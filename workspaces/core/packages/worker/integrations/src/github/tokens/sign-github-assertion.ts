@@ -2,7 +2,7 @@ import { capturePromise } from '@mechane/utilities';
 import { DateTime, Redacted, Result } from 'effect';
 import { SignJWT } from 'jose';
 import { createPrivateKey } from 'node:crypto';
-import type { KeyObject } from 'node:crypto';
+import type { JsonWebKey } from 'node:crypto';
 import { GITHUB_UNKNOWN_STATUS } from '../constants.ts';
 import type { GitHubFailed } from '../errors.ts';
 import { failGitHub } from '../requests/fail-github.ts';
@@ -19,7 +19,14 @@ export async function signGitHubAssertion({
   appId,
 }: SignGitHubAssertionInput): Promise<Result.Result<Redacted.Redacted, GitHubFailed>> {
   const pem = Redacted.value(secret);
-  const parseKey: () => KeyObject = () => createPrivateKey(pem);
+
+  const parseKey: () => JsonWebKey = () => {
+    const key = createPrivateKey(pem);
+
+    // Workers cannot convert a KeyObject through toCryptoKey, so jose imports its JWK representation.
+    return key.export({ format: 'jwk' });
+  };
+
   const key = Result.try(parseKey);
 
   if (Result.isFailure(key)) {
