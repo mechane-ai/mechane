@@ -42,6 +42,7 @@ import {
   objectSettings,
   SandboxAnswer,
   SourceAnswer,
+  SourceGrantAnswer,
   ThreadsAnswer,
   TurnCancelAnswer,
   WatchAnswer,
@@ -68,6 +69,7 @@ import { openMech } from './open-mech.ts';
 import { manageSandbox } from './sandboxes/manage-sandbox.ts';
 import { receiveSlackItem } from './slack/receive-slack-item.ts';
 import { manageSource } from './sources/configuration/manage-source.ts';
+import { readSourceGrant } from './sources/configuration/read-source-grant.ts';
 import { readThreads } from './threads/read-threads.ts';
 import { decideTurnCancel } from './turns/decide-turn-cancel.ts';
 import { readTurn } from './turns/read-turn.ts';
@@ -128,6 +130,12 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
 
   async schemaRevision(): Promise<number> {
     return await this.#mech.atomic({ run: (tables) => tables.schemaRevision() });
+  }
+
+  async sourceGrant(): Promise<typeof SourceGrantAnswer.Encoded> {
+    const answer = await this.#mech.atomic({ run: readSourceGrant });
+
+    return Schema.encodeSync(SourceGrantAnswer)(answer);
   }
 
   async receiveSlackInboxItem({

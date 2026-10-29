@@ -1430,6 +1430,9 @@ importers:
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment
+      '@mechane/logs':
+        specifier: workspace:*
+        version: link:../logs
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol

@@ -44,7 +44,8 @@
     "POST /v1/workspaces",
     "GET /v1/workspaces/:workspace_id/members",
     "PUT /v1/workspaces/:workspace_id/members/:principal_id",
-    "DELETE /v1/workspaces/:workspace_id/members/:principal_id"
+    "DELETE /v1/workspaces/:workspace_id/members/:principal_id",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant"
   ],
   "errors": [
     "RouteNotFound",
@@ -244,7 +245,8 @@
     "workspace create",
     "workspace members",
     "workspace member set",
-    "workspace member remove"
+    "workspace member remove",
+    "source access"
   ],
   "flags": [
     "--origin",
@@ -1019,7 +1021,16 @@
     "PUT /v1/workspaces/:workspace_id/members/:principal_id output.name",
     "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role",
     "PUT /v1/workspaces/:workspace_id/members/:principal_id output.created_at",
-    "DELETE /v1/workspaces/:workspace_id/members/:principal_id output.principal_id"
+    "DELETE /v1/workspaces/:workspace_id/members/:principal_id output.principal_id",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.app_id",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.installation_id",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.repository_id",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.owner",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.repository",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.base_branch",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.secret_reference",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.write_paths"
   ],
   "members": [
     "GET /v1/readiness output.durable_objects[].object_class=DirectoryObject",
@@ -1193,7 +1204,16 @@
     "PUT /v1/workspaces/:workspace_id/members/:principal_id body.role=owner",
     "PUT /v1/workspaces/:workspace_id/members/:principal_id body.role=member",
     "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role=owner",
-    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role=member"
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role=member",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.app_id=Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.app_id=-Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.app_id=NaN",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.installation_id=Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.installation_id=-Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.installation_id=NaN",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.repository_id=Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.repository_id=-Infinity",
+    "GET /v1/workspaces/:workspace_id/mechs/:mech_id/source/grant output.grant.repository_id=NaN"
   ],
   "families": [
     "invalid_request=400",

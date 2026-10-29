@@ -12,8 +12,7 @@ export function productionVariables({ rendered }: RenderedInput): Effect.Effect<
       () =>
         new DeployFailed({
           step: DeployStep.DecodeRenderedVariables,
-          reason:
-            'invalid cloud variables; origins must use HTTPS and secrets and local launcher variables must be absent',
+          reason: 'invalid cloud variables; require HTTPS, gateway egress, and no secrets or local launcher variables',
         }),
     ),
     Effect.tap(() =>

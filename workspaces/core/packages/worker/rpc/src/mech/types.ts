@@ -16,7 +16,7 @@ import type {
 import type { SandboxAnswer } from '../sandbox.schemas.ts';
 import type { SandboxManageInput } from '../sandbox.types.ts';
 import type { ReceiveSlackInboxItemInput } from '../slack.types.ts';
-import type { SourceAnswer } from '../source.schemas.ts';
+import type { SourceAnswer, SourceGrantAnswer } from '../source.schemas.ts';
 import type { SourceManageInput } from '../source.types.ts';
 import type { FindingsAnswer, WatchAnswer, WatchesAnswer } from '../watch.schemas.ts';
 import type { SetWatchInput, UpdateWatchStatusInput, WatchInput } from '../watch.types.ts';
@@ -127,6 +127,7 @@ export type MechRpc = Rpc.DurableObjectBranded & MechMethods;
 /** Each RPC method of a mech's object. */
 type MechMethods = {
   readonly manageSource: (input: SourceManageInput) => Promise<typeof SourceAnswer.Encoded>;
+  readonly sourceGrant: () => Promise<typeof SourceGrantAnswer.Encoded>;
   readonly receiveSlackInboxItem: (input: ReceiveSlackInboxItemInput) => Promise<typeof InboxItemReceipt.Encoded>;
   readonly slackDeliveries: () => Promise<typeof SlackDeliveries.Encoded>;
   readonly setWatch: (input: SetWatchInput) => Promise<typeof WatchAnswer.Encoded>;

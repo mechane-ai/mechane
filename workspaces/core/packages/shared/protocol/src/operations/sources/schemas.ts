@@ -112,6 +112,14 @@ const SourceGrantRecord = wireStruct({
   },
 });
 
+/** A read distinguishes absent repository authority from a missing or inaccessible mech. */
+export const SourceGrantState = Schema.Struct({
+  /** None means the mech has no current repository grant; the wire carries null. */
+  grant: Schema.OptionFromNullOr(SourceGrantRecord),
+});
+
+export type SourceGrantState = typeof SourceGrantState.Type;
+
 /** Configuration responses accept saved grant values independently of current request limits. */
 export const SourceReport = Schema.TaggedUnion({
   Configured: {

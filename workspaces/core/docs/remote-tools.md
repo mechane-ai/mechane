@@ -6,14 +6,15 @@ model budget.
 
 ## Configure a connection
 
-Run `mechane workspace list` to find the workspace ID. Connection and grant commands act in the signed-in account's
-first workspace. Every administration request checks the caller's current owner membership.
+Run `mechane workspace list` to find the workspace ID, then set `MECHANE_WORKSPACE_ID` or pass `--workspace UUID` to
+select it. Without a selection, commands use the personal workspace. Every administration request checks the caller's
+current owner membership.
 
 The operator supplies bearer credentials through the server-only `MECHANE_INTEGRATION_SECRETS` setting. Its JSON value
 maps workspace IDs to named credential references:
 
 ```json
-{ "WORKSPACE_UUID": { "nexus-reader": "BEARER_TOKEN" } }
+{ "WORKSPACE_UUID": { "knowledge-reader": "BEARER_TOKEN" } }
 ```
 
 Replace the placeholders and supply this value through the installation's secret configuration. For Cloudflare, use the
@@ -25,9 +26,9 @@ placeholders:
 
 ```sh
 mechane connection create \
-  --name Nexus \
-  --url https://nexus.example/mcp \
-  --secret-reference nexus-reader \
+  --name Knowledge \
+  --url https://knowledge.example/mcp \
+  --secret-reference knowledge-reader \
   --allowed-tools '["search","read_document"]' \
   --policy read_only_free
 mechane connection list

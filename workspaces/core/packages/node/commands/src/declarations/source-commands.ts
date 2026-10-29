@@ -46,6 +46,14 @@ const SourceRevokeInput = Schema.OptionFromNullOr(SourceGrant).pipe(
 
 /** Owners select immutable source and publication intent while credentials remain in trusted server configuration. */
 export const SOURCE_COMMANDS = {
+  'source access': {
+    summary: "show a mech's current repository grant without changing source work",
+    shape: CommandShape.Document,
+    operations: ['listWorkspaces', 'showSourceGrant'],
+    arguments: [MECH_ARGUMENT],
+    flags: {},
+    input: renamedWireStruct({ fields: { mechId: MechId }, renames: { mechId: 'mech-id' } }),
+  },
   'source grant': {
     summary: 'grant a mech one whole GitHub repository for reading and explicit write paths for owner-approved drafts',
     shape: CommandShape.Document,

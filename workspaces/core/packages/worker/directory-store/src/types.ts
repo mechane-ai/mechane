@@ -46,6 +46,8 @@ export type PrincipalForIdentityInput = { readonly identity: IdentityKey };
 /** What the directory's store does with principals, their identities and their workspaces. */
 export type PrincipalRecords = {
   readonly principal: (input: PrincipalInput) => PrincipalRow;
+  /** Absent when the target has not signed in to this installation. */
+  readonly findPrincipal: (input: PrincipalInput) => Option.Option<PrincipalRow>;
   /** The stable provider subjects whose admission policy applies to this principal. */
   readonly principalIdentities: (input: PrincipalInput) => ReadonlyArray<IdentityKey>;
   /** The principal that signed up with the identity, none before its first sign-in. */

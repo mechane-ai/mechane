@@ -6,6 +6,7 @@ import {
   refuseWorkspacePrivileges,
   registerWorkspaceMember,
   transferWorkspaceOwnership,
+  verifySourceGrantAccess,
   verifyWorkspaceSelection,
 } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
@@ -23,10 +24,12 @@ export const sharedWorkspacesKeepCurrentAuthority = Effect.fn('sharedWorkspacesK
   yield* verifyWorkspaceSelection({ ...selection, sharedWorkspaceId: workspace.workspaceId });
 
   const authority = { stack, workspace, member };
+
+  yield* verifySourceGrantAccess({ ...authority, guarantee });
+
   const refusals = yield* refuseWorkspacePrivileges(authority);
-  const { removed, missing, remaining } = yield* transferWorkspaceOwnership(authority);
+  const { removed, missing, creationRetry, remaining } = yield* transferWorkspaceOwnership(authority);
   const isMember: (entry: WorkspaceMember) => boolean = ({ principalId }) => principalId === member.principalId;
-  const hasRemainingMember = remaining.members.some(isMember);
 
   const conditions = [
     workspace.created.id === workspace.repeated.id,
@@ -37,8 +40,9 @@ export const sharedWorkspacesKeepCurrentAuthority = Effect.fn('sharedWorkspacesK
     refusals.personal.code === RefusalCode.PersonalWorkspaceProtected,
     removed === RefusalCode.WorkspaceNotFound,
     missing === removed,
+    creationRetry === RefusalCode.WorkspaceCreationConflict,
     remaining.members.length === 1,
-    hasRemainingMember,
+    remaining.members.some(isMember),
   ];
 
   const detail = `workspace retries ${workspace.created.id}, ${workspace.repeated.id}; refusals ${workspace.conflict.code}, ${refusals.cannotCreate.code}, ${refusals.cannotPromote.code}, ${refusals.lastOwner.code}, ${refusals.personal.code}; removed/missing ${removed}, ${missing}`;

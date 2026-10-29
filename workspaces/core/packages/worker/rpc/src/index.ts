@@ -137,7 +137,7 @@ export type {
 } from './connections.types.ts';
 export { WatchAnswer, WatchesAnswer, FindingsAnswer } from './watch.schemas.ts';
 export type { SetWatchInput, UpdateWatchStatusInput, WatchInput } from './watch.types.ts';
-export { SourceAnswer } from './source.schemas.ts';
+export { SourceAnswer, SourceGrantAnswer } from './source.schemas.ts';
 export type {
   SourceManageInput,
   SourcePrepareInput,

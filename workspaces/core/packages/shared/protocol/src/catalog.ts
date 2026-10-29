@@ -10,6 +10,7 @@ import { listMemories } from './operations/memories/list-memories.ts';
 import { manageSandbox } from './operations/sandboxes/manage-sandbox.ts';
 import { SLACK_OPERATIONS } from './operations/slack/slack-operations.ts';
 import { manageSource } from './operations/sources/manage-source.ts';
+import { showSourceGrant } from './operations/sources/show-source-grant.ts';
 import { STATUS_OPERATIONS } from './operations/status/status-operations.ts';
 import { listThreads } from './operations/threads/list-threads.ts';
 import { TURN_OPERATIONS } from './operations/turns/turn-operations.ts';
@@ -32,6 +33,7 @@ export const catalog = {
   manageSandbox,
   ...SLACK_OPERATIONS,
   manageSource,
+  showSourceGrant,
   ...STATUS_OPERATIONS,
   listThreads,
   ...TURN_OPERATIONS,

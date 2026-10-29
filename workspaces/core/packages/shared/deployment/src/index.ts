@@ -2,6 +2,7 @@ export {
   WORKER_VARIABLES,
   OriginProtocol,
   SandboxProvider,
+  SandboxEgress,
   LocalSandboxProvider,
   LimitPolicy,
   EVERY_WORKSPACE,

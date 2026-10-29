@@ -1,4 +1,5 @@
 import { Option, Redacted } from 'effect';
+import { gatewayCertificates } from '../../gateway-certificates.ts';
 
 /** Git's fixed environment keys, kept here where the sanitized child environment is constructed. */
 const GIT_VARIABLES = {
@@ -26,7 +27,10 @@ type SourceAuthorizationInput = { readonly token: Redacted.Redacted };
 
 /** Supplies only trusted executable paths and disables every ambient Git credential or configuration source. */
 export function sourceGitEnvironment({ folder, token }: SourceGitEnvironmentInput): Readonly<Record<string, string>> {
+  const certificates = gatewayCertificates();
+
   const environment = {
+    ...certificates,
     [GIT_VARIABLES.path]: '/usr/bin:/bin',
     [GIT_VARIABLES.home]: folder,
     [GIT_VARIABLES.locale]: 'C.UTF-8',

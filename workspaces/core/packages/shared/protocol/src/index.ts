@@ -1,6 +1,12 @@
 export { catalog } from './catalog.ts';
 export { SourceAction, SourceStatus, SourcePublicationStatus } from './operations/sources/constants.ts';
-export { SourceGrant, SourceRequest, SourceReport, SourcePublishPaths } from './operations/sources/schemas.ts';
+export {
+  SourceGrant,
+  SourceGrantState,
+  SourceRequest,
+  SourceReport,
+  SourcePublishPaths,
+} from './operations/sources/schemas.ts';
 export { WatchNotFound, WatchLimitReached } from './errors/mech.errors.ts';
 export {
   Watch,

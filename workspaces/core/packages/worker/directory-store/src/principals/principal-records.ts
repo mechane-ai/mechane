@@ -7,6 +7,7 @@ import type { Array } from 'effect';
 import type { PrincipalInput, WorkspaceInput, WorkspaceMembershipInput } from '../inputs.types.ts';
 import { PrincipalRow, WorkspaceRow } from '../schemas.ts';
 import type { PrincipalForIdentityInput, PrincipalRecords, SignUpInput } from '../types.ts';
+import { findPrincipal } from './find-principal.ts';
 import { principalIdentities } from './principal-identities.ts';
 import { requiredPrincipal } from './required-principal.ts';
 
@@ -21,6 +22,7 @@ const MembershipRow = Schema.Struct({ role: Schema.Enum(MembershipRole) });
 export function principalRecords({ sql }: RecordsInput): PrincipalRecords {
   return {
     principal: (input) => requiredPrincipal({ sql, ...input }),
+    findPrincipal: (input) => findPrincipal({ sql, ...input }),
     principalIdentities: (input) => principalIdentities({ sql, ...input }),
     principalForIdentity: (input) => principalForIdentity({ sql, ...input }),
     signUp: (input) => signUp({ sql, ...input }),

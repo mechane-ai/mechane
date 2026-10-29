@@ -1,4 +1,10 @@
-import { ModelOffersVariable, OriginProtocol, SandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
+import {
+  ModelOffersVariable,
+  OriginProtocol,
+  SandboxEgress,
+  SandboxProvider,
+  WORKER_VARIABLES,
+} from '@mechane/deployment';
 import { Release, SandboxWorkspacesVariable } from '@mechane/protocol';
 import { renamedWireStruct } from '@mechane/records';
 import { Schema } from 'effect';
@@ -20,6 +26,7 @@ export const ProductionVariables = Schema.Struct({
   githubClientId: Schema.NonEmptyString,
   modelOffers: ModelOffersVariable,
   sandboxProvider: Schema.Literals([SandboxProvider.Tensorlake, SandboxProvider.Container]),
+  sandboxEgress: Schema.Literal(SandboxEgress.Gateway),
   /** Absent when the installation has no Tensorlake machines. */
   tensorlakeImage: Schema.optionalKey(Schema.NonEmptyString),
   /** Always absent: the deploy uploads the secret, which no variable holds. */

@@ -61,8 +61,9 @@
     "MECHANE_NAMED_KEY_LIFETIME_SECONDS": "31536000",
     // The CLI waits 2 seconds between two polls of a device approval; only the smoke's stack stages less.
     "MECHANE_APPROVAL_POLL_INTERVAL_SECONDS": "2",
-    // Local Docker sandboxes run behind celld's fence. The production overlay selects Tensorlake instead.
+    // Cloudflare denies direct egress; local staging selects celld's private-network fence.
     "MECHANE_SANDBOX_PROVIDER": "container",
+    "MECHANE_SANDBOX_EGRESS": "gateway",
     // Only listed workspaces get sandboxes, as a JSON array of their ids, and each runs at most 4 machines at once; a
     // suspended workspace's members are refused and its dispatches find no allowance. Each change takes a deploy.
     "MECHANE_SANDBOX_WORKSPACES": "[]",

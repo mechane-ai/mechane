@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.5.0",
+  "release": "0.5.1",
   "flags": [
     {
       "name": "origin",
@@ -34,6 +34,22 @@
     }
   ],
   "commands": [
+    {
+      "name": "source access",
+      "summary": "show a mech's current repository grant without changing source work",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showSourceGrant"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
     {
       "name": "source grant",
       "summary": "grant a mech one whole GitHub repository for reading and explicit write paths for owner-approved drafts",

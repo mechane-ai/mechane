@@ -1,6 +1,14 @@
-import { LoopbackOrigin, SandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
+import {
+  LOOPBACK_HOSTS,
+  LoopbackOrigin,
+  OriginProtocol,
+  SandboxEgress,
+  SandboxProvider,
+  SecureOrigin,
+  WORKER_VARIABLES,
+} from '@mechane/deployment';
 import { renamedWireStruct } from '@mechane/records';
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 
 /**
  * The variables a sandbox's object reads: its provider, and for containers how their machines reach the internet. The
@@ -21,9 +29,25 @@ export const SandboxVariables = Schema.Union([
     },
   }),
   renamedWireStruct({
-    fields: { provider: Schema.Literal(SandboxProvider.Container) },
-    renames: { provider: WORKER_VARIABLES.sandboxProvider },
-  }),
+    fields: {
+      provider: Schema.Literal(SandboxProvider.Container),
+      /** Absent selects the Cloudflare gateway; local staging explicitly chooses the celld fence. */
+      egress: Schema.Enum(SandboxEgress).pipe(Schema.withDecodingDefaultKey(Effect.succeed(SandboxEgress.Gateway))),
+      origin: SecureOrigin,
+    },
+    renames: {
+      provider: WORKER_VARIABLES.sandboxProvider,
+      egress: WORKER_VARIABLES.sandboxEgress,
+      origin: WORKER_VARIABLES.origin,
+    },
+  }).check(
+    Schema.makeFilter(
+      ({ egress, origin }) =>
+        egress !== SandboxEgress.Fence ||
+        (origin.protocol === OriginProtocol.Loopback && LOOPBACK_HOSTS.has(origin.hostname)),
+      { expected: 'the local celld fence only on a loopback installation' },
+    ),
+  ),
   renamedWireStruct({
     fields: {
       provider: Schema.Literal(SandboxProvider.Host),

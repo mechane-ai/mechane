@@ -7,8 +7,7 @@ import { approvedLocalCli } from '../approvals/approved-local-cli.ts';
 import { refusedCli } from '../cli/refused-cli.ts';
 import { runCli } from '../cli/run-cli.ts';
 import { SignedIn } from '../schemas.ts';
-import type { ScenarioFailure, StackInput } from '../types.ts';
-import type { SharedWorkspaceFixture } from './types.ts';
+import type { ScenarioFailure, SharedWorkspaceFixture, StackInput } from '../types.ts';
 
 const BOOTSTRAP_SECRET_BYTES = 32;
 

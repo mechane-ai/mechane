@@ -18,7 +18,7 @@ import { Effect } from 'effect';
 import { serve } from './serve.ts';
 
 export { DirectoryObject } from '@mechane/directory';
-export { SandboxObject } from '@mechane/sandbox';
+export { SandboxObject, EgressGateway } from '@mechane/sandbox';
 export { KeyCacheObject } from '@mechane/key-cache';
 export { LimiterObject } from '@mechane/limiter';
 export { MechObject } from '@mechane/mech';

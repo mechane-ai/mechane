@@ -22,6 +22,7 @@ export { BrowserStep, CLI_BINARY, FileStep, RefusalCode } from './constants.ts';
 export { FileStepFailed } from './errors.ts';
 export type { ScenariosFailed } from './errors.ts';
 export { freshFolder } from './fresh-folder.ts';
+export { verifySourceGrantAccess } from './sources/verify-source-grant-access.ts';
 export { roundtripWorkspace } from './sandboxes/roundtrip-workspace.ts';
 export { refuseUnlistedMaintenance } from './sandboxes/refuse-unlisted-maintenance.ts';
 export { commandGate } from './mechs/command-gate.ts';

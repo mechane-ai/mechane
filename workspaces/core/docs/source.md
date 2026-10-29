@@ -37,7 +37,13 @@ Private-source checkout currently supports the container provider with portable 
 boundary. Host process fixtures accept only loopback HTTP fixture repositories. Tensorlake process scope is unqualified
 and refuses real repository checkout before token issuance. The complete workspace, including `.git`, must fit a 512 MiB
 uncompressed tar stream and a 256 MiB compressed snapshot. A failed preparatory save preserves the current machine and
-its unsaved files. This path has not been qualified for Metta- or Nexus-scale repositories.
+its unsaved files. Qualify each installation's intended repositories and toolchains before admitting coding tasks.
+Include Git metadata and generated files in the measured workspace size. Keep disposable dependency caches and build
+output outside the durable home, and verify that a completed checkout survives checkpoint and restoration.
+
+Use `mechane source access MECH_ID` to inspect the current grant without advancing a checkout or publication. Only a
+current workspace owner can read it. The JSON result contains `grant: null` when no repository is granted, or the saved
+grant metadata without its credential. An inaccessible workspace or missing mech is an error, not an absent grant.
 
 After reviewing the desired files, call
 `mechane source publish MECH_ID --source-id UUID --title TITLE --body BODY --paths '["src/file.ts"]'`. Selected absent

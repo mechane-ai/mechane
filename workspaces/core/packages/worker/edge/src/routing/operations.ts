@@ -33,6 +33,7 @@ import { configureSlackBinding } from '../operations/slack/configure-slack-bindi
 import { listSlackBindings } from '../operations/slack/list-slack-bindings.ts';
 import { listSlackDeliveries } from '../operations/slack/list-slack-deliveries.ts';
 import { manageSource } from '../operations/sources/manage-source.ts';
+import { showSourceGrant } from '../operations/sources/show-source-grant.ts';
 import { health } from '../operations/status/health.ts';
 import { readiness } from '../operations/status/readiness.ts';
 import { listWatches } from '../operations/watches/list-watches.ts';
@@ -52,6 +53,7 @@ type OperationWorks = { readonly [N in OperationName]: OperationWork<(typeof cat
 /** The work of each catalog operation; an operation without its work, or with another's, fails to compile. */
 export const OPERATIONS: Readonly<OperationWorks> = {
   manageSource,
+  showSourceGrant,
   configureSlackBinding,
   listSlackBindings,
   listSlackDeliveries,

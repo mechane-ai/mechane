@@ -1,4 +1,10 @@
-import { MachinesVariable, RateLimitsVariable, SandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
+import {
+  MachinesVariable,
+  RateLimitsVariable,
+  SandboxEgress,
+  SandboxProvider,
+  WORKER_VARIABLES,
+} from '@mechane/deployment';
 import { SandboxWorkspacesVariable, WorkspaceIdsVariable } from '@mechane/protocol';
 import { renamedWireStruct, wireStruct } from '@mechane/records';
 import { Record, Schema, Struct } from 'effect';
@@ -43,6 +49,7 @@ const InstallationVariables = renamedWireStruct({
     modelUpstream: Schema.NonEmptyString,
     modelOffers: Schema.NonEmptyString,
     sandboxProvider: Schema.Literals([SandboxProvider.Container, SandboxProvider.Tensorlake]),
+    sandboxEgress: Schema.optionalKey(Schema.Literal(SandboxEgress.Gateway)),
     sandboxWorkspaces: SandboxWorkspacesVariable,
     workspaceMachines: MachinesVariable,
     suspendedWorkspaces: WorkspaceIdsVariable,

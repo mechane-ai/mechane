@@ -41,7 +41,6 @@ export const WORKER_VARIABLES = {
   slackInstallations: 'MECHANE_SLACK_INSTALLATIONS',
   modelOffers: 'MECHANE_MODEL_OFFERS',
   sandboxProvider: 'MECHANE_SANDBOX_PROVIDER',
-  /** Reserved by the deployed wire lock; the retired gateway no longer reads this variable. */
   sandboxEgress: 'MECHANE_SANDBOX_EGRESS',
   tensorlakeApiKey: 'MECHANE_TENSORLAKE_API_KEY',
   tensorlakeImage: 'MECHANE_TENSORLAKE_IMAGE',
@@ -65,6 +64,11 @@ export type LocalSandboxProvider = (typeof LocalSandboxProvider)[keyof typeof Lo
 export const SandboxProvider = { ...LocalSandboxProvider, Tensorlake: 'tensorlake' } as const;
 
 export type SandboxProvider = (typeof SandboxProvider)[keyof typeof SandboxProvider];
+
+/** Cloudflare routes package requests through the gateway; local celld supplies its own network fence. */
+export const SandboxEgress = { Gateway: 'gateway', Fence: 'fence' } as const;
+
+export type SandboxEgress = (typeof SandboxEgress)[keyof typeof SandboxEgress];
 
 /** The value of the sandbox workspaces variable that gives every workspace a sandbox, as a local stack stages it. */
 export const EVERY_WORKSPACE = '*';

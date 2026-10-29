@@ -20,6 +20,7 @@ import {
   SlackBindingResult,
   SlackBindings,
   SlackDeliveries,
+  SourceGrantState,
   SourceReport,
   ThreadList,
   ToolGrant,
@@ -44,6 +45,7 @@ import { ACCESS_OUTPUTS } from './access-outputs.ts';
  */
 export const COMMAND_OUTPUTS = {
   'source grant': SourceReport,
+  'source access': SourceGrantState,
   'source revoke': SourceReport,
   'source checkout': SourceReport,
   'source publish': SourceReport,

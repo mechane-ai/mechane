@@ -31,7 +31,12 @@ export function machineProvider({ settings, state, store }: MachineProviderInput
     case SandboxProvider.Tensorlake:
       return tensorlakeProvider({ apiKey: settings.apiKey, image: settings.image, store, name: `foundry-${name}` });
     case SandboxProvider.Container:
-      return containerProvider({ state, container: Option.getOrThrow(Option.fromNullishOr(state.container)) });
+      return containerProvider({
+        state,
+        container: Option.getOrThrow(Option.fromNullishOr(state.container)),
+        egress: settings.egress,
+        gateway: () => state.exports.EgressGateway({ props: {} }),
+      });
     case SandboxProvider.Host:
       return hostProvider({ launcherOrigin: settings.launcherOrigin, launcherKey: settings.launcherKey });
   }

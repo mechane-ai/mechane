@@ -103,10 +103,10 @@ Glossary:
 | settlement | A dispatch's one charge: priced from the usage the upstream reported, or at its reservation without any | billing, payment |
 | sandbox | A mech's or a drone's own `SandboxObject` and the machines it starts, where its bash tool runs | box, VM (for this concept) |
 | hands | The sandboxes of a mech and its drones as the harness's tools reach them: one execution, run to its end, with no pi type crossing | executor, tool backend |
-| machine | One start of a sandbox's guest under a fresh id: a container, or locally a host process; a new one starts with an empty home | instance, container (for one start) |
+| machine | One start of a sandbox's guest under a fresh id: a container, a native provider VM, or a local fixture process; a container restores its committed workspace before accepting commands | instance, container (for one start) |
 | lease | A workspace's record that one sandbox may run a machine until the idle window ends, renewed by each ask and released by a drone's stop; `MECHANE_WORKSPACE_MACHINES` bounds the unexpired ones | slot, quota (for this concept) |
 | fence | celld's rules that let a container reach the internet but not the node or a private, shared or link-local range; `MECHANE_SANDBOX_EGRESS=fence` | firewall, egress filter |
-| sandbox egress policy | Tensorlake allows package-source hosts and denies private networks; the local celld fence refuses private addresses and the deployment | — |
+| sandbox egress policy | Cloudflare's gateway and optional Tensorlake networking allow the declared package-source hosts; Cloudflare disables direct egress and Tensorlake denies private IPv4 ranges. The local celld fence refuses the node and private, shared and link-local ranges | — |
 | guest | The program every machine runs, which runs each execution once and keeps its receipt | agent, daemon, server (for this concept) |
 | execution | One bash command a sandbox runs once, under the id its tool call derives | job, run, sandbox command |
 | receipt | An execution's settled result: its exit code or timeout, its duration and the tail of its output | execution result |

@@ -205,6 +205,25 @@ permanently removes those files. Add `--drone DRONE_ID` to manage a finished dro
 These commands back up sandbox files only. Conversation state, access grants, and deployment secrets need their own
 backup under the operator's control. Archives retain the normal workspace size limits.
 
+## Sandbox network policy
+
+Cloudflare containers allow only the package hosts in the sandbox's shared `PACKAGE_SOURCE_HOSTS` declaration. The
+gateway validates the request's URL and Host authority, uses TLS upstream and does not follow redirects. Direct internet
+access and other outbound ports are disabled. Ordinary commands and trusted Git checkout trust Cloudflare's runtime CA
+through fixed certificate paths; no TLS-verification bypass is used.
+
+The local celld fence blocks the host and private, shared and link-local networks. It permits public internet access and
+has no package-host filter. Cloud installation files cannot select this local mode.
+
+When changing network policy, pause new work and let active commands finish or cancel them through Mechane. Wait for
+their checkpoints and any source credential lease to settle. Recreate existing machines with `sandbox upgrade` after
+deploying the new code. A running container retains its startup internet setting; deploying code alone does not change
+it. A failed checkpoint requires recovery before replacement so live files are preserved.
+
+Qualify a cold candidate before routing live intake: allowed GitHub checkout and npm/PyPI TLS requests must succeed;
+arbitrary hosts, private addresses, the deployment host and raw TCP must be refused. Check mismatching Host authorities,
+redirect credential handling and restored workspace files. Local celld checks cannot prove Cloudflare interception.
+
 ## Existing Tensorlake installations
 
 Set `MECHANE_SANDBOX_PROVIDER` to `tensorlake`, omit `container`, and supply `tensorlake_image_prefix` plus the

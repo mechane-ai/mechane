@@ -5,8 +5,7 @@ import { freshAccount } from '../accounts/fresh-account.ts';
 import { approvedCli } from '../approvals/approved-cli.ts';
 import { runCli } from '../cli/run-cli.ts';
 import { SignedIn } from '../schemas.ts';
-import type { ScenarioFailure, StackInput } from '../types.ts';
-import type { SharedWorkspaceFixture, WorkspaceMemberFixture } from './types.ts';
+import type { ScenarioFailure, SharedWorkspaceFixture, StackInput, WorkspaceMemberFixture } from '../types.ts';
 
 type RegisterWorkspaceMemberInput = StackInput & { readonly workspace: SharedWorkspaceFixture };
 

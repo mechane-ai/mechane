@@ -31,8 +31,8 @@ commands until release; a failed save can release the live workspace for a later
 ## Never
 
 - Never restart a guest that has accepted an execution: its identity and receipt ledger remain single-use.
-- Never read the environment outside `load-guest-settings.ts`, and never give an execution a variable beyond `PATH`, its
-  home and the execution variables.
+- Never read the environment outside `load-guest-settings.ts`. Execution children receive only `PATH`, their home, fixed
+  execution variables and the public gateway certificate paths.
 
 Container scope explicitly selects an isolated process namespace. Quiescence preserves the guest and its ancestor init
 processes and stops other live processes of the guest user, including detached sessions. Failure to establish quiescence
@@ -43,3 +43,6 @@ and restoration validates part sizes and the whole archive checksum before repla
 Private source credentials require a fresh container generation. The controller commits the old home, destroys its guest
 and restores the snapshot before preparing a credential lease; quiescing a previously used guest alone cannot establish
 this boundary. No agent command is admitted until revocation or confirmed token expiry.
+
+Cloudflare injects its interception CA at runtime. Both bash children and trusted Git read the fixed certificate path
+when they start, so a cold checkout trusts the gateway without inheriting ambient credentials or disabling TLS checks.

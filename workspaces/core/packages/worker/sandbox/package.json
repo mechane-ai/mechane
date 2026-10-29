@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@mechane/deployment": "workspace:*",
+    "@mechane/logs": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/rpc": "workspace:*",

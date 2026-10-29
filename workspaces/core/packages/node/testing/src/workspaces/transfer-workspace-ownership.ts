@@ -2,14 +2,15 @@ import { MembershipRole, WorkspaceMember, WorkspaceMemberList, WorkspaceMemberRe
 import { WorkspaceId } from '@mechane/records';
 import { Effect, Redacted } from 'effect';
 import { savedLoginToken } from '../accounts/saved-login-token.ts';
+import { refusedCli } from '../cli/refused-cli.ts';
 import { refusedOperation } from '../cli/refused-operation.ts';
 import { runCli } from '../cli/run-cli.ts';
-import type { ScenarioFailure } from '../types.ts';
-import type { WorkspaceAuthorityInput } from './types.ts';
+import type { ScenarioFailure, WorkspaceAuthorityInput } from '../types.ts';
 
 type TransferredWorkspace = {
   readonly removed: string;
   readonly missing: string;
+  readonly creationRetry: string;
   readonly remaining: WorkspaceMemberList;
 };
 
@@ -35,6 +36,8 @@ export const transferWorkspaceOwnership = Effect.fn('transferWorkspaceOwnership'
   const missingWorkspaceId = WorkspaceId.make(crypto.randomUUID());
   const missingInput = { workspaceId: missingWorkspaceId };
   const missing = yield* refusedOperation({ stack, name: 'listWorkspaceMembers', input: missingInput, credential });
+  const retryArgs = ['workspace', 'create', '--name', workspace.created.name, '--workspace-id', workspaceId];
+  const retry = yield* refusedCli({ stack, args: retryArgs, environment: owner.environment });
   const args = ['--workspace', workspaceId, 'workspace', 'members'];
 
   const remaining = yield* runCli({
@@ -44,5 +47,5 @@ export const transferWorkspaceOwnership = Effect.fn('transferWorkspaceOwnership'
     result: WorkspaceMemberList,
   });
 
-  return { removed, missing, remaining: remaining.result };
+  return { removed, missing, creationRetry: retry.code, remaining: remaining.result };
 });

@@ -3,6 +3,7 @@ import type { ExecutionId, ExecutionRequest } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import { spawn } from 'node:child_process';
 import { ExecutionUnstarted } from '../errors.ts';
+import { gatewayCertificates } from '../gateway-certificates.ts';
 import type { GuestSettings } from '../types.ts';
 import { spawnedBash } from './spawned-bash.ts';
 import type { BashRun } from './types.ts';
@@ -23,7 +24,8 @@ export const spawnBash = Effect.fn('spawnBash')(function* ({
   request,
   settings,
 }: SpawnBashInput): Effect.fn.Return<BashRun, ExecutionUnstarted> {
-  const environment = { PATH: settings.path, HOME: settings.home, ...EXECUTION_VARIABLES };
+  const certificates = gatewayCertificates();
+  const environment = { PATH: settings.path, HOME: settings.home, ...EXECUTION_VARIABLES, ...certificates };
 
   return yield* Effect.callback<BashRun, ExecutionUnstarted>((resume) => {
     const child = spawn('bash', ['-c', '--', request.command], {

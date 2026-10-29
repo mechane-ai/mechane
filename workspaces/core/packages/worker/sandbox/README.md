@@ -9,6 +9,7 @@ Layer 4 · worker · plain · consumers: `@mechane/app`
 - `executions/`: command admission, dispatch, cancellation and receipts.
 - `machines/`: machine creation, health, restoration and startup deadlines.
 - `providers/`: local host and container machines behind `MachineProvider`.
+- `egress/`: the Cloudflare package-host gateway; `constants.ts` owns the hosted providers' shared host list.
 - `tensorlake/`: native persistent VMs and their maintenance journal.
 - `maintenance/`: portable export, import, replacement and deletion.
 - `checkpoints/` and `workspace/`: portable R2 generations, transfers and retirement.
@@ -48,6 +49,17 @@ Provider choice is stored per sandbox. Switching a native installation to Contai
 until an explicit import verifies their archive in a fresh guest. Failed imports preserve the previous head. Export
 generations remain downloadable while commands advance that head; a new maintenance operation invalidates the export.
 See [self-hosting](../../../docs/self-hosting.md) for backup and migration commands.
+
+## Networking
+
+Cloudflare starts containers with direct internet disabled. HTTP and HTTPS pass through `EgressGateway`, which admits
+only the package hosts declared in `src/constants.ts`, forwards over TLS and never follows redirects. Invalid or
+mismatching URL and Host authorities are refused. Local celld uses its own node/private-network fence; it does not
+filter package hosts. Cloud deployment validation rejects that local mode. Tensorlake uses the same hosted package-host
+list.
+
+A running container retains its startup network setting. Drain and recreate existing machines through their checkpoint
+lifecycle when rolling out a network-policy change; constructing a Durable Object never discards their files or work.
 
 ## Never
 

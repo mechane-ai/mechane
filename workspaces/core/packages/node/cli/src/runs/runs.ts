@@ -39,6 +39,7 @@ import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
 import { runSlackBind } from './slack/run-slack-bind.ts';
 import { runSlackBindings } from './slack/run-slack-bindings.ts';
 import { runSlackDeliveries } from './slack/run-slack-deliveries.ts';
+import { runSourceAccess } from './sources/run-source-access.ts';
 import { runSource } from './sources/run-source.ts';
 import { runFindingList } from './watches/run-finding-list.ts';
 import { runWatchList } from './watches/run-watch-list.ts';
@@ -52,6 +53,7 @@ type Runs = { readonly [N in CommandName]: Run<N> };
 /** The run of each command; a command without one fails to compile. Only a command that streams writes as it goes. */
 export const RUNS: Readonly<Runs> = {
   'source grant': documentRun<'source grant'>({ run: runSource }),
+  'source access': documentRun<'source access'>({ run: runSourceAccess }),
   'source revoke': documentRun<'source revoke'>({ run: runSource }),
   'source checkout': documentRun<'source checkout'>({ run: runSource }),
   'source publish': documentRun<'source publish'>({ run: runSource }),

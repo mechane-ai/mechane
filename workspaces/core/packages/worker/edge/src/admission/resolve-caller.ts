@@ -8,8 +8,8 @@ import { cachedKey } from './cached-key.ts';
 import type { AdmitInput } from './types.ts';
 
 /**
- * Resolves the request's bearer key to the caller it acts for. Only the key's cache shard decides, filled from the
- * directory's record of the key's hash, and it refuses a revoked key before an expired one.
+ * The key cache decides credential validity, refusing revocation before expiry. Installation admission separately
+ * checks the principal's current provider identities, so a cached credential cannot preserve withdrawn access.
  */
 export const resolveCaller = Effect.fn('resolveCaller')(function* ({
   request,

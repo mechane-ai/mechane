@@ -1,19 +1,11 @@
 import { MACHINE_LEASE } from '@mechane/rpc';
 import { GUEST_PORT } from '@mechane/sandbox-wire';
 import { Duration } from 'effect';
+import { PACKAGE_SOURCE_HOSTS } from '../../constants.ts';
 import type { TensorlakeSettings } from '../types.ts';
 
 const TENSORLAKE_PENDING_SECONDS = 90;
 const TENSORLAKE_MEMORY_MIB = 1024;
-
-const TENSORLAKE_ALLOWED_HOSTS = [
-  'github.com',
-  '*.githubusercontent.com',
-  'api.github.com',
-  'registry.npmjs.org',
-  'pypi.org',
-  'files.pythonhosted.org',
-] as const;
 
 const TENSORLAKE_DENIED_NETWORKS = [
   '0.0.0.0/8',
@@ -39,6 +31,6 @@ export function sandboxStart({ name, image }: TensorlakeSettings): string {
     allow_unauthenticated_access: false,
     exposed_ports: [GUEST_PORT],
     entrypoint: ['/bin/sleep', 'infinity'],
-    network: { allow_internet_access: true, allow_out: TENSORLAKE_ALLOWED_HOSTS, deny_out: TENSORLAKE_DENIED_NETWORKS },
+    network: { allow_internet_access: true, allow_out: PACKAGE_SOURCE_HOSTS, deny_out: TENSORLAKE_DENIED_NETWORKS },
   });
 }

@@ -1,8 +1,7 @@
 import { MembershipRole } from '@mechane/protocol';
 import { Effect } from 'effect';
 import { refusedCli } from '../cli/refused-cli.ts';
-import type { CliRefusal, ScenarioFailure } from '../types.ts';
-import type { WorkspaceAuthorityInput } from './types.ts';
+import type { CliRefusal, ScenarioFailure, WorkspaceAuthorityInput } from '../types.ts';
 
 type WorkspacePrivilegeRefusals = {
   readonly cannotCreate: CliRefusal;
