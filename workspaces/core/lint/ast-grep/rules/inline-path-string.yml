@@ -1,0 +1,51 @@
+# SC-10: a template literal that forms a path, URL, key or query is the whole return value of a builder function named
+# for what it builds, such as `guestExecutionPath({ machineId, executionId })`.
+id: inline-path-string
+language: TypeScript
+severity: error
+message: 'Build the path in one named builder that takes its parts as fields, such as `guestExecutionPath({ machineId, executionId })` (SC-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  path-like:
+    all:
+      - kind: template_string
+      - has: { kind: template_substitution }
+      - regex: '^`(/|https?://|\$\{[^}]+\}/|\$\{[^}]+\}:)|/\$\{|\$\{[^}]+\}/|\?[a-z_]+=|&[a-z_]+='
+      - not: { regex: '\s' }
+  builder-name: { regex: '(Path|Url|Query|Key|Name|Ref|Glob|Specifier|Header|Authorization|Control)$' }
+  # the expression a builder returns last, whatever statements build its parts first
+  builder-return:
+    inside:
+      kind: return_statement
+      not:
+        {
+          precedes:
+            {
+              stopBy: end,
+              any: [{ kind: expression_statement }, { kind: return_statement }, { kind: lexical_declaration }],
+            },
+        }
+      inside:
+        kind: statement_block
+        inside:
+          any:
+            - { kind: function_declaration, has: { field: name, matches: builder-name } }
+            - kind: arrow_function
+              inside: { kind: variable_declarator, has: { field: name, matches: builder-name } }
+  # a string operand of `+` that is a path's or query's piece, such as `'/packs/'` or `'?offset='`
+  path-piece:
+    kind: string
+    regex: "^['\"](/|https?://|[^'\" ]*/['\"]$|\\?[a-z_]+=|&[a-z_]+=|:['\"]$)"
+rule:
+  any:
+    - all:
+        - matches: path-like
+        - not: { matches: builder-return }
+    # `+` never forms such a string, not even in a builder
+    - all:
+        - kind: binary_expression
+        - has: { field: operator, regex: '^\+$' }
+        - any:
+            - has: { field: left, matches: path-piece }
+            - has: { field: right, matches: path-piece }

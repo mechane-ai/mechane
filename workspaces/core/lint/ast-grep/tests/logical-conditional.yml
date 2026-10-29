@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: logical-conditional
+valid:
+  - 'const isDone = isReady && hasTotal;'
+invalid:
+  - 'const value = (isReady && total) || fallback;'
+  - 'const value = isReady && total ?? fallback;'

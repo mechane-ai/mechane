@@ -1,0 +1,19 @@
+# SC-09: every failure is a tagged error value: no thrown option or result, no rejected promise, no free-form step text.
+# untagged-errors-typescript, which contract 024 ships, rejects a bare `Error` and a message defect.
+id: untyped-failure
+language: TypeScript
+severity: error
+message: 'Fail with a tagged error whose fields name what failed, such as `Result.fail(new LauncherRefused({ machineId, status }))` or `return yield* new FileUnwritable({ path, step: FileStep.Write })` (SC-09)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  any:
+    - pattern: Option.getOrThrowWith($$$ARGS)
+    - pattern: Result.getOrThrowWith($$$ARGS)
+    - pattern: Promise.reject($$$ARGS)
+    # a free-form text that names the failed step, such as `operation: \`write ${path}\``
+    - all:
+        - kind: pair
+        - has: { field: key, regex: '^(operation|step|code|message|detail|issue)$' }
+        - has: { field: value, any: [{ kind: string }, { kind: template_string }] }
+        - inside: { kind: object, inside: { kind: arguments, inside: { kind: new_expression } } }

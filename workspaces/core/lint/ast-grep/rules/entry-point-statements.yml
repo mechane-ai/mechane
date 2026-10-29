@@ -1,0 +1,46 @@
+# An entry point holds only `export { name } from` and `export type { Name } from`; no file re-exports a namespace.
+id: entry-point-statements
+language: TypeScript
+severity: error
+message: "Keep an entry point to named re-exports, such as `export { parseLine } from './parse-line.ts'` (ST-10)"
+files: ['**/index.ts']
+ignores: ['**/node_modules/**']
+rule:
+  inside:
+    kind: program
+  any:
+    - kind: export_statement
+    - kind: import_statement
+    - kind: expression_statement
+    - kind: lexical_declaration
+    - kind: variable_declaration
+    - kind: function_declaration
+    - kind: generator_function_declaration
+    - kind: class_declaration
+    - kind: abstract_class_declaration
+    - kind: type_alias_declaration
+    - kind: interface_declaration
+    - kind: enum_declaration
+    - kind: internal_module
+    - kind: module
+    - kind: ambient_declaration
+    - kind: import_alias
+    - kind: statement_block
+    - kind: if_statement
+    - kind: switch_statement
+    - kind: for_statement
+    - kind: for_in_statement
+    - kind: while_statement
+    - kind: do_statement
+    - kind: try_statement
+    - kind: labeled_statement
+    - kind: throw_statement
+    - kind: empty_statement
+  not:
+    all:
+      - kind: export_statement
+      - has:
+          field: source
+          kind: string
+      - has:
+          kind: export_clause

@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: pass-through-function
+valid:
+  - 'function readRows({ sql }: ReadInput): Rows { return sql.exec(STATEMENT); }'
+  - 'const recordTurn = (input: TurnInput): void => insertTurn({ sql, ...input });'
+  - 'function lastLine({ text }: TextInput): string { const lines = text.split(EOL); return lines.at(-1); }'
+  - 'function isListed({ path, patterns }: ListedInput): boolean { const matches: (pattern: string) => boolean = (pattern) => matchesGlob(path, pattern); return patterns.some(matches); }'
+invalid:
+  - 'function isGlobMatch({ file, pattern }: MatchInput): boolean { return matchesGlob(file, pattern); }'
+  - 'function admit({ access, request }: AdmitInput): Admitted { return ADMISSIONS[access]({ request }); }'

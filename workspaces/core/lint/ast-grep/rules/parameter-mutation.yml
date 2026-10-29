@@ -1,0 +1,45 @@
+id: parameter-mutation
+language: TypeScript
+severity: error
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+message: "Return a new value instead of changing a parameter's collection, such as `return [...rows, row]` (EF-23)"
+rule:
+  all:
+    - any:
+        - kind: call_expression
+          has:
+            field: function
+            kind: member_expression
+            all:
+              - has:
+                  field: property
+                  regex: '^(push|pop|shift|unshift|splice|sort|reverse|fill|copyWithin|set|add|delete|clear)$'
+              - has:
+                  field: object
+                  any:
+                    - { kind: identifier, pattern: $P }
+                    - { kind: member_expression, has: { stopBy: end, kind: identifier, pattern: $P } }
+        - kind: call_expression
+          pattern: Object.assign($$$)
+          has:
+            field: arguments
+            has:
+              nthChild: 1
+              any:
+                - { kind: identifier, pattern: $P }
+                - { kind: member_expression, has: { stopBy: end, kind: identifier, pattern: $P } }
+    - inside:
+        stopBy: end
+        any:
+          - kind: function_declaration
+          - kind: function_expression
+          - kind: arrow_function
+          - kind: method_definition
+        has:
+          field: parameters
+          has:
+            stopBy: end
+            any:
+              - { kind: shorthand_property_identifier_pattern, pattern: $P }
+              - { kind: identifier, pattern: $P }

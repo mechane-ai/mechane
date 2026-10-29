@@ -1,0 +1,1969 @@
+{
+  "steps": [
+    {
+      "name": "store",
+      "members": {
+        "@mechane/store": {
+          "owns": "The SQL kernel every object's database shares: the migration ledger, its transactions, row decoding and the pages of a list that grows",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/worker"]
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/store/types.ts",
+          "names": [
+            "PageAfterInput",
+            "RecordsInput",
+            "Migration",
+            "AtomicInput",
+            "AsyncTransaction",
+            "DatabaseFunctions",
+            "RowsPage",
+            "SqlCall",
+            "AlarmTimeInput"
+          ]
+        }
+      ],
+      "moves": [{ "from": "packages/worker/src/store/", "to": "packages/worker/store/src/" }]
+    },
+    {
+      "name": "shared",
+      "members": {
+        "@mechane/records": {
+          "owns": "The shapes every stored and wire record is built from: record ids and names, the entity id and unit brands, wire structs, bounded text and list queries, the byte units, and the HTTP methods, status codes, header names and media types",
+          "layer": 0,
+          "lane": "shared",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse"
+        },
+        "@mechane/deployment": {
+          "owns": "The deployment's variable names, secure origins, model offers and rate limits, and their schemas",
+          "layer": 0,
+          "lane": "shared",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse"
+        },
+        "@mechane/utilities": {
+          "owns": "Isomorphic, domain-free functions beside Effect, and the only code that builds promises",
+          "layer": 0,
+          "lane": "shared",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse"
+        },
+        "@mechane/sandbox-wire": {
+          "owns": "Every shape that crosses into or out of a sandbox: the guest wire, the host launcher's wire and an execution's progress",
+          "layer": 1,
+          "lane": "shared",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse"
+        },
+        "@mechane/credentials": {
+          "owns": "How keys, device codes, user codes and session tokens are minted, and the hash the directory stores",
+          "layer": 2,
+          "lane": "shared",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/worker"]
+        },
+        "@mechane/protocol": {
+          "owns": "The operation catalog, every resource's schemas and errors, the error families, the paths and the device page's forms, GitHub's OAuth wire and login names, the workspace lists of the deployment's variables, the release keys, manifest and stamp, and the lines of the Worker's log",
+          "layer": 1,
+          "lane": "shared",
+          "dialect": "data",
+          "kind": "wire",
+          "criterion": "reuse"
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/protocol/src/deployment/schemas.ts",
+          "to": "packages/protocol/src/schemas.ts",
+          "names": ["SandboxWorkspacesVariable", "WorkspaceIdsVariable"]
+        },
+        {
+          "from": "packages/protocol/src/schemas.ts",
+          "to": "packages/protocol/src/records/schemas.ts",
+          "names": ["PrintableName"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/protocol/src/guest/types.ts",
+          "names": ["RunExecutionInput"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/protocol/src/records/types.ts",
+          "names": ["CopyRows", "DispatchRequest", "TokenHashInput"]
+        },
+        {
+          "from": "packages/worker/src/schemas.ts",
+          "to": "packages/protocol/src/records/schemas.ts",
+          "names": ["BrowserSessionRow"]
+        },
+        {
+          "from": "packages/worker/src/directory.schemas.ts",
+          "to": "packages/protocol/src/records/schemas.ts",
+          "names": ["DirectoryPrincipal"]
+        },
+        {
+          "from": "packages/worker/src/directory.types.ts",
+          "to": "packages/protocol/src/records/types.ts",
+          "names": ["BrowserSessionRequest", "StateHashInput"]
+        },
+        {
+          "from": "packages/worker/src/workspace.types.ts",
+          "to": "packages/protocol/src/records/types.ts",
+          "names": ["WorkDispatchesInput"]
+        },
+        {
+          "from": "packages/worker/src/schemas.ts",
+          "to": "packages/protocol/src/durable-objects/schemas.ts",
+          "names": ["DispatchRow", "MechSummaryRow"]
+        },
+        {
+          "from": "packages/worker/src/keys.schemas.ts",
+          "to": "packages/protocol/src/durable-objects/schemas.ts",
+          "names": ["KeyAccess", "KeyAccessAnswer", "KeyRow"]
+        },
+        {
+          "from": "packages/worker/src/directory.types.ts",
+          "to": "packages/protocol/src/durable-objects/types.ts",
+          "names": ["DeviceApprovalRequest"]
+        },
+        {
+          "from": "packages/worker/src/workspace.types.ts",
+          "to": "packages/protocol/src/durable-objects/types.ts",
+          "names": ["IndexMechInput", "ReservationSettlement", "Settlement", "UsageSettlement"]
+        },
+        {
+          "from": "packages/worker/src/key-cache.types.ts",
+          "to": "packages/protocol/src/durable-objects/types.ts",
+          "names": ["FillKeyInput"]
+        }
+      ],
+      "moves": [
+        { "from": "packages/protocol/src/records/", "to": "packages/shared/records/src/" },
+        { "from": "packages/protocol/src/deployment/", "to": "packages/shared/deployment/src/" },
+        { "from": "packages/protocol/src/guest/", "to": "packages/shared/sandbox-wire/src/" },
+        { "from": "packages/worker/src/utilities/", "to": "packages/shared/utilities/src/" },
+        { "from": "packages/worker/src/tokens/", "to": "packages/shared/credentials/src/" },
+        { "from": "packages/protocol/", "to": "packages/shared/protocol/" },
+        { "from": "packages/client/", "to": "packages/shared/client/" }
+      ]
+    },
+    {
+      "name": "worker",
+      "members": {
+        "@mechane/store": {
+          "owns": "The SQL kernel every object's database shares: the migration ledger, its transactions, row decoding and the pages of a list that grows",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/directory-store",
+            "@mechane/workspace-store",
+            "@mechane/mech-store",
+            "@mechane/sandbox-store",
+            "@mechane/key-cache-store",
+            "@mechane/limiter-store",
+            "@mechane/directory",
+            "@mechane/workspace",
+            "@mechane/mech",
+            "@mechane/sandbox",
+            "@mechane/key-cache",
+            "@mechane/limiter",
+            "@mechane/harness",
+            "@mechane/harness-tools"
+          ]
+        },
+        "@mechane/credentials": {
+          "owns": "How keys, device codes, user codes and session tokens are minted, and the hash the directory stores",
+          "layer": 2,
+          "lane": "shared",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/edge", "@mechane/pages"]
+        },
+        "@mechane/logs": {
+          "owns": "The Worker's one log channel",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/harness",
+            "@mechane/harness-tools",
+            "@mechane/bindings",
+            "@mechane/edge",
+            "@mechane/pages",
+            "@mechane/directory",
+            "@mechane/workspace",
+            "@mechane/mech",
+            "@mechane/sandbox",
+            "@mechane/key-cache",
+            "@mechane/limiter"
+          ]
+        },
+        "@mechane/rpc": {
+          "owns": "Each Durable Object's RPC answers, its callee edge and plain caller, and the bindings' types and object settings",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/bindings",
+            "@mechane/directory",
+            "@mechane/workspace",
+            "@mechane/mech",
+            "@mechane/sandbox",
+            "@mechane/key-cache",
+            "@mechane/limiter",
+            "@mechane/edge",
+            "@mechane/pages",
+            "@mechane/app"
+          ]
+        },
+        "@mechane/bindings": {
+          "owns": "The Worker's Effect side of its bindings: settings and calls to each object",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/app"]
+        },
+        "@mechane/harness": {
+          "owns": "The pi adapter: a mech's harness, conversations, prompt sections and metered models, behind Mechane-named ports",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/mech"],
+          "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+        },
+        "@mechane/harness-tools": {
+          "owns": "The mech's pi tools and the ports they call, which the mech passes to its harness",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/mech"],
+          "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+        },
+        "@mechane/directory-store": {
+          "owns": "The directory object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/directory"]
+        },
+        "@mechane/workspace-store": {
+          "owns": "The workspace object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/workspace"]
+        },
+        "@mechane/mech-store": {
+          "owns": "The mech object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/mech"]
+        },
+        "@mechane/sandbox-store": {
+          "owns": "The sandbox object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/sandbox"]
+        },
+        "@mechane/key-cache-store": {
+          "owns": "The key-cache object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/key-cache"]
+        },
+        "@mechane/limiter-store": {
+          "owns": "The limiter object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/limiter"]
+        },
+        "@mechane/directory": {
+          "owns": "The directory Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/workspace": {
+          "owns": "The workspace Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/mech": {
+          "owns": "The mech Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/sandbox": {
+          "owns": "The sandbox Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/key-cache": {
+          "owns": "The key-cache Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/limiter": {
+          "owns": "The limiter Durable Object and its decisions",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/edge": {
+          "owns": "The HTTP edge: matching, admission, decoding, one handler per operation, the install script and release files",
+          "layer": 5,
+          "lane": "worker",
+          "dialect": "effect",
+          "kind": "surface",
+          "criterion": "closure",
+          "consumers": ["@mechane/app"]
+        },
+        "@mechane/app": {
+          "owns": "The Worker entry module and its serve, the Wrangler configuration that Cloudflare and celld deploy, and the production overlay only the deploy program reads",
+          "layer": 6,
+          "lane": "worker",
+          "dialect": "effect",
+          "kind": "app",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/pages": {
+          "owns": "The browser pages: device approval, GitHub sign-in and its OAuth client, browser sessions and HTML",
+          "layer": 5,
+          "lane": "worker",
+          "dialect": "effect",
+          "kind": "surface",
+          "criterion": "closure",
+          "consumers": ["@mechane/app"],
+          "confines": ["cookie"]
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/worker/src/constants.ts",
+          "to": "packages/worker/src/harness/constants.ts",
+          "names": ["TurnFailure"]
+        },
+        {
+          "from": "packages/worker/src/constants.ts",
+          "to": "packages/worker/src/harness/tools/constants.ts",
+          "names": ["SandboxRefusal"]
+        },
+        {
+          "from": "packages/worker/src/constants.ts",
+          "to": "packages/worker/src/rpc/constants.ts",
+          "names": ["MACHINE_LEASE_MS", "SANDBOX_IDLE_MS", "STOP_RETRY_MS"]
+        },
+        {
+          "from": "packages/worker/src/directory.schemas.ts",
+          "to": "packages/worker/src/rpc/directory.schemas.ts",
+          "names": [
+            "ApprovalClaim",
+            "ApprovalDecision",
+            "Approved",
+            "DirectoryKey",
+            "DirectoryKeyPage",
+            "DirectoryWorkspaces",
+            "KeyRevocation",
+            "KeyTokenAnswer",
+            "LiveSession",
+            "Pending",
+            "PendingApproval",
+            "SignInClaim"
+          ]
+        },
+        {
+          "from": "packages/worker/src/directory.types.ts",
+          "to": "packages/worker/src/rpc/directory.types.ts",
+          "names": [
+            "ApproveDeviceApprovalInput",
+            "BrowserSessionOpening",
+            "ClaimDeviceApprovalInput",
+            "DeviceApprovalOpening",
+            "DirectoryMethods",
+            "DirectoryRpc",
+            "KeysOfPrincipalQuery",
+            "KeysQuery",
+            "PrincipalIdInput",
+            "SignInOpening",
+            "UserCodeInput",
+            "WorkspaceIdInput"
+          ]
+        },
+        {
+          "from": "packages/worker/src/directory/constants.ts",
+          "to": "packages/worker/src/directory/store/constants.ts",
+          "names": ["IdentityProvider"]
+        },
+        {
+          "from": "packages/worker/src/directory/schemas.ts",
+          "to": "packages/worker/src/directory/store/schemas.ts",
+          "names": ["DeviceApprovalRow", "KeyRowPage", "PrincipalRow", "WorkspaceRow"]
+        },
+        {
+          "from": "packages/worker/src/directory/types.ts",
+          "to": "packages/worker/src/directory/store/types.ts",
+          "names": [
+            "BrowserSessionRecords",
+            "ClaimSignInInput",
+            "ClaimableDeviceApprovalInput",
+            "DeviceApprovalRecords",
+            "DirectoryStore",
+            "IdentityKey",
+            "IssueKeyInput",
+            "KeyForTokenInput",
+            "KeyRecords",
+            "KeysOfPrincipalInput",
+            "Lifespan",
+            "LiveBrowserSessionInput",
+            "NewKey",
+            "NewWorkspace",
+            "OpenBrowserSessionInput",
+            "OpenDeviceApprovalInput",
+            "OpenSignInInput",
+            "OwnedKeyInput",
+            "PendingDeviceApprovalInput",
+            "PrincipalForIdentityInput",
+            "PrincipalInput",
+            "PrincipalRecords",
+            "RecordApprovalInput",
+            "RecordClaimInput",
+            "RevokeKeyInput",
+            "SignInRecords",
+            "SignUpInput",
+            "TokenHash",
+            "WorkspaceInput"
+          ]
+        },
+        {
+          "from": "packages/worker/src/drones.schemas.ts",
+          "to": "packages/worker/src/rpc/drones.schemas.ts",
+          "names": [
+            "DRONE_RECORD_FIELDS",
+            "DroneAnswer",
+            "DroneCancelAnswer",
+            "DroneRecord",
+            "DronesAnswer",
+            "ThreadRecord",
+            "ThreadsAnswer"
+          ]
+        },
+        {
+          "from": "packages/worker/src/errors.ts",
+          "to": "packages/worker/src/pages/errors.ts",
+          "names": ["GitHubRefused", "GitHubUnavailable"]
+        },
+        {
+          "from": "packages/worker/src/key-cache.types.ts",
+          "to": "packages/worker/src/rpc/key-cache.types.ts",
+          "names": ["KeyCacheMethods", "KeyCacheRpc"]
+        },
+        {
+          "from": "packages/worker/src/key-cache/schemas.ts",
+          "to": "packages/worker/src/key-cache/store/schemas.ts",
+          "names": ["CachedKeyRow", "LiveKeyRow", "RevokedKeyRow"]
+        },
+        {
+          "from": "packages/worker/src/key-cache/types.ts",
+          "to": "packages/worker/src/key-cache/store/types.ts",
+          "names": ["CachedKeyInput", "CachedKeyRecords", "KeyCacheStore", "RevokeKeyInput"]
+        },
+        {
+          "from": "packages/worker/src/keys.schemas.ts",
+          "to": "packages/worker/src/rpc/keys.schemas.ts",
+          "names": ["CachedResolution", "JudgedKey"]
+        },
+        {
+          "from": "packages/worker/src/limits.types.ts",
+          "to": "packages/worker/src/rpc/limits.types.ts",
+          "names": ["LimiterMethods", "LimiterRpc", "TakeInput"]
+        },
+        {
+          "from": "packages/worker/src/limits/schemas.ts",
+          "to": "packages/worker/src/limits/store/schemas.ts",
+          "names": ["LimitWindowRow"]
+        },
+        {
+          "from": "packages/worker/src/limits/types.ts",
+          "to": "packages/worker/src/limits/store/types.ts",
+          "names": ["LimitWindowInput", "LimitWindowRecords", "LimiterStore", "WriteWindowInput"]
+        },
+        {
+          "from": "packages/worker/src/mech.schemas.ts",
+          "to": "packages/worker/src/rpc/mech.schemas.ts",
+          "names": [
+            "CancelRecord",
+            "EventsAnswer",
+            "ForkAnswer",
+            "ForkPointRecord",
+            "InboxItemReceipt",
+            "InboxItemRecord",
+            "MechRecord",
+            "MemoriesAnswer",
+            "MemoryRecord",
+            "RECORD_TIME_KEYS",
+            "TurnCancelAnswer"
+          ]
+        },
+        {
+          "from": "packages/worker/src/mech/schemas.ts",
+          "to": "packages/worker/src/mech/store/schemas.ts",
+          "names": ["ForkRow", "MechRow", "RunningDroneRow", "TurnMemoryRow"]
+        },
+        {
+          "from": "packages/worker/src/mech/types.ts",
+          "to": "packages/worker/src/mech/store/types.ts",
+          "names": ["EarlierAlarm", "MechAlarm", "OpenMechStoreInput"]
+        },
+        {
+          "from": "packages/worker/src/object-calls/types.ts",
+          "to": "packages/worker/src/rpc/types.ts",
+          "names": ["BindingsInput"]
+        },
+        {
+          "from": "packages/worker/src/sandbox/constants.ts",
+          "to": "packages/worker/src/sandbox/store/constants.ts",
+          "names": ["ExecutionStatus", "MachineStatus"]
+        },
+        {
+          "from": "packages/worker/src/sandbox/schemas.ts",
+          "to": "packages/worker/src/sandbox/store/schemas.ts",
+          "names": [
+            "EXECUTION_KEYS",
+            "ExecutionRow",
+            "LiveMachineRow",
+            "MachineIdRow",
+            "OUTPUT_FIELDS",
+            "REQUEST_FIELDS"
+          ]
+        },
+        {
+          "from": "packages/worker/src/sandbox/types.ts",
+          "to": "packages/worker/src/sandbox/store/types.ts",
+          "names": [
+            "ClaimExecutionInput",
+            "DispatchExecutionInput",
+            "ExecutionIdInput",
+            "ExecutionRecords",
+            "FailMachineInput",
+            "MachineRecords",
+            "MachineTimeInput",
+            "SandboxAlarm",
+            "SandboxStore",
+            "SettleExecutionInput"
+          ]
+        },
+        {
+          "from": "packages/worker/src/schemas.ts",
+          "to": "packages/worker/src/rpc/schemas.ts",
+          "names": ["TakeAnswer"]
+        },
+        {
+          "from": "packages/worker/src/schemas.ts",
+          "to": "packages/worker/src/sandbox/schemas.ts",
+          "names": ["EgressVariables"]
+        },
+        {
+          "from": "packages/worker/src/settings/constants.ts",
+          "to": "packages/worker/src/object-calls/constants.ts",
+          "names": ["KEY_LIFETIME_MAX_SECONDS"]
+        },
+        {
+          "from": "packages/worker/src/settings/constants.ts",
+          "to": "packages/worker/src/rpc/constants.ts",
+          "names": ["ALARM_WORK_MAX_SECONDS"]
+        },
+        {
+          "from": "packages/worker/src/settings/schemas.ts",
+          "to": "packages/worker/src/object-calls/schemas.ts",
+          "names": ["KeyLifetimeSeconds", "MicrosVariable", "PollIntervalSeconds", "WorkerVariables"]
+        },
+        {
+          "from": "packages/worker/src/settings/schemas.ts",
+          "to": "packages/worker/src/rpc/schemas.ts",
+          "names": ["AlarmWorkSeconds", "MechVariables"]
+        },
+        {
+          "from": "packages/worker/src/settings/types.ts",
+          "to": "packages/worker/src/object-calls/types.ts",
+          "names": ["KeyLifetimes", "ReleaseBindings", "WorkerConfiguration", "WorkerSettings"]
+        },
+        {
+          "from": "packages/worker/src/settings/types.ts",
+          "to": "packages/worker/src/rpc/types.ts",
+          "names": ["DecodeSettingsInput", "ObjectBindings", "ObjectSettings", "WorkerEnvironment"]
+        },
+        { "from": "packages/worker/src/types.ts", "to": "packages/worker/src/edge/types.ts", "names": ["Peer"] },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/harness/tools/types.ts",
+          "names": [
+            "ConversationRole",
+            "DroneRole",
+            "DroneStart",
+            "ExecutionOutcome",
+            "Hands",
+            "HandsExecution",
+            "HandsOutcome",
+            "HandsRefusal",
+            "MechRole",
+            "RunningProgress",
+            "ThreadChange",
+            "ThreadOpening"
+          ]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/harness/types.ts",
+          "names": ["MechAgent", "NotedReason", "OwedNote", "StopInput"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/harness/models/types.ts",
+          "names": ["ReserveInput"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/harness/progress/types.ts",
+          "names": ["ItemAnswered", "ItemEnded", "ItemUnanswered"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/mech-rpc/types.ts",
+          "names": [
+            "CancelDroneInput",
+            "CancelTurnInput",
+            "CreateMechInput",
+            "DroneInput",
+            "DronesInput",
+            "EventsInput",
+            "ForkInput",
+            "SendInboxItemInput",
+            "ThreadsInput",
+            "TurnInput"
+          ]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/rpc/directory.types.ts",
+          "names": ["OwnedKey"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/rpc/types.ts",
+          "names": ["SandboxMethods", "SandboxRpc"]
+        },
+        {
+          "from": "packages/worker/src/types.ts",
+          "to": "packages/worker/src/sandbox/types.ts",
+          "names": ["EgressSettings"]
+        },
+        {
+          "from": "packages/worker/src/workspace.schemas.ts",
+          "to": "packages/worker/src/rpc/workspace.schemas.ts",
+          "names": [
+            "CommittedToday",
+            "DISPATCH_RECORD_FIELDS",
+            "LeaseDecision",
+            "MechSummaryPage",
+            "MechSummaryRecord",
+            "RECORD_TIME_KEYS",
+            "ReservationDecision",
+            "SETTLED_RECORD_FIELDS",
+            "WorkDispatchesAnswer"
+          ]
+        },
+        {
+          "from": "packages/worker/src/workspace.types.ts",
+          "to": "packages/worker/src/rpc/workspace.types.ts",
+          "names": [
+            "DispatchSettlement",
+            "LeaseMachineInput",
+            "MechIdInput",
+            "MechsInput",
+            "ReleaseMachineInput",
+            "ReserveDispatchInput",
+            "WorkspaceMethods",
+            "WorkspaceRpc"
+          ]
+        },
+        {
+          "from": "packages/worker/src/workspace/schemas.ts",
+          "to": "packages/worker/src/workspace/store/schemas.ts",
+          "names": ["CommittedRow", "MechRowPage"]
+        },
+        {
+          "from": "packages/worker/src/workspace/types.ts",
+          "to": "packages/worker/src/workspace/store/types.ts",
+          "names": [
+            "CommittedInput",
+            "DayInput",
+            "DecidedDispatch",
+            "DispatchDecision",
+            "DispatchRecords",
+            "HoldLeaseInput",
+            "LeaseInput",
+            "MachineLeaseRecords",
+            "MechIndexRecords",
+            "NowInput",
+            "RecordDispatchInput",
+            "SettleDispatchInput",
+            "SettleOpenDispatchesInput",
+            "WorkspaceStore"
+          ]
+        }
+      ],
+      "moves": [
+        { "from": "packages/worker/src/logs/", "to": "packages/worker/logs/src/" },
+        { "from": "packages/worker/src/rpc/", "to": "packages/worker/rpc/src/" },
+        { "from": "packages/worker/src/mech-rpc/", "to": "packages/worker/rpc/src/mech/" },
+        { "from": "packages/worker/src/sandbox-rpc/", "to": "packages/worker/rpc/src/sandbox/" },
+        { "from": "packages/worker/src/object-calls/stubs/", "to": "packages/worker/rpc/src/stubs/" },
+        {
+          "from": "packages/worker/src/settings/egress-settings.ts",
+          "to": "packages/worker/sandbox/src/egress/egress-settings.ts"
+        },
+        {
+          "from": "packages/worker/src/settings/object-bindings.ts",
+          "to": "packages/worker/rpc/src/object-bindings.ts"
+        },
+        {
+          "from": "packages/worker/src/settings/object-settings.ts",
+          "to": "packages/worker/rpc/src/object-settings.ts"
+        },
+        { "from": "packages/worker/src/settings/", "to": "packages/worker/bindings/src/settings/" },
+        { "from": "packages/worker/src/object-calls/", "to": "packages/worker/bindings/src/" },
+        { "from": "packages/worker/src/harness/tools/", "to": "packages/worker/harness-tools/src/" },
+        { "from": "packages/worker/src/harness/memory/", "to": "packages/worker/harness-tools/src/memory/" },
+        { "from": "packages/worker/src/harness/threads/", "to": "packages/worker/harness-tools/src/threads/" },
+        {
+          "from": "packages/worker/src/harness/drones/conversation-role.ts",
+          "to": "packages/worker/harness-tools/src/conversation-role.ts"
+        },
+        { "from": "packages/worker/src/harness/", "to": "packages/worker/harness/src/" },
+        { "from": "packages/worker/src/directory/store/", "to": "packages/worker/directory-store/src/" },
+        { "from": "packages/worker/src/workspace/store/", "to": "packages/worker/workspace-store/src/" },
+        { "from": "packages/worker/src/mech/store/", "to": "packages/worker/mech-store/src/" },
+        { "from": "packages/worker/src/sandbox/store/", "to": "packages/worker/sandbox-store/src/" },
+        { "from": "packages/worker/src/key-cache/store/", "to": "packages/worker/key-cache-store/src/" },
+        { "from": "packages/worker/src/limits/store/", "to": "packages/worker/limiter-store/src/" },
+        { "from": "packages/worker/src/directory/", "to": "packages/worker/directory/src/" },
+        { "from": "packages/worker/src/workspace/", "to": "packages/worker/workspace/src/" },
+        { "from": "packages/worker/src/mech/", "to": "packages/worker/mech/src/" },
+        { "from": "packages/worker/src/sandbox/", "to": "packages/worker/sandbox/src/" },
+        { "from": "packages/worker/src/key-cache/", "to": "packages/worker/key-cache/src/" },
+        { "from": "packages/worker/src/limits/", "to": "packages/worker/limiter/src/" },
+        { "from": "packages/worker/src/edge/", "to": "packages/worker/edge/src/" },
+        { "from": "packages/worker/src/router/admit.ts", "to": "packages/worker/edge/src/admission/admit.ts" },
+        {
+          "from": "packages/worker/src/router/cached-key.ts",
+          "to": "packages/worker/edge/src/admission/cached-key.ts"
+        },
+        {
+          "from": "packages/worker/src/router/resolve-caller.ts",
+          "to": "packages/worker/edge/src/admission/resolve-caller.ts"
+        },
+        { "from": "packages/worker/src/router/", "to": "packages/worker/edge/src/routing/" },
+        { "from": "packages/worker/src/serve/serve.ts", "to": "packages/worker/app/src/serve.ts" },
+        {
+          "from": "packages/worker/src/serve/failure-message.ts",
+          "to": "packages/worker/edge/src/routing/failure-message.ts"
+        },
+        { "from": "packages/worker/src/serve/serve-named.ts", "to": "packages/worker/edge/src/routing/serve-named.ts" },
+        { "from": "packages/worker/src/serve/operations.ts", "to": "packages/worker/edge/src/routing/operations.ts" },
+        { "from": "packages/worker/src/serve/", "to": "packages/worker/edge/src/operations/" },
+        { "from": "packages/worker/src/auth/", "to": "packages/worker/edge/src/operations/auth/" },
+        { "from": "packages/worker/src/drones/", "to": "packages/worker/edge/src/operations/drones/" },
+        { "from": "packages/worker/src/mechs/", "to": "packages/worker/edge/src/operations/mechs/" },
+        { "from": "packages/worker/src/workspaces/", "to": "packages/worker/edge/src/operations/workspaces/" },
+        { "from": "packages/worker/src/status/", "to": "packages/worker/edge/src/operations/status/" },
+        { "from": "packages/worker/src/releases/", "to": "packages/worker/edge/src/releases/" },
+        { "from": "packages/worker/src/pages/", "to": "packages/worker/pages/src/" },
+        { "from": "packages/worker/src/github/", "to": "packages/worker/pages/src/github/" },
+        { "from": "apps/mechane/", "to": "packages/worker/app/" }
+      ]
+    },
+    {
+      "name": "node",
+      "members": {
+        "@mechane/program": {
+          "owns": "What every executable shares: output channels, exit, child processes, signals and files",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse"
+        },
+        "@mechane/commands": {
+          "owns": "The command model: declarations, parser shapes, help and the command reference",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/cli", "@mechane/deploy"]
+        },
+        "@mechane/eval": {
+          "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/cli"]
+        },
+        "@mechane/release": {
+          "owns": "Building the CLI's release for every target, and uploading it to the bucket its caller names",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library-program",
+          "criterion": "reuse",
+          "consumers": ["@mechane/stack", "@mechane/smoke", "@mechane/deploy"]
+        },
+        "@mechane/wrangler": {
+          "owns": "The Worker's Wrangler configuration, its migration tags, the releases bucket it binds and the built bundle's path",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/stack", "@mechane/deploy"]
+        },
+        "@mechane/rules": {
+          "owns": "The rule registry: every enforced value, rule, glossary entry and template, and the generator of every tool configuration",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/checks"],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/stack": {
+          "owns": "The local stack: celld, the local GitHub, host launcher, scripted model upstream and releases bucket; its main is mise run dev",
+          "layer": 4,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library-program",
+          "criterion": "closure",
+          "consumers": ["@mechane/testing", "@mechane/smoke"]
+        },
+        "@mechane/testing": {
+          "owns": "The smoke's support: CLI driver, browser, approvals, accounts, mechs and the event follower",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "support",
+          "criterion": "closure",
+          "consumers": ["@mechane/smoke"],
+          "confines": ["cookie"]
+        },
+        "@mechane/smoke": {
+          "owns": "The scenario catalog and one function per guarantee",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "scenarios",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/checks": {
+          "owns": "The repository's owned checks, normalizers, renames and package moves",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": [],
+          "confines": ["dependency-cruiser", "oxc-parser"]
+        },
+        "@mechane/deploy": {
+          "owns": "The production deploy: preflight, render, rollout, the upload of the CLI's built release, and the production smoke through the installed CLI",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/cli": {
+          "owns": "The mechane command: its settings, output rendering, saved login, self-update and one run per command",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/core": {
+          "owns": "Tool pins and product tasks; no source",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": [],
+          "confines": []
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/cli/src/constants.ts",
+          "to": "packages/cli/src/model/constants.ts",
+          "names": [
+            "API_KEY_VARIABLE",
+            "CONFIG_HOME_VARIABLE",
+            "CommandShape",
+            "DEFAULT_ORIGIN",
+            "DEFAULT_OUTPUT",
+            "ErrorCode",
+            "ExitStatus",
+            "FlagKind",
+            "OUTPUT_VARIABLE",
+            "OutputMode",
+            "PROGRAM",
+            "VERSION_COMMAND"
+          ]
+        },
+        {
+          "from": "packages/cli/src/errors.ts",
+          "to": "packages/cli/src/runs/eval/errors.ts",
+          "names": [
+            "AllowanceExhausted",
+            "EvalFileFailed",
+            "EvalInterrupted",
+            "OutFolderBusy",
+            "PlanChanged",
+            "SuiteInvalid"
+          ]
+        },
+        {
+          "from": "packages/cli/src/output/types.ts",
+          "to": "packages/cli/src/types.ts",
+          "names": ["WriteFailureInput"]
+        },
+        {
+          "from": "packages/cli/src/runs/constants.ts",
+          "to": "packages/cli/src/runs/eval/constants.ts",
+          "names": ["EvalOutcome"]
+        },
+        {
+          "from": "packages/cli/src/runs/types.ts",
+          "to": "packages/cli/src/runs/eval/types.ts",
+          "names": ["WorkspaceAccess"]
+        },
+        {
+          "from": "packages/cli/src/types.ts",
+          "to": "packages/cli/src/model/types.ts",
+          "names": ["ArgumentDeclaration", "CommandDeclaration", "FlagDeclaration"]
+        },
+        { "from": "packages/cli/src/types.ts", "to": "packages/cli/src/runs/eval/types.ts", "names": ["EvalFailure"] },
+        { "from": "scripts/constants.ts", "to": "scripts/checks/constants.ts", "names": ["TYPESCRIPT_EXTENSION"] },
+        {
+          "from": "scripts/constants.ts",
+          "to": "scripts/release/constants.ts",
+          "names": ["DIRTY_SUFFIX", "EMPTY_DOTENV"]
+        },
+        {
+          "from": "scripts/constants.ts",
+          "to": "scripts/stack/constants.ts",
+          "names": ["COMMAND_PREFIX", "HOLD_PREFIX", "LOCAL_GITHUB", "REPLY_PREFIX"]
+        },
+        {
+          "from": "scripts/constants.ts",
+          "to": "scripts/utilities/constants.ts",
+          "names": [
+            "JSON_INDENT_CHARS",
+            "MIGRATION_LOCK",
+            "PROGRAM_ARGUMENTS_START",
+            "UpdateOutcome",
+            "WIRE_LOCK",
+            "WireKind"
+          ]
+        },
+        { "from": "scripts/errors.ts", "to": "scripts/release/errors.ts", "names": ["ReleaseFailed"] },
+        { "from": "scripts/schemas.ts", "to": "scripts/utilities/schemas.ts", "names": ["GitHubLogin", "Lock"] },
+        {
+          "from": "scripts/stack/constants.ts",
+          "to": "scripts/wrangler/constants.ts",
+          "names": ["WORKER_BUNDLE", "WRANGLER_CONFIGURATION"]
+        },
+        { "from": "scripts/stack/errors.ts", "to": "scripts/wrangler/errors.ts", "names": ["WranglerFailed"] },
+        {
+          "from": "scripts/stack/schemas.ts",
+          "to": "scripts/wrangler/schemas.ts",
+          "names": ["BaseConfiguration", "ContainerEntries", "WranglerMigration", "WranglerMigrations"]
+        },
+        { "from": "scripts/stack/types.ts", "to": "scripts/wrangler/types.ts", "names": ["ProgramFailureInput"] },
+        { "from": "scripts/types.ts", "to": "scripts/stack/types.ts", "names": ["PersonalUpstream"] },
+        { "from": "scripts/types.ts", "to": "scripts/utilities/types.ts", "names": ["LockPair", "StepFailure"] }
+      ],
+      "moves": [
+        { "from": "scripts/utilities/", "to": "packages/node/program/src/" },
+        {
+          "from": "packages/cli/src/utilities/interrupt-on-signal.ts",
+          "to": "packages/node/eval/src/interrupt-on-signal.ts"
+        },
+        { "from": "packages/cli/src/utilities/", "to": "packages/node/program/src/files/" },
+        { "from": "packages/cli/src/model/", "to": "packages/node/commands/src/" },
+        { "from": "packages/cli/src/runs/eval/", "to": "packages/node/eval/src/" },
+        { "from": "scripts/release/", "to": "packages/node/release/src/" },
+        { "from": "scripts/wrangler/", "to": "packages/node/wrangler/src/" },
+        { "from": "scripts/stack/base-configuration.ts", "to": "packages/node/wrangler/src/base-configuration.ts" },
+        { "from": "scripts/stack/releases/releases-bucket.ts", "to": "packages/node/wrangler/src/releases-bucket.ts" },
+        { "from": "scripts/stack/", "to": "packages/node/stack/src/" },
+        { "from": "scripts/dev/main.ts", "to": "packages/node/stack/src/main.ts" },
+        { "from": "scripts/dev/", "to": "packages/node/stack/src/dev/" },
+        { "from": "testing/", "to": "packages/node/testing/src/" },
+        { "from": "packages/cli/", "to": "packages/node/cli/" },
+        { "from": "packages/guest/", "to": "packages/node/guest/" },
+        { "from": "scripts/smoke/", "to": "packages/node/smoke/src/" },
+        { "from": "scripts/rename/", "to": "packages/node/checks/src/rename/" },
+        { "from": "scripts/checks/", "to": "packages/node/checks/src/" },
+        { "from": "scripts/deploy/", "to": "packages/node/deploy/src/" }
+      ]
+    },
+    {
+      "name": "mech",
+      "members": {
+        "@mechane/harness": {
+          "owns": "The pi adapter: a mech's harness, conversations, prompt sections and metered models, behind Mechane-named ports",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/mech", "@mechane/mech-ports"],
+          "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+        },
+        "@mechane/harness-tools": {
+          "owns": "The mech's pi tools and the ports they call, which the mech passes to its harness",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/mech", "@mechane/mech-ports"],
+          "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+        },
+        "@mechane/logs": {
+          "owns": "The Worker's one log channel",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/harness",
+            "@mechane/harness-tools",
+            "@mechane/bindings",
+            "@mechane/edge",
+            "@mechane/pages",
+            "@mechane/directory",
+            "@mechane/workspace",
+            "@mechane/mech",
+            "@mechane/mech-ports",
+            "@mechane/sandbox",
+            "@mechane/key-cache",
+            "@mechane/limiter"
+          ]
+        },
+        "@mechane/rpc": {
+          "owns": "Each Durable Object's RPC answers, its callee edge and plain caller, and the bindings' types and object settings",
+          "layer": 2,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/bindings",
+            "@mechane/directory",
+            "@mechane/workspace",
+            "@mechane/mech",
+            "@mechane/mech-ports",
+            "@mechane/sandbox",
+            "@mechane/key-cache",
+            "@mechane/limiter",
+            "@mechane/edge",
+            "@mechane/pages",
+            "@mechane/app"
+          ]
+        },
+        "@mechane/mech-store": {
+          "owns": "The mech object's database: its tables, rows and record functions",
+          "layer": 3,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "store",
+          "criterion": "state",
+          "consumers": ["@mechane/mech", "@mechane/mech-ports"]
+        },
+        "@mechane/mech-ports": {
+          "owns": "The mech Durable Object's ports to its harness but its hands: its dispatch meter, and its memory and threads",
+          "layer": 4,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "library",
+          "criterion": "state",
+          "consumers": ["@mechane/mech"]
+        },
+        "@mechane/mech": {
+          "owns": "The mech Durable Object and its decisions",
+          "layer": 5,
+          "lane": "worker",
+          "dialect": "plain",
+          "kind": "object",
+          "criterion": "state",
+          "consumers": ["@mechane/app"]
+        }
+      },
+      "declarations": [],
+      "moves": [
+        {
+          "from": "packages/worker/mech/src/memories/mech-memory.ts",
+          "to": "packages/worker/mech-ports/src/memories/mech-memory.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/memories/decide-memory-change.ts",
+          "to": "packages/worker/mech-ports/src/memories/decide-memory-change.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/memories/decide-memory-deletion.ts",
+          "to": "packages/worker/mech-ports/src/memories/decide-memory-deletion.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/memories/decide-memory-write.ts",
+          "to": "packages/worker/mech-ports/src/memories/decide-memory-write.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/memories/change-refusal.ts",
+          "to": "packages/worker/mech-ports/src/memories/change-refusal.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/memories/read-memory-bound.ts",
+          "to": "packages/worker/mech-ports/src/memories/read-memory-bound.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/threads/mech-threads.ts",
+          "to": "packages/worker/mech-ports/src/threads/mech-threads.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/threads/decide-thread-change.ts",
+          "to": "packages/worker/mech-ports/src/threads/decide-thread-change.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/threads/decide-thread-opening.ts",
+          "to": "packages/worker/mech-ports/src/threads/decide-thread-opening.ts"
+        },
+        {
+          "from": "packages/worker/mech/src/drones/decide-drone-start.ts",
+          "to": "packages/worker/mech-ports/src/threads/decide-drone-start.ts"
+        },
+        { "from": "packages/worker/mech/src/ports.types.ts", "to": "packages/worker/mech-ports/src/types.ts" },
+        { "from": "packages/worker/mech/src/meter/", "to": "packages/worker/mech-ports/src/meter/" }
+      ]
+    },
+    {
+      "name": "cli",
+      "members": {
+        "@mechane/commands": {
+          "owns": "The command model: declarations, parser shapes, help and the command reference",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/cli-kernel",
+            "@mechane/cli-login",
+            "@mechane/cli-update",
+            "@mechane/cli",
+            "@mechane/deploy"
+          ]
+        },
+        "@mechane/eval": {
+          "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/cli-kernel", "@mechane/cli"]
+        },
+        "@mechane/cli-kernel": {
+          "owns": "What every part of the mechane command shares: its constants, failures, output schemas and types, and a run's input and result",
+          "layer": 4,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
+        },
+        "@mechane/cli-login": {
+          "owns": "The mechane command's login: the saved login's private files, the key each command sends, device approval, and the auth commands' runs",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/cli"]
+        },
+        "@mechane/cli-update": {
+          "owns": "The mechane command's self-update: the latest release's binary, checked against its manifest and run before it replaces the running one, and the update command's run",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/cli"]
+        },
+        "@mechane/cli": {
+          "owns": "The mechane command: its invocation and settings, the output it writes and the failures it reports, and the run of each command beside the login's and the self-update's",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        }
+      },
+      "declarations": [],
+      "moves": [
+        { "from": "packages/node/cli/src/runs/run-update.ts", "to": "packages/node/cli-update/src/run-update.ts" },
+        { "from": "packages/node/cli/src/runs/update/", "to": "packages/node/cli-update/src/" },
+        { "from": "packages/node/cli/src/runs/auth/", "to": "packages/node/cli-login/src/" },
+        { "from": "packages/node/cli/src/store/", "to": "packages/node/cli-login/src/store/" },
+        { "from": "packages/node/cli/src/constants.ts", "to": "packages/node/cli-kernel/src/constants.ts" },
+        { "from": "packages/node/cli/src/errors.ts", "to": "packages/node/cli-kernel/src/errors.ts" },
+        { "from": "packages/node/cli/src/schemas.ts", "to": "packages/node/cli-kernel/src/schemas.ts" },
+        { "from": "packages/node/cli/src/types.ts", "to": "packages/node/cli-kernel/src/types.ts" },
+        { "from": "packages/node/cli/src/runs/types.ts", "to": "packages/node/cli-kernel/src/runs/types.ts" }
+      ]
+    },
+    {
+      "name": "deploy",
+      "members": {
+        "@mechane/release": {
+          "owns": "Building the CLI's release for every target, and uploading it to the bucket its caller names",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library-program",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/stack",
+            "@mechane/testing",
+            "@mechane/smoke",
+            "@mechane/deploy-kernel",
+            "@mechane/deploy-smoke",
+            "@mechane/deploy"
+          ]
+        },
+        "@mechane/wrangler": {
+          "owns": "The Worker's Wrangler configuration, its migration tags, the releases bucket it binds and the built bundle's path",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/stack",
+            "@mechane/deploy-kernel",
+            "@mechane/deploy-preflight",
+            "@mechane/deploy-render",
+            "@mechane/deploy"
+          ]
+        },
+        "@mechane/deploy-kernel": {
+          "owns": "What every mode of the production deploy shares: its failure, settings, constants and schemas, its git and Wrangler runs, production's variables, and its requests to production, Cloudflare and OpenRouter",
+          "layer": 4,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/deploy-preflight",
+            "@mechane/deploy-render",
+            "@mechane/deploy-smoke",
+            "@mechane/deploy"
+          ]
+        },
+        "@mechane/deploy-preflight": {
+          "owns": "The checks a production deploy passes before it changes anything: the checkout, the accounts, what production runs, the formats it may only append to, and the tools",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/deploy"]
+        },
+        "@mechane/deploy-render": {
+          "owns": "Production's Wrangler configuration, rendered from the base configuration and the production overlay",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/deploy"]
+        },
+        "@mechane/deploy-smoke": {
+          "owns": "The production smoke: production driven through the installed CLI with a real model, and the scan of what it logged",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "program",
+          "consumers": ["@mechane/deploy"]
+        },
+        "@mechane/deploy": {
+          "owns": "The production deploy program: its command line and settings, its modes, the rollout that deploys and rolls back production, and the upload of the CLI's built release",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/node/deploy/src/preflight/schemas.ts",
+          "to": "packages/node/deploy/src/schemas.ts",
+          "names": ["HttpsUrl", "ProductionVariables"]
+        }
+      ],
+      "moves": [
+        {
+          "from": "packages/node/deploy/src/preflight/production-variables.ts",
+          "to": "packages/node/deploy-kernel/src/production-variables.ts"
+        },
+        { "from": "packages/node/deploy/src/preflight/", "to": "packages/node/deploy-preflight/src/" },
+        { "from": "packages/node/deploy/src/render/", "to": "packages/node/deploy-render/src/" },
+        { "from": "packages/node/deploy/src/smoke/", "to": "packages/node/deploy-smoke/src/" },
+        { "from": "packages/node/deploy/src/services/", "to": "packages/node/deploy-kernel/src/services/" },
+        {
+          "from": "packages/node/deploy/src/check-refusals.ts",
+          "to": "packages/node/deploy-kernel/src/check-refusals.ts"
+        },
+        { "from": "packages/node/deploy/src/constants.ts", "to": "packages/node/deploy-kernel/src/constants.ts" },
+        { "from": "packages/node/deploy/src/errors.ts", "to": "packages/node/deploy-kernel/src/errors.ts" },
+        { "from": "packages/node/deploy/src/run-git.ts", "to": "packages/node/deploy-kernel/src/run-git.ts" },
+        { "from": "packages/node/deploy/src/run-wrangler.ts", "to": "packages/node/deploy-kernel/src/run-wrangler.ts" },
+        { "from": "packages/node/deploy/src/schemas.ts", "to": "packages/node/deploy-kernel/src/schemas.ts" },
+        {
+          "from": "packages/node/deploy/src/temporary-folder.ts",
+          "to": "packages/node/deploy-kernel/src/temporary-folder.ts"
+        },
+        { "from": "packages/node/deploy/src/types.ts", "to": "packages/node/deploy-kernel/src/types.ts" }
+      ]
+    },
+    {
+      "name": "rules",
+      "members": {
+        "@mechane/rule-shapes": {
+          "owns": "The shapes the rule registry is built from: each kind of rule with its status, phase, fix and file roles, the contract names, the member manifest, and the files the registry generates",
+          "layer": 1,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/structure-rules",
+            "@mechane/typescript-rules",
+            "@mechane/name-rules",
+            "@mechane/program-rules",
+            "@mechane/local-rules",
+            "@mechane/rules",
+            "@mechane/rule-generator",
+            "@mechane/checks"
+          ]
+        },
+        "@mechane/structure-rules": {
+          "owns": "The registry's entries of the boundary and structure contracts: packages, modules, entry points, exports, file roles, folders, functions and branches",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/rules"]
+        },
+        "@mechane/typescript-rules": {
+          "owns": "The registry's entries of the TypeScript contracts: bindings, inputs, assertions, types, arguments, classes, module state, the compiler, file names, Effect errors and schemas, and the Effect dialect",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/rules"]
+        },
+        "@mechane/name-rules": {
+          "owns": "The registry's entries of the names and comments contracts: blank lines, booleans, measured values, spelled-out names, the vocabulary, comments and suppressions, with oxlint's opt-out list",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/rules"]
+        },
+        "@mechane/program-rules": {
+          "owns": "The registry's entries of the contracts of what programs do: shared code, settings, entry points, diagnostics, lifecycles and the CLI, then data, tests, security and evals",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/rules"]
+        },
+        "@mechane/local-rules": {
+          "owns": "The registry's entries of Mechane's own contracts, the package layers, the rule registry and the code style, and of the factory's repository contracts",
+          "layer": 2,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/rules"]
+        },
+        "@mechane/rules": {
+          "owns": "The rule registry: every contract's entry by its name, the file roles, oxlint's settings, and the text of every file the registry generates",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/checks", "@mechane/rule-generator"],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/rule-generator": {
+          "owns": "The registry's program: it writes or checks every file the registry generates, runs the registry's own checks, and prints a rule's or a path's rules",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/node/rules/scripts/generate/types.ts",
+          "to": "packages/node/rules/scripts/generate/configurations/types.ts",
+          "names": ["GeneratedFile", "WordLists", "WordListsInput", "ContractText", "ExitStatus", "WorkspaceMember"]
+        },
+        {
+          "from": "packages/node/rules/src/types.ts",
+          "to": "packages/node/rules/scripts/generate/configurations/types.ts",
+          "names": ["ConfigurationNote"]
+        },
+        {
+          "from": "packages/node/rules/scripts/generate/constants.ts",
+          "to": "packages/node/rules/scripts/generate/ast-grep/constants.ts",
+          "names": ["AST_GREP_RULES", "VOCABULARY_FOLDER"]
+        }
+      ],
+      "moves": [
+        { "from": "packages/node/rules/src/constants.ts", "to": "packages/node/rule-shapes/src/constants.ts" },
+        { "from": "packages/node/rules/src/types.ts", "to": "packages/node/rule-shapes/src/types.ts" },
+        { "from": "packages/node/rules/src/schemas.ts", "to": "packages/node/rule-shapes/src/schemas.ts" },
+        {
+          "from": "packages/node/rules/src/manifest.constants.ts",
+          "to": "packages/node/rule-shapes/src/manifest.constants.ts"
+        },
+        {
+          "from": "packages/node/rules/src/contract-names.ts",
+          "to": "packages/node/rule-shapes/src/contract-names.ts"
+        },
+        { "from": "packages/node/rules/src/boundaries/", "to": "packages/node/structure-rules/src/boundaries/" },
+        { "from": "packages/node/rules/src/structure/", "to": "packages/node/structure-rules/src/structure/" },
+        { "from": "packages/node/rules/src/typescript/", "to": "packages/node/typescript-rules/src/typescript/" },
+        { "from": "packages/node/rules/src/effect/", "to": "packages/node/typescript-rules/src/effect/" },
+        { "from": "packages/node/rules/src/names/", "to": "packages/node/name-rules/src/" },
+        { "from": "packages/node/rules/src/programs/", "to": "packages/node/program-rules/src/programs/" },
+        { "from": "packages/node/rules/src/data/", "to": "packages/node/program-rules/src/data/" },
+        { "from": "packages/node/rules/src/tests/", "to": "packages/node/program-rules/src/tests/" },
+        { "from": "packages/node/rules/src/security/", "to": "packages/node/program-rules/src/security/" },
+        { "from": "packages/node/rules/src/evals/", "to": "packages/node/program-rules/src/evals/" },
+        { "from": "packages/node/rules/src/mechane/", "to": "packages/node/local-rules/src/mechane/" },
+        { "from": "packages/node/rules/src/factory/", "to": "packages/node/local-rules/src/factory/" },
+        { "from": "packages/node/rules/src/layout/file-roles.ts", "to": "packages/node/rules/src/file-roles.ts" },
+        { "from": "packages/node/rules/scripts/generate/ast-grep/", "to": "packages/node/rules/src/ast-grep/" },
+        {
+          "from": "packages/node/rules/scripts/generate/configurations/",
+          "to": "packages/node/rules/src/configurations/"
+        },
+        { "from": "packages/node/rules/scripts/generate/contracts/", "to": "packages/node/rules/src/contract-blocks/" },
+        {
+          "from": "packages/node/rules/scripts/generate/generated-files.ts",
+          "to": "packages/node/rules/src/generated-files.ts"
+        },
+        {
+          "from": "packages/node/rules/scripts/generate/git-attributes.ts",
+          "to": "packages/node/rules/src/git-attributes.ts"
+        },
+        {
+          "from": "packages/node/rules/scripts/generate/word-list-files.ts",
+          "to": "packages/node/rules/src/word-list-files.ts"
+        },
+        { "from": "packages/node/rules/scripts/generate/", "to": "packages/node/rule-generator/src/" }
+      ]
+    },
+    {
+      "name": "checks",
+      "members": {
+        "@mechane/modules": {
+          "owns": "TypeScript modules as the checks read them: the parser's node types and the roles of module files, a parsed source and its lines, and each module's statements, references and declarations, with the units a declaration moves as",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/checks-kernel",
+            "@mechane/normalizers",
+            "@mechane/owned-rules",
+            "@mechane/locks",
+            "@mechane/boundaries",
+            "@mechane/package-moves",
+            "@mechane/rename",
+            "@mechane/checks"
+          ],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/checks-kernel": {
+          "owns": "What every program of the checks shares: the workspace's files read, decoded and listed, git's and the tools' output, the members and the move map, parsed sources, findings and sites, the linters' sites and each ratchet's baseline",
+          "layer": 4,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/normalizers",
+            "@mechane/owned-rules",
+            "@mechane/locks",
+            "@mechane/boundaries",
+            "@mechane/package-moves",
+            "@mechane/rename",
+            "@mechane/checks"
+          ],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/normalizers": {
+          "owns": "The normalizers: the barrel and placement rewrites, which declaration moves are feasible and where they land, and each normalizer's sites and settled changes",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": ["@mechane/package-moves", "@mechane/checks"],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/owned-rules": {
+          "owns": "The owned rules and checks that no installed tool runs: the layout, the documents, the pins, the orphans, the source's blank lines, comment width and patterns, and the one-value, doc-comment, span-name and banned-word sites",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/checks"],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/locks": {
+          "owns": "The wire and migration locks: each shipped name and schema step the source declares, held append-only, and the record forms; the only part of the checks that imports the product's packages",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/checks"],
+          "confines": ["oxc-parser"]
+        },
+        "@mechane/boundaries": {
+          "owns": "The members' boundaries: one dependency-cruiser cruise of every rule, each import held to its member's declared edges and the member manifest, and the changed set that the cruise's module graph gives",
+          "layer": 5,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "library",
+          "criterion": "closure",
+          "consumers": ["@mechane/checks"],
+          "confines": ["dependency-cruiser"]
+        },
+        "@mechane/package-moves": {
+          "owns": "The move codemod: the committed move map, applied through one step with each step's declarations, files, imports, entries, manifests and every path a text names",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/rename": {
+          "owns": "The rename codemod: one binding renamed with its input type, span name, file stem and every import, or the committed rename maps replayed",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/checks": {
+          "owns": "The checks program: the owned checks with the registry's examples, lint, the baselines' tightening and merge, the fingerprint, the changed set, the rules' measurement, the locks' append, and the fixers",
+          "layer": 6,
+          "lane": "node",
+          "dialect": "effect",
+          "kind": "program",
+          "criterion": "program",
+          "consumers": []
+        },
+        "@mechane/rules": {
+          "owns": "The rule registry: every contract's entry by its name, the file roles, oxlint's settings, and the text of every file the registry generates",
+          "layer": 3,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/checks-kernel",
+            "@mechane/normalizers",
+            "@mechane/owned-rules",
+            "@mechane/boundaries",
+            "@mechane/checks",
+            "@mechane/rule-generator"
+          ]
+        },
+        "@mechane/rule-shapes": {
+          "owns": "The shapes the rule registry is built from: each kind of rule with its status, phase, fix and file roles, the contract names, and the member manifest",
+          "layer": 1,
+          "lane": "node",
+          "dialect": "data",
+          "kind": "library",
+          "criterion": "reuse",
+          "consumers": [
+            "@mechane/structure-rules",
+            "@mechane/typescript-rules",
+            "@mechane/name-rules",
+            "@mechane/program-rules",
+            "@mechane/local-rules",
+            "@mechane/rules",
+            "@mechane/rule-generator",
+            "@mechane/checks-kernel",
+            "@mechane/normalizers",
+            "@mechane/boundaries",
+            "@mechane/package-moves",
+            "@mechane/rename",
+            "@mechane/checks"
+          ]
+        }
+      },
+      "declarations": [
+        {
+          "from": "packages/node/checks/src/constants.ts",
+          "to": "packages/node/checks/src/normalizers/constants.ts",
+          "names": ["NodeType", "RoleFile", "ENTRY_FILE", "PROGRAM_FILE", "TYPESCRIPT_EXTENSION"]
+        },
+        {
+          "from": "packages/node/checks/src/types.ts",
+          "to": "packages/node/checks/src/normalizers/types.ts",
+          "names": ["ParsedSource"]
+        },
+        {
+          "from": "packages/node/checks/src/constants.ts",
+          "to": "packages/node/checks/src/kernel.constants.ts",
+          "names": [
+            "MOVE_MAP",
+            "AST_GREP_CONFIGURATION",
+            "FINISHED_STATUSES",
+            "BASELINE_FOLDER",
+            "CheckStatus",
+            "WORKSPACE_FOLDER",
+            "FACTORY_FOLDER",
+            "CACHE_FOLDER",
+            "BASE_BRANCH",
+            "CHILD_TIMEOUT",
+            "LINT_TIMEOUT",
+            "OXLINT",
+            "AST_GREP"
+          ]
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/packages.constants.ts",
+          "to": "packages/node/checks/src/kernel.constants.ts",
+          "names": ["TRAILING_SLASH"]
+        },
+        {
+          "from": "packages/node/checks/src/types.ts",
+          "to": "packages/node/checks/src/kernel.types.ts",
+          "names": [
+            "FileChange",
+            "Ratchet",
+            "SiteCounts",
+            "ChecksFailure",
+            "Member",
+            "Finding",
+            "Site",
+            "CheckInput",
+            "InheritedInput",
+            "ReadInput",
+            "TextFile"
+          ]
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/packages.types.ts",
+          "to": "packages/node/checks/src/packages.types.ts",
+          "names": ["PathMove"]
+        },
+        {
+          "from": "packages/node/checks/src/constants.ts",
+          "to": "packages/node/checks/src/documents/constants.ts",
+          "names": ["WORKFLOWS", "DOCUMENT_WORDS", "UNBUDGETED_DOCUMENTS"]
+        },
+        {
+          "from": "packages/node/checks/src/types.ts",
+          "to": "packages/node/checks/src/vocabulary/types.ts",
+          "names": ["BannedPhrase"]
+        },
+        {
+          "from": "packages/node/checks/src/constants.ts",
+          "to": "packages/node/checks/src/boundaries/constants.ts",
+          "names": ["MODULE_GRAPH"]
+        }
+      ],
+      "moves": [
+        {
+          "from": "packages/node/checks/src/normalizers/statements/statement-edits.ts",
+          "to": "packages/node/modules/src/edits/statement-edits.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/statements/edited-text.ts",
+          "to": "packages/node/modules/src/edits/edited-text.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/moves/unit-users.ts",
+          "to": "packages/node/modules/src/units/unit-users.ts"
+        },
+        { "from": "packages/node/checks/src/normalizers/statements/", "to": "packages/node/modules/src/statements/" },
+        { "from": "packages/node/checks/src/normalizers/references/", "to": "packages/node/modules/src/references/" },
+        {
+          "from": "packages/node/checks/src/normalizers/declarations/",
+          "to": "packages/node/modules/src/declarations/"
+        },
+        { "from": "packages/node/checks/src/normalizers/moves/", "to": "packages/node/modules/src/moves/" },
+        { "from": "packages/node/checks/src/normalizers/constants.ts", "to": "packages/node/modules/src/constants.ts" },
+        { "from": "packages/node/checks/src/normalizers/types.ts", "to": "packages/node/modules/src/types.ts" },
+        {
+          "from": "packages/node/checks/src/normalizers/origin-key.ts",
+          "to": "packages/node/modules/src/origin-key.ts"
+        },
+        { "from": "packages/node/checks/src/normalizers/line-end.ts", "to": "packages/node/modules/src/line-end.ts" },
+        { "from": "packages/node/checks/src/normalizers/file-role.ts", "to": "packages/node/modules/src/file-role.ts" },
+        { "from": "packages/node/checks/src/normalizers/in-scope.ts", "to": "packages/node/modules/src/in-scope.ts" },
+        { "from": "packages/node/checks/src/source/line-at.ts", "to": "packages/node/modules/src/line-at.ts" },
+        {
+          "from": "packages/node/checks/src/kernel.constants.ts",
+          "to": "packages/node/checks-kernel/src/constants.ts"
+        },
+        { "from": "packages/node/checks/src/kernel.types.ts", "to": "packages/node/checks-kernel/src/types.ts" },
+        { "from": "packages/node/checks/src/errors.ts", "to": "packages/node/checks-kernel/src/errors.ts" },
+        { "from": "packages/node/checks/src/schemas.ts", "to": "packages/node/checks-kernel/src/schemas.ts" },
+        {
+          "from": "packages/node/checks/src/packages.schemas.ts",
+          "to": "packages/node/checks-kernel/src/packages.schemas.ts"
+        },
+        {
+          "from": "packages/node/checks/src/packages.types.ts",
+          "to": "packages/node/checks-kernel/src/packages.types.ts"
+        },
+        { "from": "packages/node/checks/src/read-text.ts", "to": "packages/node/checks-kernel/src/read-text.ts" },
+        { "from": "packages/node/checks/src/decode-file.ts", "to": "packages/node/checks-kernel/src/decode-file.ts" },
+        { "from": "packages/node/checks/src/list-files.ts", "to": "packages/node/checks-kernel/src/list-files.ts" },
+        { "from": "packages/node/checks/src/output.ts", "to": "packages/node/checks-kernel/src/write-findings.ts" },
+        { "from": "packages/node/checks/src/workspace/", "to": "packages/node/checks-kernel/src/workspace/" },
+        {
+          "from": "packages/node/checks/src/owned/parse-source.ts",
+          "to": "packages/node/checks-kernel/src/sources/parse-source.ts"
+        },
+        {
+          "from": "packages/node/checks/src/owned/parsed-text.ts",
+          "to": "packages/node/checks-kernel/src/sources/parsed-text.ts"
+        },
+        {
+          "from": "packages/node/checks/src/owned/parsed-sources.ts",
+          "to": "packages/node/checks-kernel/src/sources/parsed-sources.ts"
+        },
+        {
+          "from": "packages/node/checks/src/owned/standard-message.ts",
+          "to": "packages/node/checks-kernel/src/standard-message.ts"
+        },
+        { "from": "packages/node/checks/src/lint/", "to": "packages/node/checks-kernel/src/lint/" },
+        { "from": "packages/node/checks/src/ratchets/", "to": "packages/node/checks-kernel/src/ratchets/" },
+        {
+          "from": "packages/node/checks/src/baselines/declaration-pools.ts",
+          "to": "packages/node/checks-kernel/src/baselines/moves/declaration-pools.ts"
+        },
+        {
+          "from": "packages/node/checks/src/baselines/mapped-path.ts",
+          "to": "packages/node/checks-kernel/src/baselines/moves/mapped-path.ts"
+        },
+        {
+          "from": "packages/node/checks/src/baselines/mapped-renames.ts",
+          "to": "packages/node/checks-kernel/src/baselines/moves/mapped-renames.ts"
+        },
+        {
+          "from": "packages/node/checks/src/baselines/read-move-map.ts",
+          "to": "packages/node/checks-kernel/src/baselines/moves/read-move-map.ts"
+        },
+        {
+          "from": "packages/node/checks/src/baselines/renamed-files.ts",
+          "to": "packages/node/checks-kernel/src/baselines/moves/renamed-files.ts"
+        },
+        { "from": "packages/node/checks/src/baselines/", "to": "packages/node/checks-kernel/src/baselines/" },
+        {
+          "from": "packages/node/checks/src/normalizers/write-changes.ts",
+          "to": "packages/node/checks-kernel/src/write-changes.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/package-moves/moved-path.ts",
+          "to": "packages/node/checks-kernel/src/moved-path.ts"
+        },
+        {
+          "from": "packages/node/checks/src/fingerprint/sha256-hex.ts",
+          "to": "packages/node/checks-kernel/src/sha256-hex.ts"
+        },
+        { "from": "packages/node/checks/src/owned/", "to": "packages/node/owned-rules/src/" },
+        { "from": "packages/node/checks/src/doc-comments/", "to": "packages/node/owned-rules/src/doc-comments/" },
+        { "from": "packages/node/checks/src/layout/", "to": "packages/node/owned-rules/src/layout/" },
+        {
+          "from": "packages/node/checks/src/names/span-name-sites.ts",
+          "to": "packages/node/owned-rules/src/span-name-sites.ts"
+        },
+        { "from": "packages/node/checks/src/vocabulary/", "to": "packages/node/owned-rules/src/vocabulary/" },
+        { "from": "packages/node/checks/src/documents/", "to": "packages/node/owned-rules/src/documents/" },
+        { "from": "packages/node/checks/src/source/", "to": "packages/node/owned-rules/src/source/" },
+        { "from": "packages/node/checks/src/pins/check-pins.ts", "to": "packages/node/owned-rules/src/check-pins.ts" },
+        {
+          "from": "packages/node/checks/src/orphans/check-orphans.ts",
+          "to": "packages/node/owned-rules/src/check-orphans.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/package-moves/move-declarations.ts",
+          "to": "packages/node/package-moves/src/declarations/move-declarations.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/package-moves/rewrite-paths.ts",
+          "to": "packages/node/package-moves/src/paths/rewrite-paths.ts"
+        },
+        { "from": "packages/node/checks/src/normalizers/package-moves/", "to": "packages/node/package-moves/src/" },
+        {
+          "from": "packages/node/checks/src/normalizers/package-imports/",
+          "to": "packages/node/package-moves/src/package-imports/"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/package-manifests/",
+          "to": "packages/node/package-moves/src/package-manifests/"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/packages.constants.ts",
+          "to": "packages/node/package-moves/src/constants.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/packages.errors.ts",
+          "to": "packages/node/package-moves/src/errors.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/packages.types.ts",
+          "to": "packages/node/package-moves/src/packages.types.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/feasibility/acyclic-moves.ts",
+          "to": "packages/node/normalizers/src/graph/acyclic-moves.ts"
+        },
+        {
+          "from": "packages/node/checks/src/normalizers/feasibility/move-edges.ts",
+          "to": "packages/node/normalizers/src/graph/move-edges.ts"
+        },
+        { "from": "packages/node/checks/src/normalizers/", "to": "packages/node/normalizers/src/" },
+        { "from": "packages/node/checks/src/locks/", "to": "packages/node/locks/src/" },
+        { "from": "packages/node/checks/src/boundaries/", "to": "packages/node/boundaries/src/" },
+        {
+          "from": "packages/node/checks/src/changed/changed-files.ts",
+          "to": "packages/node/boundaries/src/changed-files.ts"
+        },
+        {
+          "from": "packages/node/checks/src/rename/rewrite-strings.ts",
+          "to": "packages/node/rename/src/strings/rewrite-strings.ts"
+        },
+        { "from": "packages/node/checks/src/rename/", "to": "packages/node/rename/src/" },
+        {
+          "from": "packages/node/checks/src/baselines/tighten-baselines.ts",
+          "to": "packages/node/checks/src/tighten-baselines.ts"
+        }
+      ]
+    }
+  ]
+}

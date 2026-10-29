@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/directory",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/directory-store": "workspace:*",
+    "@mechane/logs": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

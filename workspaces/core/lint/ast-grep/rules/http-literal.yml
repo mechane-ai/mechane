@@ -1,0 +1,93 @@
+# SC-12: header names, media types, a status under another status-named key, a status-named table's codes and `HEAD`
+# in a method set are members of the one HTTP vocabulary, never literals. The rules contract 014 ships report a method
+# and a status under `status` or `statusCode`, and their testing copies report both in the test support package.
+id: http-literal
+language: TypeScript
+severity: error
+message: 'Name the HTTP word by its closed set, such as `HttpHeader.ContentType`, `MediaType.Json` or `HttpStatusCode.NotFound` (SC-12)'
+files: ['**/*.ts']
+ignores:
+  - '**/node_modules/**'
+  - '**/*.d.ts'
+  # the homes of the sets this rule reads
+  - 'packages/shared/records/src/http-status.constants.ts'
+  - 'packages/shared/records/src/http-header.constants.ts'
+  - 'packages/shared/records/src/media-type.constants.ts'
+utils:
+  header-word:
+    kind: string
+    regex: '^[''"](?i:content-type|content-length|content-security-policy|content-disposition|authorization|accept|user-agent|location|cache-control|cookie|set-cookie|retry-after|www-authenticate|referrer-policy|x-content-type-options|strict-transport-security|etag|if-none-match|origin|host|x-[a-z-]+|cf-[a-z-]+)[''"]$'
+  media-word: { kind: string, regex: '^[''"](application|text|image|multipart)/[a-z0-9.+-]+(;[^''"]*)?[''"]$' }
+  status-number: { kind: number, regex: '^[1-5][0-9][0-9]$' }
+rule:
+  any:
+    # `HEAD` as a member of a method set, which the shipped rule reads only where a method belongs
+    - all:
+        - { kind: string, regex: '^[''"]HEAD[''"]$' }
+        - inside:
+            {
+              kind: pair,
+              field: value,
+              inside: { kind: object, inside: { kind: lexical_declaration, regex: '(Method|METHOD)', stopBy: end } },
+            }
+    # a status under a status-named key other than the `status` and `statusCode` the shipped rule reads, or as a member
+    # of a status table outside the vocabulary
+    - all:
+        - matches: status-number
+        - any:
+            - inside:
+                {
+                  kind: pair,
+                  field: value,
+                  has: { field: key, regex: '(?i)status', not: { regex: '^[''"]?(?i:status|status_?code)[''"]?$' } },
+                }
+            - inside:
+                {
+                  kind: pair,
+                  field: value,
+                  inside:
+                    {
+                      kind: object,
+                      inside:
+                        {
+                          stopBy: end,
+                          kind: variable_declarator,
+                          has:
+                            {
+                              field: name,
+                              regex: '(?i)status',
+                              not: { regex: '(?i)exit|smoke|check|release|dev|rename|move|deploy' },
+                            },
+                        },
+                    },
+                }
+            - inside:
+                {
+                  kind: pair,
+                  field: value,
+                  inside:
+                    {
+                      kind: object,
+                      inside:
+                        {
+                          stopBy: end,
+                          kind: variable_declarator,
+                          has: { field: name, regex: 'FAMILY_STATUS|STATUSES' },
+                        },
+                    },
+                }
+    # a header name as a key, or as the name a headers call reads or sets
+    - all:
+        - matches: header-word
+        - any:
+            - inside: { kind: pair, field: key }
+            - inside:
+                {
+                  kind: arguments,
+                  inside: { kind: call_expression, has: { field: function, regex: '\.(get|set|has|append|delete)$' } },
+                }
+            - inside:
+                { kind: array, inside: { kind: array, inside: { kind: arguments, inside: { kind: new_expression } } } }
+            - inside: { kind: lexical_declaration, inside: { kind: program } }
+    # a media type anywhere
+    - matches: media-word

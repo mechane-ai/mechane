@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: stored-name-outside-store
+valid:
+  - "const path = 'notes.json';"
+invalid:
+  - "const path = 'credentials.json';"

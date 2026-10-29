@@ -1,0 +1,75 @@
+# A named function whose body only forwards its parameters to one call, awaited or not: each argument is one of its
+# parameters, or an object of them and their spreads. The callee may be computed or curried, such as
+# `ADMISSIONS[access](…)`; a store's forwarder that binds its client, such as `({ sql, ...input })`, and a callback that
+# passes a value it closes over, such as `(pattern) => matchesGlob(path, pattern)`, add a value.
+id: pass-through-function
+language: TypeScript
+severity: error
+message: 'Inline the function that only forwards its parameters, and call its callee where it was called, such as `matchesGlob(file, pattern)` (ST-28)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  parameter-name:
+    all:
+      - any: [{ kind: identifier }, { kind: shorthand_property_identifier }]
+      - pattern: $NAME
+      # a parameter of the nearest function, never one it closes over, such as `path` in
+      # `const matches: (pattern: string) => boolean = (pattern) => matchesGlob(path, pattern)`
+      - inside:
+          stopBy:
+            any:
+              - kind: function_declaration
+              - kind: generator_function_declaration
+              - kind: function_expression
+              - kind: generator_function
+              - kind: arrow_function
+              - kind: method_definition
+          any: [{ kind: function_declaration }, { kind: arrow_function }]
+          has:
+            field: parameters
+            has:
+              stopBy: end
+              any: [{ kind: shorthand_property_identifier_pattern }, { kind: identifier }]
+              pattern: $NAME
+  forwarded-object:
+    all:
+      - kind: object
+      - not:
+          has:
+            all:
+              - not: { regex: '^[{},]$' }
+              - not: { kind: comment }
+              - not: { matches: parameter-name }
+              - not: { all: [{ kind: spread_element }, { has: { matches: parameter-name } }] }
+      - has: { kind: shorthand_property_identifier }
+  forwarded-call:
+    all:
+      - kind: call_expression
+      - has:
+          field: arguments
+          all:
+            - not:
+                has:
+                  all:
+                    - not: { regex: '^[(),]$' }
+                    - not: { kind: comment }
+                    - not: { matches: parameter-name }
+                    - not: { matches: forwarded-object }
+            - has: { any: [{ kind: identifier }, { kind: object }] }
+  forwarded-value:
+    any:
+      - matches: forwarded-call
+      - all: [{ kind: await_expression }, { has: { matches: forwarded-call } }]
+rule:
+  any:
+    - all:
+        - kind: function_declaration
+        - has:
+            field: body
+            all:
+              - not: { has: { nthChild: 2 } }
+              - has: { kind: return_statement, has: { matches: forwarded-value } }
+    - all:
+        - kind: arrow_function
+        - inside: { kind: variable_declarator }
+        - has: { field: body, matches: forwarded-value }

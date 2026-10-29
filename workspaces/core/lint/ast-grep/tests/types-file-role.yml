@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: types-file-role
+valid:
+  - 'export type Line = { readonly text: string };'
+invalid:
+  - 'export const LIMIT = 3;'
+  - 'export function parse() { return 1; }'

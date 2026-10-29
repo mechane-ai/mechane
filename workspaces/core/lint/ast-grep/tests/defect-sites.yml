@@ -1,0 +1,14 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: defect-sites
+valid:
+  - 'const name = Option.getOrThrow(Option.fromNullishOr(names[0]));'
+  - 'class MechObject { listThreads(query: unknown) { return Schema.decodeUnknownSync(ThreadsQuery)(query); } }'
+  - 'const file = Effect.acquireRelease(open(), (opened) => Effect.orDie(close(opened)));'
+  - 'function work() { const release = (opened) => Effect.orDie(close(opened)); return Effect.acquireRelease(open(), release); }'
+invalid:
+  - 'const row = Option.getOrThrow(store.mech());'
+  - 'const settings = Schema.decodeUnknownSync(Variables)(environment);'
+  - 'const restored = Effect.orDie(restart());'
+  - 'function work() { const release = (opened) => Effect.orDie(close(opened)); return release(resource); }'
+  - 'function work() { const release = (opened) => Effect.orDie(close(opened)); return Effect.acquireRelease(open(), otherRelease); }'
+  - 'function work() { const release = (opened) => Effect.orDie(close(opened)); function nested(release) { return Effect.acquireRelease(open(), release); } return release(resource); }'

@@ -1,0 +1,71 @@
+---
+name: code-exhaustive-branches
+message: Write an `else if` chain of equality tests on one value as a `switch`, and name every member of a declared closed set instead of a default or wildcard.
+requires-tenet: 0.11.0
+paths: ["**/*.ts"]
+---
+
+## Rules
+
+Never follow an equality test on a value with an `else if` that tests the same value for equality; write those cases as a `switch` statement.
+The requirement applies only where a `switch` accepts any expression as a case and compares it by strict equality, so the rewrite keeps behavior.
+The requirement holds for an open set, such as a header value, as for a closed set, where the lint then checks that every member is named.
+Comparisons of the value joined by a logical or form one equality test, and a test joined by a logical and is not an equality test.
+
+When code branches on a closed set, as `code-closed-value-sets` defines it, that the repository declares, such as a union of states or an enumeration of event kinds, name every member in a case or arm.
+Never cover a member of such a set with a default case, a wildcard arm, or a final `else`, such as `default: return 0` or `_ => None`, because a member added later would take that path unreviewed.
+Never end a branch that names every member with a default case or wildcard arm, because a member added later would take it unreviewed.
+A test for one member whose other branch serves every remaining member, such as `if let Order::Paid(paid) = order` with an `else` or `let Order::Paid(paid) = order else`, is a wildcard too, although no lint reports it.
+A test with the lookup of a declared subset of two or more members, such as `endedStates.has(state)`, is not a wildcard, so its `else` may serve the remaining members.
+Group members that share one result in one case, such as `Order::Draft(_) | Order::Sent(_) => None`.
+A lookup table that `code-conditional-expressions` allows is exhaustive only when its type requires every member as a key, such as `Record<OrderStatus, Delay>`.
+
+A branch on an open set, such as a header value or an integer, ends with a default case that handles every remaining value.
+A branch on a set declared outside the repository, such as a dependency's event kinds or the standard library's optional value, may cover the remaining members with a wildcard.
+Where the lint reports such a wildcard, suppress it as `code-lint-suppressions` requires, with a reason that names the set.
+
+Configure the repository's lint to reject an `else if` chain of equality tests on one value, wherever the lint supports that rule.
+Configure the repository's lint to reject a branch on a union or enumeration that omits a member, covers members with a default or wildcard case, or covers a single remaining member with a wildcard.
+Turn off each lint rule that requires a default case or final `else` on a branch over a closed set, or an `if` instead of a short `switch`.
+Run the lint with the type information that its exhaustiveness rule needs.
+Where the repository's lint can load the configuration in this contract's `assets/` folder, extend it from the repository's own lint configuration.
+
+Violation: `if (order.status === OrderStatus.Draft)` is followed by `else if` tests for `OrderStatus.Paid`, `OrderStatus.Refunded`, and `OrderStatus.Cancelled`, so a new status passes the lint unhandled.
+Allowed: `switch (order.status)` names `OrderStatus.Draft` and `OrderStatus.Paid` in their own cases and `OrderStatus.Refunded` and `OrderStatus.Cancelled` in one shared case, with no default, so a new status fails the lint.
+
+## Checks
+
+Run the repository's lint with type information from the repository root, and confirm that it reports no type configuration error, which makes its exhaustiveness rule skip files.
+Confirm the lint rejects an `else if` chain of equality tests on one value, a missing member, a default or wildcard covering a member, and a default after every member.
+For each `else if` that a change adds and the lint does not report, does it test the same value for equality as the test before it?
+For each final `else` a change adds over a closed set's members, does it follow a declared subset's lookup, or would a later member fall into it?
+For each pattern test with an `else` that a change adds over a closed set the repository declares, does the `else` serve every remaining member?
+For each wildcard suppression a change adds, is the set declared outside the repository, and does the reason name it?
+
+## Local adaptations
+
+oxlint runs `typescript/switch-exhaustiveness-check` with type information, with `allowDefaultCaseForExhaustiveSwitch` and `considerDefaultExhaustiveForUnions` off and `requireDefaultForNonUnion` on.
+`Effect.catchTags` and `Match.valueTags` branch on a failure's tag through an object whose keys the compiler requires for every tag.
+oxlint `unicorn/switch-case-braces` with `avoid` writes each case without a block, since a case holds one statement.
+oxlint `no-restricted-properties` rejects `Match.value`, `type`, `tag`, `tags`, `when` and `orElse`, so a tagged union branches through `Match.valueTags`, which names every tag.
+No branch covers an external set with a wildcard yet.
+
+oxlint `no-else-return` with `allowElseIf: false` and `no-lonely-if` rule out every `else if`, the chain this contract's lint sentence names (011).
+A run of guard `if`s that test one value for equality is the form those rules leave.
+It stays where the value's union is wider than a `switch` that names every member can be within `functionLines`, such as oxc's `Expression['type']`, and review holds the rest.
+
+No lint rule requires a default case, a final `else` or an `if` in place of a short `switch` on a closed set.
+`requireDefaultForNonUnion` requires a default only on an open set, as this contract asks.
+
+Deviation (§5.2, EF-14): the lint does not extend the file this contract ships under `assets/`.
+Its `prefer-switch` needs `eslint-plugin-unicorn` through `jsPlugins` and reads only `else if` chains, which the rules above already rule out.
+The file also turns off 16 type-aware rules that Mechane's categories run, and it allows a default case beside every member, which EF-14 forbids.
+This replaces "Where the repository's lint can load the configuration in this contract's `assets/` folder, extend it from the repository's own lint configuration".
+
+<!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
+
+- oxlint `typescript/switch-exhaustiveness-check` (EF-14): enforced, `["error",{"allowDefaultCaseForExhaustiveSwitch":false,"considerDefaultExhaustiveForUnions":false,"requireDefaultForNonUnion":true}]`
+- oxlint `unicorn/switch-case-braces` (ST-27): enforced in phase D, `["error","avoid"]`
+- oxlint's restricted members (EF-14): enforced in phase D: `Match.value`, `Match.type`, `Match.tag`, `Match.tags`, `Match.when`, `Match.orElse`
+
+<!-- End of the generated block. -->

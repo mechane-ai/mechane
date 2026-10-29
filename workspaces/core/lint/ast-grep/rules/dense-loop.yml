@@ -1,0 +1,103 @@
+# SC-08: a loop body holds no loop, a loop states its end in its condition, nothing is updated in place, and no
+# collection is filled inside a loop; a cursor-paged read in the Effect dialect is one `Stream.paginate`.
+id: dense-loop
+language: TypeScript
+severity: error
+message: 'Write the loop as named steps, such as `const rows = pageRows({ batch })`, or page with `Stream.paginate` (SC-08)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  loop:
+    any:
+      - kind: for_statement
+      - kind: for_in_statement
+      - kind: while_statement
+      - kind: do_statement
+  function-boundary:
+    any:
+      - kind: function_declaration
+      - kind: function_expression
+      - kind: arrow_function
+      - kind: generator_function
+      - kind: generator_function_declaration
+      - kind: method_definition
+rule:
+  any:
+    # a loop nested in a loop of the same function
+    - all:
+        - matches: loop
+        - inside:
+            stopBy: { matches: function-boundary }
+            matches: loop
+    # a loop that runs until a `break` or `return` inside it: `while (true)` or `for (;;)`
+    - all:
+        - kind: while_statement
+        - has: { field: condition, regex: '^\(true\)$' }
+    - all:
+        - kind: for_statement
+        - regex: '^for\s*\(\s*;\s*;'
+    # a counter or running total updated in place
+    - any:
+        - kind: update_expression
+        - all:
+            - kind: augmented_assignment_expression
+            - has: { field: left, kind: identifier }
+        # a running value rebuilt from itself, such as `total = total + size` or `seen = [...seen, item]`
+        - all:
+            - kind: assignment_expression
+            - has: { field: left, kind: identifier, pattern: $RUNNING }
+            - has:
+                field: right
+                any:
+                  - { kind: binary_expression, has: { pattern: $RUNNING } }
+                  - { kind: array, has: { kind: spread_element, has: { pattern: $RUNNING } } }
+    # a collection filled by `push`, `unshift`, `add` or `set` inside a loop of the same function, unless it is the
+    # state a closure keeps across its calls: a `Map` or `Set` that a factory declares at its top and never returns,
+    # filled by a closure the factory declares beside it and answers in its object, such as a cache's `Map`
+    - all:
+        - any:
+            - pattern: $COLLECTION.push($$$ITEMS)
+            - pattern: $COLLECTION.unshift($$$ITEMS)
+            - pattern: $COLLECTION.add($$$ITEMS)
+            - pattern: $COLLECTION.set($$$ITEMS)
+        - inside:
+            stopBy: { matches: function-boundary }
+            matches: loop
+        - not:
+            all:
+              - any:
+                  - pattern: $COLLECTION.add($$$ITEMS)
+                  - pattern: $COLLECTION.set($$$ITEMS)
+              - has: { field: function, has: { field: object, kind: identifier } }
+              - inside:
+                  stopBy: { matches: function-boundary }
+                  matches: function-boundary
+                  not:
+                    any:
+                      - has: { field: parameters, has: { stopBy: end, pattern: $COLLECTION } }
+                      - has:
+                          field: body
+                          has: { stopBy: end, kind: variable_declarator, has: { field: name, pattern: $COLLECTION } }
+                  inside:
+                    kind: variable_declarator
+                    inside:
+                      kind: lexical_declaration
+                      inside:
+                        kind: statement_block
+                        inside:
+                          matches: function-boundary
+                          has:
+                            field: body
+                            all:
+                              - has:
+                                  kind: lexical_declaration
+                                  has:
+                                    kind: variable_declarator
+                                    all:
+                                      - has: { field: name, pattern: $COLLECTION }
+                                      - has:
+                                          field: value
+                                          kind: new_expression
+                                          has: { field: constructor, regex: '^(Map|Set)$' }
+                              - has: { kind: return_statement, has: { kind: object } }
+                              - not: { has: { kind: return_statement, has: { stopBy: end, pattern: $COLLECTION } } }

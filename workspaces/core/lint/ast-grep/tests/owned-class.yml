@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: owned-class
+valid:
+  - 'class MechObject extends DurableObject {}'
+  - "class Missing extends Schema.TaggedError<Missing>()('Missing', {}) {}"
+invalid:
+  - 'class Stack {}'
+  - 'abstract class Store {}'

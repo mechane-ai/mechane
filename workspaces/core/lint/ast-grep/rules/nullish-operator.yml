@@ -1,0 +1,14 @@
+# `??` and `?.`, which test for `null` and `undefined` where an `Option` holds absence.
+id: nullish-operator
+language: TypeScript
+severity: error
+message: 'Read an absent value through `Option`, such as `Option.getOrElse(Option.fromNullishOr(value), () => fallback)` (TD-18)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: binary_expression
+      has:
+        field: operator
+        regex: ^\?\?$
+    - kind: optional_chain

@@ -1,0 +1,17 @@
+# A `_tag` property type or value written by hand, which a schema's tagged union and its constructors replace.
+id: hand-written-tag
+language: TypeScript
+severity: error
+message: 'Declare a tagged union with `Schema.TaggedUnion` and build a member with its constructor, such as `Answer.cases.Settled.make({ receipt })` (TD-20)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: property_signature
+      has:
+        field: name
+        regex: ^_tag$
+    - kind: pair
+      has:
+        field: key
+        regex: ^_tag$

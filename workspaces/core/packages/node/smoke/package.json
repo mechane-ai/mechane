@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/smoke",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/release": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/stack": "workspace:*",
+    "@mechane/testing": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

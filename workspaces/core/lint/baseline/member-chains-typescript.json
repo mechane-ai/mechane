@@ -1,0 +1,18 @@
+{
+  "packages/node/boundaries/src/check-boundaries.ts": 1,
+  "packages/node/checks-kernel/src/lint/rule-key.ts": 1,
+  "packages/node/checks-kernel/src/ratchets/proposed-rules.ts": 1,
+  "packages/node/checks/src/run-checks.ts": 1,
+  "packages/node/modules/src/declarations/constant-value.ts": 1,
+  "packages/node/modules/src/declarations/is-type-declaration.ts": 1,
+  "packages/node/modules/src/declarations/top-level-declaration.ts": 1,
+  "packages/node/modules/src/declarations/typescript-declaration.ts": 1,
+  "packages/node/modules/src/moves/pull-move.ts": 1,
+  "packages/node/rule-generator/src/load-generate-settings.ts": 1,
+  "packages/node/rule-generator/src/validate/message-findings.ts": 1,
+  "packages/node/rule-generator/src/validate/suppression-budget.ts": 1,
+  "packages/node/testing/src/mechs/events/drone-end.ts": 1,
+  "packages/node/testing/src/mechs/events/turn-end-after.ts": 1,
+  "packages/worker/mech/src/sandboxes/sandbox-access.ts": 1,
+  "packages/worker/sandbox/src/tensorlake/tensorlake-request.ts": 1
+}

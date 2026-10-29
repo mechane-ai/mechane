@@ -1,0 +1,7 @@
+{
+  "packages/shared/protocol/src/durable-objects/schemas.ts": 8,
+  "packages/shared/protocol/src/durable-objects/types.ts": 2,
+  "packages/worker/edge/src/routing/peer.ts": 1,
+  "packages/worker/harness/src/drones/drone-doc.ts": 1,
+  "packages/worker/rpc/src/mech/types.ts": 3
+}

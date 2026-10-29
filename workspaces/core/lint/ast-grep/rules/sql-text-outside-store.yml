@@ -1,0 +1,9 @@
+id: sql-text-outside-store
+language: TypeScript
+severity: error
+message: "Move the SQL text into the store module of the database's owner, such as `turnStore.listTurns({ mechId })` here (DO-06)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**']
+rule:
+  kind: string_fragment
+  regex: ^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|WITH|PRAGMA)\s

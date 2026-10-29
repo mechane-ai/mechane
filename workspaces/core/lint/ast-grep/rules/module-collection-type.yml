@@ -1,0 +1,32 @@
+id: module-collection-type
+language: TypeScript
+severity: error
+message: 'Give the module-level collection a read-only type or `as const`, such as `const LIMITS = [1, 2] as const` (ST-33)'
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/node/cli/scripts/**]
+rule:
+  kind: variable_declarator
+  has:
+    field: value
+    any:
+      - kind: new_expression
+      - kind: array
+      - kind: object
+      - all:
+          - kind: satisfies_expression
+          - not:
+              has:
+                kind: as_expression
+  not:
+    has:
+      field: type
+      regex: Readonly|readonly
+  inside:
+    kind: lexical_declaration
+    any:
+      - inside:
+          kind: program
+      - inside:
+          kind: export_statement
+          inside:
+            kind: program

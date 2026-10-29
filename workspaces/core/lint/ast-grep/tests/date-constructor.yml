@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: date-constructor
+valid:
+  - 'const now = DateTime.nowUnsafe();'
+invalid:
+  - 'const now = new Date();'
+  - 'const opened = new Date(openedAtMs);'

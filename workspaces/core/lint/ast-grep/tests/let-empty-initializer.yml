@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: let-empty-initializer
+valid:
+  - 'let attempt = 0;'
+invalid:
+  - 'let row = null;'
+  - 'let row = undefined;'

@@ -1,0 +1,25 @@
+{
+  "name": "@mechane/app",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/bindings": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/directory": "workspace:*",
+    "@mechane/edge": "workspace:*",
+    "@mechane/key-cache": "workspace:*",
+    "@mechane/limiter": "workspace:*",
+    "@mechane/mech": "workspace:*",
+    "@mechane/pages": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "@mechane/sandbox": "workspace:*",
+    "@mechane/workspace": "workspace:*",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261028.1",
+    "wrangler": "4.155.0"
+  }
+}

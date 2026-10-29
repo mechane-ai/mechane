@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: sync-in-generator
+valid:
+  - "const write = Effect.fn('write')(function* () { print(); });"
+  - 'const writeLine: WriteLine = ({ line }) => Effect.sync(() => print({ line })); const WRITERS: Writers = { line: writeLine };'
+invalid:
+  - "const write = Effect.fn('write')(function* () { yield* Effect.sync(() => print()); });"
+  - 'const writeLine: WriteLine = ({ line }) => Effect.sync(() => print({ line })); lines.forEach(writeLine);'

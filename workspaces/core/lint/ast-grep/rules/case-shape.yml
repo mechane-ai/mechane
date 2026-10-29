@@ -1,0 +1,89 @@
+# A case of a switch, or an arm of a `Match` call, that does more than choose: two statements, a trailing `break`
+# aside, a statement other than a return or an expression, a statement of two calls side by side, such as
+# `a() + b()`, or a function with a block body anywhere inside it. A call's arguments and its callee stay one call.
+id: case-shape
+language: TypeScript
+severity: error
+message: 'Give the case its own function and hold only its call, such as `case Phase.Starting: return advanceStarting({ run });` (ST-27)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  block-function:
+    any:
+      - kind: function_expression
+      - kind: generator_function
+      - all: [{ kind: arrow_function }, { has: { field: body, kind: statement_block } }]
+  arm:
+    all:
+      - kind: pair
+      - inside:
+          kind: object
+          inside:
+            kind: arguments
+            inside:
+              kind: call_expression
+              has: { field: function, regex: '^Match\.' }
+  arm-statement:
+    all: [{ not: { regex: '^[{}]$' } }, { not: { kind: comment } }]
+  holds-call:
+    any: [{ kind: call_expression }, { has: { stopBy: end, kind: call_expression } }]
+  # A node, not a call or its part, with two children that each hold a call.
+  call-pair:
+    all:
+      - not: { any: [{ kind: arguments }, { kind: call_expression }, { kind: member_expression }] }
+      - has: { matches: holds-call, precedes: { stopBy: end, matches: holds-call } }
+  case-statement:
+    any: [{ kind: return_statement }, { kind: expression_statement }]
+  # A return or an expression of two calls side by side, outside any call's arguments.
+  two-calls:
+    all:
+      - matches: case-statement
+      - has:
+          stopBy: end
+          all:
+            - matches: call-pair
+            - not: { inside: { stopBy: { matches: case-statement }, kind: arguments } }
+  arm-function:
+    all: [{ kind: arrow_function }, { inside: { field: value, matches: arm } }]
+rule:
+  any:
+    - all:
+        - any: [{ kind: switch_case }, { kind: switch_default }]
+        - any:
+            - has:
+                field: body
+                not: { any: [{ kind: return_statement }, { kind: expression_statement }, { kind: break_statement }] }
+            - has:
+                field: body
+                not: { kind: break_statement }
+                precedes: { stopBy: end, not: { any: [{ kind: break_statement }, { kind: comment }] } }
+            - has: { field: body, has: { stopBy: end, matches: block-function } }
+            - has: { field: body, matches: two-calls }
+    - all:
+        - matches: arm
+        - has:
+            field: value
+            any:
+              - has:
+                  field: body
+                  any: [{ matches: block-function }, { has: { stopBy: end, matches: block-function } }]
+              - has:
+                  field: body
+                  kind: statement_block
+                  any:
+                    - has:
+                        all:
+                          - matches: arm-statement
+                          - not: { any: [{ kind: return_statement }, { kind: expression_statement }] }
+                    - has: { matches: arm-statement, precedes: { stopBy: end, matches: arm-statement } }
+                    - has: { matches: two-calls }
+              - has:
+                  field: body
+                  not: { kind: statement_block }
+                  any:
+                    - matches: call-pair
+                    - has:
+                        stopBy: end
+                        all:
+                          - matches: call-pair
+                          - not: { inside: { stopBy: { matches: arm-function }, kind: arguments } }

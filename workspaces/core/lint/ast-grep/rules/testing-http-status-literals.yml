@@ -1,0 +1,60 @@
+# SC-12 in the test support package, whose folder the test patterns of contract 014's shipped rules skip. A copy of
+# the shipped `http-status-literals-typescript` rule, which its registry entry pins by hash, for
+# `packages/node/testing` alone: a status there is a member of `HttpStatusCode` too.
+id: testing-http-status-literals
+language: TypeScript
+severity: error
+message: 'Name the HTTP status by its closed set, such as `HttpStatusCode.NotFound` (SC-12)'
+files: ['packages/node/testing/**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  # A three-digit number in the range that HTTP status codes occupy.
+  status-code:
+    kind: number
+    regex: ^[1-5][0-9][0-9]$
+  # A property name that holds a status code, quoted or not.
+  status-name:
+    regex: ^["']?(?i:status|status_?code)["']?$
+  # A type name that holds status codes, such as `ErrorStatus`.
+  status-type-name:
+    regex: (?i)status(_?code)?$
+rule:
+  all:
+    - matches: status-code
+    - any:
+        # `{ status: 404 }`.
+        - inside:
+            kind: pair
+            field: value
+            has:
+              field: key
+              matches: status-name
+        # `response.status = 500`.
+        - inside:
+            kind: assignment_expression
+            field: right
+            has:
+              field: left
+              kind: member_expression
+              has:
+                field: property
+                matches: status-name
+        # `readonly status = 410`.
+        - inside:
+            kind: public_field_definition
+            field: value
+            regex: \breadonly\s
+            has:
+              field: name
+              matches: status-name
+        # `type ErrorStatus = 404 | 410`.
+        - inside:
+            kind: literal_type
+            inside:
+              stopBy:
+                not:
+                  kind: union_type
+              kind: type_alias_declaration
+              has:
+                field: name
+                matches: status-type-name

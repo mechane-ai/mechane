@@ -1,0 +1,1906 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "extends": [
+    ".contracts/015-code-typescript-const-bindings/assets/oxlint/oxlintrc.json",
+    ".contracts/064-code-typescript-call-arguments/assets/oxlint/oxlintrc.json"
+  ],
+  "plugins": ["typescript", "unicorn", "oxc", "import", "node", "jsdoc", "promise"],
+  // Every rule of the six categories runs unless the opt-out list that ends `rules` turns it off;
+  // `mise -C workspaces/core run rules:measure` computes that list and finds each standard rule that measures zero.
+  "categories": {
+    "correctness": "error",
+    "suspicious": "error",
+    "pedantic": "error",
+    "perf": "error",
+    "style": "error",
+    "restriction": "error"
+  },
+  "options": { "typeAware": true, "reportUnusedDisableDirectives": "error" },
+  "ignorePatterns": ["**/dist/**", "**/node_modules/**", "lint/types/**", "licenses/*.js"],
+  "rules": {
+    "import/no-unassigned-import": [
+      "error",
+      {
+        "allow": [
+          "../../../../licenses/apache-2.0.js",
+          "../../../../licenses/cfworker-json-schema.js",
+          "../../../../licenses/content-type.js",
+          "../../../../licenses/cookie.js",
+          "../../../../licenses/effect.js",
+          "../../../../licenses/eventsource-parser.js",
+          "../../../../licenses/jose.js",
+          "../../../../licenses/model-context-protocol.js",
+          "../../../../licenses/openai.js",
+          "../../../../licenses/partial-json.js",
+          "../../../../licenses/pi.js",
+          "../../../../licenses/pkce-challenge.js",
+          "../../../../licenses/typebox.js",
+          "../../../../licenses/zod.js"
+        ]
+      }
+    ],
+    "import/no-namespace": "error",
+    "import/no-default-export": "error",
+    "import/no-commonjs": "error",
+    "import/unambiguous": "error",
+    "id-denylist": [
+      "error",
+      "common",
+      "data",
+      "endpoint",
+      "handler",
+      "helpers",
+      "info",
+      "item",
+      "manager",
+      "misc",
+      "script"
+    ],
+    "typescript/strict-boolean-expressions": [
+      "error",
+      {
+        "allowString": false,
+        "allowNumber": false,
+        "allowNullableObject": false,
+        "allowNullableBoolean": false,
+        "allowNullableString": false,
+        "allowNullableNumber": false,
+        "allowNullableEnum": false,
+        "allowAny": false
+      }
+    ],
+    "typescript/no-unnecessary-condition": ["error", { "allowConstantLoopConditions": "only-allowed-literals" }],
+    "max-params": ["error", { "max": 3 }],
+    "no-use-before-define": [
+      "error",
+      { "functions": false, "classes": true, "variables": false, "typedefs": false, "ignoreTypeReferences": true }
+    ],
+    "new-cap": ["error", { "capIsNew": false }],
+    "no-bitwise": "error",
+    "max-lines": ["error", { "max": 120, "skipBlankLines": true, "skipComments": true }],
+    "max-lines-per-function": ["error", { "max": 30, "skipBlankLines": true, "skipComments": true, "IIFEs": true }],
+    "max-depth": ["error", { "max": 2 }],
+    "max-nested-callbacks": ["error", { "max": 2 }],
+    "complexity": ["error", { "max": 6, "variant": "modified" }],
+    "no-else-return": ["error", { "allowElseIf": false }],
+    "no-lonely-if": "error",
+    "no-negated-condition": "error",
+    "no-ternary": "error",
+    "typescript/switch-exhaustiveness-check": [
+      "error",
+      {
+        "allowDefaultCaseForExhaustiveSwitch": false,
+        "considerDefaultExhaustiveForUnions": false,
+        "requireDefaultForNonUnion": true
+      }
+    ],
+    "unicorn/switch-case-braces": ["error", "avoid"],
+    "no-var": "error",
+    "prefer-const": "error",
+    "init-declarations": ["error", "always"],
+    "one-var": ["error", "never"],
+    "prefer-destructuring": ["error", { "array": false }],
+    "no-param-reassign": ["error", { "props": true }],
+    "unicorn/no-array-sort": ["error", { "allowExpressionStatement": false }],
+    "unicorn/no-array-reverse": ["error", { "allowExpressionStatement": false }],
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unnecessary-type-parameters": "error",
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "typescript/array-type": ["error", { "default": "generic", "readonly": "generic" }],
+    "typescript/consistent-indexed-object-style": ["error", "record"],
+    "typescript/consistent-type-imports": ["error", { "prefer": "type-imports", "fixStyle": "separate-type-imports" }],
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    "import/no-duplicates": "error",
+    // oxfmt sorts the import statements, and this rule sorts the names inside each one.
+    "sort-imports": ["error", { "ignoreDeclarationSort": true, "ignoreCase": true }],
+    "typescript/method-signature-style": ["error", "property"],
+    "typescript/no-namespace": ["error", { "allowDeclarations": true }],
+    "class-methods-use-this": "error",
+    "typescript/ban-ts-comment": [
+      "error",
+      { "ts-expect-error": true, "ts-ignore": true, "ts-nocheck": true, "ts-check": true }
+    ],
+    "typescript/explicit-function-return-type": [
+      "error",
+      {
+        "allowExpressions": false,
+        "allowTypedFunctionExpressions": true,
+        "allowHigherOrderFunctions": false,
+        "allowedNames": [
+          "connectionRecords",
+          "findingRecords",
+          "slackDeliveryProgressRecords",
+          "slackDeliveryRecords",
+          "slackOriginRecords",
+          "slackRecords",
+          "sourceGrantRecords",
+          "sourceRecords",
+          "watchRecords",
+          "workspaceRecoveryRecords"
+        ]
+      }
+    ],
+    "typescript/explicit-module-boundary-types": [
+      "error",
+      {
+        "allowedNames": [
+          "connectionRecords",
+          "findingRecords",
+          "slackDeliveryProgressRecords",
+          "slackDeliveryRecords",
+          "slackOriginRecords",
+          "slackRecords",
+          "sourceGrantRecords",
+          "sourceRecords",
+          "watchRecords",
+          "workspaceRecoveryRecords"
+        ]
+      }
+    ],
+    "unicorn/filename-case": ["error", { "case": "kebabCase" }],
+    "no-throw-literal": "error",
+    "preserve-caught-error": "error",
+    "unicorn/throw-new-error": "off",
+    // A type parameter of one capital letter, such as `O extends Operation`, is a name the naming rules allow.
+    "id-length": ["error", { "min": 2, "exceptions": ["_"], "checkGeneric": false }],
+    // Effect names the discriminant of every tagged value `_tag`.
+    "no-underscore-dangle": ["error", { "allow": ["_tag"] }],
+    "no-warning-comments": ["error", { "terms": ["todo", "fixme", "xxx", "hack"], "location": "anywhere" }],
+    "jsdoc/no-blank-blocks": "error",
+    "unicorn/no-abusive-eslint-disable": "error",
+    "node/no-process-env": "error",
+    "typescript/no-floating-promises": "error",
+    "no-void": ["error", { "allowAsStatement": true }],
+    "typescript/promise-function-async": ["error", { "checkArrowFunctions": false }],
+    "typescript/return-await": ["error", "always"],
+    "promise/avoid-new": "error",
+    "promise/always-return": ["error", { "ignoreLastCallback": true }],
+    "no-console": "error",
+    "unicorn/no-process-exit": "error",
+    // An outbound call keeps its `.then` with both handlers, such as `.then(() => undefined, onRejected)`.
+    "unicorn/no-useless-undefined": ["error", { "checkArguments": false, "checkArrowFunctionBody": false }],
+    // A named callback stays a typed const beside the statement that passes it (SC-03).
+    "unicorn/consistent-function-scoping": ["error", { "checkArrowFunctions": false }],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "effect",
+            "importNames": ["Clock"],
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "name": "effect",
+            "importNames": ["Context", "Layer", "LayerMap", "ManagedRuntime"],
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "name": "node:process",
+            "message": "Use the global `process` in a settings or output module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "name": "process",
+            "message": "Use the global `process` in a settings or output module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "name": "effect",
+            "importNames": ["Console"],
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          }
+        ]
+      }
+    ],
+    "no-restricted-properties": [
+      "error",
+      {
+        "object": "Date",
+        "property": "now",
+        "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+      },
+      {
+        "object": "DateTime",
+        "property": "now",
+        "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+      },
+      {
+        "object": "Match",
+        "property": "value",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Match",
+        "property": "type",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Match",
+        "property": "tag",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Match",
+        "property": "tags",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Match",
+        "property": "when",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Match",
+        "property": "orElse",
+        "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+      },
+      {
+        "object": "Effect",
+        "property": "provide",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "provideContext",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "provideService",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "provideServiceEffect",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "service",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "serviceOption",
+        "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+      },
+      {
+        "object": "Effect",
+        "property": "ignore",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "option",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "result",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "either",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "orElse",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "orElseSucceed",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "orElseFail",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "catchCause",
+        "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+      },
+      {
+        "object": "Option",
+        "property": "getOrThrowWith",
+        "message": "Guard with `Option.isNone` and leave, such as `if (Option.isNone(row)) { return … }` (ER-06)"
+      },
+      {
+        "object": "Effect",
+        "property": "catchTag",
+        "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+      },
+      {
+        "object": "Effect",
+        "property": "catchIf",
+        "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+      },
+      {
+        "object": "Effect",
+        "property": "catchFilter",
+        "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+      },
+      {
+        "object": "Effect",
+        "property": "catchSome",
+        "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+      },
+      {
+        "object": "Effect",
+        "property": "match",
+        "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+      },
+      {
+        "object": "Effect",
+        "property": "gen",
+        "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+      },
+      {
+        "object": "Effect",
+        "property": "fnUntraced",
+        "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+      },
+      {
+        "object": "Effect",
+        "property": "map",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "flatMap",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "andThen",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "tap",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "as",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "asVoid",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "asSome",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "zip",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "zipWith",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "suspend",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "flatten",
+        "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+      },
+      {
+        "object": "Effect",
+        "property": "filterOrFail",
+        "message": "Leave a generator by returning a failure, such as `return yield* new MechNotFound({ mechId })` (EF-02)"
+      },
+      {
+        "object": "Schema",
+        "property": "decodeUnknownOption",
+        "message": "Decode a boundary with its one verb, such as `Schema.decodeUnknownEffect(Settings)(input)` (TD-22)"
+      },
+      {
+        "object": "Schema",
+        "property": "encodeEffect",
+        "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+      },
+      {
+        "object": "Schema",
+        "property": "encodeUnknownEffect",
+        "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+      },
+      {
+        "object": "Object",
+        "property": "keys",
+        "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+      },
+      {
+        "object": "Object",
+        "property": "values",
+        "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+      },
+      {
+        "object": "Object",
+        "property": "entries",
+        "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+      },
+      {
+        "object": "Object",
+        "property": "fromEntries",
+        "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+      },
+      {
+        "object": "process",
+        "property": "argv",
+        "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+      },
+      {
+        "object": "process",
+        "property": "execPath",
+        "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+      },
+      {
+        "object": "Effect",
+        "property": "promise",
+        "message": "Wrap one call with `Effect.tryPromise`, such as `Effect.tryPromise({ try: () => fetch(url), catch })` (EF-06)"
+      },
+      {
+        "object": "Effect",
+        "property": "acquireUseRelease",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Effect",
+        "property": "addFinalizer",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Effect",
+        "property": "ensuring",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Scope",
+        "property": "make",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Scope",
+        "property": "provide",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Scope",
+        "property": "close",
+        "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+      },
+      {
+        "object": "Effect",
+        "property": "timeout",
+        "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+      },
+      {
+        "object": "Effect",
+        "property": "timeoutFail",
+        "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+      },
+      {
+        "object": "Effect",
+        "property": "repeat",
+        "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+      },
+      {
+        "object": "process",
+        "property": "stdout",
+        "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+      },
+      {
+        "object": "process",
+        "property": "stderr",
+        "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+      },
+      {
+        "object": "process",
+        "property": "exitCode",
+        "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+      },
+      {
+        "object": "process",
+        "property": "exit",
+        "message": "End the process by setting its exit status in the output module's finish, such as `finish({ status })` (CP-05)"
+      },
+      {
+        "object": "Effect",
+        "property": "log",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logDebug",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logError",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logFatal",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logInfo",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logTrace",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logWarning",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "logWithLevel",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "withSpan",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "withSpanScoped",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "annotateLogs",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      },
+      {
+        "object": "Effect",
+        "property": "annotateLogsScoped",
+        "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+      }
+    ],
+    // Off while the tree has findings; `mise -C workspaces/core run rules:measure` lists them, and a sweep turns one on.
+    "capitalized-comments": "off",
+    "import/exports-last": "off",
+    "import/max-dependencies": "off",
+    "import/no-nodejs-modules": "off",
+    "import/no-relative-parent-imports": "off",
+    "jsdoc/require-yields-type": "off",
+    "max-classes-per-file": "off",
+    "no-duplicate-imports": "off",
+    "no-undefined": "off",
+    "node/no-sync": "off",
+    "node/no-top-level-await": "off",
+    "oxc/no-async-await": "off",
+    "oxc/no-map-spread": "off",
+    "oxc/no-rest-spread-properties": "off",
+    "prefer-named-capture-group": "off",
+    "require-await": "off",
+    "require-unicode-regexp": "off",
+    "typescript/explicit-member-accessibility": "off",
+    "typescript/no-confusing-void-expression": "off",
+    "typescript/no-invalid-void-type": "off",
+    "typescript/strict-void-return": "off",
+    "unicorn/catch-error-name": "off",
+    "unicorn/import-style": "off",
+    "unicorn/no-array-method-this-argument": "off",
+    // Off whatever they measure, each for its reason.
+    // a switch over a closed set names every member and has no default (EF-14)
+    "default-case": "off",
+    // a callback is named by the binding or the call that holds it
+    "func-names": "off",
+    // each declaration is exported where it is declared
+    "import/group-exports": "off",
+    // dependency-cruiser's no-circular decides cycles, and this rule costs a second module-graph pass
+    "import/no-cycle": "off",
+    // every module exports by name
+    "import/no-named-export": "off",
+    // every module exports by name
+    "import/prefer-default-export": "off",
+    // it restates the compiler's types
+    "jsdoc/require-param": "off",
+    // a doc comment never restates the compiler's type
+    "jsdoc/require-param-type": "off",
+    // it restates the compiler's types
+    "jsdoc/require-returns": "off",
+    // a doc comment never restates the compiler's type
+    "jsdoc/require-returns-type": "off",
+    // a doc comment never restates the compiler's type
+    "jsdoc/require-throws-type": "off",
+    // max-lines-per-function bounds a function
+    "max-statements": "off",
+    // a loop of awaits runs its steps in order on purpose
+    "no-await-in-loop": "off",
+    // the ast-grep rule magic-number names every number but -1, 0 and 1 and keeps SC-11's unit forms, which this rule reports (063)
+    "no-magic-numbers": "off",
+    // no-ternary bans every conditional operator
+    "no-nested-ternary": "off",
+    // an Effect schema and its type share one name
+    "no-redeclare": "off",
+    // it flags every `(error) =>` handler a callback API takes, such as a decode's failure
+    "promise/prefer-await-to-callbacks": "off",
+    // it flags `Effect.catch` and the two-handler `.then` that DO-03 gives an outbound call
+    "promise/prefer-await-to-then": "off",
+    // it counts the two arguments of a data-first `Effect.catch(self, handler)` as a promise's, and the compiler checks each promise method's arguments
+    "promise/valid-params": "off",
+    // key order is the schema's encode order, the /v1 field order and reference.json's order
+    "sort-keys": "off",
+    // a switch names every member of its closed set and has no default, which the compiler checks with noImplicitReturns
+    "typescript/consistent-return": "off",
+    // it asks for `!`, which TD-07 bans
+    "typescript/non-nullable-type-assertion-style": "off",
+    // ast-grep no-throw-or-try rejects every throw
+    "typescript/only-throw-error": "off",
+    // erasableSyntaxOnly makes a parameter property a compile error
+    "typescript/parameter-properties": "off",
+    // it asks for `??`, which TD-18 bans
+    "typescript/prefer-nullish-coalescing": "off",
+    // Effect types are not deeply read-only
+    "typescript/prefer-readonly-parameter-types": "off",
+    // DO-03 bans `Promise.resolve`, so an `async` arrow that awaits nothing is how a callback a dependency types as answering a promise answers a value
+    "typescript/require-await": "off",
+    // ast-grep nested-call rejects every nested call (064)
+    "unicorn/max-nested-calls": "off",
+    // a typed callback const states the parameters it reads, and TD-01 gives an owned function no second positional parameter (SC-03)
+    "unicorn/no-array-callback-reference": "off",
+    // no-lonely-if decides it
+    "unicorn/no-lonely-if": "off",
+    // no-negated-condition decides it
+    "unicorn/no-negated-condition": "off",
+    // no-ternary bans every conditional operator
+    "unicorn/no-nested-ternary": "off",
+    // encoded forms spell absence as null, which an Option schema decodes
+    "unicorn/no-null": "off",
+    // the formatter writes a hex literal's digits in lowercase, which the rule refuses
+    "unicorn/number-literal-case": "off",
+    // it asks for `Date.now()`, which EF-17 bans
+    "unicorn/prefer-date-now": "off",
+    // no-ternary bans every conditional operator
+    "unicorn/prefer-logical-operator-over-ternary": "off",
+    // it asks for `Object.fromEntries`, where TD-25 uses Effect's `Record`
+    "unicorn/prefer-object-from-entries": "off",
+    // it asks to spread a string into its characters, which typescript/no-misused-spread refuses
+    "unicorn/prefer-spread": "off",
+    // it asks for the conditional operator, which no-ternary bans (EF-21)
+    "unicorn/prefer-ternary": "off",
+    // it reads a module-level `Effect.catch`, such as an `Effect.fn`'s trailing one, as a promise chain, and promise-chain keeps every promise awaited (DO-03)
+    "unicorn/prefer-top-level-await": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "packages/node/cli/src/settings/load-invocation.ts",
+        "packages/node/guest/src/load-guest-settings.ts",
+        "packages/node/stack/src/load-stack-settings.ts",
+        "packages/node/release/src/load-release-settings.ts",
+        "packages/node/deploy/src/load-deploy-settings.ts",
+        "packages/node/deploy/src/image/load-image-settings.ts",
+        "packages/node/checks/src/load-checks-settings.ts",
+        "packages/node/rename/src/load-rename-settings.ts",
+        "packages/node/package-moves/src/load-move-settings.ts",
+        "packages/node/rule-generator/src/load-generate-settings.ts"
+      ],
+      "rules": {
+        "node/no-process-env": "off",
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "Date",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "DateTime",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "Match",
+            "property": "value",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "type",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tag",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tags",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "when",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "orElse",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Effect",
+            "property": "provide",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideContext",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideService",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideServiceEffect",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "service",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "serviceOption",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "ignore",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "option",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "result",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "either",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElse",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseSucceed",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseFail",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchCause",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Option",
+            "property": "getOrThrowWith",
+            "message": "Guard with `Option.isNone` and leave, such as `if (Option.isNone(row)) { return … }` (ER-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchTag",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchIf",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchFilter",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchSome",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "match",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "gen",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "fnUntraced",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "map",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatMap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "andThen",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "tap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "as",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asVoid",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asSome",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zip",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zipWith",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "suspend",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatten",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "filterOrFail",
+            "message": "Leave a generator by returning a failure, such as `return yield* new MechNotFound({ mechId })` (EF-02)"
+          },
+          {
+            "object": "Schema",
+            "property": "decodeUnknownOption",
+            "message": "Decode a boundary with its one verb, such as `Schema.decodeUnknownEffect(Settings)(input)` (TD-22)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeUnknownEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Object",
+            "property": "keys",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "values",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "entries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "fromEntries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Effect",
+            "property": "promise",
+            "message": "Wrap one call with `Effect.tryPromise`, such as `Effect.tryPromise({ try: () => fetch(url), catch })` (EF-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "acquireUseRelease",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "addFinalizer",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "ensuring",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "make",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "provide",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "close",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeout",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeoutFail",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "repeat",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "process",
+            "property": "stdout",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "stderr",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "exitCode",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "exit",
+            "message": "End the process by setting its exit status in the output module's finish, such as `finish({ status })` (CP-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "log",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logDebug",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logError",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logFatal",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logInfo",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logTrace",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWarning",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWithLevel",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpan",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpanScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogs",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogsScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/node/cli/scripts/reference/main.ts",
+        "packages/node/program/src/output/**",
+        "packages/node/testing/src/check.ts",
+        "packages/worker/logs/src/write-log.ts"
+      ],
+      "rules": {
+        "no-console": "off",
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "Date",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "DateTime",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "Match",
+            "property": "value",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "type",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tag",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tags",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "when",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "orElse",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Effect",
+            "property": "provide",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideContext",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideService",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideServiceEffect",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "service",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "serviceOption",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "ignore",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "option",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "result",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "either",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElse",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseSucceed",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseFail",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchCause",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Option",
+            "property": "getOrThrowWith",
+            "message": "Guard with `Option.isNone` and leave, such as `if (Option.isNone(row)) { return … }` (ER-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchTag",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchIf",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchFilter",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchSome",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "match",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "gen",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "fnUntraced",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "map",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatMap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "andThen",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "tap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "as",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asVoid",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asSome",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zip",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zipWith",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "suspend",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatten",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "filterOrFail",
+            "message": "Leave a generator by returning a failure, such as `return yield* new MechNotFound({ mechId })` (EF-02)"
+          },
+          {
+            "object": "Schema",
+            "property": "decodeUnknownOption",
+            "message": "Decode a boundary with its one verb, such as `Schema.decodeUnknownEffect(Settings)(input)` (TD-22)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeUnknownEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Object",
+            "property": "keys",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "values",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "entries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "fromEntries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "process",
+            "property": "argv",
+            "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "object": "process",
+            "property": "execPath",
+            "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "object": "Effect",
+            "property": "promise",
+            "message": "Wrap one call with `Effect.tryPromise`, such as `Effect.tryPromise({ try: () => fetch(url), catch })` (EF-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "acquireUseRelease",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "addFinalizer",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "ensuring",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "make",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "provide",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "close",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeout",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeoutFail",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "repeat",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "process",
+            "property": "exit",
+            "message": "End the process by setting its exit status in the output module's finish, such as `finish({ status })` (CP-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "log",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logDebug",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logError",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logFatal",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logInfo",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logTrace",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWarning",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWithLevel",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpan",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpanScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogs",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogsScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          }
+        ]
+      }
+    },
+    { "files": ["packages/worker/app/src/worker.ts"], "rules": { "import/no-default-export": "off" } },
+    {
+      "files": ["packages/node/stack/src/celld/start-celld.ts"],
+      "rules": {
+        "no-restricted-properties": [
+          "error",
+          {
+            "object": "Date",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "DateTime",
+            "property": "now",
+            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
+          },
+          {
+            "object": "Match",
+            "property": "value",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "type",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tag",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "tags",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "when",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Match",
+            "property": "orElse",
+            "message": "Branch on tags with `Match.valueTags`, such as `Match.valueTags(failure, MESSAGES)` (EF-14)"
+          },
+          {
+            "object": "Effect",
+            "property": "provide",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideContext",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideService",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "provideServiceEffect",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "service",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "serviceOption",
+            "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+          },
+          {
+            "object": "Effect",
+            "property": "ignore",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "option",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "result",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "either",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElse",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseSucceed",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "orElseFail",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchCause",
+            "message": "Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })` (ER-05)"
+          },
+          {
+            "object": "Option",
+            "property": "getOrThrowWith",
+            "message": "Guard with `Option.isNone` and leave, such as `if (Option.isNone(row)) { return … }` (ER-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchTag",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchIf",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchFilter",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "catchSome",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "match",
+            "message": "Recover with the object form of `Effect.catchTags`, such as `Effect.catchTags({ MechNotFound: … })` (ER-07)"
+          },
+          {
+            "object": "Effect",
+            "property": "gen",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "fnUntraced",
+            "message": "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+          },
+          {
+            "object": "Effect",
+            "property": "map",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatMap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "andThen",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "tap",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "as",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asVoid",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "asSome",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zip",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "zipWith",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "suspend",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "flatten",
+            "message": "Bind each value with `yield*`, such as `const row = yield* readRow(input)` (EF-02)"
+          },
+          {
+            "object": "Effect",
+            "property": "filterOrFail",
+            "message": "Leave a generator by returning a failure, such as `return yield* new MechNotFound({ mechId })` (EF-02)"
+          },
+          {
+            "object": "Schema",
+            "property": "decodeUnknownOption",
+            "message": "Decode a boundary with its one verb, such as `Schema.decodeUnknownEffect(Settings)(input)` (TD-22)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Schema",
+            "property": "encodeUnknownEffect",
+            "message": "Encode the code's own output with `Schema.encodeSync`, such as `Schema.encodeSync(Row)(row)` (EF-16)"
+          },
+          {
+            "object": "Object",
+            "property": "keys",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "values",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "entries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "Object",
+            "property": "fromEntries",
+            "message": "Read keys and entries with Effect's `Record`, such as `Record.keys(table)` (TD-25)"
+          },
+          {
+            "object": "process",
+            "property": "argv",
+            "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "object": "process",
+            "property": "execPath",
+            "message": "Read the command line and the runtime's path once, in the program's settings module, such as `loadStackSettings()` (ST-31)"
+          },
+          {
+            "object": "Effect",
+            "property": "promise",
+            "message": "Wrap one call with `Effect.tryPromise`, such as `Effect.tryPromise({ try: () => fetch(url), catch })` (EF-06)"
+          },
+          {
+            "object": "Effect",
+            "property": "acquireUseRelease",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "addFinalizer",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "ensuring",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "make",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Scope",
+            "property": "close",
+            "message": "Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn` (EF-08)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeout",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "timeoutFail",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "Effect",
+            "property": "repeat",
+            "message": "Bound a wait with `Effect.timeoutOrElse` and repeat in a loop, such as `Effect.timeoutOrElse({ duration, orElse })` (EF-09)"
+          },
+          {
+            "object": "process",
+            "property": "stdout",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "stderr",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "exitCode",
+            "message": "Write output and set the exit status through the program's output module, such as `writeResult({ line })` (CP-05)"
+          },
+          {
+            "object": "process",
+            "property": "exit",
+            "message": "End the process by setting its exit status in the output module's finish, such as `finish({ status })` (CP-05)"
+          },
+          {
+            "object": "Effect",
+            "property": "log",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logDebug",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logError",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logFatal",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logInfo",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logTrace",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWarning",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "logWithLevel",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpan",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "withSpanScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogs",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          },
+          {
+            "object": "Effect",
+            "property": "annotateLogsScoped",
+            "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+          }
+        ]
+      }
+    },
+    { "files": ["packages/**/src/index.ts"], "rules": { "max-lines": "off" } },
+    { "files": ["packages/node/smoke/src/catalog.ts"], "rules": { "max-lines": "off" } },
+    {
+      "files": [
+        "packages/worker/directory/src/directory-object.ts",
+        "packages/worker/key-cache/src/key-cache-object.ts",
+        "packages/worker/limiter/src/limiter-object.ts",
+        "packages/worker/mech/src/mech-object.ts",
+        "packages/worker/sandbox/src/sandbox-object.ts",
+        "packages/worker/workspace/src/workspace-object.ts"
+      ],
+      "rules": { "max-lines": "off" }
+    },
+    { "files": ["**/migrations.ts"], "rules": { "max-lines-per-function": "off" } },
+    {
+      "files": [".dependency-cruiser.cjs"],
+      "rules": { "import/no-commonjs": "off", "import/unambiguous": "off", "max-lines": "off" }
+    },
+    { "files": ["**/utilities/**"], "rules": { "promise/avoid-new": "off" } }
+  ]
+}

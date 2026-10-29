@@ -1,0 +1,34 @@
+# A tagged error field of free text: a `message`, `issue`, `detail`, `code` or `operation`, or a URL or timeout held
+# as a string; `tagged-error-cause` refuses `cause`.
+id: error-free-text
+language: TypeScript
+severity: error
+message: "Give a tagged error ids, closed-set members and measured values and a dependency's text as `reason`, such as `{ mechId: MechId, reason: Schema.String }` (ER-02)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  error-fields:
+    kind: object
+    inside:
+      kind: arguments
+      inside:
+        kind: call_expression
+        has:
+          field: function
+          kind: call_expression
+          regex: ^Schema\.TaggedError
+rule:
+  kind: pair
+  inside:
+    matches: error-fields
+  any:
+    - has:
+        field: key
+        regex: ^(message|issue|detail|code|operation)$
+    - all:
+        - has:
+            field: key
+            regex: ^(url|\w*[tT]imeout\w*)$
+        - has:
+            field: value
+            regex: ^Schema\.String$

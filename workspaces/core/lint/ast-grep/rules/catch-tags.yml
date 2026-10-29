@@ -1,0 +1,18 @@
+# A recovery from one tag with `Effect.catchTag`; the fix writes the object form, which names each tag it recovers.
+id: catch-tags
+language: TypeScript
+severity: error
+message: 'Recover with the object form, such as `Effect.catchTags({ MechNotFound: () => missing })` (ER-07)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: Effect.catchTag($TAG, $HANDLER)
+constraints:
+  TAG: { kind: string }
+transform:
+  NAME:
+    replace:
+      source: $TAG
+      replace: '^.(.*).$'
+      by: '$1'
+fix: 'Effect.catchTags({ $NAME: $HANDLER })'

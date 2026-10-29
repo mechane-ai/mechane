@@ -1,0 +1,25 @@
+# An id property typed as a plain string, which its entity's brand types instead.
+id: plain-id-type
+language: TypeScript
+severity: error
+message: "Type an id with its entity's brand from the protocol's records, such as `readonly turnId: TurnId` (TD-14)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: property_signature
+  all:
+    - has:
+        field: name
+        regex: (^id|Id|Ids)$
+    - has:
+        field: type
+        any:
+          - has:
+              kind: predefined_type
+              regex: ^string$
+          - has:
+              stopBy: end
+              kind: type_arguments
+              has:
+                kind: predefined_type
+                regex: ^string$

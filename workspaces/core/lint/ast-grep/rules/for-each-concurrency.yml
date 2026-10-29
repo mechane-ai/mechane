@@ -1,0 +1,10 @@
+# `Effect.forEach` without options, whose default runs one step at a time; the fix states it.
+id: for-each-concurrency
+language: TypeScript
+severity: error
+message: 'State how the steps run, such as `Effect.forEach(items, step, { concurrency: 1 })` (EF-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: Effect.forEach($ITEMS, $STEP)
+fix: 'Effect.forEach($ITEMS, $STEP, { concurrency: 1 })'

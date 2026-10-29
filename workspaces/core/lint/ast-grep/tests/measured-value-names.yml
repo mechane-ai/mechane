@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: measured-value-names
+valid:
+  - 'const timeoutMs = 30;'
+  - 'type Retry = { readonly maxAttempts: number };'
+invalid:
+  - 'const timeout = 30;'
+  - 'type Retry = { readonly maxRetry: number };'

@@ -1,0 +1,12 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: http-literal
+valid:
+  - 'const headers = { [HttpHeader.ContentType]: MediaType.Json };'
+  - 'const FAMILY_STATUS = { NotFound: HttpStatusCode.NotFound };'
+  - 'const expected = { expectedStatus: HttpStatusCode.NotFound };'
+  - "const ref = { branch: 'HEAD' };"
+invalid:
+  - "const headers = { 'content-type': 'application/json' };"
+  - 'const FAMILY_STATUS = { NotFound: 404 };'
+  - 'const expected = { expectedStatus: 404 };'
+  - "const READ_METHODS = { probe: 'HEAD' };"

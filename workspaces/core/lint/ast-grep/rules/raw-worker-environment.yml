@@ -1,0 +1,18 @@
+# The Worker module hands the raw environment to `serve`, which hands it to the settings module to decode.
+id: raw-worker-environment
+language: TypeScript
+severity: error
+message: 'Pass the decoded Worker settings, such as `settings: WorkerSettings`, never the raw Worker environment (ST-31)'
+files: [packages/**/*.ts]
+ignores:
+  - '**/node_modules/**'
+  - packages/worker/app/src/worker.ts
+  - packages/worker/app/src/serve.ts
+  - packages/worker/bindings/src/settings/**
+  - packages/worker/rpc/src/types.ts
+  - packages/worker/mech/src/mech-object.ts
+  - packages/worker/sandbox/src/sandbox-object.ts
+  - packages/worker/sandbox/src/egress/egress-gateway.ts
+rule:
+  kind: type_identifier
+  regex: ^WorkerEnvironment$

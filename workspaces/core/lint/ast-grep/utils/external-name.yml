@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: external-name
+language: TypeScript
+rule:
+  regex: '^(configHome|ConfigHome|CONFIG_HOME_FALLBACK|CONFIG_HOME_VARIABLE|GIT_CONFIG_NOSYSTEM|GlobalProps|new-cap|capIsNew|new_sqlite_classes|dockerConfigJson)$'

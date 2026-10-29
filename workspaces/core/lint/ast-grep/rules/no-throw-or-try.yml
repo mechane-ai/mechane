@@ -1,0 +1,10 @@
+id: no-throw-or-try
+language: TypeScript
+severity: error
+message: "Fail with a tagged error in the Effect's error type, such as `return yield* new FileUnreadable({ path })` (ER-04)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: throw_statement
+    - kind: try_statement

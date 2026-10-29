@@ -1,0 +1,68 @@
+# SC-04: a behavior file declares at most two top-level functions: its one export and one private function the export
+# calls. Each function past the second is reported. Role, fixed, catalog and store-records files are out of scope; in
+# `<object>-object.ts` the class counts as the file's one export, and a tagged error is never a function.
+id: third-function
+language: TypeScript
+severity: error
+message: 'Move this function to its own file named for it in the folder of its concept, such as `restore-pack.ts` exporting `restorePack` (SC-04)'
+files: ['**/*.ts']
+ignores:
+  - '**/node_modules/**'
+  - '**/*.d.ts'
+  - 'packages/**/src/index.ts'
+  - '**/constants.ts'
+  - '**/schemas.ts'
+  - '**/errors.ts'
+  - '**/types.ts'
+  - '**/*.constants.ts'
+  - '**/*.schemas.ts'
+  - '**/*.errors.ts'
+  - '**/*.types.ts'
+  - '**/index.ts'
+  - '**/migrations.ts'
+  - '**/catalog.ts'
+  - '**/main.ts'
+  - '**/worker.ts'
+  - '**/routes.ts'
+  - '**/serve.ts'
+  - '**/load-*-settings.ts'
+  - '**/open-*-store.ts'
+  - '**/*-records.ts'
+utils:
+  function-statement:
+    any:
+      - kind: function_declaration
+      - kind: generator_function_declaration
+      # a class counts, but never a tagged error, which ST-19 places beside its user
+      - all:
+          - kind: class_declaration
+          - not: { has: { kind: class_heritage, regex: 'Schema\.(TaggedError|TaggedClass|ErrorClass)' } }
+      - all:
+          - kind: lexical_declaration
+          - has:
+              kind: variable_declarator
+              has:
+                field: value
+                any:
+                  - kind: arrow_function
+                  - kind: function_expression
+                  - all:
+                      - kind: call_expression
+                      - regex: '^Effect\.fn\('
+  top-function:
+    all:
+      - any:
+          - matches: function-statement
+          - all:
+              - kind: export_statement
+              - has: { field: declaration, matches: function-statement }
+      - inside: { kind: program }
+rule:
+  all:
+    - matches: top-function
+    - follows:
+        stopBy: end
+        matches: top-function
+        follows:
+          stopBy: end
+          matches: top-function

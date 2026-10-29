@@ -1,0 +1,2 @@
+# The guest bundle mise run build:guest writes into the image's build folder, beside the Dockerfile.
+image/guest.mjs

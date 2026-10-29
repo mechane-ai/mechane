@@ -1,0 +1,19 @@
+# Constants, schemas and errors files declare values; behavior lives in files named for it.
+id: declaration-file-role
+language: TypeScript
+severity: error
+message: 'Move the function to a file named for its behavior, such as `parseLine` to `parse-line.ts` (ST-20)'
+files: ['**/{constants,*.constants}.ts', '**/{schemas,*.schemas}.ts', '**/{errors,*.errors}.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: function_declaration
+    - kind: variable_declarator
+      has:
+        field: value
+        any:
+          - kind: arrow_function
+          - kind: function_expression
+  inside:
+    stopBy: end
+    kind: program

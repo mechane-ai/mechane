@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: no-optional-property
+valid:
+  - 'type Mech = { readonly name: Option.Option<string> };'
+invalid:
+  - 'type Mech = { readonly name?: string };'

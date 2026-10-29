@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: catch-handlers-typescript
+valid:
+  - 'Effect.tryPromise({ try: () => open(path), catch: (cause) => new Unreadable({ path, reason: String(cause) }) });'
+invalid:
+  - 'promise.catch(() => {});'
+  - 'try { read(); } catch { stop(); }'

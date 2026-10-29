@@ -1,0 +1,20 @@
+{
+  "name": "@mechane/rules",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/local-rules": "workspace:*",
+    "@mechane/name-rules": "workspace:*",
+    "@mechane/program-rules": "workspace:*",
+    "@mechane/rule-shapes": "workspace:*",
+    "@mechane/structure-rules": "workspace:*",
+    "@mechane/typescript-rules": "workspace:*",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2"
+  }
+}

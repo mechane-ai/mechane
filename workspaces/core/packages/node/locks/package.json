@@ -1,0 +1,19 @@
+{
+  "name": "@mechane/locks",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/checks-kernel": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/modules": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "effect": "4.0.7",
+    "oxc-parser": "0.156.0"
+  }
+}

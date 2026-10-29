@@ -1,0 +1,15 @@
+{
+  "packages/node/cli/src/runs/mechs/run-inbox-send.ts": 1,
+  "packages/node/eval/src/trial/role-turn.ts": 1,
+  "packages/node/program/src/files/fresh-file-path.ts": 1,
+  "packages/node/stack/src/github/create-github-ledger.ts": 2,
+  "packages/node/stack/src/model/scripted-reply.ts": 1,
+  "packages/node/stack/src/model/stream-answer.ts": 1,
+  "packages/worker/directory/src/device-approvals/decide-approval.ts": 2,
+  "packages/worker/edge/src/operations/auth/poll-device-approval.ts": 1,
+  "packages/worker/edge/src/operations/auth/start-device-approval.ts": 1,
+  "packages/worker/edge/src/operations/mechs/fork-mech.ts": 1,
+  "packages/worker/harness/src/renew-provider.ts": 1,
+  "packages/worker/mech-ports/src/threads/decide-drone-start.ts": 1,
+  "packages/worker/sandbox/src/executions/dispatch-pending.ts": 1
+}

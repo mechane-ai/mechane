@@ -1,0 +1,15 @@
+{
+  "name": "@mechane/key-cache",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/key-cache-store": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

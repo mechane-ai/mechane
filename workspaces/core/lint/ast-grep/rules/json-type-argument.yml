@@ -1,0 +1,16 @@
+# A `json` call with a type argument, which asserts the body's type where the lane's strict globals return `unknown`.
+id: json-type-argument
+language: TypeScript
+severity: error
+message: 'Decode the body with its schema, such as `Schema.decodeUnknownEffect(Row)(await response.json())` (TD-11)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: call_expression
+  all:
+    - has:
+        field: function
+        regex: \.json$
+    - has:
+        field: type_arguments
+        kind: type_arguments

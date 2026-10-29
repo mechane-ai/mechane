@@ -1,0 +1,123 @@
+# 064: no call, `new` or `await` inside another call's arguments. A copy of the shipped `call-arguments-typescript`
+# rule, which its registry entry pins by hash, for Mechane's schema role: the `schemas.ts` and `<concept>.schemas.ts`
+# files, and a schema declaration in any file, a constant whose value is a `Schema.*`, `Type.*`, `wireStruct` or
+# `renamedWireStruct` call, and the heritage of the class that declares a tagged error (ST-19). It also keeps SC-02's
+# E6 `catch`, whose one call is `String(cause)`, and E8's trailing catch at an entry boundary, in both of its forms.
+id: nested-call
+language: TypeScript
+severity: error
+message: 'Bind the inner call to a name and pass the name, such as `const total = Number.sumAll(sizes)` before `report({ total })` (064)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts', '**/schemas.ts', '**/*.schemas.ts']
+utils:
+  # A function, class, or JSX element restarts the count.
+  boundary:
+    any:
+      - kind: arrow_function
+      - kind: function_expression
+      - kind: function_declaration
+      - kind: generator_function
+      - kind: generator_function_declaration
+      # A method restarts at its parameters and body; a computed name such as `[key()]` runs where the method is written.
+      - kind: formal_parameters
+        inside:
+          kind: method_definition
+      - kind: statement_block
+        inside:
+          kind: method_definition
+      - kind: class
+      - kind: class_declaration
+      - kind: abstract_class_declaration
+  # tree-sitter parses a tagged template as a call whose arguments are the template.
+  tagged-template:
+    kind: call_expression
+    has:
+      field: arguments
+      kind: template_string
+  # The expressions the rule counts.
+  counted:
+    any:
+      - kind: call_expression
+        not:
+          matches: tagged-template
+      - kind: new_expression
+      - kind: await_expression
+  # A type: tree-sitter parses an import type such as `import("./a").T` as a call.
+  type:
+    any:
+      - kind: type_annotation
+      - kind: type_arguments
+      - kind: type_query
+      # The type side of `x as T` and `x satisfies T`.
+      - follows:
+          regex: ^(as|satisfies)$
+          stopBy: end
+        inside:
+          any:
+            - kind: as_expression
+            - kind: satisfies_expression
+  # A direct argument of `pipe(...)` or `X.pipe(...)`.
+  pipe-step:
+    kind: call_expression
+    inside:
+      kind: arguments
+      inside:
+        kind: call_expression
+        has:
+          field: function
+          any:
+            - kind: identifier
+              regex: ^pipe$
+            - kind: member_expression
+              has:
+                field: property
+                regex: ^pipe$
+  # A schema builder's call, such as `Schema.Struct({ … })`, `Type.Object({ … })` or `Schema.Struct({ … }).pipe(…)`.
+  schema-builder:
+    kind: call_expression
+    has:
+      field: function
+      any:
+        - regex: ^((Schema|Type)\.\w+|wireStruct|renamedWireStruct)$
+        - kind: member_expression
+          has: { field: object, matches: schema-builder }
+  # ST-19: a schema declaration, a constant whose value is a schema builder's call, or a tagged error's class heritage.
+  schema-declaration:
+    any:
+      - kind: variable_declarator
+        has: { field: value, matches: schema-builder }
+      - kind: class_heritage
+        has: { stopBy: end, kind: member_expression, regex: ^Schema\.TaggedError$ }
+rule:
+  matches: counted
+  # The nearest enclosing argument list, counted expression, boundary, or type must be an argument list.
+  # Stopping at a call keeps receivers (`a()` in `a().b()`) and `await` operands from counting twice.
+  inside:
+    kind: arguments
+    stopBy:
+      any:
+        - kind: arguments
+        - matches: counted
+        - matches: boundary
+        - matches: type
+  not:
+    any:
+      - matches: pipe-step
+      # TD-14 requires a generated UUID to be immediately branded; permit precisely that constructor boundary.
+      - all:
+          - any:
+              - pattern: crypto.randomUUID()
+              - pattern: randomUUID()
+          - inside:
+              kind: arguments
+              inside:
+                kind: call_expression
+                has: { field: function, regex: '^[A-Z]\w*Id\.make$' }
+      - matches: type
+      # E8's trailing `Effect.catch((failure) => …)`; E6's and E8's arrows are utilities of `lint/ast-grep/utils`.
+      - all:
+          - has: { field: function, regex: ^Effect\.catch$ }
+          - has: { field: arguments, has: { matches: boundary-catch } }
+      - inside: { stopBy: end, matches: schema-declaration }
+      - inside: { stopBy: end, matches: try-catch }
+      - inside: { stopBy: end, matches: boundary-catch }

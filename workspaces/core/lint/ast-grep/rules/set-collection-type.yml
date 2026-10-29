@@ -1,0 +1,18 @@
+# A `Set` under an array type, which oxlint's fix of `unicorn/prefer-set-has` leaves when it turns a typed array into a
+# set; the fix types it as the read-only set it holds, so fix leaves code that compiles.
+id: set-collection-type
+language: TypeScript
+severity: error
+message: 'Type the set as a read-only set, such as `const LIMITS: ReadonlySet<number> = new Set([1, 2])` (ST-33)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern:
+    context: 'const limits: ReadonlyArray<$ITEM> = []'
+    selector: type_annotation
+  inside:
+    kind: variable_declarator
+    has:
+      field: value
+      pattern: 'new Set($$$ITEMS)'
+fix: ': ReadonlySet<$ITEM>'

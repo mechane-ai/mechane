@@ -1,0 +1,51 @@
+# Pinned tools from the canonical source.
+min_version = "2026.10.17"
+
+[settings]
+locked = true
+
+[tools]
+node = "24.22.1"
+pnpm = "12.16.1"
+bun = "1.4.4"
+"github:macromackie/tenet" = "0.11.0"
+"github:macromackie/ev-grep" = "0.6.3"
+"github:denoland/celld" = "0.6.3"
+"aqua:koalaman/shellcheck" = "0.11.0"
+
+[tasks.setup]
+description = "Install the product's locked packages"
+run = "mise -C workspaces/core run setup"
+
+[tasks.check]
+description = "Run every repository and product check"
+depends = ["contracts:check", "repository:check"]
+run = "mise -C workspaces/core run check"
+
+[tasks."contracts:check"]
+description = "Validate repository and product contracts"
+run = "tenet validate --root ."
+
+[tasks."repository:check"]
+description = "Check repository formatting and bootstrap"
+run = ["workspaces/core/node_modules/.bin/oxfmt --check . '!workspaces/**'", "shellcheck .config/*.sh"]
+
+[tasks.fix]
+description = "Format the repository and apply the product's fixers"
+run = ["workspaces/core/node_modules/.bin/oxfmt . '!workspaces/**'", "mise -C workspaces/core run fix"]
+
+[tasks.dev]
+description = "Serve a disposable local fixture with a scripted model"
+run = "mise -C workspaces/core run dev"
+
+[tasks.start]
+description = "Start a persistent local Mechane installation on celld"
+run = "mise -C workspaces/core run start --"
+
+[tasks."local:reset"]
+description = "Reset an inactive local installation only with --confirm"
+run = "mise -C workspaces/core run local:reset --"
+
+[tasks.mechane]
+description = "Run the Mechane CLI from source"
+run = "mise -C workspaces/core run mechane --"

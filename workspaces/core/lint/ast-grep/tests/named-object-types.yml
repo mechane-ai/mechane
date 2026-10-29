@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: named-object-types
+valid:
+  - 'type LineInput = { readonly line: string };'
+  - 'type ReadInput = PageInput & { readonly line: string };'
+invalid:
+  - 'function parse(input: { line: string }) { return input; }'
+  - 'type ReadInput = PageInput & { readonly line: string } & { readonly column: number };'

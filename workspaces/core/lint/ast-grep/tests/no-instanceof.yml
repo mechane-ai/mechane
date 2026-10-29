@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: no-instanceof
+valid:
+  - 'const retried = call.pipe(Effect.retry({ while: Match.valueTags({ Unreachable: () => true }) }));'
+invalid:
+  - 'const isTransient = (failure: unknown) => failure instanceof Unreachable;'

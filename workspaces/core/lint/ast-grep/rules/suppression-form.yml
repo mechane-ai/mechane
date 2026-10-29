@@ -1,0 +1,32 @@
+# The forms code-lint-suppressions allows: a named rule and a reason on the reported site.
+id: suppression-form
+language: TypeScript
+severity: error
+message: 'Suppress one site and name its rule and a reason, such as `// oxlint-disable-next-line max-params -- the runtime passes four` (AS-02)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: comment
+  any:
+    - all:
+        - regex: (oxlint|eslint)-(disable|enable)
+        - not:
+            regex: ^// oxlint-disable-next-line [\w/-]+(, [\w/-]+)* -- \S
+    - all:
+        - regex: ast-grep-ignore
+        - any:
+            - not:
+                regex: '^// ast-grep-ignore: [\w-]+(, [\w-]+)*$'
+            - not:
+                follows:
+                  kind: comment
+                  not:
+                    regex: ast-grep-ignore
+    - all:
+        - regex: jscpd:ignore-start
+        - not:
+            regex: ^// jscpd:ignore-start -- \S
+    - all:
+        - regex: check-allow
+        - not:
+            regex: ^// [a-z-]+-allow [a-z-]+ -- \S

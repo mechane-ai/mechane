@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: readonly-collections
+valid:
+  - 'type Turns = { readonly turns: ReadonlyArray<Turn> };'
+  - 'type Entry = readonly [string, string];'
+  - 'type Totals = Readonly<Partial<Record<string, number>>>;'
+  - 'function lines(): ReadonlyArray<string> { const buffer: Array<string> = []; return buffer; }'
+invalid:
+  - 'type Turns = { readonly turns: Array<Turn> };'
+  - 'function total({ counts }: { readonly counts: Record<string, number> }): number { return 0; }'
+  - 'type Entry = [string, string];'

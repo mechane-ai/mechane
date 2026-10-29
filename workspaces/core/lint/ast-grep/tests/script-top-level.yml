@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: script-top-level
+valid:
+  - 'await main();'
+  - 'main();'
+invalid:
+  - "console.log('start');"
+  - 'if (isReady) { start(); }'

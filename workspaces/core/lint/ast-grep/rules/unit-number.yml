@@ -1,0 +1,60 @@
+# SC-11: a constant holds one literal in its own unit. A span is a Duration from its largest whole unit, a byte size of
+# a kibibyte or more is a count of `BYTES_PER_KIBIBYTE` or `BYTES_PER_MEBIBYTE`, and no expression combines literals.
+id: unit-number
+language: TypeScript
+severity: error
+message: 'Write the value from its unit, such as `Duration.minutes(15)` or `5 * BYTES_PER_MEBIBYTE`, never `900_000` or `5 * 1024 ** 2` (SC-11)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  literal-operand:
+    any:
+      - kind: number
+      - kind: parenthesized_expression
+        has: { kind: number }
+  span-name: { regex: '(?i)(_ms|_seconds|_minutes|_hours|ms|seconds|minutes|hours)$' }
+  byte-name: { regex: '(?i)(_bytes|bytes)$' }
+rule:
+  any:
+    # an arithmetic expression of two literals, such as `5 * 1024 ** 2` or `60 * 1000`
+    - all:
+        - kind: binary_expression
+        - has: { field: operator, regex: '^(\*|/|\*\*|\+|-)$' }
+        - has:
+            {
+              field: left,
+              any: [{ matches: literal-operand }, { kind: binary_expression, has: { field: left, kind: number } }],
+            }
+        - has: { field: right, matches: literal-operand }
+    # a span written as a count of milliseconds or seconds of 1,000 or more
+    - all:
+        - kind: number
+        - regex: '^[1-9][0-9_]{3,}$'
+        - inside:
+            any:
+              - { kind: variable_declarator, has: { field: name, matches: span-name } }
+              - { kind: pair, has: { field: key, matches: span-name } }
+    # a byte size of 1,024 or more written as a count of bytes
+    - all:
+        - kind: number
+        - regex: '^[1-9][0-9_]{3,}$'
+        - inside:
+            any:
+              - { kind: variable_declarator, has: { field: name, matches: byte-name } }
+              - { kind: pair, has: { field: key, matches: byte-name } }
+    # a whole number of seconds written in milliseconds, such as `Duration.millis(900_000)`
+    - all:
+        - kind: number
+        - regex: '^[1-9][0-9_]*000$'
+        - inside:
+            kind: arguments
+            inside: { kind: call_expression, has: { field: function, regex: '^Duration\.millis$' } }
+    # a whole number of minutes or hours written in the unit below, such as `Duration.seconds(60)`: a multiple of 60 is
+    # a multiple of 20 whose digits sum to a multiple of 3
+    - all:
+        - kind: number
+        - regex: '^(?:[1-9][0-9]*[02468]|[2468])0$'
+        - regex: '^(?:[0369]|[147][0369]*[258]|(?:[258]|[147][0369]*[147])(?:[0369]|[258][0369]*[147])*(?:[147]|[258][0369]*[258]))+$'
+        - inside:
+            kind: arguments
+            inside: { kind: call_expression, has: { field: function, regex: '^Duration\.(seconds|minutes)$' } }

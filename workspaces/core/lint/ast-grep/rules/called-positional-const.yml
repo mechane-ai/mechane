@@ -1,0 +1,25 @@
+# SC-03: a typed const arrow that its own file calls by name takes one destructured object, as TD-01 asks; a typed
+# callback passed by name keeps the positional signature its callee fixes (object-arguments' amendment).
+id: called-positional-const
+language: TypeScript
+severity: error
+message: 'Give a function that owned code calls by name one destructured object, such as `clipText({ text })` (SC-03)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  all:
+    - kind: variable_declarator
+    - has: { field: name, pattern: $NAME }
+    - has: { field: type, kind: type_annotation }
+    - has:
+        field: value
+        kind: arrow_function
+        has:
+          {
+            field: parameters,
+            has: { kind: required_parameter, not: { has: { field: pattern, kind: object_pattern } } },
+          }
+    - inside:
+        kind: program
+        stopBy: end
+        has: { stopBy: end, kind: call_expression, has: { field: function, pattern: $NAME } }

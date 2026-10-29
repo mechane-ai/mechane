@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: plain-id-type
+valid:
+  - 'type Row = { readonly turnId: TurnId };'
+invalid:
+  - 'type Row = { readonly turnId: string };'

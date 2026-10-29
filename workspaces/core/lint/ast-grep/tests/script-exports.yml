@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: script-exports
+valid:
+  - 'async function main() { await run(); }'
+invalid:
+  - 'export function main() { return 0; }'
+  - "export { main } from './run.ts';"

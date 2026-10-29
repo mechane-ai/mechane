@@ -1,0 +1,28 @@
+id: numeric-exit-status
+language: TypeScript
+severity: error
+message: "Pass a member of the program's exit statuses, such as `finish({ status: CheckStatus.Failed })` (CP-05)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: number
+  any:
+    # A status field, such as `finish({ status: 0 })` or `{ status: 1, record }`.
+    - inside:
+        kind: pair
+        has:
+          field: key
+          regex: ^status$
+    # A number that a function declared to return a status returns, such as `return 0;` from `(): ExitStatus`.
+    - inside:
+        kind: return_statement
+        inside:
+          stopBy: end
+          any:
+            - kind: function_declaration
+            - kind: function_expression
+            - kind: arrow_function
+            - kind: method_definition
+          has:
+            field: return_type
+            regex: Status\b

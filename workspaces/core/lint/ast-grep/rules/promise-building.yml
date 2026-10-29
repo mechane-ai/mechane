@@ -1,0 +1,21 @@
+# DO-05: in the worker lane only `utilities` builds a promise, races one or arms a timer, and DO-03's `.then` takes
+# both handlers directly on a call, so every other wait goes through `utilities`' named waits.
+id: promise-building
+language: TypeScript
+severity: error
+message: "Wait through `utilities`, such as `await untilAborted({ signal })` or `wakeList().wait({ timeout, stop })`, and give a call's `.then` both handlers (DO-05)"
+files: ['packages/worker/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  any:
+    - pattern: Promise.withResolvers($$$ARGS)
+    - pattern: Promise.withResolvers<$TYPE>($$$ARGS)
+    - pattern: Promise.race($$$ARGS)
+    - pattern: Promise.any($$$ARGS)
+    - pattern: setTimeout($$$ARGS)
+    - pattern: setInterval($$$ARGS)
+    - all:
+        - pattern: $PROMISE.then($$$ARGS)
+        - any:
+            - not: { pattern: '$PROMISE.then($FULFILLED, $REJECTED)' }
+            - not: { has: { field: function, has: { field: object, kind: call_expression } } }

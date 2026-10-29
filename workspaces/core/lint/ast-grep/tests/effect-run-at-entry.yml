@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: effect-run-at-entry
+valid:
+  - "const read = Effect.fn('read')(function* () { return yield* readRow(input); });"
+invalid:
+  - 'Effect.runPromise(program);'

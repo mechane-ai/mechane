@@ -1,0 +1,13 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: unit-number
+valid:
+  - 'const SANDBOX_IDLE = Duration.minutes(15);'
+  - 'const ALARM_WORK = Duration.seconds(90);'
+  - 'const OUTPUT_TAIL_BYTES = 50 * BYTES_PER_KIBIBYTE;'
+  - 'const HEALTH_INTERVAL_MS = 500;'
+invalid:
+  - 'const SANDBOX_IDLE_MS = 900_000;'
+  - 'const PACK_CHUNK_BYTES = 5 * 1024 ** 2;'
+  - 'const HOLD = Duration.millis(30_000);'
+  - 'const CLI_TIMEOUT = Duration.seconds(60);'
+  - 'const WORK = Duration.minutes(120);'

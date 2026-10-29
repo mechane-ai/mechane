@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: loop-recursion
+valid:
+  - 'function walk({ root }: WalkInput): void { const pending = [root]; while (pending.length > 0) { pending.push(...pending.pop().children); } }'
+invalid:
+  - 'function walk({ node }: WalkInput): void { for (const child of node.children) { walk({ node: child }); } }'

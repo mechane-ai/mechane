@@ -1,0 +1,5 @@
+{
+  "packages/node/deploy-kernel/src/services/fetch-answer.ts": 1,
+  "packages/node/eval/src/store/is-process-running.ts": 1,
+  "packages/node/program/src/files/read-optional-file.ts": 1
+}

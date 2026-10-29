@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: decode-or-die
+valid:
+  - 'const row = yield* Schema.decodeUnknownEffect(Row)(input).pipe(Effect.mapError(toFailed));'
+invalid:
+  - 'const row = yield* Schema.decodeUnknownEffect(Row)(input).pipe(Effect.orDie);'
+  - 'const row = yield* Effect.orDie(Schema.decodeUnknownEffect(Row)(input));'

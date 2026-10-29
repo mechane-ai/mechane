@@ -1,0 +1,5 @@
+{
+  "packages/shared/client/src/errors.ts": 1,
+  "packages/shared/protocol/src/errors/errors.ts": 1,
+  "packages/worker/harness/src/models/metered-events.ts": 1
+}

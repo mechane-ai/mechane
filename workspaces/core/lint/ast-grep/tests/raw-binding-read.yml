@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-binding-read
+valid:
+  - 'const origin = settings.origin;'
+invalid:
+  - 'const origin = env.ORIGIN;'
+  - 'const variables = this.env;'

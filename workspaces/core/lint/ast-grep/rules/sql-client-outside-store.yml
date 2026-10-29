@@ -1,0 +1,13 @@
+id: sql-client-outside-store
+language: TypeScript
+severity: error
+message: "Call the SQL client only in the store module of the database's owner, such as `turnStore.insertTurn({ turn })` elsewhere (DO-06)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**']
+rule:
+  any:
+    - pattern: $HOLDER.sql
+    - pattern: $HOLDER.transactionSync
+    - pattern: sql.exec
+    - pattern: database.exec
+    - pattern: database.prepare

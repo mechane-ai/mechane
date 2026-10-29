@@ -1,0 +1,20 @@
+# `Effect.succeed`, `fail` or `void` outside a callback that must return an Effect; a generator returns the value.
+id: succeed-in-generator
+language: TypeScript
+severity: error
+message: 'Return the value from the generator and fail with `return yield*`, such as `return row` (EF-04)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+# A yielded `Effect.fail` is `generator-guard`'s finding; a yielded `Effect.succeed` or `void` is this rule's.
+rule:
+  any:
+    - pattern: Effect.succeed($$$ARGS)
+    - pattern: Effect.void
+    - pattern: Effect.fail($$$ARGS)
+      not:
+        inside:
+          kind: yield_expression
+  not:
+    inside:
+      stopBy: end
+      matches: effect-callback

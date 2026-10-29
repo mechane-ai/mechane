@@ -1,0 +1,28 @@
+# Every executable is a `main.ts`; its top level holds declarations and one statement that runs main.
+id: script-top-level
+language: TypeScript
+severity: error
+message: 'Move top-level work into `main`, such as `await main();` as the one statement that runs it (ST-31)'
+files: ['**/main.ts']
+ignores: ['**/node_modules/**']
+rule:
+  inside:
+    kind: program
+  any:
+    - kind: export_statement
+    - kind: expression_statement
+    - kind: variable_declaration
+    - kind: statement_block
+    - kind: if_statement
+    - kind: switch_statement
+    - kind: for_statement
+    - kind: for_in_statement
+    - kind: while_statement
+    - kind: do_statement
+    - kind: try_statement
+    - kind: labeled_statement
+    - kind: throw_statement
+  not:
+    any:
+      - pattern: await main();
+      - pattern: main();

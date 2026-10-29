@@ -1,0 +1,22 @@
+# `Effect.forEach` with options that leave out `concurrency`; the fix states the default, one step at a time.
+id: for-each-options-concurrency
+language: TypeScript
+severity: error
+message: 'State how the steps run, such as `Effect.forEach(items, step, { discard: true, concurrency: 1 })` (EF-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: 'Effect.forEach($ITEMS, $STEP, { $$$OPTIONS })'
+  not:
+    has:
+      stopBy: end
+      kind: property_identifier
+      regex: ^concurrency$
+# The options' text without a trailing comma, so the stated concurrency follows the last option.
+transform:
+  LISTED:
+    replace:
+      source: $$$OPTIONS
+      replace: ',\s*$'
+      by: ''
+fix: 'Effect.forEach($ITEMS, $STEP, { $LISTED, concurrency: 1 })'

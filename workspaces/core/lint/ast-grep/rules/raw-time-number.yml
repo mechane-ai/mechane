@@ -1,0 +1,19 @@
+# TD-16: an instant is a `DateTime.Utc` and a span a `Duration.Duration` in every Type; a `number` named for a time,
+# by a unit suffix, a measure word or `At`, holds epoch or span milliseconds, which only an Encoded form keeps.
+id: raw-time-number
+language: TypeScript
+severity: error
+message: 'Type an instant as `DateTime.Utc` and a span as `Duration.Duration`, such as `readonly expiresAt: DateTime.Utc` or `readonly lifetime: Duration.Duration` (TD-16)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: property_signature
+  all:
+    - has:
+        field: name
+        regex: ([a-z](Ms|Seconds|Minutes|Hours|At|Timeout|Deadline|Delay|Interval|Duration|Grace|Lifetime|Window|Ttl|Age|Period)|^(ms|seconds|timeout|deadline|delay|interval|duration|grace|lifetime|window|ttl|age|period))$
+    - has:
+        field: type
+        has:
+          kind: predefined_type
+          regex: ^number$

@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: measure-word
+language: TypeScript
+rule:
+  regex: '^#?(timeout|deadline|delay|interval|limit|size|budget|duration|grace|allowance|cap|lifetime|window|ttl|age|period|threshold)$|[a-z0-9](Timeout|Deadline|Delay|Interval|Limit|Size|Budget|Duration|Grace|Allowance|Cap|Lifetime|Window|Ttl|Age|Period|Threshold)$|(^|_)(TIMEOUT|DEADLINE|DELAY|INTERVAL|LIMIT|SIZE|BUDGET|DURATION|GRACE|ALLOWANCE|CAP|LIFETIME|WINDOW|TTL|AGE|PERIOD|THRESHOLD)$|^#?(max|min)[A-Z]|^(MAX|MIN)_'

@@ -1,0 +1,12 @@
+# Every executable `main.ts` and the Worker module the runtime loads run Effects; elsewhere one composes with `yield*`.
+id: effect-run-at-entry
+language: TypeScript
+severity: error
+message: 'Compose the Effect with `yield*` and run it only at an entry point, such as `const row = yield* readRow(input)` (EF-12)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/main.ts', packages/worker/app/src/worker.ts]
+rule:
+  pattern: Effect.$RUN
+constraints:
+  RUN:
+    regex: ^run

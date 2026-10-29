@@ -1,0 +1,17 @@
+id: diagnostic-trailing-period
+language: TypeScript
+severity: error
+message: "End the diagnostic without a period, such as `reason: 'the file is missing'` (ER-11)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  all:
+    - any:
+        - kind: string
+        - kind: template_string
+    - regex: "\\.['\"`]$"
+    - inside:
+        kind: pair
+        has:
+          field: key
+          regex: ^(line|diagnostic|detail|issue|reason|message)$

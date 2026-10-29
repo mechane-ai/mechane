@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: sql-text-outside-store
+valid:
+  - 'const rows = turnStore.listTurns({ mechId });'
+invalid:
+  - "const statement = 'SELECT 1';"

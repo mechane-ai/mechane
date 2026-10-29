@@ -1,0 +1,55 @@
+# A top-level constant of an executable holds a literal, a function, `new URL(path, import.meta.url)`, or
+# `fileURLToPath` of a constant bound to such a URL.
+id: script-top-level-constants
+language: TypeScript
+severity: error
+message: "Initialize a top-level constant from a literal, a function, `new URL(path, import.meta.url)` or `fileURLToPath` of such a URL constant, such as `const PROGRAM = 'checks'` (ST-31)"
+files: ['**/main.ts']
+ignores: ['**/node_modules/**']
+utils:
+  declared-url:
+    pattern: new URL($PATH, import.meta.url)
+  declared-path:
+    pattern: fileURLToPath($URL)
+    has: { field: arguments, has: { kind: identifier } }
+  declared:
+    any:
+      - matches: declared-url
+      - matches: declared-path
+  work:
+    any:
+      - kind: await_expression
+      - kind: member_expression
+      - kind: new_expression
+        not:
+          matches: declared-url
+      - kind: call_expression
+        not:
+          matches: declared-path
+rule:
+  any:
+    - kind: lexical_declaration
+      inside:
+        kind: program
+      regex: ^let\b
+    - kind: variable_declarator
+      inside:
+        kind: lexical_declaration
+        inside:
+          kind: program
+      has:
+        field: value
+        any:
+          - matches: work
+          - not:
+              any:
+                - kind: arrow_function
+                - kind: function_expression
+                - matches: declared
+            has:
+              stopBy:
+                any:
+                  - kind: arrow_function
+                  - kind: function_expression
+                  - matches: declared
+              matches: work

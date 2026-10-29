@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-literal-schema
+valid:
+  - 'const Step = Schema.Literal(DeviceStep.Approve);'
+  - 'const Status = Schema.Literals([MachineStatus.Starting, MachineStatus.Ready]);'
+invalid:
+  - "const Step = Schema.Literal('approve');"
+  - "const Status = Schema.Literals(['starting', 'ready']);"

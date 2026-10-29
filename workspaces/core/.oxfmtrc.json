@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 120,
+  "tabWidth": 2,
+  "useTabs": false,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "quoteProps": "consistent",
+  "objectWrap": "collapse",
+  "proseWrap": "preserve",
+  "sortImports": {
+    "groups": [["builtin", "external", "internal", "subpath"], ["parent", "sibling", "index"], "unknown"],
+    "newlinesBetween": false,
+    "ignoreCase": true
+  },
+  "sortPackageJson": { "sortScripts": true },
+  "jsdoc": {
+    "commentLineStrategy": "singleLine",
+    "lineWrappingStyle": "greedy",
+    "capitalizeDescriptions": false,
+    "addDefaultToDescription": false
+  },
+  "overrides": [{ "files": ["**/*.md"], "options": { "proseWrap": "always" } }],
+  "ignorePatterns": [
+    ".contracts/**",
+    "pnpm-lock.yaml",
+    "packages/node/cli/reference.json",
+    "lint/wire.json",
+    "lint/migrations.json",
+    "lint/baseline/**"
+  ]
+}

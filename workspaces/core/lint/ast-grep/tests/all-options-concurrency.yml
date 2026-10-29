@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: all-options-concurrency
+valid:
+  - 'Effect.all(effects, { discard: true, concurrency: 1 });'
+invalid:
+  - 'Effect.all(effects, { discard: true });'
+  - 'Effect.all(effects, { discard: true, });'

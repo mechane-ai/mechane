@@ -1,0 +1,15 @@
+{
+  "name": "@mechane/sandbox-store",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/store": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

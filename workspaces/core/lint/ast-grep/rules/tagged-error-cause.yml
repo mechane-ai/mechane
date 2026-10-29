@@ -1,0 +1,19 @@
+id: tagged-error-cause
+language: TypeScript
+severity: error
+message: "Name a tagged error's dependency text `reason`, such as `{ path: Schema.String, reason: Schema.String }` (ER-01)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: property_identifier
+  regex: ^cause$
+  inside:
+    kind: pair
+    field: key
+    inside:
+      kind: object
+      inside:
+        kind: arguments
+        inside:
+          kind: call_expression
+          regex: ^Schema\.TaggedError

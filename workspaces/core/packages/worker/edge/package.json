@@ -1,0 +1,20 @@
+{
+  "name": "@mechane/edge",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/bindings": "workspace:*",
+    "@mechane/credentials": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/integrations": "workspace:*",
+    "@mechane/logs": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

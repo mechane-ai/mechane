@@ -1,0 +1,89 @@
+# Owned functions take one destructured object; callbacks a library calls and runtime-defined signatures keep theirs,
+# as do the lanes' declaration files, which merge with the runtime's own signatures.
+id: object-arguments
+language: TypeScript
+severity: error
+message: 'Give an owned function one destructured object argument, such as `parse({ line })` (TD-01)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  positional:
+    any:
+      - has:
+          kind: required_parameter
+          nthChild:
+            position: 2
+            ofRule:
+              any:
+                - kind: required_parameter
+                - kind: optional_parameter
+      - has:
+          kind: optional_parameter
+rule:
+  any:
+    - kind: formal_parameters
+      inside:
+        any:
+          - kind: function_declaration
+          - kind: generator_function_declaration
+          - all:
+              - kind: method_definition
+              - not:
+                  has:
+                    field: name
+                    regex: ^constructor$
+              - not:
+                  has:
+                    kind: override_modifier
+              - not:
+                  inside:
+                    kind: object
+                    stopBy: end
+          - all:
+              - any:
+                  - kind: arrow_function
+                  - kind: function_expression
+              - any:
+                  - inside:
+                      kind: variable_declarator
+                      # A callback const typed by its callee's signature, such as `const isLate: (turn: Turn) => boolean`,
+                      # keeps the positional parameters that signature gives it (SC-03).
+                      not: { has: { field: type, kind: type_annotation } }
+                  # A callback an object holds keeps the signature the const's type gives it, a library's such as
+                  # `GlobOptionsWithoutFileTypes['exclude']`, or an owned function type, which the rule checks where
+                  # it is declared.
+                  - inside:
+                      kind: pair
+                      inside:
+                        kind: object
+                        inside:
+                          kind: variable_declarator
+                          not: { has: { field: type, kind: type_annotation } }
+      any:
+        - matches: positional
+        - has:
+            kind: required_parameter
+            has:
+              field: pattern
+              not:
+                kind: object_pattern
+    # A function type or an interface method an owned callback is declared by takes one named object type.
+    - kind: formal_parameters
+      inside:
+        any:
+          - all:
+              - kind: function_type
+              - not: { inside: { kind: type_annotation, inside: { kind: variable_declarator } } }
+          - kind: method_signature
+      any:
+        - matches: positional
+        - has:
+            kind: required_parameter
+            has:
+              field: type
+              not:
+                has:
+                  any:
+                    - kind: type_identifier
+                    - kind: generic_type
+                    - kind: nested_type_identifier

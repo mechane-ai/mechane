@@ -1,0 +1,56 @@
+# ER-06: a defect only for a broken invariant, at the allowed sites: `decodeUnknownSync` at an object's RPC input and in
+# the store kernel's decode verbs, `Option.getOrThrow` after `Option.fromNullishOr`, and `Effect.orDie` on a release.
+# The baseline holds every other defect, each with its invariant stated in a comment above it, since AS-02 caps a
+# rule's suppressions at three.
+id: defect-sites
+language: TypeScript
+severity: error
+message: 'Answer a typed failure, or die only where ER-06 allows, such as `Option.getOrThrow(Option.fromNullishOr(row))` (ER-06)'
+files: ['packages/**/*.ts']
+# The store kernel's decode verbs are the stores' one decode of a row.
+ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/worker/store/src/**']
+rule:
+  any:
+    # an object's RPC method decodes its input in its body, never in its constructor
+    - all:
+        - pattern: Schema.decodeUnknownSync($$$ARGS)
+        - not:
+            inside:
+              stopBy: end
+              kind: method_definition
+              not: { has: { field: name, regex: '^constructor$' } }
+              inside: { stopBy: end, kind: class_declaration, has: { field: name, regex: 'Object$' } }
+    # a value the types exclude only after `Option.fromNullishOr`
+    - all:
+        - pattern: Option.getOrThrow($VALUE)
+        - not: { has: { field: arguments, has: { stopBy: end, pattern: Option.fromNullishOr } } }
+    - all:
+        - any:
+            - pattern: Effect.orDie
+            - pattern: Effect.die($$$ARGS)
+            - pattern: Effect.dieMessage($$$ARGS)
+        - not:
+            any:
+              - inside:
+                  stopBy: end
+                  kind: arguments
+                  nthChild: 2
+                  inside: { kind: call_expression, has: { field: function, regex: '^Effect\.acquireRelease$' } }
+              - inside:
+                  stopBy: end
+                  kind: variable_declarator
+                  has: { field: name, pattern: $RELEASE }
+                  inside:
+                    kind: lexical_declaration
+                    inside:
+                      kind: statement_block
+                      has:
+                        stopBy:
+                          any:
+                            - kind: statement_block
+                            - kind: arrow_function
+                            - kind: function_declaration
+                            - kind: function_expression
+                            - kind: generator_function
+                            - kind: generator_function_declaration
+                        pattern: Effect.acquireRelease($ACQUIRE, $RELEASE)

@@ -1,0 +1,18 @@
+{
+  "packages/node/deploy-kernel/src/production-variables.ts": 1,
+  "packages/node/deploy-kernel/src/run-git.ts": 3,
+  "packages/node/deploy-kernel/src/run-wrangler.ts": 1,
+  "packages/node/deploy-kernel/src/services/read-json.ts": 2,
+  "packages/node/deploy-kernel/src/services/read-open-router-key.ts": 1,
+  "packages/node/deploy-preflight/src/check-checkout.ts": 3,
+  "packages/node/deploy-preflight/src/check-tools.ts": 2,
+  "packages/node/deploy-preflight/src/deployed-state.ts": 1,
+  "packages/node/deploy-preflight/src/read-formats.ts": 1,
+  "packages/node/deploy/src/rollout/await-readiness.ts": 3,
+  "packages/node/deploy/src/rollout/confirm-tag.ts": 3,
+  "packages/node/deploy/src/rollout/roll-back.ts": 2,
+  "packages/node/release/src/clean-revision.ts": 1,
+  "packages/node/release/src/load-release-settings.ts": 1,
+  "packages/node/release/src/upload-release.ts": 3,
+  "packages/worker/edge/src/routing/peer.ts": 1
+}

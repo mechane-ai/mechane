@@ -1,0 +1,13 @@
+# TD-04: the type of a store's object of functions is inferred from its factory, `type XRecords = ReturnType<typeof
+# xRecords>`, beside the factory in its `*-records.ts` file; a `*Records` alias written as an object type repeats it.
+id: records-type-inferred
+language: TypeScript
+severity: error
+message: 'Infer the records type from its factory beside it, such as `type TurnRecords = ReturnType<typeof turnRecords>` (TD-04)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: type_alias_declaration
+  all:
+    - has: { field: name, regex: 'Records$' }
+    - has: { field: value, kind: object_type }

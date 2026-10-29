@@ -1,0 +1,23 @@
+# A migrations file holds only its imports and its `MIGRATIONS`, whose steps `max-lines-per-function` leaves
+# unbounded, so no other function there escapes the bound.
+id: migrations-statements
+language: TypeScript
+severity: error
+message: 'Keep a migrations file to its imports and `MIGRATIONS`, such as `export const MIGRATIONS: ReadonlyArray<Migration> = [step]`, and move any helper to a file of its own (ST-22)'
+files: ['**/migrations.ts']
+ignores: ['**/node_modules/**']
+rule:
+  inside:
+    kind: program
+  any:
+    - kind: class_declaration
+    - kind: enum_declaration
+    - kind: export_statement
+    - kind: expression_statement
+    - kind: function_declaration
+    - kind: interface_declaration
+    - kind: lexical_declaration
+    - kind: type_alias_declaration
+    - kind: variable_declaration
+  not:
+    pattern: 'export const MIGRATIONS: $TYPE = $STEPS'

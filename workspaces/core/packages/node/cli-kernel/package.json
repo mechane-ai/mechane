@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/cli-kernel",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/client": "workspace:*",
+    "@mechane/commands": "workspace:*",
+    "@mechane/eval": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

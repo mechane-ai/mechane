@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: http-status-literals-typescript
+valid:
+  - 'const answer = { status: HttpStatusCode.NotFound };'
+invalid:
+  - 'const answer = { status: 404 };'

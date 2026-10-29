@@ -1,0 +1,23 @@
+id: trailing-if
+language: TypeScript
+severity: error
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+message: 'Invert an `if` that ends a function and holds more than two statements into a guard, such as `if (!isReady) { return; }` (ST-26)'
+rule:
+  kind: if_statement
+  not: { has: { field: alternative, kind: else_clause } }
+  nthChild: { position: 1, reverse: true }
+  has:
+    field: consequence
+    kind: statement_block
+    has: { matches: trailing-if-overflow }
+  inside:
+    kind: statement_block
+    inside:
+      field: body
+      any:
+        - kind: function_declaration
+        - kind: function_expression
+        - kind: arrow_function
+        - kind: method_definition

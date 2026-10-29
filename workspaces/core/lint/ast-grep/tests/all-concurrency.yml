@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: all-concurrency
+valid:
+  - 'Effect.all([readTurn, readMech], { concurrency: 1 });'
+invalid:
+  - 'Effect.all([readTurn, readMech]);'

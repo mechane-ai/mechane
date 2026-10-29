@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: class-field-form
+valid:
+  - 'class Stack { readonly #ready = false; }'
+  - "class Gone extends Base { override readonly message = 'gone'; }"
+invalid:
+  - 'class Stack { ready = false; }'
+  - 'class Stack { readonly ready = false; }'

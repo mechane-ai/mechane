@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: nullable-type
+valid:
+  - 'type Row = { readonly endedAt: Option.Option<number> };'
+  - 'type Rows = ReadonlyMap<string, undefined>;'
+invalid:
+  - 'type Row = { readonly endedAt: number | null };'
+  - 'const Row = Schema.NullOr(Schema.Number);'

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: trailing-if
+valid:
+  - 'function check() { if (!isReady) { return; } open(); read(); close(); }'
+invalid:
+  - 'function check() { if (isReady) { open(); read(); close(); } }'

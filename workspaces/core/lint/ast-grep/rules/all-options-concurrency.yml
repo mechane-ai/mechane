@@ -1,0 +1,22 @@
+# `Effect.all` with options that leave out `concurrency`; the fix states the default, one effect at a time.
+id: all-options-concurrency
+language: TypeScript
+severity: error
+message: 'State how the effects run, such as `Effect.all(effects, { discard: true, concurrency: 1 })` (EF-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: 'Effect.all($EFFECTS, { $$$OPTIONS })'
+  not:
+    has:
+      stopBy: end
+      kind: property_identifier
+      regex: ^concurrency$
+# The options' text without a trailing comma, so the stated concurrency follows the last option.
+transform:
+  LISTED:
+    replace:
+      source: $$$OPTIONS
+      replace: ',\s*$'
+      by: ''
+fix: 'Effect.all($EFFECTS, { $LISTED, concurrency: 1 })'

@@ -1,0 +1,9 @@
+# Only a mech's own object calls its sandbox, so no operation and no other object reaches a sandbox directly.
+id: sandbox-stub-outside-mech
+language: TypeScript
+severity: error
+message: "Call a mech's sandbox only from `packages/worker/mech/src`, such as `sandboxStub({ mechId })` in the mech's own object (055)"
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/worker/mech/src/**]
+rule:
+  pattern: sandboxStub($$$ARGUMENTS)

@@ -1,0 +1,34 @@
+# Money, token counts, sizes and log positions held as plain numbers, which their unit brands type instead.
+id: raw-money-number
+language: TypeScript
+severity: error
+message: "Type a measured value with its unit's brand, such as `readonly costMicros: Micros` (TD-15)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  unit-name:
+    regex: (Micros|Tokens|Bytes|Chars|^sequence|Sequence)$
+rule:
+  any:
+    - kind: property_signature
+      all:
+        - has:
+            field: name
+            matches: unit-name
+        - has:
+            field: type
+            has:
+              kind: predefined_type
+              regex: ^number$
+    - kind: pair
+      all:
+        - has:
+            field: key
+            matches: unit-name
+        - has:
+            field: value
+            any:
+              - regex: ^Schema\.(Int|Number|Finite|NonNegativeInt)$
+              - has:
+                  stopBy: end
+                  regex: ^Schema\.(Int|Number|Finite|NonNegativeInt)$

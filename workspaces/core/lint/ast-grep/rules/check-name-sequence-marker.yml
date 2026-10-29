@@ -1,0 +1,15 @@
+id: check-name-sequence-marker
+language: TypeScript
+severity: error
+message: "Name the check for its guarantee alone, such as `name: 'a revoked key is refused'` (TS-03)"
+files: ['**/*.ts']
+rule:
+  any:
+    - kind: string
+    - kind: template_string
+  regex: "^['\"`]\\s*(\\([a-z0-9]+\\)|[a-z0-9]+[.):]\\s|step\\s*[0-9]+)"
+  inside:
+    kind: pair
+    has:
+      field: key
+      regex: ^(name|guarantee)$

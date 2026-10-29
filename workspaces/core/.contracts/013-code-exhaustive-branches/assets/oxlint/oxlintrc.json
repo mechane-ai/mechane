@@ -1,0 +1,18 @@
+{
+  "jsPlugins": [{ "name": "unicorn-js", "specifier": "eslint-plugin-unicorn" }],
+  "options": { "typeAware": true },
+  "rules": {
+    "typescript/switch-exhaustiveness-check": [
+      "error",
+      {
+        "allowDefaultCaseForExhaustiveSwitch": false,
+        "considerDefaultExhaustiveForUnions": false,
+        "requireDefaultForNonUnion": true
+      }
+    ],
+    "unicorn-js/prefer-switch": [
+      "error",
+      { "emptyDefaultCase": "no-default-case", "minimumCases": 2 }
+    ]
+  }
+}

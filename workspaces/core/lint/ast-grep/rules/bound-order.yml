@@ -1,0 +1,12 @@
+# A bound names its subject first, then `MAX` and its unit, so the bounds of one subject sort together.
+id: bound-order
+language: TypeScript
+severity: error
+message: 'Name a bound for its subject before `MAX`, such as `TURN_MAX_SECONDS` in place of `MAX_TURN_SECONDS` (NM-08)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: variable_declarator
+  has:
+    field: name
+    regex: ^MAX_

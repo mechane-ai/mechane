@@ -1,0 +1,13 @@
+{
+  "path": ["packages", "lint"],
+  "format": ["typescript", "javascript", "yaml", "json"],
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/reference.json", "lint/baseline/**"],
+  "minTokens": 50,
+  "minLines": 6,
+  "maxLines": 1000000,
+  "maxSize": "100mb",
+  "threshold": 0,
+  "exitCode": 1,
+  "reporters": ["console"],
+  "gitignore": true
+}

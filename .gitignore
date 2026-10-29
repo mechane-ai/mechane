@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+.celld/
+.dev.vars
+.env
+.env.*
+mise.local.toml
+mise.local.lock
+.tenet/
+*.log

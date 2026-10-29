@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: numeric-exit-status
+valid:
+  - 'finish({ status: CheckStatus.Failed });'
+invalid:
+  - 'finish({ status: 1 });'
+  - 'function exit(): CheckStatus { return 0; }'

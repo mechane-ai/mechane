@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: class-accessibility-keyword
+valid:
+  - 'class Stack { readonly #ready = false; }'
+invalid:
+  - 'class Stack { private ready = false; }'

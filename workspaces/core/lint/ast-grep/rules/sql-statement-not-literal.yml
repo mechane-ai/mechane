@@ -1,0 +1,29 @@
+id: sql-statement-not-literal
+language: TypeScript
+severity: error
+message: "Pass the SQL client one whole literal statement, such as `sql.exec('SELECT 1')` (DO-06)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: call_expression
+  all:
+    - has:
+        field: function
+        any:
+          - pattern: $CLIENT.exec
+          - pattern: $CLIENT.prepare
+    - has:
+        field: arguments
+        has:
+          nthChild: 1
+          not:
+            any:
+              - kind: string
+              - all:
+                  - kind: template_string
+                  - not:
+                      has:
+                        kind: template_substitution
+constraints:
+  CLIENT:
+    regex: (^|\.)(sql|database)$

@@ -1,0 +1,87 @@
+# SC-11 and contract 063: every number but -1, 0 and 1 is named. It stays bare as one module-level constant's whole value,
+# a property of the object that is one, the one argument of the unit call that is one, such as `Duration.seconds(30)`,
+# or a count of a unit constant, such as `50 * BYTES_PER_KIBIBYTE`. Elsewhere only an object's property value, an index,
+# an enumeration member and a type alias's whole value or union member keep one; a constants file holds no exemption.
+# A direct const in an exported MIGRATIONS callback also names one literal, keeping its value inside the step's hash.
+id: magic-number
+language: TypeScript
+severity: error
+message: 'Name the number with a module constant, or a direct const in a migration callback, such as `const MAX_ROWS = 10_000` (SC-11)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  # A module-level constant's value, or the value of a property of the object that is its value.
+  constant-value:
+    any:
+      - matches: module-value
+      - inside: { kind: pair, field: value, inside: { kind: object, matches: module-value } }
+  # A module-level constant's value, seen through `as` and `satisfies`.
+  module-value:
+    any:
+      - inside: { field: value, matches: module-declarator }
+      - inside:
+          any: [{ kind: as_expression }, { kind: satisfies_expression }]
+          inside: { field: value, matches: module-declarator }
+  module-declarator:
+    kind: variable_declarator
+    inside:
+      kind: lexical_declaration
+      any:
+        - inside: { kind: program }
+        - inside: { kind: export_statement, inside: { kind: program } }
+  # Only a const directly in an array callback of the module's exported MIGRATIONS; nested helpers do not qualify.
+  migration-value:
+    inside:
+      field: value
+      kind: variable_declarator
+      inside:
+        kind: lexical_declaration
+        regex: '^const\b'
+        inside:
+          kind: statement_block
+          inside:
+            any: [{ kind: arrow_function }, { kind: function_expression }]
+            inside:
+              kind: array
+              inside:
+                field: value
+                kind: variable_declarator
+                has: { field: name, regex: '^MIGRATIONS$' }
+                inside:
+                  kind: lexical_declaration
+                  inside:
+                    kind: export_statement
+                    pattern: 'export const MIGRATIONS: $TYPE = $STEPS'
+                    inside: { kind: program }
+  # A type alias's whole value, or a member of the union that is.
+  alias-value:
+    inside:
+      kind: literal_type
+      any:
+        - inside: { kind: type_alias_declaration, field: value }
+        - inside:
+            kind: union_type
+            stopBy: { not: { kind: union_type } }
+            inside: { kind: type_alias_declaration, field: value }
+rule:
+  kind: number
+  not:
+    any:
+      - regex: ^[01]n?$
+      - matches: constant-value
+      - inside: { kind: unary_expression, matches: constant-value }
+      - matches: migration-value
+      - inside: { kind: unary_expression, matches: migration-value }
+      # the one argument of a unit call, such as `Duration.minutes(15)` (SC-11)
+      - inside:
+          kind: arguments
+          not: { has: { nthChild: 2 } }
+          inside: { kind: call_expression, matches: constant-value }
+      # a count of a unit constant, such as `50 * BYTES_PER_KIBIBYTE` (SC-11)
+      - inside:
+          { kind: binary_expression, regex: '^[0-9_]+ \* BYTES_PER_(KIBIBYTE|MEBIBYTE)$', matches: constant-value }
+      - inside: { kind: subscript_expression, field: index }
+      - inside: { kind: literal_type, inside: { kind: lookup_type } }
+      - inside: { kind: pair, field: value }
+      - inside: { kind: enum_assignment, field: value }
+      - matches: alias-value

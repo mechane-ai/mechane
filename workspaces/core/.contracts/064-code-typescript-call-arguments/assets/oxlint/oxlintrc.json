@@ -1,0 +1,5 @@
+{
+  "rules": {
+    "unicorn/no-await-expression-member": "error"
+  }
+}

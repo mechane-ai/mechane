@@ -1,0 +1,31 @@
+# Outside `utilities`, a promise is awaited rather than chained: no `.catch` with a named handler, `.finally`,
+# `Promise.resolve`, `new Promise` or `.then` on a `.then`. A capitalized object's `catch`, such as `Effect.catch`, is no
+# promise's, and catch-handlers-typescript, which contract 024 ships, rejects a `.catch` whose handler is written inline.
+id: promise-chain
+language: TypeScript
+severity: error
+message: 'Await each promise in an async function rather than chain it, such as `const answer = await call()` in place of `call().then(read).then(use)` (DO-03)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/utilities/**']
+rule:
+  any:
+    - pattern: $PROMISE.finally($$$ARGS)
+    - pattern: Promise.resolve($$$ARGS)
+    - pattern: new Promise($$$ARGS)
+    - pattern: new Promise<$TYPE>($$$ARGS)
+    - pattern: $PROMISE.then($$$FIRST).then($$$SECOND)
+    - all:
+        - pattern: $PROMISE.catch($$$ARGS)
+        - not:
+            has:
+              field: function
+              has:
+                field: object
+                regex: ^[A-Z]
+        - not:
+            has:
+              field: arguments
+              has:
+                any:
+                  - kind: arrow_function
+                  - kind: function_expression

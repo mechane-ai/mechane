@@ -1,0 +1,25 @@
+# ER-08: `Effect.catch` answers every failure only at an entry boundary, as a trailing argument of the `Effect.fn` of
+# `serve`, `servePage` or `runCommand`: `Effect.catch((failure) => …)`, or `(run, input) => Effect.catch(run, …)`
+# where the answer reads the call's input.
+id: catch-all-outside-boundary
+language: TypeScript
+severity: error
+message: 'Recover from each failure by its tag, such as `Effect.catchTags({ MechNotFound: () => … })`; only `serve`, `servePage` and `runCommand` catch everything (ER-08)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  boundary-fn:
+    kind: call_expression
+    has:
+      field: function
+      kind: call_expression
+      all:
+        - has: { field: function, regex: '^Effect\.fn$' }
+        - has: { field: arguments, has: { kind: string, regex: "^'(serve|servePage|runCommand)'$" } }
+rule:
+  kind: call_expression
+  has: { field: function, regex: '^Effect\.catch$' }
+  not:
+    any:
+      - inside: { kind: arguments, inside: { matches: boundary-fn } }
+      - inside: { kind: arrow_function, inside: { kind: arguments, inside: { matches: boundary-fn } } }

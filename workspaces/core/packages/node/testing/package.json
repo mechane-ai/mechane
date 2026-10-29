@@ -1,0 +1,18 @@
+{
+  "name": "@mechane/testing",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/release": "workspace:*",
+    "@mechane/stack": "workspace:*",
+    "cookie": "1.1.1",
+    "effect": "4.0.7"
+  }
+}

@@ -1,0 +1,15 @@
+id: no-ok-false
+language: TypeScript
+severity: error
+message: 'Fail with a tagged error instead of an `{ ok: false }` object, such as `return yield* new MechNotFound({ mechId })` (ER-04)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: pair
+  all:
+    - has:
+        field: key
+        regex: ^ok$
+    - has:
+        field: value
+        kind: 'false'

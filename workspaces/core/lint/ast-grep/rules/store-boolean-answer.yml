@@ -1,0 +1,14 @@
+# A store function that answers its outcome as a boolean, which a tagged value names instead.
+id: store-boolean-answer
+language: TypeScript
+severity: error
+message: 'Answer a store outcome as a tagged value, such as `TurnEnd.cases.Ended.make({ turnId })` in place of `true` (TD-17)'
+files: ['packages/worker/**/*store/**/*.ts']
+ignores: ['**/node_modules/**', 'packages/worker/store/src/**']
+rule:
+  kind: function_declaration
+  has:
+    field: return_type
+    has:
+      kind: predefined_type
+      regex: ^boolean$

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: encode-sync
+valid:
+  - 'const text = Schema.encodeSync(SecretsFile)(secrets);'
+invalid:
+  - 'const text = yield* Schema.encodeEffect(SecretsFile)(secrets).pipe(Effect.orDie);'

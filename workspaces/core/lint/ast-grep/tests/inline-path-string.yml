@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: inline-path-string
+valid:
+  - 'function guestHealthPath({ machineId }: GuestHealthPathInput): string { return `/${GuestSegment.Machines}/${machineId}/${GuestSegment.Health}`; }'
+  - 'const line = `listing ${count} events`;'
+invalid:
+  - 'const path = `/machines/${machineId}/health`;'
+  - "const url = '/packs/' + sha;"

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: sandbox-stub-outside-mech
+valid:
+  - 'const stub = mechStub({ mechId });'
+invalid:
+  - 'const stub = sandboxStub({ mechId });'

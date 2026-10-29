@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: boolean-prefix
+language: TypeScript
+rule:
+  regex: '^#?(is|has|can|should|was|needs|include|allow|skip|keep|use)([A-Z_]|$)|^(IS|HAS|CAN|SHOULD|WAS|NEEDS|INCLUDE|ALLOW|SKIP|KEEP|USE)_'

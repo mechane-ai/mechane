@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: sql-client-outside-store
+valid:
+  - 'turnStore.insertTurn({ turn });'
+invalid:
+  - 'ctx.storage.sql.exec(statement);'
+  - 'database.prepare(statement);'

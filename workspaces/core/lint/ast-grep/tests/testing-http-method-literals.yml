@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: testing-http-method-literals
+valid:
+  - 'const answer = await fetch(url, { method: HttpMethod.Post });'
+  - "const ref = 'HEAD';"
+invalid:
+  - "const answer = await fetch(url, { method: 'POST' });"
+  - "export const verb = 'POST';"
+  - "type ReadMethod = 'GET' | 'HEAD';"
+  - "if (request.method === 'head') { stop(); }"

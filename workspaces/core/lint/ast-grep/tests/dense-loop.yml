@@ -1,0 +1,15 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: dense-loop
+valid:
+  - 'for (const table of tables) { await copyTable({ table }); }'
+  - 'const seen = new Set(items);'
+  - "function itemCache(): ItemCache { const seen = new Set<Item>(); const remember: ItemCache['remember'] = ({ items }) => { for (const item of items) { seen.add(item); } }; return { remember }; }"
+invalid:
+  - 'for (const table of tables) { while (Option.isSome(next)) { next = copyPage({ table }); } }'
+  - 'while (true) { step(); }'
+  - 'for (const file of files) { offset += 1; }'
+  - 'for (const item of items) { seen.add(item); }'
+  - 'function seenItems({ items }: SeenInput): ReadonlySet<Item> { const seen = new Set<Item>(); for (const item of items) { seen.add(item); } return seen; }'
+  - "function words({ lines }: WordsInput): ReadonlyArray<string> { const found: Array<string> = []; const collect: (line: string) => void = (line) => { for (const word of line.split(' ')) { found.push(word); } }; lines.forEach(collect); return found; }"
+  - "function seenWords({ lines }: WordsInput): ReadonlySet<string> { const seen = new Set<string>(); const collect: (line: string) => void = (line) => { for (const word of line.split(' ')) { seen.add(word); } }; lines.forEach(collect); return seen; }"
+  - 'function fill({ holder, lines }: FillInput): void { const { found } = holder; for (const line of lines) { found.push(line); } }'

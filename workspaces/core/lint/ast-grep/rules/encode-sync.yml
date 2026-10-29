@@ -1,0 +1,19 @@
+# An encoding of the code's own output that dies when it fails; the fix encodes it with `encodeSync`, which throws the
+# same defect inside the generator.
+id: encode-sync
+language: TypeScript
+severity: error
+message: 'Encode the output with `encodeSync`, such as `Schema.encodeSync(SecretsFile)(secrets)` (EF-16)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: yield* Schema.$ENCODE($SCHEMA)($VALUE).pipe(Effect.orDie)
+constraints:
+  ENCODE: { regex: '^encode(Unknown)?Effect$' }
+transform:
+  SYNC:
+    replace:
+      source: $ENCODE
+      replace: 'Effect$'
+      by: 'Sync'
+fix: 'Schema.$SYNC($SCHEMA)($VALUE)'

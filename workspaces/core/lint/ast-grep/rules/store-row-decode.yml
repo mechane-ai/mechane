@@ -1,0 +1,12 @@
+# A store that decodes its rows itself, where the store kernel's decoding is the one verb.
+id: store-row-decode
+language: TypeScript
+severity: error
+message: 'Decode a store row with the store kernel, such as `decodeRows({ cursor, schema: TurnRow })` (TD-22)'
+files: ['packages/worker/**/*store/**/*.ts']
+ignores: ['**/node_modules/**', 'packages/worker/store/src/**']
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: ^Schema\.decode\w*$

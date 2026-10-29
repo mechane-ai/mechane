@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: error-free-text
+valid:
+  - "class Missing extends Schema.TaggedError<Missing>()('Missing', { mechId: MechId, reason: Schema.String }) {}"
+invalid:
+  - "class Missing extends Schema.TaggedError<Missing>()('Missing', { message: Schema.String }) {}"

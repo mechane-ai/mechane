@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: membership-lists-typescript
+valid:
+  - 'const isEnded = ENDED_STATES.has(state);'
+invalid:
+  - 'const isEnded = [State.Stopped, State.Failed].includes(state);'

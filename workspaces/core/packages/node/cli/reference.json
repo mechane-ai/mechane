@@ -1,0 +1,1422 @@
+{
+  "schema_version": 4,
+  "program": "mechane",
+  "release": "0.3.0",
+  "flags": [
+    {
+      "name": "origin",
+      "kind": "text",
+      "summary": "the Mechane deployment to call, such as a local stack at http://127.0.0.1:9876, and https://mechane.ai when neither this flag nor its variable names one",
+      "variable": "MECHANE_ORIGIN"
+    },
+    {
+      "name": "output",
+      "kind": "text",
+      "summary": "write the result as one of human, json, jsonl; human on a terminal and json elsewhere by default, or jsonl for a command that streams, which never writes json",
+      "variable": "MECHANE_OUTPUT"
+    },
+    {
+      "name": "help",
+      "kind": "switch",
+      "summary": "print the commands, flags, variables and exit statuses"
+    },
+    {
+      "name": "version",
+      "kind": "switch",
+      "summary": "print the release, as mechane version does",
+      "command": "version"
+    }
+  ],
+  "commands": [
+    {
+      "name": "source grant",
+      "summary": "grant a mech one whole GitHub repository for reading and explicit write paths for owner-approved drafts",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSource"
+      ],
+      "flags": [
+        {
+          "name": "configuration",
+          "kind": "text",
+          "summary": "repository grant JSON; credentials remain in the server secret map",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "source revoke",
+      "summary": "revoke future private-source checkouts and draft publication for a mech",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSource"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "source checkout",
+      "summary": "checkout an immutable upstream commit through a credential-fenced full shallow Git fetch",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSource"
+      ],
+      "flags": [
+        {
+          "name": "source-id",
+          "kind": "text",
+          "summary": "a stable UUID for this source checkout and its single publication intent",
+          "required": true
+        },
+        {
+          "name": "commit",
+          "kind": "text",
+          "summary": "the full immutable upstream commit SHA",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "source publish",
+      "summary": "freeze selected changed files and publish one draft pull request under the current repository grant",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSource"
+      ],
+      "flags": [
+        {
+          "name": "source-id",
+          "kind": "text",
+          "summary": "a stable UUID for this source checkout and its single publication intent",
+          "required": true
+        },
+        {
+          "name": "title",
+          "kind": "text",
+          "summary": "the draft title",
+          "required": true
+        },
+        {
+          "name": "body",
+          "kind": "text",
+          "summary": "the draft description",
+          "required": true
+        },
+        {
+          "name": "paths",
+          "kind": "text",
+          "summary": "a JSON array of reviewed changed paths, including deletions",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "source show",
+      "summary": "show a source checkout and its immutable draft publication status",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSource"
+      ],
+      "flags": [
+        {
+          "name": "source-id",
+          "kind": "text",
+          "summary": "a stable UUID for this source checkout and its single publication intent",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "watch set",
+      "summary": "save a bounded scheduled check that runs through the mech inbox with its current grants and daily cap",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "setWatch"
+      ],
+      "flags": [
+        {
+          "name": "watch-id",
+          "kind": "text",
+          "summary": "reuse this watch ID to update or retry; a new ID when absent",
+          "required": false
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "a short name for the watch",
+          "required": true
+        },
+        {
+          "name": "prompt",
+          "kind": "text",
+          "summary": "the focused question to investigate with fresh evidence at each check",
+          "required": true
+        },
+        {
+          "name": "interval-seconds",
+          "kind": "text",
+          "summary": "seconds between checks, from 300 to 2592000; missed intervals coalesce",
+          "required": true
+        },
+        {
+          "name": "max-check-seconds",
+          "kind": "text",
+          "summary": "cancel a running check after 60 to 3600 seconds; 300 when absent",
+          "required": false
+        },
+        {
+          "name": "status",
+          "kind": "text",
+          "summary": "active or paused; active when absent",
+          "required": false
+        },
+        {
+          "name": "notification-binding-id",
+          "kind": "text",
+          "summary": "a Slack binding owned by this mech; absent disables notifications",
+          "required": false
+        },
+        {
+          "name": "cooldown-seconds",
+          "kind": "text",
+          "summary": "minimum seconds between notifications for one finding, from 300 to 2592000; 300 when absent",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "watch list",
+      "summary": "list the mech watches, next checks, and latest completed or unknown check outcomes",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listWatches"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "watch pause",
+      "summary": "pause future checks independently of interactive agent work and Slack listening or replies",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateWatchStatus"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "watch-id",
+          "summary": "the watch ID printed by watch set or watch list"
+        }
+      ]
+    },
+    {
+      "name": "watch resume",
+      "summary": "resume the watch with one fresh check when due, without replaying missed intervals",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateWatchStatus"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "watch-id",
+          "summary": "the watch ID printed by watch set or watch list"
+        }
+      ]
+    },
+    {
+      "name": "finding list",
+      "summary": "list a watch findings with stable identities, current evidence, observation windows, and changes",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listFindings"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "watch-id",
+          "summary": "the watch ID printed by watch set or watch list"
+        }
+      ]
+    },
+    {
+      "name": "slack bind",
+      "summary": "bind one existing Slack channel to one mech, or change its listening and reply switches",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "configureSlackBinding"
+      ],
+      "flags": [
+        {
+          "name": "binding-id",
+          "kind": "text",
+          "summary": "the persistent UUID for this binding, reused on changes and retries",
+          "required": true
+        },
+        {
+          "name": "connection-id",
+          "kind": "text",
+          "summary": "the configured existing Slack installation",
+          "required": true
+        },
+        {
+          "name": "team-id",
+          "kind": "text",
+          "summary": "the Slack workspace ID",
+          "required": true
+        },
+        {
+          "name": "channel-id",
+          "kind": "text",
+          "summary": "the existing Slack channel ID",
+          "required": true
+        },
+        {
+          "name": "listening",
+          "kind": "text",
+          "summary": "true to receive human messages, false to stop receiving",
+          "required": true
+        },
+        {
+          "name": "replies",
+          "kind": "text",
+          "summary": "true to deliver replies and notifications, false to mute them",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "slack bindings",
+      "summary": "list Slack channel bindings and their listening and reply switches",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listSlackBindings"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "slack deliveries",
+      "summary": "inspect the latest Slack delivery receipts, including uncertain outcomes that need review",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listSlackDeliveries"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "connection create",
+      "summary": "register a reusable remote MCP connection with explicitly approved read-only tools",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "createConnection"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the name for the remote MCP server",
+          "required": true
+        },
+        {
+          "name": "url",
+          "kind": "text",
+          "summary": "the Streamable HTTP MCP URL without credentials or a query",
+          "required": true
+        },
+        {
+          "name": "secret-reference",
+          "kind": "text",
+          "summary": "a server-only bearer credential reference scoped to this workspace; omit for no authentication",
+          "required": false
+        },
+        {
+          "name": "allowed-tools",
+          "kind": "text",
+          "summary": "a JSON array of the exact remote tools approved for grants",
+          "required": true
+        },
+        {
+          "name": "policy",
+          "kind": "text",
+          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "required": true
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "name": "connection update",
+      "summary": "replace a connection configuration and restrict every future invocation to its current allowlist",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateConnection"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the name for the remote MCP server",
+          "required": true
+        },
+        {
+          "name": "url",
+          "kind": "text",
+          "summary": "the Streamable HTTP MCP URL without credentials or a query",
+          "required": true
+        },
+        {
+          "name": "secret-reference",
+          "kind": "text",
+          "summary": "a server-only bearer credential reference scoped to this workspace; omit for no authentication",
+          "required": false
+        },
+        {
+          "name": "allowed-tools",
+          "kind": "text",
+          "summary": "a JSON array of the exact remote tools approved for grants",
+          "required": true
+        },
+        {
+          "name": "policy",
+          "kind": "text",
+          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "connection-id",
+          "summary": "the connection id"
+        }
+      ]
+    },
+    {
+      "name": "connection list",
+      "summary": "list the workspace remote connections as their owner",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listConnections"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "connection delete",
+      "summary": "delete a connection and revoke every agent grant to it",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "deleteConnection"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "connection-id",
+          "summary": "the connection id"
+        }
+      ]
+    },
+    {
+      "name": "grant set",
+      "summary": "grant one mech an explicit subset of a connection allowlist, replacing its previous grant",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "grantTools"
+      ],
+      "flags": [
+        {
+          "name": "tools",
+          "kind": "text",
+          "summary": "a JSON array of approved tool names",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "connection-id",
+          "summary": "the connection id"
+        }
+      ]
+    },
+    {
+      "name": "grant list",
+      "summary": "list one mech's explicit remote tool grants",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listToolGrants"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "grant revoke",
+      "summary": "revoke one mech's access to a connection before its next tool call",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "revokeTools"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "connection-id",
+          "summary": "the connection id"
+        }
+      ]
+    },
+    {
+      "name": "readiness",
+      "summary": "report the release, the Worker revision and each Durable Object schema revision",
+      "shape": "document",
+      "operations": [
+        "readiness"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "auth login",
+      "summary": "sign in through an approval in the browser, save the login key for this origin, and revoke the one it replaces",
+      "shape": "document",
+      "operations": [
+        "startDeviceApproval",
+        "pollDeviceApproval",
+        "revokeKey"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "auth status",
+      "summary": "report the account, its workspaces and the key this CLI signs in with, and when the key expires",
+      "shape": "document",
+      "operations": [
+        "showPrincipal",
+        "listWorkspaces"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "auth logout",
+      "summary": "revoke the saved login key on the deployment, then remove the saved login",
+      "shape": "document",
+      "operations": [
+        "revokeKey"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "key create",
+      "summary": "create a named key through an approval in the browser, and write its token to a private file",
+      "shape": "document",
+      "operations": [
+        "startDeviceApproval",
+        "pollDeviceApproval"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the name that tells the key apart, such as ci",
+          "required": true
+        },
+        {
+          "name": "key-file",
+          "kind": "text",
+          "summary": "the file the token goes to, readable only by its owner",
+          "required": true
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "name": "key list",
+      "summary": "list your keys, oldest first, with revoked and expired ones",
+      "shape": "document",
+      "operations": [
+        "listKeys"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "key revoke",
+      "summary": "revoke one of your keys for good",
+      "shape": "document",
+      "operations": [
+        "revokeKey"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "key-id",
+          "summary": "the id of the key, as mechane key list prints it"
+        }
+      ]
+    },
+    {
+      "name": "workspace list",
+      "summary": "list the workspaces you belong to, with your role and each daily model allowance",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "allowance show",
+      "summary": "show your workspace's daily model allowance and what the current UTC day has committed of it",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showAllowance"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "mech create",
+      "summary": "create a mech in your workspace, which answers each inbox item through its model",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "createMech"
+      ],
+      "flags": [
+        {
+          "name": "request-id",
+          "kind": "text",
+          "summary": "reuse the printed creation request id to retry without creating another mech",
+          "required": false
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the name that tells the mech apart, such as scout",
+          "required": true
+        },
+        {
+          "name": "instructions",
+          "kind": "text",
+          "summary": "the instructions the mech follows in every turn",
+          "required": false
+        },
+        {
+          "name": "model",
+          "kind": "text",
+          "summary": "the model the mech answers through, one the deployment offers; its first offer when absent",
+          "required": false
+        },
+        {
+          "name": "daily-cap-micros",
+          "kind": "text",
+          "summary": "what the mech's model requests may cost each UTC day, in micro-dollars; the deployment's default when absent",
+          "required": false
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "name": "mech list",
+      "summary": "list the mechs of your workspace, oldest first, each with the mech it was forked from",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listMechs"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "mech fork",
+      "summary": "fork an idle mech into a new mech of your workspace, which keeps the mech's conversation, memory and records so far but not its sandbox's files",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "forkMech"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the name that tells the new mech apart",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "inbox send",
+      "summary": "send text to the inbox of a mech under an id it prints first, which a resend with --inbox-item-id delivers only once",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "sendInboxItem"
+      ],
+      "flags": [
+        {
+          "name": "inbox-item-id",
+          "kind": "text",
+          "summary": "the inbox item id of a send to repeat, as an earlier send printed it; a fresh one when absent",
+          "required": false
+        },
+        {
+          "name": "delivery",
+          "kind": "text",
+          "summary": "when_idle to wait until the mech is idle, next_pause to join its running turn at its next pause, interrupt to cancel its running turn and then wait like when_idle, or silent to enter its conversation without waking it; when_idle when absent",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "text",
+          "summary": "what to tell the mech"
+        }
+      ]
+    },
+    {
+      "name": "event list",
+      "summary": "write the events of a mech, one record each: to the end of its log, or with --follow as they happen; a turn ends only with turn.answered or turn.unanswered, and a drone only with drone.reported or drone.unreported",
+      "shape": "stream",
+      "operations": [
+        "listWorkspaces",
+        "listEvents"
+      ],
+      "flags": [
+        {
+          "name": "after",
+          "kind": "text",
+          "summary": "the sequence of the last event you have, to resume after it; 0 when absent",
+          "required": false
+        },
+        {
+          "name": "follow",
+          "kind": "switch",
+          "summary": "keep waiting for new events until Ctrl-C",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech clone",
+      "summary": "copy a definition into a fresh identity with empty history and no connection grants, bindings, or watches",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "cloneMech"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the new mech display name",
+          "required": true
+        },
+        {
+          "name": "request-id",
+          "kind": "text",
+          "summary": "reuse the printed request id to retry the same clone",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech show",
+      "summary": "show the mech definition, lifecycle, and current and active revisions",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showMech"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech update",
+      "summary": "update a definition with a revision check; running work keeps its definition until the next safe turn",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateMech"
+      ],
+      "flags": [
+        {
+          "name": "expected-revision",
+          "kind": "text",
+          "summary": "the current revision from mech show; refuses a concurrent edit",
+          "required": true
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "a new display name; the mech keeps its identity and history",
+          "required": false
+        },
+        {
+          "name": "model",
+          "kind": "text",
+          "summary": "one of the deployment model offers",
+          "required": false
+        },
+        {
+          "name": "instructions",
+          "kind": "text",
+          "summary": "the mission for future turns; an empty string clears it",
+          "required": false
+        },
+        {
+          "name": "daily-cap-micros",
+          "kind": "text",
+          "summary": "the daily spending cap in micro-dollars",
+          "required": false
+        },
+        {
+          "name": "status",
+          "kind": "text",
+          "summary": "active, paused, or archived",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech rename",
+      "summary": "rename a mech without changing its identity, history, or connections",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateMech"
+      ],
+      "flags": [
+        {
+          "name": "expected-revision",
+          "kind": "text",
+          "summary": "the current revision from mech show; refuses a concurrent edit",
+          "required": true
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the new display name",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech revisions",
+      "summary": "list a page of definition revisions with who changed each one and when",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listMechRevisions"
+      ],
+      "flags": [
+        {
+          "name": "after",
+          "kind": "text",
+          "summary": "list revisions after this number; 0 when absent",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech pause",
+      "summary": "pause new turns while running work finishes and queued input stays durable",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateMech"
+      ],
+      "flags": [
+        {
+          "name": "expected-revision",
+          "kind": "text",
+          "summary": "the current revision from mech show; refuses a concurrent edit",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech resume",
+      "summary": "resume a paused or archived mech and release its queued input",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateMech"
+      ],
+      "flags": [
+        {
+          "name": "expected-revision",
+          "kind": "text",
+          "summary": "the current revision from mech show; refuses a concurrent edit",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "mech archive",
+      "summary": "retain the mech and its history while stopping new turns and refusing new input",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "updateMech"
+      ],
+      "flags": [
+        {
+          "name": "expected-revision",
+          "kind": "text",
+          "summary": "the current revision from mech show; refuses a concurrent edit",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox show",
+      "summary": "show the sandbox image, provider state and any pending maintenance without waking it",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox upgrade",
+      "summary": "replace an idle sandbox with the deployed image, preserving /home/node and verifying its archive first",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        },
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "resume the operation id printed by an earlier attempt",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox export",
+      "summary": "save an idle sandbox home directory as a verified private tar.gz archive",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        },
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "resume the operation id printed by an earlier attempt",
+          "required": false
+        },
+        {
+          "name": "file",
+          "kind": "text",
+          "summary": "the new archive file to create; existing files are never overwritten",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox delete",
+      "summary": "permanently delete sandbox files; the next command starts an empty workspace",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        },
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "resume the operation id printed by an earlier attempt",
+          "required": false
+        },
+        {
+          "name": "confirm",
+          "kind": "switch",
+          "summary": "confirm permanent deletion of this sandbox and its files",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox cancel",
+      "summary": "cancel maintenance before its binding swap, or finish retiring the old VM after that swap",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        },
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "the pending operation id shown by sandbox show",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "turn show",
+      "summary": "show one turn of a mech: its outcome, and each model request it reserved, with its tokens and charge",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showTurn"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "turn-id",
+          "summary": "the id of the turn, as mechane event list prints it"
+        }
+      ]
+    },
+    {
+      "name": "turn cancel",
+      "summary": "cancel a running turn and its unfinished command; the turn ends unanswered and saves none of its memory changes",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "cancelTurn"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "turn-id",
+          "summary": "the id of the turn, as mechane event list prints it"
+        }
+      ]
+    },
+    {
+      "name": "memory list",
+      "summary": "list the memories a mech saved, by path, each with its version, the turn that saved it, and its text",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listMemories"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "thread list",
+      "summary": "list the threads a mech opened, oldest first, each with its state and its note",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listThreads"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "drone list",
+      "summary": "list the drones a mech started, oldest first, each with its thread and how it ended",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listDrones"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "drone show",
+      "summary": "show one drone of a mech: its outcome, its brief, and each model request it reserved, as turn show does",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showDrone"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "drone-id",
+          "summary": "the id of the drone, as mechane drone list prints it"
+        }
+      ]
+    },
+    {
+      "name": "drone cancel",
+      "summary": "cancel a running drone of a mech: it ends unreported, canceled, and its mech receives an item saying so",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "cancelDrone"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "drone-id",
+          "summary": "the id of the drone, as mechane drone list prints it"
+        }
+      ]
+    },
+    {
+      "name": "eval run",
+      "summary": "run a suite's cases, each on a fresh mech, grade each reply with a fresh grader mech, and report each trial; a rerun with the same --out-folder resumes",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "readiness",
+        "showAllowance",
+        "createMech",
+        "sendInboxItem",
+        "listEvents",
+        "showTurn"
+      ],
+      "flags": [
+        {
+          "name": "suite",
+          "kind": "text",
+          "summary": "the suite file: JSON with its cases and their expectations",
+          "required": true
+        },
+        {
+          "name": "out-folder",
+          "kind": "text",
+          "summary": "the folder that keeps the plan, each trial's records and the report",
+          "required": true
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "name": "update",
+      "summary": "replace this mechane with the deployment's latest release, once the binary's size and SHA-256 match its manifest",
+      "shape": "document",
+      "operations": [],
+      "flags": [
+        {
+          "name": "check",
+          "kind": "switch",
+          "summary": "report the latest release without installing it",
+          "required": false
+        }
+      ],
+      "arguments": []
+    }
+  ],
+  "variables": [
+    {
+      "name": "MECHANE_API_KEY",
+      "summary": "a key from mechane key create, used in place of the saved login, such as by an agent or CI"
+    },
+    {
+      "name": "XDG_CONFIG_HOME",
+      "summary": "the folder whose mechane folder holds the saved login; ~/.config when unset"
+    }
+  ],
+  "exit_statuses": [
+    {
+      "name": "Ok",
+      "status": 0
+    },
+    {
+      "name": "Failed",
+      "status": 1
+    },
+    {
+      "name": "InvalidRequest",
+      "status": 2
+    },
+    {
+      "name": "Unauthenticated",
+      "status": 3
+    },
+    {
+      "name": "ForbiddenOrNotFound",
+      "status": 4
+    },
+    {
+      "name": "Conflict",
+      "status": 5
+    },
+    {
+      "name": "Unavailable",
+      "status": 6
+    },
+    {
+      "name": "Interrupted",
+      "status": 130
+    }
+  ],
+  "error_codes": [
+    "SandboxMaintenanceFailed",
+    "UsageInvalid",
+    "OriginUnreachable",
+    "RequestTimedOut",
+    "ResponseUnreadable",
+    "CredentialsFailed",
+    "SavedLoginMissing",
+    "VerificationUrlMismatched",
+    "ApprovalTimedOut",
+    "ReleaseStampMissing",
+    "TargetUnpublished",
+    "BinaryMismatched",
+    "ReplaceFailed",
+    "SuiteInvalid",
+    "OutFolderBusy",
+    "PlanChanged",
+    "AllowanceExhausted",
+    "EvalFileFailed",
+    "EvalInterrupted"
+  ]
+}

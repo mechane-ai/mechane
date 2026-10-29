@@ -1,0 +1,13 @@
+{
+  "name": "@mechane/limiter",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/limiter-store": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

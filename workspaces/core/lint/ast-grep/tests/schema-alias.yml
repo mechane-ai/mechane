@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: schema-alias
+valid:
+  - 'export const Turn = Schema.Struct({ id: Schema.String }); export type Turn = typeof Turn.Type;'
+  - 'export const MemoryReadParameters = Type.Object({ path: Type.String() });'
+invalid:
+  - 'export const Turn = Schema.Struct({ id: Schema.String });'

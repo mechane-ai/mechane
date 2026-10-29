@@ -1,0 +1,32 @@
+# A closed set's members are compared by name; a type-of result and the empty string are values the language defines.
+id: literal-comparison
+language: TypeScript
+severity: error
+message: "Compare against the closed set's named member, such as `status === RuleStatus.Proposed` (TD-19)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: binary_expression
+      has:
+        field: operator
+        regex: ^[!=]==?$
+      all:
+        - has:
+            any:
+              - kind: string
+                not:
+                  regex: ^(''|"")$
+              - kind: template_string
+                not:
+                  regex: ^``$
+        - not:
+            has:
+              kind: unary_expression
+              regex: ^typeof
+    - kind: switch_case
+      has:
+        field: value
+        any:
+          - kind: string
+          - kind: template_string

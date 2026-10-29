@@ -1,0 +1,3 @@
+# The checks program writes every baseline; a merge keeps each file's smaller count through the baseline-min driver,
+# which .config/bootstrap.sh registers, and `mise run fix` tightens whatever a merge leaves.
+*.json merge=baseline-min linguist-generated

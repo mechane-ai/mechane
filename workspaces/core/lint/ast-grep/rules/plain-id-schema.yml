@@ -1,0 +1,20 @@
+# An id field decoded as plain text or a bare record id, which its entity's branded schema decodes instead.
+id: plain-id-schema
+language: TypeScript
+severity: error
+message: "Decode an id with its entity's branded schema from the protocol's records, such as `turnId: TurnId` (TD-14)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: pair
+  all:
+    - has:
+        field: key
+        regex: (^id|Id|Ids)$
+    - has:
+        field: value
+        any:
+          - regex: ^(Schema\.String|RecordId|RandomId)$
+          - has:
+              stopBy: end
+              regex: ^(Schema\.String|RecordId|RandomId)$

@@ -1,0 +1,13 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: case-shape
+valid:
+  - 'switch (phase) { case Phase.Starting: return advanceStarting({ run }); }'
+  - 'switch (phase) { case Phase.Starting: advanceStarting({ run }); break; }'
+  - 'switch (phase) { case Phase.Starting: return advanceStarting({ run: started(run) }); }'
+  - 'Match.valueTags(change, { Write: (write) => saveWrite({ store, write }), Delete: saveDeletion });'
+invalid:
+  - 'switch (phase) { case Phase.Starting: start({ run }); record({ run }); break; }'
+  - 'switch (phase) { case Phase.Starting: return run.pipe(Effect.tap(() => { record({ run }); })); }'
+  - 'Match.valueTags(change, { Write: (write) => { record({ write }); return saved({ write }); } });'
+  - 'switch (phase) { case Phase.Starting: return text.indexOf(start) + text.lastIndexOf(end); }'
+  - 'Match.valueTags(change, { Write: (write) => heading({ write }) + saved({ write }) });'

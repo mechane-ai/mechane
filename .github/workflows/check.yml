@@ -1,0 +1,41 @@
+name: Check
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # mise installs from the URLs mise.lock records; the read-only token raises the API limit for any other lookup.
+      GITHUB_TOKEN: ${{ github.token }}
+      # The owned checks hold each ratchet's baseline to the one at the merge base with the branch a pull request
+      # targets, or with main otherwise.
+      MECHANE_BASE_BRANCH: origin/${{ github.base_ref || 'main' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          # The full history holds the merge base the baselines are compared with.
+          fetch-depth: 0
+      - name: Put the bootstrap's tools on PATH
+        run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Install the pinned mise, tools and locked packages
+        run: .config/bootstrap.sh
+      - name: Run every check
+        run: mise run check
+      - name: Print the end of each celld and guest log a failed smoke kept
+        if: failure()
+        run: |
+          shopt -s nullglob
+          for log in "${TMPDIR:-/tmp}"/mechane-stack-*/celld.log "${TMPDIR:-/tmp}"/mechane-stack-*/sandboxes/*/guest.log; do
+            echo "== $log"
+            tail -n 80 "$log"
+          done

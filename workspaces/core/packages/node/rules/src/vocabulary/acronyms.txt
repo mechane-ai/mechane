@@ -1,0 +1,16 @@
+api
+cli
+fd
+http
+https
+id
+json
+jsonl
+pid
+rpc
+sql
+tcp
+tty
+uri
+url
+utf8

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: for-each-concurrency
+valid:
+  - 'Effect.forEach(paths, readFile, { concurrency: 1 });'
+invalid:
+  - 'Effect.forEach(paths, readFile);'

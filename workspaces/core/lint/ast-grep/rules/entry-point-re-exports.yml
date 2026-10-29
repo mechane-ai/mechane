@@ -1,0 +1,15 @@
+# Only an entry point re-exports; every other file exports each declaration where it declares it.
+id: entry-point-re-exports
+language: TypeScript
+severity: error
+message: 'Export the declaration where it is declared, such as `export function parseLine(input)`, and re-export only from an entry point (ST-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', 'packages/**/src/index.ts', packages/worker/app/src/worker.ts]
+rule:
+  kind: export_statement
+  any:
+    - has:
+        field: source
+        kind: string
+    - has:
+        kind: export_clause

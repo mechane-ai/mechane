@@ -1,0 +1,16 @@
+{
+  "packages/shared/protocol/src/errors/detail-failure.ts": 1,
+  "packages/worker/directory/src/device-approvals/decide-claim.ts": 1,
+  "packages/worker/directory/src/directory-object.ts": 1,
+  "packages/worker/directory/src/keys/read-key-access.ts": 2,
+  "packages/worker/harness-tools/src/conversation-role.ts": 2,
+  "packages/worker/harness-tools/src/types.ts": 2,
+  "packages/worker/harness/src/models/types.ts": 2,
+  "packages/worker/mech-ports/src/meter/refuse-dispatch.ts": 1,
+  "packages/worker/mech-ports/src/meter/reserve-dispatch.ts": 1,
+  "packages/worker/mech/src/events/list-events.ts": 2,
+  "packages/worker/mech/src/forks/copy-fork.ts": 2,
+  "packages/worker/mech/src/forks/copy-table.ts": 1,
+  "packages/worker/mech/src/turns/read-turn.ts": 3,
+  "packages/worker/rpc/src/mech/types.ts": 6
+}

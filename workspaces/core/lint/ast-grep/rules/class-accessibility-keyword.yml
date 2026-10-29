@@ -1,0 +1,8 @@
+id: class-accessibility-keyword
+language: TypeScript
+severity: error
+message: 'Give the member a private name instead of an accessibility keyword, such as `#ready` for `private ready` (020)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: accessibility_modifier

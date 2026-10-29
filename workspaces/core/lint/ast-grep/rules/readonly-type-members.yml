@@ -1,0 +1,10 @@
+# A property signature without `readonly`, in a type alias or an object type; a property-style method is one too.
+id: readonly-type-members
+language: TypeScript
+severity: error
+message: 'Make the property read-only, such as `readonly turnId: TurnId` (TD-06)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: property_signature
+  not: { regex: '^readonly\b' }

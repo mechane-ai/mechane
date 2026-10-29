@@ -1,0 +1,40 @@
+# A `fetch` inside a promise's wrap that drops the wrap's signal, so an interrupt cannot cancel it.
+id: fetch-signal
+language: TypeScript
+severity: error
+message: "Pass the wrap's signal to `fetch`, such as `try: (signal) => fetch(url, { signal })` (EF-06)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: ^fetch$
+  inside:
+    stopBy: end
+    kind: pair
+    has:
+      field: key
+      regex: ^try$
+    inside:
+      kind: object
+      inside:
+        kind: arguments
+        inside:
+          kind: call_expression
+          has:
+            field: function
+            regex: ^Effect\.tryPromise$
+  not:
+    has:
+      field: arguments
+      has:
+        kind: object
+        has:
+          any:
+            - kind: shorthand_property_identifier
+              regex: ^signal$
+            - kind: pair
+              has:
+                field: key
+                regex: ^signal$

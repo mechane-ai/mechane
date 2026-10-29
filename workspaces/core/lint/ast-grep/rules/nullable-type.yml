@@ -1,0 +1,46 @@
+# `null` or `undefined` in an owned type, or a schema whose Type holds one; a dependency's generic decides its own
+# type arguments, and a Mechane generic's are owned types.
+id: nullable-type
+language: TypeScript
+severity: error
+message: 'Spell absence as `Option`, such as `readonly endedAt: Option.Option<number>` decoded by `Schema.OptionFromNullOr` (TD-18)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  # The type arguments a generic that no Mechane module declares takes, which follow that dependency's own types: the
+  # TypeScript library's and each dependency's that a site passes `null` or `undefined` today.
+  dependency-type-arguments:
+    kind: type_arguments
+    inside:
+      any:
+        - kind: generic_type
+          has:
+            field: name
+            regex: ^(Array|ChildProcessByStdio|Map|Partial|Promise|Readonly|ReadonlyArray|ReadonlyMap|ReadonlySet|Record|Set)$
+        - kind: call_expression
+          has:
+            field: function
+            regex: ^defineDocFamily$
+rule:
+  any:
+    - kind: literal_type
+      has:
+        any:
+          - kind: 'null'
+          - kind: undefined
+      not:
+        inside:
+          stopBy:
+            kind: type_arguments
+          matches: dependency-type-arguments
+    - kind: predefined_type
+      regex: ^undefined$
+      not:
+        inside:
+          stopBy:
+            kind: type_arguments
+          matches: dependency-type-arguments
+    - kind: call_expression
+      has:
+        field: function
+        regex: ^Schema\.(NullOr|UndefinedOr|NullishOr)$

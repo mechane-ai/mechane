@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/boundaries",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/checks-kernel": "workspace:*",
+    "@mechane/modules": "workspace:*",
+    "@mechane/rule-shapes": "workspace:*",
+    "@mechane/rules": "workspace:*",
+    "dependency-cruiser": "18.7.0",
+    "effect": "4.0.7"
+  }
+}

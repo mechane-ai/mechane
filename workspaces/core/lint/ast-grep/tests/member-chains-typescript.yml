@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: member-chains-typescript
+valid:
+  - 'const isEnded = ENDED_STATES.has(state);'
+invalid:
+  - 'const isEnded = state === State.Stopped || state === State.Failed;'

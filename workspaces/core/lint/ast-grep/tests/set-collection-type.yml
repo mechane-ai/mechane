@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: set-collection-type
+valid:
+  - "const NAMES: ReadonlySet<string> = new Set(['turn']);"
+  - "const NAMES: ReadonlyArray<string> = ['turn'];"
+invalid:
+  - "const NAMES: ReadonlyArray<string> = new Set(['turn']);"

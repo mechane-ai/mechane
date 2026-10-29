@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: effect-function-form
+valid:
+  - "const start = Effect.fn('start')(function* (): Effect.fn.Return<Stack> { return yield* open(); });"
+invalid:
+  - 'function start(): Effect.Effect<Stack> { return open(); }'

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: encode-keys-outside-records
+valid:
+  - 'const Row = wireStruct({ fields: { mechId: RecordId } });'
+invalid:
+  - "const Row = Schema.Struct({ mechId: RecordId }).pipe(Schema.encodeKeys({ mechId: 'mech_id' }));"

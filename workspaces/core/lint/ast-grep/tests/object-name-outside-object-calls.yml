@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: object-name-outside-object-calls
+valid:
+  - 'const name = mechObjectName({ mechId });'
+invalid:
+  - 'const id = namespace.idFromName(name);'

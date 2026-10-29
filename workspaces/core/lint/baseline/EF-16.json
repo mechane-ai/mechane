@@ -1,0 +1,4 @@
+{
+  "packages/node/deploy/src/rollout/roll-back.ts": 1,
+  "packages/node/deploy/src/rollout/upload-worker.ts": 1
+}

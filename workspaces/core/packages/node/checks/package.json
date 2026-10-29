@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/checks",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/boundaries": "workspace:*",
+    "@mechane/checks-kernel": "workspace:*",
+    "@mechane/locks": "workspace:*",
+    "@mechane/modules": "workspace:*",
+    "@mechane/normalizers": "workspace:*",
+    "@mechane/owned-rules": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/rule-shapes": "workspace:*",
+    "@mechane/rules": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

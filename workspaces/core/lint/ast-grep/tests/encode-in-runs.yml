@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: encode-in-runs
+valid:
+  - 'const run = () => ({ lines, result });'
+invalid:
+  - 'const text = Schema.encodeSync(Document)(result);'

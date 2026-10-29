@@ -1,0 +1,13 @@
+# EF-11: a program handles its stop signals once, in `program`'s `interruptOnSignal`; no other code listens on
+# `process`, which would race it for the signal.
+id: process-signal
+language: TypeScript
+severity: error
+message: 'Run the program under `interruptOnSignal`, such as `yield* interruptOnSignal({ program: runMode() })` (EF-11)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/node/program/src/interrupt-on-signal.ts']
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: '^process\.(on|once|off|addListener|removeListener|prependListener|prependOnceListener)$'

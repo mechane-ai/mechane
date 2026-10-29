@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: json-type-argument
+valid:
+  - 'const row = Schema.decodeUnknownEffect(Row)(await response.json());'
+invalid:
+  - 'const row = await response.json<Row>();'

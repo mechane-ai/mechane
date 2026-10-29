@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: entry-point-re-exports
+valid:
+  - 'export function parseLine({ line }: LineInput) { return line; }'
+invalid:
+  - "export { parseLine } from './parse-line.ts';"
+  - 'export { parseLine };'

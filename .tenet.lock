@@ -1,0 +1,743 @@
+{
+  "version": 2,
+  "sources": {
+    "tenet": "https://github.com/macromackie/tenet-contracts"
+  },
+  "contracts": {
+    ".contracts/001-test-curation/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "test-curation",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:acc1d02e907ef82e97cef1d425429d13cd97ff2c3c7a6dd95297e9601512da75",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:5ac7acb2a92fce758591b34752729b655150d3637b3ea354fad4b2f0570cb2ce"
+      }
+    },
+    ".contracts/002-test-assertion-integrity/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "test-assertion-integrity",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:459ce809e33bdf2a72c3b1f7a3170813948ca22f72514b79e3ebd6615d6c41ac",
+      "files": {
+        "assets/ast-grep/rules/expect-has-assertions-tsx.yml": "blake3:c57856accffb4f47081aa3ae98eef79cc40cf07477dfb5938aa5b1f9e0123750",
+        "assets/ast-grep/rules/expect-has-assertions-typescript.yml": "blake3:099cfcdceb92c26fe5bc2f9f8798388265831968b8d227ae7295bfd28d457580",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:c7b36856a2efe4bc6dd8ca22959d9599ba13f97cb08279ee35a7927c1232109a"
+      }
+    },
+    ".contracts/003-ci-reproducible-checks/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ci-reproducible-checks",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:99d925187aeb60d8f67e92e24554b5fc580d7f390b7e7d59e586396f09dc4239"
+    },
+    ".contracts/004-ci-check-trust/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ci-check-trust",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:00c0f35a62b8552f8b56b476d52cc268f759000767dd6f3bdab9dc6a5a7c880b"
+    },
+    ".contracts/005-contract-maintenance/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "contract-maintenance",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d734e2b74b459a25eec46ac560ff117d70d30b7e3af918022528a007bdd41949"
+    },
+    ".contracts/006-context-note-curation/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "context-note-curation",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:e6781653bab3e4b0682754ba5109d7276f8238e4f0bb1b4e4f6c9a8a1bab6228"
+    },
+    ".contracts/007-context-agent-instruction-files/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "context-agent-instruction-files",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:a31677493980712e07e9a5c9fabd6c7f8551737f9f2e73ce28aae5cb9587f369"
+    },
+    ".contracts/008-docs-prose-style/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "docs-prose-style",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:74528876b5bfa39ede62b1638bdb839f5fd32b07975005b39fb0e9e1427156b7"
+    },
+    ".contracts/009-docs-readme-structure/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "docs-readme-structure",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:c8408ef9574448912c667357b5448bdbbdd656e92a14f6a7350e594a1caf2c08"
+    },
+    "workspaces/core/.contracts/001-code-ownership-and-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-ownership-and-boundaries",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:84a5ab4d1e99a34c181b0137937c7d7472608d23f64cecbea5ce9245ec92c35f"
+    },
+    "workspaces/core/.contracts/002-code-dependency-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-dependency-boundaries",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:c71969a3138ddf58ab46476e8b5e272f3fa549935fc1136245ed4b176f4fcd65"
+    },
+    "workspaces/core/.contracts/003-code-typescript-package-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-package-boundaries",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:da02a2c2579fb6dd19ada51cd3491d611491a9e77ccf0e8f2e4b96be9f5a1f6e"
+    },
+    "workspaces/core/.contracts/004-code-typescript-module-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-module-boundaries",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:0351ddc24a3c00cc4c145c2ca4c8d3b3d172b9841b782d6c855064785ae9e768",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:beccb1af9dd204074822d4e2df3b23d488c2b41f2bdff9a4ae5c69e6927a4c8e"
+      }
+    },
+    "workspaces/core/.contracts/005-code-typescript-entry-points/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-entry-points",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:b529d12ef38b9dd184d46e30b4990b9639487549ef01a3ce9800cc976526b2d0"
+    },
+    "workspaces/core/.contracts/006-code-export-consumers/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-export-consumers",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:77edb0ad30cbd24f84894bed4800ef2107b1fb314eff9605096b3a30317315c6"
+    },
+    "workspaces/core/.contracts/007-code-module-structure-and-control-flow/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-module-structure-and-control-flow",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:0d5b1a2ff7f69d69252cdb71e74bf92c41071d40702a5bf0f8bdcfc63f4862a7",
+      "files": {
+        "assets/ast-grep/rules/function-verbs-python.yml": "blake3:b55c913144448225a2078ba998e55bf722f98410f2f76dbba856329761c3af76",
+        "assets/ast-grep/rules/function-verbs-rust.yml": "blake3:b668d9b6e0f28c0c76b2bd3619b58b119de5a93051283283801671ae13798ec2",
+        "assets/ast-grep/rules/function-verbs-tsx.yml": "blake3:cd7d593f1f2a4041410d73dd975c723d67552bf4553243832c543d1d9a054ccd",
+        "assets/ast-grep/rules/function-verbs-typescript.yml": "blake3:b050239c62f16293a5efecf543d28ddcc673e6e9e0419fe16966beea13edc156",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/ast-grep/verbs.txt": "blake3:bfb6e8ac5bf17a734399ff5f03012f086390b0c7e63c8cdaa9bb596e34cebf63"
+      }
+    },
+    "workspaces/core/.contracts/008-code-module-file-roles/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-module-file-roles",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:9d8bd6a25aa83920e9ee0394d85dbd8ae696731de5c519262f14065515c64a06",
+      "files": {
+        "assets/ast-grep/rules/exported-functions-javascript.yml": "blake3:0ae4b246b05afa6085836519d7d6f5d1ebdd1f8dc26cda307fa167a3c7b5ff00",
+        "assets/ast-grep/rules/exported-functions-tsx.yml": "blake3:73170997619d8b325405e34997c1005daf0edea63e6ff6b5c11598393825e398",
+        "assets/ast-grep/rules/exported-functions-typescript.yml": "blake3:a1c75627f7c36db382a58029527404f9753e32ade0e23a2a88b7e1f903084562",
+        "assets/ast-grep/sgconfig.yml": "blake3:b161b013b4df803c5c63634f339838129467f73500d33d7f45e768de16e19aa2",
+        "assets/ast-grep/utils/framework-exports.yml": "blake3:ac8c3dda4bb5d000cf72d7149004371874618d6fb98e3277541e48073e120680",
+        "assets/oxlint/oxlintrc.json": "blake3:74c1189fa7eb1ca699cb16a9837bffe91bb761996729fa6649120c11c2c8bf97"
+      }
+    },
+    "workspaces/core/.contracts/009-code-folder-size/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-folder-size",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:47a76996575ee1379f1c305427c5414b6ed7ab01a2f489e4c9a410163c3d52a7"
+    },
+    "workspaces/core/.contracts/010-code-function-size/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-function-size",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:36cd3c0c51e73d358a01c5a11d35ec6abf276fc5a52664876cce4dee7e811623",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:375d8d4be73ad4c0be1c083529c35edb9f8340d7da1bd880286bbc5397ebb7bb"
+      }
+    },
+    "workspaces/core/.contracts/011-code-guard-clauses/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-guard-clauses",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:deeabcda4abd69dabf71f079f1d9d1e27079adf4398add4cf574f2b622d39194"
+    },
+    "workspaces/core/.contracts/012-code-conditional-expressions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-conditional-expressions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d5e0a94e476fd916fcdf2c506d3af5ada84fde2f7177cbd0d95c2db19b18e74a",
+      "files": {
+        "assets/ast-grep/rules/complementary-markup-children-javascript.yml": "blake3:d0a2ac3fec197afde6a209b47a31330c42fdc4701a6950628193564f621b16a4",
+        "assets/ast-grep/rules/complementary-markup-children-tsx.yml": "blake3:385b1972bb1beee79e5dd25321cb997f30906000b2815f88271b65e6a0c4ed24",
+        "assets/ast-grep/rules/immediately-invoked-function-javascript.yml": "blake3:246c8775cfa8c91e802ea9aea3c5237cd00281d59351c34ec82cd0e4e893d5c4",
+        "assets/ast-grep/rules/immediately-invoked-function-tsx.yml": "blake3:3ea118a5006d5ae21575bfbdcc131ecba75fe72e80e8b839eeb741690161cd74",
+        "assets/ast-grep/rules/immediately-invoked-function-typescript.yml": "blake3:5f0622c07f1f8749a73197c9cd9281b315d01020fc27c5a83140de226e57ce8d",
+        "assets/ast-grep/rules/prop-gated-null-returns-javascript.yml": "blake3:ccc465137912bdfee317fc58f41d13fdf4a7f5410228dad3a0319a260a6b147f",
+        "assets/ast-grep/rules/prop-gated-null-returns-tsx.yml": "blake3:bbf62868c6e13366e908a9ca80682a44d76c30b0233a6ae6b8b109ab55330009",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:21906bea677caa4560c5fc99d3b5d14412edf0d0f96cc3f86212b053887c2db3"
+      }
+    },
+    "workspaces/core/.contracts/013-code-exhaustive-branches/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-exhaustive-branches",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:3223c3e18d31c6c8fb6c8de5aa96124d00bc0e8cc704940ab55ea8d1a2b85569",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:c7de5f9eb92b3e844d511cd8f74a6f4c0881a1d1172123cf12f2492435063534"
+      }
+    },
+    "workspaces/core/.contracts/014-code-closed-value-sets/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-closed-value-sets",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:be589f06c5240db23a7d7dc357ef6aca66b3e7bb0ec8acc4766bb974c6171b4f",
+      "files": {
+        "assets/ast-grep/rules/http-method-literals-tsx.yml": "blake3:5cf3c134f2ccfcd41ac085632f8bbc75d418986bb161eb8079afe6e56a2db0f0",
+        "assets/ast-grep/rules/http-method-literals-typescript.yml": "blake3:3c7e614f3e9435da9b37525e0427a13aa981c98088800c2dfca7daf9ed30521d",
+        "assets/ast-grep/rules/http-status-literals-tsx.yml": "blake3:e2c0378704f8681cdcecadd5bafd51b7b0c1dfaba99916ed1c5aae0d28cf97dd",
+        "assets/ast-grep/rules/http-status-literals-typescript.yml": "blake3:ed4e21fb25e6f843678bd53bc5fe489cfc2608a4befa2d3adbd1e60231147427",
+        "assets/ast-grep/rules/member-chains-python.yml": "blake3:55f72fa2e3d334f11a77e02e7439e451b60d419cc2efab80a10ce176035592ff",
+        "assets/ast-grep/rules/member-chains-rust.yml": "blake3:10ab124ae7b09b9ec8646cd4ba580c0f0a5b535bc4d01d8fc266bf014bead2fb",
+        "assets/ast-grep/rules/member-chains-tsx.yml": "blake3:1e640974ef8b2d132c35351c60ad16956cbd38fdd2960d45ebfe1ec4be5458af",
+        "assets/ast-grep/rules/member-chains-typescript.yml": "blake3:8c433ed18e7c5b04022f07ffed8672caa149d2c90b1dea2eee5bf00e73a10464",
+        "assets/ast-grep/rules/member-patterns-rust.yml": "blake3:1821a7ee7f4d04a4a52e38567707e1f81369fe89aeeb2060c6b4eb478e961699",
+        "assets/ast-grep/rules/membership-lists-tsx.yml": "blake3:c1cf37d95ee774bddec4083620cf5f90b85dd20542f8def181804217b7a09d0d",
+        "assets/ast-grep/rules/membership-lists-typescript.yml": "blake3:e6c333a36a7a55d99c97814c9dbc6bf799aebb5245dd13142f6d6c8261379f44",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:2986cc1f8f55365e72be9313907d93a826556c0d2c4236be620a5163cd548e91"
+      }
+    },
+    "workspaces/core/.contracts/015-code-typescript-const-bindings/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-const-bindings",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:439c158081061033856c6e04ba325b7f3cf88e08a83e1b202202daf509d98c53",
+      "files": {
+        "assets/ast-grep/rules/let-reassignments-tsx.yml": "blake3:a15c7296b5f600c3dc5f98ee31ece079a2e54b24c3730069eee053f369abfa10",
+        "assets/ast-grep/rules/let-reassignments-typescript.yml": "blake3:05cc44bf7f59c6e6a0f8de8fac26a431d4a9d1f89f64174c750f6464beabf6fb",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:467afaf4c6b90d1fab27f449eacba25243b40221a4d48497442d2fe1abf0ac59"
+      }
+    },
+    "workspaces/core/.contracts/016-code-typescript-input-immutability/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-input-immutability",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:9767641df671da33eca1babbbbf80b415aa36a9ecd44123d588b99f9ba84b0d2",
+      "files": {
+        "assets/ast-grep/rules/array-generics-tsx.yml": "blake3:a631f06f1c4f96104867fd58186231833a62ae0aac612c50b60e789da50ee6ba",
+        "assets/ast-grep/rules/array-generics-typescript.yml": "blake3:23374922585b24bb60e7751cbdfc542edfa8e48c5e538527e6418a1c4ecb0226",
+        "assets/ast-grep/rules/delete-environment-tsx.yml": "blake3:ca999e786d5a2246d0b9da197e8a25389e583880184597d66392c3edde40e952",
+        "assets/ast-grep/rules/delete-environment-typescript.yml": "blake3:81a275bd1563566c021b5454920d6a71035c68ede91aa431506639c92eb840b1",
+        "assets/ast-grep/rules/delete-operator-tsx.yml": "blake3:42e6a4d1197dae72d0259b0e276d914537747796383394c50192a36477b0eab6",
+        "assets/ast-grep/rules/delete-operator-typescript.yml": "blake3:11fa1a905a7c2b8fc8126f811e335740437b4a40e0237269317d69c8f4a44ea4",
+        "assets/ast-grep/rules/readonly-array-types-tsx.yml": "blake3:414bd8d38b4385066f9ee1ece2d739551c886a5a10d67e293a5a7e37b612f22c",
+        "assets/ast-grep/rules/readonly-array-types-typescript.yml": "blake3:e9f7498d21b6f08e26ce9b5798257779374a4e52a57ab9d0ea7e756e67a8c10f",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:7079da27c7aa98f5ea29bda053c9281cbfce604c1b9576d5ae67a2f7b93124d5"
+      }
+    },
+    "workspaces/core/.contracts/017-code-typescript-type-assertions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-type-assertions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:4b374d5c1cf87ae944857d6ac8f48604843880aff902a3d763bfe31e1c7624b0",
+      "files": {
+        "assets/ast-grep/rules/satisfies-expressions-tsx.yml": "blake3:8603568a3ccb15f9544d5f3427279a16ed6c04c0e40cd2ad8a4c4ba38088a824",
+        "assets/ast-grep/rules/satisfies-expressions-typescript.yml": "blake3:5542679c974c865208754baaa5cb6b8792a54348f69e3f3537b2a324567b8759",
+        "assets/ast-grep/rules/type-predicates-tsx.yml": "blake3:44cbb967da8b3bafed4c65798311b6b8df219cc673d845658552e8d98091f9d9",
+        "assets/ast-grep/rules/type-predicates-typescript.yml": "blake3:0e0f91a8ac2423446344b5f02e9a9a3a121fc4b11d982773eecb9f0e474e9c4e",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/018-code-typescript-named-types/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-named-types",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:48318deff78a2beba297c3e68f9f3ea84ed65246a8aadfa306a1a1172b311e67",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:62080c39635d54b8d02d89da11f8d7198b6d2c31434c36ea6b0de113a5105cec"
+      }
+    },
+    "workspaces/core/.contracts/019-code-typescript-function-arguments/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-function-arguments",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:f65aba74f5261b623ca09a8039a51f72f5355b7ad1af920a953cafc6cdc57104",
+      "files": {
+        "assets/ast-grep/rules/argument-type-names-tsx.yml": "blake3:2750e14c99f7a4d3607638e1b436254cc76a8b5169c579212045063ce29b207e",
+        "assets/ast-grep/rules/argument-type-names-typescript.yml": "blake3:a8e90cd0d3bcb3d09bd72377376c55d6e10dcbbbe329487e67d65f2e7f9dbf32",
+        "assets/ast-grep/rules/body-field-defaults-tsx.yml": "blake3:4090deed7c86422a3f8e88cdc2659a8cf55c99cf28676be7cfeaaec679886294",
+        "assets/ast-grep/rules/body-field-defaults-typescript.yml": "blake3:a0400d7fba733e873aa16ab4617a9061cc0f47e18ee35899c3528d817f376324",
+        "assets/ast-grep/rules/function-reference-arguments-tsx.yml": "blake3:e10adc4a5ff403a3c23d2a8e8d443789a14fb448db552372224c0453e396d03b",
+        "assets/ast-grep/rules/function-reference-arguments-typescript.yml": "blake3:0cc3b702bac877097e0630537796c220433b0cb0b75ac526c47b6fb2eed4d16d",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/020-code-typescript-class-declarations/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-class-declarations",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:030d987c269186c8b920a5736a11a3ebb2a141e315b0f0fbf1896131e54e1811"
+    },
+    "workspaces/core/.contracts/021-code-typescript-module-state/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-module-state",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:c6d8ebfe7bf1eb94812ffb1d20d3f5541c942053a954bbb407d1901883164c0f",
+      "files": {
+        "assets/ast-grep/rules/module-collections-tsx.yml": "blake3:2e6a5cab3aae03acc23a287130a91b7c7acedd7f5a3ff6cfacdbe69418f28d70",
+        "assets/ast-grep/rules/module-collections-typescript.yml": "blake3:3d3a3b96228a5ee9f877f764c8ee226fc94fd5eb5f7c0ed361e056454ca8c51e",
+        "assets/ast-grep/rules/module-literals-tsx.yml": "blake3:4281cc3dd15fd9e125eb6be50a83c7c2a61261cf0136a5f1baa26962151ad4da",
+        "assets/ast-grep/rules/module-literals-typescript.yml": "blake3:96aea4f97579eec9a0a29312645d3deeefe1d500d47a7f2111d6cdadf0bb2d6d",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/022-code-typescript-compiler-strictness/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-compiler-strictness",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:ad749e8cd724d4946007e62b5c9c21aa3b0031be947e2c60764bccd3b47addbb",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:1faf33e148cb55bf712b63c14b134a33475ef006020b899f0ba68c396b04e794"
+      }
+    },
+    "workspaces/core/.contracts/023-code-typescript-file-names/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-file-names",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:e25dc974dd105a9cb5eb3521ca63b819455d0ba805b412c7b6498005cfea4610"
+    },
+    "workspaces/core/.contracts/024-code-typescript-effect-errors/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-effect-errors",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d4bedd3b8e262838dbb290616d7d3d1a503e84c5d5b3fe62d6d4ce8be48673b4",
+      "files": {
+        "assets/ast-grep/rules/catch-handlers-tsx.yml": "blake3:1dfc2b96e59dfb9a5974eb7a21477f4f5516fd623116f3c79751bedcc9c5807b",
+        "assets/ast-grep/rules/catch-handlers-typescript.yml": "blake3:70f68641b20c4206e559382910fbed80b94979c816b2b31b7e4f2441e61eca24",
+        "assets/ast-grep/rules/promise-chains-tsx.yml": "blake3:0189b6daacc37441585e71ded64b5f04543afc10ffadb48eae034fafefceaa8f",
+        "assets/ast-grep/rules/promise-chains-typescript.yml": "blake3:4ba4789a552288ff904193f522fd3b40a91fb15b40a4eee6052a6347a9d9a6fb",
+        "assets/ast-grep/rules/untagged-errors-tsx.yml": "blake3:7474a690923d5ad53687568bbf0ca9a15d1c1deb6ae70414bb369620ecc2e670",
+        "assets/ast-grep/rules/untagged-errors-typescript.yml": "blake3:69108b9344d9e5fad0783c0a9e32d842121b458e13a661a2800ad5396ee9f068",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:fd599e016a1af14fd6f3e8ad3cdb055a48adf3a32a42ef6f35b90c6eab4fc52a"
+      }
+    },
+    "workspaces/core/.contracts/025-code-typescript-effect-schemas/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-effect-schemas",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:1323cf81c63c13df15bdb9691292ed9def358500acfd3314a95119b875d6822f",
+      "files": {
+        "assets/ast-grep/rules/excess-properties-tsx.yml": "blake3:35cb950f4438c514cb670efbd8615bc0614ff1745d987d36cb438214b1b1e010",
+        "assets/ast-grep/rules/excess-properties-typescript.yml": "blake3:ec90b704575a5358661109a88d82f84d61cc68e1d22dbe7719c3609219af1e70",
+        "assets/ast-grep/rules/schema-names-tsx.yml": "blake3:fb9bb7ffefb9e80cad2fe65e33b7e3a7f9e87a8e8dd198d97de905e900386115",
+        "assets/ast-grep/rules/schema-names-typescript.yml": "blake3:22711f46278786a2b54af232fbb569d0f73fe5774f9292d10be67dea8c8b157b",
+        "assets/ast-grep/rules/schema-types-tsx.yml": "blake3:65a0d6bda2e0999cd696cbdbf5a4c46d48d2ab2b76adafd52e82cc087eaf7c20",
+        "assets/ast-grep/rules/schema-types-typescript.yml": "blake3:23b1b03af5d1e73ca63ca4bcce7c8c39a20ef5b6795c4a7dce8a819f20599612",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/026-code-blank-lines/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-blank-lines",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:1ffb5fae48c53c1979b315d35d0b457e3ae4c202adbce97a0e8192fada2bb264",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:f6b0b803ffc6e7e8d23f311351f272976528d787a248b69965854ccdbacc0160"
+      }
+    },
+    "workspaces/core/.contracts/027-code-boolean-names/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-boolean-names",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:bbbbd22b6cdbe4a51508cd4d4dfad64b8b32d25b31ba983902f95f85a19f9a53",
+      "files": {
+        "assets/ast-grep/rules/boolean-prop-names-tsx.yml": "blake3:0ede91a8545e3fe64cd4810405c99c02847e53b2c5b3e568b195144032cfd299",
+        "assets/ast-grep/rules/boolean-prop-names-typescript.yml": "blake3:e8da67e60930299328f53a8a48c48854fde843d312a94db215505e18e41657e8",
+        "assets/ast-grep/rules/predicate-function-names-python.yml": "blake3:bdce2c3cfa5b1be323229dbcccb00cd8bf546bd2b7c696c18bdef6369604ef39",
+        "assets/ast-grep/rules/predicate-function-names-rust.yml": "blake3:585359bd4f5687e691d152e78294972ab567ec35da1504809b418461d1df2172",
+        "assets/ast-grep/rules/predicate-function-names-tsx.yml": "blake3:f1208dece55feba9a67ff28bcde0c026dc00eb9b64b65535c3f0a2f8965437c6",
+        "assets/ast-grep/rules/predicate-function-names-typescript.yml": "blake3:308c0d7a6ff8b1a38e25893d3261b2ae5a923299f1eb6abbb875a09e6e53cd5d",
+        "assets/ast-grep/sgconfig.yml": "blake3:b161b013b4df803c5c63634f339838129467f73500d33d7f45e768de16e19aa2",
+        "assets/ast-grep/utils/boolean-attribute-names.yml": "blake3:933a7184e6a74e2852c71d86d684414eebbd21f7d3aef522aa41b264ae6c2ea2",
+        "assets/ast-grep/utils/option-prefixes.yml": "blake3:4a892f0cfb31388c8867577d095cd3a0babb9050c31a8e552c51df363d720b38",
+        "assets/ast-grep/utils/predicate-prefixes.yml": "blake3:a52b0fc3c15e7d56c9ce27467af26c6f0f2095d0e4eef8359c6b0e9020bba345"
+      }
+    },
+    "workspaces/core/.contracts/028-code-measured-value-names/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-measured-value-names",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:fc8d8dafb3494599e1a52434e7570511c18781feefc7f7c5fac28fa38551a14a"
+    },
+    "workspaces/core/.contracts/029-code-spelled-out-names/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-spelled-out-names",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:2b725d4e2209bc1a4523b2dad8b582d79ff168cc59bfee003d02c98d7d355011",
+      "files": {
+        "assets/ast-grep/rules/acronym-names-javascript.yml": "blake3:9eb1656fb00b626c7251e2576fc893fd87cc8cc189635769e852a20fae3a0144",
+        "assets/ast-grep/rules/acronym-names-python.yml": "blake3:7d3cb791ef1255fee52c98eecb86430ba9ce5daa94a7d8d1ef440386add30595",
+        "assets/ast-grep/rules/acronym-names-rust.yml": "blake3:0022b39d21f005406cd808ce69fd37977fbd964bce3faea31054c504b8dfea92",
+        "assets/ast-grep/rules/acronym-names-tsx.yml": "blake3:b540ad13c6b1b495260992f4624d3932b4882aeb3a5dae7dde509c19e0ea7a29",
+        "assets/ast-grep/rules/acronym-names-typescript.yml": "blake3:4a243a918505779c056cdd19cb7f62e86159729b47ac233b75b649d6e05f0509",
+        "assets/ast-grep/rules/lookup-names-javascript.yml": "blake3:f9984f29ef1e513c7b8e8cf987e7859cd6ec343f6e867aa5cb1bfee61e10a37f",
+        "assets/ast-grep/rules/lookup-names-python.yml": "blake3:4b6bc8840727d847a0245c80adfd68c2de38da63bc2d3c4b21e806d825d4aec2",
+        "assets/ast-grep/rules/lookup-names-rust.yml": "blake3:de6cda4347d615f790469b115961ff4adfe5b846f6fcb7fae4806b8ae88bd8cb",
+        "assets/ast-grep/rules/lookup-names-tsx.yml": "blake3:5fe7556d7a65fef7e9db6c85d09083f27c5c01c7b2291ff1bf8d0471409dc29f",
+        "assets/ast-grep/rules/lookup-names-typescript.yml": "blake3:39bdf21811facf3166c71e05cbbd0d889d206afb8e121fe3bd413c3a4de80e44",
+        "assets/ast-grep/rules/type-parameter-names-python.yml": "blake3:8dbf17e0930b9b9bd7b784dc0c37c776df2e3138b4ffd24df35e1672a44c2f10",
+        "assets/ast-grep/rules/type-parameter-names-rust.yml": "blake3:3c3856343b5ea8ad6c8cc4db220f4e6cf7c186624688e81056562e51616d8072",
+        "assets/ast-grep/rules/type-parameter-names-tsx.yml": "blake3:cbe9d9edae93c3a5763983dcf60d82295ab80a4895d6b5c450818779f9f1fd00",
+        "assets/ast-grep/rules/type-parameter-names-typescript.yml": "blake3:721739157d555e4295d6278b0cdb39a5c7d0028860b662852082478ba96ded6b",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/030-code-domain-vocabulary/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-domain-vocabulary",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:8f5ea99b961beada96c24acd339b598d8f0b6bc73c72a0c229a5586a4ad745c4"
+    },
+    "workspaces/core/.contracts/031-code-comment-content/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-comment-content",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:8b6090043b7582b614939ed6a1eafb1ab2e618748e641ac446d46c18883a76dd"
+    },
+    "workspaces/core/.contracts/032-code-comment-form/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-comment-form",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:61dc89a4fba60e9cc22219805b70ad037caa7be33ba61c2ed7751a3253858c97",
+      "files": {
+        "assets/ast-grep/rules/body-doc-comments-rust.yml": "blake3:9bec6c18358c1cbc35fc69deedc69e2b8cda4cc7d149d393679ef45f5ce3e9af",
+        "assets/ast-grep/rules/body-doc-comments-tsx.yml": "blake3:551d726361a634d90ff6af9f1806b72f5e685efff0826f5be5d960440f26c509",
+        "assets/ast-grep/rules/body-doc-comments-typescript.yml": "blake3:d4a54ee663d164fd358c7e3efd77dfdb0f7ebaa662afa76e469bbcd8c1de741d",
+        "assets/ast-grep/rules/comment-capitals-python.yml": "blake3:e1beb1cc3ac05ce06a14e81079f46247beb715dc5b020ef460b894079a567d88",
+        "assets/ast-grep/rules/comment-capitals-rust.yml": "blake3:3cb4022d40f3d8fe6150efc8238450a30b9a6ac9c82dc155489338aa3e8a296c",
+        "assets/ast-grep/rules/declaration-comments-python.yml": "blake3:735ac8845d0137e9962acbfa4e3deb3c66c0d95c5b6125982d5a1cb7acfb3272",
+        "assets/ast-grep/rules/declaration-comments-rust.yml": "blake3:0a9bc55a42a170fd90f051f7ceed3104c94585fc9bea970f75f4c2776024187f",
+        "assets/ast-grep/rules/declaration-comments-tsx.yml": "blake3:c6041afb660477a9b2405e7e3b3347ae3daff6313d8747e6c875911fb35ede69",
+        "assets/ast-grep/rules/declaration-comments-typescript.yml": "blake3:546c195f206c23d7ede59f34da6c15383f328cfa4cad4e79e0e39a4b633a0dcb",
+        "assets/ast-grep/rules/executable-file-summaries-javascript.yml": "blake3:55e376ea56194b27478f05c466433a9bfb364c2c45f794d9c91645f09ae2052a",
+        "assets/ast-grep/rules/executable-file-summaries-python.yml": "blake3:d09eced57de06f67e71121f176cd9216bb52d74257095fa8816cd419456c9d69",
+        "assets/ast-grep/rules/executable-file-summaries-rust.yml": "blake3:70f894e5367dbd7ede171e1ada64e45b572707a4652537322ffff1d3109753c1",
+        "assets/ast-grep/rules/executable-file-summaries-tsx.yml": "blake3:6996fe5df6da0a83cd5c1362f7ec4db721d783e5cea655a5083dee41f3762c6b",
+        "assets/ast-grep/rules/executable-file-summaries-typescript.yml": "blake3:ebade19b96992ef4c2755171de099de8467fe1e2774362ad5efa41efe878bfbe",
+        "assets/ast-grep/rules/license-notices-javascript.yml": "blake3:58807bace4e2c57bcf9cfce884ef15390284ad886580c8d1d1ab85c8fa935406",
+        "assets/ast-grep/rules/license-notices-python.yml": "blake3:a3a37537e798f76dc7f74458a86a23bb9b96255d7218a78fd4e56089e62a2a30",
+        "assets/ast-grep/rules/license-notices-rust.yml": "blake3:0fd12a8499c064d8f32c80f5ef9bfec5e87175b97cbe24da722e382903f7d117",
+        "assets/ast-grep/rules/license-notices-tsx.yml": "blake3:1e818d64548f07eb409f8bbd7617f2af180c9e2534a3e0a0bd23f71386f3ee88",
+        "assets/ast-grep/rules/license-notices-typescript.yml": "blake3:00d1d26632546e636421e2e4b939adce080658ef26e86c3654f831dfd68021e4",
+        "assets/ast-grep/rules/prose-doc-comments-javascript.yml": "blake3:e0e5f32ac126597de6a9a34cd12e340d7e87d0894120168db7d658c99c017e96",
+        "assets/ast-grep/rules/prose-doc-comments-python.yml": "blake3:b5a67798c6a322ce7e98fe7c18226dac2dc95dc1c3ee4c1c0190068c8e81d705",
+        "assets/ast-grep/rules/prose-doc-comments-rust.yml": "blake3:69feae4e3ea59cd07e55ca55134168f1702315c0fac2a597bc718c7e468994c7",
+        "assets/ast-grep/rules/prose-doc-comments-tsx.yml": "blake3:155d1e41d8d8ddd91673bc6e63eb71249b9d809f20e0688f8f599dad52757e4a",
+        "assets/ast-grep/rules/prose-doc-comments-typescript.yml": "blake3:e05acd5d5338fa3cba32ee5af614e54d2c540a1f9feb6792d8de0abe889cc8bf",
+        "assets/ast-grep/rules/step-labels-javascript.yml": "blake3:2132e175c34a405dd98d3f2261c775d484a0f59988cac925dd1e3a03f307c183",
+        "assets/ast-grep/rules/step-labels-python.yml": "blake3:882842a9e6537e2e830dc7e79642c96dff8a18bc64801d2315abff9a1a9a0739",
+        "assets/ast-grep/rules/step-labels-rust.yml": "blake3:72b933e058fa90adc77b0c01ba38daaf085c453d5edebeefc775285829adb9e1",
+        "assets/ast-grep/rules/step-labels-tsx.yml": "blake3:ec61ce759bf0c5206ca4132cfd7e398dccc3fcb0c3b3ee64d086086925ea1001",
+        "assets/ast-grep/rules/step-labels-typescript.yml": "blake3:f72b33c53625bf71f4b909f9ff7ce3b0cddb7d0fa8899fab1cece71305922b04",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:c3a8800e67428affc1a7f2939cec99002cba338fd1902970a7d9b4a4670f042c"
+      }
+    },
+    "workspaces/core/.contracts/033-code-comment-attribution/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-comment-attribution",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:f789313f72adb4a420c88b0bd0e2dfe3422c7b7fca77ebdeb00dbb6360b6e223"
+    },
+    "workspaces/core/.contracts/034-code-lint-suppressions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-lint-suppressions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:13e442b22375d77023304c3cc8679f96dbd48299492d7bfabfe87ba26ea66307"
+    },
+    "workspaces/core/.contracts/035-code-duplicated-blocks/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-duplicated-blocks",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:ea1b3a76c6980daa8c77cefb1f1fbc47ee0268ec95da842df19d9dba01b0f66a"
+    },
+    "workspaces/core/.contracts/036-code-shared-definitions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-shared-definitions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:6ae2192bd9c046195b5a2cb9daa3d1e8b714038ddc7f6d27cc2fd8cc7409f093"
+    },
+    "workspaces/core/.contracts/037-code-shared-utilities/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-shared-utilities",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:486c14cff28d875dd9a51a2b29272afda58d3964a9ce654e67fa1cba744d5aa7"
+    },
+    "workspaces/core/.contracts/038-code-environment-settings/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-environment-settings",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:f89faf3c657014357dc540ae5a9d424662fadcd5aa3f43993ab8a96cf02b9eb9"
+    },
+    "workspaces/core/.contracts/039-code-script-entry-points/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-script-entry-points",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:fdc159b7ff8bbd8f9765b9569e939a492121cea34b706edbf6e4046767532aa2"
+    },
+    "workspaces/core/.contracts/040-code-diagnostic-messages/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-diagnostic-messages",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:da162f1e8bc7ad993683e931c61a20574a50e3097b1c798fde759216df9735ad",
+      "files": {
+        "assets/ast-grep/rules/diagnostic-case-python.yml": "blake3:cccd5bc02f81506273dac79b0ee7e1e99014a8f91fe871e7fab27c97417233dc",
+        "assets/ast-grep/rules/diagnostic-case-rust.yml": "blake3:039f6ab13e90770001f18d56a60e94c147b876aea62fe2f0e7ecaeaf7eb1f1d8",
+        "assets/ast-grep/rules/diagnostic-case-tsx.yml": "blake3:5796d65fb50d85932d742b3f4fc10f1346be1c7c18f67fa6ca310a4ff5db488e",
+        "assets/ast-grep/rules/diagnostic-case-typescript.yml": "blake3:028f9bfa55366df2ceb007f3ccaea2ee2896ec5a975846f31d972547a943b807",
+        "assets/ast-grep/rules/diagnostic-values-python.yml": "blake3:9f7f95d2fffff5bb3cfe4220f8b9742f5f7577f8c2e7253710ce53619d9955b1",
+        "assets/ast-grep/rules/diagnostic-values-rust.yml": "blake3:16d273bff46bbd71685f201cb80dbb8540354ae10527d27a3a3f2de11b637b21",
+        "assets/ast-grep/rules/diagnostic-values-tsx.yml": "blake3:841acdab54e66fba5130346f7ff0854cabcc91f3c079d09c1e41c74b14bb7a3e",
+        "assets/ast-grep/rules/diagnostic-values-typescript.yml": "blake3:de51b52d5b7ac8d76cc5d05e13b7e7a29ddcfe1021d9cf0568396779328fadae",
+        "assets/ast-grep/sgconfig.yml": "blake3:b161b013b4df803c5c63634f339838129467f73500d33d7f45e768de16e19aa2",
+        "assets/ast-grep/utils/proper-nouns.yml": "blake3:48f9f4c6cfeadd6458e082f37069d7afcbe854472756ba038d78d325fb5cba05"
+      }
+    },
+    "workspaces/core/.contracts/041-code-execution-lifecycle/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-execution-lifecycle",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:e515286a4b453c321bf5ceb1085b842c4a038e66ef96e018a21ebc287926e0f2"
+    },
+    "workspaces/core/.contracts/042-cli-command-reference-generation/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "cli-command-reference-generation",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:e3e21ce3c6434ea10ee709c8fa1cbe2bf926db8e7148279728f2c63a0dfc5c18"
+    },
+    "workspaces/core/.contracts/043-cli-output-channels/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "cli-output-channels",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:ae28eb91bb1b066a4ad6d50253ad5dbd7eaa11d0488e7e6355e35155ee753882"
+    },
+    "workspaces/core/.contracts/044-data-record-identifiers/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-record-identifiers",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:de70b2a3b9970949ed4ae9d22012d9d3ded515af2a88162b7995235fcba3df29"
+    },
+    "workspaces/core/.contracts/045-data-store-ownership/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-store-ownership",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:bc2a76dcd9e702360bc8e16d97af62f18958e0d5f254b3b940f61a3346454206"
+    },
+    "workspaces/core/.contracts/046-data-sql-store-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-sql-store-boundaries",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:6d706ba971280f4bfd6bdb99cb2cb365cddc2ec61a3c35c985a56dfd9dad8c75"
+    },
+    "workspaces/core/.contracts/047-data-stored-and-shipped-formats/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-stored-and-shipped-formats",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:2d688e340782ffe864f8cd9ee1008417cbc402d8580ce77a9f3cb57bae87d5ef"
+    },
+    "workspaces/core/.contracts/048-data-and-apis/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-and-apis",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:fee81a32897b835a9d6aa560ce243dee2744bed3d991eb5e698ee5ecb32082c7"
+    },
+    "workspaces/core/.contracts/049-test-scenario-functions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "test-scenario-functions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:1ffb55ce49da3296e0587689f4b67044869449b9e9cdb045e8219a4491d5d780",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:cc035ad3c41142c6ec76742c3fd29fabddb06f8e198cb1609ea4f7476de61353"
+      }
+    },
+    "workspaces/core/.contracts/050-test-support-modules/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "test-support-modules",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:fd15f484e83f54341264692010770386e0d00c8634d4ee9425c0cd90679f1d25"
+    },
+    "workspaces/core/.contracts/051-security-api-key-lifecycle/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-api-key-lifecycle",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:38e09e420b2dc8595f71ecf52ecb8374087898bf6f07a21938548b33a461166e"
+    },
+    "workspaces/core/.contracts/052-security-cli-credential-lifecycle/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-cli-credential-lifecycle",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:6c8c5f8477579c628f189dfd3b305b347f855067344d91719883f33eb10cb690"
+    },
+    "workspaces/core/.contracts/053-security-oauth-browser-sessions/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-oauth-browser-sessions",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:079123d9618278709743428120d5e71153b51003e28d6dc8c002459e55dd4b22"
+    },
+    "workspaces/core/.contracts/054-security-server-secret-storage/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-server-secret-storage",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:c37a80677151070770afd7fe822344f151980c89603addd0996ff549d734977a"
+    },
+    "workspaces/core/.contracts/055-security-resource-access-control/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-resource-access-control",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:7d8d89e9b449ddaaa650333172e476e1eff784d2e4791223bae22af704318feb"
+    },
+    "workspaces/core/.contracts/056-security-interpreter-injection/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "security-interpreter-injection",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d77d60241147ce2fc575a996cba42b890788e80eeaa54caba14542eb5e75d023"
+    },
+    "workspaces/core/.contracts/057-eval-run-lifecycle/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "eval-run-lifecycle",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:30c29d43cdfc2a468d7f19d213cacf574ecb86cc5e769f368bb5732dc41503ee"
+    },
+    "workspaces/core/.contracts/058-eval-grading-isolation/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "eval-grading-isolation",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:5eed74d49e66dc166a9df098bcbd06eeed8869d766aba769972bde66118c01f3"
+    },
+    "workspaces/core/.contracts/059-eval-production-path/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "eval-production-path",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:2f7f3c16280d30e4f135dc5cb00b130582c4dee7e67298b897a6f8465ae51f8c"
+    },
+    "workspaces/core/.contracts/060-eval-score-accounting/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "eval-score-accounting",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:791ed9c6342202c946546ebe6c4e02986e905f3194b888bfc4c5384476d148c1"
+    },
+    "workspaces/core/.contracts/061-data-sql-schema-rollouts/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "data-sql-schema-rollouts",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:16254cc8c7d060b9e17e400734df7a54dd8fe2782679f1f1f1a3495473eef9cc"
+    },
+    "workspaces/core/.contracts/062-api-typescript-request-paths/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "api-typescript-request-paths",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:a5d39ba24f5d224f52debe98e137c7b5ac16284292cfe036105571a462727f9b",
+      "files": {
+        "assets/ast-grep/rules/request-paths-tsx.yml": "blake3:a04af25dd11b9c41e8f7b93479c7dfdd8c0262ac9a194014e4cd35ebb3c3fbfc",
+        "assets/ast-grep/rules/request-paths-typescript.yml": "blake3:90d2cfac28276444d33ac64711467faac79ebd830fad17d26f8b694d2ae04eaa",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954"
+      }
+    },
+    "workspaces/core/.contracts/063-code-numeric-literals/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-numeric-literals",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d32f37f37575bbf15caff8af0a772dadb120a7e72cc0aea6fc083f5ffcad841a",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:ab06e0be6b11f8887573da6a29bc3512de8896e8b1334b9e593d6d91e27e8a2c"
+      }
+    },
+    "workspaces/core/.contracts/064-code-typescript-call-arguments/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "code-typescript-call-arguments",
+      "ref": "v11.0.0",
+      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
+      "hash": "blake3:d9975ef7cf3d7fe7a2828492bd60acad89bbbcdbb8983e934d4c14c6ddb71117",
+      "files": {
+        "assets/ast-grep/rules/argument-object-functions-tsx.yml": "blake3:d1f4b961231c7dbb7705e492164bf26dda18622b62a35e512445bfdcaaf88e35",
+        "assets/ast-grep/rules/argument-object-functions-typescript.yml": "blake3:fc61aca0f5f61ed273206538f5864ba2e48707601978e8e2689f466937218ab6",
+        "assets/ast-grep/rules/awaited-members-tsx.yml": "blake3:28c2f7961ef7a636346e3928ee169b0bee810446f4c196a30a4e54b4ccd8eb49",
+        "assets/ast-grep/rules/awaited-members-typescript.yml": "blake3:31318cb1d02aff893f5f993ca8fde67756b2fb923a4dcac6f22625d6c52ecf6c",
+        "assets/ast-grep/rules/call-arguments-tsx.yml": "blake3:b13b6f25591c392579f1112845d8fb484597dd74020c57a07c2931f05f9b70c1",
+        "assets/ast-grep/rules/call-arguments-typescript.yml": "blake3:48337e75a01fa3342b47ed32370cf72b62d0d890c312d00a47b20272a51c8a4f",
+        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/oxlint/oxlintrc.json": "blake3:d533cc8f3eddb539aa3aa6ae9e299183ce3960ce3952e979821d8fe957716672"
+      }
+    }
+  }
+}

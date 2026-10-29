@@ -1,0 +1,11 @@
+{
+  "packages/shared/utilities/src/after-failing.ts": 1,
+  "packages/shared/utilities/src/after-settling.ts": 1,
+  "packages/shared/utilities/src/settles-within.ts": 2,
+  "packages/shared/utilities/src/unless-stopped.ts": 2,
+  "packages/shared/utilities/src/wake-list.ts": 1,
+  "packages/worker/mech-ports/src/meter/settle-dispatch.ts": 1,
+  "packages/worker/mech/src/project-progress.ts": 1,
+  "packages/worker/sandbox/src/executions/guest-reply.ts": 2,
+  "packages/worker/sandbox/src/providers/http-guest.ts": 1
+}

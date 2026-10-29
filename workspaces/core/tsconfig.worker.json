@@ -1,0 +1,30 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": { "types": ["@cloudflare/workers-types", "node"] },
+  "files": ["lint/types/worker/strict-globals.d.ts"],
+  "include": [
+    "packages/worker/app/src",
+    "packages/worker/bindings/src",
+    "packages/worker/directory/src",
+    "packages/worker/directory-store/src",
+    "packages/worker/edge/src",
+    "packages/worker/harness/src",
+    "packages/worker/harness-tools/src",
+    "packages/worker/integrations/src",
+    "packages/worker/key-cache/src",
+    "packages/worker/key-cache-store/src",
+    "packages/worker/limiter/src",
+    "packages/worker/limiter-store/src",
+    "packages/worker/logs/src",
+    "packages/worker/mech/src",
+    "packages/worker/mech-ports/src",
+    "packages/worker/mech-store/src",
+    "packages/worker/pages/src",
+    "packages/worker/rpc/src",
+    "packages/worker/sandbox/src",
+    "packages/worker/sandbox-store/src",
+    "packages/worker/store/src",
+    "packages/worker/workspace/src",
+    "packages/worker/workspace-store/src"
+  ]
+}

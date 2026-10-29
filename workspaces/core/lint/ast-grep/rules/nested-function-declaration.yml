@@ -1,0 +1,21 @@
+# SC-03: inside a function, every named function is a typed const declared above the statement that first uses it,
+# with no statement between, never a function declaration.
+id: nested-function-declaration
+language: TypeScript
+severity: error
+message: 'Declare the inner function as a typed const above the statement that first uses it, such as `const allowance: (input: AllowanceInput) => Promise<number> = async ({ workspaceId }) => …` (SC-03)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  any:
+    - kind: function_declaration
+    - kind: generator_function_declaration
+  inside:
+    stopBy: end
+    any:
+      - kind: function_declaration
+      - kind: generator_function_declaration
+      - kind: function_expression
+      - kind: generator_function
+      - kind: arrow_function
+      - kind: method_definition

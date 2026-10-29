@@ -1,0 +1,24 @@
+{
+  "name": "@mechane/cli",
+  "private": true,
+  "bin": {
+    "mechane": "./src/main.ts"
+  },
+  "type": "module",
+  "dependencies": {
+    "@mechane/cli-kernel": "workspace:*",
+    "@mechane/cli-login": "workspace:*",
+    "@mechane/cli-update": "workspace:*",
+    "@mechane/client": "workspace:*",
+    "@mechane/commands": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/eval": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2"
+  }
+}

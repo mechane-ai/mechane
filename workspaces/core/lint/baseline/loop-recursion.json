@@ -1,0 +1,14 @@
+{
+  "packages/node/boundaries/src/with-importers.ts": 1,
+  "packages/node/locks/src/fields/decoded-node.ts": 1,
+  "packages/node/locks/src/fields/field-names.ts": 1,
+  "packages/node/locks/src/fields/record-form-findings.ts": 1,
+  "packages/node/modules/src/declarations/constant-value.ts": 1,
+  "packages/node/modules/src/declarations/value-role.ts": 1,
+  "packages/node/modules/src/statements/export-origin.ts": 1,
+  "packages/node/modules/src/units/attached-start.ts": 1,
+  "packages/node/modules/src/units/unit-users.ts": 1,
+  "packages/node/rename/src/binding/type-declaration.ts": 1,
+  "packages/node/rules/src/configurations/configuration-text.ts": 1,
+  "packages/node/testing/src/mechs/events/await-event.ts": 1
+}

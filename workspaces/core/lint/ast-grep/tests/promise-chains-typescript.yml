@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: promise-chains-typescript
+valid:
+  - 'const result = await promise;'
+invalid:
+  - 'promise.then(read);'
+  - 'promise.finally(close);'

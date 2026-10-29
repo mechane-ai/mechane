@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: module-mutable-binding
+valid:
+  - 'const LIMIT = 3;'
+invalid:
+  - 'let count = 0;'
+  - 'var count = 0;'

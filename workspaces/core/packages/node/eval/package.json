@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/eval",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/client": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

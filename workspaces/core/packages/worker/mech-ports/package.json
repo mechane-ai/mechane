@@ -1,0 +1,21 @@
+{
+  "name": "@mechane/mech-ports",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/harness": "workspace:*",
+    "@mechane/harness-tools": "workspace:*",
+    "@mechane/integrations": "workspace:*",
+    "@mechane/logs": "workspace:*",
+    "@mechane/mech-store": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

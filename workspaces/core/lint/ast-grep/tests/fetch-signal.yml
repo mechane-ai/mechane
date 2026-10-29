@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: fetch-signal
+valid:
+  - 'Effect.tryPromise({ try: (signal) => fetch(url, { signal }), catch: (cause) => new Unreachable({ reason: String(cause) }) });'
+invalid:
+  - 'Effect.tryPromise({ try: () => fetch(url), catch: (cause) => new Unreachable({ reason: String(cause) }) });'

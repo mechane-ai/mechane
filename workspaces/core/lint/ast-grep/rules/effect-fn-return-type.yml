@@ -1,0 +1,25 @@
+# An `Effect.fn` generator without `Effect.fn.Return`, which states what the effect succeeds, fails and needs with.
+id: effect-fn-return-type
+language: TypeScript
+severity: error
+message: "Declare the generator's return type, such as `Effect.fn('startStack')(function* (input): Effect.fn.Return<Stack, StackFailed> { … })` (EF-01)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: generator_function
+  inside:
+    kind: arguments
+    inside:
+      kind: call_expression
+      has:
+        field: function
+        any:
+          - regex: ^Effect\.fn$
+          - kind: call_expression
+            has:
+              field: function
+              regex: ^Effect\.fn$
+  not:
+    has:
+      field: return_type
+      regex: '^:\s*Effect\.fn\.Return<'

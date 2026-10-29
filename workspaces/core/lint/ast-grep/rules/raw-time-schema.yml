@@ -1,0 +1,21 @@
+# TD-16: a schema field named for a time decodes its instant or span, through `Schema.DateTimeUtcFromMillis` or
+# `Schema.DurationFromMillis`, rather than holding its milliseconds as a number.
+id: raw-time-schema
+language: TypeScript
+severity: error
+message: 'Decode a time field to its instant or span, such as `expiresAt: Schema.DateTimeUtcFromMillis` or `lifetime: Schema.DurationFromMillis` (TD-16)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: pair
+  all:
+    - has:
+        field: key
+        regex: ([a-z](Ms|Seconds|Minutes|Hours|At|Timeout|Deadline|Delay|Interval|Duration|Grace|Lifetime|Window|Ttl|Age|Period)|^(ms|seconds|timeout|deadline|delay|interval|duration|grace|lifetime|window|ttl|age|period)|_(ms|at|seconds))$
+    - has:
+        field: value
+        any:
+          - regex: ^Schema\.(Int|Number|Finite|NonNegativeInt|NonNegative|Positive|PositiveInt)$
+          - has:
+              stopBy: end
+              regex: ^Schema\.(Int|Number|Finite|NonNegativeInt|NonNegative|Positive|PositiveInt)$

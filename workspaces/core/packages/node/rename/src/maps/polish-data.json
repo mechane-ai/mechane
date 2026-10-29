@@ -1,0 +1,46 @@
+{
+  "identifiers": [
+    {
+      "file": "packages/worker/src/workspace/store/dispatch-records.ts",
+      "at": "function turnDispatches(",
+      "from": "turnDispatches",
+      "to": "workDispatches"
+    },
+    {
+      "file": "packages/worker/src/workspace/store/types.ts",
+      "at": "readonly turnDispatches:",
+      "from": "turnDispatches",
+      "to": "workDispatches"
+    },
+    {
+      "file": "packages/worker/src/workspace/workspace-object.ts",
+      "at": "turnDispatches({ mechId, workId }: ",
+      "from": "turnDispatches",
+      "to": "workDispatches"
+    },
+    {
+      "file": "packages/worker/src/workspace/store/types.ts",
+      "at": "export type TurnDispatchesInput",
+      "from": "TurnDispatchesInput",
+      "to": "WorkDispatchesInput"
+    },
+    {
+      "file": "packages/worker/src/workspace/types.ts",
+      "at": "export type TurnDispatchesInput",
+      "from": "TurnDispatchesInput",
+      "to": "WorkDispatchesInput"
+    },
+    {
+      "file": "packages/worker/src/workspace/schemas.ts",
+      "at": "export const TurnDispatchesAnswer",
+      "from": "TurnDispatchesAnswer",
+      "to": "WorkDispatchesAnswer"
+    }
+  ],
+  "files": [],
+  "strings": [
+    { "from": "turnDispatches", "to": "workDispatches", "within": "packages" },
+    { "from": "TurnDispatchesInput", "to": "WorkDispatchesInput", "within": "packages" },
+    { "from": "TurnDispatchesAnswer", "to": "WorkDispatchesAnswer", "within": "packages" }
+  ]
+}

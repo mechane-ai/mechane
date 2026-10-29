@@ -1,0 +1,10 @@
+# An optional property of a written type, which an `Option` spells instead.
+id: no-optional-property
+language: TypeScript
+severity: error
+message: 'Spell an absent property as `Option`, such as `readonly name: Option.Option<string>` (TD-18)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: property_signature
+  regex: ^(readonly\s+)?[#\w]+\?

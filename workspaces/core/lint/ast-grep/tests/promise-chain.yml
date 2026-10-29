@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: promise-chain
+valid:
+  - 'async function use() { return read(await call()); }'
+  - 'Effect.catch(stop);'
+invalid:
+  - 'p.finally(f);'
+  - 'p.catch(f);'
+  - 'p.then(f).then(g);'
+  - 'new Promise(f);'
+  - 'Promise.resolve(1);'

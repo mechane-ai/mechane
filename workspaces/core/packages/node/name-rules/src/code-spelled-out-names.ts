@@ -1,0 +1,123 @@
+import { ADOPTED, AST_GREP_DEFAULTS, FixBehavior, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
+import type { ContractEnforcement } from '@mechane/rule-shapes';
+import { Option } from 'effect';
+
+/**
+ * The abbreviations a name may not hold, each with the word it spells out; `temp` is a history word, which the
+ * vocabulary bans. The external names keep an external system's own word, such as XDG's `XDG_CONFIG_HOME`, oxlint's
+ * `new-cap` or Wrangler's `new_sqlite_classes`, which neither this rule nor the vocabulary's banned words hold.
+ */
+const VALUES = {
+  externalNames: [
+    'configHome',
+    'ConfigHome',
+    'CONFIG_HOME_FALLBACK',
+    'CONFIG_HOME_VARIABLE',
+    'GIT_CONFIG_NOSYSTEM',
+    'GlobalProps',
+    'new-cap',
+    'capIsNew',
+    'new_sqlite_classes',
+    // Tensorlake's image SDK takes this exact option name for registry credentials.
+    'dockerConfigJson',
+  ],
+  wordReplacements: {
+    addr: 'address',
+    arr: 'array',
+    attr: 'attribute',
+    buf: 'buffer',
+    calc: 'calculation',
+    cb: 'callback',
+    cfg: 'configuration',
+    conf: 'configuration',
+    config: 'configuration',
+    configs: 'configurations',
+    ctx: 'context',
+    cur: 'current',
+    desc: 'description',
+    dir: 'folder',
+    dst: 'destination',
+    elem: 'element',
+    env: 'environment',
+    err: 'error',
+    evt: 'event',
+    ext: 'extension',
+    fn: 'function',
+    hdr: 'header',
+    idx: 'index',
+    impl: 'implementation',
+    len: 'length',
+    mgr: 'manager',
+    mod: 'module',
+    msg: 'message',
+    num: 'number',
+    obj: 'object',
+    op: 'operation',
+    opts: 'options',
+    org: 'organization',
+    pkg: 'package',
+    pos: 'position',
+    prev: 'previous',
+    proc: 'process',
+    prop: 'property',
+    props: 'properties',
+    ref: 'reference',
+    repo: 'repository',
+    req: 'request',
+    res: 'response',
+    resp: 'response',
+    ret: 'result',
+    seq: 'sequence',
+    sig: 'signature',
+    spec: 'specification',
+    src: 'source',
+    str: 'string',
+    tmp: 'temporary',
+    tx: 'transaction',
+    txn: 'transaction',
+    util: 'utility',
+    utils: 'utilities',
+    val: 'value',
+  },
+} as const;
+
+/** What enforces `code-spelled-out-names`: no abbreviation, no one-character name, and `_tag` alone dangles. */
+export const codeSpelledOutNames = {
+  values: VALUES,
+  rules: [
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'id-length',
+      behavior: FixBehavior.BindingNames,
+      value: [Severity.Error, { min: 2, exceptions: ['_'], checkGeneric: false }],
+      note: Option.some(
+        'A type parameter of one capital letter, such as `O extends Operation`, is a name the naming rules allow.',
+      ),
+      standard: 'NM-06',
+    },
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'no-underscore-dangle',
+      behavior: FixBehavior.BindingNames,
+      value: [Severity.Error, { allow: ['_tag'] }],
+      note: Option.some('Effect names the discriminant of every tagged value `_tag`.'),
+      standard: '029',
+    },
+    {
+      ...AST_GREP_DEFAULTS,
+      ...ADOPTED,
+      name: 'spelled-out-names',
+      behavior: FixBehavior.BindingNames,
+      standard: 'NM-05',
+      violation: [
+        'const cfg = load();',
+        'function parse({ ctx }: ParseInput) { return ctx; }',
+        'const config = load();',
+        'type ConfigPath = string;',
+      ],
+      allowed: ['const configuration = load();', 'function home({ configHome }: HomeInput) { return configHome; }'],
+    },
+  ],
+} as const satisfies ContractEnforcement;

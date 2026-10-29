@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: declaration-file-role
+valid:
+  - 'export const LIMIT = 3;'
+invalid:
+  - 'export function parseLine({ line }: LineInput) { return line; }'
+  - 'export const parseLine = ({ line }: LineInput) => line;'

@@ -1,0 +1,16 @@
+# A function or method that declares it returns an Effect, which `Effect.fn` replaces.
+id: effect-function-form
+language: TypeScript
+severity: error
+message: "Write an effectful function as `Effect.fn`, such as `Effect.fn('startStack')(function* (input) { … })` (EF-01)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: function_declaration
+    - kind: arrow_function
+    - kind: function_expression
+    - kind: method_definition
+  has:
+    field: return_type
+    regex: '^:\s*Effect\.Effect<'

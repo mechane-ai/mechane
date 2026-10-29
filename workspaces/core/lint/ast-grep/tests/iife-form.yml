@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: iife-form
+valid:
+  - 'const wait: Duration.Duration = (() => { if (isFollowing) { return WAIT_MAX; } return LISTING_WAIT; })();'
+  - 'const references: ReadonlyArray<ObjectReference> = (() => { if (isTip) { return [object]; } const manifests = archiveManifests({ archive }); return manifests.flatMap(manifestReferences); })();'
+invalid:
+  - 'const value = (() => { return 1; })();'
+  - 'const delay: number = (async () => { return await wait(); })();'
+  - 'const total: number = (() => { let sum = 0; for (const item of items) { sum += item; } return sum; })();'
+  - 'const doubled: number = ((count) => { return count * 2; })(items);'

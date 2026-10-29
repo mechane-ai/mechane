@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/integrations",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "@modelcontextprotocol/client": "2.4.0",
+    "effect": "4.0.7",
+    "jose": "6.2.13"
+  }
+}

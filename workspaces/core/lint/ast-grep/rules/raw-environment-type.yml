@@ -1,0 +1,20 @@
+id: raw-environment-type
+language: TypeScript
+severity: error
+message: 'Pass decoded settings, such as `settings: StackSettings`, never the raw process environment (ST-31)'
+files: ['**/*.ts']
+ignores:
+  - '**/node_modules/**'
+  - packages/node/cli/src/settings/load-invocation.ts
+  - packages/node/guest/src/load-guest-settings.ts
+  - packages/node/stack/src/load-stack-settings.ts
+  - packages/node/release/src/load-release-settings.ts
+  - packages/node/deploy/src/load-deploy-settings.ts
+  - packages/node/deploy/src/image/load-image-settings.ts
+  - packages/node/checks/src/load-checks-settings.ts
+  - packages/node/rename/src/load-rename-settings.ts
+  - packages/node/package-moves/src/load-move-settings.ts
+  - packages/node/rule-generator/src/load-generate-settings.ts
+rule:
+  kind: nested_type_identifier
+  regex: ^NodeJS\.ProcessEnv$

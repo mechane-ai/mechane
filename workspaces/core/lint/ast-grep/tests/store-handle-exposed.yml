@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: store-handle-exposed
+valid:
+  - 'function turnStore({ sql }: StoreInput) { return { readTurn }; }'
+invalid:
+  - 'function turnStore({ sql }: StoreInput) { return { sql, readTurn }; }'

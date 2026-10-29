@@ -1,0 +1,17 @@
+# The Worker's settings module is the one reader of its bindings and variables.
+id: raw-binding-read
+language: TypeScript
+severity: error
+message: "Read a binding only in the Worker's settings module and pass the decoded settings, such as `settings.origin` (ST-31)"
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/worker/bindings/src/settings/**, packages/worker/rpc/src/object-bindings.ts]
+rule:
+  any:
+    - kind: member_expression
+      has:
+        field: object
+        regex: ^(env|environment|this\.env)$
+    - kind: variable_declarator
+      has:
+        field: value
+        regex: ^(env|environment|this\.env)$

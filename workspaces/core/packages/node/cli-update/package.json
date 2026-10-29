@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/cli-update",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/cli-kernel": "workspace:*",
+    "@mechane/client": "workspace:*",
+    "@mechane/commands": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

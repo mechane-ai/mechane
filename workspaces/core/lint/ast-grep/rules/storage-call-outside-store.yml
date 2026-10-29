@@ -1,0 +1,15 @@
+id: storage-call-outside-store
+language: TypeScript
+severity: error
+message: 'Read and write Durable Object storage only through its store module, such as `turnStore.readTurn({ turnId })` (DO-06)'
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**', packages/node/smoke/**, packages/node/testing/**]
+rule:
+  kind: member_expression
+  all:
+    - has:
+        field: object
+        regex: (^|\.|#)(storage|kv)$
+    - has:
+        field: property
+        regex: ^(get|getWithMetadata|put|delete|list|deleteAll|getAlarm|setAlarm|deleteAlarm|transaction)$

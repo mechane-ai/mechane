@@ -1,0 +1,12 @@
+{
+  "name": "@mechane/rename",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/checks-kernel": "workspace:*",
+    "@mechane/modules": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/rule-shapes": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

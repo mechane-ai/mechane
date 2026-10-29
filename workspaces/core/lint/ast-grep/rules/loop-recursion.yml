@@ -1,0 +1,18 @@
+# EF-18: repeat with `for … of` or `while` in the function that owns the repetition; a function that calls itself walks
+# recursive data only, under a suppression that names it.
+id: loop-recursion
+language: TypeScript
+severity: error
+message: 'Repeat with a loop over a worklist, such as `while (pending.length > 0) { const next = pending.pop(); }`, or suppress a walk of recursive data (EF-18)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  any:
+    - kind: function_declaration
+      all:
+        - has: { field: name, pattern: $NAME }
+        - has: { field: body, has: { stopBy: end, kind: call_expression, has: { field: function, pattern: $NAME } } }
+    - kind: variable_declarator
+      all:
+        - has: { field: name, pattern: $NAME }
+        - has: { field: value, has: { stopBy: end, kind: call_expression, has: { field: function, pattern: $NAME } } }

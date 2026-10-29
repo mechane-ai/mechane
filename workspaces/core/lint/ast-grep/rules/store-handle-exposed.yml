@@ -1,0 +1,22 @@
+id: store-handle-exposed
+language: TypeScript
+severity: error
+message: "Keep the storage handle in the store's closure, such as `return { readTurn }` (DO-06)"
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: shorthand_property_identifier
+      regex: ^(storage|sql|kv)$
+    - kind: pair
+      has:
+        field: key
+        regex: ^(storage|sql|kv)$
+  inside:
+    kind: object
+    inside:
+      any:
+        - kind: return_statement
+        - kind: parenthesized_expression
+          inside:
+            kind: arrow_function

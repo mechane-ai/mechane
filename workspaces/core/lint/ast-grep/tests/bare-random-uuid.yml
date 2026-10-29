@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: bare-random-uuid
+valid:
+  - 'const turnId = TurnId.make(crypto.randomUUID());'
+invalid:
+  - 'const turnId = crypto.randomUUID();'

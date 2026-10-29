@@ -1,0 +1,30 @@
+# A decode piped into `Effect.orDie`, or passed to it, which turns the failure a boundary expects into a defect.
+id: decode-or-die
+language: TypeScript
+severity: error
+message: "Map the decode's failure to the boundary's error, such as `Schema.decodeUnknownEffect(Row)(input).pipe(Effect.mapError(toFailed))` (EF-16)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  decode:
+    kind: call_expression
+    has:
+      field: function
+      kind: call_expression
+      has: { field: function, regex: '^Schema\.decode' }
+rule:
+  kind: call_expression
+  any:
+    - all:
+        - has:
+            field: function
+            kind: member_expression
+            all:
+              - has: { field: property, regex: '^pipe$' }
+              - has: { field: object, matches: decode }
+        - has:
+            field: arguments
+            has: { regex: '^Effect\.orDie$' }
+    - all:
+        - has: { field: function, regex: '^Effect\.orDie$' }
+        - has: { field: arguments, has: { matches: decode } }

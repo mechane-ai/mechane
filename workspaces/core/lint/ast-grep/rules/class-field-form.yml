@@ -1,0 +1,19 @@
+id: class-field-form
+language: TypeScript
+severity: error
+message: "Declare the class field `readonly` with a private name, such as `readonly #ready = false`, or `override readonly` with the base class's name (020)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: public_field_definition
+  any:
+    - not:
+        regex: ^(override\s+)?readonly\s
+    - all:
+        - not:
+            has:
+              kind: override_modifier
+        - not:
+            has:
+              field: name
+              kind: private_property_identifier

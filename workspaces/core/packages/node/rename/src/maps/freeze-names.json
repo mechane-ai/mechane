@@ -1,0 +1,282 @@
+{
+  "identifiers": [
+    {
+      "file": "packages/worker/src/mech/drones/read-drones.ts",
+      "at": "export function readDrone(",
+      "from": "readDrone",
+      "to": "droneWithBrief"
+    },
+    {
+      "file": "packages/protocol/src/auth/whoami.ts",
+      "at": "export const whoami",
+      "from": "whoami",
+      "to": "showPrincipal"
+    },
+    {
+      "file": "packages/worker/src/auth/whoami.ts",
+      "at": "export function whoami(",
+      "from": "whoami",
+      "to": "showPrincipal"
+    },
+    {
+      "file": "packages/protocol/src/auth/schemas.ts",
+      "at": "export const Whoami",
+      "from": "Whoami",
+      "to": "PrincipalAnswer"
+    },
+    {
+      "file": "packages/protocol/src/auth/schemas.ts",
+      "at": "export type Whoami",
+      "from": "Whoami",
+      "to": "PrincipalAnswer"
+    },
+    {
+      "file": "packages/protocol/src/drones/read-drone.ts",
+      "at": "export const readDrone",
+      "from": "readDrone",
+      "to": "showDrone"
+    },
+    {
+      "file": "packages/worker/src/drones/read-drone.ts",
+      "at": "export function readDrone(",
+      "from": "readDrone",
+      "to": "showDrone"
+    },
+    {
+      "file": "packages/protocol/src/traces/read-trace.ts",
+      "at": "export const readTrace",
+      "from": "readTrace",
+      "to": "showTrace"
+    },
+    {
+      "file": "packages/worker/src/mechs/read-trace.ts",
+      "at": "export function readTrace(",
+      "from": "readTrace",
+      "to": "showTrace"
+    },
+    {
+      "file": "packages/protocol/src/workspaces/read-allowance.ts",
+      "at": "export const readAllowance",
+      "from": "readAllowance",
+      "to": "showAllowance"
+    },
+    {
+      "file": "packages/worker/src/workspaces/read-allowance.ts",
+      "at": "export function readAllowance(",
+      "from": "readAllowance",
+      "to": "showAllowance"
+    },
+    {
+      "file": "packages/cli/src/runs/mechs/run-send.ts",
+      "at": "export function runSend(",
+      "from": "runSend",
+      "to": "runInboxSend"
+    },
+    {
+      "file": "packages/cli/src/runs/observe/run-events.ts",
+      "at": "export function runEvents(",
+      "from": "runEvents",
+      "to": "runEventList"
+    },
+    {
+      "file": "packages/cli/src/runs/observe/run-trace.ts",
+      "at": "export function runTrace(",
+      "from": "runTrace",
+      "to": "runTraceShow"
+    },
+    {
+      "file": "packages/protocol/src/errors/errors.ts",
+      "at": "export class KeyInvalid",
+      "from": "KeyInvalid",
+      "to": "KeyUnrecognized"
+    },
+    {
+      "file": "packages/protocol/src/errors/errors.ts",
+      "at": "export class ModelUnavailable",
+      "from": "ModelUnavailable",
+      "to": "ModelInvalid"
+    },
+    {
+      "file": "packages/protocol/src/errors/errors.ts",
+      "at": "export class DeviceApprovalExpired",
+      "from": "DeviceApprovalExpired",
+      "to": "DeviceApprovalNotFound"
+    },
+    {
+      "file": "packages/protocol/src/errors/errors.ts",
+      "at": "export class CredentialMissing",
+      "from": "CredentialMissing",
+      "to": "KeyMissing"
+    },
+    {
+      "file": "packages/protocol/src/errors/errors.ts",
+      "at": "export class ReleasesUnavailable",
+      "from": "ReleasesUnavailable",
+      "to": "ReleasesBucketUnavailable"
+    },
+    {
+      "file": "packages/cli/src/runs/errors.ts",
+      "at": "export class AllowanceShort",
+      "from": "AllowanceShort",
+      "to": "AllowanceExhausted"
+    },
+    {
+      "file": "packages/worker/src/harness/models/errors.ts",
+      "at": "export class AllowanceRefused",
+      "from": "AllowanceRefused",
+      "to": "AllowanceExhausted"
+    },
+    {
+      "file": "packages/client/src/errors.ts",
+      "at": "export class ServerUnreachable",
+      "from": "ServerUnreachable",
+      "to": "OriginUnreachable"
+    },
+    {
+      "file": "packages/cli/src/runs/errors.ts",
+      "at": "export class NotSignedIn",
+      "from": "NotSignedIn",
+      "to": "SavedLoginMissing"
+    },
+    {
+      "file": "packages/cli/src/runs/errors.ts",
+      "at": "export class UnreleasedProgram",
+      "from": "UnreleasedProgram",
+      "to": "ReleaseStampMissing"
+    },
+    {
+      "file": "packages/guest/src/errors.ts",
+      "at": "export class GuestUnlistening",
+      "from": "GuestUnlistening",
+      "to": "GuestUnreachable"
+    },
+    {
+      "file": "packages/guest/src/errors.ts",
+      "at": "export class BashUnstarted",
+      "from": "BashUnstarted",
+      "to": "ExecutionUnstarted"
+    },
+    {
+      "file": "scripts/stack/celld/errors.ts",
+      "at": "export class HealthUnanswered",
+      "from": "HealthUnanswered",
+      "to": "WorkerUnreachable"
+    },
+    {
+      "file": "packages/cli/src/runs/errors.ts",
+      "at": "export class BinaryMismatch",
+      "from": "BinaryMismatch",
+      "to": "BinaryMismatched"
+    },
+    {
+      "file": "packages/cli/src/runs/errors.ts",
+      "at": "export class VerificationUrlForeign",
+      "from": "VerificationUrlForeign",
+      "to": "VerificationUrlMismatched"
+    },
+    {
+      "file": "scripts/utilities/cli/constants.ts",
+      "at": "InstallDirectory: 'MECHANE_INSTALL_DIR'",
+      "from": "InstallDirectory",
+      "to": "InstallFolder"
+    },
+    {
+      "file": "packages/client/src/errors.ts",
+      "at": "export class ApiFailure",
+      "from": "ApiFailure",
+      "to": "OperationFailed"
+    }
+  ],
+  "files": [
+    { "from": "packages/protocol/src/auth/whoami.ts", "to": "packages/protocol/src/auth/show-principal.ts" },
+    { "from": "packages/protocol/src/drones/read-drone.ts", "to": "packages/protocol/src/drones/show-drone.ts" },
+    { "from": "packages/protocol/src/traces/read-trace.ts", "to": "packages/protocol/src/traces/show-trace.ts" },
+    {
+      "from": "packages/protocol/src/workspaces/read-allowance.ts",
+      "to": "packages/protocol/src/workspaces/show-allowance.ts"
+    },
+    { "from": "packages/worker/src/auth/whoami.ts", "to": "packages/worker/src/auth/show-principal.ts" },
+    { "from": "packages/worker/src/drones/read-drone.ts", "to": "packages/worker/src/drones/show-drone.ts" },
+    { "from": "packages/worker/src/mechs/read-trace.ts", "to": "packages/worker/src/mechs/show-trace.ts" },
+    {
+      "from": "packages/worker/src/workspaces/read-allowance.ts",
+      "to": "packages/worker/src/workspaces/show-allowance.ts"
+    },
+    { "from": "packages/cli/src/runs/mechs/run-send.ts", "to": "packages/cli/src/runs/mechs/run-inbox-send.ts" },
+    { "from": "packages/cli/src/runs/observe/run-events.ts", "to": "packages/cli/src/runs/observe/run-event-list.ts" },
+    { "from": "packages/cli/src/runs/observe/run-trace.ts", "to": "packages/cli/src/runs/observe/run-trace-show.ts" }
+  ],
+  "strings": [
+    { "from": "/v1/whoami", "to": "/v1/principal" },
+    { "from": "whoami", "to": "showPrincipal" },
+    { "from": "Whoami", "to": "PrincipalAnswer" },
+    { "from": "readDrone", "to": "showDrone", "within": "packages" },
+    { "from": "readTrace", "to": "showTrace" },
+    { "from": "readAllowance", "to": "showAllowance" },
+    { "from": "  send: {", "to": "  'inbox send': {" },
+    { "from": "  events: {", "to": "  'event list': {" },
+    { "from": "  trace: {", "to": "  'trace show': {" },
+    { "from": "  send: documentRun(", "to": "  'inbox send': documentRun(" },
+    { "from": "  events: runEventList,", "to": "  'event list': runEventList," },
+    { "from": "  trace: documentRun(", "to": "  'trace show': documentRun(" },
+    { "from": "<'send'>", "to": "<'inbox send'>" },
+    { "from": "<'events'>", "to": "<'event list'>" },
+    { "from": "<'trace'>", "to": "<'trace show'>" },
+    { "from": "['send', ", "to": "['inbox', 'send', " },
+    { "from": "['events', ", "to": "['event', 'list', " },
+    { "from": "['trace', ", "to": "['trace', 'show', " },
+    { "from": "mechane send", "to": "mechane inbox send" },
+    { "from": "mechane -- send", "to": "mechane -- inbox send" },
+    { "from": "mechane events", "to": "mechane event list" },
+    { "from": "mechane -- events", "to": "mechane -- event list" },
+    { "from": "mechane trace", "to": "mechane trace show" },
+    { "from": "mechane -- trace", "to": "mechane -- trace show" },
+    { "from": "`trace` shows", "to": "`trace show` shows" },
+    { "from": "--output-file", "to": "--key-file" },
+    { "from": "'output-file'", "to": "'key-file'" },
+    { "from": "\"output-file\"", "to": "\"key-file\"" },
+    { "from": "output_file", "to": "key_file" },
+    { "from": "outputFile", "to": "keyFile" },
+    { "from": "      out: { kind: FlagKind.Text", "to": "      'out-folder': { kind: FlagKind.Text" },
+    { "from": "outFolder: 'out' }", "to": "outFolder: 'out-folder' }" },
+    { "from": "--out", "to": "--out-folder" },
+    { "from": "KeyInvalid", "to": "KeyUnrecognized" },
+    { "from": "ModelUnavailable", "to": "ModelInvalid" },
+    { "from": "DeviceApprovalExpired", "to": "DeviceApprovalNotFound" },
+    { "from": "CredentialMissing", "to": "KeyMissing" },
+    { "from": "ReleasesUnavailable", "to": "ReleasesBucketUnavailable" },
+    { "from": "AllowanceShort", "to": "AllowanceExhausted" },
+    { "from": "AllowanceRefused", "to": "AllowanceExhausted" },
+    { "from": "ServerUnreachable", "to": "OriginUnreachable" },
+    { "from": "NotSignedIn", "to": "SavedLoginMissing" },
+    { "from": "UnreleasedProgram", "to": "ReleaseStampMissing" },
+    { "from": "GuestUnlistening", "to": "GuestUnreachable" },
+    { "from": "BashUnstarted", "to": "ExecutionUnstarted" },
+    { "from": "HealthUnanswered", "to": "WorkerUnreachable" },
+    { "from": "BinaryMismatch", "to": "BinaryMismatched" },
+    { "from": "VerificationUrlForeign", "to": "VerificationUrlMismatched" },
+    { "from": "ApiFailure", "to": "OperationFailed" },
+    { "from": "MECHANE_INSTALL_DIR", "to": "MECHANE_INSTALL_FOLDER" },
+    { "from": "event_log", "to": "events" },
+    { "from": "mech_threads", "to": "threads" },
+    { "from": "mech_drones_by_status", "to": "drones_by_status" },
+    { "from": "mech_drones_unstopped", "to": "drones_unstopped" },
+    { "from": "mech_drones", "to": "drones" },
+    { "from": "mech_forks", "to": "forks" },
+    { "from": "mech_copy", "to": "copy" },
+    { "from": "sandbox_machines_by_state", "to": "machines_by_status" },
+    { "from": "sandbox_machines", "to": "machines" },
+    { "from": "sandbox_executions_by_status", "to": "executions_by_status" },
+    { "from": "sandbox_executions", "to": "executions" },
+    { "from": "limit_windows", "to": "windows" },
+    { "from": "machine_leases", "to": "leases" },
+    { "from": "approved_by", "to": "approver_id", "within": "packages/worker/src/directory/store/" },
+    { "from": "report_item_id", "to": "report_inbox_item_id", "within": "packages/worker/src/mech/store/" },
+    { "from": "fork_id", "to": "id", "within": "packages/worker/src/mech/store/" },
+    { "from": "task_id", "to": "pi_task_id", "within": "packages/worker/src/mech/store/" },
+    { "from": "session_id", "to": "pi_session_id", "within": "packages/worker/src/mech/store/" },
+    { "from": "      id: {", "to": "      'inbox-item-id': {", "within": "packages/cli/src/model/" },
+    { "from": "inboxItemId: 'id'", "to": "inboxItemId: 'inbox-item-id'" },
+    { "from": "--id", "to": "--inbox-item-id" }
+  ]
+}

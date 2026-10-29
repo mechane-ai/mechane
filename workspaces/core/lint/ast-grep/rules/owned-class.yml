@@ -1,0 +1,22 @@
+# Classes exist only where the Workers runtime instantiates them or Effect requires a tagged error class.
+id: owned-class
+language: TypeScript
+severity: error
+message: 'Write a factory function instead of a class, such as `makeStack({ settings })`, unless the runtime or a tagged error needs one (020)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: abstract_class_declaration
+    - all:
+        - any:
+            - kind: class_declaration
+            - kind: class
+        - not:
+            has:
+              kind: class_heritage
+              has:
+                kind: extends_clause
+                has:
+                  field: value
+                  regex: ^(DurableObject|WorkerEntrypoint|Schema\.TaggedError<)

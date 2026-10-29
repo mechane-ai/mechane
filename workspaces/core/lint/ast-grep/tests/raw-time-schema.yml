@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-time-schema
+valid:
+  - 'const Key = wireStruct({ fields: { expiresAt: Schema.DateTimeUtcFromMillis } });'
+invalid:
+  - 'const Key = Schema.Struct({ expiresAtMs: Schema.Int });'

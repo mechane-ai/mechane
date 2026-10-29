@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: trailing-if-overflow
+language: TypeScript
+rule:
+  nthChild: 3

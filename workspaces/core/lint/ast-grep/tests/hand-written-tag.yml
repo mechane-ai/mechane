@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: hand-written-tag
+valid:
+  - 'const answer = Answer.cases.Settled.make({ receipt });'
+invalid:
+  - "type Answer = { readonly _tag: 'Settled' };"
+  - "const answer = { _tag: 'Settled', receipt };"

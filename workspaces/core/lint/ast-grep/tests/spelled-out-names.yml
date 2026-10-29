@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: spelled-out-names
+valid:
+  - 'const configuration = load();'
+  - 'function home({ configHome }: HomeInput) { return configHome; }'
+invalid:
+  - 'const cfg = load();'
+  - 'function parse({ ctx }: ParseInput) { return ctx; }'
+  - 'const config = load();'
+  - 'type ConfigPath = string;'

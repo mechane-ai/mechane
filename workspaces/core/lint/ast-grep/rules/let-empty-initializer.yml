@@ -1,0 +1,14 @@
+id: let-empty-initializer
+language: TypeScript
+severity: error
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+message: 'Give the `let` its first real value where it is declared, such as `let attempt = 0` (EF-22)'
+rule:
+  kind: variable_declarator
+  inside: { kind: lexical_declaration, regex: '^let\s' }
+  has:
+    field: value
+    any:
+      - kind: 'null'
+      - kind: 'undefined'

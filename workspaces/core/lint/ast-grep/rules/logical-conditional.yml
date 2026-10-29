@@ -1,0 +1,26 @@
+# `ready && total || fallback` imitates a conditional operator; choose the value with an if statement instead.
+id: logical-conditional
+language: TypeScript
+severity: error
+message: 'Choose the value with an `if` statement or a lookup, such as `if (isReady) { return total; }` (EF-21)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  conjunction:
+    kind: binary_expression
+    has:
+      field: operator
+      regex: ^&&$
+rule:
+  kind: binary_expression
+  all:
+    - has:
+        field: operator
+        regex: ^(\|\||\?\?)$
+    - has:
+        field: left
+        any:
+          - matches: conjunction
+          - kind: parenthesized_expression
+            has:
+              matches: conjunction

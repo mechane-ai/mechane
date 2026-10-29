@@ -1,0 +1,11 @@
+# EF-17: time is read only with `DateTime.nowUnsafe()` and held as a `DateTime.Utc`; a `Date` reads the clock or parses
+# text outside the one read a function passes down.
+id: date-constructor
+language: TypeScript
+severity: error
+message: 'Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()`, never `new Date()` (EF-17)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: new_expression
+  has: { field: constructor, regex: ^Date$ }

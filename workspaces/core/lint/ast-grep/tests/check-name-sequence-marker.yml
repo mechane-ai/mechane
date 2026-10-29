@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: check-name-sequence-marker
+valid:
+  - "const check = { name: 'a revoked key is refused' };"
+invalid:
+  - "const check = { name: '1. a revoked key is refused' };"

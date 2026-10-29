@@ -1,0 +1,65 @@
+# A wrap of a promise or a throwing call whose `try` is not one call or whose `catch` builds no failure, and the
+# `attempt` utility, which hides both.
+id: try-promise-shape
+language: TypeScript
+severity: error
+message: 'Wrap one call and build a tagged failure, such as `Effect.tryPromise({ try: () => readFile(path), catch: (cause) => new FileUnreadable({ path, reason: String(cause) }) })` (EF-06)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  one-call:
+    kind: arrow_function
+    not:
+      regex: ^async
+    has:
+      field: body
+      kind: call_expression
+  tagged-failure:
+    kind: arrow_function
+    has:
+      field: body
+      kind: new_expression
+rule:
+  any:
+    - kind: call_expression
+      has:
+        field: function
+        regex: ^Effect\.(tryPromise|try)$
+      any:
+        - not:
+            has:
+              field: arguments
+              has:
+                kind: object
+        - has:
+            field: arguments
+            has:
+              kind: object
+              has:
+                kind: pair
+                all:
+                  - has:
+                      field: key
+                      regex: ^try$
+                  - not:
+                      has:
+                        field: value
+                        matches: one-call
+        - has:
+            field: arguments
+            has:
+              kind: object
+              has:
+                kind: pair
+                all:
+                  - has:
+                      field: key
+                      regex: ^catch$
+                  - not:
+                      has:
+                        field: value
+                        matches: tagged-failure
+    - kind: call_expression
+      has:
+        field: function
+        regex: ^attempt$

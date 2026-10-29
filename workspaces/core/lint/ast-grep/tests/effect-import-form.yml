@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: effect-import-form
+valid:
+  - "import { Effect, Option } from 'effect';"
+invalid:
+  - "import * as Effect from 'effect/Effect';"
+  - "import { Effect as E } from 'effect';"

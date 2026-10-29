@@ -1,0 +1,14 @@
+{
+  "packages/node/eval/src/report/trial-verdict.ts": 1,
+  "packages/worker/directory-store/src/types.ts": 5,
+  "packages/worker/key-cache-store/src/types.ts": 1,
+  "packages/worker/limiter-store/src/types.ts": 1,
+  "packages/worker/mech-store/src/drone.types.ts": 2,
+  "packages/worker/mech-store/src/fork.types.ts": 2,
+  "packages/worker/mech-store/src/memory.types.ts": 1,
+  "packages/worker/mech-store/src/thread.types.ts": 1,
+  "packages/worker/mech-store/src/turn.types.ts": 2,
+  "packages/worker/mech-store/src/types.ts": 3,
+  "packages/worker/sandbox-store/src/types.ts": 2,
+  "packages/worker/workspace-store/src/types.ts": 3
+}

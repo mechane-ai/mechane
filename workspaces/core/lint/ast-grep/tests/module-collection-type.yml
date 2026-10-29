@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: module-collection-type
+valid:
+  - 'const LIMITS = [1, 2] as const;'
+  - "const NAMES: ReadonlyArray<string> = ['turn'];"
+invalid:
+  - 'const LIMITS = [1, 2];'
+  - 'export const NAMES = new Set();'

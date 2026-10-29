@@ -1,0 +1,11 @@
+{
+  "name": "@mechane/utilities",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "effect": "4.0.7"
+  }
+}

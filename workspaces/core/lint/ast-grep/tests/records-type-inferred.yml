@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: records-type-inferred
+valid:
+  - 'export type TurnRecords = ReturnType<typeof turnRecords>;'
+invalid:
+  - 'export type TurnRecords = { readonly turn: (input: TurnIdInput) => Option.Option<TurnRow> };'

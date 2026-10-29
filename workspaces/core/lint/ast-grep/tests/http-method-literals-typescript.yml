@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: http-method-literals-typescript
+valid:
+  - 'const init = { method: HttpMethod.Post };'
+invalid:
+  - "const init = { method: 'POST' };"
+  - "const methods = ['GET', 'HEAD'];"

@@ -1,0 +1,26 @@
+id: return-only-type-parameter
+language: TypeScript
+severity: error
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+message: 'Decode the result instead of a type parameter only the return type uses, such as `Schema.decodeUnknownEffect(Row)(value)` (TD-07)'
+rule:
+  all:
+    - any:
+        - kind: function_declaration
+        - kind: method_definition
+        - kind: function_signature
+        - kind: method_signature
+        - kind: arrow_function
+    - has:
+        field: type_parameters
+        has:
+          kind: type_parameter
+          has: { field: name, pattern: $T }
+    - has:
+        field: return_type
+        has: { stopBy: end, kind: type_identifier, pattern: $T }
+    - not:
+        has:
+          field: parameters
+          has: { stopBy: end, kind: type_identifier, pattern: $T }

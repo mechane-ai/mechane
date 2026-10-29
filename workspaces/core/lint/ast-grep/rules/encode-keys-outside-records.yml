@@ -1,0 +1,9 @@
+# A wire struct's key map written by hand; `wireStruct` and `renamedWireStruct` in the protocol's records derive the keys.
+id: encode-keys-outside-records
+language: TypeScript
+severity: error
+message: 'Declare a wire struct with `wireStruct`, which derives its keys, such as `wireStruct({ fields: { mechId: RecordId } })` (CP-06)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', 'packages/shared/records/src/**']
+rule:
+  pattern: Schema.encodeKeys

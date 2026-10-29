@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: third-function
+valid:
+  - 'export function askGuest() { return putExecution(); } function putExecution() { return 1; }'
+  - "export class GuestLost extends Schema.TaggedError<GuestLost>()('GuestLost', {}) {} export function askGuest() { return putExecution(); } function putExecution() { return 1; }"
+invalid:
+  - 'export function askGuest() { return putExecution(); } function putExecution() { return 1; } function guestAnswer() { return 2; }'

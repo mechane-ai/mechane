@@ -1,0 +1,77 @@
+{
+  "jsPlugins": ["@stylistic/eslint-plugin"],
+  "rules": {
+    "@stylistic/padding-line-between-statements": [
+      "error",
+      {
+        "blankLine": "always",
+        "next": ["if", "for", "while", "do", "switch", "try", "return", "throw"],
+        "prev": "*"
+      },
+      {
+        "blankLine": "always",
+        "next": "*",
+        "prev": ["if", "for", "while", "do", "switch", "try", "return", "throw"]
+      },
+      {
+        "blankLine": "always",
+        "next": [
+          "multiline-expression",
+          {
+            "lineMode": "multiline",
+            "selector": "VariableDeclaration, FunctionDeclaration, ClassDeclaration, TSTypeAliasDeclaration, TSInterfaceDeclaration, TSEnumDeclaration, TSModuleDeclaration, TSDeclareFunction, ExportNamedDeclaration[declaration], ExportDefaultDeclaration"
+          }
+        ],
+        "prev": "*"
+      },
+      {
+        "blankLine": "always",
+        "next": "*",
+        "prev": [
+          "multiline-expression",
+          {
+            "lineMode": "multiline",
+            "selector": "VariableDeclaration, FunctionDeclaration, ClassDeclaration, TSTypeAliasDeclaration, TSInterfaceDeclaration, TSEnumDeclaration, TSModuleDeclaration, TSDeclareFunction, ExportNamedDeclaration[declaration], ExportDefaultDeclaration"
+          }
+        ]
+      },
+      {
+        "blankLine": "always",
+        "next": {
+          "selector": "ExpressionStatement[expression.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.expression.type='CallExpression'], ExpressionStatement[expression.operator='void'][expression.argument.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.operator='void'][expression.argument.expression.type='CallExpression']"
+        },
+        "prev": "*"
+      },
+      {
+        "blankLine": "always",
+        "next": "*",
+        "prev": {
+          "selector": "ExpressionStatement[expression.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.expression.type='CallExpression'], ExpressionStatement[expression.operator='void'][expression.argument.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.operator='void'][expression.argument.expression.type='CallExpression']"
+        }
+      },
+      {
+        "blankLine": "any",
+        "next": {
+          "selector": "ExpressionStatement[expression.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.expression.type='CallExpression'], ExpressionStatement[expression.operator='void'][expression.argument.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.operator='void'][expression.argument.expression.type='CallExpression']"
+        },
+        "prev": {
+          "selector": "ExpressionStatement[expression.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.expression.type='CallExpression'], ExpressionStatement[expression.operator='void'][expression.argument.type=/^(CallExpression|NewExpression|AwaitExpression)$/], ExpressionStatement[expression.operator='void'][expression.argument.expression.type='CallExpression']"
+        }
+      },
+      {
+        "blankLine": "any",
+        "next": {
+          "selector": "TSDeclareFunction[declare=false], ExportNamedDeclaration[declaration.type='TSDeclareFunction'][declaration.declare=false], ExportDefaultDeclaration[declaration.type='TSDeclareFunction'], FunctionDeclaration, ExportNamedDeclaration[declaration.type='FunctionDeclaration'], ExportDefaultDeclaration[declaration.type='FunctionDeclaration']"
+        },
+        "prev": {
+          "selector": "TSDeclareFunction[declare=false], ExportNamedDeclaration[declaration.type='TSDeclareFunction'][declaration.declare=false], ExportDefaultDeclaration[declaration.type='TSDeclareFunction']"
+        }
+      },
+      {
+        "blankLine": "never",
+        "next": ["case", "default"],
+        "prev": ["case", "default"]
+      }
+    ]
+  }
+}

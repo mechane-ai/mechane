@@ -1,0 +1,11 @@
+# A failure yielded through `Effect.fail`, which the failure itself replaces.
+id: generator-guard
+language: TypeScript
+severity: error
+message: 'Fail by yielding the failure itself, such as `return yield* new MechNotFound({ mechId })` (EF-04)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: Effect.fail($$$ARGS)
+  inside:
+    kind: yield_expression

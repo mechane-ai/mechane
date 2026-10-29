@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-money-number
+valid:
+  - 'type Cost = { readonly costMicros: Micros };'
+invalid:
+  - 'type Cost = { readonly costMicros: number };'
+  - 'const Cost = Schema.Struct({ costMicros: Schema.Int });'

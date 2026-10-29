@@ -1,0 +1,20 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: nested-call
+valid:
+  - 'const total = Number.sumAll(sizes); report({ total });'
+  - 'const id = TurnId.make(crypto.randomUUID());'
+  - 'const id = SandboxOperationId.make(randomUUID());'
+  - 'const totals = orders.map((order) => total({ order }));'
+  - 'const doubled = amount.pipe(map(double), tap(log));'
+  - 'const Row = Schema.Struct({ name: Schema.optional(Schema.String) });'
+  - 'const Parameters = Type.Object({ target: Type.String() });'
+  - "export class Missing extends Schema.TaggedError<Missing>()('Missing', { path: Schema.optional(Schema.String) }) {}"
+  - 'const read = Effect.tryPromise({ try: () => open(path), catch: (cause) => new Unreadable({ path, reason: String(cause) }) });'
+  - "const serve = Effect.fn('serve')(function* () { return yield* route(); }, Effect.catch((failure) => Effect.succeed(respondFailure({ failure }))));"
+  - "const runCommand = Effect.fn('runCommand')(function* () { return yield* run(); }, (run, { invocation }) => Effect.catch(run, (failure) => Effect.succeed(reportFailure({ invocation, failure }))));"
+invalid:
+  - 'send({ invoice: await load({ id }) });'
+  - 'report({ total: Number.sumAll(sizes) });'
+  - "const main = Effect.fn('main')(function* () { return yield* run(); }, Effect.withSpan(spanName({ name })));"
+  - 'const reason = describe({ text: String(cause) });'
+  - 'const id = TurnId.make(readIdentifier());'

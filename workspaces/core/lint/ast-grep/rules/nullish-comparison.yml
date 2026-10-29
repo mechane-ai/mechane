@@ -1,0 +1,17 @@
+# A comparison with `null` or `undefined`, which an `Option` replaces.
+id: nullish-comparison
+language: TypeScript
+severity: error
+message: 'Test absence through `Option`, such as `Option.isNone(Option.fromNullishOr(value))` (TD-18)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: binary_expression
+  all:
+    - has:
+        field: operator
+        regex: ^(===|!==|==|!=)$
+    - has:
+        any:
+          - kind: 'null'
+          - kind: undefined

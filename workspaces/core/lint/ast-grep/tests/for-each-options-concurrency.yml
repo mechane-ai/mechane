@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: for-each-options-concurrency
+valid:
+  - 'Effect.forEach(paths, readFile, { discard: true, concurrency: 1 });'
+invalid:
+  - 'Effect.forEach(paths, readFile, { discard: true });'
+  - 'Effect.forEach(paths, readFile, { discard: true, });'

@@ -1,0 +1,9 @@
+{
+  "packages/node/deploy-kernel/src/constants.ts": 1,
+  "packages/node/deploy-preflight/src/check-accounts.ts": 1,
+  "packages/node/deploy-preflight/src/check-checkout.ts": 1,
+  "packages/node/deploy-preflight/src/deployed-state.ts": 1,
+  "packages/node/deploy-preflight/src/read-formats.ts": 1,
+  "packages/node/deploy/src/rollout/roll-back.ts": 2,
+  "packages/node/release/src/upload-release.ts": 2
+}

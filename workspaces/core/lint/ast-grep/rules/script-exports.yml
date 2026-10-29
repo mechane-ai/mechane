@@ -1,0 +1,9 @@
+# No module imports from an executable file, so an executable exports nothing.
+id: script-exports
+language: TypeScript
+severity: error
+message: 'Move the shared function into a module beside the executable, such as `run-checks.ts` beside `main.ts` (ST-31)'
+files: ['**/main.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: export_statement

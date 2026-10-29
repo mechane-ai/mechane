@@ -1,0 +1,9 @@
+# Only a mech's own fork sends a copy, since a copy's begin deletes the whole database of the object it reaches.
+id: copy-outside-forks
+language: TypeScript
+severity: error
+message: "Send a fork's copy only from the forks module, such as `receiveCopy` in `packages/worker/mech/src/forks` (055)"
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/worker/mech/src/forks/**]
+rule:
+  pattern: $STUB.receiveCopy($$$ARGUMENTS)

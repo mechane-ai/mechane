@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: testing-http-status-literals
+valid:
+  - 'expect({ status: HttpStatusCode.NotFound });'
+  - 'const limit = { attempts: 404 };'
+invalid:
+  - 'expect({ status: 404 });'
+  - 'type ErrorStatus = 404 | 410;'
+  - 'response.status = 500;'

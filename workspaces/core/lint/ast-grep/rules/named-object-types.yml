@@ -1,0 +1,28 @@
+# An object type literal stands only as a `type` alias's whole value, or as the one object literal of an intersection
+# that is the alias's value, beside named types, such as `type ReadInput = PageInput & { readonly line: string }` (TD-03).
+id: named-object-types
+language: TypeScript
+severity: error
+message: 'Name the object type with a `type` alias, such as `type LineInput = { readonly line: string }` (TD-03)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  # an intersection's operand that is an object type literal, or an intersection holding one
+  intersected-object:
+    any:
+      - kind: object_type
+      - kind: intersection_type
+        has:
+          stopBy: { not: { kind: intersection_type } }
+          kind: object_type
+rule:
+  kind: object_type
+  any:
+    - not:
+        inside:
+          stopBy: { not: { kind: intersection_type } }
+          kind: type_alias_declaration
+    # a second object literal of the alias's intersection
+    - all:
+        - inside: { kind: intersection_type }
+        - follows: { stopBy: end, matches: intersected-object }

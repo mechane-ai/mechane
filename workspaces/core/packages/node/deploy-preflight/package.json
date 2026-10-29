@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/deploy-preflight",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/deploy-kernel": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/wrangler": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

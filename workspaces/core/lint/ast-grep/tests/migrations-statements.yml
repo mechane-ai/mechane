@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: migrations-statements
+valid:
+  - "import type { Migration } from '../../store/index.ts';"
+  - "export const MIGRATIONS: ReadonlyArray<Migration> = [({ sql }) => { sql.exec('CREATE TABLE t (id TEXT) STRICT'); }];"
+invalid:
+  - 'function stepCount() { return 1; }'
+  - 'export const STEP_COUNT = 1;'

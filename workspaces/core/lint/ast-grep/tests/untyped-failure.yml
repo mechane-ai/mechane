@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: untyped-failure
+valid:
+  - 'return Result.fail(new LauncherRefused({ machineId, status, reason }));'
+  - 'const failure = new CredentialsFailed({ step: CredentialsStep.WriteKeyFile, path, reason: String(cause) });'
+invalid:
+  - 'return Promise.reject(new MachineStopped({ machineId }));'
+  - 'const row = Option.getOrThrowWith(found, () => new RowMissing({ mechId }));'
+  - "const failure = new CredentialsFailed({ operation: 'write the key file', reason: String(cause) });"

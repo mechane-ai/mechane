@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: try-promise-shape
+valid:
+  - 'Effect.tryPromise({ try: () => open(path), catch: (cause) => new Unreadable({ path, reason: String(cause) }) });'
+invalid:
+  - 'Effect.tryPromise({ try: async () => { await open(); }, catch: (cause) => new Unreadable({ reason: String(cause) }) });'
+  - 'Effect.tryPromise({ try: () => open(), catch: (cause) => String(cause) });'

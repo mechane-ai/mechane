@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/owned-rules",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/checks-kernel": "workspace:*",
+    "@mechane/modules": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rules": "workspace:*",
+    "effect": "4.0.7",
+    "oxc-parser": "0.156.0"
+  }
+}

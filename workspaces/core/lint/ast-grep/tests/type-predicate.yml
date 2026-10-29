@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: type-predicate
+valid:
+  - 'const oxlint = rules.filter((rule) => rule.tool === RuleTool.Oxlint);'
+invalid:
+  - 'function isRow(value: unknown): value is Row { return true; }'
+  - 'function assertRow(value: unknown): asserts value is Row {}'

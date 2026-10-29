@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: storage-call-outside-store
+valid:
+  - 'turnStore.readTurn({ turnId });'
+invalid:
+  - 'this.ctx.storage.get(key);'
+  - 'this.ctx.storage.setAlarm(at);'

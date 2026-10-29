@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: unit-suffix
+language: TypeScript
+rule:
+  regex: '(Bytes|Chars|Micros|Minutes|Ms|Seconds|Tokens|Attempts|Dispatches|Entries|Files|Instances|Levels|Lines|Pages|Requests|Retries|Scenarios|Sentences|Statements|Suppressions|Turns|Words|Writes)$|_(BYTES|CHARS|MICROS|MINUTES|MS|SECONDS|TOKENS|ATTEMPTS|DISPATCHES|ENTRIES|FILES|INSTANCES|LEVELS|LINES|PAGES|REQUESTS|RETRIES|SCENARIOS|SENTENCES|STATEMENTS|SUPPRESSIONS|TURNS|WORDS|WRITES)$'

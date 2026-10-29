@@ -1,0 +1,73 @@
+# The util `abbreviation` carries the registry's word replacements, and `external-name` the names that keep an
+# external system's own word.
+id: spelled-out-names
+language: TypeScript
+severity: error
+message: 'Spell out every word of the name, such as `configuration` for `cfg` or `context` for `ctx` (NM-05)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  matches: abbreviation
+  not: { matches: external-name }
+  any:
+    - kind: identifier
+      inside:
+        kind: variable_declarator
+        field: name
+    - kind: identifier
+      inside:
+        kind: function_declaration
+        field: name
+    - kind: identifier
+      inside:
+        kind: required_parameter
+        field: pattern
+    - kind: shorthand_property_identifier_pattern
+    - kind: type_identifier
+      inside:
+        kind: type_alias_declaration
+        field: name
+    - kind: type_identifier
+      inside:
+        kind: class_declaration
+        field: name
+    - kind: type_identifier
+      inside:
+        kind: interface_declaration
+        field: name
+    - kind: property_identifier
+      inside:
+        kind: property_signature
+        field: name
+    - kind: property_identifier
+      inside:
+        kind: method_definition
+        field: name
+    - kind: property_identifier
+      inside:
+        kind: pair
+        field: key
+        inside:
+          kind: object
+          inside:
+            any:
+              - kind: variable_declarator
+              - kind: as_expression
+              - kind: satisfies_expression
+              - kind: arguments
+                inside:
+                  kind: call_expression
+                  regex: ^Schema\.Struct
+    # A class field's name, and the local name a destructuring gives a field, such as `#ctx` or `{ length: len }`.
+    - kind: property_identifier
+      inside:
+        kind: public_field_definition
+        field: name
+    - kind: private_property_identifier
+      inside:
+        kind: public_field_definition
+        field: name
+    - kind: identifier
+      inside:
+        kind: pair_pattern
+        field: value

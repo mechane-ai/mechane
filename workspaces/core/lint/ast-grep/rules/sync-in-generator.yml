@@ -1,0 +1,13 @@
+# `Effect.sync` outside a callback that must return an Effect; a generator calls the function itself.
+id: sync-in-generator
+language: TypeScript
+severity: error
+message: 'Call the function in the generator instead of wrapping it, such as `writeResult({ document })` (EF-04)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: Effect.sync($$$ARGS)
+  not:
+    inside:
+      stopBy: end
+      matches: effect-callback

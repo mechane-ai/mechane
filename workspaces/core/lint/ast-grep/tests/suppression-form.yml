@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: suppression-form
+valid:
+  - '// oxlint-disable-next-line max-params -- the runtime passes four'
+invalid:
+  - '// oxlint-disable max-params'
+  - '// eslint-disable-next-line max-params'

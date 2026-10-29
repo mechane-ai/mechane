@@ -1,0 +1,14 @@
+# TD-19: a closed set is declared once, as an `as const` object, and its schemas read its members; a literal written in
+# `Schema.Literal` or `Schema.Literals` declares the set a second time.
+id: raw-literal-schema
+language: TypeScript
+severity: error
+message: "Read a closed set through its members, such as `Schema.Literal(DeviceStep.Approve)` or `Schema.Enum(DeviceStep)`, never `Schema.Literal('approve')` (TD-19)"
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: call_expression
+  all:
+    - has: { field: function, regex: ^Schema\.(Literal|Literals)$ }
+    - has:
+        { field: arguments, has: { stopBy: end, any: [{ kind: string }, { kind: number }, { kind: template_string }] } }

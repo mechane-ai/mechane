@@ -1,0 +1,11 @@
+# The compiler does not check that a predicate's or an assertion signature's body proves its claim.
+id: type-predicate
+language: TypeScript
+severity: error
+message: 'Let the compiler infer the predicate, such as `rules.filter((rule) => rule.tool === RuleTool.Oxlint)` (TD-07)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - kind: type_predicate_annotation
+    - kind: asserts_annotation

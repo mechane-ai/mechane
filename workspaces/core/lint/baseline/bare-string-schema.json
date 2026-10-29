@@ -1,0 +1,22 @@
+{
+  "packages/shared/protocol/src/durable-objects/schemas.ts": 5,
+  "packages/shared/protocol/src/errors/errors.ts": 5,
+  "packages/shared/protocol/src/errors/schemas.ts": 2,
+  "packages/shared/protocol/src/github/schemas.ts": 6,
+  "packages/shared/protocol/src/pages/schemas.ts": 2,
+  "packages/worker/directory-store/src/keys/key-records.ts": 1,
+  "packages/worker/directory-store/src/schemas.ts": 6,
+  "packages/worker/key-cache-store/src/schemas.ts": 2,
+  "packages/worker/mech-store/src/drone.schemas.ts": 1,
+  "packages/worker/mech-store/src/drones/drone-records.ts": 1,
+  "packages/worker/mech-store/src/events/event-records.ts": 1,
+  "packages/worker/mech-store/src/forks/copy-records.ts": 2,
+  "packages/worker/mech-store/src/memory.schemas.ts": 6,
+  "packages/worker/mech-store/src/schemas.ts": 3,
+  "packages/worker/mech-store/src/thread.schemas.ts": 4,
+  "packages/worker/rpc/src/directory.schemas.ts": 7,
+  "packages/worker/rpc/src/drones.schemas.ts": 3,
+  "packages/worker/rpc/src/mech.schemas.ts": 4,
+  "packages/worker/rpc/src/workspace.schemas.ts": 2,
+  "packages/worker/sandbox-store/src/schemas.ts": 2
+}

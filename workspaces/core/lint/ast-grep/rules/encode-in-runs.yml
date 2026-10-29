@@ -1,0 +1,13 @@
+# A CLI run, or the eval runner that the CLI's eval run calls, that encodes its own document, which the output module
+# encodes once for every output mode.
+id: encode-in-runs
+language: TypeScript
+severity: error
+message: "Return the run's result and let the output module encode it, such as `return { lines, result: list }` (CP-03)"
+files: ['packages/node/cli/src/runs/**/*.ts', 'packages/node/eval/src/**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: call_expression
+  has:
+    field: function
+    regex: ^Schema\.(encodeEffect|encodeSync|encodeUnknownEffect|encodeUnknownSync|encodeResult|encodeUnknownResult)$

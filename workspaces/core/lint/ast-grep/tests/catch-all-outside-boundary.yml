@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: catch-all-outside-boundary
+valid:
+  - "const serve = Effect.fn('serve')(function* () { return yield* route(); }, Effect.catch((failure) => Effect.succeed(respondFailure({ failure }))));"
+  - "const runCommand = Effect.fn('runCommand')(function* ({ invocation }: RunCommandInput) { return yield* run({ invocation }); }, (run, { invocation }) => Effect.catch(run, (failure) => Effect.succeed(reportFailure({ invocation, failure }))));"
+invalid:
+  - "const read = Effect.fn('read')(function* () { return yield* Effect.catch(readCount(), () => Effect.succeed(0)); });"
+  - 'const answered = route.pipe(Effect.catch((failure) => Effect.succeed(respondFailure({ failure }))));'

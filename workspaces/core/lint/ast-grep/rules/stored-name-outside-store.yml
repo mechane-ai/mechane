@@ -1,0 +1,14 @@
+# A stored name outside the store that owns it: a table the migrations create, named in SQL text, or a stored file.
+# Only SQL positions count, so a word that is also a table's name, such as the guest's `machines` route segment, is no
+# stored name. The owned check `locks` fails when the table list differs from the tables the migrations create.
+id: stored-name-outside-store
+language: TypeScript
+severity: error
+message: 'Name a table or a stored file only in the store module that owns it, such as `turnStore.listTurns({ mechId })` here (DO-06)'
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**', packages/node/smoke/**, packages/node/testing/**]
+rule:
+  kind: string_fragment
+  any:
+    - regex: \b(FROM|INTO|UPDATE|JOIN|TABLE|EXISTS|ON)\s+(browser_sessions|cached_keys|copy|device_approvals|dispatches|drones|events|execution_cancellations|executions|finding_reports|findings|forks|identities|identity_sessions|inbox_items|keys|leases|machines|mech|mech_creation_intents|mech_revisions|mech_tool_grants|mechs|memberships|memory_changes|principal_identities|principals|remote_connections|remote_sandbox|sandbox_maintenance|sandbox_workspace|schema_migrations|sign_ins|slack_bindings|slack_deliveries|slack_events|slack_inbox_origins|source_fences|source_grant|source_grant_changes|source_tasks|threads|turns|watch_checks|watches|windows|workspace_retirements|workspaces)\b
+    - regex: ^(credentials\.json|lock\.json|plan\.json|report\.json|subject-intent\.json|subject\.json|grader-intent\.json|grade\.json)$

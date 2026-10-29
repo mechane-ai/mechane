@@ -1,0 +1,33 @@
+# An import of Effect under an alias, as a namespace or from a subpath, any of which dodges the restricted-property bans.
+id: effect-import-form
+language: TypeScript
+severity: error
+message: "Import Effect's modules by name from `effect`, such as `import { Effect, Option } from 'effect'` (EF-02)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  kind: import_statement
+  any:
+    - has:
+        field: source
+        all:
+          - regex: ^.effect/
+          - not:
+              regex: ^.effect/encoding.$
+    - all:
+        - has:
+            field: source
+            regex: ^.effect.$
+        - has:
+            stopBy: end
+            kind: import_specifier
+            has:
+              field: alias
+              kind: identifier
+    - all:
+        - has:
+            field: source
+            regex: ^.effect
+        - has:
+            stopBy: end
+            kind: namespace_import

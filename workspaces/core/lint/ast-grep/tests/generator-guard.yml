@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: generator-guard
+valid:
+  - "const read = Effect.fn('read')(function* () { return yield* new MechNotFound({ mechId }); });"
+invalid:
+  - "const read = Effect.fn('read')(function* () { return yield* Effect.fail(new MechNotFound({ mechId })); });"

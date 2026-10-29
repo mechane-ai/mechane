@@ -1,0 +1,34 @@
+# TD-26: each string field of a wire, RPC or stored schema is bounded: `boundedText(…)`, a patterned or branded schema,
+# or `Redacted`. A bare `Schema.String` stands only as ER-02's `reason`, a record's key, or an id's, which TD-14's
+# `plain-id-schema` counts.
+id: bare-string-schema
+language: TypeScript
+severity: error
+message: 'Bound a boundary text, such as `name: boundedText({ maxBytes: NAME_MAX_BYTES })` or `Schema.String.check(Schema.isPattern(SHA256_PATTERN))` (TD-26)'
+files:
+  - 'packages/shared/protocol/src/**/*.ts'
+  - 'packages/shared/sandbox-wire/src/**/*.ts'
+  - 'packages/worker/rpc/src/**/*.ts'
+  - 'packages/worker/*-store/src/**/*.ts'
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: member_expression
+  regex: ^Schema\.String$
+  not:
+    any:
+      # a patterned or bounded string, such as `Schema.String.check(Schema.isPattern(…))`
+      - inside: { kind: member_expression, field: object, has: { field: property, regex: ^(check|pipe)$ } }
+      # a redacted one
+      - inside:
+          kind: arguments
+          inside: { kind: call_expression, has: { field: function, regex: ^Schema\.(Redacted|RedactedFromValue)$ } }
+      # a record's key
+      - all:
+          - nthChild: 1
+          - inside:
+              kind: arguments
+              inside: { kind: call_expression, has: { field: function, regex: ^Schema\.Record$ } }
+      # ER-02's `reason`
+      - inside: { kind: pair, has: { field: key, regex: ^reason$ } }
+      # an id, which `plain-id-schema` counts
+      - inside: { kind: pair, stopBy: end, has: { field: key, regex: (^id|Id|Ids)$ } }

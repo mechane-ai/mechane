@@ -1,0 +1,38 @@
+import { ErrorFamily } from './constants.ts';
+import type { ServerFailure } from './errors.ts';
+
+/** The family of each failure the Worker answers with; the failure's tag is its code. */
+export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>> = {
+  WorkspaceOwnerRequired: ErrorFamily.Forbidden,
+  ConnectionNotFound: ErrorFamily.NotFound,
+  ConnectionLimitReached: ErrorFamily.Conflict,
+  ToolGrantInvalid: ErrorFamily.InvalidRequest,
+  RouteNotFound: ErrorFamily.NotFound,
+  RequestInvalid: ErrorFamily.InvalidRequest,
+  WorkerMisconfigured: ErrorFamily.Unavailable,
+  ObjectUnavailable: ErrorFamily.Unavailable,
+  ReleaseFileNotFound: ErrorFamily.NotFound,
+  ReleasesBucketUnavailable: ErrorFamily.Unavailable,
+  KeyMissing: ErrorFamily.Unauthenticated,
+  KeyUnrecognized: ErrorFamily.Unauthenticated,
+  KeyRevoked: ErrorFamily.Unauthenticated,
+  KeyExpired: ErrorFamily.Unauthenticated,
+  RateLimited: ErrorFamily.RateLimited,
+  DeviceApprovalNotFound: ErrorFamily.NotFound,
+  KeyNotFound: ErrorFamily.NotFound,
+  WorkspaceNotFound: ErrorFamily.NotFound,
+  WorkspaceSuspended: ErrorFamily.Forbidden,
+  MechNotFound: ErrorFamily.NotFound,
+  WatchNotFound: ErrorFamily.NotFound,
+  WatchLimitReached: ErrorFamily.Conflict,
+  MechBusy: ErrorFamily.Conflict,
+  MechRevisionConflict: ErrorFamily.Conflict,
+  MechCreationConflict: ErrorFamily.Conflict,
+  MechArchived: ErrorFamily.Conflict,
+  ModelInvalid: ErrorFamily.InvalidRequest,
+  InboxItemConflict: ErrorFamily.Conflict,
+  TurnNotFound: ErrorFamily.NotFound,
+  TurnEnded: ErrorFamily.Conflict,
+  DroneNotFound: ErrorFamily.NotFound,
+  DroneEnded: ErrorFamily.Conflict,
+};

@@ -1,0 +1,19 @@
+# A random UUID made outside its entity's brand, so no type says which kind of id it is.
+id: bare-random-uuid
+language: TypeScript
+severity: error
+message: 'Make a new id through its brand, such as `TurnId.make(crypto.randomUUID())` (TD-14)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  any:
+    - pattern: crypto.randomUUID()
+    - pattern: randomUUID()
+  not:
+    inside:
+      kind: arguments
+      inside:
+        kind: call_expression
+        has:
+          field: function
+          regex: ^[A-Z]\w*Id\.make$

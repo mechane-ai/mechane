@@ -1,0 +1,79 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // celld deploys this file too, so it holds only keys celld accepts. Never rename the Worker: its name keys its objects.
+  "name": "mechane",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  // pi reaches Node built-ins only through guarded lookups at run time, which this flag lets the bundle resolve.
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": {
+    "bindings": [
+      { "name": "DIRECTORY", "class_name": "DirectoryObject" },
+      { "name": "WORKSPACES", "class_name": "WorkspaceObject" },
+      { "name": "MECHS", "class_name": "MechObject" },
+      { "name": "SANDBOXES", "class_name": "SandboxObject" },
+      { "name": "LIMITERS", "class_name": "LimiterObject" },
+      { "name": "KEY_CACHES", "class_name": "KeyCacheObject" },
+    ],
+  },
+  // Append a migration for each new class; never edit or remove one that has shipped.
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "DirectoryObject",
+        "WorkspaceObject",
+        "MechObject",
+        "SandboxObject",
+        "LimiterObject",
+        "KeyCacheObject",
+      ],
+    },
+  ],
+  // The CLI's releases, which the Worker serves read-only below /cli/; `mise run release:upload` fills the bucket.
+  "r2_buckets": [
+    { "binding": "RELEASES", "bucket_name": "mechane-local-releases" },
+    { "binding": "WORKSPACE_FILES", "bucket_name": "mechane-local-workspace-files" },
+  ],
+  // Every machine of a sandbox runs this one image. celld accepts only class_name, image, name, instance_type,
+  // max_instances and runtime here; the local stack drops the entry for host sandboxes, so the smoke needs no Docker.
+  "containers": [
+    {
+      "class_name": "SandboxObject",
+      "image": "../../../packages/node/guest/image/Dockerfile",
+      "instance_type": "standard-1",
+      "max_instances": 20,
+    },
+  ],
+  // Common defaults. A production deploy adds the GitHub OAuth App's MECHANE_GITHUB_CLIENT_ID and, as a secret, its
+  // MECHANE_GITHUB_CLIENT_SECRET, and the model upstream's MECHANE_MODEL_UPSTREAM, MECHANE_MODEL_OFFERS and, as a
+  // secret, MECHANE_MODEL_API_KEY; the local stack overrides the origins in .dev.vars and adds its scripted model.
+  "vars": {
+    "MECHANE_ORIGIN": "https://mechane.ai",
+    "MECHANE_GITHUB_WEB_ORIGIN": "https://github.com",
+    "MECHANE_GITHUB_API_ORIGIN": "https://api.github.com",
+    // The model spend a new workspace may make each day, in micro-dollars: twenty dollars; and a new mech's own daily
+    // cap within it, unless its creator names another: ten dollars.
+    "MECHANE_DAILY_ALLOWANCE_MICROS": "20000000",
+    "MECHANE_MECH_DAILY_CAP_MICROS": "10000000",
+    // A login key lasts 30 days and a named key 365 days, the longest the Worker accepts.
+    "MECHANE_LOGIN_KEY_LIFETIME_SECONDS": "2592000",
+    "MECHANE_NAMED_KEY_LIFETIME_SECONDS": "31536000",
+    // The CLI waits 2 seconds between two polls of a device approval; only the smoke's stack stages less.
+    "MECHANE_APPROVAL_POLL_INTERVAL_SECONDS": "2",
+    // Local Docker sandboxes run behind celld's fence. The production overlay selects Tensorlake instead.
+    "MECHANE_SANDBOX_PROVIDER": "container",
+    // Only listed workspaces get sandboxes, as a JSON array of their ids, and each runs at most 4 machines at once; a
+    // suspended workspace's members are refused and its dispatches find no allowance. Each change takes a deploy.
+    "MECHANE_SANDBOX_WORKSPACES": "[]",
+    "MECHANE_WORKSPACE_MACHINES": "4",
+    "MECHANE_SUSPENDED_WORKSPACES": "[]",
+    // The requests each policy allows in its fixed window: an address 600 a minute, every request but health; the
+    // device approvals one address starts, 10 in 10 minutes; an admitted principal 300 a minute; and the codes one
+    // GitHub user types on the device page, 10 in 10 minutes.
+    "MECHANE_RATE_LIMITS": "{\"address\":{\"requests\":600,\"window_seconds\":60},\"device_start\":{\"requests\":10,\"window_seconds\":600},\"principal\":{\"requests\":300,\"window_seconds\":60},\"code_attempt\":{\"requests\":10,\"window_seconds\":600}}",
+    // How long one alarm lets pi work before it hands pi to the next alarm, in seconds: at most 600, because
+    // Cloudflare ends an alarm at 15 minutes.
+    "MECHANE_ALARM_WORK_SECONDS": "600",
+  },
+}

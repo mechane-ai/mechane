@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-time-number
+valid:
+  - 'type Lifespan = { readonly lifetime: Duration.Duration; readonly expiresAt: DateTime.Utc };'
+invalid:
+  - 'type Lifespan = { readonly lifetimeMs: number };'
+  - 'type Opened = { readonly expiresAt: number };'

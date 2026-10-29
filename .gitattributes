@@ -1,0 +1,7 @@
+* text=auto eol=lf
+**/pnpm-lock.yaml -diff linguist-generated
+workspaces/core/packages/node/cli/reference.json linguist-generated
+/.oxfmtrc.json linguist-generated merge=ours
+# Preserve the copied upstream license text verbatim.
+workspaces/core/licenses/*.js whitespace=-blank-at-eol,-blank-at-eof
+workspaces/core/licenses/*.txt whitespace=-blank-at-eol,-blank-at-eof

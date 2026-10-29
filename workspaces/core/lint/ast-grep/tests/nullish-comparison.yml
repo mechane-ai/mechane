@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: nullish-comparison
+valid:
+  - 'if (Option.isNone(Option.fromNullishOr(value))) { stop(); }'
+invalid:
+  - 'if (value === null) { stop(); }'
+  - 'if (value !== undefined) { stop(); }'

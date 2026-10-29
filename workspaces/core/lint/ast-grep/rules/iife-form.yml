@@ -1,0 +1,52 @@
+# SC-01: an IIFE only chooses a value: it initializes a typed const, takes no parameters, is not async, and its body
+# holds guards, `const` bindings and one final return, with no loop, `let`, `await` or `yield` (nested functions aside).
+# ST-27's `case-shape` already keeps it out of a `case` or `Match` arm, since it is a block-bodied function.
+id: iife-form
+language: TypeScript
+severity: error
+message: "Choose the value in a typed const's IIFE of guards and one return, such as `const wait: Duration.Duration = (() => { if (isFollowing) { return WAIT_MAX; } return LISTING_WAIT; })();` (SC-01)"
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  iife:
+    kind: call_expression
+    has:
+      field: function
+      kind: parenthesized_expression
+      has: { any: [{ kind: arrow_function }, { kind: function_expression }] }
+  chooser-arrow:
+    all:
+      - kind: arrow_function
+      - not: { regex: '^async' }
+      - has: { field: parameters, not: { has: { any: [{ kind: required_parameter }, { kind: optional_parameter }] } } }
+      - has: { field: body, kind: statement_block }
+  function-boundary:
+    any:
+      - kind: function_declaration
+      - kind: function_expression
+      - kind: arrow_function
+      - kind: generator_function
+      - kind: generator_function_declaration
+      - kind: method_definition
+  # work that is not a choice: a loop, a `let`, an `await` or a `yield` in the IIFE's own body
+  not-a-choice:
+    any:
+      - kind: for_statement
+      - kind: for_in_statement
+      - kind: while_statement
+      - kind: do_statement
+      - { kind: lexical_declaration, regex: '^let\b' }
+      - kind: await_expression
+      - kind: yield_expression
+rule:
+  all:
+    - matches: iife
+    - any:
+        - not: { inside: { kind: variable_declarator, has: { field: type, kind: type_annotation } } }
+        - not: { has: { field: function, has: { matches: chooser-arrow } } }
+        - has: { field: arguments, has: { kind: identifier } }
+        - has:
+            field: function
+            has:
+              kind: arrow_function
+              has: { field: body, has: { stopBy: { matches: function-boundary }, matches: not-a-choice } }

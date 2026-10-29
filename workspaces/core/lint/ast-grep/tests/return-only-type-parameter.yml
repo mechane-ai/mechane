@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: return-only-type-parameter
+valid:
+  - 'function first<T>({ items }: ItemsInput<T>): T { return items[0]; }'
+invalid:
+  - 'function read<T>(): T { return value; }'

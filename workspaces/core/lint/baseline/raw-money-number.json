@@ -1,0 +1,23 @@
+{
+  "packages/node/eval/src/errors.ts": 2,
+  "packages/node/eval/src/store/schemas.ts": 2,
+  "packages/node/smoke/src/mechs/types.ts": 1,
+  "packages/node/stack/src/types.ts": 2,
+  "packages/shared/protocol/src/durable-objects/schemas.ts": 6,
+  "packages/shared/protocol/src/durable-objects/types.ts": 2,
+  "packages/shared/records/src/bounded-text.ts": 1,
+  "packages/worker/directory-store/src/principals/principal-records.ts": 1,
+  "packages/worker/directory-store/src/types.ts": 1,
+  "packages/worker/directory/src/device-approvals/decide-approval.ts": 1,
+  "packages/worker/harness/src/models/metered-events.ts": 1,
+  "packages/worker/harness/src/models/types.ts": 1,
+  "packages/worker/mech-ports/src/meter/bound-micros.ts": 1,
+  "packages/worker/mech-ports/src/meter/price-micros.ts": 1,
+  "packages/worker/mech-store/src/mechs/mech-records.ts": 1,
+  "packages/worker/mech-store/src/types.ts": 1,
+  "packages/worker/rpc/src/directory.types.ts": 1,
+  "packages/worker/rpc/src/mech/types.ts": 1,
+  "packages/worker/rpc/src/workspace.types.ts": 2,
+  "packages/worker/workspace-store/src/dispatches/dispatch-records.ts": 1,
+  "packages/worker/workspace-store/src/schemas.ts": 2
+}

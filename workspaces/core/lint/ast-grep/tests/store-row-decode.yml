@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: store-row-decode
+valid:
+  - 'const rows = decodeRows({ cursor, schema: TurnRow });'
+invalid:
+  - 'const row = Schema.decodeUnknownSync(TurnRow)(value);'

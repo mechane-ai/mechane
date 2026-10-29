@@ -1,0 +1,11 @@
+# `Effect.all` without options, whose default runs one effect at a time; the fix states it, and each site then
+# decides whether its effects may run together.
+id: all-concurrency
+language: TypeScript
+severity: error
+message: 'State how the effects run, such as `Effect.all(effects, { concurrency: 1 })` (EF-10)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: Effect.all($EFFECTS)
+fix: 'Effect.all($EFFECTS, { concurrency: 1 })'

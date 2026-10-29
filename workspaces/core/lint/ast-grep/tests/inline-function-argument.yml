@@ -1,0 +1,15 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: inline-function-argument
+valid:
+  - 'const ids = items.map((item) => item.id);'
+  - 'const texts = parts.map((part) => readText({ part }));'
+  - 'const writeEvent: (event: StreamEvent) => void = (event) => process.stderr.write(eventLine({ event })); run({ onEvent: writeEvent });'
+  - 'const fetched = Effect.tryPromise({ try: () => fetch(url), catch: (cause) => new RequestFailed({ url, reason: String(cause) }) });'
+  - "const serve = Effect.fn('serve')(function* () { return yield* route(); }, Effect.catch((failure) => Effect.succeed(respondFailure({ failure, message: failureMessage({ failure }) }))));"
+  - "const runCommand = Effect.fn('runCommand')(function* ({ invocation }: RunCommandInput) { return yield* run({ invocation }); }, (run, { invocation }) => Effect.catch(run, (failure) => Effect.succeed(reportFailure({ invocation, failure }))));"
+invalid:
+  - 'const ids = items.map((item) => { return item.id; });'
+  - 'run({ onEvent: (event) => process.stderr.write(eventLine(JSON.stringify(event))) });'
+  - 'const lines = cases.flatMap(({ id, description }) => [headingLine({ id }), description]);'
+  - 'const answered = route.pipe(Effect.catch((failure) => Effect.succeed(pages.map((page) => page.path))));'
+  - 'const count = Effect.catch(readCount(), (failure) => Effect.succeed(fallbackCount({ failure })));'

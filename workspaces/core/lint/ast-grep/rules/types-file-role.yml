@@ -1,0 +1,21 @@
+id: types-file-role
+language: TypeScript
+severity: error
+message: 'Move the declaration to the file of its role, such as `export const LIMIT = 3` to `constants.ts` (ST-20)'
+files: ['**/{types,*.types}.ts']
+ignores: ['**/node_modules/**']
+rule:
+  inside:
+    kind: program
+  any:
+    - kind: expression_statement
+    - kind: lexical_declaration
+    - kind: variable_declaration
+    - kind: function_declaration
+    - kind: class_declaration
+    - kind: export_statement
+      has:
+        any:
+          - kind: lexical_declaration
+          - kind: function_declaration
+          - kind: class_declaration

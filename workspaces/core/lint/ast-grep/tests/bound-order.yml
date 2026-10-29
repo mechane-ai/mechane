@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: bound-order
+valid:
+  - 'const TURN_MAX_SECONDS = 600;'
+invalid:
+  - 'const MAX_TURN_SECONDS = 600;'

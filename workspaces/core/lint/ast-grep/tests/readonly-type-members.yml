@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: readonly-type-members
+valid:
+  - 'type Turn = { readonly turnId: TurnId };'
+invalid:
+  - 'type Turn = { turnId: TurnId };'

@@ -1,0 +1,12 @@
+{
+  "name": "@mechane/program",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/protocol": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

@@ -1,0 +1,61 @@
+# SC-02's E8: an arrow of ER-08's catch, a trailing argument of the `Effect.fn` whose every failure it answers, with
+# calls alone and no function, template, conditional, `await` or `yield`: the arrow of `Effect.catch((failure) => …)`,
+# or, where the answer reads the call's input, `(run, input) => Effect.catch(run, (failure) => …)` and its inner arrow.
+id: boundary-catch
+language: TypeScript
+utils:
+  fn-trailing:
+    inside:
+      kind: arguments
+      inside:
+        kind: call_expression
+        has: { field: function, kind: call_expression, has: { field: function, regex: '^Effect\.fn$' } }
+  expression-arrow:
+    all:
+      - kind: arrow_function
+      - not: { has: { field: body, kind: statement_block } }
+  beyond-calls:
+    any:
+      - kind: arrow_function
+      - kind: function_expression
+      - kind: generator_function
+      - kind: template_string
+      - kind: ternary_expression
+      - kind: await_expression
+      - kind: yield_expression
+  calls-alone:
+    all:
+      - matches: expression-arrow
+      - not:
+          has:
+            field: body
+            any:
+              - matches: beyond-calls
+              - has: { stopBy: end, matches: beyond-calls }
+  boundary-catch-call:
+    kind: call_expression
+    has: { field: function, regex: '^Effect\.catch$' }
+  boundary-catch-input:
+    all:
+      - matches: expression-arrow
+      - matches: fn-trailing
+      - has:
+          field: body
+          matches: boundary-catch-call
+          has:
+            field: arguments
+            all:
+              - has: { nthChild: 1, kind: identifier }
+              - has: { nthChild: 2, matches: calls-alone }
+              - not: { has: { nthChild: 3 } }
+rule:
+  any:
+    - all:
+        - matches: calls-alone
+        - inside: { kind: arguments, inside: { all: [{ matches: boundary-catch-call }, { matches: fn-trailing }] } }
+    - matches: boundary-catch-input
+    - all:
+        - matches: calls-alone
+        - inside:
+            kind: arguments
+            inside: { matches: boundary-catch-call, inside: { matches: boundary-catch-input } }

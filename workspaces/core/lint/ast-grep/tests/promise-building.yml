@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: promise-building
+valid:
+  - 'const answer = await unlessStopped({ promise: asked, stop: aborted });'
+  - 'const isHealthy = await probe().then(isAnswered, () => false);'
+invalid:
+  - 'const { promise, resolve } = Promise.withResolvers<void>();'
+  - 'const answer = await Promise.race([asked, aborted]);'
+  - 'const timer = setTimeout(wake, WAKE_MS);'
+  - 'await settling.then(close, close);'
+  - 'await call().then(read);'

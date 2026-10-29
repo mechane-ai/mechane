@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: entry-point-statements
+valid:
+  - "export { parseLine } from './parse-line.ts';"
+  - "export type { Line } from './types.ts';"
+invalid:
+  - 'export const LIMIT = 3;'
+  - "export * from './parse-line.ts';"

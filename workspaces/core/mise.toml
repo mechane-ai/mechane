@@ -1,0 +1,243 @@
+# Product tasks; run them from the factory root as `mise -C workspaces/core run <task>`.
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+WRANGLER_SEND_METRICS = "false"
+# Wrangler writes a debug log per run; keep it in the app's ignored .wrangler folder instead of the home directory.
+WRANGLER_LOG_PATH = "{{config_root}}/packages/worker/app/.wrangler/logs"
+
+[tasks.setup]
+description = "Install the locked packages"
+run = "pnpm install --frozen-lockfile"
+
+[tasks.check]
+description = "Run every product check: types, lint, dead code, copies, owned checks with the boundaries, builds and the smoke; once all pass, record the fingerprint as the last green one"
+depends = [
+  "format:check",
+  "typecheck",
+  "lint",
+  "knip",
+  "duplicates",
+  "checks",
+  "rules:check",
+  "build:worker",
+  "build:guest",
+  "reference:check",
+  "deploy:render",
+  "smoke",
+]
+run = "node packages/node/checks/src/main.ts record"
+
+# The inner loop: each tool reads only the changed set or reuses its last run, and a fingerprint equal to the last
+# green full check's skips the builds and the smoke. It never replaces check, which CI runs cold.
+[tasks."check:fast"]
+description = "Check a change quickly: the changed set's format and lint, an incremental typecheck, knip, the owned checks, copies and the command reference, and the smoke only when the fingerprint differs from the last green full check's"
+depends = ["lint:changed", "typecheck:incremental", "knip", "duplicates", "checks", "rules:check", "reference:check"]
+run = "node packages/node/checks/src/main.ts compare || mise run deploy:render ::: smoke"
+
+[tasks.fingerprint]
+description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"
+run = "node packages/node/checks/src/main.ts fingerprint"
+
+[tasks.locks]
+description = "Append to the wire lock and the migration lock each shipped name and schema step the source declares that they do not hold yet"
+run = "node packages/node/checks/src/main.ts lock"
+
+[tasks."rules:measure"]
+description = "Measure every oxlint rule of the six categories and each rule of the registry, print their findings, statuses and phases and the pending list, and fail where the registry differs from the run or a rule with findings has no phase"
+run = "node packages/node/checks/src/main.ts measure"
+
+[tasks."rules:generate"]
+description = "Write every file the rule registry in packages/node/rules generates: each tool's configuration, the ast-grep utilities and tests, each contract's enforcement block and the contract names"
+run = "node packages/node/rule-generator/src/main.ts write"
+
+[tasks."rules:check"]
+description = "Fail on each file the rule registry generates whose committed text differs from what rules:generate writes, on each finding of the registry's own checks, and on an ast-grep rule that misjudges one of its examples"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = ["node packages/node/rule-generator/src/main.ts check", "ast-grep test --skip-snapshot-tests"]
+
+[tasks."rules:explain"]
+description = "Print each rule that a name or a rule of the standard names, such as `rules:explain -- EF-02`: its contract's sentence, its message, its autofix, its suppression budget and its examples"
+run = "node packages/node/rule-generator/src/main.ts explain"
+
+[tasks."rules:for"]
+description = "Print every rule of the registry that applies to a path relative to the workspace, such as `rules:for -- packages/node/checks/src/main.ts`"
+run = "node packages/node/rule-generator/src/main.ts for"
+
+[tasks.tighten]
+description = "Write each ratchet's baseline in lint/baseline as the findings the tree has, never above the merge base's counts carried across renames, refuse an empty one and delete a stray one"
+run = "node packages/node/checks/src/main.ts tighten"
+
+# Each static task waits for the builds when the same run starts them, as a check does, and runs alone without them:
+# the smoke waits for the Worker build, which took 12 to 17 seconds instead of 3 while the static tasks held the CPUs.
+[tasks."format:check"]
+description = "Fail when a product file is not formatted"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = "oxfmt --check ."
+
+# Each lane's program checks every member of the lane once, under the lane's runtime types, as dependencies.json
+# assigns them. Two checkers per program leave CPUs to the other builders of a shared host.
+[tasks.typecheck]
+description = "Type-check each lane's program: the shared lane, the worker lane and the node lane, each with every member dependencies.json puts in it"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = [
+  "tsc -p tsconfig.shared.json --checkers 2",
+  "tsc -p tsconfig.worker.json --checkers 2",
+  "tsc -p tsconfig.node.json --checkers 2",
+]
+
+[tasks."typecheck:incremental"]
+description = "Type-check each lane's program as typecheck does, reusing each program's build information from its last run"
+run = [
+  "tsc -p tsconfig.shared.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/shared.tsbuildinfo",
+  "tsc -p tsconfig.worker.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/worker.tsbuildinfo",
+  "tsc -p tsconfig.node.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/node.tsbuildinfo",
+]
+
+
+# One oxlint run with type information and one ast-grep run: an enforced rule fails on any finding, and a ratchet fails
+# on a file above or below its count in lint/baseline.
+[tasks.lint]
+description = "Lint with oxlint and the ast-grep rules once each, failing on an enforced rule's finding and holding each ratchet to its baseline"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = "node packages/node/checks/src/main.ts lint"
+
+# The changed set adds every importer of a changed file, whose type-aware findings the change can alter, and grows to
+# every file when a configuration changes; with no change at all, each tool runs over the whole workspace.
+[tasks."lint:changed"]
+description = "Check the changed set's formatting, then lint it and hold its files to the ratchets' baselines"
+run = """
+files=$(node packages/node/checks/src/main.ts changed)
+oxfmt --check --no-error-on-unmatched-pattern $files
+node packages/node/checks/src/main.ts lint $files
+"""
+
+[tasks.knip]
+description = "Report unused files, exports and dependencies, counting tests and then production consumers only"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = ["knip", "knip --production"]
+
+[tasks.duplicates]
+description = "Fail on any copied block at or above the declared size"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = "jscpd"
+
+[tasks.checks]
+description = "Run the repository's own checks: layout, blank lines, patterns, orphans, documents, pins, the wire and migration locks, the boundaries with one dependency-cruiser cruise of every rule, the owned ratchets with their baselines, and every baseline against the merge base's"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+run = "node packages/node/checks/src/main.ts check"
+
+[tasks."build:worker"]
+description = "Build the Worker as a production deploy would, without deploying it or building the sandbox image; the local stack serves this bundle"
+dir = "{{config_root}}/packages/worker/app"
+# A dry run builds the containers' image unless no rollout is asked for, which would make the check need Docker.
+run = "pnpm exec wrangler deploy --dry-run --containers-rollout=none --outdir dist"
+
+[tasks."build:guest"]
+description = "Bundle the sandbox's guest into one Node module in its image's build folder, which the host launcher runs too"
+dir = "{{config_root}}/packages/node/guest"
+run = '''
+set -e
+notices=$(cat ../../../licenses/apache-2.0.js ../../../licenses/effect.js)
+bun build src/main.ts --target=node --outfile image/guest.mjs --banner "$notices"
+'''
+
+[tasks."build:cli"]
+description = "Compile the mechane CLI into one binary with Bun"
+dir = "{{config_root}}/packages/node/cli"
+run = "bun build src/main.ts --compile --asset=../../../licenses --outfile dist/mechane"
+
+[tasks.reference]
+description = "Write the command reference that the CLI's command model generates"
+dir = "{{config_root}}/packages/node/cli"
+run = "node scripts/reference/main.ts > reference.json"
+
+[tasks."reference:check"]
+description = "Fail when the committed command reference differs from the command model"
+wait_for = ["build:worker", "build:cli", "build:guest"]
+dir = "{{config_root}}/packages/node/cli"
+run = "node scripts/reference/main.ts | diff -u reference.json -"
+
+[tasks."release:cli"]
+description = "Build the CLI's release of this source for every target into dist/release, which holds each file at its bucket key"
+run = "node packages/node/release/src/main.ts build"
+
+[tasks."release:upload"]
+description = "Upload dist/release to production's releases bucket with Wrangler; only an operator on a trusted host runs it"
+run = "node packages/node/deploy/src/main.ts upload"
+
+[tasks."deploy:render"]
+description = "Render production's Wrangler configuration from wrangler.jsonc and production.jsonc, and have Wrangler build it in a dry run, deploying nothing"
+depends = ["build:worker"]
+dir = "{{config_root}}/packages/worker/app"
+run = '''
+set -e
+configuration=$(node {{config_root}}/packages/node/deploy/src/main.ts render)
+pnpm exec wrangler deploy --dry-run --config "$configuration" --containers-rollout=none --outdir "$(dirname "$configuration")/dry-run" --env-file /dev/null
+'''
+
+[tasks."deploy:preflight"]
+description = "Check that this tagged checkout and the operator's credentials can deploy production, changing nothing"
+depends = ["build:worker"]
+run = "node packages/node/deploy/src/main.ts preflight"
+
+[tasks.deploy]
+description = "Deploy this tagged checkout to production after the full check; only an operator on a trusted host runs it"
+depends = ["check"]
+# A task that runs after others gets no terminal for its input unless it runs raw, and the deploy asks for a typed tag.
+raw = true
+run = "node packages/node/deploy/src/main.ts deploy"
+
+[tasks."deploy:rollback"]
+description = "Return production to an earlier version of the same formats, as in `deploy:rollback -- --to <version-id>`"
+run = "node packages/node/deploy/src/main.ts rollback"
+
+
+[tasks.smoke]
+description = "Drive the built CLI against a fresh celld stack serving the built Worker"
+depends = ["build:cli", "build:worker", "build:guest"]
+run = "node packages/node/smoke/src/main.ts"
+
+[tasks.dev]
+description = "Serve the built Worker on a fresh celld stack and print MECHANE_ORIGIN"
+depends = ["build:worker", "build:guest"]
+run = "node packages/node/stack/src/main.ts fixture"
+
+[tasks.start]
+description = "Start the built Worker on a persistent local celld installation"
+depends = ["build:worker", "build:guest"]
+run = "node packages/node/stack/src/main.ts start"
+
+[tasks."local:reset"]
+description = "Reset an inactive local installation only with --confirm"
+run = "node packages/node/stack/src/main.ts reset"
+
+[tasks.mechane]
+description = "Run the mechane CLI from source, such as `mise run mechane -- readiness`"
+run = "bun packages/node/cli/src/main.ts"
+
+# A fix applies only what the tree has settled: a ratchet's autofix waits for its sweep, one rule per commit. It keeps
+# the standard's order but for two steps: the registry's files come first, since every later step reads them, and oxfmt
+# runs after the oxlint and ast-grep fixers so that their rewrites leave formatted code. A rename map renames wire
+# strings, which changes behavior by design, so only `rename` with no names replays the maps.
+[tasks.fix]
+description = "Apply every fixer in turn: the rule registry's files, each enforced normalizer, each enforced rule's autofix with oxlint and ast-grep, oxfmt, and each ratchet's baseline tightened to the tree"
+run = [
+  "node packages/node/rule-generator/src/main.ts write",
+  "node packages/node/checks/src/main.ts normalize",
+  "node packages/node/checks/src/main.ts fix",
+  "oxfmt .",
+  "node packages/node/checks/src/main.ts tighten",
+]
+
+[tasks.sweep]
+description = "Apply one rule's autofix whatever its status, to the paths named or to every file, such as `mise -C workspaces/core run sweep -- for-each-concurrency packages/shared/protocol`; run fix after it"
+run = "node packages/node/checks/src/main.ts fix"
+
+[tasks.rename]
+description = "Rename a binding with its input type, span name, file stem and every import, such as `mise -C workspaces/core run rename -- startStack launchStack`, naming its file after the new name when two files declare it; with no names, replay the committed rename maps, as a branch cut before one runs once"
+run = "node packages/node/rename/src/main.ts"
+
+[tasks.move]
+description = "Apply the committed move map through one step, such as `mise -C workspaces/core run move -- store`: each earlier step first, then the step's declarations, files, imports, entries, manifests and every path a text names; run `mise run fix` after it"
+run = "node packages/node/package-moves/src/main.ts"

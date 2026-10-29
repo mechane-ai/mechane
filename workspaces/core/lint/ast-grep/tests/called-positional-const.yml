@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: called-positional-const
+valid:
+  - 'const isLate: (turn: Turn) => boolean = (turn) => turn.endsAtMs < nowMs; turns.filter(isLate);'
+  - 'const clip: (input: ClipInput) => string = ({ text, max }) => text.slice(0, max); clip({ text: line, max: 4 });'
+invalid:
+  - 'const clip: (text: string, max: number) => string = (text, max) => text.slice(0, max); clip(line, 4);'

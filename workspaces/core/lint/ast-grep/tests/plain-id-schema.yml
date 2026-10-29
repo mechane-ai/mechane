@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: plain-id-schema
+valid:
+  - 'const Row = Schema.Struct({ turnId: TurnId });'
+invalid:
+  - 'const Row = Schema.Struct({ turnId: Schema.String });'

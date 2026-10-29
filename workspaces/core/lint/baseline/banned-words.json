@@ -1,0 +1,22 @@
+{
+  "../../.contracts/003-ci-reproducible-checks/CONTRACT.md": 1,
+  "../../.contracts/004-ci-check-trust/CONTRACT.md": 2,
+  ".contracts/042-cli-command-reference-generation/CONTRACT.md": 1,
+  ".contracts/043-cli-output-channels/CONTRACT.md": 2,
+  ".contracts/047-data-stored-and-shipped-formats/CONTRACT.md": 1,
+  "packages/node/cli-login/src/constants.ts": 1,
+  "packages/node/cli-login/src/run-auth-login.ts": 5,
+  "packages/node/cli-login/src/schemas.ts": 4,
+  "packages/node/cli-login/src/store/prepare-login-file.ts": 9,
+  "packages/node/cli/reference.json": 1,
+  "packages/node/cli/src/output/constants.ts": 1,
+  "packages/node/cli/src/output/render-document.ts": 5,
+  "packages/node/cli/src/output/render-line.ts": 7,
+  "packages/node/commands/src/command-reference.ts": 3,
+  "packages/node/commands/src/schemas.ts": 1,
+  "packages/node/rename/src/identifiers/linked-edits.ts": 1,
+  "packages/node/rename/src/schemas.ts": 1,
+  "packages/node/rename/src/server/edit-text.ts": 3,
+  "packages/node/rename/src/server/rename-at.ts": 1,
+  "packages/worker/harness/src/models/metered-models.ts": 1
+}

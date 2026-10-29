@@ -1,0 +1,10 @@
+# The bindings and the rpc stubs derive every Durable Object's name, so a mech's object is named only by mechObjectName.
+id: object-name-outside-object-calls
+language: TypeScript
+severity: error
+message: 'Name a Durable Object only in `packages/worker/bindings/src` or the object stubs, `packages/worker/rpc/src/stubs`, such as `mechObjectName({ mechId })` (044)'
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/worker/bindings/src/**, packages/worker/rpc/src/stubs/**]
+rule:
+  kind: property_identifier
+  regex: ^(idFromName|idFromString|newUniqueId)$

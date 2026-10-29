@@ -1,0 +1,22 @@
+# A schema a schemas file exports without its type beside it, a Pascal name whose value is not TypeBox's `Type`; the
+# fix declares the type after it.
+id: schema-alias
+language: TypeScript
+severity: error
+message: "Declare the schema's type beside it, such as `export type Turn = typeof Turn.Type` (TD-12)"
+files: ['**/{schemas,*.schemas}.ts']
+ignores: ['**/node_modules/**']
+rule:
+  pattern: export const $NAME = $SCHEMA;
+  inside: { kind: program }
+  not:
+    precedes:
+      stopBy: end
+      pattern: export type $NAME = typeof $NAME.Type;
+constraints:
+  NAME: { regex: '^[A-Z][a-z]' }
+  SCHEMA: { not: { regex: '^Type\.' } }
+fix: |-
+  export const $NAME = $SCHEMA;
+
+  export type $NAME = typeof $NAME.Type;

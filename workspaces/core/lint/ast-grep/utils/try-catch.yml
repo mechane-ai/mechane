@@ -1,0 +1,31 @@
+# SC-02's E6: the `catch` arrow of `Effect.tryPromise` or `Effect.try` in EF-06's shape, which builds one tagged error
+# from `cause` and calls nothing but `String(cause)`, such as `(cause) => new X({ …, reason: String(cause) })`.
+id: try-catch
+language: TypeScript
+rule:
+  all:
+    - kind: arrow_function
+    - inside:
+        kind: pair
+        field: value
+        has: { field: key, regex: '^catch$' }
+        inside:
+          kind: object
+          inside:
+            kind: arguments
+            inside: { kind: call_expression, has: { field: function, regex: '^Effect\.(tryPromise|try)$' } }
+    - has:
+        field: body
+        kind: new_expression
+        not:
+          has:
+            stopBy: end
+            any:
+              - kind: new_expression
+              - kind: template_string
+              - kind: arrow_function
+              - kind: function_expression
+              - kind: ternary_expression
+              - kind: await_expression
+              - kind: yield_expression
+              - all: [{ kind: call_expression }, { not: { pattern: String($CAUSE) } }]

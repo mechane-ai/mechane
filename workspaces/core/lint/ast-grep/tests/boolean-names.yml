@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: boolean-names
+valid:
+  - 'const isPaid = true;'
+  - 'type Mech = { readonly isReady: boolean };'
+invalid:
+  - 'const paid = true;'
+  - 'type Mech = { readonly ready: boolean };'

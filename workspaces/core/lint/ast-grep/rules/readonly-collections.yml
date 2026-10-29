@@ -1,0 +1,46 @@
+# A mutable collection type: `Array`, `Set`, `Map`, a `Record` no `Readonly` wraps, `T[]`, or a tuple that is not
+# `readonly`. Only a `const` local inside a function body may hold one, such as a listener's buffer, as may a call's
+# type argument there, such as `new Map<string, Turn>()`.
+id: readonly-collections
+language: TypeScript
+severity: error
+message: 'Type the collection read-only, such as `ReadonlyArray<Turn>`, `Readonly<Record<string, Turn>>` or `readonly [string, Turn]` (TD-06)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**']
+utils:
+  function-body:
+    inside:
+      stopBy: end
+      kind: statement_block
+      inside:
+        any:
+          - kind: function_declaration
+          - kind: function_expression
+          - kind: arrow_function
+          - kind: method_definition
+          - kind: generator_function
+          - kind: generator_function_declaration
+rule:
+  all:
+    - any:
+        - kind: array_type
+        - all: [{ kind: tuple_type }, { not: { inside: { kind: readonly_type } } }]
+        - all:
+            - kind: generic_type
+            - has: { field: name, regex: '^(Array|Set|Map|Record)$' }
+    - not:
+        all:
+          - has: { field: name, regex: '^Record$' }
+          - inside: { stopBy: end, kind: generic_type, has: { field: name, regex: '^Readonly$' } }
+    - not:
+        all:
+          - matches: function-body
+          - any:
+              - inside:
+                  stopBy: end
+                  kind: type_annotation
+                  inside: { kind: variable_declarator, inside: { kind: lexical_declaration, regex: '^const\b' } }
+              - inside:
+                  stopBy: end
+                  kind: type_arguments
+                  inside: { any: [{ kind: new_expression }, { kind: call_expression }] }

@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: process-signal
+valid:
+  - 'const ended = yield* interruptOnSignal({ program: runMode() });'
+invalid:
+  - "process.once('SIGINT', stop);"

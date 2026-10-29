@@ -1,0 +1,20 @@
+# Scripts and tests own their top level under code-script-entry-points, so the lint leaves them out.
+id: module-mutable-binding
+language: TypeScript
+severity: error
+message: 'Bind module state with `const`, such as `const LIMIT = 3` (ST-33)'
+files: [packages/**/*.ts]
+ignores: ['**/node_modules/**', packages/node/cli/scripts/**]
+rule:
+  all:
+    - any:
+        - kind: variable_declaration
+        - kind: lexical_declaration
+          regex: ^let\s
+    - any:
+        - inside:
+            kind: program
+        - inside:
+            kind: export_statement
+            inside:
+              kind: program

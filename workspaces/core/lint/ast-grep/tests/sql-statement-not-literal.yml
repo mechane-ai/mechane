@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: sql-statement-not-literal
+valid:
+  - "sql.exec('SELECT 1');"
+  - 'database.prepare(`SELECT 1`);'
+invalid:
+  - 'sql.exec(statement);'
+  - "sql.exec('SELECT ' + column);"

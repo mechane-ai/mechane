@@ -1,0 +1,43 @@
+{
+  "identifiers": [
+    {
+      "file": "packages/protocol/src/traces/show-trace.ts",
+      "at": "export const showTrace",
+      "from": "showTrace",
+      "to": "showTurn"
+    },
+    {
+      "file": "packages/worker/src/mechs/show-trace.ts",
+      "at": "export function showTrace(",
+      "from": "showTrace",
+      "to": "showTurn"
+    },
+    {
+      "file": "packages/cli/src/runs/observe/run-trace-show.ts",
+      "at": "export function runTraceShow(",
+      "from": "runTraceShow",
+      "to": "runTurnShow"
+    }
+  ],
+  "files": [
+    { "from": "packages/protocol/src/traces/show-trace.ts", "to": "packages/protocol/src/traces/show-turn.ts" },
+    { "from": "packages/worker/src/mechs/show-trace.ts", "to": "packages/worker/src/mechs/show-turn.ts" },
+    {
+      "from": "packages/cli/src/runs/observe/run-trace-show.ts",
+      "to": "packages/cli/src/runs/observe/run-turn-show.ts"
+    }
+  ],
+  "strings": [
+    { "from": "/turns/:turn_id/trace'", "to": "/turns/:turn_id'", "within": "packages" },
+    { "from": "/v1/device-approvals", "to": "/v1/device_approvals", "within": "packages" },
+    { "from": "showTrace", "to": "showTurn", "within": "packages" },
+    { "from": "runTraceShow", "to": "runTurnShow", "within": "packages" },
+    { "from": "'trace show'", "to": "'turn show'", "within": "packages" },
+    { "from": "['trace', 'show', ", "to": "['turn', 'show', ", "within": "scripts" },
+    { "from": "['trace', 'show', ", "to": "['turn', 'show', ", "within": "testing" },
+    { "from": "mechane trace show", "to": "mechane turn show", "within": "packages" },
+    { "from": "mechane trace show", "to": "mechane turn show", "within": "scripts" },
+    { "from": "as trace shows", "to": "as turn show does", "within": "packages" },
+    { "from": "KeyPurpose.Key", "to": "KeyPurpose.Named", "within": "packages" }
+  ]
+}

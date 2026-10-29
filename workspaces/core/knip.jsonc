@@ -1,0 +1,95 @@
+{
+  "$schema": "./node_modules/knip/schema-jsonc.json",
+  // Every export of an entry file needs a consumer; `!` marks production files for `knip --production`.
+  "includeEntryExports": true,
+  // A stale ignore entry or entry pattern is a suppression that suppresses nothing, so it fails the check.
+  "treatConfigHintsAsErrors": true,
+  // A type that an exported declaration's signature uses counts as used by that declaration's consumers.
+  "ignoreExportsUsedInFile": { "type": true, "interface": true },
+  // mise installs celld from its GitHub release, because npm publishes no celld package.
+  "ignoreBinaries": ["celld"],
+  // dependency-cruiser loads swc to parse TypeScript, as .dependency-cruiser.cjs selects with `parser: 'swc'`; the
+  // Workers runtime provides `cloudflare:workers`, which no package installs.
+  "ignoreDependencies": ["@swc/core", "cloudflare"],
+  // The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,
+  // since the root that holds it holds no source.
+  "ignore": [".dependency-cruiser.cjs"],
+  // Each member's workspace follows from its kind and source roots, so a new member is checked like the others.
+  "workspaces": {
+    "packages/node/boundaries": { "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/checks": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/checks-kernel": { "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/cli": {
+      "entry": ["src/**/main.ts!", "scripts/*/main.ts!"],
+      "project": ["src/**/*.ts!", "scripts/**/*.ts!"],
+    },
+    "packages/node/cli-kernel": { "project": ["src/**/*.ts!"] },
+    "packages/node/cli-login": { "project": ["src/**/*.ts!"] },
+    "packages/node/cli-update": { "project": ["src/**/*.ts!"] },
+    "packages/node/commands": { "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/deploy": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/deploy-kernel": { "project": ["src/**/*.ts!"] },
+    "packages/node/deploy-preflight": { "project": ["src/**/*.ts!"] },
+    "packages/node/deploy-render": { "project": ["src/**/*.ts!"] },
+    "packages/node/eval": { "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/guest": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/local-rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/locks": { "project": ["src/**/*.ts!"] },
+    "packages/node/modules": { "project": ["src/**/*.ts!"] },
+    "packages/node/name-rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/normalizers": { "project": ["src/**/*.ts!"] },
+    "packages/node/owned-rules": { "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/package-moves": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/program": { "project": ["src/**/*.ts!"] },
+    "packages/node/program-rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/release": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/rename": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/rule-generator": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/rule-shapes": { "project": ["src/**/*.ts!"] },
+    "packages/node/rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/smoke": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/stack": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
+    "packages/node/structure-rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/testing": { "project": ["src/**/*.ts!"] },
+    "packages/node/typescript-rules": { "project": ["src/**/*.ts!"] },
+    "packages/node/wrangler": { "project": ["src/**/*.ts!"] },
+    "packages/shared/client": { "project": ["src/**/*.ts!"] },
+    "packages/shared/credentials": { "project": ["src/**/*.ts!"] },
+    "packages/shared/deployment": { "project": ["src/**/*.ts!"] },
+    "packages/shared/protocol": { "project": ["src/**/*.ts!"] },
+    "packages/shared/records": { "project": ["src/**/*.ts!"] },
+    "packages/shared/sandbox-wire": { "project": ["src/**/*.ts!"] },
+    "packages/shared/utilities": { "project": ["src/**/*.ts!"] },
+    // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
+    "packages/worker/app": { "project": ["src/**/*.ts!"] },
+    "packages/worker/bindings": { "project": ["src/**/*.ts!"] },
+    "packages/worker/directory": { "project": ["src/**/*.ts!"] },
+    "packages/worker/directory-store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/edge": { "project": ["src/**/*.ts!"] },
+    "packages/worker/harness": { "project": ["src/**/*.ts!"] },
+    "packages/worker/harness-tools": { "project": ["src/**/*.ts!"] },
+    "packages/worker/integrations": { "project": ["src/**/*.ts!"] },
+    "packages/worker/key-cache": { "project": ["src/**/*.ts!"] },
+    "packages/worker/key-cache-store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/limiter": { "project": ["src/**/*.ts!"] },
+    "packages/worker/limiter-store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/logs": { "project": ["src/**/*.ts!"] },
+    "packages/worker/mech": { "project": ["src/**/*.ts!"] },
+    "packages/worker/mech-ports": { "project": ["src/**/*.ts!"] },
+    "packages/worker/mech-store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/pages": { "project": ["src/**/*.ts!"] },
+    "packages/worker/rpc": { "project": ["src/**/*.ts!"] },
+    "packages/worker/sandbox": { "project": ["src/**/*.ts!"] },
+    "packages/worker/sandbox-store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/store": { "project": ["src/**/*.ts!"] },
+    "packages/worker/workspace": { "project": ["src/**/*.ts!"] },
+    "packages/worker/workspace-store": { "project": ["src/**/*.ts!"] },
+  },
+}

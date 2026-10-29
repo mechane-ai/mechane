@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: store-boolean-answer
+valid:
+  - 'function endTurn({ turnId }: EndInput): TurnEnd { return TurnEnd.cases.Ended.make({ turnId }); }'
+invalid:
+  - 'function endTurn({ turnId }: EndInput): boolean { return true; }'

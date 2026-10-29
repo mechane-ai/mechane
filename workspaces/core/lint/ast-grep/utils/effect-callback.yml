@@ -1,0 +1,74 @@
+# A callback that must return an Effect: a Match arm or a `catchTags` handler, an `orElse`, the entry's `catch`, the
+# functions of `acquireRelease`, the argument of `resume` or `Deferred.doneUnsafe`, the finalizer an `Effect.callback`
+# register function returns, a schema default, and a typed callback const, whose type fixes the Effect it answers, that
+# a table or `Effect.catch` takes by name: a value of an object a typed const holds or an argument of `Effect.catch` in
+# its file, or an exported module-level const that another file's table takes.
+id: effect-callback
+language: TypeScript
+rule:
+  any:
+    - kind: pair
+      inside:
+        kind: object
+        inside:
+          kind: arguments
+          inside:
+            kind: call_expression
+            has:
+              field: function
+              regex: ^(Match\.\w+|Effect\.catchTags)$
+    - kind: pair
+      has:
+        field: key
+        regex: ^orElse$
+    - kind: arguments
+      inside:
+        kind: call_expression
+        has:
+          field: function
+          regex: ^(Effect\.catch|Effect\.acquireRelease|resume|Deferred\.doneUnsafe|Schema\.withDecodingDefault\w*|Schema\.withConstructorDefault)$
+    # the finalizer `Effect.callback`'s register function returns (EF-07)
+    - kind: return_statement
+      inside:
+        kind: statement_block
+        inside:
+          kind: arrow_function
+          inside:
+            kind: arguments
+            inside: { kind: call_expression, has: { field: function, regex: ^Effect\.callback$ } }
+    # a typed const that a table or `Effect.catch` takes by name, never one its own file calls, which is an
+    # `Effect.fn` (EF-01)
+    - kind: arrow_function
+      inside:
+        kind: variable_declarator
+        all:
+          - has: { field: type, kind: type_annotation }
+          - has: { field: name, pattern: $CALLBACK }
+          - not:
+              inside:
+                kind: program
+                stopBy: end
+                has: { stopBy: end, kind: call_expression, has: { field: function, pattern: $CALLBACK } }
+          - any:
+              # exported at module level, for another file's table
+              - inside: { kind: lexical_declaration, inside: { kind: export_statement, inside: { kind: program } } }
+              # passed by name to `Effect.catch`, or held as a value of an object a typed const holds
+              - inside:
+                  kind: program
+                  stopBy: end
+                  has:
+                    stopBy: end
+                    any:
+                      - kind: call_expression
+                        all:
+                          - has: { field: function, regex: ^Effect\.catch$ }
+                          - has: { field: arguments, has: { pattern: $CALLBACK } }
+                      - kind: variable_declarator
+                        all:
+                          - has: { field: type, kind: type_annotation }
+                          - has:
+                              {
+                                field: value,
+                                kind: object,
+                                has: { kind: pair, has: { field: value, pattern: $CALLBACK } },
+                              }

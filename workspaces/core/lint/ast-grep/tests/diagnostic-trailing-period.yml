@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: diagnostic-trailing-period
+valid:
+  - "const failure = { reason: 'the file is missing' };"
+invalid:
+  - "const failure = { reason: 'the file is missing.' };"

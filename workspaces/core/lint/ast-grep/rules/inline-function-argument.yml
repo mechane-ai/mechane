@@ -1,0 +1,121 @@
+# SC-02: a function passed as an argument, or held by an object literal, is a name declared above (SC-03). Allowed
+# inline, by shape alone (never by line count): E1 the generator of `Effect.fn('name')(…)` that is a const's value; E2 a
+# projection, an expression-bodied arrow with no call, `new`, template, function, conditional, await or yield in its
+# body; E3 an adapter, an expression-bodied arrow whose body is one call or `new` (awaited, in an `async` arrow) whose
+# callee and arguments hold none of those; E4 an expression-bodied arrow passed straight to a Schema, SchemaGetter or
+# SchemaTransformation call; E5 a value of a typed module-level table (TD-24); E6 the `catch` arrow of
+# `Effect.tryPromise` or `Effect.try` in EF-06's shape, `(cause) => new X({ …, reason: String(cause) })`, whose `try`
+# is an E3 adapter; E7 the register function of `Effect.callback` (EF-07); E8 ER-08's catch as a trailing argument of
+# an `Effect.fn`, `Effect.catch((failure) => …)` or `(run, input) => Effect.catch(run, (failure) => …)`, with calls
+# alone.
+id: inline-function-argument
+language: TypeScript
+severity: error
+message: 'Declare the function above as a typed const and pass it by name, such as `const writeEvent: (event: StreamEvent) => void = (event) => …` then `onEvent: writeEvent` (SC-02)'
+files: ['**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  heavy:
+    any:
+      - kind: call_expression
+      - kind: new_expression
+      - kind: template_string
+      - kind: arrow_function
+      - kind: function_expression
+      - kind: generator_function
+      - kind: ternary_expression
+      - kind: await_expression
+      - kind: yield_expression
+  holds-heavy:
+    any:
+      - matches: heavy
+      - has: { stopBy: end, matches: heavy }
+  expression-arrow:
+    all:
+      - kind: arrow_function
+      - not: { has: { field: body, kind: statement_block } }
+  plain-call:
+    all:
+      - kind: call_expression
+      - not: { has: { field: function, matches: holds-heavy } }
+      - not: { has: { field: arguments, has: { stopBy: end, matches: heavy } } }
+  projection:
+    all:
+      - matches: expression-arrow
+      - not: { has: { field: body, matches: holds-heavy } }
+  adapter:
+    all:
+      - matches: expression-arrow
+      - has:
+          field: body
+          any:
+            - matches: plain-call
+            - all:
+                - kind: new_expression
+                - not: { has: { field: arguments, has: { stopBy: end, matches: heavy } } }
+            # DO-03's async arm, such as `async () => await endOutlived({ store, provider, execution })`
+            - all:
+                - kind: await_expression
+                - inside: { kind: arrow_function, regex: '^async' }
+                - has: { matches: plain-call }
+  # E1: the generator of an `Effect.fn('name')(…)` that is a const's value, never one passed inline
+  effect-fn-body:
+    inside:
+      kind: arguments
+      inside:
+        kind: call_expression
+        inside: { kind: variable_declarator, field: value }
+        has:
+          field: function
+          kind: call_expression
+          has: { field: function, regex: '^Effect\.fn$' }
+  # E7: EF-07's register function, which registers its listeners and returns the finalizer that removes them
+  callback-register:
+    all:
+      - kind: arrow_function
+      - inside:
+          kind: arguments
+          inside: { kind: call_expression, has: { field: function, regex: '^Effect\.callback$' } }
+  schema-call:
+    kind: call_expression
+    has: { field: function, regex: '^(Schema|SchemaGetter|SchemaTransformation)\.' }
+  schema-callback:
+    all:
+      - kind: arrow_function
+      - not: { has: { field: body, kind: statement_block } }
+      - not: { has: { field: body, has: { stopBy: end, kind: ternary_expression } } }
+      - any:
+          - inside: { kind: arguments, inside: { matches: schema-call } }
+          - inside:
+              { kind: pair, inside: { kind: object, inside: { kind: arguments, inside: { matches: schema-call } } } }
+  module-declarator:
+    kind: variable_declarator
+    inside:
+      kind: lexical_declaration
+      any:
+        - inside: { kind: program }
+        - inside: { kind: export_statement, inside: { kind: program } }
+  # a module-level table typed by an annotation or `satisfies`, such as `const KEY_MESSAGES: FailureMessages<…> = {…}`
+  module-table:
+    any:
+      - inside: { kind: satisfies_expression, inside: { matches: module-declarator } }
+      - all:
+          - inside: { matches: module-declarator }
+          - inside: { kind: variable_declarator, has: { field: type, kind: type_annotation } }
+rule:
+  all:
+    - any:
+        - kind: arrow_function
+        - kind: function_expression
+        - kind: generator_function
+    - any:
+        - inside: { kind: arguments }
+        - inside: { kind: pair, field: value }
+    - not: { inside: { kind: pair, field: value, inside: { kind: object, matches: module-table } } }
+    - not: { matches: effect-fn-body }
+    - not: { matches: projection }
+    - not: { matches: adapter }
+    - not: { matches: schema-callback }
+    - not: { matches: try-catch }
+    - not: { matches: callback-register }
+    - not: { matches: boundary-catch }

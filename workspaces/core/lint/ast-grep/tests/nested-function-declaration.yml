@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: nested-function-declaration
+valid:
+  - 'function dispatchMeter({ store }: DispatchMeterInput) { const allowance: () => number = () => store.allowance(); return { allowance }; }'
+  - 'function allowance({ store }: AllowanceInput) { return store.allowance(); }'
+invalid:
+  - 'function dispatchMeter({ store }: DispatchMeterInput) { function allowance() { return store.allowance(); } return { allowance }; }'

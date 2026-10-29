@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: raw-environment-type
+valid:
+  - 'type Input = { readonly settings: StackSettings };'
+invalid:
+  - 'type Input = { readonly variables: NodeJS.ProcessEnv };'

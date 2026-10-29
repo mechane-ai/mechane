@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: parameter-mutation
+valid:
+  - 'function add({ rows, row }: AddInput) { return [...rows, row]; }'
+invalid:
+  - 'function add({ rows, row }: AddInput) { rows.push(row); }'
+  - 'function add({ totals }: AddInput) { Object.assign(totals, { turns: 1 }); }'

@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: succeed-in-generator
+valid:
+  - "const read = Effect.fn('read')(function* () { return 1; });"
+  - 'Effect.catchTags({ MechNotFound: () => Effect.succeed(0) });'
+  - 'export const health: (input: HealthInput) => Effect.Effect<Health> = () => Effect.succeed(HEALTH);'
+  - 'const fallback: (failure: ReadFailure) => Effect.Effect<number> = () => Effect.succeed(0); const count = Effect.catch(readCount(), fallback);'
+invalid:
+  - "const read = Effect.fn('read')(function* () { return yield* Effect.succeed(1); });"
+  - 'const readCount: ReadCount = () => Effect.succeed(1); const count = readCount();'
+  - "const doubled = Effect.fn('doubled')(function* ({ items }: DoubledInput) { const double: (item: number) => Effect.Effect<number> = (item) => Effect.succeed(item + item); return yield* Effect.forEach(items, double); });"

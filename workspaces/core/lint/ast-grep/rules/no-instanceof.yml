@@ -1,0 +1,11 @@
+# EF-05 and TD-25: a failure is told apart by its tag, with `Match.valueTags` in a `retry` filter or `catchTags`, and a
+# value by its schema; `instanceof` tests a class, which a decoded value or another realm's object fails.
+id: no-instanceof
+language: TypeScript
+severity: error
+message: 'Tell a failure by its tag, such as `while: Match.valueTags({ Unreachable: () => true })`, never with `instanceof` (EF-05)'
+files: ['packages/**/*.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+rule:
+  kind: binary_expression
+  has: { field: operator, regex: ^instanceof$ }

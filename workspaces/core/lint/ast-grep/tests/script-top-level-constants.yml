@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: script-top-level-constants
+valid:
+  - "const PROGRAM = 'checks';"
+  - "const ROOT_URL = new URL('../', import.meta.url);"
+  - 'const ROOT = fileURLToPath(ROOT_URL);'
+  - 'const run = () => main();'
+invalid:
+  - 'const settings = loadSettings();'
+  - 'let attempt = 0;'
+  - "const ROOT = fileURLToPath(new URL('../', import.meta.url));"

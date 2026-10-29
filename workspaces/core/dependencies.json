@@ -1,0 +1,676 @@
+{
+  "@mechane/core": {
+    "owns": "Tool pins and product tasks; no source",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": [],
+    "confines": []
+  },
+  "@mechane/protocol": {
+    "owns": "The operation catalog, every resource's schemas and errors, the error families, the paths and the device page's forms, GitHub's OAuth wire and login names, the workspace lists of the deployment's variables, the release keys, manifest and stamp, and the lines of the Worker's log",
+    "layer": 2,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "wire",
+    "criterion": "reuse"
+  },
+  "@mechane/client": {
+    "owns": "The isomorphic client that calls catalog operations and decodes their answers, downloads the files a deployment serves and reads its latest release",
+    "layer": 3,
+    "lane": "shared",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/guest": {
+    "owns": "The guest program every machine of a sandbox runs, which runs each execution once, and the container image that carries it",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/cli": {
+    "owns": "The mechane command: its invocation and settings, the output it writes and the failures it reports, and the run of each command beside the login's and the self-update's",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/app": {
+    "owns": "The Worker entry module and its serve, the base Wrangler configuration that Cloudflare and celld deploy, and the public cloud installation example",
+    "layer": 7,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "app",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/rules": {
+    "owns": "The rule registry: every contract's entry by its name, the file roles, oxlint's settings, and the text of every file the registry generates",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/checks-kernel",
+      "@mechane/normalizers",
+      "@mechane/owned-rules",
+      "@mechane/boundaries",
+      "@mechane/checks",
+      "@mechane/rule-generator"
+    ]
+  },
+  "@mechane/store": {
+    "owns": "The SQL kernel every object's database shares: the migration ledger, its transactions, row decoding and the pages of a list that grows",
+    "layer": 3,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/directory-store",
+      "@mechane/workspace-store",
+      "@mechane/mech-store",
+      "@mechane/sandbox-store",
+      "@mechane/key-cache-store",
+      "@mechane/limiter-store",
+      "@mechane/directory",
+      "@mechane/workspace",
+      "@mechane/mech",
+      "@mechane/sandbox",
+      "@mechane/key-cache",
+      "@mechane/limiter",
+      "@mechane/harness",
+      "@mechane/harness-tools"
+    ]
+  },
+  "@mechane/records": {
+    "owns": "The shapes every stored and wire record is built from: record ids and names, the entity id and unit brands, wire structs, bounded text and list queries, the byte units, and the HTTP methods, status codes, header names and media types",
+    "layer": 0,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/deployment": {
+    "owns": "The deployment's variable names, secure origins, model offers and rate limits, and their schemas",
+    "layer": 1,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/utilities": {
+    "owns": "Isomorphic, domain-free functions beside Effect, and the only code that builds promises",
+    "layer": 0,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/sandbox-wire": {
+    "owns": "Every shape that crosses into or out of a sandbox: the guest wire, the host launcher's wire and an execution's progress",
+    "layer": 2,
+    "lane": "shared",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/credentials": {
+    "owns": "How keys, device codes, user codes and session tokens are minted, and the hash the directory stores",
+    "layer": 3,
+    "lane": "shared",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/edge", "@mechane/pages"]
+  },
+  "@mechane/logs": {
+    "owns": "The Worker's one log channel",
+    "layer": 3,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/harness",
+      "@mechane/harness-tools",
+      "@mechane/bindings",
+      "@mechane/edge",
+      "@mechane/pages",
+      "@mechane/directory",
+      "@mechane/workspace",
+      "@mechane/mech",
+      "@mechane/mech-ports",
+      "@mechane/sandbox",
+      "@mechane/key-cache",
+      "@mechane/limiter"
+    ]
+  },
+  "@mechane/rpc": {
+    "owns": "Each Durable Object's RPC answers, its callee edge and plain caller, and the bindings' types and object settings",
+    "layer": 3,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/bindings",
+      "@mechane/directory",
+      "@mechane/workspace",
+      "@mechane/mech",
+      "@mechane/mech-ports",
+      "@mechane/sandbox",
+      "@mechane/key-cache",
+      "@mechane/limiter",
+      "@mechane/edge",
+      "@mechane/pages",
+      "@mechane/app"
+    ]
+  },
+  "@mechane/bindings": {
+    "owns": "The Worker's Effect side of its bindings: settings and calls to each object",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/app"]
+  },
+  "@mechane/harness": {
+    "owns": "The pi adapter: a mech's harness, conversations, prompt sections and metered models, behind Mechane-named ports",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/mech", "@mechane/mech-ports"],
+    "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+  },
+  "@mechane/harness-tools": {
+    "owns": "The mech's pi tools and the ports they call, which the mech passes to its harness",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/mech", "@mechane/mech-ports"],
+    "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
+  },
+  "@mechane/directory-store": {
+    "owns": "The directory object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/directory"]
+  },
+  "@mechane/workspace-store": {
+    "owns": "The workspace object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/workspace"]
+  },
+  "@mechane/mech-store": {
+    "owns": "The mech object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/mech", "@mechane/mech-ports"]
+  },
+  "@mechane/sandbox-store": {
+    "owns": "The sandbox object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/sandbox"]
+  },
+  "@mechane/key-cache-store": {
+    "owns": "The key-cache object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/key-cache"]
+  },
+  "@mechane/limiter-store": {
+    "owns": "The limiter object's database: its tables, rows and record functions",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "store",
+    "criterion": "state",
+    "consumers": ["@mechane/limiter"]
+  },
+  "@mechane/directory": {
+    "owns": "The directory Durable Object and its decisions",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/workspace": {
+    "owns": "The workspace Durable Object and its decisions",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/mech": {
+    "owns": "The mech Durable Object and its decisions",
+    "layer": 6,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/sandbox": {
+    "owns": "The sandbox Durable Object and its decisions",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/key-cache": {
+    "owns": "The key-cache Durable Object and its decisions",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/limiter": {
+    "owns": "The limiter Durable Object and its decisions",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "object",
+    "criterion": "state",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/edge": {
+    "owns": "The HTTP edge: matching, admission, decoding, one handler per operation, the install script and release files",
+    "layer": 6,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "surface",
+    "criterion": "closure",
+    "consumers": ["@mechane/app"]
+  },
+  "@mechane/pages": {
+    "owns": "The browser pages: device approval, GitHub sign-in and its OAuth client, browser sessions and HTML",
+    "layer": 6,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "surface",
+    "criterion": "closure",
+    "consumers": ["@mechane/app"],
+    "confines": ["cookie"]
+  },
+  "@mechane/program": {
+    "owns": "What every executable shares: output channels, exit, child processes, signals and files",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse"
+  },
+  "@mechane/commands": {
+    "owns": "The command model: declarations, parser shapes, help and the command reference",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/cli-kernel", "@mechane/cli-login", "@mechane/cli-update", "@mechane/cli", "@mechane/deploy"]
+  },
+  "@mechane/eval": {
+    "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/cli-kernel", "@mechane/cli"]
+  },
+  "@mechane/release": {
+    "owns": "Building the CLI's release for every target, and uploading it to the bucket its caller names",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library-program",
+    "criterion": "reuse",
+    "consumers": ["@mechane/stack", "@mechane/testing", "@mechane/smoke", "@mechane/deploy-kernel", "@mechane/deploy"]
+  },
+  "@mechane/wrangler": {
+    "owns": "The Worker's Wrangler configuration, its migration tags, the releases bucket it binds and the built bundle's path",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/stack",
+      "@mechane/deploy-kernel",
+      "@mechane/deploy-preflight",
+      "@mechane/deploy-render",
+      "@mechane/deploy"
+    ]
+  },
+  "@mechane/stack": {
+    "owns": "The local stack: celld, the local GitHub, host launcher, scripted model upstream and releases bucket; its main is mise run dev",
+    "layer": 5,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library-program",
+    "criterion": "closure",
+    "consumers": ["@mechane/testing", "@mechane/smoke"]
+  },
+  "@mechane/testing": {
+    "owns": "The smoke's support: CLI driver, browser, approvals, accounts, mechs and the event follower",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "support",
+    "criterion": "closure",
+    "consumers": ["@mechane/smoke"],
+    "confines": ["cookie"]
+  },
+  "@mechane/smoke": {
+    "owns": "The scenario catalog and one function per guarantee",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "scenarios",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/checks": {
+    "owns": "The checks program: the owned checks with the registry's examples, lint, the baselines' tightening and merge, the fingerprint, the changed set, the rules' measurement, the locks' append, and the fixers",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/deploy": {
+    "owns": "The production deploy program: its command line and settings, its modes, the rollout that deploys and rolls back production, and the upload of the CLI's built release",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/mech-ports": {
+    "owns": "The mech Durable Object's ports to its harness but its hands: its dispatch meter, and its memory and threads",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "state",
+    "consumers": ["@mechane/mech"]
+  },
+  "@mechane/cli-kernel": {
+    "owns": "What every part of the mechane command shares: its constants, failures, output schemas and types, and a run's input and result",
+    "layer": 5,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
+  },
+  "@mechane/cli-login": {
+    "owns": "The mechane command's login: the saved login's private files, the key each command sends, device approval, and the auth commands' runs",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "program",
+    "consumers": ["@mechane/cli"]
+  },
+  "@mechane/cli-update": {
+    "owns": "The mechane command's self-update: the latest release's binary, checked against its manifest and run before it replaces the running one, and the update command's run",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "program",
+    "consumers": ["@mechane/cli"]
+  },
+  "@mechane/deploy-kernel": {
+    "owns": "What every mode of the production deploy shares: its failure, settings, constants and schemas, its git and Wrangler runs, production's variables, and its requests to production, Cloudflare and OpenRouter",
+    "layer": 5,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/deploy-preflight", "@mechane/deploy-render", "@mechane/deploy"]
+  },
+  "@mechane/deploy-preflight": {
+    "owns": "The checks a production deploy passes before it changes anything: the checkout, the accounts, what production runs, the formats it may only append to, and the tools",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "program",
+    "consumers": ["@mechane/deploy"]
+  },
+  "@mechane/deploy-render": {
+    "owns": "Production's Wrangler configuration, rendered from the base configuration and the production overlay",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "program",
+    "consumers": ["@mechane/deploy"]
+  },
+  "@mechane/rule-shapes": {
+    "owns": "The shapes the rule registry is built from: each kind of rule with its status, phase, fix and file roles, the contract names, and the member manifest",
+    "layer": 2,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/structure-rules",
+      "@mechane/typescript-rules",
+      "@mechane/name-rules",
+      "@mechane/program-rules",
+      "@mechane/local-rules",
+      "@mechane/rules",
+      "@mechane/rule-generator",
+      "@mechane/checks-kernel",
+      "@mechane/normalizers",
+      "@mechane/boundaries",
+      "@mechane/package-moves",
+      "@mechane/rename",
+      "@mechane/checks"
+    ]
+  },
+  "@mechane/structure-rules": {
+    "owns": "The registry's entries of the boundary and structure contracts: packages, modules, entry points, exports, file roles, folders, functions and branches",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/rules"]
+  },
+  "@mechane/typescript-rules": {
+    "owns": "The registry's entries of the TypeScript contracts: bindings, inputs, assertions, types, arguments, classes, module state, the compiler, file names, Effect errors and schemas, and the Effect dialect",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/rules"]
+  },
+  "@mechane/name-rules": {
+    "owns": "The registry's entries of the names and comments contracts: blank lines, booleans, measured values, spelled-out names, the vocabulary, comments and suppressions, with oxlint's opt-out list",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/rules"]
+  },
+  "@mechane/program-rules": {
+    "owns": "The registry's entries of the contracts of what programs do: shared code, settings, entry points, diagnostics, lifecycles and the CLI, then data, tests, security and evals",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/rules"]
+  },
+  "@mechane/local-rules": {
+    "owns": "The registry's entries of Mechane's own contracts, the package layers, the rule registry and the code style, and of the factory's repository contracts",
+    "layer": 3,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/rules"]
+  },
+  "@mechane/rule-generator": {
+    "owns": "The registry's program: it writes or checks every file the registry generates, runs the registry's own checks, and prints a rule's or a path's rules",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/modules": {
+    "owns": "TypeScript modules as the checks read them: the parser's node types and the roles of module files, a parsed source and its lines, and each module's statements, references and declarations, with the units a declaration moves as",
+    "layer": 4,
+    "lane": "node",
+    "dialect": "data",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/checks-kernel",
+      "@mechane/normalizers",
+      "@mechane/owned-rules",
+      "@mechane/locks",
+      "@mechane/boundaries",
+      "@mechane/package-moves",
+      "@mechane/rename",
+      "@mechane/checks"
+    ],
+    "confines": ["oxc-parser"]
+  },
+  "@mechane/checks-kernel": {
+    "owns": "What every program of the checks shares: the workspace's files read, decoded and listed, git's and the tools' output, the members and the move map, parsed sources, findings and sites, the linters' sites and each ratchet's baseline",
+    "layer": 5,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/normalizers",
+      "@mechane/owned-rules",
+      "@mechane/locks",
+      "@mechane/boundaries",
+      "@mechane/package-moves",
+      "@mechane/rename",
+      "@mechane/checks"
+    ],
+    "confines": ["oxc-parser"]
+  },
+  "@mechane/normalizers": {
+    "owns": "The normalizers: the barrel, placement and blank-line rewrites, which declaration moves are feasible and where they land, and each normalizer's sites and settled changes",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/package-moves", "@mechane/checks"],
+    "confines": ["oxc-parser"]
+  },
+  "@mechane/owned-rules": {
+    "owns": "The owned rules and checks that no installed tool runs: the layout, the documents, the pins, the orphans, the source's comment width and patterns, and the one-value, doc-comment, span-name, logical-operator and banned-word sites",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/checks"],
+    "confines": ["oxc-parser"]
+  },
+  "@mechane/locks": {
+    "owns": "The wire and migration locks: each shipped name and schema step the source declares, held append-only, and the record forms; the only part of the checks that imports the product's packages",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/checks"],
+    "confines": ["oxc-parser"]
+  },
+  "@mechane/boundaries": {
+    "owns": "The members' boundaries: one dependency-cruiser cruise of every rule, each import held to its member's declared edges and the member manifest, and the changed set that the cruise's module graph gives",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/checks"],
+    "confines": ["dependency-cruiser"]
+  },
+  "@mechane/package-moves": {
+    "owns": "The move codemod: the committed move map, applied through one step with each step's declarations, files, imports, entries, manifests and every path a text names",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/rename": {
+    "owns": "The rename codemod: one binding renamed with its input type, span name, file stem and every import, or the committed rename maps replayed",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/integrations": {
+    "owns": "Server-side integration credential resolution and bounded MCP, Slack and GitHub clients",
+    "layer": 4,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/edge", "@mechane/mech-ports", "@mechane/mech"],
+    "confines": ["@modelcontextprotocol/client", "jose"]
+  }
+}

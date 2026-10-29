@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: literal-comparison
+valid:
+  - 'if (status === RuleStatus.Proposed) { stop(); }'
+  - "if (typeof value === 'string') { stop(); }"
+  - "if (text === '') { stop(); }"
+invalid:
+  - "if (status === 'proposed') { stop(); }"
+  - "switch (status) { case 'proposed': stop(); }"

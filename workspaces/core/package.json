@@ -1,0 +1,18 @@
+{
+  "name": "@mechane/core",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@ast-grep/cli": "0.51.0",
+    "@cloudflare/workers-types": "5.20261028.1",
+    "@swc/core": "1.16.20",
+    "@types/node": "24.19.2",
+    "jscpd": "5.4.2",
+    "knip": "6.43.0",
+    "oxfmt": "0.75.0",
+    "oxlint": "1.90.0",
+    "oxlint-tsgolint": "7.0.2005",
+    "typescript": "7.0.2"
+  },
+  "packageManager": "pnpm@12.16.1"
+}

@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: nullish-operator
+valid:
+  - 'const name = Option.getOrElse(Option.fromNullishOr(value), () => fallback);'
+invalid:
+  - 'const name = value ?? fallback;'
+  - 'const name = row?.name;'

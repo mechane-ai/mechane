@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: copy-outside-forks
+valid:
+  - 'stub.receiveFork({ page });'
+invalid:
+  - 'stub.receiveCopy({ page });'

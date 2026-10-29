@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: bare-string-schema
+valid:
+  - 'const Thread = Schema.Struct({ title: boundedText({ maxBytes: TITLE_MAX_BYTES }) });'
+  - 'const Digest = Schema.String.check(Schema.isPattern(SHA256_PATTERN));'
+  - "class RequestInvalid extends Schema.TaggedError<RequestInvalid>()('RequestInvalid', { reason: Schema.String }) {}"
+  - 'const Binaries = Schema.Record(Schema.String, ReleaseBinary);'
+  - 'const Secret = Schema.RedactedFromValue(Schema.String);'
+invalid:
+  - 'const Thread = Schema.Struct({ title: Schema.String });'

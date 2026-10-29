@@ -1,0 +1,6 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: tagged-error-cause
+valid:
+  - "class Failed extends Schema.TaggedError<Failed>()('Failed', { reason: Schema.String }) {}"
+invalid:
+  - "class Failed extends Schema.TaggedError<Failed>()('Failed', { cause: Schema.String }) {}"

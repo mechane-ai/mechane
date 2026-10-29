@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: untagged-errors-typescript
+valid:
+  - 'const failure = new FileUnreadable({ path });'
+invalid:
+  - "const failure = new Error('x');"
+  - "Effect.dieMessage('the row is missing');"
