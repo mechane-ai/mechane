@@ -12,6 +12,7 @@ export const runSlackDeliveries = Effect.fn('runSlackDeliveries')(function* ({
   input,
   origin,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'slack deliveries'>): Effect.fn.Return<CommandResult<'slack deliveries'>, RunFailure> {
   const list: (access: WorkspaceAccess) => Effect.Effect<SlackDeliveries, ClientFailure> = ({
     token,
@@ -22,7 +23,7 @@ export const runSlackDeliveries = Effect.fn('runSlackDeliveries')(function* ({
     return call({ name: 'listSlackDeliveries', input: { workspaceId, mechId: input.mechId }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use: list });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: list });
 
   const format: (delivery: SlackDelivery) => string = (delivery) => {
     const fields: Array<string> = [delivery.id, delivery.status];

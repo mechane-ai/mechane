@@ -1,5 +1,6 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { SandboxAction } from '@mechane/protocol';
+import type { SandboxReport } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
 import { withWorkspace } from '../mechs/with-workspace.ts';
 
@@ -9,6 +10,7 @@ export const runSandboxShow = Effect.fn('runSandboxShow')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'sandbox show'>): Effect.fn.Return<CommandResult<'sandbox show'>, RunFailure> {
   const request = {
     action: SandboxAction.Show,
@@ -21,17 +23,31 @@ export const runSandboxShow = Effect.fn('runSandboxShow')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       call({ name: 'manageSandbox', credential: token, input: { ...request, workspaceId, mechId: input.mechId } }),
   });
 
-  return {
-    lines: [
-      `${result.provider}: ${result.status}`,
-      `image: ${Option.getOrElse(result.image, () => 'none')}; desired: ${result.desiredImage}`,
-      `operation: ${Option.getOrElse(result.operationId, () => 'none')} (${result.phase})`,
-      'retention: files remain until explicit deletion',
-    ],
-    result,
-  };
+  const lines = sandboxLines(result);
+
+  return { lines, result };
 });
+
+function sandboxLines({
+  provider,
+  status,
+  image,
+  desiredImage,
+  operationId,
+  phase,
+}: SandboxReport): ReadonlyArray<string> {
+  const currentImage = Option.getOrElse(image, () => 'none');
+  const operation = Option.getOrElse(operationId, () => 'none');
+
+  return [
+    `${provider}: ${status}`,
+    `image: ${currentImage}; desired: ${desiredImage}`,
+    `operation: ${operation} (${phase})`,
+    'retention: files remain until explicit deletion',
+  ];
+}

@@ -17,6 +17,7 @@ export const runWatchStatus = Effect.fn('runWatchStatus')(function* <N extends W
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
   status,
 }: RunWatchStatusInput<N>): Effect.fn.Return<CommandResult<N>, RunFailure> {
   const change: (access: WorkspaceAccess) => Effect.Effect<Watch, ClientFailure> = ({ token, workspaceId }) => {
@@ -25,7 +26,7 @@ export const runWatchStatus = Effect.fn('runWatchStatus')(function* <N extends W
     return call({ name: 'updateWatchStatus', input: { ...input, workspaceId: workspace, status }, credential: token });
   };
 
-  const watch = yield* withWorkspace({ call, origin, credentials, use: change });
+  const watch = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: change });
 
   return { lines: [watchLine({ watch })], result: watch };
 });

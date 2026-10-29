@@ -12,6 +12,9 @@ export const LogEvent = {
   IdentitySignedUp: 'auth.identity_signed_up',
   KeyIssued: 'auth.key_issued',
   KeyRevoked: 'auth.key_revoked',
+  WorkspaceCreated: 'workspace.created',
+  WorkspaceMemberSet: 'workspace.member_set',
+  WorkspaceMemberRemoved: 'workspace.member_removed',
 } as const;
 
 export type LogEvent = (typeof LogEvent)[keyof typeof LogEvent];

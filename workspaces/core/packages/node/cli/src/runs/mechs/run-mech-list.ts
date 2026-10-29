@@ -12,6 +12,7 @@ export const runMechList = Effect.fn('runMechList')(function* ({
   call,
   origin,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'mech list'>): Effect.fn.Return<CommandResult<'mech list'>, RunFailure> {
   const mechs: (access: WorkspaceAccess) => Effect.Effect<MechList, ClientFailure> = ({ token, workspaceId }) =>
     readPages({
@@ -20,7 +21,7 @@ export const runMechList = Effect.fn('runMechList')(function* ({
         call({ name: 'listMechs', input: { workspaceId, after }, credential: token }),
     });
 
-  const list = yield* withWorkspace({ call, origin, credentials, use: mechs });
+  const list = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: mechs });
 
   return { lines: list.mechs.map((mech) => mechLine({ mech })), result: list };
 });

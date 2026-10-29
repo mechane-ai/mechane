@@ -36,6 +36,16 @@ const NO_NEXT_STEP = Option.none<string>();
  * gathered from the tables of the failures' owners.
  */
 export const FAILURE_MESSAGES: Readonly<FailureMessages<Failure>> = {
+  WorkspaceSelectionRefused: ({ _tag, workspaceId }) => {
+    const next = Option.some(`run ${PROGRAM} workspace list`);
+
+    return ownMessage({
+      code: _tag,
+      status: ExitStatus.ForbiddenOrNotFound,
+      message: `workspace ${workspaceId} is not one you belong to`,
+      next,
+    });
+  },
   SandboxMaintenanceFailed: ({ _tag, reason }) =>
     ownMessage({ code: _tag, status: ExitStatus.Failed, message: reason, next: NO_NEXT_STEP }),
   ...CLIENT_FAILURE_MESSAGES,

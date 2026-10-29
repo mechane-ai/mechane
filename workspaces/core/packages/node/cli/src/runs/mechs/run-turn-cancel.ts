@@ -8,11 +8,13 @@ export const runTurnCancel = Effect.fn('runTurnCancel')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'turn cancel'>): Effect.fn.Return<CommandResult<'turn cancel'>, RunFailure> {
   const cancel = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'cancelTurn', input: { ...input, workspaceId }, credential: token }),
   });
 

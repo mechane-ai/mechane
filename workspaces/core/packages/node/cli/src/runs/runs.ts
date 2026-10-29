@@ -44,8 +44,7 @@ import { runFindingList } from './watches/run-finding-list.ts';
 import { runWatchList } from './watches/run-watch-list.ts';
 import { runWatchSet } from './watches/run-watch-set.ts';
 import { runWatchStatus } from './watches/run-watch-status.ts';
-import { runAllowanceShow } from './workspaces/run-allowance-show.ts';
-import { runWorkspaceList } from './workspaces/run-workspace-list.ts';
+import { WORKSPACE_RUNS } from './workspaces/workspace-runs.ts';
 
 /** The run of each command; a command without one fails to compile. */
 type Runs = { readonly [N in CommandName]: Run<N> };
@@ -86,8 +85,7 @@ export const RUNS: Readonly<Runs> = {
   'key create': documentRun({ run: runKeyCreate }),
   'key list': documentRun({ run: runKeyList }),
   'key revoke': documentRun({ run: runKeyRevoke }),
-  'workspace list': documentRun({ run: runWorkspaceList }),
-  'allowance show': documentRun({ run: runAllowanceShow }),
+  ...WORKSPACE_RUNS,
   'mech create': documentRun({ run: runMechCreate }),
   'mech list': documentRun({ run: runMechList }),
   'mech fork': documentRun({ run: runMechFork }),

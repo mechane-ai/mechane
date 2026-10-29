@@ -1,6 +1,6 @@
 import { Schema } from 'effect';
 import { UnknownFailure } from './errors.ts';
-import type { ServerFailure } from './errors.ts';
+import type { ServerFailure } from './server-failure.errors.ts';
 
 type FailureCodeInput = { readonly failure: ServerFailure | UnknownFailure };
 

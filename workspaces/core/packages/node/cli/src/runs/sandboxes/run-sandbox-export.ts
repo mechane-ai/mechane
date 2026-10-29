@@ -17,6 +17,7 @@ export const runSandboxExport = Effect.fn('runSandboxExport')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'sandbox export'>): Effect.fn.Return<CommandResult<'sandbox export'>, RunFailure> {
   const fallback = SandboxOperationId.make(randomUUID());
   const specified = Option.fromNullishOr(input.operationId);
@@ -33,6 +34,7 @@ export const runSandboxExport = Effect.fn('runSandboxExport')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       exportWorkspace({ call, token, workspaceId, mechId: input.mechId, request, file: input.file }),
   });

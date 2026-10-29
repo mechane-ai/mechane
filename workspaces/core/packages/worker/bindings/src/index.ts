@@ -8,3 +8,4 @@ export { callWorkspace } from './call-workspace.ts';
 export { decodeSettings } from './settings/decode-settings.ts';
 export { callObject } from './call-object.ts';
 export { readinessStubs } from './readiness-stubs.ts';
+export { hasPrincipalIdentity } from './has-principal-identity.ts';

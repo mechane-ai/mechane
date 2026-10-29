@@ -2,6 +2,7 @@ import type { ClientFailure, OperationCall } from '@mechane/client';
 import type { CommandInput, CommandName, COMMANDS, ExitStatus, OutputMode } from '@mechane/commands';
 import type { EvalFailure } from '@mechane/eval';
 import type { CliTarget, Release } from '@mechane/protocol';
+import type { WorkspaceId } from '@mechane/records';
 import type { Effect, Option, Redacted } from 'effect';
 import type { CredentialSource, InvocationKind, RunOutcome } from './constants.ts';
 import type {
@@ -16,8 +17,9 @@ import type {
   TargetUnpublished,
   UsageInvalid,
   VerificationUrlMismatched,
+  WorkspaceSelectionRefused,
 } from './errors.ts';
-import type { COMMAND_OUTPUTS } from './output/schemas.ts';
+import type { COMMAND_OUTPUTS } from './output/command-outputs.ts';
 import type { ErrorRecord } from './schemas.ts';
 
 /** A result for the output module to write in the invocation's output mode. */
@@ -48,6 +50,8 @@ export type CommandInvocation<N extends CommandName = CommandName> = {
   readonly origin: URL;
   readonly output: OutputMode;
   readonly credentials: CredentialSettings;
+  /** None selects the personal workspace. */
+  readonly selectedWorkspaceId: Option.Option<WorkspaceId>;
   readonly program: ProgramSettings;
 };
 
@@ -56,6 +60,7 @@ export type CommandInvocation<N extends CommandName = CommandName> = {
  * an eval run.
  */
 export type RunFailure =
+  | WorkspaceSelectionRefused
   | SandboxMaintenanceFailed
   | ClientFailure
   | SavedLoginRejected
@@ -114,6 +119,8 @@ export type RunInput<N extends CommandName> = {
   readonly origin: URL;
   readonly input: CommandInput<N>;
   readonly credentials: CredentialSettings;
+  /** None selects the personal workspace. */
+  readonly selectedWorkspaceId: Option.Option<WorkspaceId>;
   /** The program that runs, which `mechane update` replaces when a release build compiled it. */
   readonly program: ProgramSettings;
 };

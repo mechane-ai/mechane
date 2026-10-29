@@ -92,29 +92,29 @@ url_api = "https://api.github.com/repos/denoland/celld/releases/assets/663757291
 provenance = "github-attestations"
 
 [[tools."github:macromackie/ev-grep"]]
-version = "0.6.3"
+version = "0.7.0"
 backend = "github:macromackie/ev-grep"
-specifiers = ["0.6.3"]
+specifiers = ["0.7.0"]
 
 [tools."github:macromackie/ev-grep"."platforms.linux-arm64"]
-checksum = "sha256:8e1a81bd36d0021d9a97ea50c38aa9bac64698edffab43289d52834454f55c7c"
-url = "https://github.com/macromackie/ev-grep/releases/download/v0.6.3/ev-grep-aarch64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/642843863"
+checksum = "sha256:b50e4b8cab79e94c2300124240bc57fdf38d49e29890e9ee5cc13e557abb8f19"
+url = "https://github.com/macromackie/ev-grep/releases/download/v0.7.0/ev-grep-aarch64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/687365596"
 
 [tools."github:macromackie/ev-grep"."platforms.linux-x64"]
-checksum = "sha256:be61d1fb9fa01fa044c5a8ce10322b70bd38edc333769264a35d7e58647cee9b"
-url = "https://github.com/macromackie/ev-grep/releases/download/v0.6.3/ev-grep-x86_64-unknown-linux-gnu.tar.xz"
-url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/642843888"
+checksum = "sha256:7cc8ef714afa08bd69e043aae47a70584ee272a1f099a6b3395dbf3abdb0d0c6"
+url = "https://github.com/macromackie/ev-grep/releases/download/v0.7.0/ev-grep-x86_64-unknown-linux-gnu.tar.xz"
+url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/687365637"
 
 [tools."github:macromackie/ev-grep"."platforms.macos-arm64"]
-checksum = "sha256:97f214e2791f3428f882a26bccf80fb82d615c5ac1f16b4a4fd7ba0e556c8364"
-url = "https://github.com/macromackie/ev-grep/releases/download/v0.6.3/ev-grep-aarch64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/642843866"
+checksum = "sha256:c084169e0731b092ebc927599fa0a60c8bbb8de196c6dc2760c874f2beab3f99"
+url = "https://github.com/macromackie/ev-grep/releases/download/v0.7.0/ev-grep-aarch64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/687365589"
 
 [tools."github:macromackie/ev-grep"."platforms.macos-x64"]
-checksum = "sha256:2ca6bbf0ba46c678d3893885a502ef5b1ac0ea63fb8148b910bd3d81b3d50199"
-url = "https://github.com/macromackie/ev-grep/releases/download/v0.6.3/ev-grep-x86_64-apple-darwin.tar.xz"
-url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/642843903"
+checksum = "sha256:cdd412858978084bd274fce297ab11305847b11d9f767d286a30b032aa864eb1"
+url = "https://github.com/macromackie/ev-grep/releases/download/v0.7.0/ev-grep-x86_64-apple-darwin.tar.xz"
+url_api = "https://api.github.com/repos/macromackie/ev-grep/releases/assets/687365622"
 
 [[tools."github:macromackie/tenet"]]
 version = "0.11.0"

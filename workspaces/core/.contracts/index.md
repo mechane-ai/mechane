@@ -1,7 +1,7 @@
 # Product contracts
 
 These rules govern `workspaces/core` after the [repository contracts](../../../.contracts/index.md). Contracts 001 to
-064 are adopted from tenet-contracts v11.0.0; each one's `paths` narrow it and its `## Local adaptations` state this
+064 are adopted from tenet-contracts v11.0.0, with 016, 020 and 064 updated to v11.1.0; each one's `paths` narrow it and its `## Local adaptations` state this
 product's values. The rule registry, [`@mechane/rules`](../packages/node/rules/src/index.ts), holds each value a tool
 enforces once and generates every tool's configuration and the block that ends each contract's adaptations. Contracts
 from 101 are Mechane's own.

@@ -15,6 +15,7 @@ export const runSandboxChange = Effect.fn('runSandboxChange')(function* <N exten
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
   action,
 }: RunSandboxChangeInput<N>): Effect.fn.Return<CommandResult<N>, RunFailure> {
   const fallback = SandboxOperationId.make(randomUUID());
@@ -27,6 +28,7 @@ export const runSandboxChange = Effect.fn('runSandboxChange')(function* <N exten
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => maintainSandbox({ call, token, workspaceId, mechId: input.mechId, request }),
   });
 

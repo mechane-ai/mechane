@@ -60,7 +60,6 @@ export { failureCode } from './errors/failure-code.ts';
 export { RELEASE_FAILURES } from './errors/release-failures.ts';
 export { ROUTE_FAILURES } from './errors/route-failures.ts';
 export {
-  ServerFailure,
   UnknownFailure,
   KeyMissing,
   DeviceApprovalNotFound,
@@ -172,7 +171,24 @@ export {
   TurnStatus,
   UnansweredReason,
 } from './operations/turns/constants.ts';
-export { Allowance, Workspace, WorkspaceList, WorkspacePath } from './operations/workspaces/schemas.ts';
+export {
+  Allowance,
+  Workspace,
+  WorkspaceList,
+  WorkspacePath,
+  WorkspaceMember,
+  WorkspaceMemberList,
+  WorkspaceMemberRemoval,
+} from './operations/workspaces/schemas.ts';
+export {
+  IdentityNotAdmitted,
+  InstallationAdministratorRequired,
+  PersonalWorkspaceProtected,
+  PrincipalNotFound,
+  WorkspaceCreationConflict,
+  WorkspaceLastOwner,
+  WorkspaceMemberNotFound,
+} from './errors/workspace.errors.ts';
 export { MembershipRole } from './operations/workspaces/constants.ts';
 export {
   KeyAccessAnswer,
@@ -217,3 +233,5 @@ export {
 export { RemoteToolPolicy, CONNECTIONS_PER_WORKSPACE } from './operations/connections/constants.ts';
 
 export { RemoteToolDescription, RemoteToolsOutcome } from './operations/connections/remote-tools.schemas.ts';
+
+export { ServerFailure } from './errors/server-failure.errors.ts';

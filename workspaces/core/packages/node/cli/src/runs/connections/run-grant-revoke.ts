@@ -10,6 +10,7 @@ export const runGrantRevoke = Effect.fn('runGrantRevoke')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'grant revoke'>): Effect.fn.Return<CommandResult<'grant revoke'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'grant revoke'>['result'], RunFailure> = ({
     token,
@@ -20,7 +21,7 @@ export const runGrantRevoke = Effect.fn('runGrantRevoke')(function* ({
     return call({ name: 'revokeTools', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   return { lines: [`${result.mechId} ${result.connectionId} revoked`], result };
 });

@@ -14,6 +14,7 @@ export const runThreadList = Effect.fn('runThreadList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'thread list'>): Effect.fn.Return<CommandResult<'thread list'>, RunFailure> {
   const threads: (access: WorkspaceAccess) => Effect.Effect<ThreadList, ClientFailure> = ({ token, workspaceId }) =>
     readPages({
@@ -22,7 +23,7 @@ export const runThreadList = Effect.fn('runThreadList')(function* ({
         call({ name: 'listThreads', input: { ...input, workspaceId, after }, credential: token }),
     });
 
-  const list = yield* withWorkspace({ call, origin, credentials, use: threads });
+  const list = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: threads });
 
   return { lines: list.threads.flatMap((thread) => threadLines({ thread })), result: list };
 });

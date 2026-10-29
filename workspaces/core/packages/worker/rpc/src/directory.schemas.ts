@@ -19,15 +19,18 @@ export const DirectoryKey = Schema.Struct({
 export type DirectoryKey = typeof DirectoryKey.Type;
 
 /** A principal's workspaces as the directory answers them: at least its personal one. */
-export const DirectoryWorkspaces = Schema.NonEmptyArray(
-  Schema.Struct({
-    id: Schema.String,
-    name: Schema.String,
-    role: Schema.Enum(MembershipRole),
-    dailyAllowanceMicros: Micros,
-    createdAt: Schema.DateTimeUtcFromMillis,
-  }).pipe(Schema.encodeKeys({ createdAt: 'createdAtMs' })),
-);
+export const DirectoryWorkspace = Schema.Struct({
+  id: Schema.String,
+  name: Schema.String,
+  role: Schema.Enum(MembershipRole),
+  dailyAllowanceMicros: Micros,
+  createdAt: Schema.DateTimeUtcFromMillis,
+}).pipe(Schema.encodeKeys({ createdAt: 'createdAtMs' }));
+
+export type DirectoryWorkspace = typeof DirectoryWorkspace.Type;
+
+/** The principal's personal workspace comes first, followed by shared memberships. */
+export const DirectoryWorkspaces = Schema.NonEmptyArray(DirectoryWorkspace);
 
 export type DirectoryWorkspaces = typeof DirectoryWorkspaces.Type;
 

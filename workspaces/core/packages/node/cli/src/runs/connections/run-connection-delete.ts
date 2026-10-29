@@ -10,6 +10,7 @@ export const runConnectionDelete = Effect.fn('runConnectionDelete')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'connection delete'>): Effect.fn.Return<CommandResult<'connection delete'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'connection delete'>['result'], RunFailure> = ({
     token,
@@ -20,7 +21,7 @@ export const runConnectionDelete = Effect.fn('runConnectionDelete')(function* ({
     return call({ name: 'deleteConnection', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   return { lines: [`${result.connectionId} deleted`], result };
 });

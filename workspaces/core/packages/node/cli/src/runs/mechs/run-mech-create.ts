@@ -10,6 +10,7 @@ export const runMechCreate = Effect.fn('runMechCreate')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'mech create'>): Effect.fn.Return<CommandResult<'mech create'>, RunFailure> {
   const requestedId = Option.fromUndefinedOr(input.requestId);
   const requestId = prepareCreationRequest({ command: 'mech create', requestedId });
@@ -18,6 +19,7 @@ export const runMechCreate = Effect.fn('runMechCreate')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       call({ name: 'createMech', input: { ...input, requestId, workspaceId }, credential: token }),
   });

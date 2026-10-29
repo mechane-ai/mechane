@@ -11,11 +11,13 @@ export const runDroneShow = Effect.fn('runDroneShow')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'drone show'>): Effect.fn.Return<CommandResult<'drone show'>, RunFailure> {
   const trace = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'showDrone', input: { ...input, workspaceId }, credential: token }),
   });
 

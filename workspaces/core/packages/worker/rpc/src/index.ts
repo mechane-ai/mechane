@@ -32,6 +32,17 @@ export type {
   WorkspaceIdInput,
   DirectoryRpc,
 } from './directory.types.ts';
+export {
+  SharedWorkspaceCreation,
+  WorkspaceOwnerRefusal,
+  WorkspaceMembersAnswer,
+  WorkspaceMemberChange,
+  WorkspaceMemberChangeRefusal,
+  WorkspaceMemberChangeAnswer,
+  WorkspaceMemberSetAnswer,
+  WorkspaceMemberRemovalAnswer,
+} from './workspace-members.schemas.ts';
+export type { CreateSharedWorkspaceInput, ChangeWorkspaceMemberInput } from './workspace-members.types.ts';
 export { DroneCancelAnswer, DronesAnswer, DroneAnswer, ThreadsAnswer } from './drones.schemas.ts';
 export {
   WorkDispatchesAnswer,

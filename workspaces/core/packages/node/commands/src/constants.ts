@@ -20,6 +20,7 @@ export const DEFAULT_ORIGIN = 'https://mechane.ai';
  * answered carries the deployment's code instead. A code ships, so the reference lists each one.
  */
 export const ErrorCode = {
+  WorkspaceSelectionRefused: 'WorkspaceSelectionRefused',
   SandboxMaintenanceFailed: 'SandboxMaintenanceFailed',
   UsageInvalid: 'UsageInvalid',
   OriginUnreachable: 'OriginUnreachable',
@@ -64,6 +65,9 @@ export type FlagKind = (typeof FlagKind)[keyof typeof FlagKind];
 
 /** The variable that names the output mode when the output flag names none. */
 export const OUTPUT_VARIABLE = 'MECHANE_OUTPUT';
+
+/** The default workspace selector for invocations that omit --workspace. */
+export const WORKSPACE_VARIABLE = 'MECHANE_WORKSPACE_ID';
 
 /** How a command writes its result to standard output. */
 export const OutputMode = { Human: 'human', Json: 'json', Jsonl: 'jsonl' } as const;

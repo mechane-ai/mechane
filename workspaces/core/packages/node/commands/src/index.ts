@@ -11,6 +11,7 @@ export {
   CONFIG_HOME_VARIABLE,
   DEFAULT_ORIGIN,
   OUTPUT_VARIABLE,
+  WORKSPACE_VARIABLE,
   FlagKind,
 } from './constants.ts';
 export { helpLines } from './help-lines.ts';

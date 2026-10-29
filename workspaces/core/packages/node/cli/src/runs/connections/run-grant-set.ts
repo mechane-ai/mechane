@@ -10,6 +10,7 @@ export const runGrantSet = Effect.fn('runGrantSet')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'grant set'>): Effect.fn.Return<CommandResult<'grant set'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'grant set'>['result'], RunFailure> = ({
     token,
@@ -20,7 +21,7 @@ export const runGrantSet = Effect.fn('runGrantSet')(function* ({
     return call({ name: 'grantTools', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   return { lines: [`${result.mechId} ${result.connectionId}: ${result.tools.join(', ')}`], result };
 });

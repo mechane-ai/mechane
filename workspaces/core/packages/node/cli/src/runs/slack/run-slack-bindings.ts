@@ -11,6 +11,7 @@ export const runSlackBindings = Effect.fn('runSlackBindings')(function* ({
   call,
   origin,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'slack bindings'>): Effect.fn.Return<CommandResult<'slack bindings'>, RunFailure> {
   const list: (access: WorkspaceAccess) => Effect.Effect<SlackBindings, ClientFailure> = ({
     token,
@@ -21,7 +22,7 @@ export const runSlackBindings = Effect.fn('runSlackBindings')(function* ({
     return call({ name: 'listSlackBindings', input: { workspaceId }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use: list });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: list });
 
   const format: (binding: SlackBinding) => string = (binding) =>
     `${binding.id} ${binding.channelId} → ${binding.mechId} listening=${binding.isListening} replies=${binding.isReplyEnabled}`;

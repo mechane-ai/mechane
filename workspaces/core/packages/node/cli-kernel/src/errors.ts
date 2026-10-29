@@ -2,9 +2,15 @@ import { OperationFailed } from '@mechane/client';
 import { OutputMode } from '@mechane/commands';
 import { FileStep } from '@mechane/program';
 import { CliTarget, Release } from '@mechane/protocol';
-import { Bytes } from '@mechane/records';
+import { Bytes, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { CredentialsStep } from './constants.ts';
+
+/** Explicit selection never falls back to a workspace the caller did not request. */
+export class WorkspaceSelectionRefused extends Schema.TaggedError<WorkspaceSelectionRefused>()(
+  'WorkspaceSelectionRefused',
+  { workspaceId: WorkspaceId },
+) {}
 
 /** The downloaded binary holds another number of bytes than its release's manifest names. */
 export class SizeMismatched extends Schema.TaggedError<SizeMismatched>()('SizeMismatched', {

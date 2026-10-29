@@ -10,6 +10,7 @@ export const runConnectionCreate = Effect.fn('runConnectionCreate')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'connection create'>): Effect.fn.Return<CommandResult<'connection create'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'connection create'>['result'], RunFailure> = ({
     token,
@@ -20,5 +21,5 @@ export const runConnectionCreate = Effect.fn('runConnectionCreate')(function* ({
     return call({ name: 'createConnection', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  return yield* withSavedConnection({ call, origin, credentials, use });
+  return yield* withSavedConnection({ call, origin, credentials, selectedWorkspaceId, use });
 });

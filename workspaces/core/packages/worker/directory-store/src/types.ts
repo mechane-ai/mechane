@@ -1,8 +1,10 @@
 import type { DeviceApprovalRequest, KeyRow, MembershipRole } from '@mechane/protocol';
-import type { BrowserIdentity, BrowserSessionRequest, StateHashInput } from '@mechane/records';
+import type { BrowserIdentity, BrowserSessionRequest, Micros, StateHashInput, WorkspaceId } from '@mechane/records';
 import type { DatabaseFunctions, PageAfterInput } from '@mechane/store';
 import type { Array, DateTime, Option } from 'effect';
+import type { IdentityKey, PrincipalInput, WorkspaceInput, WorkspaceMembershipInput } from './inputs.types.ts';
 import type { ClaimedSignInRow, DeviceApprovalRow, KeyRowPage, PrincipalRow, WorkspaceRow } from './schemas.ts';
+import type { WorkspaceRecords } from './workspaces/workspace-records.ts';
 
 /** What the directory's store does with device approvals. */
 export type DeviceApprovalRecords = {
@@ -18,8 +20,6 @@ export type DeviceApprovalRecords = {
   readonly recordClaim: (input: RecordClaimInput) => void;
 };
 
-type IdentityKey = Pick<BrowserIdentity, 'provider' | 'subject'>;
-
 /** What the directory's store does with keys. */
 export type KeyRecords = {
   readonly issueKey: (input: IssueKeyInput) => void;
@@ -34,23 +34,30 @@ export type KeyRecords = {
 };
 
 /** The personal workspace a principal's sign-up creates. */
-type PersonalWorkspace = { readonly id: string; readonly name: string; readonly dailyAllowanceMicros: number };
+type PersonalWorkspace = {
+  readonly id: typeof WorkspaceId.Encoded;
+  readonly name: string;
+  readonly dailyAllowanceMicros: typeof Micros.Encoded;
+};
 
+/** A verified provider subject can resolve to an existing principal before sign-up. */
 export type PrincipalForIdentityInput = { readonly identity: IdentityKey };
 
 /** What the directory's store does with principals, their identities and their workspaces. */
 export type PrincipalRecords = {
   readonly principal: (input: PrincipalInput) => PrincipalRow;
+  /** The stable provider subjects whose admission policy applies to this principal. */
+  readonly principalIdentities: (input: PrincipalInput) => ReadonlyArray<IdentityKey>;
   /** The principal that signed up with the identity, none before its first sign-in. */
   readonly principalForIdentity: (input: PrincipalForIdentityInput) => Option.Option<PrincipalRow>;
   /** Creates a principal, its identity, and its personal workspace with the principal as owner. */
   readonly signUp: (input: SignUpInput) => void;
-  /** The workspaces the principal is a member of, oldest first. */
+  /** The personal workspace first, followed by shared workspaces in creation order. */
   readonly workspacesOfPrincipal: (input: PrincipalInput) => Array.NonEmptyReadonlyArray<WorkspaceRow>;
   /** Absent when the principal has no current membership in the workspace. */
   readonly workspaceMembership: (input: WorkspaceMembershipInput) => Option.Option<MembershipRole>;
   /** The model spend the workspace may make each UTC day, in micro-dollars. */
-  readonly dailyAllowanceMicros: (input: WorkspaceInput) => number;
+  readonly dailyAllowanceMicros: (input: WorkspaceInput) => typeof Micros.Encoded;
 };
 
 export type SignUpInput = {
@@ -74,6 +81,7 @@ export type ClaimableDeviceApprovalInput = { readonly pollTokenHash: string; rea
 
 /** The directory database's functions; the store is the only code that runs SQL against the directory object. */
 export type DirectoryStore = DatabaseFunctions &
+  WorkspaceRecords &
   DeviceApprovalRecords &
   KeyRecords &
   PrincipalRecords &
@@ -109,8 +117,6 @@ export type OwnedKeyInput = { readonly principalId: string; readonly keyId: stri
 
 export type PendingDeviceApprovalInput = { readonly userCode: string; readonly now: DateTime.Utc };
 
-export type PrincipalInput = { readonly principalId: string };
-
 export type RecordApprovalInput = { readonly approvalId: string; readonly principalId: string };
 
 export type RecordClaimInput = { readonly approvalId: string; readonly keyId: string };
@@ -124,7 +130,3 @@ export type SignInRecords = {
   /** Removes the unexpired sign-in with the state's hash, so one GitHub answer completes it once; else none. */
   readonly claimSignIn: (input: ClaimSignInInput) => Option.Option<ClaimedSignInRow>;
 };
-
-export type WorkspaceInput = { readonly workspaceId: string };
-
-export type WorkspaceMembershipInput = PrincipalInput & WorkspaceInput;

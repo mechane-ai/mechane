@@ -28,6 +28,8 @@ export const WORKER_VARIABLES = {
   githubClientId: 'MECHANE_GITHUB_CLIENT_ID',
   githubClientSecret: 'MECHANE_GITHUB_CLIENT_SECRET',
   localBootstrapSecret: 'MECHANE_LOCAL_BOOTSTRAP_SECRET',
+  allowedIdentities: 'MECHANE_ALLOWED_IDENTITIES',
+  administratorIdentities: 'MECHANE_ADMINISTRATOR_IDENTITIES',
   dailyAllowanceMicros: 'MECHANE_DAILY_ALLOWANCE_MICROS',
   mechDailyCapMicros: 'MECHANE_MECH_DAILY_CAP_MICROS',
   loginKeyLifetimeSeconds: 'MECHANE_LOGIN_KEY_LIFETIME_SECONDS',

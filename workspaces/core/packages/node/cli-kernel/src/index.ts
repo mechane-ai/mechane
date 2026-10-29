@@ -1,4 +1,5 @@
 export {
+  WorkspaceSelectionRefused,
   SandboxMaintenanceFailed,
   SavedLoginMissing,
   SavedLoginRejected,
@@ -44,6 +45,6 @@ export type {
   PageCursor,
 } from './types.ts';
 export { ErrorRecord } from './schemas.ts';
-export { COMMAND_OUTPUTS } from './output/schemas.ts';
+export { COMMAND_OUTPUTS } from './output/command-outputs.ts';
 export { InvocationKind, REQUEST_TIMEOUT, RunOutcome, CredentialSource, CredentialsStep } from './constants.ts';
 export type { UpdateResult } from './schemas.ts';

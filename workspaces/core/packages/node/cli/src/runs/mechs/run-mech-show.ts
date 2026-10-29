@@ -9,11 +9,13 @@ export const runMechShow = Effect.fn('runMechShow')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'mech show'>): Effect.fn.Return<CommandResult<'mech show'>, RunFailure> {
   const mech = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'showMech', input: { ...input, workspaceId }, credential: token }),
   });
 

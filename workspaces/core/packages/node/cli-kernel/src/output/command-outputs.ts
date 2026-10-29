@@ -9,14 +9,11 @@ import {
   DroneTrace,
   FindingList,
   InboxItem,
-  KeyList,
-  KeyMetadata,
   ListedEvent,
   Mech,
   MechList,
   MechRevisionPage,
   MemoryList,
-  Principal,
   Readiness,
   RemoteConnection,
   SandboxReport,
@@ -33,43 +30,13 @@ import {
   WatchList,
   Workspace,
   WorkspaceList,
+  WorkspaceMember,
+  WorkspaceMemberList,
+  WorkspaceMemberRemoval,
 } from '@mechane/protocol';
-import { wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { CredentialSource } from '../constants.ts';
 import { UpdateResult } from '../schemas.ts';
-
-/** What `mechane auth login` reports: the account, its new login key, and the file that saved it, never the token. */
-const LoginResult = wireStruct({
-  fields: { origin: Schema.String, principal: Principal, key: KeyMetadata, credentialsFile: Schema.String },
-});
-
-type LoginResult = typeof LoginResult.Type;
-
-/** What `mechane auth logout` reports: the login key it revoked, and the saved login it removed. */
-const LogoutResult = wireStruct({
-  fields: { origin: Schema.String, key: KeyMetadata, credentialsFile: Schema.String },
-});
-
-type LogoutResult = typeof LogoutResult.Type;
-
-/** What `mechane auth status` reports: the account, the key the CLI sent and where it came from, and the workspaces. */
-const StatusResult = wireStruct({
-  fields: {
-    origin: Schema.String,
-    credentialSource: Schema.Enum(CredentialSource),
-    principal: Principal,
-    key: KeyMetadata,
-    workspaces: Schema.Array(Workspace),
-  },
-});
-
-type StatusResult = typeof StatusResult.Type;
-
-/** What `mechane key create` reports: the new key and the file that holds its token, never the token. */
-const KeyCreateResult = wireStruct({ fields: { principal: Principal, key: KeyMetadata, keyFile: Schema.String } });
-
-type KeyCreateResult = typeof KeyCreateResult.Type;
+import { ACCESS_OUTPUTS } from './access-outputs.ts';
 
 /**
  * The schema of each command's result, which the output module encodes for `json` and `jsonl`; a streaming command's
@@ -100,13 +67,12 @@ export const COMMAND_OUTPUTS = {
   'sandbox cancel': SandboxReport,
   'sandbox export': Schema.Struct({ sandbox: SandboxReport, file: Schema.String }),
   'readiness': Readiness,
-  'auth login': LoginResult,
-  'auth status': StatusResult,
-  'auth logout': LogoutResult,
-  'key create': KeyCreateResult,
-  'key list': KeyList,
-  'key revoke': KeyMetadata,
+  ...ACCESS_OUTPUTS,
   'workspace list': WorkspaceList,
+  'workspace create': Workspace,
+  'workspace members': WorkspaceMemberList,
+  'workspace member set': WorkspaceMember,
+  'workspace member remove': WorkspaceMemberRemoval,
   'allowance show': Allowance,
   'mech create': Mech,
   'mech list': MechList,

@@ -9,11 +9,13 @@ export const runMemoryList = Effect.fn('runMemoryList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'memory list'>): Effect.fn.Return<CommandResult<'memory list'>, RunFailure> {
   const list = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       call({ name: 'listMemories', input: { ...input, workspaceId }, credential: token }),
   });

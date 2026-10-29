@@ -19,6 +19,7 @@ export const runMechChange = Effect.fn('runMechChange')(function* <N extends Cha
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunMechChangeInput<N>): Effect.fn.Return<CommandResult<N>, RunFailure> {
   const change = definitionChange({ input });
 
@@ -26,6 +27,7 @@ export const runMechChange = Effect.fn('runMechChange')(function* <N extends Cha
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       call({ name: 'updateMech', input: { ...change, workspaceId, mechId: input.mechId }, credential: token }),
   });

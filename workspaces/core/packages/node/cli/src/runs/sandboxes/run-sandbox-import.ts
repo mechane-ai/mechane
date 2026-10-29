@@ -15,6 +15,7 @@ export const runSandboxImport = Effect.fn('runSandboxImport')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'sandbox import'>): Effect.fn.Return<CommandResult<'sandbox import'>, RunFailure, Scope.Scope> {
   const opened = yield* openImportArchive({ file: input.file });
   const fallback = SandboxOperationId.make(randomUUID());
@@ -35,6 +36,7 @@ export const runSandboxImport = Effect.fn('runSandboxImport')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) =>
       uploadImportArchive({ call, token, workspaceId, mechId: input.mechId, request, ...opened }),
   });

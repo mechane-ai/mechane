@@ -7,11 +7,13 @@ export const runAllowanceShow = Effect.fn('runAllowanceShow')(function* ({
   call,
   origin,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'allowance show'>): Effect.fn.Return<CommandResult<'allowance show'>, RunFailure> {
   const allowance = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'showAllowance', input: { workspaceId }, credential: token }),
   });
 

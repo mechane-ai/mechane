@@ -14,11 +14,12 @@ export const runSlackBind = Effect.fn('runSlackBind')(function* ({
   input,
   origin,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'slack bind'>): Effect.fn.Return<CommandResult<'slack bind'>, RunFailure> {
   const configure: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'slack bind'>, ClientFailure> = (access) =>
     bindSlackChannel({ call, input, origin, ...access });
 
-  return yield* withWorkspace({ call, origin, credentials, use: configure });
+  return yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: configure });
 });
 
 const bindSlackChannel = Effect.fn('bindSlackChannel')(function* ({

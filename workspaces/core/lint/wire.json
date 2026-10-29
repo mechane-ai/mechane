@@ -40,7 +40,11 @@
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/source",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id",
     "GET /v1/workspaces/:workspace_id/mechs/:mech_id/watches",
-    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status"
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status",
+    "POST /v1/workspaces",
+    "GET /v1/workspaces/:workspace_id/members",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id",
+    "DELETE /v1/workspaces/:workspace_id/members/:principal_id"
   ],
   "errors": [
     "RouteNotFound",
@@ -145,7 +149,26 @@
     "SandboxCapacityReached",
     "SandboxCapacityReached.workspace_id",
     "SandboxDisabled=forbidden",
-    "SandboxCapacityReached=conflict"
+    "SandboxCapacityReached=conflict",
+    "IdentityNotAdmitted",
+    "InstallationAdministratorRequired",
+    "PersonalWorkspaceProtected",
+    "PersonalWorkspaceProtected.workspace_id",
+    "PrincipalNotFound",
+    "PrincipalNotFound.principal_id",
+    "WorkspaceCreationConflict",
+    "WorkspaceCreationConflict.workspace_id",
+    "WorkspaceLastOwner",
+    "WorkspaceLastOwner.workspace_id",
+    "WorkspaceMemberNotFound",
+    "WorkspaceMemberNotFound.principal_id",
+    "IdentityNotAdmitted=forbidden",
+    "InstallationAdministratorRequired=forbidden",
+    "PersonalWorkspaceProtected=forbidden",
+    "PrincipalNotFound=not_found",
+    "WorkspaceCreationConflict=conflict",
+    "WorkspaceLastOwner=conflict",
+    "WorkspaceMemberNotFound=not_found"
   ],
   "events": [
     "inbox_item.received",
@@ -217,7 +240,11 @@
     "mech resume",
     "mech archive",
     "mech revisions",
-    "sandbox import"
+    "sandbox import",
+    "workspace create",
+    "workspace members",
+    "workspace member set",
+    "workspace member remove"
   ],
   "flags": [
     "--origin",
@@ -300,7 +327,11 @@
     "sandbox import --drone",
     "sandbox import --operation-id",
     "sandbox import --file",
-    "sandbox import --confirm"
+    "sandbox import --confirm",
+    "--workspace",
+    "workspace create --name",
+    "workspace create --workspace-id",
+    "workspace member set --role"
   ],
   "variables": [
     "MECHANE_ORIGIN",
@@ -338,7 +369,10 @@
     "MECHANE_LOCAL_BOOTSTRAP_SECRET",
     "MECHANE_INTEGRATION_SECRETS",
     "MECHANE_SLACK_INSTALLATIONS",
-    "MECHANE_GUEST_SCOPE"
+    "MECHANE_GUEST_SCOPE",
+    "MECHANE_WORKSPACE_ID",
+    "MECHANE_ALLOWED_IDENTITIES",
+    "MECHANE_ADMINISTRATOR_IDENTITIES"
   ],
   "cli_errors": [
     "UsageInvalid",
@@ -359,7 +393,8 @@
     "AllowanceExhausted",
     "EvalFileFailed",
     "EvalInterrupted",
-    "SandboxMaintenanceFailed"
+    "SandboxMaintenanceFailed",
+    "WorkspaceSelectionRefused"
   ],
   "fields": [
     "GET /health output.service",
@@ -966,7 +1001,25 @@
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.bytes",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.parts",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.sha256",
-    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.base64"
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.base64",
+    "POST /v1/workspaces body.id",
+    "POST /v1/workspaces body.name",
+    "POST /v1/workspaces output.id",
+    "POST /v1/workspaces output.name",
+    "POST /v1/workspaces output.role",
+    "POST /v1/workspaces output.daily_allowance_micros",
+    "POST /v1/workspaces output.created_at",
+    "GET /v1/workspaces/:workspace_id/members output.members",
+    "GET /v1/workspaces/:workspace_id/members output.members[].principal_id",
+    "GET /v1/workspaces/:workspace_id/members output.members[].name",
+    "GET /v1/workspaces/:workspace_id/members output.members[].role",
+    "GET /v1/workspaces/:workspace_id/members output.members[].created_at",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id body.role",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.principal_id",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.name",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.created_at",
+    "DELETE /v1/workspaces/:workspace_id/members/:principal_id output.principal_id"
   ],
   "members": [
     "GET /v1/readiness output.durable_objects[].object_class=DirectoryObject",
@@ -1132,7 +1185,15 @@
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.action=import",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.action=upload",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox output.action=import",
-    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox output.action=upload"
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox output.action=upload",
+    "POST /v1/workspaces output.role=owner",
+    "POST /v1/workspaces output.role=member",
+    "GET /v1/workspaces/:workspace_id/members output.members[].role=owner",
+    "GET /v1/workspaces/:workspace_id/members output.members[].role=member",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id body.role=owner",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id body.role=member",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role=owner",
+    "PUT /v1/workspaces/:workspace_id/members/:principal_id output.role=member"
   ],
   "families": [
     "invalid_request=400",

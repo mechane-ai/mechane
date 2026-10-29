@@ -1,8 +1,15 @@
 import { ErrorFamily } from './constants.ts';
-import type { ServerFailure } from './errors.ts';
+import type { ServerFailure } from './server-failure.errors.ts';
 
 /** The family of each failure the Worker answers with; the failure's tag is its code. */
 export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>> = {
+  IdentityNotAdmitted: ErrorFamily.Forbidden,
+  InstallationAdministratorRequired: ErrorFamily.Forbidden,
+  PersonalWorkspaceProtected: ErrorFamily.Forbidden,
+  PrincipalNotFound: ErrorFamily.NotFound,
+  WorkspaceCreationConflict: ErrorFamily.Conflict,
+  WorkspaceLastOwner: ErrorFamily.Conflict,
+  WorkspaceMemberNotFound: ErrorFamily.NotFound,
   WorkspaceOwnerRequired: ErrorFamily.Forbidden,
   ConnectionNotFound: ErrorFamily.NotFound,
   ConnectionLimitReached: ErrorFamily.Conflict,

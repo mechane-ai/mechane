@@ -23,13 +23,14 @@ export const runInboxSend = Effect.fn('runInboxSend')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'inbox send'>): Effect.fn.Return<CommandResult<'inbox send'>, RunFailure> {
   const { mechId, text, delivery, inboxItemId = crypto.randomUUID() } = input;
 
   const send: (access: WorkspaceAccess) => Effect.Effect<InboxItem, ClientFailure> = (access) =>
     sentItem({ call, access, mechId, text, delivery, inboxItemId });
 
-  const received = yield* withWorkspace({ call, origin, credentials, use: send });
+  const received = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: send });
   const time = DateTime.formatIso(received.receivedAt);
 
   return {

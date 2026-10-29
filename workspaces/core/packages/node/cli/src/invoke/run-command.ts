@@ -27,7 +27,7 @@ const RUN_OUTCOME_STATUS: Readonly<Record<RunOutcome, ExitStatus>> = {
  */
 export const runCommand = Effect.fn('runCommand')(
   function* <N extends CommandName>({ invocation }: RunCommandInput<N>): Effect.fn.Return<ExitStatus, RunFailure> {
-    const { command, origin, input, credentials, program } = invocation;
+    const { command, origin, input, credentials, selectedWorkspaceId, program } = invocation;
 
     const operationCall = Effect.fn('operationCall')(function* <M extends OperationName>({
       name,
@@ -45,7 +45,16 @@ export const runCommand = Effect.fn('runCommand')(
     });
 
     const write: (record: ResultRecord<N>) => void = ({ result }) => writeCommandResult({ invocation, result });
-    const outcome = yield* RUNS[command]({ call: operationCall, origin, input, credentials, program, write });
+
+    const outcome = yield* RUNS[command]({
+      call: operationCall,
+      origin,
+      input,
+      credentials,
+      selectedWorkspaceId,
+      program,
+      write,
+    });
 
     return RUN_OUTCOME_STATUS[outcome];
   },

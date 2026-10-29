@@ -1,4 +1,5 @@
 import {
+  IdentitySubjectsVariable,
   IntegrationSecretsVariable,
   ModelOffersVariable,
   RateLimitsVariable,
@@ -44,6 +45,10 @@ export const WorkerVariables = Schema.Struct({
   githubClientSecret: Schema.OptionFromOptionalKey(Schema.RedactedFromValue(Schema.NonEmptyString)),
   /** Absent when local owner sign-in is disabled. */
   localBootstrapSecret: Schema.OptionFromOptionalKey(Schema.RedactedFromValue(Schema.NonEmptyString)),
+  /** Omission admits every verified identity; an empty list admits nobody. */
+  allowedIdentities: Schema.OptionFromOptionalKey(IdentitySubjectsVariable),
+  /** Omission grants nobody authority to create a shared workspace. */
+  administratorIdentities: Schema.OptionFromOptionalKey(IdentitySubjectsVariable),
   dailyAllowanceMicros: MicrosVariable,
   mechDailyCapMicros: MicrosVariable,
   loginKeyLifetimeSeconds: KeyLifetimeSeconds,

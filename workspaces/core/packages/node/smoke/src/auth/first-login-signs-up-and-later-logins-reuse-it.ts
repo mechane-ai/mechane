@@ -12,6 +12,7 @@ import {
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect, Schema } from 'effect';
 import { randomBytes } from 'node:crypto';
+import { sharedWorkspacesKeepCurrentAuthority } from '../workspaces/shared-workspaces-keep-current-authority.ts';
 
 const BOOTSTRAP_SECRET_BYTES = 32;
 
@@ -49,6 +50,7 @@ export const firstLoginSignsUpAndLaterLoginsReuseIt = Effect.fn('firstLoginSigns
   });
 
   yield* localLogin({ stack, guarantee });
+  yield* sharedWorkspacesKeepCurrentAuthority({ stack, guarantee });
 });
 
 const localLogin = Effect.fn('localLogin')(function* ({

@@ -26,6 +26,13 @@ const INVALID_KEY_CHALLENGE: ReadonlyArray<FailureHeader> = [
  * names the wait it asks for.
  */
 const FAILURE_HEADERS: Readonly<FailureHeaders> = {
+  IdentityNotAdmitted: () => [],
+  InstallationAdministratorRequired: () => [],
+  PersonalWorkspaceProtected: () => [],
+  PrincipalNotFound: () => [],
+  WorkspaceCreationConflict: () => [],
+  WorkspaceLastOwner: () => [],
+  WorkspaceMemberNotFound: () => [],
   WatchNotFound: () => [],
   WatchLimitReached: () => [],
   WorkspaceOwnerRequired: () => [],

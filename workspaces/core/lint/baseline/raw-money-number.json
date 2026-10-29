@@ -6,8 +6,6 @@
   "packages/shared/protocol/src/durable-objects/schemas.ts": 6,
   "packages/shared/protocol/src/durable-objects/types.ts": 2,
   "packages/shared/records/src/bounded-text.ts": 1,
-  "packages/worker/directory-store/src/principals/principal-records.ts": 1,
-  "packages/worker/directory-store/src/types.ts": 1,
   "packages/worker/directory/src/device-approvals/decide-approval.ts": 1,
   "packages/worker/harness/src/models/metered-events.ts": 1,
   "packages/worker/harness/src/models/types.ts": 1,

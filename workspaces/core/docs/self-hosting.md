@@ -34,6 +34,10 @@ Edit the copy before contacting your account:
 - Set `routes` and `MECHANE_ORIGIN` to your domain in Cloudflare. Both must describe the same installation.
 - Register a GitHub OAuth application for that origin, with callback `/auth/github/callback`. Set its client ID in
   `MECHANE_GITHUB_CLIENT_ID` and keep its client secret outside the configuration.
+- Set `MECHANE_ALLOWED_IDENTITIES` and `MECHANE_ADMINISTRATOR_IDENTITIES` to JSON arrays of stable provider subjects,
+  such as `[{"provider":"github","subject":"123456"}]`. Use the numeric `id` from GitHub's user API, encoded as a
+  string; a login, email or organization name grants no access. The example denies everyone until these lists are
+  configured.
 - Set the HTTPS `MECHANE_MODEL_UPSTREAM` and `MECHANE_MODEL_OFFERS` for your compatible model provider. Supply its real
   model ID, token limits and rates; the example's offer is a placeholder.
 - Set sandbox admission, machine limits, daily model allowances and rate limits for your users. The example admits every
@@ -130,6 +134,44 @@ Worker version and bundle digest. Point the CLI at your installation before logg
 export MECHANE_ORIGIN="https://agents.your-domain.example"
 mise run mechane -- auth login
 ```
+
+## Private admission and shared workspaces
+
+`MECHANE_ALLOWED_IDENTITIES` controls which verified identities may sign in, approve device logins and make
+authenticated API requests. An empty list denies everyone. Omitting the setting retains public sign-in. Changing the
+list takes effect with the deployed Worker, including for retained browser sessions and cached keys. A missing directory
+fails closed.
+
+Each admitted person first receives a permanent personal workspace. `MECHANE_ADMINISTRATOR_IDENTITIES` separately grants
+the right to create shared workspaces; omitting it grants nobody that right. Every shared workspace starts with the
+creator as owner and the installation's daily allowance. Keep the administrator list small because each new workspace
+has its own budget. A local `mise run start` installation explicitly grants its bootstrap owner this role by default.
+
+Provision the company workspace once with a stable UUID, and retain that ID in your operator configuration:
+
+```sh
+mechane workspace create --name "Company" --workspace-id YOUR_WORKSPACE_UUID
+export MECHANE_WORKSPACE_ID=YOUR_WORKSPACE_UUID
+mechane workspace members
+mechane workspace member set PERSON_PRINCIPAL_UUID --role member
+```
+
+The person must already have signed in to this installation; `mechane auth status` shows their principal ID. Admission
+and membership are separate: adding a member does not add their provider identity to the installation allowlist.
+Repeating creation with the same UUID, name and creator returns the workspace without another budget. Conflicting intent
+is refused. An administrator removed from the workspace cannot use a creation retry to regain membership.
+
+Owners can promote another member with `--role owner` and remove a member with `workspace member remove PRINCIPAL_UUID`.
+Grant changes are atomic and recorded with actor, credential and target IDs. Personal ownership cannot change, and a
+shared workspace must retain an owner. Removing a member immediately blocks their next workspace request, including
+requests with an already cached key.
+
+`--workspace UUID` overrides `MECHANE_WORKSPACE_ID`. An inaccessible selection fails instead of choosing another
+workspace. Without either selection, the CLI keeps the personal workspace as its default. Installation admission and
+membership removal do not cancel work already accepted or disable configured Slack bindings and watches. To stop
+existing work, suspend the workspace with `MECHANE_SUSPENDED_WORKSPACES` and disable its external triggers.
+
+## Upgrade and rollback
 
 Upgrade from a new clean annotated release while retaining the installation's Worker and bucket names. The deploy
 refuses changes to previously shipped migrations and API formats. Keep backups and retention under your account's

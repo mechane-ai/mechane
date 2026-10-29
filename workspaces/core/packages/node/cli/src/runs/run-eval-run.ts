@@ -13,15 +13,13 @@ const EVAL_RUN_OUTCOME: Readonly<Record<EvalOutcome, RunOutcome>> = {
   [EvalOutcome.Incomplete]: RunOutcome.Incomplete,
 };
 
-/**
- * Runs `eval run` in the caller's one workspace, the personal one its sign-up made: the run's progress goes to standard
- * error, and its report is the command's result.
- */
+/** The eval's progress goes to standard error, and its report is the command's result. */
 export const runEvalRun = Effect.fn('runEvalRun')(function* ({
   call,
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
   write,
 }: CommandRunInput<'eval run'>): Effect.fn.Return<RunOutcome, RunFailure> {
   const { suiteFile, outFolder } = input;
@@ -31,6 +29,7 @@ export const runEvalRun = Effect.fn('runEvalRun')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: (access) => runEval({ call, access, suiteFile, outFolder, writeProgress }),
   });
 

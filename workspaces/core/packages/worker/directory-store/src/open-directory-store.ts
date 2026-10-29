@@ -6,6 +6,7 @@ import { MIGRATIONS } from './migrations.ts';
 import { principalRecords } from './principals/principal-records.ts';
 import { signInRecords } from './sign-ins/sign-in-records.ts';
 import type { DirectoryStore } from './types.ts';
+import { workspaceRecords } from './workspaces/workspace-records.ts';
 
 type OpenDirectoryStoreInput = { readonly storage: DurableObjectStorage };
 
@@ -21,6 +22,7 @@ export function openDirectoryStore({ storage }: OpenDirectoryStoreInput): Direct
     ...deviceApprovalRecords({ sql }),
     ...keyRecords({ sql }),
     ...principalRecords({ sql }),
+    ...workspaceRecords({ sql }),
     ...browserSessionRecords({ sql }),
     ...signInRecords({ sql }),
   };

@@ -1,6 +1,3 @@
-import type { HttpStatusCode } from '@mechane/records';
-import type { BrowserStep } from '../constants.ts';
-
 /** A page a browser opened or a form it posted brought back: its URL, status, headers and text. */
 export type Page = { readonly url: URL; readonly status: number; readonly headers: Headers; readonly text: string };
 
@@ -21,9 +18,3 @@ type LocalBrowserIdentity = { readonly bootstrapSecret: string };
 export type BrowserIdentity = GithubBrowserIdentity | LocalBrowserIdentity;
 
 export type SignedInBrowserInput = { readonly url: URL } & BrowserIdentity;
-
-/** A request a step sends. */
-export type SendInput = { readonly step: BrowserStep; readonly request: Request };
-
-/** The status a person's browser expects of a step's answer. */
-export type ExpectedStatus = { readonly expected: HttpStatusCode };

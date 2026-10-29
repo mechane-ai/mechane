@@ -1,21 +1,17 @@
 import { MembershipRole } from '@mechane/protocol';
-import { wireStruct } from '@mechane/records';
+import { Micros, wireStruct } from '@mechane/records';
 import { decodeFirst, decodeNonEmptyRows, decodeOne } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
 import { DateTime, Option, Schema } from 'effect';
 import type { Array } from 'effect';
+import type { PrincipalInput, WorkspaceInput, WorkspaceMembershipInput } from '../inputs.types.ts';
 import { PrincipalRow, WorkspaceRow } from '../schemas.ts';
-import type {
-  PrincipalForIdentityInput,
-  PrincipalInput,
-  PrincipalRecords,
-  SignUpInput,
-  WorkspaceInput,
-  WorkspaceMembershipInput,
-} from '../types.ts';
+import type { PrincipalForIdentityInput, PrincipalRecords, SignUpInput } from '../types.ts';
+import { principalIdentities } from './principal-identities.ts';
+import { requiredPrincipal } from './required-principal.ts';
 
 /** The model spend a workspace may make each UTC day. */
-const AllowanceRow = wireStruct({ fields: { dailyAllowanceMicros: Schema.Int } });
+const AllowanceRow = wireStruct({ fields: { dailyAllowanceMicros: Micros } });
 
 type AllowanceRow = typeof AllowanceRow.Type;
 
@@ -24,20 +20,14 @@ const MembershipRow = Schema.Struct({ role: Schema.Enum(MembershipRole) });
 /** The directory's principals, with the identity each signed up with and the workspaces it is a member of. */
 export function principalRecords({ sql }: RecordsInput): PrincipalRecords {
   return {
-    principal: (input) => principal({ sql, ...input }),
+    principal: (input) => requiredPrincipal({ sql, ...input }),
+    principalIdentities: (input) => principalIdentities({ sql, ...input }),
     principalForIdentity: (input) => principalForIdentity({ sql, ...input }),
     signUp: (input) => signUp({ sql, ...input }),
     workspacesOfPrincipal: (input) => workspacesOfPrincipal({ sql, ...input }),
     workspaceMembership: (input) => workspaceMembership({ sql, ...input }),
     dailyAllowanceMicros: (input) => dailyAllowanceMicros({ sql, ...input }),
   };
-}
-
-/** Every key and identity names an existing principal, so a missing one is a defect. */
-function principal({ sql, principalId }: SqlCall<PrincipalInput>): PrincipalRow {
-  const cursor = sql.exec('SELECT id, name FROM principals WHERE id = ?', principalId);
-
-  return decodeOne({ cursor, schema: PrincipalRow });
 }
 
 function principalForIdentity({ sql, identity }: SqlCall<PrincipalForIdentityInput>): Option.Option<PrincipalRow> {
@@ -83,7 +73,7 @@ function workspacesOfPrincipal({
   principalId,
 }: SqlCall<PrincipalInput>): Array.NonEmptyReadonlyArray<WorkspaceRow> {
   const cursor = sql.exec(
-    'SELECT workspaces.id, workspaces.name, memberships.role, workspaces.daily_allowance_micros, workspaces.created_at_ms FROM memberships JOIN workspaces ON workspaces.id = memberships.workspace_id WHERE memberships.principal_id = ? ORDER BY workspaces.created_at_ms, workspaces.rowid',
+    "SELECT workspaces.id, workspaces.name, memberships.role, workspaces.daily_allowance_micros, workspaces.created_at_ms FROM memberships JOIN workspaces ON workspaces.id = memberships.workspace_id WHERE memberships.principal_id = ? ORDER BY workspaces.kind != 'personal', workspaces.created_at_ms, workspaces.rowid",
     principalId,
   );
 
@@ -91,7 +81,7 @@ function workspacesOfPrincipal({
 }
 
 /** Only a member's request reaches a workspace's mechs, so the workspace exists and a missing one is a defect. */
-function dailyAllowanceMicros({ sql, workspaceId }: SqlCall<WorkspaceInput>): number {
+function dailyAllowanceMicros({ sql, workspaceId }: SqlCall<WorkspaceInput>): typeof Micros.Encoded {
   const cursor = sql.exec('SELECT daily_allowance_micros FROM workspaces WHERE id = ?', workspaceId);
 
   return decodeOne({ cursor, schema: AllowanceRow }).dailyAllowanceMicros;

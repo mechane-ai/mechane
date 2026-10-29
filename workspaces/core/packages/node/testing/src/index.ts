@@ -1,4 +1,6 @@
 export { freshAccount } from './accounts/fresh-account.ts';
+export { preparePrivateAdmission } from './admission/prepare-private-admission.ts';
+export { refusePrivateAdmission } from './admission/refuse-private-admission.ts';
 export { savedLoginToken } from './accounts/saved-login-token.ts';
 export { approvedCli } from './approvals/approved-cli.ts';
 export { approvedLocalCli } from './approvals/approved-local-cli.ts';
@@ -50,3 +52,8 @@ export type {
 } from './types.ts';
 export { awaitLogged } from './worker-log/await-logged.ts';
 export { workerLines } from './worker-log/worker-lines.ts';
+export { verifyWorkspaceSelection } from './workspaces/verify-workspace-selection.ts';
+export { bootstrapSharedWorkspace } from './workspaces/bootstrap-shared-workspace.ts';
+export { registerWorkspaceMember } from './workspaces/register-workspace-member.ts';
+export { refuseWorkspacePrivileges } from './workspaces/refuse-workspace-privileges.ts';
+export { transferWorkspaceOwnership } from './workspaces/transfer-workspace-ownership.ts';

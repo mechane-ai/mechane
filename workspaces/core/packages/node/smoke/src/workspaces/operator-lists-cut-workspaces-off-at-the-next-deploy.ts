@@ -14,6 +14,7 @@ import {
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
+import { privateIdentitiesCannotSpend } from './private-identities-cannot-spend.ts';
 import { queuedWork } from './queued-work.ts';
 
 /** What the unlisted workspace's command would print, had the deployment given it a machine. */
@@ -70,6 +71,8 @@ export const operatorListsCutWorkspacesOffAtTheNextDeploy = Effect.fn('operatorL
       conditions: [isNamed, isRefused, refusal.code === RefusalCode.Suspended, spent.length === 0],
       detail: `the suspended workspace was named as an end user: ${isNamed}; the unlisted workspace's turn ended ${turnOutcome({ ended })}; the suspended workspace's call answered ${refusal.code}, and its work sent ${spent.length} requests`,
     });
+
+    yield* privateIdentitiesCannotSpend({ stack, guarantee });
   },
   Effect.scoped,
 );

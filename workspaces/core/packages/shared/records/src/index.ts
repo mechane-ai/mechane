@@ -29,7 +29,7 @@ export {
   BYTES_PER_KIBIBYTE,
   BYTES_PER_MEBIBYTE,
 } from './constants.ts';
-export { IdentityProvider } from './identity-provider.constants.ts';
+export { IdentityProvider, LOCAL_OWNER_IDENTITY } from './identity-provider.constants.ts';
 export { HttpMethod } from './http-method.constants.ts';
 export { SlackDestination, SlackInboxOrigin } from './slack.schemas.ts';
 export { SlackDeliveryStatus, SlackOriginKind } from './slack.constants.ts';

@@ -30,7 +30,7 @@ export const codeTypescriptCallArguments = {
       name: 'nested-call',
       derivedFrom: Option.some({
         asset: 'assets/ast-grep/rules/call-arguments-typescript.yml',
-        hash: 'blake3:48337e75a01fa3342b47ed32370cf72b62d0d890c312d00a47b20272a51c8a4f',
+        hash: 'blake3:2b4ec20240812411a2b9d960a933602c8ecbde313a511196ccf6092bd4ec72d6',
       }),
       standard: '064',
       status: RuleStatus.Ratchet,

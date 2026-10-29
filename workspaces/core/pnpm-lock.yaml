@@ -871,6 +871,9 @@ importers:
 
   packages/node/testing:
     dependencies:
+      '@mechane/client':
+        specifier: workspace:*
+        version: link:../../shared/client
       '@mechane/deployment':
         specifier: workspace:*
         version: link:../../shared/deployment

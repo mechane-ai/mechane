@@ -12,13 +12,14 @@ export const runSource = Effect.fn('runSource')(function* <N extends SourceComma
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<N>): Effect.fn.Return<CommandResult<N>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<N>['result'], RunFailure> = ({
     token,
     workspaceId,
   }) => call({ name: 'manageSource', input: { ...input, workspaceId }, credential: token });
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   if (SourceReport.guards.Configured(result)) {
     return { lines: ['repository grant saved'], result };

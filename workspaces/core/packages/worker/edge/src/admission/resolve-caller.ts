@@ -1,5 +1,7 @@
+import { hasPrincipalIdentity } from '@mechane/bindings';
+import { IdentityNotAdmitted } from '@mechane/protocol';
 import type { AuthenticationFailure, ObjectUnavailable } from '@mechane/protocol';
-import { Effect } from 'effect';
+import { Effect, Option } from 'effect';
 import type { Caller } from '../types.ts';
 import { bearerTokenHash } from './bearer-token-hash.ts';
 import { cachedKey } from './cached-key.ts';
@@ -15,6 +17,18 @@ export const resolveCaller = Effect.fn('resolveCaller')(function* ({
 }: AdmitInput): Effect.fn.Return<Caller, AuthenticationFailure | ObjectUnavailable> {
   const hash = yield* bearerTokenHash({ request });
   const { key, principal } = yield* cachedKey({ settings, tokenHash: hash });
+
+  if (Option.isSome(settings.allowedIdentities)) {
+    const isAdmitted = yield* hasPrincipalIdentity({
+      settings,
+      principalId: principal.id,
+      identities: settings.allowedIdentities.value,
+    });
+
+    if (!isAdmitted) {
+      return yield* new IdentityNotAdmitted({});
+    }
+  }
 
   return { key, principal };
 });

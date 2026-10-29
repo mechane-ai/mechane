@@ -2,20 +2,6 @@ import { ConnectionId, memberOrUnknown, RecordId, WorkspaceId } from '@mechane/r
 import { Schema } from 'effect';
 import { DurableObjectClass } from '../durable-objects/constants.ts';
 import { UnknownFields, WireTime } from '../schemas.ts';
-import {
-  DroneEnded,
-  DroneNotFound,
-  MechArchived,
-  MechCreationConflict,
-  MechRevisionConflict,
-  ModelInvalid,
-  SandboxCapacityReached,
-  SandboxDisabled,
-  TurnEnded,
-  TurnNotFound,
-  WatchLimitReached,
-  WatchNotFound,
-} from './mech.errors.ts';
 
 /** No operation of the catalog serves the request's method and path. */
 export class RouteNotFound extends Schema.TaggedError<RouteNotFound>()('RouteNotFound', {
@@ -128,43 +114,3 @@ export class ConnectionLimitReached extends Schema.TaggedError<ConnectionLimitRe
 export class ToolGrantInvalid extends Schema.TaggedError<ToolGrantInvalid>()('ToolGrantInvalid', {
   connectionId: ConnectionId,
 }) {}
-
-/** Every failure the Worker answers with; a client decodes a code it knows into the failure with its fields. */
-export const ServerFailure = Schema.Union([
-  WorkspaceOwnerRequired,
-  ConnectionNotFound,
-  ConnectionLimitReached,
-  ToolGrantInvalid,
-  RouteNotFound,
-  RequestInvalid,
-  WorkerMisconfigured,
-  ObjectUnavailable,
-  ReleaseFileNotFound,
-  ReleasesBucketUnavailable,
-  KeyMissing,
-  KeyUnrecognized,
-  KeyRevoked,
-  KeyExpired,
-  RateLimited,
-  WorkspaceNotFound,
-  WorkspaceSuspended,
-  SandboxDisabled,
-  SandboxCapacityReached,
-  DeviceApprovalNotFound,
-  KeyNotFound,
-  MechNotFound,
-  WatchNotFound,
-  WatchLimitReached,
-  MechBusy,
-  MechRevisionConflict,
-  MechCreationConflict,
-  MechArchived,
-  ModelInvalid,
-  InboxItemConflict,
-  TurnNotFound,
-  TurnEnded,
-  DroneNotFound,
-  DroneEnded,
-]);
-
-export type ServerFailure = typeof ServerFailure.Type;

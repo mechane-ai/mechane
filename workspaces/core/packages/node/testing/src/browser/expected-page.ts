@@ -1,7 +1,11 @@
+import type { HttpStatusCode } from '@mechane/records';
 import { Effect } from 'effect';
 import type { BrowserStep } from '../constants.ts';
 import { BrowserRefused } from '../errors.ts';
-import type { ExpectedStatus, Page } from './types.ts';
+import type { Page } from './types.ts';
+
+/** The status a person's browser expects of a step's answer. */
+type ExpectedStatus = { readonly expected: HttpStatusCode };
 
 /** A page a step got, and the status a person's browser expects of it. */
 type ExpectedPageInput = ExpectedStatus & { readonly step: BrowserStep; readonly page: Page };

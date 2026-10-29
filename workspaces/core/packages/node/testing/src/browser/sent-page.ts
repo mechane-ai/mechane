@@ -1,6 +1,10 @@
 import { Effect } from 'effect';
+import type { BrowserStep } from '../constants.ts';
 import { BrowserRefused } from '../errors.ts';
-import type { Page, SendInput } from './types.ts';
+import type { Page } from './types.ts';
+
+/** A request a step sends. */
+type SendInput = { readonly step: BrowserStep; readonly request: Request };
 
 /** Sends one request without following a redirect, and reads the page it answers with, whatever its status. */
 export const sentPage = Effect.fn('sentPage')(function* ({

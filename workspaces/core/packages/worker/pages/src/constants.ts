@@ -16,6 +16,7 @@ export const NO_STORE = 'no-store';
 
 /** Why a page refused a browser's request, which names the page it answers with. */
 export const PageRefusal = {
+  IdentityNotAdmitted: 'identity_not_admitted',
   SignInInvalid: 'sign_in_invalid',
   SignInDenied: 'sign_in_denied',
   NotPending: 'not_pending',

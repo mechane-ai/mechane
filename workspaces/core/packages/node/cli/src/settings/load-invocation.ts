@@ -9,6 +9,7 @@ import {
   GLOBAL_FLAGS,
   OUTPUT_VARIABLE,
   VERSION_COMMAND,
+  WORKSPACE_VARIABLE,
 } from '@mechane/commands';
 import type { OutputMode } from '@mechane/commands';
 import { ORIGIN_VARIABLE } from '@mechane/deployment';
@@ -22,6 +23,7 @@ import { decodeCommand } from './decode-command.ts';
 import { decodeCredentials } from './decode-credentials.ts';
 import { decodeOrigin } from './decode-origin.ts';
 import { decodeOutput } from './decode-output.ts';
+import { decodeWorkspace } from './decode-workspace.ts';
 import { defaultOutput } from './default-output.ts';
 import { parseOptions } from './parse-options.ts';
 import { programSettings } from './program-settings.ts';
@@ -56,6 +58,8 @@ const ParsedFlags = renamedWireStruct({
     origin: Schema.OptionFromOptionalKey(Schema.String),
     /** Absent when the command line names no output mode. */
     output: Schema.OptionFromOptionalKey(Schema.String),
+    /** Absent when the command line names no workspace. */
+    workspace: Schema.OptionFromOptionalKey(Schema.String),
     /** Absent for a command line that asks for no help, as `false` says. */
     isHelpRequested: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(false))),
     /** Absent for a command line that asks for no release, as `false` says. */
@@ -144,6 +148,9 @@ const commandInvocation = Effect.fn('commandInvocation')(function* ({
 
   const origin = yield* decodeOrigin({ text: originText, output });
 
+  const workspaceText = Option.orElse(flags.workspace, () => Option.fromNullishOr(process.env[WORKSPACE_VARIABLE]));
+  const selectedWorkspaceId = yield* decodeWorkspace({ text: workspaceText, output });
+
   const credentials = yield* decodeCredentials({
     apiKey: Option.fromNullishOr(process.env[API_KEY_VARIABLE]),
     configHome: Option.fromNullishOr(process.env[CONFIG_HOME_VARIABLE]),
@@ -151,5 +158,5 @@ const commandInvocation = Effect.fn('commandInvocation')(function* ({
     output,
   });
 
-  return { kind: InvocationKind.Command, ...selected, origin, output, credentials, program };
+  return { kind: InvocationKind.Command, ...selected, origin, output, credentials, selectedWorkspaceId, program };
 });

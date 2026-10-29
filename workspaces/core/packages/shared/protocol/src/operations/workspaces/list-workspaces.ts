@@ -5,7 +5,7 @@ import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { WorkspaceList } from './schemas.ts';
 
-/** Lists the workspaces the caller is a member of, oldest first. */
+/** Lists the personal workspace first, followed by shared memberships in creation order. */
 export const listWorkspaces = {
   method: HttpMethod.Get,
   path: '/v1/workspaces',

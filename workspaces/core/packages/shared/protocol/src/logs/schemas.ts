@@ -2,6 +2,7 @@ import { LimitPolicy } from '@mechane/deployment';
 import { IdentityProvider, Micros, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { KeyPurpose } from '../operations/auth/constants.ts';
+import { MembershipRole } from '../operations/workspaces/constants.ts';
 import { LOG_CODE_PATTERN, LogEvent } from './constants.ts';
 
 /** The id of a record a line names, a UUID, never a token, an address or a machine's id. */
@@ -90,6 +91,28 @@ export const LogLine = Schema.Union([
     },
   }),
   wireStruct({ fields: { event: Schema.Literal(LogEvent.KeyRevoked), keyId: LogId, principalId: LogId } }),
+  wireStruct({
+    fields: { event: Schema.Literal(LogEvent.WorkspaceCreated), workspaceId: LogId, principalId: LogId, keyId: LogId },
+  }),
+  wireStruct({
+    fields: {
+      event: Schema.Literal(LogEvent.WorkspaceMemberSet),
+      workspaceId: LogId,
+      principalId: LogId,
+      keyId: LogId,
+      memberPrincipalId: LogId,
+      role: Schema.Enum(MembershipRole),
+    },
+  }),
+  wireStruct({
+    fields: {
+      event: Schema.Literal(LogEvent.WorkspaceMemberRemoved),
+      workspaceId: LogId,
+      principalId: LogId,
+      keyId: LogId,
+      memberPrincipalId: LogId,
+    },
+  }),
 ]);
 
 export type LogLine = typeof LogLine.Type;

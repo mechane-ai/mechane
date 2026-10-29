@@ -9,11 +9,13 @@ export const runTurnShow = Effect.fn('runTurnShow')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'turn show'>): Effect.fn.Return<CommandResult<'turn show'>, RunFailure> {
   const trace = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'showTurn', input: { ...input, workspaceId }, credential: token }),
   });
 

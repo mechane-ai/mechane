@@ -18,7 +18,7 @@
   "packages/shared/sandbox-wire/src/types.ts": 1,
   "packages/worker/bindings/src/call-mech.ts": 2,
   "packages/worker/bindings/src/call-workspace.ts": 1,
-  "packages/worker/directory-store/src/types.ts": 11,
+  "packages/worker/directory-store/src/types.ts": 8,
   "packages/worker/harness-tools/src/threads/types.ts": 1,
   "packages/worker/harness-tools/src/types.ts": 4,
   "packages/worker/harness/src/drones/types.ts": 1,

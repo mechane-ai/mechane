@@ -1,8 +1,8 @@
 import { wireKey } from '@mechane/records';
 import { Array, Effect, Option, Record, Schema, Struct } from 'effect';
 import { UnknownFailure } from './errors.ts';
-import type { ServerFailure } from './errors.ts';
 import type { ErrorDetail } from './schemas.ts';
+import type { ServerFailure } from './server-failure.errors.ts';
 import type { FailureCodec } from './types.ts';
 
 /** An error detail, and the failures its reader expects, which a code outside them leaves unknown. */

@@ -6,7 +6,7 @@ paths: ["**/*.ts"]
 
 ## Rules
 
-Declare a class only where a runtime or library requires one: a class the runtime instantiates, such as a stateful actor, a container, or a worker entry point; a tagged error class that `code-typescript-effect-errors` requires; or a service key class with an empty body that an effect or dependency-injection library requires to name a service.
+Declare a class only where a runtime or library requires one: a class the runtime instantiates, such as a stateful actor, a container, or a worker entry point; a tagged error class that `code-typescript-effect-errors` requires; a schema class that `code-typescript-effect-schemas` allows; or a service key class with an empty body that an effect or dependency-injection library requires to name a service.
 Write every other unit that holds dependencies or state, such as a store, a client, or a driver, as a factory function that returns named functions that close over them, such as `createInvoiceStore({ sql })` returning `{ settleInvoice }`.
 Keep a factory's storage handle and other dependencies in its closure, and never return them beside its functions.
 A plain record that holds values and no storage handle is data and needs no factory.
@@ -33,6 +33,7 @@ For each suppression of these rules, does its reason name the runtime or library
 ## Local adaptations
 
 The allowed base classes are `DurableObject`, `WorkerEntrypoint` and `Schema.TaggedError`, enforced by ast-grep `owned-class`.
+The v11.1 schema-class allowance stays outside this baseline; Mechane declares record schemas as values.
 ast-grep `class-field-form` and `class-accessibility-keyword`, and oxlint `class-methods-use-this`, enforce the field and method rules.
 `tsconfig.base.json` enables `erasableSyntaxOnly`, which makes a parameter property a compile error, and `noImplicitOverride` for every package.
 No service key class exists: oxlint `no-restricted-imports` rejects Effect's `Context`, `Layer`, `LayerMap` and `ManagedRuntime`, and `no-restricted-properties` rejects `Effect.provide`, `provideContext`, `provideService`, `provideServiceEffect`, `service` and `serviceOption`, so every dependency travels in the input object.

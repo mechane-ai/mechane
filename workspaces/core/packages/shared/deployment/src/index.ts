@@ -21,3 +21,5 @@ export type { ModelOffer, RateLimit } from './schemas.ts';
 
 export { IntegrationSecrets, IntegrationSecretsVariable } from './integrations.schemas.ts';
 export { SlackInstallation, SlackInstallationsVariable } from './slack.schemas.ts';
+export { IdentitySubjects, IdentitySubjectsVariable } from './identity-policy.schemas.ts';
+export { isIdentityListed } from './is-identity-listed.ts';

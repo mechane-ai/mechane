@@ -3,7 +3,7 @@ import type { DirectoryStore } from '@mechane/directory-store';
 import { writeLog } from '@mechane/logs';
 import { catalog, LogEvent } from '@mechane/protocol';
 import type { KeyAccessAnswer } from '@mechane/protocol';
-import type { StateHashInput, TokenHashInput } from '@mechane/records';
+import type { BrowserIdentity, StateHashInput, TokenHashInput } from '@mechane/records';
 import {
   DirectoryWorkspaces,
   KeyRevocation,
@@ -18,16 +18,21 @@ import type {
   ApprovalDecision,
   ApproveDeviceApprovalInput,
   BrowserSessionOpening,
+  ChangeWorkspaceMemberInput,
   ClaimDeviceApprovalInput,
+  CreateSharedWorkspaceInput,
   DeviceApprovalOpening,
   DirectoryKeyPage,
   DirectoryRpc,
   KeysOfPrincipalQuery,
   OwnedKey,
   PrincipalIdInput,
+  SharedWorkspaceCreation,
   SignInOpening,
   UserCodeInput,
   WorkspaceIdInput,
+  WorkspaceMemberChangeAnswer,
+  WorkspaceMembersAnswer,
   WorkspaceMembershipInput,
 } from '@mechane/rpc';
 import { DurableObject } from 'cloudflare:workers';
@@ -36,6 +41,9 @@ import { decideApproval } from './device-approvals/decide-approval.ts';
 import { decideClaim } from './device-approvals/decide-claim.ts';
 import { readKeyAccess } from './keys/read-key-access.ts';
 import { lifespan } from './lifespan.ts';
+import { changeWorkspaceMember } from './workspaces/change-workspace-member.ts';
+import { createSharedWorkspace } from './workspaces/create-shared-workspace.ts';
+import { readWorkspaceMembers } from './workspaces/read-workspace-members.ts';
 
 /**
  * The one directory of a deployment; the Workers runtime instantiates it, and the Worker calls its methods by RPC. Each
@@ -55,6 +63,10 @@ export class DirectoryObject extends DurableObject<unknown> implements Directory
   /** The count of schema migrations the directory's database has applied. */
   schemaRevision(): number {
     return this.#store.schemaRevision();
+  }
+
+  principalIdentities({ principalId }: PrincipalIdInput): ReadonlyArray<Pick<BrowserIdentity, 'provider' | 'subject'>> {
+    return this.#store.principalIdentities({ principalId });
   }
 
   openDeviceApproval({ approval, lifetimeMs }: DeviceApprovalOpening): void {
@@ -125,6 +137,32 @@ export class DirectoryObject extends DurableObject<unknown> implements Directory
 
   workspacesOfPrincipal({ principalId }: PrincipalIdInput): typeof DirectoryWorkspaces.Encoded {
     return Schema.encodeSync(DirectoryWorkspaces)(this.#store.workspacesOfPrincipal({ principalId }));
+  }
+
+  createSharedWorkspace({
+    principalId,
+    id,
+    name,
+    dailyAllowanceMicros,
+  }: CreateSharedWorkspaceInput): typeof SharedWorkspaceCreation.Encoded {
+    const now = DateTime.nowUnsafe();
+
+    return createSharedWorkspace({ store: this.#store, principalId, id, name, dailyAllowanceMicros, now });
+  }
+
+  workspaceMembers({ principalId, workspaceId }: WorkspaceMembershipInput): typeof WorkspaceMembersAnswer.Encoded {
+    return readWorkspaceMembers({ store: this.#store, principalId, workspaceId });
+  }
+
+  changeWorkspaceMember({
+    principalId,
+    workspaceId,
+    memberPrincipalId,
+    change,
+  }: ChangeWorkspaceMemberInput): typeof WorkspaceMemberChangeAnswer.Encoded {
+    const now = DateTime.nowUnsafe();
+
+    return changeWorkspaceMember({ store: this.#store, principalId, workspaceId, memberPrincipalId, change, now });
   }
 
   workspaceMembership({ principalId, workspaceId }: WorkspaceMembershipInput): typeof WorkspaceMembership.Encoded {

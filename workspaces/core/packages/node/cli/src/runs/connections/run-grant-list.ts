@@ -11,6 +11,7 @@ export const runGrantList = Effect.fn('runGrantList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'grant list'>): Effect.fn.Return<CommandResult<'grant list'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'grant list'>['result'], RunFailure> = ({
     token,
@@ -21,7 +22,7 @@ export const runGrantList = Effect.fn('runGrantList')(function* ({
     return call({ name: 'listToolGrants', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   const line: (grant: ToolGrant) => string = (grant) => `${grant.connectionId}: ${grant.tools.join(', ')}`;
 

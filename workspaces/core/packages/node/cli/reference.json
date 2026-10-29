@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.4.1",
+  "release": "0.5.0",
   "flags": [
     {
       "name": "origin",
@@ -19,6 +19,12 @@
       "name": "help",
       "kind": "switch",
       "summary": "print the commands, flags, variables and exit statuses"
+    },
+    {
+      "name": "workspace",
+      "kind": "text",
+      "summary": "the workspace UUID for commands that act in a workspace; your personal workspace when absent",
+      "variable": "MECHANE_WORKSPACE_ID"
     },
     {
       "name": "version",
@@ -653,6 +659,29 @@
       ]
     },
     {
+      "name": "workspace create",
+      "summary": "create a shared workspace as an installation administrator",
+      "shape": "document",
+      "operations": [
+        "createWorkspace"
+      ],
+      "flags": [
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the shared workspace name",
+          "required": true
+        },
+        {
+          "name": "workspace-id",
+          "kind": "text",
+          "summary": "reuse the printed workspace UUID to retry the same creation",
+          "required": false
+        }
+      ],
+      "arguments": []
+    },
+    {
       "name": "workspace list",
       "summary": "list the workspaces you belong to, with your role and each daily model allowance",
       "shape": "document",
@@ -661,6 +690,56 @@
       ],
       "flags": [],
       "arguments": []
+    },
+    {
+      "name": "workspace members",
+      "summary": "list the selected workspace members as an owner",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listWorkspaceMembers"
+      ],
+      "flags": [],
+      "arguments": []
+    },
+    {
+      "name": "workspace member set",
+      "summary": "add an existing principal or change their role in a shared workspace as an owner",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "setWorkspaceMember"
+      ],
+      "flags": [
+        {
+          "name": "role",
+          "kind": "text",
+          "summary": "owner or member",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "principal-id",
+          "summary": "the principal UUID printed by mechane auth status"
+        }
+      ]
+    },
+    {
+      "name": "workspace member remove",
+      "summary": "remove a principal from a shared workspace as an owner, keeping at least one owner",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "removeWorkspaceMember"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "principal-id",
+          "summary": "the principal UUID printed by mechane auth status"
+        }
+      ]
     },
     {
       "name": "allowance show",
@@ -1440,6 +1519,7 @@
     }
   ],
   "error_codes": [
+    "WorkspaceSelectionRefused",
     "SandboxMaintenanceFailed",
     "UsageInvalid",
     "OriginUnreachable",

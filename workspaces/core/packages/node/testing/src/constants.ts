@@ -9,6 +9,13 @@ export const CLI_BINARY = join(import.meta.dirname, '..', '..', 'cli', 'dist', '
 
 /** The error codes with which the deployment refuses a revoked and an expired key, and a suspended workspace. */
 export const RefusalCode = {
+  IdentityNotAdmitted: 'IdentityNotAdmitted',
+  AdministratorRequired: 'InstallationAdministratorRequired',
+  WorkspaceCreationConflict: 'WorkspaceCreationConflict',
+  WorkspaceOwnerRequired: 'WorkspaceOwnerRequired',
+  WorkspaceLastOwner: 'WorkspaceLastOwner',
+  PersonalWorkspaceProtected: 'PersonalWorkspaceProtected',
+  WorkspaceNotFound: 'WorkspaceNotFound',
   Revoked: 'KeyRevoked',
   Expired: 'KeyExpired',
   Suspended: 'WorkspaceSuspended',

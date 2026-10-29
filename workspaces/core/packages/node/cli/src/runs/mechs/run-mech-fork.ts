@@ -9,11 +9,13 @@ export const runMechFork = Effect.fn('runMechFork')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'mech fork'>): Effect.fn.Return<CommandResult<'mech fork'>, RunFailure> {
   const mech = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'forkMech', input: { ...input, workspaceId }, credential: token }),
   });
 

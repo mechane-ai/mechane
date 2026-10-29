@@ -17,6 +17,15 @@ type FailureMessages = {
 
 /** The message of each failure's error response: the step that failed and its input, the cause, and how to recover. */
 const FAILURE_MESSAGES: Readonly<FailureMessages> = {
+  IdentityNotAdmitted: () => 'admit the caller: this installation does not allow its identity',
+  InstallationAdministratorRequired: () => 'create workspace: an installation administrator is required',
+  PersonalWorkspaceProtected: ({ workspaceId }) => `change workspace ${workspaceId}: personal ownership is permanent`,
+  PrincipalNotFound: ({ principalId }) =>
+    `add member ${principalId}: the person must sign in to this installation first`,
+  WorkspaceCreationConflict: ({ workspaceId }) =>
+    `create workspace ${workspaceId}: the id already names another creation`,
+  WorkspaceLastOwner: ({ workspaceId }) => `change workspace ${workspaceId}: add another owner first`,
+  WorkspaceMemberNotFound: ({ principalId }) => `remove member ${principalId}: the workspace has no such member`,
   WorkspaceOwnerRequired: ({ workspaceId }) => `manage workspace ${workspaceId}: an owner is required`,
   ConnectionNotFound: ({ connectionId }) =>
     `find connection ${connectionId}: the workspace has no connection with this id`,

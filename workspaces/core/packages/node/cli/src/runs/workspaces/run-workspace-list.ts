@@ -1,7 +1,7 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import { withCredential } from '@mechane/cli-login';
-import type { Workspace } from '@mechane/protocol';
 import { Effect } from 'effect';
+import { workspaceLine } from './workspace-line.ts';
 
 /** Lists the workspaces of the account the CLI's key signs in as, with its role and each daily allowance. */
 export const runWorkspaceList = Effect.fn('runWorkspaceList')(function* ({
@@ -15,8 +15,7 @@ export const runWorkspaceList = Effect.fn('runWorkspaceList')(function* ({
     use: ({ token }) => call({ name: 'listWorkspaces', input: {}, credential: token }),
   });
 
-  const workspaceLine: (workspace: Workspace) => string = (workspace) =>
-    `${workspace.id} ${workspace.name} (${workspace.role}) ${workspace.dailyAllowanceMicros} micro-dollars a day`;
+  const lines = list.workspaces.map(workspaceLine);
 
-  return { lines: list.workspaces.map(workspaceLine), result: list };
+  return { lines, result: list };
 });

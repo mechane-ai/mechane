@@ -38,7 +38,11 @@ import { readiness } from '../operations/status/readiness.ts';
 import { listWatches } from '../operations/watches/list-watches.ts';
 import { setWatch } from '../operations/watches/set-watch.ts';
 import { updateWatchStatus } from '../operations/watches/update-watch-status.ts';
+import { createWorkspace } from '../operations/workspaces/create-workspace.ts';
+import { listWorkspaceMembers } from '../operations/workspaces/list-workspace-members.ts';
 import { listWorkspaces } from '../operations/workspaces/list-workspaces.ts';
+import { removeWorkspaceMember } from '../operations/workspaces/remove-workspace-member.ts';
+import { setWorkspaceMember } from '../operations/workspaces/set-workspace-member.ts';
 import { showAllowance } from '../operations/workspaces/show-allowance.ts';
 import type { OperationWork } from './types.ts';
 
@@ -72,6 +76,10 @@ export const OPERATIONS: Readonly<OperationWorks> = {
   listKeys,
   revokeKey,
   listWorkspaces,
+  createWorkspace,
+  listWorkspaceMembers,
+  setWorkspaceMember,
+  removeWorkspaceMember,
   createMech,
   cloneMech,
   listMechs,

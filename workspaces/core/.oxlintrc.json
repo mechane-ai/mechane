@@ -144,7 +144,8 @@
           "sourceGrantRecords",
           "sourceRecords",
           "watchRecords",
-          "workspaceRecoveryRecords"
+          "workspaceRecoveryRecords",
+          "workspaceRecords"
         ]
       }
     ],
@@ -161,7 +162,8 @@
           "sourceGrantRecords",
           "sourceRecords",
           "watchRecords",
-          "workspaceRecoveryRecords"
+          "workspaceRecoveryRecords",
+          "workspaceRecords"
         ]
       }
     ],

@@ -1,5 +1,6 @@
 import { EVERY_WORKSPACE } from '@mechane/deployment';
-import { Effect } from 'effect';
+import { LOCAL_OWNER_IDENTITY } from '@mechane/records';
+import { Effect, Option } from 'effect';
 import type { Scope } from 'effect';
 import type { StackFailed } from './errors.ts';
 import { verifyOriginFree } from './loopback/verify-origin-free.ts';
@@ -16,6 +17,11 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
 }: StartLocalStackInput): Effect.fn.Return<LocalStack, StackFailed, Scope.Scope> {
   const model = yield* localModelSettings({ settings });
   const { bootstrapSecret, bootstrapSecretFile, ...layout } = yield* persistentStateFolder({ settings });
+  const configuredAdministrators = Option.fromNullishOr(settings.workerVariables.administratorIdentities);
+
+  const administratorIdentities = Option.getOrElse(configuredAdministrators, () =>
+    JSON.stringify([LOCAL_OWNER_IDENTITY]),
+  );
 
   yield* verifyOriginFree({ origin: settings.localOrigin });
 
@@ -31,6 +37,7 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
       origin: settings.localOrigin.origin,
       sandboxProvider: settings.sandboxProvider,
       localBootstrapSecret: bootstrapSecret,
+      administratorIdentities,
       sandboxWorkspaces: EVERY_WORKSPACE,
     },
   });

@@ -9,6 +9,7 @@ import {
   OutputMode,
   PROGRAM,
   VERSION_COMMAND,
+  WORKSPACE_VARIABLE,
 } from './constants.ts';
 import type { FlagDeclaration } from './types.ts';
 
@@ -45,6 +46,12 @@ export const GLOBAL_FLAGS = {
     kind: FlagKind.Switch,
     summary: 'print the commands, flags, variables and exit statuses',
     variable: Option.none(),
+    command: Option.none(),
+  },
+  workspace: {
+    kind: FlagKind.Text,
+    summary: 'the workspace UUID for commands that act in a workspace; your personal workspace when absent',
+    variable: Option.some(WORKSPACE_VARIABLE),
     command: Option.none(),
   },
   version: {

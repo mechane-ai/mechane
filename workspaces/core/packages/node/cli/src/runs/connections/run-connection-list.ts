@@ -11,6 +11,7 @@ export const runConnectionList = Effect.fn('runConnectionList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'connection list'>): Effect.fn.Return<CommandResult<'connection list'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'connection list'>['result'], RunFailure> = ({
     token,
@@ -21,7 +22,7 @@ export const runConnectionList = Effect.fn('runConnectionList')(function* ({
     return call({ name: 'listConnections', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const result = yield* withWorkspace({ call, origin, credentials, use });
+  const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   const line: (connection: RemoteConnection) => string = (connection) =>
     `${connection.id} ${connection.name} ${connection.url.href} (${connection.allowedTools.length} tools)`;

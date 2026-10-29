@@ -14,6 +14,7 @@ export const runDroneList = Effect.fn('runDroneList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'drone list'>): Effect.fn.Return<CommandResult<'drone list'>, RunFailure> {
   const drones: (access: WorkspaceAccess) => Effect.Effect<DroneList, ClientFailure> = ({ token, workspaceId }) =>
     readPages({
@@ -22,7 +23,7 @@ export const runDroneList = Effect.fn('runDroneList')(function* ({
         call({ name: 'listDrones', input: { ...input, workspaceId, after }, credential: token }),
     });
 
-  const list = yield* withWorkspace({ call, origin, credentials, use: drones });
+  const list = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: drones });
 
   return { lines: list.drones.map((drone) => droneLine({ drone })), result: list };
 });

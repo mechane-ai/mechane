@@ -241,20 +241,20 @@
     "workspaces/core/.contracts/016-code-typescript-input-immutability/CONTRACT.md": {
       "source": "tenet",
       "contract": "code-typescript-input-immutability",
-      "ref": "v11.0.0",
-      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
-      "hash": "blake3:9767641df671da33eca1babbbbf80b415aa36a9ecd44123d588b99f9ba84b0d2",
+      "ref": "v11.1.0",
+      "commit": "911e795a5db70683505d7016df8b64b796120dc6",
+      "hash": "blake3:c7cc987b92d2b399f8456f861d45a9a35b0f707de57193a7825cbc6f4ea7330c",
       "files": {
-        "assets/ast-grep/rules/array-generics-tsx.yml": "blake3:a631f06f1c4f96104867fd58186231833a62ae0aac612c50b60e789da50ee6ba",
-        "assets/ast-grep/rules/array-generics-typescript.yml": "blake3:23374922585b24bb60e7751cbdfc542edfa8e48c5e538527e6418a1c4ecb0226",
-        "assets/ast-grep/rules/delete-environment-tsx.yml": "blake3:ca999e786d5a2246d0b9da197e8a25389e583880184597d66392c3edde40e952",
-        "assets/ast-grep/rules/delete-environment-typescript.yml": "blake3:81a275bd1563566c021b5454920d6a71035c68ede91aa431506639c92eb840b1",
-        "assets/ast-grep/rules/delete-operator-tsx.yml": "blake3:42e6a4d1197dae72d0259b0e276d914537747796383394c50192a36477b0eab6",
-        "assets/ast-grep/rules/delete-operator-typescript.yml": "blake3:11fa1a905a7c2b8fc8126f811e335740437b4a40e0237269317d69c8f4a44ea4",
-        "assets/ast-grep/rules/readonly-array-types-tsx.yml": "blake3:414bd8d38b4385066f9ee1ece2d739551c886a5a10d67e293a5a7e37b612f22c",
-        "assets/ast-grep/rules/readonly-array-types-typescript.yml": "blake3:e9f7498d21b6f08e26ce9b5798257779374a4e52a57ab9d0ea7e756e67a8c10f",
-        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
-        "assets/oxlint/oxlintrc.json": "blake3:7079da27c7aa98f5ea29bda053c9281cbfce604c1b9576d5ae67a2f7b93124d5"
+        "assets/ast-grep/rules/array-generics-tsx.yml": "blake3:410a8018c1b95619d4e90ca5d88f1eaf9fdbc6b5464c28ee4e0fdaa49da0984e",
+        "assets/ast-grep/rules/array-generics-typescript.yml": "blake3:8e6cfcebdbb1b32bcd8cdd7f1f1435832f2cf44cd4440298d142d2409073ab07",
+        "assets/ast-grep/rules/delete-environment-tsx.yml": "blake3:852e88904244415794201dc4c443a421f22fc6370da9277305a58d332fe8d1ce",
+        "assets/ast-grep/rules/delete-environment-typescript.yml": "blake3:10eff703908e395415dd1e7f04f8c414a726f5d10ef2659e747fa9f66746a89a",
+        "assets/ast-grep/rules/delete-operator-tsx.yml": "blake3:c389b4a625627b5af5cd4aa166f327dc07fc82623f08c0af0beeb8fe53504bfb",
+        "assets/ast-grep/rules/delete-operator-typescript.yml": "blake3:c6d472adbee3d61f50d4563c160e726c460a024148ede4252aa324f2262927c6",
+        "assets/ast-grep/rules/readonly-array-types-tsx.yml": "blake3:3fc8c20644346ea3ec6063c5beb735f5db0029fad9fe3c519ae94bfa95112428",
+        "assets/ast-grep/rules/readonly-array-types-typescript.yml": "blake3:2ee3d5c9f68ae0eb1a85ef1d666094d609a96122cfc4ff786a08d9ac348c7bc5",
+        "assets/ast-grep/sgconfig.yml": "blake3:7efa75791b66e44f1a3261cb5f6d58291d90b6b00e6ef6e0669c2b66e3ac7656",
+        "assets/oxlint/oxlintrc.json": "blake3:4780fb85245d413362f4b500d53b7e63aa9260e3f77a8e3de15abd17223d7c6c"
       }
     },
     "workspaces/core/.contracts/017-code-typescript-type-assertions/CONTRACT.md": {
@@ -300,9 +300,9 @@
     "workspaces/core/.contracts/020-code-typescript-class-declarations/CONTRACT.md": {
       "source": "tenet",
       "contract": "code-typescript-class-declarations",
-      "ref": "v11.0.0",
-      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
-      "hash": "blake3:030d987c269186c8b920a5736a11a3ebb2a141e315b0f0fbf1896131e54e1811"
+      "ref": "v11.1.0",
+      "commit": "911e795a5db70683505d7016df8b64b796120dc6",
+      "hash": "blake3:c54825e85dea870743033441f9970c532b7d306f2c17a22a1c2e3109140d841f"
     },
     "workspaces/core/.contracts/021-code-typescript-module-state/CONTRACT.md": {
       "source": "tenet",
@@ -725,17 +725,17 @@
     "workspaces/core/.contracts/064-code-typescript-call-arguments/CONTRACT.md": {
       "source": "tenet",
       "contract": "code-typescript-call-arguments",
-      "ref": "v11.0.0",
-      "commit": "c7b0c3d56dc86e2e8983bb421e223b80f89935e3",
-      "hash": "blake3:d9975ef7cf3d7fe7a2828492bd60acad89bbbcdbb8983e934d4c14c6ddb71117",
+      "ref": "v11.1.0",
+      "commit": "911e795a5db70683505d7016df8b64b796120dc6",
+      "hash": "blake3:01a273b427659899b1be6d6761540c30ac8e83d992b5785a13d86aa755509ce0",
       "files": {
-        "assets/ast-grep/rules/argument-object-functions-tsx.yml": "blake3:d1f4b961231c7dbb7705e492164bf26dda18622b62a35e512445bfdcaaf88e35",
-        "assets/ast-grep/rules/argument-object-functions-typescript.yml": "blake3:fc61aca0f5f61ed273206538f5864ba2e48707601978e8e2689f466937218ab6",
-        "assets/ast-grep/rules/awaited-members-tsx.yml": "blake3:28c2f7961ef7a636346e3928ee169b0bee810446f4c196a30a4e54b4ccd8eb49",
-        "assets/ast-grep/rules/awaited-members-typescript.yml": "blake3:31318cb1d02aff893f5f993ca8fde67756b2fb923a4dcac6f22625d6c52ecf6c",
-        "assets/ast-grep/rules/call-arguments-tsx.yml": "blake3:b13b6f25591c392579f1112845d8fb484597dd74020c57a07c2931f05f9b70c1",
-        "assets/ast-grep/rules/call-arguments-typescript.yml": "blake3:48337e75a01fa3342b47ed32370cf72b62d0d890c312d00a47b20272a51c8a4f",
-        "assets/ast-grep/sgconfig.yml": "blake3:a69d1529053a00ae93b8cc88928c3ecb1006364882852cf330d24a444244f954",
+        "assets/ast-grep/rules/argument-object-functions-tsx.yml": "blake3:adf412c16b326e9165258fbe14b773bdaf071fa2d8bf22d89d650bd084df9280",
+        "assets/ast-grep/rules/argument-object-functions-typescript.yml": "blake3:ce020d5ad22ed8f54464d4575667f4f79426d4bc18dc7a28c89f0311caa18320",
+        "assets/ast-grep/rules/awaited-members-tsx.yml": "blake3:0c7494155706e2f54086865f2956b20854131de43ce170cca57dcefd2fc4639d",
+        "assets/ast-grep/rules/awaited-members-typescript.yml": "blake3:07596e122b55bd08e4ac362540afec8d6f947147de64ae054be4527553bbbdc6",
+        "assets/ast-grep/rules/call-arguments-tsx.yml": "blake3:c42a2f60927b45f9bd6e2f79af527d6c186a270dffd0b0afdc49813589efba97",
+        "assets/ast-grep/rules/call-arguments-typescript.yml": "blake3:2b4ec20240812411a2b9d960a933602c8ecbde313a511196ccf6092bd4ec72d6",
+        "assets/ast-grep/sgconfig.yml": "blake3:7efa75791b66e44f1a3261cb5f6d58291d90b6b00e6ef6e0669c2b66e3ac7656",
         "assets/oxlint/oxlintrc.json": "blake3:d533cc8f3eddb539aa3aa6ae9e299183ce3960ce3952e979821d8fe957716672"
       }
     }

@@ -28,6 +28,12 @@ type RefusalPageInput = { readonly failure: PageFailure };
  * was approved or never existed. A review so tells a person nothing about a code they did not start.
  */
 const REFUSALS: Readonly<Record<PageRefusal, FailurePage>> = {
+  [PageRefusal.IdentityNotAdmitted]: {
+    status: HttpStatusCode.Forbidden,
+    title: 'This identity is not admitted',
+    detail: 'Ask this installation’s operator to allow your identity',
+    headers: [],
+  },
   [PageRefusal.SignInUnavailable]: {
     status: HttpStatusCode.Forbidden,
     title: 'This sign-in is unavailable',

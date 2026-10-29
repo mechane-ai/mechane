@@ -24,6 +24,9 @@
   "vars": {
     "MECHANE_ORIGIN": "https://agents.example.invalid",
     "MECHANE_GITHUB_CLIENT_ID": "replace-with-your-github-oauth-client-id",
+    // Replace both lists with verified GitHub numeric IDs before admitting users.
+    "MECHANE_ALLOWED_IDENTITIES": "[]",
+    "MECHANE_ADMINISTRATOR_IDENTITIES": "[]",
     "MECHANE_MODEL_UPSTREAM": "https://model-provider.example.invalid/v1",
     "MECHANE_MODEL_OFFERS": "[{\"id\":\"replace-with-your-model-id\",\"context_window_tokens\":32768,\"max_output_tokens\":8192,\"input_micros_per_million_tokens\":1000000,\"output_micros_per_million_tokens\":5000000,\"cache_read_micros_per_million_tokens\":1000000,\"cache_write_micros_per_million_tokens\":1000000}]",
     "MECHANE_SANDBOX_PROVIDER": "container",

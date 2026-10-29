@@ -30,6 +30,7 @@ const VALUES = {
     'sourceRecords',
     'watchRecords',
     'workspaceRecoveryRecords',
+    'workspaceRecords',
   ],
   compilerOptions: {
     target: 'es2024',

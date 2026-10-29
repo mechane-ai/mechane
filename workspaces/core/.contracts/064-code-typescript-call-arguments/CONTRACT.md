@@ -13,9 +13,9 @@ A call chain such as `invoices.listForAccount({ account }).findLatest()` is one 
 Inside a function, class, or embedded markup element written in the arguments, the rule starts afresh, so `orders.map((order) => computeTotal({ order }))` is allowed.
 A tagged template is a template, not a call: passing one is allowed, and a call in its placeholders counts as inside the arguments that hold it.
 
-A file with the schema role the repository declares under `code-module-file-roles` may nest calls, `new` expressions, and `await` inside arguments, such as `Schema.Struct({ tags: Schema.Array(Schema.String) })`.
-The configuration under `assets/` exempts files named `schemas`, the name the example in `code-module-file-roles` gives that role.
-A repository that declares another schema file name copies that configuration into its own lint configuration with the name it declares.
+A file with the schema or errors role the repository declares under `code-module-file-roles` may nest calls, `new` expressions, and `await` inside arguments, such as `Schema.Struct({ tags: Schema.Array(Schema.String) })` or the schema fields of a tagged error class.
+The configuration under `assets/` exempts files named `schemas` and `errors`, the names the example in `code-module-file-roles` gives those roles.
+A repository that declares another schema or errors file name copies that configuration into its own lint configuration with the name it declares.
 
 Each direct argument of `pipe(...)` or of a `.pipe(...)` method may itself be one call, such as `amount.pipe(map((price) => applyDiscount({ price })), tap((price) => recordPrice({ price })))`, but never a `new` expression or an `await`.
 The arguments of such a step follow the rules above, so `pipe(succeed(readAmount({ id })), map((price) => applyDiscount({ price })))` violates them.
@@ -45,7 +45,7 @@ Allowed: `const order = yield* readOrder({ id })`, then `order.total`, or `const
 ## Checks
 
 Run the repository's lint from the repository root and confirm that it rejects a nested call, a function in an argument object, and a member read from an `await`.
-For each call a change adds or edits, does an argument hold a call, `new`, or `await` that is neither a direct pipeline step nor in a schema file?
+For each call a change adds or edits, does an argument hold a call, `new`, or `await` that is neither a direct pipeline step nor in a schema or errors file?
 For each pipeline a change adds, does a step need an earlier step's result other than its input, or choose between paths, without bound statements?
 For each object or array a change passes to a call, is every function written in it bound to a name?
 For each member a change reads from an `await` or `yield*` expression, through parentheses or assertions, is the value bound to a name first?
@@ -57,12 +57,12 @@ branding; other nested calls remain subject to this contract.
 
 oxlint `func-style` comes from contract 015's shipped oxlint file, which the registry extends. `declaration` with `allowTypeAnnotation` writes each named function as a `function` declaration. An `Effect.fn` stays a constant, since the rule passes over a call, and so does a typed callback const, which SC-03 asks for.
 ast-grep `nested-call` copies the shipped `call-arguments-typescript` rule, as this contract allows for another schema role, and exempts Mechane's schema role. That role is the `schemas.ts` and `<concept>.schemas.ts` files and a schema declaration in any file: a constant whose value is a `Schema.*`, `wireStruct` or `renamedWireStruct` call, and the class that declares a tagged error. It is a ratchet at its baseline, so new code binds every nested call first. Its registry entry pins the installed rule's hash in `derivedFrom`, so `rules:check` fails when an update changes the shipped rule until the copy is reviewed.
-Deviation (ST-19): a schema declaration may nest calls wherever ST-19 puts it, since ST-19 declares a schema that one file uses in that file. This replaces "A file with the schema role the repository declares under `code-module-file-roles` may nest calls, `new` expressions, and `await` inside arguments" with the declaration in place of the file.
+Deviation (ST-19): a schema declaration may nest calls wherever ST-19 puts it, since ST-19 declares a schema that one file uses in that file. This replaces "A file with the schema or errors role the repository declares under `code-module-file-roles` may nest calls, `new` expressions, and `await` inside arguments" with the declaration in place of the file.
 Deviation (SC-02's E6 and E8, under the accepted code standard in contract 111): E6's `catch`, which builds one tagged error with `String(cause)` as its only call, keeps that nested call. So does E8's trailing catch at an entry boundary, `Effect.catch((failure) => …)` or `(run, input) => Effect.catch(run, (failure) => …)`, whose arrows hold calls alone, and `nested-call` exempts both shapes. This replaces "Never write a call, a `new` expression, or an `await` inside the arguments of another call or `new` expression" for those forms.
 Deviation (SC-02, under the accepted code standard in contract 111): the inline forms SC-02 allows stay inline as fields of an argument object. These are E6's `try` and `catch` of `Effect.tryPromise` and `Effect.try`, E7's register function, E8's boundary arrow, E2 projections, E3 adapters, and the handler objects of `Effect.catchTags`, `Match.valueTags`, `Option.match` and `Result.match` built of them. Any other function in an argument object is a typed callback const, as SC-02 and SC-03 require, which ast-grep `inline-function-argument` holds. This replaces "Bind to a name each function written as a field, method, or element of an object or array in the arguments of a call or `new` expression" for those forms. The shipped `argument-object-functions` rules are not loaded.
 
 The registry loads the shipped no-await-expression-member setting, and review checks the corresponding yield* member reads.
-The nested-call copy was reviewed against v11; only the upstream explanation changed, so its schema and SC-02 exceptions are preserved.
+The nested-call copy was reviewed against v11.1. Its existing tagged-error schema exception covers the new upstream errors-role allowance. Mechane keeps declaration-level exemptions and its SC-02 exceptions; the copied rule's behavior is unchanged.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

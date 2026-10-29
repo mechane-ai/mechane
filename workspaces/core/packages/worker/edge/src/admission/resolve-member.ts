@@ -4,8 +4,7 @@ import type { AuthenticationFailure, ObjectUnavailable } from '@mechane/protocol
 import { WorkspaceMembership } from '@mechane/rpc';
 import { Effect, Match, Schema } from 'effect';
 import type { Caller } from '../types.ts';
-import { bearerTokenHash } from './bearer-token-hash.ts';
-import { cachedKey } from './cached-key.ts';
+import { resolveCaller } from './resolve-caller.ts';
 import type { AdmitInput } from './types.ts';
 
 /**
@@ -21,14 +20,12 @@ export const resolveMember = Effect.fn('resolveMember')(function* ({
   Caller,
   AuthenticationFailure | ObjectUnavailable | RequestInvalid | WorkspaceNotFound | WorkspaceSuspended
 > {
-  const hash = yield* bearerTokenHash({ request });
-
   // The path's other parameters are the operation's to decode, after admission.
   const { workspaceId } = yield* Schema.decodeUnknownEffect(WorkspacePath)(params).pipe(
     Effect.mapError((error) => new RequestInvalid({ reason: error.message })),
   );
 
-  const { key, principal } = yield* cachedKey({ settings, tokenHash: hash });
+  const { key, principal } = yield* resolveCaller({ request, params, settings });
 
   const membership = yield* callDirectory({
     settings,

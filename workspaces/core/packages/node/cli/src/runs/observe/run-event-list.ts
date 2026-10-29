@@ -20,6 +20,7 @@ export const runEventList = Effect.fn('runEventList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
   write,
 }: CommandRunInput<'event list'>): Effect.fn.Return<RunOutcome, RunFailure> {
   const { mechId, after, isFollowing } = input;
@@ -36,6 +37,7 @@ export const runEventList = Effect.fn('runEventList')(function* ({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: (access) => writeEvents({ call, access, mechId, after, isFollowing, wait, write }),
   });
 

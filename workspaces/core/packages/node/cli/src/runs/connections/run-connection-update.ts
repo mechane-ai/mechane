@@ -10,6 +10,7 @@ export const runConnectionUpdate = Effect.fn('runConnectionUpdate')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'connection update'>): Effect.fn.Return<CommandResult<'connection update'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<CommandResult<'connection update'>['result'], RunFailure> = ({
     token,
@@ -20,5 +21,5 @@ export const runConnectionUpdate = Effect.fn('runConnectionUpdate')(function* ({
     return call({ name: 'updateConnection', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  return yield* withSavedConnection({ call, origin, credentials, use });
+  return yield* withSavedConnection({ call, origin, credentials, selectedWorkspaceId, use });
 });

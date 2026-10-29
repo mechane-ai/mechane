@@ -69,4 +69,10 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       "INSERT INTO identity_sessions (token_hash, provider, subject, name, created_at_ms, expires_at_ms) SELECT token_hash, 'github', CAST(github_user_id AS TEXT), github_login, created_at_ms, expires_at_ms FROM browser_sessions",
     );
   },
+  ({ sql }) => {
+    sql.exec("ALTER TABLE workspaces ADD COLUMN kind TEXT NOT NULL DEFAULT 'personal'");
+    sql.exec('ALTER TABLE workspaces ADD COLUMN creator_id TEXT REFERENCES principals (id)');
+    sql.exec('CREATE INDEX memberships_by_workspace ON memberships (workspace_id)');
+    sql.exec('CREATE INDEX principal_identities_by_principal ON principal_identities (principal_id)');
+  },
 ];

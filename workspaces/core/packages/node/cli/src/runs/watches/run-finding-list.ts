@@ -14,6 +14,7 @@ export const runFindingList = Effect.fn('runFindingList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'finding list'>): Effect.fn.Return<CommandResult<'finding list'>, RunFailure> {
   const read: (access: WorkspaceAccess) => Effect.Effect<FindingList, ClientFailure> = ({ token, workspaceId }) => {
     const workspace = WorkspaceId.make(workspaceId);
@@ -21,7 +22,7 @@ export const runFindingList = Effect.fn('runFindingList')(function* ({
     return call({ name: 'listFindings', input: { ...input, workspaceId: workspace }, credential: token });
   };
 
-  const list = yield* withWorkspace({ call, origin, credentials, use: read });
+  const list = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: read });
 
   return { lines: list.findings.map((finding) => findingLine({ finding })), result: list };
 });

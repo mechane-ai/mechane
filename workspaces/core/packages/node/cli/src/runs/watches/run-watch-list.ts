@@ -9,11 +9,13 @@ export const runWatchList = Effect.fn('runWatchList')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'watch list'>): Effect.fn.Return<CommandResult<'watch list'>, RunFailure> {
   const list = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'listWatches', input: { ...input, workspaceId }, credential: token }),
   });
 

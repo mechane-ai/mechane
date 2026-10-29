@@ -15,6 +15,7 @@ export const runWatchSet = Effect.fn('runWatchSet')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'watch set'>): Effect.fn.Return<CommandResult<'watch set'>, RunFailure> {
   const chosenId = Option.fromUndefinedOr(input.watchId);
   const createWatchId: () => WatchId = () => WatchId.make(crypto.randomUUID());
@@ -28,7 +29,7 @@ export const runWatchSet = Effect.fn('runWatchSet')(function* ({
     return call({ name: 'setWatch', input: { ...input, watchId, workspaceId: workspace }, credential: token });
   };
 
-  const watch = yield* withWorkspace({ call, origin, credentials, use: save });
+  const watch = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use: save });
 
   return { lines: [watchLine({ watch })], result: watch };
 });

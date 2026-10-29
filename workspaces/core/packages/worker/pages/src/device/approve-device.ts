@@ -9,6 +9,7 @@ import { Effect, Match } from 'effect';
 import { PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
 import { renderPage } from '../html/render-page.ts';
+import { requireIdentityAdmission } from '../session/require-identity-admission.ts';
 import type { BrowserSession, PageFailure } from '../types.ts';
 import { PURPOSE_SUMMARY } from './constants.ts';
 
@@ -30,6 +31,8 @@ export const approveDevice = Effect.fn('approveDevice')(function* ({
   session,
   userCode,
 }: ApproveDeviceInput): Effect.fn.Return<Response, PageFailure> {
+  yield* requireIdentityAdmission({ settings, identity: session });
+
   const sessionTokenHash = yield* tokenHash({ token: session.token });
 
   const decision = yield* callDirectory({

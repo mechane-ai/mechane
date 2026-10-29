@@ -8,11 +8,13 @@ export const runDroneCancel = Effect.fn('runDroneCancel')(function* ({
   origin,
   input,
   credentials,
+  selectedWorkspaceId,
 }: RunInput<'drone cancel'>): Effect.fn.Return<CommandResult<'drone cancel'>, RunFailure> {
   const cancel = yield* withWorkspace({
     call,
     origin,
     credentials,
+    selectedWorkspaceId,
     use: ({ token, workspaceId }) => call({ name: 'cancelDrone', input: { ...input, workspaceId }, credential: token }),
   });
 

@@ -4,7 +4,7 @@ import { DirectoryWorkspaces } from '@mechane/rpc';
 import { Effect } from 'effect';
 import type { WorkInput } from '../../routing/types.ts';
 
-/** Lists the workspaces the caller is a member of, oldest first, with the caller's role in each. */
+/** Personal-first ordering preserves the CLI default when a shared workspace predates the principal. */
 export const listWorkspaces = Effect.fn('listWorkspaces')(function* ({
   settings,
   caller,

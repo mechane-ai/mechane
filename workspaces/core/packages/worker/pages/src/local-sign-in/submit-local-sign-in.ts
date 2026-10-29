@@ -1,4 +1,4 @@
-import { IdentityProvider } from '@mechane/records';
+import { LOCAL_OWNER_IDENTITY } from '@mechane/records';
 import { Effect, Record, Schema } from 'effect';
 import { PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
@@ -30,7 +30,5 @@ export const submitLocalSignIn = Effect.fn('submitLocalSignIn')(function* (
     return yield* new PageRefused({ refusal: PageRefusal.BootstrapRefused });
   }
 
-  const identity = { provider: IdentityProvider.Local, subject: 'owner', name: 'Local owner' };
-
-  return yield* openBrowserSession({ settings, identity });
+  return yield* openBrowserSession({ settings, identity: LOCAL_OWNER_IDENTITY });
 });
