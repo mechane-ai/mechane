@@ -1,6 +1,14 @@
 import { callMech } from '@mechane/bindings';
-import { DroneNotFound, MechBusy, MechNotFound, SandboxRequest } from '@mechane/protocol';
+import {
+  DroneNotFound,
+  MechBusy,
+  MechNotFound,
+  SandboxCapacityReached,
+  SandboxDisabled,
+  SandboxRequest,
+} from '@mechane/protocol';
 import type { catalog, ObjectUnavailable, SandboxReport } from '@mechane/protocol';
+import { WorkspaceId } from '@mechane/records';
 import { SandboxAnswer } from '@mechane/rpc';
 import { Effect, Match, Schema } from 'effect';
 import type { WorkInput } from '../../routing/types.ts';
@@ -11,9 +19,10 @@ export const manageSandbox = Effect.fn('manageSandbox')(function* ({
   settings,
 }: WorkInput<typeof catalog.manageSandbox>): Effect.fn.Return<
   SandboxReport,
-  MechNotFound | DroneNotFound | MechBusy | ObjectUnavailable
+  MechNotFound | DroneNotFound | MechBusy | ObjectUnavailable | SandboxDisabled | SandboxCapacityReached
 > {
   const { workspaceId, mechId, ...request } = input;
+  const ownerWorkspaceId = WorkspaceId.make(workspaceId);
   const encoded = Schema.encodeSync(SandboxRequest)(request);
 
   const answer = yield* callMech({
@@ -29,5 +38,7 @@ export const manageSandbox = Effect.fn('manageSandbox')(function* ({
     MechMissing: () => new MechNotFound({ mechId }),
     DroneMissing: ({ droneId }) => new DroneNotFound({ droneId }),
     Busy: () => new MechBusy({ mechId }),
+    Disabled: () => new SandboxDisabled({ workspaceId: ownerWorkspaceId }),
+    CapacityReached: () => new SandboxCapacityReached({ workspaceId: ownerWorkspaceId }),
   });
 });

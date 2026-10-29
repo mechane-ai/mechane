@@ -8,6 +8,8 @@ export const SandboxAnswer = Schema.TaggedUnion({
   MechMissing: {},
   DroneMissing: { droneId: DroneId },
   Busy: {},
+  Disabled: {},
+  CapacityReached: {},
 });
 
 export type SandboxAnswer = typeof SandboxAnswer.Type;

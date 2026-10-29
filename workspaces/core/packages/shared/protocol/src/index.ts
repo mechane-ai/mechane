@@ -1,7 +1,7 @@
 export { catalog } from './catalog.ts';
 export { SourceAction, SourceStatus, SourcePublicationStatus } from './operations/sources/constants.ts';
 export { SourceGrant, SourceRequest, SourceReport, SourcePublishPaths } from './operations/sources/schemas.ts';
-export { WatchNotFound, WatchLimitReached } from './errors/errors.ts';
+export { WatchNotFound, WatchLimitReached } from './errors/mech.errors.ts';
 export {
   Watch,
   WatchConfiguration,
@@ -64,8 +64,6 @@ export {
   UnknownFailure,
   KeyMissing,
   DeviceApprovalNotFound,
-  DroneEnded,
-  DroneNotFound,
   InboxItemConflict,
   KeyExpired,
   KeyUnrecognized,
@@ -73,20 +71,24 @@ export {
   KeyRevoked,
   MechBusy,
   MechNotFound,
-  ModelInvalid,
   ObjectUnavailable,
   RateLimited,
   ReleaseFileNotFound,
   ReleasesBucketUnavailable,
   RequestInvalid,
   RouteNotFound,
-  TurnEnded,
-  TurnNotFound,
   WorkerMisconfigured,
   WorkspaceNotFound,
   WorkspaceSuspended,
 } from './errors/errors.ts';
-export { MechArchived, MechCreationConflict, MechRevisionConflict } from './errors/mech.errors.ts';
+export { DroneEnded, DroneNotFound, ModelInvalid, TurnEnded, TurnNotFound } from './errors/mech.errors.ts';
+export {
+  MechArchived,
+  MechCreationConflict,
+  MechRevisionConflict,
+  SandboxDisabled,
+  SandboxCapacityReached,
+} from './errors/mech.errors.ts';
 export type { AuthenticationFailure } from './errors/authentication-failures.ts';
 export type { FailureCodec } from './errors/types.ts';
 export type { ReleaseFailure } from './errors/release-failures.ts';

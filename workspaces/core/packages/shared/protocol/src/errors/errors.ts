@@ -1,18 +1,21 @@
-import { ModelId } from '@mechane/deployment';
-import {
-  ConnectionId,
-  DroneId,
-  MechId,
-  memberOrUnknown,
-  RecordId,
-  TurnId,
-  WatchId,
-  WorkspaceId,
-} from '@mechane/records';
+import { ConnectionId, memberOrUnknown, RecordId, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { DurableObjectClass } from '../durable-objects/constants.ts';
 import { UnknownFields, WireTime } from '../schemas.ts';
-import { MechArchived, MechCreationConflict, MechRevisionConflict } from './mech.errors.ts';
+import {
+  DroneEnded,
+  DroneNotFound,
+  MechArchived,
+  MechCreationConflict,
+  MechRevisionConflict,
+  ModelInvalid,
+  SandboxCapacityReached,
+  SandboxDisabled,
+  TurnEnded,
+  TurnNotFound,
+  WatchLimitReached,
+  WatchNotFound,
+} from './mech.errors.ts';
 
 /** No operation of the catalog serves the request's method and path. */
 export class RouteNotFound extends Schema.TaggedError<RouteNotFound>()('RouteNotFound', {
@@ -82,25 +85,11 @@ export class WorkspaceSuspended extends Schema.TaggedError<WorkspaceSuspended>()
 /** The workspace has no mech with this id. */
 export class MechNotFound extends Schema.TaggedError<MechNotFound>()('MechNotFound', { mechId: RecordId }) {}
 
-/** The addressed mech has no watch under the requested ID. */
-export class WatchNotFound extends Schema.TaggedError<WatchNotFound>()('WatchNotFound', { watchId: WatchId }) {}
-
-/** The requested schedule would exceed the maximum saved watches for this mech. */
-export class WatchLimitReached extends Schema.TaggedError<WatchLimitReached>()('WatchLimitReached', {
-  mechId: MechId,
-}) {}
-
 /**
  * The mech is not idle, so it cannot be forked now. A turn runs or owes its note, an inbox item waits for a turn or
  * holds one, or a drone runs or its machine has not stopped.
  */
 export class MechBusy extends Schema.TaggedError<MechBusy>()('MechBusy', { mechId: RecordId }) {}
-
-/** The deployment offers no model with this id; `offered` lists the ones it does. */
-export class ModelInvalid extends Schema.TaggedError<ModelInvalid>()('ModelInvalid', {
-  model: ModelId,
-  offered: Schema.Array(ModelId),
-}) {}
 
 /**
  * The mech already holds an inbox item with this id and another text or delivery, so the send is not a retry of that
@@ -109,18 +98,6 @@ export class ModelInvalid extends Schema.TaggedError<ModelInvalid>()('ModelInval
 export class InboxItemConflict extends Schema.TaggedError<InboxItemConflict>()('InboxItemConflict', {
   inboxItemId: RecordId,
 }) {}
-
-/** The mech has no turn with this id. */
-export class TurnNotFound extends Schema.TaggedError<TurnNotFound>()('TurnNotFound', { turnId: TurnId }) {}
-
-/** The turn ended before any cancel, with a reply or a reason for none, so nothing is left to cancel. */
-export class TurnEnded extends Schema.TaggedError<TurnEnded>()('TurnEnded', { turnId: TurnId }) {}
-
-/** The mech has no drone with this id. */
-export class DroneNotFound extends Schema.TaggedError<DroneNotFound>()('DroneNotFound', { droneId: DroneId }) {}
-
-/** The drone ended before any cancel, with a report or a reason for none, so nothing is left to cancel. */
-export class DroneEnded extends Schema.TaggedError<DroneEnded>()('DroneEnded', { droneId: DroneId }) {}
 
 /**
  * An error whose code this release does not know, such as one a newer deployment added. It holds its code and the
@@ -171,6 +148,8 @@ export const ServerFailure = Schema.Union([
   RateLimited,
   WorkspaceNotFound,
   WorkspaceSuspended,
+  SandboxDisabled,
+  SandboxCapacityReached,
   DeviceApprovalNotFound,
   KeyNotFound,
   MechNotFound,

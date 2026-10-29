@@ -4,6 +4,7 @@ import type { SandboxRpc } from '@mechane/rpc';
 import { Equal, Option, Result, Schema } from 'effect';
 import type { OpenedMech } from '../types.ts';
 import { SandboxAccess } from './constants.ts';
+import { manageLeasedSandbox } from './manage-leased-sandbox.ts';
 import { sandboxAccess } from './sandbox-access.ts';
 
 type ManageSandboxInput = { readonly mech: OpenedMech; readonly request: SandboxRequest };
@@ -41,12 +42,7 @@ export async function manageSandbox({ mech, request }: ManageSandboxInput): Prom
     return SandboxAnswer.cases.Busy.make({});
   }
 
-  const input = Schema.encodeSync(SandboxRequest)(request);
-  const encoded = await stub.manage({ request: input });
-  const decoded = Schema.decodeUnknownResult(SandboxReport)(encoded);
-  const report = Result.getOrThrow(decoded);
-
-  return SandboxAnswer.cases.Found.make({ report });
+  return await manageLeasedSandbox({ settings: mech.settings, owner: parent.value, stub, request });
 }
 
 async function resumeAllowed({ stub, request, access }: ResumeAllowedInput): Promise<boolean> {

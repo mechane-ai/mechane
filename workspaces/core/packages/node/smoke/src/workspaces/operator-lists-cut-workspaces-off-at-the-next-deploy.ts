@@ -2,7 +2,15 @@ import { EventType, LogEvent } from '@mechane/protocol';
 import type { LogLine } from '@mechane/protocol';
 import { COMMAND_PREFIX } from '@mechane/stack';
 import type { Stack } from '@mechane/stack';
-import { awaitLogged, check, RefusalCode, refusedCli, signedInMech, turnOutcome } from '@mechane/testing';
+import {
+  awaitLogged,
+  check,
+  RefusalCode,
+  refusedCli,
+  refuseUnlistedMaintenance,
+  signedInMech,
+  turnOutcome,
+} from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
@@ -40,6 +48,8 @@ export const operatorListsCutWorkspacesOffAtTheNextDeploy = Effect.fn('operatorL
 
     const unlisted = yield* signedInMech({ stack, offer: 'echo' });
     const { ended } = yield* unlisted.turn({ text: `${COMMAND_PREFIX}echo ${LISTED_OUTPUT}` });
+
+    yield* refuseUnlistedMaintenance({ stack, mech: unlisted });
 
     yield* refusedWork({ stack, workspaceId });
 

@@ -1,5 +1,6 @@
 import { HttpMethod } from '@mechane/records';
-import { DroneNotFound, MechBusy, MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechBusy, MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { DroneNotFound, SandboxCapacityReached, SandboxDisabled } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -15,5 +16,5 @@ export const manageSandbox = {
   query: NoFields,
   body: SandboxRequest,
   output: SandboxReport,
-  errors: [MechNotFound, DroneNotFound, MechBusy, ObjectUnavailable],
+  errors: [MechNotFound, DroneNotFound, MechBusy, ObjectUnavailable, SandboxDisabled, SandboxCapacityReached],
 } as const satisfies Operation;

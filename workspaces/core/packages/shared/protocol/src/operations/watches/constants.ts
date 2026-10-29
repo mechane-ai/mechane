@@ -1,4 +1,6 @@
 import { Duration } from 'effect';
+import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { WatchLimitReached, WatchNotFound } from '../../errors/mech.errors.ts';
 
 /** Whether a watch may admit scheduled work, independently of the mech lifecycle. */
 export const WatchStatus = { Active: 'active', Paused: 'paused' } as const;
@@ -24,3 +26,6 @@ export const WATCH_DEFAULT_CHECK_TIME = Duration.minutes(5);
 export const WatchCheckOutcome = { Completed: 'completed', Unknown: 'unknown' } as const;
 
 export type WatchCheckOutcome = (typeof WatchCheckOutcome)[keyof typeof WatchCheckOutcome];
+
+/** Mutating a watch requires its mech, an admitted watch slot, and an available owner object. */
+export const WATCH_MUTATION_FAILURES = [MechNotFound, WatchNotFound, WatchLimitReached, ObjectUnavailable] as const;

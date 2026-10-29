@@ -12,6 +12,7 @@ export const RefusalCode = {
   Revoked: 'KeyRevoked',
   Expired: 'KeyExpired',
   Suspended: 'WorkspaceSuspended',
+  SandboxDisabled: 'SandboxDisabled',
 } as const satisfies Readonly<Record<string, ServerFailure['_tag']>>;
 
 /**

@@ -40,6 +40,10 @@ const FAILURE_MESSAGES: Readonly<FailureMessages> = {
   WorkspaceNotFound: ({ workspaceId }) =>
     `admit the caller to workspace ${workspaceId}: it belongs to no such workspace`,
   WorkspaceSuspended: ({ workspaceId }) => `admit the caller to workspace ${workspaceId}: its operator suspended it`,
+  SandboxDisabled: ({ workspaceId }) =>
+    `maintain sandbox in workspace ${workspaceId}: its operator has not enabled sandbox compute`,
+  SandboxCapacityReached: ({ workspaceId }) =>
+    `maintain sandbox in workspace ${workspaceId}: its machine capacity is full`,
   MechNotFound: ({ mechId }) => `find mech ${mechId}: the workspace has no mech with this id`,
   WatchNotFound: ({ watchId }) => `find watch ${watchId}: the mech has no watch with this id`,
   WatchLimitReached: ({ mechId }) => `save watch for mech ${mechId}: its watch limit is reached`,

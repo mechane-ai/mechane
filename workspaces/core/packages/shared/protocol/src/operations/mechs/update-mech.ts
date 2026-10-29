@@ -1,8 +1,8 @@
 import { ModelId } from '@mechane/deployment';
 import { HttpMethod, Micros, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { MechNotFound, ModelInvalid, ObjectUnavailable } from '../../errors/errors.ts';
-import { MechRevisionConflict } from '../../errors/mech.errors.ts';
+import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechRevisionConflict, ModelInvalid } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';

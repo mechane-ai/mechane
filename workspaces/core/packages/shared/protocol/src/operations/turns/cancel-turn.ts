@@ -1,5 +1,6 @@
 import { HttpMethod } from '@mechane/records';
-import { MechNotFound, ObjectUnavailable, TurnEnded, TurnNotFound } from '../../errors/errors.ts';
+import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { TurnEnded, TurnNotFound } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';

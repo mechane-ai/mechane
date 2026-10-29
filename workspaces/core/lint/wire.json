@@ -139,7 +139,13 @@
     "WatchLimitReached=conflict",
     "MechRevisionConflict=conflict",
     "MechCreationConflict=conflict",
-    "MechArchived=conflict"
+    "MechArchived=conflict",
+    "SandboxDisabled",
+    "SandboxDisabled.workspace_id",
+    "SandboxCapacityReached",
+    "SandboxCapacityReached.workspace_id",
+    "SandboxDisabled=forbidden",
+    "SandboxCapacityReached=conflict"
   ],
   "events": [
     "inbox_item.received",

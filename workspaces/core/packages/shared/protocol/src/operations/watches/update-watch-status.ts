@@ -1,11 +1,10 @@
 import { HttpMethod } from '@mechane/records';
 import { Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable, WatchLimitReached, WatchNotFound } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { WatchPath } from '../schemas.ts';
-import { WatchStatus } from './constants.ts';
+import { WATCH_MUTATION_FAILURES, WatchStatus } from './constants.ts';
 import { Watch } from './schemas.ts';
 
 const WatchStatusBody = Schema.Struct({ status: Schema.Enum(WatchStatus) });
@@ -19,5 +18,5 @@ export const updateWatchStatus = {
   query: NoFields,
   body: WatchStatusBody,
   output: Watch,
-  errors: [MechNotFound, WatchNotFound, WatchLimitReached, ObjectUnavailable],
+  errors: WATCH_MUTATION_FAILURES,
 } as const satisfies Operation;

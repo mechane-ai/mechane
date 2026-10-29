@@ -22,6 +22,8 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   KeyNotFound: ErrorFamily.NotFound,
   WorkspaceNotFound: ErrorFamily.NotFound,
   WorkspaceSuspended: ErrorFamily.Forbidden,
+  SandboxDisabled: ErrorFamily.Forbidden,
+  SandboxCapacityReached: ErrorFamily.Conflict,
   MechNotFound: ErrorFamily.NotFound,
   WatchNotFound: ErrorFamily.NotFound,
   WatchLimitReached: ErrorFamily.Conflict,
