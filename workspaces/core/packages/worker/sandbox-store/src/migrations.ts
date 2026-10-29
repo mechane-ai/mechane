@@ -49,4 +49,9 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'INSERT INTO workspace_retirements (generation) SELECT retired FROM sandbox_workspace WHERE retired IS NOT NULL',
     );
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE portable_maintenance (slot INTEGER PRIMARY KEY CHECK (slot = 1), value TEXT NOT NULL) STRICT',
+    );
+  },
 ];

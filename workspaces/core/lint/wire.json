@@ -210,7 +210,8 @@
     "mech pause",
     "mech resume",
     "mech archive",
-    "mech revisions"
+    "mech revisions",
+    "sandbox import"
   ],
   "flags": [
     "--origin",
@@ -289,7 +290,11 @@
     "mech pause --expected-revision",
     "mech resume --expected-revision",
     "mech archive --expected-revision",
-    "mech revisions --after"
+    "mech revisions --after",
+    "sandbox import --drone",
+    "sandbox import --operation-id",
+    "sandbox import --file",
+    "sandbox import --confirm"
   ],
   "variables": [
     "MECHANE_ORIGIN",
@@ -950,7 +955,12 @@
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.created_at",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.updated_at",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.last_check_outcome",
-    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.last_checked_at"
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.last_checked_at",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.bytes",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.parts",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.archive.sha256",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.base64"
   ],
   "members": [
     "GET /v1/readiness output.durable_objects[].object_class=DirectoryObject",
@@ -1112,7 +1122,11 @@
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.status=paused",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.last_check_outcome=completed",
     "POST /v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status output.last_check_outcome=unknown",
-    "GET /v1/workspaces output.workspaces[].role=member"
+    "GET /v1/workspaces output.workspaces[].role=member",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.action=import",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox body.action=upload",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox output.action=import",
+    "POST /v1/workspaces/:workspace_id/mechs/:mech_id/sandbox output.action=upload"
   ],
   "families": [
     "invalid_request=400",

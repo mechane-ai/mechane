@@ -95,6 +95,7 @@ export const COMMAND_OUTPUTS = {
   'grant revoke': ToolGrant,
   'sandbox show': SandboxReport,
   'sandbox upgrade': SandboxReport,
+  'sandbox import': SandboxReport,
   'sandbox delete': SandboxReport,
   'sandbox cancel': SandboxReport,
   'sandbox export': Schema.Struct({ sandbox: SandboxReport, file: Schema.String }),

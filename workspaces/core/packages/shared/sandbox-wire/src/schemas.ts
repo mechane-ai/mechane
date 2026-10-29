@@ -26,7 +26,7 @@ import {
 export const ExecutionId = Schema.String.check(
   Schema.isPattern(
     new RegExp(
-      `^(?:${EXECUTION_ID_PREFIX}[0-9]{1,16}|source-(?:prepare|finalize|capture)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`,
+      `^(?:${EXECUTION_ID_PREFIX}[0-9]{1,16}|(?:source-(?:prepare|finalize|capture)|maintenance)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`,
     ),
   ),
 ).pipe(Schema.brand('ExecutionId'));

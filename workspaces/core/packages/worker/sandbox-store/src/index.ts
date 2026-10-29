@@ -5,5 +5,6 @@ export { openSandboxStore } from './open-sandbox-store.ts';
 export { sandboxAlarm } from './sandbox-alarm.ts';
 
 export { SandboxMaintenance } from './lifecycle/schemas.ts';
+export type { PortableMaintenance } from './maintenance/schemas.ts';
 export type { WorkspaceSnapshot, WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';
 export type { SourceFence } from './sources/schemas.ts';

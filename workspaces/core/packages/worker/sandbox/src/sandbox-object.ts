@@ -26,10 +26,14 @@ import type { RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
+import { PortableMaintenanceRefused } from './errors.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
 import { cancelExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
 import { runExecution } from './executions/run-execution.ts';
+import { maintenanceActive } from './maintenance/maintenance-active.ts';
+import { manageSandboxWorkspace } from './maintenance/manage-sandbox-workspace.ts';
+import { nativeWorkspacePending } from './maintenance/native-workspace-pending.ts';
 import { machineProvider } from './providers/machine-provider.ts';
 import { sandboxSettings } from './providers/sandbox-settings.ts';
 import { captureSource } from './sources/capture-source.ts';
@@ -55,7 +59,9 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   readonly #store: SandboxStore;
   readonly #alarm: SandboxAlarm;
   readonly #provider: MachineProvider;
+  readonly #providerName: string;
   readonly #workspace: Option.Option<WorkspaceFiles>;
+  readonly #workspaceFiles: WorkspaceFiles;
   readonly #calls = serialCalls();
   readonly #stops = new Set<Promise<void>>();
 
@@ -67,16 +73,20 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
 
     const settings = sandboxSettings({ store: this.#store, variables: environment });
     const bindings = objectBindings({ environment });
+    const owner = state.id.toString();
 
+    this.#workspaceFiles = { bucket: bindings.workspaceFiles, owner };
+    this.#providerName = settings.provider;
+    this.#provider = machineProvider({ settings, state, store: this.#store });
     this.#workspace = Option.none();
 
     if (settings.provider !== SandboxProvider.Tensorlake) {
-      const owner = state.id.toString();
-
-      this.#workspace = Option.some({ bucket: bindings.workspaceFiles, owner });
+      this.#workspace = Option.some(this.#workspaceFiles);
     }
+  }
 
-    this.#provider = machineProvider({ settings, state, store: this.#store });
+  get #isImportRequired(): boolean {
+    return nativeWorkspacePending({ store: this.#store, providerName: this.#providerName });
   }
 
   async manage({ request: input }: SandboxManageInput): Promise<typeof SandboxReport.Encoded> {
@@ -90,27 +100,13 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
 
     this.#assertUnfenced();
 
-    const manage = this.#provider.manage;
-
-    if (Option.isNone(manage)) {
-      const report = {
-        provider: 'local',
-        sandboxId: Option.none(),
-        status: 'unsupported',
-        image: Option.none(),
-        desiredImage: '',
-        operationId: Option.none(),
-        action: Option.none(),
-        phase: SandboxPhase.Idle,
-        archive: Option.none(),
-        part: 0,
-        base64: Option.none(),
-      };
-
-      return Schema.encodeSync(SandboxReport)(report);
-    }
-
-    const report = await manage.value(request);
+    const report = await manageSandboxWorkspace({
+      store: this.#store,
+      provider: this.#provider,
+      workspace: this.#workspaceFiles,
+      request,
+      providerName: this.#providerName,
+    });
 
     if (request.action !== SandboxAction.Show && report.phase === SandboxPhase.Done) {
       const now = DateTime.nowUnsafe();
@@ -154,10 +150,9 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   }: RunExecutionInput): Promise<typeof ExecutionProgress.Encoded> {
     await Promise.all(this.#stops);
 
-    const maintenance = this.#store.maintenance();
     const fence = this.#store.activeSourceFence();
 
-    if (Option.isSome(fence) || (Option.isSome(maintenance) && maintenance.value.phase !== SandboxPhase.Done)) {
+    if (Option.isSome(fence) || maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
       const pending = ExecutionProgress.cases.Running.make({});
 
       return Schema.encodeSync(ExecutionProgress)(pending);
@@ -215,7 +210,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
 
     const workspace = this.#store.workspace();
 
-    if (Option.isSome(workspace.recovery)) {
+    if (Option.isSome(workspace.recovery) || maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
       return;
     }
 
@@ -259,9 +254,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       return;
     }
 
-    const maintenance = this.#store.maintenance();
-
-    if (Option.isSome(maintenance) && maintenance.value.phase !== SandboxPhase.Done) {
+    if (maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
       return;
     }
 
@@ -323,6 +316,13 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   async #sourceCall<Value>({ run }: SourceCallInput<Value>): Promise<Value> {
     const call: () => Promise<Value> = async () => {
       await Promise.all(this.#stops);
+
+      if (maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
+        const cause = new PortableMaintenanceRefused({ reason: 'finish sandbox maintenance before source work' });
+        const failure = Result.fail(cause);
+
+        return Result.getOrThrow(failure);
+      }
 
       const now = DateTime.nowUnsafe();
       const at = DateTime.addDuration(now, STOP_RETRY);

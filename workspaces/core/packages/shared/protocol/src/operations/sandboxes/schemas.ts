@@ -1,20 +1,6 @@
 import { DroneId, RecordText, RemoteSandboxId, SandboxOperationId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { SandboxAction, SandboxPhase } from './constants.ts';
-
-/** A maintenance id makes retries resume the same operation; null selects inspection only. */
-export const SandboxRequest = wireStruct({
-  fields: {
-    action: Schema.Enum(SandboxAction),
-    /** Null for inspection; changes carry the id used by every retry. */
-    operationId: Schema.OptionFromNullOr(SandboxOperationId),
-    /** None selects the mech workspace. */
-    droneId: Schema.OptionFromNullOr(DroneId),
-    part: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-  },
-});
-
-export type SandboxRequest = typeof SandboxRequest.Type;
+import { SANDBOX_ARCHIVE_PART_BYTES, SandboxAction, SandboxPhase } from './constants.ts';
 
 /** The archive checksum covers the concatenation of every downloaded part. */
 export const SandboxArchive = wireStruct({
@@ -26,6 +12,27 @@ export const SandboxArchive = wireStruct({
 });
 
 export type SandboxArchive = typeof SandboxArchive.Type;
+
+const BASE64_SIZE_MARGIN = 2;
+const ARCHIVE_PART_BASE64_CHARACTERS = BASE64_SIZE_MARGIN * SANDBOX_ARCHIVE_PART_BYTES;
+
+/** A maintenance id makes retries resume the same operation; null selects inspection only. */
+export const SandboxRequest = wireStruct({
+  fields: {
+    action: Schema.Enum(SandboxAction),
+    /** Null for inspection; changes carry the id used by every retry. */
+    operationId: Schema.OptionFromNullOr(SandboxOperationId),
+    /** None selects the mech workspace. */
+    droneId: Schema.OptionFromNullOr(DroneId),
+    part: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    /** Absent except when declaring or resuming an import. */
+    archive: Schema.optionalKey(SandboxArchive),
+    /** Absent except when uploading one import part. */
+    base64: Schema.optionalKey(Schema.String.check(Schema.isMaxLength(ARCHIVE_PART_BASE64_CHARACTERS))),
+  },
+});
+
+export type SandboxRequest = typeof SandboxRequest.Type;
 
 /** Provider identifiers are observable, while provider credentials remain inside the service. */
 export const SandboxReport = wireStruct({

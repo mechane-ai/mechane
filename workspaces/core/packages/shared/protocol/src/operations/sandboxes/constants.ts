@@ -8,6 +8,8 @@ export const SandboxAction = {
   Delete: 'delete',
   Cancel: 'cancel',
   Download: 'download',
+  Import: 'import',
+  Upload: 'upload',
 } as const;
 
 export type SandboxAction = (typeof SandboxAction)[keyof typeof SandboxAction];

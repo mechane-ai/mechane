@@ -20,6 +20,7 @@ export { BrowserStep, CLI_BINARY, FileStep, RefusalCode } from './constants.ts';
 export { FileStepFailed } from './errors.ts';
 export type { ScenariosFailed } from './errors.ts';
 export { freshFolder } from './fresh-folder.ts';
+export { roundtripWorkspace } from './sandboxes/roundtrip-workspace.ts';
 export { commandGate } from './mechs/command-gate.ts';
 export { LOG_START, ScriptedTool, TEXT_BYTES } from './mechs/constants.ts';
 export { followEvents } from './mechs/events/follow-events.ts';

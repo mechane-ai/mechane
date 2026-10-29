@@ -1,10 +1,9 @@
 import { SandboxMaintenanceFailed } from '@mechane/cli-kernel';
 import type { RunFailure } from '@mechane/cli-kernel';
-import { PROGRAM } from '@mechane/commands';
-import { writeDiagnostic } from '@mechane/program';
 import { SandboxPhase } from '@mechane/protocol';
-import type { SandboxReport, SandboxRequest } from '@mechane/protocol';
+import type { SandboxReport } from '@mechane/protocol';
 import { DateTime, Duration, Effect, Option } from 'effect';
+import { announceMaintenance } from './announce-maintenance.ts';
 import { maintenanceFailure } from './maintenance-failure.ts';
 import type { SandboxCallInput } from './types.ts';
 
@@ -49,14 +48,3 @@ export const maintainSandbox = Effect.fn('maintainSandbox')(function* ({
     reason: `operation ${operationId} is still pending; resume with the same operation id`,
   });
 });
-
-type AnnounceMaintenanceInput = Pick<SandboxRequest, 'operationId'>;
-
-function announceMaintenance({ operationId: requested }: AnnounceMaintenanceInput): void {
-  const operationId = Option.getOrElse(requested, () => 'none');
-
-  writeDiagnostic({
-    program: PROGRAM,
-    line: `sandbox operation ${operationId}; resume with --operation-id ${operationId}`,
-  });
-}

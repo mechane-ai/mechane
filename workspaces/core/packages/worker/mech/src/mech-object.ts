@@ -47,9 +47,9 @@ import {
   WatchAnswer,
   WatchesAnswer,
 } from '@mechane/rpc';
-import { serialCalls, wakeList } from '@mechane/utilities';
+import { capturePromise, serialCalls, wakeList } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
-import { DateTime, Duration, Option, Schema } from 'effect';
+import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { runAlarm } from './alarm/run-alarm.ts';
 import { createDefinition } from './definitions/create-definition.ts';
 import { projectMechIndex } from './definitions/project-mech-index.ts';
@@ -100,7 +100,16 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
   async manageSandbox({ request: input }: SandboxManageInput): Promise<typeof SandboxAnswer.Encoded> {
     const mech = await this.#mech.current();
     const request = Schema.decodeUnknownSync(SandboxRequest)(input);
-    const answer = await this.ctx.blockConcurrencyWhile(() => manageSandbox({ mech, request }));
+
+    const run: () => Promise<Result.Result<SandboxAnswer, unknown>> = () => {
+      const promise = manageSandbox({ mech, request });
+
+      return capturePromise({ promise });
+    };
+
+    // A rejection inside the input gate resets the object and interrupts unrelated event readers.
+    const result = await this.ctx.blockConcurrencyWhile(run);
+    const answer = Result.getOrThrow(result);
 
     return Schema.encodeSync(SandboxAnswer)(answer);
   }

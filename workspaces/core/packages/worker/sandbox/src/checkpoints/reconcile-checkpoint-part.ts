@@ -1,7 +1,7 @@
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option, Result } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
-import { snapshotPartBytes } from '../workspace/snapshot-part-bytes.ts';
+import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 

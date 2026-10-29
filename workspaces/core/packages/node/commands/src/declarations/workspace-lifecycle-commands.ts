@@ -62,6 +62,19 @@ export const WORKSPACE_LIFECYCLE_COMMANDS = {
       renames: { ...CHANGE_RENAMES, isConfirmed: 'confirm' },
     }),
   },
+  'sandbox import': {
+    ...WORKSPACE_LIFECYCLE_COMMAND,
+    summary: 'restore a tar.gz archive into the configured portable provider after verifying it in a fresh sandbox',
+    flags: {
+      ...CHANGE_FLAGS,
+      file: { kind: FlagKind.Text, summary: 'the private tar.gz archive to restore' },
+      confirm: { kind: FlagKind.Switch, summary: 'confirm replacement of this sandbox workspace' },
+    },
+    input: renamedWireStruct({
+      fields: { ...CHANGE_FIELDS, file: Schema.NonEmptyString, isConfirmed: DELETE_CONFIRMED },
+      renames: { ...CHANGE_RENAMES, isConfirmed: 'confirm' },
+    }),
+  },
   'sandbox cancel': {
     ...WORKSPACE_LIFECYCLE_COMMAND,
     summary: 'cancel maintenance before its binding swap, or finish retiring the old VM after that swap',

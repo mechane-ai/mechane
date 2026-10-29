@@ -3,6 +3,7 @@ import type { SettledReceipt } from '@mechane/sandbox-wire';
 import type { AlarmTimeInput, DatabaseFunctions } from '@mechane/store';
 import type { DateTime, Duration, Option } from 'effect';
 import type { MaintenanceRecords } from './lifecycle/maintenance-records.ts';
+import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import type { ExecutionRow, LiveMachineRow, MachineIdRow } from './schemas.ts';
 import type { sourceRecords } from './sources/source-records.ts';
 import type { workspaceRecords } from './workspaces/workspace-records.ts';
@@ -84,6 +85,7 @@ export type SandboxStore = DatabaseFunctions &
   MachineRecords &
   ExecutionRecords &
   MaintenanceRecords &
+  ReturnType<typeof portableMaintenanceRecords> &
   ReturnType<typeof sourceRecords> &
   ReturnType<typeof workspaceRecords>;
 

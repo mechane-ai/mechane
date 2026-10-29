@@ -83,7 +83,8 @@ mise -C workspaces/core/packages/worker/app exec -- pnpm exec wrangler r2 bucket
 ```
 
 These commands create resources and may incur account charges. Keep the workspace-files bucket private. Do not apply a
-bucket lifecycle policy that deletes active workspace generations. No workspace archive is served by the Worker.
+bucket lifecycle policy that deletes active workspace generations. Only authenticated workspace members can export
+workspace archives through the sandbox API.
 
 Render your configuration before deploying:
 
@@ -144,12 +145,35 @@ It requires the earlier version to have compatible stored formats and guest-imag
 workspace files, images or CLI releases. Cloudflare refuses a version with incompatible secret changes; roll forward
 with a patch release in that case.
 
+## Back up sandbox files
+
+Pause new agent work and export an idle sandbox through its normal workspace login:
+
+```sh
+mechane sandbox export MECH_ID --file ./home.tar.gz
+mechane sandbox import MECH_ID --file ./home.tar.gz --confirm
+```
+
+Export creates a private file and verifies its size and SHA-256. Import uploads bounded parts, verifies the complete
+archive in a fresh guest, then commits its snapshot. A failed import leaves the previous committed snapshot intact.
+`sandbox cancel MECH_ID --operation-id ID` releases an interrupted import; `--operation-id ID` resumes one. Keep the
+same archive while resuming. `sandbox upgrade` replaces the machine from its saved files. `sandbox delete --confirm`
+permanently removes those files. Add `--drone DRONE_ID` to manage a finished drone.
+
+These commands back up sandbox files only. Conversation state, access grants, and deployment secrets need their own
+backup under the operator's control. Archives retain the normal workspace size limits.
+
 ## Existing Tensorlake installations
 
 Set `MECHANE_SANDBOX_PROVIDER` to `tensorlake`, omit `container`, and supply `tensorlake_image_prefix` plus the
 `MECHANE_TENSORLAKE_API_KEY` secret reference. Each release builds or reuses `<prefix>-v<release>` through Tensorlake.
 The prefix preserves that installation's image namespace. New container installations need neither setting.
 
-Sandbox provider selection is persisted. Changing the default affects new sandboxes; it does not move existing machines
-or workspace files. Keep the Tensorlake image prefix and secret reference when existing Tensorlake sandboxes remain,
-even if new sandboxes use Containers. A provider migration needs an explicit data transfer and cutover.
+To move to Containers, first pause agent work and export every existing sandbox, including finished drones. Then deploy
+the container configuration with the same Worker and bucket names. Remove the Tensorlake image prefix and secret
+reference. Native workspaces report `import_required` and refuse execution until their archives are imported and
+verified. Empty sandboxes that never started a machine can use the new provider immediately.
+
+Import each archive, export it again, and compare file contents, modes and links before deleting the old provider VMs.
+Keep the original backups through that verification. Resume agents afterward. Retire the old images and provider key,
+and explicitly delete the old Worker secret: omitting a secret reference does not remove the deployed secret.

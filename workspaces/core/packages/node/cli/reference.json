@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.3.0",
+  "release": "0.4.0",
   "flags": [
     {
       "name": "origin",
@@ -1142,6 +1142,47 @@
           "name": "confirm",
           "kind": "switch",
           "summary": "confirm permanent deletion of this sandbox and its files",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox import",
+      "summary": "restore a tar.gz archive into the configured portable provider after verifying it in a fresh sandbox",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "manageSandbox"
+      ],
+      "flags": [
+        {
+          "name": "drone",
+          "kind": "text",
+          "summary": "manage this finished drone instead of the mech",
+          "required": false
+        },
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "resume the operation id printed by an earlier attempt",
+          "required": false
+        },
+        {
+          "name": "file",
+          "kind": "text",
+          "summary": "the private tar.gz archive to restore",
+          "required": true
+        },
+        {
+          "name": "confirm",
+          "kind": "switch",
+          "summary": "confirm replacement of this sandbox workspace",
           "required": true
         }
       ],

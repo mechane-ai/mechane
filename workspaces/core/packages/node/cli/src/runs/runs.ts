@@ -34,6 +34,7 @@ import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
 import { runSandboxExport } from './sandboxes/run-sandbox-export.ts';
+import { runSandboxImport } from './sandboxes/run-sandbox-import.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
 import { runSlackBind } from './slack/run-slack-bind.ts';
 import { runSlackBindings } from './slack/run-slack-bindings.ts';
@@ -74,6 +75,7 @@ export const RUNS: Readonly<Runs> = {
 
   'sandbox show': documentRun({ run: runSandboxShow }),
   'sandbox export': documentRun({ run: runSandboxExport }),
+  'sandbox import': documentRun({ run: runSandboxImport }),
   'sandbox upgrade': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Upgrade }) }),
   'sandbox delete': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Delete }) }),
   'sandbox cancel': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Cancel }) }),

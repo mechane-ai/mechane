@@ -10,15 +10,15 @@ Layer 4 · worker · plain · consumers: `@mechane/app`
 - `machines/`: machine creation, health, restoration and startup deadlines.
 - `providers/`: local host and container machines behind `MachineProvider`.
 - `tensorlake/`: native persistent VMs and their maintenance journal.
+- `maintenance/`: portable export, import, replacement and deletion.
 - `checkpoints/` and `workspace/`: portable R2 generations, transfers and retirement.
 - `sources/`: source credential fences and trusted checkout preparation.
 
 ## Use
 
 `runExecution` runs a command once under its execution id. While it answers Running, repeat the same request. `manage`
-inspects or maintains Tensorlake workspaces; portable providers report maintenance as unsupported. `stop` ends an
-ordinary idle machine. A failed checkpoint preserves its live machine for recovery; an active source fence refuses
-maintenance and stop.
+inspects, exports, imports, replaces or deletes workspace files. `stop` ends an ordinary idle machine. A failed
+checkpoint preserves its live machine for recovery; an active source fence refuses maintenance and stop.
 
 ## Workspace durability
 
@@ -44,8 +44,10 @@ never run agent code. Only then may it receive a repository token. The durable f
 revocation or confirmed expiry. A failed preparatory save retains the live workspace. Process scope, used by host
 fixtures and current Tensorlake guests, refuses real repository credentials before minting.
 
-Provider choice is stored per sandbox. Deployment defaults affect new sandboxes only; existing Tensorlake identities and
-native files retain that provider.
+Provider choice is stored per sandbox. Switching a native installation to Containers fences existing native workspaces
+until an explicit import verifies their archive in a fresh guest. Failed imports preserve the previous head. Export
+generations remain downloadable while commands advance that head; a new maintenance operation invalidates the export.
+See [self-hosting](../../../docs/self-hosting.md) for backup and migration commands.
 
 ## Never
 

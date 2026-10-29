@@ -1,5 +1,5 @@
 import { EXECUTION_VARIABLES } from '@mechane/sandbox-wire';
-import { check, signedInAccount, talkingMech } from '@mechane/testing';
+import { check, roundtripWorkspace, signedInAccount, talkingMech } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect, Option, Record } from 'effect';
 import type { Scope } from 'effect';
@@ -42,6 +42,9 @@ export const mechClonesARepositoryIntoItsOwnSandbox = Effect.fn('mechClonesARepo
   const cloning = yield* talkingMech({ stack, account, model });
   const clone = `git clone ${url} ${CLONE_FOLDER} && cat ${readme}`;
   const cloned = yield* commandReply({ mech: cloning, command: clone });
+
+  yield* roundtripWorkspace({ stack, mech: cloning });
+
   const reread = yield* commandReply({ mech: cloning, command: `cat ${readme}` });
   const { listed, names, home } = yield* neighborSandbox({ stack, account, model });
   const isSandboxed: (path: string) => boolean = (path) => path.startsWith(`${stack.sandboxesFolder}${sep}`);

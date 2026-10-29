@@ -4,7 +4,7 @@ import { Option, Result } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
-import { snapshotPartBytes } from '../workspace/snapshot-part-bytes.ts';
+import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
 import type { ArchivedCheckpointInput } from './types.ts';

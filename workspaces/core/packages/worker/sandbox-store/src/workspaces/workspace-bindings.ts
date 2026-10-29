@@ -27,6 +27,8 @@ type BindProviderInput = { readonly provider: string };
 type WorkspaceBindings = {
   readonly workspace: () => WorkspaceState;
   readonly bindProvider: (input: BindProviderInput) => void;
+  readonly replaceProvider: (input: BindProviderInput) => void;
+  readonly clearWorkspace: () => void;
 };
 
 /** Reads the portable workspace journal and permanently binds its selected provider. */
@@ -43,5 +45,15 @@ export function workspaceBindings({ sql }: RecordsInput): WorkspaceBindings {
     sql.exec('UPDATE sandbox_workspace SET provider = ? WHERE slot = 1 AND provider IS NULL', provider);
   };
 
-  return { workspace, bindProvider };
+  const replaceProvider: WorkspaceBindings['replaceProvider'] = ({ provider }) => {
+    sql.exec('UPDATE sandbox_workspace SET provider = ? WHERE slot = 1', provider);
+  };
+
+  const clearWorkspace: WorkspaceBindings['clearWorkspace'] = () => {
+    sql.exec(
+      'UPDATE sandbox_workspace SET head = NULL, checkpoint = NULL, restoration = NULL, recovery = NULL WHERE slot = 1',
+    );
+  };
+
+  return { workspace, bindProvider, replaceProvider, clearWorkspace };
 }
