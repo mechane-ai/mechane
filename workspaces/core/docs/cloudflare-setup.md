@@ -138,6 +138,18 @@ OpenTofu labels mirror packages `unauthenticated`; the helper performs their sig
 Keep `TF_CLI_CONFIG_FILE` set for subsequent OpenTofu commands in this directory. If you already manage a CLI
 configuration, merge the generated `provider_installation` rules there and select that file explicitly.
 
+When using a shared lockfile on a new platform, run the helper on that machine and replace the first `tofu init` above
+with:
+
+```sh
+tofu get
+tofu providers lock -fs-mirror=.mechane/provider-mirror mechane-ai/mechane
+tofu init
+```
+
+The lock command adds the native checksum from the verified mirror and retains checksums for other platforms. Review and
+commit the updated `.terraform.lock.hcl`.
+
 This is OpenTofu's documented
 [filesystem mirror](https://opentofu.org/docs/cli/config/config-file/#provider-installation), using the unchanged
 `mechane-ai/mechane` provider address. After registry registration is available, remove the mirror override and run
