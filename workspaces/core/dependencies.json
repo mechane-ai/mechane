@@ -378,13 +378,13 @@
     "consumers": ["@mechane/stack", "@mechane/distribution"]
   },
   "@mechane/stack": {
-    "owns": "The local stack: celld, the local GitHub, host launcher, scripted model upstream and releases bucket; its main is mise run dev",
+    "owns": "The shared celld runtime, persistent local launcher, packaged release inputs, and disposable development services",
     "layer": 5,
     "lane": "node",
     "dialect": "effect",
     "kind": "library-program",
     "criterion": "closure",
-    "consumers": ["@mechane/testing", "@mechane/smoke"]
+    "consumers": ["@mechane/testing", "@mechane/smoke", "@mechane/distribution"]
   },
   "@mechane/testing": {
     "owns": "The smoke's support: CLI driver, browser, approvals, accounts, mechs and the event follower",
@@ -633,7 +633,7 @@
     "confines": ["@modelcontextprotocol/client", "jose"]
   },
   "@mechane/distribution": {
-    "owns": "Versioned Cloudflare installation archives, public release manifests, artifact checksums, and local module validation previews",
+    "owns": "Versioned local and Cloudflare installation archives, public release manifests, artifact checksums, and local module validation previews",
     "layer": 7,
     "lane": "node",
     "dialect": "effect",

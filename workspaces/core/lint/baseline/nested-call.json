@@ -430,7 +430,7 @@
   "packages/node/testing/src/sentinels/read-private-file.ts": 3,
   "packages/node/testing/src/worker-log/await-logged.ts": 2,
   "packages/node/testing/src/worker-log/worker-lines.ts": 5,
-  "packages/node/wrangler/src/constants.ts": 2,
+  "packages/node/wrangler/src/constants.ts": 1,
   "packages/node/wrangler/src/decode-jsonc.ts": 1,
   "packages/shared/client/src/request-init.ts": 2,
   "packages/shared/client/src/request-url.ts": 3,

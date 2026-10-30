@@ -1,4 +1,4 @@
-# Configuration
+# Development setup
 
 Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked dependencies. The root `mise.toml` and
 `mise.lock` pin tools. `workspaces/core/pnpm-lock.yaml` pins packages.
@@ -8,16 +8,14 @@ Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked
 mise run check
 ```
 
-Use `mise run start` for a persistent local installation with Docker and your model provider. Set
-`MECHANE_MODEL_UPSTREAM`, `MECHANE_MODEL_API_KEY`, and `MECHANE_MODEL_OFFERS` as the
-[local guide](../workspaces/core/packages/node/stack/README.md) describes. The launcher prints the owner-login URL, the
-private bootstrap-secret file path, and the CLI origin.
-
-State lives in `$XDG_STATE_HOME/mechane`, or `~/.local/state/mechane`. Restart with the same settings to retain agents
-and data. Keep credentials in an ignored local environment file or the operating system's credential store.
+Use `mise run start` to run a persistent installation from this checkout. It requires Docker and the model settings
+described in the [local guide](../workspaces/core/packages/node/stack/README.md). That guide also covers packaged local
+releases, which need no contributor toolchain. Keep credentials outside version control.
 
 Use `mise run dev` for a disposable development fixture. It supplies local GitHub sign-in and a scripted model.
 Development fixtures and checks require no provider credentials.
 
-The [operator guide](runbook.md) describes the example deployment configuration. The public repository contains no
-credentials, production account identifiers, or organization admission lists.
+Use `mise -C workspaces/core run TASK` for one product task and `mise run mechane -- --help` for the CLI from source.
+
+The [operator guide](runbook.md) links the installation procedures. The public repository contains no credentials,
+production account identifiers, or organization admission lists.

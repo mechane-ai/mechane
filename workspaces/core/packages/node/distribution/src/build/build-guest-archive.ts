@@ -5,6 +5,7 @@ import type { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
 import { fileDigest } from '../files/file-digest.ts';
 import { runCommand } from '../files/run-command.ts';
+import { guestImageName } from '../local/guest-image-name.ts';
 import type { DistributionInput, PathInput } from '../types.ts';
 import { guestImageDigest } from '../verify/guest-image-digest.ts';
 import type { GuestImage } from './types.ts';
@@ -20,6 +21,7 @@ export const buildGuestArchive = Effect.fn('buildGuestArchive')(function* ({
   const name = assetName({ kind: 'guest' });
   const path = join(settings.folder, name);
   const output = archiveOutput({ path });
+  const image = guestImageName();
 
   yield* runCommand({
     command: 'docker',
@@ -29,6 +31,8 @@ export const buildGuestArchive = Effect.fn('buildGuestArchive')(function* ({
       '--platform=linux/amd64',
       '--provenance=false',
       '--sbom=false',
+      '--tag',
+      image,
       '--output',
       output,
       GUEST_FOLDER,

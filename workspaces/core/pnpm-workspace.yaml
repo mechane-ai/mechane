@@ -6,17 +6,10 @@ packages:
 
 # pnpm holds back releases younger than its minimum release age; these are the exact releases this workspace pins.
 minimumReleaseAgeExclude:
-  - '@tensorlakeai/tensorlake@0.5.159'
   - effect@4.0.7
   - miniflare@5.20261023.2-beta
   - wrangler@4.155.0
   - '@cloudflare/workers-types@5.20261028.1'
-  - '@tensorlakeai/native-darwin-arm64@0.5.159'
-  - '@tensorlakeai/native-linux-arm64-gnu@0.5.159'
-  - '@tensorlakeai/native-linux-arm64-musl@0.5.159'
-  - '@tensorlakeai/native-linux-x64-gnu@0.5.159'
-  - '@tensorlakeai/native-linux-x64-musl@0.5.159'
-  - '@tensorlakeai/native-win32-x64@0.5.159'
 
 # These install scripts place each tool's platform binary; swc's binary arrives as an optional package instead, and
 # pi-ai's Google and protobuf dependencies need no script for the one OpenAI-compatible API the Worker loads.

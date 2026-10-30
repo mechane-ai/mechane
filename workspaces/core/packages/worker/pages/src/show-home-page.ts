@@ -9,6 +9,11 @@ import type { PageInput } from './types.ts';
 export const showHomePage: (input: PageInput) => Effect.Effect<Response> = ({ settings }) => {
   const installer = installScriptUrl({ origin: settings.origin });
   const install = escapeHtml({ text: `curl -fsSL ${installer.href} | sh` });
+
+  const start = escapeHtml({
+    text: `export MECHANE_ORIGIN='${settings.origin.origin}'\nmechane auth login\nmechane mech create --name scout`,
+  });
+
   const device = escapeHtml({ text: PagePath.Device });
 
   const body = [
@@ -16,8 +21,8 @@ export const showHomePage: (input: PageInput) => Effect.Effect<Response> = ({ se
     '<h2>Install the CLI</h2>',
     `<pre><code>${install}</code></pre>`,
     '<h2>Start a conversation</h2>',
-    '<pre><code>mechane auth login\nmechane mech create --name scout</code></pre>',
-    '<p>Sign in with GitHub when the terminal asks, then use the CLI to send messages and follow your agents.</p>',
+    `<pre><code>${start}</code></pre>`,
+    '<p>Follow the terminal’s sign-in link, then use the CLI to send messages and follow your agents.</p>',
     `<p><a href="${device}">Approve a CLI login</a></p>`,
   ].join('\n');
 

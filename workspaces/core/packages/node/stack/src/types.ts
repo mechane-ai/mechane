@@ -1,12 +1,21 @@
 import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
 import type { HttpStatusCode } from '@mechane/records';
 import type { ReleaseFailed } from '@mechane/release';
+import type { BaseConfiguration } from '@mechane/wrangler';
 import type { Effect, Option } from 'effect';
 import type { ChildProcess } from 'node:child_process';
 import type { IncomingHttpHeaders } from 'node:http';
-import type { SCRIPTED_OFFERS } from './constants.ts';
-import type { LocalCommand } from './dev/constants.ts';
+import type { LocalCommand, SCRIPTED_OFFERS } from './constants.ts';
 import type { StackFailed } from './errors.ts';
+
+/** The immutable runtime inputs supplied by a source build or an installed release. */
+export type RuntimeProject = {
+  readonly bundle: string;
+  readonly configuration: BaseConfiguration;
+  readonly revision: string;
+  readonly celldCommand: string;
+  readonly releasesBucket: string;
+};
 
 /** A child process the stack started and stops. */
 export type ChildInput = { readonly child: ChildProcess };
@@ -66,6 +75,7 @@ export type StackSettings = {
   readonly localStateFolder: string;
   readonly localOrigin: URL;
   readonly localCommand: LocalCommand;
+  readonly executableFolder: string;
 };
 
 /** Worker variables the stack writes into `.dev.vars`, over the Wrangler configuration's, keyed by settings field. */

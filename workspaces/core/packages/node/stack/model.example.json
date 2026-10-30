@@ -1,0 +1,15 @@
+{
+  "model_upstream": "https://openrouter.ai/api/v1",
+  "model_api_key": "replace-with-your-provider-api-key",
+  "model_offers": [
+    {
+      "id": "anthropic/claude-haiku-5.5",
+      "context_window_tokens": 65536,
+      "max_output_tokens": 4096,
+      "input_micros_per_million_tokens": 100000,
+      "output_micros_per_million_tokens": 500000,
+      "cache_read_micros_per_million_tokens": 10000,
+      "cache_write_micros_per_million_tokens": 125000
+    }
+  ]
+}

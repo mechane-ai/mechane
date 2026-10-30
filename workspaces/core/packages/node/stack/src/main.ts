@@ -2,7 +2,7 @@ import { finish, reportExit, stepLine } from '@mechane/program';
 import type { FailureLines } from '@mechane/program';
 import type { ReleaseFailed } from '@mechane/release';
 import { Effect, Match } from 'effect';
-import { DevStatus, PROGRAM } from './dev/constants.ts';
+import { DevStatus, PROGRAM } from './constants.ts';
 import { serveLocally } from './dev/serve-locally.ts';
 import type { StackFailed } from './errors.ts';
 

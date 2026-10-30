@@ -1,15 +1,16 @@
 import { Effect } from 'effect';
 import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { DistributionStep } from '../constants.ts';
+import { CORE_FOLDER, DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { runCommand } from '../files/run-command.ts';
+import { buildLocalAssets } from '../local/build-local-assets.ts';
+import { packageProviderSetup } from '../local/package-provider-setup.ts';
 import type { ArtifactReceipt } from '../schemas.ts';
 import type { DistributionInput } from '../types.ts';
 import { verifyDistribution } from '../verify/verify-distribution.ts';
 import { buildCliAssets } from './build-cli-assets.ts';
 import { buildGuestArchive } from './build-guest-archive.ts';
-import { CORE_FOLDER } from './constants.ts';
 import { installationManifest } from './installation-manifest.ts';
 import { packageModule } from './package-module.ts';
 import { readPublicSource } from './read-public-source.ts';
@@ -33,6 +34,8 @@ export const buildDistribution = Effect.fn('buildDistribution')(function* ({
   const manifest = yield* installationManifest({ commit, isPreview: false, guest });
   const moduleAssets = yield* packageModule({ settings, manifest });
   const cliAssets = yield* buildCliAssets({ settings, commit });
+  const localAssets = yield* buildLocalAssets({ settings, commit });
+  const providerSetup = yield* packageProviderSetup({ settings });
   const unchanged = yield* readPublicSource({ settings });
 
   if (unchanged !== commit) {
@@ -42,7 +45,8 @@ export const buildDistribution = Effect.fn('buildDistribution')(function* ({
     });
   }
 
-  const assets = [{ name: guest.name, sha256: guest.sha256, bytes: guest.bytes }, ...moduleAssets, ...cliAssets];
+  const guestAsset = { name: guest.name, sha256: guest.sha256, bytes: guest.bytes };
+  const assets = [guestAsset, ...moduleAssets, ...cliAssets, ...localAssets, providerSetup];
 
   yield* writeReceipt({ folder: settings.folder, commit, assets });
 

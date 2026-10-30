@@ -7,7 +7,17 @@ import { DistributionMode, DistributionStep } from './constants.ts';
 import { DistributionFailed } from './errors.ts';
 import type { DistributionSettings } from './types.ts';
 
-const INHERITED_NAMES = ['PATH', 'HOME', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'BUILDX_BUILDER', 'XDG_CACHE_HOME'] as const;
+const INHERITED_NAMES = [
+  'PATH',
+  'HOME',
+  'DOCKER_HOST',
+  'DOCKER_CONTEXT',
+  'BUILDX_BUILDER',
+  'XDG_CACHE_HOME',
+  'MISE_CONFIG_DIR',
+  'MISE_SYSTEM_CONFIG_DIR',
+] as const;
+
 const OUTPUT_URL: Readonly<URL> = new URL('../../../../dist/distribution', import.meta.url);
 const OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 

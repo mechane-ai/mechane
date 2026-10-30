@@ -1,10 +1,14 @@
 import { Effect } from 'effect';
 import type { Cause } from 'effect';
 import { dirname, resolve } from 'node:path';
-import { WRANGLER_CONFIGURATION } from './constants.ts';
+import { fileURLToPath } from 'node:url';
 import { readJsonc } from './read-jsonc.ts';
 import { BaseConfiguration } from './schemas.ts';
 import type { ProgramFailureInput } from './types.ts';
+
+/** The build configuration also supplies local runtime settings and release metadata. */
+const WRANGLER_URL: Readonly<URL> = new URL('../../../worker/app/wrangler.jsonc', import.meta.url);
+const WRANGLER_CONFIGURATION = fileURLToPath(WRANGLER_URL);
 
 /** A configuration, and the path of the built bundle it serves. */
 type BuiltBundleInput<C> = { readonly configuration: C; readonly main: string };

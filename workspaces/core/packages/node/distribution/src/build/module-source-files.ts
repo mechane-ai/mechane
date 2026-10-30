@@ -2,9 +2,8 @@ import { Effect } from 'effect';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DistributionStep, MODULE_NOTICE_NAMES, MODULE_SOURCE_NAMES } from '../constants.ts';
+import { DistributionStep, MODULE_NOTICE_NAMES, MODULE_SOURCE_NAMES, SOURCE_FOLDER } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
-import { SOURCE_FOLDER } from './constants.ts';
 import type { ModuleSourceFile } from './types.ts';
 
 type SourceFilesInput = { readonly isPreview: boolean };

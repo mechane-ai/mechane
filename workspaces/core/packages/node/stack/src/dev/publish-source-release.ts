@@ -4,8 +4,10 @@ import { buildRelease, hostTarget } from '@mechane/release';
 import { Effect } from 'effect';
 import { join } from 'node:path';
 import type { StackFailed } from '../errors.ts';
-import { RELEASE_FOLDER } from './constants.ts';
 import type { PublishSourceReleaseInput } from './types.ts';
+
+/** The folder in the stack's state folder that holds the release dev builds of this source. */
+const RELEASE_FOLDER = 'release';
 
 /** Builds and publishes the source checkout’s CLI for the local installer. */
 export const publishSourceRelease = Effect.fn('publishSourceRelease')(function* ({

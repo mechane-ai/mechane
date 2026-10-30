@@ -6,8 +6,6 @@
   "treatConfigHintsAsErrors": true,
   // A type that an exported declaration's signature uses counts as used by that declaration's consumers.
   "ignoreExportsUsedInFile": { "type": true, "interface": true },
-  // mise installs celld from its GitHub release, because npm publishes no celld package.
-  "ignoreBinaries": ["celld"],
   // dependency-cruiser loads swc to parse TypeScript, as .dependency-cruiser.cjs selects with `parser: 'swc'`; the
   // Workers runtime provides `cloudflare:workers`, which no package installs.
   "ignoreDependencies": ["@swc/core", "cloudflare"],

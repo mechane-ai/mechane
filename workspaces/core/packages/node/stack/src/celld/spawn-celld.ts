@@ -27,6 +27,7 @@ type SpawnCelldInput = {
   readonly origin: URL;
   readonly settings: StackSettings;
   readonly logFile: string;
+  readonly celldCommand: string;
 };
 
 type CloseLogInput = { readonly log: FileHandle; readonly path: string };
@@ -41,6 +42,7 @@ export const spawnCelld = Effect.fn('spawnCelld')(function* ({
   origin,
   settings,
   logFile,
+  celldCommand,
 }: SpawnCelldInput): Effect.fn.Return<ChildProcess, StackFailed, Scope.Scope> {
   const logSubjects = [StepSubject.cases.Path.make({ path: logFile })];
 
@@ -59,7 +61,7 @@ export const spawnCelld = Effect.fn('spawnCelld')(function* ({
   const environment = { ...settings.inherited, CELLD_MAX_RSS_MB: '0', CELLD_FETCH_TIMEOUT_S: fetchTimeoutSeconds };
 
   return yield* Effect.callback<ChildProcess, StackFailed>((resume) => {
-    const child = spawn('celld', args, { env: environment, stdio: ['ignore', log.fd, log.fd], detached: true });
+    const child = spawn(celldCommand, args, { env: environment, stdio: ['ignore', log.fd, log.fd], detached: true });
     const started: () => void = () => resume(Effect.succeed(child));
 
     const refuse: (error: Error) => void = (error) =>

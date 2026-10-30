@@ -1,7 +1,9 @@
 # Installation
 
-Use `mise run start` for persistent local use or `mise run dev` for a disposable scripted fixture. Local runtime state
-survives ordinary restarts; `local:reset --confirm` is the explicit reset operation.
+Use [mechane.ai](https://mechane.ai) for the hosted service, a
+[packaged local release](../workspaces/core/packages/node/stack/README.md) on your computer, or
+[OpenTofu](../workspaces/core/docs/self-hosting.md) in your Cloudflare account. Local runtime state survives ordinary
+restarts; explicit reset erases an inactive installation.
 
 Cloud installations use the versioned OpenTofu module, prebuilt Worker, and sandbox image. Follow the
 [self-hosting guide](../workspaces/core/docs/self-hosting.md), starting with the
@@ -13,6 +15,6 @@ Use `tofu plan`, inspect the proposed changes, then `tofu apply`. Upgrade by cha
 Worker and workspace bucket identities. Workspace members, agents, credentials, Slack connections, and watches are
 managed separately through the running service's CLI or API.
 
-CI runs offline checks only: the product smoke uses local scripted services, and infrastructure checks compile the
-provider and validate the packaged module without a cloud account. Release publication and cloud applies remain explicit
-operator actions. Retain `LICENSE`, `NOTICE`, and dependency notices when redistributing artifacts.
+Follow [operations](../workspaces/core/docs/operations.md) for shared infrastructure state, credential rotation,
+recovery, and workspace access. Contributor setup and checks are described in [development setup](README.md). Retain
+`LICENSE`, `NOTICE`, and dependency notices when redistributing artifacts.

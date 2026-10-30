@@ -6,3 +6,5 @@ export { startStack } from './start-stack.ts';
 export { TOOL_CALL_PREFIX } from './model/constants.ts';
 
 export { startCloudflareStack } from './cloudflare/start-cloudflare-stack.ts';
+export { LocalPackage } from './local/schemas.ts';
+export { LocalTarget, LOCAL_PACKAGE_FILES } from './local/constants.ts';

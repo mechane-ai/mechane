@@ -1,5 +1,6 @@
 node_modules/
 .terraform/
+.mechane/
 *.tfstate
 *.tfstate.*
 *.tfplan

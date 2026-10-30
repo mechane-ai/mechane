@@ -1,7 +1,6 @@
 import { LocalSandboxProvider, LoopbackOrigin } from '@mechane/deployment';
 import { Effect, Schema } from 'effect';
-import { LOOPBACK_HOST, StackStep } from '../constants.ts';
-import { LocalCommand } from '../dev/constants.ts';
+import { LocalCommand, LOOPBACK_HOST, StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
 import type { StackSettings } from '../types.ts';
 

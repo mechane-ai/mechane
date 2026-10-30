@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { readDocument } from '../files/read-document.ts';
+import { verifyLocalAssets } from '../local/verify-local-assets.ts';
 import { ArtifactReceipt, InstallationManifest } from '../schemas.ts';
 import type { DistributionInput } from '../types.ts';
 import { verifyCliAssets } from './verify-cli-assets.ts';
@@ -32,6 +33,7 @@ export const verifyDistribution = Effect.fn('verifyDistribution')(function* ({
   yield* verifyGuestAsset({ settings, manifest, receipt });
   yield* verifyModule({ settings, manifest });
   yield* verifyCliAssets({ settings, receipt });
+  yield* verifyLocalAssets({ settings, manifest, receipt });
 
   return receipt;
 });

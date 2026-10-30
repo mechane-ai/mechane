@@ -2,17 +2,17 @@ import { LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
 import { PROGRAM_ARGUMENTS_START } from '@mechane/program';
 import { Effect, Option, Record } from 'effect';
 import { homedir, tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { StackFailed } from './errors.ts';
 import { decodeStackSettings } from './settings/decode-stack-settings.ts';
+import { modelConfiguration } from './settings/model-configuration.ts';
 import type { StackSettings, StackVariables } from './types.ts';
 
-const INHERITED_VARIABLES = ['PATH', 'HOME', 'DOCKER_HOST'] as const;
+const INHERITED_VARIABLES = ['PATH', 'HOME', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG'] as const;
 const DEFAULT_LOCAL_ORIGIN = 'http://127.0.0.1:8787';
 
-type LocalSettings = Pick<StackSettings, 'stateRoot' | 'localStateFolder'> & {
+type LocalSettings = Pick<StackSettings, 'stateRoot' | 'localStateFolder' | 'executableFolder'> & {
   readonly localOrigin: string;
-  readonly localCommand: string;
 };
 
 /** Reads launcher arguments, persistent configuration, and declared Worker variables at the process boundary. */
@@ -31,7 +31,9 @@ export const loadStackSettings = Effect.fn('loadStackSettings')(function* (): Ef
 
   const workerValue: (name: string) => Option.Option<string> = (name) => Option.fromNullishOr(process.env[name]);
   const workerOptions = Record.map(WORKER_VARIABLES, workerValue);
-  const workerVariables: StackVariables = Record.getSomes(workerOptions);
+  const args = process.argv.slice(PROGRAM_ARGUMENTS_START);
+  const configured = yield* modelConfiguration({ args });
+  const workerVariables: StackVariables = { ...Record.getSomes(workerOptions), ...configured.workerVariables };
 
   const provider = Option.getOrElse(
     Option.fromNullishOr(workerVariables.sandboxProvider),
@@ -40,7 +42,13 @@ export const loadStackSettings = Effect.fn('loadStackSettings')(function* (): Ef
 
   const local = localSettings();
 
-  return yield* decodeStackSettings({ inherited, ...local, workerVariables, sandboxProvider: provider });
+  return yield* decodeStackSettings({
+    inherited,
+    ...local,
+    localCommand: configured.localCommand,
+    workerVariables,
+    sandboxProvider: provider,
+  });
 });
 
 function localSettings(): LocalSettings {
@@ -53,7 +61,6 @@ function localSettings(): LocalSettings {
   const localStateFolder = Option.getOrElse(configuredStateFolder, () => defaultStateFolder);
   const configuredOrigin = Option.fromNullishOr(process.env['MECHANE_LOCAL_ORIGIN']);
   const localOrigin = Option.getOrElse(configuredOrigin, () => DEFAULT_LOCAL_ORIGIN);
-  const localCommand = process.argv.slice(PROGRAM_ARGUMENTS_START).join(' ');
 
-  return { stateRoot: tmpdir(), localStateFolder, localOrigin, localCommand };
+  return { stateRoot: tmpdir(), localStateFolder, localOrigin, executableFolder: dirname(process.execPath) };
 }

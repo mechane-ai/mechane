@@ -1,11 +1,10 @@
 import { RELEASE } from '@mechane/protocol';
 import { GitCommit } from '@mechane/records';
 import { Effect, Schema } from 'effect';
-import { DistributionStep } from '../constants.ts';
+import { DistributionStep, SOURCE_FOLDER } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { runCommand } from '../files/run-command.ts';
 import type { DistributionInput } from '../types.ts';
-import { SOURCE_FOLDER } from './constants.ts';
 
 const PUBLIC_REMOTES = ['https://github.com/mechane-ai/mechane.git', 'git@github.com:mechane-ai/mechane.git'] as const;
 

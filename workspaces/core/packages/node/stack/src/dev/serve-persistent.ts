@@ -4,10 +4,11 @@ import { installScriptUrl, localSignInUrl } from '@mechane/protocol';
 import type { ReleaseFailed } from '@mechane/release';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
+import { PROGRAM } from '../constants.ts';
 import type { StackFailed } from '../errors.ts';
+import { sourceProject } from '../project/source-project.ts';
 import { startLocalStack } from '../start-local-stack.ts';
 import type { LocalStack, StackSettings } from '../types.ts';
-import { PROGRAM } from './constants.ts';
 import { publishSourceRelease } from './publish-source-release.ts';
 
 type ServePersistentInput = { readonly settings: StackSettings };
@@ -22,7 +23,8 @@ export const servePersistent = Effect.fn('servePersistent')(function* ({
     line: `starting Mechane at ${settings.localOrigin.origin}; Docker builds the sandbox image when needed`,
   });
 
-  const stack = yield* startLocalStack({ settings });
+  const project = yield* sourceProject({ settings });
+  const stack = yield* startLocalStack({ settings, project });
 
   yield* publishSourceRelease({ stack });
   announceLocal({ stack });

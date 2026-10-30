@@ -105,6 +105,9 @@ export const LOOPBACK_HOST = '127.0.0.1';
 export const StackStep = {
   ReadSandboxProvider: 'read the sandbox provider variable',
   ReadLocalSettings: 'read the local stack settings',
+  ReadLocalPackage: 'read the local release package',
+  VerifyLocalPackage: 'verify the local release package',
+  LoadGuestImage: 'load the packaged sandbox image into Docker',
   ReadLocalState: 'read the local stack state',
   WriteLocalState: 'write the local stack state',
   LockLocalState: 'lock the local stack state',
@@ -130,3 +133,15 @@ export const StackStep = {
 } as const;
 
 export type StackStep = (typeof StackStep)[keyof typeof StackStep];
+
+/** The local program's name, which prefixes each diagnostic it writes. */
+export const PROGRAM = 'local';
+
+/** The local launcher commands; an empty command starts the persistent installation. */
+export const LocalCommand = { Default: '', Start: 'start', Fixture: 'fixture', Reset: 'reset --confirm' } as const;
+export type LocalCommand = (typeof LocalCommand)[keyof typeof LocalCommand];
+
+/** How the dev program ends: a stop signal ends a healthy stack, and a stack that failed ends the program as failed. */
+export const DevStatus = { Stopped: 0, Failed: 1 } as const;
+
+export type DevStatus = (typeof DevStatus)[keyof typeof DevStatus];

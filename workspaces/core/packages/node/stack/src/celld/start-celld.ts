@@ -20,6 +20,7 @@ type CelldProcessInput = {
   /** How long celld may take to serve the Worker. */
   readonly startupTimeout: Duration.Duration;
   readonly isPersistent: boolean;
+  readonly celldCommand: string;
 };
 
 /** A celld process to start, and the variables the stack staged, over which a restart stages its own. */
@@ -41,8 +42,18 @@ export const startCelld = Effect.fn('startCelld')(function* ({
   startupTimeout,
   staged,
   isPersistent,
+  celldCommand,
 }: StartCelldInput): Effect.fn.Return<RunningCelld, StackFailed, Scope.Scope> {
-  const started = celldProcess({ projectFolder, origin, logFile, settings, startupTimeout, isPersistent });
+  const started = celldProcess({
+    projectFolder,
+    origin,
+    logFile,
+    settings,
+    startupTimeout,
+    isPersistent,
+    celldCommand,
+  });
+
   const scope = yield* Effect.scope;
   const current = yield* Ref.make(yield* started);
 
@@ -66,6 +77,7 @@ const celldProcess = Effect.fn('celldProcess')(function* ({
   settings,
   startupTimeout,
   isPersistent,
+  celldCommand,
 }: CelldProcessInput): Effect.fn.Return<ChildProcess, StackFailed, Scope.Scope> {
   const release: (child: ChildProcess, exit: Exit.Exit<unknown, unknown>) => Effect.Effect<void> = Effect.fn('release')(
     function* (child: ChildProcess, exit: Exit.Exit<unknown, unknown>): Effect.fn.Return<void> {
@@ -84,7 +96,7 @@ const celldProcess = Effect.fn('celldProcess')(function* ({
     },
   );
 
-  const launch = { projectFolder, origin, settings, logFile, isPersistent };
+  const launch = { projectFolder, origin, settings, logFile, isPersistent, celldCommand };
   const child = yield* Effect.acquireRelease(spawnOwnedCelld(launch), release);
 
   yield* awaitReady({ origin, child, logFile, startupTimeout });

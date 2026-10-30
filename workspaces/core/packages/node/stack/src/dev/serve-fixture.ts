@@ -3,11 +3,10 @@ import { writeDiagnostic, writeResult } from '@mechane/program';
 import type { ReleaseFailed } from '@mechane/release';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
-import { LOCAL_GITHUB } from '../constants.ts';
+import { LOCAL_GITHUB, PROGRAM } from '../constants.ts';
 import type { StackFailed } from '../errors.ts';
 import { startStack } from '../start-stack.ts';
 import type { StackSettings } from '../types.ts';
-import { PROGRAM } from './constants.ts';
 import { publishSourceRelease } from './publish-source-release.ts';
 
 type ServeFixtureInput = { readonly settings: StackSettings };

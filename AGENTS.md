@@ -9,7 +9,7 @@ Run `.config/bootstrap.sh` on a fresh checkout. Use the pinned tools through mis
 - `mise run setup` installs locked dependencies.
 - `mise run check` runs the complete check graph used by CI.
 - `mise run fix` regenerates configuration and applies the repository's fixers.
-- `mise run start` starts a persistent local installation.
+- `mise run start` runs a persistent local installation from source.
 - `mise run local:reset -- --confirm` erases an inactive local installation.
 - `mise run dev` starts a disposable fixture with a scripted model.
 - `mise run mechane -- --help` runs the CLI from source.

@@ -1,94 +1,83 @@
 # @mechane/stack
 
-Mechane's local runtime uses celld, Docker, and the same Worker and Pi code as a hosted deployment. `mise run start`
-keeps agents, authentication, R2 objects, and sandbox files across restarts. `mise run dev` starts a disposable fixture
-with fake GitHub and a scripted model.
+Mechane's local runtime uses celld, Docker, and the same Worker and Pi code as a hosted deployment. The packaged
+`mechane-local` launcher retains agents, authentication, R2 objects, and sandbox files across restarts. Source
+contributors can also run disposable fixtures with fake GitHub and a scripted model.
 
-Layer 4 · node lane · effect dialect · consumers: testing, smoke
+Layer 5 · node lane · effect dialect · consumers: distribution, testing, smoke
 
-## Start locally
+## Install locally
 
-Run the repository's setup first and start Docker. Use a model that supports streaming OpenAI-compatible Chat
-Completions and tool calls. From the repository root, configure one model:
+Download the `mechane-local-vVERSION-TARGET.tar.gz` archive and `SHA256SUMS` from the same
+[public release](https://github.com/mechane-ai/mechane/releases). Targets are `darwin-arm64`, `linux-arm64`, and
+`linux-x64`. Compare the archive's SHA-256 with its entry in `SHA256SUMS`, then extract it into an empty directory. The
+archive includes the launcher, celld, the CLI, Worker, guest image, and license notices. Docker is the runtime
+prerequisite; Node, mise, a source checkout, and compilers are unnecessary.
 
-```sh
-export MECHANE_MODEL_UPSTREAM='https://model-provider.example.invalid/v1'
-export MECHANE_MODEL_API_KEY='replace-with-your-provider-api-key'
-export MECHANE_MODEL_OFFERS='[
-  {
-    "id": "replace-with-your-model-id",
-    "context_window_tokens": 32768,
-    "max_output_tokens": 8192,
-    "input_micros_per_million_tokens": 1000000,
-    "output_micros_per_million_tokens": 5000000,
-    "cache_read_micros_per_million_tokens": 1000000,
-    "cache_write_micros_per_million_tokens": 1000000
-  }
-]'
-```
-
-Replace the URL, key, and model ID with your provider's values. The URL includes the API prefix, such as `/v1`, and
-excludes `/chat/completions`. Replace both token limits and all four example rates with your model's values.
-
-Keep `max_output_tokens` at or below `65536`. Rates are integer micro-dollars per million tokens: $1 per million is
-`1000000`. Use `0` for cache categories your provider does not use.
-
-These rates control Mechane's budget accounting; your provider bills independently. Keep the exports in your shell or a
-private configuration file, then run:
+Start Docker, copy `model.example.json` to a private configuration file, and replace its API key:
 
 ```sh
-mise run start
+cp model.example.json model.json
+chmod 600 model.json
+./mechane-local start --config model.json
 ```
 
-Normal local mode requires these settings and Docker containers. The
-[deployment schema](../../shared/deployment/src/schemas.ts) validates installation settings. Configure workspace
-credentials and integrations through the runtime CLI, as described in [remote tools](../../../docs/remote-tools.md) and
-[Slack](../../../docs/slack.md). The local installation retains its encryption keyring in private state.
+The JSON file has three fields: `model_upstream`, `model_api_key`, and `model_offers`. The upstream must support
+streaming OpenAI-compatible Chat Completions and tool calls. Its URL includes the API prefix, such as `/v1`, and
+excludes `/chat/completions`. Only an explicitly selected file is read; its fields override the corresponding model
+environment variables. Unknown fields and invalid offers are refused without printing their values.
+
+The example uses OpenRouter's `anthropic/claude-haiku-5.5` with a 65,536-token context and 4,096-token output limit.
+These smaller limits stay below the provider's higher-priced long-context range. Update the model ID, limits, and rates
+when using another model. Rates are integer micro-dollars per million tokens; `$1` per million is `1000000`. Use `0` for
+unused cache categories. The provider bills independently of Mechane's budget accounting.
+
+The launcher verifies packaged checksums and loads the prebuilt Linux amd64 guest into Docker. ARM machines need a
+Docker engine that runs amd64 containers. Celld also prepares its small network-fence image through Docker; its first
+start can need network access. Product code is already built.
+
+## Sign in and restart
 
 The default origin is `http://127.0.0.1:8787`. State lives in `$XDG_STATE_HOME/mechane`, or `~/.local/state/mechane`.
 `MECHANE_LOCAL_STATE_DIR` selects another absolute directory. `MECHANE_LOCAL_ORIGIN` selects another loopback origin;
 each initialized directory keeps its origin so saved credentials remain bound to the same service.
 
-The launcher prints the bootstrap secret's file path. Open `/auth/local` at the printed origin and paste that file's
-contents. Then use the printed `MECHANE_ORIGIN` export and run `mise run mechane -- auth login`. The local installer
-also serves a CLI built from this source; it does not bundle the local server.
+Open the printed `/auth/local` URL and paste the contents of the printed bootstrap-secret file. Then run the bundled CLI
+against that origin:
 
-Stop with Ctrl-C and restart with the same settings. The private state directory retains credentials and data after
-successful, failed, and interrupted runs. It permits only one running stack or reset. To erase an initialized local
-installation explicitly, run `mise run local:reset -- --confirm` while the stack is stopped.
+```sh
+export MECHANE_ORIGIN=http://127.0.0.1:8787
+./mechane auth login
+```
 
-The private state directory also stores the server's deployed credentials in `.dev.vars` and celld's deployment
-database.
+Stop with Ctrl-C and restart with the same command and configuration. The private state directory retains credentials
+and data after successful, failed, and interrupted runs. It permits only one running launcher or reset. To erase an
+initialized installation explicitly, run `./mechane-local reset --confirm` while it is stopped.
 
-A killed launcher can leave celld running. The ownership record prevents restart or reset while those processes remain
-alive. An interrupted startup with an unconfirmed owner requires checking its processes before removing the record; the
-error identifies that file.
+The private state directory stores the encryption keyring, bootstrap secret, deployed credentials in `.dev.vars`, and
+celld's databases. Preserve this directory when replacing the extracted release. Workspace credentials and integrations
+use the runtime CLI; see [remote tools](../../../docs/remote-tools.md) and [Slack](../../../docs/slack.md).
 
-## Public surface
+A killed launcher can leave celld running. Its ownership record prevents restart or reset while those processes remain
+alive. An interrupted startup with an unconfirmed owner requires checking its processes before removing that record; the
+error identifies the file. The local web installer and CLI updates use the public release artifacts.
 
-- `loadStackSettings` reads the stack's variables, and `startStack` starts a `Stack` in the caller's scope.
-- `StackFailed` is the failure of a step of starting or stopping it, a member of its `StackStep`.
-- `COMMAND_PREFIX`, `REPLY_PREFIX`, `HOLD_PREFIX` and `TOOL_CALL_PREFIX` start a scenario's scripted lines.
+## Develop from source
 
-## Layout
+Run repository setup and start Docker, then use `mise run start -- --config /absolute/path/model.json`. The same
+configuration is also supported through `MECHANE_MODEL_UPSTREAM`, `MECHANE_MODEL_API_KEY`, and the JSON-array variable
+`MECHANE_MODEL_OFFERS`. Source mode builds the Worker, guest, and locally served CLI. `mise run dev` starts a disposable
+fixture with fake GitHub and a scripted model. `mise run local:reset -- --confirm` resets stopped source state.
 
-- `src/state/`: disposable state, persistent state, its process lock, and explicit reset.
-- `src/project/`: the Worker's project staged for celld, with the stack's variables.
-- `src/services/`: the external-service fixtures used by disposable stacks.
-- `src/celld/`: celld's process, its readiness and its restart.
-- `src/loopback/`: the server every local service answers on.
-- `src/github/`, `src/host-launcher/`, `src/model/`: the local services.
-- `src/processes/`: a child's exit, and the stop of its process group.
-- `src/releases/`: a release published into celld's object store, which `store/` writes as celld does.
-- `src/dev/`: persistent start, explicit reset, and disposable fixture commands.
-- `src/settings/`: decoding of local configuration and required model settings.
+## Public surface and layout
 
-## Split seam
+`loadStackSettings` reads configuration, and `startStack` starts a disposable stack in the caller's scope.
+`LocalPackage` and `LocalTarget` define packaged runtime inputs consumed by distribution. `StackFailed` identifies
+failed lifecycle steps. The line prefixes support the smoke's scripted model.
 
-The stack is near its budget. The scripted model upstream, `src/model/`, splits out first: it reads only the loopback
-server, the shared types and the line prefixes.
+`src/local/` handles installed releases; `src/dev/` handles source commands. Both feed `src/project/`, `src/celld/`, and
+`src/state/`. Local service fixtures live in `src/github/`, `src/host-launcher/`, and `src/model/`. The scripted
+upstream is the first split seam if the package exceeds its budget.
 
-## Never
-
-- Never serve the smoke's Worker a personal upstream: its mechs answer through the scripted upstream only.
-- Never read the environment outside `load-stack-settings.ts`.
+Never serve the smoke's Worker a personal upstream, and never read environment variables outside
+`load-stack-settings.ts`.

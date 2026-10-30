@@ -3,6 +3,7 @@ import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import type { StackFailed } from './errors.ts';
 import { freeLoopbackOrigin } from './loopback/free-loopback-origin.ts';
+import { sourceProject } from './project/source-project.ts';
 import { localServices } from './services/local-services.ts';
 import { startRuntime } from './start-runtime.ts';
 import { freshStateFolder } from './state/fresh-state-folder.ts';
@@ -33,6 +34,7 @@ export const startStack = Effect.fn('startStack')(function* ({
   const origin = yield* freeLoopbackOrigin();
   const { sandboxesFolder } = layout;
   const services = yield* localServices({ origin, settings, sandboxProvider, sandboxesFolder, variables });
+  const project = yield* sourceProject({ settings });
 
   const runtime = yield* startRuntime({
     settings,
@@ -41,6 +43,7 @@ export const startStack = Effect.fn('startStack')(function* ({
     variables: { ...services.variables, ...variables },
     sandboxProvider,
     isPersistent: false,
+    project,
   });
 
   return { ...runtime, ...services.served };

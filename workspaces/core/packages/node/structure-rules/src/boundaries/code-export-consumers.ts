@@ -10,7 +10,6 @@ const VALUES = {
     includeEntryExports: true,
     treatConfigHintsAsErrors: true,
     ignoreExportsUsedInFile: { type: true, interface: true },
-    ignoreBinaries: ['celld'],
     ignoreDependencies: ['@swc/core', 'cloudflare'],
     ignore: ['.dependency-cruiser.cjs'],
   },
@@ -26,10 +25,6 @@ const VALUES = {
     {
       path: ['ignoreExportsUsedInFile'],
       lines: ["A type that an exported declaration's signature uses counts as used by that declaration's consumers."],
-    },
-    {
-      path: ['ignoreBinaries'],
-      lines: ['mise installs celld from its GitHub release, because npm publishes no celld package.'],
     },
     {
       path: ['ignoreDependencies'],

@@ -18,8 +18,6 @@ const VALUES = {
     'new-cap',
     'capIsNew',
     'new_sqlite_classes',
-    // Tensorlake's image SDK takes this exact option name for registry credentials.
-    'dockerConfigJson',
   ],
   wordReplacements: {
     addr: 'address',

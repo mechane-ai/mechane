@@ -6,15 +6,17 @@ import { verifyOriginFree } from './loopback/verify-origin-free.ts';
 import { localModelSettings } from './settings/local-model-settings.ts';
 import { startRuntime } from './start-runtime.ts';
 import { persistentStateFolder } from './state/persistent-state-folder.ts';
-import type { LocalStack, StackSettings } from './types.ts';
+import type { LocalStack, RuntimeProject, StackSettings } from './types.ts';
 
-type StartLocalStackInput = { readonly settings: StackSettings };
+type StartLocalStackInput = { readonly settings: StackSettings; readonly project: RuntimeProject };
 
 /** Starts the production Worker on retained local state with configured models and the stable bootstrap identity. */
 export const startLocalStack = Effect.fn('startLocalStack')(function* ({
   settings,
+  project,
 }: StartLocalStackInput): Effect.fn.Return<LocalStack, StackFailed, Scope.Scope> {
-  const model = yield* localModelSettings({ settings });
+  yield* localModelSettings({ settings });
+
   const state = yield* persistentStateFolder({ settings });
   const { bootstrapSecret, bootstrapSecretFile, credentialKeyring, ...layout } = state;
   const configuredAdministrators = Option.fromNullishOr(settings.workerVariables.administratorIdentities);
@@ -31,10 +33,10 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
     origin: settings.localOrigin,
     sandboxProvider: settings.sandboxProvider,
     isPersistent: true,
+    project,
     variables: {
       credentialKeyring,
       ...settings.workerVariables,
-      ...model,
       origin: settings.localOrigin.origin,
       sandboxProvider: settings.sandboxProvider,
       localBootstrapSecret: bootstrapSecret,

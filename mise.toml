@@ -41,7 +41,7 @@ description = "Serve a disposable local fixture with a scripted model"
 run = "mise -C workspaces/core run dev"
 
 [tasks.start]
-description = "Start a persistent local Mechane installation on celld"
+description = "Run a persistent local Mechane installation from source"
 run = "mise -C workspaces/core run start --"
 
 [tasks."local:reset"]

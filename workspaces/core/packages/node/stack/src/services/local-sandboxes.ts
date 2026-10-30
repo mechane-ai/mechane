@@ -1,4 +1,4 @@
-import { LocalSandboxProvider, SandboxEgress, WORKER_VARIABLES } from '@mechane/deployment';
+import { LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
 import { Effect, Option } from 'effect';
 import type { Scope } from 'effect';
 import { randomBytes } from 'node:crypto';
@@ -20,7 +20,7 @@ type HostSandboxesInput = Omit<LocalSandboxesInput, 'sandboxProvider'>;
 
 /**
  * The stack's sandboxes. For host, the launcher with a fresh key, and the variables that point the Worker at it. For
- * containers, celld's network fence; the configuration's provider stands.
+ * containers, celld provides the machine service directly.
  */
 export const localSandboxes = Effect.fn('localSandboxes')(function* ({
   sandboxProvider,
@@ -30,7 +30,7 @@ export const localSandboxes = Effect.fn('localSandboxes')(function* ({
 }: LocalSandboxesInput): Effect.fn.Return<LocalService<Option.Option<string>>, StackFailed, Scope.Scope> {
   switch (sandboxProvider) {
     case LocalSandboxProvider.Container:
-      return { service: Option.none(), variables: { sandboxEgress: SandboxEgress.Fence } };
+      return { service: Option.none(), variables: {} };
     case LocalSandboxProvider.Host:
       return yield* hostSandboxes({ settings, sandboxesFolder, variables });
   }
