@@ -2,7 +2,7 @@ terraform {
   required_version = ">= 1.13.0, < 2.0.0"
   required_providers {
     cloudflare = { source = "cloudflare/cloudflare", version = "5.28.1" }
-    mechane    = { source = "mechane-ai/mechane", version = "0.6.0" }
+    mechane    = { source = "mechane-ai/mechane", version = "0.6.1" }
   }
 }
 
@@ -10,7 +10,7 @@ provider "cloudflare" {}
 provider "mechane" {}
 
 module "mechane" {
-  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.6.0/mechane-cloudflare-v0.6.0.zip"
+  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.6.1/mechane-cloudflare-v0.6.1.zip"
   account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
   name       = "mechane"
   domain = {
