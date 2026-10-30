@@ -32,7 +32,7 @@ Rotate the key version and confirm existing ciphertexts still decrypt until re-e
 
 ## Local adaptations
 
-The Worker holds the GitHub OAuth secret, model upstream key and configured integration credentials. An installation using Tensorlake additionally holds its project key. Local deployments may hold a bootstrap secret, and test host stacks additionally use a launcher key. Deployment secrets supply the production values; local stack credentials are private files of mode 0600.
+Installation secrets include the GitHub OAuth secret, model upstream key and credential-encryption keyring. An installation using Tensorlake additionally holds its project key. Local deployments may hold a bootstrap secret, and test host stacks additionally use a launcher key. Cloud installations resolve these values from Secrets Store references; local stack credentials are private files of mode 0600. Workspace integration credentials remain encrypted records, resolved only by trusted clients for authorized operations.
 The local bootstrap secret is stable within its owner-only state directory. The server prints its file path, never its value. Only the loopback sign-in handler reads its redacted setting, and neither the model nor its guest receives it.
 The settings keep credentials redacted; only the code exchange reads the client secret, and the key reaches pi-ai only through its auth resolution, never through pi's stream settings, which pi stores in every request's checkpoint.
 The stack draws a fresh launcher key per stack, which only the sandbox's host provider presents; the launcher refuses every other bearer.

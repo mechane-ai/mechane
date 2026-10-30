@@ -65,8 +65,9 @@ Glossary:
 | sign-in | A GitHub OAuth web flow in progress, which ends in a browser session | OAuth transaction |
 | saved login | The CLI's file holding its login key and the origin that issued it | session file, login file |
 | workspace | A principal's space for mechs and model spend, with members | organization, team |
-| listed workspace | A workspace that `MECHANE_SANDBOX_WORKSPACES` names, or every one under `*`; only a listed workspace's bash starts a machine | allowed workspace, allowlist entry |
-| suspension | The operator's listing of a workspace in `MECHANE_SUSPENDED_WORKSPACES`: its members' calls answer `WorkspaceSuspended`, its dispatches see an allowance of 0, and it starts no machine | ban, block, disable |
+| workspace policy | A workspace's stored suspension, sandbox admission, machine limit and daily allowance, bounded by installation ceilings and changed by an installation administrator | workspace settings (for these controls) |
+| sandbox admission | The effective workspace policy's permission to start machines, subject to the installation's sandbox switch | allowed workspace, allowlist entry |
+| suspension | A workspace policy state that refuses ordinary member operations, new model reservations and machine leases without erasing saved files | ban, block, disable |
 | member | A principal that belongs to a workspace, whose key a workspace's operations admit | user (for this concept) |
 | mech | An agent of a workspace, with a name, a model offer and instructions, that answers its inbox in turns | agent, bot, assistant |
 | inbox item | One text sent to a mech, under an id its sender made, so a resend is received once | message, request (for this concept) |
@@ -133,15 +134,12 @@ Glossary:
 | parent | The mech a fork was copied from, which the fork's `forked_from` names | source, origin, ancestor |
 | fork point | The parent and the sequence of its last event at the fork; the fork's log holds the parent's events up to it | branch point, snapshot |
 | copy | The move of a fork's rows from its parent's object into the new mech's, in bounded pages, before pi opens on them | export, import, migration (for this concept) |
-| overlay | An explicit cloud installation file: its resource names, routes, nonsecret variables and secret references, which only the deploy program reads; `packages/worker/app/cloudflare.example.jsonc` is the public example | production config, override |
-| rendered configuration | The Wrangler configuration the deploy program writes from the base, the overlay, the smoke's bundle and the revision, and deploys | generated config, final config |
-| preflight | The deploy program's ordered checks that this tagged, clean checkout and the operator's accounts can deploy production; it changes nothing | pre-deploy checks, validation |
-| live release verification | The deploy program's run against production with the installed CLI and a real model, which runs only when a maintainer asks | canary, live test |
+| installation | One Mechane service and its global settings; cloud installations declare resources and an immutable release through OpenTofu separately from runtime records | production config, override |
 
 oxlint `id-denylist` rejects `endpoint`, a replaced single word with no ordinary sense as an identifier; review checks the rest.
 The banned-words ratchet of `mise -C workspaces/core run checks` holds each replaced item of two or more words that no concept scope narrows, in any case style and inside compound names: in identifiers, strings that spell a snake-case or kebab-case name such as a wire key, the folders and stems of TypeScript paths, comments, `reference.json`, the wire lock's names, every contract's local adaptations and the whole of a contract without any.
 It skips the glossary's last column and bans no replaced single word and no scoped item.
-The key row scopes `API token` to its concept, since Cloudflare's own credential, `CLOUDFLARE_API_TOKEN`, which the deploy program names `cloudflareApiToken`, is an API token in Cloudflare's sense and no Mechane key.
+The key row scopes `API token` to its concept. Cloudflare's `CLOUDFLARE_API_TOKEN` authenticates infrastructure operations and is not a Mechane key.
 History words, banned in names only, are `historyWords`. The same ratchet holds them in identifiers, name strings, path folders and stems, and the wire lock, never in prose.
 A name that keeps an external system's own words, listed in 029's `externalNames`, such as oxlint's `new-cap` and its option `capIsNew` or Wrangler's migration key `new_sqlite_classes`, holds no banned item or history word, since Mechane did not choose it.
 

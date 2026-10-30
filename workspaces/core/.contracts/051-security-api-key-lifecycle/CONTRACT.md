@@ -1,7 +1,7 @@
 ---
 name: security-api-key-lifecycle
 message: Store issued keys as hashes bound to owner, scope, and expiry, revoke them permanently, and fail with distinct unauthenticated errors.
-paths: ["packages/shared/protocol/src/operations/auth/**", "packages/worker/edge/src/operations/auth/**", "packages/worker/directory/src/**", "packages/worker/pages/src/**", "packages/worker/edge/src/routing/**", "packages/shared/credentials/src/**", "packages/worker/app/wrangler.jsonc", "packages/worker/app/cloudflare.example.jsonc"]
+paths: ["packages/shared/protocol/src/operations/auth/**", "packages/worker/edge/src/operations/auth/**", "packages/worker/directory/src/**", "packages/worker/pages/src/**", "packages/worker/edge/src/routing/**", "packages/shared/credentials/src/**", "packages/worker/app/wrangler.jsonc", "infrastructure/modules/cloudflare/variables.tf"]
 ---
 
 ## Rules
@@ -48,7 +48,7 @@ Only a device approval issues a key: the CLI starts one without a credential, a 
 A device approval stores its purpose, key name and key lifetime when it starts, with its peer's address and country when Cloudflare names them; the review page shows them and the approval's age, and approving changes none of them; it expires after 10 minutes. One address starts at most `device_start`'s approvals in a window.
 The key is minted by the first poll after the approval, through the directory's one `issueKey`, so its token exists only in that poll's answer and is never stored; a later poll finds nothing to claim.
 Issuance and revocation are recorded by id only, in the key's own row: its principal, who approved it, its purpose, and its creation and revocation times, which outlive the device approval that the directory deletes once it expires.
-`MECHANE_LOGIN_KEY_LIFETIME_SECONDS` (30 days) and `MECHANE_NAMED_KEY_LIFETIME_SECONDS` (365 days) in `packages/worker/app/wrangler.jsonc` set each purpose's lifetime; an explicit cloud installation may override the named-key lifetime, as `packages/worker/app/cloudflare.example.jsonc` shows, and the Worker refuses one above 365 days.
+`MECHANE_LOGIN_KEY_LIFETIME_SECONDS` and `MECHANE_NAMED_KEY_LIFETIME_SECONDS` set each purpose's lifetime. The local defaults live in `packages/worker/app/wrangler.jsonc`. Cloud installations use `authentication.login_key_lifetime_seconds` and `authentication.named_key_lifetime_seconds` in `infrastructure/modules/cloudflare/variables.tf`. Both the module and Worker refuse lifetimes above 365 days.
 Revocation keeps its first time and is permanent. A principal has no disabled state and no key derives from a membership; workspace access additionally requires the directory's current membership on every request.
 Resolution answers `KeyMissing`, `KeyUnrecognized`, `KeyRevoked`, checked before expiry, and `KeyExpired`, whose message states the expiry; each is 401 with `WWW-Authenticate: Bearer`, which adds `error="invalid_token"` when the request sent a key, and each message says how to replace the key; the scheme matches in any letter case.
 The deployment holds no upstream credential whose failure a key's holder could see as unauthenticated.

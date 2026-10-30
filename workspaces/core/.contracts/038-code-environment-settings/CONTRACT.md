@@ -32,25 +32,43 @@ For each child process a change starts, does it inherit any parent variable that
 
 ## Local adaptations
 
-Settings modules: the Worker's `packages/worker/bindings/src/settings`, the CLI's `packages/node/cli/src/settings` with its command model `packages/node/commands/src`, the guest's `packages/node/guest/src/load-guest-settings.ts`, `packages/node/release/src/load-release-settings.ts`, the release program's, `packages/node/deploy/src/load-deploy-settings.ts`, the deploy program's, `packages/node/deploy/src/image/load-image-settings.ts`, its image child's, and `packages/node/stack/src/load-stack-settings.ts` with its pure decoders in `packages/node/stack/src/settings`, which the persistent local, fixture and smoke programs share; the checks program reads no environment.
+The node settings modules are registered in `packages/node/rules/src/file-roles.ts`. Each program reads its arguments and inherited variables through its registered settings module. The CLI's command model in `packages/node/commands/src` declares flags and environment fallbacks. The stack shares its pure decoders in `packages/node/stack/src/settings` across persistent local, fixture and smoke modes.
+
 The CLI reads `MECHANE_API_KEY` and `XDG_CONFIG_HOME` in `load-invocation.ts`, beside its flags' variables, and the command model declares both for `--help`.
 `load-invocation.ts` also reads the release stamp, which a release compiles in as `import.meta.mechaneStamp`, and `process.execPath`, the binary `mechane update` replaces.
-The release program reads its mode from its one argument; Bun inherits `PATH` and `HOME`, and Wrangler also `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`, which `MODE_VARIABLES` lists.
-The Worker module hands its raw environment to `serve`, which hands it to `decodeSettings`; a Durable Object hands the environment its constructor receives to `objectSettings`, which decodes the model variables and the object bindings synchronously; the mech's object, which alone reads them, and the settings are the only code that names `WorkerEnvironment`.
+
+The release builder reads its mode in `load-release-settings.ts`; its children inherit only `PATH` and `HOME`, as `MODE_VARIABLES` declares. The distribution builder reads its mode, destination and build environment in `load-distribution-settings.ts`. It builds or verifies public artifacts without cloud credentials. Publication and installation are separate operations.
+
+The checks program reads its command, paths, base branch and inherited environment in `load-checks-settings.ts`. Rename, package moves and rule generation use their registered settings modules too.
+
+The Worker module hands its environment through `serve` to `packages/worker/bindings/src/settings/decode-settings.ts`. `packages/worker/rpc/src/object-settings.ts` decodes the mech's settings as its object opens. Each other object's constructor decodes its own declared settings. The registered settings boundaries alone interpret raw bindings.
+
+Settings turn a Secrets Store binding or a redacted local value into a secret reader. Trusted operations resolve OAuth, model and credential-keyring values only when needed. Runtime workspace credentials and Slack installations are records, not environment settings.
+
 `@mechane/deployment` declares the deployment's variable names once: `ORIGIN_VARIABLE`, which every client reads, and `WORKER_VARIABLES`, which the Worker decodes and the stack writes.
 When neither `--origin` nor `MECHANE_ORIGIN` names a deployment, the CLI calls production's, `DEFAULT_ORIGIN` in its command model, which repeats the origin `packages/worker/app/wrangler.jsonc` gives the Worker; dev prints the stack's origin to export, and the smoke gives every CLI child it.
-`packages/worker/app/wrangler.jsonc` holds the product's base configuration. The deploy settings read an explicit installation file, selected with `--config` or `MECHANE_DEPLOY_CONFIG_FILE`, which owns cloud resource names, routes, nonsecret Worker variables and secret references. Every cloud operation requires that selection; credential-free rendering alone defaults to `packages/worker/app/cloudflare.example.jsonc`. Fixture `.dev.vars` supplies the local GitHub client and scripted model upstream's URL, key and offers, and the smoke shortens a named key's lifetime there.
+
+`packages/worker/app/wrangler.jsonc` supplies the build and local runtime configuration. Cloud installations consume an immutable release module whose `infrastructure/modules/cloudflare/variables.tf` declares resource identities, global settings and secret references. OpenTofu receives no secret values. Installation ownership defines the resource and runtime-data boundary.
+
+Fixture `.dev.vars` supplies the local GitHub client and scripted model upstream's URL, key and offers. The smoke shortens a named key's lifetime there.
 `loadStackSettings` reads every variable declared in `WORKER_VARIABLES` for persistent local mode; fixture and smoke startup ignore those operator values and use their declared fixtures.
 It reads `MECHANE_LOCAL_STATE_DIR` for persistent state, defaulting to `mechane` below `XDG_STATE_HOME` or `~/.local/state`, and `MECHANE_LOCAL_ORIGIN`, defaulting to `http://127.0.0.1:8787`; fixtures use the operating system's temporary directory as their state root.
-`loadStackSettings` reads `MECHANE_SANDBOX_PROVIDER` for persistent local mode, `container` when it is unset, and never falls back to `host`; the smoke always runs `host`, and the stack refuses `host` beside a person's model upstream.
+
+`loadStackSettings` reads `MECHANE_SANDBOX_PROVIDER` for persistent local mode and defaults to `container`, with no fallback to `host`. Local process fixtures use `host`; the stack refuses that provider beside a person's model upstream.
 The sandbox's object decodes `MECHANE_SANDBOX_PROVIDER` itself, with `MECHANE_HOST_LAUNCHER_ORIGIN` and `MECHANE_HOST_LAUNCHER_KEY` only under `host`, since only the local stack serves a launcher.
+
 The guest reads `MECHANE_GUEST_MACHINE_ID`, `MECHANE_GUEST_HOST` and `MECHANE_GUEST_PORT`, which `GUEST_VARIABLES` names. Execution children receive only `PATH`, `HOME`, `EXECUTION_VARIABLES` and fixed public gateway certificate paths, never the guest's own credentials or ambient trust overrides.
 A child of the stack inherits only `PATH`, `HOME` and `DOCKER_HOST`, which `INHERITED_VARIABLES` in `packages/node/stack/src/load-stack-settings.ts` lists, and a host machine only `PATH` beside its start's variables; celld also receives `CELLD_MAX_RSS_MB=0`, and the CLI child the stack's origin under `ORIGIN_VARIABLE` with the scenario's `XDG_CONFIG_HOME` and, where it presents a key, `MECHANE_API_KEY`.
+
 oxlint `node/no-process-env` and `no-restricted-properties` on `process.argv` and `process.execPath`, with overrides for the settings modules, and ast-grep `raw-environment-type`, `raw-worker-environment` and `raw-binding-read` enforce these rules.
-The operator's limits and lists are Worker variables that a deploy applies: `MECHANE_RATE_LIMITS`, a JSON object of each policy's `requests` and `window_seconds`; `MECHANE_SANDBOX_WORKSPACES`, a JSON list of workspace ids or `"*"`; `MECHANE_WORKSPACE_MACHINES`; and `MECHANE_SUSPENDED_WORKSPACES`, a JSON list of workspace ids. The installation declares each and decodes them with the Worker's schemas in `@mechane/deployment` and `@mechane/protocol`, so malformed values fail rendering before a cloud call.
-`MECHANE_SANDBOX_EGRESS` decodes only under `container` and defaults to `gateway`. Cloud installation decoding and rendered-variable validation admit only `gateway`. The local stack stages `fence` for containers, since celld refuses interception; Worker settings accept that mode only for a loopback origin. Local staging supplies `*` as the sandbox list for both providers.
-`Stack.restart` stages its `variables` over the stack's before celld starts again, as a deploy applies new values, so a scenario can change the operator's lists of a running stack.
-The deploy loader reads its mode and flags, `MECHANE_DEPLOY_CONFIG_FILE` and optional `MECHANE_DEPLOY_ENV_FILE`; its settings helpers decode the invocation, installation and credentials from those explicit inputs. Credentials come from that file of mode 0600 when selected, otherwise from the parent environment: only `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` and the names in the installation's `secret_refs` are used. Credentials are redacted before their shape is checked, so a refusal never quotes their values. Its children inherit `PATH`, `HOME` and `DOCKER_HOST`; git also `SSH_AUTH_SOCK`, and Wrangler the two Cloudflare names, `WRANGLER_LOG_PATH`, `WRANGLER_SEND_METRICS=false` and `--env-file /dev/null`, so no ignored dotenv file reaches its environment. The image child's settings module decodes its one image-name argument; the SDK receives `TENSORLAKE_API_KEY` in that child's environment.
+
+Installation variables define request rate limits, initial workspace defaults and global ceilings. `MECHANE_WORKSPACE_MACHINES` and `MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS` bound effective workspace policy. `MECHANE_SANDBOXES_ENABLED` is the global sandbox switch; `MECHANE_WORKSPACE_SANDBOXES_DEFAULT` governs workspaces without a saved policy.
+
+Workspace suspension, sandbox admission, machine limits and daily allowance live in workspace policy records. Installation administrators change them through `workspace policy` operations without redeploying. Effective policy applies installation ceilings without replacing saved policy. Credentials and Slack installation metadata enter through their authenticated runtime APIs.
+
+`MECHANE_SANDBOX_EGRESS` decodes only under `container` and defaults to `gateway`. The cloud module supplies `gateway`. The local stack stages `fence` for containers, since celld refuses interception; Worker settings accept that mode only for a loopback origin.
+
+`Stack.restart` stages installation variables over the stack's existing values before restarting celld. Runtime policy checks change workspace records through the API while agents remain running.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

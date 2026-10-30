@@ -59,7 +59,6 @@ Deviation (ST-18, SC-04, SC-06): each builder is a behavior file of its own name
 Deviation (D9, fixed paths): another system's fixed path is a constant beside the one client or fake that requests or serves it.
 GitHub's are members of the closed set `GitHubPath` in `@mechane/protocol`, which the Worker's pages and the local stack's GitHub both import, so the client and the fake read one declaration.
 celld's health path sits beside the stack's startup probe, and OpenRouter's paths beside the scripted upstream that serves them, as `ScriptedPath`.
-The deploy program's `API_ORIGINS` holds Cloudflare's API base and OpenRouter's key endpoint as whole URLs, since only that program calls them.
 This replaces "A fixed path, such as `/health`, also comes from its operation's path function" and "never by writing an origin into path text" for another system's fixed paths.
 Deviation (D9, parameterless operations): a program that does not depend on `@mechane/client` resolves a parameterless operation's declared `path` against the origin, which is the URL `requestUrl` builds for it.
 The stack's startup probe, the smoke's burst of raw requests and the live release verification do so.

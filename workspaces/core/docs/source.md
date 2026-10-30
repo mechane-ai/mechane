@@ -6,9 +6,17 @@ the grant's write paths. Scheduled checks and model tools have no publication op
 
 Configure a GitHub App installed on the approved repository. It needs Contents read/write and Pull requests write to
 support both checkout and draft publication. This is separate from the App used to export Mechane's own public source.
-Put the App's downloaded PEM private key in the server's `MECHANE_INTEGRATION_SECRETS` map under the workspace ID and a
-secret reference. Ordinary PKCS#1 PEM keys are accepted. The key never enters a prompt, guest, execution receipt, or
-workspace snapshot.
+Select the workspace for these commands and store the App's downloaded PEM private key through the runtime API:
+
+```sh
+export MECHANE_WORKSPACE_ID=WORKSPACE_UUID
+mechane credential put source-app --file /private/path/source-app.pem
+```
+
+Use `source-app` as the grant's `secret_reference`. Ordinary PKCS#1 PEM keys are accepted. The service encrypts the key
+in workspace storage; it never enters a prompt, guest, execution receipt, or workspace snapshot. Credential changes
+require no infrastructure update. See [credential management](remote-tools.md#configure-a-connection) for replacement
+and deletion.
 
 An owner configures the grant with `mechane source grant MECH_ID --configuration JSON`. The JSON contains `app_id`,
 `installation_id`, `repository_id`, `owner`, `repository`, `base_branch`, `secret_reference`, and `write_paths`. A path

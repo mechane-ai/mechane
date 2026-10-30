@@ -3,7 +3,7 @@
 The command model: each command's declaration with its flags, arguments, input and the operations it calls, the global
 flags, the help and the command reference.
 
-Layer 3 · node lane · data dialect · consumers: cli-kernel, cli-login, cli-update, cli, deploy
+Layer 3 · node lane · data dialect · consumers: cli-kernel, cli-login, cli-update, cli
 
 ## Layout
 
@@ -17,9 +17,9 @@ The [product contracts](../../../.contracts/index.md) apply, with
 
 ## Use
 
-The CLI reads `COMMANDS`, `helpLines` and `commandReference`, and the deploy program its command words. A new command
-adds its declaration to its group's file, its run to the CLI's `RUNS` and its output schema to `COMMAND_OUTPUTS`;
-`mise -C workspaces/core run reference` then writes `reference.json`.
+The CLI reads `COMMANDS`, `helpLines` and `commandReference`. A new command adds its declaration to its group's file,
+its run to the CLI's `RUNS` and its output schema to `COMMAND_OUTPUTS`; `mise -C workspaces/core run reference` then
+writes `reference.json`.
 
 ## Never
 

@@ -40,8 +40,10 @@ private configuration file, then run:
 mise run start
 ```
 
-Normal local mode requires these settings and Docker containers. Optional integration settings use declared Worker
-variables. The [deployment schema](../../shared/deployment/src/schemas.ts) defines additional validation.
+Normal local mode requires these settings and Docker containers. The
+[deployment schema](../../shared/deployment/src/schemas.ts) validates installation settings. Configure workspace
+credentials and integrations through the runtime CLI, as described in [remote tools](../../../docs/remote-tools.md) and
+[Slack](../../../docs/slack.md). The local installation retains its encryption keyring in private state.
 
 The default origin is `http://127.0.0.1:8787`. State lives in `$XDG_STATE_HOME/mechane`, or `~/.local/state/mechane`.
 `MECHANE_LOCAL_STATE_DIR` selects another absolute directory. `MECHANE_LOCAL_ORIGIN` selects another loopback origin;
