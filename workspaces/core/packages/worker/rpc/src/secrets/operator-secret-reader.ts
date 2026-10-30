@@ -1,7 +1,9 @@
 import { capturePromise } from '@mechane/utilities';
-import { Redacted, Result, Schema } from 'effect';
+import type { Redacted } from 'effect';
+import { Result, Schema } from 'effect';
 import type { OperatorSecretName } from './constants.ts';
 import { OperatorSecretUnavailable } from './errors.ts';
+import { SecretSourceValue } from './secret-source.schemas.ts';
 import type { SecretSource } from './secret-source.schemas.ts';
 import type { SecretReader } from './types.ts';
 
@@ -12,12 +14,12 @@ const SecretValue = Schema.RedactedFromValue(Schema.NonEmptyString);
 /** Resolves a rotating secret binding on use and replaces provider diagnostics with its safe binding name. */
 export function operatorSecretReader({ source, name }: OperatorSecretReaderInput): SecretReader<Redacted.Redacted> {
   const read: SecretReader<Redacted.Redacted> = async () => {
-    if (Redacted.isRedacted(source)) {
-      return source;
+    if (SecretSourceValue.guards.Text(source)) {
+      return source.secret;
     }
 
     const get: () => Promise<unknown> = async () => {
-      const value: unknown = Reflect.apply(source.get, source, []);
+      const value: unknown = Reflect.apply(source.binding.get, source.binding, []);
 
       return await value;
     };

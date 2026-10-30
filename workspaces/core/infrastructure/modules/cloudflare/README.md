@@ -53,6 +53,16 @@ its existing namespace identities. For a Worker predating immutable installation
 locks. Remove this input after adoption succeeds. Missing or mismatched history stops the release before upload. The
 image resource copies the new release's OCI image by digest; old image bytes remain available for existing versions.
 
+Cloudflare provider 5.28.1 can insert `observability.traces.propagation_policy = "authenticated"` during import even
+when the Worker API omits that field. The next update then fails with Cloudflare error `100342`. This is an
+[upstream import bug](https://github.com/cloudflare/terraform-provider-cloudflare/issues/7192#issuecomment-4785016291),
+not a requirement to enable tracing.
+
+Verify the live Worker response first. If it omits or nulls this policy, pull the state, change only the imported
+Worker's policy field to null, increment the state serial, and push it without `-force`. Refresh and review the plan
+again. Keep the imported state binding afterward; re-importing recreates the false default. Fresh installations need no
+correction.
+
 Keep the original Worker and bucket names. Importing is a state operation, not permission to replace persistent
 resources. The module's Worker and bucket deletion guards make replacement plans fail. To intentionally retire an
 installation, first remove its resource ownership from OpenTofu and then delete the chosen cloud resources through an
