@@ -1,8 +1,6 @@
 {
   "packages/node/checks-kernel/src/remove-path.ts": 1,
   "packages/node/cli/src/settings/program-settings.ts": 1,
-  "packages/node/deploy/src/rollout/roll-back.ts": 1,
-  "packages/node/deploy/src/rollout/upload-worker.ts": 1,
   "packages/node/eval/src/trial/await-turn-end.ts": 1,
   "packages/node/guest/src/executions/kill-group.ts": 1,
   "packages/node/locks/src/fields/decoded-node.ts": 1,
@@ -26,8 +24,6 @@
   "packages/worker/mech/src/forks/end-received-copy.ts": 1,
   "packages/worker/mech/src/hands/asked-execution.ts": 1,
   "packages/worker/mech/src/hands/mech-hands.ts": 1,
-  "packages/worker/mech/src/hands/settled-execution.ts": 1,
-  "packages/worker/rpc/src/object-settings.ts": 1,
   "packages/worker/sandbox/src/executions/ask-guest.ts": 1,
   "packages/worker/sandbox/src/executions/claim-execution.ts": 1,
   "packages/worker/sandbox/src/executions/dispatch-pending.ts": 1,

@@ -1,12 +1,12 @@
 import type { Stack } from '@mechane/stack';
 import { approvedCli, check, createdKey, freshAccount, savedLoginToken, SignedIn, tokenLeaks } from '@mechane/testing';
 import type { CreatedKey, PrivateToken, ScenarioFailure, ScenarioInput, SearchedText } from '@mechane/testing';
-import { Effect, Option } from 'effect';
+import { Effect, Option, Record, Redacted } from 'effect';
 import { ScenarioKey } from './constants.ts';
 import { scannedTexts } from './scanned-texts.ts';
 import { sentinelTurns } from './sentinel-turns.ts';
 
-/** The credential texts the token scan must recognize: the saved login, the named key, and the stack's two secrets. */
+/** The saved login, named key, model key and launcher key precede the keyring's variable-length key list. */
 const RECOGNIZED_CREDENTIALS = 4;
 
 /** The saved login and the named key whose texts the scan must recognize, and the stack that staged its secrets. */
@@ -27,10 +27,12 @@ export const tokensStayInTheirCredentialFiles = Effect.fn('tokensStayInTheirCred
   const isCommandRun = yield* sentinelTurns({ stack, account });
   const scanned = yield* scannedTexts({ stack, account, login, named, loginToken: saved.token });
   const { texts, isStorageRead, isSentinelLogged, decodedLines, undecodedLines } = scanned;
-  const secrets = [stack.modelUpstream.apiKey, ...Option.toArray(stack.launcherKey)];
+  const keyring = Redacted.value(stack.credentialKeyring);
+  const encryptionKeys = Record.values(keyring.keys);
+  const secrets = [stack.modelUpstream.apiKey, ...Option.toArray(stack.launcherKey), ...encryptionKeys];
   const leaks = tokenLeaks({ texts, secrets });
   const held = tokenLeaks({ texts: credentialTexts({ stack, saved, named }), secrets });
-  const isEveryTokenFound = held.length === RECOGNIZED_CREDENTIALS;
+  const isEveryTokenFound = held.length === RECOGNIZED_CREDENTIALS + encryptionKeys.length;
   const isLogWellFormed = decodedLines > 0 && undecodedLines === 0;
   const isLogClean = isCommandRun && !isSentinelLogged && isLogWellFormed;
 
@@ -46,10 +48,14 @@ export const tokensStayInTheirCredentialFiles = Effect.fn('tokensStayInTheirCred
  * the secrets the stack staged.
  */
 function credentialTexts({ stack, saved, named }: CredentialTextsInput): ReadonlyArray<SearchedText> {
+  const keyring = Redacted.value(stack.credentialKeyring);
+  const keys = Record.values(keyring.keys);
+
   return [
     { name: 'the saved login', text: saved.token },
     { name: 'the named key file', text: named.token },
     { name: 'the model upstream key the stack staged', text: stack.modelUpstream.apiKey },
     ...Option.toArray(stack.launcherKey).map((text) => ({ name: 'the host launcher key the stack staged', text })),
+    ...keys.map((text) => ({ name: 'an encryption key the stack staged', text })),
   ];
 }

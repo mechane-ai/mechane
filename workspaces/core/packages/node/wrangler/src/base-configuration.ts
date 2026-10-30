@@ -16,10 +16,8 @@ type BuiltBundle = { readonly main: string; readonly no_bundle: true };
 type ContainerEntry = BaseConfiguration['containers'][number];
 
 /**
- * The one Wrangler configuration that celld and Cloudflare deploy, with its containers' keys limited to those celld
- * accepts. Each image is the absolute path Wrangler resolves against the configuration's folder, so a copy staged or
- * rendered elsewhere builds the same Dockerfile in the same build folder. It fails as the program's `failure` of
- * `step`.
+ * Container keys are limited to those celld accepts. Absolute image paths keep staged local configurations pointed at
+ * the same Dockerfile and build folder. Reads fail as the caller's failure at its requested step.
  */
 export const baseConfiguration = Effect.fn('baseConfiguration')(function* <S, E extends Cause.YieldableError>({
   step,

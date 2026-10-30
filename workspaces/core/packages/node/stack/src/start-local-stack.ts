@@ -1,4 +1,3 @@
-import { EVERY_WORKSPACE } from '@mechane/deployment';
 import { LOCAL_OWNER_IDENTITY } from '@mechane/records';
 import { Effect, Option } from 'effect';
 import type { Scope } from 'effect';
@@ -16,7 +15,8 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
   settings,
 }: StartLocalStackInput): Effect.fn.Return<LocalStack, StackFailed, Scope.Scope> {
   const model = yield* localModelSettings({ settings });
-  const { bootstrapSecret, bootstrapSecretFile, ...layout } = yield* persistentStateFolder({ settings });
+  const state = yield* persistentStateFolder({ settings });
+  const { bootstrapSecret, bootstrapSecretFile, credentialKeyring, ...layout } = state;
   const configuredAdministrators = Option.fromNullishOr(settings.workerVariables.administratorIdentities);
 
   const administratorIdentities = Option.getOrElse(configuredAdministrators, () =>
@@ -32,13 +32,13 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
     sandboxProvider: settings.sandboxProvider,
     isPersistent: true,
     variables: {
+      credentialKeyring,
       ...settings.workerVariables,
       ...model,
       origin: settings.localOrigin.origin,
       sandboxProvider: settings.sandboxProvider,
       localBootstrapSecret: bootstrapSecret,
       administratorIdentities,
-      sandboxWorkspaces: EVERY_WORKSPACE,
     },
   });
 

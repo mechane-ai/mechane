@@ -24,10 +24,16 @@ export const githubUser = Effect.fn('githubUser')(function* ({
   }
 
   const redirectUri = callbackUrl({ origin: settings.origin });
+  const readClientSecret = settings.githubClientSecret.value;
+
+  const clientSecret = yield* Effect.tryPromise({
+    try: () => readClientSecret(),
+    catch: () => new PageRefused({ refusal: PageRefusal.SignInUnavailable }),
+  });
 
   const form = Schema.encodeSync(GitHubTokenRequest)({
     clientId: settings.githubClientId.value,
-    clientSecret: settings.githubClientSecret.value,
+    clientSecret,
     code: authorizationCode,
     redirectUri,
   });

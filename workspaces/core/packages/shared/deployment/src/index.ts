@@ -5,7 +5,6 @@ export {
   SandboxEgress,
   LocalSandboxProvider,
   LimitPolicy,
-  EVERY_WORKSPACE,
   ORIGIN_VARIABLE,
   RATE_TOKENS,
   LOOPBACK_HOSTS,
@@ -20,7 +19,7 @@ export {
 } from './schemas.ts';
 export type { ModelOffer, RateLimit } from './schemas.ts';
 
-export { IntegrationSecrets, IntegrationSecretsVariable } from './integrations.schemas.ts';
-export { SlackInstallation, SlackInstallationsVariable } from './slack.schemas.ts';
 export { IdentitySubjects, IdentitySubjectsVariable } from './identity-policy.schemas.ts';
 export { isIdentityListed } from './is-identity-listed.ts';
+export { CredentialKeyring, CredentialKeyringVariable, EncryptedCredential } from './credential-keyring.schemas.ts';
+export { ReleaseOrigin } from './release.schemas.ts';

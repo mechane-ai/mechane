@@ -2,26 +2,19 @@ import { SlackBindingResult } from '@mechane/protocol';
 import { decodeFirst } from '@mechane/store';
 import type { SqlCall } from '@mechane/store';
 import { Option, Schema } from 'effect';
+import { readSlackInstallation } from '../slack-installations/read-slack-installation.ts';
 import { SerializedSlackBinding, SlackBindingRow } from './schemas.ts';
 import type { ConfigureSlackBindingInput } from './types.ts';
 
 /** Refuses audience changes before updating the binding switches in the workspace transaction. */
 export function configureSlackBinding({ sql, binding }: SqlCall<ConfigureSlackBindingInput>): SlackBindingResult {
-  const conflicts = sql.exec(
-    'SELECT binding FROM slack_bindings WHERE (id = ? AND (connection_id != ? OR team_id != ? OR channel_id != ? OR mech_id != ?)) OR (id != ? AND ((connection_id = ? AND team_id = ? AND channel_id = ?) OR mech_id = ?)) LIMIT 1',
-    binding.id,
-    binding.connectionId,
-    binding.teamId,
-    binding.channelId,
-    binding.mechId,
-    binding.id,
-    binding.connectionId,
-    binding.teamId,
-    binding.channelId,
-    binding.mechId,
-  );
+  const installation = readSlackInstallation({ sql, connectionId: binding.connectionId });
 
-  const conflict = decodeFirst({ cursor: conflicts, schema: SlackBindingRow });
+  if (Option.isNone(installation) || installation.value.teamId !== binding.teamId) {
+    return SlackBindingResult.cases.ConnectionMissing.make({});
+  }
+
+  const conflict = conflictingSlackBinding({ sql, binding });
 
   if (Option.isSome(conflict)) {
     return SlackBindingResult.cases.Conflicting.make({});
@@ -40,4 +33,25 @@ export function configureSlackBinding({ sql, binding }: SqlCall<ConfigureSlackBi
   );
 
   return SlackBindingResult.cases.Configured.make({ binding });
+}
+
+function conflictingSlackBinding({
+  sql,
+  binding,
+}: SqlCall<ConfigureSlackBindingInput>): Option.Option<SlackBindingRow> {
+  const cursor = sql.exec(
+    'SELECT binding FROM slack_bindings WHERE (id = ? AND (connection_id != ? OR team_id != ? OR channel_id != ? OR mech_id != ?)) OR (id != ? AND ((connection_id = ? AND team_id = ? AND channel_id = ?) OR mech_id = ?)) LIMIT 1',
+    binding.id,
+    binding.connectionId,
+    binding.teamId,
+    binding.channelId,
+    binding.mechId,
+    binding.id,
+    binding.connectionId,
+    binding.teamId,
+    binding.channelId,
+    binding.mechId,
+  );
+
+  return decodeFirst({ cursor, schema: SlackBindingRow });
 }

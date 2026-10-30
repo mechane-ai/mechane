@@ -70,6 +70,7 @@ export const CONTRACT_NAMES = [
   'package-layers',
   'rule-registry',
   'code-style',
+  'installation-ownership',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

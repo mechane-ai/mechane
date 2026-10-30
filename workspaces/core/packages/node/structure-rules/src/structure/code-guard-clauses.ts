@@ -48,7 +48,7 @@ export const codeGuardClauses = {
       ...AST_GREP_DEFAULTS,
       name: 'succeed-in-generator',
       standard: 'EF-04',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.EffectDialect,
       violation: [
         "const read = Effect.fn('read')(function* () { return yield* Effect.succeed(1); });",
@@ -66,7 +66,7 @@ export const codeGuardClauses = {
       ...AST_GREP_DEFAULTS,
       name: 'sync-in-generator',
       standard: 'EF-04',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.EffectDialect,
       violation: [
         "const write = Effect.fn('write')(function* () { yield* Effect.sync(() => print()); });",

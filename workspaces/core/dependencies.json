@@ -44,7 +44,7 @@
     "consumers": []
   },
   "@mechane/app": {
-    "owns": "The Worker entry module and its serve, the base Wrangler configuration that Cloudflare and celld deploy, and the public cloud installation example",
+    "owns": "The Worker entry point, Durable Object exports, build configuration, and local runtime bindings",
     "layer": 7,
     "lane": "worker",
     "dialect": "effect",
@@ -173,7 +173,8 @@
       "@mechane/limiter",
       "@mechane/edge",
       "@mechane/pages",
-      "@mechane/app"
+      "@mechane/app",
+      "@mechane/integrations"
     ]
   },
   "@mechane/bindings": {
@@ -347,7 +348,7 @@
     "dialect": "data",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/cli-kernel", "@mechane/cli-login", "@mechane/cli-update", "@mechane/cli", "@mechane/deploy"]
+    "consumers": ["@mechane/cli-kernel", "@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
   },
   "@mechane/eval": {
     "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
@@ -359,28 +360,22 @@
     "consumers": ["@mechane/cli-kernel", "@mechane/cli"]
   },
   "@mechane/release": {
-    "owns": "Building the CLI's release for every target, and uploading it to the bucket its caller names",
+    "owns": "Build CLI binaries and download manifests for every supported target",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
     "kind": "library-program",
     "criterion": "reuse",
-    "consumers": ["@mechane/stack", "@mechane/testing", "@mechane/smoke", "@mechane/deploy-kernel", "@mechane/deploy"]
+    "consumers": ["@mechane/stack", "@mechane/testing", "@mechane/smoke", "@mechane/distribution"]
   },
   "@mechane/wrangler": {
-    "owns": "The Worker's Wrangler configuration, its migration tags, the releases bucket it binds and the built bundle's path",
+    "owns": "Worker configuration for builds and local runtimes, and stable binding and migration metadata for releases",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": [
-      "@mechane/stack",
-      "@mechane/deploy-kernel",
-      "@mechane/deploy-preflight",
-      "@mechane/deploy-render",
-      "@mechane/deploy"
-    ]
+    "consumers": ["@mechane/stack", "@mechane/distribution"]
   },
   "@mechane/stack": {
     "owns": "The local stack: celld, the local GitHub, host launcher, scripted model upstream and releases bucket; its main is mise run dev",
@@ -419,15 +414,6 @@
     "criterion": "program",
     "consumers": []
   },
-  "@mechane/deploy": {
-    "owns": "The production deploy program: its command line and settings, its modes, the rollout that deploys and rolls back production, and the upload of the CLI's built release",
-    "layer": 7,
-    "lane": "node",
-    "dialect": "effect",
-    "kind": "program",
-    "criterion": "program",
-    "consumers": []
-  },
   "@mechane/mech-ports": {
     "owns": "The mech Durable Object's ports to its harness but its hands: its dispatch meter, and its memory and threads",
     "layer": 5,
@@ -444,7 +430,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
+    "consumers": ["@mechane/cli-login", "@mechane/cli-update", "@mechane/cli", "@mechane/testing"]
   },
   "@mechane/cli-login": {
     "owns": "The mechane command's login: the saved login's private files, the key each command sends, device approval, and the auth commands' runs",
@@ -463,33 +449,6 @@
     "kind": "library",
     "criterion": "program",
     "consumers": ["@mechane/cli"]
-  },
-  "@mechane/deploy-kernel": {
-    "owns": "What every mode of the production deploy shares: its failure, settings, constants and schemas, its git and Wrangler runs, production's variables, and its requests to production, Cloudflare and OpenRouter",
-    "layer": 5,
-    "lane": "node",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/deploy-preflight", "@mechane/deploy-render", "@mechane/deploy"]
-  },
-  "@mechane/deploy-preflight": {
-    "owns": "The checks a production deploy passes before it changes anything: the checkout, the accounts, what production runs, the formats it may only append to, and the tools",
-    "layer": 6,
-    "lane": "node",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "program",
-    "consumers": ["@mechane/deploy"]
-  },
-  "@mechane/deploy-render": {
-    "owns": "Production's Wrangler configuration, rendered from the base configuration and the production overlay",
-    "layer": 6,
-    "lane": "node",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "program",
-    "consumers": ["@mechane/deploy"]
   },
   "@mechane/rule-shapes": {
     "owns": "The shapes the rule registry is built from: each kind of rule with its status, phase, fix and file roles, the contract names, and the member manifest",
@@ -672,5 +631,14 @@
     "criterion": "reuse",
     "consumers": ["@mechane/edge", "@mechane/mech-ports", "@mechane/mech"],
     "confines": ["@modelcontextprotocol/client", "jose"]
+  },
+  "@mechane/distribution": {
+    "owns": "Versioned Cloudflare installation archives, public release manifests, artifact checksums, and local module validation previews",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": []
   }
 }

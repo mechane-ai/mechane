@@ -92,7 +92,7 @@ Values: `deniedIdentifiers` `common`, `data`, `endpoint`, `handler`, `helpers`, 
 - oxlint `no-use-before-define` (ST-29): enforced in phase A, `["error",{"functions":false,"classes":true,"variables":false,"typedefs":false,"ignoreTypeReferences":true}]`
 - oxlint `new-cap` (007): enforced in phase D, `["error",{"capIsNew":false}]`
 - oxlint `no-bitwise` (007): enforced in phase D, `"error"`
-- oxlint's restricted members (EF-17): a ratchet until phase F5: `Date.now`, `DateTime.now`, `Clock` of `effect`
+- oxlint's restricted members (EF-17): enforced in phase F5: `Date.now`, `DateTime.now`, `Clock` of `effect`
 - ast-grep `date-constructor` (EF-17): enforced in phase F5
 
 <!-- End of the generated block. -->

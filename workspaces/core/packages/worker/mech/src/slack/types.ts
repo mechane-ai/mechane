@@ -1,5 +1,5 @@
-import type { SlackInstallation } from '@mechane/deployment';
 import type { MechRow, MechStore, SlackDeliveryRow } from '@mechane/mech-store';
+import type { SlackInstallation } from '@mechane/protocol';
 import type { SlackDestination } from '@mechane/records';
 import type { ObjectSettings } from '@mechane/rpc';
 import type { Redacted } from 'effect';

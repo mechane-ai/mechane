@@ -6,7 +6,7 @@ Layer 0 · shared lane · data dialect · any consumer
 
 ## Surface
 
-- Variables: `WORKER_VARIABLES`, `ORIGIN_VARIABLE` and `EVERY_WORKSPACE`.
+- Variables: `WORKER_VARIABLES` and `ORIGIN_VARIABLE`.
 - Origins: `SecureOrigin`, `LoopbackOrigin` and `OriginProtocol`.
 - Models: `ModelId`, `ModelOffer`, `ModelOffersVariable` and `RATE_TOKENS`.
 - Sandboxes: `SandboxProvider` and `MachinesVariable`.

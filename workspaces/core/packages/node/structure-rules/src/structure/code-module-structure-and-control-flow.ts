@@ -97,7 +97,7 @@ export const codeModuleStructureAndControlFlow = {
       imports: [{ module: 'effect', names: ['Clock'] }],
       exemptRoles: [],
       standard: 'EF-17',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.Time,
     },
     {

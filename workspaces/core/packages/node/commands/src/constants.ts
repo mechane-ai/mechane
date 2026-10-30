@@ -20,6 +20,7 @@ export const DEFAULT_ORIGIN = 'https://mechane.ai';
  * answered carries the deployment's code instead. A code ships, so the reference lists each one.
  */
 export const ErrorCode = {
+  WorkspaceImportConflict: 'WorkspaceImportConflict',
   WorkspaceSelectionRefused: 'WorkspaceSelectionRefused',
   SandboxMaintenanceFailed: 'SandboxMaintenanceFailed',
   UsageInvalid: 'UsageInvalid',

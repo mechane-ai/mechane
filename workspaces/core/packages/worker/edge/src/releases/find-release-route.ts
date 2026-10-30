@@ -4,7 +4,6 @@ import { Array, Duration, Option, Schema } from 'effect';
 import { cacheControl } from './cache-control.ts';
 import { REPLACED_FILE_LIFETIME } from './constants.ts';
 import { serveInstallScript } from './serve-install-script.ts';
-import { serveReleaseFile } from './serve-release-file.ts';
 import type { ServeRelease } from './types.ts';
 
 type FindReleaseRouteInput = { readonly method: string; readonly pathname: string };
@@ -47,7 +46,7 @@ export function findReleaseRoute({ method, pathname }: FindReleaseRouteInput): O
   const servedFile: (file: ReleaseFile) => ServeRelease =
     (file) =>
     ({ settings }) =>
-      serveReleaseFile({ settings, key, file });
+      settings.readReleaseFile({ key, file });
 
   return Option.map(Array.findFirst(RELEASE_FILES, holdsKey), servedFile);
 }

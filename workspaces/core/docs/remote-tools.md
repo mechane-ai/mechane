@@ -1,8 +1,8 @@
 # Remote MCP tools
 
-A workspace owner can register a remote MCP connection and grant each mech an explicit subset of its tools. The first
-release supports tools that only read data and incur no external charge. Model work still uses the workspace's normal
-model budget.
+A workspace owner can register a remote MCP connection and grant each mech an explicit subset of its tools. Connections
+support tools that only read data and incur no external charge. Model work still uses the workspace's normal model
+budget.
 
 ## Configure a connection
 
@@ -10,16 +10,25 @@ Run `mechane workspace list` to find the workspace ID, then set `MECHANE_WORKSPA
 select it. Without a selection, commands use the personal workspace. Every administration request checks the caller's
 current owner membership.
 
-The operator supplies bearer credentials through the server-only `MECHANE_INTEGRATION_SECRETS` setting. Its JSON value
-maps workspace IDs to named credential references:
+Save the bearer credential in a private file, then upload it through the runtime API:
 
-```json
-{ "WORKSPACE_UUID": { "knowledge-reader": "BEARER_TOKEN" } }
+```sh
+mechane credential put knowledge-reader --file /private/path/knowledge-reader
+mechane credential list
 ```
 
-Replace the placeholders and supply this value through the installation's secret configuration. For Cloudflare, use the
-`secret_refs` mapping described in [self-hosting](self-hosting.md). The same reference name in another workspace
-resolves only against that workspace's map. Connection records contain the reference, never the credential value.
+The service encrypts the value in workspace storage. Commands return reference names, key versions, and timestamps;
+there is no API that returns the value. The same reference in another workspace resolves only within that workspace.
+Connection records contain the reference, never the credential.
+
+Repeat `credential put` to replace a value, or use `credential delete REFERENCE` to remove it. Changes affect subsequent
+requests without deploying or restarting agents. Add `--create-only` when an import must refuse an existing reference.
+The [workspace import workflow](slack.md#import-existing-configuration) imports credentials, Slack metadata, and
+optional workspace policy while preserving existing records.
+
+The installation supplies the encryption keyring through its secret store; local mode retains it privately. See
+[self-hosting](self-hosting.md) for installation configuration. Keep older encryption keys until all credentials have
+been saved under the new version. Listing credentials shows the versions still in use.
 
 Register the remote URL and the exact tool names you have approved. The remote URL and tool names below are
 placeholders:
@@ -71,5 +80,5 @@ operations remain unsupported until they have reservation and receipt handling.
 Each discovery or invocation has a 30-second deadline and accepts cancellation. Arguments and returned content are
 limited to 64 KiB, aggregate HTTP response bodies to 1 MiB, and discovery to eight pages. There are at most 64
 connections per workspace and 64 approved names per connection. Invalid schemas, missing credentials, changed grants,
-oversized responses, and failed cleanup produce explicit bounded errors. Credentials stay in server settings and are
-redacted from returned content before it reaches the model.
+oversized responses, and failed cleanup produce explicit bounded errors. Only the server component sending the request
+decrypts its credential, and returned content is redacted before it reaches the model.

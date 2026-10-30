@@ -17,6 +17,8 @@ type FailureMessages = {
 
 /** The message of each failure's error response: the step that failed and its input, the cause, and how to recover. */
 const FAILURE_MESSAGES: Readonly<FailureMessages> = {
+  CredentialAlreadyExists: ({ secretReference }) =>
+    `import credential ${secretReference}: the reference already exists`,
   IdentityNotAdmitted: () => 'admit the caller: this installation does not allow its identity',
   InstallationAdministratorRequired: () => 'create workspace: an installation administrator is required',
   PersonalWorkspaceProtected: ({ workspaceId }) => `change workspace ${workspaceId}: personal ownership is permanent`,
@@ -39,6 +41,7 @@ const FAILURE_MESSAGES: Readonly<FailureMessages> = {
   RateLimited: ({ retryAfterSeconds }) => `admit the request: it is rate limited; send it in ${retryAfterSeconds}s`,
   ReleaseFileNotFound: ({ key }) => `serve ${key}: no release published it`,
   ReleasesBucketUnavailable: ({ key, reason }) => `read ${key} from the releases bucket: ${reason}`,
+  ReleaseSourceUnavailable: ({ key, reason }) => `read ${key} from the release source: ${reason}`,
   KeyMissing: () => `authenticate the request: it carries no key; ${RECOVER_KEY}`,
   KeyUnrecognized: () => `authenticate the request: no key of this deployment matches; ${RECOVER_KEY}`,
   KeyRevoked: () => `authenticate the request: the key was revoked; ${RECOVER_KEY}`,
@@ -49,6 +52,7 @@ const FAILURE_MESSAGES: Readonly<FailureMessages> = {
   WorkspaceNotFound: ({ workspaceId }) =>
     `admit the caller to workspace ${workspaceId}: it belongs to no such workspace`,
   WorkspaceSuspended: ({ workspaceId }) => `admit the caller to workspace ${workspaceId}: its operator suspended it`,
+  WorkspacePolicyConflict: ({ workspaceId }) => `import policy for workspace ${workspaceId}: a policy already exists`,
   SandboxDisabled: ({ workspaceId }) =>
     `maintain sandbox in workspace ${workspaceId}: its operator has not enabled sandbox compute`,
   SandboxCapacityReached: ({ workspaceId }) =>

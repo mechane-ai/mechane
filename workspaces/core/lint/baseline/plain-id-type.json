@@ -6,8 +6,6 @@
   "packages/node/smoke/src/drones/types.ts": 1,
   "packages/node/smoke/src/forks/isolation-conditions.ts": 1,
   "packages/node/smoke/src/memory/member-canceled-turn.ts": 1,
-  "packages/node/smoke/src/workspaces/operator-lists-cut-workspaces-off-at-the-next-deploy.ts": 1,
-  "packages/node/smoke/src/workspaces/queued-work.ts": 1,
   "packages/node/stack/src/github/types.ts": 1,
   "packages/node/stack/src/model/stream-answer.ts": 1,
   "packages/node/stack/src/types.ts": 1,

@@ -1,6 +1,9 @@
 import type { ServerFailure } from '@mechane/protocol';
 import { join } from 'node:path';
 
+/** The credential checks and signed Slack callbacks deliberately share this reference. */
+export const CREDENTIAL_REFERENCE = 'smoke-integration';
+
 /**
  * The CLI binary that `mise run build:cli` compiles; the smoke drives the built program, not its source. Knip takes a
  * `new URL` of `import.meta.url` for an import and would parse the 91 MB binary, so the path joins the folder.
@@ -9,9 +12,12 @@ export const CLI_BINARY = join(import.meta.dirname, '..', '..', 'cli', 'dist', '
 
 /** The error codes with which the deployment refuses a revoked and an expired key, and a suspended workspace. */
 export const RefusalCode = {
+  InvalidRequest: 'RequestInvalid',
+  CredentialAlreadyExists: 'CredentialAlreadyExists',
   IdentityNotAdmitted: 'IdentityNotAdmitted',
   AdministratorRequired: 'InstallationAdministratorRequired',
   WorkspaceCreationConflict: 'WorkspaceCreationConflict',
+  WorkspacePolicyConflict: 'WorkspacePolicyConflict',
   WorkspaceOwnerRequired: 'WorkspaceOwnerRequired',
   WorkspaceLastOwner: 'WorkspaceLastOwner',
   PersonalWorkspaceProtected: 'PersonalWorkspaceProtected',

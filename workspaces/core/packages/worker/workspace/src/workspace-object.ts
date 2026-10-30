@@ -1,12 +1,20 @@
+import { EncryptedCredential } from '@mechane/deployment';
 import {
   catalog,
   ConnectionConfiguration,
   ConnectionList,
+  CredentialList,
+  IntegrationSecretReference,
   SlackBinding,
   SlackBindingResult,
   SlackBindings,
+  SlackInstallation,
+  SlackInstallationResult,
+  SlackInstallations,
   ToolGrant,
   ToolGrantList,
+  WorkerMisconfigured,
+  WorkspacePolicy,
 } from '@mechane/protocol';
 import type { DispatchRow } from '@mechane/protocol';
 import { ConnectionId, MechId } from '@mechane/records';
@@ -15,7 +23,9 @@ import type {
   AdmitSlackEventInput,
   CommittedToday,
   ConfigureSlackBindingInput,
+  ConfigureSlackInstallationInput,
   ConnectionIdInput,
+  CredentialReferenceInput,
   DispatchSettlement,
   GrantToolsInput,
   IndexMechInput,
@@ -25,15 +35,21 @@ import type {
   MechIdInput,
   MechsInput,
   PrepareMechCreationInput,
+  ReadWorkspacePolicyInput,
   ReleaseMachineInput,
   ReservationDecision,
   ReserveDispatchInput,
   SaveConnectionInput,
+  SaveCredentialInput,
+  SaveWorkspacePolicyInput,
   SlackBindingInput,
+  SlackInstallationInput,
   WorkspaceRpc,
 } from '@mechane/rpc';
 import {
   ConnectionMutation,
+  CredentialMutation,
+  CredentialReading,
   GrantedConnectionReading,
   GrantedConnections,
   MechCreationAnswer,
@@ -41,17 +57,23 @@ import {
   MechSummaryRecord,
   SlackBindingAnswer,
   SlackEventAdmission,
+  SlackInstallationAnswer,
   ToolGrantMutation,
+  WorkspacePolicyMutation,
+  WorkspaceVariables,
 } from '@mechane/rpc';
 import { openWorkspaceStore } from '@mechane/workspace-store';
 import type { WorkspaceStore } from '@mechane/workspace-store';
 import { DurableObject } from 'cloudflare:workers';
-import { DateTime, Duration, Option, Schema } from 'effect';
+import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { grantTools } from './connections/grant-tools.ts';
 import { grantedConnections } from './connections/granted-connections.ts';
 import { saveConnection } from './connections/save-connection.ts';
+import { saveCredential } from './credentials/save-credential.ts';
 import { decideReservation } from './dispatches/decide-reservation.ts';
 import { decideLease } from './leases/decide-lease.ts';
+import { effectivePolicy } from './policy/effective-policy.ts';
+import { savePolicy } from './policy/save-policy.ts';
 import { admitSlackEvent } from './slack/admit-slack-event.ts';
 
 /**
@@ -62,16 +84,101 @@ import { admitSlackEvent } from './slack/admit-slack-event.ts';
  */
 export class WorkspaceObject extends DurableObject<unknown> implements WorkspaceRpc {
   readonly #store: WorkspaceStore;
+  readonly #settings: WorkspaceVariables;
 
   constructor(state: DurableObjectState, environment: unknown) {
     super(state, environment);
 
+    const decoded = Schema.decodeUnknownResult(WorkspaceVariables)(environment);
+
+    const checked = Result.mapError(
+      decoded,
+      () => new WorkerMisconfigured({ reason: 'workspace settings are invalid' }),
+    );
+
+    this.#settings = Result.getOrThrow(checked);
     this.#store = openWorkspaceStore({ storage: state.storage });
+  }
+
+  policy({ initialAllowanceMicros }: ReadWorkspacePolicyInput): typeof WorkspacePolicy.Encoded {
+    const policy = effectivePolicy({ store: this.#store, settings: this.#settings, initialAllowanceMicros });
+
+    return Schema.encodeSync(WorkspacePolicy)(policy);
+  }
+
+  savePolicy({ policy, isCreateOnly }: SaveWorkspacePolicyInput): typeof WorkspacePolicyMutation.Encoded {
+    const decoded = Schema.decodeUnknownSync(WorkspacePolicy)(policy);
+    const result = savePolicy({ store: this.#store, settings: this.#settings, policy: decoded, isCreateOnly });
+
+    return Schema.encodeSync(WorkspacePolicyMutation)(result);
   }
 
   /** The count of schema migrations the workspace's database has applied. */
   schemaRevision(): number {
     return this.#store.schemaRevision();
+  }
+
+  configureSlackInstallation({
+    installation,
+    isCreateOnly,
+  }: ConfigureSlackInstallationInput): typeof SlackInstallationResult.Encoded {
+    const decoded = Schema.decodeUnknownSync(SlackInstallation)(installation);
+    const answer = this.#store.saveSlackInstallation({ installation: decoded, isCreateOnly });
+
+    return Schema.encodeSync(SlackInstallationResult)(answer);
+  }
+
+  slackInstallations(): typeof SlackInstallations.Encoded {
+    const installations = this.#store.slackInstallations();
+
+    return Schema.encodeSync(SlackInstallations)({ installations });
+  }
+
+  slackInstallation({ connectionId }: SlackInstallationInput): typeof SlackInstallationAnswer.Encoded {
+    const installation = this.#store.slackInstallation({ connectionId });
+
+    return Schema.encodeSync(SlackInstallationAnswer)(installation);
+  }
+
+  deleteSlackInstallation({ connectionId }: SlackInstallationInput): void {
+    this.#store.deleteSlackInstallation({ connectionId });
+  }
+
+  credential({ secretReference }: CredentialReferenceInput): typeof CredentialReading.Encoded {
+    const reference = Schema.decodeUnknownSync(IntegrationSecretReference)(secretReference);
+    const credential = this.#store.credential({ secretReference: reference });
+
+    return Schema.encodeSync(CredentialReading)(credential);
+  }
+
+  credentials(): typeof CredentialList.Encoded {
+    const credentials = this.#store.credentials();
+
+    return Schema.encodeSync(CredentialList)({ credentials });
+  }
+
+  saveCredential({
+    secretReference,
+    credential,
+    isCreateOnly,
+  }: SaveCredentialInput): typeof CredentialMutation.Encoded {
+    const reference = Schema.decodeUnknownSync(IntegrationSecretReference)(secretReference);
+    const encrypted = Schema.decodeUnknownSync(EncryptedCredential)(credential);
+
+    const result = saveCredential({
+      store: this.#store,
+      secretReference: reference,
+      credential: encrypted,
+      isCreateOnly,
+    });
+
+    return Schema.encodeSync(CredentialMutation)(result);
+  }
+
+  deleteCredential({ secretReference }: CredentialReferenceInput): void {
+    const reference = Schema.decodeUnknownSync(IntegrationSecretReference)(secretReference);
+
+    this.#store.deleteCredential({ secretReference: reference });
   }
 
   configureSlackBinding({ binding }: ConfigureSlackBindingInput): typeof SlackBindingResult.Encoded {
@@ -186,7 +293,14 @@ export class WorkspaceObject extends DurableObject<unknown> implements Workspace
   }
 
   reserveDispatch({ dispatch, allowanceMicros, capMicros }: ReserveDispatchInput): typeof ReservationDecision.Encoded {
-    return decideReservation({ store: this.#store, dispatch, allowanceMicros, capMicros, now: DateTime.nowUnsafe() });
+    return decideReservation({
+      store: this.#store,
+      settings: this.#settings,
+      dispatch,
+      allowanceMicros,
+      capMicros,
+      now: DateTime.nowUnsafe(),
+    });
   }
 
   settleDispatch({ dispatchId, settlement }: DispatchSettlement): void {
@@ -206,11 +320,11 @@ export class WorkspaceObject extends DurableObject<unknown> implements Workspace
   }
 
   /** Leases a machine to the sandbox for its idle window, while the workspace runs fewer than it may. */
-  leaseMachine({ sandboxId, machines, leaseMs }: LeaseMachineInput): typeof LeaseDecision.Encoded {
+  leaseMachine({ sandboxId, leaseMs }: LeaseMachineInput): typeof LeaseDecision.Encoded {
     const now = DateTime.nowUnsafe();
     const expiresAt = DateTime.addDuration(now, Duration.millis(leaseMs));
 
-    return decideLease({ store: this.#store, sandboxId, machines, expiresAt, now });
+    return decideLease({ store: this.#store, settings: this.#settings, sandboxId, expiresAt, now });
   }
 
   /** Releases a sandbox's lease once its machine stopped, such as an ended drone's. */

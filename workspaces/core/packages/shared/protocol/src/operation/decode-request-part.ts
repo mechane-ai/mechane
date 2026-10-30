@@ -14,6 +14,6 @@ export const decodeRequestPart = Effect.fn('decodeRequestPart')(function* <S ext
   value,
 }: DecodeRequestPartInput<S>): Effect.fn.Return<S['Type'], RequestInvalid> {
   return yield* Schema.decodeUnknownEffect(schema, { onExcessProperty: 'error' })(value).pipe(
-    Effect.mapError((error) => new RequestInvalid({ reason: error.message })),
+    Effect.mapError(() => new RequestInvalid({ reason: 'request fields do not match the operation schema' })),
   );
 });

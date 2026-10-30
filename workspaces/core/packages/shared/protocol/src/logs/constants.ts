@@ -13,6 +13,7 @@ export const LogEvent = {
   KeyIssued: 'auth.key_issued',
   KeyRevoked: 'auth.key_revoked',
   WorkspaceCreated: 'workspace.created',
+  WorkspacePolicyChanged: 'workspace.policy_changed',
   WorkspaceMemberSet: 'workspace.member_set',
   WorkspaceMemberRemoved: 'workspace.member_removed',
 } as const;

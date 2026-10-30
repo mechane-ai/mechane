@@ -30,10 +30,7 @@
     "packages/node/cli-update": { "project": ["src/**/*.ts!"] },
     "packages/node/commands": { "project": ["src/**/*.ts!"] },
     // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
-    "packages/node/deploy": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
-    "packages/node/deploy-kernel": { "project": ["src/**/*.ts!"] },
-    "packages/node/deploy-preflight": { "project": ["src/**/*.ts!"] },
-    "packages/node/deploy-render": { "project": ["src/**/*.ts!"] },
+    "packages/node/distribution": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
     "packages/node/eval": { "project": ["src/**/*.ts!"] },
     // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
     "packages/node/guest": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },

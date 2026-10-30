@@ -4,7 +4,8 @@ import { SlackBindingAnswer, workspaceStub } from '@mechane/rpc';
 import { capturePromise } from '@mechane/utilities';
 import { Option, Result, Schema } from 'effect';
 import { blockSlackDelivery } from './block-slack-delivery.ts';
-import { deferSlackBindingLookup } from './defer-slack-binding-lookup.ts';
+import { deferSlackLookup } from './defer-slack-lookup.ts';
+import { isSlackWorkspaceAvailable } from './is-slack-workspace-available.ts';
 import type { RunSlackDeliveryInput } from './types.ts';
 
 type MatchSlackDestinationInput = RunSlackDeliveryInput & {
@@ -19,9 +20,9 @@ export async function readSlackDestination({
   mech,
   delivery,
 }: RunSlackDeliveryInput): Promise<Option.Option<SlackDestination>> {
-  if (settings.suspendedWorkspaces.includes(mech.workspaceId)) {
-    await blockSlackDelivery({ store, delivery, reason: 'workspace_suspended' });
+  const isAvailable = await isSlackWorkspaceAvailable({ store, settings, mech, delivery });
 
+  if (!isAvailable) {
     return Option.none();
   }
 
@@ -32,7 +33,7 @@ export async function readSlackDestination({
   const decoded = Result.flatMap(response, decode);
 
   if (Result.isFailure(decoded)) {
-    await deferSlackBindingLookup({ store, delivery });
+    await deferSlackLookup({ store, delivery, reason: 'binding_unavailable' });
 
     return Option.none();
   }

@@ -34,6 +34,7 @@ import type {
   WorkspaceMemberChangeAnswer,
   WorkspaceMembersAnswer,
   WorkspaceMembershipInput,
+  WorkspacePresence,
 } from '@mechane/rpc';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Schema } from 'effect';
@@ -110,6 +111,12 @@ export class DirectoryObject extends DurableObject<unknown> implements Directory
   /** The model spend the workspace may make each UTC day, which its mechs' dispatches reserve against. */
   dailyAllowanceMicros({ workspaceId }: WorkspaceIdInput): number {
     return this.#store.dailyAllowanceMicros({ workspaceId });
+  }
+
+  workspaceExists({ workspaceId }: WorkspaceIdInput): typeof WorkspacePresence.Encoded {
+    const workspace = this.#store.managedWorkspace({ workspaceId });
+
+    return { isPresent: Option.isSome(workspace) };
   }
 
   keysOfPrincipal({ principalId, query }: KeysOfPrincipalQuery): typeof DirectoryKeyPage.Encoded {

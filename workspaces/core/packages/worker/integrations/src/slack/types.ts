@@ -1,4 +1,4 @@
-import type { SlackInstallation } from '@mechane/deployment';
+import type { SlackInstallation } from '@mechane/protocol';
 import type { SlackDeliveryId, SlackDestination } from '@mechane/records';
 import type { DateTime, Option, Redacted } from 'effect';
 

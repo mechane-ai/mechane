@@ -59,7 +59,7 @@ const DISPATCH_RECORD_FIELDS = {
 } as const;
 
 /** The workspace's decision on a machine: the sandbox holds its lease, or the workspace runs every machine it may. */
-export const LeaseDecision = Schema.TaggedUnion({ Leased: {}, Full: {} });
+export const LeaseDecision = Schema.TaggedUnion({ Leased: {}, Full: {}, Disabled: {} });
 
 export type LeaseDecision = typeof LeaseDecision.Type;
 

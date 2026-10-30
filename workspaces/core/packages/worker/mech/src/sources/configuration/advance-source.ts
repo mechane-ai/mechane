@@ -29,7 +29,5 @@ export async function advanceSource({
     return sourceAnswer({ source });
   }
 
-  const next = await checkoutSource({ mech, owner, sandbox, source });
-
-  return sourceAnswer({ source: next });
+  return await checkoutSource({ mech, owner, sandbox, source });
 }

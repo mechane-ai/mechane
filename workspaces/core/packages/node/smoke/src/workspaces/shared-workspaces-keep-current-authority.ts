@@ -6,8 +6,8 @@ import {
   refuseWorkspacePrivileges,
   registerWorkspaceMember,
   transferWorkspaceOwnership,
-  verifySourceGrantAccess,
-  verifyWorkspaceSelection,
+  verifyRevokedCredentialAccess,
+  verifyWorkspaceMemberAccess,
 } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect } from 'effect';
@@ -19,16 +19,15 @@ export const sharedWorkspacesKeepCurrentAuthority = Effect.fn('sharedWorkspacesK
 }: ScenarioInput): Effect.fn.Return<void, ScenarioFailure> {
   const workspace = yield* bootstrapSharedWorkspace({ stack });
   const member = yield* registerWorkspaceMember({ stack, workspace });
-  const selection = { stack, guarantee, account: member.account, personalWorkspaceId: member.personalWorkspaceId };
-
-  yield* verifyWorkspaceSelection({ ...selection, sharedWorkspaceId: workspace.workspaceId });
-
   const authority = { stack, workspace, member };
 
-  yield* verifySourceGrantAccess({ ...authority, guarantee });
+  yield* verifyWorkspaceMemberAccess({ ...authority, guarantee });
 
   const refusals = yield* refuseWorkspacePrivileges(authority);
   const { removed, missing, creationRetry, remaining } = yield* transferWorkspaceOwnership(authority);
+
+  yield* verifyRevokedCredentialAccess({ ...authority, guarantee });
+
   const isMember: (entry: WorkspaceMember) => boolean = ({ principalId }) => principalId === member.principalId;
 
   const conditions = [

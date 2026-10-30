@@ -1,4 +1,12 @@
 export { catalog } from './catalog.ts';
+export { CredentialAlreadyExists } from './errors/credential.errors.ts';
+export {
+  CredentialValue,
+  CredentialMetadata,
+  CredentialList,
+  CredentialDeletion,
+  CREDENTIAL_METADATA_FIELDS,
+} from './operations/credentials/schemas.ts';
 export { SourceAction, SourceStatus, SourcePublicationStatus } from './operations/sources/constants.ts';
 export {
   SourceGrant,
@@ -53,7 +61,6 @@ export {
 } from './operations/auth/constants.ts';
 export { userCodeOf } from './operations/auth/user-code-of.ts';
 export { bearerAuthorization } from './operations/auth/bearer-authorization.ts';
-export { SandboxWorkspacesVariable, WorkspaceIdsVariable } from './schemas.ts';
 export { Drone, DroneCancel, DroneList, DronePage, DroneTrace, UnknownDrone } from './operations/drones/schemas.ts';
 export { DroneStatus, RUNNING_DRONES_PER_MECH } from './operations/drones/constants.ts';
 export { DurableObjectClass } from './durable-objects/constants.ts';
@@ -62,7 +69,6 @@ export { ErrorBody } from './errors/schemas.ts';
 export { errorDetail } from './errors/error-detail.ts';
 export { ErrorFamily, FAMILY_STATUS } from './errors/constants.ts';
 export { FAILURE_FAMILY } from './errors/failure-family.ts';
-export { failureCode } from './errors/failure-code.ts';
 export { RELEASE_FAILURES } from './errors/release-failures.ts';
 export { ROUTE_FAILURES } from './errors/route-failures.ts';
 export {
@@ -97,6 +103,9 @@ export {
 export type { AuthenticationFailure } from './errors/authentication-failures.ts';
 export type { FailureCodec } from './errors/types.ts';
 export type { ReleaseFailure } from './errors/release-failures.ts';
+export { ReleaseSourceUnavailable } from './errors/release-source.errors.ts';
+export { ReleaseAsset } from './releases/constants.ts';
+export { releaseBinaryName } from './releases/release-binary-name.ts';
 export { Event, EventCursor, EventPage, ListedEvent, UnknownEvent } from './operations/events/schemas.ts';
 export { EventType, WAIT_MAX } from './operations/events/constants.ts';
 export { Delivery, INBOX_TEXT_MAX_CHARS } from './operations/inbox/constants.ts';
@@ -192,6 +201,7 @@ export {
   PersonalWorkspaceProtected,
   PrincipalNotFound,
   WorkspaceCreationConflict,
+  WorkspacePolicyConflict,
   WorkspaceLastOwner,
   WorkspaceMemberNotFound,
 } from './errors/workspace.errors.ts';
@@ -217,6 +227,12 @@ export {
   SLACK_DELIVERY_FIELDS,
 } from './operations/slack/schemas.ts';
 export { slackEventsPath } from './operations/slack/slack-events-path.ts';
+export {
+  SlackInstallation,
+  SlackInstallations,
+  SlackInstallationResult,
+  SlackInstallationDeletion,
+} from './operations/slack/installations.schemas.ts';
 
 export {
   WorkspaceOwnerRequired,
@@ -241,3 +257,4 @@ export { RemoteToolPolicy, CONNECTIONS_PER_WORKSPACE } from './operations/connec
 export { RemoteToolDescription, RemoteToolsOutcome } from './operations/connections/remote-tools.schemas.ts';
 
 export { ServerFailure } from './errors/server-failure.errors.ts';
+export { WorkspacePolicy } from './operations/workspaces/policy.schemas.ts';

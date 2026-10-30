@@ -53,7 +53,7 @@ oxlint `unicorn/no-useless-undefined`, with `checkArguments` and `checkArrowFunc
 - oxlint `unicorn/no-useless-undefined` (TD-18): enforced in phase D, `["error",{"checkArguments":false,"checkArrowFunctionBody":false}]`
 - ast-grep `nullable-type` (TD-18): a ratchet until phase F2
 - ast-grep `nullish-comparison` (TD-18): enforced in phase F2
-- ast-grep `nullish-operator` (TD-18): a ratchet until phase F2
+- ast-grep `nullish-operator` (TD-18): enforced in phase F2
 - ast-grep `store-boolean-answer` (TD-17): enforced in phase F2
 
 <!-- End of the generated block. -->

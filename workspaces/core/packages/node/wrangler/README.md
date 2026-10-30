@@ -1,8 +1,8 @@
 # @mechane/wrangler
 
-The Worker's Wrangler configuration, its migration tags, the releases bucket it binds and the built bundle's path.
+The Worker's build and local runtime configuration, migration tags, local releases bucket and built bundle path.
 
-Layer 3 · node lane · effect dialect · consumers: stack, deploy-kernel, deploy-preflight, deploy-render, deploy
+Layer 4 · node lane · effect dialect · consumers: stack, distribution
 
 ## Layout
 
@@ -11,15 +11,14 @@ Layer 3 · node lane · effect dialect · consumers: stack, deploy-kernel, deplo
 
 ## Rules
 
-The [product contracts](../../../.contracts/index.md) apply. The smoke's stack and `deploy:render` read the
-configuration through these functions.
+The [product contracts](../../../.contracts/index.md) apply. The local stack and release packager read the configuration
+through this package.
 
 ## Use
 
 Each read fails as its caller's failure at the caller's step, such as
 `baseConfiguration({ step: StackStep.ReadWranglerConfiguration, failure: StackFailed })`, so this member declares no
-failure or step of its own. `readJsonc` and `decodeJsonc` keep `jsonc-parser` out of `@mechane/program`, which the guest
-bundles.
+failure or step of its own. The JSONC reader keeps `jsonc-parser` out of `@mechane/program`, which the guest bundles.
 
 ## Never
 

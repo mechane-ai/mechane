@@ -1,12 +1,16 @@
 import type {
   catalog,
   ConnectionList,
+  CredentialList,
   DispatchRow,
   Settlement,
   SlackBindingResult,
   SlackBindings,
+  SlackInstallationResult,
+  SlackInstallations,
   ToolGrant,
   ToolGrantList,
+  WorkspacePolicy,
 } from '@mechane/protocol';
 import type { CreationRequestId, DispatchRequest, MechId, WorkDispatchesInput } from '@mechane/records';
 import type {
@@ -21,8 +25,18 @@ import type {
   MechConnectionInput,
   SaveConnectionInput,
 } from './connections.types.ts';
-import type { SlackBindingAnswer, SlackEventAdmission } from './slack.schemas.ts';
-import type { AdmitSlackEventInput, ConfigureSlackBindingInput, SlackBindingInput } from './slack.types.ts';
+import type { CredentialMutation, CredentialReading } from './credentials.schemas.ts';
+import type { CredentialReferenceInput, SaveCredentialInput } from './credentials.types.ts';
+import type { SlackBindingAnswer, SlackEventAdmission, SlackInstallationAnswer } from './slack.schemas.ts';
+import type {
+  AdmitSlackEventInput,
+  ConfigureSlackBindingInput,
+  ConfigureSlackInstallationInput,
+  SlackBindingInput,
+  SlackInstallationInput,
+} from './slack.types.ts';
+import type { WorkspacePolicyMutation } from './workspace-policy.schemas.ts';
+import type { ReadWorkspacePolicyInput, SaveWorkspacePolicyInput } from './workspace-policy.types.ts';
 import type {
   CommittedToday,
   LeaseDecision,
@@ -31,6 +45,13 @@ import type {
   MechSummaryRecord,
   ReservationDecision,
 } from './workspace.schemas.ts';
+
+type CredentialMethods = {
+  readonly credential: (input: CredentialReferenceInput) => typeof CredentialReading.Encoded;
+  readonly credentials: () => typeof CredentialList.Encoded;
+  readonly saveCredential: (input: SaveCredentialInput) => typeof CredentialMutation.Encoded;
+  readonly deleteCredential: (input: CredentialReferenceInput) => void;
+};
 
 type MechGrantsInput = { readonly mechId: typeof MechId.Encoded };
 
@@ -47,6 +68,14 @@ type ConnectionMethods = {
 
 /** Each RPC method of a workspace's object. */
 type WorkspaceMethods = {
+  readonly policy: (input: ReadWorkspacePolicyInput) => typeof WorkspacePolicy.Encoded;
+  readonly savePolicy: (input: SaveWorkspacePolicyInput) => typeof WorkspacePolicyMutation.Encoded;
+  readonly configureSlackInstallation: (
+    input: ConfigureSlackInstallationInput,
+  ) => typeof SlackInstallationResult.Encoded;
+  readonly slackInstallations: () => typeof SlackInstallations.Encoded;
+  readonly slackInstallation: (input: SlackInstallationInput) => typeof SlackInstallationAnswer.Encoded;
+  readonly deleteSlackInstallation: (input: SlackInstallationInput) => void;
   readonly configureSlackBinding: (input: ConfigureSlackBindingInput) => typeof SlackBindingResult.Encoded;
   readonly slackBindings: () => typeof SlackBindings.Encoded;
   readonly slackBinding: (input: SlackBindingInput) => typeof SlackBindingAnswer.Encoded;
@@ -75,7 +104,7 @@ type WorkspaceMethods = {
  * The methods a workspace's object serves by RPC, each answering with plain data its caller decodes. The bindings and
  * the mech name the object by this type, so they need not import the object.
  */
-export type WorkspaceRpc = Rpc.DurableObjectBranded & WorkspaceMethods & ConnectionMethods;
+export type WorkspaceRpc = Rpc.DurableObjectBranded & WorkspaceMethods & ConnectionMethods & CredentialMethods;
 
 /** A mech its object created, as the workspace's index takes it by RPC: its record, encoded. */
 export type IndexMechInput = { readonly mech: typeof MechSummaryRecord.Encoded };
@@ -90,11 +119,11 @@ export type PrepareMechCreationInput = {
 export type DispatchSettlement = { readonly dispatchId: string; readonly settlement: Settlement };
 
 /**
- * A machine to lease to a sandbox, keyed by its mech's or drone's id, while fewer than `machines` run. The lease lasts
- * `leaseMs`: its machine's idle window and one retry of its stop. By then the sandbox's own alarm has stopped an idle
- * machine.
+ * A machine to lease to a sandbox, keyed by its mech's or drone's id, within the workspace's current policy. The lease
+ * lasts `leaseMs`: its machine's idle window and one retry of its stop. By then the sandbox's own alarm has stopped an
+ * idle machine.
  */
-export type LeaseMachineInput = { readonly sandboxId: string; readonly machines: number; readonly leaseMs: number };
+export type LeaseMachineInput = { readonly sandboxId: string; readonly leaseMs: number };
 
 export type MechIdInput = { readonly mechId: string };
 

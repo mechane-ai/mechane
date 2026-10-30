@@ -1,4 +1,6 @@
 export { resolveIntegrationSecret } from './resolve-integration-secret.ts';
+export { encryptIntegrationSecret } from './credentials/encrypt-integration-secret.ts';
+export { IntegrationSecretInvalid } from './credentials/errors.ts';
 export { findSlackInstallation } from './slack/find-slack-installation.ts';
 export { verifySlackSignature } from './slack/verify-slack-signature.ts';
 export { postSlackDelivery } from './slack/post-slack-delivery.ts';

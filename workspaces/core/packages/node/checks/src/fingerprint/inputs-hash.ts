@@ -5,12 +5,11 @@ import { Effect } from 'effect';
 import { basename, join } from 'node:path';
 
 /**
- * The smoke also depends on configuration, the installation example, package manifests, and dependency locks. Their
- * content participates in the fingerprint wherever they sit.
+ * The smoke also depends on runtime configuration, package manifests, and dependency locks. Their content participates
+ * in the fingerprint wherever they sit.
  */
 const INPUT_NAMES: ReadonlySet<string> = new Set([
   'wrangler.jsonc',
-  'cloudflare.example.jsonc',
   'package.json',
   'pnpm-lock.yaml',
   'pnpm-workspace.yaml',

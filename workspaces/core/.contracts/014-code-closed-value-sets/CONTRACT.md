@@ -82,7 +82,7 @@ The test-support HTTP method copy retains its prior scope: no StyleX definition 
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- asset `assets/ast-grep/rules` `http-method-literals-typescript` (SC-12): a ratchet until phase F2
+- asset `assets/ast-grep/rules` `http-method-literals-typescript` (SC-12): enforced in phase F2
 - asset `assets/ast-grep/rules` `http-status-literals-typescript` (SC-12): enforced in phase F2
 - asset `assets/ast-grep/rules` `member-chains-typescript` (014): a ratchet until phase F2
 - asset `assets/ast-grep/rules` `membership-lists-typescript` (014): enforced in phase F2

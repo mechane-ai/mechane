@@ -7,7 +7,6 @@
   },
   "dependencies": {
     "@mechane/checks-kernel": "workspace:*",
-    "@mechane/deployment": "workspace:*",
     "@mechane/modules": "workspace:*",
     "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",

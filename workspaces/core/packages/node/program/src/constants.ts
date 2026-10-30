@@ -20,7 +20,7 @@ export type UpdateOutcome = (typeof UpdateOutcome)[keyof typeof UpdateOutcome];
 
 /**
  * The wire lock, relative to the product workspace: every name a shipped format carries, by kind. A name joins it once
- * and stays, so a rename or a removal of a shipped name fails the check, and a deploy that would drop one is refused.
+ * and stays, so a rename or a removal of a shipped name fails the check.
  */
 export const WIRE_LOCK = 'lint/wire.json';
 

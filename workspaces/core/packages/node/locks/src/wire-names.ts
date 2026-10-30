@@ -21,8 +21,8 @@ type MappedName = readonly [name: string, value: string | number];
 /**
  * Every name a shipped format carries, as the source declares it now. For `/v1`, each operation's method and path, its
  * parts' fields and members, the error body's, each error code with its fields and family, and each family's HTTP
- * status. Then the CLI's error codes and exit statuses, each event type, each command and flag, and each variable a
- * shipped program reads.
+ * status. Then the CLI's error codes and exit statuses, each event type, each command and flag, and each public CLI,
+ * guest or installer variable.
  */
 export const wireNames = Effect.fn('wireNames')(function* (): Effect.fn.Return<Lock, InputUnreadable> {
   const { fields, members } = fieldNames();

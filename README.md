@@ -32,9 +32,9 @@ cloud account or paid model. The smoke uses host processes for sandboxes, while 
 
 To erase an inactive local installation and create fresh state on its next start, run
 `mise run local:reset -- --confirm`. For a cloud installation, follow the
-[self-hosting guide](workspaces/core/docs/self-hosting.md), then run the product's `deploy:render`, `deploy:preflight`,
-and `deploy` tasks with your installation configuration. Cloud deployment uses a clean checkout of an annotated
-`v<version>` source tag. Binaries and images are published separately from source tags.
+[self-hosting guide](workspaces/core/docs/self-hosting.md). An immutable release archive supplies the OpenTofu module,
+Worker bundle, and sandbox image. Deployment requires no source checkout or local build. OpenTofu owns installation
+resources and release versions; agents and workspace integrations remain dynamic API data.
 
 ## Layout
 

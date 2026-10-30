@@ -99,3 +99,4 @@ from 101 are Mechane's own.
 - [Package layers](101-package-layers/CONTRACT.md): each package's layer, lane and consumers, from `dependencies.json`.
 - [Rule registry](110-rule-registry/CONTRACT.md): every enforced value and rule declared once, and every configuration generated.
 - [Code style](111-code-style/CONTRACT.md): values chosen with statements, functions passed by name, two functions a file, and named paths, units and HTTP words.
+- [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.

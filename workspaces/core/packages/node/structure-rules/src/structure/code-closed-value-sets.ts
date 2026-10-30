@@ -31,7 +31,7 @@ export const codeClosedValueSets = {
     {
       ...AST_GREP_ASSET,
       name: 'http-method-literals-typescript',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       violation: ["const init = { method: 'POST' };", "const methods = ['GET', 'HEAD'];"],
       allowed: ['const init = { method: HttpMethod.Post };'],
     },

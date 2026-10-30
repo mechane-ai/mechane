@@ -30,7 +30,7 @@
       ],
     },
   ],
-  // The CLI's releases, which the Worker serves read-only below /cli/; `mise run release:upload` fills the bucket.
+  // Local stacks populate CLI releases here; hosted installations use the public release origin.
   "r2_buckets": [
     { "binding": "RELEASES", "bucket_name": "mechane-local-releases" },
     { "binding": "WORKSPACE_FILES", "bucket_name": "mechane-local-workspace-files" },
@@ -64,11 +64,11 @@
     // Cloudflare denies direct egress; local staging selects celld's private-network fence.
     "MECHANE_SANDBOX_PROVIDER": "container",
     "MECHANE_SANDBOX_EGRESS": "gateway",
-    // Only listed workspaces get sandboxes, as a JSON array of their ids, and each runs at most 4 machines at once; a
-    // suspended workspace's members are refused and its dispatches find no allowance. Each change takes a deploy.
-    "MECHANE_SANDBOX_WORKSPACES": "[]",
+    // Runtime workspace policies can lower these installation ceilings without a deployment.
+    "MECHANE_SANDBOXES_ENABLED": "true",
+    "MECHANE_WORKSPACE_SANDBOXES_DEFAULT": "true",
     "MECHANE_WORKSPACE_MACHINES": "4",
-    "MECHANE_SUSPENDED_WORKSPACES": "[]",
+    "MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS": "100000000",
     // The requests each policy allows in its fixed window: an address 600 a minute, every request but health; the
     // device approvals one address starts, 10 in 10 minutes; an admitted principal 300 a minute; and the codes one
     // GitHub user types on the device page, 10 in 10 minutes.

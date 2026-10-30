@@ -1,4 +1,5 @@
 import { Schema } from 'effect';
+import { CredentialAlreadyExists } from './credential.errors.ts';
 import {
   ConnectionLimitReached,
   ConnectionNotFound,
@@ -37,6 +38,7 @@ import {
   WatchLimitReached,
   WatchNotFound,
 } from './mech.errors.ts';
+import { ReleaseSourceUnavailable } from './release-source.errors.ts';
 import {
   IdentityNotAdmitted,
   InstallationAdministratorRequired,
@@ -45,15 +47,19 @@ import {
   WorkspaceCreationConflict,
   WorkspaceLastOwner,
   WorkspaceMemberNotFound,
+  WorkspacePolicyConflict,
 } from './workspace.errors.ts';
 
 /** Every failure the Worker answers with; a client decodes a code it knows into the failure with its fields. */
 export const ServerFailure = Schema.Union([
+  ReleaseSourceUnavailable,
+  CredentialAlreadyExists,
   IdentityNotAdmitted,
   InstallationAdministratorRequired,
   PersonalWorkspaceProtected,
   PrincipalNotFound,
   WorkspaceCreationConflict,
+  WorkspacePolicyConflict,
   WorkspaceLastOwner,
   WorkspaceMemberNotFound,
   WorkspaceOwnerRequired,

@@ -43,4 +43,17 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'CREATE TABLE slack_events (connection_id TEXT NOT NULL, event_id TEXT NOT NULL, team_id TEXT NOT NULL, channel_id TEXT NOT NULL, message_timestamp TEXT NOT NULL, inbox_item_id TEXT NOT NULL UNIQUE, fingerprint TEXT NOT NULL, binding TEXT NOT NULL, PRIMARY KEY (connection_id, event_id), UNIQUE (connection_id, team_id, channel_id, message_timestamp)) STRICT',
     );
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE integration_credentials (secret_reference TEXT PRIMARY KEY, key_version TEXT NOT NULL, nonce TEXT NOT NULL, ciphertext TEXT NOT NULL, created_at_ms INTEGER NOT NULL, updated_at_ms INTEGER NOT NULL) STRICT',
+    );
+  },
+  ({ sql }) => {
+    sql.exec('CREATE TABLE slack_installations (id TEXT PRIMARY KEY, installation TEXT NOT NULL) STRICT');
+  },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE workspace_policy (singleton INTEGER PRIMARY KEY CHECK (singleton = 1), policy TEXT NOT NULL) STRICT',
+    );
+  },
 ];

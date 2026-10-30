@@ -10,6 +10,7 @@
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/utilities": "workspace:*",
     "effect": "4.0.7"
   }
 }

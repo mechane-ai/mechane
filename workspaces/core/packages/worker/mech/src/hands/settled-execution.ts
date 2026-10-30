@@ -41,14 +41,26 @@ async function leasedAsk({
 }: SettledExecutionInput): Promise<Option.Option<HandsOutcome>> {
   signal.throwIfAborted();
 
-  const { sandboxId, machines } = target;
-  const decision = await workspace.leaseMachine({ sandboxId, machines, leaseMs: Duration.toMillis(MACHINE_LEASE) });
+  const { sandboxId } = target;
+  const leaseMs = Duration.toMillis(MACHINE_LEASE);
+  const decision = await workspace.leaseMachine({ sandboxId, leaseMs });
+  const decoded = await Schema.decodeUnknownPromise(LeaseDecision)(decision);
 
-  const full: () => Option.Option<HandsOutcome> = () =>
-    Option.some(refusedOutcome({ target, reason: SandboxRefusal.MachinesFull }));
+  const full: () => Option.Option<HandsOutcome> = () => {
+    const refusal = refusedOutcome({ target, reason: SandboxRefusal.MachinesFull });
 
-  return await Match.valueTags(Schema.decodeUnknownSync(LeaseDecision)(decision), {
+    return Option.some(refusal);
+  };
+
+  const disabled: () => Option.Option<HandsOutcome> = () => {
+    const refusal = refusedOutcome({ target, reason: SandboxRefusal.NoSandbox });
+
+    return Option.some(refusal);
+  };
+
+  return await Match.valueTags(decoded, {
     Leased: async () => await askedExecution({ sandbox, execution, signal, aborted }),
     Full: full,
+    Disabled: disabled,
   });
 }

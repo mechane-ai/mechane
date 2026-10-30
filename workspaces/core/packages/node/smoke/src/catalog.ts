@@ -19,7 +19,7 @@ import { uncoverableDispatchIsRefusedUnsent } from './mechs/uncoverable-dispatch
 import { canceledTurnSavesNoMemory } from './memory/canceled-turn-saves-no-memory.ts';
 import { savedMemoryOutlivesARestartAndAReset } from './memory/saved-memory-outlives-a-restart-and-a-reset.ts';
 import { installedCliUpdatesToThePublishedRelease } from './releases/installed-cli-updates-to-the-published-release.ts';
-import { operatorListsCutWorkspacesOffAtTheNextDeploy } from './workspaces/operator-lists-cut-workspaces-off-at-the-next-deploy.ts';
+import { workspacePolicyCutsOffQueuedWorkImmediately } from './workspaces/workspace-policy-cuts-off-queued-work-immediately.ts';
 
 /** One scenario of the smoke and the consequential regression it guards. */
 type Scenario = {
@@ -31,9 +31,9 @@ type Scenario = {
 /**
  * The scenario catalog: every scenario the smoke runs, each guarding one consequential regression. Scott approves each
  * change to this list. The mech scenarios run early: a follower's last wait for an event ends only at its deadline, 20
- * seconds on, and the stack stops only once every wait has ended. The restarts of the memory, drone report, crash,
- * lists and burst scenarios end the waits before them, and the crash and lists scenarios restore the stack's variables
- * as they end. The token scan runs last, so it reads the stored state and the sandboxes every other scenario left.
+ * seconds on, and the stack stops only once every wait has ended. Restart scenarios end prior waits and restore their
+ * temporary installation settings. Workspace policy checks use runtime APIs while agents keep running. The token scan
+ * runs last, so it reads the stored state and the sandboxes every other scenario left.
  */
 export const CATALOG: ReadonlyArray<Scenario> = [
   {
@@ -117,10 +117,10 @@ export const CATALOG: ReadonlyArray<Scenario> = [
   },
   {
     guarantee:
-      "an operator's lists cut one workspace off at the next deploy: unlisted, its bash starts no machine; suspended, its calls are refused and its queued work spends nothing",
+      'workspace policy takes effect without a deployment: disabled sandboxes start no machines, suspended work spends nothing, and budget reductions govern the next dispatch',
     regression:
-      'operator control: a workspace the operator did not list that still starts machines, or a suspended one whose members are still admitted or whose queued work still reaches the model',
-    run: operatorListsCutWorkspacesOffAtTheNextDeploy,
+      'operator control: workspace policy waits for an agent restart, a suspended workspace still admits calls or dispatches, or a workspace owner changes installation policy',
+    run: workspacePolicyCutsOffQueuedWorkImmediately,
   },
   {
     guarantee:

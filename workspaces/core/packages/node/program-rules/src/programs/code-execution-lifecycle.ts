@@ -50,6 +50,7 @@ export const codeExecutionLifecycle = {
       properties: { Effect: ['acquireUseRelease', 'addFinalizer', 'ensuring'], Scope: ['make'] },
       exemptRoles: [],
       standard: 'EF-08',
+      status: RuleStatus.Enforced,
     },
     {
       ...SWEPT_IN_DIALECT,
@@ -57,6 +58,7 @@ export const codeExecutionLifecycle = {
       properties: { Scope: ['provide'] },
       exemptRoles: [FileRole.CelldRestart],
       standard: 'EF-08',
+      status: RuleStatus.Enforced,
     },
     {
       ...SWEPT_IN_DIALECT,
@@ -64,6 +66,7 @@ export const codeExecutionLifecycle = {
       properties: { Scope: ['close'] },
       exemptRoles: [],
       standard: 'EF-08',
+      status: RuleStatus.Enforced,
     },
     {
       ...RESTRICTED_DEFAULTS,

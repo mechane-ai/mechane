@@ -26,11 +26,13 @@ const INVALID_KEY_CHALLENGE: ReadonlyArray<FailureHeader> = [
  * names the wait it asks for.
  */
 const FAILURE_HEADERS: Readonly<FailureHeaders> = {
+  CredentialAlreadyExists: () => [],
   IdentityNotAdmitted: () => [],
   InstallationAdministratorRequired: () => [],
   PersonalWorkspaceProtected: () => [],
   PrincipalNotFound: () => [],
   WorkspaceCreationConflict: () => [],
+  WorkspacePolicyConflict: () => [],
   WorkspaceLastOwner: () => [],
   WorkspaceMemberNotFound: () => [],
   WatchNotFound: () => [],
@@ -46,6 +48,7 @@ const FAILURE_HEADERS: Readonly<FailureHeaders> = {
   ObjectUnavailable: () => [],
   ReleaseFileNotFound: () => [],
   ReleasesBucketUnavailable: () => [],
+  ReleaseSourceUnavailable: () => [],
   KeyMissing: () => [[HttpHeader.WwwAuthenticate, BEARER_SCHEME]],
   KeyUnrecognized: () => INVALID_KEY_CHALLENGE,
   KeyRevoked: () => INVALID_KEY_CHALLENGE,

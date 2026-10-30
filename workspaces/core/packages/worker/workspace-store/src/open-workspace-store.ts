@@ -1,9 +1,12 @@
 import { openDatabase } from '@mechane/store';
 import { connectionRecords } from './connections/connection-records.ts';
+import { credentialRecords } from './credentials/credential-records.ts';
 import { dispatchRecords } from './dispatches/dispatch-records.ts';
 import { machineLeaseRecords } from './leases/machine-lease-records.ts';
 import { mechIndexRecords } from './mechs/mech-index-records.ts';
 import { MIGRATIONS } from './migrations.ts';
+import { policyRecords } from './policy/policy-records.ts';
+import { slackInstallationRecords } from './slack-installations/slack-installation-records.ts';
 import { slackRecords } from './slack/slack-records.ts';
 import type { WorkspaceStore } from './types.ts';
 
@@ -18,10 +21,13 @@ export function openWorkspaceStore({ storage }: OpenWorkspaceStoreInput): Worksp
 
   return {
     ...openDatabase({ storage, migrations: MIGRATIONS }),
+    ...policyRecords({ sql }),
     ...mechIndexRecords({ sql }),
     ...dispatchRecords({ sql }),
     ...machineLeaseRecords({ sql }),
     ...slackRecords({ sql }),
+    ...slackInstallationRecords({ sql }),
     ...connectionRecords({ sql }),
+    ...credentialRecords({ sql }),
   };
 }

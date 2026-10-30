@@ -1,14 +1,7 @@
-import {
-  IntegrationSecretsVariable,
-  MachinesVariable,
-  ModelOffersVariable,
-  SecureOrigin,
-  SlackInstallationsVariable,
-  WORKER_VARIABLES,
-} from '@mechane/deployment';
-import { SandboxWorkspacesVariable, WorkspaceIdsVariable } from '@mechane/protocol';
+import { ModelOffersVariable, SecureOrigin, WORKER_VARIABLES } from '@mechane/deployment';
 import { Duration, Schema } from 'effect';
 import { ALARM_WORK_MAX } from './constants.ts';
+import { SecretSource } from './secrets/secret-source.schemas.ts';
 
 /** How long one alarm lets pi work as a variable writes it: whole seconds above zero, at most the declared maximum. */
 const AlarmWorkSeconds = Schema.NumberFromString.check(
@@ -25,16 +18,10 @@ const AlarmWorkSeconds = Schema.NumberFromString.check(
 export const MechVariables = Schema.Struct({
   githubWebOrigin: SecureOrigin,
   githubApiOrigin: SecureOrigin,
-  /** Omission means no integration credentials are configured for any workspace. */
-  integrationSecrets: Schema.OptionFromOptionalKey(IntegrationSecretsVariable),
-  /** Absent when no Slack installations are configured. */
-  slackInstallations: Schema.OptionFromOptionalKey(SlackInstallationsVariable),
   modelUpstream: SecureOrigin,
-  modelApiKey: Schema.RedactedFromValue(Schema.NonEmptyString),
+  modelApiKey: SecretSource,
+  credentialKeyring: SecretSource,
   modelOffers: ModelOffersVariable,
-  sandboxWorkspaces: SandboxWorkspacesVariable,
-  workspaceMachines: MachinesVariable,
-  suspendedWorkspaces: WorkspaceIdsVariable,
   alarmWorkSeconds: AlarmWorkSeconds,
 }).pipe(Schema.encodeKeys(WORKER_VARIABLES));
 

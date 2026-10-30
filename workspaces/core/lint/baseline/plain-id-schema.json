@@ -4,8 +4,6 @@
   "packages/node/commands/src/declarations/mech-commands.ts": 4,
   "packages/node/commands/src/declarations/schemas.ts": 1,
   "packages/node/commands/src/declarations/turn-commands.ts": 1,
-  "packages/node/deploy-kernel/src/schemas.ts": 1,
-  "packages/node/deploy-preflight/src/schemas.ts": 1,
   "packages/node/eval/src/schemas.ts": 3,
   "packages/node/eval/src/store/schemas.ts": 3,
   "packages/node/guest/src/schemas.ts": 1,

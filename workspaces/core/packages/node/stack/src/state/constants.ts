@@ -2,6 +2,7 @@
 export const LOCAL_FILES = {
   manifest: 'local-state.json',
   bootstrapSecret: 'bootstrap-secret',
+  credentialKeyring: 'credential-keyring.json',
   lock: 'local-lock.sqlite3',
 } as const;
 

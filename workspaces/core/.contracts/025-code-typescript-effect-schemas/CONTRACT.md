@@ -74,10 +74,10 @@ Existing schema-alias and boundary checks remain enforced.
 
 Values: `jsonBodies` `shared` [`Body`], `worker` [`Response`, `Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>`, `R2ObjectBody`], `node` [].
 - oxlint's restricted members (TD-22): a ratchet until phase F2: `Schema.decodeUnknownOption`
-- oxlint's restricted members (EF-16): a ratchet until phase D: `Schema.encodeEffect`, `Schema.encodeUnknownEffect`
+- oxlint's restricted members (EF-16): enforced in phase D: `Schema.encodeEffect`, `Schema.encodeUnknownEffect`
 - ast-grep `decode-or-die` (EF-16): enforced in phase D
 - ast-grep `schema-alias` (TD-12): enforced in phase D
-- ast-grep `encode-sync` (EF-16): a ratchet until phase D
+- ast-grep `encode-sync` (EF-16): enforced in phase D
 - ast-grep `encode-keys-outside-records` (CP-06): a ratchet until phase F2
 - ast-grep `store-row-decode` (TD-22): enforced in phase F2
 - ast-grep `bare-string-schema` (TD-26): a ratchet until phase F2

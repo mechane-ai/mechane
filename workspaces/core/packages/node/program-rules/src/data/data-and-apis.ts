@@ -52,7 +52,7 @@ export const dataAndApis = {
       ...AST_GREP_DEFAULTS,
       name: 'nullish-operator',
       standard: 'TD-18',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: ['const name = value ?? fallback;', 'const name = row?.name;'],
       allowed: ['const name = Option.getOrElse(Option.fromNullishOr(value), () => fallback);'],

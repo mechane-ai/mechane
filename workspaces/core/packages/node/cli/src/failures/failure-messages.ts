@@ -36,6 +36,13 @@ const NO_NEXT_STEP = Option.none<string>();
  * gathered from the tables of the failures' owners.
  */
 export const FAILURE_MESSAGES: Readonly<FailureMessages<Failure>> = {
+  WorkspaceImportConflict: ({ _tag, workspaceId, connectionId }) =>
+    ownMessage({
+      code: _tag,
+      status: ExitStatus.Conflict,
+      message: `workspace ${workspaceId} import conflicts with Slack installation ${connectionId}`,
+      next: NO_NEXT_STEP,
+    }),
   WorkspaceSelectionRefused: ({ _tag, workspaceId }) => {
     const next = Option.some(`run ${PROGRAM} workspace list`);
 

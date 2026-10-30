@@ -24,7 +24,12 @@ type OfferModelInput = { readonly offer: ModelOffer; readonly upstream: URL };
 export function meteredModels({ modelUpstream, meter }: MeteredModelsInput): Models {
   const { upstream, apiKey, offers } = modelUpstream;
   const models = createModels();
-  const resolveKey: ApiKeyAuth['resolve'] = async () => ({ auth: { apiKey: Redacted.value(apiKey) } });
+
+  const resolveKey: ApiKeyAuth['resolve'] = async () => {
+    const key = await apiKey();
+
+    return { auth: { apiKey: Redacted.value(key) } };
+  };
 
   models.setProvider(
     createProvider({

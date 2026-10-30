@@ -19,9 +19,11 @@ import type {
   WorkspaceMembersAnswer,
 } from './workspace-members.schemas.ts';
 import type { ChangeWorkspaceMemberInput, CreateSharedWorkspaceInput } from './workspace-members.types.ts';
+import type { WorkspacePresence } from './workspace-policy.schemas.ts';
 
 /** Each RPC method of the directory. */
 type DirectoryMethods = {
+  readonly workspaceExists: (input: WorkspaceIdInput) => typeof WorkspacePresence.Encoded;
   readonly createSharedWorkspace: (input: CreateSharedWorkspaceInput) => typeof SharedWorkspaceCreation.Encoded;
   readonly workspaceMembers: (input: WorkspaceMembershipInput) => typeof WorkspaceMembersAnswer.Encoded;
   readonly changeWorkspaceMember: (input: ChangeWorkspaceMemberInput) => typeof WorkspaceMemberChangeAnswer.Encoded;

@@ -1,9 +1,8 @@
-import { EVERY_WORKSPACE } from '@mechane/deployment';
 import { SandboxRefusal } from '@mechane/harness-tools';
 import type { Hands, HandsExecution } from '@mechane/harness-tools';
 import type { MechRow, MechStore, MechTables, SessionIdInput } from '@mechane/mech-store';
 import type { DroneId } from '@mechane/records';
-import { sandboxStub, workspaceStub } from '@mechane/rpc';
+import { readWorkspacePolicy, sandboxStub, workspaceStub } from '@mechane/rpc';
 import type { ObjectSettings } from '@mechane/rpc';
 import { untilAborted } from '@mechane/utilities';
 import { Match, Option } from 'effect';
@@ -25,7 +24,7 @@ type SandboxOwner = MechRow & {
 /**
  * The hands of a mech and its drones: each one's own sandbox, which runs each execution once under its id. A tool runs
  * only in a turn or a drone of a created mech, so the mech's record names the sandbox and a drone's conversation names
- * its drone. An unlisted or suspended workspace reaches no sandbox, and a full one none until a machine stops.
+ * its drone. Disabled or suspended workspaces reach no sandbox, and full ones wait until a machine stops.
  */
 export function mechHands({ store, settings }: MechHandsInput): Hands {
   const run: Hands['run'] = async (execution) => {
@@ -33,13 +32,13 @@ export function mechHands({ store, settings }: MechHandsInput): Hands {
       sandboxOwner({ store: tables, role: execution.role });
 
     const { workspaceId, id, droneId } = await store.atomic({ run: owner });
-    const isListed = settings.sandboxWorkspaces === EVERY_WORKSPACE || settings.sandboxWorkspaces.includes(workspaceId);
+    const policy = await readWorkspacePolicy({ bindings: settings, workspaceId });
     const sandboxId = Option.getOrElse(droneId, () => id);
-    const target = { workspaceId, mechId: id, sandboxId, machines: settings.workspaceMachines };
+    const target = { workspaceId, mechId: id, sandboxId, machines: policy.machines };
     const unaborted: () => AbortSignal = () => new AbortController().signal;
     const signal = Option.getOrElse(execution.signal, unaborted);
 
-    if (!isListed || settings.suspendedWorkspaces.includes(workspaceId)) {
+    if (!policy.hasSandboxes || policy.isSuspended) {
       return refusedOutcome({ target, reason: SandboxRefusal.NoSandbox });
     }
 

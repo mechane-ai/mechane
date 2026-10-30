@@ -17,6 +17,7 @@ import type {
   TargetUnpublished,
   UsageInvalid,
   VerificationUrlMismatched,
+  WorkspaceImportConflict,
   WorkspaceSelectionRefused,
 } from './errors.ts';
 import type { COMMAND_OUTPUTS } from './output/command-outputs.ts';
@@ -60,6 +61,7 @@ export type CommandInvocation<N extends CommandName = CommandName> = {
  * an eval run.
  */
 export type RunFailure =
+  | WorkspaceImportConflict
   | WorkspaceSelectionRefused
   | SandboxMaintenanceFailed
   | ClientFailure

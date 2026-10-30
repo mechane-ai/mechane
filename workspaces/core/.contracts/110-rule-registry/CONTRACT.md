@@ -71,7 +71,7 @@ Each contract that ships an asset says in its adaptations whether the lint loads
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `unexercised` `packages/worker/edge/src/routing/peer.ts`, `packages/worker/sandbox/src/providers/container-provider.ts`, `packages/node/deploy-kernel/src/check-refusals.ts`, `packages/node/deploy-kernel/src/run-git.ts`, `packages/node/deploy-kernel/src/run-wrangler.ts`, `packages/node/deploy-kernel/src/temporary-folder.ts`, `packages/node/deploy-kernel/src/production-variables.ts`, `packages/node/deploy-preflight/src/**`, `packages/node/deploy/src/rollout/**`, `packages/node/deploy-kernel/src/services/**`, `packages/node/release/src/main.ts`, `packages/node/release/src/load-release-settings.ts`, `packages/node/release/src/print-source-release.ts`, `packages/node/release/src/upload-release.ts`, `packages/node/release/src/clean-revision.ts`, `packages/node/release/src/build/build-source-release.ts`, `packages/node/stack/src/dev/**`; `baselineHold` per-file.
+Values: `unexercised` `packages/worker/edge/src/routing/peer.ts`, `packages/worker/sandbox/src/providers/container-provider.ts`, `packages/node/release/src/main.ts`, `packages/node/release/src/load-release-settings.ts`, `packages/node/release/src/print-source-release.ts`, `packages/node/release/src/clean-revision.ts`, `packages/node/release/src/build/build-source-release.ts`, `packages/node/stack/src/dev/**`; `baselineHold` per-file.
 - owned check `rules` (AS-01): enforced in phase C2
 
 <!-- End of the generated block. -->

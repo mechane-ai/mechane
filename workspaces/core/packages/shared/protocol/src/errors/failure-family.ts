@@ -3,11 +3,14 @@ import type { ServerFailure } from './server-failure.errors.ts';
 
 /** The family of each failure the Worker answers with; the failure's tag is its code. */
 export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>> = {
+  ReleaseSourceUnavailable: ErrorFamily.Unavailable,
+  CredentialAlreadyExists: ErrorFamily.Conflict,
   IdentityNotAdmitted: ErrorFamily.Forbidden,
   InstallationAdministratorRequired: ErrorFamily.Forbidden,
   PersonalWorkspaceProtected: ErrorFamily.Forbidden,
   PrincipalNotFound: ErrorFamily.NotFound,
   WorkspaceCreationConflict: ErrorFamily.Conflict,
+  WorkspacePolicyConflict: ErrorFamily.Conflict,
   WorkspaceLastOwner: ErrorFamily.Conflict,
   WorkspaceMemberNotFound: ErrorFamily.NotFound,
   WorkspaceOwnerRequired: ErrorFamily.Forbidden,

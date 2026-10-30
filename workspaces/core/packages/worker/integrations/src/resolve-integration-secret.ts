@@ -1,29 +1,43 @@
-import type { IntegrationSecrets } from '@mechane/deployment';
-import type { WorkspaceId } from '@mechane/records';
-import { Option, Redacted } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { Option, Result } from 'effect';
+import type { Redacted } from 'effect';
+import { decryptIntegrationSecret } from './credentials/decrypt-integration-secret.ts';
+import type { IntegrationSecretInvalid } from './credentials/errors.ts';
+import { failIntegrationSecret } from './credentials/fail-integration-secret.ts';
+import { readEncryptedCredential } from './credentials/read-encrypted-credential.ts';
+import type { ResolveIntegrationSecretInput } from './types.ts';
 
-type ResolveIntegrationSecretInput = {
-  /** None means the operator has configured no integration credentials. */
-  readonly secrets: Option.Option<IntegrationSecrets>;
-  readonly workspaceId: typeof WorkspaceId.Encoded;
-  readonly secretReference: string;
-};
-
-/** Resolves only within the requested workspace; absence never falls back to another scope. */
-export function resolveIntegrationSecret({
-  secrets,
+/** A missing credential never falls back to deployment configuration or another workspace. */
+export async function resolveIntegrationSecret({
+  settings,
   workspaceId,
   secretReference,
-}: ResolveIntegrationSecretInput): Option.Option<Redacted.Redacted> {
-  if (Option.isNone(secrets)) {
-    return Option.none();
+}: ResolveIntegrationSecretInput): Promise<Result.Result<Option.Option<Redacted.Redacted>, IntegrationSecretInvalid>> {
+  const decoded = await readEncryptedCredential({ settings, workspaceId, secretReference });
+
+  if (Result.isFailure(decoded)) {
+    return Result.fail(decoded.failure);
   }
 
-  const configured = Redacted.value(secrets.value);
-  const workspace = Option.fromUndefinedOr(configured[workspaceId]);
+  if (Option.isNone(decoded.success)) {
+    const missing = Option.none();
 
-  return workspace.pipe(
-    Option.flatMap((values) => Option.fromUndefinedOr(values[secretReference])),
-    Option.map(Redacted.make),
-  );
+    return Result.succeed(missing);
+  }
+
+  const current = settings.credentialKeyring();
+  const keyring = await capturePromise({ promise: current });
+
+  if (Result.isFailure(keyring)) {
+    return failIntegrationSecret();
+  }
+
+  const decrypted = await decryptIntegrationSecret({
+    workspaceId,
+    secretReference,
+    credential: decoded.success.value,
+    keyring: keyring.success,
+  });
+
+  return Result.map(decrypted, Option.some);
 }

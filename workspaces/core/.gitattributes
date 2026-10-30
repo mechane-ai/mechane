@@ -139,10 +139,7 @@
 /packages/node/cli-update/tsconfig.json linguist-generated merge=ours
 /packages/node/cli/tsconfig.json linguist-generated merge=ours
 /packages/node/commands/tsconfig.json linguist-generated merge=ours
-/packages/node/deploy-kernel/tsconfig.json linguist-generated merge=ours
-/packages/node/deploy-preflight/tsconfig.json linguist-generated merge=ours
-/packages/node/deploy-render/tsconfig.json linguist-generated merge=ours
-/packages/node/deploy/tsconfig.json linguist-generated merge=ours
+/packages/node/distribution/tsconfig.json linguist-generated merge=ours
 /packages/node/eval/tsconfig.json linguist-generated merge=ours
 /packages/node/guest/tsconfig.json linguist-generated merge=ours
 /packages/node/local-rules/tsconfig.json linguist-generated merge=ours

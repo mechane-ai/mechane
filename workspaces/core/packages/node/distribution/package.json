@@ -1,0 +1,13 @@
+{
+  "name": "@mechane/distribution",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/release": "workspace:*",
+    "@mechane/wrangler": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

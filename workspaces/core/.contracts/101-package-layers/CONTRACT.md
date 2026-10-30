@@ -6,7 +6,7 @@ paths: ["**/*.ts", "**/package.json", "dependencies.json", ".dependency-cruiser.
 
 ## Rules
 
-The product is one pnpm workspace of private packages under the `@mechane` scope.
+The runtime and build programs form one pnpm workspace of private packages under the `@mechane` scope. The native OpenTofu provider is an independent Go module under `infrastructure/provider`; HCL installation modules live under `infrastructure/modules`. These infrastructure components do not import runtime implementation packages.
 `dependencies.json` declares each member once: what it owns; its `layer`, from 0 for vocabulary through configuration, wire, platform, adapters, domain and surfaces to 7 for entries; its `lane`, `shared` for code that runs in the Worker, in Bun and in Node, `worker` for the Workers runtime and `node` for Node and Bun programs; its `dialect`, `data`, `plain` or `effect`; its `kind`, the template its package follows; and its `criterion`, the boundary that admits it: `state`, `closure`, `reuse` or `program`.
 `consumers`, when present, names the only members that may import it, and `confines` names the third-party packages that only it and the other members naming them may import.
 A member imports another only when that member sits in a strictly lower layer of a lane its own lane imports, `shared` from every lane, `worker` from the worker lane and `node` from the node lane, and its `consumers` allow it, and then only through that member's `src/index.ts`, so no two members of one layer import each other and no package cycle can form.
@@ -20,7 +20,7 @@ A folder becomes a package only for its criterion, and a maintainer approves eac
 
 Declare each HTTP operation once in `@mechane/protocol`; the Worker's router and the client derive from the catalog, and each CLI command names the operations it calls.
 The browser pages `/device` and `/auth/github/callback` are not operations: `@mechane/pages` serves them as HTML, and `@mechane/protocol` names their paths, the approval page's query and form, and GitHub's OAuth wire, which the stack's local GitHub and the smoke's browser use too.
-The install script `/install.sh` and the release files below `/cli/` are not operations either, since an operation answers JSON that the router encodes and caches nothing, and a binary is no JSON: the `releases` folder of `@mechane/edge` serves them read-only from the `RELEASES` bucket, and answers a key no release published and a bucket that fails as `ReleaseFileNotFound` and `ReleasesBucketUnavailable`, through the same error response as an operation's failure; `@mechane/protocol` names their keys, the manifest and the release stamp.
+The install script `/install.sh` and release files below `/cli/` are read-only HTTP surfaces owned by `@mechane/edge`. Settings compose their source from the installation’s immutable public release origin, or the local `RELEASES` bucket. `@mechane/protocol` owns paths, target names, manifests and release stamps. Release files are not JSON operations, but their failures use the same public error response boundary.
 Add a package only with its first real code, and add its edge to its `package.json` in the same change as the first import that needs it.
 
 Violation: `@mechane/client` imports `node:fs` to read a credential file, which the Worker cannot load.

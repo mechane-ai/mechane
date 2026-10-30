@@ -44,8 +44,8 @@ Values: `trailingIfStatements` 2.
 - oxlint `no-lonely-if` (EF-21): enforced, `"error"`
 - oxlint `no-negated-condition` (EF-21): enforced, `"error"`
 - ast-grep `generator-guard` (EF-04): enforced in phase F3
-- ast-grep `succeed-in-generator` (EF-04): a ratchet until phase F3
-- ast-grep `sync-in-generator` (EF-04): a ratchet until phase F3
+- ast-grep `succeed-in-generator` (EF-04): enforced in phase F3
+- ast-grep `sync-in-generator` (EF-04): enforced in phase F3
 - ast-grep `trailing-if` (ST-26): enforced
 
 <!-- End of the generated block. -->

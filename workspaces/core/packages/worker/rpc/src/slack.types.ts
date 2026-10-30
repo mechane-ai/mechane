@@ -1,4 +1,4 @@
-import type { SlackBinding } from '@mechane/protocol';
+import type { SlackBinding, SlackInstallation } from '@mechane/protocol';
 import type {
   InboxItemId,
   SlackBindingId,
@@ -11,6 +11,13 @@ import type {
 
 export type ConfigureSlackBindingInput = { readonly binding: typeof SlackBinding.Encoded };
 export type SlackBindingInput = { readonly bindingId: SlackBindingId };
+
+export type SlackInstallationInput = { readonly connectionId: SlackConnectionId };
+
+export type ConfigureSlackInstallationInput = {
+  readonly installation: typeof SlackInstallation.Encoded;
+  readonly isCreateOnly: boolean;
+};
 
 export type AdmitSlackEventInput = {
   readonly connectionId: SlackConnectionId;

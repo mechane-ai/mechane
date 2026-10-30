@@ -1,4 +1,10 @@
 node_modules/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
 dist/
 .wrangler/
 .celld/

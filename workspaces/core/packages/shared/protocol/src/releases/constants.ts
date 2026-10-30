@@ -28,6 +28,9 @@ export const ReleaseKey = {
   Binary: '/mechane-',
 } as const;
 
+/** The manifest filename shared by publication and the download proxy. */
+export const ReleaseAsset = { Manifest: 'cli-manifest.json' } as const;
+
 /** The path of the install script a deployment serves, which installs the release its latest manifest names. */
 export const INSTALL_SCRIPT_PATH = '/install.sh';
 

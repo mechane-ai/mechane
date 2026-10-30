@@ -16,6 +16,13 @@ export function admitSlackEvent({
   messageTimestamp,
   fingerprint,
 }: AdmitEventInput): SlackEventAdmission {
+  const installation = store.slackInstallation({ connectionId });
+  const isInstalled = Option.exists(installation, (current) => current.teamId === teamId);
+
+  if (!isInstalled) {
+    return SlackEventAdmission.cases.Ignored.make({});
+  }
+
   const existing = store.slackEvent({ connectionId, eventId, teamId, channelId, messageTimestamp });
 
   if (Option.isSome(existing)) {

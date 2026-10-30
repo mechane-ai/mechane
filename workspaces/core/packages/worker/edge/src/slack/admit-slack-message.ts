@@ -1,9 +1,8 @@
 import { callWorkspace } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
-import type { SlackInstallation } from '@mechane/deployment';
 import type { SlackEventCallback, SlackMessage } from '@mechane/integrations';
 import { RequestInvalid } from '@mechane/protocol';
-import type { ObjectUnavailable } from '@mechane/protocol';
+import type { ObjectUnavailable, SlackInstallation } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { SlackEventAdmission } from '@mechane/rpc';
 import { sha256Hex } from '@mechane/utilities';
@@ -23,7 +22,7 @@ type PrepareSlackEventInput = AdmitSlackMessageInput & { readonly message: Slack
 export const admitSlackMessage = Effect.fn('admitSlackMessage')(function* (
   input: AdmitSlackMessageInput,
 ): Effect.fn.Return<HttpStatusCode, ObjectUnavailable | RequestInvalid> {
-  const human = readHumanSlackMessage(input);
+  const human = yield* readHumanSlackMessage(input);
 
   if (Option.isNone(human)) {
     return HttpStatusCode.Ok;

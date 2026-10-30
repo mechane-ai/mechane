@@ -1,5 +1,0 @@
-{
-  "packages/node/deploy-kernel/src/services/read-json.ts": 1,
-  "packages/node/deploy/src/rollout/check-served.ts": 1,
-  "packages/node/deploy/src/rollout/roll-back.ts": 2
-}

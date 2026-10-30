@@ -57,6 +57,8 @@ export { JudgedKey, CachedResolution } from './keys.schemas.ts';
 export type { KeyCacheRpc } from './key-cache.types.ts';
 export type { TakeInput, LimiterRpc } from './limits.types.ts';
 export { TakeAnswer } from './schemas.ts';
+export { CredentialReading, CredentialMutation } from './credentials.schemas.ts';
+export type { CredentialReferenceInput, SaveCredentialInput } from './credentials.types.ts';
 export { sandboxStub } from './stubs/sandbox-stub.ts';
 export { workspaceStub } from './stubs/workspace-stub.ts';
 export {
@@ -105,6 +107,11 @@ export type {
   PrepareMechCreationInput,
 } from './workspace.types.ts';
 export { objectSettings } from './object-settings.ts';
+export { SecretSource } from './secrets/secret-source.schemas.ts';
+export { operatorSecretReader } from './secrets/operator-secret-reader.ts';
+export { credentialKeyringReader } from './secrets/credential-keyring-reader.ts';
+export { OperatorSecretName } from './secrets/constants.ts';
+export type { SecretReader } from './secrets/types.ts';
 export { directoryStub } from './stubs/directory-stub.ts';
 export { keyCacheStub } from './stubs/key-cache-stub.ts';
 export { limiterStub } from './stubs/limiter-stub.ts';
@@ -114,12 +121,14 @@ export { objectBindings } from './object-bindings.ts';
 export { SandboxAnswer } from './sandbox.schemas.ts';
 
 export type { SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
-export { SlackBindingAnswer, SlackEventAdmission } from './slack.schemas.ts';
+export { SlackBindingAnswer, SlackEventAdmission, SlackInstallationAnswer } from './slack.schemas.ts';
 export type {
   ConfigureSlackBindingInput,
   SlackBindingInput,
   AdmitSlackEventInput,
   ReceiveSlackInboxItemInput,
+  ConfigureSlackInstallationInput,
+  SlackInstallationInput,
 } from './slack.types.ts';
 
 export {
@@ -145,3 +154,6 @@ export type {
   SourceIdentityInput,
   SourceCaptureInput,
 } from './source.types.ts';
+export { WorkspaceVariables, WorkspacePolicyMutation, WorkspacePresence } from './workspace-policy.schemas.ts';
+export type { ReadWorkspacePolicyInput, SaveWorkspacePolicyInput } from './workspace-policy.types.ts';
+export { readWorkspacePolicy } from './read-workspace-policy.ts';

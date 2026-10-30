@@ -21,11 +21,14 @@ const COMPILER_DEFAULTS = { tool: RuleTool.Compiler, fix: RuleFix.Manual, behavi
 const VALUES = {
   inferredRecordFactories: [
     'connectionRecords',
+    'credentialRecords',
     'findingRecords',
+    'policyRecords',
     'slackDeliveryProgressRecords',
     'slackDeliveryRecords',
     'slackOriginRecords',
     'slackRecords',
+    'slackInstallationRecords',
     'sourceGrantRecords',
     'sourceRecords',
     'watchRecords',

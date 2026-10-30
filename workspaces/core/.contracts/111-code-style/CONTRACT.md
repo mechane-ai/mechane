@@ -138,6 +138,6 @@ Through the cleanup, contract 110's `baselineHold` held each ratchet's total, so
 - ast-grep `dense-loop` (SC-08): enforced in phase F3
 - ast-grep `untyped-failure` (SC-09): enforced in phase F2
 - ast-grep `unit-number` (SC-11): enforced in phase F5
-- ast-grep `http-literal` (SC-12): a ratchet until phase F2
+- ast-grep `http-literal` (SC-12): enforced in phase F2
 
 <!-- End of the generated block. -->

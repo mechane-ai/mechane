@@ -1,7 +1,3 @@
 {
-  "packages/node/deploy-kernel/src/run-git.ts": 1,
-  "packages/node/deploy-kernel/src/run-wrangler.ts": 1,
-  "packages/node/deploy-kernel/src/services/read-readiness.ts": 1,
-  "packages/node/release/src/upload-release.ts": 1,
   "packages/node/wrangler/src/base-configuration.ts": 1
 }

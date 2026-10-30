@@ -29,7 +29,7 @@ export async function cloneSourceCheckout({
 
   const token = await createGitHubToken({
     origin: mech.settings.githubApiOrigin,
-    secrets: mech.settings.integrationSecrets,
+    settings: mech.settings,
     workspaceId: owner.workspaceId,
     grant: source.grant,
     permission: GITHUB_TOKEN_PERMISSION.Read,

@@ -25,6 +25,8 @@ under test curation. Do not add unit tests or mocks of Mechane code. Checks requ
 paid models.
 
 This repository receives source snapshots from a private development repository. Changes must remain independently
-buildable and preserve required legal attribution. Keep credentials and installation state outside source control. The
-included deployment overlay is an example with no hosted installation identifiers. Publishing a snapshot does not
-authorize deploying a service or uploading release artifacts.
+buildable and preserve required legal attribution. Keep credentials and installation state outside source control.
+
+The OpenTofu example contains no hosted installation identifiers. Infrastructure owns installation resources; agents and
+workspace integrations are runtime API data. Publishing a snapshot does not authorize deploying a service or uploading
+release artifacts.

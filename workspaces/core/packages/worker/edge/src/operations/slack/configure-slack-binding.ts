@@ -1,11 +1,10 @@
 import { callMech, callWorkspace } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
-import { findSlackInstallation } from '@mechane/integrations';
 import { SlackBinding, SlackBindingResult } from '@mechane/protocol';
 import type { catalog, ObjectUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired } from '@mechane/protocol';
 import { WorkspaceId } from '@mechane/records';
 import { MechAnswer } from '@mechane/rpc';
-import { Effect, Option, Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import { requireWorkspaceOwner } from '../../admission/require-workspace-owner.ts';
 import type { WorkInput } from '../../routing/types.ts';
 
@@ -28,16 +27,6 @@ export const configureSlackBinding = Effect.fn('configureSlackBinding')(function
   const workspaceId = WorkspaceId.make(rawWorkspaceId);
 
   yield* requireWorkspaceOwner({ settings, caller, workspaceId });
-
-  const installation = findSlackInstallation({
-    installations: settings.slackInstallations,
-    workspaceId,
-    connectionId: binding.connectionId,
-  });
-
-  if (Option.isNone(installation) || installation.value.teamId !== binding.teamId) {
-    return SlackBindingResult.cases.ConnectionMissing.make({});
-  }
 
   return yield* saveSlackBinding({ settings, workspaceId, binding });
 });

@@ -48,7 +48,7 @@ The shipped oxlint file stays unloaded because the existing ban-ts-comment setti
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `inferredRecordFactories` `connectionRecords`, `findingRecords`, `slackDeliveryProgressRecords`, `slackDeliveryRecords`, `slackOriginRecords`, `slackRecords`, `sourceGrantRecords`, `sourceRecords`, `watchRecords`, `workspaceRecoveryRecords`, `workspaceRecords`; `compilerOptions` `target` es2024, `module` nodenext, `moduleResolution` nodenext, `lib` [`es2024`], `types` [], `allowImportingTsExtensions` true, `noEmit` true, `skipLibCheck` true.
+Values: `inferredRecordFactories` `connectionRecords`, `credentialRecords`, `findingRecords`, `policyRecords`, `slackDeliveryProgressRecords`, `slackDeliveryRecords`, `slackOriginRecords`, `slackRecords`, `slackInstallationRecords`, `sourceGrantRecords`, `sourceRecords`, `watchRecords`, `workspaceRecoveryRecords`, `workspaceRecords`; `compilerOptions` `target` es2024, `module` nodenext, `moduleResolution` nodenext, `lib` [`es2024`], `types` [], `allowImportingTsExtensions` true, `noEmit` true, `skipLibCheck` true.
 The generated configurations carry `lanePrograms`.
 - compiler option `strict` (TD-10): enforced, `true`
 - compiler option `noUncheckedIndexedAccess` (TD-10): enforced, `true`
@@ -69,7 +69,7 @@ The generated configurations carry `lanePrograms`.
 - compiler option `moduleDetection` (TD-10): enforced in phase C2, `force`
 - compiler option `libReplacement` (TD-10): enforced in phase C2, `false`
 - oxlint `typescript/ban-ts-comment` (TD-10): enforced, `["error",{"ts-expect-error":true,"ts-ignore":true,"ts-nocheck":true,"ts-check":true}]`
-- oxlint `typescript/explicit-function-return-type` (TD-09): enforced in phase D, `["error",{"allowExpressions":false,"allowTypedFunctionExpressions":true,"allowHigherOrderFunctions":false,"allowedNames":["connectionRecords","findingRecords","slackDeliveryProgressRecords","slackDeliveryRecords","slackOriginRecords","slackRecords","sourceGrantRecords","sourceRecords","watchRecords","workspaceRecoveryRecords","workspaceRecords"]}]`
-- oxlint `typescript/explicit-module-boundary-types` (TD-09): enforced in phase D, `["error",{"allowedNames":["connectionRecords","findingRecords","slackDeliveryProgressRecords","slackDeliveryRecords","slackOriginRecords","slackRecords","sourceGrantRecords","sourceRecords","watchRecords","workspaceRecoveryRecords","workspaceRecords"]}]`
+- oxlint `typescript/explicit-function-return-type` (TD-09): enforced in phase D, `["error",{"allowExpressions":false,"allowTypedFunctionExpressions":true,"allowHigherOrderFunctions":false,"allowedNames":["connectionRecords","credentialRecords","findingRecords","policyRecords","slackDeliveryProgressRecords","slackDeliveryRecords","slackOriginRecords","slackRecords","slackInstallationRecords","sourceGrantRecords","sourceRecords","watchRecords","workspaceRecoveryRecords","workspaceRecords"]}]`
+- oxlint `typescript/explicit-module-boundary-types` (TD-09): enforced in phase D, `["error",{"allowedNames":["connectionRecords","credentialRecords","findingRecords","policyRecords","slackDeliveryProgressRecords","slackDeliveryRecords","slackOriginRecords","slackRecords","slackInstallationRecords","sourceGrantRecords","sourceRecords","watchRecords","workspaceRecoveryRecords","workspaceRecords"]}]`
 
 <!-- End of the generated block. -->

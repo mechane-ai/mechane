@@ -9,7 +9,7 @@ export const apiTypescriptRequestPaths = {
       ...AST_GREP_DEFAULTS,
       name: 'inline-path-string',
       standard: 'SC-10',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: [`const path = \`/machines/\${machineId}/health\`;`, "const url = '/packs/' + sha;"],
       allowed: [

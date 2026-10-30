@@ -10,6 +10,9 @@ import { runConnectionUpdate } from './connections/run-connection-update.ts';
 import { runGrantList } from './connections/run-grant-list.ts';
 import { runGrantRevoke } from './connections/run-grant-revoke.ts';
 import { runGrantSet } from './connections/run-grant-set.ts';
+import { runCredentialDelete } from './credentials/run-credential-delete.ts';
+import { runCredentialList } from './credentials/run-credential-list.ts';
+import { runCredentialPut } from './credentials/run-credential-put.ts';
 import { documentRun } from './document-run.ts';
 import { runDroneCancel } from './drones/run-drone-cancel.ts';
 import { runDroneList } from './drones/run-drone-list.ts';
@@ -36,9 +39,7 @@ import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
 import { runSandboxExport } from './sandboxes/run-sandbox-export.ts';
 import { runSandboxImport } from './sandboxes/run-sandbox-import.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
-import { runSlackBind } from './slack/run-slack-bind.ts';
-import { runSlackBindings } from './slack/run-slack-bindings.ts';
-import { runSlackDeliveries } from './slack/run-slack-deliveries.ts';
+import { SLACK_RUNS } from './slack/slack-runs.ts';
 import { runSourceAccess } from './sources/run-source-access.ts';
 import { runSource } from './sources/run-source.ts';
 import { runFindingList } from './watches/run-finding-list.ts';
@@ -52,6 +53,9 @@ type Runs = { readonly [N in CommandName]: Run<N> };
 
 /** The run of each command; a command without one fails to compile. Only a command that streams writes as it goes. */
 export const RUNS: Readonly<Runs> = {
+  'credential put': documentRun({ run: runCredentialPut }),
+  'credential list': documentRun({ run: runCredentialList }),
+  'credential delete': documentRun({ run: runCredentialDelete }),
   'source grant': documentRun<'source grant'>({ run: runSource }),
   'source access': documentRun<'source access'>({ run: runSourceAccess }),
   'source revoke': documentRun<'source revoke'>({ run: runSource }),
@@ -63,9 +67,7 @@ export const RUNS: Readonly<Runs> = {
   'watch pause': documentRun({ run: (input) => runWatchStatus({ ...input, status: WatchStatus.Paused }) }),
   'watch resume': documentRun({ run: (input) => runWatchStatus({ ...input, status: WatchStatus.Active }) }),
   'finding list': documentRun({ run: runFindingList }),
-  'slack bind': documentRun({ run: runSlackBind }),
-  'slack bindings': documentRun({ run: runSlackBindings }),
-  'slack deliveries': documentRun({ run: runSlackDeliveries }),
+  ...SLACK_RUNS,
   'connection create': documentRun({ run: runConnectionCreate }),
   'connection update': documentRun({ run: runConnectionUpdate }),
   'connection list': documentRun({ run: runConnectionList }),

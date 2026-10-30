@@ -3,7 +3,10 @@ import type { CreationRequestId, DispatchRequest, WorkDispatchesInput } from '@m
 import type { DatabaseFunctions, PageAfterInput } from '@mechane/store';
 import type { DateTime, Option } from 'effect';
 import type { ConnectionRecords } from './connections/connection-records.ts';
+import type { CredentialRecords } from './credentials/credential-records.ts';
+import type { policyRecords } from './policy/policy-records.ts';
 import type { CommittedRow, LeaseRow, MechRowPage, MechSummaryRow } from './schemas.ts';
+import type { SlackInstallationRecords } from './slack-installations/slack-installation-records.ts';
 import type { slackRecords } from './slack/slack-records.ts';
 
 type SlackRecords = Readonly<ReturnType<typeof slackRecords>>;
@@ -93,8 +96,11 @@ export type SettleOpenDispatchesInput = { readonly mechId: string; readonly now:
 
 /** The workspace database's functions; the store is the only code that runs SQL against the workspace object. */
 export type WorkspaceStore = ConnectionRecords &
+  Readonly<ReturnType<typeof policyRecords>> &
+  CredentialRecords &
   DatabaseFunctions &
   MechIndexRecords &
   DispatchRecords &
   MachineLeaseRecords &
-  SlackRecords;
+  SlackRecords &
+  SlackInstallationRecords;

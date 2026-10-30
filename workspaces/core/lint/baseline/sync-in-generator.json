@@ -1,6 +1,0 @@
-{
-  "packages/node/deploy-kernel/src/production-variables.ts": 1,
-  "packages/node/deploy-preflight/src/check-checkout.ts": 1,
-  "packages/node/deploy/src/rollout/await-readiness.ts": 1,
-  "packages/node/deploy/src/rollout/confirm-tag.ts": 2
-}

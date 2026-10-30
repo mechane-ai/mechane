@@ -1,9 +1,10 @@
 import type { WorkerSettings } from '@mechane/bindings';
-import type { SlackInstallation } from '@mechane/deployment';
 import { resolveIntegrationSecret, SlackEnvelopeType } from '@mechane/integrations';
-import type { ObjectUnavailable, RequestInvalid } from '@mechane/protocol';
+import { DurableObjectClass, ObjectUnavailable } from '@mechane/protocol';
+import type { RequestInvalid, SlackInstallation } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
-import { Effect, Option } from 'effect';
+import { Effect, Option, Result } from 'effect';
+import type { Redacted } from 'effect';
 import { admitSlackMessage } from './admit-slack-message.ts';
 import { readSignedSlackEnvelope } from './read-signed-slack-envelope.ts';
 
@@ -13,17 +14,15 @@ type AnswerSlackRequestInput = {
   readonly installation: SlackInstallation;
 };
 
+type ReadSigningSecretInput = Pick<AnswerSlackRequestInput, 'settings' | 'installation'>;
+
 /** Authenticates an event or URL challenge with the configured signing-secret reference. */
 export const answerSlackRequest = Effect.fn('answerSlackRequest')(function* ({
   request,
   settings,
   installation,
 }: AnswerSlackRequestInput): Effect.fn.Return<Response, RequestInvalid | ObjectUnavailable> {
-  const signingSecret = resolveIntegrationSecret({
-    secrets: settings.integrationSecrets,
-    workspaceId: installation.workspaceId,
-    secretReference: installation.signingSecretReference,
-  });
+  const signingSecret = yield* readSigningSecret({ settings, installation });
 
   if (Option.isNone(signingSecret)) {
     return new Response(null, { status: HttpStatusCode.Unavailable });
@@ -42,4 +41,26 @@ export const answerSlackRequest = Effect.fn('answerSlackRequest')(function* ({
   const status = yield* admitSlackMessage({ settings, installation, envelope: envelope.value });
 
   return new Response(null, { status });
+});
+
+const readSigningSecret = Effect.fn('readSigningSecret')(function* ({
+  settings,
+  installation,
+}: ReadSigningSecretInput): Effect.fn.Return<Option.Option<Redacted.Redacted>, ObjectUnavailable> {
+  const resolved = yield* Effect.tryPromise({
+    try: () =>
+      resolveIntegrationSecret({
+        settings,
+        workspaceId: installation.workspaceId,
+        secretReference: installation.signingSecretReference,
+      }),
+    catch: () =>
+      new ObjectUnavailable({ objectClass: DurableObjectClass.Workspace, reason: 'Slack credential lookup failed' }),
+  });
+
+  if (Result.isFailure(resolved)) {
+    return Option.none();
+  }
+
+  return resolved.success;
 });

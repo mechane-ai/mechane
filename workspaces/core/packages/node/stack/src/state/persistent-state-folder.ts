@@ -8,13 +8,19 @@ import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
 import type { StackSettings, StateLayout } from '../types.ts';
 import { LOCAL_FILES } from './constants.ts';
-import { localBootstrapSecret } from './local-bootstrap-secret.ts';
 import { localStateManifest } from './local-state-manifest.ts';
 import { lockedStateFolder } from './locked-state-folder.ts';
+import { localBootstrapSecret } from './secrets/local-bootstrap-secret.ts';
+import { localCredentialKeyring } from './secrets/local-credential-keyring.ts';
 import { stateLayout } from './state-layout.ts';
 
 type PersistentStateFolderInput = { readonly settings: StackSettings };
-type PersistentState = StateLayout & { readonly bootstrapSecret: string; readonly bootstrapSecretFile: string };
+
+type PersistentState = StateLayout & {
+  readonly bootstrapSecret: string;
+  readonly bootstrapSecretFile: string;
+  readonly credentialKeyring: string;
+};
 
 /** Opens a private installation whose credentials and runtime files survive scope closure. */
 export const persistentStateFolder = Effect.fn('persistentStateFolder')(function* ({
@@ -34,12 +40,14 @@ export const persistentStateFolder = Effect.fn('persistentStateFolder')(function
 
   const bootstrapSecretFile = join(stateFolder, LOCAL_FILES.bootstrapSecret);
   const bootstrapSecret = yield* localBootstrapSecret({ path: bootstrapSecretFile });
+  const credentialKeyringFile = join(stateFolder, LOCAL_FILES.credentialKeyring);
+  const credentialKeyring = yield* localCredentialKeyring({ path: credentialKeyringFile });
 
   const paths = [layout.projectFolder, layout.sandboxesFolder];
 
   yield* Effect.forEach(paths, createDirectory, { concurrency: 1, discard: true });
 
-  return { ...layout, bootstrapSecret, bootstrapSecretFile };
+  return { ...layout, bootstrapSecret, bootstrapSecretFile, credentialKeyring };
 });
 
 const createDirectory = Effect.fn('createDirectory')(function* (path: string): Effect.fn.Return<void, StackFailed> {

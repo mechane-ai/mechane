@@ -16,6 +16,11 @@ export class WorkspaceCreationConflict extends Schema.TaggedError<WorkspaceCreat
   { workspaceId: WorkspaceId },
 ) {}
 
+/** Create-only policy imports never replace later operator changes. */
+export class WorkspacePolicyConflict extends Schema.TaggedError<WorkspacePolicyConflict>()('WorkspacePolicyConflict', {
+  workspaceId: WorkspaceId,
+}) {}
+
 /** Personal ownership is permanent even for installation administrators. */
 export class PersonalWorkspaceProtected extends Schema.TaggedError<PersonalWorkspaceProtected>()(
   'PersonalWorkspaceProtected',

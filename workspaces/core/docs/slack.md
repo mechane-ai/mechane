@@ -11,28 +11,27 @@ access need the scopes for the channel type, such as `channels:history` or `grou
 and/or the relevant message events. Add scopes and authorize them only when the existing installation lacks them.
 [Slack's Events API](https://docs.slack.dev/apis/events-api/)
 
-Configure `MECHANE_SLACK_INSTALLATIONS` as a JSON array following the
-[installation schema](../packages/shared/deployment/src/slack.schemas.ts). This abbreviated example shows one record:
+Select the workspace with `--workspace UUID` or `MECHANE_WORKSPACE_ID`. Save each credential in a private file, then
+upload it with the workspace owner's CLI login:
 
-```json
-{
-  "id": "team-chat",
-  "workspaceId": "YOUR-MECHANE-WORKSPACE-UUID",
-  "teamId": "YOUR-SLACK-TEAM-ID",
-  "botUserId": "YOUR-SLACK-BOT-USER-ID",
-  "apiOrigin": "https://slack.com",
-  "signingSecretReference": "slack-signing",
-  "botTokenSecretReference": "slack-bot",
-  "historyTokenSecretReference": "slack-history"
-}
+```sh
+mechane credential put slack-signing --file /private/path/slack-signing
+mechane credential put slack-bot --file /private/path/slack-bot
+mechane slack connect team-chat \
+  --team-id SLACK-TEAM-ID --bot-user-id SLACK-BOT-USER-ID \
+  --signing-secret-reference slack-signing --bot-token-secret-reference slack-bot
+mechane slack connections
 ```
 
-Store the signing secret and tokens in the server-only `MECHANE_INTEGRATION_SECRETS` secret: a JSON object keyed first
-by Mechane workspace UUID, then by secret reference. Installation metadata contains references only. The optional
-history reference falls back to the bot token. Choose a credential that can read the bound conversation and message
-metadata with [conversations.replies](https://docs.slack.dev/reference/methods/conversations.replies/). See
-[self-hosting](self-hosting.md#supply-credentials) for uploading secrets. Neither prompts nor guest machines receive the
-credentials.
+The service encrypts credentials in workspace storage. Installation metadata contains references only; neither prompts
+nor guest machines receive their values. Updating credentials or Slack connections takes effect without a deployment.
+`credential list` returns metadata, and `credential delete REFERENCE` removes a held credential.
+
+The optional `--history-token-secret-reference` falls back to the bot token. Choose a credential that can read the bound
+conversation and message metadata with
+[conversations.replies](https://docs.slack.dev/reference/methods/conversations.replies/). Use `slack connect` with the
+same connection ID to replace metadata. `slack disconnect CONNECTION-ID` disables the connection while retaining
+bindings and delivery history. Subsequent callbacks and deliveries check the current record.
 
 ## Bind a channel
 
@@ -52,10 +51,49 @@ mechane slack deliveries MECH-UUID
 signed, and the event endpoint authenticates the exact body with Slack's timestamped signature before reading it.
 [Slack request verification](https://docs.slack.dev/authentication/verifying-requests-from-slack/)
 
+The URL stays `/integrations/slack/WORKSPACE-UUID/CONNECTION-ID/events` when credentials or connection metadata change.
+
 A binding keeps its original agent, team and channel. Reuse its UUID and audience to change `--listening` or
 `--replies`. Only one channel binds to an agent, and only one agent binds to a channel per installation. Bot messages,
 the app's own messages, message edits and unbound audiences are ignored. Duplicate events and duplicate mention/message
 subscriptions reuse the same admitted inbox item. The endpoint acknowledges after durable admission, before model work.
+
+## Import existing configuration
+
+Prepare an ignored file with mode `0600`, replacing the example IDs and credential placeholders below. Preserve the
+existing workspace UUID, connection ID, and secret references so callbacks and bindings keep their identity.
+
+```json
+{
+  "credentials": { "slack-signing": "REPLACE_WITH_SIGNING_SECRET", "slack-bot": "REPLACE_WITH_BOT_TOKEN" },
+  "slack_installations": [
+    {
+      "id": "team-chat",
+      "workspace_id": "00000000-0000-4000-8000-000000000001",
+      "team_id": "T12345",
+      "bot_user_id": "U12345",
+      "signing_secret_reference": "slack-signing",
+      "bot_token_secret_reference": "slack-bot",
+      "api_origin": "https://slack.com"
+    }
+  ],
+  "policy": { "suspended": false, "sandboxes": true, "machines": 2, "daily_allowance_micros": 5000000 }
+}
+```
+
+Run `mechane --workspace WORKSPACE-UUID workspace import --file /private/path/runtime-import.json` once after pausing
+the agents that use these connections. This operator action creates missing records; ordinary deployments never import
+or replace workspace data. `credentials` and `slack_installations` are required; use `{}` and `[]` when empty. Omit
+`history_token_secret_reference` to reuse the bot token; an included value must be a reference string.
+
+Omit `policy` to retain the existing policy. Including it requires an installation administrator, checked before any
+writes. An already stored policy or Slack installation must match. Existing credentials remain unchanged and are
+reported as retained without comparing their values. A failed import can leave earlier records created; retrying resumes
+safely. An imported suspension must be explicitly lifted before subsequent member operations.
+
+See the [import schema](../packages/node/cli/src/runs/workspace-import/schemas.ts) and
+[Slack installation schema](../packages/shared/protocol/src/operations/slack/installations.schemas.ts) for the current
+format. The import never changes agents, sandbox files, grants, bindings, or delivery history.
 
 ## Delivery receipts
 

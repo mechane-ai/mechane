@@ -1,4 +1,3 @@
-import { EVERY_WORKSPACE } from '@mechane/deployment';
 import type { LocalSandboxProvider } from '@mechane/deployment';
 import { callbackUrl } from '@mechane/protocol';
 import { Effect } from 'effect';
@@ -7,13 +6,14 @@ import { randomBytes } from 'node:crypto';
 import { LOCAL_GITHUB, SECRET_BYTES } from '../constants.ts';
 import type { StackFailed } from '../errors.ts';
 import { startFakeGitHub } from '../github/start-fake-github.ts';
+import { generateCredentialKeyring } from '../state/secrets/generate-credential-keyring.ts';
 import type { Stack, StackSettings, StackVariables } from '../types.ts';
 import { localModelUpstream } from './local-model-upstream.ts';
 import { localSandboxes } from './local-sandboxes.ts';
 import type { LocalService } from './types.ts';
 
 /** The services a stack serves beside celld, as the stack exposes them. */
-type ServedServices = Pick<Stack, 'githubOrigin' | 'modelUpstream' | 'launcherKey'>;
+type ServedServices = Pick<Stack, 'githubOrigin' | 'modelUpstream' | 'launcherKey' | 'credentialKeyring'>;
 
 /** The services a stack serves beside celld, and the variables that point the Worker at them. */
 type LocalServices = { readonly served: ServedServices; readonly variables: StackVariables };
@@ -44,15 +44,16 @@ export const localServices = Effect.fn('localServices')(function* ({
   const github = yield* localGitHub({ origin });
   const modelUpstream = yield* localModelUpstream();
   const sandboxes = yield* localSandboxes({ sandboxProvider, settings, sandboxesFolder, variables });
+  const { keyring: credentialKeyring, encoded } = generateCredentialKeyring();
 
   return {
-    served: { githubOrigin: github.service, modelUpstream: modelUpstream.service, launcherKey: sandboxes.service },
-    variables: {
-      sandboxWorkspaces: EVERY_WORKSPACE,
-      ...github.variables,
-      ...modelUpstream.variables,
-      ...sandboxes.variables,
+    served: {
+      githubOrigin: github.service,
+      modelUpstream: modelUpstream.service,
+      launcherKey: sandboxes.service,
+      credentialKeyring,
     },
+    variables: { credentialKeyring: encoded, ...github.variables, ...modelUpstream.variables, ...sandboxes.variables },
   };
 });
 

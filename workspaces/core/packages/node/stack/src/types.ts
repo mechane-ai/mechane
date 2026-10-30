@@ -1,4 +1,4 @@
-import type { LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
+import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
 import type { HttpStatusCode } from '@mechane/records';
 import type { ReleaseFailed } from '@mechane/release';
 import type { Effect, Option } from 'effect';
@@ -100,6 +100,7 @@ export type RuntimeStack = {
 export type Stack = RuntimeStack & {
   readonly githubOrigin: URL;
   readonly modelUpstream: ScriptedUpstream;
+  readonly credentialKeyring: CredentialKeyring;
   /** Absent when the fixture uses container sandboxes instead of the host launcher. */
   readonly launcherKey: Option.Option<string>;
 };

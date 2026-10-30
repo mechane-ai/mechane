@@ -1,11 +1,14 @@
+import type { CredentialKeyring } from '@mechane/deployment';
 import type { SandboxReport } from '@mechane/protocol';
 import type { ExecutionProgress, RunExecutionInput, SourceFenceReport, SourceGuestAnswer } from '@mechane/sandbox-wire';
+import type { Redacted } from 'effect';
 import type { DirectoryRpc } from './directory.types.ts';
 import type { KeyCacheRpc } from './key-cache.types.ts';
 import type { LimiterRpc } from './limits.types.ts';
 import type { MechRpc } from './mech/types.ts';
 import type { SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
 import type { MechVariables } from './schemas.ts';
+import type { SecretReader } from './secrets/types.ts';
 import type { SourceCaptureInput, SourceCloneInput, SourceIdentityInput, SourcePrepareInput } from './source.types.ts';
 import type { WorkspaceRpc } from './workspace.types.ts';
 
@@ -22,7 +25,7 @@ export type ObjectBindings = {
 
 /**
  * The bindings and variables the Workers runtime passes the Worker and each Durable Object, as `wrangler.jsonc` and the
- * deployment declare them.
+ * deployment declare them. RELEASES is absent when downloads use the configured public release origin.
  */
 export type WorkerEnvironment = {
   readonly DIRECTORY: DurableObjectNamespace<DirectoryRpc>;
@@ -31,15 +34,18 @@ export type WorkerEnvironment = {
   readonly SANDBOXES: DurableObjectNamespace<SandboxRpc>;
   readonly LIMITERS: DurableObjectNamespace<LimiterRpc>;
   readonly KEY_CACHES: DurableObjectNamespace<KeyCacheRpc>;
-  readonly RELEASES: R2Bucket;
   readonly WORKSPACE_FILES: R2Bucket;
-};
+} & Readonly<Partial<Record<'RELEASES', R2Bucket>>>;
 
 /**
  * Everything a mech's object reads from its environment: the model it reaches, its workspace's sandboxes and
  * suspension, how long its alarm lets pi work, and the objects it calls.
  */
-export type ObjectSettings = MechVariables & ObjectBindings;
+export type ObjectSettings = Omit<MechVariables, 'modelApiKey' | 'credentialKeyring'> &
+  ObjectBindings & {
+    readonly modelApiKey: SecretReader<Redacted.Redacted>;
+    readonly credentialKeyring: SecretReader<CredentialKeyring>;
+  };
 
 export type BindingsInput = { readonly bindings: ObjectBindings };
 
@@ -63,8 +69,7 @@ type SandboxMethods = {
 };
 
 /**
- * The methods a sandbox's object serves by RPC, each answering with plain data its caller decodes. The settings name
- * the object by this type, so they need not import the object, which reads those settings itself.
+ * The sandbox's RPC methods, reached only by its owning mech. Callers decode their plain-data answers without importing
+ * the implementation.
  */
-/** The sandbox methods reached only through its owning mech. */
 export type SandboxRpc = Rpc.DurableObjectBranded & SandboxMethods;

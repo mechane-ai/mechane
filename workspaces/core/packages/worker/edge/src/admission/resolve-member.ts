@@ -1,4 +1,4 @@
-import { callDirectory } from '@mechane/bindings';
+import { callDirectory, callWorkspacePolicy } from '@mechane/bindings';
 import { RequestInvalid, WorkspaceNotFound, WorkspacePath, WorkspaceSuspended } from '@mechane/protocol';
 import type { AuthenticationFailure, ObjectUnavailable } from '@mechane/protocol';
 import { WorkspaceMembership } from '@mechane/rpc';
@@ -38,7 +38,9 @@ export const resolveMember = Effect.fn('resolveMember')(function* ({
     NotMember: () => new WorkspaceNotFound({ workspaceId }),
   });
 
-  if (settings.suspendedWorkspaces.includes(workspaceId)) {
+  const policy = yield* callWorkspacePolicy({ settings, workspaceId });
+
+  if (policy.isSuspended) {
     return yield* new WorkspaceSuspended({ workspaceId });
   }
 

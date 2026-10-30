@@ -23,6 +23,7 @@ export const ORIGIN_VARIABLE = 'MECHANE_ORIGIN';
 export const WORKER_VARIABLES = {
   workerRevision: 'MECHANE_WORKER_REVISION',
   origin: ORIGIN_VARIABLE,
+  releaseOrigin: 'MECHANE_RELEASE_ORIGIN',
   githubWebOrigin: 'MECHANE_GITHUB_WEB_ORIGIN',
   githubApiOrigin: 'MECHANE_GITHUB_API_ORIGIN',
   githubClientId: 'MECHANE_GITHUB_CLIENT_ID',
@@ -37,16 +38,16 @@ export const WORKER_VARIABLES = {
   approvalPollIntervalSeconds: 'MECHANE_APPROVAL_POLL_INTERVAL_SECONDS',
   modelUpstream: 'MECHANE_MODEL_UPSTREAM',
   modelApiKey: 'MECHANE_MODEL_API_KEY',
-  integrationSecrets: 'MECHANE_INTEGRATION_SECRETS',
-  slackInstallations: 'MECHANE_SLACK_INSTALLATIONS',
+  credentialKeyring: 'MECHANE_CREDENTIAL_KEYRING',
   modelOffers: 'MECHANE_MODEL_OFFERS',
   sandboxProvider: 'MECHANE_SANDBOX_PROVIDER',
   sandboxEgress: 'MECHANE_SANDBOX_EGRESS',
   tensorlakeApiKey: 'MECHANE_TENSORLAKE_API_KEY',
   tensorlakeImage: 'MECHANE_TENSORLAKE_IMAGE',
-  sandboxWorkspaces: 'MECHANE_SANDBOX_WORKSPACES',
   workspaceMachines: 'MECHANE_WORKSPACE_MACHINES',
-  suspendedWorkspaces: 'MECHANE_SUSPENDED_WORKSPACES',
+  isSandboxEnabled: 'MECHANE_SANDBOXES_ENABLED',
+  isWorkspaceSandboxEnabledByDefault: 'MECHANE_WORKSPACE_SANDBOXES_DEFAULT',
+  workspaceDailyAllowanceLimitMicros: 'MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS',
   rateLimits: 'MECHANE_RATE_LIMITS',
   alarmWorkSeconds: 'MECHANE_ALARM_WORK_SECONDS',
   hostLauncherOrigin: 'MECHANE_HOST_LAUNCHER_ORIGIN',
@@ -69,9 +70,6 @@ export type SandboxProvider = (typeof SandboxProvider)[keyof typeof SandboxProvi
 export const SandboxEgress = { Gateway: 'gateway', Fence: 'fence' } as const;
 
 export type SandboxEgress = (typeof SandboxEgress)[keyof typeof SandboxEgress];
-
-/** The value of the sandbox workspaces variable that gives every workspace a sandbox, as a local stack stages it. */
-export const EVERY_WORKSPACE = '*';
 
 /** The tokens an offer's rate prices: each rate is written in micro-dollars per million tokens. */
 export const RATE_TOKENS = 1_000_000;

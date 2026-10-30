@@ -1,4 +1,3 @@
-import { EVERY_WORKSPACE } from '@mechane/deployment';
 import type { MechRow } from '@mechane/mech-store';
 import { SandboxAction } from '@mechane/protocol';
 import type { SandboxRequest } from '@mechane/protocol';
@@ -30,20 +29,18 @@ export async function admitSandboxMaintenance({
   }
 
   const { workspaceId } = owner;
-  const isListed = settings.sandboxWorkspaces === EVERY_WORKSPACE || settings.sandboxWorkspaces.includes(workspaceId);
+  const sandboxId = Option.getOrElse(request.droneId, () => owner.id);
+  const workspace = workspaceStub({ bindings: settings, workspaceId });
+  const leaseMs = Duration.toMillis(MACHINE_LEASE);
+  const encoded = await workspace.leaseMachine({ sandboxId, leaseMs });
+  const decoded = Schema.decodeUnknownResult(LeaseDecision)(encoded);
+  const decision = Result.getOrThrow(decoded);
 
-  if (!isListed || settings.suspendedWorkspaces.includes(workspaceId)) {
+  if (LeaseDecision.guards.Disabled(decision)) {
     const answer = SandboxAnswer.cases.Disabled.make({});
 
     return Option.some(answer);
   }
-
-  const sandboxId = Option.getOrElse(request.droneId, () => owner.id);
-  const workspace = workspaceStub({ bindings: settings, workspaceId });
-  const leaseMs = Duration.toMillis(MACHINE_LEASE);
-  const encoded = await workspace.leaseMachine({ sandboxId, machines: settings.workspaceMachines, leaseMs });
-  const decoded = Schema.decodeUnknownResult(LeaseDecision)(encoded);
-  const decision = Result.getOrThrow(decoded);
 
   if (LeaseDecision.guards.Full(decision)) {
     const answer = SandboxAnswer.cases.CapacityReached.make({});

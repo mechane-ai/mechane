@@ -96,6 +96,14 @@ export const LogLine = Schema.Union([
   }),
   wireStruct({
     fields: {
+      event: Schema.Literal(LogEvent.WorkspacePolicyChanged),
+      workspaceId: LogId,
+      principalId: LogId,
+      keyId: LogId,
+    },
+  }),
+  wireStruct({
+    fields: {
       event: Schema.Literal(LogEvent.WorkspaceMemberSet),
       workspaceId: LogId,
       principalId: LogId,

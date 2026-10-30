@@ -92,9 +92,9 @@ Every `Effect.forEach` and `Effect.all` states its concurrency: ast-grep `for-ea
 - oxlint `typescript/no-floating-promises` (041): enforced, `"error"`
 - oxlint `no-void` (041): enforced in phase D, `["error",{"allowAsStatement":true}]`
 - oxlint's restricted members (EF-06): a ratchet until phase F3: `Effect.promise`
-- oxlint's restricted members (EF-08): a ratchet until phase F3: `Effect.acquireUseRelease`, `Effect.addFinalizer`, `Effect.ensuring`, `Scope.make`
-- oxlint's restricted members (EF-08): a ratchet until phase F3: `Scope.provide`
-- oxlint's restricted members (EF-08): a ratchet until phase F3: `Scope.close`
+- oxlint's restricted members (EF-08): enforced in phase F3: `Effect.acquireUseRelease`, `Effect.addFinalizer`, `Effect.ensuring`, `Scope.make`
+- oxlint's restricted members (EF-08): enforced in phase F3: `Scope.provide`
+- oxlint's restricted members (EF-08): enforced in phase F3: `Scope.close`
 - oxlint's restricted members (EF-09): enforced in phase A: `Effect.timeout`, `Effect.timeoutFail`, `Effect.repeat`
 - oxlint `typescript/promise-function-async` (DO-03): enforced in phase F4, `["error",{"checkArrowFunctions":false}]`
 - oxlint `typescript/return-await` (DO-03): enforced in phase D, `["error","always"]`

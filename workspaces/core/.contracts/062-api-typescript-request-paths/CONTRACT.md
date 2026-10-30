@@ -73,6 +73,6 @@ This replaces "Where the repository's lint can load the configuration in this co
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- ast-grep `inline-path-string` (SC-10): a ratchet until phase F2
+- ast-grep `inline-path-string` (SC-10): enforced in phase F2
 
 <!-- End of the generated block. -->

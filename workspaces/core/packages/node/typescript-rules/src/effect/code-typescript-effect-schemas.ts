@@ -46,7 +46,7 @@ export const codeTypescriptEffectSchemas = {
       imports: [],
       exemptRoles: [],
       standard: 'EF-16',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,
     },
     {
@@ -81,7 +81,7 @@ export const codeTypescriptEffectSchemas = {
       name: 'encode-sync',
       fix: RuleFix.AstGrep,
       standard: 'EF-16',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,
       violation: ['const text = yield* Schema.encodeEffect(SecretsFile)(secrets).pipe(Effect.orDie);'],
       allowed: ['const text = Schema.encodeSync(SecretsFile)(secrets);'],

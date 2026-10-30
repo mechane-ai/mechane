@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/deployment": "workspace:*",
     "@mechane/harness": "workspace:*",
     "@mechane/harness-tools": "workspace:*",
     "@mechane/integrations": "workspace:*",

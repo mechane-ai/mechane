@@ -23,7 +23,7 @@ depends = [
   "build:worker",
   "build:guest",
   "reference:check",
-  "deploy:render",
+  "infrastructure:check",
   "smoke",
 ]
 run = "node packages/node/checks/src/main.ts record"
@@ -31,9 +31,18 @@ run = "node packages/node/checks/src/main.ts record"
 # The inner loop: each tool reads only the changed set or reuses its last run, and a fingerprint equal to the last
 # green full check's skips the builds and the smoke. It never replaces check, which CI runs cold.
 [tasks."check:fast"]
-description = "Check a change quickly: the changed set's format and lint, an incremental typecheck, knip, the owned checks, copies and the command reference, and the smoke only when the fingerprint differs from the last green full check's"
-depends = ["lint:changed", "typecheck:incremental", "knip", "duplicates", "checks", "rules:check", "reference:check"]
-run = "node packages/node/checks/src/main.ts compare || mise run deploy:render ::: smoke"
+description = "Check a change quickly: changed format and lint, incremental types, dependencies, owned checks, infrastructure, and the command reference; run the smoke only when its fingerprint changed"
+depends = [
+  "lint:changed",
+  "typecheck:incremental",
+  "knip",
+  "duplicates",
+  "checks",
+  "rules:check",
+  "reference:check",
+  "infrastructure:check",
+]
+run = "node packages/node/checks/src/main.ts compare || mise run smoke"
 
 [tasks.fingerprint]
 description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"
@@ -162,35 +171,19 @@ run = "node scripts/reference/main.ts | diff -u reference.json -"
 description = "Build the CLI's release of this source for every target into dist/release, which holds each file at its bucket key"
 run = "node packages/node/release/src/main.ts build"
 
-[tasks."release:upload"]
-description = "Upload dist/release to production's releases bucket with Wrangler; only an operator on a trusted host runs it"
-run = "node packages/node/deploy/src/main.ts upload"
+[tasks."distribution:build"]
+description = "Build immutable Cloudflare installation artifacts from a clean public release tag"
+depends = ["build:worker", "build:guest"]
+run = "node packages/node/distribution/src/main.ts build"
 
-[tasks."deploy:render"]
-description = "Render production's Wrangler configuration from wrangler.jsonc and production.jsonc, and have Wrangler build it in a dry run, deploying nothing"
+[tasks."distribution:verify"]
+description = "Verify an installation archive and its release receipt"
+run = "node packages/node/distribution/src/main.ts verify"
+
+[tasks."infrastructure:check"]
+description = "Check the native provider and validate the release module without using a cloud account"
 depends = ["build:worker"]
-dir = "{{config_root}}/packages/worker/app"
-run = '''
-set -e
-configuration=$(node {{config_root}}/packages/node/deploy/src/main.ts render)
-pnpm exec wrangler deploy --dry-run --config "$configuration" --containers-rollout=none --outdir "$(dirname "$configuration")/dry-run" --env-file /dev/null
-'''
-
-[tasks."deploy:preflight"]
-description = "Check that this tagged checkout and the operator's credentials can deploy production, changing nothing"
-depends = ["build:worker"]
-run = "node packages/node/deploy/src/main.ts preflight"
-
-[tasks.deploy]
-description = "Deploy this tagged checkout to production after the full check; only an operator on a trusted host runs it"
-depends = ["check"]
-# A task that runs after others gets no terminal for its input unless it runs raw, and the deploy asks for a typed tag.
-raw = true
-run = "node packages/node/deploy/src/main.ts deploy"
-
-[tasks."deploy:rollback"]
-description = "Return production to an earlier version of the same formats, as in `deploy:rollback -- --to <version-id>`"
-run = "node packages/node/deploy/src/main.ts rollback"
+run = "./infrastructure/check.sh"
 
 
 [tasks.smoke]
@@ -227,6 +220,8 @@ run = [
   "node packages/node/checks/src/main.ts normalize",
   "node packages/node/checks/src/main.ts fix",
   "oxfmt .",
+  "tofu fmt -recursive infrastructure",
+  "gofmt -w infrastructure/provider",
   "node packages/node/checks/src/main.ts tighten",
 ]
 

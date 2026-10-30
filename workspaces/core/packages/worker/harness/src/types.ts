@@ -46,7 +46,7 @@ export type ProgressQuery = { readonly inboxItemIds: ReadonlyArray<string>; read
 /** The model upstream a mech's dispatches go to, its key, and the offers it serves. */
 export type ModelUpstream = {
   readonly upstream: URL;
-  readonly apiKey: Redacted.Redacted;
+  readonly apiKey: () => Promise<Redacted.Redacted>;
   readonly offers: ReadonlyArray<ModelOffer>;
 };
 

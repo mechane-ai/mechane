@@ -1,9 +1,11 @@
 import type { CommandName } from '@mechane/commands';
 import { Report } from '@mechane/eval';
 import {
-  Allowance,
   ConnectionDeletion,
   ConnectionList,
+  CredentialDeletion,
+  CredentialList,
+  CredentialMetadata,
   DroneCancel,
   DroneList,
   DroneTrace,
@@ -20,6 +22,9 @@ import {
   SlackBindingResult,
   SlackBindings,
   SlackDeliveries,
+  SlackInstallationDeletion,
+  SlackInstallationResult,
+  SlackInstallations,
   SourceGrantState,
   SourceReport,
   ThreadList,
@@ -29,21 +34,20 @@ import {
   TurnCancel,
   Watch,
   WatchList,
-  Workspace,
-  WorkspaceList,
-  WorkspaceMember,
-  WorkspaceMemberList,
-  WorkspaceMemberRemoval,
 } from '@mechane/protocol';
 import { Schema } from 'effect';
 import { UpdateResult } from '../schemas.ts';
 import { ACCESS_OUTPUTS } from './access-outputs.ts';
+import { WORKSPACE_OUTPUTS } from './workspace-outputs.ts';
 
 /**
  * The schema of each command's result, which the output module encodes for `json` and `jsonl`; a streaming command's
  * result is one of its records. A command without one fails to compile.
  */
 export const COMMAND_OUTPUTS = {
+  'credential put': CredentialMetadata,
+  'credential list': CredentialList,
+  'credential delete': CredentialDeletion,
   'source grant': SourceReport,
   'source access': SourceGrantState,
   'source revoke': SourceReport,
@@ -70,12 +74,7 @@ export const COMMAND_OUTPUTS = {
   'sandbox export': Schema.Struct({ sandbox: SandboxReport, file: Schema.String }),
   'readiness': Readiness,
   ...ACCESS_OUTPUTS,
-  'workspace list': WorkspaceList,
-  'workspace create': Workspace,
-  'workspace members': WorkspaceMemberList,
-  'workspace member set': WorkspaceMember,
-  'workspace member remove': WorkspaceMemberRemoval,
-  'allowance show': Allowance,
+  ...WORKSPACE_OUTPUTS,
   'mech create': Mech,
   'mech list': MechList,
   'mech fork': Mech,
@@ -89,6 +88,9 @@ export const COMMAND_OUTPUTS = {
   'mech revisions': MechRevisionPage,
   'inbox send': InboxItem,
   'slack bind': SlackBindingResult,
+  'slack connect': SlackInstallationResult,
+  'slack connections': SlackInstallations,
+  'slack disconnect': SlackInstallationDeletion,
   'slack bindings': SlackBindings,
   'slack deliveries': SlackDeliveries,
   'event list': ListedEvent,

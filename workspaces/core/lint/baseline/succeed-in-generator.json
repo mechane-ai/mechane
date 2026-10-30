@@ -1,5 +1,0 @@
-{
-  "packages/node/deploy-kernel/src/check-refusals.ts": 2,
-  "packages/node/deploy-preflight/src/check-append-only.ts": 1,
-  "packages/node/deploy/src/rollout/confirm-tag.ts": 1
-}

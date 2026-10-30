@@ -1,5 +1,3 @@
 {
-  "packages/node/deploy/src/rollout/roll-back.ts": 1,
-  "packages/node/locks/src/fields/field-names.ts": 5,
-  "packages/node/release/src/upload-release.ts": 1
+  "packages/node/locks/src/fields/field-names.ts": 5
 }

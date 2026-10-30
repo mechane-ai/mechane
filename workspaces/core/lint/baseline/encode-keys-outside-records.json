@@ -1,8 +1,5 @@
 {
   "packages/node/boundaries/src/schemas.ts": 1,
-  "packages/node/deploy-kernel/src/schemas.ts": 1,
-  "packages/node/deploy-kernel/src/services/schemas.ts": 2,
-  "packages/node/deploy/src/rollout/schemas.ts": 2,
   "packages/shared/deployment/src/schemas.ts": 2,
   "packages/worker/bindings/src/schemas.ts": 1,
   "packages/worker/edge/src/operations/mechs/show-turn.ts": 3,

@@ -5,6 +5,7 @@ export { limitRequest } from './limit-request.ts';
 export { limitAddress } from './limit-address.ts';
 export { callMech } from './call-mech.ts';
 export { callWorkspace } from './call-workspace.ts';
+export { callWorkspacePolicy } from './call-workspace-policy.ts';
 export { decodeSettings } from './settings/decode-settings.ts';
 export { callObject } from './call-object.ts';
 export { readinessStubs } from './readiness-stubs.ts';

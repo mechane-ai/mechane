@@ -1,6 +1,7 @@
 import type { Operation } from './operation/types.ts';
 import { AUTH_OPERATIONS } from './operations/auth/auth-operations.ts';
 import { CONNECTION_OPERATIONS } from './operations/connections/connection-operations.ts';
+import { CREDENTIAL_OPERATIONS } from './operations/credentials/credential-operations.ts';
 import { DRONE_OPERATIONS } from './operations/drones/drone-operations.ts';
 import { listEvents } from './operations/events/list-events.ts';
 import { listFindings } from './operations/findings/list-findings.ts';
@@ -24,6 +25,7 @@ type Catalog = Readonly<Record<string, Operation>>;
 export const catalog = {
   ...AUTH_OPERATIONS,
   ...CONNECTION_OPERATIONS,
+  ...CREDENTIAL_OPERATIONS,
   ...DRONE_OPERATIONS,
   listEvents,
   listFindings,

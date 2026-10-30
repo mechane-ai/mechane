@@ -1,5 +1,6 @@
-import { Option } from 'effect';
+import { Option, Result } from 'effect';
 import { blockSlackDelivery } from './block-slack-delivery.ts';
+import { deferSlackLookup } from './defer-slack-lookup.ts';
 import { readSlackDestination } from './read-slack-destination.ts';
 import { resolveSlackClient } from './resolve-slack-client.ts';
 import type { PreparedSlackDelivery, RunSlackDeliveryInput } from './types.ts';
@@ -17,7 +18,15 @@ export async function prepareSlackDelivery({
     return Option.none();
   }
 
-  const client = resolveSlackClient({ settings, mech, destination: destination.value });
+  const resolved = await resolveSlackClient({ settings, mech, destination: destination.value });
+
+  if (Result.isFailure(resolved)) {
+    await deferSlackLookup({ store, delivery, reason: 'connection_unavailable' });
+
+    return Option.none();
+  }
+
+  const client = resolved.success;
 
   if (Option.isNone(client)) {
     await blockSlackDelivery({ store, delivery, reason: 'connection_or_credential_unavailable' });

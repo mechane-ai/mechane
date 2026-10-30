@@ -1,16 +1,13 @@
 import { SourcePublicationStatus } from '@mechane/protocol';
-import type { SourcePublishPaths } from '@mechane/protocol';
-import type { SourceChanges } from '@mechane/records';
-import { SourceCapture, SourceGuestAnswer } from '@mechane/sandbox-wire';
-import { Option, Result, Schema } from 'effect';
-import { captureMatchesIntent } from './capture-matches-intent.ts';
-import { captureWithinLimit } from './capture-within-limit.ts';
+import { Option, Result } from 'effect';
+import { captureSourcePatch } from './capture-source-patch.ts';
 import { recordSourcePublication } from './record-source-publication.ts';
 import type { ExistingPublicationInput, PublicationSource } from './types.ts';
 
 /** Freezes exactly the selected bytes before a write credential is minted. */
 export async function capturePublication({
   mech,
+  owner,
   sandbox,
   source,
   publication,
@@ -21,14 +18,7 @@ export async function capturePublication({
     return Result.succeed(existing);
   }
 
-  const capture = Schema.encodeSync(SourceCapture)({
-    sourceId: source.sourceId,
-    commit: source.commit,
-    paths: publication.paths,
-  });
-
-  const encoded = await sandbox.captureSource({ capture });
-  const patch = capturedPatch({ encoded, paths: publication.paths });
+  const patch = await captureSourcePatch({ mech, owner, sandbox, source, publication });
 
   if (Result.isFailure(patch)) {
     return Result.fail(patch.failure);
@@ -45,34 +35,4 @@ export async function capturePublication({
   const some = Option.some(frozen);
 
   return Result.succeed(some);
-}
-
-type CapturedPatchInput = { readonly encoded: unknown; readonly paths: SourcePublishPaths };
-
-function capturedPatch({ encoded, paths }: CapturedPatchInput): Result.Result<Option.Option<SourceChanges>, string> {
-  const decoded = Schema.decodeUnknownResult(SourceGuestAnswer)(encoded);
-
-  if (Result.isFailure(decoded)) {
-    return Result.fail('source guest returned an invalid captured patch');
-  }
-
-  const answer = decoded.success;
-
-  if (SourceGuestAnswer.guards.Pending(answer)) {
-    const pending = Option.none<SourceChanges>();
-
-    return Result.succeed(pending);
-  }
-
-  if (!SourceGuestAnswer.guards.Changes(answer)) {
-    return Result.fail('source patch could not be captured');
-  }
-
-  if (!captureMatchesIntent({ changes: answer.changes, paths }) || !captureWithinLimit({ changes: answer.changes })) {
-    return Result.fail('source capture differs from the owner-selected bounded patch');
-  }
-
-  const captured = Option.some(answer.changes);
-
-  return Result.succeed(captured);
 }

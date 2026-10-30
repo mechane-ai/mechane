@@ -1,14 +1,13 @@
 import {
   IdentitySubjectsVariable,
-  IntegrationSecretsVariable,
   ModelOffersVariable,
   RateLimitsVariable,
+  ReleaseOrigin,
   SecureOrigin,
-  SlackInstallationsVariable,
   WORKER_VARIABLES,
 } from '@mechane/deployment';
-import { WorkspaceIdsVariable } from '@mechane/protocol';
 import { GitHubClientId } from '@mechane/records';
+import { SecretSource } from '@mechane/rpc';
 import { Duration, Schema } from 'effect';
 import { KEY_LIFETIME_MAX } from './constants.ts';
 
@@ -31,18 +30,17 @@ const PollIntervalSeconds = Schema.NumberFromString.check(Schema.isInt(), Schema
  * goes to is HTTPS outside a loopback stack.
  */
 export const WorkerVariables = Schema.Struct({
-  /** Omission means no integration credentials are configured for any workspace. */
-  integrationSecrets: Schema.OptionFromOptionalKey(IntegrationSecretsVariable),
-  /** Absent when no Slack installations are configured. */
-  slackInstallations: Schema.OptionFromOptionalKey(SlackInstallationsVariable),
   workerRevision: Schema.NonEmptyString,
   origin: SecureOrigin,
+  /** Absent when the installation serves CLI releases from its bound R2 bucket. */
+  releaseOrigin: Schema.OptionFromOptionalKey(ReleaseOrigin),
   githubWebOrigin: SecureOrigin,
   githubApiOrigin: SecureOrigin,
   /** Absent when GitHub sign-in is not configured. */
   githubClientId: Schema.OptionFromOptionalKey(GitHubClientId),
   /** Absent when this deployment cannot exchange a GitHub authorization code. */
-  githubClientSecret: Schema.OptionFromOptionalKey(Schema.RedactedFromValue(Schema.NonEmptyString)),
+  githubClientSecret: Schema.OptionFromOptionalKey(SecretSource),
+  credentialKeyring: SecretSource,
   /** Absent when local owner sign-in is disabled. */
   localBootstrapSecret: Schema.OptionFromOptionalKey(Schema.RedactedFromValue(Schema.NonEmptyString)),
   /** Omission admits every verified identity; an empty list admits nobody. */
@@ -56,7 +54,6 @@ export const WorkerVariables = Schema.Struct({
   approvalPollIntervalSeconds: PollIntervalSeconds,
   modelOffers: ModelOffersVariable,
   rateLimits: RateLimitsVariable,
-  suspendedWorkspaces: WorkspaceIdsVariable,
 }).pipe(Schema.encodeKeys(WORKER_VARIABLES));
 
 export type WorkerVariables = typeof WorkerVariables.Type;

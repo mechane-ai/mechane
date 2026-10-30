@@ -30,8 +30,8 @@ export const WranglerMigrations = Schema.Struct({ migrations: Schema.Array(Wrang
 export type WranglerMigrations = typeof WranglerMigrations.Type;
 
 /**
- * The Wrangler configuration that celld and Cloudflare both deploy: the Worker's name, its variables, migrations,
- * containers and R2 buckets. A staged or rendered copy keeps every other key unchanged.
+ * The build and local runtime configuration supplies release defaults, class migrations, containers and R2 bindings. A
+ * staged local copy keeps every other key unchanged.
  */
 export const BaseConfiguration = Schema.StructWithRest(
   Schema.Struct({

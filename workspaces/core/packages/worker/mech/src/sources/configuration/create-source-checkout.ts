@@ -6,7 +6,6 @@ import type { PrincipalId } from '@mechane/records';
 import { SourceAnswer } from '@mechane/rpc';
 import { DateTime, Option } from 'effect';
 import { checkoutSource } from '../checkout/checkout-source.ts';
-import { sourceAnswer } from '../context/source-answer.ts';
 import type { SourceManagement } from './types.ts';
 
 type CheckoutAction = { readonly action: typeof SourceAction.Checkout };
@@ -42,9 +41,7 @@ export async function createSourceCheckout({
 
   await mech.store.atomic({ run: save });
 
-  const next = await checkoutSource({ mech, owner, sandbox, source });
-
-  return sourceAnswer({ source: next });
+  return await checkoutSource({ mech, owner, sandbox, source });
 }
 
 function initialSourceTask({ request, grant, principalId }: InitialSourceTaskInput): SourceTask {

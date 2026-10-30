@@ -67,7 +67,7 @@ export const STYLE_CONTENT_RULES = [
     ...AST_GREP_DEFAULTS,
     name: 'http-literal',
     standard: 'SC-12',
-    status: RuleStatus.Ratchet,
+    status: RuleStatus.Enforced,
     phase: RolloutPhase.DataShapes,
     violation: [
       "const headers = { 'content-type': 'application/json' };",

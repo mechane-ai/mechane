@@ -1,14 +1,15 @@
 import { LeaseDecision } from '@mechane/rpc';
-import type { LeaseMachineInput } from '@mechane/rpc';
+import type { LeaseMachineInput, WorkspaceVariables } from '@mechane/rpc';
 import type { WorkspaceStore } from '@mechane/workspace-store';
 import { Option } from 'effect';
 import type { DateTime } from 'effect';
+import { effectivePolicy } from '../policy/effective-policy.ts';
 
 /** A sandbox's lease to decide, which lasts until `expiresAt`, once its machine's idle window and stop have ended. */
 type DecideLeaseInput = {
   readonly store: WorkspaceStore;
+  readonly settings: WorkspaceVariables;
   readonly sandboxId: LeaseMachineInput['sandboxId'];
-  readonly machines: LeaseMachineInput['machines'];
   readonly expiresAt: DateTime.Utc;
   readonly now: DateTime.Utc;
 };
@@ -20,15 +21,27 @@ type DecideLeaseInput = {
  */
 export function decideLease({
   store,
+  settings,
   sandboxId,
-  machines,
   expiresAt,
   now,
 }: DecideLeaseInput): typeof LeaseDecision.Encoded {
   const lease: () => typeof LeaseDecision.Encoded = () => {
+    const policy = effectivePolicy({ store, settings, initialAllowanceMicros: 0 });
+
+    if (policy.isSuspended || !policy.hasSandboxes) {
+      return LeaseDecision.cases.Disabled.make({});
+    }
+
     store.dropExpiredLeases({ now });
 
-    if (Option.isNone(store.sandboxLease({ sandboxId })) && store.leaseCount() >= machines) {
+    const leasedMachines = store.leaseCount();
+
+    if (leasedMachines > policy.machines) {
+      return LeaseDecision.cases.Full.make({});
+    }
+
+    if (Option.isNone(store.sandboxLease({ sandboxId })) && leasedMachines >= policy.machines) {
       return LeaseDecision.cases.Full.make({});
     }
 

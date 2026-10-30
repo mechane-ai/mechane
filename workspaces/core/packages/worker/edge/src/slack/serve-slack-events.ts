@@ -1,17 +1,19 @@
 import type { WorkerSettings } from '@mechane/bindings';
-import { findSlackInstallation } from '@mechane/integrations';
 import { RequestInvalid } from '@mechane/protocol';
 import type { ObjectUnavailable } from '@mechane/protocol';
 import { HttpMethod, HttpStatusCode, SlackConnectionId, WorkspaceId } from '@mechane/records';
 import { Effect, Option, Record, Schema } from 'effect';
 import { matchPath } from '../routing/match-path.ts';
+import type { RawPathParams } from '../types.ts';
 import { answerSlackRequest } from './answer-slack-request.ts';
+import { readSlackInstallation } from './read-slack-installation.ts';
 
 const SlackEventRoute = Schema.Struct({ workspace_id: WorkspaceId, connection_id: SlackConnectionId });
 
 type SlackEventRoute = typeof SlackEventRoute.Type;
 
 type ServeSlackEventsInput = { readonly request: Request; readonly url: URL; readonly settings: WorkerSettings };
+type ReadSlackRouteInput = { readonly path: RawPathParams };
 
 /** Routes signed Slack events outside the bearer-authenticated operation catalog. */
 export const serveSlackEvents = Effect.fn('serveSlackEvents')(function* ({
@@ -28,19 +30,11 @@ export const serveSlackEvents = Effect.fn('serveSlackEvents')(function* ({
     return Option.none();
   }
 
-  const params = yield* Effect.try({
-    try: () => Record.map(path.value, decodeURIComponent),
-    catch: () => new RequestInvalid({ reason: 'Slack route contains invalid percent-encoding' }),
-  });
-
-  const route = yield* Schema.decodeUnknownEffect(SlackEventRoute)(params).pipe(
-    Effect.mapError(() => new RequestInvalid({ reason: 'Slack route is invalid' })),
-  );
-
+  const route = yield* readSlackRoute({ path: path.value });
   const workspaceId = route.workspace_id;
   const connectionId = route.connection_id;
 
-  const installation = findSlackInstallation({ installations: settings.slackInstallations, workspaceId, connectionId });
+  const installation = yield* readSlackInstallation({ settings, workspaceId, connectionId });
 
   if (Option.isNone(installation)) {
     const response = new Response(null, { status: HttpStatusCode.NotFound });
@@ -51,4 +45,17 @@ export const serveSlackEvents = Effect.fn('serveSlackEvents')(function* ({
   const response = yield* answerSlackRequest({ request, settings, installation: installation.value });
 
   return Option.some(response);
+});
+
+const readSlackRoute = Effect.fn('readSlackRoute')(function* ({
+  path,
+}: ReadSlackRouteInput): Effect.fn.Return<SlackEventRoute, RequestInvalid> {
+  const params = yield* Effect.try({
+    try: () => Record.map(path, decodeURIComponent),
+    catch: () => new RequestInvalid({ reason: 'Slack route contains invalid percent-encoding' }),
+  });
+
+  return yield* Schema.decodeUnknownEffect(SlackEventRoute)(params).pipe(
+    Effect.mapError(() => new RequestInvalid({ reason: 'Slack route is invalid' })),
+  );
 });

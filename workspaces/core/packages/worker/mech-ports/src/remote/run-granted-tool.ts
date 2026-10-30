@@ -1,7 +1,8 @@
-import { resolveIntegrationSecret, runRemoteMcp } from '@mechane/integrations';
+import { runRemoteMcp } from '@mechane/integrations';
 import { RemoteToolsOutcome } from '@mechane/protocol';
-import { Option } from 'effect';
+import { Option, Result } from 'effect';
 import { authorizeGrantedTool } from './authorize-granted-tool.ts';
+import { readGrantedToken } from './read-granted-token.ts';
 import type { RunGrantedToolInput } from './types.ts';
 
 /** Resolves workspace-scoped credentials and requires fresh authority before actual dispatch. */
@@ -15,11 +16,13 @@ export async function runGrantedTool({
 }: RunGrantedToolInput): Promise<RemoteToolsOutcome> {
   const { connection, grant } = granted;
 
-  const token = connection.secretReference.pipe(
-    Option.flatMap((secretReference) =>
-      resolveIntegrationSecret({ secrets: settings.integrationSecrets, workspaceId, secretReference }),
-    ),
-  );
+  const resolved = await readGrantedToken({ settings, workspaceId, granted });
+
+  if (Result.isFailure(resolved)) {
+    return RemoteToolsOutcome.cases.Refused.make({ reason: 'The connection credential is unavailable' });
+  }
+
+  const token = resolved.success;
 
   if (Option.isSome(connection.secretReference) && Option.isNone(token)) {
     return RemoteToolsOutcome.cases.Refused.make({ reason: 'The connection credential is not configured' });
