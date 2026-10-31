@@ -114,7 +114,6 @@
 /lint/ast-grep/tests/tagged-error-cause.yml linguist-generated merge=ours
 /lint/ast-grep/tests/testing-http-method-literals.yml linguist-generated merge=ours
 /lint/ast-grep/tests/testing-http-status-literals.yml linguist-generated merge=ours
-/lint/ast-grep/tests/third-function.yml linguist-generated merge=ours
 /lint/ast-grep/tests/trailing-if.yml linguist-generated merge=ours
 /lint/ast-grep/tests/try-promise-shape.yml linguist-generated merge=ours
 /lint/ast-grep/tests/type-predicate.yml linguist-generated merge=ours
@@ -148,7 +147,6 @@
 /packages/node/name-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/normalizers/tsconfig.json linguist-generated merge=ours
 /packages/node/owned-rules/tsconfig.json linguist-generated merge=ours
-/packages/node/package-moves/tsconfig.json linguist-generated merge=ours
 /packages/node/program-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/program/tsconfig.json linguist-generated merge=ours
 /packages/node/release/tsconfig.json linguist-generated merge=ours

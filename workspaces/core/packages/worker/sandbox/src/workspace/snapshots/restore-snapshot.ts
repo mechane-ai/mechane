@@ -3,11 +3,11 @@ import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/reco
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { DateTime, Option, Schema } from 'effect';
-import type { GuestConnection, MachineIdInput, WorkspaceTransferInput } from '../../types.ts';
+import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { workspaceRequest } from '../workspace-request.ts';
 import { copySnapshotPart } from './copy-snapshot-part.ts';
 
-type RestoreSnapshotInput = WorkspaceTransferInput &
+type RestoreSnapshotInput = WorkspaceProviderStepInput &
   MachineIdInput & { readonly guest: GuestConnection; readonly snapshot: WorkspaceSnapshot };
 
 /** An imported candidate must pass the same bounded guest verification as a committed snapshot. */

@@ -11,8 +11,7 @@ export async function checkpointMaintenance({ store, provider, workspace, job }:
   const executionId = ExecutionId.make(name);
   const wait = Duration.seconds(1);
   const request = { executionId, command: 'true', timeout: SOURCE_FINALIZE_TIMEOUT, wait };
-  const portable = Option.some(workspace);
-  const progress = await runExecution({ store, provider, workspace: portable, request });
+  const progress = await runExecution({ store, provider, workspace, request });
 
   if (ExecutionProgress.guards.Running(progress)) {
     return;

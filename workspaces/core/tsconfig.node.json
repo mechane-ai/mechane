@@ -21,7 +21,6 @@
     "packages/node/name-rules/src",
     "packages/node/normalizers/src",
     "packages/node/owned-rules/src",
-    "packages/node/package-moves/src",
     "packages/node/program/src",
     "packages/node/program-rules/src",
     "packages/node/release/src",

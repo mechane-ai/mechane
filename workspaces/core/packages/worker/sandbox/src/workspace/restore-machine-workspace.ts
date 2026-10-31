@@ -11,15 +11,11 @@ export async function restoreMachineWorkspace({
   workspace,
   machineId,
 }: RestoreMachineWorkspaceInput): Promise<boolean> {
-  if (Option.isNone(workspace)) {
-    return true;
-  }
-
   const guest = await provider.connect({ machineId });
 
   if (Option.isNone(guest)) {
     return false;
   }
 
-  return await restoreWorkspace({ store, provider, workspace: workspace.value, guest: guest.value, machineId });
+  return await restoreWorkspace({ store, provider, workspace, guest: guest.value, machineId });
 }

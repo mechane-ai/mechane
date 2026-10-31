@@ -1,5 +1,5 @@
 import { SandboxAction, SandboxPhase } from '@mechane/protocol';
-import { DateTime, Option } from 'effect';
+import { DateTime } from 'effect';
 import { maintenanceValue } from '../maintenance-value.ts';
 import type { PortableStepInput } from '../types.ts';
 import { maintenanceSnapshot } from './maintenance-snapshot.ts';
@@ -12,11 +12,10 @@ export function commitMaintenance({ store, job }: PortableStepInput): void {
   const commit: () => void = () => {
     if (job.action === SandboxAction.Import) {
       const snapshot = maintenanceSnapshot({ job });
-      const sandboxId = Option.none();
 
       store.commitWorkspace(snapshot);
       store.replaceProvider({ provider: job.provider });
-      store.replaceRemoteSandbox({ sandboxId });
+      store.clearRemoteSandbox();
     }
 
     store.readyMachine({ machineId, now });

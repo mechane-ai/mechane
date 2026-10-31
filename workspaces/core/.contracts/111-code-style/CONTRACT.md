@@ -1,6 +1,6 @@
 ---
 name: code-style
-message: Choose a value with statements, pass a function by name, keep a file to two functions, and build every path, number and HTTP word from its named form.
+message: Choose a value with statements, pass a function by name, keep related private helpers with their operation, and build every path, number and HTTP word from its named form.
 paths: ["**/*.ts"]
 ---
 
@@ -36,16 +36,17 @@ As fields of an argument object these forms stay inline too, and E6 and E8 keep 
 **SC-03, give a named function the form its caller needs.**
 A module-level function that owned code calls by name takes one destructured object: a `function` declaration in the plain dialect, an `Effect.fn` const in the effect dialect.
 A function passed as a value is a typed callback const, `const name: (param: ParamType) => ReturnType = (param) => …`, whose callee fixes its positional signature; type it with an owned named type or an indexed member, such as `MachineProvider['stop']`, or with an explicit function type, never `Parameters<…>` of a library function.
-A named callback is a typed const above the statement that passes it, with no statement between, even when it reads no local binding, and it never counts toward SC-04's cap.
+A named callback is a typed const above the statement that passes it, with no statement between, even when it reads no local binding.
 Inside a function body every named function is a typed const declared above the statement that first uses it, with no statement between, a port factory's methods included; never an untyped const arrow, a function expression, or a function declaration inside another function.
 A function both called and passed takes one object and is passed through an adapter, such as `(item) => isOverLimit({ item })`; effectful work behind a callback is an `Effect.fn` with an object input, reached through an adapter.
 
-**SC-04, one exported function per behavior file, and at most one private helper.**
-A behavior file declares at most two top-level functions: its one exported value, whose name its stem spells, and one private function only the export calls.
-A top-level function is a function or generator declaration, a class other than a tagged error, or a module-level const whose value is an arrow, a function expression or `Effect.fn(…)(…)`; constants, schemas, types, tagged errors and local named callbacks are not.
-Role files, `index.ts`, `migrations.ts`, `catalog.ts`, `main.ts`, `worker.ts`, `routes.ts`, `serve.ts`, `load-*-settings.ts`, `open-*-store.ts` and `*-records.ts` are out of scope, and in `<object>-object.ts` the class is the file's one export.
-To split a file, keep the export and the first private function it calls, and move every other function to `<its-kebab-name>.ts` beside it, exported with a doc comment, taking the first-declared private function only it calls; repeat in each new file.
-Before moving a one-use chooser, try SC-01's IIFE; a moved copy of `finish`, `writeDiagnostic` or `reportExit` is deleted for `program`'s, and any other name that collides takes its source file's concept noun.
+**SC-04, one exported operation with its private helpers.**
+A behavior file exports one operation, named for its file stem.
+Keep private helpers that explain that operation beside it, including helpers called by other private helpers in the same operation.
+Extract a separate module for an independent concept or real reuse, rather than to meet a function-count quota.
+Each helper must name a meaningful step; inline trivial forwarding glue.
+The existing function-length, complexity, and file-length bounds still apply.
+Review whether the operation's ordering, state changes, and failure paths can be followed in this file.
 
 **SC-05, split beside the file, and group a feature into a folder when the folder fills.**
 A split's files stay in the folder of the file they came from, within `folderFiles` and `folderDepth`.
@@ -113,7 +114,7 @@ Is each builder the one place its layout is written, with its parsers reading th
 
 ## Local adaptations
 
-The accepted code standard resolves these choices: E1 to E7 stay inline, a behavior file holds one export and at most one private helper, a named callback is a typed const above the statement that passes it with no statement between, ST-28 is amended as SC-02 says, an IIFE replaces a one-use named chooser, no namespace re-export is adopted, the HTTP sets live in `@mechane/records` with the status set named `HttpStatusCode`, conditional types stay, and span constants become `Duration` values in this cleanup while wire fields and columns keep `Ms` or `Seconds`, so SC-01's example chooses a list's wait as a `Duration`.
+The accepted code standard resolves these choices: E1 to E7 stay inline, a behavior file holds one exported operation and its cohesive private helpers, a named callback is a typed const above the statement that passes it with no statement between, ST-28 is amended as SC-02 says, an IIFE replaces a one-use named chooser, no namespace re-export is adopted, the HTTP sets live in `@mechane/records` with the status set named `HttpStatusCode`, conditional types stay, and span constants become `Duration` values in this cleanup while wire fields and columns keep `Ms` or `Seconds`, so SC-01's example chooses a list's wait as a `Duration`.
 The cleanup's close adds E8, because ER-08 writes the entry boundary's one catch as a trailing `Effect.catch((failure) => …)`: a named handler there would only restate the boundary that answers every failure. E8 holds only in that trailing position, and ER-08's `catch-all-outside-boundary` keeps `Effect.catch` to `serve`, `servePage` and `runCommand`.
 It also decides that a closure's state changes in place: the harness's answer cache keeps the answer entries of earlier commits across a mech's commits, and no constructor rebuilds state that outlives the call, so `dense-loop` skips the `add` and `set` of a `Map` or `Set` that a factory declares at its top and never returns, from a closure the factory declares beside it and answers in its object; a collection an inner function fills for its outer function's one call stays a finding.
 oxlint `func-style`, from the file contract 064 ships, keeps `declaration` and allows a typed const arrow. oxlint `unicorn/consistent-function-scoping` checks no arrow, since a named callback stays beside the statement that passes it, and `unicorn/no-array-callback-reference` is off by decision, since a typed callback const states the parameters it reads.
@@ -134,7 +135,6 @@ Through the cleanup, contract 110's `baselineHold` held each ratchet's total, so
 - ast-grep `inline-function-argument` (SC-02): a ratchet until phase F3
 - ast-grep `called-positional-const` (SC-03): enforced in phase F3
 - ast-grep `nested-function-declaration` (SC-03): enforced in phase F3
-- ast-grep `third-function` (SC-04): a ratchet until phase F3
 - ast-grep `dense-loop` (SC-08): enforced in phase F3
 - ast-grep `untyped-failure` (SC-09): enforced in phase F2
 - ast-grep `unit-number` (SC-11): enforced in phase F5

@@ -1,4 +1,3 @@
-import { SandboxProvider } from '@mechane/deployment';
 import { SandboxAction, SandboxPhase, SandboxReport, SandboxRequest } from '@mechane/protocol';
 import { SourceId } from '@mechane/records';
 import type {
@@ -60,8 +59,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   readonly #alarm: SandboxAlarm;
   readonly #provider: MachineProvider;
   readonly #providerName: string;
-  readonly #workspace: Option.Option<WorkspaceFiles>;
-  readonly #workspaceFiles: WorkspaceFiles;
+  readonly #workspace: WorkspaceFiles;
   readonly #calls = serialCalls();
   readonly #stops = new Set<Promise<void>>();
 
@@ -75,14 +73,9 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     const bindings = objectBindings({ environment });
     const owner = state.id.toString();
 
-    this.#workspaceFiles = { bucket: bindings.workspaceFiles, owner };
+    this.#workspace = { bucket: bindings.workspaceFiles, owner };
     this.#providerName = settings.provider;
-    this.#provider = machineProvider({ settings, state, store: this.#store });
-    this.#workspace = Option.none();
-
-    if (settings.provider !== SandboxProvider.Tensorlake) {
-      this.#workspace = Option.some(this.#workspaceFiles);
-    }
+    this.#provider = machineProvider({ settings, state });
   }
 
   get #isImportRequired(): boolean {
@@ -103,7 +96,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     const report = await manageSandboxWorkspace({
       store: this.#store,
       provider: this.#provider,
-      workspace: this.#workspaceFiles,
+      workspace: this.#workspace,
       request,
       providerName: this.#providerName,
     });
@@ -280,17 +273,6 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     });
 
     if (!canStop) {
-      return;
-    }
-
-    const suspend = this.#provider.suspend;
-    const live = this.#store.liveMachine();
-
-    if (Option.isSome(suspend) && Option.isSome(live)) {
-      await this.#alarm.arm({ at: retryAt });
-      await suspend.value({ machineId });
-      await this.#alarm.disarmAt({ at: retryAt });
-
       return;
     }
 

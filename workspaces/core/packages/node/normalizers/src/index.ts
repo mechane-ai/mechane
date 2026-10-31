@@ -5,5 +5,3 @@ export { placementSites } from './placement/placement-sites.ts';
 export { ruleSites } from './rule-sites.ts';
 export { settledChanges } from './settled-changes.ts';
 export { normalize } from './normalize.ts';
-export { feasibleMoves } from './feasibility/feasible-moves.ts';
-export { moveChanges } from './placement/move-changes.ts';

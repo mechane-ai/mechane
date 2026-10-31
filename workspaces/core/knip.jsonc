@@ -38,8 +38,6 @@
     "packages/node/name-rules": { "project": ["src/**/*.ts!"] },
     "packages/node/normalizers": { "project": ["src/**/*.ts!"] },
     "packages/node/owned-rules": { "project": ["src/**/*.ts!"] },
-    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
-    "packages/node/package-moves": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },
     "packages/node/program": { "project": ["src/**/*.ts!"] },
     "packages/node/program-rules": { "project": ["src/**/*.ts!"] },
     "packages/node/release": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.ts!"] },

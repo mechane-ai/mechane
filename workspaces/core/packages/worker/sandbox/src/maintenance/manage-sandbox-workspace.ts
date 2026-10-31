@@ -2,12 +2,12 @@ import { SandboxAction, SandboxPhase } from '@mechane/protocol';
 import type { SandboxReport, SandboxRequest } from '@mechane/protocol';
 import { Option, Result } from 'effect';
 import { PortableMaintenanceRefused } from '../errors.ts';
-import type { WorkspaceTransferInput } from '../types.ts';
+import type { WorkspaceProviderStepInput } from '../types.ts';
 import { managePortable } from './manage-portable.ts';
 import { nativeWorkspacePending } from './native-workspace-pending.ts';
 import { portableReport } from './portable-report.ts';
 
-type ManageSandboxWorkspaceInput = WorkspaceTransferInput & {
+type ManageSandboxWorkspaceInput = WorkspaceProviderStepInput & {
   readonly request: SandboxRequest;
   readonly providerName: string;
 };
@@ -16,7 +16,7 @@ const IMPORT_ACTIONS: ReadonlySet<SandboxAction> = new Set([SandboxAction.Import
 
 /** Keeps native files fenced while an explicit import moves them to the configured portable provider. */
 export async function manageSandboxWorkspace({ ...input }: ManageSandboxWorkspaceInput): Promise<SandboxReport> {
-  const { store, provider, request } = input;
+  const { store, request } = input;
   const portable = store.portableMaintenance();
   const isPortablePending = Option.exists(portable, (job) => job.phase !== SandboxPhase.Done);
   const isImport = IMPORT_ACTIONS.has(request.action);
@@ -33,14 +33,10 @@ export async function manageSandboxWorkspace({ ...input }: ManageSandboxWorkspac
     return { ...report, status: 'import_required', sandboxId: store.remoteSandbox() };
   }
 
-  if (Option.isSome(provider.manage)) {
-    return await provider.manage.value(request);
-  }
-
   return await managePortable(input);
 }
 
-function assertPortableTarget({ store, provider, providerName }: ManageSandboxWorkspaceInput): void {
+function assertPortableTarget({ store, providerName }: ManageSandboxWorkspaceInput): void {
   const native = store.maintenance();
   const portable = store.portableMaintenance();
   const isNativePending = Option.exists(native, (job) => job.phase !== SandboxPhase.Done);
@@ -50,7 +46,7 @@ function assertPortableTarget({ store, provider, providerName }: ManageSandboxWo
     (job) => job.phase !== SandboxPhase.Done && job.provider !== providerName,
   );
 
-  const isRefused = Option.isSome(provider.manage) || isNativePending || isOtherTarget;
+  const isRefused = isNativePending || isOtherTarget;
 
   if (!isRefused) {
     return;

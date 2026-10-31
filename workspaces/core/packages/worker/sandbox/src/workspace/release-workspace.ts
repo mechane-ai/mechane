@@ -1,10 +1,10 @@
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
-import type { GuestConnection, MachineIdInput, WorkspaceTransferInput } from '../types.ts';
+import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { workspaceRequest } from './workspace-request.ts';
 
-type ReleaseWorkspaceInput = WorkspaceTransferInput & {
+type ReleaseWorkspaceInput = WorkspaceProviderStepInput & {
   readonly guest: GuestConnection;
   readonly machineId: MachineIdInput['machineId'];
 };

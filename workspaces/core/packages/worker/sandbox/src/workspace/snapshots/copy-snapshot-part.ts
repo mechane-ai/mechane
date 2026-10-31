@@ -2,11 +2,11 @@ import { HttpMethod } from '@mechane/records';
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
-import type { GuestConnection, WorkspaceTransferInput } from '../../types.ts';
+import type { GuestConnection, WorkspaceProviderStepInput } from '../../types.ts';
 import { workspaceRequest } from '../workspace-request.ts';
 import { readSnapshotPart } from './read-snapshot-part.ts';
 
-type CopySnapshotPartInput = WorkspaceTransferInput & {
+type CopySnapshotPartInput = WorkspaceProviderStepInput & {
   readonly guest: GuestConnection;
   readonly snapshot: WorkspaceSnapshot;
   readonly restoration: WorkspaceRestoration;

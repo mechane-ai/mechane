@@ -586,30 +586,6 @@ importers:
         specifier: 0.156.0
         version: 0.156.0
 
-  packages/node/package-moves:
-    dependencies:
-      '@mechane/checks-kernel':
-        specifier: workspace:*
-        version: link:../checks-kernel
-      '@mechane/modules':
-        specifier: workspace:*
-        version: link:../modules
-      '@mechane/normalizers':
-        specifier: workspace:*
-        version: link:../normalizers
-      '@mechane/program':
-        specifier: workspace:*
-        version: link:../program
-      '@mechane/rule-shapes':
-        specifier: workspace:*
-        version: link:../rule-shapes
-      effect:
-        specifier: 4.0.7
-        version: 4.0.7
-      yaml:
-        specifier: 2.9.1
-        version: 2.9.1
-
   packages/node/program:
     dependencies:
       '@mechane/protocol':

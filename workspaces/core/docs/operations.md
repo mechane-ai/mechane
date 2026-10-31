@@ -207,6 +207,11 @@ For an idle sandbox, use `sandbox import MECH_ID --file ./workspace.tar.gz --con
 `sandbox upgrade MECH_ID` to replace its machine while preserving home files. Active turns and running drones refuse
 maintenance. Add `--drone DRONE_ID` to manage a finished drone.
 
+Tensorlake execution is retired. Before upgrading an older Tensorlake installation, export its native files and finish
+native maintenance on the previous release. Configure containers, then import the archive with the commands above. The
+retained native-file guard refuses execution until verified import commits the replacement. Existing container
+workspaces use the same R2 generations throughout the upgrade.
+
 Each mutation prints an operation ID. After interruption, retry with `--operation-id ID` or inspect progress with
 `sandbox show`. Use `sandbox cancel MECH_ID --operation-id ID` to discard an uncommitted replacement. Failed maintenance
 requires cancellation before another change. Imports preserve the previous committed snapshot until verification

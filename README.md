@@ -38,16 +38,9 @@ integrations remain separate from infrastructure configuration.
 
 ## Development
 
-Contributors need Git, Bash, and Linux or macOS. The bootstrap installs the pinned toolchain and locked packages:
-
-```sh
-.config/bootstrap.sh
-export PATH="$HOME/.local/bin:$PATH"
-mise run check
-```
-
-Use `mise run dev` for a disposable scripted fixture or `mise run start` to run a persistent installation from source.
-Checks require no cloud account or paid model. See [development setup](.config/README.md) for the source commands.
+Follow [development setup](.config/README.md) to bootstrap the pinned toolchain and run checks. Use `mise run dev` for
+an isolated scripted fixture or `mise run start` for a persistent source installation. Checks require no cloud account
+or paid model.
 
 Mechane develops in a private source repository. An organization-owned GitHub App publishes reviewed source snapshots
 here. Every snapshot builds independently. Private history, credentials, planning notes, and hosted installation

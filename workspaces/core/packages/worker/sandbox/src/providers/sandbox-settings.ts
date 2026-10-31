@@ -15,7 +15,7 @@ export function sandboxSettings({ store, variables }: SandboxSettingsInput): San
   const configured = readSandboxSettings({ variables: settings });
   const provider = selectedProvider({ store, configured });
 
-  if (provider === SandboxProvider.Tensorlake && configured.provider !== SandboxProvider.Tensorlake) {
+  if (provider === SandboxProvider.Tensorlake) {
     store.bindProvider({ provider });
 
     return configured;

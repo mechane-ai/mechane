@@ -19,10 +19,6 @@ export async function requestSourcePreparation({
   workspace,
   fence,
 }: SourceFinalizeInput): Promise<SourceFenceReport> {
-  if (Option.isNone(workspace)) {
-    return failSource({ store, fence, reason: 'private source checkout requires portable workspace restoration' });
-  }
-
   const current = await expirePreparation({ store, provider, workspace, fence });
 
   if (current.phase === SourceFencePhase.Failed) {

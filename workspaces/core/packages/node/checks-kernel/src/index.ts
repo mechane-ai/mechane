@@ -10,8 +10,6 @@ export {
   CHILD_TIMEOUT,
   FINISHED_STATUSES,
   BASE_BRANCH,
-  TRAILING_SLASH,
-  MOVE_MAP,
   CHECKS_PROGRAM,
   CheckStatus,
 } from './constants.ts';
@@ -67,9 +65,6 @@ export { OxlintReport } from './schemas.ts';
 export { listFiles } from './list-files.ts';
 export { astGrepSites } from './lint/ast-grep-sites.ts';
 export { configurationName } from './lint/configuration-name.ts';
-export { movedPath } from './moved-path.ts';
-export type { MoveStep, PathMove } from './packages.types.ts';
-export { readMoveMap } from './baselines/moves/read-move-map.ts';
 export { raisedCounts } from './baselines/raised-counts.ts';
 export { heldFindings } from './ratchets/held-findings.ts';
 export { proposedRules } from './ratchets/proposed-rules.ts';

@@ -76,7 +76,7 @@ Create a directory for the installation and download the pinned
 mkdir mechane-infrastructure
 cd mechane-infrastructure
 curl --fail --location --output main.tf \
-  https://raw.githubusercontent.com/mechane-ai/mechane/v0.7.0/workspaces/core/infrastructure/examples/cloudflare/main.tf
+  https://raw.githubusercontent.com/mechane-ai/mechane/v0.8.0/workspaces/core/infrastructure/examples/cloudflare/main.tf
 ```
 
 Replace the account ID, hostname, zone ID, OAuth client ID, numeric GitHub identity, and Secrets Store ID in `main.tf`.
@@ -120,12 +120,12 @@ fingerprint `2229E3931B4A4739A439C9A357BF85C24B6B0DFA`, then verifies the origin
 Download the versioned helper and check it against that release's checksum file before running it:
 
 ```sh
-release=https://github.com/mechane-ai/mechane/releases/download/v0.7.0
-curl --fail --location --output mechane-setup-provider-v0.7.0.sh "$release/mechane-setup-provider-v0.7.0.sh"
+release=https://github.com/mechane-ai/mechane/releases/download/v0.8.0
+curl --fail --location --output mechane-setup-provider-v0.8.0.sh "$release/mechane-setup-provider-v0.8.0.sh"
 curl --fail --location --output SHA256SUMS "$release/SHA256SUMS"
-expected=$(awk '$2 == "mechane-setup-provider-v0.7.0.sh" { print $1 }' SHA256SUMS)
-actual=$(openssl dgst -sha256 mechane-setup-provider-v0.7.0.sh | awk '{ print $NF }')
-test -n "$expected" && test "$actual" = "$expected" && sh mechane-setup-provider-v0.7.0.sh 0.7.0
+expected=$(awk '$2 == "mechane-setup-provider-v0.8.0.sh" { print $1 }' SHA256SUMS)
+actual=$(openssl dgst -sha256 mechane-setup-provider-v0.8.0.sh | awk '{ print $NF }')
+test -n "$expected" && test "$actual" = "$expected" && sh mechane-setup-provider-v0.8.0.sh 0.7.0
 export TF_CLI_CONFIG_FILE="$PWD/.mechane/tofurc"
 tofu init
 tofu validate

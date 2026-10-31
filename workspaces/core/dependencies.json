@@ -468,7 +468,6 @@
       "@mechane/checks-kernel",
       "@mechane/normalizers",
       "@mechane/boundaries",
-      "@mechane/package-moves",
       "@mechane/rename",
       "@mechane/checks"
     ]
@@ -540,7 +539,6 @@
       "@mechane/owned-rules",
       "@mechane/locks",
       "@mechane/boundaries",
-      "@mechane/package-moves",
       "@mechane/rename",
       "@mechane/checks"
     ],
@@ -558,7 +556,6 @@
       "@mechane/owned-rules",
       "@mechane/locks",
       "@mechane/boundaries",
-      "@mechane/package-moves",
       "@mechane/rename",
       "@mechane/checks"
     ],
@@ -571,7 +568,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/package-moves", "@mechane/checks"],
+    "consumers": ["@mechane/checks"],
     "confines": ["oxc-parser"]
   },
   "@mechane/owned-rules": {
@@ -603,15 +600,6 @@
     "criterion": "closure",
     "consumers": ["@mechane/checks"],
     "confines": ["dependency-cruiser"]
-  },
-  "@mechane/package-moves": {
-    "owns": "The move codemod: the committed move map, applied through one step with each step's declarations, files, imports, entries, manifests and every path a text names",
-    "layer": 7,
-    "lane": "node",
-    "dialect": "effect",
-    "kind": "program",
-    "criterion": "program",
-    "consumers": []
   },
   "@mechane/rename": {
     "owns": "The rename codemod: one binding renamed with its input type, span name, file stem and every import, or the committed rename maps replayed",

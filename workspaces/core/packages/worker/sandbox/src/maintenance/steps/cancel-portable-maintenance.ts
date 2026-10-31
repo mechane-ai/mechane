@@ -9,8 +9,7 @@ export async function cancelPortableMaintenance({ store, provider, workspace, jo
     return;
   }
 
-  const portable = Option.some(workspace);
-  const canStop = await advanceIdleWorkspace({ store, provider, workspace: portable });
+  const canStop = await advanceIdleWorkspace({ store, provider, workspace });
 
   if (!canStop) {
     return;

@@ -5,18 +5,12 @@ import type { Option } from 'effect';
 import { ExecutionStatus, MachineStatus } from '../constants.ts';
 import { LiveMachineRow, MachineIdRow } from '../schemas.ts';
 import type { FailMachineInput, MachineRecords, MachineTimeInput } from '../types.ts';
-import { bindRemoteGuest } from './bind-remote-guest.ts';
-import { bindRemoteSandbox } from './bind-remote-sandbox.ts';
-import { remoteGuest } from './remote-guest.ts';
 import { remoteSandbox } from './remote-sandbox.ts';
 
 /** The sandbox's machines on its object's SQL storage. */
 export function machineRecords({ sql }: RecordsInput): MachineRecords {
   return {
     remoteSandbox: () => remoteSandbox({ sql }),
-    bindRemoteSandbox: (input) => bindRemoteSandbox({ sql, ...input }),
-    remoteGuest: () => remoteGuest({ sql }),
-    bindRemoteGuest: (input) => bindRemoteGuest({ sql, ...input }),
     liveMachine: () => liveMachine({ sql }),
     latestMachine: () => latestMachine({ sql }),
     openMachine: (input) => openMachine({ sql, ...input }),

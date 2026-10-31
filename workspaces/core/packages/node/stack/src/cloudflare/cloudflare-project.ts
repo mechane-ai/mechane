@@ -1,18 +1,13 @@
-import { SandboxProvider } from '@mechane/deployment';
 import { workerRevision } from '@mechane/program';
 import { baseConfiguration, WORKER_BUNDLE } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { readFile } from 'node:fs/promises';
 import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
-import type { Stack, StackSettings, StackVariables } from '../types.ts';
-import { tensorlakeFixture } from './tensorlake-fixture.ts';
+import type { StackSettings, StackVariables } from '../types.ts';
 import type { CloudflareOptionsInput } from './types.ts';
 
-type CloudflareServices = {
-  readonly served: Pick<Stack, 'githubOrigin' | 'modelUpstream'>;
-  readonly variables: StackVariables;
-};
+type CloudflareServices = { readonly variables: StackVariables };
 
 type CloudflareProjectInput = {
   readonly settings: StackSettings;
@@ -47,14 +42,8 @@ export const cloudflareProject = Effect.fn('cloudflareProject')(function* ({
     ...services.variables,
     origin: origin.origin,
     workerRevision: revision,
-    sandboxProvider: SandboxProvider.Tensorlake,
-    tensorlakeApiKey: 'offline-provider-key',
-    tensorlakeImage: 'fixture-next-image',
     approvalPollIntervalSeconds: '0',
   };
 
-  const provider = tensorlakeFixture();
-  const origins = new Set([services.served.githubOrigin.origin, services.served.modelUpstream.upstream.origin]);
-
-  return { revision, context: { base, variables, origin, contents, stateFolder, origins, provider } };
+  return { revision, context: { base, variables, origin, contents, stateFolder } };
 });

@@ -1,6 +1,11 @@
 import { Array, Option, Order } from 'effect';
-import { TRAILING_SLASH } from './constants.ts';
-import type { PathMove } from './packages.types.ts';
+import type { MoveStep } from './packages.types.ts';
+
+/** The slash a path relative to the workspace never ends with, though a folder's specifier does. */
+const TRAILING_SLASH = /\/$/;
+
+/** One move of files of a step, relative to the workspace. */
+type PathMove = MoveStep['moves'][number];
 
 /** What ends a folder move's paths, and so tells it from the move of one file. */
 const FOLDER_END = '/';

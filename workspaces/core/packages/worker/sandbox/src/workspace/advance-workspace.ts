@@ -5,13 +5,9 @@ import { retireWorkspace } from './retire-workspace.ts';
 
 /** Advances bounded retirement or checkpoint work before the next command is dispatched. */
 export async function advanceWorkspace({ store, provider, workspace }: WorkspaceProviderStepInput): Promise<boolean> {
-  if (Option.isNone(workspace)) {
-    return true;
-  }
-
   const state = store.workspace();
   const isRecovering = Option.isSome(state.recovery);
-  const isRetired = isRecovering || (await retireWorkspace({ store, workspace: workspace.value }));
+  const isRetired = isRecovering || (await retireWorkspace({ store, workspace }));
 
   if (!isRetired) {
     return false;
@@ -20,7 +16,7 @@ export async function advanceWorkspace({ store, provider, workspace }: Workspace
   const checkpoint = store.workspace().checkpoint;
 
   if (Option.isSome(checkpoint)) {
-    await advanceCheckpoint({ store, provider, workspace: workspace.value, checkpoint: checkpoint.value });
+    await advanceCheckpoint({ store, provider, workspace, checkpoint: checkpoint.value });
 
     return false;
   }

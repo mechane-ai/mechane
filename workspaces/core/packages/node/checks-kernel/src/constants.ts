@@ -4,9 +4,6 @@ import { fileURLToPath } from 'node:url';
 /** The checks program's name, which prefixes each diagnostic its runs write. */
 export const CHECKS_PROGRAM = 'checks';
 
-/** The committed move map, relative to the workspace. */
-export const MOVE_MAP = 'packages/node/package-moves/src/move-map.json';
-
 /** The ast-grep configuration, relative to the workspace, which names the folder of the rules. */
 export const AST_GREP_CONFIGURATION = 'sgconfig.yml';
 
@@ -47,6 +44,3 @@ export const OXLINT = fileURLToPath(new URL('../../../../node_modules/oxlint/bin
 
 /** The ast-grep the workspace installs, by the `bin` its package declares. */
 export const AST_GREP = fileURLToPath(new URL('../../../../node_modules/@ast-grep/cli/ast-grep', import.meta.url));
-
-/** The slash a path relative to the workspace never ends with, though a folder's specifier does. */
-export const TRAILING_SLASH = /\/$/;

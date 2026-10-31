@@ -3,8 +3,7 @@
 What every program of the checks shares: the workspace's files read, decoded and listed, git's and the tools' output,
 the members and the move map, parsed sources, findings and sites, the linters' sites and each ratchet's baseline.
 
-Layer 4 · node lane · effect dialect · consumers: normalizers, owned-rules, locks, boundaries, package-moves, rename,
-checks
+Layer 4 · node lane · effect dialect · consumers: normalizers, owned-rules, locks, boundaries, rename, checks
 
 ## Layout
 
@@ -15,7 +14,8 @@ checks
 - `src/lint/`: the sites oxlint and ast-grep report, keyed by rule.
 - `src/ratchets/`: the registry's ratchets and proposed rules, each ratchet's sites held to its baseline.
 - `src/baselines/`: the merge base's baselines, the counts each file carries and may hold, and their merge.
-- `src/baselines/moves/`: the move map, the paths it and git's renames move, and its declarations' pools.
+- `src/baselines/moves/`: the historical map used to attribute old baseline counts, git's renames, and declaration
+  pools. The completed migration executor is retired; this data cannot move product files.
 
 ## Rules
 

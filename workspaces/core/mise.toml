@@ -232,7 +232,3 @@ run = "node packages/node/checks/src/main.ts fix"
 [tasks.rename]
 description = "Rename a binding with its input type, span name, file stem and every import, such as `mise -C workspaces/core run rename -- startStack launchStack`, naming its file after the new name when two files declare it; with no names, replay the committed rename maps, as a branch cut before one runs once"
 run = "node packages/node/rename/src/main.ts"
-
-[tasks.move]
-description = "Apply the committed move map through one step, such as `mise -C workspaces/core run move -- store`: each earlier step first, then the step's declarations, files, imports, entries, manifests and every path a text names; run `mise run fix` after it"
-run = "node packages/node/package-moves/src/main.ts"

@@ -15,7 +15,7 @@ export async function prepareFreshMachine({
 }: PrepareFreshMachineInput): Promise<Option.Option<FreshSourceMachine>> {
   const state = store.workspace();
 
-  if (Option.isNone(workspace) || Option.isNone(state.head) || Option.isSome(state.recovery)) {
+  if (Option.isNone(state.head) || Option.isSome(state.recovery)) {
     return Option.none();
   }
 

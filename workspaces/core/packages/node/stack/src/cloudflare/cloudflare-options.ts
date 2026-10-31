@@ -12,10 +12,10 @@ const OUTBOUND_FETCH_FIELD = 'handler';
 
 /** Uses the shipped bundle and compatibility settings with network access confined to local fixtures. */
 export function cloudflareOptions({ ...input }: CloudflareOptionsInput): MiniflareOptions {
-  const { base, variables, origin, contents, stateFolder, origins, provider } = input;
+  const { base, variables, origin, contents, stateFolder } = input;
   const runtime = runtimeConfiguration({ base });
   const bindings = cloudflareBindings({ base, variables, runtime });
-  const outbound = cloudflareOutbound({ origins, provider });
+  const outbound = cloudflareOutbound();
 
   return {
     host: origin.hostname,

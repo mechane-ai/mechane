@@ -1,8 +1,8 @@
 import { Option } from 'effect';
-import type { GuestConnection, MachineIdInput, WorkspaceTransferInput } from '../types.ts';
+import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { restoreSnapshot } from './snapshots/restore-snapshot.ts';
 
-type RestoreWorkspaceInput = WorkspaceTransferInput & {
+type RestoreWorkspaceInput = WorkspaceProviderStepInput & {
   readonly guest: GuestConnection;
   readonly machineId: MachineIdInput['machineId'];
 };

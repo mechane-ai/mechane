@@ -1,13 +1,24 @@
-import type { RemoteSandboxId } from '@mechane/records';
+import { SandboxAction, SandboxArchive, SandboxPhase } from '@mechane/protocol';
+import { RecordText, RemoteSandboxId, SandboxOperationId } from '@mechane/records';
 import { decodeFirst } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
 import { Option, Schema } from 'effect';
-import { SandboxMaintenance } from './schemas.ts';
 
-type ReplacementBinding = {
-  /** None clears the binding after explicit deletion. */
-  readonly sandboxId: Option.Option<RemoteSandboxId>;
-};
+/** Historical native maintenance remains decodable so unfinished work cannot be silently discarded. */
+const SandboxMaintenance = Schema.Struct({
+  id: SandboxOperationId,
+  action: Schema.Enum(SandboxAction),
+  phase: Schema.Enum(SandboxPhase),
+  image: RecordText,
+  sourceId: RecordText,
+  /** Null before a replacement VM is discovered. */
+  targetId: Schema.OptionFromNullOr(RemoteSandboxId),
+  /** Null before the source archive is complete. */
+  archive: Schema.OptionFromNullOr(Schema.toType(SandboxArchive)),
+  part: Schema.Int,
+});
+
+type SandboxMaintenance = typeof SandboxMaintenance.Type;
 
 const MaintenanceJson = Schema.fromJsonString(SandboxMaintenance);
 const MaintenanceRow = Schema.Struct({ value: MaintenanceJson });
@@ -17,11 +28,10 @@ export type MaintenanceRecords = ReturnType<typeof maintenanceRecords>;
 type MaintenanceTable = {
   /** None before the first maintenance operation. */
   readonly maintenance: () => Option.Option<SandboxMaintenance>;
-  readonly saveMaintenance: (input: SandboxMaintenance) => void;
-  readonly replaceRemoteSandbox: (input: ReplacementBinding) => void;
+  readonly clearRemoteSandbox: () => void;
 };
 
-/** The journal survives Worker eviction, so every destructive effect follows its recorded intent. */
+/** Reads the retired native journal and clears its remote binding only after verified portable import. */
 export function maintenanceRecords({ sql }: RecordsInput): MaintenanceTable {
   const maintenance: () => Option.Option<SandboxMaintenance> = () => {
     const cursor = sql.exec('SELECT value FROM sandbox_maintenance WHERE slot = 1');
@@ -30,22 +40,9 @@ export function maintenanceRecords({ sql }: RecordsInput): MaintenanceTable {
     return Option.map(row, ({ value }) => value);
   };
 
-  const saveMaintenance: (input: SandboxMaintenance) => void = (input) => {
-    const value = Schema.encodeSync(MaintenanceJson)(input);
-
-    sql.exec(
-      'INSERT INTO sandbox_maintenance (slot, value) VALUES (1, ?) ON CONFLICT (slot) DO UPDATE SET value = excluded.value',
-      value,
-    );
-  };
-
-  const replaceRemoteSandbox: (input: ReplacementBinding) => void = ({ sandboxId }) => {
+  const clearRemoteSandbox: () => void = () => {
     sql.exec('DELETE FROM remote_sandbox WHERE slot = 1');
-
-    if (Option.isSome(sandboxId)) {
-      sql.exec('INSERT INTO remote_sandbox (slot, id) VALUES (1, ?)', sandboxId.value);
-    }
   };
 
-  return { maintenance, saveMaintenance, replaceRemoteSandbox };
+  return { maintenance, clearRemoteSandbox };
 }

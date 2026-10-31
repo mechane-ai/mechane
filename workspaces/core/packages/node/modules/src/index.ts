@@ -44,7 +44,6 @@ export { importBinding } from './moves/import-binding.ts';
 export { originKey } from './origin-key.ts';
 export { fileRole } from './file-role.ts';
 export { placementIndex } from './moves/placement-index.ts';
-export { unitUsers } from './units/unit-users.ts';
 export { isWithin } from './references/is-within.ts';
 export { lineEnd } from './line-end.ts';
 export { unitMoves } from './moves/unit-moves.ts';

@@ -1,6 +1,6 @@
 import { MACHINE_LEASE } from '@mechane/rpc';
 import { GuestScope, GuestStart } from '@mechane/sandbox-wire';
-import { Duration, Option, Schema } from 'effect';
+import { Duration, Schema } from 'effect';
 import type { MachineProvider } from '../types.ts';
 import { containerGuest } from './container-guest.ts';
 import { startContainer } from './start-container.ts';
@@ -17,8 +17,6 @@ export function containerProvider({ container, state, egress, gateway }: Contain
   }
 
   return {
-    manage: Option.none(),
-    suspend: Option.none(),
     start: async ({ machineId }) => {
       const environment = Schema.encodeSync(GuestStart)({ machineId, scope: GuestScope.Container });
 

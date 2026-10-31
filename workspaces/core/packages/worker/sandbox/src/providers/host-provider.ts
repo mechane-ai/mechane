@@ -45,7 +45,7 @@ export function hostProvider({ launcherOrigin, launcherKey }: HostProviderInput)
     Result.getOrThrow(await stopHostMachine({ launcherOrigin, launcherKey, machineId }));
   };
 
-  return { start, connect, stop, suspend: Option.none(), manage: Option.none() };
+  return { start, connect, stop };
 }
 
 /** Starts the machine with the variables a container gets, and reports it; a repeat starts nothing. */

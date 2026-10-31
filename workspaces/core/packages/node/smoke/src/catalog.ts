@@ -5,7 +5,7 @@ import { firstLoginSignsUpAndLaterLoginsReuseIt } from './auth/first-login-signs
 import { noKeyApprovesTheCreationOfAKey } from './auth/no-key-approves-the-creation-of-a-key.ts';
 import { onlyTheTypedCodeIsApprovedAndWrongCodesAreThrottled } from './auth/only-the-typed-code-is-approved-and-wrong-codes-are-throttled.ts';
 import { tokensStayInTheirCredentialFiles } from './auth/tokens-stay-in-their-credential-files.ts';
-import { cloudflareServesSandboxInspection } from './deployment/cloudflare-serves-sandbox-inspection.ts';
+import { cloudflareRestoresWorkspace } from './deployment/cloudflare-restores-workspace.ts';
 import { freshStackServesStagedWorker } from './deployment/fresh-stack-serves-staged-worker.ts';
 import { droneReadsMemoryAsSavedAtItsStart } from './drones/drone-reads-memory-as-saved-at-its-start.ts';
 import { droneReportsOnceThroughTheInbox } from './drones/drone-reports-once-through-the-inbox.ts';
@@ -38,10 +38,10 @@ type Scenario = {
 export const CATALOG: ReadonlyArray<Scenario> = [
   {
     guarantee:
-      'the built Worker signs in and inspects a suspended Tensorlake sandbox under Cloudflare workerd, without following a provider redirect',
+      'the built Worker restores sandbox files after export, import, machine replacement, and a Cloudflare workerd restart',
     regression:
-      'runtime compatibility: fetch options accepted by the local runtime but refused by Cloudflare, or redirects that disclose provider credentials',
-    run: cloudflareServesSandboxInspection,
+      'runtime compatibility: sandbox commands or portable file restoration that pass locally but fail under Cloudflare workerd',
+    run: cloudflareRestoresWorkspace,
   },
   {
     guarantee: 'a fresh stack serves the staged Worker, whose readiness reports its revision and each migrated class',

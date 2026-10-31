@@ -42,8 +42,6 @@ export const WORKER_VARIABLES = {
   modelOffers: 'MECHANE_MODEL_OFFERS',
   sandboxProvider: 'MECHANE_SANDBOX_PROVIDER',
   sandboxEgress: 'MECHANE_SANDBOX_EGRESS',
-  tensorlakeApiKey: 'MECHANE_TENSORLAKE_API_KEY',
-  tensorlakeImage: 'MECHANE_TENSORLAKE_IMAGE',
   workspaceMachines: 'MECHANE_WORKSPACE_MACHINES',
   isSandboxEnabled: 'MECHANE_SANDBOXES_ENABLED',
   isWorkspaceSandboxEnabledByDefault: 'MECHANE_WORKSPACE_SANDBOXES_DEFAULT',

@@ -3,7 +3,7 @@
 The normalizers: the barrel, placement and blank-line rewrites, which declaration moves are feasible and where they
 land, and each normalizer's sites and settled changes.
 
-Layer 5 · node lane · effect dialect · consumers: package-moves, checks
+Layer 5 · node lane · effect dialect · consumers: checks
 
 ## Layout
 

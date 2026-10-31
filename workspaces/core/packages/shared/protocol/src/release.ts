@@ -1,2 +1,2 @@
 /** The release this source builds; the Worker reports it, and the CLI prints it as its version. */
-export const RELEASE = '0.7.0';
+export const RELEASE = '0.8.0';

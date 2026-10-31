@@ -10,7 +10,6 @@ export const FILE_ROLES = {
     'packages/node/distribution/src/load-distribution-settings.ts',
     'packages/node/checks/src/load-checks-settings.ts',
     'packages/node/rename/src/load-rename-settings.ts',
-    'packages/node/package-moves/src/load-move-settings.ts',
     'packages/node/rule-generator/src/load-generate-settings.ts',
   ],
   [FileRole.Output]: [

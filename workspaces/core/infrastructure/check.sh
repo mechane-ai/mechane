@@ -8,7 +8,7 @@ trap 'rm -rf "$infrastructure_check"' EXIT HUP INT TERM
 tofu fmt -check -recursive infrastructure/modules infrastructure/examples
 shellcheck infrastructure/check.sh infrastructure/examples/cloudflare/setup-provider.sh
 
-provider_version=$(node --input-type=module -e 'import { RELEASE } from "./packages/shared/protocol/src/release.ts"; process.stdout.write(RELEASE)')
+provider_version=$(node --input-type=module -e 'import release from "./infrastructure/provider/release.json" with { type: "json" }; process.stdout.write(release.version)')
 provider_platform=$(go env GOOS)_$(go env GOARCH)
 provider_path="$infrastructure_check/providers/registry.opentofu.org/mechane-ai/mechane/$provider_version/$provider_platform"
 mkdir -p "$provider_path"

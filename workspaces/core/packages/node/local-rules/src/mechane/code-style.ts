@@ -6,8 +6,8 @@ import { STYLE_FUNCTION_RULES } from './style-function-rules.ts';
 
 /**
  * What enforces `code-style`: values chosen with statements, functions passed by name in the form their caller needs,
- * and two functions a file. Loops become named steps, failures tagged errors, and strings, numbers and HTTP words their
- * named forms. A rule that measured zero is enforced, and every other one is a ratchet the cleanup sweeps.
+ * and cohesive private helpers. Loops become named steps, failures tagged errors, and strings, numbers and HTTP words
+ * their named forms. A rule that measured zero is enforced, and every other one is a ratchet the cleanup sweeps.
  */
 export const codeStyle = {
   values: {},

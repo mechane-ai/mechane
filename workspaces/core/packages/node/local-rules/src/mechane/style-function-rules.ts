@@ -1,8 +1,8 @@
-import { AST_GREP_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { AST_GREP_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 
 /**
- * The rules of how `code-style` writes a function. A value is chosen in an IIFE, a callback is typed and passed by
- * name, a called const takes one object, and a behavior file holds two top-level functions.
+ * The rules of how `code-style` writes a function. A value is chosen in an IIFE, a callback is typed and passed by name
+ * and a called const takes one object.
  */
 export const STYLE_FUNCTION_RULES = [
   {
@@ -70,21 +70,6 @@ export const STYLE_FUNCTION_RULES = [
     allowed: [
       'function dispatchMeter({ store }: DispatchMeterInput) { const allowance: () => number = () => store.allowance(); return { allowance }; }',
       'function allowance({ store }: AllowanceInput) { return store.allowance(); }',
-    ],
-  },
-  {
-    ...AST_GREP_DEFAULTS,
-    name: 'third-function',
-    exemptRoles: [FileRole.EntryPoint, FileRole.Constants, FileRole.Migrations],
-    standard: 'SC-04',
-    status: RuleStatus.Ratchet,
-    phase: RolloutPhase.EffectDialect,
-    violation: [
-      'export function askGuest() { return putExecution(); } function putExecution() { return 1; } function guestAnswer() { return 2; }',
-    ],
-    allowed: [
-      'export function askGuest() { return putExecution(); } function putExecution() { return 1; }',
-      "export class GuestLost extends Schema.TaggedError<GuestLost>()('GuestLost', {}) {} export function askGuest() { return putExecution(); } function putExecution() { return 1; }",
     ],
   },
 ] as const;

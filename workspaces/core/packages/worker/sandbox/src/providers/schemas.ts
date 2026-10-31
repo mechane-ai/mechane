@@ -18,18 +18,6 @@ import { Effect, Schema } from 'effect';
 export const SandboxVariables = Schema.Union([
   renamedWireStruct({
     fields: {
-      provider: Schema.Literal(SandboxProvider.Tensorlake),
-      apiKey: Schema.RedactedFromValue(Schema.NonEmptyString),
-      image: Schema.NonEmptyString,
-    },
-    renames: {
-      provider: WORKER_VARIABLES.sandboxProvider,
-      apiKey: WORKER_VARIABLES.tensorlakeApiKey,
-      image: WORKER_VARIABLES.tensorlakeImage,
-    },
-  }),
-  renamedWireStruct({
-    fields: {
       provider: Schema.Literal(SandboxProvider.Container),
       /** Absent selects the Cloudflare gateway; local staging explicitly chooses the celld fence. */
       egress: Schema.Enum(SandboxEgress).pipe(Schema.withDecodingDefaultKey(Effect.succeed(SandboxEgress.Gateway))),

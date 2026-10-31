@@ -29,10 +29,6 @@ export type ExecutionRecords = {
 export type MachineRecords = {
   /** Absent until the provider's first creation is bound. */
   readonly remoteSandbox: () => Option.Option<RemoteSandboxId>;
-  /** Absent before the first guest starts. */
-  readonly remoteGuest: () => Option.Option<MachineTimeInput['machineId']>;
-  readonly bindRemoteSandbox: (input: BindRemoteSandboxInput) => void;
-  readonly bindRemoteGuest: (input: BindRemoteGuestInput) => void;
   /** The machine that is starting or ready, none when every machine ended. */
   readonly liveMachine: () => Option.Option<LiveMachineRow>;
   /** The machine opened last, in any status; none before the first. */
@@ -100,6 +96,3 @@ export type SettleExecutionInput = {
 export type PersistenceFailureInput = SettleExecutionInput & { readonly reason: string };
 
 export type SandboxStoreInput = { readonly storage: DurableObjectStorage };
-
-export type BindRemoteSandboxInput = { readonly sandboxId: RemoteSandboxId };
-export type BindRemoteGuestInput = Pick<MachineTimeInput, 'machineId'>;

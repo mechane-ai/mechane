@@ -11,10 +11,6 @@ export async function releaseMachineWorkspace({
   workspace,
   machineId,
 }: ReleaseMachineWorkspaceInput): Promise<boolean> {
-  if (Option.isNone(workspace)) {
-    return true;
-  }
-
   const guest = await provider.connect({ machineId });
 
   if (Option.isNone(guest)) {
@@ -25,5 +21,5 @@ export async function releaseMachineWorkspace({
     return false;
   }
 
-  return await releaseWorkspace({ store, provider, workspace: workspace.value, guest: guest.value, machineId });
+  return await releaseWorkspace({ store, provider, workspace, guest: guest.value, machineId });
 }
