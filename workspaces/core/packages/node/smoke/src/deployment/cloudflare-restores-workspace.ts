@@ -1,11 +1,10 @@
 import { SandboxReport } from '@mechane/protocol';
 import { COMMAND_PREFIX, startCloudflareStack } from '@mechane/stack';
 import type { Stack } from '@mechane/stack';
-import { check, heldMech, roundtripWorkspace, signedInMech } from '@mechane/testing';
+import { check, commandReply, heldMech, roundtripWorkspace, signedInMech } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput, TalkingMech } from '@mechane/testing';
 import { Effect, Option } from 'effect';
 import type { Scope } from 'effect';
-import { commandReply } from '../hands/command-reply.ts';
 
 const CONTENTS = 'workerd-persistent-home';
 const FILE = 'saved-workspace.txt';

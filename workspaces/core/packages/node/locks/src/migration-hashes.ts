@@ -16,7 +16,7 @@ const STORE_MIGRATIONS = {
   [DurableObjectClass.Mech]: 'packages/worker/mech-store/src/migrations.ts',
   [DurableObjectClass.Sandbox]: 'packages/worker/sandbox-store/src/migrations.ts',
   [DurableObjectClass.Limiter]: 'packages/worker/limiter-store/src/migrations.ts',
-  [DurableObjectClass.KeyCache]: 'packages/worker/key-cache-store/src/migrations.ts',
+  [DurableObjectClass.KeyCache]: 'packages/worker/key-cache/src/store/migrations.ts',
 } as const satisfies Readonly<Record<DurableObjectClass, string>>;
 
 /** The Wrangler configuration whose `migrations` add and rename the Durable Object classes. */

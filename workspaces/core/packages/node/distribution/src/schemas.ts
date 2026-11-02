@@ -1,4 +1,4 @@
-import { Lock } from '@mechane/program';
+import { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
 import { Release } from '@mechane/protocol';
 import { GitCommit, SHA256_PATTERN } from '@mechane/records';
 import { WranglerMigrations } from '@mechane/wrangler';
@@ -18,8 +18,7 @@ const ByteCount = Schema.Int.check(Schema.isGreaterThan(0));
 /** The immutable bytes of a named release asset. */
 export const Artifact = Schema.Struct({
   name: Schema.String.check(Schema.isPattern(ASSET_PATTERN)),
-  sha256: Sha256,
-  bytes: ByteCount,
+  ...ArtifactDigest.fields,
 });
 
 export type Artifact = typeof Artifact.Type;
@@ -35,16 +34,15 @@ const DurableExport = Schema.Struct({
 export const InstallationManifest = Schema.Struct({
   format_version: Schema.Literal(FORMAT_VERSION),
   is_preview: Schema.Boolean,
-  version: Release,
+  ...ReleaseDescriptor.fields,
   repository: Schema.Literal(PUBLIC_REPOSITORY),
-  public_commit: GitCommit,
   module_files: Schema.Array(Artifact),
   worker: Schema.Struct({
     path: Schema.Literal(WORKER_FILENAME),
-    sha256: Sha256,
-    bytes: ByteCount,
+    ...ArtifactDigest.fields,
     compatibility_date: Schema.String,
     compatibility_flags: Schema.Array(Schema.String),
+    container_classes: Schema.Array(Schema.String),
     bindings: Schema.Array(Binding),
     exports: Schema.Record(Schema.String, DurableExport),
     migrations: WranglerMigrations.fields.migrations,
@@ -56,7 +54,6 @@ export const InstallationManifest = Schema.Struct({
     digest: Schema.String.check(Schema.isPattern(DIGEST_PATTERN)),
   }),
   defaults: Schema.Record(Schema.String, Schema.String),
-  formats: Schema.Struct({ wire: Lock, migrations: Lock }),
 });
 
 export type InstallationManifest = typeof InstallationManifest.Type;

@@ -1,14 +1,15 @@
-import { ExecutionProgress, SourceGuestAnswer } from '@mechane/sandbox-wire';
+import { SourceGuestAnswer } from '@mechane/sandbox-wire';
 import type { SourceCapture } from '@mechane/sandbox-wire';
-import { Option } from 'effect';
+import { DateTime, Duration, Option } from 'effect';
+import { observeMachine } from '../machines/observe-machine.ts';
+import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
+import { advanceWorkspace } from '../workspace/advance-workspace.ts';
 import { captureSourceChanges } from './capture/capture-source-changes.ts';
-import { SourceCheckpointKind } from './constants.ts';
-import { runSourceCheckpoint } from './run-source-checkpoint.ts';
 
 type SourceCaptureInput = WorkspaceProviderStepInput & { readonly capture: SourceCapture };
 
-/** Captures only outside a credential lease, after the sandbox has completed its preparation execution. */
+/** Captures committed files outside a credential lease, restoring a machine after idle stop when necessary. */
 export async function captureSource({
   store,
   provider,
@@ -21,25 +22,28 @@ export async function captureSource({
     return SourceGuestAnswer.cases.Pending.make({});
   }
 
-  const progress = await runSourceCheckpoint({
-    store,
-    provider,
-    workspace,
-    sourceId: capture.sourceId,
-    kind: SourceCheckpointKind.Capture,
-  });
+  const input = { store, provider, workspace };
 
-  if (ExecutionProgress.guards.Running(progress)) {
+  if (!(await advanceWorkspace(input))) {
     return SourceGuestAnswer.cases.Pending.make({});
   }
 
-  const live = store.liveMachine();
+  const state = store.workspace();
 
-  if (!ExecutionProgress.guards.Exited(progress) || Option.isNone(live)) {
-    return SourceGuestAnswer.cases.Failed.make({ reason: 'source capture could not start its guest' });
+  if (Option.isSome(state.recovery)) {
+    return SourceGuestAnswer.cases.Failed.make({ reason: 'source capture requires recovery of the failed file save' });
   }
 
-  const machineId = live.value.id;
+  await observeMachine(input);
 
-  return await captureSourceChanges({ capture, machineId, provider });
+  const now = DateTime.nowUnsafe();
+  const wait = Duration.seconds(1);
+  const deadline = DateTime.addDuration(now, wait);
+  const machine = await readyWorkspaceMachine({ ...input, deadline });
+
+  if (Option.isNone(machine)) {
+    return SourceGuestAnswer.cases.Pending.make({});
+  }
+
+  return await captureSourceChanges({ capture, machineId: machine.value.id, provider });
 }

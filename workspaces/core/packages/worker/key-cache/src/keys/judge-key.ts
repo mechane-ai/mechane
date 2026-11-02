@@ -1,6 +1,6 @@
-import type { CachedKeyRow, LiveKeyRow } from '@mechane/key-cache-store';
 import { JudgedKey } from '@mechane/rpc';
 import { DateTime, Match, Option, Schema } from 'effect';
+import type { CachedKeyRow, LiveKeyRow } from '../store/schemas.ts';
 
 /** A shard's row of a key, and the instant of the call that judges it. */
 type JudgeKeyInput = { readonly row: CachedKeyRow; readonly now: DateTime.Utc };

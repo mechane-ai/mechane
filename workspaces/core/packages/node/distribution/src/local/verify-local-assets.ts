@@ -60,7 +60,7 @@ const verifyLocalManifest = Effect.fn('verifyLocalManifest')(function* ({
   const matches = [
     hasImage,
     local.configuration.containers.length > 0,
-    local.files['worker.js'].sha256 === manifest.worker.sha256,
+    local.worker.sha256 === manifest.worker.sha256,
     local.files['guest.oci.tar'].sha256 === manifest.guest.sha256,
     Option.exists(cli, (asset) => local.files.mechane.sha256 === asset.sha256),
   ];

@@ -1,9 +1,8 @@
 import type { Stack } from '@mechane/stack';
-import { talkingMech } from '@mechane/testing';
+import { commandReply, talkingMech } from '@mechane/testing';
 import type { Account, ScenarioFailure } from '@mechane/testing';
 import { Effect, Option } from 'effect';
 import type { Scope } from 'effect';
-import { commandReply } from './command-reply.ts';
 import { HOME_VARIABLE } from './constants.ts';
 
 type NeighborSandboxInput = { readonly stack: Stack; readonly account: Account; readonly model: string };

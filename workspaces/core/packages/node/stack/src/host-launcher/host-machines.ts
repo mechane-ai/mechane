@@ -55,6 +55,17 @@ export function hostMachines({ settings, sandboxesFolder }: HostMachinesInput): 
     }
   };
 
+  const inspect: HostMachines['inspect'] = ({ machineId }) => {
+    const current = runs.get(machineId);
+    const known = Option.fromNullishOr(current);
+
+    if (Option.isNone(known)) {
+      return { state: HostMachineStatus.Exited };
+    }
+
+    return MutableRef.get(known.value.machine);
+  };
+
   const stopEach = Effect.fn('stopEach')(function* (): Effect.fn.Return<void> {
     const stopRun: (run: HostMachineRun) => Effect.Effect<void> = ({ child }) => {
       const kill = killProcessGroup({ child });
@@ -65,7 +76,7 @@ export function hostMachines({ settings, sandboxesFolder }: HostMachinesInput): 
     yield* Effect.forEach(runs.values(), stopRun, { concurrency: 'unbounded', discard: true });
   });
 
-  return { report, stop, stopEach };
+  return { report, inspect, stop, stopEach };
 }
 
 /**

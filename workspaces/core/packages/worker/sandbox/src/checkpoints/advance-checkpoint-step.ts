@@ -1,3 +1,4 @@
+import { FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { DateTime, Option, Result } from 'effect';
 import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
@@ -24,11 +25,22 @@ export async function advanceCheckpointStep({
   const guest = await provider.connect({ machineId });
 
   if (Option.isNone(guest)) {
-    store.retireWorkspace({ generation });
-
     const now = DateTime.nowUnsafe();
 
-    store.loseMachine({ machineId, now });
+    store.atomic({
+      run: () => {
+        if (!('executionId' in checkpoint)) {
+          const result = FileCheckpointResult.cases.Failed.make({
+            reason: 'machine was lost before the file checkpoint committed',
+          });
+
+          store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
+        }
+
+        store.retireWorkspace({ generation });
+        store.loseMachine({ machineId, now });
+      },
+    });
     await provider.stop({ machineId });
 
     return;

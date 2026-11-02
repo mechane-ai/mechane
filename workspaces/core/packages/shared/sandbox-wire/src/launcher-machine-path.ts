@@ -5,8 +5,8 @@ import { GuestSegment } from './constants.ts';
 type LauncherMachinePathInput = { readonly machineId: RecordId };
 
 /**
- * The host launcher's path for one machine, which a `PUT` starts and reports and a `DELETE` stops; the id is
- * percent-encoded.
+ * The host launcher's path for one machine: PUT starts it once, GET observes without allocating, and DELETE requests
+ * its stop. The id is percent-encoded.
  */
 export function launcherMachinePath({ machineId }: LauncherMachinePathInput): string {
   const machineSegment = encodeURIComponent(machineId);

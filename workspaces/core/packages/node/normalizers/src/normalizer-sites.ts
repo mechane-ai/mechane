@@ -14,8 +14,7 @@ type NormalizerSitesInput = {
 
 /**
  * Each site the normalizers of `rules` rewrite in their next run, by each rule's name, which the owned checks hold as
- * findings. The placement normalizer's sites are the declarations it moves, the barrel normalizer's the files, and the
- * blank-lines normalizer's the lines it sets apart.
+ * findings. The barrel normalizer reports files, and the blank-lines normalizer reports the lines it sets apart.
  */
 export const normalizerSites = Effect.fn('normalizerSites')(function* ({
   rules,
@@ -23,11 +22,8 @@ export const normalizerSites = Effect.fn('normalizerSites')(function* ({
   sources,
 }: NormalizerSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
   const entries = yield* entryFiles({ members });
-  const roots = members.flatMap(({ sourceRoots }) => sourceRoots);
 
-  const groups = yield* Effect.forEach(rules, (rule) => ruleSites({ rule, entries, roots, sources }), {
-    concurrency: 1,
-  });
+  const groups = yield* Effect.forEach(rules, (rule) => ruleSites({ rule, entries, sources }), { concurrency: 1 });
 
   return groups.flat();
 });

@@ -1,14 +1,13 @@
 # @mechane/owned-rules
 
-The owned rules and checks that no installed tool runs: the layout, the documents, the pins, the orphans, the source's
-comment width and patterns, and the one-value, doc-comment, span-name, logical-operator and banned-word sites.
+The owned rules and checks that no installed tool runs: the documents, the pins, the orphans, the source's comment width
+and patterns, and the doc-comment, span-name, logical-operator and banned-word sites.
 
 Layer 5 · node lane · effect dialect · consumers: checks
 
 ## Layout
 
 - `src/`: every owned site of a source, the pins, the orphans and the span names.
-- `src/layout/`: the folders' depth and width, the file names and each behavior file's one value.
 - `src/documents/`: the documents' word budgets, their prose limits and the workflows' pinned actions.
 - `src/source/`: each source's comment width, logical operators and the shared patterns.
 - `src/doc-comments/`: each export's doc comment, and the comments too short to teach.

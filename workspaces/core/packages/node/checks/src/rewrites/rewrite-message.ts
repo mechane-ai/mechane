@@ -11,7 +11,6 @@ type RewriteMessageInput = {
   readonly rule: NormalizerRule;
   readonly rewrite: NormalizerRewrite;
   readonly entries: ReadonlyMap<string, string>;
-  readonly roots: ReadonlyArray<string>;
 };
 
 /** A normalizer, one of its rewrites, and what the normalizer changes in the rewrite's `before` once it settles. */
@@ -32,7 +31,6 @@ export const rewriteMessage = Effect.fn('rewriteMessage')(function* ({
   rule,
   rewrite,
   entries,
-  roots,
 }: RewriteMessageInput): Effect.fn.Return<ReadonlyArray<string>, InputUnreadable> {
   const sources = Record.toEntries(rewrite.before).map(([path, text]) => parsedText({ path, text }));
 
@@ -40,11 +38,10 @@ export const rewriteMessage = Effect.fn('rewriteMessage')(function* ({
     normalizer: rule.name,
     sources,
     entries,
-    roots,
     scope: { paths: [], excluded: gatedGlobs({ rule: rule.name }) },
   });
 
-  const sites = yield* ruleSites({ rule, entries, roots, sources });
+  const sites = yield* ruleSites({ rule, entries, sources });
 
   /** Whether a finding does not read as AS-01 says. */
   const isMisread: (site: Site) => boolean = ({ message }) => !MESSAGE_FORM.test(message);

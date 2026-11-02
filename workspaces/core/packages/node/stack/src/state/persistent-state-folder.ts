@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { verifyCelldStopped } from '../celld/verify-celld-stopped.ts';
 import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
-import type { StackSettings, StateLayout } from '../types.ts';
+import type { RuntimeProject, StackSettings, StateLayout } from '../types.ts';
 import { LOCAL_FILES } from './constants.ts';
 import { localStateManifest } from './local-state-manifest.ts';
 import { lockedStateFolder } from './locked-state-folder.ts';
@@ -14,7 +14,7 @@ import { localBootstrapSecret } from './secrets/local-bootstrap-secret.ts';
 import { localCredentialKeyring } from './secrets/local-credential-keyring.ts';
 import { stateLayout } from './state-layout.ts';
 
-type PersistentStateFolderInput = { readonly settings: StackSettings };
+type PersistentStateFolderInput = { readonly settings: StackSettings; readonly project: RuntimeProject };
 
 type PersistentState = StateLayout & {
   readonly bootstrapSecret: string;
@@ -25,18 +25,24 @@ type PersistentState = StateLayout & {
 /** Opens a private installation whose credentials and runtime files survive scope closure. */
 export const persistentStateFolder = Effect.fn('persistentStateFolder')(function* ({
   settings,
+  project,
 }: PersistentStateFolderInput): Effect.fn.Return<PersistentState, StackFailed, Scope.Scope> {
   const stateFolder = yield* lockedStateFolder({ path: settings.localStateFolder });
-
-  yield* localStateManifest({ stateFolder, origin: settings.localOrigin });
-  yield* Effect.tryPromise({
-    try: () => chmod(stateFolder, PrivateMode.Folder),
-    catch: (cause) => new StackFailed({ step: StackStep.WriteLocalState, reason: String(cause) }),
-  });
 
   const layout = stateLayout({ stateFolder });
 
   yield* verifyCelldStopped({ projectFolder: layout.projectFolder });
+  yield* localStateManifest({
+    stateFolder,
+    projectFolder: layout.projectFolder,
+    origin: settings.localOrigin,
+    project,
+    adoptionManifest: settings.localAdoptionManifest,
+  });
+  yield* Effect.tryPromise({
+    try: () => chmod(stateFolder, PrivateMode.Folder),
+    catch: (cause) => new StackFailed({ step: StackStep.WriteLocalState, reason: String(cause) }),
+  });
 
   const bootstrapSecretFile = join(stateFolder, LOCAL_FILES.bootstrapSecret);
   const bootstrapSecret = yield* localBootstrapSecret({ path: bootstrapSecretFile });

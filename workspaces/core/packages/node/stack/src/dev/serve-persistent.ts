@@ -23,7 +23,7 @@ export const servePersistent = Effect.fn('servePersistent')(function* ({
     line: `starting Mechane at ${settings.localOrigin.origin}; Docker builds the sandbox image when needed`,
   });
 
-  const project = yield* sourceProject({ settings });
+  const project = yield* sourceProject();
   const stack = yield* startLocalStack({ settings, project });
 
   yield* publishSourceRelease({ stack });

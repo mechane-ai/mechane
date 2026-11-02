@@ -61,3 +61,5 @@ export { verifyWorkspacePolicySandboxes } from './workspaces/verify-workspace-po
 export { registerWorkspaceMember } from './workspaces/register-workspace-member.ts';
 export { refuseWorkspacePrivileges } from './workspaces/refuse-workspace-privileges.ts';
 export { transferWorkspaceOwnership } from './workspaces/transfer-workspace-ownership.ts';
+
+export { commandReply } from './mechs/command-reply.ts';

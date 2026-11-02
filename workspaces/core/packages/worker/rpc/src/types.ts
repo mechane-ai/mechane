@@ -1,12 +1,17 @@
 import type { CredentialKeyring } from '@mechane/deployment';
-import type { SandboxReport } from '@mechane/protocol';
-import type { ExecutionProgress, RunExecutionInput, SourceFenceReport, SourceGuestAnswer } from '@mechane/sandbox-wire';
+import type { RunExecutionInput } from '@mechane/sandbox-wire';
 import type { Redacted } from 'effect';
 import type { DirectoryRpc } from './directory.types.ts';
 import type { KeyCacheRpc } from './key-cache.types.ts';
 import type { LimiterRpc } from './limits.types.ts';
 import type { MechRpc } from './mech/types.ts';
-import type { SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
+import type {
+  SandboxAnswer,
+  SandboxCaptureAnswer,
+  SandboxExecutionAnswer,
+  SandboxSourceAnswer,
+} from './sandbox.schemas.ts';
+import type { SandboxBindInput, SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
 import type { MechVariables } from './schemas.ts';
 import type { SecretReader } from './secrets/types.ts';
 import type { SourceCaptureInput, SourceCloneInput, SourceIdentityInput, SourcePrepareInput } from './source.types.ts';
@@ -53,15 +58,16 @@ export type DecodeSettingsInput = { readonly environment: WorkerEnvironment };
 
 /** Each RPC method of a sandbox's object. */
 type SandboxMethods = {
-  readonly prepareSource: (input: SourcePrepareInput) => Promise<typeof SourceFenceReport.Encoded>;
-  readonly cloneSource: (input: SourceCloneInput) => Promise<typeof SourceFenceReport.Encoded>;
-  readonly revokeSource: (input: SourceIdentityInput) => Promise<typeof SourceFenceReport.Encoded>;
-  readonly finishSource: (input: SourceIdentityInput) => Promise<typeof SourceFenceReport.Encoded>;
-  readonly captureSource: (input: SourceCaptureInput) => Promise<typeof SourceGuestAnswer.Encoded>;
-  readonly manage: (input: SandboxManageInput) => Promise<typeof SandboxReport.Encoded>;
+  readonly bindOwner: (input: SandboxBindInput) => Promise<void>;
+  readonly prepareSource: (input: SourcePrepareInput) => Promise<typeof SandboxSourceAnswer.Encoded>;
+  readonly cloneSource: (input: SourceCloneInput) => Promise<typeof SandboxSourceAnswer.Encoded>;
+  readonly revokeSource: (input: SourceIdentityInput) => Promise<typeof SandboxSourceAnswer.Encoded>;
+  readonly finishSource: (input: SourceIdentityInput) => Promise<typeof SandboxSourceAnswer.Encoded>;
+  readonly captureSource: (input: SourceCaptureInput) => Promise<typeof SandboxCaptureAnswer.Encoded>;
+  readonly manage: (input: SandboxManageInput) => Promise<typeof SandboxAnswer.Encoded>;
   /** The count of schema migrations the sandbox's database has applied. */
   readonly schemaRevision: () => Promise<number>;
-  readonly runExecution: (input: RunExecutionInput) => Promise<typeof ExecutionProgress.Encoded>;
+  readonly runExecution: (input: RunExecutionInput) => Promise<typeof SandboxExecutionAnswer.Encoded>;
   readonly cancelExecution: (input: SandboxCancelInput) => Promise<void>;
   readonly cancelActiveExecutions: () => Promise<void>;
   /** Stops the machine opened last at once, as the idle stop does, for an owner whose work there ended. */

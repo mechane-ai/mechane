@@ -15,14 +15,11 @@
     "packages/node/distribution/src",
     "packages/node/eval/src",
     "packages/node/guest/src",
-    "packages/node/local-rules/src",
     "packages/node/locks/src",
     "packages/node/modules/src",
-    "packages/node/name-rules/src",
     "packages/node/normalizers/src",
     "packages/node/owned-rules/src",
     "packages/node/program/src",
-    "packages/node/program-rules/src",
     "packages/node/release/src",
     "packages/node/rename/src",
     "packages/node/rule-generator/src",
@@ -30,9 +27,7 @@
     "packages/node/rules/src",
     "packages/node/smoke/src",
     "packages/node/stack/src",
-    "packages/node/structure-rules/src",
     "packages/node/testing/src",
-    "packages/node/typescript-rules/src",
     "packages/node/wrangler/src"
   ]
 }

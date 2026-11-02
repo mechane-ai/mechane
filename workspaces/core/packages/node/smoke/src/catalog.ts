@@ -19,6 +19,7 @@ import { uncoverableDispatchIsRefusedUnsent } from './mechs/uncoverable-dispatch
 import { canceledTurnSavesNoMemory } from './memory/canceled-turn-saves-no-memory.ts';
 import { savedMemoryOutlivesARestartAndAReset } from './memory/saved-memory-outlives-a-restart-and-a-reset.ts';
 import { installedCliUpdatesToThePublishedRelease } from './releases/installed-cli-updates-to-the-published-release.ts';
+import { retainedLocalAdmission } from './releases/retained-local-admission.ts';
 import { workspacePolicyCutsOffQueuedWorkImmediately } from './workspaces/workspace-policy-cuts-off-queued-work-immediately.ts';
 
 /** One scenario of the smoke and the consequential regression it guards. */
@@ -36,6 +37,12 @@ type Scenario = {
  * runs last, so it reads the stored state and the sandboxes every other scenario left.
  */
 export const CATALOG: ReadonlyArray<Scenario> = [
+  {
+    guarantee: 'retained local state refuses unsafe releases and verifies legacy adoption before runtime startup',
+    regression:
+      'stored-data compatibility: an older or incompatible launcher opens retained databases, or an unverified legacy baseline is accepted after interrupted startup',
+    run: retainedLocalAdmission,
+  },
   {
     guarantee:
       'the built Worker restores sandbox files after export, import, machine replacement, and a Cloudflare workerd restart',
@@ -117,9 +124,9 @@ export const CATALOG: ReadonlyArray<Scenario> = [
   },
   {
     guarantee:
-      'workspace policy takes effect without a deployment: disabled sandboxes start no machines, suspended work spends nothing, and budget reductions govern the next dispatch',
+      'workspace policy takes effect without a deployment: commands, source work and maintenance share machine capacity through recovery and stop; disabled sandboxes start no machines, suspended work spends nothing, and budget reductions govern the next dispatch',
     regression:
-      'operator control: workspace policy waits for an agent restart, a suspended workspace still admits calls or dispatches, or a workspace owner changes installation policy',
+      'operator control: a retained machine escapes capacity accounting, an unconfirmed stop releases capacity, workspace policy waits for an agent restart, a suspended workspace still admits calls or dispatches, or a workspace owner changes installation policy',
     run: workspacePolicyCutsOffQueuedWorkImmediately,
   },
   {

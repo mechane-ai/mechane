@@ -30,5 +30,3 @@ export const SOURCE_EXPIRY_MARGIN = Duration.minutes(1);
 export const SOURCE_CHECKOUT_TIMEOUT = Duration.minutes(10);
 /** Abandoned preparation can expire because no token has reached the guest. */
 export const SOURCE_PREPARATION_TIMEOUT = Duration.minutes(5);
-/** Credential-free finalization uses the normal checkpoint execution boundary. */
-export const SOURCE_FINALIZE_TIMEOUT = Duration.minutes(2);

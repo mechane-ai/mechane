@@ -3,5 +3,6 @@ id: schema-alias
 valid:
   - 'export const Turn = Schema.Struct({ id: Schema.String }); export type Turn = typeof Turn.Type;'
   - 'export const MemoryReadParameters = Type.Object({ path: Type.String() });'
+  - "export const SourceCheckpointKind = { Preparation: 'prepare' } as const;"
 invalid:
   - 'export const Turn = Schema.Struct({ id: Schema.String });'

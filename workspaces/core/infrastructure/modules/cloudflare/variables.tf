@@ -38,8 +38,8 @@ variable "authentication" {
   description = "GitHub OAuth client and stable provider subjects admitted to administer or use this installation. A null allowlist permits any GitHub identity."
   type = object({
     github_client_id           = string
-    login_key_lifetime_seconds = optional(number, 2592000)
-    named_key_lifetime_seconds = optional(number, 31536000)
+    login_key_lifetime_seconds = optional(number)
+    named_key_lifetime_seconds = optional(number)
     administrators = set(object({
       provider = string
       subject  = string
@@ -54,7 +54,7 @@ variable "authentication" {
   validation {
     condition = alltrue([
       for seconds in [var.authentication.login_key_lifetime_seconds, var.authentication.named_key_lifetime_seconds] :
-      seconds >= 1 && seconds <= 31536000 && floor(seconds) == seconds
+      seconds == null ? true : seconds >= 1 && seconds <= 31536000 && floor(seconds) == seconds
     ])
     error_message = "API key lifetimes must be whole seconds between one and 365 days."
   }
@@ -118,9 +118,9 @@ variable "sandboxes" {
     application_name          = optional(string)
     instance_type             = optional(string, "standard-1")
     max_instances             = optional(number, 4)
-    workspace_machine_limit   = optional(number, 4)
-    enabled                   = optional(bool, true)
-    workspace_default_enabled = optional(bool, true)
+    workspace_machine_limit   = optional(number)
+    enabled                   = optional(bool)
+    workspace_default_enabled = optional(bool)
     rollout_grace_seconds     = optional(number, 60)
     rollout_deadline_seconds  = optional(number, 1200)
   })
@@ -130,28 +130,26 @@ variable "sandboxes" {
   validation {
     condition = (
       var.sandboxes.max_instances >= 1 && floor(var.sandboxes.max_instances) == var.sandboxes.max_instances &&
-      var.sandboxes.workspace_machine_limit >= 1 &&
-      floor(var.sandboxes.workspace_machine_limit) == var.sandboxes.workspace_machine_limit &&
-      var.sandboxes.workspace_machine_limit <= var.sandboxes.max_instances
+      (var.sandboxes.workspace_machine_limit == null ? true : var.sandboxes.workspace_machine_limit >= 1 && floor(var.sandboxes.workspace_machine_limit) == var.sandboxes.workspace_machine_limit)
     )
     error_message = "Machine counts must be positive integers; a workspace cannot exceed installation capacity."
   }
 }
 
 variable "budgets" {
-  description = "Initial budgets and the installation ceiling, in micro-dollars. Existing workspace budgets remain runtime data."
+  description = "Optional budget overrides in micro-dollars; omitted values use the release defaults. Existing workspace budgets remain runtime data."
   type = object({
-    new_workspace_daily_micros = optional(number, 20000000)
-    new_agent_daily_micros     = optional(number, 10000000)
-    workspace_daily_max_micros = optional(number, 20000000)
+    new_workspace_daily_micros = optional(number)
+    new_agent_daily_micros     = optional(number)
+    workspace_daily_max_micros = optional(number)
   })
   default  = {}
   nullable = false
 
   validation {
     condition = alltrue([
-      for amount in values(var.budgets) : amount >= 0 && floor(amount) == amount
-    ]) && var.budgets.new_workspace_daily_micros <= var.budgets.workspace_daily_max_micros
+      for amount in values(var.budgets) : amount == null ? true : amount >= 0 && floor(amount) == amount
+    ])
     error_message = "Budgets must be whole nonnegative micro-dollars; the initial workspace budget cannot exceed its ceiling."
   }
 }

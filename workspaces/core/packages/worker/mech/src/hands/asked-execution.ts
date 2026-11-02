@@ -1,11 +1,14 @@
 import type { HandsOutcome } from '@mechane/harness-tools';
-import { EXECUTION_WAIT_MAX, ExecutionProgress } from '@mechane/sandbox-wire';
+import { SandboxRefusal } from '@mechane/harness-tools';
+import { SandboxExecutionAnswer } from '@mechane/rpc';
+import { EXECUTION_WAIT_MAX } from '@mechane/sandbox-wire';
 import { unlessStopped } from '@mechane/utilities';
-import { Duration, Match, Option, Schema } from 'effect';
+import { Duration, Match, Option, Result, Schema } from 'effect';
+import { refusedOutcome } from './refused-outcome.ts';
 import type { SettledExecutionInput } from './types.ts';
 
 /** The sandbox an execution runs in, the execution, and how its tool call ends early. */
-type AskedExecutionInput = Pick<SettledExecutionInput, 'sandbox' | 'execution' | 'signal' | 'aborted'>;
+type AskedExecutionInput = SettledExecutionInput;
 
 /**
  * Asks the sandbox for the execution with the same input each time, returning none while it runs within its own
@@ -14,6 +17,7 @@ type AskedExecutionInput = Pick<SettledExecutionInput, 'sandbox' | 'execution' |
  */
 export async function askedExecution({
   sandbox,
+  target,
   execution,
   signal,
   aborted,
@@ -35,15 +39,27 @@ export async function askedExecution({
   // The abort that stopped the wait fails the ask here, so a stopped wait's none never reaches the caller.
   signal.throwIfAborted();
 
-  return Option.flatMap(answer, executionOutcome);
-}
+  return Option.flatMap(answer, (progress) => {
+    const decoded = Schema.decodeUnknownResult(SandboxExecutionAnswer)(progress);
+    const value = Result.getOrThrow(decoded);
 
-const executionOutcome: (progress: unknown) => Option.Option<HandsOutcome> = (progress) =>
-  Match.valueTags(Schema.decodeUnknownSync(ExecutionProgress)(progress), {
-    Running: () => Option.none(),
-    Exited: (ended) => Option.some(ended),
-    TimedOut: (ended) => Option.some(ended),
-    Uncertain: (ended) => Option.some(ended),
-    Unavailable: (ended) => Option.some(ended),
-    PersistenceFailed: (ended) => Option.some(ended),
+    return Match.valueTags(value, {
+      Running: () => Option.none(),
+      Exited: (ended) => Option.some(ended),
+      TimedOut: (ended) => Option.some(ended),
+      Uncertain: (ended) => Option.some(ended),
+      Unavailable: (ended) => Option.some(ended),
+      PersistenceFailed: (ended) => Option.some(ended),
+      Disabled: () => {
+        const refused = refusedOutcome({ target, reason: SandboxRefusal.NoSandbox });
+
+        return Option.some(refused);
+      },
+      CapacityReached: () => {
+        const refused = refusedOutcome({ target, reason: SandboxRefusal.MachinesFull });
+
+        return Option.some(refused);
+      },
+    });
   });
+}

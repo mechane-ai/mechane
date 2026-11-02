@@ -80,13 +80,12 @@
       "@mechane/workspace-store",
       "@mechane/mech-store",
       "@mechane/sandbox-store",
-      "@mechane/key-cache-store",
+      "@mechane/key-cache",
       "@mechane/limiter-store",
       "@mechane/directory",
       "@mechane/workspace",
       "@mechane/mech",
       "@mechane/sandbox",
-      "@mechane/key-cache",
       "@mechane/limiter",
       "@mechane/harness",
       "@mechane/harness-tools"
@@ -242,15 +241,6 @@
     "criterion": "state",
     "consumers": ["@mechane/sandbox"]
   },
-  "@mechane/key-cache-store": {
-    "owns": "The key-cache object's database: its tables, rows and record functions",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "store",
-    "criterion": "state",
-    "consumers": ["@mechane/key-cache"]
-  },
   "@mechane/limiter-store": {
     "owns": "The limiter object's database: its tables, rows and record functions",
     "layer": 4,
@@ -373,7 +363,7 @@
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
-    "kind": "library",
+    "kind": "library-program",
     "criterion": "reuse",
     "consumers": ["@mechane/stack", "@mechane/distribution"]
   },
@@ -458,11 +448,6 @@
     "kind": "library",
     "criterion": "reuse",
     "consumers": [
-      "@mechane/structure-rules",
-      "@mechane/typescript-rules",
-      "@mechane/name-rules",
-      "@mechane/program-rules",
-      "@mechane/local-rules",
       "@mechane/rules",
       "@mechane/rule-generator",
       "@mechane/checks-kernel",
@@ -471,51 +456,6 @@
       "@mechane/rename",
       "@mechane/checks"
     ]
-  },
-  "@mechane/structure-rules": {
-    "owns": "The registry's entries of the boundary and structure contracts: packages, modules, entry points, exports, file roles, folders, functions and branches",
-    "layer": 3,
-    "lane": "node",
-    "dialect": "data",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/rules"]
-  },
-  "@mechane/typescript-rules": {
-    "owns": "The registry's entries of the TypeScript contracts: bindings, inputs, assertions, types, arguments, classes, module state, the compiler, file names, Effect errors and schemas, and the Effect dialect",
-    "layer": 3,
-    "lane": "node",
-    "dialect": "data",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/rules"]
-  },
-  "@mechane/name-rules": {
-    "owns": "The registry's entries of the names and comments contracts: blank lines, booleans, measured values, spelled-out names, the vocabulary, comments and suppressions, with oxlint's opt-out list",
-    "layer": 3,
-    "lane": "node",
-    "dialect": "data",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/rules"]
-  },
-  "@mechane/program-rules": {
-    "owns": "The registry's entries of the contracts of what programs do: shared code, settings, entry points, diagnostics, lifecycles and the CLI, then data, tests, security and evals",
-    "layer": 3,
-    "lane": "node",
-    "dialect": "data",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/rules"]
-  },
-  "@mechane/local-rules": {
-    "owns": "The registry's entries of Mechane's own contracts, the package layers, the rule registry and the code style, and of the factory's repository contracts",
-    "layer": 3,
-    "lane": "node",
-    "dialect": "data",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/rules"]
   },
   "@mechane/rule-generator": {
     "owns": "The registry's program: it writes or checks every file the registry generates, runs the registry's own checks, and prints a rule's or a path's rules",

@@ -28,11 +28,11 @@ export type GuestConnection = {
 
 /** Starts, reaches, and stops machines; Mechane owns their workspace durability. */
 export type MachineProvider = {
-  /** Starts the machine, with its id in its guest's start, after stopping any machine still running. */
+  /** Starts the requested identity; sandbox capacity coordinates replacement before calling a raw provider. */
   readonly start: (input: MachineIdInput) => Promise<void>;
-  /** The machine's guest while the machine runs; none before it runs and once it stopped. */
+  /** Reads the machine's guest without allocating; none before it runs and after it stops. */
   readonly connect: (input: MachineIdInput) => Promise<Option.Option<GuestConnection>>;
-  /** Stops the machine, if it runs. */
+  /** Confirms the machine stopped. A rejection does not acknowledge stop or permit capacity release. */
   readonly stop: (input: MachineIdInput) => Promise<void>;
 };
 

@@ -49,9 +49,9 @@
   "packages/worker/mech/src/types.ts": 2,
   "packages/worker/rpc/src/directory.types.ts": 5,
   "packages/worker/rpc/src/mech/types.ts": 14,
-  "packages/worker/rpc/src/stubs/types.ts": 3,
+  "packages/worker/rpc/src/stubs/types.ts": 2,
   "packages/worker/rpc/src/stubs/workspace-stub.ts": 1,
-  "packages/worker/rpc/src/workspace.types.ts": 4,
+  "packages/worker/rpc/src/workspace.types.ts": 3,
   "packages/worker/sandbox-store/src/types.ts": 8,
   "packages/worker/workspace-store/src/types.ts": 5
 }

@@ -1,6 +1,6 @@
 import type { MechTables, SourceTask } from '@mechane/mech-store';
 import { SourceStatus } from '@mechane/protocol';
-import { SourceFenceReport } from '@mechane/sandbox-wire';
+import { MachineRefusal, SandboxSourceAnswer } from '@mechane/rpc';
 import { capturePromise } from '@mechane/utilities';
 import { Option, Result, Schema } from 'effect';
 import { saveSourceFence } from './save-source-fence.ts';
@@ -19,7 +19,7 @@ export async function finishSourceCheckout({
   sandbox,
   checkout,
   reason,
-}: SourceCheckoutFinish): Promise<SourceTask> {
+}: SourceCheckoutFinish): Promise<SourceTask | MachineRefusal> {
   const promise = sandbox.finishSource(checkout);
   const response = await capturePromise({ promise });
 
@@ -27,14 +27,19 @@ export async function finishSourceCheckout({
     return await recordSourceUncertainty({ mech, source });
   }
 
-  const decoded = Schema.decodeUnknownResult(SourceFenceReport)(response.success);
+  const decoded = Schema.decodeUnknownResult(SandboxSourceAnswer)(response.success);
 
   if (Result.isFailure(decoded)) {
     return await recordSourceUncertainty({ mech, source });
   }
 
-  const fallback: () => Option.Option<string> = () => decoded.success.reason;
-  const fence = { ...decoded.success, reason: Option.orElse(reason, fallback) };
+  if (Schema.is(MachineRefusal)(decoded.success)) {
+    return decoded.success;
+  }
+
+  const report = decoded.success;
+  const fallback: () => Option.Option<string> = () => report.reason;
+  const fence = { ...report, reason: Option.orElse(reason, fallback) };
 
   return await saveSourceFence({ mech, owner, sandbox, source, fence });
 }

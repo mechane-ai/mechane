@@ -1,51 +1,57 @@
 import { LeaseDecision } from '@mechane/rpc';
-import type { LeaseMachineInput, WorkspaceVariables } from '@mechane/rpc';
+import type { ReserveMachineInput, WorkspaceVariables } from '@mechane/rpc';
 import type { WorkspaceStore } from '@mechane/workspace-store';
 import { Option } from 'effect';
 import type { DateTime } from 'effect';
 import { effectivePolicy } from '../policy/effective-policy.ts';
 
-/** A sandbox's lease to decide, which lasts until `expiresAt`, once its machine's idle window and stop have ended. */
-type DecideLeaseInput = {
+type DecideLeaseInput = ReserveMachineInput & {
   readonly store: WorkspaceStore;
   readonly settings: WorkspaceVariables;
-  readonly sandboxId: LeaseMachineInput['sandboxId'];
-  readonly expiresAt: DateTime.Utc;
   readonly now: DateTime.Utc;
 };
 
-/**
- * Leases a machine to one of the workspace's sandboxes until `expiresAt`, in one transaction. A sandbox that holds a
- * lease renews it, and another gets one only while fewer than `machines` leases are unexpired. A lease outlives a lost
- * release only until it expires, as its machine's own idle stop does.
- */
+/** Admission and recording share one transaction. Persistent reservations never expire while files need recovery. */
 export function decideLease({
   store,
   settings,
   sandboxId,
-  expiresAt,
+  reservationId,
+  isAdopting,
   now,
 }: DecideLeaseInput): typeof LeaseDecision.Encoded {
   const lease: () => typeof LeaseDecision.Encoded = () => {
     const policy = effectivePolicy({ store, settings, initialAllowanceMicros: 0 });
 
-    if (policy.isSuspended || !policy.hasSandboxes) {
-      return LeaseDecision.cases.Disabled.make({});
-    }
-
     store.dropExpiredLeases({ now });
 
-    const leasedMachines = store.leaseCount();
+    const held = store.sandboxLease({ sandboxId });
 
-    if (leasedMachines > policy.machines) {
-      return LeaseDecision.cases.Full.make({});
+    if (Option.isSome(held) && Option.isSome(held.value.reservationId)) {
+      const previous = held.value.reservationId.value;
+      const isRetired = reservationId === previous && held.value.active === 0;
+      const isSupersedingLive = reservationId > previous && held.value.active === 1;
+
+      if (reservationId < previous || isRetired || isSupersedingLive) {
+        return LeaseDecision.cases.Full.make({});
+      }
     }
 
-    if (Option.isNone(store.sandboxLease({ sandboxId })) && leasedMachines >= policy.machines) {
-      return LeaseDecision.cases.Full.make({});
+    if (!isAdopting) {
+      if (policy.isSuspended || !policy.hasSandboxes) {
+        return LeaseDecision.cases.Disabled.make({});
+      }
+
+      const count = store.leaseCount();
+
+      const alreadyCounted = Option.exists(held, (record) => record.active === 1);
+
+      if (count > policy.machines || (!alreadyCounted && count >= policy.machines)) {
+        return LeaseDecision.cases.Full.make({});
+      }
     }
 
-    store.holdLease({ sandboxId, expiresAt });
+    store.holdLease({ sandboxId, reservationId, now });
 
     return LeaseDecision.cases.Leased.make({});
   };

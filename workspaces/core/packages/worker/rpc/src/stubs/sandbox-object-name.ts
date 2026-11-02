@@ -1,6 +1,6 @@
+import type { SandboxOwner } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import { mechObjectName } from './mech-object-name.ts';
-import type { SandboxOwner } from './types.ts';
 
 /**
  * The name of a sandbox's object: its mech's object's name for the mech's own, and that name with the drone's id below

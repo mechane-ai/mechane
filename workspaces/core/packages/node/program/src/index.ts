@@ -48,3 +48,10 @@ export type { FileWriteFailed } from './files/errors.ts';
 export { jsonFileText } from './files/json-file-text.ts';
 export { createFile } from './files/create-file.ts';
 export { readOptionalFile } from './files/read-optional-file.ts';
+export {
+  ArtifactDigest,
+  ReleaseDescriptor,
+  readReleaseDescriptor,
+  releaseCompatibilityIssue,
+} from './release-descriptor.ts';
+export { artifactDigest } from './files/artifact-digest.ts';

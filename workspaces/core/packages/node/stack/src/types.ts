@@ -1,4 +1,5 @@
 import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
+import type { ReleaseDescriptor } from '@mechane/program';
 import type { HttpStatusCode } from '@mechane/records';
 import type { ReleaseFailed } from '@mechane/release';
 import type { BaseConfiguration } from '@mechane/wrangler';
@@ -11,6 +12,7 @@ import type { StackFailed } from './errors.ts';
 /** The immutable runtime inputs supplied by a source build or an installed release. */
 export type RuntimeProject = {
   readonly bundle: string;
+  readonly release: ReleaseDescriptor;
   readonly configuration: BaseConfiguration;
   readonly revision: string;
   readonly celldCommand: string;
@@ -73,6 +75,8 @@ export type StackSettings = {
   /** Persistent mode requires containers; a disposable fixture may select host processes. */
   readonly sandboxProvider: LocalSandboxProvider;
   readonly localStateFolder: string;
+  /** Absent unless adopting retained state from a release that did not record its format baseline. */
+  readonly localAdoptionManifest: Option.Option<string>;
   readonly localOrigin: URL;
   readonly localCommand: LocalCommand;
   readonly executableFolder: string;

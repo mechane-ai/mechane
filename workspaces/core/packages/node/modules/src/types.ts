@@ -1,13 +1,6 @@
 import type { Option } from 'effect';
-import type { Declaration, Directive, ModuleDeclaration, ParseResult, Statement } from 'oxc-parser';
-import type { BlockerKind, RoleFile, StatementKind } from './constants.ts';
-
-/** A top-level statement and the declaration it holds, with whether the statement exports it. */
-export type TopLevelDeclaration = {
-  readonly statement: Statement;
-  readonly declaration: Declaration;
-  readonly isExported: boolean;
-};
+import type { Directive, ModuleDeclaration, ParseResult, Statement } from 'oxc-parser';
+import type { StatementKind } from './constants.ts';
 
 /** One TypeScript file of a source root, read whole and parsed once: its path, its text and oxc's parse of it. */
 export type ParsedSource = { readonly path: string; readonly text: string; readonly parsed: ParseResult };
@@ -58,102 +51,6 @@ export type AddedStatement = StatementForm & {
   readonly anchor: Option.Option<number>;
 };
 
-/**
- * What a round reads of the workspace: each file's facts, every export, each declaration's uses, the entries, and the
- * declarations they export, which placement pins.
- */
-export type PlacementIndex = {
-  readonly files: ReadonlyMap<string, FileFacts>;
-  readonly table: ExportTable;
-  readonly uses: ReadonlyMap<string, ReadonlyArray<NameUse>>;
-  readonly entries: ReadonlySet<string>;
-  readonly pinned: ReadonlySet<string>;
-};
-
-/** What a round reads of one file. */
-export type FileFacts = {
-  readonly source: ParsedSource;
-  readonly statements: ReadonlyArray<ModuleStatement>;
-  readonly units: ReadonlyMap<string, Unit>;
-  readonly names: ReadonlyMap<string, TopLevelName>;
-  readonly references: ReadonlyArray<Reference>;
-  /** The offset after the last import or re-export, where declarations moved into the file land. */
-  readonly insertion: number;
-};
-
-/**
- * A unit's move to the file it belongs in: unexported into its one user, or exported into the role file of the nearest
- * folder that holds every user. A unit only other units of its file name moves with them, unexported.
- */
-export type Move = {
-  readonly unit: Unit;
-  readonly to: string;
-  /** Whether it lands without `export`: beside its one user, or beside the units that carry it. */
-  readonly isPrivate: boolean;
-  /** Whether the unit's own file still names it, and so imports it from where it lands. */
-  readonly hasOwnUse: boolean;
-  /** The keys of the units of its file that alone name it, each of which must land where it does. */
-  readonly carriers: ReadonlyArray<string>;
-};
-
-/**
- * One name's movable declarations at a file's top level: a constant or a class, a type or an interface, or such a pair.
- * It holds the references their text makes to other names.
- */
-export type Unit = {
-  readonly name: string;
-  readonly path: string;
-  /** The line its first statement starts on, counted from 1. */
-  readonly line: number;
-  readonly statements: ReadonlyArray<UnitStatement>;
-  readonly references: ReadonlyArray<Reference>;
-  readonly isTypeOnly: boolean;
-  /** Whether its text holds `import.meta` or a dynamic `import()`, whose value depends on the file's folder. */
-  readonly isLocated: boolean;
-  /** The role file its kind belongs in; absent for a value no role file holds, such as a function. */
-  readonly kindRole: Option.Option<RoleFile>;
-};
-
-/** A name a moving unit uses, and the binding its destination needs for it. */
-export type Need = {
-  readonly local: string;
-  /** The key of what the name binds: the declaration it takes through every re-export, or a package's export. */
-  readonly origin: string;
-  /** Absent for a name the unit's file imports rather than declares. */
-  readonly declared: Option.Option<TopLevelName>;
-  /** Whether every use of the name stands in a type, or it names a type, so a type-only import binds it. */
-  readonly isTypeOnly: boolean;
-  /** The value import that binds the name at the destination; the needs of one name merge its type-ness. */
-  readonly form: StatementForm;
-};
-
-/**
- * One statement of a unit: the span its removal takes, with its attached comments and its line, and its text with and
- * without the `export` it starts with.
- */
-export type UnitStatement = {
-  readonly start: number;
-  readonly end: number;
-  readonly text: string;
-  readonly privateText: string;
-};
-
-/**
- * A name a file declares at its top level: whether the file exports it, and whether it names a type alone. A value
- * import needs the file to export its value.
- */
-export type TopLevelName = {
-  readonly isExported: boolean;
-  readonly isValueExported: boolean;
-  readonly isTypeOnly: boolean;
-};
-
-/** A name a statement of a file takes, which a move of the declaration it takes redirects. */
-export type NameUse = { readonly path: string; readonly statement: ModuleStatement; readonly name: ModuleName };
-
-/** An identifier where it names a binding: its name, its offset, and whether it stands in a type. */
-export type Reference = { readonly name: string; readonly offset: number; readonly isType: boolean };
-
 /** The file that declares an export, relative to the workspace, and the name it declares it under. */
 export type Origin = { readonly path: string; readonly name: string };
 
@@ -165,12 +62,3 @@ export type NormalizerScope = { readonly paths: ReadonlyArray<string>; readonly 
 
 /** A replacement of the text between two offsets; an insertion starts and ends at one offset. */
 export type TextEdit = { readonly start: number; readonly end: number; readonly text: string };
-
-/** Why placement leaves a declaration where it is. */
-export type Blocker = KindBlocker | HiddenNeedBlocker;
-
-/** A blocker its kind alone describes. */
-type KindBlocker = { readonly kind: Exclude<BlockerKind, typeof BlockerKind.HiddenNeed> };
-
-/** A hidden need, with the name of each declaration its file does not export. */
-type HiddenNeedBlocker = { readonly kind: typeof BlockerKind.HiddenNeed; readonly names: ReadonlyArray<string> };

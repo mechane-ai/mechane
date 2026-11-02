@@ -10,14 +10,15 @@ notices, and the Worker imports every JavaScript notice here. The guest image al
 
 ## Application dependencies
 
-The CLI and guest bundle metadata contain Effect as their only external JavaScript package. The Worker source map also
-contains the packages below, including `content-type` and `@cfworker/json-schema` bundled inside the MCP client. Exact
-copies shared by multiple packages or versions use one file. Update these notices when the bundled dependency graph
-changes; the workspace's complete development dependency list is a different inventory.
+The guest bundle metadata contains Effect as its external JavaScript package. Local release admission also uses semver.
+The Worker source map also contains the packages below, including `content-type` and `@cfworker/json-schema` bundled
+inside the MCP client. Exact copies shared by multiple packages or versions use one file. Update these notices when the
+bundled dependency graph changes; the workspace's complete development dependency list is a different inventory.
 
 | Notice                      | Package version                                                          | Original license source                                                                                                          |
 | --------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | `apache-2.0.js`             | Mechane                                                                  | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)                                                                    |
+| `semver.js`                 | `semver` 7.8.5                                                           | Installed package `LICENSE`                                                                                                      |
 | `effect.js`                 | `effect` 4.0.7                                                           | Installed package `LICENSE`                                                                                                      |
 | `jose.js`                   | `jose` 6.2.13                                                            | Installed package `LICENSE.md`                                                                                                   |
 | `cookie.js`                 | `cookie` 1.1.1                                                           | Installed package `LICENSE`                                                                                                      |

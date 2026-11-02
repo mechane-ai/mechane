@@ -94,12 +94,12 @@ export type {
   TurnInput,
 } from './mech/types.ts';
 export { mechStub } from './stubs/mech-stub.ts';
-export { MACHINE_LEASE, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
+export { CONTAINER_INACTIVITY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
 export type {
   WorkspaceRpc,
   ReserveDispatchInput,
   DispatchSettlement,
-  LeaseMachineInput,
+  ReserveMachineInput,
   MechIdInput,
   MechsInput,
   ReleaseMachineInput,
@@ -118,9 +118,16 @@ export { limiterStub } from './stubs/limiter-stub.ts';
 export type { Approved, Pending } from './directory.schemas.ts';
 export { objectBindings } from './object-bindings.ts';
 
-export { SandboxAnswer } from './sandbox.schemas.ts';
+export {
+  SandboxAnswer,
+  MachineRefusal,
+  SandboxExecutionAnswer,
+  SandboxSourceAnswer,
+  SandboxCaptureAnswer,
+} from './sandbox.schemas.ts';
+export { sandboxIdentity } from './stubs/sandbox-stub.ts';
 
-export type { SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
+export type { SandboxBindInput, SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
 export { SlackBindingAnswer, SlackEventAdmission, SlackInstallationAnswer } from './slack.schemas.ts';
 export type {
   ConfigureSlackBindingInput,

@@ -1,5 +1,5 @@
 import type { HandsExecution } from '@mechane/harness-tools';
-import type { SandboxRpc, WorkspaceRpc } from '@mechane/rpc';
+import type { SandboxRpc } from '@mechane/rpc';
 
 /**
  * The sandbox a command runs in, by its mech's or drone's id, with the mech and the workspace whose machines it leases.
@@ -15,7 +15,6 @@ export type MachineTarget = {
 /** The sandbox and the workspace of one execution, its target, and how its tool call ends early. */
 export type SettledExecutionInput = {
   readonly sandbox: DurableObjectStub<SandboxRpc>;
-  readonly workspace: DurableObjectStub<WorkspaceRpc>;
   readonly target: MachineTarget;
   readonly execution: HandsExecution;
   /** The tool call's abort signal, one that never aborts for a call without one. */

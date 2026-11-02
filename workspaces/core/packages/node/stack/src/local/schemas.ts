@@ -1,29 +1,15 @@
-import { Release } from '@mechane/protocol';
-import { GitCommit, SHA256_PATTERN } from '@mechane/records';
+import { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
 import { BaseConfiguration } from '@mechane/wrangler';
 import { Schema } from 'effect';
-import { LocalTarget } from './constants.ts';
-
-const LOCAL_PACKAGE_FORMAT_VERSION = 1;
-
-const PackageFile = Schema.Struct({
-  sha256: Schema.String.check(Schema.isPattern(SHA256_PATTERN)),
-  bytes: Schema.Int.check(Schema.isGreaterThan(0)),
-});
+import { LOCAL_PACKAGE_FORMAT_VERSION, LocalTarget } from './constants.ts';
 
 /** The launcher verifies each runtime input before handing the release to celld. */
 export const LocalPackage = Schema.Struct({
   format_version: Schema.Literal(LOCAL_PACKAGE_FORMAT_VERSION),
-  version: Release,
-  public_commit: GitCommit,
+  ...ReleaseDescriptor.fields,
   target: Schema.Enum(LocalTarget),
   configuration: BaseConfiguration,
-  files: Schema.Struct({
-    'worker.js': PackageFile,
-    'guest.oci.tar': PackageFile,
-    'celld': PackageFile,
-    'mechane': PackageFile,
-  }),
+  files: Schema.Struct({ 'guest.oci.tar': ArtifactDigest, 'celld': ArtifactDigest, 'mechane': ArtifactDigest }),
 });
 
 export type LocalPackage = typeof LocalPackage.Type;

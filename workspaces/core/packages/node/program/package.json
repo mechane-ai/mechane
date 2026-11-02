@@ -7,6 +7,8 @@
   },
   "dependencies": {
     "@mechane/protocol": "workspace:*",
-    "effect": "4.0.7"
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7",
+    "semver": "7.8.5"
   }
 }

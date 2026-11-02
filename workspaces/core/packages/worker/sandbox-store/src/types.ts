@@ -2,6 +2,7 @@ import type { RemoteSandboxId } from '@mechane/records';
 import type { SettledReceipt } from '@mechane/sandbox-wire';
 import type { AlarmTimeInput, DatabaseFunctions } from '@mechane/store';
 import type { DateTime, Duration, Option } from 'effect';
+import type { capacityRecords } from './capacity/capacity-records.ts';
 import type { MaintenanceRecords } from './lifecycle/maintenance-records.ts';
 import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import type { ExecutionRow, LiveMachineRow, MachineIdRow } from './schemas.ts';
@@ -78,6 +79,7 @@ export type SandboxAlarm = {
 
 /** The sandbox database's operations and migration revision. */
 export type SandboxStore = DatabaseFunctions &
+  ReturnType<typeof capacityRecords> &
   MachineRecords &
   ExecutionRecords &
   MaintenanceRecords &

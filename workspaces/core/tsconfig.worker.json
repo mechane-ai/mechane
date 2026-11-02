@@ -12,7 +12,6 @@
     "packages/worker/harness-tools/src",
     "packages/worker/integrations/src",
     "packages/worker/key-cache/src",
-    "packages/worker/key-cache-store/src",
     "packages/worker/limiter/src",
     "packages/worker/limiter-store/src",
     "packages/worker/logs/src",

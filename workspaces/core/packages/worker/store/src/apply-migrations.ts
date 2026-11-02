@@ -1,6 +1,11 @@
-import { DateTime } from 'effect';
+import { DateTime, Result, Schema } from 'effect';
 import { schemaRevision } from './schema-revision.ts';
 import type { Migration } from './types.ts';
+
+class SchemaAhead extends Schema.TaggedError<SchemaAhead>()('SchemaAhead', {
+  applied: Schema.Int,
+  available: Schema.Int,
+}) {}
 
 type ApplyMigrationsInput = { readonly sql: SqlStorage; readonly migrations: ReadonlyArray<Migration> };
 
@@ -16,6 +21,13 @@ export function applyMigrations({ sql, migrations }: ApplyMigrationsInput): void
   );
 
   const applied = schemaRevision({ sql });
+
+  if (applied > migrations.length) {
+    const cause = new SchemaAhead({ applied, available: migrations.length });
+    const failure = Result.fail(cause);
+
+    return Result.getOrThrow(failure);
+  }
 
   for (const [offset, migrate] of migrations.slice(applied).entries()) {
     migrate({ sql });

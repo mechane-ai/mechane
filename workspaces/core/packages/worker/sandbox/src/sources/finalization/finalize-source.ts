@@ -1,7 +1,7 @@
-import { ExecutionProgress, SourceFencePhase } from '@mechane/sandbox-wire';
+import { FileCheckpointResult, SourceCheckpointKind } from '@mechane/sandbox-store';
+import { SourceFencePhase } from '@mechane/sandbox-wire';
 import type { SourceFenceReport } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
-import { SourceCheckpointKind } from '../constants.ts';
 import { runSourceCheckpoint } from '../run-source-checkpoint.ts';
 import { sourceReport } from '../source-report.ts';
 import type { SourceFinalizeInput } from '../types.ts';
@@ -22,13 +22,13 @@ export async function finalizeSource({
     kind: SourceCheckpointKind.Finalization,
   });
 
-  if (ExecutionProgress.guards.Running(progress)) {
+  if (FileCheckpointResult.guards.Pending(progress)) {
     return sourceReport({ fence });
   }
 
   let outcome: SourceOutcome = { phase: SourceFencePhase.Ready, reason: Option.none() };
 
-  if (!ExecutionProgress.guards.Exited(progress) || progress.exitCode !== 0) {
+  if (!FileCheckpointResult.guards.Committed(progress)) {
     outcome = {
       phase: SourceFencePhase.Failed,
       reason: Option.some('source checkout did not reach a durable checkpoint'),

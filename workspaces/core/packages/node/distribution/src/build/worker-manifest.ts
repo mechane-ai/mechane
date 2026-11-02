@@ -1,12 +1,11 @@
-import { WORKER_BUNDLE } from '@mechane/wrangler';
+import type { ArtifactDigest } from '@mechane/program';
 import type { BaseConfiguration } from '@mechane/wrangler';
 import { Effect, Record, Schema } from 'effect';
 import { DistributionStep, DURABLE_EXPORT, WORKER_FILENAME } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
-import { fileDigest } from '../files/file-digest.ts';
 import { InstallationManifest } from '../schemas.ts';
 
-type WorkerInput = { readonly base: BaseConfiguration };
+type WorkerInput = { readonly base: BaseConfiguration; readonly checksum: ArtifactDigest };
 
 const WorkerConfiguration = Schema.Struct({
   compatibility_date: Schema.String,
@@ -17,6 +16,7 @@ const WorkerConfiguration = Schema.Struct({
 /** Derives durable exports and compatibility settings from the configuration that also runs locally. */
 export const workerManifest = Effect.fn('workerManifest')(function* ({
   base,
+  checksum,
 }: WorkerInput): Effect.fn.Return<InstallationManifest['worker'], DistributionFailed> {
   const failed: (cause: unknown) => DistributionFailed = (cause) => {
     const reason = String(cause);
@@ -25,7 +25,6 @@ export const workerManifest = Effect.fn('workerManifest')(function* ({
   };
 
   const configuration = yield* Schema.decodeUnknownEffect(WorkerConfiguration)(base).pipe(Effect.mapError(failed));
-  const checksum = yield* fileDigest({ path: WORKER_BUNDLE });
   const bindings = configuration.durable_objects.bindings;
   const exports = bindings.map((binding) => [binding.class_name, DURABLE_EXPORT] as const);
 
@@ -35,6 +34,7 @@ export const workerManifest = Effect.fn('workerManifest')(function* ({
     compatibility_date: configuration.compatibility_date,
     compatibility_flags: configuration.compatibility_flags,
     bindings,
+    container_classes: base.containers.map((container) => container.class_name),
     exports: Record.fromEntries(exports),
     migrations: base.migrations,
   };

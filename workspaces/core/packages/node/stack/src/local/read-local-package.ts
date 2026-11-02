@@ -23,6 +23,10 @@ export const readLocalPackage = Effect.fn('readLocalPackage')(function* ({
     failure: StackFailed,
   });
 
+  const workerPath = join(folder, LOCAL_PACKAGE_FILES.worker);
+
+  yield* verifyPackageFile({ path: workerPath, expected: manifest.worker });
+
   for (const [name, expected] of Record.toEntries(manifest.files)) {
     const file = join(folder, name);
 

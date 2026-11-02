@@ -56,4 +56,8 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'CREATE TABLE workspace_policy (singleton INTEGER PRIMARY KEY CHECK (singleton = 1), policy TEXT NOT NULL) STRICT',
     );
   },
+  ({ sql }) => {
+    sql.exec('ALTER TABLE leases ADD COLUMN reservation_id INTEGER');
+    sql.exec('ALTER TABLE leases ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
+  },
 ];

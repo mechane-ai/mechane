@@ -24,7 +24,6 @@ export const normalize = Effect.fn('normalize')(function* ({
     normalizer,
     sources: yield* parsedSources({ members }),
     entries: yield* entryFiles({ members }),
-    roots: members.flatMap(({ sourceRoots }) => sourceRoots),
     scope: { paths: paths.map((path) => relative(WORKSPACE_FOLDER, path)), excluded: gatedGlobs({ rule: normalizer }) },
   });
 

@@ -1,8 +1,8 @@
+import { FileCheckpointResult, SourceCheckpointKind } from '@mechane/sandbox-store';
 import type { SandboxStore } from '@mechane/sandbox-store';
-import { ExecutionProgress, SourceFencePhase } from '@mechane/sandbox-wire';
+import { SourceFencePhase } from '@mechane/sandbox-wire';
 import type { SourceFenceReport } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
-import { SourceCheckpointKind } from '../constants.ts';
 import { failSource } from '../fail-source.ts';
 import { runSourceCheckpoint } from '../run-source-checkpoint.ts';
 import { sourceReport } from '../source-report.ts';
@@ -10,7 +10,7 @@ import type { SourceFinalizeInput } from '../types.ts';
 import { expirePreparation } from './expire-preparation.ts';
 import { prepareFreshSource } from './prepare-fresh-source.ts';
 
-type SourceCheckpointInput = { readonly progress: ExecutionProgress; readonly store: SandboxStore };
+type SourceCheckpointInput = { readonly progress: FileCheckpointResult; readonly store: SandboxStore };
 
 /** A fresh credential guest can replace the old machine only after its workspace reaches a durable checkpoint. */
 export async function requestSourcePreparation({
@@ -33,7 +33,7 @@ export async function requestSourcePreparation({
     kind: SourceCheckpointKind.Preparation,
   });
 
-  if (ExecutionProgress.guards.Running(progress)) {
+  if (FileCheckpointResult.guards.Pending(progress)) {
     return sourceReport({ fence });
   }
 
@@ -45,7 +45,7 @@ export async function requestSourcePreparation({
 }
 
 function isSourceCheckpointed({ progress, store }: SourceCheckpointInput): boolean {
-  if (!ExecutionProgress.guards.Exited(progress) || progress.exitCode !== 0) {
+  if (!FileCheckpointResult.guards.Committed(progress)) {
     return false;
   }
 

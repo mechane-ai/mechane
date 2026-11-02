@@ -38,7 +38,7 @@ Does an operation that needs one transaction run its store calls inside the stor
 
 ## Local adaptations
 
-SQL text and client calls appear only in a store member, `@mechane/store` or an object's `*-store`, or in the stack's `packages/node/stack/src/releases/store`, which writes each release file into celld's local object store as celld's own put does; each migration is a function in its `*-store` member's `src/migrations.ts` that runs its own literal statements, and the store creates its `schema_migrations` ledger and runs the migrations it lacks in one transaction.
+SQL text and client calls appear only in a store member, `@mechane/store`, an object's `*-store`, an object's internal `src/store` module, or in the stack's `packages/node/stack/src/releases/store`, which writes each release file into celld's local object store as celld's own put does; each migration is a function in its owner's declared `migrations.ts` that runs its own literal statements, and the store creates its `schema_migrations` ledger and runs the migrations it lacks in one transaction.
 A fresh object applies every step its store declares, so its schema revision is that store's step count.
 A turn's memory changes save with dense versions in task order in one statement, whose numbering a subquery computes before any row changes.
 Each store exports `atomic`, in which a decision, such as approving a device approval or reserving a dispatch, reads and writes as one transaction: the directory's and a workspace's run in `transactionSync`, and a mech's in a transaction of the one database client it shares with pi, queued behind pi's commits, so no host statement joins a pi transaction.

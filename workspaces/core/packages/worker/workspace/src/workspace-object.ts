@@ -30,7 +30,6 @@ import type {
   GrantToolsInput,
   IndexMechInput,
   LeaseDecision,
-  LeaseMachineInput,
   MechConnectionInput,
   MechIdInput,
   MechsInput,
@@ -39,6 +38,7 @@ import type {
   ReleaseMachineInput,
   ReservationDecision,
   ReserveDispatchInput,
+  ReserveMachineInput,
   SaveConnectionInput,
   SaveCredentialInput,
   SaveWorkspacePolicyInput,
@@ -65,7 +65,7 @@ import {
 import { openWorkspaceStore } from '@mechane/workspace-store';
 import type { WorkspaceStore } from '@mechane/workspace-store';
 import { DurableObject } from 'cloudflare:workers';
-import { DateTime, Duration, Option, Result, Schema } from 'effect';
+import { DateTime, Option, Result, Schema } from 'effect';
 import { grantTools } from './connections/grant-tools.ts';
 import { grantedConnections } from './connections/granted-connections.ts';
 import { saveConnection } from './connections/save-connection.ts';
@@ -319,17 +319,16 @@ export class WorkspaceObject extends DurableObject<unknown> implements Workspace
     return { day, committedMicros: this.#store.dayCommittedMicros({ day }) };
   }
 
-  /** Leases a machine to the sandbox for its idle window, while the workspace runs fewer than it may. */
-  leaseMachine({ sandboxId, leaseMs }: LeaseMachineInput): typeof LeaseDecision.Encoded {
+  /** The sandbox owns the reservation until it confirms the corresponding machine's stop. */
+  reserveMachine({ ...input }: ReserveMachineInput): typeof LeaseDecision.Encoded {
     const now = DateTime.nowUnsafe();
-    const expiresAt = DateTime.addDuration(now, Duration.millis(leaseMs));
 
-    return decideLease({ store: this.#store, settings: this.#settings, sandboxId, expiresAt, now });
+    return decideLease({ store: this.#store, settings: this.#settings, ...input, now });
   }
 
   /** Releases a sandbox's lease once its machine stopped, such as an ended drone's. */
-  releaseMachine({ sandboxId }: ReleaseMachineInput): void {
-    this.#store.releaseLease({ sandboxId });
+  releaseMachine({ ...input }: ReleaseMachineInput): void {
+    this.#store.releaseLease(input);
   }
 
   /** The dispatches of a turn or a drone as the ledger holds them, which the Worker decodes by status and basis. */

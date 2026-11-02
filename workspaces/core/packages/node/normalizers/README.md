@@ -1,7 +1,6 @@
 # @mechane/normalizers
 
-The normalizers: the barrel, placement and blank-line rewrites, which declaration moves are feasible and where they
-land, and each normalizer's sites and settled changes.
+The barrel and blank-line rewrites, their findings, and their settled changes.
 
 Layer 5 · node lane · effect dialect · consumers: checks
 
@@ -9,11 +8,7 @@ Layer 5 · node lane · effect dialect · consumers: checks
 
 - `src/`: the normalizers by rule, their sites, their settled changes and a run over the workspace.
 - `src/barrels/`: each import through a barrel taken from its declaring file, and the barrel removed.
-- `src/placement/`: each declaration moved to the role file its users share, with the imports it needs (ST-19).
 - `src/blank-lines/`: each statement that stands apart set off from its neighbors by a blank line (EF-24).
-- `src/feasibility/`: which moves a round can make without stranding a binding, breaking the role order or a cycle.
-- `src/graph/`: the file graph's import edges, and which moves keep it free of cycles.
-- `src/landings/`: where moved declarations land in their destination.
 
 ## Rules
 
@@ -23,7 +18,7 @@ The [product contracts](../../../.contracts/index.md) apply;
 ## Use
 
 `mise run fix` runs each enforced normalizer through `normalize`, and the checks hold every other one's sites to its
-baseline through `normalizerSites`. The move codemod reuses `feasibleMoves` and `moveChanges` for a step's declarations.
+baseline through `normalizerSites`. Declaration placement is a module ownership decision.
 
 ## Never
 

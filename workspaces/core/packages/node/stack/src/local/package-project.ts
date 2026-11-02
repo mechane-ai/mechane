@@ -21,6 +21,7 @@ export const packageProject = Effect.fn('packageProject')(function* ({
     bundle: join(folder, LOCAL_PACKAGE_FILES.worker),
     configuration,
     revision: manifest.public_commit,
+    release: manifest,
     celldCommand: join(folder, LOCAL_PACKAGE_FILES.celld),
     releasesBucket: bucket,
   };

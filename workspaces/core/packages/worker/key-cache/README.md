@@ -6,8 +6,9 @@ Layer 4 · worker · plain · consumers: `@mechane/app`
 
 ## Layout
 
-- `keys/`: a token's resolution from the shard, the fill of a key the directory resolved, and the judgment of a cached
-  key's revocation and expiry.
+- `src/store/`: the shard's cached rows, tombstones, and SQLite migrations.
+- `src/keys/`: a token's resolution from the shard, the fill of a key the directory resolved, and the judgment of a
+  cached key's revocation and expiry.
 
 ## Use
 

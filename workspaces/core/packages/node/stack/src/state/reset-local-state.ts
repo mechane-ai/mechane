@@ -9,7 +9,7 @@ import { StackFailed } from '../errors.ts';
 import { LOCAL_FILES } from './constants.ts';
 import { localStateEntries } from './local-state-entries.ts';
 import { lockedStateFolder } from './locked-state-folder.ts';
-import { LocalStateJson } from './schemas.ts';
+import { RecognizedLocalStateJson } from './schemas.ts';
 import { stateLayout } from './state-layout.ts';
 
 type ResetLocalStateInput = { readonly path: string };
@@ -33,7 +33,7 @@ export const resetLocalState = Effect.fn('resetLocalState')(function* ({
     catch: (cause) => new StackFailed({ step, subjects, reason: String(cause) }),
   });
 
-  yield* Schema.decodeUnknownEffect(LocalStateJson)(manifestText).pipe(
+  yield* Schema.decodeUnknownEffect(RecognizedLocalStateJson)(manifestText).pipe(
     Effect.mapError(() => new StackFailed({ step, subjects, reason: 'the local state manifest is invalid' })),
   );
 

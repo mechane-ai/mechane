@@ -16,7 +16,7 @@ pi-durable, pi-ai and chord enter only through `@mechane/harness` and `@mechane/
 The MCP client SDK and jose enter only through `@mechane/integrations`, which keeps remote transport and GitHub signing credentials behind its trusted client boundary.
 Production code never imports `packages/node/smoke/src` or `packages/node/testing/src`.
 Each member is a row of the strict standard's package map, at `packages/<lane>/<name>`; the root, `@mechane/core`, holds only tool pins and product tasks, no source.
-A folder becomes a package only for its criterion, and a maintainer approves each new member and its fields in `dependencies.json`.
+A folder becomes a package only for a real state, runtime dependency, public interface, independent consumer, or executable boundary. Source size does not require a package split. Declare each accepted member and its actual ownership in `dependencies.json`.
 
 Declare each HTTP operation once in `@mechane/protocol`; the Worker's router and the client derive from the catalog, and each CLI command names the operations it calls.
 The browser pages `/device` and `/auth/github/callback` are not operations: `@mechane/pages` serves them as HTML, and `@mechane/protocol` names their paths, the approval page's query and form, and GitHub's OAuth wire, which the stack's local GitHub and the smoke's browser use too.

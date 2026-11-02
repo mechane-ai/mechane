@@ -155,11 +155,11 @@ export const NORMALIZER_DEFAULTS = {
 } as const;
 
 /**
- * The owned normalizers, by the name a sweep and the registry give them, in the order a fix runs them: placement, then
- * barrels, then blank lines. Blank lines go last, since they space the statements the other two leave. The registry's
- * entry of each holds its rule's status.
+ * The source rewrites, by the name a sweep and the registry give them, in the order a fix runs them: barrels, then
+ * blank lines. Blank lines go last, since they space the statements the other two leave. The registry's entry of each
+ * holds its rule's status.
  */
-export const Normalizer = { Placement: 'placement', Barrels: 'barrels', BlankLines: 'blank-lines' } as const;
+export const Normalizer = { Barrels: 'barrels', BlankLines: 'blank-lines' } as const;
 
 export type Normalizer = (typeof Normalizer)[keyof typeof Normalizer];
 

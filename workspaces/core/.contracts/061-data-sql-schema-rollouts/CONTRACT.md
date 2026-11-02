@@ -1,7 +1,7 @@
 ---
 name: data-sql-schema-rollouts
 message: Ship schema changes that the previous release and existing rows survive, in batches an interrupted deploy resumes.
-paths: ["packages/worker/*-store/src/migrations.ts", "packages/worker/store/src/**", "packages/worker/app/wrangler.jsonc"]
+paths: ["packages/worker/*-store/src/migrations.ts", "packages/worker/*/src/store/migrations.ts", "packages/worker/store/src/**", "packages/worker/app/wrangler.jsonc"]
 ---
 
 ## Rules
@@ -40,10 +40,10 @@ Review each bulk statement for a batched convergent loop or a stated measured ro
 
 ## Local adaptations
 
-Each Durable Object keeps its own SQLite database, and a store's `MIGRATIONS`, in its `*-store` member's `src/migrations.ts`, are its schema steps.
+Each Durable Object keeps its own SQLite database, and a store's `MIGRATIONS`, in its declared store module, are its schema steps.
 `openDatabase` in `packages/worker/store/src` runs the steps its `schema_migrations` ledger lacks in one transaction as the object starts, so an interrupted start rolls back whole and the next start reruns every missing step.
 A Wrangler migration in `packages/worker/app/wrangler.jsonc` adds a class; `deleted_classes` destroys a class's objects, so it lands only in a deploy after the one whose code stopped using the class.
-The previous release never reads a newer schema: an object runs one release at a time, and `deploy:rollback` refuses a version whose migrations differ from production's, so a release with a wrong step rolls forward.
+Cloud release admission and retained local startup reject version downgrades and removed or changed format-lock entries. The migration runner also refuses a database revision beyond its available steps. Recovery publishes compatible code as a newer release. These checks do not establish every form of behavioral compatibility or make a mixed Worker/guest rollout atomic.
 The service has deployed databases, and their existing rows must survive each added step. The name freeze preceded the first deploy and renamed tables and columns only inside steps that no deployment had applied.
 `lint/migrations.json` refuses an edit to a locked step, and tables and columns are append-only, as `data-stored-and-shipped-formats` records.
 Keep a step's private guard limits and schemas inside its callback: the lock hashes the callback's source, not the contents of imported helpers, so moving a guard outside it would let a later helper edit silently change a locked step. A direct named numeric `const` may hold one literal there under `code-numeric-literals`; the migration file still holds only imports and `MIGRATIONS`.

@@ -64,21 +64,21 @@ type DecidedDispatch = DispatchRequest & {
   readonly decidedAt: DateTime.Utc;
 };
 
-export type HoldLeaseInput = { readonly sandboxId: string; readonly expiresAt: DateTime.Utc };
+export type HoldLeaseInput = { readonly sandboxId: string; readonly reservationId: number; readonly now: DateTime.Utc };
 
 /** The lease of one sandbox, by its mech's id for the mech's own and its drone's id for a drone's. */
 export type LeaseInput = { readonly sandboxId: string };
 
 /** What the workspace's store does with its machines' leases. */
 export type MachineLeaseRecords = {
-  /** Forgets every lease whose machine has been idle past its window, which a lost release leaves. */
+  /** Expires only historical leases whose owner has not adopted durable reservations. */
   readonly dropExpiredLeases: (input: NowInput) => void;
   /** The sandbox's lease, none when it holds none. */
   readonly sandboxLease: (input: LeaseInput) => Option.Option<LeaseRow>;
   readonly leaseCount: () => number;
-  /** Holds the sandbox's lease until `expiresAt`, renewing one it holds. */
+  /** Records a persistent, fenced reservation, adopting an old lease if present. */
   readonly holdLease: (input: HoldLeaseInput) => void;
-  readonly releaseLease: (input: LeaseInput) => void;
+  readonly releaseLease: (input: Omit<HoldLeaseInput, 'now'>) => void;
 };
 
 /** The instant of the call that reads or writes. */

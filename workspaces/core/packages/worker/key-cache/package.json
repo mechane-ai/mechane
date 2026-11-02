@@ -6,10 +6,10 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/key-cache-store": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/rpc": "workspace:*",
+    "@mechane/store": "workspace:*",
     "effect": "4.0.7"
   }
 }

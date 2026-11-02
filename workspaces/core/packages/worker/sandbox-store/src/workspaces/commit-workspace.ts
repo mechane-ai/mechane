@@ -8,7 +8,10 @@ export function commitWorkspace({ sql, generation, parent, archive }: SqlCall<Wo
   const value = Schema.encodeSync(codec)({ generation, parent, archive });
   const retired = Option.getOrNull(parent);
 
-  sql.exec('UPDATE sandbox_workspace SET head = ?, checkpoint = NULL, recovery = NULL WHERE slot = 1', value);
+  sql.exec(
+    'UPDATE sandbox_workspace SET head = ?, checkpoint = NULL, file_checkpoint = NULL, recovery = NULL WHERE slot = 1',
+    value,
+  );
   sql.exec(
     'INSERT INTO workspace_retirements (generation) SELECT ? WHERE ? IS NOT NULL ON CONFLICT (generation) DO NOTHING',
     retired,

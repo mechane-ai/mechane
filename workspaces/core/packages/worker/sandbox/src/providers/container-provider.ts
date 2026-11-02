@@ -1,4 +1,4 @@
-import { MACHINE_LEASE } from '@mechane/rpc';
+import { CONTAINER_INACTIVITY } from '@mechane/rpc';
 import { GuestScope, GuestStart } from '@mechane/sandbox-wire';
 import { Duration, Schema } from 'effect';
 import type { MachineProvider } from '../types.ts';
@@ -8,7 +8,7 @@ import type { ContainerProviderInput } from './types.ts';
 
 /** Reinstalls the per-instance inactivity lease before a running container's Durable Object accepts requests. */
 export function containerProvider({ container, state, egress, gateway }: ContainerProviderInput): MachineProvider {
-  const timeout = Duration.toMillis(MACHINE_LEASE);
+  const timeout = Duration.toMillis(CONTAINER_INACTIVITY);
 
   if (container.running) {
     const restoreTimeout: () => Promise<void> = () => container.setInactivityTimeout(timeout);

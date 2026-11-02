@@ -1,6 +1,8 @@
-import { SandboxAction, SandboxPhase, SandboxReport, SandboxRequest } from '@mechane/protocol';
+import { SandboxAction, SandboxPhase, SandboxRequest } from '@mechane/protocol';
 import { SourceId } from '@mechane/records';
 import type {
+  MachineRefusal,
+  SandboxBindInput,
   SandboxCancelInput,
   SandboxManageInput,
   SandboxRpc,
@@ -10,25 +12,28 @@ import type {
   SourcePrepareInput,
   WorkerEnvironment,
 } from '@mechane/rpc';
-import { objectBindings, SANDBOX_IDLE, STOP_RETRY } from '@mechane/rpc';
-import { openSandboxStore, sandboxAlarm } from '@mechane/sandbox-store';
-import type { SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
 import {
-  ExecutionProgress,
-  SourceCapture,
-  SourceCheckout,
-  SourceClone,
-  SourceFenceReport,
-  SourceGuestAnswer,
-} from '@mechane/sandbox-wire';
+  objectBindings,
+  SANDBOX_IDLE,
+  SandboxAnswer,
+  SandboxCaptureAnswer,
+  SandboxExecutionAnswer,
+  SandboxSourceAnswer,
+  STOP_RETRY,
+} from '@mechane/rpc';
+import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
+import type { SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
+import { ExecutionProgress, SandboxOwner, SourceCapture, SourceCheckout, SourceClone } from '@mechane/sandbox-wire';
 import type { RunExecutionInput } from '@mechane/sandbox-wire';
-import { afterSettling, serialCalls } from '@mechane/utilities';
+import { afterSettling, capturePromise, serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
+import { MachineAccessDenied, machineCapacity } from './capacity/machine-capacity.ts';
 import { PortableMaintenanceRefused } from './errors.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
 import { cancelExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
+import { executionProgress } from './executions/execution-progress.ts';
 import { runExecution } from './executions/run-execution.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { manageSandboxWorkspace } from './maintenance/manage-sandbox-workspace.ts';
@@ -46,18 +51,31 @@ import { advanceIdleWorkspace } from './workspace/advance-idle-workspace.ts';
 /** A source credential lease prevents maintenance from changing the sandbox machine. */
 class SandboxFenced extends Schema.TaggedError<SandboxFenced>()('SandboxFenced', { sourceId: SourceId }) {}
 
-type SourceCallInput<Value> = { readonly run: (input: WorkspaceProviderStepInput) => Promise<Value> };
+type SourceCallInput<Value> = {
+  readonly run: (input: WorkspaceProviderStepInput) => Promise<Value>;
+  readonly shouldCheckPolicy: boolean;
+};
+
 type StopCallInput = { readonly promise: Promise<void> };
+const READ_ACTIONS: ReadonlySet<SandboxAction> = new Set([SandboxAction.Show, SandboxAction.Download]);
+
+const MACHINE_ACTIONS: ReadonlySet<SandboxAction> = new Set([
+  SandboxAction.Export,
+  SandboxAction.Import,
+  SandboxAction.Upgrade,
+  SandboxAction.Upload,
+]);
 
 /**
  * One mech's or one drone's sandbox: the machines its executions run on, one at a time, and every execution's receipt.
- * Only its mech's object calls it, by RPC under the name `sandboxStub` derives, and it stores no id of its owner. Its
+ * Only its mech's object calls it, by RPC under the name `sandboxStub` derives and binds as its durable owner. Its
  * store decides synchronously, every intent commits before its effect, and its alarm stops an idle or ended machine.
  */
 export class SandboxObject extends DurableObject<unknown> implements SandboxRpc {
   readonly #store: SandboxStore;
   readonly #alarm: SandboxAlarm;
   readonly #provider: MachineProvider;
+  readonly #capacity: ReturnType<typeof machineCapacity>;
   readonly #providerName: string;
   readonly #workspace: WorkspaceFiles;
   readonly #calls = serialCalls();
@@ -75,23 +93,48 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
 
     this.#workspace = { bucket: bindings.workspaceFiles, owner };
     this.#providerName = settings.provider;
-    this.#provider = machineProvider({ settings, state });
+
+    const provider = machineProvider({ settings, state });
+
+    this.#capacity = machineCapacity({ store: this.#store, bindings, identity: owner, provider });
+
+    this.#provider = this.#capacity.provider;
+  }
+
+  async bindOwner({ owner }: SandboxBindInput): Promise<void> {
+    const decoded = Schema.decodeUnknownSync(SandboxOwner)(owner);
+    const isFirstBinding = await this.#capacity.bindOwner({ owner: decoded });
+    const held = this.#capacity.reservation();
+
+    if (isFirstBinding && Option.isSome(held)) {
+      await this.#armRetry();
+    }
   }
 
   get #isImportRequired(): boolean {
     return nativeWorkspacePending({ store: this.#store, providerName: this.#providerName });
   }
 
-  async manage({ request: input }: SandboxManageInput): Promise<typeof SandboxReport.Encoded> {
-    return await this.#calls.run({ run: () => this.#manage({ request: input }) });
+  async manage({ request: input }: SandboxManageInput): Promise<typeof SandboxAnswer.Encoded> {
+    const answer = await machineCall({ run: () => this.#calls.run({ run: () => this.#manage({ request: input }) }) });
+
+    return Schema.encodeSync(SandboxAnswer)(answer);
   }
 
-  async #manage({ request: input }: SandboxManageInput): Promise<typeof SandboxReport.Encoded> {
+  async #manage({ request: input }: SandboxManageInput): Promise<SandboxAnswer> {
     await Promise.all(this.#stops);
 
     const request = Schema.decodeUnknownSync(SandboxRequest)(input);
 
     this.#assertUnfenced();
+
+    if (MACHINE_ACTIONS.has(request.action)) {
+      await this.#capacity.requireEnabled();
+    }
+
+    if (!READ_ACTIONS.has(request.action)) {
+      await this.#armRetry();
+    }
 
     const report = await manageSandboxWorkspace({
       store: this.#store,
@@ -108,7 +151,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       await this.#alarm.arm({ at });
     }
 
-    return Schema.encodeSync(SandboxReport)(report);
+    return SandboxAnswer.cases.Found.make({ report });
   }
 
   async schemaRevision(): Promise<number> {
@@ -125,30 +168,35 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     command,
     timeoutMs,
     waitMs,
-  }: RunExecutionInput): Promise<typeof ExecutionProgress.Encoded> {
+  }: RunExecutionInput): Promise<typeof SandboxExecutionAnswer.Encoded> {
     const timeout = Duration.millis(timeoutMs);
     const now = DateTime.nowUnsafe();
     const claim = claimExecution({ store: this.#store, request: { executionId, command, timeout }, now });
 
-    Result.getOrThrow(claim);
+    const execution = Result.getOrThrow(claim);
+    const progress = executionProgress({ execution });
 
-    return await this.#calls.run({ run: () => this.#runExecution({ executionId, command, timeoutMs, waitMs }) });
+    if (!ExecutionProgress.guards.Running(progress)) {
+      return Schema.encodeSync(SandboxExecutionAnswer)(progress);
+    }
+
+    const answer = await machineCall({
+      run: () => this.#calls.run({ run: () => this.#runExecution({ executionId, command, timeoutMs, waitMs }) }),
+    });
+
+    return Schema.encodeSync(SandboxExecutionAnswer)(answer);
   }
 
-  async #runExecution({
-    executionId,
-    command,
-    timeoutMs,
-    waitMs,
-  }: RunExecutionInput): Promise<typeof ExecutionProgress.Encoded> {
+  async #runExecution({ executionId, command, timeoutMs, waitMs }: RunExecutionInput): Promise<ExecutionProgress> {
     await Promise.all(this.#stops);
+    await this.#capacity.requireEnabled();
 
     const fence = this.#store.activeSourceFence();
 
     if (Option.isSome(fence) || maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
       const pending = ExecutionProgress.cases.Running.make({});
 
-      return Schema.encodeSync(ExecutionProgress)(pending);
+      return pending;
     }
 
     const now = DateTime.nowUnsafe();
@@ -167,7 +215,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       request: { executionId, command, timeout, wait },
     });
 
-    return Schema.encodeSync(ExecutionProgress)(progress);
+    return progress;
   }
 
   /** Ends the current machine identity and arms its stop, retaining persistent workspace files. */
@@ -229,6 +277,13 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   async #onAlarm(): Promise<void> {
     await Promise.all(this.#stops);
 
+    const reservation = this.#capacity.reservation();
+
+    if (Option.isSome(reservation) && reservation.value.phase === ReservationPhase.Stopping) {
+      await this.#armRetry();
+      await this.#provider.stop({ machineId: reservation.value.machineId });
+    }
+
     const fence = this.#store.activeSourceFence();
 
     if (Option.isSome(fence)) {
@@ -252,6 +307,13 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     }
 
     const latest = this.#store.latestMachine();
+    const held = this.#capacity.reservation();
+
+    if (Option.isSome(held)) {
+      await this.#stopIdleMachine({ machineId: held.value.machineId });
+
+      return;
+    }
 
     if (Option.isNone(latest)) {
       return;
@@ -295,9 +357,13 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     Result.getOrThrow(failure);
   }
 
-  async #sourceCall<Value>({ run }: SourceCallInput<Value>): Promise<Value> {
+  async #sourceCall<Value>({ run, shouldCheckPolicy }: SourceCallInput<Value>): Promise<Value | MachineRefusal> {
     const call: () => Promise<Value> = async () => {
       await Promise.all(this.#stops);
+
+      if (shouldCheckPolicy) {
+        await this.#capacity.requireEnabled();
+      }
 
       if (maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
         const cause = new PortableMaintenanceRefused({ reason: 'finish sandbox maintenance before source work' });
@@ -314,39 +380,78 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       return await run({ store: this.#store, provider: this.#provider, workspace: this.#workspace });
     };
 
-    return await this.#calls.run({ run: call });
+    return await machineCall({ run: () => this.#calls.run({ run: call }) });
   }
 
-  async prepareSource({ checkout }: SourcePrepareInput): Promise<typeof SourceFenceReport.Encoded> {
+  async prepareSource({ checkout }: SourcePrepareInput): Promise<typeof SandboxSourceAnswer.Encoded> {
     const decoded = Schema.decodeUnknownSync(SourceCheckout)(checkout);
-    const report = await this.#sourceCall({ run: (input) => prepareSource({ ...input, checkout: decoded }) });
 
-    return Schema.encodeSync(SourceFenceReport)(report);
+    const report = await this.#sourceCall({
+      shouldCheckPolicy: true,
+      run: (input) => prepareSource({ ...input, checkout: decoded }),
+    });
+
+    return Schema.encodeSync(SandboxSourceAnswer)(report);
   }
 
-  async cloneSource({ clone }: SourceCloneInput): Promise<typeof SourceFenceReport.Encoded> {
+  async cloneSource({ clone }: SourceCloneInput): Promise<typeof SandboxSourceAnswer.Encoded> {
     const decoded = Schema.decodeUnknownSync(SourceClone)(clone);
-    const report = await this.#sourceCall({ run: (input) => cloneSource({ ...input, clone: decoded }) });
 
-    return Schema.encodeSync(SourceFenceReport)(report);
+    const report = await this.#sourceCall({
+      shouldCheckPolicy: true,
+      run: (input) => cloneSource({ ...input, clone: decoded }),
+    });
+
+    return Schema.encodeSync(SandboxSourceAnswer)(report);
   }
 
-  async revokeSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SourceFenceReport.Encoded> {
-    const report = await this.#sourceCall({ run: (input) => revokeSource({ ...input, sourceId, generation }) });
+  async revokeSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SandboxSourceAnswer.Encoded> {
+    const report = await this.#sourceCall({
+      shouldCheckPolicy: false,
+      run: (input) => revokeSource({ ...input, sourceId, generation }),
+    });
 
-    return Schema.encodeSync(SourceFenceReport)(report);
+    return Schema.encodeSync(SandboxSourceAnswer)(report);
   }
 
-  async finishSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SourceFenceReport.Encoded> {
-    const report = await this.#sourceCall({ run: (input) => finishSource({ ...input, sourceId, generation }) });
+  async finishSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SandboxSourceAnswer.Encoded> {
+    const report = await this.#sourceCall({
+      shouldCheckPolicy: false,
+      run: (input) => finishSource({ ...input, sourceId, generation }),
+    });
 
-    return Schema.encodeSync(SourceFenceReport)(report);
+    return Schema.encodeSync(SandboxSourceAnswer)(report);
   }
 
-  async captureSource({ capture }: SourceCaptureInput): Promise<typeof SourceGuestAnswer.Encoded> {
+  async captureSource({ capture }: SourceCaptureInput): Promise<typeof SandboxCaptureAnswer.Encoded> {
     const decoded = Schema.decodeUnknownSync(SourceCapture)(capture);
-    const report = await this.#sourceCall({ run: (input) => captureSource({ ...input, capture: decoded }) });
 
-    return Schema.encodeSync(SourceGuestAnswer)(report);
+    const report = await this.#sourceCall({
+      shouldCheckPolicy: true,
+      run: (input) => captureSource({ ...input, capture: decoded }),
+    });
+
+    return Schema.encodeSync(SandboxCaptureAnswer)(report);
   }
+
+  async #armRetry(): Promise<void> {
+    const now = DateTime.nowUnsafe();
+    const at = DateTime.addDuration(now, STOP_RETRY);
+
+    await this.#alarm.arm({ at });
+  }
+}
+
+type MachineCallInput<Value> = { readonly run: () => Promise<Value> };
+
+/** Expected admission failures cross RPC as data; transport failures and broken invariants still reject. */
+async function machineCall<Value>({ run }: MachineCallInput<Value>): Promise<Value | MachineRefusal> {
+  const promise = run();
+  const result = await capturePromise({ promise });
+
+  if (Result.isFailure(result) && Schema.is(MachineAccessDenied)(result.failure)) {
+    return result.failure.refusal;
+  }
+
+  return Result.getOrThrow(result);
 }

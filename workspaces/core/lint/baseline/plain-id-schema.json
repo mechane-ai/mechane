@@ -26,7 +26,7 @@
   "packages/shared/sandbox-wire/src/schemas.ts": 1,
   "packages/worker/directory-store/src/schemas.ts": 4,
   "packages/worker/edge/src/operations/mechs/show-turn.ts": 1,
-  "packages/worker/key-cache-store/src/schemas.ts": 2,
+  "packages/worker/key-cache/src/store/schemas.ts": 2,
   "packages/worker/mech-store/src/drone.schemas.ts": 3,
   "packages/worker/mech-store/src/mechs/mech-records.ts": 2,
   "packages/worker/mech-store/src/schemas.ts": 9,

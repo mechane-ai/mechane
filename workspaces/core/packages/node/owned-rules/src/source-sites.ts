@@ -2,7 +2,6 @@ import type { Site } from '@mechane/checks-kernel';
 import type { ParsedSource } from '@mechane/modules';
 import { HISTORY_WORDS } from './constants.ts';
 import { docCommentSites } from './doc-comments/doc-comment-sites.ts';
-import { oneValueSites } from './layout/one-value-sites.ts';
 import { logicalOperatorSites } from './source/logical-operator-sites.ts';
 import { spanNameSites } from './span-name-sites.ts';
 import { historySites } from './vocabulary/history-sites.ts';
@@ -22,7 +21,6 @@ export function sourceSites({ source, phrases }: SourceSitesInput): ReadonlyArra
   const { path: file, text } = source;
 
   return [
-    ...oneValueSites({ source }),
     ...docCommentSites({ source }),
     ...spanNameSites({ source }),
     ...logicalOperatorSites({ source }),

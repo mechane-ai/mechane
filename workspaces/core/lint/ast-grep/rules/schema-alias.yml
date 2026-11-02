@@ -1,5 +1,4 @@
-# A schema a schemas file exports without its type beside it, a Pascal name whose value is not TypeBox's `Type`; the
-# fix declares the type after it.
+# A direct Effect schema export without its type beside it. Constants may share a schema module without becoming schemas.
 id: schema-alias
 language: TypeScript
 severity: error
@@ -15,7 +14,7 @@ rule:
       pattern: export type $NAME = typeof $NAME.Type;
 constraints:
   NAME: { regex: '^[A-Z][a-z]' }
-  SCHEMA: { not: { regex: '^Type\.' } }
+  SCHEMA: { regex: '^Schema\.' }
 fix: |-
   export const $NAME = $SCHEMA;
 

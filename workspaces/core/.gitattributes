@@ -12,8 +12,6 @@
 /lint/ast-grep/tests/bare-string-schema.yml linguist-generated merge=ours
 /lint/ast-grep/tests/boolean-names.yml linguist-generated merge=ours
 /lint/ast-grep/tests/bound-order.yml linguist-generated merge=ours
-/lint/ast-grep/tests/called-positional-const.yml linguist-generated merge=ours
-/lint/ast-grep/tests/case-shape.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-all-outside-boundary.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-handlers-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-tags.yml linguist-generated merge=ours
@@ -46,7 +44,6 @@
 /lint/ast-grep/tests/http-method-literals-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/http-status-literals-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/iife-form.yml linguist-generated merge=ours
-/lint/ast-grep/tests/inline-function-argument.yml linguist-generated merge=ours
 /lint/ast-grep/tests/inline-path-string.yml linguist-generated merge=ours
 /lint/ast-grep/tests/json-type-argument.yml linguist-generated merge=ours
 /lint/ast-grep/tests/let-empty-initializer.yml linguist-generated merge=ours
@@ -62,7 +59,6 @@
 /lint/ast-grep/tests/module-mutable-binding.yml linguist-generated merge=ours
 /lint/ast-grep/tests/named-object-types.yml linguist-generated merge=ours
 /lint/ast-grep/tests/nested-call.yml linguist-generated merge=ours
-/lint/ast-grep/tests/nested-function-declaration.yml linguist-generated merge=ours
 /lint/ast-grep/tests/no-instanceof.yml linguist-generated merge=ours
 /lint/ast-grep/tests/no-ok-false.yml linguist-generated merge=ours
 /lint/ast-grep/tests/no-optional-property.yml linguist-generated merge=ours
@@ -141,13 +137,10 @@
 /packages/node/distribution/tsconfig.json linguist-generated merge=ours
 /packages/node/eval/tsconfig.json linguist-generated merge=ours
 /packages/node/guest/tsconfig.json linguist-generated merge=ours
-/packages/node/local-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/locks/tsconfig.json linguist-generated merge=ours
 /packages/node/modules/tsconfig.json linguist-generated merge=ours
-/packages/node/name-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/normalizers/tsconfig.json linguist-generated merge=ours
 /packages/node/owned-rules/tsconfig.json linguist-generated merge=ours
-/packages/node/program-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/program/tsconfig.json linguist-generated merge=ours
 /packages/node/release/tsconfig.json linguist-generated merge=ours
 /packages/node/rename/tsconfig.json linguist-generated merge=ours
@@ -157,9 +150,7 @@
 /packages/node/rules/tsconfig.json linguist-generated merge=ours
 /packages/node/smoke/tsconfig.json linguist-generated merge=ours
 /packages/node/stack/tsconfig.json linguist-generated merge=ours
-/packages/node/structure-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/testing/tsconfig.json linguist-generated merge=ours
-/packages/node/typescript-rules/tsconfig.json linguist-generated merge=ours
 /packages/node/wrangler/tsconfig.json linguist-generated merge=ours
 /packages/shared/client/tsconfig.json linguist-generated merge=ours
 /packages/shared/credentials/tsconfig.json linguist-generated merge=ours
@@ -176,7 +167,6 @@
 /packages/worker/harness-tools/tsconfig.json linguist-generated merge=ours
 /packages/worker/harness/tsconfig.json linguist-generated merge=ours
 /packages/worker/integrations/tsconfig.json linguist-generated merge=ours
-/packages/worker/key-cache-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/key-cache/tsconfig.json linguist-generated merge=ours
 /packages/worker/limiter-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/limiter/tsconfig.json linguist-generated merge=ours

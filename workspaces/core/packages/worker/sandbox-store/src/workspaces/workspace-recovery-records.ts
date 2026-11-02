@@ -8,7 +8,7 @@ type RetireWorkspaceInput = { readonly generation: RecordId };
 /** Retains failed live workspaces and records generations that still need object cleanup. */
 export function workspaceRecoveryRecords({ sql }: RecordsInput) {
   const retireWorkspace: (input: RetireWorkspaceInput) => void = ({ generation }) => {
-    sql.exec('UPDATE sandbox_workspace SET checkpoint = NULL WHERE slot = 1');
+    sql.exec('UPDATE sandbox_workspace SET checkpoint = NULL, file_checkpoint = NULL WHERE slot = 1');
     sql.exec(
       'INSERT INTO workspace_retirements (generation) VALUES (?) ON CONFLICT (generation) DO NOTHING',
       generation,
@@ -23,7 +23,10 @@ export function workspaceRecoveryRecords({ sql }: RecordsInput) {
     const codec = Schema.fromJsonString(WorkspaceRecovery);
     const value = Schema.encodeSync(codec)({ generation, machineId, reason });
 
-    sql.exec('UPDATE sandbox_workspace SET recovery = ?, checkpoint = NULL WHERE slot = 1', value);
+    sql.exec(
+      'UPDATE sandbox_workspace SET recovery = ?, checkpoint = NULL, file_checkpoint = NULL WHERE slot = 1',
+      value,
+    );
     sql.exec(
       'INSERT INTO workspace_retirements (generation) VALUES (?) ON CONFLICT (generation) DO NOTHING',
       generation,

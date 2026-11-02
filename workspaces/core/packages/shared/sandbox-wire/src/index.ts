@@ -38,7 +38,7 @@ export {
   SOURCE_EXPIRY_MARGIN,
   SOURCE_CHECKOUT_TIMEOUT,
   SOURCE_PREPARATION_TIMEOUT,
-  SOURCE_FINALIZE_TIMEOUT,
 } from './source.constants.ts';
 export { SourceCheckout, SourceClone, SourceCapture, SourceFenceReport, SourceGuestAnswer } from './source.schemas.ts';
 export { guestSourcePath } from './guest-source-path.ts';
+export { SandboxOwner } from './sandbox-owner.ts';

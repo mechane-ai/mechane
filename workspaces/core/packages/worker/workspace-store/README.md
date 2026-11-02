@@ -8,7 +8,8 @@ Layer 3 · worker · plain · consumers: `@mechane/workspace`
 
 - `credentials/`: ciphertext and encryption metadata, never credential values or the installation keyring.
 - `dispatches/`: the ledger of dispatches, each reserved, then settled with what it spent.
-- `leases/`: the machine leases of the workspace's sandboxes, each held until it expires or is released.
+- `leases/`: the machine leases of the workspace's sandboxes, each held until its sandbox confirms stop; released
+  reservation numbers fence delayed RPCs.
 - `mechs/`: the versioned roster, listed in pages, and creation intents that reserve identity before creating a mech.
 - `policy/`: workspace suspension, sandbox admission, machine limit and daily allowance.
 - `slack/`: channel bindings and event admission records.

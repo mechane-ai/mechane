@@ -1,10 +1,9 @@
 import type { SourceTask } from '@mechane/mech-store';
 import { SourceStatus } from '@mechane/protocol';
-import { SourceAnswer } from '@mechane/rpc';
-import { SourceCheckout, SourceFencePhase, SourceFenceReport } from '@mechane/sandbox-wire';
+import { MachineRefusal, SandboxSourceAnswer, SourceAnswer } from '@mechane/rpc';
+import { SourceCheckout, SourceFencePhase } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
-import { Option, Result, Schema } from 'effect';
-import { admitSourceMachine } from '../configuration/admit-source-machine.ts';
+import { Match, Option, Result, Schema } from 'effect';
 import { isSourceGranted } from '../context/is-source-granted.ts';
 import { sourceAnswer } from '../context/source-answer.ts';
 import type { SourceTaskInput } from '../types.ts';
@@ -27,18 +26,26 @@ export async function checkoutSource({ mech, owner, source, sandbox }: SourceTas
     return SourceAnswer.cases.Refused.make({ reason: 'the repository grant changed before checkout' });
   }
 
-  const refusal = await admitSourceMachine(context);
-
-  if (Option.isSome(refusal)) {
-    return SourceAnswer.cases.Refused.make({ reason: refusal.value });
-  }
-
   const next = await prepareCheckout(context);
+
+  if (Schema.is(MachineRefusal)(next)) {
+    const reason = Match.valueTags(next, {
+      Disabled: () => 'source sandbox is disabled for this workspace',
+      CapacityReached: () => 'workspace sandbox machine capacity is full',
+    });
+
+    return SourceAnswer.cases.Refused.make({ reason });
+  }
 
   return sourceAnswer({ source: next });
 }
 
-async function prepareCheckout({ mech, owner, source, sandbox }: SourceTaskInput): Promise<SourceTask> {
+async function prepareCheckout({
+  mech,
+  owner,
+  source,
+  sandbox,
+}: SourceTaskInput): Promise<SourceTask | MachineRefusal> {
   const repositoryUrl = sourceRepositoryUrl({ origin: mech.settings.githubWebOrigin, grant: source.grant });
   const checkout = { sourceId: source.sourceId, generation: source.generation, repositoryUrl, commit: source.commit };
   const context = { mech, owner, source, sandbox, checkout };
@@ -51,9 +58,17 @@ async function prepareCheckout({ mech, owner, source, sandbox }: SourceTaskInput
     return await finishSourceCheckout({ ...context, reason });
   }
 
-  const prepared = Schema.decodeUnknownResult(SourceFenceReport)(response.success);
+  const prepared = Schema.decodeUnknownResult(SandboxSourceAnswer)(response.success);
 
-  if (Result.isFailure(prepared) || prepared.success.phase !== SourceFencePhase.Prepared) {
+  if (Result.isSuccess(prepared) && Schema.is(MachineRefusal)(prepared.success)) {
+    return prepared.success;
+  }
+
+  if (
+    Result.isFailure(prepared) ||
+    !('phase' in prepared.success) ||
+    prepared.success.phase !== SourceFencePhase.Prepared
+  ) {
     return await finishSourceCheckout({ ...context, reason });
   }
 

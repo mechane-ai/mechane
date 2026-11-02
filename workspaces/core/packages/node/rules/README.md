@@ -7,6 +7,7 @@ Layer 3 · node lane · data dialect · consumers: `@mechane/checks` and `@mecha
 
 ## Layout
 
+- `src/contracts/`: contract entries grouped by their concern inside the registry.
 - `src/assets/`: the rules that load an installed contract's file in place, with the file's path.
 - `src/ast-grep/`: the ast-grep configuration, the utilities the word lists spell, and each rule's tests.
 - `src/configurations/`: oxlint's, the compilers', knip's, jscpd's and the formatters' configurations, and each lane's
@@ -26,5 +27,4 @@ Layer 3 · node lane · data dialect · consumers: `@mechane/checks` and `@mecha
 
 ## Never
 
-- Never hold a contract's entry here; it belongs in its rule-group member, which `contracts.ts` gathers.
 - Never read or write a file: `@mechane/rule-generator` reads the inputs and writes what this package renders.

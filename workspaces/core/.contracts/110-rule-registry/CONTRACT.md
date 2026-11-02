@@ -20,8 +20,8 @@ Never let fix replay a committed rename map, whose wire strings change behavior 
 Keep each word list a sorted text file with one word per line, which any change may extend, a merge unites, and `mise run fix` sorts again (AS-07).
 Leave the registry's source, its limits and budgets included, and `dependencies.json` to their owner through CODEOWNERS, and the word lists, the generated lint folders and the baselines to every builder, whose changes the checks decide (AS-07).
 
-Violation: a contract's adaptations restate `functionLines` as 30, so a change to the registry leaves the sentence stale.
-Allowed: the adaptations name `functionLines`, and the generated block states its value.
+Violation: a contract's adaptations restate `sentenceWords` as a number, so a change to the registry leaves the sentence stale.
+Allowed: the adaptations name `sentenceWords`, and the generated block states its value.
 
 ## Checks
 
@@ -34,9 +34,8 @@ Does a new value belong in the entry of the contract that asks for it, and does 
 
 ## Local adaptations
 
-The registry is seven members under `packages/node`, so no package passes ST-17's budget.
-`rule-shapes` holds the shapes every entry is built from.
-`structure-rules`, `typescript-rules`, `name-rules`, `program-rules` and `local-rules` hold the contracts' modules, by the groups of the contract index.
+`rule-shapes` holds the types shared by the registry and its consumers.
+`rules/src/contracts` holds the contract groups inside one registry owner.
 `rules` gathers them into `CONTRACTS` and renders every generated file, which `rule-generator` writes.
 The registry's own checks run in the generator, `packages/node/rule-generator/src`: they read each ast-grep rule file and every file of the workspace, and count each rule a suppression of a TypeScript file names.
 `rules:explain -- <rule>` and `rules:for -- <path>` print what the registry holds for a rule or a path.

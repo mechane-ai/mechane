@@ -1,15 +1,4 @@
-import { placementSites } from '@mechane/normalizers';
-import {
-  checkSource,
-  documentFindings,
-  fileNameFindings,
-  sourceSites,
-  workflowFindings,
-  WORKFLOWS,
-} from '@mechane/owned-rules';
-import { Normalizer } from '@mechane/rule-shapes';
-import { gatedGlobs } from '@mechane/rules';
-import { layoutRun } from './layout-run.ts';
+import { checkSource, documentFindings, sourceSites, workflowFindings, WORKFLOWS } from '@mechane/owned-rules';
 import { runFindings } from './run-findings.ts';
 import type { ExampleIndex, ExampleRun, RunFinding } from './types.ts';
 
@@ -21,9 +10,6 @@ const WORKFLOW_PATHS: ReadonlySet<string> = new Set(WORKFLOWS);
  * decision the rule's check makes on the workspace, from the same functions, over the example's files in memory.
  */
 export const EXAMPLE_RUNS: Readonly<Record<string, ExampleRun>> = {
-  'layout': layoutRun,
-  'file-names': ({ sources }) => runFindings({ findings: fileNameFindings({ sources }) }),
-  'one-value': sourceSitesRun,
   'export-doc': sourceSitesRun,
   'absence-doc': sourceSitesRun,
   'short-doc': sourceSitesRun,
@@ -37,16 +23,9 @@ export const EXAMPLE_RUNS: Readonly<Record<string, ExampleRun>> = {
     runFindings({
       findings: files.filter(({ path }) => WORKFLOW_PATHS.has(path)).flatMap((file) => workflowFindings(file)),
     }),
-  'placement-blocked': ({ sources, members, entries }) =>
-    placementSites({
-      sources,
-      entries,
-      scope: { paths: [], excluded: gatedGlobs({ rule: Normalizer.Placement }) },
-      roots: members.flatMap(({ sourceRoots }) => sourceRoots),
-    }),
 };
 
-/** The owned sites of each parsed file: its one value, doc comments, span names, logical operators and banned words. */
+/** The owned sites of each parsed file: doc comments, span names, logical operators and banned words. */
 function sourceSitesRun({ sources, phrases }: ExampleIndex): ReadonlyArray<RunFinding> {
   return sources.flatMap((source) => sourceSites({ source, phrases }));
 }

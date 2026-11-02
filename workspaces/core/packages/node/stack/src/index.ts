@@ -7,4 +7,4 @@ export { TOOL_CALL_PREFIX } from './model/constants.ts';
 
 export { startCloudflareStack } from './cloudflare/start-cloudflare-stack.ts';
 export { LocalPackage } from './local/schemas.ts';
-export { LocalTarget, LOCAL_PACKAGE_FILES } from './local/constants.ts';
+export { LocalTarget, LOCAL_PACKAGE_FILES, LOCAL_PACKAGE_FORMAT_VERSION } from './local/constants.ts';

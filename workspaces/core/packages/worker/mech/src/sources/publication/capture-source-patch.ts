@@ -1,8 +1,8 @@
 import type { SourcePublishPaths } from '@mechane/protocol';
 import type { SourceChanges } from '@mechane/records';
+import { MachineRefusal, SandboxCaptureAnswer } from '@mechane/rpc';
 import { SourceCapture, SourceGuestAnswer } from '@mechane/sandbox-wire';
-import { Option, Result, Schema } from 'effect';
-import { admitSourceMachine } from '../configuration/admit-source-machine.ts';
+import { Match, Option, Result, Schema } from 'effect';
 import { isSourceGranted } from '../context/is-source-granted.ts';
 import { captureMatchesIntent } from './capture-matches-intent.ts';
 import { captureWithinLimit } from './capture-within-limit.ts';
@@ -31,25 +31,28 @@ export async function captureSourcePatch({
     return Result.fail('the repository grant changed before capture');
   }
 
-  const refusal = await admitSourceMachine(context);
-
-  if (Option.isSome(refusal)) {
-    return Result.fail(refusal.value);
-  }
-
   const encoded = await sandbox.captureSource({ capture });
 
   return capturedPatch({ encoded, paths: publication.paths });
 }
 
 function capturedPatch({ encoded, paths }: CapturedPatchInput): Result.Result<Option.Option<SourceChanges>, string> {
-  const decoded = Schema.decodeUnknownResult(SourceGuestAnswer)(encoded);
+  const decoded = Schema.decodeUnknownResult(SandboxCaptureAnswer)(encoded);
 
   if (Result.isFailure(decoded)) {
     return Result.fail('source guest returned an invalid captured patch');
   }
 
   const answer = decoded.success;
+
+  if (Schema.is(MachineRefusal)(answer)) {
+    const reason = Match.valueTags(answer, {
+      Disabled: () => 'source sandbox is disabled for this workspace',
+      CapacityReached: () => 'workspace sandbox machine capacity is full',
+    });
+
+    return Result.fail(reason);
+  }
 
   if (SourceGuestAnswer.guards.Pending(answer)) {
     const pending = Option.none<SourceChanges>();

@@ -92,9 +92,9 @@ type WorkspaceMethods = {
   readonly settleOpenDispatches: (input: MechIdInput) => void;
   /** What the current UTC day's dispatches have committed of the workspace's allowance, settled and reserved. */
   readonly committedToday: () => typeof CommittedToday.Encoded;
-  /** Leases a machine to the sandbox for its idle window, while the workspace runs fewer than it may. */
-  readonly leaseMachine: (input: LeaseMachineInput) => typeof LeaseDecision.Encoded;
-  /** Releases a sandbox's lease once its machine stopped, such as an ended drone's. */
+  /** Reserves capacity until the sandbox confirms its machine stopped. Adoption accounts for an existing machine. */
+  readonly reserveMachine: (input: ReserveMachineInput) => typeof LeaseDecision.Encoded;
+  /** A matching reservation id prevents an old stop from releasing newer capacity. */
   readonly releaseMachine: (input: ReleaseMachineInput) => void;
   /** The dispatches of a turn or a drone as the ledger holds them, which the Worker decodes by status and basis. */
   readonly workDispatches: (input: WorkDispatchesInput) => ReadonlyArray<DispatchRow>;
@@ -118,19 +118,15 @@ export type PrepareMechCreationInput = {
 /** A dispatch's settlement, as its mech reports it once the dispatch ended. */
 export type DispatchSettlement = { readonly dispatchId: string; readonly settlement: Settlement };
 
-/**
- * A machine to lease to a sandbox, keyed by its mech's or drone's id, within the workspace's current policy. The lease
- * lasts `leaseMs`: its machine's idle window and one retry of its stop. By then the sandbox's own alarm has stopped an
- * idle machine.
- */
-export type LeaseMachineInput = { readonly sandboxId: string; readonly leaseMs: number };
+/** Adoption counts a machine that predates durable reservations, even if current policy would refuse a new one. */
+export type ReserveMachineInput = ReleaseMachineInput & { readonly isAdopting: boolean };
 
 export type MechIdInput = { readonly mechId: string };
 
 /** A page of the workspace's mechs, as the Worker asks for it: the list's query as `/v1` encodes it. */
 export type MechsInput = { readonly query: typeof catalog.listMechs.query.Encoded };
 
-export type ReleaseMachineInput = { readonly sandboxId: string };
+export type ReleaseMachineInput = { readonly sandboxId: string; readonly reservationId: number };
 
 /**
  * A dispatch to reserve, the allowance its workspace has each UTC day, which the directory keeps, and its mech's own

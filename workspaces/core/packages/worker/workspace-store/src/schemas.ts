@@ -10,10 +10,15 @@ export const CommittedRow = wireStruct({ fields: { workspaceMicros: Schema.Int, 
 
 export type CommittedRow = typeof CommittedRow.Type;
 
-/** A sandbox's lease, which holds one of the workspace's machines until it expires. */
+/** A reservation stays counted until its sandbox confirms the machine stopped; only old unfenced leases expire. */
 export const LeaseRow = renamedWireStruct({
-  fields: { expiresAt: Schema.DateTimeUtcFromMillis },
-  renames: { expiresAt: 'expires_at_ms' },
+  fields: {
+    expiresAt: Schema.DateTimeUtcFromMillis,
+    /** Absent only for a historical expiring lease not yet adopted by its sandbox. */
+    reservationId: Schema.OptionFromNullOr(Schema.Int),
+    active: Schema.Int,
+  },
+  renames: { expiresAt: 'expires_at_ms', reservationId: 'reservation_id' },
 });
 
 export type LeaseRow = typeof LeaseRow.Type;

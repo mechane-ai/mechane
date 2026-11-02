@@ -12,6 +12,8 @@ export type ReportInput = { readonly machineId: RecordId; readonly environment: 
 export type HostMachines = {
   /** Starts the machine the first time its id comes, and reports its state each time. */
   readonly report: (input: ReportInput) => HostMachine;
+  /** Reads an existing machine; an unknown id is stopped and never starts as a side effect. */
+  readonly inspect: (input: MachineIdInput) => HostMachine;
   /** Asks a machine's guest to stop, which stops every execution still running on it. */
   readonly stop: (input: MachineIdInput) => void;
   /** Stops every machine's guest, with SIGKILL for one that outlives the grace. */

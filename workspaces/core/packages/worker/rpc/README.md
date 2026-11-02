@@ -18,7 +18,8 @@ Layer 2 · worker · plain · consumers: `@mechane/bindings`, every object, `@me
   holds a given directory, workspace, mech, sandbox, token hash or counted client.
 - `objectSettings` decodes the environment a mech's object reads as it opens, and `objectBindings` names the Durable
   Object namespaces.
-- `SANDBOX_IDLE`, `STOP_RETRY` and `MACHINE_LEASE` are the machine windows that the sandbox and the workspace share.
+- `SANDBOX_IDLE`, `STOP_RETRY` and `CONTAINER_INACTIVITY` bound sandbox idle cleanup and the container platform timeout;
+  workspace reservations do not expire.
 
 ## Never
 

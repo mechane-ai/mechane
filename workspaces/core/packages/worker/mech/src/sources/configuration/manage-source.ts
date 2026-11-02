@@ -40,7 +40,7 @@ export async function manageSource({ mech, request, principalId }: ManageSourceI
 
   const droneId = Option.none();
 
-  const sandbox = sandboxStub({
+  const sandbox = await sandboxStub({
     bindings: mech.settings,
     workspaceId: owner.value.workspaceId,
     mechId: owner.value.id,

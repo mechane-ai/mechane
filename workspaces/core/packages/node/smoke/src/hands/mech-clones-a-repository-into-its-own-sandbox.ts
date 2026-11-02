@@ -1,10 +1,9 @@
 import { EXECUTION_VARIABLES } from '@mechane/sandbox-wire';
-import { check, roundtripWorkspace, signedInAccount, talkingMech } from '@mechane/testing';
+import { check, commandReply, roundtripWorkspace, signedInAccount, talkingMech } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect, Option, Record } from 'effect';
 import type { Scope } from 'effect';
 import { posix, sep } from 'node:path';
-import { commandReply } from './command-reply.ts';
 import { HOME_VARIABLE, RepositoryPart } from './constants.ts';
 import { neighborSandbox } from './neighbor-sandbox.ts';
 import { readmeRepository } from './readme-repository.ts';

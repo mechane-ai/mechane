@@ -7,13 +7,11 @@ import { gatedGlobs } from '@mechane/rules';
 import { Effect } from 'effect';
 import { barrelSites } from './barrels/barrel-sites.ts';
 import { blankLineSites } from './blank-lines/blank-line-sites.ts';
-import { placementSites } from './placement/placement-sites.ts';
 
 /** One normalizer's rule, the entries the manifests export, every member's source roots, and every parsed file. */
 type RuleSitesInput = {
   readonly rule: NormalizerRule;
   readonly entries: ReadonlyMap<string, string>;
-  readonly roots: ReadonlyArray<string>;
   readonly sources: ReadonlyArray<ParsedSource>;
 };
 
@@ -24,10 +22,9 @@ type RuleSitesInput = {
 export const ruleSites = Effect.fn('ruleSites')(function* ({
   rule,
   entries,
-  roots,
   sources,
 }: RuleSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
-  const sites = yield* bareSites({ rule, entries, roots, sources });
+  const sites = yield* bareSites({ rule, entries, sources });
 
   /** A site, its message ended with its rule's standard. */
   const standardSite: (site: Site) => Site = (site) => ({ ...site, message: standardMessage(site) });
@@ -39,14 +36,11 @@ export const ruleSites = Effect.fn('ruleSites')(function* ({
 const bareSites = Effect.fn('bareSites')(function* ({
   rule,
   entries,
-  roots,
   sources,
 }: RuleSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
   const scope = { paths: [], excluded: gatedGlobs({ rule: rule.name }) };
 
   switch (rule.name) {
-    case Normalizer.Placement:
-      return placementSites({ sources, entries, scope, roots });
     case Normalizer.Barrels:
       return yield* barrelSites({ sources, entries, scope });
     case Normalizer.BlankLines:

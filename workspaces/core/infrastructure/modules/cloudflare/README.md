@@ -27,6 +27,10 @@ Optional `storage`, `sandboxes`, and `budgets` objects set resource names, capac
 ceilings. [Variable declarations](variables.tf) contain exact types and defaults. No input accepts an individual agent
 or workspace integration. No input accepts credential values.
 
+Omitted product policy settings use the release manifest's defaults. Explicit values override them and remain stable
+across upgrades. Keep intentional budget and capacity policy in the consumer configuration; do not copy Worker metadata
+into it. Resource names and Cloudflare instance sizing remain installation choices.
+
 `authentication.administrators` contains stable numeric GitHub subjects. A null `allowed_identities` permits public
 GitHub sign-in; an empty set denies everyone. Choose the intended policy explicitly. Secret names refer to existing
 entries in one Cloudflare Secrets Store. The credential keyring must be dedicated to this installation.

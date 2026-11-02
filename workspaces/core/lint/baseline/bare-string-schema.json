@@ -6,7 +6,6 @@
   "packages/shared/protocol/src/pages/schemas.ts": 2,
   "packages/worker/directory-store/src/keys/key-records.ts": 1,
   "packages/worker/directory-store/src/schemas.ts": 6,
-  "packages/worker/key-cache-store/src/schemas.ts": 2,
   "packages/worker/mech-store/src/drone.schemas.ts": 1,
   "packages/worker/mech-store/src/drones/drone-records.ts": 1,
   "packages/worker/mech-store/src/events/event-records.ts": 1,

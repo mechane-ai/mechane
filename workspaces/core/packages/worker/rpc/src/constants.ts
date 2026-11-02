@@ -19,7 +19,7 @@ export const STOP_RETRY = Duration.minutes(1);
 export const ALARM_WORK_MAX = Duration.minutes(10);
 
 /**
- * How long a machine holds its workspace's lease after an ask: its idle window, and one retry of the stop that ends it.
- * The stop starts only once the window ends.
+ * The container platform timeout outlasts the sandbox's idle window and one stop retry. It bounds unobserved platform
+ * execution, independently of persistent workspace capacity reservations.
  */
-export const MACHINE_LEASE = Duration.sum(SANDBOX_IDLE, STOP_RETRY);
+export const CONTAINER_INACTIVITY = Duration.sum(SANDBOX_IDLE, STOP_RETRY);

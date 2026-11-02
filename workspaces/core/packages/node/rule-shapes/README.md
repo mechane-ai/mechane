@@ -3,8 +3,7 @@
 The shapes the rule registry is built from: each kind of rule with its status, phase, fix and file roles, the contract
 names, and the member manifest.
 
-Layer 1 · node lane · data dialect · consumers: the five rule-group members, `@mechane/rules`, `@mechane/rule-generator`
-and `@mechane/checks`
+Layer 1 · node lane · data dialect · consumers: `@mechane/rules`, `@mechane/rule-generator` and `@mechane/checks`
 
 ## Use
 
@@ -19,5 +18,5 @@ and `@mechane/checks`
 
 ## Never
 
-- Never hold a contract's values or rules here; they belong in its module in a rule-group member.
+- Never hold a contract's values or rules here; they belong in its module in the registry.
 - Never edit `contract-names.ts`, which `mise run fix` writes from the contract folders.

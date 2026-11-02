@@ -5,6 +5,7 @@ import {
   revokeGitHubToken,
 } from '@mechane/integrations';
 import type { SourceTask } from '@mechane/mech-store';
+import { MachineRefusal, SandboxSourceAnswer } from '@mechane/rpc';
 import { SourceClone } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { Option, Result, Schema } from 'effect';
@@ -24,7 +25,7 @@ export async function cloneSourceCheckout({
   source,
   sandbox,
   checkout,
-}: SourceCheckoutContext): Promise<SourceTask> {
+}: SourceCheckoutContext): Promise<SourceTask | MachineRefusal> {
   const context = { mech, owner, source, sandbox, checkout };
 
   const token = await createGitHubToken({
@@ -54,7 +55,7 @@ async function cloneWithCredential({
   checkout,
   token,
   expiresAt,
-}: SourceCheckoutCredential): Promise<SourceTask> {
+}: SourceCheckoutCredential): Promise<SourceTask | MachineRefusal> {
   const context = { mech, owner, source, sandbox, checkout };
   const authorization = { origin: mech.settings.githubApiOrigin, token };
   const repository = await checkGitHubRepository({ ...authorization, grant: source.grant });
@@ -71,12 +72,21 @@ async function cloneWithCredential({
   const clone = Schema.encodeSync(SourceClone)({ ...checkout, token, expiresAt });
   const promise = sandbox.cloneSource({ clone });
 
-  await capturePromise({ promise });
+  const response = await capturePromise({ promise });
 
   const isRevoked = await revokeGitHubToken(authorization);
 
   if (isRevoked) {
     await sandbox.revokeSource(checkout);
+  }
+
+  if (Result.isSuccess(response)) {
+    const decoded = Schema.decodeUnknownResult(SandboxSourceAnswer)(response.success);
+    const answer = Result.getOrThrow(decoded);
+
+    if (Schema.is(MachineRefusal)(answer)) {
+      return answer;
+    }
   }
 
   const reason = Option.none<string>();

@@ -11,9 +11,10 @@ import type { StackSettings, StackVariables } from './types.ts';
 const INHERITED_VARIABLES = ['PATH', 'HOME', 'DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_CONFIG'] as const;
 const DEFAULT_LOCAL_ORIGIN = 'http://127.0.0.1:8787';
 
-type LocalSettings = Pick<StackSettings, 'stateRoot' | 'localStateFolder' | 'executableFolder'> & {
-  readonly localOrigin: string;
-};
+type LocalSettings = Pick<
+  StackSettings,
+  'stateRoot' | 'localStateFolder' | 'executableFolder' | 'localAdoptionManifest'
+> & { readonly localOrigin: string };
 
 /** Reads launcher arguments, persistent configuration, and declared Worker variables at the process boundary. */
 export const loadStackSettings = Effect.fn('loadStackSettings')(function* (): Effect.fn.Return<
@@ -62,5 +63,13 @@ function localSettings(): LocalSettings {
   const configuredOrigin = Option.fromNullishOr(process.env['MECHANE_LOCAL_ORIGIN']);
   const localOrigin = Option.getOrElse(configuredOrigin, () => DEFAULT_LOCAL_ORIGIN);
 
-  return { stateRoot: tmpdir(), localStateFolder, localOrigin, executableFolder: dirname(process.execPath) };
+  const localAdoptionManifest = Option.fromNullishOr(process.env['MECHANE_LOCAL_ADOPTION_MANIFEST']);
+
+  return {
+    localAdoptionManifest,
+    stateRoot: tmpdir(),
+    localStateFolder,
+    localOrigin,
+    executableFolder: dirname(process.execPath),
+  };
 }

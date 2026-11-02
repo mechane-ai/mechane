@@ -1,4 +1,5 @@
 import { openDatabase } from '@mechane/store';
+import { capacityRecords } from './capacity/capacity-records.ts';
 import { executionRecords } from './executions/execution-records.ts';
 import { maintenanceRecords } from './lifecycle/maintenance-records.ts';
 import { machineRecords } from './machines/machine-records.ts';
@@ -17,6 +18,7 @@ export function openSandboxStore({ storage }: SandboxStoreInput): SandboxStore {
 
   return {
     ...openDatabase({ storage, migrations: MIGRATIONS }),
+    ...capacityRecords({ sql }),
     ...machineRecords({ sql }),
     ...maintenanceRecords({ sql }),
     ...portableMaintenanceRecords({ sql }),

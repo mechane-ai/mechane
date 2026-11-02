@@ -1,18 +1,11 @@
-import { SandboxRefusal } from '@mechane/harness-tools';
 import type { HandsOutcome } from '@mechane/harness-tools';
-import { LeaseDecision, MACHINE_LEASE } from '@mechane/rpc';
-import { Duration, Match, Option, Schema } from 'effect';
+import { Option } from 'effect';
 import { askedExecution } from './asked-execution.ts';
-import { refusedOutcome } from './refused-outcome.ts';
 import type { SettledExecutionInput } from './types.ts';
 
-/**
- * Asks the sandbox for the execution until it settles, leasing one of the workspace's machines before each ask. A
- * workspace that runs every machine it may refuses the command.
- */
+/** Rejoins the same execution until it settles. The sandbox owns machine admission and retained capacity. */
 export async function settledExecution({
   sandbox,
-  workspace,
   target,
   execution,
   signal,
@@ -21,46 +14,8 @@ export async function settledExecution({
   let outcome: Option.Option<HandsOutcome> = Option.none();
 
   while (Option.isNone(outcome)) {
-    outcome = await leasedAsk({ sandbox, workspace, target, execution, signal, aborted });
+    outcome = await askedExecution({ sandbox, target, execution, signal, aborted });
   }
 
   return outcome.value;
-}
-
-/**
- * Leases a machine to the sandbox, renewing the lease it holds, and asks for the execution once. It answers the
- * execution's outcome, none while it runs, or the refusal of a full workspace.
- */
-async function leasedAsk({
-  sandbox,
-  workspace,
-  target,
-  execution,
-  signal,
-  aborted,
-}: SettledExecutionInput): Promise<Option.Option<HandsOutcome>> {
-  signal.throwIfAborted();
-
-  const { sandboxId } = target;
-  const leaseMs = Duration.toMillis(MACHINE_LEASE);
-  const decision = await workspace.leaseMachine({ sandboxId, leaseMs });
-  const decoded = await Schema.decodeUnknownPromise(LeaseDecision)(decision);
-
-  const full: () => Option.Option<HandsOutcome> = () => {
-    const refusal = refusedOutcome({ target, reason: SandboxRefusal.MachinesFull });
-
-    return Option.some(refusal);
-  };
-
-  const disabled: () => Option.Option<HandsOutcome> = () => {
-    const refusal = refusedOutcome({ target, reason: SandboxRefusal.NoSandbox });
-
-    return Option.some(refusal);
-  };
-
-  return await Match.valueTags(decoded, {
-    Leased: async () => await askedExecution({ sandbox, execution, signal, aborted }),
-    Full: full,
-    Disabled: disabled,
-  });
 }

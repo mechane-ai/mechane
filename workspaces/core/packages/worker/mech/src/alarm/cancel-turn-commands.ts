@@ -14,7 +14,7 @@ export async function cancelTurnCommands({ mech }: CancelTurnCommandsInput): Pro
 
   const { workspaceId, id } = current.value;
   const droneId = Option.none();
-  const sandbox = sandboxStub({ bindings: mech.settings, workspaceId, mechId: id, droneId });
+  const sandbox = await sandboxStub({ bindings: mech.settings, workspaceId, mechId: id, droneId });
 
   await sandbox.cancelActiveExecutions();
 }

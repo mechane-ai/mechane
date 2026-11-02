@@ -140,7 +140,10 @@ run = "node packages/node/checks/src/main.ts check"
 description = "Build the Worker as a production deploy would, without deploying it or building the sandbox image; the local stack serves this bundle"
 dir = "{{config_root}}/packages/worker/app"
 # A dry run builds the containers' image unless no rollout is asked for, which would make the check need Docker.
-run = "pnpm exec wrangler deploy --dry-run --containers-rollout=none --outdir dist"
+run = [
+  "pnpm exec wrangler deploy --dry-run --containers-rollout=none --outdir dist",
+  "node ../../node/wrangler/src/main.ts",
+]
 
 [tasks."build:guest"]
 description = "Bundle the sandbox's guest into one Node module in its image's build folder, which the host launcher runs too"

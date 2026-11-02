@@ -54,4 +54,15 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'CREATE TABLE portable_maintenance (slot INTEGER PRIMARY KEY CHECK (slot = 1), value TEXT NOT NULL) STRICT',
     );
   },
+  ({ sql }) => {
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN file_checkpoint TEXT');
+    sql.exec(
+      'CREATE TABLE file_checkpoint_results (operation_id TEXT PRIMARY KEY, started_at_ms INTEGER NOT NULL, result TEXT NOT NULL) STRICT',
+    );
+  },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE sandbox_capacity (slot INTEGER PRIMARY KEY CHECK (slot = 1), owner TEXT NOT NULL, reservation TEXT, sequence INTEGER NOT NULL) STRICT',
+    );
+  },
 ];

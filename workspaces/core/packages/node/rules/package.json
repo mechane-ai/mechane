@@ -6,12 +6,8 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/local-rules": "workspace:*",
-    "@mechane/name-rules": "workspace:*",
-    "@mechane/program-rules": "workspace:*",
+    "@mechane/records": "workspace:*",
     "@mechane/rule-shapes": "workspace:*",
-    "@mechane/structure-rules": "workspace:*",
-    "@mechane/typescript-rules": "workspace:*",
     "effect": "4.0.7"
   },
   "devDependencies": {

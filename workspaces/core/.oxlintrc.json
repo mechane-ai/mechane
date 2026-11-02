@@ -34,6 +34,7 @@
           "../../../../licenses/partial-json.js",
           "../../../../licenses/pi.js",
           "../../../../licenses/pkce-challenge.js",
+          "../../../../licenses/semver.js",
           "../../../../licenses/typebox.js",
           "../../../../licenses/zod.js"
         ]
@@ -77,11 +78,6 @@
     ],
     "new-cap": ["error", { "capIsNew": false }],
     "no-bitwise": "error",
-    "max-lines": ["error", { "max": 120, "skipBlankLines": true, "skipComments": true }],
-    "max-lines-per-function": ["error", { "max": 30, "skipBlankLines": true, "skipComments": true, "IIFEs": true }],
-    "max-depth": ["error", { "max": 2 }],
-    "max-nested-callbacks": ["error", { "max": 2 }],
-    "complexity": ["error", { "max": 6, "variant": "modified" }],
     "no-else-return": ["error", { "allowElseIf": false }],
     "no-lonely-if": "error",
     "no-negated-condition": "error",
@@ -137,6 +133,8 @@
         "allowedNames": [
           "connectionRecords",
           "credentialRecords",
+          "fileCheckpointRecords",
+          "capacityRecords",
           "findingRecords",
           "policyRecords",
           "slackDeliveryProgressRecords",
@@ -158,6 +156,8 @@
         "allowedNames": [
           "connectionRecords",
           "credentialRecords",
+          "fileCheckpointRecords",
+          "capacityRecords",
           "findingRecords",
           "policyRecords",
           "slackDeliveryProgressRecords",
@@ -195,8 +195,6 @@
     "unicorn/no-process-exit": "error",
     // An outbound call keeps its `.then` with both handlers, such as `.then(() => undefined, onRejected)`.
     "unicorn/no-useless-undefined": ["error", { "checkArguments": false, "checkArrowFunctionBody": false }],
-    // A named callback stays a typed const beside the statement that passes it (SC-03).
-    "unicorn/consistent-function-scoping": ["error", { "checkArrowFunctions": false }],
     "no-restricted-imports": [
       "error",
       {
@@ -641,6 +639,8 @@
     "unicorn/import-style": "off",
     "unicorn/no-array-method-this-argument": "off",
     // Off whatever they measure, each for its reason.
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
+    "complexity": "off",
     // a switch over a closed set names every member and has no default (EF-14)
     "default-case": "off",
     // a callback is named by the binding or the call that holds it
@@ -663,7 +663,15 @@
     "jsdoc/require-returns-type": "off",
     // a doc comment never restates the compiler's type
     "jsdoc/require-throws-type": "off",
-    // max-lines-per-function bounds a function
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
+    "max-depth": "off",
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
+    "max-lines": "off",
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
+    "max-lines-per-function": "off",
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
+    "max-nested-callbacks": "off",
+    // contracts 008 and 010 require cohesive, readable modules and functions without size or complexity quotas
     "max-statements": "off",
     // a loop of awaits runs its steps in order on purpose
     "no-await-in-loop": "off",
@@ -695,6 +703,8 @@
     "typescript/prefer-readonly-parameter-types": "off",
     // DO-03 bans `Promise.resolve`, so an `async` arrow that awaits nothing is how a callback a dependency types as answering a promise answers a value
     "typescript/require-await": "off",
+    // contract 111 keeps callbacks and helpers with their owning operation; scope movement is a design decision
+    "unicorn/consistent-function-scoping": "off",
     // ast-grep nested-call rejects every nested call (064)
     "unicorn/max-nested-calls": "off",
     // a typed callback const states the parameters it reads, and TD-01 gives an owned function no second positional parameter (SC-03)
@@ -1889,24 +1899,7 @@
         ]
       }
     },
-    { "files": ["packages/**/src/index.ts"], "rules": { "max-lines": "off" } },
-    { "files": ["packages/node/smoke/src/catalog.ts"], "rules": { "max-lines": "off" } },
-    {
-      "files": [
-        "packages/worker/directory/src/directory-object.ts",
-        "packages/worker/key-cache/src/key-cache-object.ts",
-        "packages/worker/limiter/src/limiter-object.ts",
-        "packages/worker/mech/src/mech-object.ts",
-        "packages/worker/sandbox/src/sandbox-object.ts",
-        "packages/worker/workspace/src/workspace-object.ts"
-      ],
-      "rules": { "max-lines": "off" }
-    },
-    { "files": ["**/migrations.ts"], "rules": { "max-lines-per-function": "off" } },
-    {
-      "files": [".dependency-cruiser.cjs"],
-      "rules": { "import/no-commonjs": "off", "import/unambiguous": "off", "max-lines": "off" }
-    },
+    { "files": [".dependency-cruiser.cjs"], "rules": { "import/no-commonjs": "off", "import/unambiguous": "off" } },
     { "files": ["**/utilities/**"], "rules": { "promise/avoid-new": "off" } }
   ]
 }

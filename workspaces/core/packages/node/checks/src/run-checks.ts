@@ -14,7 +14,7 @@ import type { CheckInput, ChecksFailure, Finding, InputUnreadable, Member } from
 import { checkLocks } from '@mechane/locks';
 import type { ParsedSource } from '@mechane/modules';
 import { heldNormalizers, normalizerSites } from '@mechane/normalizers';
-import { checkDocuments, checkLayout, checkPins, checkSource, orphanFindings, ownedSites } from '@mechane/owned-rules';
+import { checkDocuments, checkPins, checkSource, orphanFindings, ownedSites } from '@mechane/owned-rules';
 import { RuleTool } from '@mechane/rule-shapes';
 import { Effect, Option } from 'effect';
 import { distinctFindings } from './distinct-findings.ts';
@@ -37,7 +37,7 @@ type RunChecksInput = { readonly baseBranch: string; readonly inherited: Readonl
 type OwnedFindingsInput = { readonly members: ReadonlyArray<Member>; readonly sources: ReadonlyArray<ParsedSource> };
 
 /** Every owned check; each enforces declared values that no installed tool checks. */
-const CHECKS: ReadonlyArray<Check> = [checkLayout, checkBoundaries, checkDocuments, checkPins, checkLocks];
+const CHECKS: ReadonlyArray<Check> = [checkBoundaries, checkDocuments, checkPins, checkLocks];
 
 /** The findings of the owned rules and of each normalizer not proposed, with each ratchet held to its baseline. */
 const ownedFindings = Effect.fn('ownedFindings')(function* ({

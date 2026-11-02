@@ -6,6 +6,7 @@ Layer 4 · worker · plain · consumers: `@mechane/app`
 
 ## Layout
 
+- `capacity/`: trusted ownership, workspace admission and durable machine reservations.
 - `executions/`: command admission, dispatch, cancellation and receipts.
 - `machines/`: machine creation, health, restoration and startup deadlines.
 - `providers/`: local host and container machines behind `MachineProvider`.
@@ -26,6 +27,14 @@ Container commands run serially. Before returning Exited or TimedOut, the object
 `/home/node` files as independent R2 objects of at most 1 MiB, then commits the generation and receipt together.
 Replacement machines restore that generation before becoming ready. Missing parts or a failed archive checksum prevent
 dispatch. Incomplete command outcomes become Uncertain and never rerun automatically.
+
+Source preparation, finalization, and maintenance use explicit file checkpoints. They share the command checkpoint's
+transfer and recovery steps, while keeping their own operation receipts. A retry reads that receipt even after another
+generation becomes the head. Saving files never creates a synthetic shell command. Patch capture reads committed files
+on a restored guest without manufacturing a command or checkpoint.
+
+The store keeps the shipped command-checkpoint shape and records file operations separately. Existing interrupted
+command checkpoints remain readable without rewriting their receipt or generation.
 
 The guest stops remaining command processes before archiving; background work and unfinished writes have no persistence
 guarantee. Archives allow at most 512 MiB of uncompressed tar data and 256 MiB compressed. Archive creation has a

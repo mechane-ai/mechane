@@ -1,13 +1,25 @@
 ---
 name: installation-ownership
 message: Keep release and cloud resources declarative while preserving dynamic runtime data and one owner for each deployed resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "docs/self-hosting.md"]
+paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/stack/**", "packages/node/program/src/release-descriptor.ts", "packages/node/program/src/files/artifact-digest.ts", "packages/node/wrangler/src/built-release.ts", "docs/self-hosting.md"]
 ---
 
 ## Rules
 
 Install and upgrade from immutable, checksum-bound public release artifacts. Ordinary operators must not compile source,
 run Docker builds, or execute a deployment shell script through an OpenTofu provisioner.
+
+Use one release descriptor for local and cloud artifacts. Derive immutable Worker metadata from the verified manifest
+inside the provider. Infrastructure callers supply installation-specific resources, settings, and secret references.
+Product defaults come from the release; company overrides remain explicit. Preserve effective settings on adoption.
+Source startup and packaging verify build metadata recorded with the Worker, rather than pairing a stale bundle with
+the checkout's current configuration or format locks.
+
+Admit retained local state before opening runtime databases. Under its process lock, record the candidate descriptor
+atomically before startup, and preserve that record after an interrupted upgrade. Refuse removed categories or entries
+and version downgrades. Legacy state requires a baseline matching its existing Worker bytes; missing metadata is not a
+fresh installation. Adoption changes the state marker so older launchers refuse it. Disposable fixtures own no retained
+upgrade guarantee. Database revision guards provide a second refusal boundary, not a substitute for admission.
 
 Keep installation version, resource identities, domains, capacity, and global settings in infrastructure configuration.
 Keep agents, missions, workspaces, credentials, grants, Slack bindings, watches, conversations, and files in Mechane's

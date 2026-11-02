@@ -34,7 +34,7 @@ export const startStack = Effect.fn('startStack')(function* ({
   const origin = yield* freeLoopbackOrigin();
   const { sandboxesFolder } = layout;
   const services = yield* localServices({ origin, settings, sandboxProvider, sandboxesFolder, variables });
-  const project = yield* sourceProject({ settings });
+  const project = yield* sourceProject();
 
   const runtime = yield* startRuntime({
     settings,

@@ -1,4 +1,4 @@
-import { MACHINE_LEASE } from '@mechane/rpc';
+import { CONTAINER_INACTIVITY } from '@mechane/rpc';
 import { GUEST_PORT } from '@mechane/sandbox-wire';
 import { Duration, Option } from 'effect';
 import type { GuestConnection, GuestTransport } from '../types.ts';
@@ -16,7 +16,7 @@ export async function containerGuest({ container }: ContainerGuestInput): Promis
     return Option.none();
   }
 
-  const timeout = Duration.toMillis(MACHINE_LEASE);
+  const timeout = Duration.toMillis(CONTAINER_INACTIVITY);
 
   await container.setInactivityTimeout(timeout);
 

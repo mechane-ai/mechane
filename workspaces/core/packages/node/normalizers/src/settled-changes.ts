@@ -13,7 +13,6 @@ type SettledChangesInput = {
   readonly normalizer: Normalizer;
   readonly sources: ReadonlyArray<ParsedSource>;
   readonly entries: ReadonlyMap<string, string>;
-  readonly roots: ReadonlyArray<string>;
   readonly scope: NormalizerScope;
 };
 
@@ -22,15 +21,14 @@ const settledSources = Effect.fn('settledSources')(function* ({
   normalizer,
   sources,
   entries,
-  roots,
   scope,
 }: SettledChangesInput): Effect.fn.Return<ReadonlyArray<ParsedSource>, InputUnreadable> {
   let current = sources;
-  let changes = yield* roundChanges({ normalizer, sources: current, entries, roots, scope });
+  let changes = yield* roundChanges({ normalizer, sources: current, entries, scope });
 
   while (changes.length > 0) {
     current = changedSources({ sources: current, changes });
-    changes = yield* roundChanges({ normalizer, sources: current, entries, roots, scope });
+    changes = yield* roundChanges({ normalizer, sources: current, entries, scope });
   }
 
   return current;
@@ -45,10 +43,9 @@ export const settledChanges = Effect.fn('settledChanges')(function* ({
   normalizer,
   sources,
   entries,
-  roots,
   scope,
 }: SettledChangesInput): Effect.fn.Return<ReadonlyArray<FileChange>, InputUnreadable> {
-  const settled = yield* settledSources({ normalizer, sources, entries, roots, scope });
+  const settled = yield* settledSources({ normalizer, sources, entries, scope });
   const before = new Map(sources.map(({ path, text }) => [path, text]));
   const kept: ReadonlySet<string> = new Set(settled.map(({ path }) => path));
 

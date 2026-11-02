@@ -1,11 +1,10 @@
-import { RELEASE } from '@mechane/protocol';
-import { LOCAL_PACKAGE_FILES } from '@mechane/stack';
+import { LOCAL_PACKAGE_FILES, LOCAL_PACKAGE_FORMAT_VERSION } from '@mechane/stack';
 import type { LocalPackage, LocalTarget } from '@mechane/stack';
-import { baseConfiguration } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { join } from 'node:path';
-import { DistributionStep, PUBLIC_REPOSITORY } from '../constants.ts';
-import { DistributionFailed } from '../errors.ts';
+import { distributionDescriptor } from '../build/release-descriptor.ts';
+import { PUBLIC_REPOSITORY } from '../constants.ts';
+import type { DistributionFailed } from '../errors.ts';
 import { fileDigest } from '../files/file-digest.ts';
 import { guestImageName } from './guest-image-name.ts';
 
@@ -17,12 +16,10 @@ export const localManifest = Effect.fn('localManifest')(function* ({
   target,
   commit,
 }: LocalManifestInput): Effect.fn.Return<LocalPackage, DistributionFailed> {
-  const base = yield* baseConfiguration({ step: DistributionStep.Read, failure: DistributionFailed });
-  const workerPath = join(folder, LOCAL_PACKAGE_FILES.worker);
+  const { configuration: base, ...descriptor } = yield* distributionDescriptor({ commit, isPreview: false });
   const guestPath = join(folder, LOCAL_PACKAGE_FILES.guest);
   const celldPath = join(folder, LOCAL_PACKAGE_FILES.celld);
   const cliPath = join(folder, LOCAL_PACKAGE_FILES.cli);
-  const worker = yield* fileDigest({ path: workerPath });
   const guest = yield* fileDigest({ path: guestPath });
   const celld = yield* fileDigest({ path: celldPath });
   const cli = yield* fileDigest({ path: cliPath });
@@ -32,12 +29,11 @@ export const localManifest = Effect.fn('localManifest')(function* ({
   const vars = { ...base.vars, MECHANE_RELEASE_ORIGIN: origin };
 
   return {
-    format_version: 1,
-    version: RELEASE,
-    public_commit: commit,
+    format_version: LOCAL_PACKAGE_FORMAT_VERSION,
+    ...descriptor,
     target,
     configuration: { ...base, containers, vars },
-    files: { 'worker.js': worker, 'guest.oci.tar': guest, celld, 'mechane': cli },
+    files: { 'guest.oci.tar': guest, celld, 'mechane': cli },
   };
 });
 

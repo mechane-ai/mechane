@@ -22,7 +22,6 @@
   "packages/worker/mech-store/src/mechs/mech-records.ts": 1,
   "packages/worker/mech/src/drones/stop-drone.ts": 1,
   "packages/worker/mech/src/forks/end-received-copy.ts": 1,
-  "packages/worker/mech/src/hands/asked-execution.ts": 1,
   "packages/worker/mech/src/hands/mech-hands.ts": 1,
   "packages/worker/sandbox/src/executions/ask-guest.ts": 1,
   "packages/worker/sandbox/src/executions/claim-execution.ts": 1,

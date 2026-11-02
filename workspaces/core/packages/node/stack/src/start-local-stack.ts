@@ -17,7 +17,7 @@ export const startLocalStack = Effect.fn('startLocalStack')(function* ({
 }: StartLocalStackInput): Effect.fn.Return<LocalStack, StackFailed, Scope.Scope> {
   yield* localModelSettings({ settings });
 
-  const state = yield* persistentStateFolder({ settings });
+  const state = yield* persistentStateFolder({ settings, project });
   const { bootstrapSecret, bootstrapSecretFile, credentialKeyring, ...layout } = state;
   const configuredAdministrators = Option.fromNullishOr(settings.workerVariables.administratorIdentities);
 

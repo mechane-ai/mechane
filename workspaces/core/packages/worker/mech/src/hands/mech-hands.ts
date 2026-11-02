@@ -1,12 +1,10 @@
-import { SandboxRefusal } from '@mechane/harness-tools';
 import type { Hands, HandsExecution } from '@mechane/harness-tools';
 import type { MechRow, MechStore, MechTables, SessionIdInput } from '@mechane/mech-store';
 import type { DroneId } from '@mechane/records';
-import { readWorkspacePolicy, sandboxStub, workspaceStub } from '@mechane/rpc';
+import { readWorkspacePolicy, sandboxStub } from '@mechane/rpc';
 import type { ObjectSettings } from '@mechane/rpc';
 import { untilAborted } from '@mechane/utilities';
 import { Match, Option } from 'effect';
-import { refusedOutcome } from './refused-outcome.ts';
 import { settledExecution } from './settled-execution.ts';
 
 /** What the mech's hands read its record from, and the settings that bind its sandboxes. */
@@ -24,7 +22,8 @@ type SandboxOwner = MechRow & {
 /**
  * The hands of a mech and its drones: each one's own sandbox, which runs each execution once under its id. A tool runs
  * only in a turn or a drone of a created mech, so the mech's record names the sandbox and a drone's conversation names
- * its drone. Disabled or suspended workspaces reach no sandbox, and full ones wait until a machine stops.
+ * its drone. The sandbox checks workspace policy before running work; settled receipts remain readable without
+ * capacity.
  */
 export function mechHands({ store, settings }: MechHandsInput): Hands {
   const run: Hands['run'] = async (execution) => {
@@ -38,13 +37,8 @@ export function mechHands({ store, settings }: MechHandsInput): Hands {
     const unaborted: () => AbortSignal = () => new AbortController().signal;
     const signal = Option.getOrElse(execution.signal, unaborted);
 
-    if (!policy.hasSandboxes || policy.isSuspended) {
-      return refusedOutcome({ target, reason: SandboxRefusal.NoSandbox });
-    }
-
     return await settledExecution({
-      sandbox: sandboxStub({ bindings: settings, workspaceId, mechId: id, droneId }),
-      workspace: workspaceStub({ bindings: settings, workspaceId }),
+      sandbox: await sandboxStub({ bindings: settings, workspaceId, mechId: id, droneId }),
       target,
       execution,
       signal,

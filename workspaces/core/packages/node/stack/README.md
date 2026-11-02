@@ -62,6 +62,19 @@ A killed launcher can leave celld running. Its ownership record prevents restart
 alive. An interrupted startup with an unconfirmed owner requires checking its processes before removing that record; the
 error identifies the file. The local web installer and CLI updates use the public release artifacts.
 
+## Upgrade retained state
+
+Stop the launcher, verify and extract the next release, then start it with the same state directory, origin, and model
+configuration. The launcher records the candidate's release descriptor before opening the databases. It rejects older
+versions and candidates that remove recorded wire or migration entries, including after an interrupted startup. Recovery
+uses a compatible newer release. These checks do not prove every behavioral change safe.
+
+State created by older launchers has no format baseline. If its staged Worker differs from the candidate, obtain
+`installation.json` from the release that last ran that directory and set `MECHANE_LOCAL_ADOPTION_MANIFEST` to its
+absolute path for the first upgrade. The launcher verifies that descriptor against the existing Worker bytes before
+adopting it. An identical candidate Worker can establish its own baseline. Missing or mismatched metadata is refused;
+the state is never silently reset. After adoption, older launchers reject the new state marker.
+
 ## Develop from source
 
 Run repository setup and start Docker, then use `mise run start -- --config /absolute/path/model.json`. The same
@@ -76,8 +89,7 @@ fixture with fake GitHub and a scripted model. `mise run local:reset -- --confir
 failed lifecycle steps. The line prefixes support the smoke's scripted model.
 
 `src/local/` handles installed releases; `src/dev/` handles source commands. Both feed `src/project/`, `src/celld/`, and
-`src/state/`. Local service fixtures live in `src/github/`, `src/host-launcher/`, and `src/model/`. The scripted
-upstream is the first split seam if the package exceeds its budget.
+`src/state/`. Local service fixtures live in `src/github/`, `src/host-launcher/`, and `src/model/`.
 
 Never serve the smoke's Worker a personal upstream, and never read environment variables outside
 `load-stack-settings.ts`.

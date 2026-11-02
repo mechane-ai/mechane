@@ -1,6 +1,6 @@
 import { bearerAuthorization } from '@mechane/protocol';
-import { HttpMethod, HttpStatusCode, RecordId } from '@mechane/records';
-import { GuestSegment } from '@mechane/sandbox-wire';
+import { HttpHeader, HttpMethod, HttpStatusCode, MediaType, RecordId } from '@mechane/records';
+import { GuestSegment, HostMachine } from '@mechane/sandbox-wire';
 import { Option, Result, Schema } from 'effect';
 import type { ServedAnswer, ServedRequest } from '../types.ts';
 import { reportMachine } from './report-machine.ts';
@@ -23,8 +23,8 @@ const NOT_FOUND: Readonly<ServedAnswer> = { status: HttpStatusCode.NotFound, hea
 
 /**
  * Answers one request of the Worker's host provider. `PUT /machines/:machine_id` starts the machine once, with exactly
- * a container's variables, and reports it on every request after; `DELETE` stops it. Only the stack's own Worker holds
- * the launcher key, and every other bearer gets 401.
+ * a container's variables; `GET` reads it without starting it, and `DELETE` requests its stop. Only the stack's own
+ * Worker holds the launcher key, and every other bearer gets 401.
  */
 export function answerLauncherRequest({ request, machines, launcherKey }: AnswerLauncherRequestInput): ServedAnswer {
   const machineId = pathMachineId({ pathname: request.url.pathname });
@@ -39,6 +39,13 @@ export function answerLauncherRequest({ request, machines, launcherKey }: Answer
   }
 
   switch (request.method) {
+    case HttpMethod.Get: {
+      const machine = machines.inspect({ machineId: machineId.value });
+      const schema = Schema.fromJsonString(HostMachine);
+      const body = Schema.encodeSync(schema)(machine);
+
+      return { status: HttpStatusCode.Ok, headers: { [HttpHeader.ContentType]: MediaType.Json }, body };
+    }
     case HttpMethod.Put:
       return reportMachine({ request, machines, machineId: machineId.value });
     case HttpMethod.Delete:

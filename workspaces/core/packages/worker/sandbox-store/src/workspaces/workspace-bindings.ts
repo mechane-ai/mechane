@@ -1,17 +1,26 @@
 import { RecordId, RecordText } from '@mechane/records';
 import { decodeOne } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { Schema } from 'effect';
-import { WorkspaceCheckpoint, WorkspaceRecovery, WorkspaceRestoration, WorkspaceSnapshot } from './schemas.ts';
+import { Option, Schema } from 'effect';
+import {
+  CommandCheckpoint,
+  FileCheckpoint,
+  WorkspaceRecovery,
+  WorkspaceRestoration,
+  WorkspaceSnapshot,
+} from './schemas.ts';
+import type { WorkspaceCheckpoint } from './schemas.ts';
 
 /** The selected provider and all durable workspace transfer and recovery state. */
-const WorkspaceState = Schema.Struct({
+const StoredWorkspaceState = Schema.Struct({
   /** Absent until the sandbox first chooses its provider. */
   provider: Schema.OptionFromNullOr(RecordText),
   /** Absent until the first checkpoint commits. */
   head: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceSnapshot)),
   /** Absent when no settled command awaits a portable save. */
-  checkpoint: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceCheckpoint)),
+  checkpoint: Schema.OptionFromNullOr(Schema.fromJsonString(CommandCheckpoint)),
+  /** Absent when no explicit file operation is being checkpointed. */
+  fileCheckpoint: Schema.OptionFromNullOr(Schema.fromJsonString(FileCheckpoint)),
   /** Absent before any committed generation is restored. */
   restoration: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRestoration)),
   /** Absent when every obsolete generation has been deleted. */
@@ -20,7 +29,10 @@ const WorkspaceState = Schema.Struct({
   recovery: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRecovery)),
 });
 
-type WorkspaceState = typeof WorkspaceState.Type;
+type WorkspaceState = Omit<typeof StoredWorkspaceState.Type, 'checkpoint' | 'fileCheckpoint'> & {
+  /** Absent when neither a command nor a file operation owns a transfer. */
+  readonly checkpoint: Option.Option<WorkspaceCheckpoint>;
+};
 
 type BindProviderInput = { readonly provider: string };
 
@@ -35,10 +47,13 @@ type WorkspaceBindings = {
 export function workspaceBindings({ sql }: RecordsInput): WorkspaceBindings {
   const workspace: WorkspaceBindings['workspace'] = () => {
     const cursor = sql.exec(
-      'SELECT provider, head, checkpoint, restoration, recovery, (SELECT generation FROM workspace_retirements ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1',
+      'SELECT provider, head, checkpoint, file_checkpoint AS fileCheckpoint, restoration, recovery, (SELECT generation FROM workspace_retirements ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1',
     );
 
-    return decodeOne({ cursor, schema: WorkspaceState });
+    const { checkpoint, fileCheckpoint, ...state } = decodeOne({ cursor, schema: StoredWorkspaceState });
+    const transfer = Option.orElse(checkpoint, () => fileCheckpoint);
+
+    return { ...state, checkpoint: transfer };
   };
 
   const bindProvider: WorkspaceBindings['bindProvider'] = ({ provider }) => {
@@ -51,7 +66,7 @@ export function workspaceBindings({ sql }: RecordsInput): WorkspaceBindings {
 
   const clearWorkspace: WorkspaceBindings['clearWorkspace'] = () => {
     sql.exec(
-      'UPDATE sandbox_workspace SET head = NULL, checkpoint = NULL, restoration = NULL, recovery = NULL WHERE slot = 1',
+      'UPDATE sandbox_workspace SET head = NULL, checkpoint = NULL, file_checkpoint = NULL, restoration = NULL, recovery = NULL WHERE slot = 1',
     );
   };
 

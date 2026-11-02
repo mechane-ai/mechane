@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/program": "workspace:*",
     "effect": "4.0.7",
     "oxc-parser": "0.156.0"
   }

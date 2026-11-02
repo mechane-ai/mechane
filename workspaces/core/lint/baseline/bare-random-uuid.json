@@ -10,6 +10,5 @@
   "packages/worker/edge/src/operations/auth/start-device-approval.ts": 1,
   "packages/worker/edge/src/operations/mechs/fork-mech.ts": 1,
   "packages/worker/harness/src/renew-provider.ts": 1,
-  "packages/worker/mech-ports/src/threads/decide-drone-start.ts": 1,
-  "packages/worker/sandbox/src/executions/dispatch-pending.ts": 1
+  "packages/worker/mech-ports/src/threads/decide-drone-start.ts": 1
 }

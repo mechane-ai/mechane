@@ -7,4 +7,4 @@ export const LOCAL_FILES = {
 } as const;
 
 /** The marker that distinguishes an installation from an unrelated directory. */
-export const LOCAL_APPLICATION = 'mechane';
+export const LOCAL_APPLICATION = 'mechane-local-release';

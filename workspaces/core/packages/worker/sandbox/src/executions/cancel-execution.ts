@@ -28,7 +28,11 @@ export async function cancelExecution({ store, provider, executionId }: CancelSa
 
     store.loseMachine({ machineId: execution.machineId, now });
 
-    if (Option.isSome(checkpoint) && checkpoint.value.executionId === executionId) {
+    if (
+      Option.isSome(checkpoint) &&
+      'executionId' in checkpoint.value &&
+      checkpoint.value.executionId === executionId
+    ) {
       store.retireWorkspace({ generation: checkpoint.value.generation });
     }
   };

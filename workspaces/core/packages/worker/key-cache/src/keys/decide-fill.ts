@@ -1,7 +1,7 @@
-import type { KeyCacheStore } from '@mechane/key-cache-store';
 import type { FillKeyInput } from '@mechane/protocol';
 import type { JudgedKey } from '@mechane/rpc';
 import type { DateTime } from 'effect';
+import type { KeyCacheStore } from '../store/types.ts';
 import { judgeKey } from './judge-key.ts';
 
 /** The directory's resolution of a key the shard missed, filled into the shard's store at the call's instant. */

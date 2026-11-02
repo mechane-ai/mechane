@@ -1,6 +1,6 @@
 # @mechane/wrangler
 
-The Worker's build and local runtime configuration, migration tags, local releases bucket and built bundle path.
+The Worker's build metadata, local runtime configuration, migration tags, and releases bucket.
 
 Layer 4 · node lane · effect dialect · consumers: stack, distribution
 
@@ -11,14 +11,14 @@ Layer 4 · node lane · effect dialect · consumers: stack, distribution
 
 ## Rules
 
-The [product contracts](../../../.contracts/index.md) apply. The local stack and release packager read the configuration
-through this package.
+The [product contracts](../../../.contracts/index.md) apply. After bundling, `mise run build:worker` records the Worker
+digest, release identity, format locks, and configuration together in `dist/release.json`. The local stack and release
+packager verify that record against the bundle before using it. Rebuild after changing source or configuration.
 
 ## Use
 
-Each read fails as its caller's failure at the caller's step, such as
-`baseConfiguration({ step: StackStep.ReadWranglerConfiguration, failure: StackFailed })`, so this member declares no
-failure or step of its own. The JSONC reader keeps `jsonc-parser` out of `@mechane/program`, which the guest bundles.
+`readBuiltRelease()` supplies verified build metadata to both consumers. Configuration and JSONC helpers report failures
+at their caller's step. The JSONC reader keeps `jsonc-parser` out of `@mechane/program`, which the guest bundles.
 
 ## Never
 

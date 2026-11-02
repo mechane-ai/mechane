@@ -3,24 +3,25 @@ locals {
   origin       = "https://${var.domain.hostname}"
 
   variables = merge(local.installation.defaults, {
-    MECHANE_ORIGIN                                 = local.origin
-    MECHANE_WORKER_REVISION                        = local.installation.public_commit
-    MECHANE_RELEASE_ORIGIN                         = "https://github.com/${local.installation.repository}/releases/download"
-    MECHANE_GITHUB_CLIENT_ID                       = var.authentication.github_client_id
-    MECHANE_LOGIN_KEY_LIFETIME_SECONDS             = tostring(var.authentication.login_key_lifetime_seconds)
-    MECHANE_NAMED_KEY_LIFETIME_SECONDS             = tostring(var.authentication.named_key_lifetime_seconds)
-    MECHANE_ADMINISTRATOR_IDENTITIES               = jsonencode(var.authentication.administrators)
-    MECHANE_MODEL_UPSTREAM                         = var.model.upstream
-    MECHANE_MODEL_OFFERS                           = jsonencode(var.model.offers)
-    MECHANE_DAILY_ALLOWANCE_MICROS                 = tostring(var.budgets.new_workspace_daily_micros)
-    MECHANE_MECH_DAILY_CAP_MICROS                  = tostring(var.budgets.new_agent_daily_micros)
-    MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS = tostring(var.budgets.workspace_daily_max_micros)
-    MECHANE_WORKSPACE_MACHINES                     = tostring(var.sandboxes.workspace_machine_limit)
-    MECHANE_SANDBOXES_ENABLED                      = tostring(var.sandboxes.enabled)
-    MECHANE_WORKSPACE_SANDBOXES_DEFAULT            = tostring(var.sandboxes.workspace_default_enabled)
-    MECHANE_SANDBOX_PROVIDER                       = "container"
-    MECHANE_SANDBOX_EGRESS                         = "gateway"
-    }, var.authentication.allowed_identities == null ? {} : {
+    MECHANE_ORIGIN                   = local.origin
+    MECHANE_WORKER_REVISION          = local.installation.public_commit
+    MECHANE_RELEASE_ORIGIN           = "https://github.com/${local.installation.repository}/releases/download"
+    MECHANE_GITHUB_CLIENT_ID         = var.authentication.github_client_id
+    MECHANE_ADMINISTRATOR_IDENTITIES = jsonencode(var.authentication.administrators)
+    MECHANE_MODEL_UPSTREAM           = var.model.upstream
+    MECHANE_MODEL_OFFERS             = jsonencode(var.model.offers)
+    MECHANE_SANDBOX_PROVIDER         = "container"
+    MECHANE_SANDBOX_EGRESS           = "gateway"
+    }, { for name, value in {
+      MECHANE_LOGIN_KEY_LIFETIME_SECONDS             = var.authentication.login_key_lifetime_seconds
+      MECHANE_NAMED_KEY_LIFETIME_SECONDS             = var.authentication.named_key_lifetime_seconds
+      MECHANE_DAILY_ALLOWANCE_MICROS                 = var.budgets.new_workspace_daily_micros
+      MECHANE_MECH_DAILY_CAP_MICROS                  = var.budgets.new_agent_daily_micros
+      MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS = var.budgets.workspace_daily_max_micros
+      MECHANE_WORKSPACE_MACHINES                     = var.sandboxes.workspace_machine_limit
+      MECHANE_SANDBOXES_ENABLED                      = var.sandboxes.enabled
+      MECHANE_WORKSPACE_SANDBOXES_DEFAULT            = var.sandboxes.workspace_default_enabled
+    } : name => tostring(value) if value != null }, var.authentication.allowed_identities == null ? {} : {
     MECHANE_ALLOWED_IDENTITIES = jsonencode(var.authentication.allowed_identities)
   })
 
@@ -70,24 +71,10 @@ resource "cloudflare_worker" "service" {
 resource "mechane_cloudflare_worker_release" "release" {
   account_id              = var.account_id
   worker_name             = cloudflare_worker.service.name
-  compatibility_date      = local.installation.worker.compatibility_date
-  compatibility_flags     = local.installation.worker.compatibility_flags
-  bundle_file             = "${path.module}/${local.installation.worker.path}"
-  bundle_sha256           = local.installation.worker.sha256
   release_manifest_file   = "${path.module}/installation.json"
   release_manifest_sha256 = filesha256("${path.module}/installation.json")
   adoption_baseline       = var.adoption_baseline == null ? null : jsonencode(var.adoption_baseline)
-  release_version         = local.installation.version
-  source_revision         = local.installation.public_commit
-  exports                 = local.installation.worker.exports
-  container_classes       = ["SandboxObject"]
-  cpu_ms                  = 300000
   bindings = concat(
-    [for binding in local.installation.worker.bindings : {
-      name       = binding.name
-      type       = "durable_object_namespace"
-      class_name = binding.class_name
-    }],
     [{
       name         = "WORKSPACE_FILES"
       type         = "r2_bucket"
@@ -104,6 +91,14 @@ resource "mechane_cloudflare_worker_release" "release" {
   )
 
   lifecycle {
+    precondition {
+      condition     = tonumber(local.variables.MECHANE_WORKSPACE_MACHINES) <= var.sandboxes.max_instances
+      error_message = "A workspace machine limit cannot exceed installation capacity."
+    }
+    precondition {
+      condition     = tonumber(local.variables.MECHANE_DAILY_ALLOWANCE_MICROS) <= tonumber(local.variables.MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS)
+      error_message = "The initial workspace budget cannot exceed its installation ceiling."
+    }
     precondition {
       condition     = filesha256("${path.module}/${local.installation.worker.path}") == local.installation.worker.sha256
       error_message = "The Worker bundle does not match this release's installation manifest."

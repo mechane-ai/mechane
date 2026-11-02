@@ -18,3 +18,6 @@ export const LOCAL_PACKAGE_FILES = {
   cli: 'mechane',
   launcher: 'mechane-local',
 } as const;
+
+/** Packaged local releases now carry the same compatibility descriptor as cloud releases. */
+export const LOCAL_PACKAGE_FORMAT_VERSION = 2;

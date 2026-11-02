@@ -18,9 +18,9 @@ from 101 are Mechane's own.
 ## Structure
 
 - [Module structure](007-code-module-structure-and-control-flow/CONTRACT.md): focused modules named for their behavior.
-- [File roles](008-code-module-file-roles/CONTRACT.md): types, constants, schemas, errors and behavior in their own files, one exported function a file.
-- [Folder size](009-code-folder-size/CONTRACT.md): files of one extension per folder, and levels below a root.
-- [Function size](010-code-function-size/CONTRACT.md): lines, nesting depth, nested callbacks and complexity per function.
+- [File roles](008-code-module-file-roles/CONTRACT.md): cohesive concept modules and explicit public exports.
+- [Folder size](009-code-folder-size/CONTRACT.md): folders organized by behavior and ownership.
+- [Function size](010-code-function-size/CONTRACT.md): readable decisions, effects, and recovery without extraction quotas.
 - [Guard clauses](011-code-guard-clauses/CONTRACT.md): leave early; no `else` after a branch that leaves.
 - [Conditional expressions](012-code-conditional-expressions/CONTRACT.md): no conditional operator, an IIFE only as SC-01 allows, and at most `logicalOperators` logical operators.
 - [Exhaustive branches](013-code-exhaustive-branches/CONTRACT.md): an `else if` equality chain becomes a `switch` that names every member of a closed set.
@@ -37,7 +37,7 @@ from 101 are Mechane's own.
 - [Class declarations](020-code-typescript-class-declarations/CONTRACT.md): classes only for the runtime and tagged errors.
 - [Module state](021-code-typescript-module-state/CONTRACT.md): no mutable module state.
 - [Compiler strictness](022-code-typescript-compiler-strictness/CONTRACT.md): one strict base configuration.
-- [File names](023-code-typescript-file-names/CONTRACT.md): kebab-case files named for their primary export.
+- [File names](023-code-typescript-file-names/CONTRACT.md): kebab-case files named for their concept or operation.
 - [Effect errors](024-code-typescript-effect-errors/CONTRACT.md): tagged errors; Effects run only at entry points.
 - [Effect schemas](025-code-typescript-effect-schemas/CONTRACT.md): decode every boundary with Effect Schema.
 
@@ -98,5 +98,5 @@ from 101 are Mechane's own.
 
 - [Package layers](101-package-layers/CONTRACT.md): each package's layer, lane and consumers, from `dependencies.json`.
 - [Rule registry](110-rule-registry/CONTRACT.md): every enforced value and rule declared once, and every configuration generated.
-- [Code style](111-code-style/CONTRACT.md): values chosen with statements, functions passed by name, cohesive private helpers, and named paths, units and HTTP words.
+- [Code style](111-code-style/CONTRACT.md): cohesive modules, readable callbacks, and consistent paths, units and HTTP vocabulary.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.

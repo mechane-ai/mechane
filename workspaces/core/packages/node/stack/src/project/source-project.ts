@@ -1,24 +1,24 @@
-import { workerRevision } from '@mechane/program';
-import { baseConfiguration, releasesBucket, WORKER_BUNDLE } from '@mechane/wrangler';
+import { readBuiltRelease, releasesBucket, WORKER_BUNDLE } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
-import type { RuntimeProject, StackSettings } from '../types.ts';
+import type { RuntimeProject } from '../types.ts';
 
-type SourceProjectInput = { readonly settings: StackSettings };
+/** Uses configuration and format metadata recorded with the verified Worker build. */
+export const sourceProject = Effect.fn('sourceProject')(function* (): Effect.fn.Return<RuntimeProject, StackFailed> {
+  const release = yield* readBuiltRelease().pipe(
+    Effect.mapError((failure) => new StackFailed({ step: StackStep.ReadLocalPackage, reason: failure.reason })),
+  );
 
-/** Resolves the build outputs and source identity before starting the shared runtime. */
-export const sourceProject = Effect.fn('sourceProject')(function* ({
-  settings,
-}: SourceProjectInput): Effect.fn.Return<RuntimeProject, StackFailed> {
-  const configuration = yield* baseConfiguration({ step: StackStep.ReadWranglerConfiguration, failure: StackFailed });
+  const configuration = release.configuration;
   const bucket = yield* releasesBucket({ configuration, step: StackStep.FindReleasesBucket, failure: StackFailed });
 
-  const revision = yield* workerRevision({
-    environment: settings.inherited,
-    step: StackStep.ReadWorkerRevision,
-    failure: StackFailed,
-  });
-
-  return { bundle: WORKER_BUNDLE, configuration, revision, celldCommand: 'celld', releasesBucket: bucket };
+  return {
+    release,
+    bundle: WORKER_BUNDLE,
+    configuration,
+    revision: release.public_commit,
+    celldCommand: 'celld',
+    releasesBucket: bucket,
+  };
 });
