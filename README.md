@@ -1,14 +1,14 @@
 # Mechane
 
-Mechane runs agents with durable memory, persistent sandboxes, and a command-line interface.
+Mechane runs agents with durable memory, persistent sandboxes, a browser console, and a command-line interface.
 
 ## Start
 
-Choose where the service runs. The CLI uses the same commands for each installation.
+Choose where the service runs. Open `/console` there, or use the CLI. Both use the same runtime API.
 
 | Installation            | Start here                                                   | Requirements                                                                  |
 | ----------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Hosted                  | [mechane.ai](https://mechane.ai)                             | GitHub sign-in and the CLI                                                    |
+| Hosted                  | [mechane.ai](https://mechane.ai)                             | GitHub sign-in                                                                |
 | Local                   | [Local guide](workspaces/core/packages/node/stack/README.md) | Packaged local release, Docker, and model credentials                         |
 | Your Cloudflare account | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | OpenTofu, Cloudflare account, domain, GitHub OAuth app, and model credentials |
 
@@ -26,12 +26,14 @@ Use the returned agent ID with `mechane inbox send MECH_ID 'hello, scout'`. A di
 origin; set `MECHANE_ORIGIN` before signing in. Workspace policy controls sandbox access and spending.
 
 Local releases retain agents, authentication, and workspace files across restarts. Cloud releases contain the OpenTofu
-module, Worker bundle, and sandbox image. Neither installation requires compiling Mechane source.
+module, Worker bundle, Console assets, and sandbox image. Neither installation requires compiling Mechane source.
 
 ## Layout
 
 `workspaces/core` is the product workspace. Its [package map](workspaces/core/dependencies.json) declares every package
 and layer. The root contains the pinned toolchain, [repository contracts](.contracts/index.md), and independent setup.
+
+The [Console guide](workspaces/core/docs/console.md) explains the browser UI and package boundaries.
 
 The [operator guide](.config/runbook.md) links installation and administration procedures. Runtime agents and
 integrations remain separate from infrastructure configuration.

@@ -1,6 +1,7 @@
 import {
   ADOPTED,
   AST_GREP_DEFAULTS,
+  FileRole,
   FixBehavior,
   OXLINT_DEFAULTS,
   RESTRICTED_DEFAULTS,
@@ -28,6 +29,7 @@ export const codeModuleStructureAndControlFlow = {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'id-denylist',
+      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.BindingNames,
       value: [Severity.Error, ...VALUES.deniedIdentifiers],
       standard: 'NM-06',

@@ -9,7 +9,7 @@ import { WatchList } from './schemas.ts';
 /** Lists saved schedules and their latest check outcomes for a mech. */
 export const listWatches = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/watches',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/watches',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

@@ -21,7 +21,7 @@ export const verifyModuleInventory = Effect.fn('verifyModuleInventory')(function
     });
   }
 
-  const expected = [...declared, manifest.worker.path, 'installation.json'];
+  const expected = [...declared, manifest.worker.path, manifest.console.path, 'installation.json'];
   const hasEveryEntry = expected.every((name) => entries.includes(name));
 
   if (!hasEveryEntry || entries.length !== expected.length) {

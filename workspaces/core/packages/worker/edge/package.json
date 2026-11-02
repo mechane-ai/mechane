@@ -6,6 +6,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@mechane/authentication": "workspace:*",
     "@mechane/bindings": "workspace:*",
     "@mechane/credentials": "workspace:*",
     "@mechane/deployment": "workspace:*",

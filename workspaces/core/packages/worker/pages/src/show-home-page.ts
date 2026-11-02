@@ -5,7 +5,7 @@ import { Effect } from 'effect';
 import { renderPage } from './html/render-page.ts';
 import type { PageInput } from './types.ts';
 
-/** A public starting point for the CLI, without opening a browser session until a person approves a login. */
+/** The public starting point for the console and CLI. */
 export const showHomePage: (input: PageInput) => Effect.Effect<Response> = ({ settings }) => {
   const installer = installScriptUrl({ origin: settings.origin });
   const install = escapeHtml({ text: `curl -fsSL ${installer.href} | sh` });
@@ -15,9 +15,11 @@ export const showHomePage: (input: PageInput) => Effect.Effect<Response> = ({ se
   });
 
   const device = escapeHtml({ text: PagePath.Device });
+  const console = escapeHtml({ text: PagePath.Console });
 
   const body = [
-    '<p>Persistent agents you control from your terminal.</p>',
+    '<p>Persistent agents you control from the console or your terminal.</p>',
+    `<p><a href="${console}">Open the console</a></p>`,
     '<h2>Install the CLI</h2>',
     `<pre><code>${install}</code></pre>`,
     '<h2>Start a conversation</h2>',

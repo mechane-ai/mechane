@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, FixBehavior, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole, FixBehavior, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 import { Option } from 'effect';
 
@@ -88,6 +88,7 @@ export const codeSpelledOutNames = {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'id-length',
+      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.BindingNames,
       value: [Severity.Error, { min: 2, exceptions: ['_'], checkGeneric: false }],
       note: Option.some(

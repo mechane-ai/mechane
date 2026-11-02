@@ -2,7 +2,7 @@ import type { WorkerSettings } from '@mechane/bindings';
 import { HttpHeader } from '@mechane/records';
 import { parseCookie } from 'cookie';
 import { Option } from 'effect';
-import type { CookieName } from '../constants.ts';
+import type { CookieName } from './constants.ts';
 import { cookieName } from './cookie-name.ts';
 
 type ReadCookieInput = { readonly request: Request; readonly cookie: CookieName; readonly settings: WorkerSettings };

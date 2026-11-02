@@ -1,5 +1,6 @@
 import {
   ADOPTED,
+  FileRole,
   FixBehavior,
   Lane,
   OXLINT_DEFAULTS,
@@ -51,6 +52,13 @@ const VALUES = {
     [Lane.Shared]: { lib: ['es2024', 'dom'] },
     [Lane.Worker]: { types: ['@cloudflare/workers-types', 'node'] },
     [Lane.Node]: { types: ['node'] },
+    [Lane.Browser]: {
+      lib: ['es2024', 'dom', 'dom.iterable'],
+      types: [],
+      jsx: 'react-jsx',
+      module: 'esnext',
+      moduleResolution: 'bundler',
+    },
   },
 } as const;
 
@@ -97,6 +105,7 @@ export const codeTypescriptCompilerStrictness = {
     {
       ...OXLINT_DEFAULTS,
       name: 'typescript/explicit-function-return-type',
+      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.TypeOnly,
       value: [
         Severity.Error,
@@ -116,6 +125,7 @@ export const codeTypescriptCompilerStrictness = {
     {
       ...OXLINT_DEFAULTS,
       name: 'typescript/explicit-module-boundary-types',
+      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, { allowedNames: VALUES.inferredRecordFactories }],
       violation: ['export function readCount() { return 1; }'],

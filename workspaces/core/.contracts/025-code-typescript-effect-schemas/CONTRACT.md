@@ -72,7 +72,7 @@ Existing schema-alias and boundary checks remain enforced.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `jsonBodies` `shared` [`Body`], `worker` [`Response`, `Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>`, `R2ObjectBody`], `node` [].
+Values: `jsonBodies` `shared` [`Body`], `worker` [`Response`, `Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>`, `R2ObjectBody`], `node` [], `browser` [`Body`].
 - oxlint's restricted members (TD-22): a ratchet until phase F2: `Schema.decodeUnknownOption`
 - oxlint's restricted members (EF-16): enforced in phase D: `Schema.encodeEffect`, `Schema.encodeUnknownEffect`
 - ast-grep `decode-or-die` (EF-16): enforced in phase D

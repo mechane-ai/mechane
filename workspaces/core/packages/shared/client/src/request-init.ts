@@ -2,6 +2,7 @@ import { bearerAuthorization } from '@mechane/protocol';
 import type { Access, OperationMethod } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { Redacted } from 'effect';
+import { BROWSER_CREDENTIAL } from './constants.ts';
 import type { AccessCredential } from './types.ts';
 
 /** The method, body, credential and program of a request. */
@@ -15,7 +16,11 @@ type RequestInitInput = {
 
 /** The method, headers and body of a request; a mutation carries its encoded body as JSON. */
 export function requestInit({ method, body, credential, userAgent }: RequestInitInput): RequestInit {
-  const headers = new Headers({ [HttpHeader.Accept]: MediaType.Json, [HttpHeader.UserAgent]: userAgent });
+  const headers = new Headers({ [HttpHeader.Accept]: MediaType.Json });
+
+  if (credential !== BROWSER_CREDENTIAL) {
+    headers.set(HttpHeader.UserAgent, userAgent);
+  }
 
   if (Redacted.isRedacted(credential)) {
     headers.set(HttpHeader.Authorization, bearerAuthorization({ token: Redacted.value(credential) }));
@@ -23,12 +28,13 @@ export function requestInit({ method, body, credential, userAgent }: RequestInit
 
   switch (method) {
     case HttpMethod.Get:
-      return { method, headers };
+      return { method, headers, credentials: 'same-origin' };
     case HttpMethod.Post:
     case HttpMethod.Put:
     case HttpMethod.Delete:
       return {
         method,
+        credentials: 'same-origin',
         headers: new Headers([...headers, [HttpHeader.ContentType, MediaType.Json]]),
         body: JSON.stringify(body),
       };

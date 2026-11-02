@@ -8,7 +8,7 @@ import { KeyPage } from './schemas.ts';
 /** Lists the caller's own keys a page at a time, oldest first, revoked and expired ones included. */
 export const listKeys = {
   method: HttpMethod.Get,
-  path: '/v1/keys',
+  path: '/api/v1/keys',
   access: Access.Principal,
   params: NoFields,
   query: listQuery({ cursor: RecordId }),

@@ -33,6 +33,7 @@ export type ObjectBindings = {
  * deployment declare them. RELEASES is absent when downloads use the configured public release origin.
  */
 export type WorkerEnvironment = {
+  readonly ASSETS: Fetcher;
   readonly DIRECTORY: DurableObjectNamespace<DirectoryRpc>;
   readonly WORKSPACES: DurableObjectNamespace<WorkspaceRpc>;
   readonly MECHS: DurableObjectNamespace<MechRpc>;

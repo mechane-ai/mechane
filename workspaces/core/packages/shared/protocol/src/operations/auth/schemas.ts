@@ -91,7 +91,11 @@ export const DeviceApprovalPoll = Schema.Union([PendingPoll, ApprovedPoll]);
 export type DeviceApprovalPoll = typeof DeviceApprovalPoll.Type;
 
 /** The caller's principal and the key it authenticated with. */
-export const PrincipalAnswer = Schema.Struct({ principal: Principal, key: KeyMetadata });
+export const PrincipalAnswer = Schema.Struct({
+  principal: Principal,
+  /** Absent when the caller authenticated with a browser session. */
+  key: Schema.OptionFromNullOr(KeyMetadata),
+});
 
 export type PrincipalAnswer = typeof PrincipalAnswer.Type;
 

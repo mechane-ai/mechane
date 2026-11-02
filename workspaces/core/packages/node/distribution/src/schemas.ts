@@ -5,6 +5,7 @@ import { WranglerMigrations } from '@mechane/wrangler';
 import { Schema } from 'effect';
 import {
   ASSET_PATTERN,
+  CONSOLE_FILENAME,
   DIGEST_PATTERN,
   DURABLE_EXPORT,
   FORMAT_VERSION,
@@ -37,6 +38,7 @@ export const InstallationManifest = Schema.Struct({
   ...ReleaseDescriptor.fields,
   repository: Schema.Literal(PUBLIC_REPOSITORY),
   module_files: Schema.Array(Artifact),
+  console: Schema.Struct({ path: Schema.Literal(CONSOLE_FILENAME), ...ArtifactDigest.fields }),
   worker: Schema.Struct({
     path: Schema.Literal(WORKER_FILENAME),
     ...ArtifactDigest.fields,

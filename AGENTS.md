@@ -18,7 +18,7 @@ Declare protocol operations once. Keep the protocol and client independent of No
 package members in `dependencies.json` and edges in each `package.json`.
 
 Decode boundaries with Effect Schema. Run Effects at entry points and report tagged errors. Preserve deployed Durable
-Object migrations and `/v1` formats.
+Object migrations and `/api/v1` formats.
 
 The retained smoke suite drives built programs against local runtimes. Add scenarios only for consequential guarantees
 under test curation. Do not add unit tests or mocks of Mechane code. Checks require no cloud credentials and call no

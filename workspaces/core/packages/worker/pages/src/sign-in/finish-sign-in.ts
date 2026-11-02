@@ -1,14 +1,14 @@
+import { CookieName, readCookie } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import { tokenHash } from '@mechane/credentials';
 import { GitHubCallbackQuery } from '@mechane/protocol';
 import { IdentityProvider } from '@mechane/records';
 import { SignInClaim } from '@mechane/rpc';
 import { Effect, Match, Option, Record, Schema } from 'effect';
-import { CookieName, PageRefusal } from '../constants.ts';
+import { PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
 import { githubUser } from '../github/github-user.ts';
 import { openBrowserSession } from '../session/open-browser-session.ts';
-import { readCookie } from '../session/read-cookie.ts';
 import type { PageFailure, PageInput } from '../types.ts';
 
 /** Finishes a GitHub sign-in: the user that GitHub's code names opens a new browser session for the device page. */
@@ -21,7 +21,7 @@ export const finishSignIn = Effect.fn('finishSignIn')(function* ({
   const user = yield* githubUser({ settings, authorizationCode });
   const identity = { provider: IdentityProvider.GitHub, subject: String(user.id), name: user.login };
 
-  return yield* openBrowserSession({ settings, identity });
+  return yield* openBrowserSession({ settings, identity, request });
 });
 
 /**

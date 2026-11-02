@@ -92,14 +92,21 @@ export const LogLine = Schema.Union([
   }),
   wireStruct({ fields: { event: Schema.Literal(LogEvent.KeyRevoked), keyId: LogId, principalId: LogId } }),
   wireStruct({
-    fields: { event: Schema.Literal(LogEvent.WorkspaceCreated), workspaceId: LogId, principalId: LogId, keyId: LogId },
+    fields: {
+      event: Schema.Literal(LogEvent.WorkspaceCreated),
+      workspaceId: LogId,
+      principalId: LogId,
+      /** None when a browser session performed the operation. */
+      keyId: Schema.OptionFromNullOr(LogId),
+    },
   }),
   wireStruct({
     fields: {
       event: Schema.Literal(LogEvent.WorkspacePolicyChanged),
       workspaceId: LogId,
       principalId: LogId,
-      keyId: LogId,
+      /** None when a browser session performed the operation. */
+      keyId: Schema.OptionFromNullOr(LogId),
     },
   }),
   wireStruct({
@@ -107,7 +114,8 @@ export const LogLine = Schema.Union([
       event: Schema.Literal(LogEvent.WorkspaceMemberSet),
       workspaceId: LogId,
       principalId: LogId,
-      keyId: LogId,
+      /** None when a browser session performed the operation. */
+      keyId: Schema.OptionFromNullOr(LogId),
       memberPrincipalId: LogId,
       role: Schema.Enum(MembershipRole),
     },
@@ -117,7 +125,8 @@ export const LogLine = Schema.Union([
       event: Schema.Literal(LogEvent.WorkspaceMemberRemoved),
       workspaceId: LogId,
       principalId: LogId,
-      keyId: LogId,
+      /** None when a browser session performed the operation. */
+      keyId: Schema.OptionFromNullOr(LogId),
       memberPrincipalId: LogId,
     },
   }),

@@ -7,6 +7,7 @@ export const HttpStatusCode = {
   NoContent: 204,
   MultipleChoices: 300,
   Found: 302,
+  SeeOther: 303,
   BadRequest: 400,
   Unauthorized: 401,
   Forbidden: 403,

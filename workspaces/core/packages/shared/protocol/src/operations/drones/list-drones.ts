@@ -9,7 +9,7 @@ import { DronePage } from './schemas.ts';
 /** Lists every drone a mech started a page at a time, oldest first, running and ended alike. */
 export const listDrones = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/drones',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/drones',
   access: Access.Member,
   params: MechPath,
   query: listQuery({ cursor: DroneId }),

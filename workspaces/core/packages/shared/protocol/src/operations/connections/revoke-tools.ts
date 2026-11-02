@@ -8,7 +8,7 @@ import { ToolGrant, ToolGrantPath } from './schemas.ts';
 /** Owners remove a grant before subsequent tool dispatches. */
 export const revokeTools = {
   method: HttpMethod.Delete,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/grants/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/grants/:connection_id',
   access: Access.Member,
   params: ToolGrantPath,
   query: NoFields,

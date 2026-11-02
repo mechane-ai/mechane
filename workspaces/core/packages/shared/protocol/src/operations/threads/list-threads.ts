@@ -12,7 +12,7 @@ import { ThreadPage } from './schemas.ts';
  */
 export const listThreads = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/threads',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/threads',
   access: Access.Member,
   params: MechPath,
   query: listQuery({ cursor: ThreadId }),

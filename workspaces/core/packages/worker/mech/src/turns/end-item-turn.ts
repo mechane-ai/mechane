@@ -27,8 +27,8 @@ type TurnEndingInput = {
 
 /**
  * The longest reply a turn's event carries, in UTF-16 units: eight for each of an offer's most output tokens, so only a
- * reply degenerating into runs of whitespace is cut. Since `/v1` reads a reply as record text, a later deployment may
- * raise it up to a row's worth.
+ * reply degenerating into runs of whitespace is cut. Since `/api/v1` reads a reply as record text, a later deployment
+ * may raise it up to a row's worth.
  */
 const REPLY_MAX_CHARS = 524_288;
 

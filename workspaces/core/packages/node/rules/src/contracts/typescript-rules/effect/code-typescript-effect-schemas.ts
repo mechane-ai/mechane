@@ -19,6 +19,7 @@ const VALUES = {
     [Lane.Shared]: ['Body'],
     [Lane.Worker]: ['Response', 'Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>', 'R2ObjectBody'],
     [Lane.Node]: [],
+    [Lane.Browser]: ['Body'],
   },
 } as const;
 

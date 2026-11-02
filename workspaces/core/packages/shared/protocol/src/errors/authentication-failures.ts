@@ -1,4 +1,4 @@
-import { KeyExpired, KeyMissing, KeyRevoked, KeyUnrecognized } from './errors.ts';
+import { KeyExpired, KeyMissing, KeyRevoked, KeyUnrecognized, RequestInvalid } from './errors.ts';
 import { IdentityNotAdmitted } from './workspace.errors.ts';
 
 /** The failures of admission's key: the request carries none, or one the directory does not accept. */
@@ -8,6 +8,7 @@ export const AUTHENTICATION_FAILURES = [
   KeyRevoked,
   KeyExpired,
   IdentityNotAdmitted,
+  RequestInvalid,
 ] as const;
 
 /** A failure of admission's key: the request carries none, or one the directory does not accept. */

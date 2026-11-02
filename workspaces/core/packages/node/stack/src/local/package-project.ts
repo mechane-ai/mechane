@@ -19,6 +19,8 @@ export const packageProject = Effect.fn('packageProject')(function* ({
 
   return {
     bundle: join(folder, LOCAL_PACKAGE_FILES.worker),
+    consoleBundle: join(folder, LOCAL_PACKAGE_FILES.console),
+    consoleDigest: manifest.files['console.json'],
     configuration,
     revision: manifest.public_commit,
     release: manifest,

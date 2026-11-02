@@ -1,36 +1,11 @@
 import type { MechRow, MechTables } from '@mechane/mech-store';
 import { catalog, SandboxRequest, SlackDeliveries, SourceRequest, WatchConfiguration } from '@mechane/protocol';
 import { PrincipalId, SlackInboxOrigin, WatchId } from '@mechane/records';
-import type {
-  CancelDroneInput,
-  CancelTurnInput,
-  CopyStepInput,
-  CreateMechInput,
-  DroneInput,
-  DronesInput,
-  EventsAnswer,
-  EventsInput,
-  ForkInput,
-  MechRevisionsInput,
-  MechRpc,
-  ObjectSettings,
-  ReceiveSlackInboxItemInput,
-  SandboxManageInput,
-  SendInboxItemInput,
-  SetWatchInput,
-  SourceManageInput,
-  ThreadsInput,
-  TurnInput,
-  TurnReading,
-  UpdateMechInput,
-  UpdateWatchStatusInput,
-  WatchInput,
-  WorkerEnvironment,
-} from '@mechane/rpc';
 import {
   DroneAnswer,
   DroneCancelAnswer,
   DronesAnswer,
+  EventsAnswer,
   FindingsAnswer,
   ForkAnswer,
   InboxItemReceipt,
@@ -45,8 +20,36 @@ import {
   SourceGrantAnswer,
   ThreadsAnswer,
   TurnCancelAnswer,
+  TurnsAnswer,
   WatchAnswer,
   WatchesAnswer,
+} from '@mechane/rpc';
+import type {
+  CancelDroneInput,
+  CancelTurnInput,
+  CopyStepInput,
+  CreateMechInput,
+  DroneInput,
+  DronesInput,
+  EventsInput,
+  ForkInput,
+  MechRevisionsInput,
+  MechRpc,
+  ObjectSettings,
+  ReceiveSlackInboxItemInput,
+  RecentEventsInput,
+  SandboxManageInput,
+  SendInboxItemInput,
+  SetWatchInput,
+  SourceManageInput,
+  ThreadsInput,
+  TurnInput,
+  TurnReading,
+  TurnsInput,
+  UpdateMechInput,
+  UpdateWatchStatusInput,
+  WatchInput,
+  WorkerEnvironment,
 } from '@mechane/rpc';
 import { capturePromise, serialCalls, wakeList } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
@@ -73,6 +76,7 @@ import { readSourceGrant } from './sources/configuration/read-source-grant.ts';
 import { readThreads } from './threads/read-threads.ts';
 import { decideTurnCancel } from './turns/decide-turn-cancel.ts';
 import { readTurn } from './turns/read-turn.ts';
+import { readTurns } from './turns/read-turns.ts';
 import type { AlarmDecision, MechHandle, OpenedMech } from './types.ts';
 import { decideWatchStatus } from './watches/decide-watch-status.ts';
 import { decideWatch } from './watches/decide-watch.ts';
@@ -294,6 +298,34 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
 
   async turn({ turnId }: TurnInput): Promise<TurnReading> {
     return await this.#mech.atomic({ run: (tables) => readTurn({ store: tables, turnId }) });
+  }
+
+  async turns({ query }: TurnsInput): Promise<typeof TurnsAnswer.Encoded> {
+    const { after } = Schema.decodeUnknownSync(catalog.listTurns.query)(query);
+    const page = await this.#mech.atomic({ run: (tables) => readTurns({ store: tables, after }) });
+
+    return Schema.encodeSync(TurnsAnswer)(page);
+  }
+
+  async recentEvents({ query }: RecentEventsInput): Promise<typeof EventsAnswer.Encoded> {
+    const { before } = Schema.decodeUnknownSync(catalog.listRecentEvents.query)(query);
+
+    const answer = await this.#mech.atomic({
+      run: (tables) => {
+        const mech = tables.mech();
+
+        if (Option.isNone(mech)) {
+          return EventsAnswer.cases.MechMissing.make({});
+        }
+
+        const page = tables.eventsBefore({ before });
+        const events = page.rows;
+
+        return EventsAnswer.cases.Listed.make({ events, hasMore: page.hasMore });
+      },
+    });
+
+    return Schema.encodeSync(EventsAnswer)(answer);
   }
 
   async memories(): Promise<typeof MemoriesAnswer.Encoded> {

@@ -1,7 +1,7 @@
 # @mechane/eval
 
-The eval runner: a suite's plan, each trial's subject and grader turns through `/v1`, the out folder's records, and the
-report.
+The eval runner: a suite's plan, each trial's subject and grader turns through `/api/v1`, the out folder's records, and
+the report.
 
 Layer 3 · node lane · effect dialect · consumers: cli-kernel, cli
 

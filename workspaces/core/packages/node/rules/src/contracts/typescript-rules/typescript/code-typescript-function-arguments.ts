@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** What enforces `code-typescript-function-arguments`: one destructured object argument for each owned function. */
@@ -9,6 +9,7 @@ export const codeTypescriptFunctionArguments = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'object-arguments',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-01',
       violation: [
         'function parse(line: string, count: number) { return line; }',

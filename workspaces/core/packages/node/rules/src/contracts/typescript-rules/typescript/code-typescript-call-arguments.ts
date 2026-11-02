@@ -1,5 +1,6 @@
 import {
   AST_GREP_DEFAULTS,
+  FileRole,
   InstalledAsset,
   OXLINT_DEFAULTS,
   RolloutPhase,
@@ -28,6 +29,7 @@ export const codeTypescriptCallArguments = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nested-call',
+      exemptRoles: [FileRole.Browser],
       derivedFrom: Option.some({
         asset: 'assets/ast-grep/rules/call-arguments-typescript.yml',
         hash: 'blake3:2b4ec20240812411a2b9d960a933602c8ecbde313a511196ccf6092bd4ec72d6',

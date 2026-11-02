@@ -9,7 +9,7 @@ import { ConnectionList } from './schemas.ts';
 /** Owners inspect stored configuration without contacting remote remote URLs. */
 export const listConnections = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/connections',
+  path: '/api/v1/workspaces/:workspace_id/connections',
   access: Access.Member,
   params: WorkspacePath,
   query: NoFields,

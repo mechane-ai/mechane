@@ -1,5 +1,6 @@
 import type { Access, catalog, OperationInput, OperationName, OperationOutput } from '@mechane/protocol';
 import type { Effect, Option, Redacted } from 'effect';
+import type { BROWSER_CREDENTIAL } from './constants.ts';
 import type { OperationFailed, OriginUnreachable, RequestTimedOut, ResponseUnreadable } from './errors.ts';
 
 /** Every way a call fails: the server's error, no server answering in time, or an answer the client cannot read. */
@@ -9,8 +10,8 @@ export type ClientFailure = OperationFailed | OriginUnreachable | RequestTimedOu
 export type AccessCredential = {
   /** Always none: a public operation sends no key. */
   readonly [Access.Public]: Option.Option<never>;
-  readonly [Access.Principal]: Redacted.Redacted;
-  readonly [Access.Member]: Redacted.Redacted;
+  readonly [Access.Principal]: Redacted.Redacted | typeof BROWSER_CREDENTIAL;
+  readonly [Access.Member]: Redacted.Redacted | typeof BROWSER_CREDENTIAL;
 };
 
 /** What one call sends: the operation's name, its input, and the credential its access needs. */

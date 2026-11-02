@@ -39,9 +39,9 @@ type EvalWorkInput = Omit<RunEvalInput, 'outFolder'> & { readonly store: EvalSto
 const COMPLETED_VERDICTS: ReadonlySet<TrialVerdict> = new Set(Record.values(CriterionVerdict));
 
 /**
- * Runs a suite through the deployment, measuring a mech with nothing but `/v1`: it plans the run, runs each trial in
- * order, and reports from the out folder's records alone. Ctrl-C interrupts it once its finalizers ran, which release
- * the out folder's lock, and a rerun with the same out folder resumes.
+ * Runs a suite through the deployment, measuring a mech with nothing but `/api/v1`: it plans the run, runs each trial
+ * in order, and reports from the out folder's records alone. Ctrl-C interrupts it once its finalizers ran, which
+ * release the out folder's lock, and a rerun with the same out folder resumes.
  */
 export const runEval = Effect.fn('runEval')(function* ({
   call,

@@ -9,6 +9,12 @@ output "version" {
   value       = local.installation.version
 }
 
+output "console_url" {
+  description = "Browser console included with this installation."
+  value       = "${local.origin}/console"
+  depends_on  = [cloudflare_workers_custom_domain.service]
+}
+
 output "resources" {
   description = "Cloudflare resource identities for inventory and support."
   value = {

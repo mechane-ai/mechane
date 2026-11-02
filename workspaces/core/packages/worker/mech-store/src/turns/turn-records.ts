@@ -1,7 +1,7 @@
 import { TurnStatus } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
-import { decodeFirst, decodeRows } from '@mechane/store';
-import type { RecordsInput, SqlCall } from '@mechane/store';
+import { decodeFirst, decodeRows, readPage } from '@mechane/store';
+import type { PageAfterInput, RecordsInput, RowsPage, SqlCall } from '@mechane/store';
 import { DateTime, Option, Schema } from 'effect';
 import { IdRow, TurnRow } from '../schemas.ts';
 import type { JoinTurnInput, OpenTurnInput, TurnIdInput, TurnRecords } from '../turn.types.ts';
@@ -18,8 +18,24 @@ export function turnRecords({ sql }: RecordsInput): TurnRecords {
     runningTurn: () => runningTurn({ sql }),
     joinTurn: (input) => joinTurn({ sql, ...input }),
     turn: (input) => turn({ sql, ...input }),
+    turns: (input) => turns({ sql, ...input }),
     turnInboxItemIds: (input) => turnInboxItemIds({ sql, ...input }),
   };
+}
+
+function turns({ sql, after }: SqlCall<PageAfterInput>): Option.Option<RowsPage<TurnRow>> {
+  return readPage({
+    after,
+    lastRow: ({ last }) => sql.exec('SELECT rowid FROM turns WHERE id = ?', last),
+    rowsAfter: ({ rowid, count }) =>
+      sql.exec(
+        'SELECT id, status, started_at_ms, ended_at_ms, reason, definition_revision FROM turns WHERE (? = 0 OR rowid < ?) ORDER BY rowid DESC LIMIT ?',
+        rowid,
+        rowid,
+        count,
+      ),
+    schema: TurnRow,
+  });
 }
 
 function openTurn({ sql, turnId, inboxItemIds, now }: SqlCall<OpenTurnInput>): void {

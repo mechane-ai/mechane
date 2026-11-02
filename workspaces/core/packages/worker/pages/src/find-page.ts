@@ -9,6 +9,8 @@ import { submitLocalSignIn } from './local-sign-in/submit-local-sign-in.ts';
 import { refusalPage } from './refusal-page.ts';
 import { showHomePage } from './show-home-page.ts';
 import { finishSignIn } from './sign-in/finish-sign-in.ts';
+import { signOut } from './sign-in/sign-out.ts';
+import { startSignIn } from './sign-in/start-sign-in.ts';
 import type { PageFailure, PageInput } from './types.ts';
 
 /** A page's request, and the address limit it counts against before its page serves it. */
@@ -30,6 +32,12 @@ type ServePageInput = AnsweredPageInput & Pick<PageRoute, 'serve'>;
 /** The pages a browser opens, beside the API's operations. */
 const PAGES: ReadonlyArray<PageRoute> = [
   { method: HttpMethod.Get, path: PagePath.Home, serve: showHomePage },
+  {
+    method: HttpMethod.Get,
+    path: PagePath.SignIn,
+    serve: ({ settings }) => startSignIn({ settings, destination: PagePath.Console }),
+  },
+  { method: HttpMethod.Post, path: PagePath.SignOut, serve: signOut },
   { method: HttpMethod.Get, path: PagePath.Device, serve: showDevicePage },
   { method: HttpMethod.Post, path: PagePath.Device, serve: submitDeviceForm },
   { method: HttpMethod.Get, path: PagePath.GitHubCallback, serve: finishSignIn },

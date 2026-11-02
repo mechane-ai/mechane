@@ -9,7 +9,7 @@ import { SourceGrantState } from './schemas.ts';
 /** Only a current workspace owner may inspect a mech's repository authority. */
 export const showSourceGrant = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/source/grant',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/source/grant',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

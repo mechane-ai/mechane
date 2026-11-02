@@ -4,6 +4,9 @@
  */
 export const PagePath = {
   Home: '/',
+  Console: '/console',
+  SignIn: '/auth/sign-in',
+  SignOut: '/auth/sign-out',
   Device: '/device',
   GitHubCallback: '/auth/github/callback',
   LocalSignIn: '/auth/local',

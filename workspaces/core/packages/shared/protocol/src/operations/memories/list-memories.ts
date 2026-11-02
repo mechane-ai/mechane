@@ -13,7 +13,7 @@ import { MemoryList } from './schemas.ts';
  */
 export const listMemories = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/memories',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/memories',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

@@ -7,8 +7,9 @@ const VALUES = {
     [Lane.Shared]: [Lane.Shared],
     [Lane.Worker]: [Lane.Shared, Lane.Worker],
     [Lane.Node]: [Lane.Shared, Lane.Node],
+    [Lane.Browser]: [Lane.Shared, Lane.Browser],
   },
-  sourceFolders: ['src', 'scripts'],
+  sourceFolders: ['src', 'scripts', '.storybook', 'vite.config.ts'],
 } as const;
 
 /** A family of rules the member manifest generates, fixed by hand, which the packages phase turned on. */

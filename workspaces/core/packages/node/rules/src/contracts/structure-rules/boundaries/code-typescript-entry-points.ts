@@ -27,6 +27,7 @@ const VALUES = {
     '../../../../licenses/semver.js',
     '../../../../licenses/typebox.js',
     '../../../../licenses/zod.js',
+    '**/styles.css',
   ],
 } as const;
 
@@ -47,6 +48,7 @@ export const codeTypescriptEntryPoints = {
     {
       ...OXLINT_DEFAULTS,
       name: 'import/no-namespace',
+      exemptRoles: [FileRole.Browser],
       value: Severity.Error,
       standard: 'ST-10',
       status: RuleStatus.Enforced,
@@ -57,7 +59,7 @@ export const codeTypescriptEntryPoints = {
       ...ADOPTED,
       name: 'import/no-default-export',
       value: Severity.Error,
-      exemptRoles: [FileRole.WorkerModule],
+      exemptRoles: [FileRole.WorkerModule, FileRole.BrowserConfiguration],
       standard: '005',
     },
     {
@@ -73,7 +75,7 @@ export const codeTypescriptEntryPoints = {
       ...OXLINT_DEFAULTS,
       name: 'import/unambiguous',
       value: Severity.Error,
-      exemptRoles: [FileRole.CruiserConfiguration],
+      exemptRoles: [FileRole.CruiserConfiguration, FileRole.BrowserConfiguration],
       standard: '005',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,

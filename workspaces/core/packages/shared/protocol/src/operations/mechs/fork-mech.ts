@@ -20,7 +20,7 @@ type ForkMechBody = typeof ForkMechBody.Type;
  */
 export const forkMech = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/fork',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/fork',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

@@ -7,7 +7,7 @@ type TurnEndInput = { readonly event: ListedEvent };
 
 /**
  * The turn an event ends and how, none for an event that ends no turn. Only two events this release knows end a turn in
- * `/v1`, so an event of an unknown type ends none.
+ * `/api/v1`, so an event of an unknown type ends none.
  */
 export function turnEnd({ event }: TurnEndInput): Option.Option<TurnEnd> {
   if (Schema.is(UnknownEvent)(event)) {

@@ -1,7 +1,7 @@
 # @mechane/protocol
 
-The `/v1` operation catalog, every resource's schemas and errors, and the other wires the Worker shares with its clients
-and objects.
+The `/api/v1` operation catalog, every resource's schemas and errors, and the other wires the Worker shares with its
+clients and objects.
 
 Layer 1 · shared lane · data dialect · any consumer
 

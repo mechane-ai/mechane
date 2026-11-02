@@ -1,9 +1,12 @@
 import { CredentialSource } from '@mechane/cli-kernel';
 import type { CommandResult, Credential, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { ClientFailure } from '@mechane/client';
+import { AnswerStep, ResponseUnreadable } from '@mechane/client';
 import { API_KEY_VARIABLE } from '@mechane/commands';
+import { catalog } from '@mechane/protocol';
 import type { Workspace } from '@mechane/protocol';
-import { DateTime, Effect } from 'effect';
+import { HttpStatusCode } from '@mechane/records';
+import { DateTime, Effect, Option } from 'effect';
 import { withCredential } from './with-credential.ts';
 
 /** Where a key came from, as a person reads it. */
@@ -39,7 +42,21 @@ const authStatus = Effect.fn('authStatus')(function* ({
   token,
   source,
 }: AuthStatusInput): Effect.fn.Return<CommandResult<'auth status'>, ClientFailure> {
-  const { principal, key } = yield* call({ name: 'showPrincipal', input: {}, credential: token });
+  const { principal, key: currentKey } = yield* call({ name: 'showPrincipal', input: {}, credential: token });
+
+  if (Option.isNone(currentKey)) {
+    const url = new URL(catalog.showPrincipal.path, origin);
+
+    return yield* new ResponseUnreadable({
+      url,
+      status: HttpStatusCode.Ok,
+      step: AnswerStep.Decode,
+      reason: 'A bearer-authenticated session must identify its API key',
+    });
+  }
+
+  const key = currentKey.value;
+
   const { workspaces } = yield* call({ name: 'listWorkspaces', input: {}, credential: token });
 
   const workspaceLine: (workspace: Workspace) => string = (workspace) =>

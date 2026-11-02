@@ -2,7 +2,7 @@ import { FixBehavior, OWNED_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** The sentences a doc comment may hold, and the words each may hold. */
-const VALUES = { docSentences: 3, docSentenceWords: 30 } as const;
+const VALUES = { docSentences: 3, docSentenceWords: 30, componentFiles: ['packages/browser/**/*.tsx'] } as const;
 
 /** What enforces `code-comment-content`: the limits the short-doc ratchet reads. */
 export const codeCommentContent = {
@@ -15,6 +15,7 @@ export const codeCommentContent = {
       standard: 'CD-03',
       violation: [{ 'scripts/limits.ts': 'export const TURN_LIMIT = 3;\n' }],
       allowed: [
+        { 'packages/browser/ui/src/title.tsx': 'export function Title() { return <h1>Console</h1>; }\n' },
         { 'scripts/limits.ts': '/** The most turns a mech runs at once. */\nexport const TURN_LIMIT = 3;\n' },
         {
           'scripts/modes.ts':

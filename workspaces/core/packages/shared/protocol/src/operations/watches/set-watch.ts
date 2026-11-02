@@ -9,7 +9,7 @@ import { Watch, WatchConfiguration } from './schemas.ts';
 /** Creates or replaces a watch under a caller-chosen stable ID. */
 export const setWatch = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id',
   access: Access.Member,
   params: WatchPath,
   query: NoFields,

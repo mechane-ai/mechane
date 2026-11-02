@@ -13,7 +13,7 @@ type PollRequest = typeof PollRequest.Type;
 /** Answers pending until the approval is approved, then mints its key and delivers the token, once. */
 export const pollDeviceApproval = {
   method: HttpMethod.Post,
-  path: '/v1/device_approvals/poll',
+  path: '/api/v1/device_approvals/poll',
   access: Access.Public,
   params: NoFields,
   query: NoFields,

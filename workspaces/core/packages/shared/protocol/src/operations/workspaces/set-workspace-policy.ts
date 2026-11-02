@@ -22,7 +22,7 @@ type WorkspacePolicyUpdate = typeof WorkspacePolicyUpdate.Type;
 /** Installation administrators change workspace policy within the installation's global limits. */
 export const setWorkspacePolicy = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/policy',
+  path: '/api/v1/workspaces/:workspace_id/policy',
   access: Access.Principal,
   params: WorkspacePath,
   query: NoFields,

@@ -28,7 +28,9 @@ import { forkMech } from '../operations/mechs/fork-mech.ts';
 import { listEvents } from '../operations/mechs/list-events.ts';
 import { listMechs } from '../operations/mechs/list-mechs.ts';
 import { listMemories } from '../operations/mechs/list-memories.ts';
+import { listRecentEvents } from '../operations/mechs/list-recent-events.ts';
 import { listThreads } from '../operations/mechs/list-threads.ts';
+import { listTurns } from '../operations/mechs/list-turns.ts';
 import { manageSandbox } from '../operations/mechs/manage-sandbox.ts';
 import { sendInboxItem } from '../operations/mechs/send-inbox-item.ts';
 import { showTurn } from '../operations/mechs/show-turn.ts';
@@ -105,6 +107,8 @@ export const OPERATIONS: Readonly<OperationWorks> = {
   forkMech,
   sendInboxItem,
   listEvents,
+  listRecentEvents,
+  listTurns,
   showTurn,
   cancelTurn,
   listMemories,

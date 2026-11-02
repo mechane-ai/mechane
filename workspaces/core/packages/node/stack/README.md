@@ -42,8 +42,8 @@ The default origin is `http://127.0.0.1:8787`. State lives in `$XDG_STATE_HOME/m
 `MECHANE_LOCAL_STATE_DIR` selects another absolute directory. `MECHANE_LOCAL_ORIGIN` selects another loopback origin;
 each initialized directory keeps its origin so saved credentials remain bound to the same service.
 
-Open the printed `/auth/local` URL and paste the contents of the printed bootstrap-secret file. Then run the bundled CLI
-against that origin:
+Open the printed `/auth/local` URL and paste the contents of the printed bootstrap-secret file. Open `/console` to
+manage mechs in the browser, or run the bundled CLI against that origin:
 
 ```sh
 export MECHANE_ORIGIN=http://127.0.0.1:8787

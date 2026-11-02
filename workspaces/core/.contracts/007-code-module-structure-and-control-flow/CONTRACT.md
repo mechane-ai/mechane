@@ -69,7 +69,7 @@ Contract 064 governs every TypeScript file, so its bound statements take the pla
 For them this replaces "Extract a helper only when it names a real concept, collapses real duplication, or isolates an independent operation, never just to shorten a block".
 
 A name another system fixes, or that a shipped format keeps, appears only in the mapping that reads or writes it.
-`renamedWireStruct` and `PAGE_RENAMES` map a `/v1` key that `wireKey` cannot derive, and a closed-set member's value holds a header's name, such as `HttpHeader.XSessionId`'s `'x-session-id'`.
+`renamedWireStruct` and `PAGE_RENAMES` map a `/api/v1` key that `wireKey` cannot derive, and a closed-set member's value holds a header's name, such as `HttpHeader.XSessionId`'s `'x-session-id'`.
 A store's SQL text stays in its records function, and an outbound request has its own mapping, such as `endUserPayload`, which writes the workspace's `endUserId` as OpenRouter's `user`.
 Owned fields and members keep their concept's name, and `id-denylist` rejects a generic one.
 

@@ -16,6 +16,7 @@ import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import type { WorkerEnvironment } from '@mechane/rpc';
 import { Effect, Option } from 'effect';
 import { canonicalUrl } from './canonical-url.ts';
+import { serveConsole } from './serve-console.ts';
 
 type ServeInput = { readonly request: Request; readonly environment: WorkerEnvironment };
 
@@ -36,6 +37,12 @@ export const serve = Effect.fn('serve')(
       const headers = { [HttpHeader.Location]: canonical.href, [HttpHeader.CacheControl]: 'no-store' };
 
       return new Response(null, { status: HttpStatusCode.Found, headers });
+    }
+
+    const console = yield* serveConsole({ request, url, settings });
+
+    if (Option.isSome(console)) {
+      return console.value;
     }
 
     const peer = yield* peerOf({ request });

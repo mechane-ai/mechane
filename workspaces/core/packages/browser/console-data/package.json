@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/console-data",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/client": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@tanstack/db": "1.0.0-rc.1.1",
+    "@tanstack/query-core": "5.105.2",
+    "@tanstack/query-db-collection": "1.5.0",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {}
+}

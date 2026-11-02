@@ -9,13 +9,13 @@ import { decodedNode } from './decoded-node.ts';
 import { isRequestForm } from './is-request-form.ts';
 import type { JsonSchemaNode } from './schemas.ts';
 
-/** The protocol's source, which declares every schema an answer of `/v1` is decoded with. */
+/** The protocol's source, which declares every schema an answer of `/api/v1` is decoded with. */
 const PROTOCOL_SOURCE = 'packages/shared/protocol/src';
 
 /** A node as its document holds it, the document's definitions, and the path a finding names it by. */
 type NodePathsInput = { readonly node: unknown; readonly definitions: JsonSchema.Definitions; readonly path: string };
 
-/** A decoded node and its path, such as `GET /v1/keys output.keys[].name`. */
+/** A decoded node and its path, such as `GET /api/v1/keys output.keys[].name`. */
 type NodePath = { readonly node: JsonSchemaNode; readonly path: string };
 
 /** An object's property, by its key. */

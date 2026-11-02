@@ -8,7 +8,7 @@ language: TypeScript
 severity: error
 message: 'Bind the inner call to a name and pass the name, such as `const total = Number.sumAll(sizes)` before `report({ total })` (064)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts', '**/schemas.ts', '**/*.schemas.ts']
+ignores: ['packages/browser/**', '**/node_modules/**', '**/*.d.ts', '**/schemas.ts', '**/*.schemas.ts']
 utils:
   # A function, class, or JSX element restarts the count.
   boundary:

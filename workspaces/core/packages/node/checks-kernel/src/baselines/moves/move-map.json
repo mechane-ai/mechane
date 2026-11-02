@@ -871,7 +871,7 @@
           "consumers": ["@mechane/cli", "@mechane/deploy"]
         },
         "@mechane/eval": {
-          "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+          "owns": "The eval runner: suite, plan, trials, records and report, through /api/v1 only",
           "layer": 3,
           "lane": "node",
           "dialect": "effect",
@@ -1250,7 +1250,7 @@
           ]
         },
         "@mechane/eval": {
-          "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+          "owns": "The eval runner: suite, plan, trials, records and report, through /api/v1 only",
           "layer": 3,
           "lane": "node",
           "dialect": "effect",
@@ -1962,6 +1962,47 @@
         {
           "from": "packages/node/checks/src/baselines/tighten-baselines.ts",
           "to": "packages/node/checks/src/tighten-baselines.ts"
+        }
+      ]
+    },
+    {
+      "name": "console-authentication",
+      "members": {},
+      "declarations": [
+        {
+          "from": "packages/worker/edge/src/operations/mechs/show-turn.ts",
+          "to": "packages/worker/rpc/src/turn.schemas.ts",
+          "names": ["TURN_RECORD_FIELDS", "TurnRecord", "TurnAnswer"]
+        }
+      ],
+      "moves": [
+        {
+          "from": "packages/worker/pages/src/session/browser-session.ts",
+          "to": "packages/worker/authentication/src/browser-session.ts"
+        },
+        {
+          "from": "packages/worker/pages/src/session/cookie-header.ts",
+          "to": "packages/worker/authentication/src/cookie-header.ts"
+        },
+        {
+          "from": "packages/worker/pages/src/session/cookie-name.ts",
+          "to": "packages/worker/authentication/src/cookie-name.ts"
+        },
+        {
+          "from": "packages/worker/pages/src/session/read-cookie.ts",
+          "to": "packages/worker/authentication/src/read-cookie.ts"
+        },
+        {
+          "from": "packages/worker/edge/src/admission/bearer-token-hash.ts",
+          "to": "packages/worker/authentication/src/bearer-token-hash.ts"
+        },
+        {
+          "from": "packages/worker/edge/src/admission/cached-key.ts",
+          "to": "packages/worker/authentication/src/cached-key.ts"
+        },
+        {
+          "from": "packages/worker/edge/src/admission/resolve-caller.ts",
+          "to": "packages/worker/authentication/src/resolve-caller.ts"
         }
       ]
     }

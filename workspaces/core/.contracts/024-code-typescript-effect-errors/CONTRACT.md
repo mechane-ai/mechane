@@ -71,7 +71,7 @@ The sandbox's claim throws `ExecutionReused` that way and its host launcher's ca
 Deviation (ER-06): a defect at one of ER-06's library sites, `decodeUnknownSync` at an RPC input or in a store's row decode and `Option.getOrThrow` on a value the types exclude, carries the error its library throws. Every other defect, `Effect.die`, `Effect.orDie` and a plain-dialect `Result.getOrThrow` included, carries an owned tagged error or the tagged failure it promotes. This replaces the defect's tagged error "with fields that locate it" for those sites.
 Each `Effect.orDie` dies at a release or an encode. A scope's release has no failure channel, so one that removes a path or closes a handle the program owns dies when `rm` with `force` or the close refuses, and the smoke's restore of the stack's variables dies when its restart fails. A release whose effect is bound before its scope opens dies in `acquireRelease` itself, such as `() => Effect.orDie(removal)`, which `defect-sites` allows. One that needs the acquired value, such as celld's log handle, dies in its own function, whose error names the path, and the baseline holds it.
 Encoding output that the same code built to its schema's type, and decoding a row that only its store wrote, fail as defects with `Effect.orDie`, because a failure there is a broken invariant.
-A known execution id that arrives with another request is a defect, since only pi's replay repeats an id, with the arguments it recorded. `claimExecution` answers the tagged `ExecutionReused`, which names the `executionId`, from its transaction. `runExecution` dies with it through `Result.getOrThrow`, so the sandbox's RPC call rejects as 041's refusal of a reused identity. The failure joins no RPC union and no `/v1` answer.
+A known execution id that arrives with another request is a defect, since only pi's replay repeats an id, with the arguments it recorded. `claimExecution` answers the tagged `ExecutionReused`, which names the `executionId`, from its transaction. `runExecution` dies with it through `Result.getOrThrow`, so the sandbox's RPC call rejects as 041's refusal of a reused identity. The failure joins no RPC union and no `/api/v1` answer.
 oxlint `no-restricted-properties` rejects `Effect.ignore`, `option`, `result`, `either`, `orElse`, `orElseSucceed`, `orElseFail` and `catchCause`, which discard a failure, so a caller handles each expected failure by its tag.
 Handling by tag takes the object form of `Effect.catchTags` even for one tag, such as `Effect.catchTags({ RefundRefused: … })`, where the rules name `Effect.catchTag` (ER-07): ast-grep `catch-tags` rejects `Effect.catchTag` with one tag, and `mise run fix` writes its object form, and oxlint `no-restricted-properties` rejects `Effect.catchTag`, `catchIf`, `catchFilter`, `catchSome` and `match`.
 A catch-all handler appears only at an entry boundary (ER-08): ast-grep `catch-all-outside-boundary` rejects an `Effect.catch` anywhere but as a trailing argument of the `Effect.fn` of `serve`, `servePage` or `runCommand`, `Effect.catch((failure) => …)`, or `(run, input) => Effect.catch(run, (failure) => …)` where the answer reads the call's input, and each answer branches on every tag through its message table.
@@ -81,9 +81,7 @@ An effectful function is an `Effect.fn`: ast-grep `effect-function-form` ratchet
 A generator binds each value with `yield*`: oxlint `no-restricted-properties` ratchets `Effect.map`, `flatMap`, `andThen`, `tap`, `as`, `asVoid`, `asSome`, `zip`, `zipWith`, `suspend`, `flatten` and `filterOrFail`, and ast-grep `effect-import-form` rejects importing `effect` under an alias, as a namespace or from a subpath other than `effect/encoding`, any of which would dodge a ban of a property.
 A wrap of a promise or of a throwing call holds one call: ast-grep `try-promise-shape` ratchets an `Effect.tryPromise` or `Effect.try` whose `try` is not an arrow whose body is one call or whose `catch` builds no tagged error, and a call of an `attempt` helper, which `program` no longer has since each caller wraps its own promise, and oxlint `no-restricted-properties` ratchets `Effect.promise`.
 A failure is told apart by its tag (EF-05): ast-grep `no-instanceof` rejects `instanceof`, which a decoded value or another realm's object fails.
-The registry loads both files this contract ships under `assets/`.
-It extends `assets/oxlint/oxlintrc.json`, which turns on `no-throw-literal` and `preserve-caught-error` and keeps `unicorn/throw-new-error` off.
-It adds `assets/ast-grep/rules`, whose `untagged-errors-typescript` and `catch-handlers-typescript` are enforced.
+The registry owns the adopted error rules. It leaves the shipped assets unchanged; hash-pinned derivatives of the three TypeScript syntax rules exclude the browser lane, whose Promise boundary and React conventions are defined in contract 113.
 Mechane's own rules hold what the shipped ones do not: ast-grep `no-throw-or-try` rejects every `throw` and every `try`, one with only a `finally` clause included, since SC-09 bans both.
 `untyped-failure` (SC-09) rejects `Option.getOrThrowWith`, `Result.getOrThrowWith`, `Promise.reject` and a text step field.
 `promise-chain` (DO-03) rejects a promise's `catch` with a named handler, `finally`, `Promise.resolve`, `new Promise` and a chained `then`.
@@ -91,7 +89,7 @@ The bound statements that `code-typescript-call-arguments` requires go inside an
 
 Deviation (ER-01, ER-02, ER-09): a wrap's `catch` builds a tagged error whose `reason` holds the caught value's text, `String(cause)`.
 It never keeps the caught value, which ast-grep `tagged-error-cause` rejects as a field.
-An error's fields travel on `/v1` (ER-09), in the CLI's JSON envelope and in log lines, and a caught value is unbounded and may hold a request's headers.
+An error's fields travel on `/api/v1` (ER-09), in the CLI's JSON envelope and in log lines, and a caught value is unbounded and may hold a request's headers.
 This replaces the `catch` option's mapping "that keeps the caught value as its `cause`" and the check's "that keeps the cause".
 
 Each entry point has one defect handler.
@@ -100,9 +98,9 @@ The Worker's `fetch` leaves a defect to the Workers runtime, which answers 500 a
 
 A Durable Object's alarm and RPC methods also leave a defect to the runtime, which retries an alarm and rejects an RPC call.
 The Worker's `callObject` maps that rejection to `ObjectUnavailable`.
-Pages are server-rendered HTML with no client script, so no route has an error boundary.
+Sign-in pages remain server-rendered; the console uses React route error boundaries and the shared client failure transport.
 
-The registry loads all TypeScript ast-grep rules from this contract, with promise-chains held by its generated ratchet baseline.
+The three derived TypeScript rules retain their original backend coverage, with promise-chains held by its generated ratchet baseline.
 Deviation (EF-06, DO-03): direct native-promise callbacks at the Effect boundary keep their existing signatures and return forms.
 This replaces v11's blanket async and return-await requirements where the existing async-shell rules exempt those callbacks.
 The oxlint asset stays unloaded because it would override those rules; owned no-throw-literal, preserve-caught-error and throw-new-error settings retain their prior values.
@@ -112,9 +110,9 @@ The oxlint asset stays unloaded because it would override those rules; owned no-
 - oxlint `no-throw-literal` (ER-04): enforced in phase F3, `"error"`
 - oxlint `preserve-caught-error` (ER-04): enforced in phase F3, `"error"`
 - oxlint `unicorn/throw-new-error` (ER-04): enforced in phase F3, `"off"`
-- asset `assets/ast-grep/rules` `untagged-errors-typescript` (ER-04): enforced in phase F3
-- asset `assets/ast-grep/rules` `catch-handlers-typescript` (ER-04): enforced in phase F3
-- asset `assets/ast-grep/rules` `promise-chains-typescript` (ER-04): a ratchet until phase F3
+- ast-grep `untagged-errors-typescript` (ER-04): enforced in phase F3
+- ast-grep `catch-handlers-typescript` (ER-04): enforced in phase F3
+- ast-grep `promise-chains-typescript` (ER-04): a ratchet until phase F3
 - oxlint's restricted members (ER-05): enforced in phase A: `Effect.ignore`, `Effect.option`, `Effect.result`, `Effect.either`, `Effect.orElse`, `Effect.orElseSucceed`, `Effect.orElseFail`, `Effect.catchCause`
 - oxlint's restricted members (ER-06): enforced in phase F3: `Option.getOrThrowWith`
 - ast-grep `defect-sites` (ER-06): a ratchet until phase F3

@@ -8,7 +8,7 @@ import { WorkspaceList } from './schemas.ts';
 /** Lists the personal workspace first, followed by shared memberships in creation order. */
 export const listWorkspaces = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces',
+  path: '/api/v1/workspaces',
   access: Access.Principal,
   params: NoFields,
   query: NoFields,

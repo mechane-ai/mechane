@@ -8,6 +8,8 @@ from 101 are Mechane's own.
 
 ## Boundaries
 
+- [Console boundaries](113-console-boundaries/CONTRACT.md): browser package ownership, session data, and release assets.
+
 - [Ownership and boundaries](001-code-ownership-and-boundaries/CONTRACT.md): one owner per decision and fact.
 - [Dependency boundaries](002-code-dependency-boundaries/CONTRACT.md): every member declared once, and each edge once in its `package.json`.
 - [Package boundaries](003-code-typescript-package-boundaries/CONTRACT.md): exports maps and workspace links only.
@@ -71,7 +73,7 @@ from 101 are Mechane's own.
 - [Record identifiers](044-data-record-identifiers/CONTRACT.md): random UUIDs; derived ids only where a retry needs them.
 - [Store ownership](045-data-store-ownership/CONTRACT.md): one store module per owner of persisted data.
 - [SQL store boundaries](046-data-sql-store-boundaries/CONTRACT.md): SQL only in the store, each statement once and whole.
-- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): append-only migrations and `/v1`.
+- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): append-only migrations and `/api/v1`.
 - [Schema rollouts](061-data-sql-schema-rollouts/CONTRACT.md): steps the previous release and existing rows survive.
 - [Data and APIs](048-data-and-apis/CONTRACT.md): explicit outcomes behind small APIs.
 - [Request paths](062-api-typescript-request-paths/CONTRACT.md): one named builder per path, which encodes each part.
@@ -91,7 +93,7 @@ from 101 are Mechane's own.
 
 - [Eval run lifecycle](057-eval-run-lifecycle/CONTRACT.md): frozen plans, one writer, receipts before sends, resume.
 - [Eval grading isolation](058-eval-grading-isolation/CONTRACT.md): expectations only for the grader, on another model.
-- [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through `/v1`, on fresh mechs.
+- [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through `/api/v1`, on fresh mechs.
 - [Eval score accounting](060-eval-score-accounting/CONTRACT.md): distinct verdicts, and spend by role.
 
 ## Mechane

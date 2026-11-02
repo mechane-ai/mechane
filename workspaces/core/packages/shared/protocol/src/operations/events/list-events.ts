@@ -30,7 +30,7 @@ const EventQuery = renamedWireStruct({
  */
 export const listEvents = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/events',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/events',
   access: Access.Member,
   params: MechPath,
   query: EventQuery,

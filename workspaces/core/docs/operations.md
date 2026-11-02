@@ -85,8 +85,8 @@ Durable Objects and disconnect event streams. Keep model offers while agents sti
 reconnect with their saved `--after` cursor.
 
 The provider waits for container rollout, but an apply cannot prove third-party credentials work. Check `/health`,
-`/v1/readiness`, ordinary login, an existing agent's history, and its saved files. Exercise a model request and a cold
-sandbox restore when approving an upgrade; those checks use the installation's paid services.
+`/api/v1/readiness`, ordinary login, an existing agent's history, and its saved files. Exercise a model request and a
+cold sandbox restore when approving an upgrade; those checks use the installation's paid services.
 
 ## Recovery
 

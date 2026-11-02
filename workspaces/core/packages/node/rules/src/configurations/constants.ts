@@ -11,4 +11,5 @@ export const LANE_PROGRAMS = {
   [Lane.Shared]: 'tsconfig.shared.json',
   [Lane.Worker]: 'tsconfig.worker.json',
   [Lane.Node]: 'tsconfig.node.json',
+  [Lane.Browser]: 'tsconfig.browser.json',
 } as const;

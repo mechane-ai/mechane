@@ -71,6 +71,7 @@ export const CONTRACT_NAMES = [
   'rule-registry',
   'code-style',
   'installation-ownership',
+  'console-boundaries',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

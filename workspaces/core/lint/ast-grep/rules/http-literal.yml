@@ -12,6 +12,7 @@ ignores:
   # the homes of the sets this rule reads
   - 'packages/shared/records/src/http-status.constants.ts'
   - 'packages/shared/records/src/http-header.constants.ts'
+  - 'packages/shared/records/src/http-method.constants.ts'
   - 'packages/shared/records/src/media-type.constants.ts'
 utils:
   header-word:

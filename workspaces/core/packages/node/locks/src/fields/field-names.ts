@@ -21,7 +21,7 @@ const OBJECT_TYPE = 'object';
 /** The wire lock's entries of the operations' parts and the error body: each field, and each member under its field. */
 type FieldNames = { readonly fields: ReadonlyArray<string>; readonly members: ReadonlyArray<string> };
 
-/** A schema whose fields the wire lock holds, and the entry it stands at, such as `GET /v1/keys output`. */
+/** A schema whose fields the wire lock holds, and the entry it stands at, such as `GET /api/v1/keys output`. */
 type WirePart = { readonly schema: Schema.Constraint; readonly path: string };
 
 /** An object's property, by its key. */
@@ -30,7 +30,7 @@ type PropertyEntry = readonly [key: string, property: unknown];
 /** A property that holds one value, which names a union's variant. */
 type Discriminator = { readonly key: string; readonly value: string };
 
-/** A decoded node, its document's definitions, and the entry it stands at, such as `GET /v1/keys output.keys[]`. */
+/** A decoded node, its document's definitions, and the entry it stands at, such as `GET /api/v1/keys output.keys[]`. */
 type NodeNamesInput = {
   readonly node: JsonSchemaNode;
   readonly definitions: JsonSchema.Definitions;
@@ -61,8 +61,8 @@ type MemberNamesInput = { readonly values: ReadonlyArray<string>; readonly path:
 
 /**
  * Every field and closed-set member of each operation's query, body and output under its method and path, and of the
- * error body under `errors body`, as `/v1` encodes them. A field's steps are a property's wire key, `[]` for an array's
- * items, and a variant named by its single-value enums, as in
+ * error body under `errors body`, as `/api/v1` encodes them. A field's steps are a property's wire key, `[]` for an
+ * array's items, and a variant named by its single-value enums, as in
  * `output.dispatches[][status=settled,basis=usage].input_tokens`. A member follows its field after `=`, a nullable
  * value adds no step, and a variant that keeps the wire's rest adds no name; the walk's functions call each other.
  */

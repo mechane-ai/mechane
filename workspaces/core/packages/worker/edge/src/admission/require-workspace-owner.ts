@@ -1,3 +1,4 @@
+import type { Caller } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { MembershipRole, WorkspaceNotFound, WorkspaceOwnerRequired } from '@mechane/protocol';
@@ -5,7 +6,6 @@ import type { ObjectUnavailable } from '@mechane/protocol';
 import { WorkspaceId } from '@mechane/records';
 import { WorkspaceMembership } from '@mechane/rpc';
 import { Effect } from 'effect';
-import type { Caller } from '../types.ts';
 
 type RequireWorkspaceOwnerInput = {
   readonly settings: WorkerSettings;

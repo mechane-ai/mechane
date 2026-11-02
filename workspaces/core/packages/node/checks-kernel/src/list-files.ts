@@ -5,7 +5,7 @@ import { WORKSPACE_FOLDER } from './constants.ts';
 import { InputUnreadable } from './errors.ts';
 
 /** A path below a dependency or build folder, which no listing names. */
-const SKIPPED_FOLDER = /(^|\/)(node_modules|dist)\//;
+const SKIPPED_FOLDER = /(^|\/)(node_modules|dist)\/|(^|\/)routeTree\.gen\.ts$/;
 
 type ListFilesInput = { readonly folder: string; readonly extension: string };
 

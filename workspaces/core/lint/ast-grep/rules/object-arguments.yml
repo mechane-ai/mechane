@@ -5,7 +5,7 @@ language: TypeScript
 severity: error
 message: 'Give an owned function one destructured object argument, such as `parse({ line })` (TD-01)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/browser/**']
 utils:
   positional:
     any:

@@ -5,7 +5,7 @@ import { Effect, Option, Record, Schema } from 'effect';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { lt, valid } from 'semver';
-import { MIGRATION_LOCK, WIRE_LOCK } from './constants.ts';
+import { MIGRATION_LOCK, WIRE_LOCK, WireKind } from './constants.ts';
 import { lostEntries } from './locks/lost-entries.ts';
 import { Lock } from './schemas.ts';
 
@@ -110,8 +110,10 @@ export function releaseCompatibilityIssue({ previous, candidate }: ReleaseCompat
     return Option.some('release downgrades are not supported; publish compatible recovery code as a newer release');
   }
 
+  const comparable = { wire: comparableWire({ wire: previous.formats.wire }), migrations: previous.formats.migrations };
+
   for (const kind of ['wire', 'migrations'] as const) {
-    const locked = previous.formats[kind];
+    const locked = comparable[kind];
     const current = candidate.formats[kind];
     const categories = Record.keys(locked);
     const missingCategory = categories.find((name) => !Record.has(current, name));
@@ -124,4 +126,20 @@ export function releaseCompatibilityIssue({ previous, candidate }: ReleaseCompat
   }
 
   return Option.none();
+}
+
+const API_FORMAT_KINDS: ReadonlySet<string> = new Set([WireKind.Operations, WireKind.Fields, WireKind.Members]);
+const CONSOLE_API_PREFIX = /^(GET|POST|PUT|DELETE) \/v1(?=\/| |$)/;
+
+type ComparableWireInput = { readonly wire: Lock };
+
+/** The console's one API relocation changes addresses, never stored formats or migration hashes. */
+function comparableWire({ wire }: ComparableWireInput): Lock {
+  return Record.map(wire, (entries, category) => {
+    if (!API_FORMAT_KINDS.has(category)) {
+      return entries;
+    }
+
+    return entries.map((entry) => entry.replace(CONSOLE_API_PREFIX, '$1 /api/v1'));
+  });
 }

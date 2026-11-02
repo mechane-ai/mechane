@@ -1,4 +1,4 @@
-import { PackageKind } from '@mechane/rule-shapes';
+import { Lane, PackageKind } from '@mechane/rule-shapes';
 import { Option, Record } from 'effect';
 import { posix } from 'node:path';
 import { ConfigurationPath, Syntax } from '../constants.ts';
@@ -27,10 +27,10 @@ const PROGRAM_ENTRIES = '**/main.ts!';
 const GENERATOR_ENTRIES = '*/main.ts!';
 
 /** Every TypeScript file below a source root, each a production file. */
-const PROJECT_FILES = '**/*.ts!';
+const PROJECT_FILES = '**/*.{ts,tsx}!';
 
 /** A member's entries and project files, as knip's workspace takes them. */
-type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string>>>;
+type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string> | boolean>>;
 
 type KnipConfigurationInput = { readonly members: ReadonlyArray<WorkspaceMember> };
 
@@ -66,6 +66,14 @@ export function knipConfiguration({ members }: KnipConfigurationInput): Generate
 
 /** A member's workspace: each program's `main.ts` and each generator's, and every file of its roots. */
 function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
+  if (member.entry.lane === Lane.Browser && member.entry.kind === PackageKind.App) {
+    return {
+      includeEntryExports: false,
+      entry: ['src/routes/**/*.tsx!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
+      project: ['src/**/*.{ts,tsx}!'],
+    };
+  }
+
   const roots = member.roots.map((root) => posix.relative(member.folder, root));
 
   const isProgramSource: (root: string) => boolean = (root) =>

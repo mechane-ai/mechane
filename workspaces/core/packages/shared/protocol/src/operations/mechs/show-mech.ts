@@ -9,7 +9,7 @@ import { Mech } from './schemas.ts';
 /** Reads the mech definition, lifecycle, and saved and active revision numbers. */
 export const showMech = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

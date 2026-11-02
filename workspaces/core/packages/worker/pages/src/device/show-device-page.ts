@@ -1,10 +1,10 @@
-import { DeviceStep, ReviewForm, TYPED_CODE_FIELD, TYPED_CODE_MAX_CHARS } from '@mechane/protocol';
+import { browserSession } from '@mechane/authentication';
+import { DeviceStep, PagePath, ReviewForm, TYPED_CODE_FIELD, TYPED_CODE_MAX_CHARS } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { escapeHtml } from '@mechane/utilities';
 import { Effect, Option, Record, Schema } from 'effect';
 import { hiddenFields } from '../html/hidden-fields.ts';
 import { renderPage } from '../html/render-page.ts';
-import { browserSession } from '../session/browser-session.ts';
 import { csrfToken } from '../session/csrf-token.ts';
 import { startSignIn } from '../sign-in/start-sign-in.ts';
 import type { PageFailure, PageInput } from '../types.ts';
@@ -20,7 +20,7 @@ export const showDevicePage = Effect.fn('showDevicePage')(function* ({
   const session = yield* browserSession({ request, settings });
 
   if (Option.isNone(session)) {
-    return yield* startSignIn({ settings });
+    return yield* startSignIn({ settings, destination: PagePath.Device });
   }
 
   const csrf = yield* csrfToken({ sessionToken: session.value.token });

@@ -10,6 +10,7 @@ import {
   KeyTokenAnswer,
   LiveSession,
   PendingApproval,
+  SessionPrincipal,
   SignInClaim,
   WorkspaceMembership,
 } from '@mechane/rpc';
@@ -17,6 +18,7 @@ import type {
   ApprovalClaim,
   ApprovalDecision,
   ApproveDeviceApprovalInput,
+  BrowserPrincipalInput,
   BrowserSessionOpening,
   ChangeWorkspaceMemberInput,
   ClaimDeviceApprovalInput,
@@ -40,6 +42,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Schema } from 'effect';
 import { decideApproval } from './device-approvals/decide-approval.ts';
 import { decideClaim } from './device-approvals/decide-claim.ts';
+import { signedInPrincipal } from './identities/signed-in-principal.ts';
 import { readKeyAccess } from './keys/read-key-access.ts';
 import { lifespan } from './lifespan.ts';
 import { changeWorkspaceMember } from './workspaces/change-workspace-member.ts';
@@ -192,6 +195,28 @@ export class DirectoryObject extends DurableObject<unknown> implements Directory
       onNone: () => LiveSession.cases.SignedOut.make({}),
       onSome: (identity) => LiveSession.cases.Live.make(identity),
     });
+  }
+
+  sessionPrincipal({ tokenHash, dailyAllowanceMicros }: BrowserPrincipalInput): typeof SessionPrincipal.Encoded {
+    const now = DateTime.nowUnsafe();
+
+    return this.#store.atomic({
+      run: () => {
+        const session = this.#store.liveBrowserSession({ tokenHash, now });
+
+        if (Option.isNone(session)) {
+          return SessionPrincipal.cases.SignedOut.make({});
+        }
+
+        const principal = signedInPrincipal({ store: this.#store, session: session.value, dailyAllowanceMicros, now });
+
+        return SessionPrincipal.cases.SignedIn.make({ principal });
+      },
+    });
+  }
+
+  closeBrowserSession({ tokenHash }: TokenHashInput): void {
+    this.#store.closeBrowserSession({ tokenHash });
   }
 
   openSignIn({ signIn, lifetimeMs }: SignInOpening): void {

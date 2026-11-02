@@ -1,6 +1,6 @@
 import type { IdentitySubjects } from '@mechane/deployment';
 import type { catalog, DeviceApprovalRequest, KeyAccessAnswer } from '@mechane/protocol';
-import type { BrowserSessionRequest, StateHashInput, TokenHashInput } from '@mechane/records';
+import type { BrowserSessionRequest, Micros, StateHashInput, TokenHashInput } from '@mechane/records';
 import type {
   ApprovalClaim,
   ApprovalDecision,
@@ -10,6 +10,7 @@ import type {
   KeyTokenAnswer,
   LiveSession,
   PendingApproval,
+  SessionPrincipal,
   SignInClaim,
   WorkspaceMembership,
 } from './directory.schemas.ts';
@@ -44,6 +45,8 @@ type DirectoryMethods = {
   readonly workspaceMembership: (input: WorkspaceMembershipInput) => typeof WorkspaceMembership.Encoded;
   readonly openBrowserSession: (input: BrowserSessionOpening) => void;
   readonly liveBrowserSession: (input: TokenHashInput) => typeof LiveSession.Encoded;
+  readonly sessionPrincipal: (input: BrowserPrincipalInput) => typeof SessionPrincipal.Encoded;
+  readonly closeBrowserSession: (input: TokenHashInput) => void;
   readonly openSignIn: (input: SignInOpening) => void;
   readonly claimSignIn: (input: StateHashInput) => typeof SignInClaim.Encoded;
 };
@@ -64,6 +67,8 @@ export type ApproveDeviceApprovalInput = {
 
 /** A browser session to open; the directory sets its creation and expiry times by its own clock. */
 export type BrowserSessionOpening = { readonly session: BrowserSessionRequest; readonly lifetimeMs: number };
+
+export type BrowserPrincipalInput = TokenHashInput & { readonly dailyAllowanceMicros: Micros };
 
 /** A poll's claim; the caller generates the key's id and token, and the directory stores only the token's hash. */
 export type ClaimDeviceApprovalInput = {

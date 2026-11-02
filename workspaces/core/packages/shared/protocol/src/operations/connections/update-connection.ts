@@ -13,7 +13,7 @@ import { ConnectionConfiguration, ConnectionPath, RemoteConnection } from './sch
 /** Owners replace configuration and prune removed tool names from existing grants. */
 export const updateConnection = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/connections/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/connections/:connection_id',
   access: Access.Member,
   params: ConnectionPath,
   query: NoFields,

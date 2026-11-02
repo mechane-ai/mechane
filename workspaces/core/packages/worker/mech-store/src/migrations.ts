@@ -2,8 +2,8 @@ import type { Migration } from '@mechane/store';
 
 /**
  * A mech's own schema steps in order, after the ledger that records them. Append a step, and never edit one that has
- * shipped. pi's tables share the database under their own prefix and migrate themselves. Each event is stored as `/v1`
- * serves it, so the event schemas follow both the append-only `/v1` rule and the stored-format rule.
+ * shipped. pi's tables share the database under their own prefix and migrate themselves. Each event is stored as
+ * `/api/v1` serves it, so the event schemas follow both the append-only `/api/v1` rule and the stored-format rule.
  */
 export const MIGRATIONS: ReadonlyArray<Migration> = [
   ({ sql }) => {

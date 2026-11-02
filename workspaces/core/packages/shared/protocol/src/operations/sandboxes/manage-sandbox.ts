@@ -10,7 +10,7 @@ import { SandboxReport, SandboxRequest } from './schemas.ts';
 /** Manages the mech's workspace, or one of its drones, through an idempotent maintenance request. */
 export const manageSandbox = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/sandbox',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/sandbox',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

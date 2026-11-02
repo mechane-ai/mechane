@@ -28,4 +28,5 @@ export type WorkerSettings = WorkerConfiguration &
     /** The lifetime of a new key of each purpose. */
     readonly keyLifetimes: Readonly<Record<KeyPurpose, Duration.Duration>>;
     readonly readReleaseFile: ReleaseFileReader;
+    readonly consoleAssets: Fetcher;
   };

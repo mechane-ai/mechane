@@ -50,7 +50,7 @@
     "promise/prefer-await-to-callbacks": "it flags every `(error) =>` handler a callback API takes, such as a decode's failure",
     "promise/prefer-await-to-then": "it flags `Effect.catch` and the two-handler `.then` that DO-03 gives an outbound call",
     "promise/valid-params": "it counts the two arguments of a data-first `Effect.catch(self, handler)` as a promise's, and the compiler checks each promise method's arguments",
-    "sort-keys": "key order is the schema's encode order, the /v1 field order and reference.json's order",
+    "sort-keys": "key order is the schema's encode order, the /api/v1 field order and reference.json's order",
     "typescript/consistent-return": "a switch names every member of its closed set and has no default, which the compiler checks with noImplicitReturns",
     "typescript/non-nullable-type-assertion-style": "it asks for `!`, which TD-07 bans",
     "typescript/only-throw-error": "ast-grep no-throw-or-try rejects every throw",

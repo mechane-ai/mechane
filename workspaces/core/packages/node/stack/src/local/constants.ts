@@ -13,11 +13,12 @@ export type LocalTarget = (typeof LocalTarget)[keyof typeof LocalTarget];
 export const LOCAL_PACKAGE_FILES = {
   manifest: 'local.json',
   worker: 'worker.js',
+  console: 'console.json',
   guest: 'guest.oci.tar',
   celld: 'celld',
   cli: 'mechane',
   launcher: 'mechane-local',
 } as const;
 
-/** Packaged local releases now carry the same compatibility descriptor as cloud releases. */
-export const LOCAL_PACKAGE_FORMAT_VERSION = 2;
+/** Packaged local releases include the Console asset inventory and compatibility descriptor. */
+export const LOCAL_PACKAGE_FORMAT_VERSION = 3;

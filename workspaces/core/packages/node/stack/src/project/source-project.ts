@@ -1,4 +1,4 @@
-import { readBuiltRelease, releasesBucket, WORKER_BUNDLE } from '@mechane/wrangler';
+import { CONSOLE_BUNDLE, readBuiltRelease, releasesBucket, WORKER_BUNDLE } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
@@ -16,6 +16,8 @@ export const sourceProject = Effect.fn('sourceProject')(function* (): Effect.fn.
   return {
     release,
     bundle: WORKER_BUNDLE,
+    consoleBundle: CONSOLE_BUNDLE,
+    consoleDigest: release.console,
     configuration,
     revision: release.public_commit,
     celldCommand: 'celld',

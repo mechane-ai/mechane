@@ -12,7 +12,7 @@ const WatchStatusBody = Schema.Struct({ status: Schema.Enum(WatchStatus) });
 /** Pauses or resumes a saved watch without replacing its configuration. */
 export const updateWatchStatus = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/status',
   access: Access.Member,
   params: WatchPath,
   query: NoFields,

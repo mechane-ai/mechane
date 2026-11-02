@@ -10,7 +10,7 @@ import { FindingList } from './schemas.ts';
 /** Lists the current durable findings of one watch. */
 export const listFindings = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/findings',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/watches/:watch_id/findings',
   access: Access.Member,
   params: WatchPath,
   query: NoFields,

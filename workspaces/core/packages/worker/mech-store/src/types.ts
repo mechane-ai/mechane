@@ -1,4 +1,4 @@
-import type { Event, MechRevisionPage } from '@mechane/protocol';
+import type { Event, ListedEvent, MechRevisionPage } from '@mechane/protocol';
 import type { Sequence, TurnId } from '@mechane/records';
 import type { AlarmControl, AlarmTimeInput, AsyncTransaction, RowsPage } from '@mechane/store';
 import type { DateTime, Option } from 'effect';
@@ -41,6 +41,11 @@ export type AppendEventInput = { readonly event: EventDraft; readonly now: DateT
 /** The sequence a page of the log starts after, 0 for its start. */
 export type EventsAfterInput = { readonly after: number };
 
+export type EventsBeforeInput = {
+  /** None selects the newest page. */
+  readonly before: Option.Option<number>;
+};
+
 /** The record functions of a mech's inbox items, from their receipt to the turn or the conversation they enter. */
 export type InboxItemRecords = {
   readonly receiveInboxItem: (input: ReceiveInboxItemInput) => void;
@@ -78,8 +83,9 @@ export type EventRecords = {
    * change it reports.
    */
   readonly appendEvent: (input: AppendEventInput) => Sequence;
-  /** The stored `/v1` JSON of the events after `after`, oldest first, a page at a time. */
+  /** The stored `/api/v1` JSON of the events after `after`, oldest first, a page at a time. */
   readonly eventsAfter: (input: EventsAfterInput) => RowsPage<string>;
+  readonly eventsBefore: (input: EventsBeforeInput) => RowsPage<ListedEvent>;
   /** The sequence of the log's last event, 0 before the first. */
   readonly lastSequence: () => Sequence;
 };

@@ -8,7 +8,7 @@ import { SlackInstallationDeletion, SlackInstallationPath } from './installation
 /** Owners disable an installation while retaining its bindings and delivery history. */
 export const deleteSlackInstallation = {
   method: HttpMethod.Delete,
-  path: '/v1/workspaces/:workspace_id/slack-installations/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/slack-installations/:connection_id',
   access: Access.Member,
   params: SlackInstallationPath,
   query: NoFields,

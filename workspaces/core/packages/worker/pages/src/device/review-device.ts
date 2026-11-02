@@ -1,3 +1,4 @@
+import type { BrowserSession } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { ApproveForm, DeviceStep, UserCode, userCodeOf } from '@mechane/protocol';
@@ -11,7 +12,7 @@ import { PageRefused } from '../errors.ts';
 import { hiddenFields } from '../html/hidden-fields.ts';
 import { renderPage } from '../html/render-page.ts';
 import { csrfToken } from '../session/csrf-token.ts';
-import type { BrowserSession, PageFailure } from '../types.ts';
+import type { PageFailure } from '../types.ts';
 import { PURPOSE_SUMMARY } from './constants.ts';
 
 /** A signed-in browser's review of the code its person typed. */

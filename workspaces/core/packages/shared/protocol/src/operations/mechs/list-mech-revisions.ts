@@ -16,7 +16,7 @@ const MechRevisionQuery = Schema.Struct({
 /** Lists saved definitions after an exclusive revision cursor. */
 export const listMechRevisions = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/revisions',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/revisions',
   access: Access.Member,
   params: MechPath,
   query: MechRevisionQuery,

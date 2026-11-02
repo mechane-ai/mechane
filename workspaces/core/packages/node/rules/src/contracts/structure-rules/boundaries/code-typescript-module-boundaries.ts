@@ -55,8 +55,8 @@ export const codeTypescriptModuleBoundaries = {
       name: 'no-circular',
       comment:
         'Break the cycle by moving what both files share into a file of its own, such as `session/types.ts`; type-only and dynamic imports count as edges',
-      from: {},
-      to: { circular: true },
+      from: { pathNot: 'routeTree[.]gen[.]ts$' },
+      to: { circular: true, pathNot: 'routeTree[.]gen[.]ts$' },
       standard: 'ST-07',
     },
     {

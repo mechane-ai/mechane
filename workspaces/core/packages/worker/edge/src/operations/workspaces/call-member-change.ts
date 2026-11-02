@@ -1,3 +1,4 @@
+import type { Caller } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import type { ObjectUnavailable } from '@mechane/protocol';
@@ -5,7 +6,6 @@ import type { PrincipalId, WorkspaceId } from '@mechane/records';
 import type { WorkspaceMemberChange } from '@mechane/rpc';
 import { Effect } from 'effect';
 import type { Schema } from 'effect';
-import type { Caller } from '../../types.ts';
 
 type CallMemberChangeInput<S> = {
   readonly settings: WorkerSettings;

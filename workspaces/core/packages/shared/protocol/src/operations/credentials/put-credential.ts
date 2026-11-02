@@ -25,7 +25,7 @@ type CredentialWrite = typeof CredentialWrite.Type;
 /** Owners replace a credential value; create-only imports preserve existing values. */
 export const putCredential = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/credentials/:secret_reference',
+  path: '/api/v1/workspaces/:workspace_id/credentials/:secret_reference',
   access: Access.Member,
   params: CredentialPath,
   query: NoFields,

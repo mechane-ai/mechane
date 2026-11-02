@@ -1,5 +1,6 @@
 import {
   artifactDigest,
+  ArtifactDigest,
   finishedProcess,
   jsonFileText,
   PrivateMode,
@@ -13,7 +14,8 @@ import { Duration, Effect, Option, Schema } from 'effect';
 import type { Scope } from 'effect';
 import { fileURLToPath } from 'node:url';
 import { baseConfiguration } from './base-configuration.ts';
-import { WORKER_BUNDLE } from './constants.ts';
+import { writeConsoleBundle } from './console.ts';
+import { CONSOLE_BUNDLE, WORKER_BUNDLE } from './constants.ts';
 import { readJsonc } from './read-jsonc.ts';
 import { BaseConfiguration } from './schemas.ts';
 
@@ -25,7 +27,12 @@ const COMMIT_TIMEOUT = Duration.seconds(10);
 const BuildStep = { Read: 'read Worker build metadata', Write: 'record Worker build metadata' } as const;
 
 /** Build metadata keeps source-mode configuration paired with its compiled Worker and format locks. */
-export const BuiltRelease = Schema.Struct({ ...ReleaseDescriptor.fields, configuration: BaseConfiguration });
+export const BuiltRelease = Schema.Struct({
+  ...ReleaseDescriptor.fields,
+  configuration: BaseConfiguration,
+  console: ArtifactDigest,
+});
+
 export type BuiltRelease = typeof BuiltRelease.Type;
 
 class WorkerBuildFailed extends Schema.TaggedError<WorkerBuildFailed>()('WorkerBuildFailed', {
@@ -58,7 +65,16 @@ export const writeBuiltRelease = Effect.fn('writeBuiltRelease')(function* (): Ef
   );
 
   const configuration = yield* baseConfiguration({ step: BuildStep.Read, failure: WorkerBuildFailed });
-  const value = { ...descriptor, configuration };
+
+  yield* writeConsoleBundle().pipe(
+    Effect.mapError((failure) => new WorkerBuildFailed({ step: BuildStep.Write, reason: failure.reason })),
+  );
+
+  const console = yield* artifactDigest({ path: CONSOLE_BUNDLE }).pipe(
+    Effect.mapError((failure) => new WorkerBuildFailed({ step: BuildStep.Read, reason: failure.reason })),
+  );
+
+  const value = { ...descriptor, configuration, console };
   const contents = jsonFileText({ schema: BuiltRelease, value });
   const accept = Option.none();
 
@@ -89,6 +105,17 @@ export const readBuiltRelease = Effect.fn('readBuiltRelease')(function* (): Effe
       step: BuildStep.Read,
       reason:
         'Worker bytes differ from their build descriptor; run mise run build:worker before starting or packaging this release',
+    });
+  }
+
+  const console = yield* artifactDigest({ path: CONSOLE_BUNDLE }).pipe(
+    Effect.mapError((failure) => new WorkerBuildFailed({ step: BuildStep.Read, reason: failure.reason })),
+  );
+
+  if (console.sha256 !== descriptor.console.sha256 || console.bytes !== descriptor.console.bytes) {
+    return yield* new WorkerBuildFailed({
+      step: BuildStep.Read,
+      reason: 'Console assets differ from their build descriptor; run mise run build:worker',
     });
   }
 

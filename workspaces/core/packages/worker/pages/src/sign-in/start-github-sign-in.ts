@@ -1,3 +1,4 @@
+import { COOKIE_LIFETIME, cookieHeader, CookieName } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { issueToken, tokenHash } from '@mechane/credentials';
@@ -6,8 +7,7 @@ import type { ObjectUnavailable } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import type { GitHubClientId } from '@mechane/records';
 import { Duration, Effect, Schema } from 'effect';
-import { COOKIE_LIFETIME, CookieName, NO_STORE } from '../constants.ts';
-import { cookieHeader } from '../session/cookie-header.ts';
+import { NO_STORE } from '../constants.ts';
 
 type StartGithubSignInInput = { readonly settings: WorkerSettings; readonly clientId: GitHubClientId };
 

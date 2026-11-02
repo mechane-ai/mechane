@@ -12,7 +12,7 @@ const WorkspaceCreation = wireStruct({ fields: { id: WorkspaceId, name: RecordNa
 /** Only installation administrators allocate a shared workspace and its daily allowance. */
 export const createWorkspace = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces',
+  path: '/api/v1/workspaces',
   access: Access.Principal,
   params: NoFields,
   query: NoFields,

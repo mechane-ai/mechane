@@ -3,8 +3,8 @@ import { renamedWireStruct, Sequence, TurnId } from '@mechane/records';
 import { Schema } from 'effect';
 
 /**
- * A page of the events after a cursor as the log stores them, each its `/v1` JSON, or no mech. Each reads as a listed
- * event, so a release rolled back to still lists a log that holds a type a later release added.
+ * A page of the events after a cursor as the log stores them, each its `/api/v1` JSON, or no mech. Each reads as a
+ * listed event, so a release rolled back to still lists a log that holds a type a later release added.
  */
 export const EventsAnswer = Schema.TaggedUnion({
   Listed: { events: Schema.Array(Schema.fromJsonString(ListedEvent)), hasMore: Schema.Boolean },

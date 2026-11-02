@@ -8,7 +8,7 @@ import { PrincipalAnswer } from './schemas.ts';
 /** Reports the principal the caller's key acts for, and that key. */
 export const showPrincipal = {
   method: HttpMethod.Get,
-  path: '/v1/principal',
+  path: '/api/v1/principal',
   access: Access.Principal,
   params: NoFields,
   query: NoFields,

@@ -10,7 +10,7 @@ import { WorkspacePath } from './schemas.ts';
 /** Installation administrators inspect effective policy even when the workspace is suspended. */
 export const showWorkspacePolicy = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/policy',
+  path: '/api/v1/workspaces/:workspace_id/policy',
   access: Access.Principal,
   params: WorkspacePath,
   query: NoFields,

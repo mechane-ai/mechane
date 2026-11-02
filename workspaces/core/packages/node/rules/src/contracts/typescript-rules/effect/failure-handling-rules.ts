@@ -1,4 +1,11 @@
-import { AST_GREP_DEFAULTS, RESTRICTED_DEFAULTS, RolloutPhase, RuleFix, RuleStatus } from '@mechane/rule-shapes';
+import {
+  AST_GREP_DEFAULTS,
+  FileRole,
+  RESTRICTED_DEFAULTS,
+  RolloutPhase,
+  RuleFix,
+  RuleStatus,
+} from '@mechane/rule-shapes';
 
 /** A restricted rule of failure handling, which bans no import and exempts no file. */
 const RESTRICTED = { ...RESTRICTED_DEFAULTS, imports: [], exemptRoles: [] } as const;
@@ -11,6 +18,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...RESTRICTED,
     message: 'Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })`',
+    exemptRoles: [FileRole.BrowserAdapter],
     properties: {
       Effect: ['ignore', 'option', 'result', 'either', 'orElse', 'orElseSucceed', 'orElseFail', 'catchCause'],
     },
@@ -84,6 +92,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'no-instanceof',
+    exemptRoles: [FileRole.BrowserAdapter],
     standard: 'EF-05',
     status: RuleStatus.Enforced,
     phase: RolloutPhase.EffectDialect,

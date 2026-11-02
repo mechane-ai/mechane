@@ -8,7 +8,7 @@ import { SlackBindings } from './schemas.ts';
 /** Lists the Slack bindings visible to the workspace member. */
 export const listSlackBindings = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/slack-bindings',
+  path: '/api/v1/workspaces/:workspace_id/slack-bindings',
   access: Access.Member,
   params: wireStruct({ fields: { workspaceId: WorkspaceId } }),
   query: NoFields,

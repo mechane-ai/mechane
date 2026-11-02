@@ -35,7 +35,7 @@ For each new edge, does the depending package need the dependency's own concept,
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`]; `sourceFolders` `src`, `scripts`.
+Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`.
 - dependency-cruiser family `layer` (ST-02): enforced in phase E: Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`
 - dependency-cruiser family `lane` (ST-02): enforced in phase E: Import Node's modules only outside the shared lane and the Workers runtime's only in the worker lane, such as `node:path` in `@mechane/cli` and `cloudflare:workers` in `@mechane/mech`
 - dependency-cruiser family `confine` (ST-04): enforced in phase E: Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`

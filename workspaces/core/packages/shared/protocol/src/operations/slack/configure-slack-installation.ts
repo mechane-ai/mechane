@@ -27,7 +27,7 @@ type SlackInstallationWrite = typeof SlackInstallationWrite.Type;
 /** Owners configure Slack metadata while keeping credential values in the workspace vault. */
 export const configureSlackInstallation = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/slack-installations/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/slack-installations/:connection_id',
   access: Access.Member,
   params: SlackInstallationPath,
   query: NoFields,

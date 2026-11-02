@@ -34,5 +34,6 @@ export const decodeSettings = Effect.fn('decodeSettings')(function* ({
     },
     ...objectBindings({ environment }),
     readReleaseFile,
+    consoleAssets: environment.ASSETS,
   };
 });

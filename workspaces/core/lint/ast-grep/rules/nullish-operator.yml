@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'Read an absent value through `Option`, such as `Option.getOrElse(Option.fromNullishOr(value), () => fallback)` (TD-18)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', 'packages/browser/**']
 rule:
   any:
     - kind: binary_expression

@@ -8,6 +8,12 @@ The CLI embeds this directory as readable assets in its executable. The guest bu
 notices, and the Worker imports every JavaScript notice here. The guest image also retains the Node image's
 `/usr/local/LICENSE`, Debian package copyright files under `/usr/share/doc`, and `/usr/share/common-licenses`.
 
+## Browser assets
+
+Vite generates `THIRD_PARTY_LICENSES.txt` from the packages actually bundled into the Console. The file is part of
+`console.json`, so local and Cloudflare releases retain the same notices. The Console links to it at
+`/console/THIRD_PARTY_LICENSES.txt`. Check this generated inventory when changing browser dependencies.
+
 ## Application dependencies
 
 The guest bundle metadata contains Effect as its external JavaScript package. Local release admission also uses semver.

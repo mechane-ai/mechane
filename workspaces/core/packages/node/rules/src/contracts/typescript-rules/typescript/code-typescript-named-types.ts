@@ -1,6 +1,7 @@
 import {
   ADOPTED,
   AST_GREP_DEFAULTS,
+  FileRole,
   FixBehavior,
   OXLINT_DEFAULTS,
   RolloutPhase,
@@ -28,6 +29,7 @@ export const codeTypescriptNamedTypes = {
       ...OXLINT_DEFAULTS,
       ...SWEPT_BY_FIXERS,
       name: 'typescript/consistent-type-definitions',
+      exemptRoles: [FileRole.BrowserConfiguration],
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, 'type'],
       maxSuppressions: 2,
@@ -99,6 +101,7 @@ export const codeTypescriptNamedTypes = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'named-object-types',
+      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.TypeOnly,
       standard: 'TD-03',
       violation: [

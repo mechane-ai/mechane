@@ -12,7 +12,7 @@ import { TurnCancel, TurnPath } from './schemas.ts';
  */
 export const cancelTurn = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/cancel',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/cancel',
   access: Access.Member,
   params: TurnPath,
   query: NoFields,

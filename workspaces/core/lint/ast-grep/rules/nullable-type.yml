@@ -5,7 +5,7 @@ language: TypeScript
 severity: error
 message: 'Spell absence as `Option`, such as `readonly endedAt: Option.Option<number>` decoded by `Schema.OptionFromNullOr` (TD-18)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['packages/browser/**', '**/node_modules/**']
 utils:
   # The type arguments a generic that no Mechane module declares takes, which follow that dependency's own types: the
   # TypeScript library's and each dependency's that a site passes `null` or `undefined` today.

@@ -1,0 +1,18 @@
+{
+  "name": "@mechane/authentication",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/bindings": "workspace:*",
+    "@mechane/credentials": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/rpc": "workspace:*",
+    "cookie": "1.1.1",
+    "effect": "4.0.7"
+  }
+}

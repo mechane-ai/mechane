@@ -1,3 +1,4 @@
+import type { BrowserSession } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { tokenHash } from '@mechane/credentials';
@@ -10,7 +11,7 @@ import { PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
 import { renderPage } from '../html/render-page.ts';
 import { requireIdentityAdmission } from '../session/require-identity-admission.ts';
-import type { BrowserSession, PageFailure } from '../types.ts';
+import type { PageFailure } from '../types.ts';
 import { PURPOSE_SUMMARY } from './constants.ts';
 
 /** A signed-in browser's approval of the code its review showed. */

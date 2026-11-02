@@ -8,7 +8,7 @@ import { Allowance, WorkspacePath } from './schemas.ts';
 /** Reads the workspace's allowance for the current UTC day, and what the day's dispatches have committed of it. */
 export const showAllowance = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/allowance',
+  path: '/api/v1/workspaces/:workspace_id/allowance',
   access: Access.Member,
   params: WorkspacePath,
   query: NoFields,

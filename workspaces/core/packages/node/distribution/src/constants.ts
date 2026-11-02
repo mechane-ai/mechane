@@ -41,3 +41,6 @@ export const DistributionStep = {
 } as const;
 
 export type DistributionStep = (typeof DistributionStep)[keyof typeof DistributionStep];
+
+/** The console inventory shipped beside the immutable Worker module. */
+export const CONSOLE_FILENAME = 'console.json';

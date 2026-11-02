@@ -8,7 +8,7 @@ import { ConnectionDeletion, ConnectionPath } from './schemas.ts';
 /** Owners remove a connection together with all of its mech grants. */
 export const deleteConnection = {
   method: HttpMethod.Delete,
-  path: '/v1/workspaces/:workspace_id/connections/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/connections/:connection_id',
   access: Access.Member,
   params: ConnectionPath,
   query: NoFields,

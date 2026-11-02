@@ -18,7 +18,7 @@ const ToolGrantRequest = Schema.Struct({ tools: RemoteToolNames });
 /** Owners replace one mech selection with names from the connection's allowed set. */
 export const grantTools = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/grants/:connection_id',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/grants/:connection_id',
   access: Access.Member,
   params: ToolGrantPath,
   query: NoFields,

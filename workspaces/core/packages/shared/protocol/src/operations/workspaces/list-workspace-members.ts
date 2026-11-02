@@ -8,7 +8,7 @@ import { WorkspaceMemberList, WorkspacePath } from './schemas.ts';
 /** Live owner authority is required to enumerate the workspace’s audience. */
 export const listWorkspaceMembers = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/members',
+  path: '/api/v1/workspaces/:workspace_id/members',
   access: Access.Member,
   params: WorkspacePath,
   query: NoFields,

@@ -1,9 +1,9 @@
+import type { Caller } from '@mechane/authentication';
 import { hasPrincipalIdentity } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { InstallationAdministratorRequired } from '@mechane/protocol';
 import type { ObjectUnavailable } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
-import type { Caller } from '../types.ts';
 
 type RequireInstallationAdministratorInput = { readonly settings: WorkerSettings; readonly caller: Caller };
 

@@ -8,7 +8,7 @@ import { WorkspaceMemberPath, WorkspaceMemberRemoval } from './schemas.ts';
 /** Revocation takes effect on the next workspace request even with a cached key. */
 export const removeWorkspaceMember = {
   method: HttpMethod.Delete,
-  path: '/v1/workspaces/:workspace_id/members/:principal_id',
+  path: '/api/v1/workspaces/:workspace_id/members/:principal_id',
   access: Access.Member,
   params: WorkspaceMemberPath,
   query: NoFields,

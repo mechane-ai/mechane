@@ -5,7 +5,7 @@ language: TypeScript
 severity: error
 message: 'Name the object type with a `type` alias, such as `type LineInput = { readonly line: string }` (TD-03)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', 'packages/browser/**']
 utils:
   # an intersection's operand that is an object type literal, or an intersection holding one
   intersected-object:

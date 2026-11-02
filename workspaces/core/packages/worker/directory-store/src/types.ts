@@ -75,6 +75,7 @@ export type BrowserSessionRecords = {
   readonly openBrowserSession: (input: OpenBrowserSessionInput) => void;
   /** The unexpired session with the token's hash, none once it expired or when none opened. */
   readonly liveBrowserSession: (input: LiveBrowserSessionInput) => Option.Option<BrowserIdentity>;
+  readonly closeBrowserSession: (input: KeyForTokenInput) => void;
 };
 
 export type ClaimSignInInput = { readonly stateHash: string; readonly now: DateTime.Utc };

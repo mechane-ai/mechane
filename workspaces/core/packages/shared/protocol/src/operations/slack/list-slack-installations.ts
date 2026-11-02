@@ -8,7 +8,7 @@ import { SlackInstallations } from './installations.schemas.ts';
 /** Owners inspect Slack installations without resolving their credential references. */
 export const listSlackInstallations = {
   method: HttpMethod.Get,
-  path: '/v1/workspaces/:workspace_id/slack-installations',
+  path: '/api/v1/workspaces/:workspace_id/slack-installations',
   access: Access.Member,
   params: wireStruct({ fields: { workspaceId: WorkspaceId } }),
   query: NoFields,

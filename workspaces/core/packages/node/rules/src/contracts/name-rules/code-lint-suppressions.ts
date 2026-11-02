@@ -23,7 +23,13 @@ const VALUES = {
     categories: ['correctness', 'suspicious', 'pedantic', 'perf', 'style', 'restriction'],
     options: { typeAware: true, reportUnusedDisableDirectives: Severity.Error },
     // Copied license text uses legal comments for bundler retention and contains no implementation code.
-    ignorePatterns: ['**/dist/**', '**/node_modules/**', 'lint/types/**', 'licenses/*.js'],
+    ignorePatterns: [
+      '**/dist/**',
+      '**/node_modules/**',
+      'lint/types/**',
+      'licenses/*.js',
+      'packages/browser/console/src/routeTree.gen.ts',
+    ],
     optOuts: OXLINT_OPT_OUTS,
   },
   maxRuleSuppressions: 3,

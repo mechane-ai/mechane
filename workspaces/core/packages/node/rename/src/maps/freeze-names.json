@@ -207,7 +207,7 @@
     { "from": "packages/cli/src/runs/observe/run-trace.ts", "to": "packages/cli/src/runs/observe/run-trace-show.ts" }
   ],
   "strings": [
-    { "from": "/v1/whoami", "to": "/v1/principal" },
+    { "from": "/api/v1/whoami", "to": "/api/v1/principal" },
     { "from": "whoami", "to": "showPrincipal" },
     { "from": "Whoami", "to": "PrincipalAnswer" },
     { "from": "readDrone", "to": "showDrone", "within": "packages" },

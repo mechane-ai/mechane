@@ -24,7 +24,7 @@ const UpdateMechBody = wireStruct({
 /** Saves a definition only when the caller's expected revision still matches. */
 export const updateMech = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/definition',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/definition',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

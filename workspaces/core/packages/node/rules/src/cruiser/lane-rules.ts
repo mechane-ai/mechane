@@ -6,6 +6,8 @@ import type { FamilyRule } from './types.ts';
 /** The modules every runtime but Node lacks, and those only the Workers runtime provides. */
 const RUNTIME_MODULES = { node: { dependencyTypes: ['core'] }, workers: { path: '^cloudflare:' } } as const;
 
+const BROWSER_LANES: ReadonlySet<Lane> = new Set([Lane.Shared, Lane.Browser]);
+
 /** Every member that holds a source root. */
 type LaneRulesInput = { readonly members: ReadonlyArray<WorkspaceMember> };
 
@@ -14,7 +16,7 @@ export function laneRules({ members }: LaneRulesInput): ReadonlyArray<FamilyRule
   return [
     {
       subject: Lane.Shared,
-      from: { path: rootsPattern({ members: members.filter(({ entry }) => entry.lane === Lane.Shared) }) },
+      from: { path: rootsPattern({ members: members.filter(({ entry }) => BROWSER_LANES.has(entry.lane)) }) },
       to: RUNTIME_MODULES.node,
     },
     {

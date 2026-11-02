@@ -16,7 +16,7 @@ export const localManifest = Effect.fn('localManifest')(function* ({
   target,
   commit,
 }: LocalManifestInput): Effect.fn.Return<LocalPackage, DistributionFailed> {
-  const { configuration: base, ...descriptor } = yield* distributionDescriptor({ commit, isPreview: false });
+  const { configuration: base, console, ...descriptor } = yield* distributionDescriptor({ commit, isPreview: false });
   const guestPath = join(folder, LOCAL_PACKAGE_FILES.guest);
   const celldPath = join(folder, LOCAL_PACKAGE_FILES.celld);
   const cliPath = join(folder, LOCAL_PACKAGE_FILES.cli);
@@ -33,7 +33,7 @@ export const localManifest = Effect.fn('localManifest')(function* ({
     ...descriptor,
     target,
     configuration: { ...base, containers, vars },
-    files: { 'guest.oci.tar': guest, celld, 'mechane': cli },
+    files: { 'guest.oci.tar': guest, celld, 'mechane': cli, 'console.json': console },
   };
 });
 

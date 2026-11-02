@@ -1,6 +1,6 @@
 import type { WorkerSettings } from '@mechane/bindings';
 import { OriginProtocol } from '@mechane/deployment';
-import type { CookieName } from '../constants.ts';
+import type { CookieName } from './constants.ts';
 
 type CookieNameInput = { readonly cookie: CookieName; readonly settings: WorkerSettings };
 

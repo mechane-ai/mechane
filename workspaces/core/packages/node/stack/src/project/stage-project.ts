@@ -1,6 +1,6 @@
 import type { LocalSandboxProvider } from '@mechane/deployment';
 import { JSON_INDENT_CHARS, StepSubject } from '@mechane/program';
-import { withBuiltBundle } from '@mechane/wrangler';
+import { stageConsole, withBuiltBundle } from '@mechane/wrangler';
 import { Effect, Struct } from 'effect';
 import { copyFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -62,6 +62,12 @@ export const stageProject = Effect.fn('stageProject')(function* ({
   });
   yield* stageVariables({ projectFolder, variables });
 
+  const assetsFolder = join(projectFolder, 'assets');
+
+  yield* stageConsole({ path: project.consoleBundle, expected: project.consoleDigest, folder: assetsFolder }).pipe(
+    Effect.mapError((failure) => new StackFailed({ step: StackStep.CopyWorkerBundle, reason: failure.reason })),
+  );
+
   return { durableObjectClasses };
 });
 
@@ -74,6 +80,7 @@ function stagedConfiguration({ sandboxProvider, project }: StagedConfigurationIn
 
   const configuration = {
     ...Struct.omit(base, ['containers']),
+    assets: { directory: './assets', binding: 'ASSETS', html_handling: 'none', run_worker_first: true },
     ...stagedContainers({ sandboxProvider, containers: base.containers }),
   };
 

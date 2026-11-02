@@ -4,9 +4,9 @@ import { tokenHash } from '@mechane/credentials';
 import type { ObjectUnavailable } from '@mechane/protocol';
 import { LiveSession } from '@mechane/rpc';
 import { Effect, Match, Option } from 'effect';
-import { CookieName } from '../constants.ts';
-import type { BrowserSession } from '../types.ts';
+import { CookieName } from './constants.ts';
 import { readCookie } from './read-cookie.ts';
+import type { BrowserSession } from './types.ts';
 
 type BrowserSessionInput = { readonly request: Request; readonly settings: WorkerSettings };
 

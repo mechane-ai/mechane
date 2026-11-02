@@ -8,7 +8,7 @@ import { GenerateFailed } from '../errors.ts';
 const SKIPPED_FOLDERS: ReadonlySet<string> = new Set(['node_modules', 'dist', '.git', '.wrangler']);
 
 /** The patterns of the listing: every path, and every dotfile, which `**` alone leaves out. */
-const WORKSPACE_PATTERNS = ['**/*', '**/.*'] as const;
+const WORKSPACE_PATTERNS = ['**/*', '**/.*', '**/.storybook/**/*'] as const;
 
 /**
  * Every file and folder of the workspace, dotfiles included, relative to it, without installed packages, builds, Git's

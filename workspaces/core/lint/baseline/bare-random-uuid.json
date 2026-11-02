@@ -5,7 +5,6 @@
   "packages/node/stack/src/github/create-github-ledger.ts": 2,
   "packages/node/stack/src/model/scripted-reply.ts": 1,
   "packages/node/stack/src/model/stream-answer.ts": 1,
-  "packages/worker/directory/src/device-approvals/decide-approval.ts": 2,
   "packages/worker/edge/src/operations/auth/poll-device-approval.ts": 1,
   "packages/worker/edge/src/operations/auth/start-device-approval.ts": 1,
   "packages/worker/edge/src/operations/mechs/fork-mech.ts": 1,

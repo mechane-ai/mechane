@@ -71,7 +71,6 @@ export {
   MechRevisionsAnswer,
   MemoriesAnswer,
   TurnCancelAnswer,
-  RECORD_TIME_KEYS,
 } from './mech.schemas.ts';
 export type {
   ForkInput,
@@ -164,3 +163,8 @@ export type {
 export { WorkspaceVariables, WorkspacePolicyMutation, WorkspacePresence } from './workspace-policy.schemas.ts';
 export type { ReadWorkspacePolicyInput, SaveWorkspacePolicyInput } from './workspace-policy.types.ts';
 export { readWorkspacePolicy } from './read-workspace-policy.ts';
+export { SessionPrincipal } from './directory.schemas.ts';
+export type { BrowserPrincipalInput } from './directory.types.ts';
+
+export { TurnAnswer, TurnsAnswer } from './turn.schemas.ts';
+export type { TurnsInput, RecentEventsInput } from './mech/types.ts';

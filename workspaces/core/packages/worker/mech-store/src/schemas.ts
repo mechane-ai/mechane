@@ -37,7 +37,7 @@ export const PendingItemRow = renamedWireStruct({
 
 export type PendingItemRow = typeof PendingItemRow.Type;
 
-/** A turn, as `/v1` reads it, by its status: only an ended turn has its end, and only an unanswered one a reason. */
+/** A turn by status: an ended turn has an end time, and an unanswered turn has a reason. */
 export const TurnRow = Schema.Union([
   renamedWireStruct({
     fields: {
@@ -107,7 +107,7 @@ export const ForkRow = renamedWireStruct({
 
 export type ForkRow = typeof ForkRow.Type;
 
-/** The mech an object holds, stored as `/v1` serves it. */
+/** The mech an object holds, stored as `/api/v1` serves it. */
 export const MechRow = renamedWireStruct({
   fields: {
     ...MECH_RECORD_FIELDS,

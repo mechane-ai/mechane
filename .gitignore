@@ -16,3 +16,7 @@ mise.local.toml
 mise.local.lock
 .tenet/
 *.log
+# TanStack Start regenerates this route map during console builds.
+workspaces/core/packages/browser/console/src/routeTree.gen.ts
+
+storybook-static/

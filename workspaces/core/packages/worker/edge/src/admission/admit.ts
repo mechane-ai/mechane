@@ -1,11 +1,12 @@
+import type { Caller } from '@mechane/authentication';
+import { resolveCaller } from '@mechane/authentication';
 import { limitRequest } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { LimitPolicy } from '@mechane/deployment';
 import { Access } from '@mechane/protocol';
 import type { AccessFailure, ObjectUnavailable, RateLimited } from '@mechane/protocol';
 import { Effect } from 'effect';
-import type { AccessCaller, Caller, RawPathParams } from '../types.ts';
-import { resolveCaller } from './resolve-caller.ts';
+import type { AccessCaller, RawPathParams } from '../types.ts';
 import { resolveMember } from './resolve-member.ts';
 import type { AdmitInput } from './types.ts';
 
@@ -30,8 +31,8 @@ type Admissions = {
 /** The admission of each access; an access without one fails to compile. */
 const ADMISSIONS: Readonly<Admissions> = {
   [Access.Public]: () => Effect.succeedNone,
-  [Access.Principal]: ({ request, params, settings }) =>
-    limitedCaller({ settings, caller: resolveCaller({ request, params, settings }) }),
+  [Access.Principal]: ({ request, settings }) =>
+    limitedCaller({ settings, caller: resolveCaller({ request, settings }) }),
   [Access.Member]: ({ request, params, settings }) =>
     limitedCaller({ settings, caller: resolveMember({ request, params, settings }) }),
 };

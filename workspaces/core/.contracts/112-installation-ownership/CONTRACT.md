@@ -55,6 +55,10 @@ Inspect release archives for public provenance and notices, and verify their man
 
 ## Local adaptations
 
+The Console release relocates `/v1` to `/api/v1` without runtime aliases, as explicitly authorized before use.
+Upgrade admission normalizes only previous operation, field, and enum-member addresses for this move. Stored wire categories
+and migration entries keep their exact comparison. This exception does not authorize other removals or data resets.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

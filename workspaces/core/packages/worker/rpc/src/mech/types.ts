@@ -18,6 +18,7 @@ import type { SandboxManageInput } from '../sandbox.types.ts';
 import type { ReceiveSlackInboxItemInput } from '../slack.types.ts';
 import type { SourceAnswer, SourceGrantAnswer } from '../source.schemas.ts';
 import type { SourceManageInput } from '../source.types.ts';
+import type { TurnsAnswer } from '../turn.schemas.ts';
 import type { FindingsAnswer, WatchAnswer, WatchesAnswer } from '../watch.schemas.ts';
 import type { SetWatchInput, UpdateWatchStatusInput, WatchInput } from '../watch.types.ts';
 
@@ -51,7 +52,7 @@ export type MechRevisionsInput = { readonly after: number };
 
 export type DroneInput = { readonly droneId: string };
 
-/** A page of the mech's drones, as the Worker asks for it: the list's query as `/v1` encodes it. */
+/** A page of the mech's drones, as the Worker asks for it: the list's query as `/api/v1` encodes it. */
 export type DronesInput = { readonly query: typeof catalog.listDrones.query.Encoded };
 
 /** The events to list: those after `after`, waiting up to `waitMs` while there are none. */
@@ -68,10 +69,14 @@ export type SendInboxItemInput = {
   readonly senderId: string;
 };
 
-/** A page of the mech's threads, as the Worker asks for it: the list's query as `/v1` encodes it. */
+/** A page of the mech's threads, as the Worker asks for it: the list's query as `/api/v1` encodes it. */
 export type ThreadsInput = { readonly query: typeof catalog.listThreads.query.Encoded };
 
 export type TurnInput = { readonly turnId: string };
+
+export type TurnsInput = { readonly query: typeof catalog.listTurns.query.Encoded };
+
+export type RecentEventsInput = { readonly query: typeof catalog.listRecentEvents.query.Encoded };
 
 /** A turn as a mech's object answers it, decoded into the wire's turn; its end and reason are null until it ends. */
 export type TurnFields = {
@@ -144,6 +149,8 @@ type MechMethods = {
   readonly sendInboxItem: (input: SendInboxItemInput) => Promise<typeof InboxItemReceipt.Encoded>;
   readonly events: (input: EventsInput) => Promise<typeof EventsAnswer.Encoded>;
   readonly turn: (input: TurnInput) => Promise<TurnReading>;
+  readonly turns: (input: TurnsInput) => Promise<typeof TurnsAnswer.Encoded>;
+  readonly recentEvents: (input: RecentEventsInput) => Promise<typeof EventsAnswer.Encoded>;
   readonly cancelTurn: (input: CancelTurnInput) => Promise<typeof TurnCancelAnswer.Encoded>;
   readonly memories: () => Promise<typeof MemoriesAnswer.Encoded>;
   readonly threads: (input: ThreadsInput) => Promise<typeof ThreadsAnswer.Encoded>;

@@ -1,6 +1,7 @@
 import {
   ADOPTED,
   AST_GREP_DEFAULTS,
+  FileRole,
   OWNED_DEFAULTS,
   OXLINT_DEFAULTS,
   RolloutPhase,
@@ -16,11 +17,19 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
 export const codeConditionalExpressions = {
   values: { logicalOperators: 2 },
   rules: [
-    { ...OXLINT_DEFAULTS, ...ADOPTED, name: 'no-ternary', value: Severity.Error, standard: 'EF-21' },
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'no-ternary',
+      exemptRoles: [FileRole.Browser],
+      value: Severity.Error,
+      standard: 'EF-21',
+    },
     {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'logical-conditional',
+      exemptRoles: [FileRole.Browser],
       standard: 'EF-21',
       violation: ['const value = (isReady && total) || fallback;', 'const value = isReady && total ?? fallback;'],
       allowed: ['const isDone = isReady && hasTotal;'],

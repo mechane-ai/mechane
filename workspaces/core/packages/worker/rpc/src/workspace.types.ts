@@ -123,7 +123,7 @@ export type ReserveMachineInput = ReleaseMachineInput & { readonly isAdopting: b
 
 export type MechIdInput = { readonly mechId: string };
 
-/** A page of the workspace's mechs, as the Worker asks for it: the list's query as `/v1` encodes it. */
+/** A page of the workspace's mechs, as the Worker asks for it: the list's query as `/api/v1` encodes it. */
 export type MechsInput = { readonly query: typeof catalog.listMechs.query.Encoded };
 
 export type ReleaseMachineInput = { readonly sandboxId: string; readonly reservationId: number };

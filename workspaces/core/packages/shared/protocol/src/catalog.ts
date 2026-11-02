@@ -4,6 +4,7 @@ import { CONNECTION_OPERATIONS } from './operations/connections/connection-opera
 import { CREDENTIAL_OPERATIONS } from './operations/credentials/credential-operations.ts';
 import { DRONE_OPERATIONS } from './operations/drones/drone-operations.ts';
 import { listEvents } from './operations/events/list-events.ts';
+import { listRecentEvents } from './operations/events/list-recent-events.ts';
 import { listFindings } from './operations/findings/list-findings.ts';
 import { sendInboxItem } from './operations/inbox/send-inbox-item.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
@@ -28,6 +29,7 @@ export const catalog = {
   ...CREDENTIAL_OPERATIONS,
   ...DRONE_OPERATIONS,
   listEvents,
+  listRecentEvents,
   listFindings,
   sendInboxItem,
   ...MECH_OPERATIONS,

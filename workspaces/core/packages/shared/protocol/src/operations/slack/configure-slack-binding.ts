@@ -8,7 +8,7 @@ import { SlackBinding, SlackBindingResult } from './schemas.ts';
 /** Configures one fixed agent and audience, requiring live workspace ownership. */
 export const configureSlackBinding = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/slack-bindings',
+  path: '/api/v1/workspaces/:workspace_id/slack-bindings',
   access: Access.Member,
   params: wireStruct({ fields: { workspaceId: WorkspaceId } }),
   query: NoFields,

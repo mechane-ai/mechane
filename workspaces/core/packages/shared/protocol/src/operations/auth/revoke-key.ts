@@ -12,7 +12,7 @@ type KeyParams = typeof KeyParams.Type;
 /** Revokes one of the caller's keys for good; revoking a revoked key keeps its first revocation time. */
 export const revokeKey = {
   method: HttpMethod.Post,
-  path: '/v1/keys/:key_id/revoke',
+  path: '/api/v1/keys/:key_id/revoke',
   access: Access.Principal,
   params: KeyParams,
   query: NoFields,

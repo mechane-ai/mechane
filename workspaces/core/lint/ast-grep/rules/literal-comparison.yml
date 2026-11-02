@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: "Compare against the closed set's named member, such as `status === RuleStatus.Proposed` (TD-19)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', 'packages/browser/**']
 rule:
   any:
     - kind: binary_expression

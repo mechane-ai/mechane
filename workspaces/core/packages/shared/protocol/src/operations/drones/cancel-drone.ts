@@ -13,7 +13,7 @@ import { DroneCancel, DronePath } from './schemas.ts';
  */
 export const cancelDrone = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/drones/:drone_id/cancel',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/drones/:drone_id/cancel',
   access: Access.Member,
   params: DronePath,
   query: NoFields,

@@ -1,7 +1,7 @@
+import type { Caller } from '@mechane/authentication';
 import { callWorkspace } from '@mechane/bindings';
 import type { ObjectUnavailable, ServiceFreeCodec, WorkspaceNotFound, WorkspaceOwnerRequired } from '@mechane/protocol';
 import { Effect } from 'effect';
-import type { Caller } from '../types.ts';
 import { requireWorkspaceOwner } from './require-workspace-owner.ts';
 
 type CallOwnerWorkspaceInput<Answer extends ServiceFreeCodec> = Parameters<typeof callWorkspace<Answer>>[0] & {

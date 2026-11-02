@@ -1,7 +1,7 @@
 import { releaseBinaryName } from '@mechane/protocol';
 import { LOCAL_PACKAGE_FILES } from '@mechane/stack';
 import type { LocalTarget } from '@mechane/stack';
-import { WORKER_BUNDLE } from '@mechane/wrangler';
+import { CONSOLE_BUNDLE, WORKER_BUNDLE } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { chmod, cp } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -60,6 +60,7 @@ function localSourceFiles({ target, settings }: LocalSourceFilesInput): Readonly
 
   return [
     { source: WORKER_BUNDLE, name: LOCAL_PACKAGE_FILES.worker },
+    { source: CONSOLE_BUNDLE, name: LOCAL_PACKAGE_FILES.console },
     { source: join(settings.folder, guest), name: LOCAL_PACKAGE_FILES.guest },
     { source: join(settings.folder, binary), name: LOCAL_PACKAGE_FILES.cli },
     { source: LOCAL_EXAMPLE, name: 'model.example.json' },

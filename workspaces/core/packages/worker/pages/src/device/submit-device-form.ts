@@ -1,3 +1,4 @@
+import { browserSession } from '@mechane/authentication';
 import { limitRequest } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { LimitPolicy } from '@mechane/deployment';
@@ -5,7 +6,6 @@ import { DeviceForm, DeviceStep } from '@mechane/protocol';
 import { Effect, Option, Record, Schema } from 'effect';
 import { PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
-import { browserSession } from '../session/browser-session.ts';
 import { csrfToken } from '../session/csrf-token.ts';
 import { identityKey } from '../session/identity-key.ts';
 import { readBrowserForm } from '../session/read-browser-form.ts';

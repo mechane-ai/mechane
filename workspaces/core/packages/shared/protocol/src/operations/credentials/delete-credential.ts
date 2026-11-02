@@ -8,7 +8,7 @@ import { CredentialDeletion, CredentialPath } from './schemas.ts';
 /** Owners remove a credential without deleting integrations that retain its reference. */
 export const deleteCredential = {
   method: HttpMethod.Delete,
-  path: '/v1/workspaces/:workspace_id/credentials/:secret_reference',
+  path: '/api/v1/workspaces/:workspace_id/credentials/:secret_reference',
   access: Access.Member,
   params: CredentialPath,
   query: NoFields,

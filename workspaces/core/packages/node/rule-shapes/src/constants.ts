@@ -183,6 +183,9 @@ export type Severity = (typeof Severity)[keyof typeof Severity];
  * promise, and a constants file names every number.
  */
 export const FileRole = {
+  Browser: 'browser',
+  BrowserConfiguration: 'browser-configuration',
+  BrowserAdapter: 'browser-adapter',
   Settings: 'settings',
   Output: 'output',
   WorkerModule: 'worker-module',

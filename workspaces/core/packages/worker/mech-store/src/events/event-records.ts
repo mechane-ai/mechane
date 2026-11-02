@@ -1,9 +1,9 @@
-import { Event } from '@mechane/protocol';
+import { Event, ListedEvent } from '@mechane/protocol';
 import { Sequence } from '@mechane/records';
 import { decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, RowsPage, SqlCall } from '@mechane/store';
-import { Schema } from 'effect';
-import type { AppendEventInput, EventRecords, EventsAfterInput } from '../types.ts';
+import { Option, Schema } from 'effect';
+import type { AppendEventInput, EventRecords, EventsAfterInput, EventsBeforeInput } from '../types.ts';
 
 /**
  * The most events one page of a mech's log holds. Every page says whether more follow, so no client reads it, and a
@@ -11,7 +11,7 @@ import type { AppendEventInput, EventRecords, EventsAfterInput } from '../types.
  */
 const EVENTS_PER_PAGE = 100;
 
-/** One event of the log, as `/v1` encodes it. */
+/** One event of the log, as `/api/v1` encodes it. */
 const EventRow = Schema.Struct({ event: Schema.String });
 
 type EventRow = typeof EventRow.Type;
@@ -21,7 +21,7 @@ const SequenceRow = Schema.Struct({ sequence: Sequence });
 
 type SequenceRow = typeof SequenceRow.Type;
 
-/** An event as the log stores it: the JSON of its `/v1` encoding. */
+/** An event as the log stores it: the JSON of its `/api/v1` encoding. */
 const StoredEvent = Schema.fromJsonString(Event);
 
 type StoredEvent = typeof StoredEvent.Type;
@@ -31,8 +31,26 @@ export function eventRecords({ sql }: RecordsInput): EventRecords {
   return {
     appendEvent: (input) => appendEvent({ sql, ...input }),
     eventsAfter: (input) => eventsAfter({ sql, ...input }),
+    eventsBefore: (input) => eventsBefore({ sql, ...input }),
     lastSequence: () => lastSequence({ sql }),
   };
+}
+
+const RecentEventRow = Schema.Struct({ event: Schema.fromJsonString(ListedEvent) });
+
+function eventsBefore({ sql, before }: SqlCall<EventsBeforeInput>): RowsPage<ListedEvent> {
+  const cursorBefore = Option.getOrNull(before);
+
+  const cursor = sql.exec(
+    'SELECT event FROM events WHERE (? IS NULL OR sequence < ?) ORDER BY sequence DESC LIMIT ?',
+    cursorBefore,
+    cursorBefore,
+    EVENTS_PER_PAGE + 1,
+  );
+
+  const events = decodeRows({ cursor, schema: RecentEventRow }).map(({ event }) => event);
+
+  return { rows: events.slice(0, EVENTS_PER_PAGE).toReversed(), hasMore: events.length > EVENTS_PER_PAGE };
 }
 
 /**

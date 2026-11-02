@@ -130,7 +130,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/edge", "@mechane/pages"]
+    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/authentication"]
   },
   "@mechane/logs": {
     "owns": "The Worker's one log channel",
@@ -173,7 +173,8 @@
       "@mechane/edge",
       "@mechane/pages",
       "@mechane/app",
-      "@mechane/integrations"
+      "@mechane/integrations",
+      "@mechane/authentication"
     ]
   },
   "@mechane/bindings": {
@@ -183,7 +184,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/app"]
+    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/app", "@mechane/authentication"]
   },
   "@mechane/harness": {
     "owns": "The pi adapter: a mech's harness, conversations, prompt sections and metered models, behind Mechane-named ports",
@@ -321,7 +322,7 @@
     "kind": "surface",
     "criterion": "closure",
     "consumers": ["@mechane/app"],
-    "confines": ["cookie"]
+    "confines": []
   },
   "@mechane/program": {
     "owns": "What every executable shares: output channels, exit, child processes, signals and files",
@@ -341,7 +342,7 @@
     "consumers": ["@mechane/cli-kernel", "@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
   },
   "@mechane/eval": {
-    "owns": "The eval runner: suite, plan, trials, records and report, through /v1 only",
+    "owns": "The eval runner: suite, plan, trials, records and report, through /api/v1 only",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
@@ -566,6 +567,52 @@
     "lane": "node",
     "dialect": "effect",
     "kind": "program",
+    "criterion": "program",
+    "consumers": []
+  },
+  "@mechane/authentication": {
+    "owns": "Browser cookies and sessions, API credential authentication, and browser request origin checks",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/pages", "@mechane/edge"],
+    "confines": ["cookie"]
+  },
+  "@mechane/ui": {
+    "owns": "Accessible primitives, theme tokens, and small charts independent of Mechane resources",
+    "layer": 3,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/console-views", "@mechane/console"]
+  },
+  "@mechane/console-data": {
+    "owns": "Browser sessions, workspace-scoped reactive collections, bounded activity queries, and acknowledged API commands",
+    "layer": 5,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/console"]
+  },
+  "@mechane/console-views": {
+    "owns": "Mechane resource views and user interactions without network or session ownership",
+    "layer": 6,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/console"]
+  },
+  "@mechane/console": {
+    "owns": "The TanStack Start console, route composition, workspace selection, and client lifetime",
+    "layer": 7,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "app",
     "criterion": "program",
     "consumers": []
   }

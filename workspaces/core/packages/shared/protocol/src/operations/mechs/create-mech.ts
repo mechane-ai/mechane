@@ -25,7 +25,7 @@ type CreateMechBody = typeof CreateMechBody.Type;
 /** Creates a mech in the workspace, under an id the deployment makes, with a model the deployment offers. */
 export const createMech = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs',
+  path: '/api/v1/workspaces/:workspace_id/mechs',
   access: Access.Member,
   params: WorkspacePath,
   query: NoFields,

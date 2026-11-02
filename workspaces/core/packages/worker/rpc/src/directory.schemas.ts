@@ -1,4 +1,4 @@
-import { KeyPurpose, MembershipRole } from '@mechane/protocol';
+import { KeyPurpose, MembershipRole, Principal } from '@mechane/protocol';
 import { BrowserIdentity, DirectoryPrincipal, Micros } from '@mechane/records';
 import { Schema } from 'effect';
 
@@ -48,6 +48,11 @@ export type KeyTokenAnswer = typeof KeyTokenAnswer.Type;
 export const LiveSession = Schema.TaggedUnion({ Live: BrowserIdentity.fields, SignedOut: {} });
 
 export type LiveSession = typeof LiveSession.Type;
+
+/** The principal owned by a still-live browser session, or a signed-out decision. */
+export const SessionPrincipal = Schema.TaggedUnion({ SignedIn: { principal: Principal }, SignedOut: {} });
+
+export type SessionPrincipal = typeof SessionPrincipal.Type;
 
 /** A device approval that awaits a browser's approval, as its review shows it: what it issues and when it began. */
 const Pending = Schema.TaggedStruct('Pending', {

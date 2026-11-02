@@ -3,14 +3,24 @@ import { decodeFirst } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
 import { DateTime } from 'effect';
 import type { Option } from 'effect';
-import type { BrowserSessionRecords, LiveBrowserSessionInput, OpenBrowserSessionInput } from '../types.ts';
+import type {
+  BrowserSessionRecords,
+  KeyForTokenInput,
+  LiveBrowserSessionInput,
+  OpenBrowserSessionInput,
+} from '../types.ts';
 
 /** Stores hashed browser sessions and resolves their unexpired identities. */
 export function browserSessionRecords({ sql }: RecordsInput): BrowserSessionRecords {
   return {
     openBrowserSession: (input) => openBrowserSession({ sql, ...input }),
     liveBrowserSession: (input) => liveBrowserSession({ sql, ...input }),
+    closeBrowserSession: (input) => closeBrowserSession({ sql, ...input }),
   };
+}
+
+function closeBrowserSession({ sql, tokenHash }: SqlCall<KeyForTokenInput>): void {
+  sql.exec('DELETE FROM identity_sessions WHERE token_hash = ?', tokenHash);
 }
 
 function openBrowserSession({ sql, session }: SqlCall<OpenBrowserSessionInput>): void {

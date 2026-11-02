@@ -1,0 +1,33 @@
+{
+  "name": "@mechane/console",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "build-storybook": "storybook build",
+    "storybook": "storybook dev -p 6006 --no-open"
+  },
+  "dependencies": {
+    "@mechane/console-data": "workspace:*",
+    "@mechane/console-views": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/ui": "workspace:*",
+    "@tanstack/react-db": "1.0.0-rc.1.1",
+    "@tanstack/react-router": "1.170.46",
+    "@tanstack/react-start": "1.169.4",
+    "effect": "4.0.7",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "10.6.5",
+    "@stylexjs/unplugin": "0.19.1",
+    "@types/node": "24.9.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "storybook": "10.6.5",
+    "vite": "8.3.5"
+  }
+}

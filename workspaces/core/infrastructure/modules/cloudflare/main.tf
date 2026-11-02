@@ -75,6 +75,7 @@ resource "mechane_cloudflare_worker_release" "release" {
   release_manifest_sha256 = filesha256("${path.module}/installation.json")
   adoption_baseline       = var.adoption_baseline == null ? null : jsonencode(var.adoption_baseline)
   bindings = concat(
+    [{ name = "ASSETS", type = "assets" }],
     [{
       name         = "WORKSPACE_FILES"
       type         = "r2_bucket"
@@ -106,6 +107,10 @@ resource "mechane_cloudflare_worker_release" "release" {
     precondition {
       condition     = local.installation.format_version == 1
       error_message = "This module cannot read the installation manifest version."
+    }
+    precondition {
+      condition     = filesha256("${path.module}/${local.installation.console.path}") == local.installation.console.sha256
+      error_message = "The console assets do not match this release's installation manifest."
     }
     precondition {
       condition     = !local.installation.is_preview

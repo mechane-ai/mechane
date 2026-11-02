@@ -17,7 +17,7 @@ type DeviceApprovalRequest = typeof DeviceApprovalRequest.Type;
  */
 export const startDeviceApproval = {
   method: HttpMethod.Post,
-  path: '/v1/device_approvals',
+  path: '/api/v1/device_approvals',
   access: Access.Public,
   params: NoFields,
   query: NoFields,

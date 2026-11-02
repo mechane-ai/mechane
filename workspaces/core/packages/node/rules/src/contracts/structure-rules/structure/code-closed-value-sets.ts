@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, InstalledAsset, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole, InstalledAsset, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 import { Option } from 'effect';
 
@@ -96,6 +96,7 @@ export const codeClosedValueSets = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'literal-comparison',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-19',
       violation: ["if (status === 'proposed') { stop(); }", "switch (status) { case 'proposed': stop(); }"],
       allowed: [

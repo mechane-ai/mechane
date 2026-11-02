@@ -21,7 +21,7 @@ import { EventType } from './constants.ts';
 /** The fields of every event: its place in the log, dense from 1 and assigned at its commit, and when it committed. */
 const EVENT_FIELDS = { sequence: Sequence.check(Schema.isGreaterThanOrEqualTo(1)), occurredAt: WireTime } as const;
 
-/** One event of a mech's log, as `/v1` serves it and the mech stores it. */
+/** One event of a mech's log, as `/api/v1` serves it and the mech stores it. */
 export const Event = Schema.Union([
   wireStruct({
     fields: {

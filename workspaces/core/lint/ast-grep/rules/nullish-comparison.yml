@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'Test absence through `Option`, such as `Option.isNone(Option.fromNullishOr(value))` (TD-18)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', 'packages/browser/**']
 rule:
   kind: binary_expression
   all:

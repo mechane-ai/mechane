@@ -4,6 +4,7 @@
   "files": ["lint/types/worker/strict-globals.d.ts"],
   "include": [
     "packages/worker/app/src",
+    "packages/worker/authentication/src",
     "packages/worker/bindings/src",
     "packages/worker/directory/src",
     "packages/worker/directory-store/src",

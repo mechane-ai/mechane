@@ -15,9 +15,12 @@ export const parsedSources = Effect.fn('parsedSources')(function* ({
 }: ParsedSourcesInput): Effect.fn.Return<ReadonlyArray<ParsedSource>, InputUnreadable> {
   const roots = members.flatMap(({ sourceRoots }) => sourceRoots);
 
-  const paths = yield* Effect.forEach(roots, (folder) => listFiles({ folder, extension: TYPESCRIPT_EXTENSION }), {
-    concurrency: 'unbounded',
-  });
+  const queries = roots.flatMap((folder) => [
+    { folder, extension: TYPESCRIPT_EXTENSION },
+    { folder, extension: '.tsx' },
+  ]);
+
+  const paths = yield* Effect.forEach(queries, (query) => listFiles(query), { concurrency: 'unbounded' });
 
   return yield* Effect.forEach(paths.flat(), (path) => parseSource({ path }), { concurrency: 1 });
 });

@@ -40,7 +40,7 @@ Confirm that an evaluation request produced no external effect, and that a requi
 
 ## Local adaptations
 
-The runner reaches the deployment only through `/v1`, with `@mechane/client` and the schemas of `@mechane/protocol`, against the same Worker build a deployment serves, and imports no Worker module.
+The runner reaches the deployment only through `/api/v1`, with `@mechane/client` and the schemas of `@mechane/protocol`, against the same Worker build a deployment serves, and imports no Worker module.
 A suite file is the one case format, and each suite is a file its author keeps; no suite is committed yet.
 Each repeat is a trial whose id derives from the plan's digest, its case and its repeat, run on fresh mechs, so it starts with an empty memory, no thread and no drone; a case has one round.
 The plan records the release and the worker revision, and the suite records the subject's instructions and both models; the grader's instructions are the release's.

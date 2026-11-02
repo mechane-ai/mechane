@@ -1,4 +1,4 @@
-import { WORKER_BUNDLE } from '@mechane/wrangler';
+import { CONSOLE_BUNDLE, WORKER_BUNDLE } from '@mechane/wrangler';
 import { Effect } from 'effect';
 import { copyFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -21,7 +21,12 @@ export const stageModule = Effect.fn('stageModule')(function* ({
   });
 
   const sources = yield* moduleSourceFiles({ isPreview: manifest.is_preview });
-  const files = [...sources, { name: WORKER_FILENAME, path: WORKER_BUNDLE }];
+
+  const files = [
+    ...sources,
+    { name: WORKER_FILENAME, path: WORKER_BUNDLE },
+    { name: manifest.console.path, path: CONSOLE_BUNDLE },
+  ];
 
   for (const file of files) {
     const destination = join(folder, file.name);

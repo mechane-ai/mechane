@@ -1,10 +1,10 @@
+import type { Caller } from '@mechane/authentication';
+import { resolveCaller } from '@mechane/authentication';
 import { callDirectory, callWorkspacePolicy } from '@mechane/bindings';
 import { RequestInvalid, WorkspaceNotFound, WorkspacePath, WorkspaceSuspended } from '@mechane/protocol';
 import type { AuthenticationFailure, ObjectUnavailable } from '@mechane/protocol';
 import { WorkspaceMembership } from '@mechane/rpc';
 import { Effect, Match, Schema } from 'effect';
-import type { Caller } from '../types.ts';
-import { resolveCaller } from './resolve-caller.ts';
 import type { AdmitInput } from './types.ts';
 
 /**
@@ -25,7 +25,7 @@ export const resolveMember = Effect.fn('resolveMember')(function* ({
     Effect.mapError((error) => new RequestInvalid({ reason: error.message })),
   );
 
-  const { key, principal } = yield* resolveCaller({ request, params, settings });
+  const { key, principal } = yield* resolveCaller({ request, settings });
 
   const membership = yield* callDirectory({
     settings,

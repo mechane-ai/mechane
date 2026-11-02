@@ -2,7 +2,7 @@
  * The runtimes a member's program targets, whose globals differ: the shared lane's code, which also loads in a browser,
  * under the DOM's types; the Worker's, under Cloudflare's; and Node's.
  */
-export const Lane = { Shared: 'shared', Worker: 'worker', Node: 'node' } as const;
+export const Lane = { Shared: 'shared', Worker: 'worker', Node: 'node', Browser: 'browser' } as const;
 
 export type Lane = (typeof Lane)[keyof typeof Lane];
 

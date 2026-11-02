@@ -2,7 +2,6 @@
 ruleDirs:
   - lint/ast-grep/rules
   - .contracts/014-code-closed-value-sets/assets/ast-grep/rules
-  - .contracts/024-code-typescript-effect-errors/assets/ast-grep/rules
 utilDirs:
   - lint/ast-grep/utils
 testConfigs:

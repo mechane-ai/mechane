@@ -1,5 +1,5 @@
 import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
-import type { ReleaseDescriptor } from '@mechane/program';
+import type { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
 import type { HttpStatusCode } from '@mechane/records';
 import type { ReleaseFailed } from '@mechane/release';
 import type { BaseConfiguration } from '@mechane/wrangler';
@@ -12,6 +12,8 @@ import type { StackFailed } from './errors.ts';
 /** The immutable runtime inputs supplied by a source build or an installed release. */
 export type RuntimeProject = {
   readonly bundle: string;
+  readonly consoleBundle: string;
+  readonly consoleDigest: ArtifactDigest;
   readonly release: ReleaseDescriptor;
   readonly configuration: BaseConfiguration;
   readonly revision: string;

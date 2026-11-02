@@ -123,9 +123,14 @@
 /lint/ast-grep/utils/measure-word.yml linguist-generated merge=ours
 /lint/ast-grep/utils/trailing-if-overflow.yml linguist-generated merge=ours
 /lint/ast-grep/utils/unit-suffix.yml linguist-generated merge=ours
+/lint/types/browser/strict-globals.d.ts linguist-generated merge=ours
 /lint/types/node/strict-globals.d.ts linguist-generated merge=ours
 /lint/types/shared/strict-globals.d.ts linguist-generated merge=ours
 /lint/types/worker/strict-globals.d.ts linguist-generated merge=ours
+/packages/browser/console-data/tsconfig.json linguist-generated merge=ours
+/packages/browser/console-views/tsconfig.json linguist-generated merge=ours
+/packages/browser/console/tsconfig.json linguist-generated merge=ours
+/packages/browser/ui/tsconfig.json linguist-generated merge=ours
 /packages/node/boundaries/tsconfig.json linguist-generated merge=ours
 /packages/node/checks-kernel/tsconfig.json linguist-generated merge=ours
 /packages/node/checks/tsconfig.json linguist-generated merge=ours
@@ -160,6 +165,7 @@
 /packages/shared/sandbox-wire/tsconfig.json linguist-generated merge=ours
 /packages/shared/utilities/tsconfig.json linguist-generated merge=ours
 /packages/worker/app/tsconfig.json linguist-generated merge=ours
+/packages/worker/authentication/tsconfig.json linguist-generated merge=ours
 /packages/worker/bindings/tsconfig.json linguist-generated merge=ours
 /packages/worker/directory-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/directory/tsconfig.json linguist-generated merge=ours
@@ -183,6 +189,7 @@
 /packages/worker/workspace/tsconfig.json linguist-generated merge=ours
 /sgconfig.yml linguist-generated merge=ours
 /tsconfig.base.json linguist-generated merge=ours
+/tsconfig.browser.json linguist-generated merge=ours
 /tsconfig.json linguist-generated merge=ours
 /tsconfig.node.json linguist-generated merge=ours
 /tsconfig.shared.json linguist-generated merge=ours

@@ -13,7 +13,7 @@ const CloneMechBody = wireStruct({ fields: { name: MechName, requestId: Schema.o
 /** Copies a definition into a separate mech with no inherited conversation or operational authority. */
 export const cloneMech = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/clone',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/clone',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

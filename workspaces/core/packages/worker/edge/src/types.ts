@@ -1,4 +1,5 @@
-import type { Access, KeyMetadata, Principal } from '@mechane/protocol';
+import type { Caller } from '@mechane/authentication';
+import type { Access } from '@mechane/protocol';
 import type { Option } from 'effect';
 
 /**
@@ -14,6 +15,3 @@ export type AccessCaller = {
 
 /** Path parameters as the path carries them, before percent-decoding. */
 export type RawPathParams = Readonly<Record<string, string>>;
-
-/** The principal a request's key acts for, and that key. */
-export type Caller = { readonly principal: Principal; readonly key: KeyMetadata };

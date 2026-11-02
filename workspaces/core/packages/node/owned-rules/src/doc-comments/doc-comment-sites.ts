@@ -1,5 +1,7 @@
 import type { Site } from '@mechane/checks-kernel';
 import type { ParsedSource } from '@mechane/modules';
+import { CONTRACTS } from '@mechane/rules';
+import { matchesGlob } from 'node:path';
 import type { Comment } from 'oxc-parser';
 import { absenceDocSites } from './absence-doc-sites.ts';
 import { attachedDocs } from './attached-docs.ts';
@@ -23,9 +25,13 @@ export function docCommentSites({ source }: DocCommentSitesInput): ReadonlyArray
   const docs = source.parsed.comments.filter(isDoc);
   const attached = attachedDocs({ text: source.text, docs });
 
-  return [
-    ...exportDocSites({ source, attached }),
-    ...absenceDocSites({ source, attached }),
-    ...shortDocSites({ source, docs, attached }),
-  ];
+  const { componentFiles } = CONTRACTS['code-comment-content'].values;
+  const isComponent = componentFiles.some((pattern) => matchesGlob(source.path, pattern));
+  const short = shortDocSites({ source, docs, attached });
+
+  if (isComponent) {
+    return short;
+  }
+
+  return [...exportDocSites({ source, attached }), ...absenceDocSites({ source, attached }), ...short];
 }

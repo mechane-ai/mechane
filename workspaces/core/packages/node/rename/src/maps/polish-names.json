@@ -29,7 +29,7 @@
   ],
   "strings": [
     { "from": "/turns/:turn_id/trace'", "to": "/turns/:turn_id'", "within": "packages" },
-    { "from": "/v1/device-approvals", "to": "/v1/device_approvals", "within": "packages" },
+    { "from": "/api/v1/device-approvals", "to": "/api/v1/device_approvals", "within": "packages" },
     { "from": "showTrace", "to": "showTurn", "within": "packages" },
     { "from": "runTraceShow", "to": "runTurnShow", "within": "packages" },
     { "from": "'trace show'", "to": "'turn show'", "within": "packages" },

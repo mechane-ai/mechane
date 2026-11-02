@@ -14,7 +14,7 @@ import { ConnectionConfiguration, RemoteConnection } from './schemas.ts';
 /** Owners declare an remote URL and approved free reads before any mech can receive access. */
 export const createConnection = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/connections',
+  path: '/api/v1/workspaces/:workspace_id/connections',
   access: Access.Member,
   params: WorkspacePath,
   query: NoFields,

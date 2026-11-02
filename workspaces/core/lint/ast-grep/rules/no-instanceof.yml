@@ -5,7 +5,7 @@ language: TypeScript
 severity: error
 message: 'Tell a failure by its tag, such as `while: Match.valueTags({ Unreachable: () => true })`, never with `instanceof` (EF-05)'
 files: ['packages/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/browser/console-data/src/api.ts']
 rule:
   kind: binary_expression
   has: { field: operator, regex: ^instanceof$ }

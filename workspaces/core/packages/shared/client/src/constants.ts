@@ -7,3 +7,6 @@ export type AnswerStep = (typeof AnswerStep)[keyof typeof AnswerStep];
 
 /** The failures a read of a release file expects: the release's own, and those of every route. */
 export const RELEASE_READ_FAILURES = [...RELEASE_FAILURES, ...ROUTE_FAILURES] as const;
+
+/** Uses the same-origin browser cookie instead of an explicit API key. */
+export const BROWSER_CREDENTIAL = 'browser-session' as const;

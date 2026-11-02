@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'Spell an absent property as `Option`, such as `readonly name: Option.Option<string>` (TD-18)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['packages/browser/**', '**/node_modules/**']
 rule:
   kind: property_signature
   regex: ^(readonly\s+)?[#\w]+\?

@@ -6,6 +6,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@mechane/authentication": "workspace:*",
     "@mechane/bindings": "workspace:*",
     "@mechane/credentials": "workspace:*",
     "@mechane/deployment": "workspace:*",
@@ -13,7 +14,6 @@
     "@mechane/records": "workspace:*",
     "@mechane/rpc": "workspace:*",
     "@mechane/utilities": "workspace:*",
-    "cookie": "1.1.1",
     "effect": "4.0.7"
   }
 }

@@ -1,4 +1,12 @@
-import { AST_GREP_DEFAULTS, OXLINT_DEFAULTS, RolloutPhase, RuleFix, RuleStatus, Severity } from '@mechane/rule-shapes';
+import {
+  AST_GREP_DEFAULTS,
+  FileRole,
+  OXLINT_DEFAULTS,
+  RolloutPhase,
+  RuleFix,
+  RuleStatus,
+  Severity,
+} from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 import { Option } from 'effect';
 
@@ -9,6 +17,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'no-optional-property',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,
@@ -30,6 +39,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullable-type',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-18',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
@@ -42,6 +52,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullish-comparison',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
@@ -51,6 +62,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullish-operator',
+      exemptRoles: [FileRole.Browser],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,

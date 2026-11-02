@@ -38,7 +38,7 @@ Compare a resumed run's deadlines, budgets, and trace sequence with the original
 
 ## Local adaptations
 
-The assessed system is the deployment behind `/v1`, and `mechane eval run` is the runner: it starts only when a person runs it, and the smoke runs it only against the scripted upstream.
+The assessed system is the deployment behind `/api/v1`, and `mechane eval run` is the runner: it starts only when a person runs it, and the smoke runs it only against the scripted upstream.
 The frozen inputs are `plan.json`: the suite, with its cases, expectations, models, repeats and `trial_cap_micros`, the deployment's release and worker revision, the workspace, and their digest, saved once its refusals passed and before the first send; the grader's instructions are the release's own, which the release covers.
 A rerun with the same `--out-folder` resumes, follows the plan it builds and never an edited `plan.json`, and refuses another digest as `PlanChanged`; a suite that does not decode is `SuiteInvalid` before any call.
 The budget is each mech's cap, `trial_cap_micros`, which the plan freezes, and a plan whose turns yet to send could spend more than the day's allowance has left is `AllowanceExhausted` before any mech exists; no run deadline is persisted, since a role waits for its turn's end with no deadline of its own and each dispatch has its own, as `code-execution-lifecycle` records.

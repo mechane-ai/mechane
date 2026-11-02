@@ -27,7 +27,7 @@ type SendInboxItemBody = typeof SendInboxItemBody.Type;
  */
 export const sendInboxItem = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/inbox/:inbox_item_id',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/inbox/:inbox_item_id',
   access: Access.Member,
   params: InboxItemPath,
   query: NoFields,

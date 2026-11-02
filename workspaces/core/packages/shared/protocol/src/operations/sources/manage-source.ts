@@ -16,7 +16,7 @@ import { SourceReport, SourceRequest } from './schemas.ts';
 /** Each source operation requires live owner membership and returns progress without credential material. */
 export const manageSource = {
   method: HttpMethod.Post,
-  path: '/v1/workspaces/:workspace_id/mechs/:mech_id/source',
+  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/source',
   access: Access.Member,
   params: MechPath,
   query: NoFields,

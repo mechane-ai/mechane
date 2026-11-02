@@ -30,5 +30,5 @@ export const submitLocalSignIn = Effect.fn('submitLocalSignIn')(function* (
     return yield* new PageRefused({ refusal: PageRefusal.BootstrapRefused });
   }
 
-  return yield* openBrowserSession({ settings, identity: LOCAL_OWNER_IDENTITY });
+  return yield* openBrowserSession({ settings, identity: LOCAL_OWNER_IDENTITY, request });
 });

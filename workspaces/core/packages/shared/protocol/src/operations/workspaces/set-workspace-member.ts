@@ -12,7 +12,7 @@ const WorkspaceMemberRole = Schema.Struct({ role: Schema.Enum(MembershipRole) })
 /** Owners grant or change membership without creating new principals. */
 export const setWorkspaceMember = {
   method: HttpMethod.Put,
-  path: '/v1/workspaces/:workspace_id/members/:principal_id',
+  path: '/api/v1/workspaces/:workspace_id/members/:principal_id',
   access: Access.Member,
   params: WorkspaceMemberPath,
   query: NoFields,

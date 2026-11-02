@@ -17,7 +17,7 @@ export const installationManifest = Effect.fn('installationManifest')(function* 
   isPreview,
   guest,
 }: ManifestInput): Effect.fn.Return<InstallationManifest, DistributionFailed> {
-  const { configuration: base, ...descriptor } = yield* distributionDescriptor({ commit, isPreview });
+  const { configuration: base, console, ...descriptor } = yield* distributionDescriptor({ commit, isPreview });
   const worker = yield* workerManifest({ base, checksum: descriptor.worker });
   const moduleFiles = yield* moduleManifest({ isPreview });
   const defaults = Record.remove(base.vars, 'MECHANE_ORIGIN');
@@ -32,6 +32,7 @@ export const installationManifest = Effect.fn('installationManifest')(function* 
     repository: PUBLIC_REPOSITORY,
     module_files: moduleFiles,
     worker,
+    console: { path: 'console.json', ...console },
     guest: { url, sha256: guest.sha256, bytes: guest.bytes, digest: guest.digest },
     defaults,
   };

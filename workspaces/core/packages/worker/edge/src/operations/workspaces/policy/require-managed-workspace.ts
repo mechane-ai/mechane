@@ -1,3 +1,4 @@
+import type { Caller } from '@mechane/authentication';
 import { callDirectory } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { WorkspaceNotFound } from '@mechane/protocol';
@@ -6,7 +7,6 @@ import { WorkspaceId } from '@mechane/records';
 import { WorkspacePresence } from '@mechane/rpc';
 import { Effect } from 'effect';
 import { requireInstallationAdministrator } from '../../../admission/require-installation-administrator.ts';
-import type { Caller } from '../../../types.ts';
 
 type RequireManagedWorkspaceInput = {
   readonly settings: WorkerSettings;

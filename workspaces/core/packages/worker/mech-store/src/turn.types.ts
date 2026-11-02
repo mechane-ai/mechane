@@ -1,5 +1,6 @@
 import type { TurnStatus, UnansweredReason } from '@mechane/protocol';
 import type { TurnId } from '@mechane/records';
+import type { PageAfterInput, RowsPage } from '@mechane/store';
 import type { DateTime, Option } from 'effect';
 import type { CancelRow, OwedNoteRow, RefusalRow, TurnRow } from './schemas.ts';
 
@@ -42,6 +43,8 @@ export type TurnRecords = {
   readonly joinTurn: (input: JoinTurnInput) => void;
   /** The turn of the id, none for an id the mech never ran. */
   readonly turn: (input: TurnIdInput) => Option.Option<TurnRow>;
+  /** None when the requested cursor does not identify a saved turn. */
+  readonly turns: (input: PageAfterInput) => Option.Option<RowsPage<TurnRow>>;
   /** The ids of the inbox items the turn took up, in the order the mech received them. */
   readonly turnInboxItemIds: (input: TurnIdInput) => ReadonlyArray<string>;
 };

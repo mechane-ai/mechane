@@ -9,7 +9,12 @@ export const LocalPackage = Schema.Struct({
   ...ReleaseDescriptor.fields,
   target: Schema.Enum(LocalTarget),
   configuration: BaseConfiguration,
-  files: Schema.Struct({ 'guest.oci.tar': ArtifactDigest, 'celld': ArtifactDigest, 'mechane': ArtifactDigest }),
+  files: Schema.Struct({
+    'guest.oci.tar': ArtifactDigest,
+    'celld': ArtifactDigest,
+    'mechane': ArtifactDigest,
+    'console.json': ArtifactDigest,
+  }),
 });
 
 export type LocalPackage = typeof LocalPackage.Type;
