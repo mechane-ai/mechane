@@ -20,8 +20,8 @@ export const showTurn = Effect.fn('showTurn')(function* ({
     answer: TurnAnswer,
   });
 
-  const turn = yield* Match.valueTags(answer, {
-    Found: (found) => Effect.succeed(found.turn),
+  const detail = yield* Match.valueTags(answer, {
+    Found: (found) => Effect.succeed(found),
     MechMissing: () => new MechNotFound({ mechId }),
     TurnMissing: () => new TurnNotFound({ turnId }),
   });
@@ -33,5 +33,5 @@ export const showTurn = Effect.fn('showTurn')(function* ({
     answer: WorkDispatchesAnswer,
   });
 
-  return { turn, dispatches };
+  return { turn: detail.turn, replyExcerpt: detail.replyExcerpt, dispatches };
 });

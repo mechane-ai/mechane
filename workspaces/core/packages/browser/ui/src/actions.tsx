@@ -28,6 +28,9 @@ const styles = stylex.create({
     ':disabled': { opacity: 0.45, cursor: 'default' },
     ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: 2 },
   },
+  labels: { display: 'inline-grid' },
+  label: { gridArea: '1 / 1' },
+  hidden: { visibility: 'hidden' },
   primary: {
     'backgroundColor': colors.ink,
     'borderColor': colors.ink,
@@ -64,13 +67,19 @@ const styles = stylex.create({
 
 export function Button({
   tone = 'normal',
+  pendingLabel,
+  pending = false,
+  children,
   ...props
 }: ComponentProps<typeof BaseButton> & {
   readonly tone?: 'normal' | 'primary' | 'quiet' | 'danger' | 'link';
+  readonly pendingLabel?: string;
+  readonly pending?: boolean;
 }): ReactNode {
   return (
     <BaseButton
       {...props}
+      aria-busy={pending || undefined}
       {...stylex.props(
         styles.button,
         tone === 'primary' && styles.primary,
@@ -78,7 +87,20 @@ export function Button({
         tone === 'danger' && styles.danger,
         tone === 'link' && styles.inline,
       )}
-    />
+    >
+      {pendingLabel === undefined ? (
+        children
+      ) : (
+        <span {...stylex.props(styles.labels)}>
+          <span aria-hidden={pending} {...stylex.props(styles.label, pending && styles.hidden)}>
+            {children}
+          </span>
+          <span aria-hidden={!pending} {...stylex.props(styles.label, !pending && styles.hidden)}>
+            {pendingLabel}
+          </span>
+        </span>
+      )}
+    </BaseButton>
   );
 }
 

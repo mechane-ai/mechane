@@ -5,9 +5,9 @@ import { MechStatus } from '@mechane/protocol';
 import type { Mech } from '@mechane/protocol';
 import {
   Button,
+  CopyValue,
   DetailPage,
   Heading,
-  Identifier,
   Muted,
   Notice,
   Panel,
@@ -24,28 +24,24 @@ import { Option } from 'effect';
 import { Pause, Pencil, Play, Send } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
+import type { ConsoleNavigation } from '../types.ts';
 import { ActivityScreen } from './activity.tsx';
 import { EditMechForm } from './edit-mech.tsx';
 import { MessageForm } from './message.tsx';
 import { TraceScreen } from './trace.tsx';
 import { TurnsScreen } from './turns.tsx';
 
-type MechNavigation = {
-  readonly data: ConsoleData;
-  readonly mechId: string;
-  readonly turnId: string | undefined;
-  readonly onBack: () => void;
-  readonly onTurn: (id: string | undefined) => void;
-};
+type MechNavigation = ConsoleNavigation & { readonly data: ConsoleData; readonly mechId: string };
 
-export function MechScreen({ data, mechId, turnId, onBack, onTurn }: MechNavigation): ReactNode {
+export function MechScreen({ data, mechId, location, navigate }: MechNavigation): ReactNode {
   const source = useMemo(() => data.mech(mechId), [data, mechId]);
 
   return (
-    <Resource data={data} source={source} fallbackHeader={<Toolbar title="Mech" />}>
+    <Resource data={data} source={source} fallbackHeader={<Toolbar title="Mech" />} label="Loading mech">
       {(mech, notice) => (
-        <MechDetails data={data} mech={mech} notice={notice} turnId={turnId} onBack={onBack} onTurn={onTurn} />
+        <MechDetails data={data} mech={mech} notice={notice} location={location} navigate={navigate} />
       )}
     </Resource>
   );
@@ -54,12 +50,12 @@ export function MechScreen({ data, mechId, turnId, onBack, onTurn }: MechNavigat
 function MechDetails({
   data,
   mech,
-  turnId,
-  onBack,
-  onTurn,
+  location,
+  navigate,
   notice,
 }: Omit<MechNavigation, 'mechId'> & { readonly mech: Mech; readonly notice: ReactNode }): ReactNode {
-  const [tab, setTab] = useState<'Turns' | 'Activity' | 'Definition'>('Turns');
+  const tab = location.view === 'activity' ? 'Activity' : location.view === 'definition' ? 'Definition' : 'Turns';
+  const base = { workspace: data.workspace.id, mech: mech.id };
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -86,8 +82,18 @@ function MechDetails({
     return <EditMechForm data={data} mech={mech} notice={notice} onClose={() => setEditing(false)} />;
   }
 
-  if (turnId !== undefined) {
-    return <TraceScreen data={data} mech={mech} notice={notice} turnId={turnId} onBack={() => onTurn(undefined)} />;
+  if (location.turn !== undefined) {
+    return (
+      <TraceScreen
+        key={location.turn}
+        data={data}
+        mech={mech}
+        notice={notice}
+        turnId={location.turn}
+        location={location}
+        navigate={navigate}
+      />
+    );
   }
 
   return (
@@ -96,10 +102,7 @@ function MechDetails({
         breadcrumb
         title={
           <>
-            <Button tone="link" onClick={onBack}>
-              Mechs
-            </Button>{' '}
-            / {mech.name}
+            <ConsoleLink to={{ workspace: data.workspace.id }}>Mechs</ConsoleLink> / {mech.name}
           </>
         }
         actions={
@@ -135,7 +138,9 @@ function MechDetails({
             <Muted>
               {mech.model} · Revision {mech.revision}
             </Muted>
-            <Identifier>{mech.id}</Identifier>
+            <Row>
+              <CopyValue label="mech ID" value={mech.id} />
+            </Row>
           </Stack>
           {error !== undefined && <Notice error>{error}</Notice>}
           {mech.status === 'paused' && (
@@ -144,9 +149,16 @@ function MechDetails({
             </Notice>
           )}
           {message && <MessageForm data={data} mech={mech} onClose={() => setMessage(false)} />}
-          <Tabs options={['Turns', 'Activity', 'Definition']} value={tab} onChange={setTab}>
+          <Tabs
+            label="Mech details"
+            options={['Turns', 'Activity', 'Definition']}
+            value={tab}
+            onChange={(next) =>
+              navigate(next === 'Turns' ? base : { ...base, view: next === 'Activity' ? 'activity' : 'definition' })
+            }
+          >
             <Stack>
-              {tab === 'Turns' && <TurnsScreen data={data} mechId={mech.id} onTurn={onTurn} />}
+              {tab === 'Turns' && <TurnsScreen data={data} mech={mech} onMessage={() => setMessage(true)} />}
               {tab === 'Activity' && <ActivityScreen data={data} mechId={mech.id} />}
               {tab === 'Definition' && (
                 <Stack>

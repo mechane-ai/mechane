@@ -1,15 +1,14 @@
-import type { Mech, Workspace } from '@mechane/protocol';
+import { Event, EventType, WAIT_MAX } from '@mechane/protocol';
+import type { EventPage, InboxItem, Mech, Turn, Workspace } from '@mechane/protocol';
 import { createCollection, DbClient, safeRandomUUID } from '@tanstack/db';
 import type { Collection } from '@tanstack/db';
 import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import type { QueryCollectionUtils } from '@tanstack/query-db-collection';
-import { Duration, Option } from 'effect';
+import { Duration, Option, Schema } from 'effect';
 import { createApi } from './api.ts';
 import type { ConsoleApi, ConsoleOperation, Input, Output } from './api.ts';
 
-/** The current principal and the workspaces the server admits it to. */
-export type Session = Output<'showPrincipal'> & Output<'listWorkspaces'>;
 type Snapshot<T> = { readonly key: string; readonly value: T };
 /** A reactive collection containing one bounded server response. */
 export type SnapshotCollection<T> = Collection<Snapshot<T>, string, QueryCollectionUtils<Snapshot<T>, string>>;
@@ -121,6 +120,24 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
         { key: `events:${mechId}:${before ?? 'latest'}`, interval: before === null ? ACTIVITY_REFRESH_MS : false },
       ),
     allowance: () => resource('showAllowance', { workspaceId }, { key: 'allowance', interval: ALLOWANCE_REFRESH_MS }),
+    /** Follow the receipt cursor until this specific item joins a turn. Unmount aborts its pending long poll. */
+    async messageTurn(mechId: string, receipt: InboxItem, signal: AbortSignal): Promise<Turn['id']> {
+      let after: number = receipt.receivedSequence;
+
+      let turn = Option.none<Turn['id']>();
+
+      do {
+        const page = await api('listEvents', { workspaceId, mechId, after, wait: WAIT_MAX }, signal);
+        turn = Option.fromNullishOr(findMessageTurn(page.events, receipt.id));
+        const last = page.events.at(-1);
+
+        if (last !== undefined) {
+          after = last.sequence;
+        }
+      } while (Option.isNone(turn));
+
+      return turn.value;
+    },
     async update(
       mech: Mech,
       changes: Omit<Input<'updateMech'>, 'workspaceId' | 'mechId' | 'expectedRevision'>,
@@ -163,11 +180,27 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
 /** The requests and collections owned by one mounted workspace. */
 export type ConsoleData = ReturnType<typeof createConsoleData>;
 
-/** Loads the principal before discovering its current workspace membership. */
-export async function loadSession(origin: URL, signal: AbortSignal): Promise<Session> {
-  const api = createApi(origin, signal, () => undefined);
-  const principal = await api('showPrincipal', {});
-  const workspaces = await api('listWorkspaces', {});
+/** Only the start or join carrying this inbox receipt can identify its turn. */
+function findMessageTurn(events: EventPage['events'], itemId: string): Turn['id'] | undefined {
+  const event = events.filter(Schema.is(Event)).find((candidate) => {
+    if (candidate.type === EventType.TurnStarted) {
+      return candidate.inboxItemIds.includes(itemId);
+    }
 
-  return { ...principal, ...workspaces };
+    return candidate.type === EventType.TurnJoined && candidate.inboxItemId === itemId;
+  });
+
+  if (event === undefined || !Schema.is(Event)(event)) {
+    return undefined;
+  }
+
+  if (event.type === EventType.TurnStarted) {
+    return event.turnId;
+  }
+
+  if (event.type === EventType.TurnJoined) {
+    return event.turnId;
+  }
+
+  return undefined;
 }

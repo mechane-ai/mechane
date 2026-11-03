@@ -67,16 +67,21 @@ const styles = stylex.create({
   actionLabel: { display: { 'default': 'inline', '@media (max-width:600px)': 'none' } },
 });
 
-type ToolbarProps = { readonly title: ReactNode; readonly actions?: ReactNode; readonly breadcrumb?: boolean };
+type ToolbarProps = {
+  readonly title: ReactNode;
+  readonly actions?: ReactNode;
+  readonly breadcrumb?: boolean;
+  readonly navigation?: boolean;
+};
 
 type ToolbarActionProps = ComponentProps<typeof BaseButton> & { readonly icon?: ReactNode };
 
-export function Toolbar({ title, actions, breadcrumb = false }: ToolbarProps): ReactNode {
+export function Toolbar({ title, actions, breadcrumb = false, navigation = true }: ToolbarProps): ReactNode {
   const Title = breadcrumb ? 'nav' : 'h1';
 
   return (
     <header {...stylex.props(styles.toolbar)}>
-      <SidebarToggle />
+      {navigation && <SidebarToggle />}
       <Title aria-label={breadcrumb ? 'Breadcrumb' : undefined} {...stylex.props(styles.title)}>
         <span {...stylex.props(styles.titleLabel)}>{title}</span>
       </Title>

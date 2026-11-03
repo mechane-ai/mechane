@@ -3,44 +3,21 @@ import type { ReactNode } from 'react';
 import { colors } from './tokens.stylex.ts';
 
 const styles = stylex.create({
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: { 'default': 'repeat(3,minmax(0,1fr))', '@media (max-width:600px)': '1fr' },
-    columnGap: 32,
-    rowGap: 24,
-  },
-  metric: { minWidth: 0 },
-  label: { fontSize: 13, lineHeight: '20px', color: colors.muted, marginBottom: 6 },
-  value: {
-    color: colors.ink,
-    fontSize: 32,
-    lineHeight: '40px',
-    fontWeight: 400,
-    letterSpacing: '-0.8px',
-    fontVariantNumeric: 'tabular-nums',
-    marginBottom: 4,
-    overflowWrap: 'anywhere',
-  },
+  grid: { display: 'flex', flexWrap: 'wrap', gap: '8px 24px', margin: 0 },
+  metric: { display: 'inline-flex', alignItems: 'baseline', gap: 5, minWidth: 0, fontSize: 13, lineHeight: '20px' },
+  label: { color: colors.muted, order: 1 },
+  value: { margin: 0, color: colors.ink, fontWeight: 500, fontVariantNumeric: 'tabular-nums' },
 });
 
 export function MetricGrid({ children }: { readonly children: ReactNode }): ReactNode {
-  return <div {...stylex.props(styles.grid)}>{children}</div>;
+  return <dl {...stylex.props(styles.grid)}>{children}</dl>;
 }
 
-export function Metric({
-  label,
-  value,
-  detail,
-}: {
-  readonly label: string;
-  readonly value: ReactNode;
-  readonly detail?: ReactNode;
-}): ReactNode {
+export function Metric({ label, value }: { readonly label: string; readonly value: string }): ReactNode {
   return (
     <div {...stylex.props(styles.metric)}>
-      <div {...stylex.props(styles.label)}>{label}</div>
-      <div {...stylex.props(styles.value)}>{value}</div>
-      {detail}
+      <dt {...stylex.props(styles.label)}>{label}</dt>
+      <dd {...stylex.props(styles.value)}>{value}</dd>
     </div>
   );
 }

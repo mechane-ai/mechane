@@ -98,6 +98,11 @@ export function problemMessage(error: unknown): string {
   return 'Could not reach this Mechane installation. Check the connection and try again.';
 }
 
+/** A conflicting edit must be reconciled against the newer saved definition. */
+export function isRevisionConflict(error: unknown): boolean {
+  return error instanceof OperationFailed && error.failure._tag === 'MechRevisionConflict';
+}
+
 /** Whether loading a session failed because its credential is no longer valid. */
 export function isSignedOut(error: unknown): boolean {
   return error instanceof OperationFailed && error.family === ErrorFamily.Unauthenticated;

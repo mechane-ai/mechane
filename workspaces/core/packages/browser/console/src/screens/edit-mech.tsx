@@ -1,5 +1,6 @@
-import { problemMessage } from '@mechane/console-data';
+import { isRevisionConflict, problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
+import { DefinitionConflict } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import { Button, DetailPage, Heading, Muted, Notice, Row, Stack, TextArea, TextField, Toolbar } from '@mechane/ui';
@@ -18,7 +19,8 @@ export function EditMechForm({
   readonly onClose: () => void;
   readonly notice?: ReactNode;
 }): ReactNode {
-  const [original] = useState(mech);
+  const [original, setOriginal] = useState(mech);
+  const [conflict, setConflict] = useState(false);
   const [name, setName] = useState(mech.name);
   const [model, setModel] = useState(mech.model);
   const [instructions, setInstructions] = useState(Option.getOrElse(mech.instructions, () => ''));
@@ -26,10 +28,31 @@ export function EditMechForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
 
+  function continueDraft(): void {
+    if (name === original.name) {
+      setName(mech.name);
+    }
+
+    if (model === original.model) {
+      setModel(mech.model);
+    }
+
+    if (instructions === Option.getOrElse(original.instructions, () => '')) {
+      setInstructions(Option.getOrElse(mech.instructions, () => ''));
+    }
+
+    if (Number(cap) === original.dailyCapMicros / 1_000_000) {
+      setCap(String(mech.dailyCapMicros / 1_000_000));
+    }
+
+    setOriginal(mech);
+    setConflict(false);
+  }
+
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (busy) {
+    if (busy || conflict || original.revision !== mech.revision) {
       return;
     }
 
@@ -54,7 +77,13 @@ export function EditMechForm({
       })
       .then(onClose, (cause: unknown) => {
         setBusy(false);
-        setError(problemMessage(cause));
+
+        if (isRevisionConflict(cause)) {
+          setConflict(true);
+          void data.refresh();
+        } else {
+          setError(problemMessage(cause));
+        }
       });
   }
 
@@ -75,10 +104,16 @@ export function EditMechForm({
       <DetailPage>
         <Stack>
           <Heading>Edit {original.name}</Heading>
-          <Muted>
-            Saving revision {original.revision}. If someone changes this mech first, reload its definition before saving
-            again.
-          </Muted>
+          <Muted>Editing revision {original.revision}.</Muted>
+          {(conflict || mech.revision !== original.revision) && (
+            <DefinitionConflict
+              saved={mech.revision === original.revision ? undefined : mech}
+              onRefresh={() => {
+                void data.refresh();
+              }}
+              onContinue={continueDraft}
+            />
+          )}
           <form onSubmit={submit}>
             <Stack>
               <TextField
@@ -115,8 +150,14 @@ export function EditMechForm({
               />
               {error !== undefined && <Notice error>{error}</Notice>}
               <Row>
-                <Button tone="primary" type="submit" disabled={busy}>
-                  {busy ? 'Saving…' : 'Save definition'}
+                <Button
+                  tone="primary"
+                  type="submit"
+                  disabled={busy || conflict || mech.revision !== original.revision}
+                  pending={busy}
+                  pendingLabel="Saving…"
+                >
+                  Save definition
                 </Button>
                 <Button type="button" disabled={busy} onClick={onClose}>
                   Cancel

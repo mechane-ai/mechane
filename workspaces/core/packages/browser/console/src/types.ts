@@ -1,9 +1,31 @@
-/** Selection encoded in the console URL. */
+import type { ConsoleView, Turn } from '@mechane/protocol';
+
+/** Only shareable record selections go in the URL. */
 export type ConsoleLocation = {
-  /** Omitted to select the first available workspace. */
+  /** Absent selects the first workspace admitted to this session. */
   readonly workspace?: string;
-  /** Omitted to show the workspace's mech list. */
+  /** Absent opens the workspace mech list. */
   readonly mech?: string;
-  /** Omitted to show the mech overview. */
+  /** Absent opens the mech, before selecting one of its turns. */
   readonly turn?: string;
+  /** Absent opens Turns for a mech and Overview for a turn. */
+  readonly view?: ConsoleView;
+  /** Absent selects the first recorded request. */
+  readonly request?: string;
+  /** Absent starts the event history at its beginning. */
+  readonly event?: number;
+};
+
+/** The current shareable selection and its router transition. */
+export type ConsoleNavigation = {
+  readonly location: ConsoleLocation;
+  readonly navigate: (location: ConsoleLocation) => void;
+};
+
+/** Cursor trails retained by one browser history entry. */
+export type PageCursors = {
+  readonly mechs: ReadonlyArray<string>;
+  readonly turns: ReadonlyArray<Turn['id']>;
+  readonly activity: ReadonlyArray<number>;
+  readonly events: ReadonlyArray<number>;
 };

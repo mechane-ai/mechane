@@ -3,7 +3,7 @@ import { Dialog } from '@base-ui/react/dialog';
 import { Select } from '@base-ui/react/select';
 import * as stylex from '@stylexjs/stylex';
 import { Check, ChevronDown, PanelLeft } from 'lucide-react';
-import { createContext, useContext, useId } from 'react';
+import { createContext, useContext, useId, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { colors, frame } from './tokens.stylex.ts';
 
@@ -87,6 +87,15 @@ const styles = stylex.create({
     boxShadow: '0 4px 16px #00000014',
     maxHeight: 'var(--available-height)',
     overflowY: 'auto',
+  },
+  pointerPopup: {
+    'transformOrigin': 'var(--transform-origin)',
+    '@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)': {
+      'transitionProperty': 'opacity, transform',
+      'transitionDuration': '140ms',
+      'transitionTimingFunction': 'cubic-bezier(0.2, 0.75, 0.25, 1)',
+      ':is([data-starting-style])': { opacity: 0, transform: 'scale(0.98) translateY(-2px)' },
+    },
   },
   option: {
     display: 'flex',
@@ -214,6 +223,7 @@ export function SidebarAccount({ label, value, items, onValueChange }: SidebarAc
   const selected = items.find((option) => option.value === value);
   const selectedLabel = selected === undefined ? label : selected.label;
   const initial = selectedLabel.slice(0, 1).toUpperCase();
+  const [pointerOpen, setPointerOpen] = useState(false);
 
   return (
     <Select.Root<string>
@@ -226,6 +236,8 @@ export function SidebarAccount({ label, value, items, onValueChange }: SidebarAc
       }}
     >
       <Select.Trigger
+        onPointerDown={() => setPointerOpen(true)}
+        onKeyDown={() => setPointerOpen(false)}
         aria-label={`${label}: ${selectedLabel}`}
         title={selectedLabel}
         {...stylex.props(styles.account, isCollapsed && styles.accountCollapsed)}
@@ -245,7 +257,7 @@ export function SidebarAccount({ label, value, items, onValueChange }: SidebarAc
           alignItemWithTrigger={false}
           {...stylex.props(styles.positioner)}
         >
-          <Select.Popup {...stylex.props(styles.popup)}>
+          <Select.Popup {...stylex.props(styles.popup, pointerOpen && styles.pointerPopup)}>
             <Select.List>
               {items.map((option) => (
                 <Select.Item

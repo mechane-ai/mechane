@@ -1,6 +1,7 @@
-import { Event, ListedEvent } from '@mechane/protocol';
-import { Sequence } from '@mechane/records';
-import { decodeOne, decodeRows } from '@mechane/store';
+import { Event, EventType, ListedEvent, REPLY_EXCERPT_MAX_CHARS } from '@mechane/protocol';
+import type { TurnReplyExcerpt } from '@mechane/protocol';
+import { RecordText, Sequence } from '@mechane/records';
+import { decodeFirst, decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, RowsPage, SqlCall } from '@mechane/store';
 import { Option, Schema } from 'effect';
 import type {
@@ -39,8 +40,38 @@ export function eventRecords({ sql }: RecordsInput): EventRecords {
     eventsAfter: (input) => eventsAfter({ sql, ...input }),
     eventsBefore: (input) => eventsBefore({ sql, ...input }),
     turnEvents: (input) => turnEvents({ sql, ...input }),
+    turnReplyExcerpt: (input) => turnReplyExcerpt({ sql, ...input }),
     lastSequence: () => lastSequence({ sql }),
   };
+}
+
+const ReplyEventRow = Schema.Struct({
+  event: Schema.fromJsonString(Schema.Struct({ sequence: Sequence, reply: RecordText })),
+});
+
+/** A terminal reply can follow several event pages. Read its receipt by turn in the same transaction as the outcome. */
+function turnReplyExcerpt({
+  sql,
+  turnId,
+}: SqlCall<Pick<TurnEventsAfterInput, 'turnId'>>): Option.Option<TurnReplyExcerpt> {
+  const cursor = sql.exec(
+    "SELECT event FROM events WHERE json_extract(event, '$.turn_id') = ? AND json_extract(event, '$.type') = ? AND json_type(event, '$.reply') = 'text' ORDER BY sequence DESC LIMIT 1",
+    turnId,
+    EventType.TurnAnswered,
+  );
+
+  const recorded = decodeFirst({ cursor, schema: ReplyEventRow });
+
+  return Option.map(recorded, ({ event }) => {
+    const prefix = event.reply.slice(0, REPLY_EXCERPT_MAX_CHARS);
+    let text = prefix;
+
+    if (!prefix.isWellFormed()) {
+      text = prefix.slice(0, -1);
+    }
+
+    return { sequence: event.sequence, text, isTruncated: text.length < event.reply.length };
+  });
 }
 
 const RecentEventRow = Schema.Struct({ event: Schema.fromJsonString(ListedEvent) });

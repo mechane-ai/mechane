@@ -1,4 +1,4 @@
-import type { Event, ListedEvent, MechRevisionPage } from '@mechane/protocol';
+import type { Event, ListedEvent, MechRevisionPage, TurnReplyExcerpt } from '@mechane/protocol';
 import type { Sequence, TurnId } from '@mechane/records';
 import type { AlarmControl, AlarmTimeInput, AsyncTransaction, RowsPage } from '@mechane/store';
 import type { DateTime, Option } from 'effect';
@@ -90,6 +90,8 @@ export type EventRecords = {
   readonly eventsBefore: (input: EventsBeforeInput) => RowsPage<ListedEvent>;
   /** Only events attributed to this turn or one of the inbox items it took up. */
   readonly turnEvents: (input: TurnEventsAfterInput) => RowsPage<ListedEvent>;
+  /** The indexed reply prefix; none until a readable answer is recorded. */
+  readonly turnReplyExcerpt: (input: Pick<TurnEventsAfterInput, 'turnId'>) => Option.Option<TurnReplyExcerpt>;
   /** The sequence of the log's last event, 0 before the first. */
   readonly lastSequence: () => Sequence;
 };

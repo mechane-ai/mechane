@@ -6,6 +6,7 @@ import { escapeHtml } from '@mechane/utilities';
 import { Duration, Option } from 'effect';
 import { renderPage } from '../html/render-page.ts';
 import type { PageHeader } from '../types.ts';
+import { consoleDestination } from './console-destination.ts';
 
 type SignedInPageInput = {
   readonly settings: WorkerSettings;
@@ -17,12 +18,12 @@ type SignedInPageInput = {
 type RefreshHeaderInput = { readonly url: string };
 
 /**
- * Sets the session cookie, clears the sign-in cookie, and moves on to the device page with a refresh. The page itself
- * starts the refresh, so the browser sends the session's same-site cookie with it.
+ * Sets the session cookie, clears the sign-in cookie, and returns to the approved destination with a refresh. The page
+ * itself starts the refresh, so the browser sends the session's same-site cookie with it.
  */
 export function signedInPage({ settings, name, sessionToken, request }: SignedInPageInput): Response {
   const destination = readCookie({ request, settings, cookie: CookieName.Destination });
-  const path = Option.filter(destination, (value) => value === PagePath.Console);
+  const path = Option.flatMap(destination, (value) => consoleDestination({ value, origin: settings.origin }));
   const destinationPath = Option.getOrElse(path, () => PagePath.Device);
   const next = new URL(destinationPath, settings.origin).href;
   const lifetime = COOKIE_LIFETIME[CookieName.Session];

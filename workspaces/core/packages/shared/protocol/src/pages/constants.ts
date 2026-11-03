@@ -27,3 +27,13 @@ export const TYPED_CODE_FIELD = 'code';
 
 /** The longest code the device page's form takes, well past a code with spaces around it. */
 export const TYPED_CODE_MAX_CHARS = 32;
+
+/** Console selections that can be shared across browser sessions. */
+export const ConsoleView = {
+  Activity: 'activity',
+  Definition: 'definition',
+  Requests: 'requests',
+  Events: 'events',
+} as const;
+
+export type ConsoleView = (typeof ConsoleView)[keyof typeof ConsoleView];

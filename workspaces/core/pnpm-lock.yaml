@@ -976,6 +976,9 @@ importers:
 
   packages/worker/app:
     dependencies:
+      '@mechane/authentication':
+        specifier: workspace:*
+        version: link:../authentication
       '@mechane/bindings':
         specifier: workspace:*
         version: link:../bindings

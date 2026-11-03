@@ -1,17 +1,14 @@
 import { COOKIE_LIFETIME, cookieHeader, CookieName } from '@mechane/authentication';
 import type { WorkerSettings } from '@mechane/bindings';
 import { localSignInUrl } from '@mechane/protocol';
-import type { ObjectUnavailable, PagePath } from '@mechane/protocol';
+import type { ObjectUnavailable } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { Effect, Option } from 'effect';
 import { NO_STORE, PageRefusal } from '../constants.ts';
 import { PageRefused } from '../errors.ts';
 import { startGithubSignIn } from './start-github-sign-in.ts';
 
-type StartSignInInput = {
-  readonly settings: WorkerSettings;
-  readonly destination: typeof PagePath.Console | typeof PagePath.Device;
-};
+type StartSignInInput = { readonly settings: WorkerSettings; readonly destination: string };
 
 /** Starts the deployment's configured local or GitHub browser sign-in flow. */
 export const startSignIn = Effect.fn('startSignIn')(function* ({

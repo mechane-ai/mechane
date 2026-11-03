@@ -1,9 +1,9 @@
 import { Event } from '@mechane/protocol';
 import type { EventPage } from '@mechane/protocol';
-import { Badge, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane/ui';
+import { Badge, CopyValue, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane/ui';
 import { Schema } from 'effect';
 import type { ReactNode } from 'react';
-import { timeLabel } from './format.ts';
+import { preciseTimeLabel, timeLabel } from './format.ts';
 
 export function Activity({
   page,
@@ -32,7 +32,13 @@ export function Activity({
                 <Badge>{eventLabel(event.type)}</Badge>
                 <Identifier>#{event.sequence}</Identifier>
               </Row>
-              <Muted>{Schema.is(Event)(event) ? timeLabel(event.occurredAt) : 'Newer event format'}</Muted>
+              {Schema.is(Event)(event) ? (
+                <CopyValue label={`time of event ${event.sequence} in UTC`} value={preciseTimeLabel(event.occurredAt)}>
+                  {timeLabel(event.occurredAt)}
+                </CopyValue>
+              ) : (
+                <Muted>Newer event format</Muted>
+              )}
             </Row>
             {Schema.is(Event)(event) && <EventContent event={event} />}
             <Divider />

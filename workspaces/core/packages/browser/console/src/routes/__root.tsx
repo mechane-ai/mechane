@@ -1,5 +1,6 @@
 import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
+import { ConsoleEntrance } from '../entrance.tsx';
 import css from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -30,7 +31,7 @@ function Root({ children }: { readonly children: ReactNode }): ReactNode {
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <ClientOnly>{children}</ClientOnly>
+        <ClientOnly fallback={<ConsoleEntrance />}>{children}</ClientOnly>
         <Scripts />
       </body>
     </html>

@@ -1,52 +1,70 @@
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
-import { Button, Cell, EmptyState, Identifier, Muted, Stack, Status, Table } from '@mechane/ui';
-import { Schema } from 'effect';
+import { Cell, EmptyState, Muted, Stack, Status, Table } from '@mechane/ui';
+import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
-import { timeLabel } from './format.ts';
+import { durationLabel, timeLabel } from './format.ts';
+import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 export function TurnList({
   page,
-  onOpen,
+  turnLink,
+  emptyAction,
+  emptyDescription,
 }: {
   readonly page: TurnPage;
-  readonly onOpen: (id: Turn['id']) => void;
+  readonly turnLink: (id: Turn['id'], children: ReactNode) => ReactNode;
+  readonly emptyAction?: ReactNode;
+  readonly emptyDescription: string;
 }): ReactNode {
   if (page.turns.length === 0) {
     return (
-      <EmptyState title="No turns yet">
-        Send a message to start the mech’s first turn. Its work will appear here.
+      <EmptyState title="No turns yet" action={emptyAction}>
+        {emptyDescription}
       </EmptyState>
     );
   }
 
   return (
-    <Table label="Recent turns" headers={['Turn', 'Outcome', 'Started', '']}>
-      {page.turns.map((turn) => (
-        <tr key={turn.id}>
-          <Cell>
-            <Identifier>{turn.id}</Identifier>
-          </Cell>
-          <Cell>
-            <Stack compact>
-              <Status
-                tone={turn.status === 'answered' ? 'positive' : turn.status === 'running' ? 'warning' : 'neutral'}
-              >
-                {turn.status}
-              </Status>
-              {Schema.is(Turn)(turn) && turn.status === 'unanswered' && <Muted>{turn.reason}</Muted>}
-            </Stack>
-          </Cell>
-          <Cell>
-            <Muted>{Schema.is(Turn)(turn) ? timeLabel(turn.startedAt) : 'Unknown'}</Muted>
-          </Cell>
-          <Cell>
-            <Button tone="link" onClick={() => onOpen(turn.id)}>
-              View trace →
-            </Button>
-          </Cell>
-        </tr>
-      ))}
+    <Table
+      label="Recent turns"
+      headers={[
+        { label: 'Turn', width: 52 },
+        { label: 'Started', width: 30, secondary: true },
+        { label: 'Elapsed', width: 18 },
+      ]}
+    >
+      {page.turns.map((turn) => {
+        const known = Schema.is(Turn)(turn);
+        const time = known ? timeLabel(turn.startedAt) : 'Time unavailable';
+
+        const duration =
+          known && turn.status !== 'running'
+            ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))
+            : '—';
+
+        return (
+          <tr key={turn.id}>
+            <Cell mobileLabel={time}>
+              <Stack compact>
+                {turnLink(
+                  turn.id,
+                  <Status
+                    tone={
+                      turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'
+                    }
+                  >
+                    {outcomeLabel(turn.status)}
+                  </Status>,
+                )}
+                {known && turn.status === 'unanswered' && <Muted>{outcomeReason(turn.reason)}</Muted>}
+              </Stack>
+            </Cell>
+            <Cell secondary>{time}</Cell>
+            <Cell>{duration}</Cell>
+          </tr>
+        );
+      })}
     </Table>
   );
 }

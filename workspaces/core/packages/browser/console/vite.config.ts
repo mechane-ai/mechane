@@ -19,6 +19,8 @@ export default defineConfig({
     tanstackStart({
       router: { basepath: '/console' },
       spa: { enabled: true, prerender: { outputPath: '/index.html' } },
+      prerender: { enabled: true, autoStaticPathsDiscovery: false, crawlLinks: false },
+      pages: [{ path: '/welcome', prerender: { outputPath: '/welcome.html' } }],
     }),
     react(),
   ],

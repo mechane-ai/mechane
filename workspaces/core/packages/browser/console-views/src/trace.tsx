@@ -1,160 +1,238 @@
-import { Dispatch, Turn } from '@mechane/protocol';
 import type { Trace } from '@mechane/protocol';
 import {
   Button,
+  CopyValue,
   Details,
+  Divider,
   EmptyState,
-  Identifier,
+  Heading,
   Inspector,
   Metric,
   MetricGrid,
   Muted,
   Notice,
-  Panel,
+  Prose,
+  Row,
   Stack,
-  Status,
   Subheading,
+  Tabs,
   Timeline,
 } from '@mechane/ui';
-import type { TimelineItem } from '@mechane/ui';
-import { DateTime, Schema } from 'effect';
-import { useState } from 'react';
+import { Option } from 'effect';
 import type { ReactNode } from 'react';
-import { durationLabel, moneyLabel, preciseTimeLabel } from './format.ts';
+import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
+import { traceEvidence } from './trace-evidence.ts';
 import { TraceRequest } from './trace-request.tsx';
+import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
-export function TurnTrace({ trace }: { readonly trace: Trace }): ReactNode {
-  const [selection, setSelection] = useState<string>();
-  const selected = trace.dispatches.find((request) => request.id === selection) ?? trace.dispatches[0];
-  const known = trace.dispatches.filter(Schema.is(Dispatch));
-  const settled = known.filter((request) => request.status === 'settled');
-  const cost = settled.reduce((total, request) => total + request.settledMicros, 0);
-  const usage = settled.filter((request) => request.basis === 'usage');
+export type TraceTab = 'Overview' | 'Requests' | 'Events';
 
-  const tokens = usage.reduce(
-    (total, request) =>
-      total + request.inputTokens + request.outputTokens + request.cacheReadTokens + request.cacheWriteTokens,
-    0,
-  );
+type TraceProps = {
+  readonly trace: Trace;
+  readonly tab: TraceTab;
+  readonly onTab: (tab: TraceTab) => void;
+  readonly requestId?: string | undefined;
+  readonly onRequest: (id: string) => void;
+  readonly requestHref: (id: string) => string;
+  readonly replyLink: (sequence: number) => ReactNode;
+  readonly events?: ReactNode;
+};
 
-  const turn = trace.turn;
-  const isKnownTurn = Schema.is(Turn)(turn);
+const OVERVIEW_REQUESTS = 3;
 
-  const requestTimes = known.flatMap((request) => [
-    DateTime.toEpochMillis(request.decidedAt),
-    ...(request.status === 'settled' ? [DateTime.toEpochMillis(request.settledAt)] : []),
-  ]);
+export function TurnTrace({
+  trace,
+  tab,
+  onTab,
+  requestId,
+  onRequest,
+  requestHref,
+  replyLink,
+  events,
+}: TraceProps): ReactNode {
+  const evidence = traceEvidence(trace);
+  const { turn, items, start, end, finished } = evidence;
 
-  const start = isKnownTurn
-    ? DateTime.toEpochMillis(turn.startedAt)
-    : requestTimes.length === 0
-      ? 0
-      : Math.min(...requestTimes);
+  const selected =
+    requestId === undefined ? trace.dispatches[0] : trace.dispatches.find((request) => request.id === requestId);
 
-  const turnEnd = isKnownTurn && turn.status !== 'running' ? DateTime.toEpochMillis(turn.endedAt) : undefined;
-  const end = Math.max(start, turnEnd ?? start, ...requestTimes);
-
-  const timeline: ReadonlyArray<TimelineItem> = known.map((request) => ({
-    id: request.id,
-    label: `Request ${trace.dispatches.indexOf(request) + 1}`,
-    detail: request.model,
-    start: DateTime.toEpochMillis(request.decidedAt),
-    end: request.status === 'settled' ? DateTime.toEpochMillis(request.settledAt) : null,
-    state: request.status === 'settled' ? 'complete' : request.status === 'refused' ? 'refused' : 'pending',
-    summary:
-      request.status === 'settled'
-        ? `${durationLabel(DateTime.toEpochMillis(request.settledAt) - DateTime.toEpochMillis(request.decidedAt))} · ${moneyLabel(request.settledMicros)}`
-        : request.status,
-  }));
+  const count = items.length;
+  const timing = { start, end, formatOffset: durationLabel, onSelect: onRequest };
 
   return (
     <Stack>
-      <MetricGrid>
-        <Metric
-          label="Turn duration"
-          value={
-            turnEnd === undefined ? (turn.status === 'running' ? 'Running' : 'Unknown') : durationLabel(turnEnd - start)
-          }
-          detail={
-            <Status
-              tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
-            >
-              {turn.status}
-            </Status>
-          }
-        />
-        <Metric
-          label="Settled model cost"
-          value={moneyLabel(cost)}
-          detail={
-            <Muted>
-              {settled.length} of {trace.dispatches.length} requests settled
-            </Muted>
-          }
-        />
-        <Metric
-          label="Reported tokens"
-          value={usage.length === 0 ? '—' : tokens.toLocaleString()}
-          detail={
-            <Muted>
-              Usage available for {usage.length} of {trace.dispatches.length} requests
-            </Muted>
-          }
-        />
-      </MetricGrid>
-      {isKnownTurn && turn.status === 'unanswered' && (
-        <Notice error>Turn ended without an answer: {turn.reason.replaceAll('_', ' ')}.</Notice>
-      )}
-      {selected === undefined ? (
-        <Panel>
-          <EmptyState title="No model requests recorded">
-            Requests appear here after the runtime checks their allowance.
-          </EmptyState>
-        </Panel>
-      ) : (
-        <Stack compact>
-          <Inspector
-            master={
-              <>
-                <Timeline
-                  items={timeline}
-                  start={start}
-                  end={end}
-                  selected={selected.id}
-                  onSelect={setSelection}
-                  duration={durationLabel(end - start)}
-                />
-                {trace.dispatches
-                  .filter((request) => !Schema.is(Dispatch)(request))
-                  .map((request) => (
-                    <Button key={request.id} tone="quiet" onClick={() => setSelection(request.id)}>
-                      Request {trace.dispatches.indexOf(request) + 1} · newer format
-                    </Button>
-                  ))}
-              </>
-            }
-            detail={<TraceRequest request={selected} number={trace.dispatches.indexOf(selected) + 1} />}
+      <Stack compact>
+        <Row>
+          <Muted>Turn outcome</Muted>
+          {turn !== undefined && (
+            <CopyValue label="start time in UTC" value={preciseTimeLabel(turn.startedAt)}>
+              {timeLabel(turn.startedAt)}
+            </CopyValue>
+          )}
+        </Row>
+        <Heading>{trace.turn.status === 'running' ? 'Turn in progress' : outcomeLabel(trace.turn.status)}</Heading>
+        <MetricGrid>
+          {finished !== undefined && <Metric label="elapsed" value={durationLabel(finished - start)} />}
+          <Metric label={count === 1 ? 'model request' : 'model requests'} value={String(count)} />
+          {evidence.settled > 0 && <Metric label="settled" value={moneyLabel(evidence.cost)} />}
+        </MetricGrid>
+      </Stack>
+      <Tabs label="Turn details" options={['Overview', 'Requests', 'Events']} value={tab} onChange={onTab}>
+        {tab === 'Overview' && (
+          <TraceOverview
+            trace={trace}
+            evidence={evidence}
+            onRequest={onRequest}
+            replyLink={replyLink}
+            onRequests={() => onTab('Requests')}
           />
-          <Muted>
-            Intervals run from allowance reservation to settlement. Tool execution and provider internals are not
-            recorded as spans.
-            {known.length === trace.dispatches.length ? '' : ' Some requests use a newer record format.'}
-          </Muted>
+        )}
+        {tab === 'Requests' && (
+          <Stack compact>
+            <Row between>
+              <Subheading>Model requests</Subheading>
+              <Muted>
+                {evidence.reported > 0
+                  ? `${evidence.tokens.toLocaleString()} tokens reported · ${evidence.reported} of ${count} ${count === 1 ? 'request' : 'requests'}`
+                  : 'Token usage unavailable'}
+              </Muted>
+            </Row>
+            {count === 0 ? (
+              <EmptyState title="No model requests recorded">
+                A request appears after the runtime checks its allowance.
+              </EmptyState>
+            ) : (
+              <Inspector
+                master={<Timeline {...timing} items={items} selected={selected?.id} />}
+                detail={
+                  selected === undefined ? (
+                    <Notice>This request is unavailable in this turn. Select a recorded request above.</Notice>
+                  ) : (
+                    <TraceRequest
+                      request={selected}
+                      number={trace.dispatches.indexOf(selected) + 1}
+                      href={requestHref(selected.id)}
+                    />
+                  )
+                }
+              />
+            )}
+            <Muted>
+              Bars measure reservation to settlement. A hollow point marks an open reservation. A diamond marks a
+              refusal before a model call.
+            </Muted>
+          </Stack>
+        )}
+        {tab === 'Events' && events}
+      </Tabs>
+    </Stack>
+  );
+}
+
+function TraceOverview({
+  trace,
+  evidence,
+  onRequest,
+  replyLink,
+  onRequests,
+}: Pick<TraceProps, 'trace' | 'onRequest' | 'replyLink'> & {
+  readonly evidence: ReturnType<typeof traceEvidence>;
+  readonly onRequests: () => void;
+}): ReactNode {
+  const { turn, items, start, end } = evidence;
+  const count = items.length;
+  const timing = { start, end, formatOffset: durationLabel, onSelect: onRequest };
+
+  return (
+    <Stack>
+      <RecordedOutcome trace={trace} evidence={evidence} onRequest={onRequest} replyLink={replyLink} />
+      {count > 0 && (
+        <Stack compact>
+          <Row between>
+            <Subheading>Request timing</Subheading>
+            <Button tone="link" onClick={onRequests}>
+              View requests →
+            </Button>
+          </Row>
+          <Timeline {...timing} items={items.slice(0, OVERVIEW_REQUESTS)} />
+          {count > OVERVIEW_REQUESTS && (
+            <Muted>
+              First {OVERVIEW_REQUESTS} of {count} recorded requests.
+            </Muted>
+          )}
+          <Muted>Timing runs from allowance reservation to settlement.</Muted>
         </Stack>
       )}
-      {isKnownTurn && (
-        <Stack compact>
-          <Subheading>Turn details</Subheading>
-          <Details
-            items={[
-              { label: 'Started', value: preciseTimeLabel(turn.startedAt) },
-              { label: 'Definition', value: `Revision ${turn.definitionRevision}` },
-              { label: 'Inputs', value: turn.inboxItemIds.length },
-              { label: 'Turn ID', value: <Identifier>{turn.id}</Identifier> },
-            ]}
-          />
-        </Stack>
+      <Divider />
+      <Details
+        items={[
+          { label: 'Turn ID', value: <CopyValue label="turn ID" value={trace.turn.id} /> },
+          ...(turn === undefined
+            ? []
+            : [
+                { label: 'Definition', value: `Revision ${turn.definitionRevision}` },
+                { label: 'Inputs', value: String(turn.inboxItemIds.length) },
+              ]),
+        ]}
+      />
+    </Stack>
+  );
+}
+
+function RecordedOutcome({
+  trace,
+  evidence,
+  onRequest,
+  replyLink,
+}: Pick<TraceProps, 'trace' | 'onRequest' | 'replyLink'> & {
+  readonly evidence: ReturnType<typeof traceEvidence>;
+}): ReactNode {
+  const { turn, items } = evidence;
+  const reply = Option.getOrUndefined(trace.replyExcerpt);
+  const refused = items.find((item) => item.state === 'refused');
+  const latest = items.at(-1);
+
+  return (
+    <Stack compact>
+      <Subheading>
+        {trace.turn.status === 'answered'
+          ? 'Recorded reply'
+          : trace.turn.status === 'unanswered'
+            ? 'Outcome'
+            : 'Latest evidence'}
+      </Subheading>
+      {turn?.status === 'answered' &&
+        (reply === undefined ? (
+          <Muted>The recorded reply is unavailable in this format. Open Events to inspect the history.</Muted>
+        ) : (
+          <>
+            <Prose>
+              {reply.text}
+              {reply.isTruncated ? '…' : ''}
+            </Prose>
+            <Row>{replyLink(reply.sequence)}</Row>
+          </>
+        ))}
+      {turn?.status === 'unanswered' && (
+        <>
+          <Prose>{outcomeReason(turn.reason)}</Prose>
+          {refused !== undefined && (
+            <Row>
+              <Button tone="link" onClick={() => onRequest(refused.id)}>
+                Inspect refused {refused.label.toLowerCase()} →
+              </Button>
+            </Row>
+          )}
+        </>
       )}
+      {turn?.status === 'running' && (
+        <Prose>
+          {latest === undefined
+            ? 'This turn has started. Its first model request has not been recorded yet.'
+            : `Most recent model request: ${latest.summary}.`}
+        </Prose>
+      )}
+      {turn === undefined && <Muted>This turn uses a newer record format.</Muted>}
     </Stack>
   );
 }

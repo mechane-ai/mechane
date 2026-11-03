@@ -147,7 +147,7 @@ export { GitHubPath } from './github/constants.ts';
 export { authorizeUrl } from './github/authorize-url.ts';
 export { grantedCallbackUrl } from './github/granted-callback-url.ts';
 export { ApproveForm, DeviceForm, ReviewForm } from './pages/schemas.ts';
-export { DeviceStep, PagePath, TYPED_CODE_FIELD, TYPED_CODE_MAX_CHARS } from './pages/constants.ts';
+export { ConsoleView, DeviceStep, PagePath, TYPED_CODE_FIELD, TYPED_CODE_MAX_CHARS } from './pages/constants.ts';
 export { localSignInUrl } from './pages/local-sign-in-url.ts';
 export { callbackUrl } from './pages/callback-url.ts';
 export { deviceUrl } from './pages/device-url.ts';
@@ -172,6 +172,8 @@ export { SERVICE } from './operations/status/constants.ts';
 export {
   Dispatch,
   TokenUsage,
+  REPLY_EXCERPT_MAX_CHARS,
+  TurnReplyExcerpt,
   Trace,
   TracedDispatch,
   Turn,

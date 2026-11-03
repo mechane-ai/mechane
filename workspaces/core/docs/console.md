@@ -4,17 +4,20 @@ Open `/console` on any Mechane installation. Sign in through its configured GitH
 the same workspaces and permissions as the CLI, without creating or storing a browser API key. It is a workspace
 management interface; it does not grant installation-wide administrative access.
 
-The console lists mechs and their daily allowance, creates and edits definitions, pauses or activates work, sends
-messages, and archives mechs. Each mech has recent turns, activity, and a trace for each turn. A trace shows the
-recorded request intervals, outcomes, token usage, and settled cost. Select a request to inspect its reservation,
-settlement, and usage. Each trace also pages through that turn's original inputs, replies, and lifecycle events.
-Intervals measure reservation to settlement; they do not measure provider inference alone. Missing provider usage
-remains unknown. Tool calls are not yet recorded as spans, and there is no workspace-wide event feed.
+Open a mech to see its turns, activity and definition. The list and turn names are links. Open one in another tab or use
+Back to return to the row and page you were reading. On a phone, the mech list puts the name and model beside its state.
 
-Lists are bounded pages. Newest turns and events appear first; older pages remain available. Mech lists follow the API's
-stable creation order. Background refresh keeps the last result visible and marks a failed refresh. Writes wait for the
-server. Editing checks the saved revision; a conflict keeps your draft so you can compare it with the latest definition.
-Sign-out revokes the browser session, and changing workspace discards its in-memory collections.
+A turn opens on **Overview**. An answered turn shows the start of its recorded reply. **Read full reply** opens the
+exact event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance
+decision and settlement for each model request. A bar has both endpoints, a hollow point is awaiting settlement, and a
+diamond is a refusal before a call. Select a row to inspect its model, cost and reported usage. **Copy link** shares
+that selection with someone who can access the workspace. **Events** pages through the original messages and replies in
+commit order.
+
+Activate a timestamp to copy its exact UTC value. A transient refresh failure keeps the last result visible and offers a
+retry. New activity waits behind **Show new activity** while you read. When you send a message, its receipt links to the
+turn once the mech takes it up. When you edit a definition someone else has changed, compare the saved revision with
+your draft before saving. Continuing keeps your edits and adopts the latest values for untouched fields.
 
 ## Package boundaries
 

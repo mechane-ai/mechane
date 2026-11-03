@@ -4,6 +4,8 @@ import {
   memberOrUnknown,
   Micros,
   RecordId,
+  RecordText,
+  Sequence,
   Tokens,
   TurnId,
   unknownMember,
@@ -123,10 +125,24 @@ export const TracedDispatch = Schema.Union([Dispatch, UnknownDispatch]);
 
 export type TracedDispatch = typeof TracedDispatch.Type;
 
-/** A turn and its dispatches, in the order they were decided. */
-export const Trace = Schema.Struct({
-  turn: Schema.Union([Turn, UnknownTurn]),
-  dispatches: Schema.Array(TracedDispatch),
+/** The trace carries a short excerpt. The indexed event holds the full recorded reply. */
+export const REPLY_EXCERPT_MAX_CHARS = 512;
+
+/** The recorded reply prefix with the event sequence that locates its full text. */
+export const TurnReplyExcerpt = wireStruct({
+  fields: { sequence: Sequence, text: RecordText, isTruncated: Schema.Boolean },
+});
+
+export type TurnReplyExcerpt = typeof TurnReplyExcerpt.Type;
+
+/** A turn with its dispatches in decision order and its recorded reply when available. */
+export const Trace = wireStruct({
+  fields: {
+    turn: Schema.Union([Turn, UnknownTurn]),
+    dispatches: Schema.Array(TracedDispatch),
+    /** Absent while unanswered or when the deployment cannot read a recorded reply. */
+    replyExcerpt: Schema.OptionFromOptionalKey(TurnReplyExcerpt),
+  },
 });
 
 export type Trace = typeof Trace.Type;

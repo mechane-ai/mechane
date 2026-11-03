@@ -9,6 +9,8 @@ export { DetailPage } from './page.tsx';
 export { ListFooter } from './list-footer.tsx';
 export { Cell, Table } from './table.tsx';
 export { Metric, MetricGrid } from './metrics.tsx';
+export { CopyValue } from './copy-value.tsx';
+export { Loading } from './loading.tsx';
 export { Tabs } from './tabs.tsx';
 export { Inspector, Details } from './inspector.tsx';
 export { Timeline } from './timeline.tsx';

@@ -36,11 +36,13 @@ const styles = stylex.create({
 
 export function Tabs<T extends string>({
   options,
+  label,
   value,
   onChange,
   children,
 }: {
   readonly options: ReadonlyArray<T>;
+  readonly label: string;
   readonly value: T;
   readonly onChange: (value: T) => void;
   readonly children?: ReactNode;
@@ -56,7 +58,7 @@ export function Tabs<T extends string>({
         }
       }}
     >
-      <BaseTabs.List aria-label="Mech details" {...stylex.props(styles.list)}>
+      <BaseTabs.List aria-label={label} {...stylex.props(styles.list)}>
         {options.map((option) => (
           <BaseTabs.Tab key={option} value={option} {...stylex.props(styles.tab)}>
             {option}

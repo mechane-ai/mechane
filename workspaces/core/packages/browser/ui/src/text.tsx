@@ -22,6 +22,7 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
   },
   prose: {
+    maxWidth: '72ch',
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere',
     fontSize: 14,

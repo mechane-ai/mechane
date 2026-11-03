@@ -13,6 +13,7 @@ const CLIENT_URL: Readonly<URL> = new URL('../../../browser/console/dist/client/
 const CLIENT_FOLDER = fileURLToPath(CLIENT_URL);
 const CONSOLE_PATH = /^\/console\/[A-Za-z0-9_/-]+\.[A-Za-z0-9]+$/;
 const INDEX_PATH = '/console/index.html';
+const ENTRANCE_PATHS = [INDEX_PATH, '/console/welcome.html'] as const;
 
 const CONSOLE_TYPES: Readonly<Record<string, MediaType>> = {
   '.html': MediaType.Html,
@@ -99,8 +100,11 @@ export const writeConsoleBundle = Effect.fn('writeConsoleBundle')(function* (): 
 
   const files = yield* Effect.forEach(paths, (path) => readConsoleFile({ path }), { concurrency: 1 });
 
-  if (!files.some((file) => file.path === INDEX_PATH)) {
-    return yield* new ConsoleBuildFailed({ step: ConsoleStep.Build, reason: 'The console build has no index.html' });
+  if (!ENTRANCE_PATHS.every((path) => files.some((file) => file.path === path))) {
+    return yield* new ConsoleBuildFailed({
+      step: ConsoleStep.Build,
+      reason: 'The console build is missing an entry document',
+    });
   }
 
   const value = Schema.encodeSync(ConsoleBundle)({ files });

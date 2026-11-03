@@ -4,6 +4,7 @@ import { Notice, Toolbar, ToolbarAction } from '@mechane/ui';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ConsoleLink, usePageCursors } from '../navigation.tsx';
 import { Resource, useResource } from '../resource.tsx';
 import { CreateMechForm } from './create-mech.tsx';
 
@@ -14,7 +15,7 @@ export function MechsScreen({
   readonly data: ConsoleData;
   readonly onOpen: (id: string) => void;
 }): ReactNode {
-  const [cursors, setCursors] = useState<ReadonlyArray<string>>([]);
+  const [cursors, setCursors] = usePageCursors('mechs', []);
   const [creating, setCreating] = useState(false);
   const after = cursors.at(-1) ?? null;
   const source = useMemo(() => data.mechs(after), [data, after]);
@@ -46,7 +47,7 @@ export function MechsScreen({
           </>
         }
       />
-      <Resource data={data} source={source}>
+      <Resource data={data} source={source} label="Loading mechs">
         {(page, notice) => (
           <>
             {notice}
@@ -54,15 +55,23 @@ export function MechsScreen({
             <MechList
               page={page}
               allowance={allowance.value}
-              onOpen={(mech) => onOpen(mech.id)}
+              nameLink={(mech) => (
+                <ConsoleLink
+                  to={{ workspace: data.workspace.id, mech: mech.id }}
+                  row={mech.id}
+                  title={`${mech.name} · ${mech.id}`}
+                >
+                  {mech.name}
+                </ConsoleLink>
+              )}
               onCreate={() => setCreating(true)}
               hasPrevious={cursors.length > 0}
-              onPrevious={() => setCursors((previous) => previous.slice(0, -1))}
+              onPrevious={() => setCursors(cursors.slice(0, -1))}
               onNext={() => {
                 const last = page.mechs.at(-1);
 
                 if (last !== undefined) {
-                  setCursors((previous) => [...previous, last.id]);
+                  setCursors([...cursors, last.id]);
                 }
               }}
             />

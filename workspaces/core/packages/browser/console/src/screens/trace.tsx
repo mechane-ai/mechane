@@ -1,100 +1,92 @@
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { TurnTrace } from '@mechane/console-views';
+import type { TraceTab } from '@mechane/console-views';
 import type { Mech, Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
-import { Button, DetailPage, Heading, Notice, Row, Stack, Toolbar, ToolbarAction } from '@mechane/ui';
+import { DetailPage, Notice, Stack, Toolbar, ToolbarAction } from '@mechane/ui';
+import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
+import type { ConsoleNavigation } from '../types.ts';
 import { TurnHistory } from './turn-history.tsx';
 
-export function TraceScreen({
-  data,
-  mech,
-  turnId,
-  onBack,
-  notice,
-}: {
+type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
   readonly mech: Mech;
-  readonly turnId: string;
-  readonly onBack: () => void;
-  readonly notice?: ReactNode;
-}): ReactNode {
+  readonly notice: ReactNode;
+};
+
+export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly turnId: string }): ReactNode {
   if (!Schema.is(TurnId)(turnId)) {
     return (
       <>
-        <Toolbar
-          breadcrumb
-          title={
-            <Button tone="link" onClick={onBack}>
-              Turns
-            </Button>
-          }
-        />
-        {notice}
+        <Toolbar title="Turn trace" />
+        {props.notice}
         <DetailPage>
-          <Notice error>This turn ID is not valid.</Notice>
+          <Notice error>This turn ID is invalid.</Notice>
         </DetailPage>
       </>
     );
   }
 
-  return <ValidTraceScreen data={data} mech={mech} notice={notice} turnId={turnId} onBack={onBack} />;
+  return <ValidTraceScreen {...props} turnId={turnId} />;
 }
 
 function ValidTraceScreen({
   data,
   mech,
   turnId,
-  onBack,
+  location,
+  navigate,
   notice,
-}: {
-  readonly data: ConsoleData;
-  readonly mech: Mech;
-  readonly turnId: Turn['id'];
-  readonly onBack: () => void;
-  readonly notice?: ReactNode;
-}): ReactNode {
+}: TraceScreenProps & { readonly turnId: Turn['id'] }): ReactNode {
+  const router = useRouter();
   const source = useMemo(() => data.trace(mech.id, turnId), [data, mech.id, turnId]);
-  const [busy, setBusy] = useState(false);
+  const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
   const [error, setError] = useState<string>();
+  const base = { workspace: data.workspace.id, mech: mech.id, turn: turnId };
+  const tab: TraceTab = location.view === 'requests' ? 'Requests' : location.view === 'events' ? 'Events' : 'Overview';
+
+  const title = (
+    <>
+      <ConsoleLink to={{ workspace: data.workspace.id, mech: mech.id }}>{mech.name} / Turns</ConsoleLink> / Turn trace
+    </>
+  );
 
   function cancel(): void {
-    setBusy(true);
+    setCancelState('sending');
     setError(undefined);
-    void data
-      .api('cancelTurn', { workspaceId: data.workspace.id, mechId: mech.id, turnId })
-      .then(() => source.utils.refetch())
-      .then(
-        () => setBusy(false),
-        (cause: unknown) => {
-          setBusy(false);
-          setError(problemMessage(cause));
-        },
-      );
+    void data.api('cancelTurn', { workspaceId: data.workspace.id, mechId: mech.id, turnId }).then(
+      () => {
+        setCancelState('received');
+        void source.utils.refetch();
+      },
+      (cause: unknown) => {
+        setCancelState('idle');
+        setError(problemMessage(cause));
+      },
+    );
   }
 
   return (
-    <Resource data={data} source={source} fallbackHeader={<Toolbar title="Turn trace" />}>
+    <Resource data={data} source={source} fallbackHeader={<Toolbar breadcrumb title={title} />} label="Loading turn">
       {(trace, traceNotice) => (
         <>
           <Toolbar
             breadcrumb
-            title={
-              <>
-                <Button tone="link" onClick={onBack}>
-                  {mech.name} / Turns
-                </Button>{' '}
-                / Turn trace
-              </>
-            }
+            title={title}
             actions={
               trace.turn.status === 'running' && (
-                <ToolbarAction disabled={busy} onClick={cancel}>
-                  {busy ? 'Canceling…' : 'Cancel turn'}
+                <ToolbarAction disabled={cancelState !== 'idle'} onClick={cancel}>
+                  {cancelState === 'received'
+                    ? 'Cancellation requested'
+                    : cancelState === 'sending'
+                      ? 'Requesting…'
+                      : 'Cancel turn'}
                 </ToolbarAction>
               )
             }
@@ -103,15 +95,40 @@ function ValidTraceScreen({
           {traceNotice}
           <DetailPage>
             <Stack>
-              <Heading>Turn trace</Heading>
               {error !== undefined && <Notice error>{error}</Notice>}
-              {trace.turn.status === 'running' && (
-                <Row>
-                  <Notice>This turn is running.</Notice>
-                </Row>
+              {cancelState === 'received' && trace.turn.status === 'running' && (
+                <Notice>Cancellation requested. Waiting for the turn to stop.</Notice>
               )}
-              <TurnTrace key={turnId} trace={trace} />
-              <TurnHistory data={data} mechId={mech.id} turnId={turnId} />
+              <TurnTrace
+                trace={trace}
+                tab={tab}
+                requestId={location.request}
+                onTab={(next) =>
+                  navigate(next === 'Overview' ? base : { ...base, view: next === 'Requests' ? 'requests' : 'events' })
+                }
+                onRequest={(request) => navigate({ ...base, view: 'requests', request })}
+                requestHref={(request) =>
+                  new URL(
+                    router.buildLocation({ to: '/', search: { ...base, view: 'requests', request } }).publicHref,
+                    globalThis.location.origin,
+                  ).href
+                }
+                replyLink={(sequence) => (
+                  <ConsoleLink to={{ ...base, view: 'events', event: sequence }}>Read full reply →</ConsoleLink>
+                )}
+                events={
+                  tab === 'Events' && (
+                    <TurnHistory
+                      key={location.event ?? 'start'}
+                      data={data}
+                      mechId={mech.id}
+                      turnId={turnId}
+                      target={location.event}
+                      onStart={() => navigate({ ...base, view: 'events' })}
+                    />
+                  )
+                }
+              />
             </Stack>
           </DetailPage>
         </>

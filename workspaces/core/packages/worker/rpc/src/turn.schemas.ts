@@ -1,6 +1,6 @@
-import { EventPage, TurnStatus, UnansweredReason } from '@mechane/protocol';
+import { EventPage, TurnReplyExcerpt, TurnStatus, UnansweredReason } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import { RECORD_TIME_KEYS } from './mech.schemas.ts';
 
 /** The fields of a turn in each of its states. */
@@ -31,9 +31,16 @@ const TurnRecord = Schema.Union([
 
 type TurnRecord = typeof TurnRecord.Type;
 
+/** The optional reply excerpt as an object read encodes it. */
+export const TurnReplyRecord = Schema.OptionFromNullOr(TurnReplyExcerpt).pipe(
+  Schema.withDecodingDefaultKey(Effect.succeed(null)),
+);
+
+export type TurnReplyRecord = typeof TurnReplyRecord.Type;
+
 /** What a turn read found, which decodes each state of the turn into the wire's turn. */
 export const TurnAnswer = Schema.Union([
-  Schema.TaggedStruct('Found', { turn: TurnRecord }),
+  Schema.TaggedStruct('Found', { turn: TurnRecord, replyExcerpt: TurnReplyRecord }),
   Schema.TaggedStruct('MechMissing', {}),
   Schema.TaggedStruct('TurnMissing', {}),
 ]);

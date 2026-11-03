@@ -1,12 +1,12 @@
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
-import { Button, Cell, EmptyState, ListFooter, Status, Table } from '@mechane/ui';
+import { Button, Cell, CopyValue, EmptyState, ListFooter, Status, Table } from '@mechane/ui';
 import type { ReactNode } from 'react';
-import { ageLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
+import { ageLabel, moneyLabel, preciseTimeLabel } from './format.ts';
 
 export function MechList({
   page,
   allowance,
-  onOpen,
+  nameLink,
   onCreate,
   onNext,
   onPrevious,
@@ -14,7 +14,7 @@ export function MechList({
 }: {
   readonly page: MechPage;
   readonly allowance: Allowance | undefined;
-  readonly onOpen: (mech: MechSummary) => void;
+  readonly nameLink: (mech: MechSummary) => ReactNode;
   readonly onCreate: () => void;
   readonly onNext: () => void;
   readonly onPrevious: () => void;
@@ -39,29 +39,25 @@ export function MechList({
           headers={[
             { label: 'Mech name', width: 30 },
             { label: 'Status', width: 15 },
-            { label: 'Model', width: 25 },
-            { label: 'Revision', width: 10 },
-            { label: 'Created', width: 20 },
+            { label: 'Model', width: 25, secondary: true },
+            { label: 'Revision', width: 10, secondary: true },
+            { label: 'Created', width: 20, secondary: true },
           ]}
         >
           {page.mechs.map((mech) => (
             <tr key={mech.id}>
-              <Cell>
-                <Button tone="link" title={`${mech.name} · ${mech.id}`} onClick={() => onOpen(mech)}>
-                  {mech.name}
-                </Button>
-              </Cell>
+              <Cell mobileLabel={mech.model}>{nameLink(mech)}</Cell>
               <Cell>
                 <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>{mech.status}</Status>
               </Cell>
-              <Cell>
+              <Cell secondary>
                 <span title={mech.model}>{mech.model}</span>
               </Cell>
-              <Cell>{mech.revision}</Cell>
-              <Cell>
-                <time dateTime={preciseTimeLabel(mech.createdAt)} title={timeLabel(mech.createdAt)}>
+              <Cell secondary>{mech.revision}</Cell>
+              <Cell secondary>
+                <CopyValue label={`${mech.name} creation time in UTC`} value={preciseTimeLabel(mech.createdAt)}>
                   {ageLabel(mech.createdAt)}
-                </time>
+                </CopyValue>
               </Cell>
             </tr>
           ))}
@@ -79,7 +75,7 @@ export function MechList({
           </>
         }
       >
-        {page.mechs.length} mechs on this page
+        {page.mechs.length} {page.mechs.length === 1 ? 'mech' : 'mechs'} on this page
         {allowance !== undefined &&
           ` · Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}
         {page.hasMore && ' · More available'}

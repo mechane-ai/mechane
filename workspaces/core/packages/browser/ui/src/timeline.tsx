@@ -8,128 +8,161 @@ export type TimelineItem = {
   readonly id: string;
   readonly label: string;
   readonly detail: string;
-  readonly start: number;
+  readonly start: number | null;
   readonly end: number | null;
-  readonly state: 'complete' | 'pending' | 'refused';
+  readonly state: 'complete' | 'pending' | 'refused' | 'unknown';
   readonly summary: string;
 };
 
 const styles = stylex.create({
-  heading: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    paddingBlock: 10,
-    paddingInline: 16,
-    fontSize: 13,
-    lineHeight: '20px',
+  frame: { minWidth: 0 },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: {
+      'default': 'minmax(110px, 1fr) minmax(120px, 2fr) minmax(110px, 1fr)',
+      '@media (max-width:650px)': 'minmax(0, 1fr) auto',
+    },
+    alignItems: 'center',
+    gap: '6px 18px',
+    width: '100%',
+    paddingInline: 14,
+  },
+  head: {
+    minHeight: 36,
     color: colors.muted,
+    fontSize: 12,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
   },
   row: {
-    'display': 'grid',
-    'gridTemplateColumns': 'minmax(130px, 1fr) minmax(60px, 1fr)',
-    'gap': 12,
-    'alignItems': 'center',
-    'width': '100%',
-    'minHeight': 64,
     'paddingBlock': 10,
-    'paddingInlineStart': 14,
-    'paddingInlineEnd': 16,
+    'minHeight': 52,
     'borderWidth': 0,
-    'borderInlineStartWidth': 2,
-    'borderInlineStartStyle': 'solid',
-    'borderInlineStartColor': 'transparent',
     'borderBottomWidth': 1,
     'borderBottomStyle': 'solid',
     'borderBottomColor': colors.line,
     'backgroundColor': colors.surface,
-    'textAlign': 'left',
-    'cursor': 'pointer',
     'color': colors.ink,
     'fontFamily': 'inherit',
+    'textAlign': 'start',
+    'cursor': 'pointer',
     ':hover': { backgroundColor: colors.canvas },
-    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -2 },
+    ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 2, outlineOffset: -2 },
   },
-  selected: { backgroundColor: colors.canvas, borderInlineStartColor: colors.ink },
-  name: { fontSize: 13, fontWeight: 500, lineHeight: '20px', marginBottom: 2 },
-  secondary: { fontSize: 12, lineHeight: 1.5, color: colors.muted, overflowWrap: 'anywhere' },
-  chart: { width: '100%', height: 22, display: 'block' },
+  active: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
+  name: { minWidth: 0, display: 'grid', gap: 2 },
+  label: { fontSize: 13, fontWeight: 500, lineHeight: '18px' },
+  detail: { color: colors.muted, fontSize: 12, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+  plot: {
+    minWidth: 0,
+    marginInline: 5,
+    gridColumn: { 'default': '2', '@media (max-width:650px)': '1 / -1' },
+    gridRow: { 'default': 1, '@media (max-width:650px)': 2 },
+  },
+  axis: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    fontSize: 11,
+    lineHeight: '20px',
+    fontVariantNumeric: 'tabular-nums',
+  },
+  svg: { display: 'block', width: '100%', height: 18, overflow: 'visible' },
+  guide: { stroke: colors.line },
   complete: { fill: colors.accent },
-  pending: { fill: colors.muted },
+  pending: { fill: colors.surface, stroke: colors.muted, strokeWidth: 2 },
   refused: { fill: colors.danger },
-  guide: { stroke: colors.line, strokeWidth: 1 },
   summary: {
-    textAlign: 'right',
+    gridColumn: { 'default': '3', '@media (max-width:650px)': '2' },
+    gridRow: 1,
+    textAlign: 'end',
     fontSize: 12,
     lineHeight: '18px',
-    color: colors.muted,
     fontVariantNumeric: 'tabular-nums',
+    color: colors.muted,
   },
 });
 
-/** Recorded intervals share one axis. A point marks a refusal or a request with no recorded end. */
+const TICKS = [0, 0.5, 1] as const;
+const PERCENT = 100;
+
 export function Timeline({
   items,
   start,
   end,
   selected,
   onSelect,
-  duration,
+  formatOffset,
 }: {
   readonly items: ReadonlyArray<TimelineItem>;
   readonly start: number;
   readonly end: number;
-  readonly selected: string | undefined;
+  readonly selected?: string | undefined;
   readonly onSelect: (id: string) => void;
-  readonly duration: string;
+  readonly formatOffset: (milliseconds: number) => string;
 }): ReactNode {
-  const scale = scaleLinear({ domain: [start, Math.max(start + 1, end)], range: [2, 298], clamp: true });
+  const span = end - start;
+  const scale = scaleLinear({ domain: [start, Math.max(start + 1, end)], range: [0, PERCENT], clamp: true });
+  const ticks = span > 0 ? TICKS : [0];
 
   return (
-    <div>
-      <div {...stylex.props(styles.heading)}>
-        <span>Model requests</span>
-        <span>0 → {duration}</span>
+    <div aria-label="Request timing" {...stylex.props(styles.frame)}>
+      <div {...stylex.props(styles.grid, styles.head)}>
+        <span>Model request</span>
+        <div {...stylex.props(styles.plot, styles.axis)}>
+          {ticks.map((tick) => (
+            <span key={tick}>{formatOffset(span * tick)}</span>
+          ))}
+        </div>
+        <span {...stylex.props(styles.summary)}>Recorded outcome</span>
       </div>
       {items.map((item) => {
-        const x = scale(item.start);
-        const width = item.end === null ? 3 : Math.max(3, scale(item.end) - x);
+        const x = item.start === null ? 0 : scale(item.start);
+        const width = item.end === null ? 0 : scale(item.end) - x;
 
         return (
           <button
-            type="button"
             key={item.id}
+            type="button"
             aria-pressed={selected === item.id}
             aria-label={`${item.label} · ${item.detail} · ${item.summary}`}
             onClick={() => onSelect(item.id)}
-            {...stylex.props(styles.row, selected === item.id && styles.selected)}
+            {...stylex.props(styles.grid, styles.row, selected === item.id && styles.active)}
           >
-            <div>
-              <div {...stylex.props(styles.name)}>{item.label}</div>
-              <div {...stylex.props(styles.secondary)}>{item.detail}</div>
-            </div>
-            <div>
-              <svg viewBox="0 0 302 22" preserveAspectRatio="none" aria-hidden {...stylex.props(styles.chart)}>
-                {[2, 150, 298].map((guide) => (
-                  <line key={guide} x1={guide} x2={guide} y1={0} y2={22} {...stylex.props(styles.guide)} />
+            <span {...stylex.props(styles.name)}>
+              <span {...stylex.props(styles.label)}>{item.label}</span>
+              <span title={item.detail} {...stylex.props(styles.detail)}>
+                {item.detail}
+              </span>
+            </span>
+            <span {...stylex.props(styles.plot)}>
+              <svg aria-hidden {...stylex.props(styles.svg)}>
+                {ticks.map((tick) => (
+                  <line
+                    key={tick}
+                    x1={`${tick * PERCENT}%`}
+                    x2={`${tick * PERCENT}%`}
+                    y1="0"
+                    y2="18"
+                    {...stylex.props(styles.guide)}
+                  />
                 ))}
-                <Bar
-                  x={x}
-                  y={6}
-                  width={width}
-                  height={10}
-                  rx={2}
-                  {...stylex.props(
-                    item.state === 'complete' && styles.complete,
-                    item.state === 'pending' && styles.pending,
-                    item.state === 'refused' && styles.refused,
-                  )}
-                />
+                {item.state === 'complete' &&
+                  (width > 0 ? (
+                    <Bar x={`${x}%`} y={6} width={`${width}%`} height={6} rx={2} {...stylex.props(styles.complete)} />
+                  ) : (
+                    <circle cx={`${x}%`} cy={9} r={3} {...stylex.props(styles.complete)} />
+                  ))}
+                {item.state === 'pending' && <circle cx={`${x}%`} cy={9} r={3.5} {...stylex.props(styles.pending)} />}
+                {item.state === 'refused' && (
+                  <svg x={`${x}%`} y={9} width={1} height={1} overflow="visible">
+                    <path d="M0 -5 5 0 0 5 -5 0Z" {...stylex.props(styles.refused)} />
+                  </svg>
+                )}
               </svg>
-              <div {...stylex.props(styles.summary)}>{item.summary}</div>
-            </div>
+            </span>
+            <span {...stylex.props(styles.summary)}>{item.summary}</span>
           </button>
         );
       })}

@@ -12,7 +12,17 @@ const styles = stylex.create({
     lineHeight: '20px',
     textAlign: 'left',
   },
-  fixed: { tableLayout: 'fixed', minWidth: 720 },
+  fixed: { tableLayout: 'fixed' },
+  secondary: { display: { 'default': 'table-cell', '@media (max-width:600px)': 'none' } },
+  mobileLabel: {
+    display: { 'default': 'none', '@media (max-width:600px)': 'block' },
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: '18px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+  },
+  compactWidth: { width: { '@media (max-width:600px)': 'auto' } },
   column: (width: number) => ({ width: `${width}%` }),
   th: {
     'position': 'relative',
@@ -55,7 +65,9 @@ export function Table({
   children,
   label,
 }: {
-  readonly headers: ReadonlyArray<string | { readonly label: string; readonly width: number }>;
+  readonly headers: ReadonlyArray<
+    string | { readonly label: string; readonly width: number; readonly secondary?: boolean }
+  >;
   readonly children: ReactNode;
   readonly label: string;
 }): ReactNode {
@@ -74,6 +86,8 @@ export function Table({
                 {...stylex.props(
                   styles.th,
                   typeof header !== 'string' && styles.column(header.width),
+                  typeof header !== 'string' && styles.compactWidth,
+                  typeof header !== 'string' && header.secondary === true && styles.secondary,
                   index === headers.length - 1 && styles.lastHeader,
                 )}
               >
@@ -88,6 +102,19 @@ export function Table({
   );
 }
 
-export function Cell({ children }: { readonly children?: ReactNode }): ReactNode {
-  return <td {...stylex.props(styles.td)}>{children}</td>;
+export function Cell({
+  children,
+  secondary = false,
+  mobileLabel,
+}: {
+  readonly children?: ReactNode;
+  readonly secondary?: boolean;
+  readonly mobileLabel?: string;
+}): ReactNode {
+  return (
+    <td {...stylex.props(styles.td, secondary && styles.secondary)}>
+      {children}
+      {mobileLabel !== undefined && <small {...stylex.props(styles.mobileLabel)}>{mobileLabel}</small>}
+    </td>
+  );
 }

@@ -18,7 +18,7 @@ import type { SandboxManageInput } from '../sandbox.types.ts';
 import type { ReceiveSlackInboxItemInput } from '../slack.types.ts';
 import type { SourceAnswer, SourceGrantAnswer } from '../source.schemas.ts';
 import type { SourceManageInput } from '../source.types.ts';
-import type { TurnEventsAnswer, TurnsAnswer } from '../turn.schemas.ts';
+import type { TurnEventsAnswer, TurnReplyRecord, TurnsAnswer } from '../turn.schemas.ts';
 import type { FindingsAnswer, WatchAnswer, WatchesAnswer } from '../watch.schemas.ts';
 import type { SetWatchInput, UpdateWatchStatusInput, WatchInput } from '../watch.types.ts';
 
@@ -72,7 +72,7 @@ export type SendInboxItemInput = {
 /** A page of the mech's threads, as the Worker asks for it: the list's query as `/api/v1` encodes it. */
 export type ThreadsInput = { readonly query: typeof catalog.listThreads.query.Encoded };
 
-export type TurnInput = { readonly turnId: string };
+export type TurnInput = { readonly turnId: TurnId };
 
 export type TurnEventsInput = { readonly turnId: TurnId; readonly query: typeof catalog.listTurnEvents.query.Encoded };
 
@@ -94,7 +94,11 @@ export type TurnFields = {
 };
 
 /** A turn read that found the turn. */
-type FoundTurn = { readonly _tag: 'Found'; readonly turn: TurnFields };
+type FoundTurn = {
+  readonly _tag: 'Found';
+  readonly turn: TurnFields;
+  readonly replyExcerpt: typeof TurnReplyRecord.Encoded;
+};
 
 /** A turn read of an object that holds no mech. */
 type MissingMech = { readonly _tag: 'MechMissing' };

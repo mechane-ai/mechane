@@ -31,6 +31,15 @@ Trace intervals name their measured boundaries. Reservation-to-settlement time i
 missing usage is unknown, never zero. Show recorded turn events through a bounded API page, not a filtered page of
 unrelated recent activity. The event query includes the original receipts of the turn's inputs.
 
+A turn overview reads its bounded reply excerpt and exact event sequence from that turn's durable log. The full reply
+remains reachable when it falls beyond the first event page. A message receipt identifies a turn only after a matching
+start or join event. A cancellation receipt precedes the recorded terminal outcome.
+
+Record links reopen the selected workspace, mech, turn, request or event. Returning through browser history restores
+the originating list page. Refreshing activity preserves the rows being read until the reader requests the newer page.
+The public entry contains no private snapshot. A transient read failure may retain the last authorized result; access
+loss and removal clear it. An edit conflict preserves the draft and accepts concurrent changes to untouched fields.
+
 Shared UI controls own interaction and visual states. Use supported StyleX longhands for borders, outlines, backgrounds,
 and fonts; composite shorthands can disappear from the compiled CSS. Verify the packaged styles in a real browser,
 including keyboard focus, selected tabs, request selection, and narrow-screen navigation.

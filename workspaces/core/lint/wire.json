@@ -1246,7 +1246,11 @@
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=mech.forked].forked_from",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=mech.forked].forked_from.mech_id",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=mech.forked].forked_from.sequence",
-    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.has_more"
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.has_more",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.reply_excerpt",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.reply_excerpt.sequence",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.reply_excerpt.text",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.reply_excerpt.truncated"
   ],
   "members": [
     "GET /api/v1/readiness output.durable_objects[].object_class=DirectoryObject",

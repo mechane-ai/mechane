@@ -1,23 +1,28 @@
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
-import { Columns, Details, Divider, Identifier, Muted, Row, Stack, Status, Subheading } from '@mechane/ui';
+import { Columns, CopyValue, Details, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane/ui';
 import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
-import { durationLabel, moneyLabel, preciseTimeLabel } from './format.ts';
+import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
 
 export function TraceRequest({
   request,
   number,
+  href,
 }: {
   readonly request: TracedDispatch;
   readonly number: number;
+  readonly href: string;
 }): ReactNode {
   if (!Schema.is(Dispatch)(request)) {
     return (
       <Stack>
         <Subheading>Request {number}</Subheading>
+        <CopyValue label="request link" value={href}>
+          Copy link
+        </CopyValue>
         <Muted>This request uses a newer record format.</Muted>
-        <Identifier>{request.id}</Identifier>
+        <CopyValue label="request ID" value={request.id} />
       </Stack>
     );
   }
@@ -33,7 +38,12 @@ export function TraceRequest({
             {request.status}
           </Status>
         </Row>
-        <Muted>{request.model}</Muted>
+        <Row between>
+          <Muted>{request.model}</Muted>
+          <CopyValue label="request link" value={href}>
+            Copy link
+          </CopyValue>
+        </Row>
       </Stack>
       <Divider />
       <Columns>
@@ -41,11 +51,25 @@ export function TraceRequest({
           <Subheading>Settlement</Subheading>
           <Details
             items={[
-              { label: 'Decided at', value: preciseTimeLabel(request.decidedAt) },
+              {
+                label: 'Decided at',
+                value: (
+                  <CopyValue label="reservation time in UTC" value={preciseTimeLabel(request.decidedAt)}>
+                    {timeLabel(request.decidedAt)}
+                  </CopyValue>
+                ),
+              },
               { label: 'Allowance request', value: moneyLabel(request.requestedMicros) },
               ...(settled
                 ? [
-                    { label: 'Settled at', value: preciseTimeLabel(request.settledAt) },
+                    {
+                      label: 'Settled at',
+                      value: (
+                        <CopyValue label="settlement time in UTC" value={preciseTimeLabel(request.settledAt)}>
+                          {timeLabel(request.settledAt)}
+                        </CopyValue>
+                      ),
+                    },
                     {
                       label: 'To settlement',
                       value: durationLabel(
@@ -85,7 +109,7 @@ export function TraceRequest({
       <Divider />
       <Stack compact>
         <Muted>Request ID</Muted>
-        <Identifier>{request.id}</Identifier>
+        <CopyValue label="request ID" value={request.id} />
       </Stack>
     </Stack>
   );

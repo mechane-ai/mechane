@@ -1,6 +1,6 @@
 import { canRetainResult, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, SnapshotCollection } from '@mechane/console-data';
-import { Button, EmptyState, Notice } from '@mechane/ui';
+import { Button, DetailPage, EmptyState, Loading, Notice } from '@mechane/ui';
 import { useLiveQuery } from '@tanstack/react-db';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
@@ -17,7 +17,8 @@ export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>)
   }, [data, source]);
 
   const snapshot = query.data[0];
-  const problem = source.health.error?.cause;
+  const failure = source.health.error ?? source.health.failureReason;
+  const problem = failure?.cause;
   const failed = query.health?.hasErrors === true;
 
   return { value: snapshot !== undefined && canRetainResult(problem) ? snapshot.value : undefined, problem, failed };
@@ -28,11 +29,13 @@ export function Resource<T>({
   source,
   children,
   fallbackHeader,
+  label = 'Loading records',
 }: {
   readonly data: ConsoleData;
   readonly source: SnapshotCollection<T>;
   readonly children: (value: T, notice: ReactNode) => ReactNode;
   readonly fallbackHeader?: ReactNode;
+  readonly label?: string;
 }): ReactNode {
   const { value, problem, failed } = useResource(data, source);
 
@@ -41,7 +44,7 @@ export function Resource<T>({
       value,
       failed ? (
         <Notice error>
-          Refresh failed. Showing the last saved result.{' '}
+          Showing the last result. Refresh failed.{' '}
           <Button
             onClick={() => {
               void source.utils.refetch();
@@ -81,7 +84,13 @@ export function Resource<T>({
   return (
     <>
       {fallbackHeader}
-      <EmptyState title="Loading…">Reading from your Mechane installation.</EmptyState>
+      {fallbackHeader === undefined ? (
+        <Loading label={label} />
+      ) : (
+        <DetailPage>
+          <Loading label={label} shape="detail" />
+        </DetailPage>
+      )}
     </>
   );
 }

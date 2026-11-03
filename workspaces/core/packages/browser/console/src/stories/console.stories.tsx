@@ -1,20 +1,29 @@
-import { ConsoleShell, MechList, TurnTrace } from '@mechane/console-views';
-import { Allowance, MechPage, Trace, WorkspaceList } from '@mechane/protocol';
+import type { TraceTab } from '@mechane/console-views';
+import {
+  Activity,
+  ConsoleShell,
+  MechList,
+  DefinitionConflict as SavedDefinition,
+  TurnTrace,
+} from '@mechane/console-views';
+import { Allowance, EventPage, MechPage, Trace, WorkspaceList } from '@mechane/protocol';
+import { Micros } from '@mechane/records';
 import {
   Button,
   DetailPage,
-  EmptyState,
   Heading,
+  Loading as LoadingRows,
   Muted,
   Notice,
   Row,
   Stack,
   TextField,
+  TextLink,
   Toolbar,
   ToolbarAction,
 } from '@mechane/ui';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Schema } from 'effect';
+import { Option, Schema } from 'effect';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -84,9 +93,22 @@ const mechPage = Schema.decodeUnknownSync(MechPage)({
   has_more: false,
 });
 
+const sampleMech = mechPage.mechs.find((mech) => mech.name === 'Repository scout');
+
+if (sampleMech === undefined) {
+  throw new Error('Story requires Repository scout');
+}
+
+const scout = sampleMech;
+
 const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
 
 const completedTrace = Schema.decodeUnknownSync(Trace)({
+  reply_excerpt: {
+    sequence: 107,
+    text: 'The release candidate is ready. All three packages passed their checks. The deployment can proceed once the release tag is published.',
+    truncated: false,
+  },
   turn: {
     id: '52d0e964-811d-44f4-a96e-d38ca5df748b',
     status: 'answered',
@@ -170,7 +192,7 @@ function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
         hasPrevious={false}
         page={page}
         allowance={allowance}
-        onOpen={() => undefined}
+        nameLink={(mech) => <TextLink href={`?mech=${mech.id}`}>{mech.name}</TextLink>}
         onCreate={() => undefined}
         onPrevious={() => undefined}
         onNext={() => undefined}
@@ -179,7 +201,19 @@ function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
   );
 }
 
-function TraceStory({ trace, notice }: { readonly trace: Trace; readonly notice?: ReactNode }): ReactNode {
+function TraceStory({
+  trace,
+  notice,
+  initialTab = 'Overview',
+}: {
+  readonly trace: Trace;
+  readonly notice?: ReactNode;
+  readonly initialTab?: TraceTab;
+}): ReactNode {
+  const reply = Option.getOrUndefined(trace.replyExcerpt);
+  const [tab, setTab] = useState<TraceTab>(initialTab);
+  const [request, setRequest] = useState<string>();
+
   return (
     <StoryShell>
       <Toolbar
@@ -199,13 +233,44 @@ function TraceStory({ trace, notice }: { readonly trace: Trace; readonly notice?
       {notice}
       <DetailPage>
         <Stack>
-          <Heading>Turn trace</Heading>
-          {trace.turn.status === 'running' && (
-            <Row>
-              <Notice>This turn is running.</Notice>
-            </Row>
-          )}
-          <TurnTrace trace={trace} />
+          <TurnTrace
+            trace={trace}
+            tab={tab}
+            onTab={setTab}
+            requestId={request}
+            onRequest={(id) => {
+              setRequest(id);
+              setTab('Requests');
+            }}
+            requestHref={(id) =>
+              `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
+            }
+            replyLink={() => (
+              <Button tone="link" onClick={() => setTab('Events')}>
+                Read full reply →
+              </Button>
+            )}
+            events={
+              <Activity
+                chronological
+                page={Schema.decodeUnknownSync(EventPage)({
+                  has_more: false,
+                  events:
+                    reply === undefined
+                      ? []
+                      : [
+                          {
+                            type: 'turn.answered',
+                            turn_id: trace.turn.id,
+                            sequence: reply.sequence,
+                            occurred_at: '2026-11-02T12:00:04Z',
+                            reply: reply.text,
+                          },
+                        ],
+                })}
+              />
+            }
+          />
         </Stack>
       </DetailPage>
     </StoryShell>
@@ -215,6 +280,16 @@ function TraceStory({ trace, notice }: { readonly trace: Trace; readonly notice?
 export const Mechs: Story = { render: () => <MechsStory page={mechPage} /> };
 
 export const CompletedTurn: Story = { render: () => <TraceStory trace={completedTrace} /> };
+
+export const RequestTimeline: Story = { render: () => <TraceStory trace={completedTrace} initialTab="Requests" /> };
+
+export const UnavailableReply: Story = {
+  render: () => (
+    <TraceStory
+      trace={Schema.decodeUnknownSync(Trace)({ turn: encodedTrace.turn, dispatches: encodedTrace.dispatches })}
+    />
+  ),
+};
 
 export const Empty: Story = { render: () => <MechsStory page={emptyPage} /> };
 
@@ -238,11 +313,23 @@ export const DefinitionConflict: Story = {
       <DetailPage>
         <Stack>
           <Heading>Edit Repository scout</Heading>
-          <Muted>Saving revision 1. Reload the definition if someone changes this mech before you save.</Muted>
+          <Muted>Editing revision 1.</Muted>
+          <SavedDefinition
+            saved={{
+              ...scout,
+              revision: 2,
+              dailyCapMicros: Micros.make(5_000_000),
+              instructions: Option.some('Inspect the workspace before each release.'),
+            }}
+            onContinue={() => undefined}
+            onRefresh={() => undefined}
+          />
           <TextField label="Name" value="Repository scout" readOnly />
-          <Notice error>The definition changed while you were editing. Reopen it to review the latest revision.</Notice>
+
           <Row>
-            <Button tone="primary">Save definition</Button>
+            <Button tone="primary" disabled>
+              Save definition
+            </Button>
             <Button>Cancel</Button>
           </Row>
         </Stack>
@@ -255,7 +342,7 @@ export const Loading: Story = {
   render: () => (
     <StoryShell>
       <MechsToolbar />
-      <EmptyState title="Loading…">Reading from your Mechane installation.</EmptyState>
+      <LoadingRows label="Loading mechs" />
     </StoryShell>
   ),
 };
@@ -267,7 +354,6 @@ export const RefusedTurn: Story = {
   render: () => (
     <TraceStory
       trace={Schema.decodeUnknownSync(Trace)({
-        ...encodedTrace,
         turn: { ...encodedTrace.turn, status: 'unanswered', reason: 'allowance_exhausted' },
         dispatches: [{ ...sampleRequest, status: 'refused' }],
       })}
@@ -279,7 +365,6 @@ export const RunningTurn: Story = {
   render: () => (
     <TraceStory
       trace={Schema.decodeUnknownSync(Trace)({
-        ...encodedTrace,
         turn: { ...encodedTrace.turn, status: 'running' },
         dispatches: [{ ...sampleRequest, status: 'reserved' }],
       })}
@@ -290,6 +375,7 @@ export const RunningTurn: Story = {
 export const MissingUsage: Story = {
   render: () => (
     <TraceStory
+      initialTab="Requests"
       trace={Schema.decodeUnknownSync(Trace)({
         ...encodedTrace,
         dispatches: [{ ...sampleRequest, basis: 'reservation' }],
@@ -301,6 +387,7 @@ export const MissingUsage: Story = {
 export const NewerRequestFormat: Story = {
   render: () => (
     <TraceStory
+      initialTab="Requests"
       trace={Schema.decodeUnknownSync(Trace)({
         ...encodedTrace,
         dispatches: [

@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@mechane/authentication": "workspace:*",
     "@mechane/bindings": "workspace:*",
     "@mechane/deployment": "workspace:*",
     "@mechane/directory": "workspace:*",

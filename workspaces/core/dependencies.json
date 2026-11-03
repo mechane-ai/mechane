@@ -577,7 +577,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "closure",
-    "consumers": ["@mechane/pages", "@mechane/edge"],
+    "consumers": ["@mechane/pages", "@mechane/edge", "@mechane/app"],
     "confines": ["cookie"]
   },
   "@mechane/ui": {
