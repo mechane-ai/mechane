@@ -71,3 +71,9 @@ export {
   SOURCE_GRANT_MAX_PATHS,
 } from './source.constants.ts';
 export { sourcePathAllowed } from './source-path-allowed.ts';
+/**
+ * Types named by generated client protocol declarations.
+ *
+ * @public
+ */
+export type { WireKeys, UnknownMemberSchema } from './types.ts';

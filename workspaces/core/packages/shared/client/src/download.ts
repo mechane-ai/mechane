@@ -1,5 +1,6 @@
 import { HttpHeader, HttpMethod } from '@mechane/records';
-import { Effect, Schema } from 'effect';
+import type { Bytes } from '@mechane/records';
+import { Effect, Option, Schema } from 'effect';
 import type { Duration } from 'effect';
 import { answerWithin } from './answer-within.ts';
 import { RELEASE_READ_FAILURES } from './constants.ts';
@@ -36,7 +37,15 @@ const fileBytes = Effect.fn('fileBytes')(function* ({
   url,
 }: FileBytesInput): Effect.fn.Return<Uint8Array, ClientFailure> {
   if (!response.ok) {
-    return yield* decodeAnswer({ output: Schema.Never, failures: RELEASE_READ_FAILURES, response, url });
+    const maxResponseBytes = Option.none<Bytes>();
+
+    return yield* decodeAnswer({
+      output: Schema.Never,
+      failures: RELEASE_READ_FAILURES,
+      response,
+      url,
+      maxResponseBytes,
+    });
   }
 
   return yield* Effect.tryPromise({

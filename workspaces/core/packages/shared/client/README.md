@@ -8,6 +8,7 @@ Layer 2 · shared lane · effect dialect · any consumer
 ## Surface
 
 - Calls: `call`, `CallRequest` and `OperationCall`.
+- Response limits: `Bytes`, supplied as `maxResponseBytes` on each `call`.
 - Files: `download` and `latestRelease`.
 - Failures: `OperationFailed`, `OriginUnreachable`, `RequestTimedOut`, `ResponseUnreadable`, its `AnswerStep`, and
   `ClientFailure`.
@@ -15,7 +16,9 @@ Layer 2 · shared lane · effect dialect · any consumer
 ## Use
 
 Call an operation by its catalog name with the credential its access needs, within a timeout its program bounds. An
-error answer decodes into `OperationFailed` with the failure its code names, or an `UnknownFailure`.
+explicit `maxResponseBytes` choice is `Option.some(Bytes)` for a byte cap before JSON decoding or `Option.none()` for a
+response the caller trusts to be unbounded. Cancellation stops the body reader. An error answer decodes into
+`OperationFailed` with the failure its code names, or an `UnknownFailure`.
 
 ## Never
 

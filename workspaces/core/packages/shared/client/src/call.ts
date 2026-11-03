@@ -1,7 +1,8 @@
 import { ACCESS_FAILURES, catalog, ROUTE_FAILURES } from '@mechane/protocol';
 import type { OperationName, OperationOutput } from '@mechane/protocol';
+import type { Bytes } from '@mechane/records';
 import { Effect, Schema } from 'effect';
-import type { Duration } from 'effect';
+import type { Duration, Option } from 'effect';
 import { answerWithin } from './answer-within.ts';
 import { decodeAnswer } from './decode-answer.ts';
 import { requestInit } from './request-init.ts';
@@ -18,6 +19,8 @@ type CallInput<N extends OperationName> = CallRequest<N> & {
    * (linux-x64)`, so the operator sees which releases still call.
    */
   readonly userAgent: string;
+  /** None uses the server response as-is; Some bounds the bytes read before JSON decoding. */
+  readonly maxResponseBytes: Option.Option<Bytes>;
 };
 
 /**
@@ -31,6 +34,7 @@ export const call = Effect.fn('call')(function* <N extends OperationName>({
   credential,
   timeout,
   userAgent,
+  maxResponseBytes,
 }: CallInput<N>): Effect.fn.Return<OperationOutput<(typeof catalog)[N]>, ClientFailure> {
   const operation = catalog[name];
   const failures = [...operation.errors, ...ACCESS_FAILURES[operation.access], ...ROUTE_FAILURES];
@@ -45,6 +49,6 @@ export const call = Effect.fn('call')(function* <N extends OperationName>({
     url,
     init,
     timeout,
-    read: (response) => decodeAnswer({ output: operation.output, failures, response, url }),
+    read: (response) => decodeAnswer({ output: operation.output, failures, response, url, maxResponseBytes }),
   });
 });

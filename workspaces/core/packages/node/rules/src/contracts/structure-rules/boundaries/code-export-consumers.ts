@@ -8,12 +8,19 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
 const VALUES = {
   knip: {
     includeEntryExports: true,
+    tags: ['-public'],
     treatConfigHintsAsErrors: true,
     ignoreExportsUsedInFile: { type: true, interface: true },
     ignoreDependencies: ['@swc/core', 'cloudflare'],
     ignore: ['.dependency-cruiser.cjs'],
   },
   knipNotes: [
+    {
+      path: ['tags'],
+      lines: [
+        'The public client archive consumes exports marked @public, including types its generated declarations must name. Keep this tag limited to the actual public archive surface.',
+      ],
+    },
     {
       path: ['includeEntryExports'],
       lines: ['Every export of an entry file needs a consumer; `!` marks production files for `knip --production`.'],

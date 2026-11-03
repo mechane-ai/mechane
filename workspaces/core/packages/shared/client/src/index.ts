@@ -5,3 +5,9 @@ export { OperationFailed, RequestTimedOut, ResponseUnreadable, OriginUnreachable
 export { latestRelease } from './latest-release.ts';
 export type { CallRequest, ClientFailure, OperationCall } from './types.ts';
 export { BROWSER_CREDENTIAL } from './constants.ts';
+/**
+ * Validates the byte cap accepted by the public operation client.
+ *
+ * @public
+ */
+export { Bytes } from '@mechane/records';

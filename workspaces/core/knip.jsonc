@@ -2,6 +2,8 @@
   "$schema": "./node_modules/knip/schema-jsonc.json",
   // Every export of an entry file needs a consumer; `!` marks production files for `knip --production`.
   "includeEntryExports": true,
+  // The public client archive consumes exports marked @public, including types its generated declarations must name. Keep this tag limited to the actual public archive surface.
+  "tags": ["-public"],
   // A stale ignore entry or entry pattern is a suppression that suppresses nothing, so it fails the check.
   "treatConfigHintsAsErrors": true,
   // A type that an exported declaration's signature uses counts as used by that declaration's consumers.

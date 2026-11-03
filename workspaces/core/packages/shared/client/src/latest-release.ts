@@ -1,6 +1,7 @@
 import { latestReleaseUrl, ReleaseManifest } from '@mechane/protocol';
 import { HttpHeader, HttpMethod } from '@mechane/records';
-import { Effect } from 'effect';
+import type { Bytes } from '@mechane/records';
+import { Effect, Option } from 'effect';
 import type { Duration } from 'effect';
 import { answerWithin } from './answer-within.ts';
 import { RELEASE_READ_FAILURES } from './constants.ts';
@@ -16,12 +17,14 @@ export const latestRelease = Effect.fn('latestRelease')(function* ({
   timeout,
   userAgent,
 }: LatestReleaseInput): Effect.fn.Return<ReleaseManifest, ClientFailure> {
+  const maxResponseBytes = Option.none<Bytes>();
   const url = latestReleaseUrl({ origin });
 
   return yield* answerWithin({
     url,
     init: { method: HttpMethod.Get, headers: { [HttpHeader.UserAgent]: userAgent } },
     timeout,
-    read: (response) => decodeAnswer({ output: ReleaseManifest, failures: RELEASE_READ_FAILURES, response, url }),
+    read: (response) =>
+      decodeAnswer({ output: ReleaseManifest, failures: RELEASE_READ_FAILURES, response, url, maxResponseBytes }),
   });
 });

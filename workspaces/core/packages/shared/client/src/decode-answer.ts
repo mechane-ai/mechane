@@ -1,12 +1,17 @@
 import { detailFailure, ErrorBody } from '@mechane/protocol';
 import type { FailureCodec, ServiceFreeCodec } from '@mechane/protocol';
+import type { Bytes } from '@mechane/records';
 import { Effect, Schema } from 'effect';
+import type { Option } from 'effect';
 import { AnswerStep } from './constants.ts';
 import { OperationFailed, ResponseUnreadable } from './errors.ts';
+import { readResponseJson } from './read-response-json.ts';
 
 /** The answer to decode, with its success's schema and the failures its request expects. */
 type DecodeAnswerInput<S> = {
   readonly output: S;
+  /** None leaves the response unbounded; Some caps the streamed bytes before JSON decoding. */
+  readonly maxResponseBytes: Option.Option<Bytes>;
   readonly failures: ReadonlyArray<FailureCodec>;
   readonly response: Response;
   readonly url: URL;
@@ -29,12 +34,9 @@ export const decodeAnswer = Effect.fn('decodeAnswer')(function* <S extends Servi
   failures,
   response,
   url,
+  maxResponseBytes,
 }: DecodeAnswerInput<S>): Effect.fn.Return<S['Type'], OperationFailed | ResponseUnreadable> {
-  const body = yield* Effect.tryPromise({
-    try: (): Promise<unknown> => response.json(),
-    catch: (cause) =>
-      new ResponseUnreadable({ url, status: response.status, step: AnswerStep.ParseJson, reason: String(cause) }),
-  });
+  const body = yield* readResponseJson({ response, url, maxResponseBytes });
 
   if (!response.ok) {
     const { error } = yield* decodeBody({ schema: ErrorBody, body, response, url });

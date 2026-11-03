@@ -2,7 +2,7 @@ import { call, OperationFailed } from '@mechane/client';
 import type { CallRequest, ClientFailure } from '@mechane/client';
 import type { OperationName } from '@mechane/protocol';
 import type { Stack } from '@mechane/stack';
-import { Duration, Effect, Schema } from 'effect';
+import { Duration, Effect, Option, Schema } from 'effect';
 import { CheckFailed } from '../errors.ts';
 
 const REQUEST_TIMEOUT = Duration.seconds(20);
@@ -17,7 +17,10 @@ export const refusedOperation = Effect.fn('refusedOperation')(function* <N exten
   input,
   credential,
 }: RefusedOperationInput<N>): Effect.fn.Return<string, CheckFailed> {
+  const maxResponseBytes = Option.none();
+
   const response = call({
+    maxResponseBytes,
     origin: stack.origin,
     name,
     input,

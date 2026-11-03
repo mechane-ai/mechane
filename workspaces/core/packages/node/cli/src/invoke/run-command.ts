@@ -34,7 +34,10 @@ export const runCommand = Effect.fn('runCommand')(
       input: operationInput,
       credential,
     }: CallRequest<M>): Effect.fn.Return<OperationOutput<(typeof catalog)[M]>, ClientFailure> {
+      const maxResponseBytes = Option.none();
+
       return yield* call({
+        maxResponseBytes,
         name,
         input: operationInput,
         credential,

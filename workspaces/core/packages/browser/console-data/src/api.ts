@@ -1,7 +1,7 @@
 import { BROWSER_CREDENTIAL, call, OperationFailed, RequestTimedOut, ResponseUnreadable } from '@mechane/client';
 import { ErrorFamily } from '@mechane/protocol';
 import type { catalog, OperationInput, OperationOutput } from '@mechane/protocol';
-import { Duration, Effect, Result } from 'effect';
+import { Duration, Effect, Option, Result } from 'effect';
 
 /** The authenticated operations the console currently exposes. */
 export type ConsoleOperation =
@@ -50,7 +50,10 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: ()
   ): Promise<Output<N>> {
     const combined = signal === undefined ? lifetime : AbortSignal.any([lifetime, signal]);
 
+    const maxResponseBytes = Option.none();
+
     const operation = call({
+      maxResponseBytes,
       name,
       input,
       credential: BROWSER_CREDENTIAL,
