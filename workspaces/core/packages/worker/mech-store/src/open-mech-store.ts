@@ -1,4 +1,6 @@
 import { applyMigrations, schemaRevision } from '@mechane/store';
+import { boundedTurnRecords } from './bounded-turns/bounded-turn-records.ts';
+import { dispatchEvidenceRecords } from './bounded-turns/dispatch-evidence-records.ts';
 import { droneEndRecords } from './drones/drone-end-records.ts';
 import { droneRecords } from './drones/drone-records.ts';
 import { eventRecords } from './events/event-records.ts';
@@ -29,6 +31,8 @@ export async function openMechStore({ storage, transaction }: OpenMechStoreInput
 
   const tables: MechTables = {
     schemaRevision: () => schemaRevision({ sql }),
+    ...boundedTurnRecords({ sql }),
+    ...dispatchEvidenceRecords({ sql }),
     ...mechRecords({ sql }),
     ...inboxItemRecords({ sql }),
     ...slackDeliveryRecords({ sql }),

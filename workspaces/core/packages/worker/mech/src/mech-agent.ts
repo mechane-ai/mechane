@@ -5,5 +5,5 @@ type MechInput = { readonly mech: MechRevisionRow };
 
 /** The definition held for the current turn and its drones. */
 export function mechAgent({ mech }: MechInput): MechAgent {
-  return { modelId: mech.model, instructions: mech.instructions };
+  return { modelId: mech.model, instructions: mech.instructions, isBounded: false };
 }

@@ -9,7 +9,8 @@ Layer 3 · worker · plain · consumers: `@mechane/mech`
 - `database/`: the mech's one SQLite client, shared by pi's storage and the mech's store, so their transactions queue
   one behind the other.
 - `drones/`: a drone's conversation: its opening, its brief and its abort.
-- `models/`: the metered model API, which refuses a dispatch the allowance cannot cover before the upstream receives it.
+- `models/`: the metered model API, which enforces allowance and bounded-turn limits before the upstream receives a
+  request, records its payload and response, and aborts at its deadline.
 - `progress/`: what pi has done with each inbox item and drone brief, read from its submissions and entries.
 - `turns/`: a canceled or faulted turn's close, and the stop of the run that holds it.
 
@@ -19,6 +20,8 @@ Layer 3 · worker · plain · consumers: `@mechane/mech`
   mech delivers items and briefs, opens and aborts drones, closes turns, reads progress, and lets pi work.
 - `shareDatabase` gives pi and the mech's store the one client.
 - `ItemEnded` and the progress types are what the mech records from a commit or a catch-up.
+- `readTurnEvidence` reads recorded tool calls and results through pi's transcript API. Bounded inputs exclude drone
+  spawning and root-only side-effect tools; model retries still use the same meter.
 
 ## Never
 

@@ -17,6 +17,8 @@ type FailureMessages = {
 
 /** The message of each failure's error response: the step that failed and its input, the cause, and how to recover. */
 const FAILURE_MESSAGES: Readonly<FailureMessages> = {
+  BoundedTurnNotFound: ({ requestId }) => `find bounded turn ${requestId}: the mech has no request with this id`,
+  BoundedTurnConflict: ({ requestId }) => `submit bounded turn ${requestId}: this id already names different work`,
   CredentialAlreadyExists: ({ secretReference }) =>
     `import credential ${secretReference}: the reference already exists`,
   IdentityNotAdmitted: () => 'admit the caller: this installation does not allow its identity',

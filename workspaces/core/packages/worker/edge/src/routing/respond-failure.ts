@@ -26,6 +26,8 @@ const INVALID_KEY_CHALLENGE: ReadonlyArray<FailureHeader> = [
  * names the wait it asks for.
  */
 const FAILURE_HEADERS: Readonly<FailureHeaders> = {
+  BoundedTurnConflict: () => [],
+  BoundedTurnNotFound: () => [],
   CredentialAlreadyExists: () => [],
   IdentityNotAdmitted: () => [],
   InstallationAdministratorRequired: () => [],

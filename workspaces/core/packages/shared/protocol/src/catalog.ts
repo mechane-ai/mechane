@@ -1,5 +1,6 @@
 import type { Operation } from './operation/types.ts';
 import { AUTH_OPERATIONS } from './operations/auth/auth-operations.ts';
+import { BOUNDED_TURN_OPERATIONS } from './operations/bounded-turns/bounded-turn-operations.ts';
 import { CONNECTION_OPERATIONS } from './operations/connections/connection-operations.ts';
 import { CREDENTIAL_OPERATIONS } from './operations/credentials/credential-operations.ts';
 import { DRONE_OPERATIONS } from './operations/drones/drone-operations.ts';
@@ -25,6 +26,7 @@ type Catalog = Readonly<Record<string, Operation>>;
 /** Every operation the Worker serves, keyed by name; the router and the client both derive from it. */
 export const catalog = {
   ...AUTH_OPERATIONS,
+  ...BOUNDED_TURN_OPERATIONS,
   ...CONNECTION_OPERATIONS,
   ...CREDENTIAL_OPERATIONS,
   ...DRONE_OPERATIONS,

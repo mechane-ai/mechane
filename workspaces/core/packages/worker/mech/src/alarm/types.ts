@@ -1,4 +1,5 @@
 import type { DeliverInput, OwedNote } from '@mechane/harness';
+import type { BoundedRequestRecordId } from '@mechane/records';
 import type { DroneLaunch } from '../types.ts';
 
 /**
@@ -8,6 +9,7 @@ import type { DroneLaunch } from '../types.ts';
 export type CaughtUp = {
   readonly isIndexDue: boolean;
   readonly notes: ReadonlyArray<OwedNote>;
+  readonly boundedCancellations: ReadonlyArray<BoundedRequestRecordId>;
   readonly aborts: ReadonlyArray<string>;
   readonly deliveries: ReadonlyArray<DeliverInput>;
   readonly starts: ReadonlyArray<DroneLaunch>;

@@ -95,4 +95,14 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
     sql.exec("CREATE INDEX events_by_turn ON events (json_extract(event, '$.turn_id'), sequence)");
     sql.exec("CREATE INDEX events_by_inbox_item ON events (json_extract(event, '$.inbox_item_id'), sequence)");
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE bounded_turns (request_id TEXT PRIMARY KEY REFERENCES inbox_items(id), max_model_dispatches INTEGER NOT NULL, max_output_tokens INTEGER NOT NULL, deadline_at_ms INTEGER NOT NULL, dispatched_count INTEGER NOT NULL, reason TEXT, ended_at_ms INTEGER, reply TEXT) STRICT',
+    );
+    sql.exec('CREATE INDEX bounded_turns_due ON bounded_turns (deadline_at_ms) WHERE ended_at_ms IS NULL');
+    sql.exec(
+      'CREATE TABLE bounded_dispatch_evidence (id TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES bounded_turns(request_id), model TEXT NOT NULL, status TEXT NOT NULL, request_json TEXT NOT NULL, is_payload_captured INTEGER NOT NULL, response_json TEXT, started_at_ms INTEGER NOT NULL, ended_at_ms INTEGER) STRICT',
+    );
+    sql.exec('CREATE INDEX bounded_evidence_by_request ON bounded_dispatch_evidence (request_id, started_at_ms)');
+  },
 ];

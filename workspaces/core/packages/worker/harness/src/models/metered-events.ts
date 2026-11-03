@@ -1,9 +1,10 @@
 import type { Api, AssistantMessageEvent, Model, StreamOptions, TranscriptContext } from '@earendil-works/pi-ai';
 import type { ModelOffer } from '@mechane/deployment';
-import { Array, Match, Option, Result, Schema } from 'effect';
+import { Array, DateTime, Duration, Match, Option, Result, Schema } from 'effect';
+import { DISPATCH_DEADLINE } from '../constants.ts';
 import { endUserPayload } from './end-user-payload.ts';
 import { settledEvents } from './settled-events.ts';
-import type { DispatchMeter, SendDispatch, SettleInput } from './types.ts';
+import type { DispatchMeter, GrantedReservation, SendDispatch } from './types.ts';
 
 type MeteredEventsInput = {
   readonly piModel: Model<Api>;
@@ -20,7 +21,7 @@ type MeteredEventsInput = {
  * and the text matches no retryable or context-overflow pattern, so pi ends the turn at once with `model_error`.
  */
 const ALLOWANCE_REFUSAL =
-  "mechane refused the dispatch: the workspace's allowance or the mech's cap cannot cover it today (quota exceeded)";
+  'mechane refused the dispatch: its allowance, dispatch limit, or deadline cannot cover it (quota exceeded)';
 
 /**
  * The allowance refused a dispatch, which its turn records first. pi-ai's provider boundary takes only a rejected setup
@@ -37,8 +38,8 @@ type MeteredEvents = Result.Result<AsyncIterable<AssistantMessageEvent>, Allowan
 type GrantedEventsInput = {
   readonly send: SendDispatch;
   readonly maxOutputTokens: number;
-  readonly settle: (input: SettleInput) => Promise<void>;
-  readonly endUserId: string;
+  readonly grant: GrantedReservation;
+  readonly signal: AbortSignal;
 };
 
 /**
@@ -56,15 +57,18 @@ export async function meteredEvents({
 }: MeteredEventsInput): Promise<MeteredEvents> {
   // pi asks only for a model the provider registered, one per offer.
   const offer = Option.getOrThrow(Array.findFirst(offers, (candidate) => candidate.id === piModel.id));
-  const contextBytes = new TextEncoder().encode(JSON.stringify(context)).byteLength;
+  const contextJson = JSON.stringify(context);
+  const contextBytes = new TextEncoder().encode(contextJson).byteLength;
   // pi passes its stream options with every request, as the metered provider sets them.
   const { sessionId, signal, maxTokens } = Option.getOrThrow(requested);
+  const abortSignal = Option.getOrThrow(Option.fromNullishOr(signal));
 
   const reservation = await meter.reserve({
     offer,
     contextBytes,
+    contextJson,
     sessionId: Option.getOrThrow(Option.fromNullishOr(sessionId)),
-    signal: Option.getOrThrow(Option.fromNullishOr(signal)),
+    signal: abortSignal,
   });
 
   const maxOutputTokens = Math.min(
@@ -75,14 +79,50 @@ export async function meteredEvents({
   const refused: () => MeteredEvents = () => Result.fail(new AllowanceExhausted({ message: ALLOWANCE_REFUSAL }));
 
   return Match.valueTags(reservation, {
-    Granted: ({ settle, endUserId }) => grantedEvents({ send, maxOutputTokens, settle, endUserId }),
+    Granted: (grant) => grantedEvents({ send, maxOutputTokens, grant, signal: abortSignal }),
     Refused: refused,
   });
 }
 
 /** Sends a granted dispatch for its end user, and settles it once its events end. */
-function grantedEvents({ send, maxOutputTokens, settle, endUserId }: GrantedEventsInput): MeteredEvents {
-  const events = send({ maxTokens: maxOutputTokens, onPayload: (payload) => endUserPayload({ payload, endUserId }) });
+function grantedEvents({ send, maxOutputTokens, grant, signal }: GrantedEventsInput): MeteredEvents {
+  const grantedLimit = Option.getOrElse(grant.maxOutputTokens, () => maxOutputTokens);
+  const limit = Math.min(maxOutputTokens, grantedLimit);
 
-  return Result.succeed(settledEvents({ events, settle }));
+  const deadlineSignal = Option.map(grant.deadlineAt, (at) => {
+    const now = DateTime.nowUnsafe();
+    const deadlineMs = DateTime.toEpochMillis(at);
+    const nowMs = DateTime.toEpochMillis(now);
+    const remainingMs = Math.max(0, deadlineMs - nowMs);
+    const dispatchTimeoutMs = Duration.toMillis(DISPATCH_DEADLINE);
+    const timeoutMs = Math.min(remainingMs, dispatchTimeoutMs);
+
+    return AbortSignal.timeout(timeoutMs);
+  });
+
+  const signals = [signal, ...Option.toArray(deadlineSignal)];
+  const dispatchSignal = AbortSignal.any(signals);
+
+  const events = send({
+    maxTokens: limit,
+    signal: dispatchSignal,
+    onPayload: async (payload) => {
+      const request = endUserPayload({ payload, endUserId: grant.endUserId });
+      const requestJson = JSON.stringify(request);
+      const recorded = await grant.recordRequest({ requestJson });
+
+      if (!recorded.isAllowed) {
+        const exhausted = new AllowanceExhausted({ message: ALLOWANCE_REFUSAL });
+        const refused = Result.fail(exhausted);
+
+        return Result.getOrThrow(refused);
+      }
+
+      return request;
+    },
+  });
+
+  const settled = settledEvents({ events, settle: grant.settle });
+
+  return Result.succeed(settled);
 }

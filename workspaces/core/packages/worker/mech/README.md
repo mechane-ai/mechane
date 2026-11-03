@@ -17,6 +17,7 @@ Layer 5 · worker · plain · consumers: `@mechane/app`
 - `inbox/`: an inbox item's receipt, and the write of a silent item.
 - `memories/`, `threads/`: the reads of the saved memories and of a page of threads.
 - `turns/`: a turn's start and end, a member's cancel, the notes an unanswered turn owes pi, and the read of a turn.
+- `bounded-turns/`: idempotent application requests, deadline and cancellation decisions, and authorized evidence.
 
 ## Use
 
@@ -30,6 +31,8 @@ Layer 5 · worker · plain · consumers: `@mechane/app`
   conversation history. Neither inherits connection grants, bindings, schedules, or delivery intents.
 - The object assembles its ports from `@mechane/mech-ports` and its own hands, and passes the tools of
   `@mechane/harness-tools` to `openMechHarness`.
+- [Bounded turns](../../../docs/bounded-turns.md) reuse the inbox and Pi alarm for finite external requests. Their
+  dispatch and token limits remain effective after a client disconnects.
 
 ## Never
 

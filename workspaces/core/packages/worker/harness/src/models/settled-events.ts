@@ -1,4 +1,5 @@
 import type { AssistantMessageEvent, Usage } from '@earendil-works/pi-ai';
+import { BoundedCallStatus } from '@mechane/protocol';
 import type { TokenUsage } from '@mechane/protocol';
 import { Tokens } from '@mechane/records';
 import { Option } from 'effect';
@@ -22,11 +23,19 @@ type ReportedUsageInput = { readonly usage: Usage };
 export async function* settledEvents({ events, settle }: SettledEventsInput): AsyncGenerator<AssistantMessageEvent> {
   for await (const event of events) {
     if (event.type === PiEventType.Done) {
-      await settle({ usage: reportedUsage({ usage: event.message.usage }) });
+      const usage = reportedUsage({ usage: event.message.usage });
+      const encoded = JSON.stringify(event.message);
+      const responseJson = Option.some(encoded);
+
+      await settle({ usage, responseJson, status: BoundedCallStatus.Completed });
     }
 
     if (event.type === PiEventType.Error) {
-      await settle({ usage: reportedUsage({ usage: event.error.usage }) });
+      const usage = reportedUsage({ usage: event.error.usage });
+      const encoded = JSON.stringify(event.error);
+      const responseJson = Option.some(encoded);
+
+      await settle({ usage, responseJson, status: BoundedCallStatus.Failed });
     }
 
     yield event;

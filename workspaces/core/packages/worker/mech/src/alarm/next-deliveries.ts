@@ -22,6 +22,11 @@ export function nextDeliveries({ store, pending }: NextDeliveriesInput): Readonl
 
   const running = store.runningTurn();
   const isRunning = Option.isSome(running);
+  const bounded = Option.flatMap(running, (turnId) => store.boundedTurnForTurn({ turnId }));
+
+  if (Option.isSome(bounded)) {
+    return [];
+  }
 
   if (!isRunning && store.runningDrones().length === 0) {
     store.activateDefinition({ revision: current.value.revision });
@@ -31,7 +36,18 @@ export function nextDeliveries({ store, pending }: NextDeliveriesInput): Readonl
   const agent = mechAgent({ mech: definition });
   const items = deliveryItems({ pending, isRunning });
 
-  return items.map((inboxItem) => ({ inboxItem, agent }));
+  const deliveries = items.map((inboxItem) => {
+    const request = store.boundedTurn({ requestId: inboxItem.id });
+    const isBounded = Option.isSome(request);
+
+    return { inboxItem, agent: { ...agent, isBounded } };
+  });
+
+  if (store.runningDrones().length > 0 && deliveries.some((delivery) => delivery.agent.isBounded)) {
+    return [];
+  }
+
+  return deliveries;
 }
 
 function deliveryItems({ pending, isRunning }: DeliveryItemsInput): ReadonlyArray<PendingItemRow> {

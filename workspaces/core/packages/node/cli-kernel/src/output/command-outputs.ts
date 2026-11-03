@@ -1,6 +1,7 @@
 import type { CommandName } from '@mechane/commands';
 import { Report } from '@mechane/eval';
 import {
+  BoundedTurn,
   ConnectionDeletion,
   ConnectionList,
   CredentialDeletion,
@@ -96,6 +97,9 @@ export const COMMAND_OUTPUTS = {
   'event list': ListedEvent,
   'turn show': Trace,
   'turn cancel': TurnCancel,
+  'bounded-turn submit': BoundedTurn,
+  'bounded-turn show': BoundedTurn,
+  'bounded-turn cancel': BoundedTurn,
   'memory list': MemoryList,
   'thread list': ThreadList,
   'drone list': DroneList,

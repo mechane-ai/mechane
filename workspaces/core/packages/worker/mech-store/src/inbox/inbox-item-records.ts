@@ -69,7 +69,7 @@ function writeInboxItem({ sql, inboxItemId, now }: SqlCall<WriteInboxItemInput>)
 
 function pendingInboxItems({ sql }: RecordsInput): ReadonlyArray<PendingItemRow> {
   const cursor = sql.exec(
-    'SELECT id, text, delivery, received_at_ms FROM inbox_items WHERE (turn_id IS NULL AND written_at_ms IS NULL) OR turn_id = (SELECT id FROM turns WHERE status = ?) ORDER BY received_at_ms',
+    'SELECT id, text, delivery, received_at_ms FROM inbox_items WHERE ((turn_id IS NULL AND written_at_ms IS NULL) OR turn_id = (SELECT id FROM turns WHERE status = ?)) AND NOT EXISTS (SELECT 1 FROM bounded_turns WHERE request_id = inbox_items.id AND ended_at_ms IS NOT NULL) ORDER BY received_at_ms',
     TurnStatus.Running,
   );
 

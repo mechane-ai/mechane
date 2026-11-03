@@ -6,6 +6,8 @@ export type {
   ObjectBindings,
   DecodeSettingsInput,
 } from './types.ts';
+export { BoundedTurnAnswer } from './bounded-turn.schemas.ts';
+export type { BoundedTurnInput, CancelBoundedTurnInput, SubmitBoundedTurnInput } from './bounded-turn.types.ts';
 export {
   DirectoryKeyPage,
   ApprovalClaim,

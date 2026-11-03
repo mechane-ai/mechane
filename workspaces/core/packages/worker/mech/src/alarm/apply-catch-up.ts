@@ -1,5 +1,6 @@
+import type { DeliverInput } from '@mechane/harness';
 import type { MechTables } from '@mechane/mech-store';
-import { DateTime } from 'effect';
+import { DateTime, Option } from 'effect';
 import { projectMechIndex } from '../definitions/project-mech-index.ts';
 import { startDrone } from '../drones/start-drone.ts';
 import { stopDrone } from '../drones/stop-drone.ts';
@@ -33,8 +34,20 @@ export async function applyCatchUp({ mech, caught }: ApplyCatchUpInput): Promise
     await mech.harness.abortDrone({ droneId });
   }
 
+  for (const inboxItemId of caught.boundedCancellations) {
+    await retireBoundedItem({ mech, inboxItemId });
+  }
+
   for (const delivery of caught.deliveries) {
     await mech.harness.deliver(delivery);
+
+    const inboxItemId = delivery.inboxItem.id;
+    const request = await mech.store.atomic({ run: (store) => store.boundedTurn({ requestId: inboxItemId }) });
+    const reason = Option.flatMap(request, (bounded) => bounded.reason);
+
+    if (Option.isSome(reason)) {
+      await retireBoundedItem({ mech, inboxItemId });
+    }
   }
 
   for (const launch of caught.starts) {
@@ -44,4 +57,14 @@ export async function applyCatchUp({ mech, caught }: ApplyCatchUpInput): Promise
   for (const droneId of caught.stops) {
     await stopDrone({ mech, droneId });
   }
+}
+
+type RetireInput = { readonly mech: OpenedMech; readonly inboxItemId: DeliverInput['inboxItem']['id'] };
+
+async function retireBoundedItem({ mech, inboxItemId }: RetireInput): Promise<void> {
+  await mech.harness.cancelInboxItem({ inboxItemId });
+
+  const now = DateTime.nowUnsafe();
+
+  await mech.store.atomic({ run: (store) => store.writeInboxItem({ inboxItemId, now }) });
 }

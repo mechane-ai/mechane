@@ -47,7 +47,13 @@ export function decideFork({ store, forkId, name, requesterId, now }: ForkDecisi
  * or holds a running one, and no drone runs or has a machine to stop. A memory change waits only for its running turn.
  */
 function isIdle({ store }: IdleInput): boolean {
-  const owed = [store.owedNotes(), store.pendingInboxItems(), store.runningDrones(), store.unstoppedDrones()];
+  const owed = [
+    store.owedNotes(),
+    store.pendingInboxItems(),
+    store.runningDrones(),
+    store.unstoppedDrones(),
+    store.boundedTurnCancellations(),
+  ];
 
   return Option.isNone(store.runningTurn()) && owed.every((running) => running.length === 0);
 }

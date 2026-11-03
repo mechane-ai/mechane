@@ -1,7 +1,8 @@
 import type { Extension, Harness, ToolRegistration, Wake } from '@earendil-works/pi-durable';
 import type { SqliteStorage } from '@earendil-works/pi-durable/storage/sqlite';
 import type { ModelOffer } from '@mechane/deployment';
-import type { Delivery, NOTED_REASONS } from '@mechane/protocol';
+import type { BoundedToolCall, Delivery, NOTED_REASONS } from '@mechane/protocol';
+import type { RecordId } from '@mechane/records';
 import type { AlarmControl, AsyncTransaction } from '@mechane/store';
 import type { DateTime, Option, Redacted } from 'effect';
 import type { DroneIdInput } from './drones/types.ts';
@@ -20,6 +21,7 @@ export type DroneBriefing = { readonly droneId: string; readonly brief: string }
 /** The agent a mech's conversation runs with: its offer and its instructions. */
 export type MechAgent = {
   readonly modelId: string;
+  readonly isBounded: boolean;
   /** The mech's own instructions, none for a mech created without any. */
   readonly instructions: Option.Option<string>;
 };
@@ -42,6 +44,15 @@ export type StopInput = { readonly stop: Promise<unknown> };
 
 /** The inbox items and the drones whose progress to read. */
 export type ProgressQuery = { readonly inboxItemIds: ReadonlyArray<string>; readonly droneIds: ReadonlyArray<string> };
+
+/** A request in the mech's conversation, identified by its stable inbox ID. */
+export type InboxItemQuery = { readonly inboxItemId: RecordId };
+
+/** Tool evidence stays within one request's transcript boundaries. */
+export type TurnEvidence = {
+  readonly toolCalls: ReadonlyArray<BoundedToolCall>;
+  readonly unknowns: ReadonlyArray<string>;
+};
 
 /** The model upstream a mech's dispatches go to, its key, and the offers it serves. */
 export type ModelUpstream = {
@@ -100,7 +111,7 @@ export type UntilIdleInput = HarnessHandle & StopInput;
  * mech received it.
  */
 type DeliveredItem = {
-  readonly id: string;
+  readonly id: RecordId;
   readonly text: string;
   readonly delivery: Delivery;
   readonly receivedAt: DateTime.Utc;
@@ -124,6 +135,9 @@ export type MechHarness = {
   readonly close: (input: OwedNote) => Promise<void>;
   /** Reads what pi holds of the items and the drones' briefs, in a commit that writes nothing and starts no work. */
   readonly progress: (input: ProgressQuery) => Promise<ItemProgressReport>;
+  readonly readTurnEvidence: (input: InboxItemQuery) => Promise<TurnEvidence>;
+  /** Withdraws a queued request or stops only the run that holds it. */
+  readonly cancelInboxItem: (input: InboxItemQuery) => Promise<void>;
   /** Opens a drone's ownerless conversation, which its first opening creates, and answers its provider session id. */
   readonly openDrone: (input: DroneOpening) => Promise<string>;
   /** Submits an opened drone's brief under the drone's id, which pi admits once. */

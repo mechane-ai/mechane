@@ -2,6 +2,7 @@ import { AUTH_COMMANDS } from './declarations/access/auth-commands.ts';
 import { KEY_COMMANDS } from './declarations/access/key-commands.ts';
 import { WORKSPACE_COMMANDS } from './declarations/access/workspace-commands.ts';
 import { WORKSPACE_POLICY_COMMANDS } from './declarations/access/workspace-policy-commands.ts';
+import { BOUNDED_TURN_COMMANDS } from './declarations/bounded-turn-commands.ts';
 import { DEPLOYMENT_COMMANDS } from './declarations/deployment-commands.ts';
 import { DRONE_COMMANDS } from './declarations/drone-commands.ts';
 import { EVAL_COMMANDS } from './declarations/eval-commands.ts';
@@ -39,6 +40,7 @@ export const COMMANDS = {
   ...WORKSPACE_LIFECYCLE_COMMANDS,
   ...WORKSPACE_IMPORT_COMMAND,
   ...TURN_COMMANDS,
+  ...BOUNDED_TURN_COMMANDS,
   ...DRONE_COMMANDS,
   ...EVAL_COMMANDS,
   ...RELEASE_COMMANDS,

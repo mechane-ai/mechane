@@ -62,6 +62,7 @@ export { WatchId, FindingId } from './watch.schemas.ts';
 export { MechId, WorkspaceId, PrincipalId, InboxItemId, SlackBindingId, SlackDeliveryId } from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';
+export { BoundedRequestId, BoundedRequestRecordId, ModelToolCallId } from './bounded-request.schemas.ts';
 export { SourceId, GitCommit, SourcePath, SourcePathPrefix, SourceChange, SourceChanges } from './source.schemas.ts';
 export {
   SourceFileMode,

@@ -1,5 +1,7 @@
 import type { catalog, Delivery, SlackDeliveries, TurnStatus, UnansweredReason } from '@mechane/protocol';
 import type { CopyRows, DroneId, PrincipalId, TurnId } from '@mechane/records';
+import type { BoundedTurnAnswer } from '../bounded-turn.schemas.ts';
+import type { BoundedTurnInput, CancelBoundedTurnInput, SubmitBoundedTurnInput } from '../bounded-turn.types.ts';
 import type { DroneAnswer, DroneCancelAnswer, DronesAnswer, ThreadsAnswer } from '../drones.schemas.ts';
 import type {
   EventsAnswer,
@@ -153,6 +155,9 @@ type MechMethods = {
   readonly update: (input: UpdateMechInput) => Promise<typeof MechUpdateAnswer.Encoded>;
   readonly revisions: (input: MechRevisionsInput) => Promise<typeof MechRevisionsAnswer.Encoded>;
   readonly sendInboxItem: (input: SendInboxItemInput) => Promise<typeof InboxItemReceipt.Encoded>;
+  readonly submitBoundedTurn: (input: SubmitBoundedTurnInput) => Promise<typeof BoundedTurnAnswer.Encoded>;
+  readonly showBoundedTurn: (input: BoundedTurnInput) => Promise<typeof BoundedTurnAnswer.Encoded>;
+  readonly cancelBoundedTurn: (input: CancelBoundedTurnInput) => Promise<typeof BoundedTurnAnswer.Encoded>;
   readonly events: (input: EventsInput) => Promise<typeof EventsAnswer.Encoded>;
   readonly turn: (input: TurnInput) => Promise<TurnReading>;
   readonly turnEvents: (input: TurnEventsInput) => Promise<typeof TurnEventsAnswer.Encoded>;

@@ -1,6 +1,7 @@
 import { createRegistry } from '@earendil-works/pi-durable';
 import type { HarnessOptions, HarnessSettings } from '@earendil-works/pi-durable';
 import { Duration } from 'effect';
+import { DISPATCH_DEADLINE } from './constants.ts';
 import { logReport } from './log-report.ts';
 import { meteredModels } from './models/metered-models.ts';
 import type { MechExtensions, OpenMechHarnessInput, WakeSignal } from './types.ts';
@@ -8,9 +9,6 @@ import type { MechExtensions, OpenMechHarnessInput, WakeSignal } from './types.t
 /** What pi's options for a mech are built from: its upstream, its meter, its reports, its extensions and its wakes. */
 type HarnessOptionsInput = Pick<OpenMechHarnessInput, 'modelUpstream' | 'meter' | 'mechId' | 'abortObject'> &
   Pick<MechExtensions, 'extensions'> & { readonly wakes: WakeSignal };
-
-/** How long one dispatch may stream before pi ends it. */
-const DISPATCH_DEADLINE = Duration.minutes(5);
 
 /**
  * pi's run policy for every mech. Compaction runs only inside a turn, so every dispatch belongs to one, and a turn

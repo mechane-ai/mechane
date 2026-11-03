@@ -36,5 +36,10 @@ export async function refuseDispatch({
 
   await store.atomic({ run: refuse });
 
+  return refusedReservation();
+}
+
+/** A refusal reaches pi without starting a provider request. */
+export function refusedReservation(): Reservation {
   return { _tag: 'Refused' };
 }

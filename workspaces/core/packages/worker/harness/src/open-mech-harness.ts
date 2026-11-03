@@ -12,7 +12,9 @@ import { harnessOptions } from './harness-options.ts';
 import { answerCache } from './progress/answer-cache.ts';
 import { itemChanges } from './progress/item-changes.ts';
 import { readProgress } from './progress/read-progress.ts';
+import { readTurnEvidence } from './progress/read-turn-evidence.ts';
 import { renewProvider } from './renew-provider.ts';
+import { cancelInboxItem } from './turns/cancel-inbox-item.ts';
 import { closeTurn } from './turns/close-turn.ts';
 import type { HarnessHandle, MechHarness, OpenMechHarnessInput } from './types.ts';
 import { wakeSignal } from './wake-signal.ts';
@@ -44,9 +46,11 @@ export async function openMechHarness({
   const armNext: MechHarness['armNext'] = ({ isDue }) => armAlarm({ alarm, wake: harness.wake(), isDue });
 
   return {
-    deliver: ({ inboxItem, agent }) => deliverInboxItem({ harness, inboxItem, agent }),
+    deliver: ({ inboxItem, agent }) => deliverInboxItem({ harness, selection, inboxItem, agent }),
     close: (note) => closeTurn({ harness, note }),
     progress: (query) => readProgress({ harness, ...query }),
+    readTurnEvidence: (query) => readTurnEvidence({ harness, ...query }),
+    cancelInboxItem: (query) => cancelInboxItem({ harness, ...query }),
     openDrone: (opening) => openDrone({ harness, selection, ...opening }),
     deliverBrief: (briefing) => deliverBrief({ harness, ...briefing }),
     abortDrone: ({ droneId }) => abortDrone({ harness, droneId }),

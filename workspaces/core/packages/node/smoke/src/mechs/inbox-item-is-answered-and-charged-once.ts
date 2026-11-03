@@ -3,6 +3,7 @@ import { check, signedInMech } from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
+import { boundedTurnProof } from './bounded-turn-proof.ts';
 import { chargedTurn } from './charged-turn.ts';
 import { ScenarioText } from './constants.ts';
 
@@ -31,6 +32,7 @@ export const inboxItemIsAnsweredAndChargedOnce = Effect.fn('inboxItemIsAnsweredA
   const resent = yield* mech.resend({ text: ScenarioText.First, inboxItemId: first.sent.id });
   const second = yield* chargedTurn({ stack, mech, text: ScenarioText.Second });
   const requests = stack.modelUpstream.requests().length - before;
+  const bounded = yield* boundedTurnProof({ stack, mech });
 
   yield* check({
     name: guarantee,
@@ -43,7 +45,8 @@ export const inboxItemIsAnsweredAndChargedOnce = Effect.fn('inboxItemIsAnsweredA
       second.isAnswered,
       second.isCharged,
       requests === ANSWERED_REQUESTS,
+      ...bounded.conditions,
     ],
-    detail: `${first.detail}; renamed ${mech.id} to ${renamed.id} at revision ${renamed.revision}; the resend answered ${resent.id}; ${second.detail}; the upstream received ${requests} requests`,
+    detail: `${first.detail}; renamed ${mech.id} to ${renamed.id} at revision ${renamed.revision}; the resend answered ${resent.id}; ${second.detail}; the upstream received ${requests} requests; ${bounded.detail}`,
   });
 }, Effect.scoped);

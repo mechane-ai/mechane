@@ -1,25 +1,34 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
-import type { SubmissionDraft } from '@earendil-works/pi-durable';
+import type { AgentChange, SubmissionDraft } from '@earendil-works/pi-durable';
 import { Delivery } from '@mechane/protocol';
 import { DateTime, Option } from 'effect';
-import { MODEL_PROVIDER } from './constants.ts';
-import type { DeliverInput, HarnessHandle, SubmissionDraftInput } from './types.ts';
+import { INBOX_ITEM_ENTRY_KIND, MODEL_PROVIDER } from './constants.ts';
+import type { DeliverInput, DroneSelection, HarnessHandle, SubmissionDraftInput } from './types.ts';
 
-type DeliveryInput = DeliverInput & HarnessHandle;
-
-/** The entry kind of every inbox item in a mech's transcript; pi stores it, so it is a stored format. */
-const INBOX_ITEM_ENTRY_KIND = 'mechane.inbox_item';
+type DeliveryInput = DeliverInput & HarnessHandle & { readonly selection: DroneSelection };
 
 /**
  * Submits an inbox item to the mech's one conversation, which the first delivery creates with the mech's agent, under
  * the item's id as pi's request id.
  */
-export async function deliverInboxItem({ harness, inboxItem, agent }: DeliveryInput): Promise<void> {
+export async function deliverInboxItem({ harness, inboxItem, agent, selection }: DeliveryInput): Promise<void> {
   const conversation = await harness.root(BACKGROUND_CONTEXT);
+
+  const omitted: Pick<AgentChange, 'extensions' | 'tools'> = (() => {
+    if (agent.isBounded) {
+      return { extensions: { remove: [selection.threads] }, tools: { remove: selection.rootTools } };
+    }
+
+    return { extensions: { remove: [] }, tools: { remove: [] } };
+  })();
 
   // root() keeps an existing conversation's agent. The host holds this definition until its turn and drones end.
   await conversation.configure(
-    { model: { provider: MODEL_PROVIDER, modelId: agent.modelId }, instructions: Option.getOrNull(agent.instructions) },
+    {
+      model: { provider: MODEL_PROVIDER, modelId: agent.modelId },
+      instructions: Option.getOrNull(agent.instructions),
+      ...omitted,
+    },
     BACKGROUND_CONTEXT,
   );
 

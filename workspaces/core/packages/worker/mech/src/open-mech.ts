@@ -4,7 +4,7 @@ import { errorCode, writeLog } from '@mechane/logs';
 import { LogEvent } from '@mechane/protocol';
 import { workspaceStub } from '@mechane/rpc';
 import type { ObjectSettings } from '@mechane/rpc';
-import { Option } from 'effect';
+import { DateTime, Option } from 'effect';
 import { armedStorageAlarm } from './alarm/armed-storage-alarm.ts';
 import { catchUp } from './alarm/catch-up.ts';
 import { hostAlarm } from './alarm/host-alarm.ts';
@@ -57,6 +57,10 @@ export async function openMech({ state, settings: decodeSettings, signal }: Open
     const { id, workspaceId } = mech.value;
 
     await workspaceStub({ bindings: settings, workspaceId }).settleOpenDispatches({ mechId: id });
+
+    const now = DateTime.nowUnsafe();
+
+    await store.atomic({ run: (tables) => tables.interruptDispatchEvidence({ now }) });
   }
 
   const ports = mechPorts({ store, settings, signal, recorded, abortObject });

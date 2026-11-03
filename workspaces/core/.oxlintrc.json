@@ -138,8 +138,10 @@
         "allowTypedFunctionExpressions": true,
         "allowHigherOrderFunctions": false,
         "allowedNames": [
+          "boundedTurnRecords",
           "connectionRecords",
           "credentialRecords",
+          "dispatchEvidenceRecords",
           "fileCheckpointRecords",
           "capacityRecords",
           "findingRecords",
@@ -161,8 +163,10 @@
       "error",
       {
         "allowedNames": [
+          "boundedTurnRecords",
           "connectionRecords",
           "credentialRecords",
+          "dispatchEvidenceRecords",
           "fileCheckpointRecords",
           "capacityRecords",
           "findingRecords",

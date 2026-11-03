@@ -1,7 +1,7 @@
 import type { AssistantMessageEventStream, StreamOptions } from '@earendil-works/pi-ai';
 import type { ModelOffer } from '@mechane/deployment';
-import type { TokenUsage } from '@mechane/protocol';
-import type { Option } from 'effect';
+import type { BoundedCallStatus, TokenUsage } from '@mechane/protocol';
+import type { DateTime, Option } from 'effect';
 
 /**
  * A dispatch to reserve, with the bytes of the context it sends, which bound its input tokens. The session id names the
@@ -10,6 +10,7 @@ import type { Option } from 'effect';
 export type ReserveInput = {
   readonly offer: ModelOffer;
   readonly contextBytes: number;
+  readonly contextJson: string;
   readonly sessionId: string;
   readonly signal: AbortSignal;
 };
@@ -18,7 +19,13 @@ export type ReserveInput = {
 export type SettleInput = {
   /** The usage the upstream reported for the dispatch, none when it reported no tokens. */
   readonly usage: Option.Option<TokenUsage>;
+  /** Absent if the provider never produced a response. */
+  readonly responseJson: Option.Option<string>;
+  readonly status: Exclude<BoundedCallStatus, 'running'>;
 };
+
+type RecordRequestInput = { readonly requestJson: string };
+type RecordRequestResult = { readonly isAllowed: boolean };
 
 /**
  * A held reservation, which the dispatch settles once, and the end user the dispatch is sent for. The end user is its
@@ -27,6 +34,11 @@ export type SettleInput = {
 export type GrantedReservation = {
   readonly _tag: 'Granted';
   readonly endUserId: string;
+  /** Absent for an ordinary turn, which uses the model offer's limit. */
+  readonly maxOutputTokens: Option.Option<number>;
+  /** Absent for an ordinary turn, which uses the harness stream deadline. */
+  readonly deadlineAt: Option.Option<DateTime.Utc>;
+  readonly recordRequest: (input: RecordRequestInput) => Promise<RecordRequestResult>;
   readonly settle: (input: SettleInput) => Promise<void>;
 };
 
@@ -43,7 +55,7 @@ export type DispatchMeter = { readonly reserve: (input: ReserveInput) => Promise
  * The stream options a granted dispatch adds to pi's: at most the request's own output limit, never more than its
  * offer's, and the end user's id in its body.
  */
-export type DispatchOptions = Readonly<Required<Pick<StreamOptions, 'maxTokens' | 'onPayload'>>>;
+export type DispatchOptions = Readonly<Required<Pick<StreamOptions, 'maxTokens' | 'onPayload' | 'signal'>>>;
 
 /** Sends a granted dispatch upstream with the options its grant adds to pi's. */
 export type SendDispatch = (options: DispatchOptions) => AssistantMessageEventStream;

@@ -1,9 +1,8 @@
 import type { ItemAnswered, ItemUnanswered } from '@mechane/harness';
 import type { MechTables } from '@mechane/mech-store';
-import { EventType, TurnStatus, UnansweredReason } from '@mechane/protocol';
+import { BoundedTurnLimitReason, EventType, TurnStatus, UnansweredReason } from '@mechane/protocol';
 import type { TurnId } from '@mechane/records';
-import { Match, Option } from 'effect';
-import type { DateTime } from 'effect';
+import { DateTime, Match, Option } from 'effect';
 import { enqueueSlackReplies } from '../slack/enqueue-slack-replies.ts';
 import { startTurn } from './start-turn.ts';
 import type { TurnEnding } from './types.ts';
@@ -49,6 +48,21 @@ export function endItemTurn({ store, inboxItemId, progress, now }: EndItemTurnIn
   }
 
   store.appendEvent({ event, now });
+
+  const bounded = store.boundedTurn({ requestId: inboxItemId });
+
+  if (Option.isSome(bounded)) {
+    if (DateTime.isLessThanOrEqualTo(bounded.value.deadlineAt, now)) {
+      store.stopBoundedTurn({ requestId: inboxItemId, reason: BoundedTurnLimitReason.DeadlineExceeded, now });
+    }
+
+    const reply = Option.liftPredicate(event, (ending) => ending.type === EventType.TurnAnswered);
+    const reason = Option.liftPredicate(end, (ending) => ending.status === TurnStatus.Unanswered);
+    const replyText = Option.map(reply, (ending) => ending.reply);
+    const reasonText = Option.map(reason, (ending) => ending.reason);
+
+    store.finishBoundedTurn({ requestId: inboxItemId, reply: replyText, reason: reasonText, now });
+  }
 
   if (event.type === EventType.TurnAnswered) {
     enqueueSlackReplies({ store, turnId, reply: event.reply, now });

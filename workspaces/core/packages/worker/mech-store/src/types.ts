@@ -2,6 +2,8 @@ import type { Event, ListedEvent, MechRevisionPage, TurnReplyExcerpt } from '@me
 import type { Sequence, TurnId } from '@mechane/records';
 import type { AlarmControl, AlarmTimeInput, AsyncTransaction, RowsPage } from '@mechane/store';
 import type { DateTime, Option } from 'effect';
+import type { boundedTurnRecords } from './bounded-turns/bounded-turn-records.ts';
+import type { dispatchEvidenceRecords } from './bounded-turns/dispatch-evidence-records.ts';
 import type { MechRevisionRow } from './definition.schemas.ts';
 import type { DroneEndRecords, DroneRecords } from './drone.types.ts';
 import type { FindingRecords } from './findings/finding-records.ts';
@@ -136,6 +138,8 @@ export type CursorInput = { readonly cursor: SqlStorageCursor<Readonly<Record<st
 
 /** Every record function of a mech's own tables, which only a run of the store's transaction receives. */
 export type MechTables = MechRecords &
+  ReturnType<typeof boundedTurnRecords> &
+  ReturnType<typeof dispatchEvidenceRecords> &
   ReturnType<typeof sourceRecords> &
   SlackDeliveryRecords &
   SlackDeliveryProgressRecords &

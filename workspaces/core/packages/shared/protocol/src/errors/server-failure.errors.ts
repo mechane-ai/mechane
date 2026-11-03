@@ -1,4 +1,5 @@
 import { Schema } from 'effect';
+import { BoundedTurnConflict, BoundedTurnNotFound } from './bounded-turn.errors.ts';
 import { CredentialAlreadyExists } from './credential.errors.ts';
 import {
   ConnectionLimitReached,
@@ -52,6 +53,8 @@ import {
 
 /** Every failure the Worker answers with; a client decodes a code it knows into the failure with its fields. */
 export const ServerFailure = Schema.Union([
+  BoundedTurnConflict,
+  BoundedTurnNotFound,
   ReleaseSourceUnavailable,
   CredentialAlreadyExists,
   IdentityNotAdmitted,

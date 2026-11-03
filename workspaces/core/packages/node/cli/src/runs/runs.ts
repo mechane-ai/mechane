@@ -21,6 +21,7 @@ import { runThreadList } from './drones/run-thread-list.ts';
 import { runKeyCreate } from './keys/run-key-create.ts';
 import { runKeyList } from './keys/run-key-list.ts';
 import { runKeyRevoke } from './keys/run-key-revoke.ts';
+import { runBoundedTurnCancel, runBoundedTurnShow, runBoundedTurnSubmit } from './mechs/run-bounded-turn.ts';
 import { runInboxSend } from './mechs/run-inbox-send.ts';
 import { runMechChange } from './mechs/run-mech-change.ts';
 import { runMechClone } from './mechs/run-mech-clone.ts';
@@ -111,6 +112,9 @@ export const RUNS: Readonly<Runs> = {
   'event list': runEventList,
   'turn show': documentRun({ run: runTurnShow }),
   'turn cancel': documentRun({ run: runTurnCancel }),
+  'bounded-turn submit': documentRun({ run: runBoundedTurnSubmit }),
+  'bounded-turn show': documentRun({ run: runBoundedTurnShow }),
+  'bounded-turn cancel': documentRun({ run: runBoundedTurnCancel }),
   'memory list': documentRun({ run: runMemoryList }),
   'thread list': documentRun({ run: runThreadList }),
   'drone list': documentRun({ run: runDroneList }),

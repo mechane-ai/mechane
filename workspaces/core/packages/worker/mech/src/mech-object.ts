@@ -2,6 +2,7 @@ import type { MechRow, MechTables } from '@mechane/mech-store';
 import { catalog, SandboxRequest, SlackDeliveries, SourceRequest, WatchConfiguration } from '@mechane/protocol';
 import { PrincipalId, SlackInboxOrigin, WatchId } from '@mechane/records';
 import {
+  BoundedTurnAnswer,
   DroneAnswer,
   DroneCancelAnswer,
   DronesAnswer,
@@ -26,6 +27,8 @@ import {
   WatchesAnswer,
 } from '@mechane/rpc';
 import type {
+  BoundedTurnInput,
+  CancelBoundedTurnInput,
   CancelDroneInput,
   CancelTurnInput,
   CopyStepInput,
@@ -43,6 +46,7 @@ import type {
   SendInboxItemInput,
   SetWatchInput,
   SourceManageInput,
+  SubmitBoundedTurnInput,
   ThreadsInput,
   TurnEventsInput,
   TurnInput,
@@ -57,6 +61,8 @@ import { capturePromise, serialCalls, wakeList } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { runAlarm } from './alarm/run-alarm.ts';
+import { cancelBoundedTurn, decideBoundedTurn } from './bounded-turns/decide-bounded-turn.ts';
+import { readBoundedTurn } from './bounded-turns/read-bounded-turn.ts';
 import { createDefinition } from './definitions/create-definition.ts';
 import { projectMechIndex } from './definitions/project-mech-index.ts';
 import { updateDefinition } from './definitions/update-definition.ts';
@@ -265,6 +271,50 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
     const answer = await this.#mech.atomic({ run });
 
     return Schema.encodeSync(MechRevisionsAnswer)(answer);
+  }
+
+  async submitBoundedTurn({
+    requestId,
+    submission: encoded,
+    senderId,
+  }: SubmitBoundedTurnInput): Promise<typeof BoundedTurnAnswer.Encoded> {
+    const submission = Schema.decodeUnknownSync(catalog.submitBoundedTurn.body)(encoded);
+    const now = DateTime.nowUnsafe();
+    const sender = PrincipalId.make(senderId);
+
+    const result = await this.#mech.recordForAlarm({
+      run: (store) => decideBoundedTurn({ store, requestId, submission, senderId: sender, now }),
+    });
+
+    if (Option.isSome(result)) {
+      return Schema.encodeSync(BoundedTurnAnswer)(result.value);
+    }
+
+    return await this.showBoundedTurn({ requestId });
+  }
+
+  async showBoundedTurn({ requestId }: BoundedTurnInput): Promise<typeof BoundedTurnAnswer.Encoded> {
+    const mech = await this.#mech.current();
+    const answer = await readBoundedTurn({ mech, requestId });
+
+    return Schema.encodeSync(BoundedTurnAnswer)(answer);
+  }
+
+  async cancelBoundedTurn({
+    requestId,
+    cancelerId,
+  }: CancelBoundedTurnInput): Promise<typeof BoundedTurnAnswer.Encoded> {
+    const now = DateTime.nowUnsafe();
+
+    const result = await this.#mech.recordForAlarm({
+      run: (store) => cancelBoundedTurn({ store, requestId, cancelerId, now }),
+    });
+
+    if (Option.isSome(result)) {
+      return Schema.encodeSync(BoundedTurnAnswer)(result.value);
+    }
+
+    return await this.showBoundedTurn({ requestId });
   }
 
   /** Records the item and its event; the alarm delivers it. */

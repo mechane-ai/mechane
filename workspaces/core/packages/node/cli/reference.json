@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.13.2",
+  "release": "0.14.0",
   "flags": [
     {
       "name": "origin",
@@ -1594,6 +1594,89 @@
         {
           "name": "mech-id",
           "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "bounded-turn submit",
+      "summary": "submit one isolated turn with durable dispatch, output, and deadline limits; retries reattach",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "submitBoundedTurn"
+      ],
+      "flags": [
+        {
+          "name": "max-model-dispatches",
+          "kind": "text",
+          "summary": "maximum model attempts, including retries",
+          "required": true
+        },
+        {
+          "name": "max-output-tokens",
+          "kind": "text",
+          "summary": "maximum output tokens for each model attempt",
+          "required": true
+        },
+        {
+          "name": "deadline-at",
+          "kind": "text",
+          "summary": "absolute execution deadline as an ISO timestamp",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "request-id",
+          "summary": "the caller UUID reused for every retry of this request"
+        },
+        {
+          "name": "text",
+          "summary": "the bounded task to perform"
+        }
+      ]
+    },
+    {
+      "name": "bounded-turn show",
+      "summary": "retrieve the bounded turn result with recorded model and tool evidence",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showBoundedTurn"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "request-id",
+          "summary": "the caller UUID reused for every retry of this request"
+        }
+      ]
+    },
+    {
+      "name": "bounded-turn cancel",
+      "summary": "cancel a queued or running bounded turn; completed results stay retrievable",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "cancelBoundedTurn"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "request-id",
+          "summary": "the caller UUID reused for every retry of this request"
         }
       ]
     },

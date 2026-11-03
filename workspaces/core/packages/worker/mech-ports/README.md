@@ -7,7 +7,7 @@ Layer 4 · worker · plain · consumers: `@mechane/mech`
 ## Layout
 
 - `meter/`: the dispatch meter: a dispatch's bound, its reservation in the workspace's ledger and against the mech's
-  cap, its refusal, its settlement at the usage the upstream reported, and the drain that holds new dispatches.
+  cap, its bounded-turn claim and evidence, its settlement at reported usage, and the drain that holds new dispatches.
 - `memories/`: the memory port: the reads of the running turn's memory, and the decisions of its writes, changes and
   deletions.
 - `threads/`: the threads port: the decisions of an opened or updated thread and of a drone's start.

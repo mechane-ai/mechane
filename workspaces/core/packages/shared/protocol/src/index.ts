@@ -1,4 +1,13 @@
 export { catalog } from './catalog.ts';
+export { BoundedTurnConflict, BoundedTurnNotFound } from './errors/bounded-turn.errors.ts';
+export { BoundedCallStatus, BoundedTurnLimitReason, BoundedTurnStatus } from './operations/bounded-turns/constants.ts';
+export {
+  BoundedTurn,
+  BoundedTurnSubmission,
+  BoundedDispatchEvidence,
+  BOUNDED_DISPATCH_EVIDENCE_FIELDS,
+  BoundedToolCall,
+} from './operations/bounded-turns/schemas.ts';
 export { CredentialAlreadyExists } from './errors/credential.errors.ts';
 export {
   CredentialValue,

@@ -4,6 +4,9 @@ import { pollDeviceApproval } from '../operations/auth/poll-device-approval.ts';
 import { revokeKey } from '../operations/auth/revoke-key.ts';
 import { showPrincipal } from '../operations/auth/show-principal.ts';
 import { startDeviceApproval } from '../operations/auth/start-device-approval.ts';
+import { cancelBoundedTurn } from '../operations/bounded-turns/cancel-bounded-turn.ts';
+import { showBoundedTurn } from '../operations/bounded-turns/show-bounded-turn.ts';
+import { submitBoundedTurn } from '../operations/bounded-turns/submit-bounded-turn.ts';
 import { createConnection } from '../operations/connections/create-connection.ts';
 import { deleteConnection } from '../operations/connections/delete-connection.ts';
 import { grantTools } from '../operations/connections/grant-tools.ts';
@@ -63,6 +66,9 @@ type OperationWorks = { readonly [N in OperationName]: OperationWork<(typeof cat
 
 /** The work of each catalog operation; an operation without its work, or with another's, fails to compile. */
 export const OPERATIONS: Readonly<OperationWorks> = {
+  submitBoundedTurn,
+  showBoundedTurn,
+  cancelBoundedTurn,
   putCredential,
   listCredentials,
   deleteCredential,
