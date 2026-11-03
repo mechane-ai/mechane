@@ -61,7 +61,7 @@ const styles = stylex.create({
     fontWeight: 500,
   },
   accountLabel: { flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  chevron: { display: 'flex', flexShrink: 0 },
+  indicator: { display: 'flex', flexShrink: 0 },
   collapsedLabel: { display: { 'default': 'none', '@media (max-width:800px)': 'inline-flex' } },
   positioner: { zIndex: 30, minWidth: 224, maxWidth: 'calc(100vw - 16px)' },
   popup: {
@@ -245,7 +245,7 @@ export function SidebarAccount({ label, value, items, onValueChange }: SidebarAc
           {initial}
         </span>
         <Select.Value {...stylex.props(styles.accountLabel, isCollapsed && styles.collapsedLabel)} />
-        <Select.Icon {...stylex.props(styles.chevron, isCollapsed && styles.collapsedLabel)}>
+        <Select.Icon {...stylex.props(styles.indicator, isCollapsed && styles.collapsedLabel)}>
           <ChevronDown size={16} aria-hidden />
         </Select.Icon>
       </Select.Trigger>
@@ -265,7 +265,7 @@ export function SidebarAccount({ label, value, items, onValueChange }: SidebarAc
                   className={(state) => stylex.props(styles.option, state.highlighted && styles.highlighted).className}
                 >
                   <Select.ItemText {...stylex.props(styles.optionText)}>{option.label}</Select.ItemText>
-                  <Select.ItemIndicator>
+                  <Select.ItemIndicator {...stylex.props(styles.indicator)}>
                     <Check size={16} aria-hidden />
                   </Select.ItemIndicator>
                 </Select.Item>

@@ -46,10 +46,11 @@ const styles = stylex.create({
     },
   },
   lastHeader: { '::after': { display: 'none' } },
+  lastPrimaryHeader: { '::after': { display: { '@media (max-width:600px)': 'none' } } },
   td: {
     height: 39,
     boxSizing: 'border-box',
-    paddingBlock: 0,
+    paddingBlock: 6,
     paddingInline: 16,
     color: colors.ink,
     verticalAlign: 'middle',
@@ -71,6 +72,8 @@ export function Table({
   readonly children: ReactNode;
   readonly label: string;
 }): ReactNode {
+  const lastPrimaryHeader = headers.findLastIndex((header) => typeof header === 'string' || header.secondary !== true);
+
   return (
     <div {...stylex.props(styles.scroll)}>
       <table
@@ -89,6 +92,7 @@ export function Table({
                   typeof header !== 'string' && styles.compactWidth,
                   typeof header !== 'string' && header.secondary === true && styles.secondary,
                   index === headers.length - 1 && styles.lastHeader,
+                  index === lastPrimaryHeader && styles.lastPrimaryHeader,
                 )}
               >
                 {typeof header === 'string' ? header : header.label}

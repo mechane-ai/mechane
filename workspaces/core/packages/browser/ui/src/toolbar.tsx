@@ -7,6 +7,8 @@ import { colors, frame } from './tokens.stylex.ts';
 const styles = stylex.create({
   toolbar: {
     display: 'flex',
+    containerType: 'inline-size',
+    containerName: 'toolbar',
     alignItems: 'stretch',
     height: frame.toolbarHeight,
     borderBottomWidth: 1,
@@ -63,7 +65,7 @@ const styles = stylex.create({
     ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -3 },
     ':disabled': { color: colors.faint, cursor: 'default' },
   },
-  actionLabel: { display: { 'default': 'inline', '@media (max-width:600px)': 'none' } },
+  actionLabel: { display: { 'default': 'inline', '@container toolbar (max-width:600px)': 'none' } },
 });
 
 type ToolbarProps = {
@@ -98,7 +100,7 @@ export function ToolbarAction({ icon, children, ...props }: ToolbarActionProps):
       {...stylex.props(styles.action)}
     >
       {icon}
-      <span {...stylex.props(icon !== undefined && styles.actionLabel)}>{children}</span>
+      {icon === undefined ? children : <span {...stylex.props(styles.actionLabel)}>{children}</span>}
     </BaseButton>
   );
 }

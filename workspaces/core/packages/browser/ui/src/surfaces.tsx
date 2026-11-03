@@ -20,7 +20,7 @@ const styles = stylex.create({
   compact: { gap: 8 },
   columns: {
     display: 'grid',
-    gridTemplateColumns: { 'default': 'repeat(2, minmax(0, 1fr))', '@media (max-width:700px)': 'minmax(0, 1fr)' },
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
     gap: 32,
     minWidth: 0,
   },
@@ -40,7 +40,7 @@ const styles = stylex.create({
     paddingInline: 12,
     borderRadius: 4,
     fontSize: 13,
-    lineHeight: 1.6,
+    lineHeight: '20px',
     backgroundColor: colors.warningSoft,
     color: colors.warning,
     overflowWrap: 'anywhere',

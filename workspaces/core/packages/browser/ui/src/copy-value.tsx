@@ -15,7 +15,7 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'color': colors.muted,
     'fontFamily': 'inherit',
-    'fontSize': 12,
+    'fontSize': 13,
     'lineHeight': '20px',
     'textAlign': 'start',
     'cursor': 'pointer',

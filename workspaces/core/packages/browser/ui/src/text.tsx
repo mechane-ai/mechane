@@ -14,7 +14,7 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
   },
   subheading: { margin: 0, fontSize: 16, lineHeight: '22px', fontWeight: 600, color: colors.ink },
-  muted: { margin: 0, color: colors.muted, fontSize: 13, lineHeight: 1.6 },
+  muted: { margin: 0, color: colors.muted, fontSize: 13, lineHeight: '20px' },
   mono: {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
     fontSize: 12,

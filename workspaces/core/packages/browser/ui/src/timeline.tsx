@@ -49,6 +49,7 @@ const styles = stylex.create({
     'cursor': 'pointer',
     ':hover': { backgroundColor: colors.canvas },
     ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 2, outlineOffset: -2 },
+    ':last-child': { borderBottomWidth: 0 },
   },
   active: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
   name: { minWidth: 0, display: 'grid', gap: 2 },
