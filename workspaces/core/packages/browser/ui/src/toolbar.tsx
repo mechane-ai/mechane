@@ -41,7 +41,6 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'gap': 8,
-    'height': frame.toolbarHeight,
     'paddingTop': 0,
     'paddingBottom': 0,
     'paddingLeft': 16,

@@ -174,7 +174,6 @@ const styles = stylex.create({
   toggle: {
     'alignItems': 'center',
     'justifyContent': 'center',
-    'height': frame.toolbarHeight,
     'width': frame.toolbarHeight,
     'flexShrink': 0,
     'paddingTop': 0,
