@@ -9,29 +9,37 @@ const styles = stylex.create({
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.line,
-    borderRadius: 5,
+    borderRadius: 4,
     backgroundColor: colors.surface,
     overflow: 'hidden',
   },
-  padded: { padding: 18 },
+  padded: { padding: 24 },
   row: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   between: { justifyContent: 'space-between' },
-  stack: { display: 'flex', flexDirection: 'column', gap: 18, minWidth: 0 },
-  compact: { gap: 6 },
+  stack: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 },
+  compact: { gap: 8 },
+  columns: {
+    display: 'grid',
+    gridTemplateColumns: { 'default': 'repeat(2, minmax(0, 1fr))', '@media (max-width:700px)': 'minmax(0, 1fr)' },
+    gap: 32,
+    minWidth: 0,
+  },
   empty: {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
-    padding: '48px 20px',
-    gap: 10,
+    paddingBlock: 64,
+    paddingInline: 24,
+    gap: 12,
   },
   emptyIcon: { color: colors.muted, marginBottom: 4 },
   notice: {
-    padding: '10px 12px',
+    paddingBlock: 10,
+    paddingInline: 12,
     borderRadius: 4,
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 1.6,
     backgroundColor: colors.warningSoft,
     color: colors.warning,
@@ -53,6 +61,10 @@ export function Row({ children, between = false }: Children & { readonly between
 
 export function Stack({ children, compact = false }: Children & { readonly compact?: boolean }): ReactNode {
   return <div {...stylex.props(styles.stack, compact && styles.compact)}>{children}</div>;
+}
+
+export function Columns({ children }: Children): ReactNode {
+  return <div {...stylex.props(styles.columns)}>{children}</div>;
 }
 
 export function Divider(): ReactNode {

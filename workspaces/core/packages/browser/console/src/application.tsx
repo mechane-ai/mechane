@@ -2,7 +2,7 @@ import { createConsoleData, isSignedOut, loadSession, problemMessage } from '@me
 import type { Session } from '@mechane/console-data';
 import { ConsoleShell } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
-import { Brand, Button, EmptyState, Layout, Notice, Panel, Stack, TextLink } from '@mechane/ui';
+import { Brand, Button, DetailPage, EmptyState, Layout, Notice, Stack, TextLink, Toolbar } from '@mechane/ui';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MechScreen } from './screens/mech.tsx';
@@ -43,8 +43,9 @@ export function ConsoleApplication({ location, navigate }: Navigation): ReactNod
 
   if (state.kind !== 'ready') {
     return (
-      <Layout sidebar={<Brand />} footer={null}>
-        <Panel>
+      <Layout sidebar={<Brand />}>
+        <Toolbar title="Console" />
+        <DetailPage>
           <EmptyState
             title={state.kind === 'loading' ? 'Connecting to Mechane…' : 'Welcome to your console'}
             action={
@@ -60,7 +61,7 @@ export function ConsoleApplication({ location, navigate }: Navigation): ReactNod
           >
             Inspect your mechs, follow their work, and manage this installation.
           </EmptyState>
-        </Panel>
+        </DetailPage>
       </Layout>
     );
   }
@@ -72,15 +73,16 @@ export function ConsoleApplication({ location, navigate }: Navigation): ReactNod
 
   if (workspace === undefined) {
     return (
-      <Layout sidebar={<Brand />} footer={null}>
-        <Panel>
+      <Layout sidebar={<Brand />}>
+        <Toolbar title="Console" />
+        <DetailPage>
           <EmptyState
             title="Workspace unavailable"
             action={<Button onClick={() => navigate({})}>Choose another workspace</Button>}
           >
             Your account no longer has access to this workspace.
           </EmptyState>
-        </Panel>
+        </DetailPage>
       </Layout>
     );
   }

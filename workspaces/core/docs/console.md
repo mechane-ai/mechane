@@ -29,11 +29,13 @@ Only `console-data` crosses from the shared Effect client into browser Promises.
 one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and
 persistence. No browser code imports Worker storage or installation secrets.
 
-UI modules group controls, forms, typography, surfaces, and charts by responsibility. The shell uses compact neutral
-surfaces and a mobile navigation drawer. Base UI owns button, tab, and dialog interactions. StyleX uses explicit border
-and outline longhands; the contract's syntax check prevents unsupported shorthands from silently losing styles. The
-trace timeline uses visx. Turn events come from the existing durable event log, with indexed turn and inbox lookup;
-there is no separate tracing store.
+UI modules group controls, forms, typography, surfaces, and charts by responsibility. A shared frame owns the 240-pixel
+sidebar, its 48-pixel collapsed rail, and the mobile navigation drawer. Every screen uses the same 48-pixel toolbar;
+screens supply its resource actions. Tables fill the main surface, while `DetailPage` centers forms and resource
+details. Frame dimensions and neutral colors live in shared tokens. Base UI owns button, select, tab, and dialog
+interactions. StyleX uses explicit border and outline longhands; the contract's syntax check prevents unsupported
+shorthands from silently losing styles. The trace timeline uses visx. Turn events come from the existing durable event
+log, with indexed turn and inbox lookup; there is no separate tracing store.
 
 ## Local development
 
@@ -44,8 +46,9 @@ after changing the application or Worker.
 
 For component development with hot reload, run `pnpm --filter @mechane/console storybook` from `workspaces/core`.
 `pnpm --filter @mechane/console build-storybook` checks the isolated component build. Stories cover populated, empty,
-loading, refresh-failure, and revision-conflict states. `mise run check` runs the repository checks and existing runtime
-scenarios. Browser acceptance uses the built celld Worker, including authentication and actual API responses.
+loading, refresh-failure, and revision-conflict states inside the actual console frame. `mise run check` runs the
+repository checks and existing runtime scenarios. Browser acceptance uses the built celld Worker, including
+authentication and actual API responses.
 
 ## Installation and upgrades
 

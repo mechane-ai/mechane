@@ -1,25 +1,17 @@
+import { Button as BaseButton } from '@base-ui/react/button';
 import { Dialog } from '@base-ui/react/dialog';
 import * as stylex from '@stylexjs/stylex';
-import { Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { X } from 'lucide-react';
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button } from './actions.tsx';
-import { Brand } from './text.tsx';
-import { colors } from './tokens.stylex.ts';
+import { SidebarContext } from './sidebar.tsx';
+import { colors, frame } from './tokens.stylex.ts';
 
 const styles = stylex.create({
-  layout: {
-    minHeight: '100dvh',
-    display: 'grid',
-    gridTemplateColumns: { 'default': '216px minmax(0,1fr)', '@media (max-width:800px)': 'minmax(0,1fr)' },
-    backgroundColor: colors.surface,
-    color: colors.ink,
-  },
+  layout: { minHeight: '100dvh', display: 'flex', backgroundColor: colors.surface, color: colors.ink },
   sidebar: {
     display: { 'default': 'flex', '@media (max-width:800px)': 'none' },
     flexDirection: 'column',
-    gap: 22,
-    padding: '18px 12px',
     borderRightWidth: 1,
     borderRightStyle: 'solid',
     borderRightColor: colors.line,
@@ -27,134 +19,137 @@ const styles = stylex.create({
     position: 'sticky',
     top: 0,
     height: '100dvh',
+    width: frame.sidebarWidth,
+    flexShrink: 0,
+    minHeight: 0,
+    minWidth: 0,
+  },
+  collapsed: { width: frame.toolbarHeight },
+  navigation: {
+    flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
+    paddingTop: frame.navigationInset,
+    paddingBottom: frame.navigationInset,
   },
-  footer: { marginTop: 'auto', paddingTop: 20 },
-  main: { minWidth: 0 },
-  header: {
-    height: 49,
-    padding: '0 24px',
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    fontSize: 12,
-    color: colors.muted,
-  },
-  mobile: { display: { 'default': 'none', '@media (max-width:800px)': 'flex' } },
-  content: { padding: { 'default': '24px', '@media (max-width:800px)': '18px 14px' }, width: '100%', minWidth: 0 },
-  backdrop: { position: 'fixed', inset: 0, backgroundColor: '#0006', zIndex: 20 },
+  footer: { marginTop: 'auto', color: colors.muted, fontSize: 12, lineHeight: '18px' },
+  main: { minWidth: 0, flex: 1 },
+  backdrop: { position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#0006', zIndex: 20 },
   drawer: {
     position: 'fixed',
-    inset: '0 auto 0 0',
-    width: 260,
-    padding: 16,
+    top: 0,
+    bottom: 0,
+    left: 0,
+    width: frame.sidebarWidth,
+    maxWidth: 'calc(100vw - 48px)',
     backgroundColor: colors.surface,
+    color: colors.ink,
+    borderRightWidth: 1,
+    borderRightStyle: 'solid',
+    borderRightColor: colors.line,
     zIndex: 21,
     display: 'flex',
     flexDirection: 'column',
-    gap: 20,
-    overflowY: 'auto',
+    minHeight: 0,
   },
-  drawerHeading: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  title: { margin: 0, fontSize: 14 },
-  nav: { display: 'flex', flexDirection: 'column', gap: 4 },
-  navItem: {
-    'fontFamily': 'inherit',
-    'textAlign': 'left',
-    'borderWidth': 0,
+  drawerHeader: { display: 'flex', alignItems: 'center', minHeight: frame.toolbarHeight },
+  drawerAccount: { flex: 1, minWidth: 0 },
+  close: {
     'display': 'flex',
     'alignItems': 'center',
-    'gap': 9,
-    'borderRadius': 4,
-    'padding': '9px 10px',
-    'backgroundColor': 'transparent',
-    'fontSize': 13,
-    'color': colors.muted,
+    'justifyContent': 'center',
+    'height': frame.toolbarHeight,
+    'width': frame.toolbarHeight,
+    'flexShrink': 0,
+    'paddingTop': 0,
+    'paddingBottom': 0,
+    'paddingLeft': 0,
+    'paddingRight': 0,
+    'borderTopWidth': 0,
+    'borderRightWidth': 0,
+    'borderBottomWidth': 1,
+    'borderLeftWidth': 0,
+    'borderBottomStyle': 'solid',
+    'borderBottomColor': colors.line,
+    'backgroundColor': colors.surface,
+    'color': colors.ink,
     'cursor': 'pointer',
     ':hover': { backgroundColor: colors.canvas },
+    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -3 },
   },
-  selected: { backgroundColor: colors.canvas, color: colors.ink },
+  accessibleTitle: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    marginTop: -1,
+    marginBottom: -1,
+    marginLeft: -1,
+    marginRight: -1,
+    overflow: 'hidden',
+    clipPath: 'inset(50%)',
+    whiteSpace: 'nowrap',
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0,
+  },
 });
 
-export function Layout({
-  sidebar,
-  footer,
-  header,
-  children,
-}: {
+type LayoutProps = {
+  readonly sidebarHeader?: ReactNode;
   readonly sidebar: ReactNode;
-  readonly footer: ReactNode;
-  readonly header?: ReactNode;
+  readonly footer?: ReactNode;
   readonly children: ReactNode;
-}): ReactNode {
-  const [open, setOpen] = useState(false);
+};
+
+export function Layout({ sidebarHeader, sidebar, footer, children }: LayoutProps): ReactNode {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const sidebarId = useId();
 
   return (
-    <div {...stylex.props(styles.layout)}>
-      <aside {...stylex.props(styles.sidebar)}>
-        {sidebar}
-        <div {...stylex.props(styles.footer)}>{footer}</div>
-      </aside>
-      <div {...stylex.props(styles.main)}>
-        <header {...stylex.props(styles.header)}>
-          <div {...stylex.props(styles.mobile)}>
-            <Dialog.Root open={open} onOpenChange={setOpen}>
-              <Dialog.Trigger render={<Button tone="quiet" aria-label="Open navigation" />}>
-                <Menu size={17} />
-              </Dialog.Trigger>
-              <Dialog.Portal>
-                <Dialog.Backdrop {...stylex.props(styles.backdrop)} />
-                <Dialog.Popup {...stylex.props(styles.drawer)}>
-                  <div {...stylex.props(styles.drawerHeading)}>
-                    <Dialog.Title {...stylex.props(styles.title)}>Navigation</Dialog.Title>
-                    <Dialog.Close render={<Button tone="quiet" aria-label="Close navigation" />}>
-                      <X size={16} />
-                    </Dialog.Close>
-                  </div>
-                  {sidebar}
-                  <div {...stylex.props(styles.footer)}>{footer}</div>
-                </Dialog.Popup>
-              </Dialog.Portal>
-            </Dialog.Root>
-          </div>
-          {header ?? <Brand />}
-        </header>
-        <main id="main" {...stylex.props(styles.content)}>
-          {children}
-        </main>
-      </div>
-    </div>
-  );
-}
-
-export function Navigation({ children }: { readonly children: ReactNode }): ReactNode {
-  return (
-    <nav aria-label="Console" {...stylex.props(styles.nav)}>
-      {children}
-    </nav>
-  );
-}
-
-export function NavigationItem({
-  children,
-  selected,
-  onClick,
-}: {
-  readonly children: ReactNode;
-  readonly selected: boolean;
-  readonly onClick: () => void;
-}): ReactNode {
-  return (
-    <button
-      type="button"
-      aria-current={selected ? 'page' : undefined}
-      onClick={onClick}
-      {...stylex.props(styles.navItem, selected && styles.selected)}
-    >
-      {children}
-    </button>
+    <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
+      <SidebarContext.Provider
+        value={{
+          isExpanded,
+          sidebarId,
+          onToggle: () => setIsExpanded((expanded) => !expanded),
+          onNavigate: () => setIsOpen(false),
+        }}
+      >
+        <div {...stylex.props(styles.layout)}>
+          <aside
+            id={sidebarId}
+            aria-label="Navigation"
+            {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed)}
+          >
+            {sidebarHeader}
+            <div {...stylex.props(styles.navigation)}>{sidebar}</div>
+            {footer !== undefined && footer !== null && <div {...stylex.props(styles.footer)}>{footer}</div>}
+          </aside>
+          <main id="main" {...stylex.props(styles.main)}>
+            {children}
+          </main>
+        </div>
+        <Dialog.Portal>
+          <Dialog.Backdrop {...stylex.props(styles.backdrop)} />
+          <Dialog.Popup {...stylex.props(styles.drawer)}>
+            <Dialog.Title {...stylex.props(styles.accessibleTitle)}>Navigation</Dialog.Title>
+            <div {...stylex.props(styles.drawerHeader)}>
+              <div {...stylex.props(styles.drawerAccount)}>{sidebarHeader}</div>
+              <Dialog.Close render={<BaseButton aria-label="Close navigation" {...stylex.props(styles.close)} />}>
+                <X size={16} aria-hidden />
+              </Dialog.Close>
+            </div>
+            <div {...stylex.props(styles.navigation)}>{sidebar}</div>
+            {footer !== undefined && footer !== null && <div {...stylex.props(styles.footer)}>{footer}</div>}
+          </Dialog.Popup>
+        </Dialog.Portal>
+      </SidebarContext.Provider>
+    </Dialog.Root>
   );
 }

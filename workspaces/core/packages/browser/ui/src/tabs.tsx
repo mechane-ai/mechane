@@ -4,10 +4,10 @@ import type { ReactNode } from 'react';
 import { colors } from './tokens.stylex.ts';
 
 const styles = stylex.create({
-  panel: { paddingTop: 18 },
+  panel: { paddingTop: 24 },
   list: {
     display: 'flex',
-    gap: 22,
+    gap: 24,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
@@ -16,17 +16,21 @@ const styles = stylex.create({
   tab: {
     'fontFamily': 'inherit',
     'borderWidth': 0,
-    'padding': '10px 0',
+    'minHeight': 44,
+    'paddingBlock': 10,
+    'paddingInline': 0,
     'backgroundColor': 'transparent',
     'borderBottomWidth': 2,
     'borderBottomStyle': 'solid',
     'borderBottomColor': 'transparent',
     'color': colors.muted,
     'cursor': 'pointer',
-    'fontSize': 13,
+    'fontSize': 14,
+    'lineHeight': '20px',
     'whiteSpace': 'nowrap',
     ':hover': { color: colors.ink },
     ':is([data-active])': { borderBottomColor: colors.ink, color: colors.ink },
+    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -2 },
   },
 });
 

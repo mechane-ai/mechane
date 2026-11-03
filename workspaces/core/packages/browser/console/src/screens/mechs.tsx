@@ -1,6 +1,7 @@
 import type { ConsoleData } from '@mechane/console-data';
 import { MechList } from '@mechane/console-views';
-import { Notice, Stack } from '@mechane/ui';
+import { Notice, Toolbar, ToolbarAction } from '@mechane/ui';
+import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Resource, useResource } from '../resource.tsx';
@@ -26,30 +27,48 @@ export function MechsScreen({
   }
 
   return (
-    <Resource data={data} source={source}>
-      {(page) => (
-        <Stack>
-          {allowance.failed && <Notice error>Workspace usage could not be refreshed.</Notice>}
-          <MechList
-            page={page}
-            allowance={allowance.value}
-            onOpen={(mech) => onOpen(mech.id)}
-            onCreate={() => setCreating(true)}
-            hasPrevious={cursors.length > 0}
-            onPrevious={() => setCursors((previous) => previous.slice(0, -1))}
-            onNext={() => {
-              const last = page.mechs.at(-1);
+    <>
+      <Toolbar
+        title="Mechs"
+        actions={
+          <>
+            <ToolbarAction
+              aria-label="Refresh mechs"
+              onClick={() => {
+                void data.refresh();
+              }}
+            >
+              <RefreshCw size={16} aria-hidden />
+            </ToolbarAction>
+            <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
+              Create mech
+            </ToolbarAction>
+          </>
+        }
+      />
+      <Resource data={data} source={source}>
+        {(page, notice) => (
+          <>
+            {notice}
+            {allowance.failed && <Notice error>Workspace usage could not be refreshed.</Notice>}
+            <MechList
+              page={page}
+              allowance={allowance.value}
+              onOpen={(mech) => onOpen(mech.id)}
+              onCreate={() => setCreating(true)}
+              hasPrevious={cursors.length > 0}
+              onPrevious={() => setCursors((previous) => previous.slice(0, -1))}
+              onNext={() => {
+                const last = page.mechs.at(-1);
 
-              if (last !== undefined) {
-                setCursors((previous) => [...previous, last.id]);
-              }
-            }}
-            onRefresh={() => {
-              void data.refresh();
-            }}
-          />
-        </Stack>
-      )}
-    </Resource>
+                if (last !== undefined) {
+                  setCursors((previous) => [...previous, last.id]);
+                }
+              }}
+            />
+          </>
+        )}
+      </Resource>
+    </>
   );
 }

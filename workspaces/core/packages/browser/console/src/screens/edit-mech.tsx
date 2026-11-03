@@ -2,7 +2,7 @@ import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import type { Mech } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
-import { Button, Heading, Muted, Notice, Panel, Row, Stack, TextArea, TextField } from '@mechane/ui';
+import { Button, DetailPage, Heading, Muted, Notice, Row, Stack, TextArea, TextField, Toolbar } from '@mechane/ui';
 import { Option, Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
@@ -11,10 +11,12 @@ export function EditMechForm({
   data,
   mech,
   onClose,
+  notice,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly onClose: () => void;
+  readonly notice?: ReactNode;
 }): ReactNode {
   const [original] = useState(mech);
   const [name, setName] = useState(mech.name);
@@ -57,59 +59,73 @@ export function EditMechForm({
   }
 
   return (
-    <Stack>
-      <Heading>Edit {original.name}</Heading>
-      <Muted>
-        Saving revision {original.revision}. If someone changes this mech first, reload its definition before saving
-        again.
-      </Muted>
-      <Panel>
-        <form onSubmit={submit}>
-          <Stack>
-            <TextField
-              label="Name"
-              required
-              maxLength={64}
-              value={name}
-              disabled={busy}
-              onChange={(event) => setName(event.target.value)}
-            />
-            <TextField
-              label="Model"
-              required
-              value={model}
-              disabled={busy}
-              onChange={(event) => setModel(event.target.value)}
-            />
-            <TextField
-              label="Daily cap (USD)"
-              type="number"
-              min="0"
-              step="0.000001"
-              required
-              value={cap}
-              disabled={busy}
-              onChange={(event) => setCap(event.target.value)}
-            />
-            <TextArea
-              label="Instructions"
-              maxLength={65_536}
-              value={instructions}
-              disabled={busy}
-              onChange={(event) => setInstructions(event.target.value)}
-            />
-            {error !== undefined && <Notice error>{error}</Notice>}
-            <Row>
-              <Button tone="primary" type="submit" disabled={busy}>
-                {busy ? 'Saving…' : 'Save definition'}
-              </Button>
-              <Button type="button" disabled={busy} onClick={onClose}>
-                Cancel
-              </Button>
-            </Row>
-          </Stack>
-        </form>
-      </Panel>
-    </Stack>
+    <>
+      <Toolbar
+        breadcrumb
+        title={
+          <>
+            <Button tone="link" onClick={onClose}>
+              {original.name}
+            </Button>{' '}
+            / Edit definition
+          </>
+        }
+      />
+      {notice}
+      <DetailPage>
+        <Stack>
+          <Heading>Edit {original.name}</Heading>
+          <Muted>
+            Saving revision {original.revision}. If someone changes this mech first, reload its definition before saving
+            again.
+          </Muted>
+          <form onSubmit={submit}>
+            <Stack>
+              <TextField
+                label="Name"
+                required
+                maxLength={64}
+                value={name}
+                disabled={busy}
+                onChange={(event) => setName(event.target.value)}
+              />
+              <TextField
+                label="Model"
+                required
+                value={model}
+                disabled={busy}
+                onChange={(event) => setModel(event.target.value)}
+              />
+              <TextField
+                label="Daily cap (USD)"
+                type="number"
+                min="0"
+                step="0.000001"
+                required
+                value={cap}
+                disabled={busy}
+                onChange={(event) => setCap(event.target.value)}
+              />
+              <TextArea
+                label="Instructions"
+                maxLength={65_536}
+                value={instructions}
+                disabled={busy}
+                onChange={(event) => setInstructions(event.target.value)}
+              />
+              {error !== undefined && <Notice error>{error}</Notice>}
+              <Row>
+                <Button tone="primary" type="submit" disabled={busy}>
+                  {busy ? 'Saving…' : 'Save definition'}
+                </Button>
+                <Button type="button" disabled={busy} onClick={onClose}>
+                  Cancel
+                </Button>
+              </Row>
+            </Stack>
+          </form>
+        </Stack>
+      </DetailPage>
+    </>
   );
 }

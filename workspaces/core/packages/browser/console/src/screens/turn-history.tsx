@@ -26,8 +26,9 @@ export function TurnHistory({
         <Muted>This turn · chronological order</Muted>
       </Row>
       <Resource data={data} source={source}>
-        {(page) => (
+        {(page, notice) => (
           <Stack>
+            {notice}
             <Activity page={page} chronological />
             {(page.hasMore || cursors.length > 0) && (
               <Row between>

@@ -12,8 +12,9 @@ export function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; r
 
   return (
     <Resource data={data} source={source}>
-      {(page) => (
+      {(page, notice) => (
         <Stack>
+          {notice}
           <Row between>
             <Muted>
               {before === null ? 'Recent activity · updates while this page is visible' : 'Earlier activity'}

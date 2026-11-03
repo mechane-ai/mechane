@@ -1,17 +1,7 @@
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
-import {
-  Brand,
-  Button,
-  Identifier,
-  Layout,
-  Muted,
-  Navigation,
-  NavigationItem,
-  SelectField,
-  Stack,
-  TextLink,
-} from '@mechane/ui';
+import { Layout, Navigation, NavigationItem, NavigationLink, SidebarAccount, SidebarBrand } from '@mechane/ui';
+import { BookOpen, Bot, FileText, Layers3, LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export function ConsoleShell({
@@ -33,37 +23,47 @@ export function ConsoleShell({
 }): ReactNode {
   return (
     <Layout
-      header={<span>{workspaces.find((workspace) => workspace.id === workspaceId)?.name} / Console</span>}
+      sidebarHeader={
+        <SidebarAccount
+          label="Workspace"
+          value={workspaceId}
+          items={workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }))}
+          onValueChange={onWorkspace}
+        />
+      }
       sidebar={
-        <>
-          <Brand />
-          <SelectField label="Workspace" value={workspaceId} onChange={(event) => onWorkspace(event.target.value)}>
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>
-                {workspace.name}
-              </option>
-            ))}
-          </SelectField>
-          <Navigation>
-            <NavigationItem selected onClick={onHome}>
-              Mechs
-            </NavigationItem>
-          </Navigation>
-        </>
+        <Navigation>
+          <NavigationItem selected icon={<Bot size={16} aria-hidden />} onClick={onHome}>
+            Mechs
+          </NavigationItem>
+        </Navigation>
       }
       footer={
-        <Stack compact>
-          <Muted>
-            Signed in as <strong>{name}</strong>
-          </Muted>
-          <Identifier>{origin}</Identifier>
-          <TextLink href="/console/THIRD_PARTY_LICENSES.txt">Open-source licenses</TextLink>
-          <form method={HttpMethod.Post} action="/auth/sign-out">
-            <Button type="submit" tone="quiet">
-              Sign out
-            </Button>
-          </form>
-        </Stack>
+        <>
+          <Navigation label="Help and account">
+            <NavigationLink
+              href="https://github.com/mechane-ai/mechane"
+              icon={<BookOpen size={16} aria-hidden />}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Documentation
+            </NavigationLink>
+            <NavigationLink href="/console/THIRD_PARTY_LICENSES.txt" icon={<FileText size={16} aria-hidden />}>
+              Open-source licenses
+            </NavigationLink>
+            <form method={HttpMethod.Post} action="/auth/sign-out">
+              <NavigationItem
+                type="submit"
+                icon={<LogOut size={16} aria-hidden />}
+                title={`Signed in as ${name} on ${origin}`}
+              >
+                Sign out
+              </NavigationItem>
+            </form>
+          </Navigation>
+          <SidebarBrand icon={<Layers3 size={16} aria-hidden />}>mechane</SidebarBrand>
+        </>
       }
     >
       {children}

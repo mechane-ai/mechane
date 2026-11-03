@@ -1,7 +1,7 @@
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { CreationRequestId } from '@mechane/records';
-import { Button, Heading, Muted, Notice, Panel, Row, Stack, TextArea, TextField } from '@mechane/ui';
+import { Button, DetailPage, Heading, Muted, Notice, Row, Stack, TextArea, TextField, Toolbar } from '@mechane/ui';
 import { Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
@@ -54,52 +54,62 @@ export function CreateMechForm({
   }
 
   return (
-    <Stack>
-      <Button tone="quiet" onClick={onCancel}>
-        ← Mechs
-      </Button>
-      <Heading>Create a mech</Heading>
-      <Muted>
-        The installation’s default model and daily cap apply. You can edit its definition after creating it.
-      </Muted>
-      <Panel>
-        <form onSubmit={submit}>
-          <Stack>
-            <TextField
-              label="Name"
-              required
-              maxLength={64}
-              value={name}
-              disabled={busy}
-              onChange={(event) => {
-                setName(event.target.value);
-                changed();
-              }}
-              autoFocus
-            />
-            <TextArea
-              label="Instructions"
-              maxLength={65_536}
-              value={instructions}
-              disabled={busy}
-              onChange={(event) => {
-                setInstructions(event.target.value);
-                changed();
-              }}
-              placeholder="What should this mech do?"
-            />
-            {error !== undefined && <Notice error>{error}</Notice>}
-            <Row>
-              <Button type="submit" tone="primary" disabled={busy}>
-                {busy ? 'Creating…' : 'Create mech'}
-              </Button>
-              <Button type="button" onClick={onCancel} disabled={busy}>
-                Cancel
-              </Button>
-            </Row>
-          </Stack>
-        </form>
-      </Panel>
-    </Stack>
+    <>
+      <Toolbar
+        breadcrumb
+        title={
+          <>
+            <Button tone="link" onClick={onCancel}>
+              Mechs
+            </Button>{' '}
+            / Create
+          </>
+        }
+      />
+      <DetailPage>
+        <Stack>
+          <Heading>Create a mech</Heading>
+          <Muted>
+            The installation’s default model and daily cap apply. You can edit its definition after creating it.
+          </Muted>
+          <form onSubmit={submit}>
+            <Stack>
+              <TextField
+                label="Name"
+                required
+                maxLength={64}
+                value={name}
+                disabled={busy}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  changed();
+                }}
+                autoFocus
+              />
+              <TextArea
+                label="Instructions"
+                maxLength={65_536}
+                value={instructions}
+                disabled={busy}
+                onChange={(event) => {
+                  setInstructions(event.target.value);
+                  changed();
+                }}
+                placeholder="What should this mech do?"
+              />
+              {error !== undefined && <Notice error>{error}</Notice>}
+              <Row>
+                <Button type="submit" tone="primary" disabled={busy}>
+                  {busy ? 'Creating…' : 'Create mech'}
+                </Button>
+                <Button type="button" onClick={onCancel} disabled={busy}>
+                  Cancel
+                </Button>
+              </Row>
+            </Stack>
+          </form>
+        </Stack>
+      </DetailPage>
+    </>
   );
 }

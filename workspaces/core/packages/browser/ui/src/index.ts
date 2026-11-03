@@ -1,8 +1,12 @@
 export { Button, TextLink } from './actions.tsx';
-export { Badge, Brand, Heading, Identifier, Muted, Prose, Subheading } from './text.tsx';
-export { TextArea, TextField, SelectField } from './forms.tsx';
-export { Divider, EmptyState, Notice, Panel, Row, Stack } from './surfaces.tsx';
-export { Layout, Navigation, NavigationItem } from './layout.tsx';
+export { Badge, Brand, Heading, Identifier, Muted, Prose, Status, Subheading } from './text.tsx';
+export { TextArea, TextField } from './forms.tsx';
+export { Columns, Divider, EmptyState, Notice, Panel, Row, Stack } from './surfaces.tsx';
+export { Layout } from './layout.tsx';
+export { Navigation, NavigationItem, NavigationLink, SidebarAccount, SidebarBrand } from './sidebar.tsx';
+export { Toolbar, ToolbarAction } from './toolbar.tsx';
+export { DetailPage } from './page.tsx';
+export { ListFooter } from './list-footer.tsx';
 export { Cell, Table } from './table.tsx';
 export { Metric, MetricGrid } from './metrics.tsx';
 export { Tabs } from './tabs.tsx';

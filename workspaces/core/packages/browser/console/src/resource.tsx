@@ -1,6 +1,6 @@
 import { canRetainResult, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, SnapshotCollection } from '@mechane/console-data';
-import { Button, EmptyState, Notice, Panel, Stack } from '@mechane/ui';
+import { Button, EmptyState, Notice } from '@mechane/ui';
 import { useLiveQuery } from '@tanstack/react-db';
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
@@ -27,53 +27,61 @@ export function Resource<T>({
   data,
   source,
   children,
+  fallbackHeader,
 }: {
   readonly data: ConsoleData;
   readonly source: SnapshotCollection<T>;
-  readonly children: (value: T) => ReactNode;
+  readonly children: (value: T, notice: ReactNode) => ReactNode;
+  readonly fallbackHeader?: ReactNode;
 }): ReactNode {
   const { value, problem, failed } = useResource(data, source);
 
   if (value !== undefined) {
-    return (
-      <Stack>
-        {failed && (
-          <Notice error>
-            Refresh failed. Showing the last saved result.{' '}
-            <Button
-              onClick={() => {
-                void source.utils.refetch();
-              }}
-            >
-              Retry refresh
-            </Button>
-          </Notice>
-        )}
-        {children(value)}
-      </Stack>
-    );
-  }
-
-  if (failed) {
-    return (
-      <Panel>
-        <Stack>
-          <Notice error>{problemMessage(problem)}</Notice>
+    return children(
+      value,
+      failed ? (
+        <Notice error>
+          Refresh failed. Showing the last saved result.{' '}
           <Button
             onClick={() => {
               void source.utils.refetch();
             }}
           >
-            Try again
+            Retry refresh
           </Button>
-        </Stack>
-      </Panel>
+        </Notice>
+      ) : null,
+    );
+  }
+
+  if (failed) {
+    return (
+      <>
+        {fallbackHeader}
+        <div role="alert">
+          <EmptyState
+            title="Unable to load"
+            action={
+              <Button
+                onClick={() => {
+                  void source.utils.refetch();
+                }}
+              >
+                Try again
+              </Button>
+            }
+          >
+            {problemMessage(problem)}
+          </EmptyState>
+        </div>
+      </>
     );
   }
 
   return (
-    <Panel>
+    <>
+      {fallbackHeader}
       <EmptyState title="Loading…">Reading from your Mechane installation.</EmptyState>
-    </Panel>
+    </>
   );
 }

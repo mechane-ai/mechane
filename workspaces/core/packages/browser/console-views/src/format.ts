@@ -7,6 +7,24 @@ export function timeLabel(value: DateTime.Utc): string {
   return DateTime.toDateUtc(value).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Compact record age; callers retain the absolute timestamp alongside it. */
+export function ageLabel(value: DateTime.Utc): string {
+  const elapsed = Math.max(0, DateTime.toEpochMillis(DateTime.nowUnsafe()) - DateTime.toEpochMillis(value));
+  const minutes = Math.floor(elapsed / Duration.toMillis('1 minute'));
+
+  if (minutes < 1) {
+    return 'now';
+  }
+
+  if (minutes < Duration.toMinutes('1 hour')) {
+    return `${minutes}m`;
+  }
+
+  const hours = Math.floor(elapsed / Duration.toMillis('1 hour'));
+
+  return hours < Duration.toHours('1 day') ? `${hours}h` : `${Math.floor(elapsed / Duration.toMillis('1 day'))}d`;
+}
+
 /** Trace timestamps include milliseconds so adjacent events can be distinguished. */
 export function preciseTimeLabel(value: DateTime.Utc): string {
   return DateTime.toDateUtc(value).toISOString();

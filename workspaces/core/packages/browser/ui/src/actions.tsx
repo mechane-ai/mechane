@@ -9,13 +9,14 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'gap': 6,
-    'padding': '0 11px',
+    'paddingBlock': 0,
+    'paddingInline': 10,
     'minHeight': 32,
     'borderRadius': 4,
     'borderWidth': 1,
     'borderStyle': 'solid',
-    'borderColor': colors.line,
-    'backgroundColor': colors.surface,
+    'borderColor': 'transparent',
+    'backgroundColor': colors.canvas,
     'color': colors.ink,
     'fontFamily': 'inherit',
     'fontWeight': 500,
@@ -23,9 +24,9 @@ const styles = stylex.create({
     'lineHeight': '20px',
     'cursor': 'pointer',
     'whiteSpace': 'nowrap',
-    ':hover': { backgroundColor: colors.canvas },
+    ':hover': { backgroundColor: colors.line },
     ':disabled': { opacity: 0.45, cursor: 'default' },
-    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.accent, outlineOffset: 2 },
+    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: 2 },
   },
   primary: {
     'backgroundColor': colors.ink,
@@ -33,15 +34,40 @@ const styles = stylex.create({
     'color': '#fff',
     ':hover': { backgroundColor: '#333' },
   },
-  quiet: { borderColor: 'transparent', backgroundColor: 'transparent' },
+  quiet: { backgroundColor: 'transparent' },
   danger: { color: colors.danger },
-  link: { 'color': colors.ink, 'textDecoration': 'none', ':hover': { textDecoration: 'underline' } },
+  inline: {
+    'display': 'inline-block',
+    'justifyContent': 'flex-start',
+    'minHeight': 20,
+    'minWidth': 0,
+    'paddingBlock': 0,
+    'paddingInline': 0,
+    'borderWidth': 0,
+    'borderRadius': 0,
+    'backgroundColor': 'transparent',
+    'fontSize': 14,
+    'fontWeight': 400,
+    'maxWidth': '100%',
+    'overflow': 'hidden',
+    'textOverflow': 'ellipsis',
+    'verticalAlign': 'middle',
+    ':hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+  },
+  link: {
+    'color': colors.ink,
+    'textDecoration': 'none',
+    ':hover': { textDecoration: 'underline' },
+    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: 2 },
+  },
 });
 
 export function Button({
   tone = 'normal',
   ...props
-}: ComponentProps<typeof BaseButton> & { readonly tone?: 'normal' | 'primary' | 'quiet' | 'danger' }): ReactNode {
+}: ComponentProps<typeof BaseButton> & {
+  readonly tone?: 'normal' | 'primary' | 'quiet' | 'danger' | 'link';
+}): ReactNode {
   return (
     <BaseButton
       {...props}
@@ -50,6 +76,7 @@ export function Button({
         tone === 'primary' && styles.primary,
         tone === 'quiet' && styles.quiet,
         tone === 'danger' && styles.danger,
+        tone === 'link' && styles.inline,
       )}
     />
   );

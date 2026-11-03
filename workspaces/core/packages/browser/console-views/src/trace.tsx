@@ -1,7 +1,6 @@
 import { Dispatch, Turn } from '@mechane/protocol';
 import type { Trace } from '@mechane/protocol';
 import {
-  Badge,
   Button,
   Details,
   EmptyState,
@@ -13,6 +12,8 @@ import {
   Notice,
   Panel,
   Stack,
+  Status,
+  Subheading,
   Timeline,
 } from '@mechane/ui';
 import type { TimelineItem } from '@mechane/ui';
@@ -75,11 +76,11 @@ export function TurnTrace({ trace }: { readonly trace: Trace }): ReactNode {
             turnEnd === undefined ? (turn.status === 'running' ? 'Running' : 'Unknown') : durationLabel(turnEnd - start)
           }
           detail={
-            <Badge
+            <Status
               tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
             >
               {turn.status}
-            </Badge>
+            </Status>
           }
         />
         <Metric
@@ -142,7 +143,8 @@ export function TurnTrace({ trace }: { readonly trace: Trace }): ReactNode {
         </Stack>
       )}
       {isKnownTurn && (
-        <Panel>
+        <Stack compact>
+          <Subheading>Turn details</Subheading>
           <Details
             items={[
               { label: 'Started', value: preciseTimeLabel(turn.startedAt) },
@@ -151,7 +153,7 @@ export function TurnTrace({ trace }: { readonly trace: Trace }): ReactNode {
               { label: 'Turn ID', value: <Identifier>{turn.id}</Identifier> },
             ]}
           />
-        </Panel>
+        </Stack>
       )}
     </Stack>
   );

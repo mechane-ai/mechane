@@ -35,6 +35,12 @@ Shared UI controls own interaction and visual states. Use supported StyleX longh
 and fonts; composite shorthands can disappear from the compiled CSS. Verify the packaged styles in a real browser,
 including keyboard focus, selected tabs, request selection, and narrow-screen navigation.
 
+Compose every screen with the shared frame and toolbar. The frame owns presentation state for the sidebar and mobile
+drawer; screens own their resource operations and toolbar actions. Keep lists flush with the content edges and use
+the shared detail container for resource details and forms. Define shell geometry and colors in UI tokens, not in
+individual screens. Navigation controls expose their names in collapsed and mobile states. Storybook examples use
+the same frame and presentation components as the application.
+
 Both celld and Cloudflare serve the same verified asset inventory. The installation manifest binds the console and
 Worker digests; failed or incomplete asset uploads must not activate a new Worker. Public source includes all four
 packages, their development tools, and dependency notices.
