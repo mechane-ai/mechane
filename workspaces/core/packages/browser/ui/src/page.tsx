@@ -4,11 +4,13 @@ import type { ReactNode } from 'react';
 const styles = stylex.create({
   detail: {
     boxSizing: 'border-box',
-    width: '100%',
-    maxWidth: 1080,
+    width: { 'default': '84%', '@media (max-width:720px)': '100%' },
+    maxWidth: 980,
     minWidth: 0,
     marginInline: 'auto',
-    padding: { 'default': 48, '@media (max-width: 1000px)': 24, '@media (max-width: 600px)': 16 },
+    paddingInline: { 'default': 0, '@media (max-width:720px)': 24 },
+    paddingTop: { 'default': 44, '@media (max-width:720px)': 32 },
+    paddingBottom: { 'default': 64, '@media (max-width:720px)': 52 },
   },
 });
 

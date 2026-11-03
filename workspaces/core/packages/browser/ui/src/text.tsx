@@ -6,14 +6,14 @@ import { colors } from './tokens.stylex.ts';
 const styles = stylex.create({
   heading: {
     margin: 0,
-    fontSize: 36,
-    lineHeight: '44px',
+    fontSize: { 'default': 36, '@media (max-width:639px)': 28 },
+    lineHeight: { 'default': '44px', '@media (max-width:639px)': '36px' },
     fontWeight: 600,
-    letterSpacing: '-1px',
+    letterSpacing: '-0.035em',
     color: colors.ink,
     overflowWrap: 'anywhere',
   },
-  subheading: { margin: 0, fontSize: 16, lineHeight: 1.5, fontWeight: 600, color: colors.ink },
+  subheading: { margin: 0, fontSize: 16, lineHeight: '22px', fontWeight: 600, color: colors.ink },
   muted: { margin: 0, color: colors.muted, fontSize: 13, lineHeight: 1.6 },
   mono: {
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
@@ -54,7 +54,7 @@ const styles = stylex.create({
     alignItems: 'center',
     gap: 6,
     color: colors.ink,
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: '20px',
     fontWeight: 400,
     whiteSpace: 'nowrap',

@@ -33,7 +33,7 @@ export function ConsoleShell({
       }
       sidebar={
         <Navigation>
-          <NavigationItem selected icon={<Bot size={16} aria-hidden />} onClick={onHome}>
+          <NavigationItem selected icon={<Bot size={14} strokeWidth={1.75} aria-hidden />} onClick={onHome}>
             Mechs
           </NavigationItem>
         </Navigation>
@@ -43,19 +43,22 @@ export function ConsoleShell({
           <Navigation label="Help and account">
             <NavigationLink
               href="https://github.com/mechane-ai/mechane"
-              icon={<BookOpen size={16} aria-hidden />}
+              icon={<BookOpen size={14} strokeWidth={1.75} aria-hidden />}
               target="_blank"
               rel="noreferrer"
             >
               Documentation
             </NavigationLink>
-            <NavigationLink href="/console/THIRD_PARTY_LICENSES.txt" icon={<FileText size={16} aria-hidden />}>
+            <NavigationLink
+              href="/console/THIRD_PARTY_LICENSES.txt"
+              icon={<FileText size={14} strokeWidth={1.75} aria-hidden />}
+            >
               Open-source licenses
             </NavigationLink>
             <form method={HttpMethod.Post} action="/auth/sign-out">
               <NavigationItem
                 type="submit"
-                icon={<LogOut size={16} aria-hidden />}
+                icon={<LogOut size={14} strokeWidth={1.75} aria-hidden />}
                 title={`Signed in as ${name} on ${origin}`}
               >
                 Sign out

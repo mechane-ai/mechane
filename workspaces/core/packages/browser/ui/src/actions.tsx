@@ -49,7 +49,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'borderRadius': 0,
     'backgroundColor': 'transparent',
-    'fontSize': 14,
+    'fontSize': 'inherit',
     'fontWeight': 400,
     'maxWidth': '100%',
     'overflow': 'hidden',

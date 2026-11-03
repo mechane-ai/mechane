@@ -8,7 +8,7 @@ const styles = stylex.create({
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: colors.surface,
-    fontSize: 14,
+    fontSize: 13,
     lineHeight: '20px',
     textAlign: 'left',
   },
@@ -32,7 +32,7 @@ const styles = stylex.create({
     'paddingInline': 16,
     'backgroundColor': colors.surface,
     'color': colors.muted,
-    'fontSize': 13,
+    'fontSize': 12,
     'fontWeight': 400,
     'whiteSpace': 'nowrap',
     '::after': {
