@@ -82,7 +82,10 @@ A generator binds each value with `yield*`: oxlint `no-restricted-properties` ra
 A wrap of a promise or of a throwing call holds one call: ast-grep `try-promise-shape` ratchets an `Effect.tryPromise` or `Effect.try` whose `try` is not an arrow whose body is one call or whose `catch` builds no tagged error, and a call of an `attempt` helper, which `program` no longer has since each caller wraps its own promise, and oxlint `no-restricted-properties` ratchets `Effect.promise`.
 A failure is told apart by its tag (EF-05): ast-grep `no-instanceof` rejects `instanceof`, which a decoded value or another realm's object fails.
 The registry owns the adopted error rules. It leaves the shipped assets unchanged; hash-pinned derivatives of the three TypeScript syntax rules exclude the browser lane, whose Promise boundary and React conventions are defined in contract 113.
-Mechane's own rules hold what the shipped ones do not: ast-grep `no-throw-or-try` rejects every `throw` and every `try`, one with only a `finally` clause included, since SC-09 bans both.
+Mechane's own rules hold what the shipped ones do not: ast-grep `no-throw-or-try` rejects `throw` and `try`, including
+one with only a `finally` clause, outside the browser adapter and query boundary declared by contract 113.
+Within the browser lane, only the API adapter may run an Effect. The query boundary may catch a rejected Promise to revoke cached data
+and rethrow that same failure; it must not convert a failed read into an empty success.
 `untyped-failure` (SC-09) rejects `Option.getOrThrowWith`, `Result.getOrThrowWith`, `Promise.reject` and a text step field.
 `promise-chain` (DO-03) rejects a promise's `catch` with a named handler, `finally`, `Promise.resolve`, `new Promise` and a chained `then`.
 The bound statements that `code-typescript-call-arguments` requires go inside an `Effect.fn` generator, the traced form of `Effect.gen` that EF-01 requires.

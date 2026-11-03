@@ -1,7 +1,7 @@
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
 import type { Turn } from '@mechane/protocol';
-import { Button, Muted, Notice, Row, Stack, Subheading } from '@mechane/ui';
+import { Button, Muted, Notice, Row, Stack, Subheading, TextButton } from '@mechane/ui';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { usePageCursors } from '../navigation.tsx';
@@ -32,9 +32,7 @@ export function TurnHistory({
         {target === undefined ? (
           <Muted>This turn · chronological order</Muted>
         ) : (
-          <Button tone="link" onClick={onStart}>
-            From the beginning →
-          </Button>
+          <TextButton onClick={onStart}>From the beginning →</TextButton>
         )}
       </Row>
       <Resource data={data} source={source}>

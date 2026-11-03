@@ -1,17 +1,15 @@
+import { Record } from 'effect';
 import { posix } from 'node:path';
 import type { WorkspaceMember } from '../types.ts';
 import { escapedPath } from './escaped-path.ts';
 
-/** A member's entry point below its folder, the one file another member imports of it (ST-05). */
-const ENTRY_POINT = 'src/index.ts';
-
 /** The members whose entry points the pattern matches. */
 type EntriesPatternInput = { readonly members: ReadonlyArray<WorkspaceMember> };
 
-/** A pattern of the members' entry points, the one file of each that another member imports. */
+/** Only exact manifest targets are public; an allowed package never opens its whole source folder. */
 export function entriesPattern({ members }: EntriesPatternInput): string {
-  const entryPattern: (member: WorkspaceMember) => string = ({ folder }) =>
-    escapedPath({ path: posix.join(folder, ENTRY_POINT) });
+  const entryPatterns: (member: WorkspaceMember) => ReadonlyArray<string> = ({ folder, exports }) =>
+    Record.values(exports).map((entry) => escapedPath({ path: posix.join(folder, entry) }));
 
-  return `^(?:${members.map(entryPattern).join('|')})$`;
+  return `^(?:${members.flatMap(entryPatterns).join('|')})$`;
 }

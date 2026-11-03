@@ -27,11 +27,13 @@ export type ExitStatus = { readonly name: string; readonly status: number };
 
 /**
  * A member of `dependencies.json` that holds a package in the workspace: its name, and its folder relative to the
- * workspace, empty for the root. It carries the source roots its program includes and its manifest entry.
+ * workspace, empty for the root. Its manifest exports bound the public files another member may import.
  */
 export type WorkspaceMember = {
   readonly name: string;
   readonly folder: string;
   readonly roots: ReadonlyArray<string>;
+  readonly exports: Readonly<Record<string, string>>;
+  readonly hasStories: boolean;
   readonly entry: MemberEntry;
 };

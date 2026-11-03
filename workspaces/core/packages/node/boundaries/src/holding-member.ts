@@ -10,7 +10,9 @@ type HoldingMemberInput = { readonly path: string; readonly members: ReadonlyArr
 
 /** The member whose folder holds `path`, the deepest first; none for installed packages and runtime modules. */
 export function holdingMember({ path, members }: HoldingMemberInput): Option.Option<Member> {
-  if (path.includes('node_modules') || !path.endsWith(TYPESCRIPT_EXTENSION)) {
+  const isSource = path.endsWith(TYPESCRIPT_EXTENSION) || path.endsWith('.tsx');
+
+  if (path.includes('node_modules') || !isSource) {
     return Option.none();
   }
 

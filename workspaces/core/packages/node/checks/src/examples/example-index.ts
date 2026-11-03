@@ -14,6 +14,8 @@ export function exampleIndex({ example, workspace }: ExampleInput): ExampleIndex
   return {
     ...workspace,
     files,
-    sources: files.filter(({ path }) => path.endsWith(TYPESCRIPT_EXTENSION)).map((file) => parsedText(file)),
+    sources: files
+      .filter(({ path }) => path.endsWith(TYPESCRIPT_EXTENSION) || path.endsWith('.tsx'))
+      .map((file) => parsedText(file)),
   };
 }

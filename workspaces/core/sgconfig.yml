@@ -2,6 +2,7 @@
 ruleDirs:
   - lint/ast-grep/rules
   - .contracts/014-code-closed-value-sets/assets/ast-grep/rules
+  - .contracts/066-ui-design-tokens/assets/ast-grep/rules
 utilDirs:
   - lint/ast-grep/utils
 testConfigs:

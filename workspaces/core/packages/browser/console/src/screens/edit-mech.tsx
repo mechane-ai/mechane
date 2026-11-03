@@ -3,10 +3,12 @@ import type { ConsoleData } from '@mechane/console-data';
 import { DefinitionConflict } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
-import { Button, DetailPage, Heading, Muted, Notice, Row, Stack, TextArea, TextField, Toolbar } from '@mechane/ui';
+import { Button, Field, Heading, Input, Muted, Notice, Row, Stack, Textarea, TextButton } from '@mechane/ui';
+import { DetailPage, PageToolbar } from '@mechane/ui-layout';
 import { Option, Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
 export function EditMechForm({
   data,
@@ -27,6 +29,8 @@ export function EditMechForm({
   const [cap, setCap] = useState(String(mech.dailyCapMicros / 1_000_000));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const isScreenActive = useScreenLifetime();
+  const hasConflict = conflict || original.revision !== mech.revision;
 
   function continueDraft(): void {
     if (name === original.name) {
@@ -41,7 +45,7 @@ export function EditMechForm({
       setInstructions(Option.getOrElse(mech.instructions, () => ''));
     }
 
-    if (Number(cap) === original.dailyCapMicros / 1_000_000) {
+    if (cap === String(original.dailyCapMicros / 1_000_000)) {
       setCap(String(mech.dailyCapMicros / 1_000_000));
     }
 
@@ -52,7 +56,7 @@ export function EditMechForm({
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (busy || conflict || original.revision !== mech.revision) {
+    if (busy || hasConflict) {
       return;
     }
 
@@ -75,28 +79,36 @@ export function EditMechForm({
         instructions: instructions === '' ? Option.none() : Option.some(instructions),
         dailyCapMicros: amount,
       })
-      .then(onClose, (cause: unknown) => {
-        setBusy(false);
+      .then(
+        () => {
+          if (isScreenActive()) {
+            onClose();
+          }
+        },
+        (cause: unknown) => {
+          if (!isScreenActive()) {
+            return;
+          }
 
-        if (isRevisionConflict(cause)) {
-          setConflict(true);
-          void data.refresh();
-        } else {
-          setError(problemMessage(cause));
-        }
-      });
+          setBusy(false);
+
+          if (isRevisionConflict(cause)) {
+            setConflict(true);
+            void data.refresh();
+          } else {
+            setError(problemMessage(cause));
+          }
+        },
+      );
   }
 
   return (
     <>
-      <Toolbar
+      <PageToolbar
         breadcrumb
         title={
           <>
-            <Button tone="link" onClick={onClose}>
-              {original.name}
-            </Button>{' '}
-            / Edit definition
+            <TextButton onClick={onClose}>{original.name}</TextButton> / Edit definition
           </>
         }
       />
@@ -105,7 +117,7 @@ export function EditMechForm({
         <Stack>
           <Heading>Edit {original.name}</Heading>
           <Muted>Editing revision {original.revision}.</Muted>
-          {(conflict || mech.revision !== original.revision) && (
+          {!busy && hasConflict && (
             <DefinitionConflict
               saved={mech.revision === original.revision ? undefined : mech}
               onRefresh={() => {
@@ -116,44 +128,44 @@ export function EditMechForm({
           )}
           <form onSubmit={submit}>
             <Stack>
-              <TextField
-                label="Name"
-                required
-                maxLength={64}
-                value={name}
-                disabled={busy}
-                onChange={(event) => setName(event.target.value)}
-              />
-              <TextField
-                label="Model"
-                required
-                value={model}
-                disabled={busy}
-                onChange={(event) => setModel(event.target.value)}
-              />
-              <TextField
-                label="Daily cap (USD)"
-                type="number"
-                min="0"
-                step="0.000001"
-                required
-                value={cap}
-                disabled={busy}
-                onChange={(event) => setCap(event.target.value)}
-              />
-              <TextArea
-                label="Instructions"
-                maxLength={65_536}
-                value={instructions}
-                disabled={busy}
-                onChange={(event) => setInstructions(event.target.value)}
-              />
+              <Field.Root name="name" disabled={busy}>
+                <Field.Label>Name</Field.Label>
+                <Input required maxLength={64} value={name} onChange={(event) => setName(event.target.value)} />
+                <Field.Error />
+              </Field.Root>
+              <Field.Root name="model" disabled={busy}>
+                <Field.Label>Model</Field.Label>
+                <Input required value={model} onChange={(event) => setModel(event.target.value)} />
+                <Field.Error />
+              </Field.Root>
+              <Field.Root name="dailyCap" disabled={busy}>
+                <Field.Label>Daily cap (USD)</Field.Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.000001"
+                  required
+                  value={cap}
+                  onChange={(event) => setCap(event.target.value)}
+                />
+                <Field.Description>Maximum daily model spend for this mech.</Field.Description>
+                <Field.Error />
+              </Field.Root>
+              <Field.Root name="instructions" disabled={busy}>
+                <Field.Label>Instructions</Field.Label>
+                <Textarea
+                  maxLength={65_536}
+                  value={instructions}
+                  onChange={(event) => setInstructions(event.target.value)}
+                />
+                <Field.Error />
+              </Field.Root>
               {error !== undefined && <Notice error>{error}</Notice>}
               <Row>
                 <Button
-                  tone="primary"
+                  variant="solid"
                   type="submit"
-                  disabled={busy || conflict || mech.revision !== original.revision}
+                  disabled={busy || hasConflict}
                   pending={busy}
                   pendingLabel="Saving…"
                 >

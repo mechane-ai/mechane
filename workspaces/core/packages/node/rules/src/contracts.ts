@@ -11,6 +11,7 @@ import { BOUNDARY_CONTRACTS } from './contracts/structure-rules/boundaries/bound
 import { STRUCTURE_CONTRACTS } from './contracts/structure-rules/structure/structure-contracts.ts';
 import { EFFECT_CONTRACTS } from './contracts/typescript-rules/effect/effect-contracts.ts';
 import { TYPESCRIPT_CONTRACTS } from './contracts/typescript-rules/typescript/typescript-contracts.ts';
+import { UI_CONTRACTS } from './contracts/ui-rules/ui-contracts.ts';
 
 /**
  * What enforces each contract, by its name, in the order of the contract folders: the product's, then Mechane's own,
@@ -27,6 +28,7 @@ export const CONTRACTS = {
   ...TEST_CONTRACTS,
   ...SECURITY_CONTRACTS,
   ...EVAL_CONTRACTS,
+  ...UI_CONTRACTS,
   ...MECHANE_CONTRACTS,
   ...FACTORY_CONTRACTS,
 } as const satisfies Readonly<Record<ContractName, ContractEnforcement>>;

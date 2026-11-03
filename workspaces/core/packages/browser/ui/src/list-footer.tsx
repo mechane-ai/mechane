@@ -1,6 +1,7 @@
+import { mergeProps } from '@base-ui/react/merge-props';
+import { colors, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import type { ComponentProps, ReactNode } from 'react';
 
 const styles = stylex.create({
   footer: {
@@ -8,26 +9,26 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    gap: 12,
-    padding: '12px 16px',
+    gap: spacing.md,
+    paddingBlock: spacing.md,
+    paddingInline: spacing.lg,
     borderTopWidth: 1,
     borderTopStyle: 'solid',
     borderTopColor: colors.line,
     color: colors.muted,
-    fontSize: 13,
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
   },
-  actions: { display: 'flex', alignItems: 'center', gap: 8 },
+  actions: { display: 'flex', alignItems: 'center', gap: spacing.sm },
 });
 
-export function ListFooter({
-  children,
-  actions,
-}: {
-  readonly children: ReactNode;
-  readonly actions?: ReactNode;
-}): ReactNode {
+type ListFooterProps = ComponentProps<'div'> & { readonly actions?: ReactNode };
+
+export function ListFooter({ children, actions, ...props }: ListFooterProps): ReactNode {
   return (
-    <div {...stylex.props(styles.footer)}>
+    <div {...mergeProps(stylex.props(styles.footer), props)}>
       <div>{children}</div>
       {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>

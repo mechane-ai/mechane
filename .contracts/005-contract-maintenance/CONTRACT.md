@@ -50,7 +50,8 @@ Inspect any obligation left to judgment rather than assuming that passing the me
 ## Local adaptations
 
 Validate the documents with `mise run contracts:check` from the factory root, which runs `tenet validate --root .`.
-Library contracts come from tenet-contracts v11.0.0 through `tenet contracts add`, and `.tenet.lock` records each copy and its asset files.
+Library contracts come from reviewed tenet-contracts revisions through `tenet contracts add`, and `.tenet.lock` records
+each copy and its asset files. The adoption record names the selected revisions and preserved local choices.
 A library contract installed later takes the next free number below 101 with `--number`, and local contracts take numbers from 101 in their scope.
 Each value a tool enforces is held once in the rule registry, in the module of the contract it serves.
 `@mechane/rules` in `workspaces/core/packages/node/rules` gathers those modules from its rule-group members, such as `name-rules`.

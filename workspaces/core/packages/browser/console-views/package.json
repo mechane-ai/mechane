@@ -9,6 +9,10 @@
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/ui": "workspace:*",
+    "@mechane/ui-charts": "workspace:*",
+    "@mechane/ui-layout": "workspace:*",
+    "@mechane/ui-tokens": "workspace:*",
+    "@stylexjs/stylex": "0.19.1",
     "effect": "4.0.7",
     "lucide-react": "1.66.0",
     "react": "19.3.1"

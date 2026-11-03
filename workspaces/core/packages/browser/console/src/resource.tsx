@@ -1,11 +1,18 @@
 import { canRetainResult, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, SnapshotCollection } from '@mechane/console-data';
-import { Button, DetailPage, EmptyState, Loading, Notice } from '@mechane/ui';
+import { Button, EmptyState, Loading, Notice } from '@mechane/ui';
+import { DetailPage } from '@mechane/ui-layout';
 import { useLiveQuery } from '@tanstack/react-db';
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
-export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>) {
+type ResourceState<T> =
+  | { readonly kind: 'pending' }
+  | { readonly kind: 'failed'; readonly problem: unknown; readonly retry: () => void }
+  | { readonly kind: 'ready'; readonly value: T }
+  | { readonly kind: 'stale'; readonly value: T; readonly problem: unknown; readonly retry: () => void };
+
+export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>): ResourceState<T> {
   const query = useLiveQuery({ query: (q) => q.from({ snapshot: source }), client: data.db });
 
   useEffect(() => {
@@ -16,12 +23,29 @@ export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>)
     };
   }, [data, source]);
 
-  const snapshot = query.data[0];
-  const failure = source.health.error ?? source.health.failureReason;
-  const problem = failure?.cause;
-  const failed = query.health?.hasErrors === true;
+  const snapshot = query.data.find((candidate) => candidate.key === source.id);
 
-  return { value: snapshot !== undefined && canRetainResult(problem) ? snapshot.value : undefined, problem, failed };
+  const sourceFailure = source.health.error ?? source.health.failureReason;
+  const queryFailure = query.health?.error ?? query.health?.failureReason;
+  const failure = sourceFailure ?? queryFailure;
+
+  const problem = failure?.cause;
+  const failed = source.health.hasErrors || query.health?.hasErrors === true;
+  const mayRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
+
+  function retry(): void {
+    const loadFailed = source.health.error !== null || (query.health?.error ?? null) !== null;
+    const recovery = loadFailed ? query.collection.reload() : source.utils.refetch();
+
+    // The health tree reports failed reloads to this view, without another error channel from the click.
+    void Promise.allSettled([recovery]);
+  }
+
+  if (snapshot !== undefined && mayRetain) {
+    return failed ? { kind: 'stale', value: snapshot.value, problem, retry } : { kind: 'ready', value: snapshot.value };
+  }
+
+  return failed ? { kind: 'failed', problem, retry } : { kind: 'pending' };
 }
 
 export function Resource<T>({
@@ -37,60 +61,47 @@ export function Resource<T>({
   readonly fallbackHeader?: ReactNode;
   readonly label?: string;
 }): ReactNode {
-  const { value, problem, failed } = useResource(data, source);
+  const state = useResource(data, source);
 
-  if (value !== undefined) {
-    return children(
-      value,
-      failed ? (
-        <Notice error>
-          Showing the last result. Refresh failed.{' '}
-          <Button
-            onClick={() => {
-              void source.utils.refetch();
-            }}
-          >
-            Retry refresh
-          </Button>
-        </Notice>
-      ) : null,
-    );
+  switch (state.kind) {
+    case 'ready':
+    case 'stale':
+      return (
+        <Fragment key={source.id}>
+          {children(
+            state.value,
+            state.kind === 'stale' ? (
+              <Notice error>
+                Showing the last result. Refresh failed. {problemMessage(state.problem)}{' '}
+                <Button onClick={state.retry}>Retry refresh</Button>
+              </Notice>
+            ) : null,
+          )}
+        </Fragment>
+      );
+    case 'failed':
+      return (
+        <>
+          {fallbackHeader}
+          <div role="alert">
+            <EmptyState title="Unable to load" action={<Button onClick={state.retry}>Try again</Button>}>
+              {problemMessage(state.problem)}
+            </EmptyState>
+          </div>
+        </>
+      );
+    case 'pending':
+      return (
+        <>
+          {fallbackHeader}
+          {fallbackHeader === undefined ? (
+            <Loading label={label} />
+          ) : (
+            <DetailPage>
+              <Loading label={label} shape="detail" />
+            </DetailPage>
+          )}
+        </>
+      );
   }
-
-  if (failed) {
-    return (
-      <>
-        {fallbackHeader}
-        <div role="alert">
-          <EmptyState
-            title="Unable to load"
-            action={
-              <Button
-                onClick={() => {
-                  void source.utils.refetch();
-                }}
-              >
-                Try again
-              </Button>
-            }
-          >
-            {problemMessage(problem)}
-          </EmptyState>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      {fallbackHeader}
-      {fallbackHeader === undefined ? (
-        <Loading label={label} />
-      ) : (
-        <DetailPage>
-          <Loading label={label} shape="detail" />
-        </DetailPage>
-      )}
-    </>
-  );
 }

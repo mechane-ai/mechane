@@ -3,7 +3,12 @@ language: TypeScript
 severity: error
 message: "Fail with a tagged error in the Effect's error type, such as `return yield* new FileUnreadable({ path })` (ER-04)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', 'packages/browser/console-data/src/api.ts']
+ignores:
+  [
+    '**/node_modules/**',
+    'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/console-data.ts',
+  ]
 rule:
   any:
     - kind: throw_statement

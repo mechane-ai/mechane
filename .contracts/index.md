@@ -7,8 +7,8 @@ The [product contracts](../workspaces/core/.contracts/index.md) add the code, CL
 
 ## Tests
 
-- [Test curation](001-test-curation/CONTRACT.md): one smoke; a scenario only for a consequential guarantee in the catalog.
-- [Assertion integrity](002-test-assertion-integrity/CONTRACT.md): change code to satisfy a check, never the check to fit code.
+- [Test curation](001-test-curation/CONTRACT.md): one smoke; consequential retained checks and synthetic catalog documentation.
+- [Assertion integrity](002-test-assertion-integrity/CONTRACT.md): preserve the meaning of runtime and browser checks.
 
 ## Checks
 

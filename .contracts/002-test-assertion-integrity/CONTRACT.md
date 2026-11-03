@@ -2,7 +2,7 @@
 name: test-assertion-integrity
 message: Change code to satisfy its tests; never weaken a test to match new behavior or special-case test inputs in production code.
 requires-tenet: 0.11.0
-paths: ["workspaces/core/**/*.ts"]
+paths: ["workspaces/core/**/*.ts", "workspaces/core/**/*.tsx", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
 ---
 
 ## Rules
@@ -46,6 +46,9 @@ Confirm that the same run rejects a test that opens with `expect.hasAssertions()
 
 The smoke's assertions are the `check` calls of the scenario functions under `workspaces/core/packages/node/smoke/src`.
 Production code learns the stack's origin and worker revision only through the settings a deployment also supplies, such as `MECHANE_WORKER_REVISION`, and reads nothing that only the smoke sets.
+Browser stories, catalog configuration, verification fixtures, and their test-only dependencies follow this contract
+when they contain or support assertions. Fixed synthetic story inputs document supported states; changing those inputs
+must not hide a failing retained interaction check. Root test curation decides whether a play or other assertion stays.
 
 The shipped assets configure Jest and Vitest, which this repository does not use, so the lint does not load them.
 The smoke's named Effect scenarios and assertion helpers retain the baseline at commit 94f2d0f, including explicit failure branches.

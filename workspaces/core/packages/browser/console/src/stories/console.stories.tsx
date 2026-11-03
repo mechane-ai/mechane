@@ -10,27 +10,41 @@ import { Allowance, EventPage, MechPage, Trace, WorkspaceList } from '@mechane/p
 import { Micros } from '@mechane/records';
 import {
   Button,
-  DetailPage,
+  Field,
   Heading,
+  Input,
   Loading as LoadingRows,
   Muted,
   Notice,
   Row,
   Stack,
-  TextField,
+  TextButton,
   TextLink,
-  Toolbar,
-  ToolbarAction,
 } from '@mechane/ui';
+import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane/ui-layout';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Option, Schema } from 'effect';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Bot, Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-const meta = { title: 'Console/States', parameters: { layout: 'fullscreen' } } satisfies Meta;
+const meta = {
+  title: 'Screens/Console',
+  component: ConsoleShell,
+  subcomponents: { Activity, MechList, DefinitionConflict: SavedDefinition, TurnTrace },
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component:
+          'Supported Console compositions use the real shell and resource views with fixed synthetic records. The application supplies authorized data, route state, commands, and formatting. Use package stories for individual controls. These examples document visual states; they do not prove authentication or real API behavior.',
+      },
+    },
+  },
+} satisfies Meta;
+
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj;
 
 const workspaceList = Schema.decodeUnknownSync(WorkspaceList)({
   workspaces: [
@@ -159,7 +173,11 @@ function StoryShell({ children }: { readonly children: ReactNode }): ReactNode {
       workspaceId={workspaceId}
       workspaces={workspaceList.workspaces}
       onWorkspace={setWorkspaceId}
-      onHome={() => undefined}
+      homeLink={
+        <NavigationLink href="#mechs" icon={<Bot size={16} />} selected>
+          Mechs
+        </NavigationLink>
+      }
     >
       {children}
     </ConsoleShell>
@@ -168,7 +186,7 @@ function StoryShell({ children }: { readonly children: ReactNode }): ReactNode {
 
 function MechsToolbar(): ReactNode {
   return (
-    <Toolbar
+    <PageToolbar
       title="Mechs"
       actions={
         <>
@@ -216,14 +234,11 @@ function TraceStory({
 
   return (
     <StoryShell>
-      <Toolbar
+      <PageToolbar
         breadcrumb
         title={
           <>
-            <Button tone="link" onClick={() => undefined}>
-              Repository scout / Turns
-            </Button>{' '}
-            / Turn trace
+            <TextButton onClick={() => undefined}>Repository scout / Turns</TextButton> / Turn trace
           </>
         }
         actions={
@@ -245,11 +260,7 @@ function TraceStory({
             requestHref={(id) =>
               `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
-            replyLink={() => (
-              <Button tone="link" onClick={() => setTab('Events')}>
-                Read full reply →
-              </Button>
-            )}
+            replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full reply →</TextButton>}
             events={
               <Activity
                 chronological
@@ -309,7 +320,7 @@ export const FailedRefresh: Story = {
 export const DefinitionConflict: Story = {
   render: () => (
     <StoryShell>
-      <Toolbar breadcrumb title="Repository scout / Edit definition" />
+      <PageToolbar breadcrumb title="Repository scout / Edit definition" />
       <DetailPage>
         <Stack>
           <Heading>Edit Repository scout</Heading>
@@ -324,10 +335,13 @@ export const DefinitionConflict: Story = {
             onContinue={() => undefined}
             onRefresh={() => undefined}
           />
-          <TextField label="Name" value="Repository scout" readOnly />
+          <Field.Root name="name">
+            <Field.Label>Name</Field.Label>
+            <Input value="Repository scout" readOnly />
+          </Field.Root>
 
           <Row>
-            <Button tone="primary" disabled>
+            <Button variant="solid" disabled>
               Save definition
             </Button>
             <Button>Cancel</Button>

@@ -14,6 +14,9 @@
     "packages/browser/console/vite.config.ts",
     "packages/browser/console-data/src",
     "packages/browser/console-views/src",
-    "packages/browser/ui/src"
+    "packages/browser/ui/src",
+    "packages/browser/ui-charts/src",
+    "packages/browser/ui-layout/src",
+    "packages/browser/ui-tokens/src"
   ]
 }

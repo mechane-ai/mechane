@@ -2,7 +2,7 @@
 name: test-curation
 message: Treat development tests as disposable, and commit only checks that guard consequential regressions and declared example tests.
 requires-tenet: 0.11.0
-paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/**/package.json"]
+paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
 ---
 
 ## Rules
@@ -52,6 +52,12 @@ The one retained suite is the smoke, `workspaces/core/packages/node/smoke/src/ma
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
 The repository keeps no unit tests, no tests of check scripts, no test runner and no eval in `mise run check`.
+It keeps no mocked product tests. Browser TSX, Storybook configuration, verification fixtures, and test-only dependencies
+follow the same retention policy. Synthetic catalog stories are maintained developer documentation, not example tests.
+Keep the fixtures needed to explain supported component states. Delete extra probes, scripts, and fixtures used only
+for investigation. Do not add default play functions or automatic test tags to the catalog.
+A retained Storybook play needs a consequential coverage gap, an approved runner, and explicit selection for execution.
+Its existence does not change the maintainer-approval requirement for the smoke catalog.
 Under the accepted code standard, every lint rule is shown to fail on the code it names (TS-05). Each ast-grep rule's registry entry carries at least one violation and one allowed example, which the registry writes to `workspaces/core/lint/ast-grep/tests` and `rules:check` runs with `ast-grep test`. A rule with a fix also carries what the fix leaves of each violation, which `checks` compares with the fix's output over a copy of each violation. A nursery oxlint rule's entry carries such examples too, which `checks` runs it over with type information.
 Each owned rule's entry carries such examples as small trees of files, which `checks` runs through the rule's own decision in memory.
 Each normalizer's entry carries rewrites, a small tree of files and the tree the normalizer leaves of it, which `checks` runs through the normalizer in memory.
@@ -68,6 +74,7 @@ A temporary test, probe or fixture stays out of every commit, a slice's intermed
 
 The shipped oxlint file targets Jest and Vitest, while this repository's one smoke runs through Effect and its own assertion functions.
 It is installed for source tracking but not loaded; the smoke's existing scoped deadlines supply its hang bounds.
+Storybook currently adds no assertion runner, so its stories do not activate this asset.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

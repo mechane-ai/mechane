@@ -35,7 +35,7 @@ export function TurnsScreen({
             )}
             emptyAction={
               mech.status === 'active' ? (
-                <Button tone="primary" onClick={onMessage}>
+                <Button variant="solid" onClick={onMessage}>
                   Send first message
                 </Button>
               ) : undefined

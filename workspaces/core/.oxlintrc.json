@@ -747,6 +747,15 @@
   "overrides": [
     {
       "files": ["packages/browser/**"],
+      "plugins": ["typescript", "unicorn", "oxc", "import", "node", "jsdoc", "promise", "react"],
+      "rules": {
+        "react/no-array-index-key": "error",
+        "react/rules-of-hooks": "error",
+        "react/set-state-in-effect": "error"
+      }
+    },
+    {
+      "files": ["packages/browser/**"],
       "rules": {
         "import/no-namespace": "off",
         "id-denylist": "off",
@@ -763,7 +772,7 @@
         "packages/browser/console/src/router.tsx",
         "packages/browser/console/src/vite-env.d.ts",
         "packages/browser/console/.storybook/*.ts",
-        "packages/browser/console/src/stories/*.stories.tsx"
+        "packages/browser/*/src/**/*.stories.tsx"
       ],
       "rules": {
         "import/no-default-export": "off",

@@ -1,38 +1,46 @@
+import { mergeProps } from '@base-ui/react/merge-props';
+import { colors, conditions, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import type { ComponentProps, ReactNode } from 'react';
 
 const styles = stylex.create({
-  scroll: { minWidth: 0, width: '100%', overflowX: 'auto' },
+  scroll: {
+    'minWidth': 0,
+    'width': '100%',
+    'overflowX': 'auto',
+    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -2 },
+  },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     backgroundColor: colors.surface,
-    fontSize: 13,
-    lineHeight: '20px',
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
     textAlign: 'left',
   },
   fixed: { tableLayout: 'fixed' },
-  secondary: { display: { 'default': 'table-cell', '@media (max-width:600px)': 'none' } },
+  secondary: { display: { default: 'table-cell', [conditions.compactTable]: 'none' } },
   mobileLabel: {
-    display: { 'default': 'none', '@media (max-width:600px)': 'block' },
+    display: { default: 'none', [conditions.compactTable]: 'block' },
     color: colors.muted,
-    fontSize: 12,
-    lineHeight: '18px',
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-  compactWidth: { width: { '@media (max-width:600px)': 'auto' } },
+  compactWidth: { width: { [conditions.compactTable]: 'auto' } },
   column: (width: number) => ({ width: `${width}%` }),
   th: {
     'position': 'relative',
     'height': 36,
     'boxSizing': 'border-box',
     'paddingBlock': 0,
-    'paddingInline': 16,
+    'paddingInline': spacing.lg,
     'backgroundColor': colors.surface,
     'color': colors.muted,
-    'fontSize': 12,
+    'fontSize': typography.captionSize,
     'fontWeight': 400,
     'whiteSpace': 'nowrap',
     '::after': {
@@ -46,12 +54,12 @@ const styles = stylex.create({
     },
   },
   lastHeader: { '::after': { display: 'none' } },
-  lastPrimaryHeader: { '::after': { display: { '@media (max-width:600px)': 'none' } } },
+  lastPrimaryHeader: { '::after': { display: { [conditions.compactTable]: 'none' } } },
   td: {
     height: 39,
     boxSizing: 'border-box',
     paddingBlock: 6,
-    paddingInline: 16,
+    paddingInline: spacing.lg,
     color: colors.ink,
     verticalAlign: 'middle',
     whiteSpace: 'nowrap',
@@ -61,24 +69,21 @@ const styles = stylex.create({
   },
 });
 
-export function Table({
-  headers,
-  children,
-  label,
-}: {
-  readonly headers: ReadonlyArray<
-    string | { readonly label: string; readonly width: number; readonly secondary?: boolean }
-  >;
-  readonly children: ReactNode;
-  readonly label: string;
-}): ReactNode {
+type TableHeader = string | { readonly label: string; readonly width: number; readonly secondary?: boolean };
+type TableProps = ComponentProps<'table'> & { readonly headers: ReadonlyArray<TableHeader>; readonly label: string };
+type CellProps = ComponentProps<'td'> & { readonly secondary?: boolean; readonly mobileLabel?: string };
+
+export function Table({ headers, children, label, ...props }: TableProps): ReactNode {
   const lastPrimaryHeader = headers.findLastIndex((header) => typeof header === 'string' || header.secondary !== true);
 
   return (
-    <div {...stylex.props(styles.scroll)}>
+    <div role="region" aria-label={label} tabIndex={0} {...stylex.props(styles.scroll)}>
       <table
-        aria-label={label}
-        {...stylex.props(styles.table, headers.some((header) => typeof header !== 'string') && styles.fixed)}
+        {...mergeProps(
+          { 'aria-label': label },
+          stylex.props(styles.table, headers.some((header) => typeof header !== 'string') && styles.fixed),
+          props,
+        )}
       >
         <thead>
           <tr>
@@ -106,17 +111,9 @@ export function Table({
   );
 }
 
-export function Cell({
-  children,
-  secondary = false,
-  mobileLabel,
-}: {
-  readonly children?: ReactNode;
-  readonly secondary?: boolean;
-  readonly mobileLabel?: string;
-}): ReactNode {
+export function Cell({ children, secondary = false, mobileLabel, ...props }: CellProps): ReactNode {
   return (
-    <td {...stylex.props(styles.td, secondary && styles.secondary)}>
+    <td {...mergeProps(stylex.props(styles.td, secondary && styles.secondary), props)}>
       {children}
       {mobileLabel !== undefined && <small {...stylex.props(styles.mobileLabel)}>{mobileLabel}</small>}
     </td>

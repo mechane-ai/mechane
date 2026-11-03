@@ -15,7 +15,11 @@ import type { OxlintExample } from './types.ts';
 const COMPILER_CONFIGURATION = 'tsconfig.json';
 
 /** The program the examples check in: the workspace's compiler options over every file of their folder. */
-const EXAMPLES_PROGRAM = { extends: join(WORKSPACE_FOLDER, 'tsconfig.base.json'), include: ['*.ts'] } as const;
+const EXAMPLES_PROGRAM = {
+  extends: join(WORKSPACE_FOLDER, 'tsconfig.base.json'),
+  compilerOptions: { jsx: 'react-jsx' },
+  include: ['*.ts', '*.tsx'],
+} as const;
 
 /** The examples load the repository's plugins while configuring each rule on its own. */
 const EXAMPLES_SETTINGS = {
@@ -24,6 +28,8 @@ const EXAMPLES_SETTINGS = {
 } as const;
 
 type OxlintMessagesInput = { readonly inherited: Readonly<Record<string, string>> };
+
+type ExampleLanguage = { readonly extension: string; readonly plugins: ReadonlyArray<string> };
 
 /** An oxlint rule with examples, its place among them, the examples' folder, and the variables oxlint inherits. */
 type RuleMessagesInput = {
@@ -43,16 +49,27 @@ const ruleMessages = Effect.fn('ruleMessages')(function* ({
   const prefix = join(folder, String(place));
   const configuration = `${prefix}.json`;
 
+  const language: ExampleLanguage = (() => {
+    if (rule.name.startsWith('react/')) {
+      return {
+        extension: '.tsx',
+        plugins: [...EXAMPLES_SETTINGS.plugins, ...CONTRACTS['ui-react-interaction-ownership'].values.plugins],
+      };
+    }
+
+    return { extension: '.ts', plugins: EXAMPLES_SETTINGS.plugins };
+  })();
+
   /** A violation example, written to the file its place names. */
   const violationExample: (text: string, index: number) => OxlintExample = (text, index) => ({
-    path: `${prefix}-violation-${String(index)}.ts`,
+    path: `${prefix}-violation-${String(index)}${language.extension}`,
     text,
     isViolation: true,
   });
 
   /** An allowed example, written to the file its place names. */
   const allowedExample: (text: string, index: number) => OxlintExample = (text, index) => ({
-    path: `${prefix}-allowed-${String(index)}.ts`,
+    path: `${prefix}-allowed-${String(index)}${language.extension}`,
     text,
     isViolation: false,
   });
@@ -61,7 +78,7 @@ const ruleMessages = Effect.fn('ruleMessages')(function* ({
 
   yield* writeTextFile({
     path: configuration,
-    text: JSON.stringify({ ...EXAMPLES_SETTINGS, rules: { [rule.name]: rule.value } }),
+    text: JSON.stringify({ ...EXAMPLES_SETTINGS, plugins: language.plugins, rules: { [rule.name]: rule.value } }),
   });
   yield* Effect.forEach(examples, ({ path, text }) => writeTextFile({ path, text }), { concurrency: 1 });
 

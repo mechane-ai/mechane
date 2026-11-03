@@ -1,7 +1,7 @@
 ---
 name: code-typescript-entry-points
 message: Keep each TypeScript entry point a list of named re-exports from the files that declare them, re-export from no other file, and never add a file named after a sibling folder.
-paths: ["**/*.ts"]
+paths: ["**/*.ts", "**/*.tsx"]
 ---
 
 ## Rules
@@ -44,7 +44,9 @@ The layout check of `mise -C workspaces/core run checks` rejects a file named af
 oxlint `import/no-commonjs` and `import/unambiguous` keep every module an ES module but `.dependency-cruiser.cjs`, which dependency-cruiser loads as CommonJS.
 `packages/worker/app/src/worker.ts` is the file the Workers runtime loads, so it exports the default handler and the Durable Object classes.
 Deviation (ST-09): an entry point is only a file a package manifest's exports map lists, such as a library's `src/index.ts`; no folder has an index module of its own, so a nested folder's entry point does not occur, and an entry point re-exports each name from the file that declares it. The folders that only the live release verification runs keep their `index.ts` until that smoke covers them.
-No file is generated.
+The StyleX definition module exported as `@mechane/ui-tokens/tokens.stylex` uses the compiler-required exception above.
+It declares the tokens in that module and needs no forwarding `index.ts`; contract 114 owns compiler resolution.
+Framework-generated browser files keep the authored-source exception declared in contract 113.
 
 The Worker's listed imports from `licenses/` include only legal comments, preserving the required attribution and license text in every deployed bundle without runtime code.
 oxlint `import/no-unassigned-import` allows only those exact notice paths; other unassigned imports remain errors.

@@ -44,7 +44,12 @@ export function oxlintConfiguration({ contracts }: OxlintConfigurationInput): Ge
   const running = REGISTERED_RULES.map(({ rule }) => rule).filter(isRunning);
   const own = running.filter(isOwn);
   const configured = own.filter((rule) => rule.tool === RuleTool.Oxlint);
-  const isExtended: (entry: AssetEntry) => boolean = ({ rule }) => rule.tool === RuleTool.Oxlint && isRunning(rule);
+
+  const browserRuleNames = CONTRACTS['ui-react-interaction-ownership'].rules.map(({ name }) => name);
+  const browserRules: ReadonlySet<string> = new Set(browserRuleNames);
+
+  const isExtended: (entry: AssetEntry) => boolean = ({ rule }) =>
+    rule.tool === RuleTool.Oxlint && isRunning(rule) && !browserRules.has(rule.name);
 
   const extended = assetEntries({ contracts })
     .filter(isExtended)

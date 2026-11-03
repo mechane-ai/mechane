@@ -1,6 +1,5 @@
 import type { Trace } from '@mechane/protocol';
 import {
-  Button,
   CopyValue,
   Details,
   Divider,
@@ -16,11 +15,12 @@ import {
   Stack,
   Subheading,
   Tabs,
-  Timeline,
+  TextButton,
 } from '@mechane/ui';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
+import { RequestWaterfall } from './request-waterfall.tsx';
 import { traceEvidence } from './trace-evidence.ts';
 import { TraceRequest } from './trace-request.tsx';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
@@ -57,7 +57,7 @@ export function TurnTrace({
     requestId === undefined ? trace.dispatches[0] : trace.dispatches.find((request) => request.id === requestId);
 
   const count = items.length;
-  const timing = { start, end, formatOffset: durationLabel, onSelect: onRequest };
+  const timing = { start, end, onRequest };
 
   return (
     <Stack>
@@ -77,8 +77,13 @@ export function TurnTrace({
           {evidence.settled > 0 && <Metric label="settled" value={moneyLabel(evidence.cost)} />}
         </MetricGrid>
       </Stack>
-      <Tabs label="Turn details" options={['Overview', 'Requests', 'Events']} value={tab} onChange={onTab}>
-        {tab === 'Overview' && (
+      <Tabs.Root value={tab} onValueChange={onTab}>
+        <Tabs.List aria-label="Turn details">
+          <Tabs.Tab value="Overview">Overview</Tabs.Tab>
+          <Tabs.Tab value="Requests">Requests</Tabs.Tab>
+          <Tabs.Tab value="Events">Events</Tabs.Tab>
+        </Tabs.List>
+        <Tabs.Panel value="Overview">
           <TraceOverview
             trace={trace}
             evidence={evidence}
@@ -86,8 +91,8 @@ export function TurnTrace({
             replyLink={replyLink}
             onRequests={() => onTab('Requests')}
           />
-        )}
-        {tab === 'Requests' && (
+        </Tabs.Panel>
+        <Tabs.Panel value="Requests">
           <Stack compact>
             <Row between>
               <Subheading>Model requests</Subheading>
@@ -103,7 +108,8 @@ export function TurnTrace({
               </EmptyState>
             ) : (
               <Inspector
-                master={<Timeline {...timing} items={items} selected={selected?.id} />}
+                label="Selected request"
+                master={<RequestWaterfall {...timing} items={items} selectedId={selected?.id} />}
                 detail={
                   selected === undefined ? (
                     <Notice>This request is unavailable in this turn. Select a recorded request above.</Notice>
@@ -122,9 +128,9 @@ export function TurnTrace({
               refusal before a model call.
             </Muted>
           </Stack>
-        )}
-        {tab === 'Events' && events}
-      </Tabs>
+        </Tabs.Panel>
+        <Tabs.Panel value="Events">{events}</Tabs.Panel>
+      </Tabs.Root>
     </Stack>
   );
 }
@@ -141,7 +147,7 @@ function TraceOverview({
 }): ReactNode {
   const { turn, items, start, end } = evidence;
   const count = items.length;
-  const timing = { start, end, formatOffset: durationLabel, onSelect: onRequest };
+  const timing = { start, end, onRequest };
 
   return (
     <Stack>
@@ -150,11 +156,9 @@ function TraceOverview({
         <Stack compact>
           <Row between>
             <Subheading>Request timing</Subheading>
-            <Button tone="link" onClick={onRequests}>
-              View requests →
-            </Button>
+            <TextButton onClick={onRequests}>View requests →</TextButton>
           </Row>
-          <Timeline {...timing} items={items.slice(0, OVERVIEW_REQUESTS)} />
+          <RequestWaterfall {...timing} items={items.slice(0, OVERVIEW_REQUESTS)} selectedId={undefined} />
           {count > OVERVIEW_REQUESTS && (
             <Muted>
               First {OVERVIEW_REQUESTS} of {count} recorded requests.
@@ -189,7 +193,7 @@ function RecordedOutcome({
 }): ReactNode {
   const { turn, items } = evidence;
   const reply = Option.getOrUndefined(trace.replyExcerpt);
-  const refused = items.find((item) => item.state === 'refused');
+  const refused = items.find((item) => item.status === 'refused');
   const latest = items.at(-1);
 
   return (
@@ -218,9 +222,9 @@ function RecordedOutcome({
           <Prose>{outcomeReason(turn.reason)}</Prose>
           {refused !== undefined && (
             <Row>
-              <Button tone="link" onClick={() => onRequest(refused.id)}>
+              <TextButton onClick={() => onRequest(refused.id)}>
                 Inspect refused {refused.label.toLowerCase()} →
-              </Button>
+              </TextButton>
             </Row>
           )}
         </>

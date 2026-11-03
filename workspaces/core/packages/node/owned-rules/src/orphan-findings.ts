@@ -21,7 +21,9 @@ export function orphanFindings({ members, files }: OrphanFindingsInput): Readonl
     const isBelow: (root: string) => boolean = (root) =>
       file === root || file.startsWith(folderPrefixPath({ folder: root }));
 
-    return file.endsWith(TYPESCRIPT_EXTENSION) && !roots.some(isBelow);
+    const isSource = file.endsWith(TYPESCRIPT_EXTENSION) || file.endsWith('.tsx');
+
+    return isSource && !roots.some(isBelow);
   };
 
   return files.filter(isOrphan).map((file) => ({ check: 'orphans', location: file, message: ORPHAN_MESSAGE }));

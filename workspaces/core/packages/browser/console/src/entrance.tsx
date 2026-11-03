@@ -1,12 +1,14 @@
-import { Brand, DetailPage, EmptyState, Layout, Loading, TextLink, Toolbar } from '@mechane/ui';
+import { ConsoleBrand } from '@mechane/console-views';
+import { EmptyState, Loading, TextLink } from '@mechane/ui';
+import { AppShell, DetailPage, PageToolbar } from '@mechane/ui-layout';
 import type { ReactNode } from 'react';
 
 export function ConsoleEntrance({ children }: { readonly children?: ReactNode }): ReactNode {
   return (
-    <Layout sidebar={<Brand />}>
-      <Toolbar title="Mechane Console" navigation={false} />
+    <AppShell sidebar={<ConsoleBrand />}>
+      <PageToolbar title="Mechane Console" navigation={false} />
       <DetailPage>{children ?? <Loading shape="detail" label="Opening console" />}</DetailPage>
-    </Layout>
+    </AppShell>
   );
 }
 

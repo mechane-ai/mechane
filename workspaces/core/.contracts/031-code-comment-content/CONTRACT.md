@@ -1,7 +1,7 @@
 ---
 name: code-comment-content
 message: Write comments that state what the code cannot show, never what it already says, what it used to do, or a shape that a declaration could carry.
-paths: ["**/*.ts"]
+paths: ["**/*.ts", "**/*.tsx"]
 ---
 
 ## Rules
@@ -37,10 +37,15 @@ The `summary` of each command declaration and global flag in `packages/node/comm
 The doc-comment checks of `mise -C workspaces/core run checks` read every TypeScript file: `export-doc` fails on each exported declaration without a doc comment, except a type named like a value of its file, a function's `Input` type and an `index.ts` re-export.
 `absence-doc` fails on each field that may be absent and has no doc comment: an optional, nullable or `Option` property of any type, and a field of an exported schema whose own schema leaves it optional, nullable or an `Option`; whether the doc says what absence means is left to review, since no word list tells a doc that does from one that does not.
 The code-style cleanup cleared both, so they are enforced, while the `short-doc` ratchet holds each doc of more than `docSentences` sentences, each sentence of more than `docSentenceWords` words, and each doc of an export that holds only its name's words.
+The `componentFiles` scope uses typed props, descriptive names, and colocated usage guidance for ordinary presentation
+exports. It covers browser JSX and the generic UI packages' component support, prop types, styles, and tokens in both
+TypeScript and TSX. It requires no per-export or per-optional-prop boilerplate. Explain non-obvious composition,
+behavior, and absence semantics where a type or example cannot show them; existing comments still follow `short-doc`.
+Console-data and Node TypeScript keep the export and absence documentation requirements.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `docSentences` 3; `docSentenceWords` 30; `componentFiles` `packages/browser/**/*.tsx`.
+Values: `docSentences` 3; `docSentenceWords` 30; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/ui*/src/**/*.{ts,tsx}`.
 - owned check `export-doc` (CD-03): enforced in phase F6
 - owned check `absence-doc` (CD-04): enforced in phase F6
 - owned check `short-doc` (CD-06): a ratchet until phase F6

@@ -738,6 +738,91 @@
         "assets/ast-grep/sgconfig.yml": "blake3:7efa75791b66e44f1a3261cb5f6d58291d90b6b00e6ef6e0669c2b66e3ac7656",
         "assets/oxlint/oxlintrc.json": "blake3:d533cc8f3eddb539aa3aa6ae9e299183ce3960ce3952e979821d8fe957716672"
       }
+    },
+    "workspaces/core/.contracts/065-ui-presentation-boundaries/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-presentation-boundaries",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:8cddf8f14c9d93d44e06b67f5522c1e48c4fdb5e6199dcaa5c25b459e468ff7c"
+    },
+    "workspaces/core/.contracts/066-ui-design-tokens/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-design-tokens",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:4ff5b442755dcc642f10a45fe5595c137e32242c08d082e4967e12ad735856d5",
+      "files": {
+        "assets/ast-grep/rules/variant-style-comparisons-tsx.yml": "blake3:0162434a5e1b483a6cef0ee337dac531beafa5a903e211bf0ba67157be5e6289",
+        "assets/ast-grep/rules/variant-style-comparisons-typescript.yml": "blake3:1f7556490d4db3350cf279a9e6efa4a3e8ec2dfda1ee2bb4d07834d1ee4d734c",
+        "assets/ast-grep/sgconfig.yml": "blake3:7efa75791b66e44f1a3261cb5f6d58291d90b6b00e6ef6e0669c2b66e3ac7656"
+      }
+    },
+    "workspaces/core/.contracts/067-ui-react-typescript-component-apis/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-react-typescript-component-apis",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:63fe012acd81699541fe751279bd2200d17321cd7f2fd7c6363f259ec7959ae3"
+    },
+    "workspaces/core/.contracts/068-ui-control-accessibility/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-control-accessibility",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:49406d57384ad4b243bdddb7f260a02b50843010dd18e678f0d35a2e02dd34a6"
+    },
+    "workspaces/core/.contracts/069-ui-react-interaction-ownership/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-react-interaction-ownership",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:be37ad109d3dc2ec086f18ab29e40e1e996c51af854d2b88a345f75193359796",
+      "files": {
+        "assets/oxlint/oxlintrc.json": "blake3:600ba60c6027e0432f361f230c3edba38ea6ba95f4941229e45b93e335e5ad21"
+      }
+    },
+    "workspaces/core/.contracts/070-ui-presentation-state/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-presentation-state",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:2fdb9609cee9f87b9dff5d3c8ea69ceb5389b28b92c145f3628acd1c1127034d"
+    },
+    "workspaces/core/.contracts/071-ui-async-read-states/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-async-read-states",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:250237e101e1498fd205fcb2d7b3a9ade2ad92e775c2f83a6ff87086ea1c0a44"
+    },
+    "workspaces/core/.contracts/072-ui-deterministic-display-values/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-deterministic-display-values",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:01785e1d055ff453a5f01b4bd2bc3cff060d5646796820203a3ec14443a39d1c"
+    },
+    "workspaces/core/.contracts/073-ui-motion-lifecycle/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-motion-lifecycle",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:721277be01f125f4e017ae92ada3c6684126696469ac2b707614c5f4148f76d3"
+    },
+    "workspaces/core/.contracts/074-ui-component-usage-guidance/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-component-usage-guidance",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:1f817d55e2a835b22aa2b6bef6196ba3d1801af4d49ccaa9c2f20b5b0be9215e"
+    },
+    "workspaces/core/.contracts/075-ui-storybook-component-checks/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-storybook-component-checks",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:44e0cff17d18a645c45b1f960294dd2d6c246648ae3fc87f78517797df5c9c85"
     }
   }
 }

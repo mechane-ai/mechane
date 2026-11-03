@@ -1,6 +1,8 @@
 import type { ConsoleData } from '@mechane/console-data';
 import { MechList } from '@mechane/console-views';
-import { Notice, Toolbar, ToolbarAction } from '@mechane/ui';
+import type { Allowance } from '@mechane/protocol';
+import { Button, Notice, Tooltip } from '@mechane/ui';
+import { PageToolbar, ToolbarAction } from '@mechane/ui-layout';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
@@ -22,6 +24,28 @@ export function MechsScreen({
 
   const allowanceSource = useMemo(() => data.allowance(), [data]);
   const allowance = useResource(data, allowanceSource);
+  let allowanceValue: Allowance | undefined = undefined;
+  let allowanceNotice: ReactNode = null;
+
+  switch (allowance.kind) {
+    case 'ready':
+      allowanceValue = allowance.value;
+      break;
+    case 'failed':
+    case 'stale':
+      allowanceValue = allowance.kind === 'stale' ? allowance.value : undefined;
+
+      allowanceNotice = (
+        <Notice error>
+          Workspace usage could not be refreshed. <Button onClick={allowance.retry}>Retry usage</Button>
+        </Notice>
+      );
+
+      break;
+    case 'pending':
+      allowanceValue = undefined;
+      break;
+  }
 
   if (creating) {
     return <CreateMechForm data={data} onCancel={() => setCreating(false)} onCreated={onOpen} />;
@@ -29,18 +53,29 @@ export function MechsScreen({
 
   return (
     <>
-      <Toolbar
+      <PageToolbar
         title="Mechs"
         actions={
           <>
-            <ToolbarAction
-              aria-label="Refresh mechs"
-              onClick={() => {
-                void data.refresh();
-              }}
-            >
-              <RefreshCw size={16} aria-hidden />
-            </ToolbarAction>
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                render={
+                  <ToolbarAction
+                    aria-label="Refresh mechs"
+                    onClick={() => {
+                      void data.refresh();
+                    }}
+                  />
+                }
+              >
+                <RefreshCw size={16} aria-hidden />
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Popup>Refresh mechs</Tooltip.Popup>
+                </Tooltip.Positioner>
+              </Tooltip.Portal>
+            </Tooltip.Root>
             <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
               Create mech
             </ToolbarAction>
@@ -51,10 +86,10 @@ export function MechsScreen({
         {(page, notice) => (
           <>
             {notice}
-            {allowance.failed && <Notice error>Workspace usage could not be refreshed.</Notice>}
+            {allowanceNotice}
             <MechList
               page={page}
-              allowance={allowance.value}
+              allowance={allowanceValue}
               nameLink={(mech) => (
                 <ConsoleLink
                   to={{ workspace: data.workspace.id, mech: mech.id }}

@@ -60,10 +60,15 @@ Under `total`, `mise run fix` writes the tree's own counts while their total sta
 Tenet installs the tool files a contract ships under `assets/`, read-only and locked in `.tenet.lock`, which `mise run contracts:check` verifies.
 The registry loads each adopted one in place, never a copy: an entry names the installed oxlint file or ast-grep rule folder in its `asset` field, by its path from the contract's folder.
 The generator adds the folder to `sgconfig.yml`'s `ruleDirs` and the file to `.oxlintrc.json`'s `extends`, and the entry's examples become the ast-grep tests that run against the shipped rules (TS-05).
+For contract 069's browser-only React plugin, the generator emits the verified asset entries in the same scoped override
+as the plugin. The pinned oxlint requires that placement. The asset remains installed and checked against the registry,
+without a global `extends` or a second hand-maintained rule list.
 An asset rule keeps the library's message, which the lint prints with its period dropped and the entry's standard appended, such as `(ER-04)` (AS-01).
 Its `ignores` are the library's, so an asset entry declares no exempt role, and the registry's checks of a rule file's message and `ignores` read only the authored ones.
 An oxlint asset entry states the value its file sets, which the measurement, the fixers and the rule's examples write in place of the file, and `rules:check` fails where the two differ.
 `rules:check` also fails on an asset the lock does not list for its contract, on a TypeScript rule of a loaded folder or a rule of a loaded oxlint file that no entry registers, and on an entry its file lacks.
+Explicitly registered JSX assets use the same asset and example checks with their TSX file coverage. Other languages
+in previously loaded asset folders retain their existing adoption scope.
 One running entry per rule, and no opt-out of a running rule, keep `.oxlintrc.json` from setting a second value for a rule an asset configures.
 An authored rule that copies a shipped one, such as `nested-call`, names the copied file and its locked hash in `derivedFrom`, and `rules:check` fails once the lock's hash differs, until the copy is reviewed and pinned again.
 Each contract that ships an asset says in its adaptations whether the lint loads it, and if not, which rule enforces what it configures.

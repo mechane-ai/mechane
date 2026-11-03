@@ -14,17 +14,22 @@
   // The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,
   // since the root that holds it holds no source.
   "ignore": [".dependency-cruiser.cjs"],
+  // Storybook consumes CSF metadata and story exports through discovery; production package exports remain checked.
+  "ignoreIssues": { "packages/browser/*/src/**/*.stories.tsx": ["exports"] },
   // Each member's workspace follows from its kind and source roots, so a new member is checked like the others.
   "workspaces": {
     // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
     "packages/browser/console": {
       "includeEntryExports": false,
       "entry": ["src/routes/**/*.tsx!", ".storybook/*.{ts,tsx}", "src/stories/**/*.stories.tsx"],
-      "project": ["src/**/*.{ts,tsx}!"],
+      "project": ["src/**/*.{ts,tsx,mdx}!"],
     },
     "packages/browser/console-data": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/console-views": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/browser/ui": { "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/browser/ui": { "entry": ["src/**/*.stories.tsx"], "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/browser/ui-charts": { "entry": ["src/**/*.stories.tsx"], "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/browser/ui-layout": { "entry": ["src/**/*.stories.tsx"], "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/browser/ui-tokens": { "entry": ["src/**/*.stories.tsx"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/boundaries": { "project": ["src/**/*.{ts,tsx}!"] },
     // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
     "packages/node/checks": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },

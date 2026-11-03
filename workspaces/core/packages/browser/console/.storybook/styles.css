@@ -1,0 +1,7 @@
+/* The StyleX Vite plugin appends compiled rules to this stylesheet. */
+@layer reset, priority1, priority2, priority3, priority4, priority5;
+@layer reset {
+  body {
+    margin: 0;
+  }
+}

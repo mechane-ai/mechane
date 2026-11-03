@@ -1,9 +1,10 @@
 # @mechane/ui
 
-Accessible primitives, theme tokens, and small charts independent of Mechane resources.
+Accessible controls, forms, feedback, text, and tables independent of Mechane resources.
 
-Controls, forms, typography, surfaces, tables, and layout have separate modules. The frame owns the collapsible sidebar
-and mobile drawer; screens supply toolbar actions. Lists fill the main surface, and `DetailPage` centers resource
-details and forms. Frame dimensions and colors live in the shared tokens. Base UI owns select, tab, and dialog behavior;
-StyleX owns shared appearance; visx scales the selectable timeline. Charts accept presentation values, never transport
-or storage records. See the [Console guide](../../../docs/console.md) for the package boundaries and browser checks.
+Base UI owns interaction behavior. StyleX and `@mechane/ui-tokens` supply consistent appearance. Compound controls
+retain Base UI's part names and composition protocol; native input events, refs, and accessibility attributes remain
+available. The application owns drafts, asynchronous operations, routing, and resource meaning.
+
+See the [component guide](../../../docs/components.md) for APIs and catalog examples. Application framing lives in
+`@mechane/ui-layout`, and visx presentation lives in `@mechane/ui-charts`.

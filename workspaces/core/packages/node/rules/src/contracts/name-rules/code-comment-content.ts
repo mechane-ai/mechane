@@ -2,7 +2,11 @@ import { FixBehavior, OWNED_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** The sentences a doc comment may hold, and the words each may hold. */
-const VALUES = { docSentences: 3, docSentenceWords: 30, componentFiles: ['packages/browser/**/*.tsx'] } as const;
+const VALUES = {
+  docSentences: 3,
+  docSentenceWords: 30,
+  componentFiles: ['packages/browser/**/*.tsx', 'packages/browser/ui*/src/**/*.{ts,tsx}'],
+} as const;
 
 /** What enforces `code-comment-content`: the limits the short-doc ratchet reads. */
 export const codeCommentContent = {
@@ -13,9 +17,13 @@ export const codeCommentContent = {
       name: 'export-doc',
       behavior: FixBehavior.TypeOnly,
       standard: 'CD-03',
-      violation: [{ 'scripts/limits.ts': 'export const TURN_LIMIT = 3;\n' }],
+      violation: [
+        { 'scripts/limits.ts': 'export const TURN_LIMIT = 3;\n' },
+        { 'packages/browser/console-data/src/cache.ts': 'export const capacity = 3;\n' },
+      ],
       allowed: [
         { 'packages/browser/ui/src/title.tsx': 'export function Title() { return <h1>Console</h1>; }\n' },
+        { 'packages/browser/ui-tokens/src/tokens.stylex.ts': 'export const colors = { surface: "white" };\n' },
         { 'scripts/limits.ts': '/** The most turns a mech runs at once. */\nexport const TURN_LIMIT = 3;\n' },
         {
           'scripts/modes.ts':
@@ -30,8 +38,15 @@ export const codeCommentContent = {
       name: 'absence-doc',
       behavior: FixBehavior.TypeOnly,
       standard: 'CD-04',
-      violation: [{ 'scripts/types.ts': 'export type Turn = { readonly endedAt?: number };\n' }],
+      violation: [
+        { 'scripts/types.ts': 'export type Turn = { readonly endedAt?: number };\n' },
+        { 'packages/browser/console-data/src/row.ts': 'export type Row = { readonly revision?: string };\n' },
+      ],
       allowed: [
+        {
+          'packages/browser/ui/src/control-state.ts':
+            'export type ControlProps = { readonly value?: never; readonly defaultValue?: string };\n',
+        },
         {
           'scripts/types.ts':
             'export type Turn = {\n  /** Absent until the turn ends. */\n  readonly endedAt?: number;\n};\n',
@@ -45,7 +60,12 @@ export const codeCommentContent = {
       name: 'short-doc',
       behavior: FixBehavior.TypeOnly,
       standard: 'CD-06',
-      violation: [{ 'scripts/start-stack.ts': '/** Start stack. */\nexport function startStack(): void {}\n' }],
+      violation: [
+        { 'scripts/start-stack.ts': '/** Start stack. */\nexport function startStack(): void {}\n' },
+        {
+          'packages/browser/ui/src/title.tsx': '/** Title. */\nexport function Title() { return <h1>Console</h1>; }\n',
+        },
+      ],
       allowed: [
         {
           'scripts/start-stack.ts':

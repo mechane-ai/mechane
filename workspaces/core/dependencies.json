@@ -580,14 +580,49 @@
     "consumers": ["@mechane/pages", "@mechane/edge", "@mechane/app"],
     "confines": ["cookie"]
   },
+  "@mechane/ui-tokens": {
+    "owns": "Shared StyleX color, typography, spacing, control, radius, shadow and motion definitions",
+    "layer": 2,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": [
+      "@mechane/ui",
+      "@mechane/ui-layout",
+      "@mechane/ui-charts",
+      "@mechane/console-views",
+      "@mechane/console"
+    ]
+  },
   "@mechane/ui": {
-    "owns": "Accessible primitives, theme tokens, and small charts independent of Mechane resources",
+    "owns": "Accessible controls, forms, feedback, text and tables independent of Mechane resources",
     "layer": 3,
     "lane": "browser",
     "dialect": "plain",
     "kind": "library",
     "criterion": "closure",
+    "consumers": ["@mechane/ui-layout", "@mechane/ui-charts", "@mechane/console-views", "@mechane/console"],
+    "confines": ["@base-ui/react"]
+  },
+  "@mechane/ui-layout": {
+    "owns": "Responsive application shell, navigation, page toolbar and detail layout",
+    "layer": 4,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
     "consumers": ["@mechane/console-views", "@mechane/console"]
+  },
+  "@mechane/ui-charts": {
+    "owns": "Generic accessible waterfall geometry, selection and textual evidence rendered with visx",
+    "layer": 4,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/console-views", "@mechane/console"],
+    "confines": ["@visx/scale", "@visx/shape"]
   },
   "@mechane/console-data": {
     "owns": "Browser sessions, workspace-scoped reactive collections, bounded activity queries, and acknowledged API commands",

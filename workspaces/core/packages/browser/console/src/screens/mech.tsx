@@ -6,7 +6,7 @@ import type { Mech } from '@mechane/protocol';
 import {
   Button,
   CopyValue,
-  DetailPage,
+  Dialog,
   Heading,
   Muted,
   Notice,
@@ -17,16 +17,16 @@ import {
   Status,
   Subheading,
   Tabs,
-  Toolbar,
-  ToolbarAction,
 } from '@mechane/ui';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui-layout';
 import { Option } from 'effect';
 import { Pause, Pencil, Play, Send } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
 import type { ConsoleNavigation } from '../types.ts';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { ActivityScreen } from './activity.tsx';
 import { EditMechForm } from './edit-mech.tsx';
 import { MessageForm } from './message.tsx';
@@ -39,7 +39,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
   const source = useMemo(() => data.mech(mechId), [data, mechId]);
 
   return (
-    <Resource data={data} source={source} fallbackHeader={<Toolbar title="Mech" />} label="Loading mech">
+    <Resource data={data} source={source} fallbackHeader={<PageToolbar title="Mech" />} label="Loading mech">
       {(mech, notice) => (
         <MechDetails data={data} mech={mech} notice={notice} location={location} navigate={navigate} />
       )}
@@ -58,22 +58,34 @@ function MechDetails({
   const base = { workspace: data.workspace.id, mech: mech.id };
   const [editing, setEditing] = useState(false);
   const [message, setMessage] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<MechStatus>();
   const [error, setError] = useState<string>();
   const [archiveConfirm, setArchiveConfirm] = useState(false);
+  const archiveCancel = useRef<HTMLButtonElement>(null);
+  const statusAction = useRef<HTMLButtonElement>(null);
+  const isScreenActive = useScreenLifetime();
+  const busy = pendingStatus !== undefined;
   const isArchiveDisabled = mech.status === 'archived' || busy;
 
   function setStatus(status: MechStatus): void {
-    setBusy(true);
+    if (busy) {
+      return;
+    }
+
+    setPendingStatus(status);
     setError(undefined);
     void data.update(mech, { status }).then(
       () => {
-        setBusy(false);
-        setArchiveConfirm(false);
+        if (isScreenActive()) {
+          setPendingStatus(undefined);
+          setArchiveConfirm(false);
+        }
       },
       (cause: unknown) => {
-        setBusy(false);
-        setError(problemMessage(cause));
+        if (isScreenActive()) {
+          setPendingStatus(undefined);
+          setError(problemMessage(cause));
+        }
       },
     );
   }
@@ -98,7 +110,7 @@ function MechDetails({
 
   return (
     <>
-      <Toolbar
+      <PageToolbar
         breadcrumb
         title={
           <>
@@ -108,8 +120,11 @@ function MechDetails({
         actions={
           <>
             <ToolbarAction
+              ref={statusAction}
               icon={mech.status === 'active' ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
               disabled={busy}
+              pending={busy && pendingStatus !== MechStatus.Archived}
+              pendingLabel={pendingStatus === MechStatus.Paused ? 'Pausing…' : 'Activating…'}
               onClick={() => setStatus(mech.status === 'active' ? MechStatus.Paused : MechStatus.Active)}
             >
               {mech.status === 'active' ? 'Pause' : 'Activate'}
@@ -142,24 +157,31 @@ function MechDetails({
               <CopyValue label="mech ID" value={mech.id} />
             </Row>
           </Stack>
-          {error !== undefined && <Notice error>{error}</Notice>}
+          {error !== undefined && !archiveConfirm && <Notice error>{error}</Notice>}
           {mech.status === 'paused' && (
             <Notice>
               Paused. New messages wait in the inbox until you activate this mech. A running turn may still finish.
             </Notice>
           )}
           {message && <MessageForm data={data} mech={mech} onClose={() => setMessage(false)} />}
-          <Tabs
-            label="Mech details"
-            options={['Turns', 'Activity', 'Definition']}
+          <Tabs.Root
             value={tab}
-            onChange={(next) =>
+            onValueChange={(next) =>
               navigate(next === 'Turns' ? base : { ...base, view: next === 'Activity' ? 'activity' : 'definition' })
             }
           >
-            <Stack>
+            <Tabs.List aria-label="Mech details">
+              <Tabs.Tab value="Turns">Turns</Tabs.Tab>
+              <Tabs.Tab value="Activity">Activity</Tabs.Tab>
+              <Tabs.Tab value="Definition">Definition</Tabs.Tab>
+            </Tabs.List>
+            <Tabs.Panel value="Turns">
               {tab === 'Turns' && <TurnsScreen data={data} mech={mech} onMessage={() => setMessage(true)} />}
+            </Tabs.Panel>
+            <Tabs.Panel value="Activity">
               {tab === 'Activity' && <ActivityScreen data={data} mechId={mech.id} />}
+            </Tabs.Panel>
+            <Tabs.Panel value="Definition">
               {tab === 'Definition' && (
                 <Stack>
                   <Panel>
@@ -173,23 +195,60 @@ function MechDetails({
                     </Stack>
                   </Panel>
                   <Row>
-                    <Button tone="danger" disabled={isArchiveDisabled} onClick={() => setArchiveConfirm(true)}>
-                      Archive mech
-                    </Button>
-                    {archiveConfirm && (
-                      <>
-                        <Muted>Archive and stop accepting new work? Its history and files remain.</Muted>
-                        <Button tone="danger" disabled={busy} onClick={() => setStatus(MechStatus.Archived)}>
-                          Confirm archive
-                        </Button>
-                        <Button onClick={() => setArchiveConfirm(false)}>Cancel</Button>
-                      </>
-                    )}
+                    <Dialog.Root
+                      open={archiveConfirm}
+                      onOpenChange={(open, details) => {
+                        if (busy) {
+                          details.cancel();
+
+                          return;
+                        }
+
+                        setArchiveConfirm(open);
+
+                        if (open) {
+                          setError(undefined);
+                        }
+                      }}
+                    >
+                      <Dialog.Trigger render={<Button tone="danger" disabled={isArchiveDisabled} />}>
+                        Archive mech
+                      </Dialog.Trigger>
+                      <Dialog.Portal>
+                        <Dialog.Backdrop />
+                        <Dialog.Popup
+                          initialFocus={archiveCancel}
+                          finalFocus={() => (mech.status === 'archived' ? statusAction.current : true)}
+                        >
+                          <Stack>
+                            <Dialog.Title>Archive {mech.name}?</Dialog.Title>
+                            <Dialog.Description>
+                              This mech will stop accepting new work. Its history and files remain.
+                            </Dialog.Description>
+                            {error !== undefined && <Notice error>{error}</Notice>}
+                            <Row>
+                              <Button
+                                variant="solid"
+                                tone="danger"
+                                pending={pendingStatus === MechStatus.Archived}
+                                pendingLabel="Archiving…"
+                                onClick={() => setStatus(MechStatus.Archived)}
+                              >
+                                Archive mech
+                              </Button>
+                              <Dialog.Close render={<Button ref={archiveCancel} disabled={busy} />}>
+                                Cancel
+                              </Dialog.Close>
+                            </Row>
+                          </Stack>
+                        </Dialog.Popup>
+                      </Dialog.Portal>
+                    </Dialog.Root>
                   </Row>
                 </Stack>
               )}
-            </Stack>
-          </Tabs>
+            </Tabs.Panel>
+          </Tabs.Root>
         </Stack>
       </DetailPage>
     </>

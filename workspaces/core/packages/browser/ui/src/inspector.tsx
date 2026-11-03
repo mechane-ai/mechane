@@ -1,6 +1,7 @@
+import { mergeProps } from '@base-ui/react/merge-props';
+import { colors, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import type { ComponentProps, ReactNode } from 'react';
 
 const styles = stylex.create({
   split: {
@@ -9,14 +10,14 @@ const styles = stylex.create({
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.line,
-    borderRadius: 4,
+    borderRadius: radii.sm,
     backgroundColor: colors.surface,
     overflow: 'hidden',
   },
   master: { minWidth: 0 },
   detail: {
     minWidth: 0,
-    padding: 24,
+    padding: spacing.xl,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopStyle: 'solid',
@@ -26,34 +27,41 @@ const styles = stylex.create({
     margin: 0,
     display: 'grid',
     gridTemplateColumns: 'minmax(90px, 1fr) minmax(0, 1.6fr)',
-    columnGap: 24,
-    rowGap: 12,
-    fontSize: 13,
-    lineHeight: '20px',
+    columnGap: spacing.xl,
+    rowGap: spacing.md,
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
   },
   label: { color: colors.muted },
   item: { display: 'contents' },
   value: { margin: 0, color: colors.ink, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' },
 });
 
-export function Inspector({ master, detail }: { readonly master: ReactNode; readonly detail: ReactNode }): ReactNode {
+type InspectorProps = ComponentProps<'div'> & {
+  readonly master: ReactNode;
+  readonly detail: ReactNode;
+  readonly label: string;
+};
+
+type DetailItem = { readonly label: string; readonly value: ReactNode };
+type DetailsProps = ComponentProps<'dl'> & { readonly items: ReadonlyArray<DetailItem> };
+
+export function Inspector({ master, detail, label, ...props }: InspectorProps): ReactNode {
   return (
-    <div {...stylex.props(styles.split)}>
+    <div {...mergeProps(stylex.props(styles.split), props)}>
       <div {...stylex.props(styles.master)}>{master}</div>
-      <aside aria-label="Selected request" {...stylex.props(styles.detail)}>
+      <aside aria-label={label} {...stylex.props(styles.detail)}>
         {detail}
       </aside>
     </div>
   );
 }
 
-export function Details({
-  items,
-}: {
-  readonly items: ReadonlyArray<{ readonly label: string; readonly value: ReactNode }>;
-}): ReactNode {
+export function Details({ items, ...props }: DetailsProps): ReactNode {
   return (
-    <dl {...stylex.props(styles.list)}>
+    <dl {...mergeProps(stylex.props(styles.list), props)}>
       {items.map(({ label, value }) => (
         <div key={label} {...stylex.props(styles.item)}>
           <dt {...stylex.props(styles.label)}>{label}</dt>

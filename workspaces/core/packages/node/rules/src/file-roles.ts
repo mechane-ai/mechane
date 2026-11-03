@@ -8,9 +8,10 @@ export const FILE_ROLES = {
     'packages/browser/console/src/router.tsx',
     'packages/browser/console/src/vite-env.d.ts',
     'packages/browser/console/.storybook/*.ts',
-    'packages/browser/console/src/stories/*.stories.tsx',
+    'packages/browser/*/src/**/*.stories.tsx',
   ],
   [FileRole.BrowserAdapter]: ['packages/browser/console-data/src/api.ts'],
+  [FileRole.BrowserQuery]: ['packages/browser/console-data/src/console-data.ts'],
   [FileRole.Settings]: [
     'packages/node/cli/src/settings/load-invocation.ts',
     'packages/node/guest/src/load-guest-settings.ts',

@@ -3,6 +3,8 @@ id: stylex-longhands
 valid:
   - "const styles = stylex.create({ button: { borderWidth: 1, borderStyle: 'solid', borderColor: 'black' } });"
   - "const options = { border: '1px solid black' };"
+  - "const styles = stylex.create({ outline: { borderWidth: 1, borderStyle: 'solid', borderColor: 'black' } });"
 invalid:
   - "const styles = stylex.create({ button: { border: '1px solid black' } });"
   - "const styles = stylex.create({ button: { ':hover': { 'outline': '1px solid black' } } });"
+  - "const styles = stylex.create({ button: { outline: { default: '1px solid black', ':focus': '2px solid blue' } } });"

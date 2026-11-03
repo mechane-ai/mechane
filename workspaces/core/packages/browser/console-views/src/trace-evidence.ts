@@ -1,8 +1,7 @@
 import { Dispatch, Turn } from '@mechane/protocol';
 import type { Trace } from '@mechane/protocol';
-import type { TimelineItem } from '@mechane/ui';
 import { DateTime, Schema } from 'effect';
-import { durationLabel, moneyLabel } from './format.ts';
+import { createRequestWaterfallItem } from './request-waterfall.tsx';
 
 /** Recorded endpoints, cost and usage shared by the overview and request inspector. */
 export function traceEvidence(trace: Trace) {
@@ -17,37 +16,19 @@ export function traceEvidence(trace: Trace) {
     0,
   );
 
-  const items = trace.dispatches.map((request, index): TimelineItem => {
-    const base = { id: request.id, label: `Request ${index + 1}`, detail: request.model };
+  const items = trace.dispatches.map((request, index) => createRequestWaterfallItem({ request, number: index + 1 }));
 
-    if (!Schema.is(Dispatch)(request)) {
-      return { ...base, start: null, end: null, state: 'unknown', summary: 'Newer format' };
+  const times = items.flatMap(({ geometry }) => {
+    if (geometry.kind === 'interval') {
+      return [geometry.start, geometry.end];
     }
 
-    const start = DateTime.toEpochMillis(request.decidedAt);
-
-    if (request.status !== 'settled') {
-      return {
-        ...base,
-        start,
-        end: null,
-        state: request.status === 'refused' ? 'refused' : 'pending',
-        summary: request.status === 'refused' ? 'Refused' : 'Reserved',
-      };
+    if (geometry.kind === 'point') {
+      return [geometry.at];
     }
 
-    const end = DateTime.toEpochMillis(request.settledAt);
-
-    return {
-      ...base,
-      start,
-      end,
-      state: 'complete',
-      summary: `Settled · ${durationLabel(end - start)} · ${moneyLabel(request.settledMicros)}`,
-    };
+    return [];
   });
-
-  const times = items.flatMap((item) => [item.start, item.end].filter((time) => time !== null));
 
   const start =
     turn === undefined ? (times.length === 0 ? 0 : Math.min(...times)) : DateTime.toEpochMillis(turn.startedAt);

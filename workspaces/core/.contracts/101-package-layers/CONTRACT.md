@@ -1,15 +1,17 @@
 ---
 name: package-layers
 message: Keep each package to its layer and lane, declare it once in dependencies.json, and import another only through its entry point.
-paths: ["**/*.ts", "**/package.json", "dependencies.json", ".dependency-cruiser.cjs", "tsconfig.*.json"]
+paths: ["**/*.ts", "**/*.tsx", "**/package.json", "dependencies.json", ".dependency-cruiser.cjs", "tsconfig.*.json"]
 ---
 
 ## Rules
 
 The runtime and build programs form one pnpm workspace of private packages under the `@mechane` scope. The native OpenTofu provider is an independent Go module under `infrastructure/provider`; HCL installation modules live under `infrastructure/modules`. These infrastructure components do not import runtime implementation packages.
-`dependencies.json` declares each member once: what it owns; its `layer`, from 0 for vocabulary through configuration, wire, platform, adapters, domain and surfaces to 7 for entries; its `lane`, `shared` for code that runs in the Worker, in Bun and in Node, `worker` for the Workers runtime and `node` for Node and Bun programs; its `dialect`, `data`, `plain` or `effect`; its `kind`, the template its package follows; and its `criterion`, the boundary that admits it: `state`, `closure`, `reuse` or `program`.
+`dependencies.json` declares each member once: what it owns; its `layer`, from 0 for vocabulary through configuration, wire, platform, adapters, domain and surfaces to 7 for entries; its `lane`, `shared` for code that runs in the Worker, in Bun and in Node, `worker` for the Workers runtime, `node` for Node and Bun programs, and `browser` for the Console; its `dialect`, `data`, `plain` or `effect`; its `kind`, the template its package follows; and its `criterion`, the boundary that admits it: `state`, `closure`, `reuse` or `program`.
 `consumers`, when present, names the only members that may import it, and `confines` names the third-party packages that only it and the other members naming them may import.
-A member imports another only when that member sits in a strictly lower layer of a lane its own lane imports, `shared` from every lane, `worker` from the worker lane and `node` from the node lane, and its `consumers` allow it, and then only through that member's `src/index.ts`, so no two members of one layer import each other and no package cycle can form.
+A member imports another only when that member sits in a strictly lower layer of a lane its own lane imports, `shared` from every lane, `worker` from the worker lane, `node` from the node lane, and `browser` from the browser lane, and its `consumers` allow it.
+Import only through a source target declared in that member's exports map, normally `src/index.ts`. No two members of
+one layer import each other and no package cycle can form.
 Each package declares the members it imports in its own `package.json`, by `workspace:*`, and nowhere else.
 The shared lane imports no Node module, and only the worker lane imports the modules the Workers runtime provides.
 pi-durable, pi-ai and chord enter only through `@mechane/harness` and `@mechane/harness-tools`, whose `confines` name them, and so does TypeBox, the schema language of pi's tools; no other member imports them, and pi's vocabulary ends at the harness's types, which the mech's object calls.
@@ -33,9 +35,15 @@ For each new edge, does the depending package need the dependency's own concept,
 
 ## Local adaptations
 
+The `browser` lane owns the Console's React application and generic UI packages. Its ownership and dependency edges
+are declared in `dependencies.json`; contract 113 describes the browser package map.
+The direct `ui-tokens` definition export follows the compiler-required exception in contract 114.
+Declared export resolution preserves the layer, lane, consumer, and confined-dependency rules.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`.
+Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`; `libraryExports` `.` ./src/index.ts.
+The generated configurations carry `definitionExports`.
 - dependency-cruiser family `layer` (ST-02): enforced in phase E: Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`
 - dependency-cruiser family `lane` (ST-02): enforced in phase E: Import Node's modules only outside the shared lane and the Workers runtime's only in the worker lane, such as `node:path` in `@mechane/cli` and `cloudflare:workers` in `@mechane/mech`
 - dependency-cruiser family `confine` (ST-04): enforced in phase E: Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`

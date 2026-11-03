@@ -1,10 +1,11 @@
+import { colors, radii, spacing } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import { accessibility } from './accessibility.ts';
 
 const styles = stylex.create({
   region: { minWidth: 0, position: 'relative' },
-  line: { height: 8, borderRadius: 2, backgroundColor: colors.canvas, maxWidth: '100%' },
+  line: { height: 8, borderRadius: radii.sm, backgroundColor: colors.canvas, maxWidth: '100%' },
   short: { width: 54 },
   medium: { width: 108 },
   long: { width: 174 },
@@ -14,31 +15,19 @@ const styles = stylex.create({
     columnGap: 20,
     alignItems: 'center',
     minHeight: 39,
-    paddingInline: 16,
+    paddingInline: spacing.lg,
   },
   head: { minHeight: 36, borderBottomWidth: 1, borderBottomStyle: 'solid', borderBottomColor: colors.line },
   detail: { display: 'grid', gap: 20, paddingBlock: 16 },
   title: { width: 216, height: 24 },
-  hidden: {
-    position: 'absolute',
-    clipPath: 'inset(50%)',
-    overflow: 'hidden',
-    width: 1,
-    height: 1,
-    whiteSpace: 'nowrap',
-  },
 });
 
-export function Loading({
-  label,
-  shape = 'rows',
-}: {
-  readonly label: string;
-  readonly shape?: 'rows' | 'detail';
-}): ReactNode {
+type LoadingProps = { readonly label: string; readonly shape?: 'rows' | 'detail' };
+
+export function Loading({ label, shape = 'rows' }: LoadingProps): ReactNode {
   return (
     <div role="status" {...stylex.props(styles.region)}>
-      <span {...stylex.props(styles.hidden)}>{label}</span>
+      <span {...stylex.props(accessibility.hidden)}>{label}</span>
       {shape === 'rows' ? (
         <div aria-hidden>
           <div {...stylex.props(styles.row, styles.head)}>

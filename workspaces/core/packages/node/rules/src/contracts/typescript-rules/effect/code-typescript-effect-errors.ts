@@ -46,7 +46,7 @@ export const codeTypescriptEffectErrors = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'no-throw-or-try',
-      exemptRoles: [FileRole.BrowserAdapter],
+      exemptRoles: [FileRole.BrowserAdapter, FileRole.BrowserQuery],
       standard: 'ER-04',
       violation: ["throw new Error('missing');", 'try { read(); } catch { stop(); }'],
       allowed: ["const read = Effect.fn('read')(function* () { return yield* new FileUnreadable({ path }); });"],

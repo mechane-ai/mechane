@@ -3,7 +3,7 @@ import type { InputUnreadable, Member } from '@mechane/checks-kernel';
 import { Effect, Option, Record, Schema } from 'effect';
 import { join } from 'node:path';
 
-/** A member's manifest, whose exports name its entry. */
+/** A member's manifest names both its barrel entry and any required defining modules. */
 const MANIFEST_FILE = 'package.json';
 
 /** The part of a member's manifest that names its entries. */
@@ -16,10 +16,7 @@ type EntryFilesInput = { readonly members: ReadonlyArray<Member> };
 
 type MemberEntriesInput = { readonly member: Member };
 
-/**
- * Every entry a member's manifest exports, the one `index.ts` a library keeps, by the folder of the member that holds
- * it, both relative to the workspace.
- */
+/** Every manifest export target remains public. The barrel pass distinguishes index modules from direct definitions. */
 export const entryFiles = Effect.fn('entryFiles')(function* ({
   members,
 }: EntryFilesInput): Effect.fn.Return<ReadonlyMap<string, string>, InputUnreadable> {

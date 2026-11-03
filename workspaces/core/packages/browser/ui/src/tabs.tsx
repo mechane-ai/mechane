@@ -1,22 +1,26 @@
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
+import { colors, controls, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import type { ComponentProps, ReactNode } from 'react';
+import type { ValueStateProperties } from './control-state.ts';
+import { mergeStyles } from './style-composition.ts';
 
 const styles = stylex.create({
-  panel: { paddingTop: 24 },
+  root: { fontFamily: typography.fontFamily, WebkitFontSmoothing: 'antialiased', minWidth: 0 },
+  panel: { paddingTop: spacing.xl, outlineWidth: 0 },
   list: {
     display: 'flex',
-    gap: 24,
+    gap: spacing.xl,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
     overflowX: 'auto',
   },
   tab: {
-    'fontFamily': 'inherit',
+    'fontFamily': typography.fontFamily,
+    'WebkitFontSmoothing': 'antialiased',
     'borderWidth': 0,
-    'minHeight': 44,
+    'minHeight': controls.coarseTarget,
     'paddingBlock': 10,
     'paddingInline': 0,
     'backgroundColor': 'transparent',
@@ -25,49 +29,64 @@ const styles = stylex.create({
     'borderBottomColor': 'transparent',
     'color': colors.muted,
     'cursor': 'pointer',
-    'fontSize': 14,
-    'lineHeight': '20px',
+    'fontSize': typography.inputSize,
+    'lineHeight': typography.bodyLineHeight,
     'whiteSpace': 'nowrap',
-    ':hover': { color: colors.ink },
+    ':hover:not([data-disabled])': { color: colors.ink },
     ':is([data-active])': { borderBottomColor: colors.ink, color: colors.ink },
-    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -2 },
+    ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: -2,
+    },
   },
 });
 
-export function Tabs<T extends string>({
-  options,
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  readonly options: ReadonlyArray<T>;
-  readonly label: string;
-  readonly value: T;
-  readonly onChange: (value: T) => void;
-  readonly children?: ReactNode;
-}): ReactNode {
+type BaseTabsRootProps = ComponentProps<typeof BaseTabs.Root>;
+
+type TabsRootProps = Omit<BaseTabsRootProps, 'value' | 'defaultValue' | 'onValueChange'> &
+  ValueStateProperties<Exclude<BaseTabsRootProps['value'], undefined>, NonNullable<BaseTabsRootProps['onValueChange']>>;
+
+type TabsListProps = ComponentProps<typeof BaseTabs.List>;
+type TabsTabProps = ComponentProps<typeof BaseTabs.Tab>;
+type TabsPanelProps = ComponentProps<typeof BaseTabs.Panel>;
+
+function TabsRoot({ className, style, ...props }: TabsRootProps): ReactNode {
   return (
     <BaseTabs.Root
-      value={value}
-      onValueChange={(next) => {
-        const selected = options.find((option) => option === next);
-
-        if (selected !== undefined) {
-          onChange(selected);
-        }
-      }}
-    >
-      <BaseTabs.List aria-label={label} {...stylex.props(styles.list)}>
-        {options.map((option) => (
-          <BaseTabs.Tab key={option} value={option} {...stylex.props(styles.tab)}>
-            {option}
-          </BaseTabs.Tab>
-        ))}
-      </BaseTabs.List>
-      <BaseTabs.Panel value={value} {...stylex.props(styles.panel)}>
-        {children}
-      </BaseTabs.Panel>
-    </BaseTabs.Root>
+      {...props}
+      {...mergeStyles<BaseTabs.Root.State>({ className, style, styles: stylex.props(styles.root) })}
+    />
   );
 }
+
+function TabsList({ className, style, ...props }: TabsListProps): ReactNode {
+  return (
+    <BaseTabs.List
+      {...props}
+      {...mergeStyles<BaseTabs.List.State>({ className, style, styles: stylex.props(styles.list) })}
+    />
+  );
+}
+
+function TabsTab({ className, style, ...props }: TabsTabProps): ReactNode {
+  return (
+    <BaseTabs.Tab
+      {...props}
+      {...mergeStyles<BaseTabs.Tab.State>({ className, style, styles: stylex.props(styles.tab) })}
+    />
+  );
+}
+
+function TabsPanel({ className, style, ...props }: TabsPanelProps): ReactNode {
+  return (
+    <BaseTabs.Panel
+      {...props}
+      {...mergeStyles<BaseTabs.Panel.State>({ className, style, styles: stylex.props(styles.panel) })}
+    />
+  );
+}
+
+export const Tabs = { Root: TabsRoot, List: TabsList, Tab: TabsTab, Panel: TabsPanel };

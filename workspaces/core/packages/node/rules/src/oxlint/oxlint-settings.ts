@@ -2,6 +2,7 @@ import { FileRole, RuleTool, Severity } from '@mechane/rule-shapes';
 import type { OxlintRule, RestrictedRule, Rule } from '@mechane/rule-shapes';
 import { Record } from 'effect';
 import { CONTRACTS } from '../contracts.ts';
+import { FILE_ROLES } from '../file-roles.ts';
 import { RestrictedKey } from './constants.ts';
 import { restrictedLists } from './restricted-lists.ts';
 import { roleOverride } from './role-override.ts';
@@ -25,6 +26,14 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
   const { oxlint } = CONTRACTS['code-lint-suppressions'].values;
   const configured = rules.filter((rule) => rule.tool === RuleTool.Oxlint);
   const restricted = rules.filter((rule) => rule.tool === RuleTool.Restricted);
+  const interaction = CONTRACTS['ui-react-interaction-ownership'];
+  const interactionRules = interaction.rules.map(({ name, value }) => [name, value] as const);
+
+  const browser = {
+    files: FILE_ROLES[FileRole.Browser],
+    plugins: [...oxlint.plugins, ...interaction.values.plugins],
+    rules: Record.fromEntries(interactionRules),
+  };
 
   return {
     plugins: oxlint.plugins,
@@ -32,7 +41,7 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
     options: oxlint.options,
     ignorePatterns: oxlint.ignorePatterns,
     rules: oxlintRules({ configured, restricted, optOuts }),
-    overrides: Record.values(FileRole).flatMap((role) => roleOverride({ role, configured, restricted })),
+    overrides: [browser, ...Record.values(FileRole).flatMap((role) => roleOverride({ role, configured, restricted }))],
   };
 }
 

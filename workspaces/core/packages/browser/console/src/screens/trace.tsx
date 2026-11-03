@@ -4,7 +4,8 @@ import { TurnTrace } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
 import type { Mech, Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
-import { DetailPage, Notice, Stack, Toolbar, ToolbarAction } from '@mechane/ui';
+import { Notice, Stack } from '@mechane/ui';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui-layout';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
 import { useMemo, useState } from 'react';
@@ -12,6 +13,7 @@ import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
 import type { ConsoleNavigation } from '../types.ts';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { TurnHistory } from './turn-history.tsx';
 
 type TraceScreenProps = ConsoleNavigation & {
@@ -24,7 +26,7 @@ export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly 
   if (!Schema.is(TurnId)(turnId)) {
     return (
       <>
-        <Toolbar title="Turn trace" />
+        <PageToolbar title="Turn trace" />
         {props.notice}
         <DetailPage>
           <Notice error>This turn ID is invalid.</Notice>
@@ -48,6 +50,7 @@ function ValidTraceScreen({
   const source = useMemo(() => data.trace(mech.id, turnId), [data, mech.id, turnId]);
   const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
   const [error, setError] = useState<string>();
+  const isScreenActive = useScreenLifetime();
   const base = { workspace: data.workspace.id, mech: mech.id, turn: turnId };
   const tab: TraceTab = location.view === 'requests' ? 'Requests' : location.view === 'events' ? 'Events' : 'Overview';
 
@@ -58,35 +61,49 @@ function ValidTraceScreen({
   );
 
   function cancel(): void {
+    if (cancelState !== 'idle') {
+      return;
+    }
+
     setCancelState('sending');
     setError(undefined);
     void data.api('cancelTurn', { workspaceId: data.workspace.id, mechId: mech.id, turnId }).then(
       () => {
-        setCancelState('received');
-        void source.utils.refetch();
+        if (isScreenActive()) {
+          setCancelState('received');
+          void source.utils.refetch();
+        }
       },
       (cause: unknown) => {
-        setCancelState('idle');
-        setError(problemMessage(cause));
+        if (isScreenActive()) {
+          setCancelState('idle');
+          setError(problemMessage(cause));
+        }
       },
     );
   }
 
   return (
-    <Resource data={data} source={source} fallbackHeader={<Toolbar breadcrumb title={title} />} label="Loading turn">
+    <Resource
+      data={data}
+      source={source}
+      fallbackHeader={<PageToolbar breadcrumb title={title} />}
+      label="Loading turn"
+    >
       {(trace, traceNotice) => (
         <>
-          <Toolbar
+          <PageToolbar
             breadcrumb
             title={title}
             actions={
               trace.turn.status === 'running' && (
-                <ToolbarAction disabled={cancelState !== 'idle'} onClick={cancel}>
-                  {cancelState === 'received'
-                    ? 'Cancellation requested'
-                    : cancelState === 'sending'
-                      ? 'Requesting…'
-                      : 'Cancel turn'}
+                <ToolbarAction
+                  disabled={cancelState !== 'idle'}
+                  pending={cancelState === 'sending'}
+                  pendingLabel="Requesting…"
+                  onClick={cancel}
+                >
+                  {cancelState === 'received' ? 'Cancellation requested' : 'Cancel turn'}
                 </ToolbarAction>
               )
             }

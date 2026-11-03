@@ -1,10 +1,12 @@
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { CreationRequestId } from '@mechane/records';
-import { Button, DetailPage, Heading, Muted, Notice, Row, Stack, TextArea, TextField, Toolbar } from '@mechane/ui';
+import { Button, Field, Heading, Input, Muted, Notice, Row, Stack, Textarea, TextButton } from '@mechane/ui';
+import { DetailPage, PageToolbar } from '@mechane/ui-layout';
 import { Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
 export function CreateMechForm({
   data,
@@ -20,6 +22,7 @@ export function CreateMechForm({
   const [requestId, setRequestId] = useState(() => Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const isScreenActive = useScreenLifetime();
 
   function changed(): void {
     setRequestId(Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()));
@@ -44,25 +47,26 @@ export function CreateMechForm({
       })
       .then(
         (mech) => {
-          onCreated(mech.id);
+          if (isScreenActive()) {
+            onCreated(mech.id);
+          }
         },
         (cause: unknown) => {
-          setError(problemMessage(cause));
-          setBusy(false);
+          if (isScreenActive()) {
+            setError(problemMessage(cause));
+            setBusy(false);
+          }
         },
       );
   }
 
   return (
     <>
-      <Toolbar
+      <PageToolbar
         breadcrumb
         title={
           <>
-            <Button tone="link" onClick={onCancel}>
-              Mechs
-            </Button>{' '}
-            / Create
+            <TextButton onClick={onCancel}>Mechs</TextButton> / Create
           </>
         }
       />
@@ -74,33 +78,39 @@ export function CreateMechForm({
           </Muted>
           <form onSubmit={submit}>
             <Stack>
-              <TextField
-                label="Name"
-                required
-                maxLength={64}
-                value={name}
-                disabled={busy}
-                onChange={(event) => {
-                  setName(event.target.value);
-                  changed();
-                }}
-                autoFocus
-              />
-              <TextArea
-                label="Instructions"
-                maxLength={65_536}
-                value={instructions}
-                disabled={busy}
-                onChange={(event) => {
-                  setInstructions(event.target.value);
-                  changed();
-                }}
-                placeholder="What should this mech do?"
-              />
+              <Field.Root name="name" disabled={busy}>
+                <Field.Label>Name</Field.Label>
+                <Input
+                  required
+                  maxLength={64}
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    changed();
+                  }}
+                  autoFocus
+                />
+                <Field.Description>A name people can recognize in this workspace.</Field.Description>
+                <Field.Error />
+              </Field.Root>
+              <Field.Root name="instructions" disabled={busy}>
+                <Field.Label>Instructions</Field.Label>
+                <Textarea
+                  maxLength={65_536}
+                  value={instructions}
+                  onChange={(event) => {
+                    setInstructions(event.target.value);
+                    changed();
+                  }}
+                  placeholder="What should this mech do?"
+                />
+                <Field.Description>Optional guidance for this mech’s work.</Field.Description>
+                <Field.Error />
+              </Field.Root>
               {error !== undefined && <Notice error>{error}</Notice>}
               <Row>
-                <Button type="submit" tone="primary" disabled={busy}>
-                  {busy ? 'Creating…' : 'Create mech'}
+                <Button type="submit" variant="solid" pending={busy} pendingLabel="Creating…">
+                  Create mech
                 </Button>
                 <Button type="button" onClick={onCancel} disabled={busy}>
                   Cancel

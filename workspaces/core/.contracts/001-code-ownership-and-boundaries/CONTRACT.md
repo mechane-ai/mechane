@@ -1,7 +1,7 @@
 ---
 name: code-ownership-and-boundaries
 message: Give decisions and state one owner, with explicit dependency direction.
-paths: ["**/*.ts", "**/package.json", "dependencies.json"]
+paths: ["**/*.ts", "**/*.tsx", "**/package.json", "dependencies.json"]
 ---
 
 ## Rules
@@ -37,7 +37,9 @@ Use the owning workspace's existing checks.
 ## Local adaptations
 
 `dependencies.json` declares each package with what it owns, its layer, lane and consumers, as `101-package-layers` says, and each package's `package.json` declares the members it depends on.
-A package's public entry point is its exports map's `./src/index.ts`; `@mechane/cli` publishes only its `bin` and `@mechane/app` only the Wrangler `main`.
+A package's public entry points are the source targets its exports map declares, normally `./src/index.ts`.
+The compiler-required `@mechane/ui-tokens/tokens.stylex` export points directly to its defining module under contract 114.
+`@mechane/cli` publishes only its `bin` and `@mechane/app` only the Wrangler `main`.
 The local stack in `packages/node/stack/src` serves both `mise -C workspaces/core run dev` and the smoke, so local and smoke runs take one path.
 The stack serves the bundle that `mise -C workspaces/core run build:worker` writes with `wrangler deploy --dry-run`, the bytes a production deploy uploads.
 The local GitHub that signs a browser in lives with the stack in `packages/node/stack/src/github`, never in the Worker, which reaches it only through the GitHub origins its variables name.

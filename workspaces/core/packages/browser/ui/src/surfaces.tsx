@@ -1,27 +1,30 @@
+import { mergeProps } from '@base-ui/react/merge-props';
+import { colors, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Box } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { Muted, Subheading } from './text.tsx';
-import { colors } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   panel: {
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.line,
-    borderRadius: 4,
+    borderRadius: radii.sm,
     backgroundColor: colors.surface,
     overflow: 'hidden',
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
   },
-  padded: { padding: 24 },
-  row: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
+  padded: { padding: spacing.xl },
+  row: { display: 'flex', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
   between: { justifyContent: 'space-between' },
-  stack: { display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 },
-  compact: { gap: 8 },
+  stack: { display: 'flex', flexDirection: 'column', gap: spacing.xl, minWidth: 0 },
+  compact: { gap: spacing.sm },
   columns: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
-    gap: 32,
+    gap: spacing.xxl,
     minWidth: 0,
   },
   empty: {
@@ -31,16 +34,20 @@ const styles = stylex.create({
     justifyContent: 'center',
     textAlign: 'center',
     paddingBlock: 64,
-    paddingInline: 24,
-    gap: 12,
+    paddingInline: spacing.xl,
+    gap: spacing.md,
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
   },
-  emptyIcon: { color: colors.muted, marginBottom: 4 },
+  emptyIcon: { color: colors.muted, marginBottom: spacing.xs },
   notice: {
     paddingBlock: 10,
-    paddingInline: 12,
-    borderRadius: 4,
-    fontSize: 13,
-    lineHeight: '20px',
+    paddingInline: spacing.md,
+    borderRadius: radii.sm,
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
     backgroundColor: colors.warningSoft,
     color: colors.warning,
     overflowWrap: 'anywhere',
@@ -49,35 +56,37 @@ const styles = stylex.create({
   divider: { borderWidth: 0, borderTopWidth: 1, borderStyle: 'solid', borderColor: colors.line, margin: 0 },
 });
 
-type Children = { readonly children: ReactNode };
+type PanelProps = ComponentProps<'section'> & { readonly padded?: boolean };
+type RowProps = ComponentProps<'div'> & { readonly between?: boolean };
+type StackProps = ComponentProps<'div'> & { readonly compact?: boolean };
+type ColumnsProps = ComponentProps<'div'>;
+type DividerProps = ComponentProps<'hr'>;
+type EmptyStateProps = Omit<ComponentProps<'div'>, 'title'> & { readonly title: string; readonly action?: ReactNode };
+type NoticeProps = ComponentProps<'div'> & { readonly error?: boolean };
 
-export function Panel({ children, padded = true }: Children & { readonly padded?: boolean }): ReactNode {
-  return <section {...stylex.props(styles.panel, padded && styles.padded)}>{children}</section>;
+export function Panel({ padded = true, ...props }: PanelProps): ReactNode {
+  return <section {...mergeProps(stylex.props(styles.panel, padded && styles.padded), props)} />;
 }
 
-export function Row({ children, between = false }: Children & { readonly between?: boolean }): ReactNode {
-  return <div {...stylex.props(styles.row, between && styles.between)}>{children}</div>;
+export function Row({ between = false, ...props }: RowProps): ReactNode {
+  return <div {...mergeProps(stylex.props(styles.row, between && styles.between), props)} />;
 }
 
-export function Stack({ children, compact = false }: Children & { readonly compact?: boolean }): ReactNode {
-  return <div {...stylex.props(styles.stack, compact && styles.compact)}>{children}</div>;
+export function Stack({ compact = false, ...props }: StackProps): ReactNode {
+  return <div {...mergeProps(stylex.props(styles.stack, compact && styles.compact), props)} />;
 }
 
-export function Columns({ children }: Children): ReactNode {
-  return <div {...stylex.props(styles.columns)}>{children}</div>;
+export function Columns(props: ColumnsProps): ReactNode {
+  return <div {...mergeProps(stylex.props(styles.columns), props)} />;
 }
 
-export function Divider(): ReactNode {
-  return <hr {...stylex.props(styles.divider)} />;
+export function Divider(props: DividerProps): ReactNode {
+  return <hr {...mergeProps(stylex.props(styles.divider), props)} />;
 }
 
-export function EmptyState({
-  title,
-  children,
-  action,
-}: Children & { readonly title: string; readonly action?: ReactNode }): ReactNode {
+export function EmptyState({ title, children, action, ...props }: EmptyStateProps): ReactNode {
   return (
-    <div {...stylex.props(styles.empty)}>
+    <div {...mergeProps(stylex.props(styles.empty), props)}>
       <Box size={22} aria-hidden {...stylex.props(styles.emptyIcon)} />
       <Subheading>{title}</Subheading>
       <Muted>{children}</Muted>
@@ -86,10 +95,14 @@ export function EmptyState({
   );
 }
 
-export function Notice({ children, error = false }: Children & { readonly error?: boolean }): ReactNode {
+export function Notice({ error = false, ...props }: NoticeProps): ReactNode {
   return (
-    <div role={error ? 'alert' : 'status'} {...stylex.props(styles.notice, error && styles.negative)}>
-      {children}
-    </div>
+    <div
+      {...mergeProps(
+        { role: error ? 'alert' : 'status' },
+        stylex.props(styles.notice, error && styles.negative),
+        props,
+      )}
+    />
   );
 }

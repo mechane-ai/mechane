@@ -70,8 +70,12 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
     return {
       includeEntryExports: false,
       entry: ['src/routes/**/*.tsx!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
-      project: ['src/**/*.{ts,tsx}!'],
+      project: ['src/**/*.{ts,tsx,mdx}!'],
     };
+  }
+
+  if (member.hasStories) {
+    return { entry: ['src/**/*.stories.tsx'], project: ['src/**/*.{ts,tsx}!'] };
   }
 
   const roots = member.roots.map((root) => posix.relative(member.folder, root));

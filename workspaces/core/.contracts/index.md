@@ -1,8 +1,9 @@
 # Product contracts
 
 These rules govern `workspaces/core` after the [repository contracts](../../../.contracts/index.md). Contracts 001 to
-064 are adopted from tenet-contracts v11.0.0, with 016, 020 and 064 updated to v11.1.0; each one's `paths` narrow it and its `## Local adaptations` state this
-product's values. The rule registry, [`@mechane/rules`](../packages/node/rules/src/index.ts), holds each value a tool
+064 are adopted from tenet-contracts v11.0.0, with 016, 020 and 064 updated to v11.1.0. UI contracts 065–075 adopt
+v13.0.1. Each one's `paths` narrow it and its `## Local adaptations` state this product's choices.
+The rule registry, [`@mechane/rules`](../packages/node/rules/src/index.ts), holds each value a tool
 enforces once and generates every tool's configuration and the block that ends each contract's adaptations. Contracts
 from 101 are Mechane's own.
 
@@ -95,6 +96,22 @@ from 101 are Mechane's own.
 - [Eval grading isolation](058-eval-grading-isolation/CONTRACT.md): expectations only for the grader, on another model.
 - [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through `/api/v1`, on fresh mechs.
 - [Eval score accounting](060-eval-score-accounting/CONTRACT.md): distinct verdicts, and spend by role.
+
+## UI
+
+- [Presentation boundaries](065-ui-presentation-boundaries/CONTRACT.md): product-neutral controls, layout, and charts.
+- [Design tokens](066-ui-design-tokens/CONTRACT.md): shared visual roles and exhaustive named variants.
+- [Component APIs](067-ui-react-typescript-component-apis/CONTRACT.md): typed supported modes and Base UI composition.
+- [Control accessibility](068-ui-control-accessibility/CONTRACT.md): semantic controls, keyboard use, and managed focus.
+- [Interaction ownership](069-ui-react-interaction-ownership/CONTRACT.md): one state owner and cleanup for each interaction.
+- [Presentation state](070-ui-presentation-state/CONTRACT.md): supplied records, controlled selection, and preserved drafts.
+- [Async read states](071-ui-async-read-states/CONTRACT.md): pending, failed, ready, and stale content without false empties.
+- [Display values](072-ui-deterministic-display-values/CONTRACT.md): explicit formatting and distinct missing values.
+- [Motion lifecycle](073-ui-motion-lifecycle/CONTRACT.md): immediate interaction, interruptible motion, and cleanup.
+- [Component guidance](074-ui-component-usage-guidance/CONTRACT.md): supported components and usage beside their source.
+- [Storybook checks](075-ui-storybook-component-checks/CONTRACT.md): synthetic documentation and explicitly retained plays.
+- [StyleX composition](114-ui-stylex-composition/CONTRACT.md): direct token imports and preserved composed control props.
+- [Waterfall charts](115-ui-waterfall-charts/CONTRACT.md): interval, point, and unavailable geometry with textual evidence.
 
 ## Mechane
 

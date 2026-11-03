@@ -36,7 +36,8 @@ Review whether state changes, effect ordering, and recovery can be understood to
 Group related modules in a folder named for their concept. Do not create folders or packages to meet width, depth, or source-size quotas.
 
 **SC-06, keep package APIs explicit.**
-Each library package exposes its public API through src/index.ts with named exports.
+Each library package exposes its public API through `src/index.ts` with named exports. A compiler-required defining
+module may be an explicit export instead, such as `@mechane/ui-tokens/tokens.stylex` under contract 114.
 Internal code imports its declaring module directly. Do not add forwarding barrels merely to shorten import paths.
 Keep the existing no-namespace import/export convention.
 

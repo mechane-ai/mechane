@@ -26,7 +26,7 @@ export function MechList({
         <EmptyState
           title="No mechs yet"
           action={
-            <Button tone="primary" onClick={onCreate}>
+            <Button variant="solid" onClick={onCreate}>
               Create your first mech
             </Button>
           }

@@ -2,10 +2,11 @@ import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { Delivery } from '@mechane/protocol';
 import type { InboxItem, Mech, Turn } from '@mechane/protocol';
-import { Button, Muted, Notice, Panel, Row, Stack, TextArea } from '@mechane/ui';
+import { Button, Field, Muted, Notice, Panel, Row, Stack, Textarea } from '@mechane/ui';
 import { useEffect, useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
 function MessageReceipt({
   data,
@@ -91,6 +92,7 @@ export function MessageForm({
   const [busy, setBusy] = useState(false);
   const [receipt, setReceipt] = useState<InboxItem>();
   const [error, setError] = useState<string>();
+  const isScreenActive = useScreenLifetime();
 
   function submit(event: SubmitEvent): void {
     event.preventDefault();
@@ -111,13 +113,17 @@ export function MessageForm({
       })
       .then(
         (received) => {
-          setReceipt(received);
-          setBusy(false);
-          void data.refresh();
+          if (isScreenActive()) {
+            setReceipt(received);
+            setBusy(false);
+            void data.refresh();
+          }
         },
         (cause: unknown) => {
-          setError(problemMessage(cause));
-          setBusy(false);
+          if (isScreenActive()) {
+            setError(problemMessage(cause));
+            setBusy(false);
+          }
         },
       );
   }
@@ -130,22 +136,26 @@ export function MessageForm({
     <Panel>
       <form onSubmit={submit}>
         <Stack>
-          <TextArea
-            label={`Message ${mech.name}`}
-            required
-            maxLength={65_536}
-            value={text}
-            disabled={busy}
-            onChange={(event) => {
-              setText(event.target.value);
-              setId(crypto.randomUUID());
-              setError(undefined);
-            }}
-          />
-          <Muted>Sending a message may start model requests using this workspace’s allowance.</Muted>
+          <Field.Root name="message" disabled={busy}>
+            <Field.Label>Message {mech.name}</Field.Label>
+            <Textarea
+              required
+              maxLength={65_536}
+              value={text}
+              onChange={(event) => {
+                setText(event.target.value);
+                setId(crypto.randomUUID());
+                setError(undefined);
+              }}
+            />
+            <Field.Description>
+              Sending a message may start model requests using this workspace’s allowance.
+            </Field.Description>
+            <Field.Error />
+          </Field.Root>
           {error !== undefined && <Notice error>{error}</Notice>}
           <Row>
-            <Button type="submit" tone="primary" disabled={busy} pending={busy} pendingLabel="Sending…">
+            <Button type="submit" variant="solid" pending={busy} pendingLabel="Sending…">
               Send message
             </Button>
             <Button type="button" disabled={busy} onClick={onClose}>

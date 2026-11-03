@@ -4,16 +4,13 @@ import { posix } from 'node:path';
 import { REGISTRY } from '../constants.ts';
 import type { RegistryFinding, RuleFile } from '../types.ts';
 
-/** The rules that load an installed file in place, and the TypeScript rule files of each installed folder they load. */
+/** The entries and the TypeScript or selected JSX assets loaded from their installed folders. */
 type InstalledRuleFindingsInput = {
   readonly entries: ReadonlyArray<AssetEntry>;
   readonly ruleFiles: ReadonlyArray<RuleFile>;
 };
 
-/**
- * Each TypeScript rule of a loaded folder that no entry registers (TS-05), and each entry whose folder holds no
- * TypeScript rule of its name (110).
- */
+/** Each loaded TypeScript rule without an entry (TS-05), and each entry without its supported asset (110). */
 export function installedRuleFindings({
   entries,
   ruleFiles,
@@ -41,7 +38,7 @@ export function installedRuleFindings({
 
   const unshippedFinding: (entry: AssetEntry) => RegistryFinding = ({ rule, path }) => ({
     path: REGISTRY,
-    message: `Name a TypeScript rule of ${path} in place of ${rule.name}, such as \`name: 'untagged-errors-typescript'\` (110)`,
+    message: `Name a supported rule of ${path} in place of ${rule.name}, such as \`name: 'variant-style-comparisons-tsx'\` (110)`,
   });
 
   return [

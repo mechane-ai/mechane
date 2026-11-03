@@ -2,7 +2,7 @@
 name: code-typescript-module-boundaries
 message: Share code across source folders only through each folder's explicit named-export entry point, and keep imports between files acyclic, type-only and dynamic imports included.
 requires-tenet: 0.11.0
-paths: ["**/*.ts"]
+paths: ["**/*.ts", "**/*.tsx"]
 ---
 
 ## Rules
@@ -50,7 +50,9 @@ Trace outside imports of a moved file to the entry point that exposes it.
 The boundaries check of `mise -C workspaces/core run checks` cruises once with `.dependency-cruiser.cjs` and fails on every import its rules forbid.
 Among them are a cycle through any import, type-only and dynamic imports included, since swc keeps type-only ones, and an import it cannot resolve.
 
-Deviation (ST-09): only a library package has an entry point, its `src/index.ts`, which its manifest's exports map lists; no other folder has one.
+Deviation (ST-09): only a library package has an entry point, normally its `src/index.ts`, which its manifest's exports map lists; no other folder has one.
+The compiler-required `ui-tokens` definition export in contract 114 points directly to `src/tokens.stylex.ts`.
+Dependency checks resolve that declared public target without allowing arbitrary deep imports.
 A file imports each name from the file that declares it, never through an `index.ts` and never through its own package's entry, which the barrels normalizer's dry run rejects.
 This replaces "Give each source folder that other folders import an entry point" and "Export every value and type the folder shares by name from that entry point".
 It replaces "Import every other folder only through its entry point, including type-only imports, re-exports, and dynamic imports" too.

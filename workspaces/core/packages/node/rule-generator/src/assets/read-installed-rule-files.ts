@@ -12,8 +12,13 @@ import { installedFiles } from './installed-files.ts';
 /** The language of the files Mechane lints, whose rules among an installed folder's the registry reads. */
 const LINTED_LANGUAGE = 'TypeScript';
 
+/** JSX assets are qualified individually rather than upgrading every installed counterpart. */
+const JSX_LANGUAGE = 'Tsx';
+
 /** The files a TypeScript rule without file globs scans: every file of its language, as ast-grep reads one. */
 const TYPESCRIPT_FILES = '**/*.{ts,mts,cts}';
+
+const TSX_FILES = '**/*.tsx';
 
 /** The end of an ast-grep rule file's name. */
 const RULE_FILE_END = '.yml';
@@ -37,11 +42,11 @@ const InstalledRuleFields = Schema.Struct({
 type ReadInstalledRuleFilesInput = { readonly entries: ReadonlyArray<AssetEntry>; readonly lock: ContractLock };
 
 /** An installed rule file's path, relative to the workspace. */
-type ReadInstalledRuleFileInput = { readonly path: string };
+type ReadInstalledRuleFileInput = { readonly path: string; readonly selected: ReadonlyArray<string> };
 
 /**
- * Each TypeScript rule file of the installed rule folders a rule loads, sorted by path. Each scans every TypeScript
- * file but those its `ignores` skip.
+ * Each TypeScript rule and explicitly registered JSX rule in the loaded asset folders, sorted by path. Their file
+ * coverage follows the asset's parser language.
  */
 export const readInstalledRuleFiles = Effect.fn('readInstalledRuleFiles')(function* ({
   entries,
@@ -64,20 +69,26 @@ export const readInstalledRuleFiles = Effect.fn('readInstalledRuleFiles')(functi
 
   const paths = entries.flatMap(folderFiles);
   const sorted = Array.dedupe(paths).toSorted();
-  const files = yield* Effect.forEach(sorted, (path) => readInstalledRuleFile({ path }), { concurrency: 1 });
+  const selected = entries.map(({ rule }) => rule.name);
+  const files = yield* Effect.forEach(sorted, (path) => readInstalledRuleFile({ path, selected }), { concurrency: 1 });
 
   return files.flat();
 });
 
-/** One installed rule file, when it is a TypeScript rule: its id, message and the files it skips. */
+/** A selected installed rule's message and file coverage, preserving the established TypeScript baseline. */
 const readInstalledRuleFile = Effect.fn('readInstalledRuleFile')(function* ({
   path,
+  selected,
 }: ReadInstalledRuleFileInput): Effect.fn.Return<ReadonlyArray<RuleFile>, GenerateFailed> {
   const { language, ...fields } = yield* readYaml({ path, schema: InstalledRuleFields });
 
-  if (language !== LINTED_LANGUAGE) {
-    return [];
+  if (language === LINTED_LANGUAGE) {
+    return [{ path, ...fields, files: [TYPESCRIPT_FILES] }];
   }
 
-  return [{ path, ...fields, files: [TYPESCRIPT_FILES] }];
+  if (language === JSX_LANGUAGE && selected.includes(fields.id)) {
+    return [{ path, ...fields, files: [TSX_FILES] }];
+  }
+
+  return [];
 });

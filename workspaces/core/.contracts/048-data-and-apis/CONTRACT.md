@@ -45,6 +45,8 @@ An exhausted allowance or mech cap is a turn's outcome, `allowance_exhausted`, n
 An eval trial's grader outcome is `graded` with its grade, `no_grade` with the issue its reply has, or `unanswered`, and the report derives each verdict from the saved records alone; its `charged_micros` count only settled dispatches of saved turns, and a turn that was never saved leaves its trial `unavailable` rather than charged nothing.
 A store answers an outcome as a tagged value, and ast-grep `store-boolean-answer` fails on a store function that returns a `boolean`.
 Absence is an `Option`: ast-grep `nullable-type` ratchets `null` or `undefined` in an owned type, outside the type arguments of the TypeScript library's and a dependency's generics, which follow that dependency, and `Schema.NullOr`, `UndefinedOr` and `NullishOr`, `nullish-operator` each `??` and `?.`, and `nullish-comparison` rejects a comparison with `null` or `undefined`; `no-optional-property` rejects an optional property.
+The browser role follows contract 113's native React and Promise conventions in TypeScript and TSX. Its optional props
+and absent values do not require `Option`; backend and Node boundaries retain this contract's requirements.
 oxlint `unicorn/no-useless-undefined`, with `checkArguments` and `checkArrowFunctionBody` off, rejects a `return undefined` and an `undefined` default, while an outbound call's `.then` keeps `() => undefined` as its first handler.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->

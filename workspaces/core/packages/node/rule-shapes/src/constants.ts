@@ -186,6 +186,7 @@ export const FileRole = {
   Browser: 'browser',
   BrowserConfiguration: 'browser-configuration',
   BrowserAdapter: 'browser-adapter',
+  BrowserQuery: 'browser-query',
   Settings: 'settings',
   Output: 'output',
   WorkerModule: 'worker-module',

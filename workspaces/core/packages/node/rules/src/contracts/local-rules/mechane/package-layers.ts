@@ -1,7 +1,7 @@
 import { FixBehavior, Lane, ManifestFamily, RolloutPhase, RuleFix, RuleStatus, RuleTool } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
-/** The lanes each lane's members import, and a member's folders that hold its source. */
+/** The lanes and public entries a member may import, and the folders that hold its source. */
 const VALUES = {
   laneImports: {
     [Lane.Shared]: [Lane.Shared],
@@ -10,6 +10,9 @@ const VALUES = {
     [Lane.Browser]: [Lane.Shared, Lane.Browser],
   },
   sourceFolders: ['src', 'scripts', '.storybook', 'vite.config.ts'],
+  libraryExports: { '.': './src/index.ts' },
+  // StyleX resolves variable references through the defining module, so this export cannot pass through a barrel.
+  definitionExports: { '@mechane/ui-tokens': { './tokens.stylex': './src/tokens.stylex.ts' } },
 } as const;
 
 /** A family of rules the member manifest generates, fixed by hand, which the packages phase turned on. */

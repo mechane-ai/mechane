@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: variant-style-comparisons-typescript
+valid:
+  - 'stylex.props(styles.root, toneStyles[tone]);'
+  - 'stylex.props(styles.root, row.id === selectedId && styles.selected);'
+  - "stylex.props(styles.root, typeof size === 'number' && styles.fixed);"
+invalid:
+  - "stylex.props(styles.root, tone === 'positive' && styles.positive);"
+  - 'stylex.props(styles.root, tone === Tone.Warning && styles.warning);'

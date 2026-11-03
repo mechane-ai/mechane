@@ -2,11 +2,16 @@ import { createConsoleData } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
 import { ConsoleShell } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
+import { NavigationLink } from '@mechane/ui-layout';
+import { createLink } from '@tanstack/react-router';
+import { Bot } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { MechScreen } from './screens/mech.tsx';
 import { MechsScreen } from './screens/mechs.tsx';
 import type { ConsoleNavigation } from './types.ts';
+
+const HomeLink = createLink(NavigationLink);
 
 export function WorkspaceScreen({
   session,
@@ -37,7 +42,16 @@ export function WorkspaceScreen({
       workspaces={session.workspaces}
       workspaceId={workspace.id}
       onWorkspace={(id) => navigate({ workspace: id })}
-      onHome={() => navigate({ workspace: workspace.id })}
+      homeLink={
+        <HomeLink
+          to="/"
+          search={{ workspace: workspace.id }}
+          selected={selected.mech === undefined}
+          icon={<Bot size={16} aria-hidden />}
+        >
+          Mechs
+        </HomeLink>
+      }
     >
       {selected.mech === undefined ? (
         <MechsScreen data={data} onOpen={(mech) => navigate({ workspace: workspace.id, mech })} />

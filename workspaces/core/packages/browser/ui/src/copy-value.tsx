@@ -1,80 +1,138 @@
+import { Button as BaseButton } from '@base-ui/react/button';
+import { mergeProps } from '@base-ui/react/merge-props';
+import { colors, conditions, controls, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Check, Copy } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
-import { colors } from './tokens.stylex.ts';
+import { useEffect, useRef, useState } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import { accessibility } from './accessibility.ts';
+import { mergeStyles } from './style-composition.ts';
 
 const styles = stylex.create({
   button: {
     'display': 'inline-flex',
     'alignItems': 'center',
     'maxWidth': '100%',
-    'gap': 6,
+    'minHeight': { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'gap': controls.gap,
     'padding': 0,
     'borderWidth': 0,
     'backgroundColor': 'transparent',
     'color': colors.muted,
-    'fontFamily': 'inherit',
-    'fontSize': 13,
-    'lineHeight': '20px',
+    'fontFamily': typography.fontFamily,
+    'WebkitFontSmoothing': 'antialiased',
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
     'textAlign': 'start',
     'cursor': 'pointer',
-    ':hover': { color: colors.ink },
-    ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: 2, outlineOffset: 2 },
+    ':hover:not([data-disabled])': { color: colors.ink },
+    ':focus-visible': {
+      outlineColor: colors.focus,
+      outlineStyle: 'solid',
+      outlineWidth: controls.focusWidth,
+      outlineOffset: 2,
+    },
   },
-  value: { minWidth: 0, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' },
+  value: { minWidth: 0, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', userSelect: 'text' },
   icon: { flexShrink: 0 },
 });
 
 const FEEDBACK_MS = 1600;
+type CopyStatus = 'idle' | 'pending' | 'copied' | 'failed';
+const feedbackStates: ReadonlySet<CopyStatus> = new Set(['copied', 'failed']);
+type CopyFeedback = { readonly value: string; readonly status: CopyStatus };
+
+type CopyValueProps = Omit<ComponentProps<typeof BaseButton>, 'value'> & {
+  readonly value: string;
+  readonly label: string;
+};
 
 export function CopyValue({
   value,
   label,
   children,
-}: {
-  readonly value: string;
-  readonly label: string;
-  readonly children?: ReactNode;
-}): ReactNode {
-  const [feedback, setFeedback] = useState('');
+  className,
+  style,
+  disabled = false,
+  onClick,
+  ...props
+}: CopyValueProps): ReactNode {
+  const [feedback, setFeedback] = useState<CopyFeedback>({ value, status: 'idle' });
+  const operation = useRef(0);
+  const status = feedback.value === value ? feedback.status : 'idle';
+
+  useEffect(
+    () => () => {
+      operation.current += 1;
+    },
+    [value],
+  );
 
   useEffect(() => {
-    if (feedback === '') {
+    if (!feedbackStates.has(feedback.status)) {
       return;
     }
 
-    const timer = globalThis.setTimeout(() => setFeedback(''), FEEDBACK_MS);
+    const timer = globalThis.setTimeout(() => {
+      setFeedback((current) => (current === feedback ? { value, status: 'idle' } : current));
+    }, FEEDBACK_MS);
 
     return () => globalThis.clearTimeout(timer);
   }, [feedback, value]);
 
   async function copy(): Promise<void> {
+    operation.current += 1;
+    const request = operation.current;
+
+    setFeedback({ value, status: 'pending' });
+
     try {
       await navigator.clipboard.writeText(value);
-      setFeedback('Copied');
+
+      if (operation.current === request) {
+        setFeedback({ value, status: 'copied' });
+      }
     } catch {
-      setFeedback(value);
+      if (operation.current === request) {
+        setFeedback({ value, status: 'failed' });
+      }
     }
   }
 
-  const Icon = feedback === 'Copied' ? Check : Copy;
+  const Icon = status === 'copied' ? Check : Copy;
+
+  const messages = {
+    idle: '',
+    pending: '',
+    copied: `${label} copied`,
+    failed: `Could not copy ${label}. Select and copy the value.`,
+  } satisfies Record<CopyStatus, string>;
+
+  const events = mergeProps<'button'>(
+    {
+      onClick: () => {
+        void copy();
+      },
+    },
+    { onClick },
+  );
 
   return (
-    <button
+    <BaseButton
+      {...props}
+      {...events}
+      {...mergeStyles<BaseButton.State>({ className, style, styles: stylex.props(styles.button) })}
       type="button"
       aria-label={`Copy ${label}`}
+      aria-busy={status === 'pending' || props['aria-busy']}
+      disabled={disabled || status === 'pending'}
       title={value}
-      onClick={() => {
-        void copy();
-      }}
-      {...stylex.props(styles.button)}
     >
-      <span {...stylex.props(styles.value)}>{feedback === '' ? (children ?? value) : feedback}</span>
+      <span {...stylex.props(styles.value)}>{status === 'copied' ? 'Copied' : (children ?? value)}</span>
       <Icon size={12} aria-hidden {...stylex.props(styles.icon)} />
-      <span role="status" className="sr-only">
-        {feedback === 'Copied' ? `${label} copied` : ''}
+      <span role="status" {...stylex.props(accessibility.hidden)}>
+        {messages[status]}
       </span>
-    </button>
+    </BaseButton>
   );
 }

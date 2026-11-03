@@ -18,11 +18,19 @@ const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** A member's package manifest in its folder, whose name is the member's. */
 const PACKAGE_MANIFEST = 'package.json';
 
+const DEFINITION_EXPORTS: Readonly<Record<string, Readonly<Record<string, string>>>> =
+  CONTRACTS['package-layers'].values.definitionExports;
+
 /** The part of pnpm-workspace.yaml the generator reads: the globs of the member folders. */
 const WorkspaceFolders = Schema.Struct({ packages: Schema.Array(Schema.String) });
 
-/** The part of a package manifest the generator reads: its package's name. */
-const PackageName = Schema.fromJsonString(Schema.Struct({ name: Schema.String }));
+/** The package's exports stay explicit so the generated boundaries allow only declared public files. */
+const PackageManifest = Schema.fromJsonString(
+  Schema.Struct({
+    name: Schema.String,
+    exports: Schema.OptionFromOptionalKey(Schema.Record(Schema.String, Schema.String)),
+  }),
+);
 
 /** A package folder of the workspace, relative to it, and the manifest whose entry its package may have. */
 type PackageMemberInput = { readonly folder: string; readonly manifest: MemberManifest };
@@ -78,9 +86,28 @@ const packageMember = Effect.fn('packageMember')(function* ({
 }: PackageMemberInput): Effect.fn.Return<Option.Option<WorkspaceMember>, GenerateFailed> {
   const path = posix.join(folder, PACKAGE_MANIFEST);
 
-  const { name } = yield* Schema.decodeUnknownEffect(PackageName)(yield* readInput({ path })).pipe(
-    Effect.mapError((error) => new GenerateFailed({ step: GenerateStep.Read, path, reason: error.message })),
-  );
+  const { name, exports: declaredExports } = yield* Schema.decodeUnknownEffect(PackageManifest)(
+    yield* readInput({ path }),
+  ).pipe(Effect.mapError((error) => new GenerateFailed({ step: GenerateStep.Read, path, reason: error.message })));
+
+  const exports = Option.getOrElse(declaredExports, () => ({}));
+  const { libraryExports } = CONTRACTS['package-layers'].values;
+  const packageDefinitions = Record.get(DEFINITION_EXPORTS, name);
+  const definitions = Option.getOrElse(packageDefinitions, () => ({}));
+  const allowed: Readonly<Record<string, string>> = { ...libraryExports, ...definitions };
+
+  const isUnsupported: (entry: readonly [string, string]) => boolean = ([subpath, target]) =>
+    allowed[subpath] !== target;
+
+  if (Record.toEntries(exports).some(isUnsupported)) {
+    const example = JSON.stringify(allowed);
+
+    return yield* new GenerateFailed({
+      step: GenerateStep.Read,
+      path,
+      reason: `Export only the package root or its registered defining modules, such as ${example}`,
+    });
+  }
 
   const isPresent: (root: string) => boolean = (root) => existsSync(join(WORKSPACE_FOLDER, root));
 
@@ -88,5 +115,8 @@ const packageMember = Effect.fn('packageMember')(function* ({
     .map((source) => posix.join(folder, source))
     .filter(isPresent);
 
-  return Option.map(Record.get(manifest, name), (entry) => ({ name, folder, roots, entry }));
+  const packageFolder = join(WORKSPACE_FOLDER, folder);
+  const hasStories = globSync('src/**/*.stories.tsx', { cwd: packageFolder }).length > 0;
+
+  return Option.map(Record.get(manifest, name), (entry) => ({ name, folder, roots, exports, hasStories, entry }));
 });

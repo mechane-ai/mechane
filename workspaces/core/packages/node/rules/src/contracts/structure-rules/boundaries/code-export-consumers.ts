@@ -13,6 +13,7 @@ const VALUES = {
     ignoreExportsUsedInFile: { type: true, interface: true },
     ignoreDependencies: ['@swc/core', 'cloudflare'],
     ignore: ['.dependency-cruiser.cjs'],
+    ignoreIssues: { 'packages/browser/*/src/**/*.stories.tsx': ['exports'] },
   },
   knipNotes: [
     {
@@ -45,6 +46,12 @@ const VALUES = {
       lines: [
         "The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,",
         'since the root that holds it holds no source.',
+      ],
+    },
+    {
+      path: ['ignoreIssues'],
+      lines: [
+        'Storybook consumes CSF metadata and story exports through discovery; production package exports remain checked.',
       ],
     },
     {

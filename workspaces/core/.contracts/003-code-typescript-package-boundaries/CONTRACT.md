@@ -1,7 +1,7 @@
 ---
 name: code-typescript-package-boundaries
 message: Consume TypeScript packages only through declared dependencies and explicitly exported entry points.
-paths: ["**/package.json", "**/*.ts"]
+paths: ["**/package.json", "**/*.ts", "**/*.tsx"]
 ---
 
 ## Rules
@@ -23,7 +23,10 @@ Confirm each new entry point has a consumer outside the package that `code-expor
 
 ## Local adaptations
 
-Each package's exports map lists only `./src/index.ts`; `@mechane/cli` has a `bin` and no exports, and `@mechane/app` has neither, because Wrangler loads its `main`.
+Each library's exports map normally lists `./src/index.ts`. The StyleX compiler requires direct imports from the
+defining module, so `@mechane/ui-tokens/tokens.stylex` exports `./src/tokens.stylex.ts` directly under contract 114.
+This exception does not permit undeclared package subpaths or an index that only forwards the same definitions.
+`@mechane/cli` has a `bin` and no exports, and `@mechane/app` has neither, because Wrangler loads its `main`.
 Workspace members depend on each other through `workspace:*`, and on every other package through the exact version that `pnpm-lock.yaml` locks.
 `@mechane/guest` has no exports: `build:guest` bundles its `main.ts` into the image folder's gitignored `guest.mjs`, which the image copies and the host launcher runs.
 

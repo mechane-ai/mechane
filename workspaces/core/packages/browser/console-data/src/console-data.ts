@@ -6,7 +6,7 @@ import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import type { QueryCollectionUtils } from '@tanstack/query-db-collection';
 import { Duration, Option, Schema } from 'effect';
-import { createApi } from './api.ts';
+import { canRetainResult, createApi } from './api.ts';
 import type { ConsoleApi, ConsoleOperation, Input, Output } from './api.ts';
 
 type Snapshot<T> = { readonly key: string; readonly value: T };
@@ -35,7 +35,20 @@ function createResource<N extends ConsoleOperation>({
     queryClient: cache,
     queryKey: [key],
     getKey: (row: Snapshot<Output<N>>) => row.key,
-    queryFn: async ({ signal }) => [{ key, value: await api(name, input, signal) }],
+    queryFn: async ({ signal }) => {
+      try {
+        return [{ key, value: await api(name, input, signal) }];
+      } catch (error) {
+        if (!canRetainResult(error)) {
+          // A later transient failure must not revive a snapshot this read was denied.
+          cache.setQueryData<ReadonlyArray<Snapshot<Output<N>>>>([key], (previous) =>
+            previous === undefined ? undefined : [],
+          );
+        }
+
+        throw error;
+      }
+    },
     refetchInterval: interval,
     refetchOnWindowFocus: true,
     retry: false,
