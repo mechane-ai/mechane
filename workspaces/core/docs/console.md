@@ -6,8 +6,10 @@ management interface; it does not grant installation-wide administrative access.
 
 The console lists mechs and their daily allowance, creates and edits definitions, pauses or activates work, sends
 messages, and archives mechs. Each mech has recent turns, activity, and a trace for each turn. A trace shows the
-recorded model requests, settlements, duration, and outcome. Activity shows saved inputs and replies. It does not yet
-expose a full tool-call timeline or a workspace-wide event feed.
+recorded request intervals, outcomes, token usage, and settled cost. Select a request to inspect its reservation,
+settlement, and usage. Each trace also pages through that turn's original inputs, replies, and lifecycle events.
+Intervals measure reservation to settlement; they do not measure provider inference alone. Missing provider usage
+remains unknown. Tool calls are not yet recorded as spans, and there is no workspace-wide event feed.
 
 Lists are bounded pages. Newest turns and events appear first; older pages remain available. Mech lists follow the API's
 stable creation order. Background refresh keeps the last result visible and marks a failed refresh. Writes wait for the
@@ -26,6 +28,12 @@ Sign-out revokes the browser session, and changing workspace discards its in-mem
 Only `console-data` crosses from the shared Effect client into browser Promises. It stores each bounded API response as
 one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and
 persistence. No browser code imports Worker storage or installation secrets.
+
+UI modules group controls, forms, typography, surfaces, and charts by responsibility. The shell uses compact neutral
+surfaces and a mobile navigation drawer. Base UI owns button, tab, and dialog interactions. StyleX uses explicit border
+and outline longhands; the contract's syntax check prevents unsupported shorthands from silently losing styles. The
+trace timeline uses visx. Turn events come from the existing durable event log, with indexed turn and inbox lookup;
+there is no separate tracing store.
 
 ## Local development
 

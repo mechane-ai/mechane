@@ -5,7 +5,13 @@ import { Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { timeLabel } from './format.ts';
 
-export function Activity({ page }: { readonly page: EventPage }): ReactNode {
+export function Activity({
+  page,
+  chronological = false,
+}: {
+  readonly page: EventPage;
+  readonly chronological?: boolean;
+}): ReactNode {
   if (page.events.length === 0) {
     return (
       <Panel>
@@ -19,11 +25,11 @@ export function Activity({ page }: { readonly page: EventPage }): ReactNode {
   return (
     <Panel>
       <Stack>
-        {page.events.toReversed().map((event) => (
+        {(chronological ? page.events : page.events.toReversed()).map((event) => (
           <Stack key={event.sequence} compact>
             <Row between>
               <Row>
-                <Badge>{event.type.replaceAll('_', ' ')}</Badge>
+                <Badge>{eventLabel(event.type)}</Badge>
                 <Identifier>#{event.sequence}</Identifier>
               </Row>
               <Muted>{Schema.is(Event)(event) ? timeLabel(event.occurredAt) : 'Newer event format'}</Muted>
@@ -59,4 +65,25 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
   }
 
   return null;
+}
+
+function eventLabel(type: string): string {
+  switch (type) {
+    case 'inbox_item.received':
+      return 'Message received';
+    case 'inbox_item.written':
+      return 'Message saved';
+    case 'turn.started':
+      return 'Turn started';
+    case 'turn.joined':
+      return 'Message joined';
+    case 'turn.canceled':
+      return 'Cancellation requested';
+    case 'turn.answered':
+      return 'Reply';
+    case 'turn.unanswered':
+      return 'Turn ended';
+    default:
+      return type.replaceAll(/[._]/g, ' ');
+  }
 }

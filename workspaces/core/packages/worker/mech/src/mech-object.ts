@@ -20,6 +20,7 @@ import {
   SourceGrantAnswer,
   ThreadsAnswer,
   TurnCancelAnswer,
+  TurnEventsAnswer,
   TurnsAnswer,
   WatchAnswer,
   WatchesAnswer,
@@ -43,6 +44,7 @@ import type {
   SetWatchInput,
   SourceManageInput,
   ThreadsInput,
+  TurnEventsInput,
   TurnInput,
   TurnReading,
   TurnsInput,
@@ -75,6 +77,7 @@ import { manageSource } from './sources/configuration/manage-source.ts';
 import { readSourceGrant } from './sources/configuration/read-source-grant.ts';
 import { readThreads } from './threads/read-threads.ts';
 import { decideTurnCancel } from './turns/decide-turn-cancel.ts';
+import { readTurnEvents } from './turns/read-turn-events.ts';
 import { readTurn } from './turns/read-turn.ts';
 import { readTurns } from './turns/read-turns.ts';
 import type { AlarmDecision, MechHandle, OpenedMech } from './types.ts';
@@ -298,6 +301,14 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
 
   async turn({ turnId }: TurnInput): Promise<TurnReading> {
     return await this.#mech.atomic({ run: (tables) => readTurn({ store: tables, turnId }) });
+  }
+
+  async turnEvents({ turnId, query }: TurnEventsInput): Promise<typeof TurnEventsAnswer.Encoded> {
+    const { after } = Schema.decodeUnknownSync(catalog.listTurnEvents.query)(query);
+
+    const answer = await this.#mech.atomic({ run: (tables) => readTurnEvents({ store: tables, turnId, after }) });
+
+    return Schema.encodeSync(TurnEventsAnswer)(answer);
   }
 
   async turns({ query }: TurnsInput): Promise<typeof TurnsAnswer.Encoded> {

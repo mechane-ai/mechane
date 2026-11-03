@@ -30,7 +30,7 @@ For each executable file a change touches, does any other module import from it?
 
 ## Local adaptations
 
-Executables: every file named `main.ts`, and no other file is one; the declared top-level forms are a const bound to `new URL(path, import.meta.url)` and `fileURLToPath` of that const.
+Executables: every file named `main.ts` except Storybook’s required `.storybook/main.ts` configuration, and no other file is one; the declared top-level forms are a const bound to `new URL(path, import.meta.url)` and `fileURLToPath` of that const.
 ast-grep `script-top-level`, `script-top-level-constants` and `script-exports` cover `**/main.ts`, so a new executable is covered by its name.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->

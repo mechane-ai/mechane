@@ -104,6 +104,7 @@
 /lint/ast-grep/tests/store-handle-exposed.yml linguist-generated merge=ours
 /lint/ast-grep/tests/store-row-decode.yml linguist-generated merge=ours
 /lint/ast-grep/tests/stored-name-outside-store.yml linguist-generated merge=ours
+/lint/ast-grep/tests/stylex-longhands.yml linguist-generated merge=ours
 /lint/ast-grep/tests/succeed-in-generator.yml linguist-generated merge=ours
 /lint/ast-grep/tests/suppression-form.yml linguist-generated merge=ours
 /lint/ast-grep/tests/sync-in-generator.yml linguist-generated merge=ours

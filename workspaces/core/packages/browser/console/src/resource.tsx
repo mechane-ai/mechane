@@ -37,7 +37,18 @@ export function Resource<T>({
   if (value !== undefined) {
     return (
       <Stack>
-        {failed && <Notice error>Refresh failed. Showing the last saved result.</Notice>}
+        {failed && (
+          <Notice error>
+            Refresh failed. Showing the last saved result.{' '}
+            <Button
+              onClick={() => {
+                void source.utils.refetch();
+              }}
+            >
+              Retry refresh
+            </Button>
+          </Notice>
+        )}
         {children(value)}
       </Stack>
     );

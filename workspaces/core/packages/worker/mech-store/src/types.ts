@@ -41,6 +41,8 @@ export type AppendEventInput = { readonly event: EventDraft; readonly now: DateT
 /** The sequence a page of the log starts after, 0 for its start. */
 export type EventsAfterInput = { readonly after: number };
 
+export type TurnEventsAfterInput = EventsAfterInput & { readonly turnId: TurnId };
+
 export type EventsBeforeInput = {
   /** None selects the newest page. */
   readonly before: Option.Option<number>;
@@ -86,6 +88,8 @@ export type EventRecords = {
   /** The stored `/api/v1` JSON of the events after `after`, oldest first, a page at a time. */
   readonly eventsAfter: (input: EventsAfterInput) => RowsPage<string>;
   readonly eventsBefore: (input: EventsBeforeInput) => RowsPage<ListedEvent>;
+  /** Only events attributed to this turn or one of the inbox items it took up. */
+  readonly turnEvents: (input: TurnEventsAfterInput) => RowsPage<ListedEvent>;
   /** The sequence of the log's last event, 0 before the first. */
   readonly lastSequence: () => Sequence;
 };

@@ -3,19 +3,19 @@ import stylex from '@stylexjs/unplugin/vite';
 import type { PluginOption } from 'vite';
 
 // oxlint-disable-next-line typescript/no-unsafe-assignment -- StyleX declares any for its Vite plugin.
-const stylexPlugin: PluginOption = stylex({
+const stylexPlugin: Readonly<PluginOption> = stylex({
   useCSSLayers: true,
   runtimeInjection: false,
   unstable_moduleResolution: { type: 'commonJS' },
 });
 
-const storybook: StorybookConfig = {
+const storybook: Readonly<StorybookConfig> = {
   framework: {
     name: '@storybook/react-vite',
     options: { builder: { viteConfigPath: new URL('vite.config.ts', import.meta.url).pathname } },
   },
   stories: ['../src/stories/*.stories.tsx'],
-  viteFinal: (config) => ({ ...config, plugins: [...(config.plugins ?? []), stylexPlugin] }),
+  viteFinal: (configuration) => ({ ...configuration, plugins: [...(configuration.plugins ?? []), stylexPlugin] }),
 };
 
 export default storybook;

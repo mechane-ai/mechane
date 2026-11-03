@@ -91,6 +91,7 @@ export type {
   SendInboxItemInput,
   ThreadsInput,
   TurnInput,
+  TurnEventsInput,
 } from './mech/types.ts';
 export { mechStub } from './stubs/mech-stub.ts';
 export { CONTAINER_INACTIVITY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
@@ -166,5 +167,5 @@ export { readWorkspacePolicy } from './read-workspace-policy.ts';
 export { SessionPrincipal } from './directory.schemas.ts';
 export type { BrowserPrincipalInput } from './directory.types.ts';
 
-export { TurnAnswer, TurnsAnswer } from './turn.schemas.ts';
+export { TurnAnswer, TurnsAnswer, TurnEventsAnswer } from './turn.schemas.ts';
 export type { TurnsInput, RecentEventsInput } from './mech/types.ts';

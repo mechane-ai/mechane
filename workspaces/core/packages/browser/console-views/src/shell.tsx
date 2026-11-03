@@ -33,6 +33,7 @@ export function ConsoleShell({
 }): ReactNode {
   return (
     <Layout
+      header={<span>{workspaces.find((workspace) => workspace.id === workspaceId)?.name} / Console</span>}
       sidebar={
         <>
           <Brand />

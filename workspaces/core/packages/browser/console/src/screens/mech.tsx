@@ -1,9 +1,8 @@
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { Activity, moneyLabel, TurnList, TurnTrace } from '@mechane/console-views';
+import { moneyLabel } from '@mechane/console-views';
 import { MechStatus } from '@mechane/protocol';
-import type { Mech, Turn } from '@mechane/protocol';
-import { TurnId } from '@mechane/records';
+import type { Mech } from '@mechane/protocol';
 import {
   Badge,
   Button,
@@ -18,12 +17,15 @@ import {
   Subheading,
   Tabs,
 } from '@mechane/ui';
-import { Option, Schema } from 'effect';
+import { Option } from 'effect';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Resource } from '../resource.tsx';
+import { ActivityScreen } from './activity.tsx';
 import { EditMechForm } from './edit-mech.tsx';
 import { MessageForm } from './message.tsx';
+import { TraceScreen } from './trace.tsx';
+import { TurnsScreen } from './turns.tsx';
 
 type MechNavigation = {
   readonly data: ConsoleData;
@@ -119,201 +121,40 @@ function MechDetails({
         </Notice>
       )}
       {message && <MessageForm data={data} mech={mech} onClose={() => setMessage(false)} />}
-      <Tabs options={['Turns', 'Activity', 'Definition']} value={tab} onChange={setTab} />
-      {tab === 'Turns' && <TurnsScreen data={data} mechId={mech.id} onTurn={onTurn} />}
-      {tab === 'Activity' && <ActivityScreen data={data} mechId={mech.id} />}
-      {tab === 'Definition' && (
+      <Tabs options={['Turns', 'Activity', 'Definition']} value={tab} onChange={setTab}>
         <Stack>
-          <Panel>
+          {tab === 'Turns' && <TurnsScreen data={data} mechId={mech.id} onTurn={onTurn} />}
+          {tab === 'Activity' && <ActivityScreen data={data} mechId={mech.id} />}
+          {tab === 'Definition' && (
             <Stack>
-              <Row between>
-                <Subheading>Saved definition</Subheading>
-                <Muted>Active revision {mech.activeRevision}</Muted>
-              </Row>
-              <Muted>Daily cap: {moneyLabel(mech.dailyCapMicros)}</Muted>
-              <Prose>{Option.getOrElse(mech.instructions, () => 'No additional instructions.')}</Prose>
-            </Stack>
-          </Panel>
-          <Row>
-            <Button tone="danger" disabled={isArchiveDisabled} onClick={() => setArchiveConfirm(true)}>
-              Archive mech
-            </Button>
-            {archiveConfirm && (
-              <>
-                <Muted>Archive and stop accepting new work? Its history and files remain.</Muted>
-                <Button tone="danger" disabled={busy} onClick={() => setStatus(MechStatus.Archived)}>
-                  Confirm archive
-                </Button>
-                <Button onClick={() => setArchiveConfirm(false)}>Cancel</Button>
-              </>
-            )}
-          </Row>
-        </Stack>
-      )}
-    </Stack>
-  );
-}
-
-function TurnsScreen({
-  data,
-  mechId,
-  onTurn,
-}: {
-  readonly data: ConsoleData;
-  readonly mechId: string;
-  readonly onTurn: (id: string) => void;
-}): ReactNode {
-  const [cursors, setCursors] = useState<ReadonlyArray<Turn['id']>>([]);
-  const after = cursors.at(-1);
-  const source = useMemo(() => data.turns(mechId, Option.fromNullishOr(after)), [data, mechId, after]);
-
-  return (
-    <Resource data={data} source={source}>
-      {(page) => (
-        <Stack>
-          <TurnList page={page} onOpen={onTurn} />
-          <Row between>
-            <Muted>Newest turns first</Muted>
-            <Row>
-              <Button disabled={cursors.length === 0} onClick={() => setCursors((previous) => previous.slice(0, -1))}>
-                Newer
-              </Button>
-              <Button
-                disabled={!page.hasMore}
-                onClick={() => {
-                  const last = page.turns.at(-1);
-
-                  if (last !== undefined) {
-                    setCursors((previous) => [...previous, last.id]);
-                  }
-                }}
-              >
-                Older
-              </Button>
-            </Row>
-          </Row>
-        </Stack>
-      )}
-    </Resource>
-  );
-}
-
-function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; readonly mechId: string }): ReactNode {
-  const [cursors, setCursors] = useState<ReadonlyArray<number>>([]);
-  const before = cursors.at(-1) ?? null;
-  const source = useMemo(() => data.events(mechId, before), [data, mechId, before]);
-
-  return (
-    <Resource data={data} source={source}>
-      {(page) => (
-        <Stack>
-          <Row between>
-            <Muted>
-              {before === null ? 'Recent activity · updates while this page is visible' : 'Earlier activity'}
-            </Muted>
-            <Row>
-              <Button disabled={cursors.length === 0} onClick={() => setCursors((previous) => previous.slice(0, -1))}>
-                Newer
-              </Button>
-              <Button
-                disabled={!page.hasMore}
-                onClick={() => {
-                  const first = page.events[0];
-
-                  if (first !== undefined) {
-                    setCursors((previous) => [...previous, first.sequence]);
-                  }
-                }}
-              >
-                Older
-              </Button>
-            </Row>
-          </Row>
-          <Activity page={page} />
-        </Stack>
-      )}
-    </Resource>
-  );
-}
-
-function TraceScreen({
-  data,
-  mech,
-  turnId,
-  onBack,
-}: {
-  readonly data: ConsoleData;
-  readonly mech: Mech;
-  readonly turnId: string;
-  readonly onBack: () => void;
-}): ReactNode {
-  if (!Schema.is(TurnId)(turnId)) {
-    return (
-      <Stack>
-        <Button onClick={onBack}>← Turns</Button>
-        <Notice error>This turn ID is not valid.</Notice>
-      </Stack>
-    );
-  }
-
-  return <ValidTraceScreen data={data} mech={mech} turnId={turnId} onBack={onBack} />;
-}
-
-function ValidTraceScreen({
-  data,
-  mech,
-  turnId,
-  onBack,
-}: {
-  readonly data: ConsoleData;
-  readonly mech: Mech;
-  readonly turnId: Turn['id'];
-  readonly onBack: () => void;
-}): ReactNode {
-  const source = useMemo(() => data.trace(mech.id, turnId), [data, mech.id, turnId]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-
-  function cancel(): void {
-    setBusy(true);
-    setError(undefined);
-    void data
-      .api('cancelTurn', { workspaceId: data.workspace.id, mechId: mech.id, turnId })
-      .then(() => source.utils.refetch())
-      .then(
-        () => setBusy(false),
-        (cause: unknown) => {
-          setBusy(false);
-          setError(problemMessage(cause));
-        },
-      );
-  }
-
-  return (
-    <Stack>
-      <Row>
-        <Button tone="quiet" onClick={onBack}>
-          ← {mech.name} / Turns
-        </Button>
-      </Row>
-      <Heading>Turn trace</Heading>
-      <Identifier>{turnId}</Identifier>
-      {error !== undefined && <Notice error>{error}</Notice>}
-      <Resource data={data} source={source}>
-        {(trace) => (
-          <Stack>
-            {trace.turn.status === 'running' && (
+              <Panel>
+                <Stack>
+                  <Row between>
+                    <Subheading>Saved definition</Subheading>
+                    <Muted>Active revision {mech.activeRevision}</Muted>
+                  </Row>
+                  <Muted>Daily cap: {moneyLabel(mech.dailyCapMicros)}</Muted>
+                  <Prose>{Option.getOrElse(mech.instructions, () => 'No additional instructions.')}</Prose>
+                </Stack>
+              </Panel>
               <Row>
-                <Notice>This turn is running.</Notice>
-                <Button tone="danger" disabled={busy} onClick={cancel}>
-                  {busy ? 'Canceling…' : 'Cancel turn'}
+                <Button tone="danger" disabled={isArchiveDisabled} onClick={() => setArchiveConfirm(true)}>
+                  Archive mech
                 </Button>
+                {archiveConfirm && (
+                  <>
+                    <Muted>Archive and stop accepting new work? Its history and files remain.</Muted>
+                    <Button tone="danger" disabled={busy} onClick={() => setStatus(MechStatus.Archived)}>
+                      Confirm archive
+                    </Button>
+                    <Button onClick={() => setArchiveConfirm(false)}>Cancel</Button>
+                  </>
+                )}
               </Row>
-            )}
-            <TurnTrace trace={trace} />
-          </Stack>
-        )}
-      </Resource>
+            </Stack>
+          )}
+        </Stack>
+      </Tabs>
     </Stack>
   );
 }

@@ -123,3 +123,55 @@ export const Loading: Story = {
     </Panel>
   ),
 };
+
+const encodedTrace = Schema.encodeSync(Trace)(trace);
+const sampleRequest = encodedTrace.dispatches[0];
+
+export const RefusedTurn: Story = {
+  render: () => (
+    <TurnTrace
+      trace={Schema.decodeUnknownSync(Trace)({
+        ...encodedTrace,
+        turn: { ...encodedTrace.turn, status: 'unanswered', reason: 'allowance_exhausted' },
+        dispatches: [{ ...sampleRequest, status: 'refused' }],
+      })}
+    />
+  ),
+};
+
+export const RunningTurn: Story = {
+  render: () => (
+    <TurnTrace
+      trace={Schema.decodeUnknownSync(Trace)({
+        ...encodedTrace,
+        turn: { ...encodedTrace.turn, status: 'running' },
+        dispatches: [{ ...sampleRequest, status: 'reserved' }],
+      })}
+    />
+  ),
+};
+
+export const MissingUsage: Story = {
+  render: () => (
+    <TurnTrace
+      trace={Schema.decodeUnknownSync(Trace)({
+        ...encodedTrace,
+        dispatches: [{ ...sampleRequest, basis: 'reservation' }],
+      })}
+    />
+  ),
+};
+
+export const NewerRequestFormat: Story = {
+  render: () => (
+    <TurnTrace
+      trace={Schema.decodeUnknownSync(Trace)({
+        ...encodedTrace,
+        dispatches: [
+          { ...sampleRequest, id: 'df5f71fa-cada-4b63-a3f4-4a0db43da51a', status: 'recorded_by_newer_release' },
+          ...encodedTrace.dispatches,
+        ],
+      })}
+    />
+  ),
+};

@@ -91,4 +91,8 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'CREATE TABLE source_grant_changes (sequence INTEGER PRIMARY KEY, record TEXT, principal_id TEXT NOT NULL) STRICT',
     );
   },
+  ({ sql }) => {
+    sql.exec("CREATE INDEX events_by_turn ON events (json_extract(event, '$.turn_id'), sequence)");
+    sql.exec("CREATE INDEX events_by_inbox_item ON events (json_extract(event, '$.inbox_item_id'), sequence)");
+  },
 ];

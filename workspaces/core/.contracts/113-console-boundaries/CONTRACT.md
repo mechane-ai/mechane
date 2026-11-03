@@ -17,6 +17,8 @@ The shared client validates wire data. TanStack DB collections describe bounded 
 one loaded page must not be presented as an exhaustive dataset. Session or workspace changes cancel pending reads,
 dispose collections, and clear caches. Refresh failures retain the last result and report stale data. Commands wait for
 server acknowledgement, retain request IDs across uncertain retries, and use revision checks for definition changes.
+Revisiting a page must not reuse a collection ID for a different instance while its querying hook remains mounted.
+Each released collection cancels and removes only its own query.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -24,6 +26,14 @@ current principal and workspace membership on the server. Signing out revokes th
 
 Model replies and tool output are untrusted text. Render them as text or through a deliberate safe renderer. Never
 embed secret values, raw credential-bearing tool arguments, or private runtime configuration in traces or browser assets.
+
+Trace intervals name their measured boundaries. Reservation-to-settlement time is not provider inference time;
+missing usage is unknown, never zero. Show recorded turn events through a bounded API page, not a filtered page of
+unrelated recent activity. The event query includes the original receipts of the turn's inputs.
+
+Shared UI controls own interaction and visual states. Use supported StyleX longhands for borders, outlines, backgrounds,
+and fonts; composite shorthands can disappear from the compiled CSS. Verify the packaged styles in a real browser,
+including keyboard focus, selected tabs, request selection, and narrow-screen navigation.
 
 Both celld and Cloudflare serve the same verified asset inventory. The installation manifest binds the console and
 Worker digests; failed or incomplete asset uploads must not activate a new Worker. Public source includes all four
@@ -49,6 +59,7 @@ OpenTofu plan before declaring an installation upgraded.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+- ast-grep `stylex-longhands` (113): enforced
 - oxlint `oxc/no-optional-chaining` (113): enforced, `"error"`
 
 <!-- End of the generated block. -->

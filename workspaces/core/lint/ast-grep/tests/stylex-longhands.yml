@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: stylex-longhands
+valid:
+  - "const styles = stylex.create({ button: { borderWidth: 1, borderStyle: 'solid', borderColor: 'black' } });"
+  - "const options = { border: '1px solid black' };"
+invalid:
+  - "const styles = stylex.create({ button: { border: '1px solid black' } });"
+  - "const styles = stylex.create({ button: { ':hover': { 'outline': '1px solid black' } } });"

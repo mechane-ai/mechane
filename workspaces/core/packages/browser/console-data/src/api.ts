@@ -14,6 +14,7 @@ export type ConsoleOperation =
   | 'sendInboxItem'
   | 'listTurns'
   | 'showTurn'
+  | 'listTurnEvents'
   | 'cancelTurn'
   | 'listRecentEvents'
   | 'listEvents'

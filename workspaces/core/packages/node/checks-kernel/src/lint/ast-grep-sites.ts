@@ -28,7 +28,18 @@ export const astGrepSites = Effect.fn('astGrepSites')(function* ({
   inherited,
 }: ToolSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
   const configuration = join(WORKSPACE_FOLDER, AST_GREP_CONFIGURATION);
-  const args = ['scan', '-c', configuration, '--json=stream', '--error=unused-suppression', ...targets];
+
+  const args = [
+    'scan',
+    '-c',
+    configuration,
+    '--json=stream',
+    '--error=unused-suppression',
+    '--no-ignore',
+    'hidden',
+    ...targets,
+  ];
+
   const { status, stdout, stderr } = yield* toolOutput({ command: AST_GREP, args, inherited, timeout: LINT_TIMEOUT });
 
   if (!Option.exists(status, (code) => FINISHED_STATUSES.has(code))) {

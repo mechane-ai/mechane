@@ -1,0 +1,16 @@
+id: stylex-longhands
+language: Tsx
+severity: error
+message: 'Use StyleX longhands, such as `borderWidth`, `borderStyle` and `borderColor` (113)'
+files: ['packages/browser/**/*.ts', 'packages/browser/**/*.tsx']
+rule:
+  kind: pair
+  has:
+    field: key
+    regex: ^['"]?(border|borderTop|borderBottom|borderLeft|borderRight|borderBlock|borderInline|outline|background|font)['"]?$
+  inside:
+    kind: call_expression
+    has:
+      field: function
+      pattern: stylex.create
+    stopBy: end

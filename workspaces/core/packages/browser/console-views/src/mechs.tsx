@@ -42,9 +42,8 @@ export function MechList({
     <Stack>
       <Row between>
         <Stack compact>
-          <Muted>WORKSPACE / MECHS</Muted>
           <Heading>Your mechs</Heading>
-          <Muted>Inspect their work, follow activity, and manage what runs next.</Muted>
+          <Muted>Agents, their recent work, and workspace usage.</Muted>
         </Stack>
         <Row>
           <Button onClick={onRefresh}>Refresh</Button>

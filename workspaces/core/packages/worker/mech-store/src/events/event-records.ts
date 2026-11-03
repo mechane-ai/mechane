@@ -3,7 +3,13 @@ import { Sequence } from '@mechane/records';
 import { decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, RowsPage, SqlCall } from '@mechane/store';
 import { Option, Schema } from 'effect';
-import type { AppendEventInput, EventRecords, EventsAfterInput, EventsBeforeInput } from '../types.ts';
+import type {
+  AppendEventInput,
+  EventRecords,
+  EventsAfterInput,
+  EventsBeforeInput,
+  TurnEventsAfterInput,
+} from '../types.ts';
 
 /**
  * The most events one page of a mech's log holds. Every page says whether more follow, so no client reads it, and a
@@ -32,11 +38,27 @@ export function eventRecords({ sql }: RecordsInput): EventRecords {
     appendEvent: (input) => appendEvent({ sql, ...input }),
     eventsAfter: (input) => eventsAfter({ sql, ...input }),
     eventsBefore: (input) => eventsBefore({ sql, ...input }),
+    turnEvents: (input) => turnEvents({ sql, ...input }),
     lastSequence: () => lastSequence({ sql }),
   };
 }
 
 const RecentEventRow = Schema.Struct({ event: Schema.fromJsonString(ListedEvent) });
+
+/** The indexed union includes the original input, even when it arrived before this turn began. */
+function turnEvents({ sql, turnId, after }: SqlCall<TurnEventsAfterInput>): RowsPage<ListedEvent> {
+  const cursor = sql.exec(
+    "SELECT event FROM events WHERE sequence > ? AND (json_extract(event, '$.turn_id') = ? OR json_extract(event, '$.inbox_item_id') IN (SELECT id FROM inbox_items WHERE turn_id = ?)) ORDER BY sequence LIMIT ?",
+    after,
+    turnId,
+    turnId,
+    EVENTS_PER_PAGE + 1,
+  );
+
+  const events = decodeRows({ cursor, schema: RecentEventRow }).map(({ event }) => event);
+
+  return { rows: events.slice(0, EVENTS_PER_PAGE), hasMore: events.length > EVENTS_PER_PAGE };
+}
 
 function eventsBefore({ sql, before }: SqlCall<EventsBeforeInput>): RowsPage<ListedEvent> {
   const cursorBefore = Option.getOrNull(before);

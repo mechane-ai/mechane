@@ -18,7 +18,7 @@ import type { SandboxManageInput } from '../sandbox.types.ts';
 import type { ReceiveSlackInboxItemInput } from '../slack.types.ts';
 import type { SourceAnswer, SourceGrantAnswer } from '../source.schemas.ts';
 import type { SourceManageInput } from '../source.types.ts';
-import type { TurnsAnswer } from '../turn.schemas.ts';
+import type { TurnEventsAnswer, TurnsAnswer } from '../turn.schemas.ts';
 import type { FindingsAnswer, WatchAnswer, WatchesAnswer } from '../watch.schemas.ts';
 import type { SetWatchInput, UpdateWatchStatusInput, WatchInput } from '../watch.types.ts';
 
@@ -73,6 +73,8 @@ export type SendInboxItemInput = {
 export type ThreadsInput = { readonly query: typeof catalog.listThreads.query.Encoded };
 
 export type TurnInput = { readonly turnId: string };
+
+export type TurnEventsInput = { readonly turnId: TurnId; readonly query: typeof catalog.listTurnEvents.query.Encoded };
 
 export type TurnsInput = { readonly query: typeof catalog.listTurns.query.Encoded };
 
@@ -149,6 +151,7 @@ type MechMethods = {
   readonly sendInboxItem: (input: SendInboxItemInput) => Promise<typeof InboxItemReceipt.Encoded>;
   readonly events: (input: EventsInput) => Promise<typeof EventsAnswer.Encoded>;
   readonly turn: (input: TurnInput) => Promise<TurnReading>;
+  readonly turnEvents: (input: TurnEventsInput) => Promise<typeof TurnEventsAnswer.Encoded>;
   readonly turns: (input: TurnsInput) => Promise<typeof TurnsAnswer.Encoded>;
   readonly recentEvents: (input: RecentEventsInput) => Promise<typeof EventsAnswer.Encoded>;
   readonly cancelTurn: (input: CancelTurnInput) => Promise<typeof TurnCancelAnswer.Encoded>;

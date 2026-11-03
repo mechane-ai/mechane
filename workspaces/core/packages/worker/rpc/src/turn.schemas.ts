@@ -1,4 +1,4 @@
-import { TurnStatus, UnansweredReason } from '@mechane/protocol';
+import { EventPage, TurnStatus, UnansweredReason } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
 import { Schema } from 'effect';
 import { RECORD_TIME_KEYS } from './mech.schemas.ts';
@@ -48,3 +48,8 @@ export const TurnsAnswer = Schema.TaggedUnion({
 });
 
 export type TurnsAnswer = typeof TurnsAnswer.Type;
+
+/** A bounded turn history, with missing-turn and missing-mech outcomes kept distinct. */
+export const TurnEventsAnswer = Schema.TaggedUnion({ Listed: { page: EventPage }, MechMissing: {}, TurnMissing: {} });
+
+export type TurnEventsAnswer = typeof TurnEventsAnswer.Type;

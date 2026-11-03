@@ -1,5 +1,5 @@
 import type { Mech, Workspace } from '@mechane/protocol';
-import { createCollection, DbClient } from '@tanstack/db';
+import { createCollection, DbClient, safeRandomUUID } from '@tanstack/db';
 import type { Collection } from '@tanstack/db';
 import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
@@ -52,8 +52,8 @@ const ALLOWANCE_REFRESH_MS = Duration.toMillis('30 seconds');
 
 type OwnedCollection = { readonly id: Collection['id']; readonly cleanup: Collection['cleanup'] };
 
-function collectionKey(workspace: string, key: string): string {
-  return `${workspace}:${key}`;
+function collectionKey(workspace: string, key: string, instance: string): string {
+  return `${workspace}:${key}:${instance}`;
 }
 
 type ConsoleResource<N extends ConsoleOperation> = ReturnType<typeof createResource<N>>;
@@ -82,7 +82,9 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
       readonly interval?: number | false;
     },
   ): ConsoleResource<N> {
-    const key = collectionKey(workspaceId, options.key);
+    // A mounted live query must never see a different source instance under an earlier collection ID.
+    const instance = safeRandomUUID();
+    const key = collectionKey(workspaceId, options.key, instance);
     const collection = createResource({ cache, api, name, input, key, interval: options.interval ?? false });
 
     resources.add(collection);
@@ -106,6 +108,12 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
       ),
     trace: (mechId: string, turnId: Input<'showTurn'>['turnId']) =>
       resource('showTurn', { workspaceId, mechId, turnId }, { key: `trace:${mechId}:${turnId}`, interval: REFRESH_MS }),
+    turnEvents: (mechId: string, turnId: Input<'showTurn'>['turnId'], after: number) =>
+      resource(
+        'listTurnEvents',
+        { workspaceId, mechId, turnId, after },
+        { key: `turn-events:${mechId}:${turnId}:${after}`, interval: ACTIVITY_REFRESH_MS },
+      ),
     events: (mechId: string, before: number | null) =>
       resource(
         'listRecentEvents',
