@@ -1,5 +1,5 @@
+import { Button, Cell, CopyValue, EmptyState, ListFooter, Status, Table } from '@mechane-ai/ui';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
-import { Button, Cell, CopyValue, EmptyState, ListFooter, Status, Table } from '@mechane/ui';
 import type { ReactNode } from 'react';
 import { ageLabel, moneyLabel, preciseTimeLabel } from './format.ts';
 

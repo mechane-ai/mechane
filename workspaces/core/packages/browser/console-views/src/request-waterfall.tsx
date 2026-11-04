@@ -1,7 +1,7 @@
+import { Waterfall } from '@mechane-ai/ui/charts';
+import type { WaterfallItem } from '@mechane-ai/ui/charts';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
-import { Waterfall } from '@mechane/ui/charts';
-import type { WaterfallItem } from '@mechane/ui/charts';
 import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, moneyLabel } from './format.ts';

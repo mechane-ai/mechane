@@ -33,7 +33,7 @@ Run the existing `stylex-longhands` lint rule and its allowed/violation examples
 
 ## Local adaptations
 
-The token definition export is `@mechane/ui/tokens.stylex`.
+The token definition export is `@mechane-ai/ui/tokens.stylex`.
 Compiler resolution and the package export map describe the same source. Normal package exports remain named exports;
 the direct token definition path is the compiler-required exception.
 Composition review is development evidence. It does not require a new browser suite or automatic Storybook play tests.

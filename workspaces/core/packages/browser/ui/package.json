@@ -1,6 +1,6 @@
 {
-  "name": "@mechane/ui",
-  "version": "0.1.0",
+  "name": "@mechane-ai/ui",
+  "version": "0.2.0",
   "description": "Mechane UI components, tokens, application layouts, and charts",
   "license": "Apache-2.0",
   "repository": {

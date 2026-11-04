@@ -1,6 +1,6 @@
+import { Columns, CopyValue, Details, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/ui';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
-import { Columns, CopyValue, Details, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane/ui';
 import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';

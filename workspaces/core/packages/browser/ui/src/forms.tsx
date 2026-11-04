@@ -27,7 +27,7 @@ const styles = stylex.create({
     'paddingInline': controls.paddingInline,
     'fontFamily': typography.fontFamily,
     'WebkitFontSmoothing': 'antialiased',
-    'fontSize': typography.inputSize,
+    'fontSize': { default: typography.inputSize, [conditions.coarsePointer]: typography.touchInputSize },
     'lineHeight': typography.bodyLineHeight,
     ':focus-visible': {
       outlineWidth: controls.focusWidth,

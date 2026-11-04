@@ -62,9 +62,14 @@ The registry loads both shipped `variant-style-comparisons` rules from `assets/a
 Their examples distinguish a named variant from a comparison between two runtime record identifiers.
 Exhaustive maps remain a TypeScript requirement; the syntax rule alone does not prove exhaustiveness.
 
+The UI package rejects literal color, font-size, shadow, and nonzero transition timing values in component styles.
+Define those roles in `tokens.stylex.ts`; zero-duration motion remains available for reduced motion and direct dragging.
+Review other visual literals and external theme overrides against the same ownership boundary.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `textContrast` 4.5; `largeTextContrast` 3.
+- ast-grep `ui-visual-token-values` (066): enforced
 - asset `assets/ast-grep/rules` `variant-style-comparisons-typescript` (066): enforced
 - asset `assets/ast-grep/rules` `variant-style-comparisons-tsx` (066): enforced
 

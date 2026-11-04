@@ -33,7 +33,7 @@ For each entry a change adds to the check's configuration, does a runtime, a fra
 
 ## Local adaptations
 
-Within `@mechane/ui`, each public subpath is a module boundary. Layouts and charts consume shared controls through the
+Within `@mechane-ai/ui`, each public subpath is a module boundary. Layouts and charts consume shared controls through the
 root entry point; these production uses count as consumers of that public control surface.
 
 `mise -C workspaces/core run knip` runs `knip` and then `knip --production` with `includeEntryExports`; production files carry `!` in `knip.jsonc`, and every member's files carry it, the smoke's and its support's among them, so the production run checks them too.

@@ -64,7 +64,7 @@ module.exports = {
     },
     {
       name: 'no-browser-catalog-imports',
-      comment: 'Keep catalog examples in development, such as `import { Button } from "@mechane/ui"`',
+      comment: 'Keep catalog examples in development, such as `import { Button } from "@mechane-ai/ui"`',
       severity: 'error',
       from: {
         path: '^packages/browser/',
@@ -111,7 +111,7 @@ module.exports = {
       },
     },
     {
-      name: 'layer:@mechane/ui',
+      name: 'layer:@mechane-ai/ui',
       comment:
         'Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`',
       severity: 'error',

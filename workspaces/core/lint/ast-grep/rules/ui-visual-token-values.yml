@@ -1,0 +1,17 @@
+id: ui-visual-token-values
+language: Tsx
+severity: error
+message: 'Use a visual token, such as `fontSize: typography.bodySize` or `transitionDuration: motion.duration` (066)'
+files: ['packages/browser/ui/src/**/*.ts', 'packages/browser/ui/src/**/*.tsx']
+rule:
+  any:
+    - kind: string
+      regex: ^['"](#|rgb\(|rgba\(|hsl\(|hsla\(|cubic-bezier\(|ease|linear|[1-9][0-9.]*\s*(px|rem|em|ms|s))|#[0-9a-fA-F]{3,8}\b
+    - kind: number
+      regex: ^[1-9]
+  inside:
+    kind: pair
+    has:
+      field: key
+      regex: ^['"]?(color|backgroundColor|borderColor|outlineColor|fill|stroke|fontSize|outlineWidth|boxShadow|transitionDuration|transitionTimingFunction)['"]?$
+    stopBy: end

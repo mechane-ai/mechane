@@ -10,6 +10,12 @@ import { colors, conditions, layers, motion, typography } from './tokens.stylex.
 
 const styles = stylex.create({
   viewport: { position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: layers.dialog },
+  transition: {
+    'transitionDuration': { default: motion.drawerDuration, [conditions.reducedMotion]: '0ms' },
+    'transitionTimingFunction': motion.drawerEasing,
+    ':is([data-swiping])': { transitionDuration: '0ms' },
+  },
+  backdrop: { opacity: 'calc(1 - var(--drawer-swipe-progress, 0))' },
   popup: {
     'position': 'absolute',
     'top': 0,
@@ -31,10 +37,9 @@ const styles = stylex.create({
     'borderRightStyle': 'solid',
     'borderRightColor': colors.line,
     'outlineWidth': 0,
+    'transform': 'translateX(var(--drawer-swipe-movement-x, 0px))',
     'transitionProperty': 'transform',
-    'transitionDuration': { default: motion.duration, [conditions.reducedMotion]: '0ms' },
-    'transitionTimingFunction': motion.easing,
-    ':is([data-swiping])': { transitionDuration: '0ms' },
+    ':is([data-starting-style], [data-ending-style])': { transform: 'translateX(-100%)' },
   },
 });
 
@@ -66,7 +71,11 @@ function DrawerBackdrop({ className, style, ...props }: DrawerBackdropProps): Re
   return (
     <BaseDrawer.Backdrop
       {...props}
-      {...mergeStyles<BaseDrawer.Backdrop.State>({ className, style, styles: stylex.props(overlayStyles.backdrop) })}
+      {...mergeStyles<BaseDrawer.Backdrop.State>({
+        className,
+        style,
+        styles: stylex.props(overlayStyles.backdrop, styles.transition, styles.backdrop),
+      })}
     />
   );
 }
@@ -84,7 +93,11 @@ function DrawerPopup({ className, style, xstyle, ...props }: DrawerPopupProps): 
   return (
     <BaseDrawer.Popup
       {...props}
-      {...mergeStyles<BaseDrawer.Popup.State>({ className, style, styles: stylex.props(styles.popup, xstyle) })}
+      {...mergeStyles<BaseDrawer.Popup.State>({
+        className,
+        style,
+        styles: stylex.props(styles.transition, styles.popup, xstyle),
+      })}
     />
   );
 }

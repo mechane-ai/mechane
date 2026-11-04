@@ -115,6 +115,9 @@
 /lint/ast-grep/tests/try-promise-shape.yml linguist-generated merge=ours
 /lint/ast-grep/tests/type-predicate.yml linguist-generated merge=ours
 /lint/ast-grep/tests/types-file-role.yml linguist-generated merge=ours
+/lint/ast-grep/tests/ui-hover-capability.yml linguist-generated merge=ours
+/lint/ast-grep/tests/ui-motion-properties.yml linguist-generated merge=ours
+/lint/ast-grep/tests/ui-visual-token-values.yml linguist-generated merge=ours
 /lint/ast-grep/tests/unit-number.yml linguist-generated merge=ours
 /lint/ast-grep/tests/untagged-errors-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/untyped-failure.yml linguist-generated merge=ours

@@ -1,7 +1,7 @@
+import { Button, Muted, Row, Stack } from '@mechane-ai/ui';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
 import type { EventPage } from '@mechane/protocol';
-import { Button, Muted, Row, Stack } from '@mechane/ui';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePageCursors } from '../navigation.tsx';

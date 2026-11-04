@@ -1,3 +1,4 @@
+import { SkipLink } from '@mechane-ai/ui';
 import { createFileRoute } from '@tanstack/react-router';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Welcome } from '../entrance.tsx';
@@ -18,9 +19,7 @@ export const Route = createFileRoute('/welcome')({
                 <link rel="stylesheet" href={css} />
               </head>
               <body>
-                <a className="skip-link" href="#main">
-                  Skip to content
-                </a>
+                <SkipLink href="#main">Skip to content</SkipLink>
                 <Welcome />
               </body>
             </html>,

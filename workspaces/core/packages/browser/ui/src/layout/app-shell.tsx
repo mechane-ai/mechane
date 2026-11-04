@@ -88,7 +88,7 @@ export function AppShell({ sidebarHeader, sidebar, footer, children }: AppShellP
             {sidebar}
           </Sidebar>
         </aside>
-        <main id="main" {...stylex.props(styles.main)}>
+        <main id="main" tabIndex={-1} {...stylex.props(styles.main)}>
           {children}
         </main>
       </div>

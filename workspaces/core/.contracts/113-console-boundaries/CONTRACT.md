@@ -10,7 +10,7 @@ The console ships at `/console` in the same immutable release as the Worker. `/a
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
 `console` owns routes, application composition, and the Storybook runner. `console-data` owns requests and reactive
-state; `console-views` owns resource presentation and domain formatting. `@mechane/ui` owns shared visual roles,
+state; `console-views` owns resource presentation and domain formatting. `@mechane-ai/ui` owns shared visual roles,
 accessible controls, generic data presentation, layouts, and charts behind its declared public entry points. Browser packages import only shared or lower browser packages. No browser package imports Worker, Node,
 private Factory, or installation credentials.
 

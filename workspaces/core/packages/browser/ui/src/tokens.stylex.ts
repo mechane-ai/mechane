@@ -38,6 +38,7 @@ export const typography = stylex.defineVars({
   captionSize: '12px',
   captionLineHeight: '18px',
   inputSize: '14px',
+  touchInputSize: '16px',
   sectionSize: '16px',
   sectionLineHeight: '22px',
   headingSize: '36px',
@@ -60,14 +61,20 @@ export const controls = stylex.defineVars({
 
 export const radii = stylex.defineVars({ sm: '4px', md: '6px' });
 
-export const motion = stylex.defineVars({ duration: '140ms', easing: 'cubic-bezier(0.2, 0.75, 0.25, 1)' });
+export const motion = stylex.defineVars({
+  duration: '140ms',
+  easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+  drawerDuration: '220ms',
+  drawerEasing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+});
 
 export const shadows = stylex.defineVars({ popup: '0 4px 16px #00000014' });
 
-export const layers = stylex.defineConsts({ backdrop: '20', dialog: '21', popup: '30', tooltip: '40' });
+export const layers = stylex.defineConsts({ backdrop: '20', dialog: '21', popup: '30', tooltip: '40', skipLink: '50' });
 
 export const conditions = stylex.defineConsts({
   coarsePointer: '@media (pointer: coarse)',
+  hoverPointer: '@media (hover: hover) and (pointer: fine)',
   compactText: '@media (max-width:639px)',
   compactTable: '@media (max-width:600px)',
   reducedMotion: '@media (prefers-reduced-motion: reduce)',

@@ -1,7 +1,7 @@
+import { Button, ListFooter } from '@mechane-ai/ui';
 import type { ConsoleData } from '@mechane/console-data';
 import { TurnList } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
-import { Button, ListFooter } from '@mechane/ui';
 import { Option } from 'effect';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';

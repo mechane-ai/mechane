@@ -9,26 +9,29 @@ import { colors, layers, radii, shadows, spacing, typography } from './tokens.st
 
 const styles = stylex.create({
   popup: {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: layers.dialog,
-    boxSizing: 'border-box',
-    width: 'min(440px, calc(100vw - 32px))',
-    maxHeight: 'calc(100dvh - 32px)',
-    overflowY: 'auto',
-    padding: spacing.xl,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    borderRadius: radii.md,
-    boxShadow: shadows.popup,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontFamily: typography.fontFamily,
-    WebkitFontSmoothing: 'antialiased',
-    outlineWidth: 0,
+    'position': 'fixed',
+    'top': '50%',
+    'left': '50%',
+    'transform': 'translate(-50%, -50%)',
+    'opacity': 1,
+    'zIndex': layers.dialog,
+    'boxSizing': 'border-box',
+    'width': 'min(440px, calc(100vw - 32px))',
+    'maxHeight': 'calc(100dvh - 32px)',
+    'overflowY': 'auto',
+    'overscrollBehavior': 'contain',
+    'padding': spacing.xl,
+    'borderWidth': 1,
+    'borderStyle': 'solid',
+    'borderColor': colors.line,
+    'borderRadius': radii.md,
+    'boxShadow': shadows.popup,
+    'backgroundColor': colors.surface,
+    'color': colors.ink,
+    'fontFamily': typography.fontFamily,
+    'WebkitFontSmoothing': 'antialiased',
+    'outlineWidth': 0,
+    ':is([data-starting-style], [data-ending-style])': { opacity: 0, transform: 'translate(-50%, -50%) scale(0.98)' },
   },
 });
 
@@ -48,7 +51,11 @@ function DialogBackdrop({ className, style, ...props }: DialogBackdropProps): Re
   return (
     <BaseDialog.Backdrop
       {...props}
-      {...mergeStyles<BaseDialog.Backdrop.State>({ className, style, styles: stylex.props(overlayStyles.backdrop) })}
+      {...mergeStyles<BaseDialog.Backdrop.State>({
+        className,
+        style,
+        styles: stylex.props(overlayStyles.transition, overlayStyles.backdrop),
+      })}
     />
   );
 }
@@ -60,7 +67,7 @@ function DialogPopup({ className, style, xstyle, ...props }: DialogPopupProps): 
       {...mergeStyles<BaseDialog.Popup.State>({
         className,
         style,
-        styles: stylex.props(overlayStyles.content, styles.popup, xstyle),
+        styles: stylex.props(overlayStyles.content, overlayStyles.transition, styles.popup, xstyle),
       })}
     />
   );

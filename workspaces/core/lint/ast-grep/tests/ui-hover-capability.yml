@@ -1,0 +1,8 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-hover-capability
+valid:
+  - "const styles = { ':hover': { color: { [conditions.hoverPointer]: colors.ink } } };"
+  - "const styles = { [conditions.hoverPointer]: { ':hover': { color: colors.ink } } };"
+  - "const styles = { ':focus-visible': { color: colors.ink } };"
+invalid:
+  - "const styles = { ':hover': { color: colors.ink } };"

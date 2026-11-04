@@ -42,11 +42,19 @@ Apply these requirements to implemented components that animate. Static componen
 Use shared motion tokens and named reduced-motion conditions from `ui/tokens`.
 Base UI continues to own overlay positioning and focus; the component owns any decorative transition it adds.
 
+Keep high-frequency controls, tab selection, tooltips, and data refreshes immediate. Dialogs use a short opacity and
+small-scale transition. The left drawer follows Base UI's swipe displacement and open/close state attributes.
+Use the shared duration and easing tokens; reduced motion removes transition time, while dragging follows the pointer
+without easing. Do not add a timer, animation library, or second open-state owner for these transitions.
+
+The registry permits only explicit opacity and transform transition properties and rejects transition shorthand.
+It does not establish focus preservation, interruption, or reduced-motion behavior; check those in the browser.
+
 The adopted baseline has no continuous automatic animation. If one is introduced, the pause, visibility, and cleanup
 requirements apply with that implementation. No separate animation framework or test suite is required.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-No rule of the registry decides this contract; review does.
+- ast-grep `ui-motion-properties` (073): enforced
 
 <!-- End of the generated block. -->

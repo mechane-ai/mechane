@@ -1,5 +1,5 @@
 import type { Preview } from '@storybook/react-vite';
-import '@mechane/ui/styles.css';
+import '@mechane-ai/ui/styles.css';
 import './styles.css';
 
 const preview: Readonly<Preview> = {

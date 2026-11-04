@@ -52,6 +52,6 @@ The Storybook build proves catalog composition and compilation, not browser focu
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `no-browser-catalog-imports` (075): enforced: Keep catalog examples in development, such as `import { Button } from "@mechane/ui"`
+- dependency-cruiser `no-browser-catalog-imports` (075): enforced: Keep catalog examples in development, such as `import { Button } from "@mechane-ai/ui"`
 
 <!-- End of the generated block. -->

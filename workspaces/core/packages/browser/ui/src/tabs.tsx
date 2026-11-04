@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ValueStateProperties } from './control-state.ts';
 import { mergeStyles } from './style-composition.ts';
-import { colors, controls, spacing, typography } from './tokens.stylex.ts';
+import { colors, conditions, controls, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   root: { fontFamily: typography.fontFamily, WebkitFontSmoothing: 'antialiased', minWidth: 0 },
@@ -21,7 +21,7 @@ const styles = stylex.create({
     'WebkitFontSmoothing': 'antialiased',
     'borderWidth': 0,
     'minHeight': controls.coarseTarget,
-    'paddingBlock': 10,
+    'paddingBlock': spacing.sm,
     'paddingInline': 0,
     'backgroundColor': 'transparent',
     'borderBottomWidth': 2,
@@ -32,7 +32,7 @@ const styles = stylex.create({
     'fontSize': typography.inputSize,
     'lineHeight': typography.bodyLineHeight,
     'whiteSpace': 'nowrap',
-    ':hover:not([data-disabled])': { color: colors.ink },
+    ':hover:not([data-disabled])': { color: { [conditions.hoverPointer]: colors.ink } },
     ':is([data-active])': { borderBottomColor: colors.ink, color: colors.ink },
     ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
     ':focus-visible': {

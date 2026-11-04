@@ -1,6 +1,6 @@
+import { Cell, EmptyState, Muted, Stack, Status, Table } from '@mechane-ai/ui';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
-import { Cell, EmptyState, Muted, Stack, Status, Table } from '@mechane/ui';
 import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, timeLabel } from './format.ts';

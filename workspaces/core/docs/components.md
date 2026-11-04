@@ -5,11 +5,11 @@ Use the component catalog to choose a maintained component and copy its recommen
 Console screen examples. Every example uses fixed synthetic data and works without application services.
 
 **Supported** means a component has a Console consumer, maintained public behavior, and catalog guidance. It belongs to
-the independently versioned `@mechane/ui` package, whose components the application compiles into its release. Proposed
-components are not callable APIs. The package entry points and colocated stories describe the available components;
-there is no separate component registry.
+the independently versioned `@mechane-ai/ui` package, whose components the application compiles into its release.
+Proposed components are not callable APIs. The package entry points and colocated stories describe the available
+components; there is no separate component registry.
 
-The [package guide](../packages/browser/ui/README.md) covers installing the standalone archive and its compiled CSS.
+The [package guide](../packages/browser/ui/README.md) covers installing the npm package and its compiled CSS.
 
 ## Choose
 
@@ -33,15 +33,29 @@ Compound APIs such as Field and Dialog are documented through their family compo
 Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
 UI props; the tables are not an exhaustive API reference.
 
-Import shared tokens directly from `@mechane/ui/tokens.stylex`. StyleX needs the defining export to compile variables.
-These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to `ui/layout`.
-The supported theme is light.
+Import shared tokens directly from `@mechane-ai/ui/tokens.stylex`. StyleX needs the defining export to compile
+variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to
+`ui/layout`. The supported theme is light.
+
+Keep the compact desktop type and spacing scale. Text-entry controls use 16px text on coarse pointers, and standalone
+controls provide 44px touch targets. Hover styles apply only to a fine pointer that supports hover. Shared tokens own
+these decisions so applications do not repair individual controls.
+
+Keep buttons, tab selection, tooltips, and refreshes immediate. Dialogs fade and scale slightly; drawers follow their
+edge and the user's swipe. Reduced motion removes transition time. Base UI owns focus, dismissal, and removal after
+transitions. Use the public parts instead of adding timers or a second overlay state machine.
 
 ## Compose
 
 Button performs an action; TextLink is an anchor. An icon-only action always needs its own accessible label, even when a
 Tooltip is present. Button’s `variant` controls emphasis, `tone` describes intent, and `pending` prevents duplicate
 activation. The application owns the asynchronous operation and its recovery.
+
+Place SkipLink before application navigation. Its `href` points to the main content's stable ID. It becomes visible
+immediately on focus; the destination must accept focus. The keyboard-navigation story demonstrates this composition.
+
+Pending actions keep focus and reserve space for both labels. Unavailable actions remain disabled. Use concise labels
+that describe the operation; a refresh failure belongs beside the retained content, not in a replacement empty screen.
 
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a

@@ -1,14 +1,19 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
-import { colors, conditions, spacing, typography } from './tokens.stylex.ts';
+import { colors, conditions, controls, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   scroll: {
     'minWidth': 0,
     'width': '100%',
     'overflowX': 'auto',
-    ':focus-visible': { outlineWidth: 2, outlineStyle: 'solid', outlineColor: colors.focus, outlineOffset: -2 },
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: -2,
+    },
   },
   table: {
     width: '100%',

@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { Text } from '../index.ts';
-import { colors, controls, spacing, typography } from '../tokens.stylex.ts';
+import { colors, conditions, controls, spacing, typography } from '../tokens.stylex.ts';
 
 type WaterfallGeometry =
   | { readonly kind: 'interval'; readonly start: number; readonly end: number }
@@ -69,7 +69,7 @@ const styles = stylex.create({
     'fontFamily': typography.fontFamily,
     'textAlign': 'start',
     'cursor': 'pointer',
-    ':hover': { backgroundColor: colors.canvas },
+    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',

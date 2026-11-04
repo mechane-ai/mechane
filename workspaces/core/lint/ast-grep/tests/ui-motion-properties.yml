@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-motion-properties
+valid:
+  - "const styles = { transition: { transitionProperty: 'opacity' } };"
+  - "const styles = { transitionProperty: 'opacity, transform' };"
+  - "const styles = { transitionProperty: 'transform' };"
+invalid:
+  - "const styles = { transitionProperty: 'all' };"
+  - "const styles = { transitionProperty: 'height, opacity' };"
+  - "const styles = { transition: 'opacity 140ms' };"

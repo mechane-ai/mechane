@@ -1,13 +1,3 @@
-import type { TraceTab } from '@mechane/console-views';
-import {
-  Activity,
-  ConsoleShell,
-  MechList,
-  DefinitionConflict as SavedDefinition,
-  TurnTrace,
-} from '@mechane/console-views';
-import { Allowance, EventPage, MechPage, Trace, WorkspaceList } from '@mechane/protocol';
-import { Micros } from '@mechane/records';
 import {
   Button,
   Field,
@@ -20,8 +10,18 @@ import {
   Stack,
   TextButton,
   TextLink,
-} from '@mechane/ui';
-import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane/ui/layout';
+} from '@mechane-ai/ui';
+import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import type { TraceTab } from '@mechane/console-views';
+import {
+  Activity,
+  ConsoleShell,
+  MechList,
+  DefinitionConflict as SavedDefinition,
+  TurnTrace,
+} from '@mechane/console-views';
+import { Allowance, EventPage, MechPage, Trace, WorkspaceList } from '@mechane/protocol';
+import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Option, Schema } from 'effect';
 import { Bot, Plus, RefreshCw } from 'lucide-react';

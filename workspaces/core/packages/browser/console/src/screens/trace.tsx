@@ -1,11 +1,11 @@
+import { Notice, Stack } from '@mechane-ai/ui';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { TurnTrace } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
 import type { Mech, Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
-import { Notice, Stack } from '@mechane/ui';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui/layout';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
 import { useMemo, useState } from 'react';

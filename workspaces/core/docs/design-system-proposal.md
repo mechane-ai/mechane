@@ -20,11 +20,11 @@ packages/browser/
   console/         TanStack Start routes, application composition, and Storybook runner
 ```
 
-`@mechane/ui` is one independently versioned package. Tokens depend on StyleX; controls own Base UI integration. Its
+`@mechane-ai/ui` is one independently versioned package. Tokens depend on StyleX; controls own Base UI integration. Its
 `layout` and `charts` modules consume tokens and controls without depending on each other. `console-views` combines them
 with Mechane records. `console` connects those views to `console-data` and routing.
 
-The public name is **Mechane UI**, installed as `@mechane/ui`. Its root exposes controls; `/layout`, `/charts`,
+The public name is **Mechane UI**, installed as `@mechane-ai/ui`. Its root exposes controls; `/layout`, `/charts`,
 `/tokens`, and `/styles.css` expose the other cohesive surfaces. Keep one source package in this repository and publish
 compiled ESM, declarations, and CSS with independent `ui-v` releases. Workspace consumers build the same source.
 Ordinary external React applications need no StyleX compiler. The direct `/tokens.stylex` export supports applications
@@ -38,9 +38,9 @@ Keep normal named package exports. Group files by their component family when se
 avoid a folder containing only an implementation and a forwarding index. Use one maintained implementation of each
 component, with no copies inside screen folders.
 
-Tokens need a direct definition export, such as `@mechane/ui/tokens.stylex`, resolving to `src/tokens.stylex.ts`. StyleX
-requires direct imports from the defining file. Validate resolution in both the application and Storybook compiler
-before moving every consumer. CSS variable references are not numeric inputs for visx geometry.
+Tokens need a direct definition export, such as `@mechane-ai/ui/tokens.stylex`, resolving to `src/tokens.stylex.ts`.
+StyleX requires direct imports from the defining file. Validate resolution in both the application and Storybook
+compiler before moving every consumer. CSS variable references are not numeric inputs for visx geometry.
 [StyleX variable imports](https://stylexjs.com/docs/learn/theming/using-variables/)
 
 Sidebar geometry belongs to `ui/layout`. A workspace switcher and Mechane branding belong to `console-views`. Generic
@@ -88,7 +88,7 @@ do not build a general component factory. A composed tooltip and dialog trigger 
 An illustrative field API:
 
 ```tsx
-import { Button, Field, Input } from '@mechane/ui';
+import { Button, Field, Input } from '@mechane-ai/ui';
 
 <Field.Root name="name">
   <Field.Label>Name</Field.Label>

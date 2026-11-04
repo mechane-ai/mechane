@@ -3,13 +3,6 @@
   * {
     box-sizing: border-box;
   }
-  html {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', sans-serif;
-    font-size: 14px;
-    -webkit-font-smoothing: antialiased;
-    color: #0a0a0a;
-    background: #ffffff;
-  }
   body {
     margin: 0;
   }
@@ -18,30 +11,5 @@
   select,
   textarea {
     font: inherit;
-  }
-  button:focus-visible,
-  a:focus-visible {
-    outline: 2px solid #0a69e2;
-    outline-offset: 3px;
-  }
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .skip-link {
-    position: fixed;
-    left: 12px;
-    top: -60px;
-    z-index: 100;
-    padding: 12px;
-    background: white;
-    color: #0a69e2;
-  }
-  .skip-link:focus {
-    top: 12px;
   }
 }

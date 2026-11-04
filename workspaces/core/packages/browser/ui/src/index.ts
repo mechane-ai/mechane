@@ -13,3 +13,4 @@ export { CopyValue } from './copy-value.tsx';
 export { Loading } from './loading.tsx';
 export { Tabs } from './tabs.tsx';
 export { Inspector, Details } from './inspector.tsx';
+export { SkipLink } from './skip-link.tsx';

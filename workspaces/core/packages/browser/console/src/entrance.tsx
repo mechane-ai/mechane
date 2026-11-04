@@ -1,6 +1,6 @@
+import { EmptyState, Loading, TextLink } from '@mechane-ai/ui';
+import { AppShell, DetailPage, PageToolbar } from '@mechane-ai/ui/layout';
 import { ConsoleBrand } from '@mechane/console-views';
-import { EmptyState, Loading, TextLink } from '@mechane/ui';
-import { AppShell, DetailPage, PageToolbar } from '@mechane/ui/layout';
 import type { ReactNode } from 'react';
 
 export function ConsoleEntrance({ children }: { readonly children?: ReactNode }): ReactNode {

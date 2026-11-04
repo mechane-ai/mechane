@@ -1,6 +1,6 @@
+import { Badge, CopyValue, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane-ai/ui';
 import { Event } from '@mechane/protocol';
 import type { EventPage } from '@mechane/protocol';
-import { Badge, CopyValue, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane/ui';
 import { Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { preciseTimeLabel, timeLabel } from './format.ts';

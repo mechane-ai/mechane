@@ -37,7 +37,7 @@ Review changed presentation event handlers and lifecycle code for requests, pers
 
 ## Local adaptations
 
-This contract governs `@mechane/ui`, including its `layout` and `charts` modules. `console-views` may use Mechane
+This contract governs `@mechane-ai/ui`, including its `layout` and `charts` modules. `console-views` may use Mechane
 records and domain formatting under contract 113. A resource view does not need a duplicate type for each shared API record.
 
 Keep controls and tokens independent of layouts and charts. Layouts and charts may use controls and tokens but remain

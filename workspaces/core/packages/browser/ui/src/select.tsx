@@ -27,7 +27,7 @@ const styles = stylex.create({
     'textAlign': 'left',
     'color': colors.ink,
     'cursor': 'pointer',
-    ':hover:not([data-disabled])': { backgroundColor: colors.canvas },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
     ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
     ':is([data-invalid])': { borderColor: colors.danger },
     ':focus-visible': {
@@ -55,6 +55,7 @@ const styles = stylex.create({
     boxShadow: shadows.popup,
     maxHeight: 'var(--available-height)',
     overflowY: 'auto',
+    overscrollBehavior: 'contain',
   },
   option: {
     'display': 'flex',

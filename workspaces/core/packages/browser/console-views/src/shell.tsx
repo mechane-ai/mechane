@@ -1,8 +1,15 @@
+import { Select } from '@mechane-ai/ui';
+import {
+  AppShell,
+  Navigation,
+  NavigationItem,
+  NavigationLink,
+  SidebarFooter,
+  SidebarLabel,
+} from '@mechane-ai/ui/layout';
+import { colors, controls, radii, spacing, typography } from '@mechane-ai/ui/tokens.stylex';
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
-import { Select } from '@mechane/ui';
-import { AppShell, Navigation, NavigationItem, NavigationLink, SidebarFooter, SidebarLabel } from '@mechane/ui/layout';
-import { colors, controls, radii, spacing, typography } from '@mechane/ui/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { BookOpen, Check, ChevronDown, FileText, Layers3, LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';

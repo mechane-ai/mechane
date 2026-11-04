@@ -1,6 +1,7 @@
 import { Button as BaseButton } from '@base-ui/react/button';
 import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
+import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { mergeStyles } from './style-composition.ts';
 import type { ControlStyle, PlacementStyle } from './style-composition.ts';
@@ -25,7 +26,8 @@ const styles = stylex.create({
     'lineHeight': typography.bodyLineHeight,
     'cursor': 'pointer',
     'whiteSpace': 'nowrap',
-    ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':is([data-disabled]):not([aria-busy="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':is([aria-busy="true"])': { cursor: 'progress' },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -39,13 +41,13 @@ const styles = stylex.create({
     'backgroundColor': colors.ink,
     'borderColor': colors.ink,
     'color': colors.inverse,
-    ':hover:not([data-disabled])': { backgroundColor: colors.inkHover },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } },
   },
   outlineNeutral: {
     'backgroundColor': colors.canvas,
     'borderColor': colors.line,
     'color': colors.ink,
-    ':hover:not([data-disabled])': { backgroundColor: colors.line },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.line } },
   },
   ghostNeutral: {
     'backgroundColor': 'transparent',
@@ -53,19 +55,19 @@ const styles = stylex.create({
     'borderWidth': 0,
     'color': colors.ink,
     'fontWeight': 400,
-    ':hover:not([data-disabled])': { backgroundColor: colors.canvas },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
   },
   solidDanger: {
     'backgroundColor': colors.danger,
     'borderColor': colors.danger,
     'color': colors.inverse,
-    ':hover:not([data-disabled])': { backgroundColor: colors.dangerHover },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.dangerHover } },
   },
   outlineDanger: {
     'backgroundColor': colors.surface,
     'borderColor': colors.danger,
     'color': colors.danger,
-    ':hover:not([data-disabled])': { backgroundColor: colors.dangerSoft },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.dangerSoft } },
   },
   ghostDanger: {
     'backgroundColor': 'transparent',
@@ -73,7 +75,7 @@ const styles = stylex.create({
     'borderWidth': 0,
     'color': colors.danger,
     'fontWeight': 400,
-    ':hover:not([data-disabled])': { backgroundColor: colors.dangerSoft },
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.dangerSoft } },
   },
   labels: { display: 'inline-grid' },
   label: { gridArea: '1 / 1' },
@@ -107,8 +109,9 @@ const styles = stylex.create({
     'textOverflow': 'ellipsis',
     'verticalAlign': 'middle',
     'cursor': 'pointer',
-    ':hover:not([data-disabled])': { textDecorationLine: 'underline' },
-    ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':hover:not([data-disabled])': { textDecorationLine: { [conditions.hoverPointer]: 'underline' } },
+    ':is([data-disabled]):not([aria-busy="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':is([aria-busy="true"])': { cursor: 'progress' },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -123,7 +126,7 @@ const styles = stylex.create({
     'WebkitFontSmoothing': 'antialiased',
     'color': colors.ink,
     'textDecorationLine': 'none',
-    ':hover': { textDecorationLine: 'underline' },
+    ':hover': { textDecorationLine: { [conditions.hoverPointer]: 'underline' } },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -152,7 +155,7 @@ type TextButtonProps = ComponentProps<typeof BaseButton> &
   PendingProps & { readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
 
 type TextLinkProps = ComponentProps<'a'> & { readonly xstyle?: PlacementStyle };
-type ButtonLabelsProps = PendingProps & { readonly children?: ReactNode };
+type ButtonLabelsProps = PendingProps & { readonly id: string; readonly children?: ReactNode };
 
 const variants = {
   neutral: { solid: styles.solidNeutral, outline: styles.outlineNeutral, ghost: styles.ghostNeutral },
@@ -167,13 +170,13 @@ const textTones = { neutral: styles.neutralText, danger: styles.dangerText } sat
   stylex.StyleXStyles
 >;
 
-function ButtonLabels({ children, pending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
+function ButtonLabels({ id, children, pending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
   if (pendingLabel === undefined) {
     return children;
   }
 
   return (
-    <span {...stylex.props(styles.labels)}>
+    <span id={id} {...stylex.props(styles.labels)}>
       <span aria-hidden={pending} {...stylex.props(styles.label, pending && styles.hidden)}>
         {children}
       </span>
@@ -197,6 +200,7 @@ export function Button({
   disabled = false,
   ...props
 }: ButtonProps): ReactNode {
+  const labelId = useId();
   const appearance = stylex.props(styles.button, sizes[size], variants[tone][variant], xstyle);
 
   return (
@@ -204,9 +208,14 @@ export function Button({
       {...props}
       {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
       disabled={disabled || pending}
+      focusableWhenDisabled={pending || props.focusableWhenDisabled}
+      aria-labelledby={
+        props['aria-labelledby'] ??
+        (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
+      }
       aria-busy={pending || props['aria-busy']}
     >
-      <ButtonLabels pending={pending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} pending={pending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>
@@ -234,6 +243,7 @@ export function TextButton({
   disabled = false,
   ...props
 }: TextButtonProps): ReactNode {
+  const labelId = useId();
   const appearance = stylex.props(styles.text, textTones[tone], xstyle);
 
   return (
@@ -241,9 +251,14 @@ export function TextButton({
       {...props}
       {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
       disabled={disabled || pending}
+      focusableWhenDisabled={pending || props.focusableWhenDisabled}
+      aria-labelledby={
+        props['aria-labelledby'] ??
+        (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
+      }
       aria-busy={pending || props['aria-busy']}
     >
-      <ButtonLabels pending={pending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} pending={pending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>

@@ -13,7 +13,7 @@ const VALUES = {
   libraryExports: { '.': './src/index.ts' },
   // StyleX imports resolve directly to their definition. The UI's other subpaths expose cohesive public modules.
   definitionExports: {
-    '@mechane/ui': {
+    '@mechane-ai/ui': {
       './tokens': './src/tokens.stylex.ts',
       './tokens.stylex': './src/tokens.stylex.ts',
       './layout': './src/layout/index.ts',

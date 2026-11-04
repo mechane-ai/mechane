@@ -46,7 +46,7 @@ oxlint `import/no-commonjs` and `import/unambiguous` keep every module an ES mod
 Deviation (ST-09): an entry point is only a file a package manifest's exports map lists, such as a library's `src/index.ts`
 or Mechane UI's `src/layout/index.ts`. Each entry re-exports names from their declaring files. Other folders have no
 forwarding index. The folders that only live release verification runs keep their `index.ts` until that smoke covers them.
-The StyleX definition module exported as `@mechane/ui/tokens.stylex` uses the compiler-required exception above.
+The StyleX definition module exported as `@mechane-ai/ui/tokens.stylex` uses the compiler-required exception above.
 It declares the tokens in that module and needs no forwarding `index.ts`; contract 114 owns compiler resolution.
 Framework-generated browser files keep the authored-source exception declared in contract 113.
 

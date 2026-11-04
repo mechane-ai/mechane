@@ -1,8 +1,8 @@
+import { Button, Field, Muted, Notice, Panel, Row, Stack, Textarea } from '@mechane-ai/ui';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { Delivery } from '@mechane/protocol';
 import type { InboxItem, Mech, Turn } from '@mechane/protocol';
-import { Button, Field, Muted, Notice, Panel, Row, Stack, Textarea } from '@mechane/ui';
 import { useEffect, useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { ConsoleLink } from '../navigation.tsx';

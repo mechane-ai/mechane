@@ -25,7 +25,7 @@ const styles = stylex.create({
     'lineHeight': typography.bodyLineHeight,
     'textAlign': 'start',
     'cursor': 'pointer',
-    ':hover:not([data-disabled])': { color: colors.ink },
+    ':hover:not([data-disabled])': { color: { [conditions.hoverPointer]: colors.ink } },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',

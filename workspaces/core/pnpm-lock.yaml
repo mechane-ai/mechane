@@ -214,7 +214,7 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
-      '@mechane/ui':
+      '@mechane-ai/ui':
         specifier: workspace:*
         version: link:../ui
       '@tanstack/react-db':
@@ -299,7 +299,7 @@ importers:
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
-      '@mechane/ui':
+      '@mechane-ai/ui':
         specifier: workspace:*
         version: link:../ui
       '@stylexjs/stylex':

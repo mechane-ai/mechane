@@ -1,8 +1,3 @@
-import { problemMessage } from '@mechane/console-data';
-import type { ConsoleData } from '@mechane/console-data';
-import { moneyLabel } from '@mechane/console-views';
-import { MechStatus } from '@mechane/protocol';
-import type { Mech } from '@mechane/protocol';
 import {
   Button,
   CopyValue,
@@ -17,8 +12,13 @@ import {
   Status,
   Subheading,
   Tabs,
-} from '@mechane/ui';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui/layout';
+} from '@mechane-ai/ui';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import { problemMessage } from '@mechane/console-data';
+import type { ConsoleData } from '@mechane/console-data';
+import { moneyLabel } from '@mechane/console-views';
+import { MechStatus } from '@mechane/protocol';
+import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import { Pause, Pencil, Play, Send } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';

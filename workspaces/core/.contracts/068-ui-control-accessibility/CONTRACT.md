@@ -47,8 +47,15 @@ Standalone controls meet `controls.coarseTarget` from `ui/tokens` on coarse poin
 text flow. The Storybook accessibility addon assists review; keyboard operation, focus return, names, and announcements
 are also checked in the packaged Console. The addon does not make every story an automated test.
 
+Gate hover styles with `conditions.hoverPointer`. Touch and keyboard activation remain usable without hover.
+Text-entry controls use `typography.touchInputSize` on coarse pointers so mobile focus does not require zooming.
+Pending actions preserve keyboard focus through Base UI's `focusableWhenDisabled` and keep their label space stable.
+Keep ordinary unavailable controls disabled, and honor caller-supplied accessible names during pending changes.
+
+The hover rule checks the named condition's presence. Browser review verifies its effect, pending focus, and touch sizing.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-No rule of the registry decides this contract; review does.
+- ast-grep `ui-hover-capability` (068): enforced
 
 <!-- End of the generated block. -->

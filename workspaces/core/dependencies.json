@@ -580,7 +580,7 @@
     "consumers": ["@mechane/pages", "@mechane/edge", "@mechane/app"],
     "confines": ["cookie"]
   },
-  "@mechane/ui": {
+  "@mechane-ai/ui": {
     "owns": "Mechane UI: product-neutral controls, design tokens, application layouts and visx charts, with one versioned public package",
     "layer": 3,
     "lane": "browser",

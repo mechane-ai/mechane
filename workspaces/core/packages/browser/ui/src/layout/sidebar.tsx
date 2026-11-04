@@ -35,6 +35,7 @@ const styles = stylex.create({
     'flex': 1,
     'minHeight': 0,
     'overflowY': 'auto',
+    'overscrollBehavior': 'contain',
     'paddingBlock': frame.navigationInset,
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -72,7 +73,7 @@ const styles = stylex.create({
     'WebkitFontSmoothing': 'antialiased',
     'textAlign': 'left',
     'textDecorationLine': 'none',
-    ':hover': { backgroundColor: colors.canvas },
+    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',

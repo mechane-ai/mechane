@@ -1,3 +1,4 @@
+import { EmptyState, SkipLink, TextLink } from '@mechane-ai/ui';
 import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { ConsoleEntrance } from '../entrance.tsx';
@@ -15,9 +16,9 @@ export const Route = createRootRoute({
   shellComponent: Root,
   component: Outlet,
   notFoundComponent: () => (
-    <p>
-      Page not found. <a href="/console">Open the console</a>
-    </p>
+    <ConsoleEntrance>
+      <EmptyState title="Page not found" action={<TextLink href="/console">Open the console</TextLink>} />
+    </ConsoleEntrance>
   ),
 });
 
@@ -28,9 +29,7 @@ function Root({ children }: { readonly children: ReactNode }): ReactNode {
         <HeadContent />
       </head>
       <body>
-        <a className="skip-link" href="#main">
-          Skip to content
-        </a>
+        <SkipLink href="#main">Skip to content</SkipLink>
         <ClientOnly fallback={<ConsoleEntrance />}>{children}</ClientOnly>
         <Scripts />
       </body>

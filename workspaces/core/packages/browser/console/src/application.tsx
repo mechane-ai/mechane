@@ -1,6 +1,6 @@
+import { Button, EmptyState, Notice, Stack } from '@mechane-ai/ui';
 import { isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
-import { Button, EmptyState, Notice, Stack } from '@mechane/ui';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleEntrance, Welcome } from './entrance.tsx';

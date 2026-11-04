@@ -12,7 +12,7 @@ export const uiStorybookComponentChecks = {
       ...CRUISER_DEFAULTS,
       ...ADOPTED,
       name: 'no-browser-catalog-imports',
-      comment: 'Keep catalog examples in development, such as `import { Button } from "@mechane/ui"`',
+      comment: 'Keep catalog examples in development, such as `import { Button } from "@mechane-ai/ui"`',
       from: { path: '^packages/browser/', pathNot: CATALOG_PATH },
       to: { path: CATALOG_PATH },
       standard: '075',

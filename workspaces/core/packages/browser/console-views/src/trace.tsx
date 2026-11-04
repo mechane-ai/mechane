@@ -1,4 +1,3 @@
-import type { Trace } from '@mechane/protocol';
 import {
   CopyValue,
   Details,
@@ -16,7 +15,8 @@ import {
   Subheading,
   Tabs,
   TextButton,
-} from '@mechane/ui';
+} from '@mechane-ai/ui';
+import type { Trace } from '@mechane/protocol';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';

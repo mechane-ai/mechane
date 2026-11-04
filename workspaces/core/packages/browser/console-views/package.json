@@ -6,9 +6,9 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@mechane-ai/ui": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@mechane/ui": "workspace:*",
     "@stylexjs/stylex": "0.19.1",
     "effect": "4.0.7",
     "lucide-react": "1.66.0",

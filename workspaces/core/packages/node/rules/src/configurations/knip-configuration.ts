@@ -29,7 +29,7 @@ const GENERATOR_ENTRIES = '*/main.ts!';
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
 
-const UI_PACKAGE = '@mechane/ui';
+const UI_PACKAGE = '@mechane-ai/ui';
 
 /** A member's entries and project files, as knip's workspace takes them. */
 type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string> | boolean>>;

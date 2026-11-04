@@ -8,7 +8,7 @@ const styles = stylex.create({
   metric: {
     display: 'inline-flex',
     alignItems: 'baseline',
-    gap: 5,
+    gap: spacing.xs,
     minWidth: 0,
     fontFamily: typography.fontFamily,
     WebkitFontSmoothing: 'antialiased',
