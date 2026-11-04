@@ -133,9 +133,6 @@
 /packages/browser/console-data/tsconfig.json linguist-generated merge=ours
 /packages/browser/console-views/tsconfig.json linguist-generated merge=ours
 /packages/browser/console/tsconfig.json linguist-generated merge=ours
-/packages/browser/ui-charts/tsconfig.json linguist-generated merge=ours
-/packages/browser/ui-layout/tsconfig.json linguist-generated merge=ours
-/packages/browser/ui-tokens/tsconfig.json linguist-generated merge=ours
 /packages/browser/ui/tsconfig.json linguist-generated merge=ours
 /packages/node/boundaries/tsconfig.json linguist-generated merge=ours
 /packages/node/checks-kernel/tsconfig.json linguist-generated merge=ours

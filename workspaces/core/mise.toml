@@ -149,8 +149,13 @@ run = [
 ]
 
 [tasks."build:console"]
+depends = ["build:ui"]
 description = "Build the console as static assets for the same celld and Cloudflare release"
 run = "pnpm --filter @mechane/console build"
+
+[tasks."build:ui"]
+description = "Build Mechane UI as portable JavaScript, declarations, and CSS"
+run = "pnpm --filter @mechane/ui build"
 
 [tasks."build:guest"]
 description = "Bundle the sandbox's guest into one Node module in its image's build folder, which the host launcher runs too"

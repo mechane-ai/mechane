@@ -1,7 +1,7 @@
 import { mergeProps } from '@base-ui/react/merge-props';
-import { colors, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { colors, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   grid: { display: 'flex', flexWrap: 'wrap', rowGap: spacing.sm, columnGap: spacing.xl, margin: 0 },

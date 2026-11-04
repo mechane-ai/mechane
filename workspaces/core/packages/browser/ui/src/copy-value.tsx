@@ -1,12 +1,12 @@
 import { Button as BaseButton } from '@base-ui/react/button';
 import { mergeProps } from '@base-ui/react/merge-props';
-import { colors, conditions, controls, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Check, Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { accessibility } from './accessibility.ts';
 import { mergeStyles } from './style-composition.ts';
+import { colors, conditions, controls, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   button: {

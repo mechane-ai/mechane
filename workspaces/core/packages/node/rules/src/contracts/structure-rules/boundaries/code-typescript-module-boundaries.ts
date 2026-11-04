@@ -74,6 +74,22 @@ export const codeTypescriptModuleBoundaries = {
       rewrites: [
         {
           before: {
+            'packages/browser/ui/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/ui/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/ui/src/layout/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/ui/src/layout/rows.ts':
+              "import { countRows } from '../index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
+          },
+          after: {
+            'packages/browser/ui/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/ui/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/ui/src/layout/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/ui/src/layout/rows.ts':
+              "import { countRows } from '../index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
+          },
+        },
+        {
+          before: {
             'packages/node/stack/src/drones/count-drones.ts':
               'export function countDrones(): number {\n  return 1;\n}\n',
             'packages/node/stack/src/drones/index.ts': "export { countDrones } from './count-drones.ts';\n",

@@ -2,7 +2,7 @@ import type { ConsoleData } from '@mechane/console-data';
 import { MechList } from '@mechane/console-views';
 import type { Allowance } from '@mechane/protocol';
 import { Button, Notice, Tooltip } from '@mechane/ui';
-import { PageToolbar, ToolbarAction } from '@mechane/ui-layout';
+import { PageToolbar, ToolbarAction } from '@mechane/ui/layout';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';

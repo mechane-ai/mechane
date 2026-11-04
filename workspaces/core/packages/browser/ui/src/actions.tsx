@@ -1,10 +1,10 @@
 import { Button as BaseButton } from '@base-ui/react/button';
 import { mergeProps } from '@base-ui/react/merge-props';
-import { colors, conditions, controls, radii, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import { mergeStyles } from './style-composition.ts';
 import type { ControlStyle, PlacementStyle } from './style-composition.ts';
+import { colors, conditions, controls, radii, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   button: {

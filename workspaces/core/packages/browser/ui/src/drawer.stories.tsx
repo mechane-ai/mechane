@@ -1,9 +1,9 @@
-import { spacing } from '@mechane/ui-tokens/tokens.stylex';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { Button, TextLink } from './actions.tsx';
 import { Drawer } from './drawer.tsx';
 import { Stack } from './surfaces.tsx';
+import { spacing } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   content: { width: 240, maxWidth: '100%', boxSizing: 'border-box', padding: spacing.xl },

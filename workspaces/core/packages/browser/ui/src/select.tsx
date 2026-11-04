@@ -1,19 +1,10 @@
 import { Select as BaseSelect } from '@base-ui/react/select';
-import {
-  colors,
-  conditions,
-  controls,
-  layers,
-  radii,
-  shadows,
-  spacing,
-  typography,
-} from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { OpenStateProperties, ReadOnlyValueProperties, ValueStateProperties } from './control-state.ts';
 import { mergeStyles } from './style-composition.ts';
 import type { ControlStyle, PlacementStyle } from './style-composition.ts';
+import { colors, conditions, controls, layers, radii, shadows, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   trigger: {

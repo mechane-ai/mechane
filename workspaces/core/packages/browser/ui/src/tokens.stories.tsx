@@ -52,7 +52,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported light-theme tokens live in @mechane/ui-tokens/tokens.stylex. Import directly from that definition export so both application and catalog compilers resolve StyleX variables. Colors name foreground and surface roles; typography, spacing, controls, radii, shadows, and motion hold shared choices. Prefer a component’s named variant before styling a wrapper. Shell geometry belongs to ui-layout, while chart geometry uses numbers in its caller’s unit. CSS variable references are not numeric scale inputs. Motion is decorative, brief, and removed for reduced-motion preferences; inspect it on the overlay examples.',
+          'Supported light-theme tokens live in ./tokens.stylex.ts. Import directly from that definition export so both application and catalog compilers resolve StyleX variables. Colors name foreground and surface roles; typography, spacing, controls, radii, shadows, and motion hold shared choices. Prefer a component’s named variant before styling a wrapper. Shell geometry belongs to ui/layout, while chart geometry uses numbers in its caller’s unit. CSS variable references are not numeric scale inputs. Motion is decorative, brief, and removed for reduced-motion preferences; inspect it on the overlay examples.',
       },
     },
   },

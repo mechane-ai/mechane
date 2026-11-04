@@ -1,9 +1,9 @@
-import { Button, Drawer, IconButton } from '@mechane/ui';
-import { colors, conditions, controls, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { PanelLeft, X } from 'lucide-react';
 import { createContext, useContext, useId } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
+import { Button, Drawer, IconButton } from '../index.ts';
+import { colors, conditions, controls, radii, spacing, typography } from '../tokens.stylex.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
 type SidebarState = {

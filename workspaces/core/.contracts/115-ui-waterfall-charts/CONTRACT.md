@@ -1,7 +1,7 @@
 ---
 name: ui-waterfall-charts
 message: Render interval, point, and unavailable timing evidence without inventing endpoints or hiding its values.
-paths: ["packages/browser/ui-charts/src/**"]
+paths: ["packages/browser/ui/src/charts/**"]
 ---
 
 ## Rules
@@ -12,7 +12,7 @@ Use one time domain and scale for every row, and preserve the supplied row order
 Keep record identity stable across refreshes. Receive selection and its callback from the consumer, and report the
 selected record without owning navigation or a resource request.
 
-Keep labels, units, formatting, and evidence meaning with the consumer. Keep visx types and geometry inside `ui-charts`.
+Keep labels, units, formatting, and evidence meaning with the consumer. Keep visx types and geometry inside `ui/charts`.
 Make the same values available as readable text. Distinguish unavailable evidence from a zero duration and a point.
 Support keyboard selection with an accessible name and visible focus. Keep labels and values readable in narrow layouts.
 

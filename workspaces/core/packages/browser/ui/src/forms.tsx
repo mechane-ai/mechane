@@ -1,11 +1,11 @@
 import { Field as BaseField } from '@base-ui/react/field';
 import { Input as BaseInput } from '@base-ui/react/input';
-import { colors, conditions, controls, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { TextValueProperties } from './control-state.ts';
 import { mergeStyles } from './style-composition.ts';
 import type { PlacementStyle } from './style-composition.ts';
+import { colors, conditions, controls, radii, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   root: { display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0, fontFamily: typography.fontFamily },

@@ -1,7 +1,7 @@
-import { Button } from '@mechane/ui';
-import { colors, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { Button } from '../index.ts';
+import { colors, spacing, typography } from '../tokens.stylex.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 import { SidebarToggle } from './sidebar.tsx';
 

@@ -1,6 +1,6 @@
 ---
 name: ui-component-usage-guidance
-paths: ["packages/browser/ui/**","packages/browser/ui-tokens/**","packages/browser/ui-layout/**","packages/browser/ui-charts/**","packages/browser/console-views/**","packages/browser/console/.storybook/**"]
+paths: ["packages/browser/ui/**","packages/browser/console-views/**","packages/browser/console/.storybook/**"]
 message: Document each public component's purpose, use, alternatives, and status beside its source, and generate the catalog from it.
 ---
 

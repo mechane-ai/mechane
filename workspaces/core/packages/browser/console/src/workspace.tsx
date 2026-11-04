@@ -2,7 +2,7 @@ import { createConsoleData } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
 import { ConsoleShell } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
-import { NavigationLink } from '@mechane/ui-layout';
+import { NavigationLink } from '@mechane/ui/layout';
 import { createLink } from '@tanstack/react-router';
 import { Bot } from 'lucide-react';
 import { useEffect, useState } from 'react';

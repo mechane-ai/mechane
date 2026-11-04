@@ -1,6 +1,6 @@
 ---
 name: ui-presentation-boundaries
-paths: ["packages/browser/ui/**","packages/browser/ui-layout/**","packages/browser/ui-charts/**"]
+paths: ["packages/browser/ui/**"]
 message: Render supplied data and report intent; leave requests, routing, identity, and domain decisions to applications.
 ---
 
@@ -37,8 +37,12 @@ Review changed presentation event handlers and lifecycle code for requests, pers
 
 ## Local adaptations
 
-This contract governs the generic `ui`, `ui-layout`, and `ui-charts` libraries. `console-views` may use Mechane
+This contract governs `@mechane/ui`, including its `layout` and `charts` modules. `console-views` may use Mechane
 records and domain formatting under contract 113. A resource view does not need a duplicate type for each shared API record.
+
+Keep controls and tokens independent of layouts and charts. Layouts and charts may use controls and tokens but remain
+independent of each other; applications compose them through their public entry points.
+Layouts and charts import shared controls through `../index.ts` and tokens through their direct defining file.
 
 The library responsibilities are:
 
@@ -46,14 +50,17 @@ The library responsibilities are:
 | --- | --- |
 | Base UI | `ui` wraps accessible controls and preserves their composition protocol. |
 | Lucide | Browser presentation uses one icon vocabulary and shared icon sizing. |
-| StyleX | `ui-tokens` defines shared visual roles; each component owns its styles. |
-| visx | `ui-charts` computes and renders generic chart geometry. |
+| StyleX | `ui/src/tokens.stylex.ts` defines shared visual roles; each component owns its styles. |
+| visx | `ui/charts` computes and renders generic chart geometry. |
 
 The application supplies resource reads, mutations, routing, permissions, and record-to-presentation mappings.
 The declared package edges and dependency-cruiser check these imports. Storybook builds the same components from synthetic inputs.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-No rule of the registry decides this contract; review does.
+- dependency-cruiser `ui-controls-public-entry` (065): enforced: Import shared controls through their public entry, such as `../index.ts` from the layout module
+- dependency-cruiser `ui-controls-independent` (065): enforced: Keep controls independent of layouts and charts, such as `Button` composed inside `AppShell` by the application
+- dependency-cruiser `ui-layout-independent` (065): enforced: Compose charts in the application, such as `Waterfall` passed as `AppShell` content
+- dependency-cruiser `ui-charts-independent` (065): enforced: Render charts in the space their caller supplies, such as `width` accepted without importing `AppShell`
 
 <!-- End of the generated block. -->

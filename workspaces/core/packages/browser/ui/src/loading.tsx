@@ -1,7 +1,7 @@
-import { colors, radii, spacing } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { accessibility } from './accessibility.ts';
+import { colors, radii, spacing } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   region: { minWidth: 0, position: 'relative' },

@@ -4,23 +4,26 @@ Use the component catalog to choose a maintained component and copy its recommen
 `pnpm --filter @mechane/console storybook` from `workspaces/core`. The same runner discovers package-local stories and
 Console screen examples. Every example uses fixed synthetic data and works without application services.
 
-**Supported** means a component has a Console consumer, maintained public behavior, and catalog guidance. It ships with
-the application’s release. Proposed components are not callable APIs. The package entry points and colocated stories
-describe the available components; there is no separate component registry.
+**Supported** means a component has a Console consumer, maintained public behavior, and catalog guidance. It belongs to
+the independently versioned `@mechane/ui` package, whose components the application compiles into its release. Proposed
+components are not callable APIs. The package entry points and colocated stories describe the available components;
+there is no separate component registry.
+
+The [package guide](../packages/browser/ui/README.md) covers installing the standalone archive and its compiled CSS.
 
 ## Choose
 
 | Need                     | Owner and example                                                                              |
 | ------------------------ | ---------------------------------------------------------------------------------------------- |
-| Visual roles             | [Token foundations](../packages/browser/ui-tokens/src/tokens.stories.tsx)                      |
+| Visual roles             | [Token foundations](../packages/browser/ui/src/tokens.stories.tsx)                             |
 | An action or destination | [Button, IconButton, TextButton, and TextLink](../packages/browser/ui/src/actions.stories.tsx) |
 | A labeled input          | [Field, Input, and Textarea](../packages/browser/ui/src/forms.stories.tsx)                     |
 | A fixed choice           | [Select](../packages/browser/ui/src/select.stories.tsx)                                        |
 | A focused decision       | [Dialog](../packages/browser/ui/src/dialog.stories.tsx)                                        |
 | Supplemental help        | [Tooltip](../packages/browser/ui/src/tooltip.stories.tsx)                                      |
-| A page frame             | [AppShell and its public parts](../packages/browser/ui-layout/src/app-shell.stories.tsx)       |
+| A page frame             | [AppShell and its public parts](../packages/browser/ui/src/layout/app-shell.stories.tsx)       |
 | Comparable records       | [Table and cursor actions](../packages/browser/ui/src/table.stories.tsx)                       |
-| Recorded timing          | [Waterfall](../packages/browser/ui-charts/src/waterfall.stories.tsx)                           |
+| Recorded timing          | [Waterfall](../packages/browser/ui/src/charts/waterfall.stories.tsx)                           |
 
 Each family’s metadata describes its root and public parts, their alternatives, and the decisions the application must
 supply. Components accept presentation values; resource mapping, authorization, routing, and requests stay with their
@@ -30,9 +33,9 @@ Compound APIs such as Field and Dialog are documented through their family compo
 Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
 UI props; the tables are not an exhaustive API reference.
 
-Import shared tokens directly from `@mechane/ui-tokens/tokens.stylex`. StyleX needs the defining export to compile
-variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to
-`ui-layout`. The supported theme is light.
+Import shared tokens directly from `@mechane/ui/tokens.stylex`. StyleX needs the defining export to compile variables.
+These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to `ui/layout`.
+The supported theme is light.
 
 ## Compose
 

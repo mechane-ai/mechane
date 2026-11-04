@@ -1,1 +1,1 @@
-{ "extends": "../../../tsconfig.browser.json", "include": ["src"] }
+{ "extends": "../../../tsconfig.browser.json", "include": ["src", "vite.config.ts"] }

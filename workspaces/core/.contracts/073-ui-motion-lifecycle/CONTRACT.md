@@ -1,6 +1,6 @@
 ---
 name: ui-motion-lifecycle
-paths: ["packages/browser/ui/src/**","packages/browser/ui-layout/src/**","packages/browser/ui-charts/src/**"]
+paths: ["packages/browser/ui/src/**"]
 message: Keep animation interruptible, reduced-motion aware, pausable, paused when unseen, and released on removal.
 ---
 
@@ -39,7 +39,7 @@ For a positioned overlay, confirm animation does not change its anchor or collis
 ## Local adaptations
 
 Apply these requirements to implemented components that animate. Static components need no animation machinery.
-Use shared motion tokens and named reduced-motion conditions from `ui-tokens`.
+Use shared motion tokens and named reduced-motion conditions from `ui/tokens`.
 Base UI continues to own overlay positioning and focus; the component owns any decorative transition it adds.
 
 The adopted baseline has no continuous automatic animation. If one is introduced, the pause, visibility, and cleanup

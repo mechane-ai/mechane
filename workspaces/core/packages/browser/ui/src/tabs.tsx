@@ -1,9 +1,9 @@
 import { Tabs as BaseTabs } from '@base-ui/react/tabs';
-import { colors, controls, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ValueStateProperties } from './control-state.ts';
 import { mergeStyles } from './style-composition.ts';
+import { colors, controls, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   root: { fontFamily: typography.fontFamily, WebkitFontSmoothing: 'antialiased', minWidth: 0 },

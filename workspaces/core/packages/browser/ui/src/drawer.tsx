@@ -1,5 +1,4 @@
 import { Drawer as BaseDrawer } from '@base-ui/react/drawer';
-import { colors, conditions, layers, motion, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import { accessibility } from './accessibility.ts';
@@ -7,6 +6,7 @@ import type { OpenStateProperties } from './control-state.ts';
 import { overlayStyles } from './overlay-styles.ts';
 import { mergeStyles } from './style-composition.ts';
 import type { PlacementStyle } from './style-composition.ts';
+import { colors, conditions, layers, motion, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   viewport: { position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: layers.dialog },

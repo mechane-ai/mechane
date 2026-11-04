@@ -1,7 +1,7 @@
 import { canRetainResult, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, SnapshotCollection } from '@mechane/console-data';
 import { Button, EmptyState, Loading, Notice } from '@mechane/ui';
-import { DetailPage } from '@mechane/ui-layout';
+import { DetailPage } from '@mechane/ui/layout';
 import { useLiveQuery } from '@tanstack/react-db';
 import { Fragment, useEffect } from 'react';
 import type { ReactNode } from 'react';

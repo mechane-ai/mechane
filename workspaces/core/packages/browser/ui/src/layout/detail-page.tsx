@@ -1,6 +1,6 @@
-import { spacing } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import { spacing } from '../tokens.stylex.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
 const styles = stylex.create({

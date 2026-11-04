@@ -1,5 +1,5 @@
-import { colors, layers, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
+import { colors, layers, spacing, typography } from './tokens.stylex.ts';
 
 export const overlayStyles = stylex.create({
   backdrop: {

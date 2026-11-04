@@ -1,6 +1,6 @@
 ---
 name: ui-react-typescript-component-apis
-paths: ["packages/browser/ui/src/**","packages/browser/ui-layout/src/**","packages/browser/ui-charts/src/**"]
+paths: ["packages/browser/ui/src/**"]
 message: Encode supported component use in public prop types so unsupported combinations fail to compile.
 ---
 

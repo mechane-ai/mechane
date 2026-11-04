@@ -4,7 +4,14 @@ language: TypeScript
 severity: error
 message: 'Export the declaration where it is declared, such as `export function parseLine(input)`, and re-export only from an entry point (ST-10)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', 'packages/**/src/index.ts', packages/worker/app/src/worker.ts]
+ignores:
+  [
+    '**/node_modules/**',
+    'packages/**/src/index.ts',
+    packages/browser/ui/src/layout/index.ts,
+    packages/browser/ui/src/charts/index.ts,
+    packages/worker/app/src/worker.ts,
+  ]
 rule:
   kind: export_statement
   any:

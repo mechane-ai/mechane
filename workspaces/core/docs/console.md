@@ -27,9 +27,9 @@ your draft before saving. Continuing keeps your edits and adopts the latest valu
 | `@mechane/console-data`  | Validated requests, TanStack DB snapshots, cancellation          | shared client and protocol            |
 | `@mechane/console-views` | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts |
 | `@mechane/ui`            | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries          |
-| `@mechane/ui-layout`     | AppShell, sidebar, PageToolbar, and DetailPage                   | UI and tokens                         |
-| `@mechane/ui-charts`     | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
-| `@mechane/ui-tokens`     | Semantic visual tokens                                           | StyleX                                |
+| `@mechane/ui/layout`     | AppShell, sidebar, PageToolbar, and DetailPage                   | UI and tokens                         |
+| `@mechane/ui/charts`     | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
+| `@mechane/ui/tokens`     | Semantic visual tokens                                           | StyleX                                |
 
 Only `console-data` crosses from the shared Effect client into browser Promises. It stores each bounded API response as
 one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and
@@ -38,7 +38,7 @@ persistence. No browser code imports Worker storage or installation secrets.
 UI modules group controls, forms, typography, and data presentation by responsibility. A shared frame owns the 240-pixel
 sidebar, its 48-pixel collapsed rail, and the mobile navigation drawer. Every screen uses the same 48-pixel toolbar;
 screens supply its resource actions. Tables fill the main surface, while `DetailPage` centers forms and resource
-details. Frame dimensions belong to layout; semantic colors and type roles belong to the token package. Base UI owns
+details. Frame dimensions belong to layout; semantic colors and type roles belong to the tokens module. Base UI owns
 button, select, tab, and dialog interactions. StyleX uses explicit border and outline longhands; the contract's syntax
 check prevents unsupported shorthands from silently losing styles. The trace maps recorded requests into the generic
 visx Waterfall. Turn events come from the existing durable event log, with indexed turn and inbox lookup; there is no

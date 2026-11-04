@@ -18,7 +18,7 @@ import {
   Subheading,
   Tabs,
 } from '@mechane/ui';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui-layout';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane/ui/layout';
 import { Option } from 'effect';
 import { Pause, Pencil, Play, Send } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';

@@ -2,7 +2,7 @@ import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { CreationRequestId } from '@mechane/records';
 import { Button, Field, Heading, Input, Muted, Notice, Row, Stack, Textarea, TextButton } from '@mechane/ui';
-import { DetailPage, PageToolbar } from '@mechane/ui-layout';
+import { DetailPage, PageToolbar } from '@mechane/ui/layout';
 import { Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';

@@ -13,7 +13,10 @@ const VALUES = {
     ignoreExportsUsedInFile: { type: true, interface: true },
     ignoreDependencies: ['@swc/core', 'cloudflare'],
     ignore: ['.dependency-cruiser.cjs'],
-    ignoreIssues: { 'packages/browser/*/src/**/*.stories.tsx': ['exports'] },
+    ignoreIssues: {
+      'packages/browser/*/src/**/*.stories.tsx': ['exports'],
+      'packages/browser/ui/vite.config.ts': ['exports'],
+    },
   },
   knipNotes: [
     {
@@ -52,6 +55,7 @@ const VALUES = {
       path: ['ignoreIssues'],
       lines: [
         'Storybook consumes CSF metadata and story exports through discovery; production package exports remain checked.',
+        'Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.',
       ],
     },
     {

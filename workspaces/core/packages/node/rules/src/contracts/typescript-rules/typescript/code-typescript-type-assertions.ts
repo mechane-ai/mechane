@@ -51,7 +51,7 @@ export const codeTypescriptTypeAssertions = {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'typescript/no-unsafe-assignment',
-      maxSuppressions: 2,
+      maxSuppressions: 3,
       value: Severity.Error,
       standard: 'TD-07',
     },

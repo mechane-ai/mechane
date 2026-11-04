@@ -21,7 +21,7 @@ import {
   TextButton,
   TextLink,
 } from '@mechane/ui';
-import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane/ui-layout';
+import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane/ui/layout';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Option, Schema } from 'effect';
 import { Bot, Plus, RefreshCw } from 'lucide-react';

@@ -1,8 +1,8 @@
-import { Button, Heading, Muted, Panel, Stack } from '@mechane/ui';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Archive, FileText, Folder, Plus, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { Button, Heading, Muted, Panel, Stack } from '../index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';

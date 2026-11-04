@@ -43,7 +43,7 @@ Base UI is the adopted behavior library. Mechane's `ui` wrappers keep its native
 Field composition associates labels, descriptions, and errors without adding a second form-state protocol.
 Empty values and form resets keep the semantics of the chosen native or Base UI control.
 
-Standalone controls meet `controls.coarseTarget` from `ui-tokens` on coarse pointers. Inline text links retain normal
+Standalone controls meet `controls.coarseTarget` from `ui/tokens` on coarse pointers. Inline text links retain normal
 text flow. The Storybook accessibility addon assists review; keyboard operation, focus return, names, and announcements
 are also checked in the packaged Console. The addon does not make every story an automated test.
 

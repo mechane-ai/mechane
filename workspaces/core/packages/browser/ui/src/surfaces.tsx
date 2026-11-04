@@ -1,9 +1,9 @@
 import { mergeProps } from '@base-ui/react/merge-props';
-import { colors, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Box } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Muted, Subheading } from './text.tsx';
+import { colors, radii, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   panel: {

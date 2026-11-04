@@ -1,9 +1,9 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
-import { colors, layers, radii, shadows, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { OpenStateProperties } from './control-state.ts';
 import { mergeStyles } from './style-composition.ts';
+import { colors, layers, radii, shadows, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   positioner: { zIndex: layers.tooltip },

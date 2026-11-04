@@ -4,7 +4,7 @@ import { DefinitionConflict } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import { Button, Field, Heading, Input, Muted, Notice, Row, Stack, Textarea, TextButton } from '@mechane/ui';
-import { DetailPage, PageToolbar } from '@mechane/ui-layout';
+import { DetailPage, PageToolbar } from '@mechane/ui/layout';
 import { Option, Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';

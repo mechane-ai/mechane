@@ -29,6 +29,8 @@ const GENERATOR_ENTRIES = '*/main.ts!';
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
 
+const UI_PACKAGE = '@mechane/ui';
+
 /** A member's entries and project files, as knip's workspace takes them. */
 type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string> | boolean>>;
 
@@ -72,6 +74,11 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
       entry: ['src/routes/**/*.tsx!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
       project: ['src/**/*.{ts,tsx,mdx}!'],
     };
+  }
+
+  // Vite's library source mapping merges public entries; the manifest already declares their actual sources.
+  if (member.name === UI_PACKAGE) {
+    return { vite: false, entry: ['vite.config.ts', 'src/**/*.stories.tsx'], project: ['src/**/*.{ts,tsx}!'] };
   }
 
   if (member.hasStories) {

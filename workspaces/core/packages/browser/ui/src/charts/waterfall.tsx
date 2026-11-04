@@ -1,9 +1,9 @@
-import { Text } from '@mechane/ui';
-import { colors, controls, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
+import { Text } from '../index.ts';
+import { colors, controls, spacing, typography } from '../tokens.stylex.ts';
 
 type WaterfallGeometry =
   | { readonly kind: 'interval'; readonly start: number; readonly end: number }

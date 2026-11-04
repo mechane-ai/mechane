@@ -37,7 +37,7 @@ For each new edge, does the depending package need the dependency's own concept,
 
 The `browser` lane owns the Console's React application and generic UI packages. Its ownership and dependency edges
 are declared in `dependencies.json`; contract 113 describes the browser package map.
-The direct `ui-tokens` definition export follows the compiler-required exception in contract 114.
+The direct `ui/tokens` definition export follows the compiler-required exception in contract 114.
 Declared export resolution preserves the layer, lane, consumer, and confined-dependency rules.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->

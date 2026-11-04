@@ -11,8 +11,16 @@ const VALUES = {
   },
   sourceFolders: ['src', 'scripts', '.storybook', 'vite.config.ts'],
   libraryExports: { '.': './src/index.ts' },
-  // StyleX resolves variable references through the defining module, so this export cannot pass through a barrel.
-  definitionExports: { '@mechane/ui-tokens': { './tokens.stylex': './src/tokens.stylex.ts' } },
+  // StyleX imports resolve directly to their definition. The UI's other subpaths expose cohesive public modules.
+  definitionExports: {
+    '@mechane/ui': {
+      './tokens': './src/tokens.stylex.ts',
+      './tokens.stylex': './src/tokens.stylex.ts',
+      './layout': './src/layout/index.ts',
+      './charts': './src/charts/index.ts',
+      './styles.css': './src/styles.css',
+    },
+  },
 } as const;
 
 /** A family of rules the member manifest generates, fixed by hand, which the packages phase turned on. */

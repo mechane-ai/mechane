@@ -1,9 +1,9 @@
 import { mergeProps } from '@base-ui/react/merge-props';
-import { colors, conditions, radii, spacing, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { Circle, CircleCheck, CircleX, Clock } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import type { PlacementStyle } from './style-composition.ts';
+import { colors, conditions, radii, spacing, typography } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   text: { margin: 0, fontFamily: typography.fontFamily, WebkitFontSmoothing: 'antialiased', overflowWrap: 'anywhere' },

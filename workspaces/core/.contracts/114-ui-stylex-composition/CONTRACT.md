@@ -1,7 +1,7 @@
 ---
 name: ui-stylex-composition
 message: Preserve control composition and token imports through the production StyleX compiler.
-paths: ["packages/browser/ui-tokens/**", "packages/browser/ui/src/**", "packages/browser/ui-layout/src/**", "packages/browser/ui-charts/src/**", "packages/browser/console/vite.config.ts", "packages/browser/console/.storybook/**"]
+paths: ["packages/browser/ui/**","packages/browser/console/vite.config.ts","packages/browser/console/.storybook/**"]
 ---
 
 ## Rules
@@ -33,10 +33,15 @@ Run the existing `stylex-longhands` lint rule and its allowed/violation examples
 
 ## Local adaptations
 
-The token definition export is `@mechane/ui-tokens/tokens.stylex`.
+The token definition export is `@mechane/ui/tokens.stylex`.
 Compiler resolution and the package export map describe the same source. Normal package exports remain named exports;
 the direct token definition path is the compiler-required exception.
 Composition review is development evidence. It does not require a new browser suite or automatic Storybook play tests.
+
+The published stylesheet places component rules and token defaults in the `mechane` cascade layer after `reset`.
+Consumer themes and application styles can override that layer. Preserve the defining token's package-relative path
+when packaging so separately compiled themes target the same variables. Verify both an ordinary React consumer and a
+StyleX theme applied to the document root, including portaled overlays.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

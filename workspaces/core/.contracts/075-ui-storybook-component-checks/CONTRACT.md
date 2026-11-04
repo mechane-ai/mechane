@@ -1,6 +1,6 @@
 ---
 name: ui-storybook-component-checks
-paths: ["packages/browser/ui/**","packages/browser/ui-tokens/**","packages/browser/ui-layout/**","packages/browser/ui-charts/**","packages/browser/console-views/**","packages/browser/console/src/stories/**","packages/browser/console/.storybook/**","packages/browser/console/vite.config.ts"]
+paths: ["packages/browser/ui/**","packages/browser/console-views/**","packages/browser/console/src/stories/**","packages/browser/console/.storybook/**","packages/browser/console/vite.config.ts"]
 message: Give every public component synthetic stories of its meaningful states and assert only consequential owned interactions.
 ---
 

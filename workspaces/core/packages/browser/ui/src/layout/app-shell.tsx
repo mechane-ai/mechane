@@ -1,8 +1,8 @@
-import { Drawer } from '@mechane/ui';
-import { colors, typography } from '@mechane/ui-tokens/tokens.stylex';
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { Drawer } from '../index.ts';
+import { colors, typography } from '../tokens.stylex.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
 

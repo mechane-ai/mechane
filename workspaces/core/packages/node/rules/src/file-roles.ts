@@ -5,6 +5,7 @@ export const FILE_ROLES = {
   [FileRole.Browser]: ['packages/browser/**'],
   [FileRole.BrowserConfiguration]: [
     'packages/browser/console/vite.config.ts',
+    'packages/browser/ui/vite.config.ts',
     'packages/browser/console/src/router.tsx',
     'packages/browser/console/src/vite-env.d.ts',
     'packages/browser/console/.storybook/*.ts',
@@ -30,7 +31,11 @@ export const FILE_ROLES = {
   ],
   [FileRole.WorkerModule]: ['packages/worker/app/src/worker.ts'],
   [FileRole.CelldRestart]: ['packages/node/stack/src/celld/start-celld.ts'],
-  [FileRole.EntryPoint]: ['packages/**/src/index.ts'],
+  [FileRole.EntryPoint]: [
+    'packages/**/src/index.ts',
+    'packages/browser/ui/src/layout/index.ts',
+    'packages/browser/ui/src/charts/index.ts',
+  ],
   [FileRole.Catalog]: ['packages/node/smoke/src/catalog.ts'],
   [FileRole.ObjectClass]: [
     'packages/worker/directory/src/directory-object.ts',

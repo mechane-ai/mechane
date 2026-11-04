@@ -1,7 +1,7 @@
-import { Details, Muted, Panel, Stack } from '@mechane/ui';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { Details, Muted, Panel, Stack } from '../index.ts';
 import { Waterfall } from './waterfall.tsx';
 import type { WaterfallItem } from './waterfall.tsx';
 

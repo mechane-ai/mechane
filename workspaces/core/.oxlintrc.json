@@ -769,6 +769,7 @@
     {
       "files": [
         "packages/browser/console/vite.config.ts",
+        "packages/browser/ui/vite.config.ts",
         "packages/browser/console/src/router.tsx",
         "packages/browser/console/src/vite-env.d.ts",
         "packages/browser/console/.storybook/*.ts",

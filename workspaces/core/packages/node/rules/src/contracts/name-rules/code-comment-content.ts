@@ -23,7 +23,7 @@ export const codeCommentContent = {
       ],
       allowed: [
         { 'packages/browser/ui/src/title.tsx': 'export function Title() { return <h1>Console</h1>; }\n' },
-        { 'packages/browser/ui-tokens/src/tokens.stylex.ts': 'export const colors = { surface: "white" };\n' },
+        { 'packages/browser/ui/src/tokens.stylex.ts': 'export const colors = { surface: "white" };\n' },
         { 'scripts/limits.ts': '/** The most turns a mech runs at once. */\nexport const TURN_LIMIT = 3;\n' },
         {
           'scripts/modes.ts':

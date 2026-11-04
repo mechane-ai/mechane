@@ -33,11 +33,14 @@ For each entry a change adds to the check's configuration, does a runtime, a fra
 
 ## Local adaptations
 
+Within `@mechane/ui`, each public subpath is a module boundary. Layouts and charts consume shared controls through the
+root entry point; these production uses count as consumers of that public control surface.
+
 `mise -C workspaces/core run knip` runs `knip` and then `knip --production` with `includeEntryExports`; production files carry `!` in `knip.jsonc`, and every member's files carry it, the smoke's and its support's among them, so the production run checks them too.
 knip's Wrangler plugin reads `main` from `packages/worker/app/wrangler.jsonc`, and its mise plugin reads the binaries that the tasks in `mise.toml` run.
 The ignore entries, each with its reason in `knip.jsonc`, are `celld`, which mise installs from its release; `cloudflare`, the Workers runtime's own module; `@swc/core`, which dependency-cruiser loads; and the file `.dependency-cruiser.cjs`, which the checks program loads through dependency-cruiser's API from the root, which holds no source.
 `treatConfigHintsAsErrors` makes a stale ignore entry fail, so the registry generates one workspace for each member that `dependencies.json` declares, its entries following from its kind and its source roots, in place of folder globs that may match nothing.
-The public-API marker form is `/** @public -- consumer */`, and no export uses it.
+The public-API marker names its consumer; the published client archive consumes marked API declarations.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -1,21 +1,77 @@
 {
   "name": "@mechane/ui",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Mechane UI components, tokens, application layouts, and charts",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mechane-ai/mechane.git",
+    "directory": "workspaces/core/packages/browser/ui"
+  },
+  "files": [
+    "dist",
+    "src/tokens.stylex.ts",
+    "styles.css",
+    "README.md"
+  ],
   "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.stylex.ts",
+    "./tokens.stylex": "./src/tokens.stylex.ts",
+    "./layout": "./src/layout/index.ts",
+    "./charts": "./src/charts/index.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./tokens": {
+        "types": "./dist/tokens.stylex.d.ts",
+        "import": "./dist/tokens.js"
+      },
+      "./tokens.stylex": "./src/tokens.stylex.ts",
+      "./layout": {
+        "types": "./dist/layout/index.d.ts",
+        "import": "./dist/layout.js"
+      },
+      "./charts": {
+        "types": "./dist/charts/index.d.ts",
+        "import": "./dist/charts.js"
+      },
+      "./styles.css": "./styles.css"
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
-    "@mechane/ui-tokens": "workspace:*",
     "@stylexjs/stylex": "0.19.1",
-    "lucide-react": "1.66.0",
-    "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "@visx/scale": "4.0.0",
+    "@visx/shape": "4.0.0",
+    "lucide-react": "1.66.0"
   },
   "devDependencies": {
     "@storybook/react-vite": "10.6.5",
+    "@stylexjs/unplugin": "0.19.1",
     "@types/react": "19.3.0",
-    "@types/react-dom": "19.3.0"
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.2.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "peerDependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }
