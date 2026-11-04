@@ -1,6 +1,6 @@
 ---
 name: ui-async-read-states
-paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/elements/packages/feedback/src/loading.tsx","packages/browser/elements/packages/feedback/src/skeleton.tsx"]
+paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/elements/packages/feedback/src/loading.tsx","packages/browser/elements/packages/feedback/src/skeleton.tsx","packages/browser/elements/packages/feedback/src/async-region.tsx"]
 message: Present pending, empty, failed, and refreshing reads truthfully, without false empties, flashing loaders, or displaced content.
 ---
 
@@ -46,6 +46,10 @@ Inspect the pending region in the accessibility tree for its busy state and a si
 The existing resource boundary in `packages/browser/console/src/resource.tsx` projects reads into pending, failed,
 or ready presentation. It owns the distinction between initial failure and stale retained data.
 Shared loading presentation does not fetch data.
+
+Elements accepts an optional caller-owned visibility delay and epoch. A new epoch may reset pending presentation,
+but must not remount ready children or erase drafts. Skeleton text reserves inherited line boxes; placeholders share
+the loaded control and column geometry. Generic components do not inspect document startup markers or router state.
 
 The upstream clause "Delay placeholder visibility by one shared declared delay, so a fast read completes without a
 visible loader." is replaced by this baseline: the stable initial frame and skeleton may render immediately.

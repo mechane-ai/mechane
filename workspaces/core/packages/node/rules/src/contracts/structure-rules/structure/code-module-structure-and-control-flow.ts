@@ -97,7 +97,7 @@ export const codeModuleStructureAndControlFlow = {
       message: 'Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()`',
       properties: { Date: ['now'], DateTime: ['now'] },
       imports: [{ module: 'effect', names: ['Clock'] }],
-      exemptRoles: [],
+      exemptRoles: [FileRole.Browser],
       standard: 'EF-17',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Time,

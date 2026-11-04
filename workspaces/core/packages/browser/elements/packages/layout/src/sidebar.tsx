@@ -12,6 +12,7 @@ type SidebarState = {
   readonly sidebarId: string;
   readonly drawerHandle: ReturnType<typeof Drawer.createHandle>;
   readonly navigationToggleRef: RefObject<HTMLButtonElement | null>;
+  readonly mobileNavigationToggleRef: RefObject<HTMLButtonElement | null>;
   readonly onToggle: () => void;
   readonly onNavigate: () => void;
 };
@@ -333,6 +334,7 @@ export function SidebarToggle(): ReactNode {
       </div>
       <div {...stylex.props(styles.toggleCell, styles.mobile)}>
         <Drawer.Trigger
+          ref={sidebar.mobileNavigationToggleRef}
           handle={sidebar.drawerHandle}
           render={<IconButton variant="ghost" aria-label="Open navigation" xstyle={styles.toggle} />}
         >

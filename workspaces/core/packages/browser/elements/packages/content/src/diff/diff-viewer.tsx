@@ -95,8 +95,22 @@ function SourceDisclosure({ source, maxHeight }: SourcePreviewProps): ReactNode 
 
 export function DiffViewer(props: DiffViewerProps): ReactNode {
   const { label, layout = 'split', wrap = false, annotations = [], maxHeight = 480, patch, before, after } = props;
-  const source: DiffSource = props;
+  const [source, setSource] = useState<DiffSource>(props);
   const [result, setResult] = useState<DiffResult>();
+
+  const hasSameBefore =
+    before?.name === source.before?.name &&
+    before?.code === source.before?.code &&
+    before?.language === source.before?.language;
+
+  const hasSameAfter =
+    after?.name === source.after?.name &&
+    after?.code === source.after?.code &&
+    after?.language === source.after?.language;
+
+  if (patch !== source.patch || !hasSameBefore || !hasSameAfter) {
+    setSource(props);
+  }
 
   const sourceLength =
     patch === undefined

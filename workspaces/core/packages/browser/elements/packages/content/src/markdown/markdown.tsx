@@ -1,11 +1,12 @@
 import * as stylex from '@stylexjs/stylex';
-import { Children } from 'react';
+import { Children, createElement } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
-import { defaultRehypePlugins, Streamdown, useIsCodeFenceIncomplete } from 'streamdown';
+import { Streamdown, useIsCodeFenceIncomplete } from 'streamdown';
 import type { Components } from 'streamdown';
 import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { CodeBlock } from '../code/code-block.tsx';
-import { contentHref, ContentLink } from '../content-link.tsx';
+import { ContentLink } from '../content-link.tsx';
+import { markdownOptions } from './markdown-options.ts';
 
 const styles = stylex.create({
   root: {
@@ -67,14 +68,26 @@ const styles = stylex.create({
     borderBlockStartStyle: 'solid',
     borderBlockStartColor: colors.line,
   },
-  image: { display: 'inline', color: colors.muted, fontStyle: 'italic' },
   checkbox: { accentColor: colors.ink, marginInlineEnd: spacing.xs },
   strong: { fontWeight: 600 },
   emphasis: { fontStyle: 'italic' },
   deleted: { textDecorationLine: 'line-through' },
 });
 
-export type MarkdownProps = { readonly children: string; readonly streaming?: boolean; readonly label?: string };
+type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
+
+export type MarkdownProps = {
+  readonly children: string;
+  readonly streaming?: boolean;
+  readonly label?: string;
+  readonly headingLevel?: HeadingLevel;
+};
+
+type MarkdownHeadingProps = ComponentProps<'h1'> & {
+  readonly level: HeadingLevel;
+  readonly headingLevel: HeadingLevel;
+};
+
 type MarkdownCodeProps = ComponentProps<'code'>;
 const TEXT_NODE_TYPES: ReadonlySet<string> = new Set(['string', 'number']);
 
@@ -95,46 +108,15 @@ function CodeFence({ children, className }: MarkdownCodeProps): ReactNode {
   return <CodeBlock code={parts.join('')} language={language} streaming={isIncomplete} />;
 }
 
-function safeUrl(value: string, key: string): string | undefined {
-  if (key !== 'href') {
-    return undefined;
-  }
+function MarkdownHeading({ level, headingLevel, children, id }: MarkdownHeadingProps): ReactNode {
+  const tagName = `h${Math.min(level + headingLevel - 1, 6)}`;
+  const size = level === 1 ? styles.title : level === 2 ? styles.section : styles.minor;
 
-  return contentHref(value);
+  return createElement(tagName, { id, ...stylex.props(styles.heading, size) }, children);
 }
 
 const components: Components = {
   p: ({ children }) => <p {...stylex.props(styles.paragraph)}>{children}</p>,
-  h1: ({ children, id }) => (
-    <h1 id={id} {...stylex.props(styles.heading, styles.title)}>
-      {children}
-    </h1>
-  ),
-  h2: ({ children, id }) => (
-    <h2 id={id} {...stylex.props(styles.heading, styles.section)}>
-      {children}
-    </h2>
-  ),
-  h3: ({ children, id }) => (
-    <h3 id={id} {...stylex.props(styles.heading, styles.minor)}>
-      {children}
-    </h3>
-  ),
-  h4: ({ children, id }) => (
-    <h4 id={id} {...stylex.props(styles.heading, styles.minor)}>
-      {children}
-    </h4>
-  ),
-  h5: ({ children, id }) => (
-    <h5 id={id} {...stylex.props(styles.heading, styles.minor)}>
-      {children}
-    </h5>
-  ),
-  h6: ({ children, id }) => (
-    <h6 id={id} {...stylex.props(styles.heading, styles.minor)}>
-      {children}
-    </h6>
-  ),
   ul: ({ children }) => <ul {...stylex.props(styles.list)}>{children}</ul>,
   ol: ({ children, start }) => (
     <ol start={start} {...stylex.props(styles.list)}>
@@ -150,8 +132,10 @@ const components: Components = {
       {children}
     </ContentLink>
   ),
-  img: ({ alt }) => (
-    <span {...stylex.props(styles.image)}>{alt !== undefined && alt.length > 0 ? `[Image: ${alt}]` : '[Image]'}</span>
+  img: ({ src, alt, title }) => (
+    <ContentLink href={typeof src === 'string' ? src : undefined} title={title}>
+      {alt !== undefined && alt.length > 0 ? `Open image: ${alt}` : 'Open image'}
+    </ContentLink>
   ),
   table: ({ children }) => (
     <div role="region" aria-label="Markdown table" tabIndex={0} {...stylex.props(styles.tableRegion)}>
@@ -181,10 +165,6 @@ const components: Components = {
   em: ({ children }) => <em {...stylex.props(styles.emphasis)}>{children}</em>,
   del: ({ children }) => <del {...stylex.props(styles.deleted)}>{children}</del>,
 };
-
-const rehypePlugins = Object.entries(defaultRehypePlugins)
-  .filter(([name]) => name !== 'raw')
-  .map(([, plugin]) => plugin);
 
 const allowedElements = [
   'p',
@@ -219,21 +199,29 @@ const allowedElements = [
   'section',
 ];
 
-export function Markdown({ children, streaming = false, label }: MarkdownProps): ReactNode {
+export function Markdown({ children, streaming = false, label, headingLevel = 1 }: MarkdownProps): ReactNode {
+  const headingComponents: Components = {
+    h1: (props) => <MarkdownHeading {...props} level={1} headingLevel={headingLevel} />,
+    h2: (props) => <MarkdownHeading {...props} level={2} headingLevel={headingLevel} />,
+    h3: (props) => <MarkdownHeading {...props} level={3} headingLevel={headingLevel} />,
+    h4: (props) => <MarkdownHeading {...props} level={4} headingLevel={headingLevel} />,
+    h5: (props) => <MarkdownHeading {...props} level={5} headingLevel={headingLevel} />,
+    h6: (props) => <MarkdownHeading {...props} level={6} headingLevel={headingLevel} />,
+  };
+
   return (
     <Streamdown
+      key={headingLevel}
+      {...markdownOptions}
       {...stylex.props(styles.root)}
       aria-label={label}
-      components={components}
+      components={{ ...components, ...headingComponents }}
       mode={streaming ? 'streaming' : 'static'}
       isAnimating={streaming}
       animated={false}
       controls={false}
       linkSafety={{ enabled: false }}
-      rehypePlugins={rehypePlugins}
       allowedElements={allowedElements}
-      skipHtml
-      urlTransform={safeUrl}
     >
       {children}
     </Streamdown>

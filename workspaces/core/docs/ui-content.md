@@ -20,11 +20,16 @@ import { Markdown } from '@mechane-ai/elements/content/markdown';
 <Markdown streaming={isStreaming}>{reply}</Markdown>;
 ```
 
-Raw HTML is disabled. Images display their alternative text without requesting their source. Links admit HTTP, HTTPS,
-mail, and relative destinations through the browser's URL parser. Invalid or executable destinations become plain text.
-[ContentLink](../packages/browser/elements/packages/content/src/content-link.tsx) applies the same policy to citations
-and attachments outside Markdown. Import it from `/content/link` when the consumer needs only a link; that entry does
-not load the Markdown renderer. Applications can render trusted media separately when users request it.
+Raw HTML is disabled. Images display an explicit link labelled by their alternative text without requesting their
+source. Links admit HTTP, HTTPS, mail, and relative destinations through the browser's URL parser. Invalid or executable
+destinations become plain text. [ContentLink](../packages/browser/elements/packages/content/src/content-link.tsx)
+applies the same policy to citations and attachments outside Markdown. Import it from `/content/link` when the consumer
+needs only a link; that entry does not load the Markdown renderer. Applications can render trusted media separately when
+users request it.
+
+Set `headingLevel` when embedding Markdown below a page heading; the renderer shifts the supplied hierarchy and caps it
+at `h6`. `MarkdownPreview` uses the same parsing and URL policy but emits only inert text, including image alt text. Use
+it inside record links; the application owns excerpt length and clipping. It creates no nested links or code viewer.
 
 ## Code and changes
 

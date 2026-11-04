@@ -64,6 +64,11 @@ immediately on focus; the destination must accept focus. The keyboard-navigation
 Pending actions keep focus and reserve space for both labels. Unavailable actions remain disabled. Use concise labels
 that describe the operation; a refresh failure belongs beside the retained content, not in a replacement empty screen.
 
+Use `RecordPage.Root`, `Toolbar`, `Body`, `Content`, `Header`, and `Aside` to compose a resource detail. The toolbar
+owns the shared top edge and optional back link; the header owns a focusable record heading. Body content and an aside
+wrap naturally at narrow widths. `PageNavigation` exposes ordinary anchors with controlled current-item state.
+`SettingsSection` groups settings; each `SettingsRow` binds a real control ID to its label and description.
+
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a
 disabled control is unavailable. The [form example](../packages/browser/elements/packages/forms/src/forms.stories.tsx)
@@ -84,6 +89,12 @@ Tooltip. Base UI documents [render functions](https://base-ui.com/react/handbook
 Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use Loading for
 missing initial data and EmptyState for a successful empty result. The application decides when access loss or a
 resource change requires clearing data.
+
+`AsyncRegion` renders a caller-supplied pending state with an inert placeholder. Its optional `delayMs` and epoch
+`startedAt` let an application share one visibility deadline across regions. Changing that epoch resets only the pending
+placeholder. Ready children are not keyed or remounted by a navigation clock. Keep `pending` false during a refresh that
+retains authorized content. `SkeletonText` reserves inherited line boxes and accepts a width; use one line for labels or
+explicit `lines` for prose. `ContentReveal` coordinates nested entry using shared motion tokens.
 
 ## Data and content
 

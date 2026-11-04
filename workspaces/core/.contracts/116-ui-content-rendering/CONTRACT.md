@@ -11,6 +11,9 @@ out of the render path. Admit links through an explicit protocol policy and make
 consumer choice. Strip terminal control behavior rather than interpreting recorded output as terminal commands.
 Applications redact private values before passing them to these generic viewers.
 
+Markdown previews use the same parser and emit inert text suitable inside another link. Rejected links retain their
+visible label. Embedded Markdown shifts its heading hierarchy explicitly; it never silently adds another page title.
+
 Keep the supplied text available when a renderer is loading, unsupported, or failed. SSR and first client render must
 agree on the readable fallback. A highlighting failure must not hide the source. Load renderer code, grammars, workers,
 and WebAssembly through packaged assets; do not fetch them from an implicit third-party service.

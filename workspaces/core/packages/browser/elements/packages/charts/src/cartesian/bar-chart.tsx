@@ -4,7 +4,7 @@ import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-values.tsx';
-import { ChartFrame, ChartLegend } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
@@ -195,20 +195,22 @@ export function BarChart({
           </svg>
         )}
       </div>
-      <CategoricalValues
-        items={categories.map((category, index) => ({
-          id: category.id,
-          label: category.label,
-          valueLabel: series
-            .map(
-              (item) =>
-                `${item.label}: ${item.values[index] === null || item.values[index] === undefined ? 'Unavailable' : formatValue(item.values[index])}`,
-            )
-            .join(' · '),
-          tone: 'neutral',
-        }))}
-        selection={selection}
-      />
+      <ChartDataDisclosure>
+        <CategoricalValues
+          items={categories.map((category, index) => ({
+            id: category.id,
+            label: category.label,
+            valueLabel: series
+              .map(
+                (item) =>
+                  `${item.label}: ${item.values[index] === null || item.values[index] === undefined ? 'Unavailable' : formatValue(item.values[index])}`,
+              )
+              .join(' · '),
+            tone: 'neutral',
+          }))}
+          selection={selection}
+        />
+      </ChartDataDisclosure>
     </ChartFrame>
   );
 }

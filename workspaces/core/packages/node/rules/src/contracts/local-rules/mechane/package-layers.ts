@@ -40,6 +40,7 @@ const VALUES = {
       './charts/hierarchy': './packages/charts/src/hierarchy/index.ts',
       './charts/timeline': './packages/charts/src/timeline/index.ts',
       './theme': './packages/foundations/src/theme.ts',
+      './csp': './packages/foundations/src/csp/index.ts',
       './tokens': './packages/foundations/src/tokens.stylex.ts',
       './tokens.stylex': './packages/foundations/src/tokens.stylex.ts',
       './styles.css': './packages/foundations/src/styles.css',

@@ -64,6 +64,9 @@ oxlint `new-cap` with `capIsNew` off rejects `new` on a name that starts in lowe
 oxlint `no-bitwise` rejects bitwise operators. Scoped suppressions permit the smoke's private-file permission mask and the guest's UTF-8 continuation-byte mask.
 oxlint `unicorn/no-array-callback-reference` is off by decision under contract 111's SC-03: a typed callback const states the parameters it reads, and TD-01 gives an owned function no second positional parameter.
 Time is read only with `DateTime.nowUnsafe()` (EF-17): ast-grep `date-constructor` rejects `new Date`. A function repeats with a loop (EF-18): ast-grep `loop-recursion` ratchets a function that calls itself by name, which the sweep turns into a worklist loop or, for a walk of recursive data, suppresses by name; it does not see two functions that call each other.
+Browser presentation may read the native clock for ephemeral interaction deadlines, such as delayed placeholders.
+It does not introduce Effect just to time a visual transition. Displayed record times still arrive as explicit inputs
+under contract 072; backend domain timestamps retain the clock rule.
 Contract 064 governs every TypeScript file, so its bound statements take the place of "Name intermediate values when nested calls hide the sequence", and its `nested-call` ratchet holds them.
 
 For them this replaces "Extract a helper only when it names a real concept, collapses real duplication, or isolates an independent operation, never just to shorten a block".

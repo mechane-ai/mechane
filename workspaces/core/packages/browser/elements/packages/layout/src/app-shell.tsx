@@ -44,14 +44,16 @@ type AppShellProps = {
   readonly sidebar: ReactNode;
   readonly footer?: ReactNode;
   readonly children: ReactNode;
+  readonly mainId?: string;
 };
 
-export function AppShell({ sidebarHeader, sidebar, footer, children }: AppShellProps): ReactNode {
+export function AppShell({ sidebarHeader, sidebar, footer, children, mainId = 'main' }: AppShellProps): ReactNode {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [drawerHandle] = useState(() => Drawer.createHandle());
   const sidebarId = useId();
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
+  const mobileNavigationToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const desktop = globalThis.matchMedia(frameConditions.sidebarDesktopQuery);
@@ -74,6 +76,7 @@ export function AppShell({ sidebarHeader, sidebar, footer, children }: AppShellP
         sidebarId,
         drawerHandle,
         navigationToggleRef,
+        mobileNavigationToggleRef,
         onToggle: () => setIsExpanded((expanded) => !expanded),
         onNavigate: () => setIsOpen(false),
       }}
@@ -88,7 +91,7 @@ export function AppShell({ sidebarHeader, sidebar, footer, children }: AppShellP
             {sidebar}
           </Sidebar>
         </aside>
-        <main id="main" tabIndex={-1} {...stylex.props(styles.main)}>
+        <main id={mainId} tabIndex={-1} {...stylex.props(styles.main)}>
           {children}
         </main>
       </div>
@@ -104,7 +107,7 @@ export function AppShell({ sidebarHeader, sidebar, footer, children }: AppShellP
                   return navigationToggleRef.current;
                 }
 
-                return true;
+                return mobileNavigationToggleRef.current;
               }}
             >
               <Drawer.Title visuallyHidden>Navigation</Drawer.Title>

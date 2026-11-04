@@ -765,18 +765,33 @@
         "typescript/explicit-module-boundary-types": "off",
         "id-length": "off",
         "oxc/no-optional-chaining": "off",
-        "no-restricted-properties": [
+        "no-restricted-imports": [
           "error",
           {
-            "object": "Date",
-            "property": "now",
-            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
-          },
-          {
-            "object": "DateTime",
-            "property": "now",
-            "message": "Read the clock once and pass it down, such as `const now = DateTime.nowUnsafe()` (EF-17)"
-          },
+            "paths": [
+              {
+                "name": "effect",
+                "importNames": ["Context", "Layer", "LayerMap", "ManagedRuntime"],
+                "message": "Pass each dependency in the input object, such as `startStack({ settings })` (EF-13)"
+              },
+              {
+                "name": "node:process",
+                "message": "Use the global `process` in a settings or output module, such as `loadStackSettings()` (ST-31)"
+              },
+              {
+                "name": "process",
+                "message": "Use the global `process` in a settings or output module, such as `loadStackSettings()` (ST-31)"
+              },
+              {
+                "name": "effect",
+                "importNames": ["Console"],
+                "message": "Write diagnostics through the program's output module or `writeLog`, such as `writeDiagnostic({ line })` (EF-19)"
+              }
+            ]
+          }
+        ],
+        "no-restricted-properties": [
+          "error",
           {
             "object": "Match",
             "property": "value",

@@ -14,6 +14,8 @@ export const frame = stylex.defineVars({
   detailBottom: '64px',
   detailMobileTop: '32px',
   detailMobileBottom: '52px',
+  recordContentWidth: '480px',
+  recordAsideWidth: '240px',
 });
 
 export const frameConditions = stylex.defineConsts({

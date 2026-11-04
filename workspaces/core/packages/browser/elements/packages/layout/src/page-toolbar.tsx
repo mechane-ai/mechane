@@ -13,6 +13,7 @@ const styles = stylex.create({
     containerName: 'toolbar',
     alignItems: 'stretch',
     height: frame.toolbarHeight,
+    flexShrink: 0,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
@@ -72,13 +73,17 @@ export function PageToolbar({ title, actions, breadcrumb = false, navigation = t
   const Title = breadcrumb ? 'nav' : 'h1';
 
   return (
-    <header {...stylex.props(styles.toolbar)}>
+    <div {...stylex.props(styles.toolbar)}>
       {navigation && <SidebarToggle />}
-      <Title aria-label={breadcrumb ? 'Breadcrumb' : undefined} {...stylex.props(styles.title)}>
+      <Title
+        tabIndex={breadcrumb ? undefined : -1}
+        aria-label={breadcrumb ? 'Breadcrumb' : undefined}
+        {...stylex.props(styles.title)}
+      >
         <span {...stylex.props(styles.label)}>{title}</span>
       </Title>
       {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
-    </header>
+    </div>
   );
 }
 

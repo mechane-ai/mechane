@@ -2,14 +2,27 @@ import * as stylex from '@stylexjs/stylex';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { Checkbox } from '../../forms/src/index.ts';
+import { accessibility } from '../../foundations/src/accessibility.ts';
 import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
 
+const rowControlSelector =
+  'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"], [role="tab"], [role^="menuitem"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
+
+const rowFocusOffsets: ReadonlyMap<string, number> = new Map([
+  ['ArrowUp', -1],
+  ['ArrowDown', 1],
+]);
+
 const styles = stylex.create({
+  frame: { minWidth: 0 },
+  content: {},
+  fillFrame: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
   viewport: {
     'minWidth': 0,
     'overflow': 'auto',
@@ -21,6 +34,7 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
+  fillViewport: { flex: 1, minHeight: 0 },
   virtual: (height: number) => ({ maxHeight: height }),
   table: {
     width: '100%',
@@ -33,6 +47,10 @@ const styles = stylex.create({
     color: colors.ink,
     backgroundColor: colors.surface,
   },
+  fixed: { tableLayout: 'fixed' },
+  minimumWidth: (width: number, compactWidth: number) => ({
+    minWidth: { default: width, [conditions.compactTable]: compactWidth },
+  }),
   caption: { textAlign: 'left', padding: spacing.lg, color: colors.muted, fontSize: typography.captionSize },
   header: {
     position: 'sticky',
@@ -73,13 +91,39 @@ const styles = stylex.create({
     },
   },
   row: {
-    'height': 39,
+    'height': { default: 39, [conditions.coarsePointer]: controls.coarseTarget },
     'borderTopWidth': 1,
     'borderTopStyle': 'solid',
     'borderTopColor': colors.line,
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
   },
   selected: { backgroundColor: colors.accentSoft },
+  actionable: { cursor: 'pointer' },
+  trigger: {
+    'WebkitUserSelect': 'text',
+    'userSelect': 'text',
+    'display': 'block',
+    'width': '100%',
+    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'padding': 0,
+    'borderWidth': 0,
+    'borderRadius': 2,
+    'color': 'inherit',
+    'backgroundColor': 'transparent',
+    'fontFamily': 'inherit',
+    'fontSize': 'inherit',
+    'fontWeight': 'inherit',
+    'lineHeight': 'inherit',
+    'textAlign': 'inherit',
+    'textDecoration': 'none',
+    'cursor': 'pointer',
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: 2,
+    },
+  },
   cell: {
     minWidth: '12ch',
     paddingBlock: spacing.sm,
@@ -90,15 +134,30 @@ const styles = stylex.create({
   start: { textAlign: 'start' },
   end: { textAlign: 'end' },
   width: (width: number) => ({ width, minWidth: width }),
+  secondary: { display: { [conditions.compactTable]: 'none' } },
+  truncated: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+  cellContent: { display: 'block', minWidth: 0, maxWidth: '100%' },
   selection: { width: 44, minWidth: 0, paddingInline: spacing.lg },
   spacer: (height: number) => ({ height, padding: 0, borderWidth: 0 }),
   empty: { padding: spacing.xxl, textAlign: 'center', color: colors.muted },
   footer: { padding: spacing.lg, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
+  endContent: { minHeight: controls.coarseTarget, padding: spacing.lg },
 });
 
 type ColumnAlignment = 'start' | 'end';
+type TableSizing = 'content' | 'fill';
 
 const alignmentStyles = { start: styles.start, end: styles.end } satisfies Record<ColumnAlignment, stylex.StyleXStyles>;
+
+const frameStyles = { content: styles.content, fill: styles.fillFrame } satisfies Record<
+  TableSizing,
+  stylex.StyleXStyles
+>;
+
+const viewportStyles = { content: styles.content, fill: styles.fillViewport } satisfies Record<
+  TableSizing,
+  stylex.StyleXStyles
+>;
 
 export type DataTableColumn<Row> = {
   readonly id: string;
@@ -106,12 +165,19 @@ export type DataTableColumn<Row> = {
   readonly cell: (row: Row) => ReactNode;
   readonly align?: ColumnAlignment;
   readonly width?: number;
+  readonly secondary?: boolean;
+  readonly truncate?: boolean;
   readonly sortable?: boolean;
 };
 
 export type DataTableSort = { readonly columnId: string; readonly direction: 'ascending' | 'descending' };
 
-export type DataTableWindow = { readonly height: number; readonly estimatedRowHeight?: number };
+export type DataTableWindow = { readonly height: number | 'fill'; readonly estimatedRowHeight?: number };
+
+export type DataTableRowAction<Row> = { readonly label?: (row: Row) => string } & (
+  | { readonly href: (row: Row) => string; readonly onActivate?: (row: Row) => void }
+  | { readonly href?: never; readonly onActivate: (row: Row) => void }
+);
 
 type SortProperties<Row> =
   | {
@@ -140,8 +206,14 @@ export type DataTableProps<Row> = SortProperties<Row> &
     readonly rows: ReadonlyArray<Row>;
     readonly getRowId: (row: Row) => string;
     readonly caption: string;
-    readonly empty: string;
+    readonly empty: ReactNode;
+    readonly rowAction?: DataTableRowAction<Row>;
+    readonly activeRowId?: string;
+    readonly hideCaption?: boolean;
+    readonly hideHeaders?: boolean;
     readonly window?: DataTableWindow;
+    readonly endContent?: ReactNode;
+    readonly onEndReached?: () => void;
     readonly footer?: ReactNode;
   };
 
@@ -156,7 +228,13 @@ export function DataTable<Row extends object>({
   selectedIds,
   onSelectionChange,
   selectionLabel,
+  rowAction,
+  activeRowId,
+  hideCaption = false,
+  hideHeaders = false,
   window,
+  endContent,
+  onEndReached,
   footer,
 }: DataTableProps<Row>): ReactNode {
   const model = useMemo(() => {
@@ -167,11 +245,21 @@ export function DataTable<Row extends object>({
 
   const table = useTable({ features, columns: model, data: rows, getRowId });
   const viewport = useRef<HTMLDivElement>(null);
+  const endElement = useRef<HTMLDivElement>(null);
   const captionElement = useRef<HTMLTableCaptionElement>(null);
   const headerElement = useRef<HTMLTableSectionElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [focusedId, setFocusedId] = useState<string>();
+  const pendingFocusId = useRef<string | undefined>(undefined);
   const focusedIndex = rows.findIndex((row) => getRowId(row) === focusedId);
+  const actionColumnIndex = columns.findIndex((column) => column.secondary !== true);
+  const sizing = typeof window?.height === 'string' ? window.height : 'content';
+
+  useEndReached({
+    end: endElement,
+    onEndReached: window === undefined ? onEndReached : undefined,
+    content: rows.length,
+  });
 
   useEffect(() => {
     const captionNode = captionElement.current;
@@ -187,7 +275,7 @@ export function DataTable<Row extends object>({
     observer.observe(header);
 
     return () => observer.disconnect();
-  }, [window]);
+  }, [window, hideCaption, hideHeaders]);
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -233,25 +321,113 @@ export function DataTable<Row extends object>({
           return [{ row, index: item.index, gap: item.start - (items[index - 1]?.end ?? headerHeight) }];
         });
 
+  // Row measurements can move a footer out of view before its intersection callback runs.
+  const isAtEnd = window !== undefined && (rows.length === 0 || virtualizer.range?.endIndex === rows.length - 1);
+
+  useEffect(() => {
+    if (isAtEnd) {
+      onEndReached?.();
+    }
+  }, [isAtEnd, onEndReached, rows.length]);
+
+  useLayoutEffect(() => {
+    if (pendingFocusId.current === undefined) {
+      return;
+    }
+
+    const row = Array.from(viewport.current?.querySelectorAll<HTMLTableRowElement>('[data-row-id]') ?? []).find(
+      (element) => element.dataset['rowId'] === pendingFocusId.current,
+    );
+
+    const trigger = row?.querySelector<HTMLElement>('[data-row-action]');
+
+    if (trigger !== undefined && trigger !== null) {
+      trigger.focus({ preventScroll: window !== undefined });
+
+      pendingFocusId.current = undefined;
+    }
+  });
+
+  function moveFocus(event: KeyboardEvent<HTMLElement>, index: number) {
+    const command = event.metaKey || event.ctrlKey;
+    const alternate = event.altKey || event.shiftKey;
+
+    if (command || alternate) {
+      return;
+    }
+
+    const offset = rowFocusOffsets.get(event.key);
+
+    if (offset === undefined) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const nextIndex = index + offset;
+    const nextRow = rows[nextIndex];
+
+    if (nextRow === undefined) {
+      return;
+    }
+
+    pendingFocusId.current = getRowId(nextRow);
+
+    setFocusedId(pendingFocusId.current);
+
+    if (window !== undefined) {
+      virtualizer.scrollToIndex(nextIndex, { align: 'auto' });
+    }
+  }
+
   const columnCount = columns.length + (selectedIds === undefined ? 0 : 1);
+  const selectionWidth = selectedIds === undefined ? 0 : 44;
+  const minimumWidth = columns.reduce((total, column) => total + (column.width ?? 160), selectionWidth);
+
+  const compactWidth = columns
+    .filter((column) => column.secondary !== true)
+    .reduce((total, column) => total + (column.width ?? 160), selectionWidth);
 
   const trailingSpace =
     virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? headerHeight) + headerHeight;
 
   return (
-    <div>
+    <div {...stylex.props(styles.frame, frameStyles[sizing])}>
       <div
         ref={viewport}
         role="region"
         aria-label={caption}
         tabIndex={0}
-        {...stylex.props(styles.viewport, window !== undefined && styles.virtual(window.height))}
+        {...stylex.props(
+          styles.viewport,
+          viewportStyles[sizing],
+          typeof window?.height === 'number' && styles.virtual(window.height),
+        )}
       >
-        <table aria-rowcount={window === undefined ? undefined : rows.length + 1} {...stylex.props(styles.table)}>
-          <caption ref={captionElement} {...stylex.props(styles.caption)}>
+        <table
+          aria-rowcount={window === undefined ? undefined : Math.max(1, rows.length) + 1}
+          {...stylex.props(
+            styles.table,
+            columns.some((column) => column.truncate === true) && styles.fixed,
+            styles.minimumWidth(minimumWidth, compactWidth),
+          )}
+        >
+          <caption ref={captionElement} {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}>
             {caption}
           </caption>
-          <thead ref={headerElement}>
+          <colgroup>
+            {selectedIds !== undefined && <col {...stylex.props(styles.selection)} />}
+            {columns.map((column) => (
+              <col
+                key={column.id}
+                {...stylex.props(
+                  column.width !== undefined && styles.width(column.width),
+                  column.secondary === true && styles.secondary,
+                )}
+              />
+            ))}
+          </colgroup>
+          <thead ref={headerElement} {...stylex.props(hideHeaders && accessibility.hidden)}>
             <tr>
               {selectedIds !== undefined && (
                 <th scope="col" {...stylex.props(styles.header, styles.selection)}>
@@ -270,6 +446,7 @@ export function DataTable<Row extends object>({
                       styles.header,
                       alignmentStyles[column.align ?? 'start'],
                       column.width !== undefined && styles.width(column.width),
+                      column.secondary === true && styles.secondary,
                     )}
                   >
                     {column.sortable === true && onSortChange !== undefined ? (
@@ -319,10 +496,29 @@ export function DataTable<Row extends object>({
                 )}
                 <tr
                   data-index={index}
+                  data-row-id={row.id}
                   aria-rowindex={window === undefined ? undefined : index + 2}
                   ref={window === undefined ? undefined : virtualizer.measureElement}
                   onFocus={() => setFocusedId(row.id)}
-                  {...stylex.props(styles.row, selectedIds?.has(row.id) === true && styles.selected)}
+                  onClick={(event) => {
+                    if (rowAction === undefined || !isPlainActivation(event)) {
+                      return;
+                    }
+
+                    if (event.target instanceof Element && event.target.closest(rowControlSelector) !== null) {
+                      return;
+                    }
+
+                    const trigger = event.currentTarget.querySelector<HTMLElement>('[data-row-action]');
+
+                    trigger?.focus({ preventScroll: true });
+                    trigger?.click();
+                  }}
+                  {...stylex.props(
+                    styles.row,
+                    rowAction !== undefined && styles.actionable,
+                    (selectedIds?.has(row.id) === true || activeRowId === row.id) && styles.selected,
+                  )}
                 >
                   {selectedIds !== undefined && (
                     <td {...stylex.props(styles.cell, styles.selection)}>
@@ -345,16 +541,33 @@ export function DataTable<Row extends object>({
                       </Checkbox.Root>
                     </td>
                   )}
-                  {columns.map((column) => (
+                  {columns.map((column, columnIndex) => (
                     <td
                       key={column.id}
                       {...stylex.props(
                         styles.cell,
                         alignmentStyles[column.align ?? 'start'],
                         column.width !== undefined && styles.width(column.width),
+                        column.secondary === true && styles.secondary,
+                        column.truncate === true && styles.truncated,
                       )}
                     >
-                      {column.cell(row.original)}
+                      {rowAction !== undefined && columnIndex === actionColumnIndex ? (
+                        <RowTrigger
+                          row={row.original}
+                          action={rowAction}
+                          active={activeRowId === row.id}
+                          onKeyDown={(event) => moveFocus(event, index)}
+                        >
+                          <span {...stylex.props(styles.cellContent, column.truncate === true && styles.truncated)}>
+                            {column.cell(row.original)}
+                          </span>
+                        </RowTrigger>
+                      ) : (
+                        <span {...stylex.props(styles.cellContent, column.truncate === true && styles.truncated)}>
+                          {column.cell(row.original)}
+                        </span>
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -374,8 +587,74 @@ export function DataTable<Row extends object>({
             )}
           </tbody>
         </table>
+        <div ref={endElement} {...stylex.props(endContent !== undefined && styles.endContent)}>
+          {endContent}
+        </div>
       </div>
       {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
     </div>
+  );
+}
+
+function isPlainActivation(event: MouseEvent<HTMLElement>): boolean {
+  if (event.defaultPrevented || event.button !== 0) {
+    return false;
+  }
+
+  const command = event.metaKey || event.ctrlKey;
+  const alternate = event.altKey || event.shiftKey;
+
+  if (command || alternate) {
+    return false;
+  }
+
+  return event.detail === 0 || event.currentTarget.ownerDocument.getSelection()?.isCollapsed !== false;
+}
+
+type RowTriggerProps<Row> = {
+  readonly row: Row;
+  readonly action: DataTableRowAction<Row>;
+  readonly active: boolean;
+  readonly children: ReactNode;
+  readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
+};
+
+function RowTrigger<Row>({ row, action, active, children, onKeyDown }: RowTriggerProps<Row>): ReactNode {
+  if (action.href !== undefined) {
+    return (
+      <a
+        href={action.href(row)}
+        aria-label={action.label?.(row)}
+        data-row-action
+        onKeyDown={onKeyDown}
+        onClick={(event) => {
+          if (action.onActivate !== undefined && isPlainActivation(event)) {
+            event.preventDefault();
+            action.onActivate(row);
+          }
+        }}
+        {...stylex.props(styles.trigger)}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={action.label?.(row)}
+      aria-pressed={active}
+      data-row-action
+      onKeyDown={onKeyDown}
+      onClick={(event) => {
+        if (isPlainActivation(event)) {
+          action.onActivate(row);
+        }
+      }}
+      {...stylex.props(styles.trigger)}
+    >
+      {children}
+    </button>
   );
 }

@@ -84,6 +84,8 @@ Give each implementation library one job inside its owning family:
 | visx | `charts` computes and renders geometry from supplied presentation records. |
 
 The application supplies resource reads, mutations, routing, permissions, and record-to-presentation mappings.
+The `/csp` entry exposes Base UI's provider for an application-supplied nonce. Applications own the security policy,
+nonce generation, and hydration handoff; components must not generate a replacement nonce or relax that policy.
 The declared package edges and dependency-cruiser enforce import boundaries. Storybook builds the same components
 from synthetic inputs. Lazy loading renderer code and packaged assets is component initialization, not a domain read.
 

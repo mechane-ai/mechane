@@ -37,9 +37,23 @@ props. `satisfies` retains the precise column choices while checking their suppo
 Selection requires `selectedIds`, `onSelectionChange` and a label for each row's checkbox. Changes preserve selected IDs
 outside the current page. Individual cells can perform actions without turning a table row into a button.
 
+Use `rowAction` for an inspectable record. Its first visible cell contains a real link when `href` is supplied, or a
+button for a local action. Modified link clicks retain normal browser behavior. Other cell controls keep their own
+actions, and text selection does not open the record. Arrow keys move between record actions; virtualized focus stays
+mounted. `activeRowId` marks the inspected record without changing selection.
+
+Mark columns `secondary` to hide them at the compact table breakpoint. `truncate` clips a cell within its column; the
+full value should remain available through the record view. `hideCaption` and `hideHeaders` keep their semantic labels
+available to assistive technology.
+
 The optional `window` limits mounted rows within the supplied page. It does not fetch more records. The table retains
 the focused row and its neighbors while scrolling, exposes logical row positions, and measures the caption and header
 before positioning rows. Use the ordinary table for small pages and unusual spanning or grouped structures.
+
+Set `window.height` to a pixel limit or `'fill'` inside a flex column with bounded height. `endContent` stays inside the
+scroll region; `footer` stays outside it. Supply `onEndReached` only while another page is eligible to load.
+`CollectionEnd` exposes ready, loading, retry, and complete states, including a manual load action. It never infers
+completion from an empty page. `CollectionScroll` supplies the same boundary for non-tabular content.
 
 [`CollectionToolbar`, `FilterChips`, `ColumnControls` and `CollectionPagination`](../packages/browser/elements/packages/collections/src/collection-controls.tsx)
 compose alongside the table. Pagination receives the result's position text and explicit previous/next availability. It

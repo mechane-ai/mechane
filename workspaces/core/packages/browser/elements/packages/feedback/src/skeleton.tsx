@@ -12,10 +12,12 @@ const styles = stylex.create({
     borderRadius: radii.sm,
     flexShrink: 0,
   },
-  dimensions: (width: number | `${number}%`, height: number) => ({ width, height }),
+  dimensions: (width: number | string, height: number | string) => ({ width, height }),
+  width: (width: number | string) => ({ width }),
   circle: { borderRadius: '50%' },
   rectangle: {},
-  text: { display: 'flex', flexDirection: 'column', gap: spacing.sm, width: '100%' },
+  text: { display: 'inline-flex', flexDirection: 'column', maxWidth: '100%', verticalAlign: 'top' },
+  line: { display: 'flex', alignItems: 'center', height: '1lh' },
   spinner: {
     display: 'inline-flex',
     position: 'relative',
@@ -32,12 +34,12 @@ const styles = stylex.create({
 type SkeletonShape = 'rectangle' | 'circle';
 
 export type SkeletonProps = {
-  readonly width?: number | `${number}%`;
-  readonly height?: number;
+  readonly width?: number | string;
+  readonly height?: number | string;
   readonly shape?: SkeletonShape;
 };
 
-export type SkeletonTextProps = { readonly lines?: number };
+export type SkeletonTextProps = { readonly lines?: number; readonly width?: number | string };
 export type SpinnerProps = { readonly label: string; readonly showLabel?: boolean };
 
 const shapes = { rectangle: styles.rectangle, circle: styles.circle } satisfies Record<
@@ -49,13 +51,15 @@ export function Skeleton({ width = '100%', height = 8, shape = 'rectangle' }: Sk
   return <span aria-hidden {...stylex.props(styles.skeleton, styles.dimensions(width, height), shapes[shape])} />;
 }
 
-export function SkeletonText({ lines = 3 }: SkeletonTextProps): ReactNode {
+export function SkeletonText({ lines = 1, width = '100%' }: SkeletonTextProps): ReactNode {
   return (
-    <div aria-hidden {...stylex.props(styles.text)}>
+    <span aria-hidden {...stylex.props(styles.text, styles.width(width))}>
       {Array.from({ length: lines }, (_, line) => (
-        <Skeleton key={`placeholder-${line}`} width={line === lines - 1 ? '65%' : '100%'} />
+        <span key={`placeholder-${line}`} {...stylex.props(styles.line)}>
+          <Skeleton width={lines > 1 && line === lines - 1 ? '65%' : '100%'} height="0.6em" />
+        </span>
       ))}
-    </div>
+    </span>
   );
 }
 

@@ -41,7 +41,11 @@ export function SettingsRow({ label, description, controlId, children }: Setting
         <label id={labelId} htmlFor={controlId} {...stylex.props(styles.label)}>
           {label}
         </label>
-        {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
+        {description !== undefined && (
+          <p id={`${controlId}-description`} {...stylex.props(styles.description)}>
+            {description}
+          </p>
+        )}
       </div>
       <div {...stylex.props(styles.control)}>{children}</div>
     </div>

@@ -5,3 +5,5 @@ export { Select } from './select.tsx';
 export { Checkbox, RadioGroup, Switch, ToggleGroup } from './selection.tsx';
 export type { SettingsRowProps } from './settings-row.tsx';
 export { SettingsRow } from './settings-row.tsx';
+export type { SettingsSectionProps } from './settings-section.tsx';
+export { SettingsSection } from './settings-section.tsx';

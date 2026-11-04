@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
+import { useState } from 'react';
+import { Button, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
+import { AsyncRegion } from './async-region.tsx';
 import { Loading } from './loading.tsx';
 import { Meter, Progress } from './progress.tsx';
 import { Skeleton, SkeletonText, Spinner } from './skeleton.tsx';
@@ -7,7 +9,7 @@ import { Skeleton, SkeletonText, Spinner } from './skeleton.tsx';
 const meta = {
   title: 'Feedback/Loading and progress',
   component: Progress,
-  subcomponents: { Meter, Skeleton, SkeletonText, Spinner, Loading },
+  subcomponents: { Meter, Skeleton, SkeletonText, Spinner, Loading, AsyncRegion },
   parameters: {
     docs: {
       description: {
@@ -42,7 +44,7 @@ export const PlaceholderGeometry: Story = {
             <Skeleton shape="circle" width={32} height={32} />
             <Skeleton width={140} height={14} />
           </Row>
-          <SkeletonText />
+          <SkeletonText lines={3} />
           <Skeleton height={128} />
         </div>
         <Muted>Placeholders reserve the content’s layout. They do not imply records or permissions.</Muted>
@@ -68,3 +70,21 @@ export const RetainedContent: Story = {
 
 export const InitialRows: Story = { render: () => <Loading label="Loading records" /> };
 export const InitialDetail: Story = { render: () => <Loading label="Loading detail" shape="detail" /> };
+
+function PendingExample() {
+  const [pending, setPending] = useState(true);
+
+  return (
+    <Stack>
+      <Button onClick={() => setPending(!pending)}>{pending ? 'Complete read' : 'Start another read'}</Button>
+      <AsyncRegion pending={pending} delayMs={1200} label="Loading example" placeholder={<SkeletonText lines={3} />}>
+        <Panel>
+          <Text>The completed result is available immediately.</Text>
+        </Panel>
+      </AsyncRegion>
+      <Muted>The application supplies the pending state and its visibility delay. There is no minimum wait.</Muted>
+    </Stack>
+  );
+}
+
+export const DelayedRegion: Story = { render: () => <PendingExample /> };
