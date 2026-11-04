@@ -3,7 +3,7 @@ import { CopyValue, Metric, MetricGrid, Muted, Panel, Prose, Stack, Subheading }
 import { Details, Inspector } from './inspector.tsx';
 
 const meta = {
-  title: 'Data/Record details',
+  title: 'Data display/Record details',
   component: Inspector,
   subcomponents: { Details, MetricGrid, Metric, CopyValue },
   parameters: {

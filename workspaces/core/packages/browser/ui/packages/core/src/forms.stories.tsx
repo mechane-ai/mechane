@@ -98,7 +98,11 @@ export const LongDescription: Story = {
   render: () => (
     <Field.Root name="instructions">
       <Field.Label>Instructions for the next person reviewing this item</Field.Label>
-      <Textarea defaultValue="Read the latest release notes, compare the listed changes with the previous version, and explain any remaining decisions in plain language.\n\nKeep the original references available for the reviewer." />
+      <Textarea
+        defaultValue={
+          'Read the latest release notes, compare the listed changes with the previous version, and explain any remaining decisions in plain language.\n\nKeep the original references available for the reviewer.'
+        }
+      />
       <Field.Description>
         Help text can wrap across several lines without losing its association with the input or displacing the label.
       </Field.Description>

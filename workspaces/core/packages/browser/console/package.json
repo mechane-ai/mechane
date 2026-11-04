@@ -24,7 +24,9 @@
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.5",
     "@storybook/addon-docs": "10.6.5",
+    "@storybook/addon-themes": "10.6.5",
     "@storybook/react-vite": "10.6.5",
+    "@stylexjs/stylex": "0.19.1",
     "@stylexjs/unplugin": "0.19.1",
     "@types/node": "24.9.2",
     "@types/react": "19.3.0",

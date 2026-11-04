@@ -14,7 +14,7 @@ const storybook: Readonly<StorybookConfig> = {
     name: '@storybook/react-vite',
     options: { builder: { viteConfigPath: new URL('vite.config.ts', import.meta.url).pathname } },
   },
-  addons: ['@storybook/addon-docs', '@storybook/addon-a11y'],
+  addons: ['@storybook/addon-docs', '@storybook/addon-a11y', '@storybook/addon-themes'],
   stories: ['../src/stories/**/*.stories.tsx', '../../ui/packages/**/*.stories.tsx'],
   viteFinal: (configuration) => ({ ...configuration, plugins: [...(configuration.plugins ?? []), stylexPlugin] }),
 };

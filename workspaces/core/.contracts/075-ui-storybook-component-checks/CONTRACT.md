@@ -39,6 +39,10 @@ Stories are maintained developer documentation with fixed synthetic inputs. Thei
 they explain; extra browser probes and their fixtures remain disposable development evidence.
 Catalog-only dependencies stay development dependencies, and stories never enter production package exports.
 
+Use the catalog theme control for both the canvas and portaled content. Apply the public theme to the document root;
+do not simulate dark mode with a dark preview background. Keep the same story data and geometry in either theme.
+When reviewing a popup, open it in each theme instead of inspecting only its closed trigger.
+
 The upstream clause "Add a `play` function only for a primary owned interaction or a distinct consequential failure
 that existing coverage would miss." is replaced by the repository's stronger retention rule: every retained play
 must guard a consequential regression missed by existing coverage and use an approved runner.

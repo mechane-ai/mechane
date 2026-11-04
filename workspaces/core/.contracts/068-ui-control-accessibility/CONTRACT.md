@@ -54,6 +54,11 @@ Keep ordinary unavailable controls disabled, and honor caller-supplied accessibl
 
 The hover rule checks the named condition's presence. Browser review verifies its effect, pending focus, and touch sizing.
 
+Use the shared Collapsible or Accordion for application disclosures, including chart data and supplied source.
+Their chevrons point right when closed and down when open. Derive that shape from Base UI's trigger state, without
+mirroring open state in another hook. Native details remain appropriate inside a structured-data tree.
+Check a nested disclosure: opening its parent must not change the child's indicator.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - oxlint `typescript/no-deprecated` (068): enforced, `"error"`

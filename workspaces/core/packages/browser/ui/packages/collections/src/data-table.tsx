@@ -74,17 +74,23 @@ const styles = stylex.create({
   },
   row: {
     'height': 39,
-    'borderBottomWidth': 1,
-    'borderBottomStyle': 'solid',
-    'borderBottomColor': colors.line,
+    'borderTopWidth': 1,
+    'borderTopStyle': 'solid',
+    'borderTopColor': colors.line,
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
   },
   selected: { backgroundColor: colors.accentSoft },
-  cell: { paddingBlock: spacing.sm, paddingInline: spacing.lg, verticalAlign: 'middle', overflowWrap: 'anywhere' },
+  cell: {
+    minWidth: '12ch',
+    paddingBlock: spacing.sm,
+    paddingInline: spacing.lg,
+    verticalAlign: 'middle',
+    overflowWrap: 'anywhere',
+  },
   start: { textAlign: 'start' },
   end: { textAlign: 'end' },
-  width: (width: number) => ({ width }),
-  selection: { width: 44, paddingInline: spacing.lg },
+  width: (width: number) => ({ width, minWidth: width }),
+  selection: { width: 44, minWidth: 0, paddingInline: spacing.lg },
   spacer: (height: number) => ({ height, padding: 0, borderWidth: 0 }),
   empty: { padding: spacing.xxl, textAlign: 'center', color: colors.muted },
   footer: { padding: spacing.lg, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
@@ -340,7 +346,14 @@ export function DataTable<Row extends object>({
                     </td>
                   )}
                   {columns.map((column) => (
-                    <td key={column.id} {...stylex.props(styles.cell, alignmentStyles[column.align ?? 'start'])}>
+                    <td
+                      key={column.id}
+                      {...stylex.props(
+                        styles.cell,
+                        alignmentStyles[column.align ?? 'start'],
+                        column.width !== undefined && styles.width(column.width),
+                      )}
+                    >
                       {column.cell(row.original)}
                     </td>
                   ))}

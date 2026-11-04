@@ -111,6 +111,10 @@ Use Storybook’s accessibility panel, then inspect keyboard order, visible focu
 focus return. The catalog does not import Console global styles, so components must own their appearance. Automated
 accessibility results alone do not establish complete accessibility.
 
+Use the theme toolbar to switch the entire preview between light and dark, including portaled menus and dialogs. The
+viewport control reviews the same examples at narrow widths. Open disclosures and popups in both themes; a closed
+trigger does not show the panel's layout. Chart data and source disclosures use the same Collapsible as activity views.
+
 `pnpm --filter @mechane/console build-storybook` uses the application’s React and StyleX compiler settings. Stories are
 developer documentation: the preview removes the inherited test tag, and no play assertion runs by default. Add a
 retained interaction check only for a consequential gap under the repository’s test-curation rules. Browser acceptance

@@ -5,7 +5,7 @@ import { Columns, Divider, EmptyState, Notice, Panel, Row, Stack } from './surfa
 import { Muted, Subheading } from './text.tsx';
 
 const meta = {
-  title: 'Data/Surfaces and feedback',
+  title: 'Feedback/Surfaces',
   component: Panel,
   subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, Loading },
   parameters: {

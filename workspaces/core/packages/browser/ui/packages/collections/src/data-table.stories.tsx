@@ -1,9 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as stylex from '@stylexjs/stylex';
 import { useMemo, useState } from 'react';
 import { Badge, Input, Stack, TextLink } from '../../core/src/index.ts';
 import { CollectionPagination, CollectionToolbar, ColumnControls, FilterChips } from './collection-controls.tsx';
 import { DataTable } from './data-table.tsx';
 import type { DataTableColumn, DataTableSort } from './data-table.tsx';
+
+const styles = stylex.create({ search: { width: 280, maxWidth: '100%' } });
 
 interface Run {
   readonly id: string;
@@ -48,7 +51,7 @@ function PreparedRows() {
   }, [query, sort]);
 
   return (
-    <Stack>
+    <Stack compact>
       <CollectionToolbar
         label="Run controls"
         actions={
@@ -73,7 +76,13 @@ function PreparedRows() {
           />
         }
       >
-        <Input aria-label="Search runs" value={query} onValueChange={setQuery} placeholder="Search runs…" />
+        <Input
+          aria-label="Search runs"
+          value={query}
+          onValueChange={setQuery}
+          placeholder="Search runs…"
+          xstyle={styles.search}
+        />
       </CollectionToolbar>
       {query !== '' && (
         <FilterChips filters={[{ id: 'search', label: `Name: ${query}` }]} onRemove={() => setQuery('')} />

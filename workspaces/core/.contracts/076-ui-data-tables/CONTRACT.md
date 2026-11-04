@@ -49,6 +49,11 @@ checks supplied order and controlled callbacks without inventing a database or r
 Types, source review, and temporary interaction probes verify the table's contract. Existing test-curation rules decide
 whether a discovered regression warrants a retained assertion; this adoption adds no test runner.
 
+Preserve readable column widths inside the table's named scroll region. An explicit column width is a minimum for
+its header and cells; ordinary columns retain a readable text measure. Narrow screens scroll the table instead of
+squeezing words into a few characters or widening the page. Check header alignment, horizontal keyboard scrolling,
+and a single separator above the footer at a narrow viewport.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

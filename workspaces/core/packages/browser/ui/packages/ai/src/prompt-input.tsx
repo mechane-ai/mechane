@@ -8,7 +8,8 @@ import { spacing } from '../../core/src/tokens.stylex.ts';
 const styles = stylex.create({
   form: { display: 'flex', flexDirection: 'column', gap: spacing.md, minWidth: 0 },
   footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
-  controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: '1 1 auto' },
+  action: { marginInlineStart: 'auto' },
 });
 
 export type PromptInputProps = {
@@ -120,6 +121,7 @@ export function PromptInput({
         <div {...stylex.props(styles.controls)}>{controls}</div>
         {onStop === undefined ? (
           <Button
+            xstyle={styles.action}
             type="submit"
             variant="solid"
             disabled={disabled || submitDisabled}
@@ -131,6 +133,7 @@ export function PromptInput({
           </Button>
         ) : (
           <Button
+            xstyle={styles.action}
             type="button"
             onClick={(event) => {
               // The action can replace this button with Send before the click default runs.

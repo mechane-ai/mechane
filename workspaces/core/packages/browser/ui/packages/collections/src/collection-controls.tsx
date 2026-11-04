@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { ChevronLeft, ChevronRight, Columns3, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button, Checkbox, IconButton, Popover, Text } from '../../core/src/index.ts';
-import { colors, spacing, typography } from '../../core/src/tokens.stylex.ts';
+import { colors, radii, spacing, typography } from '../../core/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   toolbar: {
@@ -10,12 +10,13 @@ const styles = stylex.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: spacing.sm,
-    padding: spacing.lg,
+    paddingInline: spacing.lg,
+    paddingBlock: spacing.sm,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
   },
-  actions: { display: 'flex', alignItems: 'center', gap: spacing.sm, marginInlineStart: 'auto' },
+  actions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginInlineStart: 'auto' },
   filters: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
   filter: {
     display: 'inline-flex',
@@ -25,7 +26,10 @@ const styles = stylex.create({
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.line,
-    borderRadius: 4,
+    borderRadius: radii.sm,
+    minWidth: 0,
+    maxWidth: '100%',
+    overflowWrap: 'anywhere',
     backgroundColor: colors.surface,
     color: colors.ink,
     fontFamily: typography.fontFamily,
@@ -103,7 +107,7 @@ export type ColumnControlsProps = {
 export function ColumnControls({ columns, onVisibilityChange, label = 'Columns' }: ColumnControlsProps): ReactNode {
   return (
     <Popover.Root>
-      <Popover.Trigger render={<Button variant="outline" />}>
+      <Popover.Trigger render={<Button variant="outline" size="md" />}>
         <Columns3 size={16} aria-hidden="true" />
         {label}
       </Popover.Trigger>

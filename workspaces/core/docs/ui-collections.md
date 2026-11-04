@@ -11,6 +11,10 @@ Supply the already filtered, ordered page, a stable row ID, a caption and an emp
 stable when labels or visibility change. Each cell receives the caller's record type and can render ordinary links and
 controls.
 
+Columns keep a readable minimum width and scroll within the table on narrow screens. A column's optional `width` sets
+its minimum in pixels for both the header and cells. Use it when the content needs a wider measure or a compact numeric
+column. The scroll region remains keyboard-focusable; horizontal overflow does not widen the page.
+
 Sortable columns require the controlled `sort` and `onSortChange` pair. Clicking a header cycles through ascending,
 descending and no sort. Until the application supplies another sort value and row page, the displayed values remain
 unchanged. Sort the entire query result before paging, with a unique row key as the final ordering field.
@@ -41,6 +45,9 @@ before positioning rows. Use the ordinary table for small pages and unusual span
 compose alongside the table. Pagination receives the result's position text and explicit previous/next availability. It
 never guesses whether another page exists from the supplied row count. Column controls report visibility changes; the
 application passes the chosen columns back to the table.
+
+Keep toolbar search fields bounded with the Input's placement-only `xstyle`, as the table example does. Actions then
+stay on the same row when space allows and wrap below on a phone.
 
 The [table stories](../packages/browser/ui/packages/collections/src/data-table.stories.tsx) demonstrate controlled
 selection, application-side sorting, an empty page and a windowed collection.

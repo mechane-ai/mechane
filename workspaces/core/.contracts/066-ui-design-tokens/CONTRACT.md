@@ -67,6 +67,11 @@ The UI package rejects literal color, font-size, shadow, and nonzero transition 
 Define those roles in `tokens.stylex.ts`; zero-duration motion remains available for reduced motion and direct dragging.
 Review other visual literals and external theme overrides against the same ownership boundary.
 
+Assign each shared edge to one separator owner. Adjacent rows, footers, and panels must not produce doubled borders.
+Keep chart frames unboxed and use caption typography for inspection hints. A caller may group charts in a Panel.
+Let chart titles and action groups wrap independently when they cannot share a row.
+Review these compositions at desktop and narrow widths, including an open disclosure and an inspected chart value.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `textContrast` 4.5; `largeTextContrast` 3.

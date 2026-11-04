@@ -41,7 +41,7 @@ function ApprovalExample(): ReactNode {
           <CodeBlock
             filename="comparison.md"
             language="markdown"
-            code="# Evaluation comparison\n\nThe candidate improved the median score."
+            code={'# Evaluation comparison\n\nThe candidate improved the median score.'}
           />
         </Approval>
       ) : (
@@ -112,7 +112,9 @@ export const Tool: Story = {
         detail={
           <LogViewer
             label="Recorded comparison output"
-            output="Comparison stopped: missing candidate values for cases case-07 and case-19.\nNo results were written."
+            output={
+              'Comparison stopped: missing candidate values for cases case-07 and case-19.\nNo results were written.'
+            }
           />
         }
       />
@@ -283,7 +285,7 @@ export const TestResults: Story = {
           detail={
             <CodeBlock
               language="text"
-              code="Expected 24 candidate measurements.\nReceived 22.\nMissing: case-07, case-19."
+              code={'Expected 24 candidate measurements.\nReceived 22.\nMissing: case-07, case-19.'}
             />
           }
         />

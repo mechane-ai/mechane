@@ -2,8 +2,8 @@ import type { FileDiffMetadata } from '@pierre/diffs';
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { CopyValue } from '../../../core/src/index.ts';
-import { colors, controls, spacing, typography } from '../../../core/src/tokens.stylex.ts';
+import { Collapsible, CopyValue } from '../../../core/src/index.ts';
+import { colors, spacing, typography } from '../../../core/src/tokens.stylex.ts';
 import { CodeBlock } from '../code/index.ts';
 import type { DiffSource, DiffViewerProps } from './diff-source.ts';
 import type { PierreDiff } from './pierre-diff.tsx';
@@ -48,20 +48,7 @@ const styles = stylex.create({
     lineHeight: typography.bodyLineHeight,
     color: colors.muted,
   },
-  disclosure: {
-    'padding': spacing.md,
-    'cursor': 'pointer',
-    'fontFamily': typography.fontFamily,
-    'fontSize': typography.captionSize,
-    'lineHeight': typography.bodyLineHeight,
-    'color': colors.muted,
-    ':focus-visible': {
-      outlineColor: colors.focus,
-      outlineWidth: controls.focusWidth,
-      outlineStyle: 'solid',
-      outlineOffset: -2,
-    },
-  },
+  disclosure: { paddingInline: spacing.md },
 });
 
 type SourcePreviewProps = { readonly source: DiffSource; readonly maxHeight: number };
@@ -94,13 +81,15 @@ function SourcePreview({ source, maxHeight }: SourcePreviewProps): ReactNode {
 }
 
 function SourceDisclosure({ source, maxHeight }: SourcePreviewProps): ReactNode {
-  const [isOpen, setOpen] = useState(false);
-
   return (
-    <details open={isOpen} onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary {...stylex.props(styles.disclosure)}>View supplied source</summary>
-      {isOpen && <SourcePreview source={source} maxHeight={maxHeight} />}
-    </details>
+    <div {...stylex.props(styles.disclosure)}>
+      <Collapsible.Root>
+        <Collapsible.Trigger>View supplied source</Collapsible.Trigger>
+        <Collapsible.Panel>
+          <SourcePreview source={source} maxHeight={maxHeight} />
+        </Collapsible.Panel>
+      </Collapsible.Root>
+    </div>
   );
 }
 

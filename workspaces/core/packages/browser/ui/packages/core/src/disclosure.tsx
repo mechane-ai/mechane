@@ -44,7 +44,13 @@ const styles = stylex.create({
       outlineOffset: 2,
     },
   },
-  icon: { flexShrink: 0, color: colors.muted },
+  icon: {
+    flexShrink: 0,
+    width: controls.iconSize,
+    height: controls.iconSize,
+    color: colors.muted,
+    transform: { default: 'rotate(-90deg)', [stylex.when.ancestor('[data-panel-open]')]: 'rotate(0deg)' },
+  },
   panel: { paddingBottom: spacing.md, overflowWrap: 'anywhere' },
 });
 
@@ -93,10 +99,14 @@ function AccordionTrigger({ className, style, children, ...props }: AccordionTri
   return (
     <BaseAccordion.Trigger
       {...props}
-      {...mergeStyles<BaseAccordion.Trigger.State>({ className, style, styles: stylex.props(styles.trigger) })}
+      {...mergeStyles<BaseAccordion.Trigger.State>({
+        className,
+        style,
+        styles: stylex.props(styles.trigger, stylex.defaultMarker()),
+      })}
     >
       {children}
-      <ChevronDown size={14} aria-hidden {...stylex.props(styles.icon)} />
+      <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
     </BaseAccordion.Trigger>
   );
 }
@@ -123,10 +133,14 @@ function CollapsibleTrigger({ className, style, children, ...props }: Collapsibl
   return (
     <BaseCollapsible.Trigger
       {...props}
-      {...mergeStyles<BaseCollapsible.Trigger.State>({ className, style, styles: stylex.props(styles.trigger) })}
+      {...mergeStyles<BaseCollapsible.Trigger.State>({
+        className,
+        style,
+        styles: stylex.props(styles.trigger, stylex.defaultMarker()),
+      })}
     >
       {children}
-      <ChevronDown size={14} aria-hidden {...stylex.props(styles.icon)} />
+      <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
     </BaseCollapsible.Trigger>
   );
 }

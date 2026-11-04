@@ -4,7 +4,7 @@ import { ListFooter } from './list-footer.tsx';
 import { Cell, Table } from './table.tsx';
 
 const meta = {
-  title: 'Data/Table',
+  title: 'Collections/Table',
   component: Table,
   subcomponents: { Cell, ListFooter },
   parameters: {

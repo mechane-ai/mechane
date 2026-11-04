@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
-import { ChevronDown } from 'lucide-react';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
+import { Collapsible } from '../../core/src/index.ts';
 import { colors, conditions, controls, spacing, typography } from '../../core/src/tokens.stylex.ts';
 import { chartToneColors } from './chart-theme.ts';
 import type { ChartTone } from './chart-theme.ts';
@@ -32,14 +32,16 @@ const styles = stylex.create({
   },
   heading: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'start',
     gap: spacing.md,
     paddingBlockEnd: spacing.lg,
   },
-  caption: { margin: 0, fontSize: typography.inputSize, lineHeight: typography.bodyLineHeight, fontWeight: 500 },
+  title: { flex: '1 1 200px', minWidth: 0, overflowWrap: 'anywhere' },
+  caption: { margin: 0, fontSize: typography.inputSize, lineHeight: typography.bodyLineHeight, fontWeight: 400 },
   description: { margin: 0, marginBlockStart: spacing.xs, color: colors.muted, fontSize: typography.captionSize },
-  actions: { flexShrink: 0 },
+  actions: { display: 'flex', flexWrap: 'wrap', gap: spacing.sm, maxWidth: '100%' },
   footer: { marginBlockStart: spacing.md, color: colors.muted, fontSize: typography.captionSize },
   legend: {
     display: 'flex',
@@ -88,20 +90,6 @@ const styles = stylex.create({
   },
   selected: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
   disclosure: { marginBlockStart: spacing.md, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
-  summary: {
-    'display': 'flex',
-    'alignItems': 'center',
-    'gap': spacing.xs,
-    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'fontFamily': typography.fontFamily,
-    'fontSize': typography.captionSize,
-    'color': colors.muted,
-    'cursor': 'pointer',
-    'listStyle': 'none',
-    'outlineOffset': 2,
-    ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: controls.focusWidth },
-    '::-webkit-details-marker': { display: 'none' },
-  },
   data: {
     'minWidth': 0,
     'maxHeight': 320,
@@ -113,7 +101,6 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  icon: { width: controls.iconSize, height: controls.iconSize },
 });
 
 export function ChartFrame({ title, description, children, actions, footer }: ChartFrameProps): ReactNode {
@@ -122,7 +109,7 @@ export function ChartFrame({ title, description, children, actions, footer }: Ch
   return (
     <figure aria-labelledby={titleId} {...stylex.props(styles.frame)}>
       <figcaption {...stylex.props(styles.heading)}>
-        <div>
+        <div {...stylex.props(styles.title)}>
           <p id={titleId} {...stylex.props(styles.caption)}>
             {title}
           </p>
@@ -185,14 +172,15 @@ export function ChartDataDisclosure({
   readonly label?: string | undefined;
 }): ReactNode {
   return (
-    <details {...stylex.props(styles.disclosure)}>
-      <summary {...stylex.props(styles.summary)}>
-        <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
-        {label}
-      </summary>
-      <div role="region" aria-label={label} tabIndex={0} {...stylex.props(styles.data)}>
-        {children}
-      </div>
-    </details>
+    <div {...stylex.props(styles.disclosure)}>
+      <Collapsible.Root>
+        <Collapsible.Trigger>{label}</Collapsible.Trigger>
+        <Collapsible.Panel>
+          <div role="region" aria-label={label} tabIndex={0} {...stylex.props(styles.data)}>
+            {children}
+          </div>
+        </Collapsible.Panel>
+      </Collapsible.Root>
+    </div>
   );
 }
