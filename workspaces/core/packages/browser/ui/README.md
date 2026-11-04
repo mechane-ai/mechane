@@ -69,3 +69,7 @@ Run `pnpm --filter @mechane/console storybook` for the component catalog. The
 [component guide](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/components.md) explains
 composition, supported states, and browser review. Stories use synthetic inputs. The repository's existing checks cover
 source and package boundaries; installation releases and UI releases have independent versions.
+
+The public repository publishes npm packages when an immutable `ui-vVERSION` GitHub release is published. The release
+workflow rebuilds the reviewed archive and checks its digest before publishing with npm trusted publishing and
+provenance. Maintainers authorize this workflow once; routine releases need no interactive npm login or stored token.

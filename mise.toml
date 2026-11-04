@@ -29,8 +29,13 @@ description = "Validate repository and product contracts"
 run = "tenet validate --root ."
 
 [tasks."repository:check"]
-description = "Check repository formatting and bootstrap"
-run = ["workspaces/core/node_modules/.bin/oxfmt --check . '!workspaces/**'", "shellcheck .config/*.sh"]
+description = "Check repository formatting, bootstrap, and package publication tools"
+run = [
+  "workspaces/core/node_modules/.bin/oxfmt --check . '!workspaces/**'",
+  "shellcheck .config/*.sh",
+  "workspaces/core/node_modules/.bin/tsc -p .config/tsconfig.json",
+  "workspaces/core/node_modules/.bin/oxlint .config/*.mts",
+]
 
 [tasks.fix]
 description = "Format the repository and apply the product's fixers"

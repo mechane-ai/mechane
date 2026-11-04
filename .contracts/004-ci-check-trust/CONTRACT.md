@@ -40,12 +40,19 @@ Confirm that check jobs receive no production credentials and no cache authority
 
 ## Local adaptations
 
-One workflow, `.github/workflows/check.yml`, runs `mise run check` on `ubuntu-24.04` for pull requests, pushes to `main` and manual runs.
+The required workflow, `.github/workflows/check.yml`, runs `mise run check` on `ubuntu-24.04` for pull requests, pushes to `main` and manual runs.
 It grants `contents: read` only, pins each action to a full commit hash, restores no cache, and receives no deployment credential.
 It checks out the full history and sets `MECHANE_BASE_BRANCH` to the pull request's target, or `main`, so the owned checks hold each ratchet's baseline to the merge base's.
 Concurrency cancels only a superseded pull-request run, never a run on `main`.
 The owned checks fail on an action that is not pinned to a full commit hash and on a workflow without `permissions`.
 When the check fails, a last step prints the end of each celld log a failed smoke kept, so the run's log holds the stack's diagnostics.
+
+The separate `publish-ui.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
+Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,
+and authenticates to npm through its package-specific trusted publisher rather than a stored registry token.
+The canonical builder must reproduce the immutable GitHub release asset's digest before publication. Existing npm
+versions must match the same archive. Source pushes, pull requests, and runtime releases cannot publish the UI package;
+the workflow does not deploy services or change installation state.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
