@@ -1,4 +1,5 @@
-import { Button, Muted, Notice, Row, Stack, Subheading, TextButton } from '@mechane-ai/ui';
+import { Button, Muted, Row, Stack, Subheading, TextButton } from '@mechane-ai/elements';
+import { Notice } from '@mechane-ai/elements/feedback';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
 import type { Turn } from '@mechane/protocol';

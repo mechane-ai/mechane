@@ -4,6 +4,6 @@ language: TypeScript
 severity: error
 message: 'Move the shared function into a module beside the executable, such as `run-checks.ts` beside `main.ts` (ST-31)'
 files: ['**/main.ts']
-ignores: ['**/node_modules/**', packages/browser/console/.storybook/main.ts]
+ignores: ['**/node_modules/**', packages/browser/*/.storybook/main.ts]
 rule:
   kind: export_statement

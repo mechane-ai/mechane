@@ -1,5 +1,6 @@
-import { Button, Muted, Notice, Panel, Row, Stack } from '@mechane-ai/ui';
-import { PromptInput } from '@mechane-ai/ui/ai';
+import { Button, Muted, Panel, Row, Stack } from '@mechane-ai/elements';
+import { PromptInput } from '@mechane-ai/elements/ai';
+import { Notice } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { Delivery, INBOX_TEXT_MAX_CHARS } from '@mechane/protocol';

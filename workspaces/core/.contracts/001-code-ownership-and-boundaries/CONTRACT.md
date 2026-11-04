@@ -38,7 +38,7 @@ Use the owning workspace's existing checks.
 
 `dependencies.json` declares each package with what it owns, its layer, lane and consumers, as `101-package-layers` says, and each package's `package.json` declares the members it depends on.
 A package's public entry points are the source targets its exports map declares, normally `./src/index.ts`.
-The compiler-required `@mechane-ai/ui/tokens.stylex` export points directly to its defining module under contract 114.
+The compiler-required `@mechane-ai/elements/tokens.stylex` export points directly to its defining module under contract 114.
 `@mechane/cli` publishes only its `bin` and `@mechane/app` only the Wrangler `main`.
 The local stack in `packages/node/stack/src` serves both `mise -C workspaces/core run dev` and the smoke, so local and smoke runs take one path.
 The stack serves the bundle that `mise -C workspaces/core run build:worker` writes with `wrangler deploy --dry-run`, the bytes a production deploy uploads.

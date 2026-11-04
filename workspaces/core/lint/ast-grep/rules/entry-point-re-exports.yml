@@ -8,14 +8,8 @@ ignores:
   [
     '**/node_modules/**',
     'packages/**/src/index.ts',
-    packages/browser/ui/packages/content/src/code/index.ts,
-    packages/browser/ui/packages/content/src/diff/index.ts,
-    packages/browser/ui/packages/content/src/tree/index.ts,
-    packages/browser/ui/packages/content/src/link.ts,
-    packages/browser/ui/packages/charts/src/cartesian/index.ts,
-    packages/browser/ui/packages/charts/src/distribution/index.ts,
-    packages/browser/ui/packages/charts/src/matrix/index.ts,
-    packages/browser/ui/packages/charts/src/graph/index.ts,
+    'packages/browser/elements/packages/**/index.ts',
+    packages/browser/elements/packages/content/src/link.ts,
     packages/worker/app/src/worker.ts,
   ]
 rule:

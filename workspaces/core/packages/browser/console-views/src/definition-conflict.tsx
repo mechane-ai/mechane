@@ -1,4 +1,4 @@
-import { Button, Muted, Panel, Prose, Row, Stack, Subheading } from '@mechane-ai/ui';
+import { Button, Muted, Panel, Prose, Row, Stack, Subheading } from '@mechane-ai/elements';
 import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';

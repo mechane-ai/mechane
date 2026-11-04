@@ -1137,13 +1137,14 @@
     },
     {
       "files": [
+        "packages/browser/catalog/src/**",
         "packages/browser/console/vite.config.ts",
-        "packages/browser/ui/vite.config.ts",
+        "packages/browser/elements/vite.config.ts",
         "packages/browser/console/src/router.tsx",
         "packages/browser/console/src/vite-env.d.ts",
-        "packages/browser/console/.storybook/*.ts",
+        "packages/browser/*/.storybook/*.ts",
         "packages/browser/*/src/**/*.stories.tsx",
-        "packages/browser/ui/packages/**/*.stories.tsx"
+        "packages/browser/elements/packages/**/*.stories.tsx"
       ],
       "rules": {
         "import/no-default-export": "off",

@@ -47,7 +47,7 @@ Run the repository's lint from the repository root and confirm that it reports a
 
 ## Local adaptations
 
-Shared visual roles live in `packages/browser/ui/packages/core/src/tokens.stylex.ts`. Shell measurements belong to `ui/layout`.
+Shared visual roles live in `packages/browser/elements/packages/foundations/src/tokens.stylex.ts`. Shell measurements belong to `elements/layout`.
 The supported themes are light and dark. Apply the chosen theme to the document root so portaled content inherits it.
 Text uses the declared `textContrast` and `largeTextContrast` ratios against its actual
 surface, with WCAG 2.2 AA's exceptions for inactive controls and decorative text.

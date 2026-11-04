@@ -2,7 +2,7 @@ id: ui-visual-token-values
 language: Tsx
 severity: error
 message: 'Use a visual token, such as `fontSize: typography.bodySize` or `transitionDuration: motion.duration` (066)'
-files: ['packages/browser/ui/packages/**/*.ts', 'packages/browser/ui/packages/**/*.tsx']
+files: ['packages/browser/elements/packages/**/*.ts', 'packages/browser/elements/packages/**/*.tsx']
 rule:
   any:
     - kind: string

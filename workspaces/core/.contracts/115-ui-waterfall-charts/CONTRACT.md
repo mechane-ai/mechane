@@ -1,7 +1,7 @@
 ---
 name: ui-waterfall-charts
 message: Render interval, point, and unavailable timing evidence without inventing endpoints or hiding its values.
-paths: ["packages/browser/ui/packages/charts/src/waterfall.tsx","packages/browser/ui/packages/charts/src/waterfall.stories.tsx"]
+paths: ["packages/browser/elements/packages/charts/src/timeline/waterfall.tsx","packages/browser/elements/packages/charts/src/timeline/waterfall.stories.tsx"]
 ---
 
 ## Rules

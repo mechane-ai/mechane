@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'End the name of a numeric limit or duration with a declared unit or counted noun, such as `timeoutMs` or `maxAttempts` (NM-08)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', 'packages/browser/ui/packages/**']
+ignores: ['**/node_modules/**', 'packages/browser/elements/packages/**']
 utils:
   numeric-type:
     kind: type_annotation

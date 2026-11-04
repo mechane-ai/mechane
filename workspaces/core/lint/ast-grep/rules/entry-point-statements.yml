@@ -3,7 +3,7 @@ id: entry-point-statements
 language: TypeScript
 severity: error
 message: "Keep an entry point to named re-exports, such as `export { parseLine } from './parse-line.ts'` (ST-10)"
-files: ['**/index.ts', 'packages/browser/ui/packages/content/src/link.ts']
+files: ['**/index.ts', 'packages/browser/elements/packages/content/src/link.ts']
 ignores: ['**/node_modules/**']
 rule:
   inside:

@@ -1,7 +1,7 @@
 ---
 name: ui-content-rendering
 message: Display supplied text and files safely, preserving their identity, readable fallback, and bounded inspection.
-paths: ["packages/browser/ui/packages/content/**"]
+paths: ["packages/browser/elements/packages/content/**"]
 ---
 
 ## Rules

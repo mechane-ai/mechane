@@ -5,7 +5,7 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
 const VALUES = {
   docSentences: 3,
   docSentenceWords: 30,
-  componentFiles: ['packages/browser/**/*.tsx', 'packages/browser/ui/packages/**/*.{ts,tsx}'],
+  componentFiles: ['packages/browser/**/*.tsx', 'packages/browser/elements/packages/**/*.{ts,tsx}'],
 } as const;
 
 /** What enforces `code-comment-content`: the limits the short-doc ratchet reads. */
@@ -22,8 +22,14 @@ export const codeCommentContent = {
         { 'packages/browser/console-data/src/cache.ts': 'export const capacity = 3;\n' },
       ],
       allowed: [
-        { 'packages/browser/ui/packages/core/src/title.tsx': 'export function Title() { return <h1>Console</h1>; }\n' },
-        { 'packages/browser/ui/packages/core/src/tokens.stylex.ts': 'export const colors = { surface: "white" };\n' },
+        {
+          'packages/browser/elements/packages/core/src/title.tsx':
+            'export function Title() { return <h1>Console</h1>; }\n',
+        },
+        {
+          'packages/browser/elements/packages/foundations/src/tokens.stylex.ts':
+            'export const colors = { surface: "white" };\n',
+        },
         { 'scripts/limits.ts': '/** The most turns a mech runs at once. */\nexport const TURN_LIMIT = 3;\n' },
         {
           'scripts/modes.ts':
@@ -44,7 +50,7 @@ export const codeCommentContent = {
       ],
       allowed: [
         {
-          'packages/browser/ui/packages/core/src/control-state.ts':
+          'packages/browser/elements/packages/core/src/control-state.ts':
             'export type ControlProps = { readonly value?: never; readonly defaultValue?: string };\n',
         },
         {
@@ -63,7 +69,7 @@ export const codeCommentContent = {
       violation: [
         { 'scripts/start-stack.ts': '/** Start stack. */\nexport function startStack(): void {}\n' },
         {
-          'packages/browser/ui/packages/core/src/title.tsx':
+          'packages/browser/elements/packages/core/src/title.tsx':
             '/** Title. */\nexport function Title() { return <h1>Console</h1>; }\n',
         },
       ],

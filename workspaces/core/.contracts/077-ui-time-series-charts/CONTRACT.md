@@ -1,6 +1,6 @@
 ---
 name: ui-time-series-charts
-paths: ["packages/browser/ui/packages/charts/src/cartesian/time-series*", "packages/browser/ui/packages/charts/src/cartesian/sparkline.tsx"]
+paths: ["packages/browser/elements/packages/charts/src/cartesian/time-series*", "packages/browser/elements/packages/charts/src/cartesian/sparkline.tsx"]
 message: Render application-prepared series faithfully and give pointer, touch, and keyboard users the same inspected values.
 ---
 

@@ -1,5 +1,6 @@
-import { Button, EmptyState, Loading, Notice } from '@mechane-ai/ui';
-import { DetailPage } from '@mechane-ai/ui/layout';
+import { Button } from '@mechane-ai/elements';
+import { EmptyState, Loading, Notice } from '@mechane-ai/elements/feedback';
+import { DetailPage } from '@mechane-ai/elements/layout';
 import { canRetainResult, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, SnapshotCollection } from '@mechane/console-data';
 import { useLiveQuery } from '@tanstack/react-db';

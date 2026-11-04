@@ -24,11 +24,17 @@ Confirm each new entry point has a consumer outside the package that `code-expor
 ## Local adaptations
 
 Each library's exports map normally lists `./src/index.ts`. The StyleX compiler requires direct imports from the
-defining module, so `@mechane-ai/ui/tokens.stylex` exports `./src/tokens.stylex.ts` directly under contract 114.
+defining module, so `@mechane-ai/elements/tokens.stylex` exports `./packages/foundations/src/tokens.stylex.ts` directly under contract 114.
 This exception does not permit undeclared package subpaths or an index that only forwards the same definitions.
 `@mechane/cli` has a `bin` and no exports, and `@mechane/app` has neither, because Wrangler loads its `main`.
 Workspace members depend on each other through `workspace:*`, and on every other package through the exact version that `pnpm-lock.yaml` locks.
 `@mechane/guest` has no exports: `build:guest` bundles its `main.ts` into the image folder's gitignored `guest.mjs`, which the image copies and the host launcher runs.
+
+Elements has one package manifest with explicit source exports. Its library build derives entries from that map; its
+release builder derives compiled declaration and JavaScript paths from the same map and rejects absent files. Keep
+private helpers and catalog files out of published exports. Preserve the token definition's path in the archive so
+consumer themes and compiled component styles address the same variables. Validate the archive in an independent
+React consumer and a StyleX theme consumer when its defining paths or build change.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

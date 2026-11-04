@@ -8,7 +8,7 @@
     "storybook": "storybook dev -p 6006 --no-open"
   },
   "dependencies": {
-    "@mechane-ai/ui": "workspace:*",
+    "@mechane-ai/elements": "workspace:*",
     "@mechane/console-data": "workspace:*",
     "@mechane/console-views": "workspace:*",
     "@mechane/protocol": "workspace:*",
@@ -22,12 +22,11 @@
     "react-dom": "19.3.1"
   },
   "devDependencies": {
+    "@mechane/catalog": "workspace:*",
     "@storybook/addon-a11y": "10.6.5",
     "@storybook/addon-docs": "10.6.5",
     "@storybook/addon-themes": "10.6.5",
     "@storybook/react-vite": "10.6.5",
-    "@stylexjs/stylex": "0.19.1",
-    "@stylexjs/unplugin": "0.19.1",
     "@types/node": "24.9.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

@@ -1,6 +1,6 @@
 ---
 name: ui-storybook-component-checks
-paths: ["packages/browser/ui/**","packages/browser/console-views/**","packages/browser/console/src/stories/**","packages/browser/console/.storybook/**","packages/browser/console/vite.config.ts"]
+paths: ["packages/browser/elements/**","packages/browser/catalog/**","packages/browser/console-views/**","packages/browser/console/src/stories/**","packages/browser/console/.storybook/**","packages/browser/console/vite.config.ts"]
 message: Give every public component synthetic stories of its meaningful states and assert only consequential owned interactions.
 ---
 
@@ -34,7 +34,11 @@ Inspect changed stories in every supported theme, at a narrow viewport, and with
 
 ## Local adaptations
 
-The existing Console Storybook runner discovers colocated component stories and representative screen stories.
+Elements owns its component catalog and discovers colocated stories under its internal families. Console owns a
+separate catalog for application screen examples. Both use the same React and StyleX settings as their builds.
+Neither catalog imports the other application or its global stylesheet.
+The private `@mechane/catalog` development package owns their shared runner, theme controls, and StyleX plugin settings.
+It accepts catalog inputs and imports no Elements or application code. Production modules may not import this package.
 Stories are maintained developer documentation with fixed synthetic inputs. Their fixtures are limited to the states
 they explain; extra browser probes and their fixtures remain disposable development evidence.
 Catalog-only dependencies stay development dependencies, and stories never enter production package exports.
@@ -56,6 +60,6 @@ The Storybook build proves catalog composition and compilation, not browser focu
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `no-browser-catalog-imports` (075): enforced: Keep catalog examples in development, such as `import { Button } from "@mechane-ai/ui"`
+- dependency-cruiser `no-browser-catalog-imports` (075): enforced: Keep catalog examples in development, such as `import { Button } from "@mechane-ai/elements"`
 
 <!-- End of the generated block. -->

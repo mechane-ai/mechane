@@ -52,7 +52,7 @@ Each rule's entry declares its suppression budget, `maxSuppressions`, 0 by defau
 `rules:check` also counts each `// <check>-allow <rule> -- <reason>` against the owned rule's budget, which is 0, and each `// jscpd:ignore-start -- <reason>` against 035's `jscpdSuppressions`.
 oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/name-rules/src/oxlint-opt-outs.json`.
 One `typescript/no-deprecated` suppression is permitted at the `nativeEvent.keyCode` read in
-`packages/browser/ui/packages/ai/src/prompt-input.tsx`. It recognizes composition-confirming Enter events whose
+`packages/browser/elements/packages/ai/src/prompt-input.tsx`. It recognizes composition-confirming Enter events whose
 `isComposing` flag is already false in affected WebKit versions. The reason cites the browser behavior;
 the registry limits this rule to one suppression and checks TSX directives too. This is not permission to use
 deprecated keyboard fields elsewhere. [WebKit report 324380](https://bugs.webkit.org/show_bug.cgi?id=324380)

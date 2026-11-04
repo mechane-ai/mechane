@@ -1,4 +1,4 @@
-import { NavigationLink } from '@mechane-ai/ui/layout';
+import { NavigationLink } from '@mechane-ai/elements/layout';
 import { createConsoleData } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
 import { ConsoleShell } from '@mechane/console-views';

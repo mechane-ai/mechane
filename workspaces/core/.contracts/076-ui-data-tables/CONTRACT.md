@@ -1,6 +1,6 @@
 ---
 name: ui-data-tables
-paths: ["packages/browser/ui/packages/collections/src/data-table*"]
+paths: ["packages/browser/elements/packages/collections/src/data-table*"]
 message: Render application-prepared rows as given, and report sorting and paging through controlled values and callbacks.
 ---
 

@@ -1,4 +1,5 @@
-import { Button, EmptyState, Notice, Stack } from '@mechane-ai/ui';
+import { Button, Stack } from '@mechane-ai/elements';
+import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
 import { isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
 import { lazy, Suspense, useEffect, useState } from 'react';

@@ -1,6 +1,6 @@
 ---
 name: ui-keyboard-shortcuts
-paths: ["packages/browser/ui/packages/collections/src/command*","packages/browser/ui/packages/collections/src/shortcut*","packages/browser/ui/packages/ai/src/prompt-input*"]
+paths: ["packages/browser/elements/packages/navigation/src/commands/**","packages/browser/elements/packages/ai/src/prompt-input*"]
 message: Register each keyboard command with its action owner, in the narrowest scope, without overriding typing or native keys.
 ---
 

@@ -13,10 +13,11 @@ const VALUES = {
     ignoreExportsUsedInFile: { type: true, interface: true },
     ignoreDependencies: ['@swc/core', 'cloudflare'],
     ignore: ['.dependency-cruiser.cjs'],
+    ignoreWorkspaces: ['packages/browser/catalog!'],
     ignoreIssues: {
       'packages/browser/*/src/**/*.stories.tsx': ['exports'],
-      'packages/browser/ui/packages/**/*.stories.tsx': ['exports'],
-      'packages/browser/ui/vite.config.ts': ['exports'],
+      'packages/browser/elements/packages/**/*.stories.tsx': ['exports'],
+      'packages/browser/elements/vite.config.ts': ['exports'],
     },
   },
   knipNotes: [
@@ -53,6 +54,12 @@ const VALUES = {
       ],
     },
     {
+      path: ['ignoreWorkspaces'],
+      lines: [
+        'The catalog workspace is development tooling. The ordinary run checks its exports and dependencies; production browser imports are forbidden by contract 075.',
+      ],
+    },
+    {
       path: ['ignoreIssues'],
       lines: [
         'Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.',
@@ -63,7 +70,7 @@ const VALUES = {
       path: ['workspaces'],
       lines: [
         "Each member's workspace follows from its kind and source roots, so a new member is checked like the others.",
-        'The published @mechane-ai/ui manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.',
+        'The published @mechane-ai/elements manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.',
       ],
     },
   ],

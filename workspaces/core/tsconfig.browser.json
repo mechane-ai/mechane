@@ -9,12 +9,14 @@
   },
   "files": ["lint/types/browser/strict-globals.d.ts"],
   "include": [
+    "packages/browser/catalog/src",
     "packages/browser/console/src",
     "packages/browser/console/.storybook",
     "packages/browser/console/vite.config.ts",
     "packages/browser/console-data/src",
     "packages/browser/console-views/src",
-    "packages/browser/ui/packages",
-    "packages/browser/ui/vite.config.ts"
+    "packages/browser/elements/packages",
+    "packages/browser/elements/.storybook",
+    "packages/browser/elements/vite.config.ts"
   ]
 }

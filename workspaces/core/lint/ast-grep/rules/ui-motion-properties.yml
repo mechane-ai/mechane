@@ -2,7 +2,7 @@ id: ui-motion-properties
 language: Tsx
 severity: error
 message: 'Name only opacity and transform, such as `transitionProperty: "opacity, transform"` (073)'
-files: ['packages/browser/ui/packages/**/*.ts', 'packages/browser/ui/packages/**/*.tsx']
+files: ['packages/browser/elements/packages/**/*.ts', 'packages/browser/elements/packages/**/*.tsx']
 rule:
   kind: pair
   any:

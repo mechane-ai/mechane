@@ -1,6 +1,7 @@
-import { Badge, CopyValue, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane-ai/ui';
-import { Conversation, Message } from '@mechane-ai/ui/ai';
-import { Markdown } from '@mechane-ai/ui/content';
+import { Badge, CopyValue, Divider, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane-ai/elements';
+import { Conversation, Message } from '@mechane-ai/elements/ai';
+import { Markdown } from '@mechane-ai/elements/content/markdown';
+import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Event } from '@mechane/protocol';
 import type { EventPage, ListedEvent } from '@mechane/protocol';
 import { Schema } from 'effect';

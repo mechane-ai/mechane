@@ -47,7 +47,7 @@ Concurrency cancels only a superseded pull-request run, never a run on `main`.
 The owned checks fail on an action that is not pinned to a full commit hash and on a workflow without `permissions`.
 When the check fails, a last step prints the end of each celld log a failed smoke kept, so the run's log holds the stack's diagnostics.
 
-The separate `publish-ui.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
+The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,
 and authenticates to npm through its package-specific trusted publisher rather than a stored registry token.
 The canonical builder must reproduce the immutable GitHub release asset's digest before publication. Existing npm

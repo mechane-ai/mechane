@@ -1,15 +1,15 @@
 # Collections and workspaces
 
-Import collection components from `@mechane-ai/ui/collections`, resizing parts from `@mechane-ai/ui/layout`, and the
-shared stylesheet once. These components render supplied records and report intent. The application owns requests, URL
-state, permissions and persisted preferences.
+Import collection components from `@mechane-ai/elements/collections`, resizing parts from `@mechane-ai/elements/layout`,
+and the shared stylesheet once. These components render supplied records and report intent. The application owns
+requests, URL state, permissions and persisted preferences.
 
 ## Tables
 
-[`DataTable`](../packages/browser/ui/packages/collections/src/data-table.tsx) compares records across named columns.
-Supply the already filtered, ordered page, a stable row ID, a caption and an empty-state message. Column IDs remain
-stable when labels or visibility change. Each cell receives the caller's record type and can render ordinary links and
-controls.
+[`DataTable`](../packages/browser/elements/packages/collections/src/data-table.tsx) compares records across named
+columns. Supply the already filtered, ordered page, a stable row ID, a caption and an empty-state message. Column IDs
+remain stable when labels or visibility change. Each cell receives the caller's record type and can render ordinary
+links and controls.
 
 Columns keep a readable minimum width and scroll within the table on narrow screens. A column's optional `width` sets
 its minimum in pixels for both the header and cells. Use it when the content needs a wider measure or a compact numeric
@@ -22,7 +22,7 @@ unchanged. Sort the entire query result before paging, with a unique row key as 
 For a plain table, use `satisfies` to check columns while preserving that none declares `sortable: true`:
 
 ```tsx
-import type { DataTableColumn } from '@mechane-ai/ui/collections';
+import type { DataTableColumn } from '@mechane-ai/elements/collections';
 
 type Item = { readonly id: string; readonly name: string };
 
@@ -41,7 +41,7 @@ The optional `window` limits mounted rows within the supplied page. It does not 
 the focused row and its neighbors while scrolling, exposes logical row positions, and measures the caption and header
 before positioning rows. Use the ordinary table for small pages and unusual spanning or grouped structures.
 
-[`CollectionToolbar`, `FilterChips`, `ColumnControls` and `CollectionPagination`](../packages/browser/ui/packages/collections/src/collection-controls.tsx)
+[`CollectionToolbar`, `FilterChips`, `ColumnControls` and `CollectionPagination`](../packages/browser/elements/packages/collections/src/collection-controls.tsx)
 compose alongside the table. Pagination receives the result's position text and explicit previous/next availability. It
 never guesses whether another page exists from the supplied row count. Column controls report visibility changes; the
 application passes the chosen columns back to the table.
@@ -49,20 +49,22 @@ application passes the chosen columns back to the table.
 Keep toolbar search fields bounded with the Input's placement-only `xstyle`, as the table example does. Actions then
 stay on the same row when space allows and wrap below on a phone.
 
-The [table stories](../packages/browser/ui/packages/collections/src/data-table.stories.tsx) demonstrate controlled
+The [table stories](../packages/browser/elements/packages/collections/src/data-table.stories.tsx) demonstrate controlled
 selection, application-side sorting, an empty page and a windowed collection.
 
 ## Dates
 
-[`Calendar`](../packages/browser/ui/packages/collections/src/calendar.tsx) wraps DayPicker's selection and keyboard
-navigation. It accepts valid civil dates as `{ year, month, day }`, with one-based months. Supply the locale, time zone,
-today and initial month explicitly so server rendering and the browser start from the same inputs.
+Import date controls from `@mechane-ai/elements/forms/dates`.
+
+[`Calendar`](../packages/browser/elements/packages/forms/src/dates/calendar.tsx) wraps DayPicker's selection and
+keyboard navigation. It accepts valid civil dates as `{ year, month, day }`, with one-based months. Supply the locale,
+time zone, today and initial month explicitly so server rendering and the browser start from the same inputs.
 
 The calendar converts civil dates to noon in the supplied time zone for DayPicker's date arithmetic. A selection returns
 civil dates, not a guessed UTC interval. The application decides how an inclusive date range maps to its API's timestamp
 boundaries. A range with `from` and no `to` is an unfinished selection, not a one-day interval.
 
-[`DateRangePicker`](../packages/browser/ui/packages/collections/src/date-range-picker.tsx) adds a Base UI popover,
+[`DateRangePicker`](../packages/browser/elements/packages/forms/src/dates/date-range-picker.tsx) adds a Base UI popover,
 application-supplied range presets and a clear action. `formatValue` owns the trigger's text. The current time zone
 remains visible in the popup. Supply new presets when relative ranges change; the component has no clock.
 
@@ -71,7 +73,9 @@ identity should reset that navigation. Changing the time zone resets it automati
 
 ## Commands
 
-[`CommandPalette`, `ShortcutHint` and `useCommandShortcuts`](../packages/browser/ui/packages/collections/src/command.tsx)
+Import command controls and scoped bindings from `@mechane-ai/elements/navigation/commands`.
+
+[`CommandPalette`, `ShortcutHint` and `useCommandShortcuts`](../packages/browser/elements/packages/navigation/src/commands/command.tsx)
 use the same application-owned action records. A command supplies its ID, label, eligibility and callback. The palette
 uses Base UI's dialog and autocomplete navigation. It does not register keyboard shortcuts by mounting.
 
@@ -87,17 +91,17 @@ scope fail instead of running multiple actions; a handled event cannot activate 
 
 Choose bindings that preserve browser and assistive-technology commands. Native typing, list navigation and overlay
 dismissal remain owned by the controls. The
-[command story](../packages/browser/ui/packages/collections/src/command.stories.tsx) shows a scoped palette opener and
-an unavailable action.
+[command story](../packages/browser/elements/packages/navigation/src/commands/command.stories.tsx) shows a scoped
+palette opener and an unavailable action.
 
 ## Resizing
 
-[`Resizable.Root`, `Resizable.Pane` and `Resizable.Handle`](../packages/browser/ui/packages/layout/src/resizable.tsx)
+[`Resizable.Root`, `Resizable.Pane` and `Resizable.Handle`](../packages/browser/elements/packages/layout/src/resizable.tsx)
 wrap Resizable Panels' pointer and keyboard mechanics. Give panes stable IDs and explicit percentage limits. The handle
 requires an accessible label describing the regions it separates.
 
 `initialSizes` and `initialSizePercent` initialize the interaction. `onSizesChange` reports user-driven changes for
 application-owned persistence. The component writes no browser storage. To restore a different saved layout, change the
 layout's React key with its initial values. The
-[resizing story](../packages/browser/ui/packages/layout/src/resizable.stories.tsx) shows a source pane and inspector
-that stay mounted throughout the gesture.
+[resizing story](../packages/browser/elements/packages/layout/src/resizable.stories.tsx) shows a source pane and
+inspector that stay mounted throughout the gesture.

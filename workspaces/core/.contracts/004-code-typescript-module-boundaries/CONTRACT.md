@@ -51,7 +51,7 @@ The boundaries check of `mise -C workspaces/core run checks` cruises once with `
 Among them are a cycle through any import, type-only and dynamic imports included, since swc keeps type-only ones, and an import it cannot resolve.
 
 Deviation (ST-09): only a library package has an entry point, normally its `src/index.ts`, which its manifest's exports map lists; no other folder has one.
-The compiler-required `ui/tokens.stylex` definition export in contract 114 points directly to `packages/core/src/tokens.stylex.ts`.
+The compiler-required `ui/tokens.stylex` definition export in contract 114 points directly to `packages/foundations/src/tokens.stylex.ts`.
 Dependency checks resolve that declared public target without allowing arbitrary deep imports.
 A file imports each name from the file that declares it, never through an `index.ts` and never through its own package's entry, which the barrels normalizer's dry run rejects.
 This replaces "Give each source folder that other folders import an entry point" and "Export every value and type the folder shares by name from that entry point".

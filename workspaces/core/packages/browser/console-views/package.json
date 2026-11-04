@@ -6,7 +6,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane-ai/ui": "workspace:*",
+    "@mechane-ai/elements": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@stylexjs/stylex": "0.19.1",

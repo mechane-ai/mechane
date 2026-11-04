@@ -1,7 +1,7 @@
 ---
 name: ui-analytical-graphics
 message: Render supplied analytical evidence with explicit units, domains, missing values, and inspectable records.
-paths: ["packages/browser/ui/packages/charts/src/cartesian/categorical*","packages/browser/ui/packages/charts/src/distribution/**","packages/browser/ui/packages/charts/src/matrix/**","packages/browser/ui/packages/charts/src/graph/**"]
+paths: ["packages/browser/elements/packages/charts/**"]
 ---
 
 ## Rules

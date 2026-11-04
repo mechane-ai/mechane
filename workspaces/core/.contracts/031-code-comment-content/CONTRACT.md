@@ -45,7 +45,7 @@ Console-data and Node TypeScript keep the export and absence documentation requi
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `docSentences` 3; `docSentenceWords` 30; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/ui/packages/**/*.{ts,tsx}`.
+Values: `docSentences` 3; `docSentenceWords` 30; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/elements/packages/**/*.{ts,tsx}`.
 - owned check `export-doc` (CD-03): enforced in phase F6
 - owned check `absence-doc` (CD-04): enforced in phase F6
 - owned check `short-doc` (CD-06): a ratchet until phase F6

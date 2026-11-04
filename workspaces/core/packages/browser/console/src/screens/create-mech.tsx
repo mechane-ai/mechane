@@ -1,5 +1,7 @@
-import { Button, Field, Heading, Input, Muted, Notice, Row, Stack, Textarea, TextButton } from '@mechane-ai/ui';
-import { DetailPage, PageToolbar } from '@mechane-ai/ui/layout';
+import { Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
+import { Notice } from '@mechane-ai/elements/feedback';
+import { Field, Input, Textarea } from '@mechane-ai/elements/forms';
+import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { CreationRequestId } from '@mechane/records';

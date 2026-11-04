@@ -21,15 +21,15 @@ your draft before saving. Continuing keeps your edits and adopts the latest valu
 
 ## Package boundaries
 
-| Package                  | Owns                                                             | Uses                                  |
-| ------------------------ | ---------------------------------------------------------------- | ------------------------------------- |
-| `@mechane/console`       | Start routes, screens, commands, session lifetime                | data, views, UI, layout               |
-| `@mechane/console-data`  | Validated requests, TanStack DB snapshots, cancellation          | shared client and protocol            |
-| `@mechane/console-views` | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts |
-| `@mechane-ai/ui`         | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries          |
-| `@mechane-ai/ui/layout`  | AppShell, sidebar, PageToolbar, and DetailPage                   | UI and tokens                         |
-| `@mechane-ai/ui/charts`  | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
-| `@mechane-ai/ui/tokens`  | Semantic visual tokens                                           | StyleX                                |
+| Package                       | Owns                                                             | Uses                                  |
+| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
+| `@mechane/console`            | Start routes, screens, commands, session lifetime                | data, views, UI, layout               |
+| `@mechane/console-data`       | Validated requests, TanStack DB snapshots, cancellation          | shared client and protocol            |
+| `@mechane/console-views`      | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts |
+| `@mechane-ai/elements`        | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries          |
+| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, and DetailPage                   | UI and tokens                         |
+| `@mechane-ai/elements/charts` | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
+| `@mechane-ai/elements/tokens` | Semantic visual tokens                                           | StyleX                                |
 
 Only `console-data` crosses from the shared Effect client into browser Promises. It stores each bounded API response as
 one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and

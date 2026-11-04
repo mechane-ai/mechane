@@ -1,8 +1,9 @@
 # Conversation and agent interfaces
 
-Import the AI presentation parts from `@mechane-ai/ui/ai` and the package stylesheet from `@mechane-ai/ui/styles.css`.
-These components render supplied records and commands. They do not import a model SDK, start runs, store messages, or
-decide permissions. They use the same typography, borders, controls, and spacing as the rest of Mechane UI.
+Import the AI presentation parts from `@mechane-ai/elements/ai` and the package stylesheet from
+`@mechane-ai/elements/styles.css`. These components render supplied records and commands. They do not import a model
+SDK, start runs, store messages, or decide permissions. They use the same typography, borders, controls, and spacing as
+the rest of Elements by Mechane.
 
 ## Conversations
 
@@ -17,8 +18,8 @@ jump action returns focus to the viewport. Updates and streamed text do not move
 
 Pass `streaming` to `Content` while a reply is incomplete. The transcript announces added records and waits for a busy
 region to settle. It does not announce each text mutation. `Message` presents an author, metadata, content, attachments,
-and actions. Render message text with `Markdown` from `/content`; use `MessageAttachment` for supplied file records.
-Both attachments and sources use the content module's safe destination policy.
+and actions. Render message text with `Markdown` from `/content/markdown`; use `MessageAttachment` for supplied file
+records. Both attachments and sources use the content module's safe destination policy.
 
 The scroller wrapper exposes ordinary live-edge following and prepend preservation. It does not expose the upstream
 anchored-turn mode. That mode has a known scrollbar-drag issue in the pinned dependency. This keeps one scroll owner
@@ -84,4 +85,4 @@ of behavior owners. A recipe composes supported parts rather than introducing an
 
 Stories use synthetic records and explicit local interactions. They make no external requests. Voice capture, workflow
 editing, shell transport, and executable previews are outside this module. The
-[public entry](../packages/browser/ui/packages/ai/src/index.ts) and adjacent prop types define the supported API.
+[public entry](../packages/browser/elements/packages/ai/src/index.ts) and adjacent prop types define the supported API.

@@ -1,8 +1,9 @@
 # Charts
 
-`@mechane-ai/ui/charts` presents supplied measurements and relationships. Focused imports under `/charts/cartesian`,
-`/charts/distribution`, `/charts/matrix`, and `/charts/graph` expose the same implementations. Import the package CSS
-once, as the [component guide](components.md) describes.
+`@mechane-ai/elements/charts` exports shared frames, legends, selection, and category types. Import plots from
+`/charts/cartesian`, `/charts/distribution`, `/charts/matrix`, `/charts/graph`, `/charts/hierarchy`, or
+`/charts/timeline`. ScatterPlot belongs to Cartesian, Treemap to hierarchy, and Waterfall to timeline. Import the
+package CSS once, as the [component guide](components.md) describes.
 
 Applications own queries, aggregation, ranking, sampling, normalization, and scientific interpretation. Charts own
 geometry, inspection, and presentation. A formatter must declare its locale, time zone, precision, and units. Titles and
@@ -22,13 +23,14 @@ descriptions explain what was measured and which period or sample is shown.
 
 The public types and synthetic catalog examples are beside each implementation:
 
-- [Cartesian](../packages/browser/ui/packages/charts/src/cartesian/index.ts) and
-  [examples](../packages/browser/ui/packages/charts/src/cartesian/cartesian.stories.tsx).
-- [Distribution](../packages/browser/ui/packages/charts/src/distribution/index.ts) and
-  [examples](../packages/browser/ui/packages/charts/src/distribution/distribution.stories.tsx).
-- [Matrix and scatter](../packages/browser/ui/packages/charts/src/matrix/index.ts).
-- [Relationships](../packages/browser/ui/packages/charts/src/graph/index.ts).
-- [Waterfall](../packages/browser/ui/packages/charts/src/waterfall.tsx).
+- [Cartesian](../packages/browser/elements/packages/charts/src/cartesian/index.ts) and
+  [examples](../packages/browser/elements/packages/charts/src/cartesian/cartesian.stories.tsx).
+- [Distribution](../packages/browser/elements/packages/charts/src/distribution/index.ts) and
+  [examples](../packages/browser/elements/packages/charts/src/distribution/distribution.stories.tsx).
+- [Matrix](../packages/browser/elements/packages/charts/src/matrix/index.ts).
+- [Hierarchy](../packages/browser/elements/packages/charts/src/hierarchy/index.ts).
+- [Relationships](../packages/browser/elements/packages/charts/src/graph/index.ts).
+- [Waterfall](../packages/browser/elements/packages/charts/src/timeline/waterfall.tsx).
 
 ## Data and interaction
 
@@ -89,13 +91,13 @@ that appears complete. Applications must choose and label a window or an aggrega
 
 The implemented limits live with their owners:
 
-- [Time-series limits](../packages/browser/ui/packages/charts/src/cartesian/time-series-data.ts).
-- [Categorical limits](../packages/browser/ui/packages/charts/src/cartesian/categorical.tsx).
-- [Distribution limits](../packages/browser/ui/packages/charts/src/distribution/distribution-input.ts).
-- [Matrix](../packages/browser/ui/packages/charts/src/matrix/matrix.tsx),
-  [tokens](../packages/browser/ui/packages/charts/src/matrix/token-heatmap.tsx), and
-  [scatter](../packages/browser/ui/packages/charts/src/matrix/scatter-plot.tsx) limits.
-- [Graph limits](../packages/browser/ui/packages/charts/src/graph/relation-graph.tsx).
+- [Time-series limits](../packages/browser/elements/packages/charts/src/cartesian/time-series-data.ts).
+- [Categorical limits](../packages/browser/elements/packages/charts/src/categorical-values.tsx).
+- [Distribution limits](../packages/browser/elements/packages/charts/src/distribution/distribution-input.ts).
+- [Matrix](../packages/browser/elements/packages/charts/src/matrix/matrix.tsx),
+  [tokens](../packages/browser/elements/packages/charts/src/matrix/token-heatmap.tsx), and
+  [scatter](../packages/browser/elements/packages/charts/src/cartesian/scatter-plot.tsx) limits.
+- [Graph limits](../packages/browser/elements/packages/charts/src/graph/relation-graph.tsx).
 
 The focused `/charts/cartesian` entry exposes `timeSeriesLimits`. `/charts/matrix` and `/charts/graph` expose their
 `MAX_*` capacities. Applications can use these values when preparing an explicitly labeled window or aggregate. The

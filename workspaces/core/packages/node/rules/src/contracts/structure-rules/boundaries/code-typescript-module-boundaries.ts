@@ -74,17 +74,25 @@ export const codeTypescriptModuleBoundaries = {
       rewrites: [
         {
           before: {
-            'packages/browser/ui/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
-            'packages/browser/ui/packages/core/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
-            'packages/browser/ui/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
-            'packages/browser/ui/packages/layout/src/rows.ts':
+            'packages/browser/elements/packages/foundations/src/theme.ts': 'export const theme = "light";\n',
+            'packages/browser/elements/packages/foundations/src/theme.stories.tsx':
+              "import { countRows } from '../../core/src/index.ts';\n\nexport const rows = countRows();\n",
+            'packages/browser/elements/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/elements/packages/core/src/rows.ts':
+              'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/elements/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/elements/packages/layout/src/rows.ts':
               "import { countRows } from '../../core/src/index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
           },
           after: {
-            'packages/browser/ui/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
-            'packages/browser/ui/packages/core/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
-            'packages/browser/ui/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
-            'packages/browser/ui/packages/layout/src/rows.ts':
+            'packages/browser/elements/packages/foundations/src/theme.ts': 'export const theme = "light";\n',
+            'packages/browser/elements/packages/foundations/src/theme.stories.tsx':
+              "import { countRows } from '../../core/src/index.ts';\n\nexport const rows = countRows();\n",
+            'packages/browser/elements/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/elements/packages/core/src/rows.ts':
+              'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/elements/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/elements/packages/layout/src/rows.ts':
               "import { countRows } from '../../core/src/index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
           },
         },

@@ -1,4 +1,4 @@
-import { Select } from '@mechane-ai/ui';
+import { Select } from '@mechane-ai/elements/forms';
 import {
   AppShell,
   Navigation,
@@ -6,8 +6,8 @@ import {
   NavigationLink,
   SidebarFooter,
   SidebarLabel,
-} from '@mechane-ai/ui/layout';
-import { colors, controls, radii, spacing, typography } from '@mechane-ai/ui/tokens.stylex';
+} from '@mechane-ai/elements/layout';
+import { colors, controls, radii, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
 import * as stylex from '@stylexjs/stylex';

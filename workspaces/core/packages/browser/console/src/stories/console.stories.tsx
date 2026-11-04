@@ -1,17 +1,7 @@
-import {
-  Button,
-  Field,
-  Heading,
-  Input,
-  Loading as LoadingRows,
-  Muted,
-  Notice,
-  Row,
-  Stack,
-  TextButton,
-  TextLink,
-} from '@mechane-ai/ui';
-import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import { Button, Heading, Muted, Row, Stack, TextButton, TextLink } from '@mechane-ai/elements';
+import { Loading as LoadingRows, Notice } from '@mechane-ai/elements/feedback';
+import { Field, Input } from '@mechane-ai/elements/forms';
+import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
 import type { TraceTab } from '@mechane/console-views';
 import {
   Activity,

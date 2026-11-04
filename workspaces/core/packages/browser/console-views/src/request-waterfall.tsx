@@ -1,5 +1,5 @@
-import { Waterfall } from '@mechane-ai/ui/charts';
-import type { WaterfallItem } from '@mechane-ai/ui/charts';
+import { Waterfall } from '@mechane-ai/elements/charts/timeline';
+import type { WaterfallItem } from '@mechane-ai/elements/charts/timeline';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';

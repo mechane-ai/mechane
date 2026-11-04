@@ -1,6 +1,6 @@
 ---
 name: ui-component-usage-guidance
-paths: ["packages/browser/ui/**","packages/browser/console-views/**","packages/browser/console/.storybook/**"]
+paths: ["packages/browser/elements/**","packages/browser/console-views/**","packages/browser/console/.storybook/**"]
 message: Document each public component's purpose, use, alternatives, and status beside its source, and generate the catalog from it.
 ---
 
@@ -36,7 +36,7 @@ Review changed public components: does the guidance say when to choose each over
 
 Colocated stories, source guidance, and package documentation describe implemented public components.
 A component family may document its public parts in one story file. Supported means that the component is part of
-the published `@mechane-ai/ui` API, with reviewed behavior, exported types, examples, and maintained guidance.
+the published `@mechane-ai/elements` API, with reviewed behavior, exported types, examples, and maintained guidance.
 Console adoption is useful integration evidence, not a prerequisite for supporting a generic library component.
 The current library families inherit the `supported` tag from the Storybook preview; Foundations defines its promise
 once for the package release. Application-only Screens opt out. This inherited source metadata fulfills each family's

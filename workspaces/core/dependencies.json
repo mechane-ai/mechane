@@ -580,8 +580,8 @@
     "consumers": ["@mechane/pages", "@mechane/edge", "@mechane/app"],
     "confines": ["cookie"]
   },
-  "@mechane-ai/ui": {
-    "owns": "Mechane UI: product-neutral controls, layout, collections, content, AI presentation and analytical charts through one versioned public package",
+  "@mechane-ai/elements": {
+    "owns": "Elements by Mechane: product-neutral controls, layout, collections, content, AI presentation and analytical charts through one versioned public package",
     "layer": 3,
     "lane": "browser",
     "dialect": "plain",
@@ -633,5 +633,14 @@
     "kind": "app",
     "criterion": "program",
     "consumers": []
+  },
+  "@mechane/catalog": {
+    "owns": "Shared development-only Storybook configuration, theme controls, and StyleX compiler settings",
+    "layer": 2,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane-ai/elements", "@mechane/console"]
   }
 }

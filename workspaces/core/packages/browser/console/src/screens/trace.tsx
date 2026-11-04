@@ -1,5 +1,6 @@
-import { Notice, Stack } from '@mechane-ai/ui';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import { Stack } from '@mechane-ai/elements';
+import { Notice } from '@mechane-ai/elements/feedback';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { TurnTrace } from '@mechane/console-views';

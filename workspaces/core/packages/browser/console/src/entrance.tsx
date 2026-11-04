@@ -1,5 +1,6 @@
-import { EmptyState, Loading, TextLink } from '@mechane-ai/ui';
-import { AppShell, DetailPage, PageToolbar } from '@mechane-ai/ui/layout';
+import { TextLink } from '@mechane-ai/elements';
+import { EmptyState, Loading } from '@mechane-ai/elements/feedback';
+import { AppShell, DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
 import { ConsoleBrand } from '@mechane/console-views';
 import type { ReactNode } from 'react';
 

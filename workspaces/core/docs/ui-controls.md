@@ -1,7 +1,8 @@
 # Form controls
 
 The supported controls use Base UI for selection, number entry, and focus behavior. The application supplies values,
-labels, validation, permissions, and save operations. Import these families from `@mechane-ai/ui`.
+labels, validation, permissions, and save operations. Import these families from `@mechane-ai/elements/forms`. Calendar
+controls use `/forms/dates`.
 
 Use `Checkbox` for submitted choices, `Switch` for immediately applied settings, and `RadioGroup` for exclusive form
 choices. `ToggleGroup` represents pressed view or formatting controls. Compose their public parts inside `Field.Label`.
@@ -22,18 +23,18 @@ bound. Both require a locale so formatting matches between server and browser.
 `FilePicker` preserves the native file input and change event. It does not upload or read files. The application owns
 accepted content, validation, storage, and progress. Use `Field.Description` for supported formats and limits.
 
-The [selection stories](../packages/browser/ui/packages/core/src/selection.stories.tsx),
-[searchable selection stories](../packages/browser/ui/packages/core/src/combobox.stories.tsx), and
-[composed form stories](../packages/browser/ui/packages/core/src/form-controls.stories.tsx) show the maintained APIs.
-They use synthetic values and perform no requests.
+The [selection stories](../packages/browser/elements/packages/forms/src/selection.stories.tsx),
+[searchable selection stories](../packages/browser/elements/packages/forms/src/combobox.stories.tsx), and
+[composed form stories](../packages/browser/elements/packages/forms/src/form-controls.stories.tsx) show the maintained
+APIs. They use synthetic values and perform no requests.
 
 ## Color scheme
 
-Spread `themeProps.light` or `themeProps.dark` onto the document root. Components share the same spacing and type scale
-in both modes. The dark theme replaces the semantic tokens through StyleX and sets the native control color scheme.
-Light token values work without a theme class. The application owns preference persistence. Apply a theme to the
-document root so portaled menus, dialogs, and tooltips inherit it. A local themed wrapper is appropriate for an isolated
-preview, not a portal owner.
+Import `themeProps` from `@mechane-ai/elements/theme`. Spread `themeProps.light` or `themeProps.dark` onto the document
+root. Components share the same spacing and type scale in both modes. The dark theme replaces the semantic tokens
+through StyleX and sets the native control color scheme. Light token values work without a theme class. The application
+owns preference persistence. Apply a theme to the document root so portaled menus, dialogs, and tooltips inherit it. A
+local themed wrapper is appropriate for an isolated preview, not a portal owner.
 
-StyleX consumers may still override roles through `@mechane-ai/ui/tokens.stylex`. Ordinary React consumers only need the
-package stylesheet and `themeProps`; they need no StyleX compiler or theme provider.
+StyleX consumers may still override roles through `@mechane-ai/elements/tokens.stylex`. Ordinary React consumers only
+need the package stylesheet and `themeProps`; they need no StyleX compiler or theme provider.

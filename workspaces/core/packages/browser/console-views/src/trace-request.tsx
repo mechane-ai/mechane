@@ -1,7 +1,7 @@
-import { Collapsible, Columns, CopyValue, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/ui';
-import { BreakdownBar } from '@mechane-ai/ui/charts/cartesian';
-import { Details } from '@mechane-ai/ui/collections';
-import { JsonViewer } from '@mechane-ai/ui/content';
+import { Collapsible, Columns, CopyValue, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/elements';
+import { BreakdownBar } from '@mechane-ai/elements/charts/cartesian';
+import { Details } from '@mechane-ai/elements/collections';
+import { JsonViewer } from '@mechane-ai/elements/content';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';

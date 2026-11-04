@@ -1,6 +1,6 @@
 ---
 name: ui-react-typescript-component-apis
-paths: ["packages/browser/ui/packages/**/src/**"]
+paths: ["packages/browser/elements/packages/**/src/**"]
 message: Encode supported component use in public prop types so unsupported combinations fail to compile.
 ---
 
@@ -30,7 +30,7 @@ Review exported prop types for third-party library types, data-layer types, and 
 
 ## Local adaptations
 
-The public surface is the implemented component families exported by `@mechane-ai/ui` and its declared subpaths.
+The public surface is the implemented component families exported by `@mechane-ai/elements` and its declared subpaths.
 Ordinary React composition and inferred framework return types remain allowed under contract 113.
 
 The upstream clause "Export the package's own prop and value types, and keep third-party component, chart,

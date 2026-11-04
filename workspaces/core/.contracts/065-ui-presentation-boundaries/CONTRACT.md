@@ -1,6 +1,6 @@
 ---
 name: ui-presentation-boundaries
-paths: ["packages/browser/ui/**"]
+paths: ["packages/browser/elements/**"]
 message: Render supplied data and report intent; leave requests, routing, identity, and domain decisions to applications.
 ---
 
@@ -37,38 +37,49 @@ Review changed presentation event handlers and lifecycle code for requests, pers
 
 ## Local adaptations
 
-This contract governs one published package, `@mechane-ai/ui`. Its internal modules live under `ui/packages`, with
-one manifest and version. `console-views` may use Mechane records and domain formatting under contract 113.
-A resource view does not need a duplicate type for each shared API record.
+This contract governs one published package, `@mechane-ai/elements`. Its eleven families live under
+`elements/packages`, with one manifest, version, build, and stylesheet. `console-views` may use Mechane records and
+domain formatting under contract 113. A resource view does not need a duplicate type for each shared API record.
 
-The module graph permits these dependencies:
+The family graph permits these dependencies:
 
-| Module | Other UI modules it may consume |
+| Family | Other families it may consume |
 | --- | --- |
-| `core` | None |
-| `layout` | `core` |
-| `collections` | `core` |
-| `content` | `core`, `collections` |
-| `ai` | `core`, `collections`, `content` |
-| `charts` | `core` |
+| `foundations` | None |
+| `core` | `foundations` |
+| `overlays` | `foundations` |
+| `forms` | `foundations`, `core`, `overlays` |
+| `feedback` | `foundations`, `core` |
+| `navigation` | `foundations`, `forms`, `overlays` |
+| `layout` | `foundations`, `core`, `overlays` |
+| `collections` | `foundations`, `core`, `forms`, `overlays` |
+| `content` | `foundations`, `core`, `forms` |
+| `ai` | `foundations`, `core`, `forms`, `overlays`, `content` |
+| `charts` | `foundations`, `core`, `forms`, `feedback` |
 
-Import another module through a declared public entry point. Import tokens directly from their `.stylex` definition,
-as contract 114 requires. The core entry imports none of the heavier families. Catalog stories may compose the public
-entries together. Applications compose charts, layout, content, and AI without adding reverse dependencies.
+Import another family through a declared public entry. The registry explicitly permits shared foundations for
+accessibility, controlled state, style composition, overlay geometry, and popup styles without exposing them to npm
+consumers. Import token definitions directly, as contract 114 requires. Foundations import no other family.
+Catalog stories may compose public entries together. Applications compose charts, layout, content, and AI without
+adding reverse dependencies. Keep the sidebar context with its layout owner and shared chart geometry with charts.
 
-Give each implementation library one job inside its owning module:
+The root entry contains basic controls, text, surfaces, and disclosure. It must not re-export heavier families.
+Focused dates, commands, Markdown, code, diff, tree, and chart entries import only their required capabilities.
+The chart root exposes shared frames, legends, and types rather than importing every geometry implementation.
+
+Give each implementation library one job inside its owning family:
 
 | Library | Owner and responsibility |
 | --- | --- |
-| Base UI | `core` preserves accessible control, focus, overlay, and composition behavior. |
-| Lucide | Browser presentation uses one icon vocabulary and shared icon sizing. |
-| StyleX | `core/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
+| Base UI | Accessible controls, focus, overlays, and composition in the family owning that interaction. |
+| Lucide | One icon vocabulary and shared icon sizing. |
+| StyleX | `foundations/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
 | TanStack Table and Virtual | `collections` models prepared rows and bounds their rendered window. |
-| TanStack Hotkeys | `collections` binds application-owned commands within their declared focus scope. |
-| DayPicker | `collections` supplies calendar mechanics for explicitly supplied date selection. |
+| TanStack Hotkeys | `navigation/src/commands` binds application-owned commands within their focus scope. |
+| DayPicker | `forms/src/dates` supplies calendar mechanics for explicit date selection. |
 | Resizable Panels | `layout` supplies pointer and keyboard pane resizing. |
-| Pierre Highlights, Diffs, and Trees | `content` owns tokenization, diff geometry, and file-tree mechanics behind Mechane APIs. |
-| Streamdown | `content` parses completed or incomplete Markdown through Mechane renderers. |
+| Pierre Highlights, Diffs, and Trees | `content` owns tokenization, diff geometry, and file-tree mechanics. |
+| Streamdown | `content` parses supplied Markdown through Elements renderers. |
 | shadcn message scroller | `ai` owns scroll anchoring and live-edge following through its headless primitive. |
 | visx | `charts` computes and renders geometry from supplied presentation records. |
 
@@ -78,17 +89,34 @@ from synthetic inputs. Lazy loading renderer code and packaged assets is compone
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `ui-core-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-foundations-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-foundations-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-core-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-core-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-layout-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-overlays-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-overlays-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-forms-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-forms-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-feedback-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-feedback-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-navigation-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
+- dependency-cruiser `ui-navigation-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-layout-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-layout-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-collections-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-collections-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-collections-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-content-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-content-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-content-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-ai-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-ai-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-ai-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
-- dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another Elements family through its public entry, such as `../../core/src/index.ts`; shared foundation definitions have explicit internal entries
 - dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-dates-vendor-owner` (065): enforced: Import the Elements dates API, such as `@mechane-ai/elements/forms/dates`, instead of its implementation dependency
+- dependency-cruiser `ui-commands-vendor-owner` (065): enforced: Import the Elements commands API, such as `@mechane-ai/elements/navigation/commands`, instead of its implementation dependency
+- dependency-cruiser `ui-tables-vendor-owner` (065): enforced: Import the Elements tables API, such as `@mechane-ai/elements/collections`, instead of its implementation dependency
+- dependency-cruiser `ui-content-vendor-owner` (065): enforced: Import the Elements content API, such as `@mechane-ai/elements/content`, instead of its implementation dependency
+- dependency-cruiser `ui-conversation-vendor-owner` (065): enforced: Import the Elements conversation API, such as `@mechane-ai/elements/ai`, instead of its implementation dependency
+- dependency-cruiser `ui-charts-vendor-owner` (065): enforced: Import the Elements charts API, such as `@mechane-ai/elements/charts`, instead of its implementation dependency
+- dependency-cruiser `ui-panes-vendor-owner` (065): enforced: Import the Elements panes API, such as `@mechane-ai/elements/layout`, instead of its implementation dependency
 
 <!-- End of the generated block. -->

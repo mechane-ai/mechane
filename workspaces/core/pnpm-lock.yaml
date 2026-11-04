@@ -200,11 +200,26 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  packages/browser/catalog:
+    dependencies:
+      '@storybook/addon-themes':
+        specifier: 10.6.5
+        version: 10.6.5(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
+      '@storybook/react-vite':
+        specifier: 10.6.5
+        version: 10.6.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      '@stylexjs/unplugin':
+        specifier: 0.19.1
+        version: 0.19.1(supports-color@10.2.2)(unplugin@2.3.11)
+      vite:
+        specifier: 8.3.5
+        version: 8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+
   packages/browser/console:
     dependencies:
-      '@mechane-ai/ui':
+      '@mechane-ai/elements':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../elements
       '@mechane/console-data':
         specifier: workspace:*
         version: link:../console-data
@@ -239,6 +254,9 @@ importers:
         specifier: 19.3.1
         version: 19.3.1(react@19.3.1)
     devDependencies:
+      '@mechane/catalog':
+        specifier: workspace:*
+        version: link:../catalog
       '@storybook/addon-a11y':
         specifier: 10.6.5
         version: 10.6.5(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
@@ -251,12 +269,6 @@ importers:
       '@storybook/react-vite':
         specifier: 10.6.5
         version: 10.6.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.5(@types/node@24.9.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@stylexjs/stylex':
-        specifier: 0.19.1
-        version: 0.19.1
-      '@stylexjs/unplugin':
-        specifier: 0.19.1
-        version: 0.19.1(supports-color@10.2.2)(unplugin@2.3.11)
       '@types/node':
         specifier: 24.9.2
         version: 24.9.2
@@ -299,9 +311,9 @@ importers:
 
   packages/browser/console-views:
     dependencies:
-      '@mechane-ai/ui':
+      '@mechane-ai/elements':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../elements
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
@@ -325,7 +337,7 @@ importers:
         specifier: 19.3.0
         version: 19.3.0
 
-  packages/browser/ui:
+  packages/browser/elements:
     dependencies:
       '@base-ui/react':
         specifier: 1.9.0
@@ -382,12 +394,21 @@ importers:
         specifier: 7.2.0
         version: 7.2.0
     devDependencies:
+      '@mechane/catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@storybook/addon-a11y':
+        specifier: 10.6.5
+        version: 10.6.5(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
+      '@storybook/addon-docs':
+        specifier: 10.6.5
+        version: 10.6.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
+      '@storybook/addon-themes':
+        specifier: 10.6.5
+        version: 10.6.5(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))
       '@storybook/react-vite':
         specifier: 10.6.5
         version: 10.6.5(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(storybook@10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1))(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
-      '@stylexjs/unplugin':
-        specifier: 0.19.1
-        version: 0.19.1(supports-color@10.2.2)(unplugin@2.3.11)
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -403,6 +424,9 @@ importers:
       react-dom:
         specifier: 19.3.1
         version: 19.3.1(react@19.3.1)
+      storybook:
+        specifier: 10.6.5
+        version: 10.6.5(@types/react@19.3.0)(prettier@3.9.10)(react@19.3.1)
       typescript:
         specifier: 7.0.2
         version: 7.0.2

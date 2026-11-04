@@ -1,19 +1,8 @@
-import {
-  Button,
-  CopyValue,
-  Dialog,
-  Heading,
-  Muted,
-  Notice,
-  Panel,
-  Prose,
-  Row,
-  Stack,
-  Status,
-  Subheading,
-  Tabs,
-} from '@mechane-ai/ui';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import { Button, CopyValue, Heading, Muted, Panel, Prose, Row, Stack, Status, Subheading } from '@mechane-ai/elements';
+import { Notice } from '@mechane-ai/elements/feedback';
+import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
+import { Tabs } from '@mechane-ai/elements/navigation';
+import { Dialog } from '@mechane-ai/elements/overlays';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { moneyLabel } from '@mechane/console-views';

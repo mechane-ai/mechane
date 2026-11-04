@@ -1,7 +1,9 @@
 # Feedback and disclosure
 
-These supported components are exported by `@mechane-ai/ui`. Their colocated stories document public parts and
-meaningful states. They share the same compact typography, neutral borders and focus treatment as the Console.
+Use `/overlays` for dialogs and anchored panels, `/feedback` for loading and outcomes, `/navigation` for location and
+shortcuts, and `/content` for Trace. Core exports disclosure and Avatar; `/forms` owns SettingsRow and `/collections`
+owns Timestamp. All paths belong to `@mechane-ai/elements`. Colocated stories document public parts and meaningful
+states. They share the same compact typography, neutral borders and focus treatment as the Console.
 
 Use `Menu` for commands and immediate choices. Its checkbox and radio items receive controlled values. Use `Select` or
 `Combobox` for form values. A menu link remains a link; command eligibility belongs to the application.
@@ -38,8 +40,8 @@ label. Format that label in the application with an explicit locale and time zon
 caller already knows. Trace infers no timing, execution, nesting or causal meaning. Use `Waterfall` for measured
 intervals and a plain list for records without status evidence.
 
-The source families are [overlays](../packages/browser/ui/packages/core/src/popover.tsx),
-[disclosure](../packages/browser/ui/packages/core/src/disclosure.tsx),
-[feedback](../packages/browser/ui/packages/core/src/progress.tsx), and
-[trace](../packages/browser/ui/packages/core/src/trace.tsx). Storybook builds those same implementations from synthetic
-inputs without application providers or live services.
+The source families are [overlays](../packages/browser/elements/packages/overlays/src/popover.tsx),
+[disclosure](../packages/browser/elements/packages/core/src/disclosure.tsx),
+[feedback](../packages/browser/elements/packages/feedback/src/progress.tsx), and
+[trace](../packages/browser/elements/packages/content/src/trace.tsx). Storybook builds those same implementations from
+synthetic inputs without application providers or live services.

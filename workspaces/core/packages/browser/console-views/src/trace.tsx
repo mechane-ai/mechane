@@ -1,22 +1,9 @@
-import {
-  CopyValue,
-  Divider,
-  EmptyState,
-  Heading,
-  Metric,
-  MetricGrid,
-  Muted,
-  Notice,
-  Prose,
-  Trace as RequestTrace,
-  Row,
-  Stack,
-  Subheading,
-  Tabs,
-  TextButton,
-} from '@mechane-ai/ui';
-import { Details, Inspector } from '@mechane-ai/ui/collections';
-import { colors, typography } from '@mechane-ai/ui/tokens.stylex';
+import { CopyValue, Divider, Heading, Muted, Prose, Row, Stack, Subheading, TextButton } from '@mechane-ai/elements';
+import { Details, Inspector, Metric, MetricGrid } from '@mechane-ai/elements/collections';
+import { Trace as RequestTrace } from '@mechane-ai/elements/content';
+import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
+import { Tabs } from '@mechane-ai/elements/navigation';
+import { colors, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { Trace } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';

@@ -1,9 +1,9 @@
 # Mechane design system proposal
 
-Status: accepted, November 3, 2026. This records the initial design and adoption decisions behind Mechane UI and its
-Console consumers. The later [UI expansion](ui-capability-proposal.md) supersedes the source layout and Console-consumer
-prerequisite below. The [component guide](components.md) describes supported APIs, and the [Console guide](console.md)
-describes the shipped application.
+Status: accepted, November 3, 2026. This records the initial design and adoption decisions behind Elements by Mechane
+and its Console consumers. The later [UI expansion](ui-capability-proposal.md) supersedes the source layout and
+Console-consumer prerequisite below. The [component guide](components.md) describes supported APIs, and the
+[Console guide](console.md) describes the shipped application.
 
 The design system should make a new screen feel like the rest of Mechane with little custom styling. Controls share
 interaction behavior, typography, spacing, and states. Layout and chart components remain useful without importing
@@ -21,32 +21,32 @@ packages/browser/
   console/         TanStack Start routes, application composition, and Storybook runner
 ```
 
-`@mechane-ai/ui` is one independently versioned package. Tokens depend on StyleX; controls own Base UI integration. Its
-`layout` and `charts` modules consume tokens and controls without depending on each other. `console-views` combines them
-with Mechane records. `console` connects those views to `console-data` and routing.
+`@mechane-ai/elements` is one independently versioned package. Tokens depend on StyleX; controls own Base UI
+integration. Its `layout` and `charts` modules consume tokens and controls without depending on each other.
+`console-views` combines them with Mechane records. `console` connects those views to `console-data` and routing.
 
-The public name is **Mechane UI**, installed as `@mechane-ai/ui`. Its root exposes controls; `/layout`, `/charts`,
-`/tokens`, and `/styles.css` expose the other cohesive surfaces. Keep one source package in this repository and publish
-compiled ESM, declarations, and CSS with independent `ui-v` releases. Workspace consumers build the same source.
-Ordinary external React applications need no StyleX compiler. The direct `/tokens.stylex` export supports applications
-that author StyleX themes and placement styles. The [package README](../packages/browser/ui/README.md) owns installation
-and customization guidance.
+The public name is **Elements by Mechane**, installed as `@mechane-ai/elements`. Its root exposes controls; `/layout`,
+`/charts`, `/tokens`, and `/styles.css` expose the other cohesive surfaces. Keep one source package in this repository
+and publish compiled ESM, declarations, and CSS with independent `elements-v` releases. Workspace consumers build the
+same source. Ordinary external React applications need no StyleX compiler. The direct `/tokens.stylex` export supports
+applications that author StyleX themes and placement styles. The
+[package README](../packages/browser/elements/README.md) owns installation and customization guidance.
 
-A future `@softmax/design-system` may wrap Mechane UI for its own branding and compositions. Softmax applications would
-import only that adapter. This extraction makes no Softmax code or deployment changes.
+A future `@softmax/design-system` may wrap Elements by Mechane for its own branding and compositions. Softmax
+applications would import only that adapter. This extraction makes no Softmax code or deployment changes.
 
 Keep normal named package exports. Group files by their component family when several files share a responsibility;
 avoid a folder containing only an implementation and a forwarding index. Use one maintained implementation of each
 component, with no copies inside screen folders.
 
-Tokens need a direct definition export, such as `@mechane-ai/ui/tokens.stylex`, resolving to `src/tokens.stylex.ts`.
-StyleX requires direct imports from the defining file. Validate resolution in both the application and Storybook
-compiler before moving every consumer. CSS variable references are not numeric inputs for visx geometry.
-[StyleX variable imports](https://stylexjs.com/docs/learn/theming/using-variables/)
+Tokens need a direct definition export, such as `@mechane-ai/elements/tokens.stylex`, resolving to
+`src/tokens.stylex.ts`. StyleX requires direct imports from the defining file. Validate resolution in both the
+application and Storybook compiler before moving every consumer. CSS variable references are not numeric inputs for visx
+geometry. [StyleX variable imports](https://stylexjs.com/docs/learn/theming/using-variables/)
 
-Sidebar geometry belongs to `ui/layout`. A workspace switcher and Mechane branding belong to `console-views`. Generic
-text, table cells, copy controls, and metrics belong to `ui`. The request timeline becomes a generic Waterfall in
-`ui/charts`, with request labels and evidence mapping in `console-views`.
+Sidebar geometry belongs to `elements/layout`. A workspace switcher and Mechane branding belong to `console-views`.
+Generic text, table cells, copy controls, and metrics belong to `ui`. The request timeline becomes a generic Waterfall
+in `ui/charts`, with request labels and evidence mapping in `console-views`.
 
 ## Component coverage
 
@@ -89,7 +89,7 @@ do not build a general component factory. A composed tooltip and dialog trigger 
 An illustrative field API:
 
 ```tsx
-import { Button, Field, Input } from '@mechane-ai/ui';
+import { Button, Field, Input } from '@mechane-ai/elements';
 
 <Field.Root name="name">
   <Field.Label>Name</Field.Label>
@@ -238,7 +238,7 @@ boundaries; a favorable review of the changed files alone does not establish lib
 
 | Contract                                                                                                                                                                                    | Proposed scope                                         | Main obligation                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| [ui-presentation-boundaries](https://github.com/macromackie/tenet-contracts/blob/01e7ac85f524a5446d04941e7db895af0b24f817/contracts/ui-presentation-boundaries/CONTRACT.md)                 | `ui`, `ui/layout`, `ui/charts`                         | Render supplied inputs and report intent; import no resource, routing, or data implementation.             |
+| [ui-presentation-boundaries](https://github.com/macromackie/tenet-contracts/blob/01e7ac85f524a5446d04941e7db895af0b24f817/contracts/ui-presentation-boundaries/CONTRACT.md)                 | `ui`, `elements/layout`, `ui/charts`                   | Render supplied inputs and report intent; import no resource, routing, or data implementation.             |
 | [ui-design-tokens](https://github.com/macromackie/tenet-contracts/blob/01e7ac85f524a5446d04941e7db895af0b24f817/contracts/ui-design-tokens/CONTRACT.md)                                     | Shared tokens and authored browser styles              | One owner for shared visual decisions; exhaustive named variants; structural geometry stays local.         |
 | [ui-react-typescript-component-apis](https://github.com/macromackie/tenet-contracts/blob/01e7ac85f524a5446d04941e7db895af0b24f817/contracts/ui-react-typescript-component-apis/CONTRACT.md) | Public UI component declarations                       | Finite supported choices, required labels, typed records, and rejected incompatible modes.                 |
 | [ui-control-accessibility](https://github.com/macromackie/tenet-contracts/blob/01e7ac85f524a5446d04941e7db895af0b24f817/contracts/ui-control-accessibility/CONTRACT.md)                     | Controls and their browser compositions                | Native semantics, explicit names, keyboard operation, and library-owned overlay focus.                     |

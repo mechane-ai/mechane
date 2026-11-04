@@ -1,5 +1,7 @@
-import { Button, Notice, Tooltip } from '@mechane-ai/ui';
-import { PageToolbar, ToolbarAction } from '@mechane-ai/ui/layout';
+import { Button } from '@mechane-ai/elements';
+import { Notice } from '@mechane-ai/elements/feedback';
+import { PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
+import { Tooltip } from '@mechane-ai/elements/overlays';
 import type { ConsoleData } from '@mechane/console-data';
 import { MechList } from '@mechane/console-views';
 import type { Allowance } from '@mechane/protocol';

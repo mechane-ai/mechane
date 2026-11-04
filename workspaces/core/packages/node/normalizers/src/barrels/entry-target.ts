@@ -27,7 +27,7 @@ export function entryTarget({ statement, path, barrels, entries, scope }: EntryT
     const crossesPublicModule = [...entries.keys()].some((entry) => {
       const prefix = `${dirname(entry)}${sep}`;
 
-      if (basename(entry) !== ENTRY_FILE || !path.startsWith(prefix)) {
+      if (!path.startsWith(prefix)) {
         return false;
       }
 

@@ -1,4 +1,6 @@
-import { EmptyState, SkipLink, TextLink } from '@mechane-ai/ui';
+import { TextLink } from '@mechane-ai/elements';
+import { EmptyState } from '@mechane-ai/elements/feedback';
+import { SkipLink } from '@mechane-ai/elements/navigation';
 import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { ConsoleEntrance } from '../entrance.tsx';

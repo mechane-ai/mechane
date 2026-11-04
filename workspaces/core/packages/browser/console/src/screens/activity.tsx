@@ -1,4 +1,4 @@
-import { Button, Muted, Row, Stack } from '@mechane-ai/ui';
+import { Button, Muted, Row, Stack } from '@mechane-ai/elements';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
 import type { EventPage } from '@mechane/protocol';

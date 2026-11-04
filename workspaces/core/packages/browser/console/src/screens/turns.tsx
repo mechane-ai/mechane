@@ -1,5 +1,5 @@
-import { Button } from '@mechane-ai/ui';
-import { ListFooter } from '@mechane-ai/ui/collections';
+import { Button } from '@mechane-ai/elements';
+import { ListFooter } from '@mechane-ai/elements/collections';
 import type { ConsoleData } from '@mechane/console-data';
 import { TurnList } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';

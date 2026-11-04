@@ -10,7 +10,7 @@ The console ships at `/console` in the same immutable release as the Worker. `/a
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
 `console` owns routes, application composition, and the Storybook runner. `console-data` owns requests and reactive
-state; `console-views` owns resource presentation and domain formatting. `@mechane-ai/ui` owns shared visual roles,
+state; `console-views` owns resource presentation and domain formatting. `@mechane-ai/elements` owns shared visual roles,
 accessible controls, generic data presentation, layouts, and charts behind its declared public entry points. Browser packages import only shared or lower browser packages. No browser package imports Worker, Node,
 private Factory, or installation credentials.
 
@@ -43,7 +43,7 @@ loss and removal clear it. A revision conflict preserves edited fields and accep
 
 Compose every screen with the shared frame and toolbar. The frame owns presentation state for the sidebar and mobile
 drawer; screens own their resource operations and toolbar actions. Keep lists flush with the content edges and use
-the shared detail container for resource details and forms. Keep shell measurements with `ui/layout` and shared colors
+the shared detail container for resource details and forms. Keep shell measurements with `elements/layout` and shared colors
 and typography with `ui/tokens`. The shell owns outer separators; child actions own only their internal dividers.
 Navigation controls expose their names in collapsed and mobile states. Storybook examples use the same frame and
 presentation components as the application. Generic component requirements belong to contracts 065–075 and 114–115.

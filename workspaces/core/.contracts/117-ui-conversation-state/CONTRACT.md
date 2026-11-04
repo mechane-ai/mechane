@@ -1,7 +1,7 @@
 ---
 name: ui-conversation-state
 message: Preserve the reader's position and the author's draft while presenting supplied messages and activity.
-paths: ["packages/browser/ui/packages/ai/**","packages/browser/console/src/screens/message.tsx","packages/browser/console-views/src/events.tsx"]
+paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/message.tsx","packages/browser/console-views/src/events.tsx"]
 ---
 
 ## Rules

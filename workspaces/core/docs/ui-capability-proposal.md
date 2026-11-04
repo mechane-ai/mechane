@@ -1,4 +1,4 @@
-# Mechane UI capability proposal
+# Elements by Mechane capability proposal
 
 Status: accepted November 3, 2026. Scott requested the full expansion with one published package and internal modules.
 The [component guide](components.md), family guides, and package exports describe the implemented API. This document
@@ -10,27 +10,27 @@ records and commands. Components present those records and report interactions.
 
 ## Package boundaries
 
-Everything ships in **`@mechane-ai/ui`**, with one version, stylesheet, npm archive, and trusted-publishing workflow.
-Internal modules expose focused subpaths. They are source boundaries inside that package, not separate workspace or npm
-packages.
+Everything ships in **`@mechane-ai/elements`**, with one version, stylesheet, npm archive, and trusted-publishing
+workflow. Internal modules expose focused subpaths. They are source boundaries inside that package, not separate
+workspace or npm packages.
 
-| Entry                                                           | Responsibility                                                             | Implementation owner                                               |
-| --------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `@mechane-ai/ui`                                                | Tokens, accessible controls, forms, feedback, and generic activity parts.  | Base UI, StyleX, and Lucide.                                       |
-| `@mechane-ai/ui/layout`                                         | Application shell, navigation, toolbars, details, and split panes.         | Core controls and Resizable Panels.                                |
-| `@mechane-ai/ui/collections`                                    | Tables, collection controls, commands, and date selection.                 | TanStack Table, Virtual, Hotkeys, and DayPicker behind owned APIs. |
-| `@mechane-ai/ui/content`                                        | Markdown, structured values, and recorded output.                          | Core controls and a shared Markdown renderer.                      |
-| `@mechane-ai/ui/content/link`                                   | Safe destinations independent of the Markdown renderer.                    | Shared content policy.                                             |
-| `@mechane-ai/ui/content/code`, `/content/diff`, `/content/tree` | Source, changes, and file navigation.                                      | Pierre behind typed Mechane components.                            |
-| `@mechane-ai/ui/ai`                                             | Conversations, prompt composition, agent activity, and maintained recipes. | Core, collections, and content. No model SDK or transport.         |
-| `@mechane-ai/ui/charts` and its family subpaths                 | Temporal, categorical, distribution, matrix, and relationship graphics.    | Core tokens and selected visx modules.                             |
+| Entry                                                                 | Responsibility                                                             | Implementation owner                                               |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `@mechane-ai/elements`                                                | Tokens, accessible controls, forms, feedback, and generic activity parts.  | Base UI, StyleX, and Lucide.                                       |
+| `@mechane-ai/elements/layout`                                         | Application shell, navigation, toolbars, details, and split panes.         | Core controls and Resizable Panels.                                |
+| `@mechane-ai/elements/collections`                                    | Tables, collection controls, commands, and date selection.                 | TanStack Table, Virtual, Hotkeys, and DayPicker behind owned APIs. |
+| `@mechane-ai/elements/content`                                        | Markdown, structured values, and recorded output.                          | Core controls and a shared Markdown renderer.                      |
+| `@mechane-ai/elements/content/link`                                   | Safe destinations independent of the Markdown renderer.                    | Shared content policy.                                             |
+| `@mechane-ai/elements/content/code`, `/content/diff`, `/content/tree` | Source, changes, and file navigation.                                      | Pierre behind typed Mechane components.                            |
+| `@mechane-ai/elements/ai`                                             | Conversations, prompt composition, agent activity, and maintained recipes. | Core, collections, and content. No model SDK or transport.         |
+| `@mechane-ai/elements/charts` and its family subpaths                 | Temporal, categorical, distribution, matrix, and relationship graphics.    | Core tokens and selected visx modules.                             |
 
 ```text
 workspaces/core/packages/browser/
   console/              TanStack Start and application composition
   console-data/         APIs, TanStack DB, query state, and commands
   console-views/        Mechane records and screen composition
-  ui/                   @mechane-ai/ui
+  ui/                   @mechane-ai/elements
     packages/
       ai/src/
       charts/src/

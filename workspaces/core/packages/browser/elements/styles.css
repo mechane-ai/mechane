@@ -1,0 +1,2 @@
+@layer reset, elements;
+@import './dist/assets/stylex.css' layer(elements);

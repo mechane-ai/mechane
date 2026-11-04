@@ -1,4 +1,4 @@
-import { SkipLink } from '@mechane-ai/ui';
+import { SkipLink } from '@mechane-ai/elements/navigation';
 import { createFileRoute } from '@tanstack/react-router';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Welcome } from '../entrance.tsx';

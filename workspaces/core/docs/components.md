@@ -1,33 +1,35 @@
-# Mechane components
+# Elements components
 
 Use the component catalog to choose a maintained component and copy its recommended composition. Run
-`pnpm --filter @mechane/console storybook` from `workspaces/core`. The same runner discovers package-local stories and
-Console screen examples. Every example uses fixed synthetic data and works without application services.
+`pnpm --filter @mechane-ai/elements storybook` from `workspaces/core`. Elements owns the component catalog;
+`pnpm --filter @mechane/console storybook` serves application screen examples. Both use fixed synthetic data without
+live application services.
 
-**Supported** means a component belongs to the published `@mechane-ai/ui` API and has maintained behavior, types,
+**Supported** means a component belongs to the published `@mechane-ai/elements` API and has maintained behavior, types,
 guidance, and synthetic catalog examples. Console adoption provides additional integration evidence; a generic library
 capability does not need a Console screen to be supported. Library stories inherit the `supported` catalog tag, whose
 promise is defined once in Foundations for the package release. Application-only Screens opt out. Plans do not create
 callable APIs.
 
-One npm package contains internal modules for core, layout, collections, content, AI, and charts. Its manifest and named
-entry-point exports define the API. Colocated stories explain use; there is no parallel component registry. Mechane
-compiles those same sources into its application release, independently of the UI package version.
+One npm package contains foundations, core, forms, overlays, feedback, navigation, layout, collections, content, AI, and
+charts. Its manifest and named entry-point exports define the API. Colocated stories explain use; there is no parallel
+component registry. Mechane compiles those same sources into its application release, independently of the Elements
+version.
 
-The [package guide](../packages/browser/ui/README.md) covers installing the npm package and its compiled CSS.
+The [package guide](../packages/browser/elements/README.md) covers installing the npm package and its compiled CSS.
 
 ## Choose
 
-| Need                                     | Owner and guide                                                                                                                                                      |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Actions, form fields, and choices        | [Core controls](ui-controls.md): native forms, Base UI composition, and controlled values.                                                                           |
-| Decisions, disclosure, and feedback      | [Feedback](ui-feedback.md): overlays, loading, status, and generic Trace activity.                                                                                   |
-| Application shell and split panes        | [Layout stories](../packages/browser/ui/packages/layout/src/app-shell.stories.tsx) and [resizing](../packages/browser/ui/packages/layout/src/resizable.stories.tsx). |
-| Comparable records, dates, and commands  | [Collections](ui-collections.md): prepared rows, stable selection, and application-owned operations.                                                                 |
-| Source, changes, and recorded output     | [Content](ui-content.md): Pierre views, safe Markdown, and bounded inspection.                                                                                       |
-| Conversations and agent workflows        | [AI](ui-ai.md): prompt composition, live-edge scrolling, citations, approvals, and recipes.                                                                          |
-| Trends, distributions, and relationships | [Charts](ui-charts.md): explicit measurements, values, and linked inspection.                                                                                        |
-| Shared visual roles                      | [Token foundations](../packages/browser/ui/packages/core/src/tokens.stories.tsx).                                                                                    |
+| Need                                     | Owner and guide                                                                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions, form fields, and choices        | [Core controls](ui-controls.md): native forms, Base UI composition, and controlled values.                                                                                       |
+| Decisions, disclosure, and feedback      | [Feedback](ui-feedback.md): overlays, loading, status, and generic Trace activity.                                                                                               |
+| Application shell and split panes        | [Layout stories](../packages/browser/elements/packages/layout/src/app-shell.stories.tsx) and [resizing](../packages/browser/elements/packages/layout/src/resizable.stories.tsx). |
+| Comparable records, dates, and commands  | [Collections](ui-collections.md): prepared rows, stable selection, and application-owned operations.                                                                             |
+| Source, changes, and recorded output     | [Content](ui-content.md): Pierre views, safe Markdown, and bounded inspection.                                                                                                   |
+| Conversations and agent workflows        | [AI](ui-ai.md): prompt composition, live-edge scrolling, citations, approvals, and recipes.                                                                                      |
+| Trends, distributions, and relationships | [Charts](ui-charts.md): explicit measurements, values, and linked inspection.                                                                                                    |
+| Shared visual roles                      | [Token foundations](../packages/browser/elements/packages/foundations/src/tokens.stories.tsx).                                                                                   |
 
 Each family’s metadata describes its root and public parts, their alternatives, and the decisions the application must
 supply. Components accept presentation values; resource mapping, authorization, routing, and requests stay with their
@@ -37,10 +39,10 @@ Compound APIs such as Field and Dialog are documented through their family compo
 Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
 UI props; the tables are not an exhaustive API reference.
 
-Import shared tokens directly from `@mechane-ai/ui/tokens.stylex`. StyleX needs the defining export to compile
+Import shared tokens directly from `@mechane-ai/elements/tokens.stylex`. StyleX needs the defining export to compile
 variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to
-`ui/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from the root
-entry to the document root so portaled controls inherit it. Applications own theme preference and persistence.
+`elements/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from
+`/theme` to the document root so portaled controls inherit it. Applications own theme preference and persistence.
 
 Keep the compact desktop type and spacing scale. Text-entry controls use 16px text on coarse pointers, and standalone
 controls provide 44px touch targets. Hover styles apply only to a fine pointer that supports hover. Shared tokens own
@@ -64,8 +66,8 @@ that describe the operation; a refresh failure belongs beside the retained conte
 
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a
-disabled control is unavailable. The [form example](../packages/browser/ui/packages/core/src/forms.stories.tsx) shows
-native validation and local draft state.
+disabled control is unavailable. The [form example](../packages/browser/elements/packages/forms/src/forms.stories.tsx)
+shows native validation and local draft state.
 
 Multi-part controls retain Base UI names such as `Root`, `Trigger`, and `Popup`. Use `render` to compose triggers.
 Shared styles apply first, then concrete native classes and style objects are merged for upstream composition. The typed
@@ -75,8 +77,8 @@ State callbacks for `className` and `style` work on a directly rendered control 
 Base UI release cannot preserve those callbacks on an inner React element supplied through `render`. Use concrete
 classes and style objects on that element. For state-dependent composition, use a `render` function, spread its supplied
 props, and choose named variants from its state. The
-[Dialog examples](../packages/browser/ui/packages/core/src/dialog.stories.tsx) show both patterns with a Tooltip. Base
-UI documents [render functions](https://base-ui.com/react/handbook/composition#render-function) and their
+[Dialog examples](../packages/browser/elements/packages/overlays/src/dialog.stories.tsx) show both patterns with a
+Tooltip. Base UI documents [render functions](https://base-ui.com/react/handbook/composition#render-function) and their
 [explicit prop merging](https://base-ui.com/react/utils/merge-props).
 
 Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use Loading for
@@ -115,7 +117,7 @@ Use the theme toolbar to switch the entire preview between light and dark, inclu
 viewport control reviews the same examples at narrow widths. Open disclosures and popups in both themes; a closed
 trigger does not show the panel's layout. Chart data and source disclosures use the same Collapsible as activity views.
 
-`pnpm --filter @mechane/console build-storybook` uses the application’s React and StyleX compiler settings. Stories are
-developer documentation: the preview removes the inherited test tag, and no play assertion runs by default. Add a
+`pnpm --filter @mechane-ai/elements build-storybook` uses the application’s React and StyleX compiler settings. Stories
+are developer documentation: the preview removes the inherited test tag, and no play assertion runs by default. Add a
 retained interaction check only for a consequential gap under the repository’s test-curation rules. Browser acceptance
 against the packaged Console remains necessary for application wiring and real requests.

@@ -1,4 +1,4 @@
-import { TextLink } from '@mechane-ai/ui';
+import { TextLink } from '@mechane-ai/elements';
 import { createLink, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';

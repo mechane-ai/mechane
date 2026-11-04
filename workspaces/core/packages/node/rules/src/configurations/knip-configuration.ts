@@ -29,7 +29,7 @@ const GENERATOR_ENTRIES = '*/main.ts!';
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
 
-const UI_PACKAGE = '@mechane-ai/ui';
+const ELEMENTS_PACKAGE = '@mechane-ai/elements';
 
 /** A member's entries and project files, as knip's workspace takes them. */
 type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string> | boolean>>;
@@ -77,12 +77,12 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
   }
 
   // Vite's library source mapping merges public entries; the manifest already declares their actual sources.
-  if (member.name === UI_PACKAGE) {
+  if (member.name === ELEMENTS_PACKAGE) {
     return {
       includeEntryExports: false,
       vite: false,
-      entry: ['vite.config.ts', 'packages/**/*.stories.tsx'],
-      project: ['packages/**/*.{ts,tsx}!'],
+      entry: ['vite.config.ts', '.storybook/*.{ts,tsx}', 'packages/**/*.stories.tsx'],
+      project: ['packages/**/*.{ts,tsx,mdx}!'],
       // Trees loads this peer through its theming dependency; Diffs requires a separate major version.
       ignoreDependencies: ['@pierre/theme'],
     };

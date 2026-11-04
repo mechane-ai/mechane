@@ -1,15 +1,7 @@
-import stylex from '@stylexjs/unplugin/vite';
+import { stylexPlugin } from '@mechane/catalog';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
-import type { PluginOption } from 'vite';
-
-// oxlint-disable-next-line typescript/no-unsafe-assignment -- StyleX declares any for its Vite plugin.
-const stylexPlugin: PluginOption = stylex({
-  useCSSLayers: true,
-  runtimeInjection: false,
-  unstable_moduleResolution: { type: 'commonJS' },
-});
 
 export default defineConfig({
   base: '/console/',
