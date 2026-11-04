@@ -6,6 +6,9 @@ receive values and callbacks; applications own routing, data, identity, and pers
 
 ## Install
 
+Install [Elements from npm](https://www.npmjs.com/package/@mechane-ai/elements). React and React DOM are peer
+dependencies.
+
 ```sh
 pnpm add @mechane-ai/elements react react-dom
 ```

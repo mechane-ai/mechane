@@ -28,6 +28,21 @@ origin; set `MECHANE_ORIGIN` before signing in. Workspace policy controls sandbo
 Local releases retain agents, authentication, and workspace files across restarts. Cloud releases contain the OpenTofu
 module, Worker bundle, Console assets, and sandbox image. Neither installation requires compiling Mechane source.
 
+## Elements
+
+[Elements by Mechane](workspaces/core/packages/browser/elements/README.md) is the reusable React design system behind
+the Console. Its components, AI interfaces, and analytical charts share compact typography, square surfaces, and light
+and dark themes.
+
+```sh
+pnpm add @mechane-ai/elements react react-dom
+```
+
+Load `@mechane-ai/elements/styles.css` once and import the families you use, such as `/forms`, `/content/code`, or
+`/charts/cartesian`. The package includes compiled ESM, TypeScript declarations, and CSS. Start with the
+[component guide](workspaces/core/docs/components.md) or the
+[npm package](https://www.npmjs.com/package/@mechane-ai/elements).
+
 ## Layout
 
 `workspaces/core` is the product workspace. Its [package map](workspaces/core/dependencies.json) declares every package
