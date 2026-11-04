@@ -1,6 +1,6 @@
 ---
 name: ui-async-read-states
-paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/ui/src/loading.tsx"]
+paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/ui/packages/core/src/loading.tsx","packages/browser/ui/packages/core/src/skeleton.tsx"]
 message: Present pending, empty, failed, and refreshing reads truthfully, without false empties, flashing loaders, or displaced content.
 ---
 

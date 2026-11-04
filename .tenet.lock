@@ -823,6 +823,27 @@
       "ref": "v13.0.1",
       "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
       "hash": "blake3:44e0cff17d18a645c45b1f960294dd2d6c246648ae3fc87f78517797df5c9c85"
+    },
+    "workspaces/core/.contracts/076-ui-data-tables/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-data-tables",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:d37c5686a35cfde1a1ebb1c4594693cf50e6d100c3e3da0deaf42a835432adbf"
+    },
+    "workspaces/core/.contracts/077-ui-time-series-charts/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-time-series-charts",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:0938538057a12585be35eab0737500330c1b2218344a217106ef53bc3bfc9bd7"
+    },
+    "workspaces/core/.contracts/078-ui-keyboard-shortcuts/CONTRACT.md": {
+      "source": "tenet",
+      "contract": "ui-keyboard-shortcuts",
+      "ref": "v13.0.1",
+      "commit": "01e7ac85f524a5446d04941e7db895af0b24f817",
+      "hash": "blake3:7a00e7a1f32efb865ddc13d4301bd812727315bf6740a36c87025532007fe622"
     }
   }
 }

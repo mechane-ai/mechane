@@ -35,8 +35,14 @@ Review changed public components: does the guidance say when to choose each over
 ## Local adaptations
 
 Colocated stories, source guidance, and package documentation describe implemented public components.
-A component family may document its public parts in one story file. The catalog describes the shipped components as
-supported and defines that status as supported by the current Console release; planned components are not callable APIs.
+A component family may document its public parts in one story file. Supported means that the component is part of
+the published `@mechane-ai/ui` API, with reviewed behavior, exported types, examples, and maintained guidance.
+Console adoption is useful integration evidence, not a prerequisite for supporting a generic library component.
+The current library families inherit the `supported` tag from the Storybook preview; Foundations defines its promise
+once for the package release. Application-only Screens opt out. This inherited source metadata fulfills each family's
+status marking without duplicating a status sentence in every part. Any different support status must be explicit in
+that family's metadata and guidance.
+Plans and research do not create callable APIs. Keep an unfinished family private rather than exporting a placeholder.
 
 The upstream clauses "Generate the catalog and all agent-facing component metadata from component source, examples,
 and guidance pages, and never maintain a parallel registry." and "Give coding agents the catalog through its supported

@@ -15,6 +15,7 @@ const VALUES = {
     ignore: ['.dependency-cruiser.cjs'],
     ignoreIssues: {
       'packages/browser/*/src/**/*.stories.tsx': ['exports'],
+      'packages/browser/ui/packages/**/*.stories.tsx': ['exports'],
       'packages/browser/ui/vite.config.ts': ['exports'],
     },
   },
@@ -54,7 +55,7 @@ const VALUES = {
     {
       path: ['ignoreIssues'],
       lines: [
-        'Storybook consumes CSF metadata and story exports through discovery; production package exports remain checked.',
+        'Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.',
         'Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.',
       ],
     },
@@ -62,6 +63,7 @@ const VALUES = {
       path: ['workspaces'],
       lines: [
         "Each member's workspace follows from its kind and source roots, so a new member is checked like the others.",
+        'The published @mechane-ai/ui manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.',
       ],
     },
   ],

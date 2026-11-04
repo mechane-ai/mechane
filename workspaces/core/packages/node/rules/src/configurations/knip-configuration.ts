@@ -78,7 +78,14 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
 
   // Vite's library source mapping merges public entries; the manifest already declares their actual sources.
   if (member.name === UI_PACKAGE) {
-    return { vite: false, entry: ['vite.config.ts', 'src/**/*.stories.tsx'], project: ['src/**/*.{ts,tsx}!'] };
+    return {
+      includeEntryExports: false,
+      vite: false,
+      entry: ['vite.config.ts', 'packages/**/*.stories.tsx'],
+      project: ['packages/**/*.{ts,tsx}!'],
+      // Trees loads this peer through its theming dependency; Diffs requires a separate major version.
+      ignoreDependencies: ['@pierre/theme'],
+    };
   }
 
   if (member.hasStories) {

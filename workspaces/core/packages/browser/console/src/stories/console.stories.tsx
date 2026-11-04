@@ -20,7 +20,7 @@ import {
   DefinitionConflict as SavedDefinition,
   TurnTrace,
 } from '@mechane/console-views';
-import { Allowance, EventPage, MechPage, Trace, WorkspaceList } from '@mechane/protocol';
+import { Allowance, EventPage, MechPage, REPLY_EXCERPT_MAX_CHARS, Trace, WorkspaceList } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Option, Schema } from 'effect';
@@ -30,6 +30,7 @@ import type { ReactNode } from 'react';
 
 const meta = {
   title: 'Screens/Console',
+  tags: ['!supported'],
   component: ConsoleShell,
   subcomponents: { Activity, MechList, DefinitionConflict: SavedDefinition, TurnTrace },
   parameters: {
@@ -116,17 +117,91 @@ if (sampleMech === undefined) {
 const scout = sampleMech;
 
 const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
+const turnId = '52d0e964-811d-44f4-a96e-d38ca5df748b';
+const inboxItemId = '08c361a4-a15b-487b-b917-1c588b48be12';
+
+const recordedReply = [
+  'The release candidate is ready for review. All three packages passed their checks. The deployment can proceed once the release tag is published.',
+  '',
+  '## Checks',
+  '',
+  '| Package | Result |',
+  '| --- | --- |',
+  '| Console | Passed |',
+  '| Protocol | Passed |',
+  '| Worker | Passed |',
+  '',
+  '## Review notes',
+  '',
+  'The packaged Console retains message drafts when sending fails. Request links reopen the selected turn, and the full recorded reply remains available beyond the short overview excerpt. Missing provider usage remains unavailable rather than appearing as zero tokens.',
+  '',
+  '## Repeat the check',
+  '',
+  '```sh',
+  'mise run check:fast',
+  '```',
+  '',
+  'Publish the release only after the remaining review is complete.',
+].join('\n');
+
+const turnInputEvents = [
+  {
+    type: 'inbox_item.received',
+    sequence: 101,
+    occurred_at: '2026-11-02T11:59:59Z',
+    inbox_item_id: inboxItemId,
+    sender_id: scout.creatorId,
+    text: 'Review the release candidate and summarize the checks with a command to repeat them.',
+    delivery: 'when_idle',
+  },
+  {
+    type: 'turn.started',
+    sequence: 102,
+    occurred_at: '2026-11-02T12:00:00Z',
+    turn_id: turnId,
+    inbox_item_ids: [inboxItemId],
+  },
+];
+
+const recordedReplyEvent = {
+  type: 'turn.answered',
+  sequence: 107,
+  occurred_at: '2026-11-02T12:00:04Z',
+  turn_id: turnId,
+  reply: recordedReply,
+};
+
+const completedEvents = Schema.decodeUnknownSync(EventPage)({
+  has_more: false,
+  events: [...turnInputEvents, recordedReplyEvent],
+});
+
+const runningEvents = Schema.decodeUnknownSync(EventPage)({ has_more: false, events: turnInputEvents });
+
+const refusedEvents = Schema.decodeUnknownSync(EventPage)({
+  has_more: false,
+  events: [
+    ...turnInputEvents,
+    {
+      type: 'turn.unanswered',
+      sequence: 103,
+      occurred_at: '2026-11-02T12:00:00Z',
+      turn_id: turnId,
+      reason: 'allowance_exhausted',
+    },
+  ],
+});
 
 const completedTrace = Schema.decodeUnknownSync(Trace)({
   reply_excerpt: {
     sequence: 107,
-    text: 'The release candidate is ready. All three packages passed their checks. The deployment can proceed once the release tag is published.',
-    truncated: false,
+    text: recordedReply.slice(0, REPLY_EXCERPT_MAX_CHARS),
+    truncated: recordedReply.length > REPLY_EXCERPT_MAX_CHARS,
   },
   turn: {
-    id: '52d0e964-811d-44f4-a96e-d38ca5df748b',
+    id: turnId,
     status: 'answered',
-    inbox_item_ids: [],
+    inbox_item_ids: [inboxItemId],
     started_at: '2026-11-02T12:00:00Z',
     ended_at: '2026-11-02T12:00:04Z',
     definition_revision: 1,
@@ -222,13 +297,14 @@ function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
 function TraceStory({
   trace,
   notice,
+  events = completedEvents,
   initialTab = 'Overview',
 }: {
   readonly trace: Trace;
   readonly notice?: ReactNode;
+  readonly events?: EventPage;
   readonly initialTab?: TraceTab;
 }): ReactNode {
-  const reply = Option.getOrUndefined(trace.replyExcerpt);
   const [tab, setTab] = useState<TraceTab>(initialTab);
   const [request, setRequest] = useState<string>();
 
@@ -261,26 +337,7 @@ function TraceStory({
               `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
             replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full reply →</TextButton>}
-            events={
-              <Activity
-                chronological
-                page={Schema.decodeUnknownSync(EventPage)({
-                  has_more: false,
-                  events:
-                    reply === undefined
-                      ? []
-                      : [
-                          {
-                            type: 'turn.answered',
-                            turn_id: trace.turn.id,
-                            sequence: reply.sequence,
-                            occurred_at: '2026-11-02T12:00:04Z',
-                            reply: reply.text,
-                          },
-                        ],
-                })}
-              />
-            }
+            events={<Activity chronological page={events} />}
           />
         </Stack>
       </DetailPage>
@@ -293,6 +350,8 @@ export const Mechs: Story = { render: () => <MechsStory page={mechPage} /> };
 export const CompletedTurn: Story = { render: () => <TraceStory trace={completedTrace} /> };
 
 export const RequestTimeline: Story = { render: () => <TraceStory trace={completedTrace} initialTab="Requests" /> };
+
+export const RecordedConversation: Story = { render: () => <TraceStory trace={completedTrace} initialTab="Events" /> };
 
 export const UnavailableReply: Story = {
   render: () => (
@@ -367,6 +426,7 @@ const sampleRequest = encodedTrace.dispatches[0];
 export const RefusedTurn: Story = {
   render: () => (
     <TraceStory
+      events={refusedEvents}
       trace={Schema.decodeUnknownSync(Trace)({
         turn: { ...encodedTrace.turn, status: 'unanswered', reason: 'allowance_exhausted' },
         dispatches: [{ ...sampleRequest, status: 'refused' }],
@@ -378,6 +438,7 @@ export const RefusedTurn: Story = {
 export const RunningTurn: Story = {
   render: () => (
     <TraceStory
+      events={runningEvents}
       trace={Schema.decodeUnknownSync(Trace)({
         turn: { ...encodedTrace.turn, status: 'running' },
         dispatches: [{ ...sampleRequest, status: 'reserved' }],
@@ -407,6 +468,23 @@ export const NewerRequestFormat: Story = {
         dispatches: [
           { ...sampleRequest, id: 'df5f71fa-cada-4b63-a3f4-4a0db43da51a', status: 'recorded_by_newer_release' },
           ...encodedTrace.dispatches,
+        ],
+      })}
+    />
+  ),
+};
+
+export const NewerEventFormat: Story = {
+  render: () => (
+    <TraceStory
+      trace={completedTrace}
+      initialTab="Events"
+      events={Schema.decodeUnknownSync(EventPage)({
+        has_more: false,
+        events: [
+          ...turnInputEvents,
+          { type: 'newer.event', sequence: 106, occurred_at: '2026-11-02T12:00:03Z' },
+          recordedReplyEvent,
         ],
       })}
     />

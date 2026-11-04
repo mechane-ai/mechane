@@ -8,6 +8,7 @@ ignores:
     '**/node_modules/**',
     'packages/browser/console-data/src/api.ts',
     'packages/browser/console-data/src/console-data.ts',
+    'packages/browser/ui/packages/content/src/code/use-highlighted-code.ts',
   ]
 rule:
   any:

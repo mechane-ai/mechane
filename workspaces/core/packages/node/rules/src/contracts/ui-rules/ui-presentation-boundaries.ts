@@ -1,47 +1,65 @@
 import { ADOPTED, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
-import type { ContractEnforcement } from '@mechane/rule-shapes';
+import type { ContractEnforcement, CruiserRule } from '@mechane/rule-shapes';
+import { Array, Record } from 'effect';
+import { posix } from 'node:path';
+import { escapedPath } from '../../cruiser/escaped-path.ts';
+import { packageLayers } from '../local-rules/mechane/package-layers.ts';
 
-/** Import boundaries and isolated stories establish the generic libraries' ownership. */
+type ModuleBoundary = { readonly name: string; readonly dependencies: ReadonlyArray<string> };
+
+const UI_FOLDER = 'packages/browser/ui';
+const UI_SOURCES = escapedPath({ path: 'packages/browser/ui/packages' });
+
+const declaredEntries = Record.values(packageLayers.values.definitionExports['@mechane-ai/ui']);
+const uniqueEntries = Array.dedupe(declaredEntries);
+
+const entryPattern: (target: string) => string = (target) => {
+  const path = posix.join(UI_FOLDER, target);
+
+  return escapedPath({ path });
+};
+
+const entryPatterns = uniqueEntries.map(entryPattern);
+const PUBLIC_TARGETS = `^(?:${entryPatterns.join('|')})$`;
+
+const MODULES: ReadonlyArray<ModuleBoundary> = [
+  { name: 'core', dependencies: [] },
+  { name: 'layout', dependencies: ['core'] },
+  { name: 'collections', dependencies: ['core'] },
+  { name: 'content', dependencies: ['core', 'collections'] },
+  { name: 'ai', dependencies: ['core', 'collections', 'content'] },
+  { name: 'charts', dependencies: ['core'] },
+];
+
+/** Each area exposes its own entry; heavier presentation capabilities cannot enter its dependencies. */
 export const uiPresentationBoundaries = {
   values: {},
-  rules: [
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-controls-public-entry',
-      comment: 'Import shared controls through their public entry, such as `../index.ts` from the layout module',
-      from: { path: '^packages/browser/ui/src/(layout|charts)/' },
-      to: { path: '^packages/browser/ui/src/[^/]+$', pathNot: '/(index[.]ts|tokens[.]stylex[.]ts)$' },
-      standard: '065',
-    },
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-controls-independent',
-      comment:
-        'Keep controls independent of layouts and charts, such as `Button` composed inside `AppShell` by the application',
-      from: { path: '^packages/browser/ui/src/[^/]+$', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^packages/browser/ui/src/(layout|charts)/' },
-      standard: '065',
-    },
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-layout-independent',
-      comment: 'Compose charts in the application, such as `Waterfall` passed as `AppShell` content',
-      from: { path: '^packages/browser/ui/src/layout/' },
-      to: { path: '^packages/browser/ui/src/charts/' },
-      standard: '065',
-    },
-    {
-      ...CRUISER_DEFAULTS,
-      ...ADOPTED,
-      name: 'ui-charts-independent',
-      comment:
-        'Render charts in the space their caller supplies, such as `width` accepted without importing `AppShell`',
-      from: { path: '^packages/browser/ui/src/charts/' },
-      to: { path: '^packages/browser/ui/src/layout/' },
-      standard: '065',
-    },
-  ],
+  rules: MODULES.flatMap(moduleRules),
 } as const satisfies ContractEnforcement;
+
+function moduleRules({ name, dependencies }: ModuleBoundary): ReadonlyArray<CruiserRule> {
+  const source = `^(?:${UI_SOURCES})/(?:${name})/`;
+  const permitted = [name, ...dependencies].join('|');
+
+  return [
+    {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: `ui-${name}-public-entry`,
+      comment:
+        'Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly',
+      from: { path: source },
+      to: { path: `^(?:${UI_SOURCES})/(?!(?:${name})/)`, pathNot: PUBLIC_TARGETS },
+      standard: '065',
+    },
+    {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: `ui-${name}-dependencies`,
+      comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
+      from: { path: source, pathNot: '[.]stories[.]tsx$' },
+      to: { path: `^(?:${UI_SOURCES})/(?!(?:${permitted})/)` },
+      standard: '065',
+    },
+  ];
+}

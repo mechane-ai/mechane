@@ -1,7 +1,8 @@
-import { Button, Cell, CopyValue, EmptyState, ListFooter, Status, Table } from '@mechane-ai/ui';
+import { Button, CopyValue, EmptyState, Status } from '@mechane-ai/ui';
+import { Cell, ListFooter, Table } from '@mechane-ai/ui/collections';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
 import type { ReactNode } from 'react';
-import { ageLabel, moneyLabel, preciseTimeLabel } from './format.ts';
+import { moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
 
 export function MechList({
   page,
@@ -56,7 +57,7 @@ export function MechList({
               <Cell secondary>{mech.revision}</Cell>
               <Cell secondary>
                 <CopyValue label={`${mech.name} creation time in UTC`} value={preciseTimeLabel(mech.createdAt)}>
-                  {ageLabel(mech.createdAt)}
+                  {timeLabel(mech.createdAt)}
                 </CopyValue>
               </Cell>
             </tr>

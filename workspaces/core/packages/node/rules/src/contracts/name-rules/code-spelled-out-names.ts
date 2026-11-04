@@ -19,6 +19,7 @@ const VALUES = {
     'new-cap',
     'capIsNew',
     'new_sqlite_classes',
+    'newText',
   ],
   wordReplacements: {
     addr: 'address',

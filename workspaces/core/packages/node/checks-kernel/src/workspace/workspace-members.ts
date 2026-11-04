@@ -1,5 +1,5 @@
 import { CONTRACTS } from '@mechane/rules';
-import { Effect, Predicate, Record, Schema } from 'effect';
+import { Effect, Option, Predicate, Record, Schema } from 'effect';
 import { globSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { readdir } from 'node:fs/promises';
@@ -12,8 +12,8 @@ import type { Member } from '../types.ts';
 /** The file that lists the workspace's member folders as globs. */
 const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 
-/** The folders of a member that hold its source; each one present is a source root. */
-const SOURCE_FOLDERS: ReadonlySet<string> = new Set(CONTRACTS['package-layers'].values.sourceFolders);
+const MEMBER_SOURCE_FOLDERS: Readonly<Record<string, ReadonlyArray<string>>> =
+  CONTRACTS['package-layers'].values.memberSourceFolders;
 
 /** The version range pnpm gives a dependency on another member of the workspace. */
 const WORKSPACE_RANGE = 'workspace:';
@@ -83,7 +83,12 @@ const readMember = Effect.fn('readMember')(function* ({
     catch: (cause) => new InputUnreadable({ path: folder, reason: String(cause) }),
   });
 
-  const isSourceRoot: (entry: Dirent) => boolean = (entry) => entry.isDirectory() && SOURCE_FOLDERS.has(entry.name);
+  const memberSources = Record.get(MEMBER_SOURCE_FOLDERS, manifest.name);
+
+  const sources = Option.getOrElse(memberSources, () => CONTRACTS['package-layers'].values.sourceFolders);
+
+  const sourceFolders: ReadonlySet<string> = new Set(sources);
+  const isSourceRoot: (entry: Dirent) => boolean = (entry) => entry.isDirectory() && sourceFolders.has(entry.name);
   const isInstalled: (dependency: Dependency) => boolean = ([, range]) => !range.startsWith(WORKSPACE_RANGE);
   const programFolder = dirname(join(folder, program));
 

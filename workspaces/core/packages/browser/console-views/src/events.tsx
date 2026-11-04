@@ -1,6 +1,8 @@
 import { Badge, CopyValue, Divider, EmptyState, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane-ai/ui';
+import { Conversation, Message } from '@mechane-ai/ui/ai';
+import { Markdown } from '@mechane-ai/ui/content';
 import { Event } from '@mechane/protocol';
-import type { EventPage } from '@mechane/protocol';
+import type { EventPage, ListedEvent } from '@mechane/protocol';
 import { Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { preciseTimeLabel, timeLabel } from './format.ts';
@@ -24,28 +26,56 @@ export function Activity({
 
   return (
     <Panel>
-      <Stack>
-        {(chronological ? page.events : page.events.toReversed()).map((event) => (
-          <Stack key={event.sequence} compact>
-            <Row between>
-              <Row>
-                <Badge>{eventLabel(event.type)}</Badge>
-                <Identifier>#{event.sequence}</Identifier>
-              </Row>
-              {Schema.is(Event)(event) ? (
-                <CopyValue label={`time of event ${event.sequence} in UTC`} value={preciseTimeLabel(event.occurredAt)}>
-                  {timeLabel(event.occurredAt)}
-                </CopyValue>
-              ) : (
-                <Muted>Newer event format</Muted>
-              )}
-            </Row>
-            {Schema.is(Event)(event) && <EventContent event={event} />}
-            <Divider />
-          </Stack>
-        ))}
-      </Stack>
+      <Conversation.Root initialPosition="start" follow={false}>
+        <Conversation.Viewport label={chronological ? 'Turn messages and events' : 'Recent messages and events'}>
+          <Conversation.Content>
+            {(chronological ? page.events : page.events.toReversed()).map((event) => (
+              <Conversation.Item key={event.sequence} messageId={String(event.sequence)}>
+                <EventItem event={event} />
+              </Conversation.Item>
+            ))}
+          </Conversation.Content>
+        </Conversation.Viewport>
+      </Conversation.Root>
     </Panel>
+  );
+}
+
+function EventItem({ event }: { readonly event: ListedEvent }): ReactNode {
+  const known = Schema.is(Event)(event);
+
+  const meta = (
+    <Row>
+      <Identifier>#{event.sequence}</Identifier>
+      {known ? (
+        <CopyValue label={`time of event ${event.sequence} in UTC`} value={preciseTimeLabel(event.occurredAt)}>
+          {timeLabel(event.occurredAt)}
+        </CopyValue>
+      ) : (
+        <Muted>Newer event format</Muted>
+      )}
+    </Row>
+  );
+
+  const isMessage = 'text' in event || 'reply' in event || 'report' in event;
+
+  if (known && isMessage) {
+    return (
+      <Message author={eventLabel(event.type)} kind={'text' in event ? 'user' : 'assistant'} meta={meta}>
+        <EventContent event={event} />
+      </Message>
+    );
+  }
+
+  return (
+    <Stack compact>
+      <Row between>
+        <Badge>{eventLabel(event.type)}</Badge>
+        {meta}
+      </Row>
+      {known && <EventContent event={event} />}
+      <Divider />
+    </Stack>
   );
 }
 
@@ -55,11 +85,11 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
   }
 
   if ('reply' in event) {
-    return <Prose>{event.reply}</Prose>;
+    return <Markdown>{event.reply}</Markdown>;
   }
 
   if ('report' in event) {
-    return <Prose>{event.report}</Prose>;
+    return <Markdown>{event.report}</Markdown>;
   }
 
   if ('reason' in event) {
@@ -89,6 +119,8 @@ function eventLabel(type: string): string {
       return 'Reply';
     case 'turn.unanswered':
       return 'Turn ended';
+    case 'drone.reported':
+      return 'Drone report';
     default:
       return type.replaceAll(/[._]/g, ' ');
   }

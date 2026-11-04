@@ -1,7 +1,7 @@
 ---
 name: code-export-consumers
 message: Give every export, source file, and dependency a production consumer, and let the repository's dead-code check prove it.
-paths: ["**/*.ts", "**/package.json", "knip.jsonc"]
+paths: ["**/*.ts", "**/*.tsx", "**/package.json", "knip.jsonc"]
 ---
 
 ## Rules
@@ -33,10 +33,19 @@ For each entry a change adds to the check's configuration, does a runtime, a fra
 
 ## Local adaptations
 
-Within `@mechane-ai/ui`, each public subpath is a module boundary. Layouts and charts consume shared controls through the
-root entry point; these production uses count as consumers of that public control surface.
+Within the published `@mechane-ai/ui` library, each manifest subpath is a public module boundary. Its documented,
+implemented exports are supported APIs for npm consumers. They need not also be used by Mechane's Console.
+This replaces the upstream requirement for a named external consumer on each such entry-point export. It does not
+permit speculative declarations: each supported family needs complete behavior, types, guidance, and synthetic
+catalog examples under contracts 074 and 075. Review the manifest and its named exports as the support commitment.
 
-`mise -C workspaces/core run knip` runs `knip` and then `knip --production` with `includeEntryExports`; production files carry `!` in `knip.jsonc`, and every member's files carry it, the smoke's and its support's among them, so the production run checks them too.
+Knip disables `includeEntryExports` only for `@mechane-ai/ui`. It still checks the package's private exports,
+unreachable files, and unused dependencies. Internal area-to-area imports count as production use but do not justify
+publishing their private helpers. Every other member retains the ordinary consumer requirement.
+
+`mise -C workspaces/core run knip` runs `knip` and then `knip --production` with `includeEntryExports`, except for the
+published UI boundary above. Production files carry `!` in `knip.jsonc`, and every member's files carry it, the smoke's
+and its support's among them, so the production run checks them too.
 knip's Wrangler plugin reads `main` from `packages/worker/app/wrangler.jsonc`, and its mise plugin reads the binaries that the tasks in `mise.toml` run.
 The ignore entries, each with its reason in `knip.jsonc`, are `celld`, which mise installs from its release; `cloudflare`, the Workers runtime's own module; `@swc/core`, which dependency-cruiser loads; and the file `.dependency-cruiser.cjs`, which the checks program loads through dependency-cruiser's API from the root, which holds no source.
 `treatConfigHintsAsErrors` makes a stale ignore entry fail, so the registry generates one workspace for each member that `dependencies.json` declares, its entries following from its kind and its source roots, in place of folder globs that may match nothing.

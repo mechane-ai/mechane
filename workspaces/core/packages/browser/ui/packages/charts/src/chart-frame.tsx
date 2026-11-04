@@ -1,0 +1,198 @@
+import * as stylex from '@stylexjs/stylex';
+import { ChevronDown } from 'lucide-react';
+import { useId } from 'react';
+import type { ReactNode } from 'react';
+import { colors, conditions, controls, spacing, typography } from '../../core/src/tokens.stylex.ts';
+import { chartToneColors } from './chart-theme.ts';
+import type { ChartTone } from './chart-theme.ts';
+
+export type ChartSelection = { readonly selectedId: string | undefined; readonly onSelect: (id: string) => void };
+
+export type ChartFrameProps = {
+  readonly title: string;
+  readonly description?: string | undefined;
+  readonly children: ReactNode;
+  readonly actions?: ReactNode;
+  readonly footer?: ReactNode;
+};
+
+export type ChartLegendItem = { readonly id: string; readonly label: string; readonly tone: ChartTone };
+
+export type ChartLegendProps = { readonly items: ReadonlyArray<ChartLegendItem>; readonly label?: string | undefined };
+
+const styles = stylex.create({
+  frame: {
+    minWidth: 0,
+    margin: 0,
+    color: colors.ink,
+    backgroundColor: colors.surface,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+  },
+  heading: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'start',
+    gap: spacing.md,
+    paddingBlockEnd: spacing.lg,
+  },
+  caption: { margin: 0, fontSize: typography.inputSize, lineHeight: typography.bodyLineHeight, fontWeight: 500 },
+  description: { margin: 0, marginBlockStart: spacing.xs, color: colors.muted, fontSize: typography.captionSize },
+  actions: { flexShrink: 0 },
+  footer: { marginBlockStart: spacing.md, color: colors.muted, fontSize: typography.captionSize },
+  legend: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+  },
+  legendItem: { display: 'inline-flex', alignItems: 'center', gap: spacing.xs },
+  swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
+  datum: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    minWidth: 0,
+    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    boxSizing: 'border-box',
+    width: '100%',
+    borderWidth: 0,
+    paddingBlock: spacing.xs,
+    paddingInline: spacing.sm,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    textAlign: 'start',
+    overflowWrap: 'anywhere',
+    color: colors.ink,
+    backgroundColor: colors.surface,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  action: {
+    'cursor': 'pointer',
+    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':focus-visible': {
+      outlineColor: colors.focus,
+      outlineStyle: 'solid',
+      outlineWidth: controls.focusWidth,
+      outlineOffset: -2,
+    },
+  },
+  selected: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
+  disclosure: { marginBlockStart: spacing.md, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
+  summary: {
+    'display': 'flex',
+    'alignItems': 'center',
+    'gap': spacing.xs,
+    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'fontFamily': typography.fontFamily,
+    'fontSize': typography.captionSize,
+    'color': colors.muted,
+    'cursor': 'pointer',
+    'listStyle': 'none',
+    'outlineOffset': 2,
+    ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: controls.focusWidth },
+    '::-webkit-details-marker': { display: 'none' },
+  },
+  data: {
+    'minWidth': 0,
+    'maxHeight': 320,
+    'overflow': 'auto',
+    ':focus-visible': {
+      outlineColor: colors.focus,
+      outlineStyle: 'solid',
+      outlineWidth: controls.focusWidth,
+      outlineOffset: -2,
+    },
+  },
+  icon: { width: controls.iconSize, height: controls.iconSize },
+});
+
+export function ChartFrame({ title, description, children, actions, footer }: ChartFrameProps): ReactNode {
+  const titleId = useId();
+
+  return (
+    <figure aria-labelledby={titleId} {...stylex.props(styles.frame)}>
+      <figcaption {...stylex.props(styles.heading)}>
+        <div>
+          <p id={titleId} {...stylex.props(styles.caption)}>
+            {title}
+          </p>
+          {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
+        </div>
+        {actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>}
+      </figcaption>
+      {children}
+      {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+    </figure>
+  );
+}
+
+export function ChartLegend({ items, label = 'Legend' }: ChartLegendProps): ReactNode {
+  return (
+    <ul aria-label={label} {...stylex.props(styles.legend)}>
+      {items.map((item) => (
+        <li key={item.id} {...stylex.props(styles.legendItem)}>
+          <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+          {item.label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function ChartDatumButton({
+  label,
+  selected = false,
+  onSelect,
+  children,
+}: {
+  readonly label: string;
+  readonly selected?: boolean | undefined;
+  readonly onSelect?: (() => void) | undefined;
+  readonly children: ReactNode;
+}): ReactNode {
+  if (onSelect === undefined) {
+    return <div {...stylex.props(styles.datum)}>{children}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      aria-pressed={selected}
+      onClick={onSelect}
+      {...stylex.props(styles.datum, styles.action, selected && styles.selected)}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function ChartDataDisclosure({
+  children,
+  label = 'View data',
+}: {
+  readonly children: ReactNode;
+  readonly label?: string | undefined;
+}): ReactNode {
+  return (
+    <details {...stylex.props(styles.disclosure)}>
+      <summary {...stylex.props(styles.summary)}>
+        <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
+        {label}
+      </summary>
+      <div role="region" aria-label={label} tabIndex={0} {...stylex.props(styles.data)}>
+        {children}
+      </div>
+    </details>
+  );
+}

@@ -1,22 +1,24 @@
 import {
   CopyValue,
-  Details,
   Divider,
   EmptyState,
   Heading,
-  Inspector,
   Metric,
   MetricGrid,
   Muted,
   Notice,
   Prose,
+  Trace as RequestTrace,
   Row,
   Stack,
   Subheading,
   Tabs,
   TextButton,
 } from '@mechane-ai/ui';
+import { Details, Inspector } from '@mechane-ai/ui/collections';
+import { colors, typography } from '@mechane-ai/ui/tokens.stylex';
 import type { Trace } from '@mechane/protocol';
+import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel, moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
@@ -24,6 +26,24 @@ import { RequestWaterfall } from './request-waterfall.tsx';
 import { traceEvidence } from './trace-evidence.ts';
 import { TraceRequest } from './trace-request.tsx';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
+
+const styles = stylex.create({
+  replyPreview: {
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 4,
+    overflow: 'hidden',
+    overflowWrap: 'anywhere',
+    whiteSpace: 'pre-wrap',
+    maxWidth: '72ch',
+    margin: 0,
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    WebkitFontSmoothing: 'antialiased',
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+  },
+});
 
 export type TraceTab = 'Overview' | 'Requests' | 'Events';
 
@@ -39,6 +59,13 @@ type TraceProps = {
 };
 
 const OVERVIEW_REQUESTS = 3;
+
+const requestTraceStatuses = {
+  reserved: 'pending',
+  refused: 'failed',
+  settled: 'complete',
+  unavailable: 'unknown',
+} as const;
 
 export function TurnTrace({
   trace,
@@ -98,7 +125,7 @@ export function TurnTrace({
               <Subheading>Model requests</Subheading>
               <Muted>
                 {evidence.reported > 0
-                  ? `${evidence.tokens.toLocaleString()} tokens reported · ${evidence.reported} of ${count} ${count === 1 ? 'request' : 'requests'}`
+                  ? `${evidence.tokens.toLocaleString('en-US')} tokens reported · ${evidence.reported} of ${count} ${count === 1 ? 'request' : 'requests'}`
                   : 'Token usage unavailable'}
               </Muted>
             </Row>
@@ -145,9 +172,8 @@ function TraceOverview({
   readonly evidence: ReturnType<typeof traceEvidence>;
   readonly onRequests: () => void;
 }): ReactNode {
-  const { turn, items, start, end } = evidence;
+  const { turn, items } = evidence;
   const count = items.length;
-  const timing = { start, end, onRequest };
 
   return (
     <Stack>
@@ -155,16 +181,29 @@ function TraceOverview({
       {count > 0 && (
         <Stack compact>
           <Row between>
-            <Subheading>Request timing</Subheading>
+            <Subheading>Recorded requests</Subheading>
             <TextButton onClick={onRequests}>View requests →</TextButton>
           </Row>
-          <RequestWaterfall {...timing} items={items.slice(0, OVERVIEW_REQUESTS)} selectedId={undefined} />
+          <RequestTrace.Root label="Recorded model requests">
+            {items.slice(0, OVERVIEW_REQUESTS).map((item) => (
+              <RequestTrace.Item
+                key={item.id}
+                id={item.id}
+                label={item.label}
+                description={item.detail}
+                status={requestTraceStatuses[item.status]}
+                statusLabel={item.summary}
+                selected={false}
+                onSelect={onRequest}
+              />
+            ))}
+          </RequestTrace.Root>
           {count > OVERVIEW_REQUESTS && (
             <Muted>
               First {OVERVIEW_REQUESTS} of {count} recorded requests.
             </Muted>
           )}
-          <Muted>Timing runs from allowance reservation to settlement.</Muted>
+          <Muted>Open a request to inspect its reservation-to-settlement timing and recorded usage.</Muted>
         </Stack>
       )}
       <Divider />
@@ -200,7 +239,7 @@ function RecordedOutcome({
     <Stack compact>
       <Subheading>
         {trace.turn.status === 'answered'
-          ? 'Recorded reply'
+          ? 'Reply preview'
           : trace.turn.status === 'unanswered'
             ? 'Outcome'
             : 'Latest evidence'}
@@ -210,11 +249,14 @@ function RecordedOutcome({
           <Muted>The recorded reply is unavailable in this format. Open Events to inspect the history.</Muted>
         ) : (
           <>
-            <Prose>
+            <p {...stylex.props(styles.replyPreview)}>
               {reply.text}
               {reply.isTruncated ? '…' : ''}
-            </Prose>
-            <Row>{replyLink(reply.sequence)}</Row>
+            </p>
+            <Row>
+              {replyLink(reply.sequence)}
+              {reply.isTruncated && <Muted>Reply continues</Muted>}
+            </Row>
           </>
         ))}
       {turn?.status === 'unanswered' && (

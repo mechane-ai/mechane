@@ -37,30 +37,58 @@ Review changed presentation event handlers and lifecycle code for requests, pers
 
 ## Local adaptations
 
-This contract governs `@mechane-ai/ui`, including its `layout` and `charts` modules. `console-views` may use Mechane
-records and domain formatting under contract 113. A resource view does not need a duplicate type for each shared API record.
+This contract governs one published package, `@mechane-ai/ui`. Its internal modules live under `ui/packages`, with
+one manifest and version. `console-views` may use Mechane records and domain formatting under contract 113.
+A resource view does not need a duplicate type for each shared API record.
 
-Keep controls and tokens independent of layouts and charts. Layouts and charts may use controls and tokens but remain
-independent of each other; applications compose them through their public entry points.
-Layouts and charts import shared controls through `../index.ts` and tokens through their direct defining file.
+The module graph permits these dependencies:
 
-The library responsibilities are:
+| Module | Other UI modules it may consume |
+| --- | --- |
+| `core` | None |
+| `layout` | `core` |
+| `collections` | `core` |
+| `content` | `core`, `collections` |
+| `ai` | `core`, `collections`, `content` |
+| `charts` | `core` |
+
+Import another module through a declared public entry point. Import tokens directly from their `.stylex` definition,
+as contract 114 requires. The core entry imports none of the heavier families. Catalog stories may compose the public
+entries together. Applications compose charts, layout, content, and AI without adding reverse dependencies.
+
+Give each implementation library one job inside its owning module:
 
 | Library | Owner and responsibility |
 | --- | --- |
-| Base UI | `ui` wraps accessible controls and preserves their composition protocol. |
+| Base UI | `core` preserves accessible control, focus, overlay, and composition behavior. |
 | Lucide | Browser presentation uses one icon vocabulary and shared icon sizing. |
-| StyleX | `ui/src/tokens.stylex.ts` defines shared visual roles; each component owns its styles. |
-| visx | `ui/charts` computes and renders generic chart geometry. |
+| StyleX | `core/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
+| TanStack Table and Virtual | `collections` models prepared rows and bounds their rendered window. |
+| TanStack Hotkeys | `collections` binds application-owned commands within their declared focus scope. |
+| DayPicker | `collections` supplies calendar mechanics for explicitly supplied date selection. |
+| Resizable Panels | `layout` supplies pointer and keyboard pane resizing. |
+| Pierre Highlights, Diffs, and Trees | `content` owns tokenization, diff geometry, and file-tree mechanics behind Mechane APIs. |
+| Streamdown | `content` parses completed or incomplete Markdown through Mechane renderers. |
+| shadcn message scroller | `ai` owns scroll anchoring and live-edge following through its headless primitive. |
+| visx | `charts` computes and renders geometry from supplied presentation records. |
 
 The application supplies resource reads, mutations, routing, permissions, and record-to-presentation mappings.
-The declared package edges and dependency-cruiser check these imports. Storybook builds the same components from synthetic inputs.
+The declared package edges and dependency-cruiser enforce import boundaries. Storybook builds the same components
+from synthetic inputs. Lazy loading renderer code and packaged assets is component initialization, not a domain read.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `ui-controls-public-entry` (065): enforced: Import shared controls through their public entry, such as `../index.ts` from the layout module
-- dependency-cruiser `ui-controls-independent` (065): enforced: Keep controls independent of layouts and charts, such as `Button` composed inside `AppShell` by the application
-- dependency-cruiser `ui-layout-independent` (065): enforced: Compose charts in the application, such as `Waterfall` passed as `AppShell` content
-- dependency-cruiser `ui-charts-independent` (065): enforced: Render charts in the space their caller supplies, such as `width` accepted without importing `AppShell`
+- dependency-cruiser `ui-core-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-core-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-layout-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-layout-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-collections-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-collections-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-content-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-content-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-ai-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-ai-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
+- dependency-cruiser `ui-charts-public-entry` (065): enforced: Import another UI area through its public entry, such as `../../core/src/index.ts`; import token definitions directly
+- dependency-cruiser `ui-charts-dependencies` (065): enforced: Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`
 
 <!-- End of the generated block. -->

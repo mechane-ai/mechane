@@ -1,8 +1,9 @@
 # Mechane design system proposal
 
-Status: accepted, November 3, 2026. This records the design and adoption decisions behind Mechane UI and its Console
-consumers. The [component guide](components.md) describes supported APIs, and the [Console guide](console.md) describes
-the shipped application. The broader catalog below remains conditional on a real product consumer.
+Status: accepted, November 3, 2026. This records the initial design and adoption decisions behind Mechane UI and its
+Console consumers. The later [UI expansion](ui-capability-proposal.md) supersedes the source layout and Console-consumer
+prerequisite below. The [component guide](components.md) describes supported APIs, and the [Console guide](console.md)
+describes the shipped application.
 
 The design system should make a new screen feel like the rest of Mechane with little custom styling. Controls share
 interaction behavior, typography, spacing, and states. Layout and chart components remain useful without importing

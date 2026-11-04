@@ -1,7 +1,7 @@
 ---
 name: code-lint-suppressions
 message: Suppress a lint or check finding only at the one site it reports, with the rule's name and a reason, and fail checks on every suppression that suppresses nothing.
-paths: ["**/*.ts", ".oxlintrc.json", "knip.jsonc", ".jscpd.json", "sgconfig.yml", "lint/**"]
+paths: ["**/*.ts", "**/*.tsx", ".oxlintrc.json", "knip.jsonc", ".jscpd.json", "sgconfig.yml", "lint/**"]
 ---
 
 ## Rules
@@ -51,6 +51,13 @@ The owned checks of `mise -C workspaces/core run checks` honor no suppression, s
 Each rule's entry declares its suppression budget, `maxSuppressions`, 0 by default and at most `maxRuleSuppressions`; `rules:check` counts each rule that a suppression of a TypeScript file names, with or without its plugin, and fails on a rule suppressed more often than its budget allows. The rules with a budget above 0 are `consistent-type-assertions` and `no-unsafe-type-assertion`, for `wireKeys`, `sql-statement-not-literal`, for a fork's copy, `consistent-type-definitions`, for the two global augmentations, and `no-bitwise`, for three masks; their entries state each budget.
 `rules:check` also counts each `// <check>-allow <rule> -- <reason>` against the owned rule's budget, which is 0, and each `// jscpd:ignore-start -- <reason>` against 035's `jscpdSuppressions`.
 oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/name-rules/src/oxlint-opt-outs.json`.
+One `typescript/no-deprecated` suppression is permitted at the `nativeEvent.keyCode` read in
+`packages/browser/ui/packages/ai/src/prompt-input.tsx`. It recognizes composition-confirming Enter events whose
+`isComposing` flag is already false in affected WebKit versions. The reason cites the browser behavior;
+the registry limits this rule to one suppression and checks TSX directives too. This is not permission to use
+deprecated keyboard fields elsewhere. [WebKit report 324380](https://bugs.webkit.org/show_bug.cgi?id=324380)
+records the affected event ordering.
+
 The copied `licenses/*.js` assets contain only verbatim legal comments, which bundlers retain in distributed artifacts; the registry excludes this exact data-asset pattern from oxlint because it contains no implementation code.
 A rule in rollout is a ratchet, and its generated baseline is no suppression: `lint/baseline/<rule>.json` maps each file to its count of the rule's findings, with sorted keys, a file it does not list has none, and no person edits it.
 Each rule's entry in the registry declares its `status`, `proposed`, `ratchet` or `enforced`, and the `phase` whose sweep clears it, or `adopted` for a rule enforced before the standard; `rules:measure` prints both, and `rules:check` fails on an ast-grep rule file that no entry registers.

@@ -1,4 +1,5 @@
-import { Cell, EmptyState, Muted, Stack, Status, Table } from '@mechane-ai/ui';
+import { EmptyState, Muted, Stack, Status } from '@mechane-ai/ui';
+import { Cell, Table } from '@mechane-ai/ui/collections';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';

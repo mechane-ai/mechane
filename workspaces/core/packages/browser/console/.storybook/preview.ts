@@ -3,7 +3,7 @@ import '@mechane-ai/ui/styles.css';
 import './styles.css';
 
 const preview: Readonly<Preview> = {
-  tags: ['autodocs', '!test'],
+  tags: ['autodocs', 'supported', '!test'],
   parameters: {
     layout: 'padded',
     a11y: { test: 'off' },

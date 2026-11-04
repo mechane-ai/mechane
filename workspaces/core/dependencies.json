@@ -581,14 +581,31 @@
     "confines": ["cookie"]
   },
   "@mechane-ai/ui": {
-    "owns": "Mechane UI: product-neutral controls, design tokens, application layouts and visx charts, with one versioned public package",
+    "owns": "Mechane UI: product-neutral controls, layout, collections, content, AI presentation and analytical charts through one versioned public package",
     "layer": 3,
     "lane": "browser",
     "dialect": "plain",
     "kind": "library",
     "criterion": "closure",
     "consumers": ["@mechane/console-views", "@mechane/console"],
-    "confines": ["@base-ui/react", "@visx/scale", "@visx/shape"]
+    "confines": [
+      "@base-ui/react",
+      "@daypicker/react",
+      "@pierre/diffs",
+      "@pierre/highlights",
+      "@pierre/theme",
+      "@pierre/trees",
+      "@shadcn/react",
+      "@tanstack/react-hotkeys",
+      "@tanstack/react-table",
+      "@tanstack/react-virtual",
+      "@visx/hierarchy",
+      "@visx/scale",
+      "@visx/shape",
+      "react-resizable-panels",
+      "streamdown",
+      "strip-ansi"
+    ]
   },
   "@mechane/console-data": {
     "owns": "Browser sessions, workspace-scoped reactive collections, bounded activity queries, and acknowledged API commands",

@@ -1,4 +1,7 @@
-import { Columns, CopyValue, Details, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/ui';
+import { Collapsible, Columns, CopyValue, Divider, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/ui';
+import { BreakdownBar } from '@mechane-ai/ui/charts/cartesian';
+import { Details } from '@mechane-ai/ui/collections';
+import { JsonViewer } from '@mechane-ai/ui/content';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';
@@ -84,18 +87,18 @@ export function TraceRequest({
           />
         </Stack>
         {settled && request.basis === 'usage' ? (
-          <Stack compact>
-            <Subheading>Token usage</Subheading>
-            <Details
-              items={[
-                { label: 'Input', value: request.inputTokens.toLocaleString() },
-                { label: 'Output', value: request.outputTokens.toLocaleString() },
-                { label: 'Cache read', value: request.cacheReadTokens.toLocaleString() },
-                { label: 'Cache write', value: request.cacheWriteTokens.toLocaleString() },
-              ]}
-            />
-            <Muted>Input excludes cached tokens.</Muted>
-          </Stack>
+          <BreakdownBar
+            title="Token usage"
+            items={[
+              { id: 'input', label: 'Input', value: request.inputTokens, tone: 'series1' },
+              { id: 'output', label: 'Output', value: request.outputTokens, tone: 'series2' },
+              { id: 'cache-read', label: 'Cache read', value: request.cacheReadTokens, tone: 'series3' },
+              { id: 'cache-write', label: 'Cache write', value: request.cacheWriteTokens, tone: 'series4' },
+            ]}
+            total={request.inputTokens + request.outputTokens + request.cacheReadTokens + request.cacheWriteTokens}
+            formatValue={(value) => value.toLocaleString('en-US')}
+            description="Input excludes cached tokens."
+          />
         ) : (
           <Muted>
             {request.status === 'refused'
@@ -111,6 +114,12 @@ export function TraceRequest({
         <Muted>Request ID</Muted>
         <CopyValue label="request ID" value={request.id} />
       </Stack>
+      <Collapsible.Root key={request.id}>
+        <Collapsible.Trigger>Recorded request data</Collapsible.Trigger>
+        <Collapsible.Panel>
+          <JsonViewer label="Recorded request JSON" value={Schema.encodeSync(Dispatch)(request)} />
+        </Collapsible.Panel>
+      </Collapsible.Root>
     </Stack>
   );
 }

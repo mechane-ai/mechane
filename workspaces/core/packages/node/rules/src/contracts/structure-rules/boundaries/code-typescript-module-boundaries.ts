@@ -74,18 +74,18 @@ export const codeTypescriptModuleBoundaries = {
       rewrites: [
         {
           before: {
-            'packages/browser/ui/src/index.ts': "export { countRows } from './rows.ts';\n",
-            'packages/browser/ui/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
-            'packages/browser/ui/src/layout/index.ts': "export { layoutRows } from './rows.ts';\n",
-            'packages/browser/ui/src/layout/rows.ts':
-              "import { countRows } from '../index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
+            'packages/browser/ui/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/ui/packages/core/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/ui/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/ui/packages/layout/src/rows.ts':
+              "import { countRows } from '../../core/src/index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
           },
           after: {
-            'packages/browser/ui/src/index.ts': "export { countRows } from './rows.ts';\n",
-            'packages/browser/ui/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
-            'packages/browser/ui/src/layout/index.ts': "export { layoutRows } from './rows.ts';\n",
-            'packages/browser/ui/src/layout/rows.ts':
-              "import { countRows } from '../index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
+            'packages/browser/ui/packages/core/src/index.ts': "export { countRows } from './rows.ts';\n",
+            'packages/browser/ui/packages/core/src/rows.ts': 'export function countRows(): number {\n  return 1;\n}\n',
+            'packages/browser/ui/packages/layout/src/index.ts': "export { layoutRows } from './rows.ts';\n",
+            'packages/browser/ui/packages/layout/src/rows.ts':
+              "import { countRows } from '../../core/src/index.ts';\n\nexport function layoutRows(): number {\n  return countRows();\n}\n",
           },
         },
         {

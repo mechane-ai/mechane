@@ -1,6 +1,6 @@
 ---
 name: ui-motion-lifecycle
-paths: ["packages/browser/ui/src/**"]
+paths: ["packages/browser/ui/packages/**/src/**"]
 message: Keep animation interruptible, reduced-motion aware, pausable, paused when unseen, and released on removal.
 ---
 

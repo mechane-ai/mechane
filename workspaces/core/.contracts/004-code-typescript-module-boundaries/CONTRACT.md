@@ -51,7 +51,7 @@ The boundaries check of `mise -C workspaces/core run checks` cruises once with `
 Among them are a cycle through any import, type-only and dynamic imports included, since swc keeps type-only ones, and an import it cannot resolve.
 
 Deviation (ST-09): only a library package has an entry point, normally its `src/index.ts`, which its manifest's exports map lists; no other folder has one.
-The compiler-required `ui/tokens` definition export in contract 114 points directly to `src/tokens.stylex.ts`.
+The compiler-required `ui/tokens.stylex` definition export in contract 114 points directly to `packages/core/src/tokens.stylex.ts`.
 Dependency checks resolve that declared public target without allowing arbitrary deep imports.
 A file imports each name from the file that declares it, never through an `index.ts` and never through its own package's entry, which the barrels normalizer's dry run rejects.
 This replaces "Give each source folder that other folders import an entry point" and "Export every value and type the folder shares by name from that entry point".
@@ -65,7 +65,8 @@ The barrels normalizer of `mise run fix` rewrites each import that passes throug
 Its dry run fails the checks on any import it would rewrite.
 A package's own files import its declaring files from every source root, its `scripts` as well as its `src`.
 Imports between manifest-exported subpath modules retain their public entry point, such as UI layouts importing controls
-from `../index.ts`. Imports within one such module still use declaring files.
+from `../../core/src/index.ts`. Imports within one such module still use declaring files.
+Supported manifest-exported UI APIs follow the public-library consumer rule in contract 006.
 It only moves imports, so it runs over the folders that only the live release verification runs too (TS-07).
 Its commits are proven by the fingerprint, or by the same module bodies in the unminified bundle where a removed barrel changes the order of a bundle's modules.
 

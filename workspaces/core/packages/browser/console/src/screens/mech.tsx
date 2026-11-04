@@ -135,7 +135,7 @@ function MechDetails({
             <ToolbarAction
               icon={<Send size={16} aria-hidden />}
               disabled={mech.status === 'archived'}
-              onClick={() => setMessage((value) => !value)}
+              onClick={() => setMessage(true)}
             >
               Send message
             </ToolbarAction>

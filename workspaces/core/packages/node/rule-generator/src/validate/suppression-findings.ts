@@ -5,8 +5,8 @@ import { readInput } from '../files/read-input.ts';
 import type { RegistryFinding } from '../types.ts';
 import { suppressionBudget } from './suppression-budget.ts';
 
-/** The extension of a TypeScript file, whose suppressions the budgets count. */
-const TYPESCRIPT_EXTENSION = '.ts';
+/** TypeScript and React sources share the same suppression budgets. */
+const TYPESCRIPT_EXTENSIONS = ['.ts', '.tsx'] as const;
 
 /**
  * Every suppression form, each capturing the rules it names: oxlint's and ast-grep's next-line directives, an owned
@@ -36,7 +36,7 @@ export const suppressionFindings = Effect.fn('suppressionFindings')(function* ({
   files,
 }: SuppressionFindingsInput): Effect.fn.Return<ReadonlyArray<RegistryFinding>, GenerateFailed> {
   const texts = yield* Effect.forEach(
-    files.filter((file) => file.endsWith(TYPESCRIPT_EXTENSION)),
+    files.filter((file) => TYPESCRIPT_EXTENSIONS.some((extension) => file.endsWith(extension))),
     (path) => readInput({ path }),
     { concurrency: 8 },
   );
@@ -61,5 +61,11 @@ function suppressedNames({ line }: SuppressedNamesInput): ReadonlyArray<string> 
     return Option.toArray(Option.flatMap(match, (found) => Option.fromNullishOr(found[1])));
   };
 
-  return SUPPRESSION_FORMS.flatMap(capturedNames).flatMap((names) => names.split(', '));
+  const names = SUPPRESSION_FORMS.flatMap(capturedNames).flatMap((captured) => captured.split(', '));
+
+  return names.map((name) => {
+    const start = name.lastIndexOf('/') + 1;
+
+    return name.slice(start);
+  });
 }

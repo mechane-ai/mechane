@@ -56,6 +56,7 @@ The hover rule checks the named condition's presence. Browser review verifies it
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+- oxlint `typescript/no-deprecated` (068): enforced, `"error"`
 - ast-grep `ui-hover-capability` (068): enforced
 
 <!-- End of the generated block. -->

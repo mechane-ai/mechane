@@ -39,6 +39,12 @@ An execution's id is `task-<n>`, its pi tool task's, which only `executionId({ t
 An id kind's branded schema in `@mechane/protocol` types its ids apart from every other kind's: `TurnId`, `DispatchId`, `ThreadId` and `DroneId` brand `RecordId`, and `ExecutionId` brands its `task-<n>` form.
 Each brand lands whole: every protocol schema of its kind decodes under it, and so do the Worker's records and the CLI's inputs of that kind, so a reader's id carries it; a log line names each record by `LogId`, a plain UUID. A kind without a brand takes one in the protocol's records with its first consumer.
 An id carries its kind's brand: ast-grep `plain-id-type` ratchets an id property typed as a plain `string`, `plain-id-schema` an id field decoded as `Schema.String`, `RecordId` or `RandomId`, and `bare-random-uuid` a random UUID made outside an id's `make`, such as `TurnId.make(crypto.randomUUID())`.
+
+Generic presentation models in `packages/browser/ui` accept stable, caller-supplied string identities for rows, columns,
+series, tree nodes, commands and messages. Compare these values whole; the library does not create persisted records
+or recover domain fields from their ids. The `plain-id-type` exception is limited to this UI package. Application data,
+API records and backend records keep their protocol brands, including when an application passes an id to a UI input.
+Use the existing domain id directly rather than generating a second presentation id for the same record.
 A machine's id is drawn and stored before its start, and every guest route carries it, so a request reaches only the machine its row names.
 Threads and drones take ids from `crypto.randomUUID()` in the transaction that records them, and each row keeps its open_thread or start_drone task's id, so pi's rerun of the call answers the recorded thread or drone; a drone also draws its report item's id there, which its one end takes.
 A drone's conversation is found by the session document `mechane.drone` under the drone's id, its brief's request id is the drone's id, which pi admits once, and a drone binds its conversation's provider session id once, which tells its tool calls and dispatches from its mech's.

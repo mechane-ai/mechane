@@ -1,7 +1,7 @@
 ---
 name: ui-waterfall-charts
 message: Render interval, point, and unavailable timing evidence without inventing endpoints or hiding its values.
-paths: ["packages/browser/ui/src/charts/**"]
+paths: ["packages/browser/ui/packages/charts/src/waterfall.tsx","packages/browser/ui/packages/charts/src/waterfall.stories.tsx"]
 ---
 
 ## Rules
@@ -27,8 +27,8 @@ Read the same evidence without the graphic, and compare its labels and values wi
 
 `Waterfall` is the generic renderer. The Mechane request adapter in `console-views` maps recorded timestamps and outcomes
 onto its inputs. Contract 113 owns the distinction between reservation-to-settlement and inference time.
-Time-series chart requirements are not adopted for this interval view. A separate line or area chart needs its own
-actual consumer and data source before that contract is adopted.
+Contract 077 owns line and area charts. Their observation model does not replace this interval view's explicit
+interval, point, and unavailable evidence.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

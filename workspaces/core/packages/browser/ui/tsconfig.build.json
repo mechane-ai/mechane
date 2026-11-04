@@ -4,10 +4,10 @@
     "noEmit": false,
     "declaration": true,
     "emitDeclarationOnly": true,
-    "rootDir": "src",
+    "rootDir": ".",
     "outDir": "dist"
   },
   "files": [],
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["src/**/*.stories.tsx"]
+  "include": ["packages/**/*.ts", "packages/**/*.tsx"],
+  "exclude": ["packages/**/*.stories.tsx"]
 }

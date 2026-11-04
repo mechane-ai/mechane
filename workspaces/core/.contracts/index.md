@@ -1,7 +1,7 @@
 # Product contracts
 
 These rules govern `workspaces/core` after the [repository contracts](../../../.contracts/index.md). Contracts 001 to
-064 are adopted from tenet-contracts v11.0.0, with 016, 020 and 064 updated to v11.1.0. UI contracts 065–075 adopt
+064 are adopted from tenet-contracts v11.0.0, with 016, 020 and 064 updated to v11.1.0. UI contracts 065–078 adopt
 v13.0.1. Each one's `paths` narrow it and its `## Local adaptations` state this product's choices.
 The rule registry, [`@mechane/rules`](../packages/node/rules/src/index.ts), holds each value a tool
 enforces once and generates every tool's configuration and the block that ends each contract's adaptations. Contracts
@@ -16,7 +16,7 @@ from 101 are Mechane's own.
 - [Package boundaries](003-code-typescript-package-boundaries/CONTRACT.md): exports maps and workspace links only.
 - [Module boundaries](004-code-typescript-module-boundaries/CONTRACT.md): entry points and an acyclic file graph.
 - [Entry points](005-code-typescript-entry-points/CONTRACT.md): an `index.ts` holds named re-exports only.
-- [Export consumers](006-code-export-consumers/CONTRACT.md): every export, file and dependency has a consumer.
+- [Export consumers](006-code-export-consumers/CONTRACT.md): real consumers and a deliberate supported npm UI boundary.
 
 ## Structure
 
@@ -110,8 +110,14 @@ from 101 are Mechane's own.
 - [Motion lifecycle](073-ui-motion-lifecycle/CONTRACT.md): immediate interaction, interruptible motion, and cleanup.
 - [Component guidance](074-ui-component-usage-guidance/CONTRACT.md): supported components and usage beside their source.
 - [Storybook checks](075-ui-storybook-component-checks/CONTRACT.md): synthetic documentation and explicitly retained plays.
+- [Data tables](076-ui-data-tables/CONTRACT.md): prepared rows, stable identity, and controlled sort and page intent.
+- [Time series](077-ui-time-series-charts/CONTRACT.md): honest observations and equal pointer, touch, and keyboard inspection.
+- [Keyboard shortcuts](078-ui-keyboard-shortcuts/CONTRACT.md): scoped commands with application-owned eligibility.
 - [StyleX composition](114-ui-stylex-composition/CONTRACT.md): direct token imports and preserved composed control props.
 - [Waterfall charts](115-ui-waterfall-charts/CONTRACT.md): interval, point, and unavailable geometry with textual evidence.
+- [Content rendering](116-ui-content-rendering/CONTRACT.md): safe supplied text, exact source identity, and bounded inspection.
+- [Conversation state](117-ui-conversation-state/CONTRACT.md): reader intent, draft preservation, and supplied agent activity.
+- [Analytical graphics](118-ui-analytical-graphics/CONTRACT.md): explicit measurements, missing values, domains, and relationships.
 
 ## Mechane
 

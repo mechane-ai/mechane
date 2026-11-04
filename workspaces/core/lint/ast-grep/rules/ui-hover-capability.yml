@@ -2,7 +2,7 @@ id: ui-hover-capability
 language: Tsx
 severity: error
 message: 'Gate hover with the pointer condition, such as `{ [conditions.hoverPointer]: colors.ink }` (068)'
-files: ['packages/browser/ui/src/**/*.ts', 'packages/browser/ui/src/**/*.tsx']
+files: ['packages/browser/ui/packages/**/*.ts', 'packages/browser/ui/packages/**/*.tsx']
 rule:
   kind: pair
   has:

@@ -14,9 +14,6 @@
   "packages/node/cli/src/output/render-line.ts": 7,
   "packages/node/commands/src/command-reference.ts": 3,
   "packages/node/commands/src/schemas.ts": 1,
-  "packages/node/rename/src/identifiers/linked-edits.ts": 1,
-  "packages/node/rename/src/schemas.ts": 1,
-  "packages/node/rename/src/server/edit-text.ts": 3,
   "packages/node/rename/src/server/rename-at.ts": 1,
   "packages/worker/harness/src/models/metered-models.ts": 1
 }

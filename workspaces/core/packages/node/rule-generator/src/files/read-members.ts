@@ -21,6 +21,9 @@ const PACKAGE_MANIFEST = 'package.json';
 const DEFINITION_EXPORTS: Readonly<Record<string, Readonly<Record<string, string>>>> =
   CONTRACTS['package-layers'].values.definitionExports;
 
+const MEMBER_SOURCE_FOLDERS: Readonly<Record<string, ReadonlyArray<string>>> =
+  CONTRACTS['package-layers'].values.memberSourceFolders;
+
 /** The part of pnpm-workspace.yaml the generator reads: the globs of the member folders. */
 const WorkspaceFolders = Schema.Struct({ packages: Schema.Array(Schema.String) });
 
@@ -111,12 +114,16 @@ const packageMember = Effect.fn('packageMember')(function* ({
 
   const isPresent: (root: string) => boolean = (root) => existsSync(join(WORKSPACE_FOLDER, root));
 
-  const roots = CONTRACTS['package-layers'].values.sourceFolders
-    .map((source) => posix.join(folder, source))
-    .filter(isPresent);
+  const memberSources = Record.get(MEMBER_SOURCE_FOLDERS, name);
+
+  const sources = Option.getOrElse(memberSources, () => CONTRACTS['package-layers'].values.sourceFolders);
+
+  const roots = sources.map((source) => posix.join(folder, source)).filter(isPresent);
 
   const packageFolder = join(WORKSPACE_FOLDER, folder);
-  const hasStories = globSync('src/**/*.stories.tsx', { cwd: packageFolder }).length > 0;
+
+  const storyPatterns = sources.map((source) => posix.join(source, '**/*.stories.tsx'));
+  const hasStories = globSync(storyPatterns, { cwd: packageFolder }).length > 0;
 
   return Option.map(Record.get(manifest, name), (entry) => ({ name, folder, roots, exports, hasStories, entry }));
 });

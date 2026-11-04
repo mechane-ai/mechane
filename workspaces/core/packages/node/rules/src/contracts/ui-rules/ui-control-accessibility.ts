@@ -1,10 +1,18 @@
-import { ADOPTED, AST_GREP_DEFAULTS } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** Browser review checks names, keyboard behavior, and focus beyond static types. */
 export const uiControlAccessibility = {
   values: {},
   rules: [
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'typescript/no-deprecated',
+      value: Severity.Error,
+      maxSuppressions: 1,
+      standard: '068',
+    },
     {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,

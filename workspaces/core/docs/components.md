@@ -4,26 +4,30 @@ Use the component catalog to choose a maintained component and copy its recommen
 `pnpm --filter @mechane/console storybook` from `workspaces/core`. The same runner discovers package-local stories and
 Console screen examples. Every example uses fixed synthetic data and works without application services.
 
-**Supported** means a component has a Console consumer, maintained public behavior, and catalog guidance. It belongs to
-the independently versioned `@mechane-ai/ui` package, whose components the application compiles into its release.
-Proposed components are not callable APIs. The package entry points and colocated stories describe the available
-components; there is no separate component registry.
+**Supported** means a component belongs to the published `@mechane-ai/ui` API and has maintained behavior, types,
+guidance, and synthetic catalog examples. Console adoption provides additional integration evidence; a generic library
+capability does not need a Console screen to be supported. Library stories inherit the `supported` catalog tag, whose
+promise is defined once in Foundations for the package release. Application-only Screens opt out. Plans do not create
+callable APIs.
+
+One npm package contains internal modules for core, layout, collections, content, AI, and charts. Its manifest and named
+entry-point exports define the API. Colocated stories explain use; there is no parallel component registry. Mechane
+compiles those same sources into its application release, independently of the UI package version.
 
 The [package guide](../packages/browser/ui/README.md) covers installing the npm package and its compiled CSS.
 
 ## Choose
 
-| Need                     | Owner and example                                                                              |
-| ------------------------ | ---------------------------------------------------------------------------------------------- |
-| Visual roles             | [Token foundations](../packages/browser/ui/src/tokens.stories.tsx)                             |
-| An action or destination | [Button, IconButton, TextButton, and TextLink](../packages/browser/ui/src/actions.stories.tsx) |
-| A labeled input          | [Field, Input, and Textarea](../packages/browser/ui/src/forms.stories.tsx)                     |
-| A fixed choice           | [Select](../packages/browser/ui/src/select.stories.tsx)                                        |
-| A focused decision       | [Dialog](../packages/browser/ui/src/dialog.stories.tsx)                                        |
-| Supplemental help        | [Tooltip](../packages/browser/ui/src/tooltip.stories.tsx)                                      |
-| A page frame             | [AppShell and its public parts](../packages/browser/ui/src/layout/app-shell.stories.tsx)       |
-| Comparable records       | [Table and cursor actions](../packages/browser/ui/src/table.stories.tsx)                       |
-| Recorded timing          | [Waterfall](../packages/browser/ui/src/charts/waterfall.stories.tsx)                           |
+| Need                                     | Owner and guide                                                                                                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Actions, form fields, and choices        | [Core controls](ui-controls.md): native forms, Base UI composition, and controlled values.                                                                           |
+| Decisions, disclosure, and feedback      | [Feedback](ui-feedback.md): overlays, loading, status, and generic Trace activity.                                                                                   |
+| Application shell and split panes        | [Layout stories](../packages/browser/ui/packages/layout/src/app-shell.stories.tsx) and [resizing](../packages/browser/ui/packages/layout/src/resizable.stories.tsx). |
+| Comparable records, dates, and commands  | [Collections](ui-collections.md): prepared rows, stable selection, and application-owned operations.                                                                 |
+| Source, changes, and recorded output     | [Content](ui-content.md): Pierre views, safe Markdown, and bounded inspection.                                                                                       |
+| Conversations and agent workflows        | [AI](ui-ai.md): prompt composition, live-edge scrolling, citations, approvals, and recipes.                                                                          |
+| Trends, distributions, and relationships | [Charts](ui-charts.md): explicit measurements, values, and linked inspection.                                                                                        |
+| Shared visual roles                      | [Token foundations](../packages/browser/ui/packages/core/src/tokens.stories.tsx).                                                                                    |
 
 Each family’s metadata describes its root and public parts, their alternatives, and the decisions the application must
 supply. Components accept presentation values; resource mapping, authorization, routing, and requests stay with their
@@ -35,7 +39,8 @@ UI props; the tables are not an exhaustive API reference.
 
 Import shared tokens directly from `@mechane-ai/ui/tokens.stylex`. StyleX needs the defining export to compile
 variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to
-`ui/layout`. The supported theme is light.
+`ui/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from the root
+entry to the document root so portaled controls inherit it. Applications own theme preference and persistence.
 
 Keep the compact desktop type and spacing scale. Text-entry controls use 16px text on coarse pointers, and standalone
 controls provide 44px touch targets. Hover styles apply only to a fine pointer that supports hover. Shared tokens own
@@ -59,8 +64,8 @@ that describe the operation; a refresh failure belongs beside the retained conte
 
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a
-disabled control is unavailable. The [form example](../packages/browser/ui/src/forms.stories.tsx) shows native
-validation and local draft state.
+disabled control is unavailable. The [form example](../packages/browser/ui/packages/core/src/forms.stories.tsx) shows
+native validation and local draft state.
 
 Multi-part controls retain Base UI names such as `Root`, `Trigger`, and `Popup`. Use `render` to compose triggers.
 Shared styles apply first, then concrete native classes and style objects are merged for upstream composition. The typed
@@ -69,20 +74,38 @@ Shared styles apply first, then concrete native classes and style objects are me
 State callbacks for `className` and `style` work on a directly rendered control or the outermost trigger. The pinned
 Base UI release cannot preserve those callbacks on an inner React element supplied through `render`. Use concrete
 classes and style objects on that element. For state-dependent composition, use a `render` function, spread its supplied
-props, and choose named variants from its state. The [Dialog examples](../packages/browser/ui/src/dialog.stories.tsx)
-show both patterns with a Tooltip. Base UI documents
-[render functions](https://base-ui.com/react/handbook/composition#render-function) and their
+props, and choose named variants from its state. The
+[Dialog examples](../packages/browser/ui/packages/core/src/dialog.stories.tsx) show both patterns with a Tooltip. Base
+UI documents [render functions](https://base-ui.com/react/handbook/composition#render-function) and their
 [explicit prop merging](https://base-ui.com/react/utils/merge-props).
 
 Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use Loading for
 missing initial data and EmptyState for a successful empty result. The application decides when access loss or a
 resource change requires clearing data.
 
+## Data and content
+
+Use `Table` for custom semantic table structures and `DataTable` for rows compared through shared columns. Pass already
+prepared rows to DataTable. Sorting, query state, pagination, and eligibility belong to the application; virtualization
+only bounds the rendered rows. A command's shortcut calls the same eligible action as its visible control.
+
+Use `Trace` for ordered activity and disclosure, `Waterfall` for supplied temporal evidence, and `RelationGraph` for
+explicit relationships. Charts receive prepared measurements, formatters, units, and missing-value meaning. They do not
+query a backend, compute an embedding, or turn a page of records into an installation-wide total.
+
+Use `Markdown` for supplied text and `CodeBlock` for source. Renderers preserve readable text before optional heavy code
+loads. Applications redact private values before passing them in. Remote media, links, and embedded content have
+explicit presentation policies; recorded output never becomes an executable terminal or web preview.
+
+Conversation owns scroll anchoring while the application owns message identity and transport. PromptInput receives a
+draft and reports submission. Approval receives an identified pending decision and reports intent. Neither component
+assumes that a click or a successful request means the underlying operation has completed.
+
 ## Review
 
-Start with each family’s **Recommended** story. Other stories show supported variants and meaningful states. Narrow
-examples cover layouts that change behavior, including tables, navigation, tabs, and Waterfall. Long labels and unknown
-values stay part of those maintained examples.
+Start with each family’s first example or **Recommended** story. Other stories show supported variants and meaningful
+states. Narrow examples cover layouts that change behavior, including tables, navigation, tabs, and Waterfall. Long
+labels and unknown values stay part of those maintained examples.
 
 Use Storybook’s accessibility panel, then inspect keyboard order, visible focus, labels, announcements, dismissal, and
 focus return. The catalog does not import Console global styles, so components must own their appearance. Automated

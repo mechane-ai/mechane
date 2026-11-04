@@ -1,0 +1,156 @@
+import * as stylex from '@stylexjs/stylex';
+import { ChevronLeft, ChevronRight, Columns3, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { Button, Checkbox, IconButton, Popover, Text } from '../../core/src/index.ts';
+import { colors, spacing, typography } from '../../core/src/tokens.stylex.ts';
+
+const styles = stylex.create({
+  toolbar: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colors.line,
+  },
+  actions: { display: 'flex', alignItems: 'center', gap: spacing.sm, marginInlineStart: 'auto' },
+  filters: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
+  filter: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingInlineStart: spacing.sm,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colors.line,
+    borderRadius: 4,
+    backgroundColor: colors.surface,
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+  },
+  choices: { display: 'grid', gap: spacing.md, minWidth: 180 },
+  choice: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.sm,
+    color: colors.ink,
+    fontSize: typography.bodySize,
+    fontFamily: typography.fontFamily,
+  },
+  pagination: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.lg,
+  },
+});
+
+export type CollectionToolbarProps = {
+  readonly label: string;
+  readonly children: ReactNode;
+  readonly actions?: ReactNode;
+};
+
+export function CollectionToolbar({ label, children, actions }: CollectionToolbarProps): ReactNode {
+  return (
+    <div role="group" aria-label={label} {...stylex.props(styles.toolbar)}>
+      {children}
+      {actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>}
+    </div>
+  );
+}
+
+export type FilterChip = { readonly id: string; readonly label: string };
+
+export type FilterChipsProps = {
+  readonly filters: ReadonlyArray<FilterChip>;
+  readonly onRemove: (id: string) => void;
+  readonly label?: string;
+};
+
+export function FilterChips({ filters, onRemove, label = 'Applied filters' }: FilterChipsProps): ReactNode {
+  return (
+    <div role="group" aria-label={label} {...stylex.props(styles.filters)}>
+      {filters.map((filter) => (
+        <span key={filter.id} {...stylex.props(styles.filter)}>
+          {filter.label}
+          <IconButton aria-label={`Remove ${filter.label}`} variant="ghost" onClick={() => onRemove(filter.id)}>
+            <X size={14} aria-hidden="true" />
+          </IconButton>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+export type ColumnChoice = {
+  readonly id: string;
+  readonly label: string;
+  readonly visible: boolean;
+  readonly required?: boolean;
+};
+
+export type ColumnControlsProps = {
+  readonly columns: ReadonlyArray<ColumnChoice>;
+  readonly onVisibilityChange: (columnId: string, visible: boolean) => void;
+  readonly label?: string;
+};
+
+export function ColumnControls({ columns, onVisibilityChange, label = 'Columns' }: ColumnControlsProps): ReactNode {
+  return (
+    <Popover.Root>
+      <Popover.Trigger render={<Button variant="outline" />}>
+        <Columns3 size={16} aria-hidden="true" />
+        {label}
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner align="end">
+          <Popover.Popup aria-label={label}>
+            <div {...stylex.props(styles.choices)}>
+              {columns.map((column) => (
+                <label key={column.id} {...stylex.props(styles.choice)}>
+                  <Checkbox.Root
+                    checked={column.visible}
+                    onCheckedChange={(visible) => onVisibilityChange(column.id, visible)}
+                    disabled={column.required}
+                  >
+                    <Checkbox.Indicator />
+                  </Checkbox.Root>
+                  {column.label}
+                </label>
+              ))}
+            </div>
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+export type CollectionPaginationProps = {
+  readonly description: string;
+  readonly previous: { readonly disabled: boolean; readonly onClick: () => void };
+  readonly next: { readonly disabled: boolean; readonly onClick: () => void };
+};
+
+export function CollectionPagination({ description, previous, next }: CollectionPaginationProps): ReactNode {
+  return (
+    <nav aria-label="Pagination" {...stylex.props(styles.pagination)}>
+      <Text>{description}</Text>
+      <div {...stylex.props(styles.actions)}>
+        <Button variant="outline" disabled={previous.disabled} onClick={previous.onClick}>
+          <ChevronLeft size={16} aria-hidden="true" />
+          Previous
+        </Button>
+        <Button variant="outline" disabled={next.disabled} onClick={next.onClick}>
+          Next
+          <ChevronRight size={16} aria-hidden="true" />
+        </Button>
+      </div>
+    </nav>
+  );
+}

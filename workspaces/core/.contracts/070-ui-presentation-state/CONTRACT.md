@@ -1,6 +1,6 @@
 ---
 name: ui-presentation-state
-paths: ["packages/browser/ui/src/**","packages/browser/console-views/src/**","packages/browser/console/src/screens/**","packages/browser/console/src/workspace.tsx"]
+paths: ["packages/browser/ui/packages/**/src/**","packages/browser/console-views/src/**","packages/browser/console/src/screens/**","packages/browser/console/src/workspace.tsx"]
 message: Hold only ephemeral interaction state and unsaved drafts in presentation; receive application-owned state as inputs.
 ---
 

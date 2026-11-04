@@ -14,13 +14,15 @@
   // The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,
   // since the root that holds it holds no source.
   "ignore": [".dependency-cruiser.cjs"],
-  // Storybook consumes CSF metadata and story exports through discovery; production package exports remain checked.
+  // Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.
   // Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.
   "ignoreIssues": {
     "packages/browser/*/src/**/*.stories.tsx": ["exports"],
+    "packages/browser/ui/packages/**/*.stories.tsx": ["exports"],
     "packages/browser/ui/vite.config.ts": ["exports"],
   },
   // Each member's workspace follows from its kind and source roots, so a new member is checked like the others.
+  // The published @mechane-ai/ui manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.
   "workspaces": {
     // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
     "packages/browser/console": {
@@ -31,9 +33,11 @@
     "packages/browser/console-data": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/console-views": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/ui": {
+      "includeEntryExports": false,
       "vite": false,
-      "entry": ["vite.config.ts", "src/**/*.stories.tsx"],
-      "project": ["src/**/*.{ts,tsx}!"],
+      "entry": ["vite.config.ts", "packages/**/*.stories.tsx"],
+      "project": ["packages/**/*.{ts,tsx}!"],
+      "ignoreDependencies": ["@pierre/theme"],
     },
     "packages/node/boundaries": { "project": ["src/**/*.{ts,tsx}!"] },
     // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.

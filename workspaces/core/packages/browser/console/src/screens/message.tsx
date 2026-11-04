@@ -1,7 +1,8 @@
-import { Button, Field, Muted, Notice, Panel, Row, Stack, Textarea } from '@mechane-ai/ui';
+import { Button, Muted, Notice, Panel, Row, Stack } from '@mechane-ai/ui';
+import { PromptInput } from '@mechane-ai/ui/ai';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { Delivery } from '@mechane/protocol';
+import { Delivery, INBOX_TEXT_MAX_CHARS } from '@mechane/protocol';
 import type { InboxItem, Mech, Turn } from '@mechane/protocol';
 import { useEffect, useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
@@ -134,36 +135,28 @@ export function MessageForm({
 
   return (
     <Panel>
-      <form onSubmit={submit}>
-        <Stack>
-          <Field.Root name="message" disabled={busy}>
-            <Field.Label>Message {mech.name}</Field.Label>
-            <Textarea
-              required
-              maxLength={65_536}
-              value={text}
-              onChange={(event) => {
-                setText(event.target.value);
-                setId(crypto.randomUUID());
-                setError(undefined);
-              }}
-            />
-            <Field.Description>
-              Sending a message may start model requests using this workspace’s allowance.
-            </Field.Description>
-            <Field.Error />
-          </Field.Root>
-          {error !== undefined && <Notice error>{error}</Notice>}
-          <Row>
-            <Button type="submit" variant="solid" pending={busy} pendingLabel="Sending…">
-              Send message
-            </Button>
-            <Button type="button" disabled={busy} onClick={onClose}>
-              Cancel
-            </Button>
-          </Row>
-        </Stack>
-      </form>
+      <PromptInput
+        name="message"
+        label={`Message ${mech.name}`}
+        value={text}
+        onValueChange={(value) => {
+          setText(value);
+          setId(crypto.randomUUID());
+          setError(undefined);
+        }}
+        onSubmit={submit}
+        maxLength={INBOX_TEXT_MAX_CHARS}
+        pending={busy}
+        submitLabel="Send message"
+        enterBehavior="newline"
+        description="Sending a message may start model requests using this workspace’s allowance."
+        error={error}
+        controls={
+          <Button type="button" disabled={busy} onClick={onClose}>
+            Cancel
+          </Button>
+        }
+      />
     </Panel>
   );
 }

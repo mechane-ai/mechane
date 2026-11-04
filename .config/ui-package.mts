@@ -30,13 +30,18 @@ export function buildUiPackage(source: string, destination: string) {
   const distribution = join(staged, 'dist');
   cpSync(join(sourcePackage, 'dist'), distribution, { recursive: true });
   // StyleX hashes variable names from the package and defining path, which must match the compiled CSS.
-  mkdirSync(join(staged, 'src'));
-  copyFileSync(join(sourcePackage, 'src/tokens.stylex.ts'), join(staged, 'src/tokens.stylex.ts'));
+  const tokenDefinition = 'packages/core/src/tokens.stylex.ts';
+  mkdirSync(dirname(join(staged, tokenDefinition)), { recursive: true });
+  copyFileSync(join(sourcePackage, tokenDefinition), join(staged, tokenDefinition));
   copyFileSync(join(sourcePackage, 'README.md'), join(staged, 'README.md'));
   copyFileSync(join(sourcePackage, 'styles.css'), join(staged, 'styles.css'));
   for (const name of ['LICENSE', 'NOTICE']) copyFileSync(join(root, name), join(staged, name));
   const { scripts, devDependencies, publishConfig, ...published } = manifest;
   assert.ok(scripts.build && devDependencies.typescript, 'Mechane UI needs its canonical build and compiler');
+  for (const [dependency, range] of Object.entries(published.dependencies)) {
+    assert.equal(typeof range, 'string');
+    assert.doesNotMatch(String(range), /^(workspace|file|link):/, `Publish ${dependency} with a registry version`);
+  }
   writeFileSync(
     join(staged, 'package.json'),
     JSON.stringify({ ...published, exports: publishConfig.exports }, null, 2) + '\n',
