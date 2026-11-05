@@ -51,9 +51,9 @@ const styles = stylex.create({
   placeholderControls: { fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
 });
 
-export type PromptInputPlaceholderProps = { readonly compact?: boolean };
+export type PromptInputPlaceholderProps = { readonly isCompact?: boolean };
 
-export function PromptInputPlaceholder({ compact = false }: PromptInputPlaceholderProps): ReactNode {
+export function PromptInputPlaceholder({ isCompact = false }: PromptInputPlaceholderProps): ReactNode {
   return (
     <div aria-hidden inert {...stylex.props(styles.form)}>
       <div {...stylex.props(styles.frame)}>
@@ -65,13 +65,13 @@ export function PromptInputPlaceholder({ compact = false }: PromptInputPlacehold
             controlStyles.plainTextarea,
           )}
         >
-          <SkeletonText lines={compact ? 1 : 2} width="22ch" />
+          <SkeletonText lines={isCompact ? 1 : 2} width="22ch" />
         </div>
         <div {...stylex.props(styles.footer)}>
           <div {...stylex.props(styles.controls, styles.placeholderControls)}>
             <SkeletonText width="8ch" />
           </div>
-          <ButtonPlaceholder icon xstyle={styles.action} />
+          <ButtonPlaceholder isIconOnly xstyle={styles.action} />
         </div>
       </div>
     </div>
@@ -87,19 +87,19 @@ export type PromptInputProps = {
   readonly placeholder?: string;
   readonly maxLength?: number;
   readonly required?: boolean;
-  readonly pending?: boolean;
+  readonly isPending?: boolean;
   readonly disabled?: boolean;
-  readonly submitDisabled?: boolean;
+  readonly isSubmitDisabled?: boolean;
   readonly submitLabel?: string;
   readonly pendingLabel?: string;
   readonly enterBehavior?: 'newline' | 'submit';
-  readonly compact?: boolean;
+  readonly isCompact?: boolean;
   readonly description?: ReactNode;
   readonly error?: string | undefined;
   readonly controls?: ReactNode;
   readonly attachments?: ReactNode;
   readonly onStop?: (() => void) | undefined;
-  readonly stopPending?: boolean;
+  readonly isStopPending?: boolean;
   readonly stopLabel?: string;
 };
 
@@ -112,28 +112,28 @@ export function PromptInput({
   placeholder,
   maxLength,
   required = true,
-  pending = false,
+  isPending = false,
   disabled = false,
-  submitDisabled = false,
+  isSubmitDisabled = false,
   submitLabel = 'Send message',
   pendingLabel = 'Sending…',
   enterBehavior = 'newline',
-  compact = false,
+  isCompact = false,
   description,
   error,
   controls,
   attachments,
   onStop,
-  stopPending = false,
+  isStopPending = false,
   stopLabel = 'Stop response',
 }: PromptInputProps): ReactNode {
   const feedbackId = useId();
-  const inputDisabled = disabled || pending;
+  const isInputDisabled = disabled || isPending;
   let tooltipLabel = submitLabel;
 
   if (onStop !== undefined) {
-    tooltipLabel = stopPending ? 'Stopping…' : stopLabel;
-  } else if (pending) {
+    tooltipLabel = isStopPending ? 'Stopping…' : stopLabel;
+  } else if (isPending) {
     tooltipLabel = pendingLabel;
   } else if (enterBehavior === 'submit') {
     tooltipLabel = `${submitLabel} · Enter`;
@@ -157,7 +157,7 @@ export function PromptInput({
 
     event.preventDefault();
 
-    if (!inputDisabled && !submitDisabled && onStop === undefined) {
+    if (!isInputDisabled && !isSubmitDisabled && onStop === undefined) {
       event.currentTarget.form?.requestSubmit();
     }
   }
@@ -165,7 +165,7 @@ export function PromptInput({
   function handleSubmit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
 
-    if (!inputDisabled && !submitDisabled && onStop === undefined) {
+    if (!isInputDisabled && !isSubmitDisabled && onStop === undefined) {
       onSubmit(event);
     }
   }
@@ -177,8 +177,8 @@ export function PromptInput({
         <div {...stylex.props(styles.frame, error !== undefined && styles.invalid)}>
           <Textarea
             appearance="plain"
-            rows={compact ? 1 : 2}
-            compact={compact}
+            rows={isCompact ? 1 : 2}
+            isCompact={isCompact}
             name={name}
             value={value}
             onChange={(event) => onValueChange(event.currentTarget.value)}
@@ -187,7 +187,7 @@ export function PromptInput({
             maxLength={maxLength}
             required={required}
             disabled={disabled}
-            readOnly={pending}
+            readOnly={isPending}
             aria-errormessage={error === undefined ? undefined : feedbackId}
           />
           {attachments}
@@ -201,9 +201,9 @@ export function PromptInput({
                       xstyle={styles.action}
                       type="submit"
                       variant="solid"
-                      aria-label={pending ? pendingLabel : submitLabel}
-                      disabled={disabled || submitDisabled}
-                      pending={pending}
+                      aria-label={isPending ? pendingLabel : submitLabel}
+                      disabled={disabled || isSubmitDisabled}
+                      isPending={isPending}
                     >
                       <ArrowUp size={16} aria-hidden />
                     </IconButton>
@@ -211,14 +211,14 @@ export function PromptInput({
                     <IconButton
                       xstyle={styles.action}
                       type="button"
-                      aria-label={stopPending ? 'Stopping…' : stopLabel}
+                      aria-label={isStopPending ? 'Stopping…' : stopLabel}
                       onClick={(event) => {
                         // The action can replace this button with Send before the click default runs.
                         event.preventDefault();
                         onStop();
                       }}
                       disabled={disabled}
-                      pending={stopPending}
+                      isPending={isStopPending}
                     >
                       <Square size={14} aria-hidden />
                     </IconButton>

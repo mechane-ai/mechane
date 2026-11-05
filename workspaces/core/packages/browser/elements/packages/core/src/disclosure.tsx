@@ -3,9 +3,10 @@ import { Collapsible as BaseCollapsible } from '@base-ui/react/collapsible';
 import * as stylex from '@stylexjs/stylex';
 import { ChevronDown } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type { OpenStateProperties, ValueStateProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   root: {

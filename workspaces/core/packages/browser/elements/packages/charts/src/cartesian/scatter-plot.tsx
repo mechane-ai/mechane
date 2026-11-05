@@ -4,7 +4,8 @@ import { useId, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
@@ -207,7 +208,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
             <ChartDatumButton
               key={point.id}
               label={`${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`}
-              selected={selection?.selectedId === point.id}
+              isSelected={selection?.selectedId === point.id}
               onSelect={selection === undefined ? undefined : () => selection.onSelect(point.id)}
             >
               <span>{point.label}</span>

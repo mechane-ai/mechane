@@ -2,7 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CopyValue } from '../../core/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { viewerStyles } from './viewer-styles.ts';
 
 export type JsonValue =

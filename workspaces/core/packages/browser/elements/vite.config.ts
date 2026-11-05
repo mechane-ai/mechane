@@ -3,11 +3,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import manifest from './package.json' with { type: 'json' };
 
-const DIRECT_EXPORTS: ReadonlySet<string> = new Set(['./styles.css', './tokens.stylex']);
-
 const entries = Object.fromEntries(
   Object.entries(manifest.exports)
-    .filter(([name]) => !DIRECT_EXPORTS.has(name))
+    .filter(([name]) => name !== './styles.css' && !name.endsWith('.stylex'))
     .map(([name, source]) => [name === '.' ? 'index' : name.replace(/^[.]\//, ''), source]),
 );
 

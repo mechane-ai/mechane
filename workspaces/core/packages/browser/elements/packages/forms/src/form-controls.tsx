@@ -5,11 +5,12 @@ import { NumberField as BaseNumberField } from '@base-ui/react/number-field';
 import { Slider as BaseSlider } from '@base-ui/react/slider';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type { ReadOnlyValueProperties, ValueStateProperties } from '../../foundations/src/control-state.ts';
 import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { fieldStyles } from './field-styles.ts';
 import type { InputProps } from './forms.tsx';
 

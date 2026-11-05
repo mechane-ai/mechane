@@ -142,7 +142,7 @@ export const Recommended: Story = {
         <IconButton aria-label="Settings">
           <Settings size={16} aria-hidden />
         </IconButton>
-        <ButtonPlaceholder icon />
+        <ButtonPlaceholder isIconOnly />
       </Row>
     </Stack>
   ),
@@ -159,14 +159,14 @@ export const TextareaRows: Story = {
       <FieldPlaceholder
         label="Description"
         hint="Four rows preserve the standard textarea minimum."
-        multiline
+        isMultiline
         rows={4}
       />
       <Field.Root>
         <Field.Label>Document</Field.Label>
         <Textarea rows={20} defaultValue="Write the longer document here." />
       </Field.Root>
-      <FieldPlaceholder label="Document" multiline rows={20} />
+      <FieldPlaceholder label="Document" isMultiline rows={20} />
     </div>
   ),
 };

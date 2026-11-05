@@ -24,15 +24,15 @@ export function EditMechForm({
   readonly notice?: ReactNode;
 }): ReactNode {
   const [original, setOriginal] = useState(mech);
-  const [conflict, setConflict] = useState(false);
+  const [hasRevisionConflict, setConflict] = useState(false);
   const [name, setName] = useState(mech.name);
   const [model, setModel] = useState(mech.model);
   const [instructions, setInstructions] = useState(Option.getOrElse(mech.instructions, () => ''));
   const [cap, setCap] = useState(String(mech.dailyCapMicros / 1_000_000));
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
-  const hasConflict = conflict || original.revision !== mech.revision;
+  const hasConflict = hasRevisionConflict || original.revision !== mech.revision;
 
   function continueDraft(): void {
     if (name === original.name) {
@@ -58,7 +58,7 @@ export function EditMechForm({
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (busy || hasConflict) {
+    if (isBusy || hasConflict) {
       return;
     }
 
@@ -107,7 +107,7 @@ export function EditMechForm({
   return (
     <>
       <PageToolbar
-        breadcrumb
+        showBreadcrumb
         title={
           <>
             <TextButton onClick={onClose}>{original.name}</TextButton> / Edit definition
@@ -119,7 +119,7 @@ export function EditMechForm({
         <Stack>
           <Heading>Edit {original.name}</Heading>
           <Muted>Editing revision {original.revision}.</Muted>
-          {!busy && hasConflict && (
+          {!isBusy && hasConflict && (
             <DefinitionConflict
               saved={mech.revision === original.revision ? undefined : mech}
               onRefresh={() => {
@@ -130,17 +130,17 @@ export function EditMechForm({
           )}
           <form onSubmit={submit}>
             <Stack>
-              <Field.Root name="name" disabled={busy}>
+              <Field.Root name="name" disabled={isBusy}>
                 <Field.Label>Name</Field.Label>
                 <Input required maxLength={64} value={name} onChange={(event) => setName(event.target.value)} />
                 <Field.Error />
               </Field.Root>
-              <Field.Root name="model" disabled={busy}>
+              <Field.Root name="model" disabled={isBusy}>
                 <Field.Label>Model</Field.Label>
                 <Input required value={model} onChange={(event) => setModel(event.target.value)} />
                 <Field.Error />
               </Field.Root>
-              <Field.Root name="dailyCap" disabled={busy}>
+              <Field.Root name="dailyCap" disabled={isBusy}>
                 <Field.Label>Daily cap (USD)</Field.Label>
                 <Input
                   type="number"
@@ -153,7 +153,7 @@ export function EditMechForm({
                 <Field.Description>Maximum daily model spend for this mech.</Field.Description>
                 <Field.Error />
               </Field.Root>
-              <Field.Root name="instructions" disabled={busy}>
+              <Field.Root name="instructions" disabled={isBusy}>
                 <Field.Label>Instructions</Field.Label>
                 <Textarea
                   maxLength={65_536}
@@ -162,18 +162,18 @@ export function EditMechForm({
                 />
                 <Field.Error />
               </Field.Root>
-              {error !== undefined && <Notice error>{error}</Notice>}
+              {error !== undefined && <Notice hasError>{error}</Notice>}
               <Row>
                 <Button
                   variant="solid"
                   type="submit"
-                  disabled={busy || hasConflict}
-                  pending={busy}
+                  disabled={isBusy || hasConflict}
+                  isPending={isBusy}
                   pendingLabel="Saving…"
                 >
                   Save definition
                 </Button>
-                <Button type="button" disabled={busy} onClick={onClose}>
+                <Button type="button" disabled={isBusy} onClick={onClose}>
                   Cancel
                 </Button>
               </Row>

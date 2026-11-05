@@ -1,0 +1,12 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-control-geometry
+valid:
+  - 'stylex.create({ button: { minHeight: controls.height } });'
+  - "stylex.create({ choice: { height: controls.height, '::before': { height: 16 } } });"
+  - "stylex.create({ input: { height: '100%' }, textarea: { minHeight: 144 }, glyph: { height: 3 } });"
+  - "stylex.create({ button: { '::before': { height: 3 } } });"
+invalid:
+  - 'stylex.create({ button: { height: 32 } });'
+  - "stylex.create({ trigger: { minHeight: { default: '32px' } } });"
+  - 'stylex.create({ choice: { height: { default: 20 } } });'
+  - 'stylex.create({ text: { minHeight: 20 } });'

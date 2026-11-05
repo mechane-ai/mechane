@@ -69,7 +69,7 @@ function Settings(): ReactNode {
           <Field.Description>An empty input remains empty until the application accepts a value.</Field.Description>
         </Field.Root>
         <Slider.Root locale="en-US" value={threshold} onValueChange={setThreshold} min={0} max={100} step={5}>
-          <Row between>
+          <Row shouldSpaceBetween>
             <Slider.Label>Score threshold</Slider.Label>
             <Slider.Value />
           </Row>
@@ -125,7 +125,7 @@ export const RangeAndDisabled: Story = {
   render: () => (
     <Stack>
       <Slider.Root locale="en-US" defaultValue={[20, 80]} min={0} max={100} step={10}>
-        <Row between>
+        <Row shouldSpaceBetween>
           <Slider.Label>Included scores</Slider.Label>
           <Slider.Value />
         </Row>

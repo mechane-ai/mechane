@@ -13,9 +13,9 @@ export type CodeBlockProps = {
   readonly code: string;
   readonly language?: string | undefined;
   readonly filename?: string | undefined;
-  readonly streaming?: boolean;
-  readonly wrap?: boolean;
-  readonly lineNumbers?: boolean;
+  readonly isStreaming?: boolean;
+  readonly shouldWrap?: boolean;
+  readonly showLineNumbers?: boolean;
   readonly selectedLines?: CodeSelection;
   readonly annotations?: ReadonlyArray<CodeAnnotation>;
   readonly maxHeight?: number;
@@ -85,9 +85,9 @@ export function CodeBlock({
   code,
   language = 'text',
   filename,
-  streaming = false,
-  wrap = false,
-  lineNumbers = true,
+  isStreaming = false,
+  shouldWrap = false,
+  showLineNumbers = true,
   selectedLines,
   annotations = [],
   maxHeight = 400,
@@ -103,7 +103,7 @@ export function CodeBlock({
       <div {...stylex.props(viewerStyles.header)}>
         <span {...stylex.props(viewerStyles.label)}>
           {label}
-          {streaming && ' · streaming'}
+          {isStreaming && ' · streaming'}
         </span>
         <CopyValue label={filename ?? 'code'} value={code}>
           Copy
@@ -115,7 +115,7 @@ export function CodeBlock({
         tabIndex={0}
         {...stylex.props(viewerStyles.scrollRegion, styles.viewport(maxHeight))}
       >
-        <pre {...stylex.props(styles.code, wrap && styles.wrapped)}>
+        <pre {...stylex.props(styles.code, shouldWrap && styles.wrapped)}>
           <code {...stylex.props(styles.sourceText)}>
             {lines.map(({ text, line }) => {
               const tokens = result === undefined ? undefined : result.lines[line - 1];
@@ -130,7 +130,7 @@ export function CodeBlock({
               return (
                 <span key={line}>
                   <span {...stylex.props(styles.line, isSelected && styles.selected)}>
-                    {lineNumbers && (
+                    {showLineNumbers && (
                       <span aria-hidden {...stylex.props(styles.number)}>
                         {line}
                       </span>

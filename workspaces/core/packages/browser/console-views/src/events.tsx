@@ -27,9 +27,9 @@ const styles = stylex.create({
   },
 });
 
-export function ActivityPlaceholder({ inset = true }: { readonly inset?: boolean }): ReactNode {
+export function ActivityPlaceholder({ hasInset = true }: { readonly hasInset?: boolean }): ReactNode {
   return (
-    <ActivityFrame inset={inset}>
+    <ActivityFrame hasInset={hasInset}>
       <Timeline.Root label="History">
         {[0, 1, 2].map((item) => (
           <Timeline.Item
@@ -49,18 +49,18 @@ export function ActivityPlaceholder({ inset = true }: { readonly inset?: boolean
 export function Activity({
   page,
   label = 'Mech history',
-  inset = true,
+  hasInset = true,
   expandedSequence,
   runLink,
 }: {
   readonly page: EventPage;
   readonly label?: string;
-  readonly inset?: boolean;
+  readonly hasInset?: boolean;
   readonly expandedSequence?: number | undefined;
   readonly runLink?: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
   return (
-    <ActivityFrame inset={inset}>
+    <ActivityFrame hasInset={hasInset}>
       {page.events.length === 0 ? (
         <EmptyState title="No activity yet">Messages and execution events appear here as the mech works.</EmptyState>
       ) : (
@@ -69,7 +69,7 @@ export function Activity({
             <EventItem
               key={event.sequence}
               event={event}
-              expanded={event.sequence === expandedSequence}
+              isExpanded={event.sequence === expandedSequence}
               runLink={runLink}
             />
           ))}
@@ -79,17 +79,23 @@ export function Activity({
   );
 }
 
-function ActivityFrame({ children, inset }: { readonly children: ReactNode; readonly inset: boolean }): ReactNode {
-  return inset ? <PageContent>{children}</PageContent> : children;
+function ActivityFrame({
+  children,
+  hasInset,
+}: {
+  readonly children: ReactNode;
+  readonly hasInset: boolean;
+}): ReactNode {
+  return hasInset ? <PageContent>{children}</PageContent> : children;
 }
 
 function EventItem({
   event,
-  expanded,
+  isExpanded,
   runLink,
 }: {
   readonly event: ListedEvent;
-  readonly expanded: boolean;
+  readonly isExpanded: boolean;
   readonly runLink: ((turnId: Turn['id'], sequence: number) => ReactNode) | undefined;
 }): ReactNode {
   const known = Schema.is(Event)(event);
@@ -100,9 +106,9 @@ function EventItem({
       icon={<EventIcon type={event.type} />}
       title={eventLabel(event.type)}
       time={known ? <ConsoleTimestamp value={event.occurredAt} /> : undefined}
-      defaultOpen={expanded}
+      defaultOpen={isExpanded}
       details={
-        <Stack compact>
+        <Stack isCompact>
           {known ? <EventContent event={event} /> : <Muted>Newer event format</Muted>}
           <Row>
             <Identifier>Event #{event.sequence}</Identifier>

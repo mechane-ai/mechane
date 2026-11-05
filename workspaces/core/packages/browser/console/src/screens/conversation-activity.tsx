@@ -27,9 +27,9 @@ export function ConversationActivity({
   const turns = snapshot?.turns.filter(Schema.is(Turn)) ?? [];
   const observed = received === undefined ? undefined : turns.find((turn) => turn.inboxItemIds.includes(received.id));
   const [recorded, setRecorded] = useState<Turn>();
-  const retainRecorded = state.kind !== 'failed';
+  const shouldRetainRecorded = state.kind !== 'failed';
 
-  if (!retainRecorded && recorded !== undefined) {
+  if (!shouldRetainRecorded && recorded !== undefined) {
     setRecorded(undefined);
   }
 
@@ -37,17 +37,19 @@ export function ConversationActivity({
     setRecorded(observed);
   }
 
-  const associated = retainRecorded && received !== undefined && recorded?.inboxItemIds.includes(received.id) === true;
-  const receivedTurn = observed ?? (associated ? recorded : undefined);
+  const isAssociated =
+    shouldRetainRecorded && received !== undefined && recorded?.inboxItemIds.includes(received.id) === true;
+
+  const receivedTurn = observed ?? (isAssociated ? recorded : undefined);
   const receipt = received === undefined ? undefined : <MessageReceipt turn={receivedTurn} />;
 
   const running = turns.find((turn) => turn.status === 'running');
   const latest = snapshot?.turns[0];
-  const unknown = latest !== undefined && !Schema.is(Turn)(latest);
+  const isUnknown = latest !== undefined && !Schema.is(Turn)(latest);
   const current = running ?? receivedTurn;
-  const label = activityLabel(mech, running, unknown);
-  const failedMessage = receivedTurn?.status === 'unanswered';
-  const inspectable = running !== undefined || failedMessage;
+  const label = activityLabel(mech, running, isUnknown);
+  const hasFailedMessage = receivedTurn?.status === 'unanswered';
+  const isInspectable = running !== undefined || hasFailedMessage;
 
   const refreshFailure = state.kind === 'ready' && state.refresh.kind === 'failed' ? state.refresh : undefined;
 
@@ -57,7 +59,7 @@ export function ConversationActivity({
         <Text variant="caption" tone="muted" role="status">
           Activity unavailable
         </Text>
-        <Button variant="ghost" onClick={state.retry} pending={state.retrying} pendingLabel="Retrying activity…">
+        <Button variant="ghost" onClick={state.retry} isPending={state.isRetrying} pendingLabel="Retrying activity…">
           Retry activity
         </Button>
       </Row>
@@ -81,7 +83,7 @@ export function ConversationActivity({
             <Text variant="caption" tone="muted" role="status">
               {refreshFailure === undefined ? label : `Refresh failed · last seen ${label.toLowerCase()}`}
             </Text>
-            {inspectable && current !== undefined && (
+            {isInspectable && current !== undefined && (
               <ConsoleLink
                 to={{ workspace: data.workspace.id, mech: mech.id, view: 'conversation', turn: current.id }}
                 row={current.id}
@@ -93,7 +95,7 @@ export function ConversationActivity({
               <Button
                 variant="ghost"
                 onClick={refreshFailure.retry}
-                pending={refreshFailure.retrying}
+                isPending={refreshFailure.isRetrying}
                 pendingLabel="Retrying activity…"
               >
                 Retry activity
@@ -129,8 +131,8 @@ function MessageReceipt({ turn }: { readonly turn: Turn | undefined }): ReactNod
   );
 }
 
-function activityLabel(mech: Mech, running: Turn | undefined, unknown: boolean): string {
-  if (unknown) {
+function activityLabel(mech: Mech, running: Turn | undefined, isUnknown: boolean): string {
+  if (isUnknown) {
     return 'Activity uses a newer format';
   }
 

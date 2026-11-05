@@ -3,17 +3,8 @@ import { CircleCheck, CircleX, Info, LoaderCircle, TriangleAlert, X } from 'luci
 import type { ReactNode } from 'react';
 import { Toaster as SonnerToaster } from 'sonner';
 import type { ToasterProps as SonnerToasterProps } from 'sonner';
-import {
-  colors,
-  conditions,
-  controls,
-  layers,
-  motion,
-  radii,
-  shadows,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions, layers } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, motion, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   toast: {

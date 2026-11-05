@@ -131,7 +131,7 @@ export function Histogram({
                   <ChartDatumButton
                     key={bin.id}
                     label={`${bin.label}, ${range}, ${countLabel}: ${count}`}
-                    selected={selection?.selectedId === bin.id}
+                    isSelected={selection?.selectedId === bin.id}
                     onSelect={selection === undefined ? undefined : () => selection.onSelect(bin.id)}
                   >
                     <span {...stylex.props(distributionStyles.value)}>

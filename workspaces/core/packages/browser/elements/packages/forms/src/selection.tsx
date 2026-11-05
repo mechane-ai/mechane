@@ -6,6 +6,7 @@ import { Toggle as BaseToggle } from '@base-ui/react/toggle';
 import { ToggleGroup as BaseToggleGroup } from '@base-ui/react/toggle-group';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type {
   CheckedStateProperties,
   ReadOnlyValueProperties,
@@ -13,7 +14,14 @@ import type {
 } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+
+const SWITCH_TRACK_WIDTH_PX = 36;
+const SWITCH_TRACK_HEIGHT_PX = 20;
+const SWITCH_THUMB_SIZE_PX = 14;
+const SWITCH_THUMB_RADIUS_PX = 2;
+const SWITCH_THUMB_INSET_PX = (SWITCH_TRACK_HEIGHT_PX - SWITCH_THUMB_SIZE_PX) / 2;
+const SWITCH_CHECKED_OFFSET_PX = SWITCH_TRACK_WIDTH_PX - SWITCH_THUMB_SIZE_PX - SWITCH_THUMB_INSET_PX;
 
 const styles = stylex.create({
   choice: {
@@ -23,8 +31,8 @@ const styles = stylex.create({
     'justifyContent': 'center',
     'flexShrink': 0,
     'boxSizing': 'border-box',
-    'width': { default: 20, [conditions.coarsePointer]: controls.coarseTarget },
-    'height': { default: 20, [conditions.coarsePointer]: controls.coarseTarget },
+    'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    'height': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'borderWidth': 0,
     'padding': 0,
     'backgroundColor': 'transparent',
@@ -120,8 +128,8 @@ const styles = stylex.create({
       content: '""',
       position: 'absolute',
       insetInlineStart: 0,
-      width: 36,
-      height: 20,
+      width: SWITCH_TRACK_WIDTH_PX,
+      height: SWITCH_TRACK_HEIGHT_PX,
       borderRadius: radii.sm,
       backgroundColor: colors.muted,
     },
@@ -131,12 +139,12 @@ const styles = stylex.create({
   },
   thumb: {
     'position': 'relative',
-    'width': 14,
-    'height': 14,
-    'marginInlineStart': 3,
-    'borderRadius': 2,
+    'width': SWITCH_THUMB_SIZE_PX,
+    'height': SWITCH_THUMB_SIZE_PX,
+    'marginInlineStart': SWITCH_THUMB_INSET_PX,
+    'borderRadius': SWITCH_THUMB_RADIUS_PX,
     'backgroundColor': colors.surface,
-    ':is([data-checked])': { marginInlineStart: 19 },
+    ':is([data-checked])': { marginInlineStart: SWITCH_CHECKED_OFFSET_PX },
   },
   toggles: {
     'display': 'inline-flex',

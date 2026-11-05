@@ -66,7 +66,7 @@ export function RankedBars({
               <ChartDatumButton
                 key={item.id}
                 label={`${label}, ${valueLabel}: ${value}`}
-                selected={selection?.selectedId === item.id}
+                isSelected={selection?.selectedId === item.id}
                 onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
               >
                 <span {...stylex.props(distributionStyles.row)}>

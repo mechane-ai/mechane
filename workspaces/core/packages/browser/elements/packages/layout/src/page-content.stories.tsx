@@ -26,7 +26,7 @@ export const ReportWithRecords: Story = {
   render: () => (
     <>
       <PageToolbar
-        navigation={false}
+        showNavigation={false}
         title="Review activity"
         actions={<ToolbarAction icon={<Download size={16} aria-hidden />}>Export</ToolbarAction>}
       />
@@ -36,7 +36,7 @@ export const ReportWithRecords: Story = {
           <Metric label="open requests" value="6" />
           <Metric label="median review time" value="8 min" />
         </MetricGrid>
-        <Stack compact>
+        <Stack isCompact>
           <Subheading>Review queue</Subheading>
           <Text>Records awaiting a decision remain available below.</Text>
         </Stack>

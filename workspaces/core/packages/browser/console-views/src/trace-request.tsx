@@ -33,12 +33,12 @@ export function TraceRequest({
     );
   }
 
-  const settled = request.status === 'settled';
+  const isSettled = request.status === 'settled';
 
   return (
     <Stack>
-      <Stack compact>
-        <Row between>
+      <Stack isCompact>
+        <Row shouldSpaceBetween>
           <Subheading>Request {number}</Subheading>
           <CopyValue
             label="request link"
@@ -47,13 +47,13 @@ export function TraceRequest({
             render={<IconButton aria-label="Copy request link" variant="ghost" />}
           />
         </Row>
-        <Row between>
+        <Row shouldSpaceBetween>
           <Muted>{request.model}</Muted>
-          <Status tone={request.status === 'refused' ? 'negative' : settled ? 'positive' : 'neutral'}>
+          <Status tone={request.status === 'refused' ? 'negative' : isSettled ? 'positive' : 'neutral'}>
             {request.status}
           </Status>
         </Row>
-        {settled && (
+        {isSettled && (
           <Row>
             <span>{moneyLabel(request.settledMicros)} charged</span>
             <Muted>
@@ -63,7 +63,7 @@ export function TraceRequest({
           </Row>
         )}
       </Stack>
-      {settled && request.basis === 'usage' ? (
+      {isSettled && request.basis === 'usage' ? (
         <BreakdownBar
           title="Reported tokens"
           items={[
@@ -80,7 +80,7 @@ export function TraceRequest({
         <Muted>
           {request.status === 'refused'
             ? 'Allowance refused before a model call was sent.'
-            : settled
+            : isSettled
               ? 'The provider did not report usage. This request was charged at its reservation.'
               : 'Awaiting settlement. Final cost and token usage are not yet recorded.'}
         </Muted>
@@ -100,7 +100,7 @@ export function TraceRequest({
                   </CopyValue>
                 ),
               },
-              ...(settled
+              ...(isSettled
                 ? [
                     {
                       label: 'Settled at',

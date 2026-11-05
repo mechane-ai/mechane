@@ -2,7 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   list: { listStyle: 'none', margin: 0, padding: 0, minWidth: 0 },

@@ -34,8 +34,8 @@ export const Annotations: Story = {
 
 export const Wrapped: Story = {
   args: {
-    wrap: true,
-    lineNumbers: false,
+    shouldWrap: true,
+    showLineNumbers: false,
     code: 'A long source line can wrap inside the available width without clipping its contents or changing the copied value. '.repeat(
       5,
     ),
@@ -78,7 +78,7 @@ function StreamingExample() {
         code={isComplete ? code : code.slice(0, 74)}
         filename="src/stream.ts"
         language="typescript"
-        streaming={!isComplete}
+        isStreaming={!isComplete}
       />
     </Stack>
   );

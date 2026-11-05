@@ -4,9 +4,10 @@ import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge, Button, Stack, Text } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
-import { CollectionPagination, CollectionToolbar, ColumnControls, FilterChips } from './collection-controls.tsx';
+import { CollectionPagination, CollectionToolbar, DisplayOptions, FilterChips } from './collection-controls.tsx';
 import { DataTable, DataTablePlaceholder, DataTableText, DataTableTextPlaceholder } from './data-table.tsx';
 import type { DataTableColumn, DataTableSort } from './data-table.tsx';
+import { ListFooter } from './list-footer.tsx';
 
 const styles = stylex.create({ search: { width: 280, maxWidth: '100%' } });
 
@@ -24,12 +25,12 @@ const runs: ReadonlyArray<Run> = [
 ];
 
 const columns: ReadonlyArray<DataTableColumn<Run>> = [
-  { id: 'name', label: 'Name', role: 'primary', cell: (run) => run.name, sortable: true },
+  { id: 'name', label: 'Name', role: 'primary', cell: (run) => run.name, canSort: true },
   { id: 'status', label: 'Status', role: 'status', cell: (run) => <Badge>{run.status}</Badge> },
-  { id: 'tokens', label: 'Tokens', role: 'number', cell: (run) => run.tokens.toLocaleString('en-US'), sortable: true },
+  { id: 'tokens', label: 'Tokens', role: 'number', cell: (run) => run.tokens.toLocaleString('en-US'), canSort: true },
 ];
 
-const displayColumns = columns.map(({ sortable: _sortable, ...column }) => column);
+const displayColumns = columns.map(({ canSort: _sortable, ...column }) => column);
 
 function PreparedRows() {
   const [query, setQuery] = useState('');
@@ -57,14 +58,14 @@ function PreparedRows() {
       <CollectionToolbar
         label="Run controls"
         actions={
-          <ColumnControls
-            columns={columns.map((column) => ({
+          <DisplayOptions
+            options={columns.map((column) => ({
               id: column.id,
               label: column.label,
-              visible: visible.has(column.id),
-              required: column.id === 'name',
+              isChecked: visible.has(column.id),
+              isRequired: column.id === 'name',
             }))}
-            onVisibilityChange={(id, shown) => {
+            onChange={(id, shown) => {
               const next = new Set(visible);
 
               if (shown) {
@@ -75,6 +76,7 @@ function PreparedRows() {
 
               setVisible(next);
             }}
+            onReset={() => setVisible(new Set(columns.map((column) => column.id)))}
           />
         }
       >
@@ -122,14 +124,15 @@ const meta = {
     DataTablePlaceholder,
     CollectionToolbar,
     FilterChips,
-    ColumnControls,
+    DisplayOptions,
     CollectionPagination,
+    ListFooter,
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction puts a native link or button in the first visible primary cell and adds arrow-key navigation; supply a complete label for its tooltip. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. Inspect narrow tables through their named horizontal scroll region.',
+          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction puts a native link or button in the first visible primary cell and adds arrow-key navigation; supply a complete label for its tooltip. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. DisplayOptions reports supplied choices through one icon menu, disables required choices, and invokes the application’s reset callback. Apply the choices to the rendered columns; the control does not transform records. CollectionPagination supplies previous and next buttons. Use ListFooter for a result summary with application-defined cursor actions. A cursor does not imply a page count. Inspect narrow tables through their named horizontal scroll region.',
       },
     },
   },
@@ -292,7 +295,34 @@ export const TextPlaceholder: Story = {
       <DataTableText leading={<FileCheck size={16} />} secondary="Recorded summary">
         Release review
       </DataTableText>
-      <DataTableTextPlaceholder leading={<FileCheck size={16} />} secondary />
+      <DataTableTextPlaceholder leading={<FileCheck size={16} />} isSecondary />
+    </Stack>
+  ),
+};
+
+export const CursorStates: Story = {
+  render: () => (
+    <Stack>
+      <ListFooter
+        actions={
+          <>
+            <Button disabled>Previous</Button>
+            <Button>Next</Button>
+          </>
+        }
+      >
+        First page
+      </ListFooter>
+      <ListFooter
+        actions={
+          <>
+            <Button>Previous</Button>
+            <Button disabled>Next</Button>
+          </>
+        }
+      >
+        Last recorded page
+      </ListFooter>
     </Stack>
   ),
 };

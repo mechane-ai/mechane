@@ -1,0 +1,57 @@
+id: ui-visual-token-values-typescript
+language: TypeScript
+severity: error
+message: 'Use a shared visual token or a named measured geometry value, such as `paddingInline: spacing.md` (066)'
+files: ['packages/browser/**/*.ts']
+utils:
+  hidden-recipe:
+    all:
+      - inside:
+          kind: pair
+          has:
+            field: key
+            regex: ^['"]?margin['"]?$
+          inside:
+            kind: object
+            all:
+              - has:
+                  pattern:
+                    context: "({ clipPath: 'inset(50%)' })"
+                    selector: pair
+              - has:
+                  pattern:
+                    context: "({ position: 'absolute' })"
+                    selector: pair
+              - has:
+                  pattern:
+                    context: '({ width: 1 })'
+                    selector: pair
+              - has:
+                  pattern:
+                    context: '({ height: 1 })'
+                    selector: pair
+          stopBy: end
+      - inside:
+          kind: unary_expression
+          regex: ^-1$
+rule:
+  all:
+    - any:
+        - kind: string
+          regex: ^['"](#|rgb\(|rgba\(|hsl\(|hsla\(|cubic-bezier\(|ease|linear|-?(?:[1-9][0-9.]*|0?\.[0-9]*[1-9][0-9]*)\s*(px|rem|em|ms|s))|^['"][1-9][0-9]*['"]$|#[0-9a-fA-F]{3,8}\b
+        - kind: template_string
+          not:
+            has:
+              kind: template_substitution
+          regex: -?(?:[1-9][0-9.]*|0?\.[0-9]*[1-9][0-9]*)\s*(px|rem|em|ms|s)|#[0-9a-fA-F]{3,8}\b
+        - kind: number
+          regex: ^(?:[1-9]|0?\.[0-9]*[1-9])
+    - matches: ui-style-value
+    - inside:
+        kind: pair
+        has:
+          field: key
+          regex: ^['"]?(color|backgroundColor|border(?:Top|Bottom|Left|Right|Block|Inline|BlockStart|BlockEnd|InlineStart|InlineEnd)?Color|outlineColor|fill|stroke|fontSize|fontWeight|gap|rowGap|columnGap|padding(?:Top|Bottom|Left|Right|Block|Inline|BlockStart|BlockEnd|InlineStart|InlineEnd)?|margin(?:Top|Bottom|Left|Right|Block|Inline|BlockStart|BlockEnd|InlineStart|InlineEnd)?|border(?:TopLeft|TopRight|BottomLeft|BottomRight|StartStart|StartEnd|EndStart|EndEnd)?Radius|outlineWidth|boxShadow|transitionDuration|transitionTimingFunction)['"]?$
+        stopBy: end
+    - not:
+        matches: hidden-recipe

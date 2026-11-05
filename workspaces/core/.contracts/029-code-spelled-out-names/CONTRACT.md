@@ -2,7 +2,7 @@
 name: code-spelled-out-names
 message: Spell out every word of every declared name, case acronyms as words, map `get`, `fetch`, and `load` to `read`, and ban one-character names in every language's lint.
 requires-tenet: 0.11.0
-paths: ["**/*.ts"]
+paths: ["**/*.ts","packages/browser/**/*.tsx"]
 ---
 
 ## Rules
@@ -65,10 +65,21 @@ The v11 get/fetch/load renames, acronym casing, generic-name ban and additional 
 The shipped assets stay unloaded until their naming migration establishes a baseline and preserves external interfaces.
 The existing wordReplacements and id-length settings remain enforced, including their declared generic-parameter allowance.
 
+Browser TypeScript and TSX use the November 5, 2026 UI naming adoption. `id-match` checks owned variable and function
+declarations and import aliases for camelCase, PascalCase, or UPPER_CASE. Use PascalCase for components and types,
+camelCase for ordinary functions and values, and UPPER_CASE for fixed shared constants. Choose descriptive names in review.
+`id-length` checks browser bindings with the same minimum as other source. External property keys keep their interface
+names; chart source alone allows `x` and `y` as coordinate bindings. The generic-parameter allowance remains explicit.
+
+React terms such as `props`, `ref`, and `ComponentProps`, and native, StyleX, and chart property names retain their
+established meanings. The server abbreviation blacklist is not expanded into Elements or TSX by this adoption.
+The browser checks replace the blanket identifier-length exemption without importing the server's Effect dialect.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `externalNames` `configHome`, `ConfigHome`, `CONFIG_HOME_FALLBACK`, `CONFIG_HOME_VARIABLE`, `GIT_CONFIG_NOSYSTEM`, `MECHANE_LOCAL_STATE_DIR`, `GlobalProps`, `new-cap`, `capIsNew`, `new_sqlite_classes`, `newText`; `wordReplacements` `addr` address, `arr` array, `attr` attribute, `buf` buffer, `calc` calculation, `cb` callback, `cfg` configuration, `conf` configuration, `config` configuration, `configs` configurations, `ctx` context, `cur` current, `desc` description, `dir` folder, `dst` destination, `elem` element, `env` environment, `err` error, `evt` event, `ext` extension, `fn` function, `hdr` header, `idx` index, `impl` implementation, `len` length, `mgr` manager, `mod` module, `msg` message, `num` number, `obj` object, `op` operation, `opts` options, `org` organization, `pkg` package, `pos` position, `prev` previous, `proc` process, `prop` property, `props` properties, `ref` reference, `repo` repository, `req` request, `res` response, `resp` response, `ret` result, `seq` sequence, `sig` signature, `spec` specification, `src` source, `str` string, `tmp` temporary, `tx` transaction, `txn` transaction, `util` utility, `utils` utilities, `val` value.
+Values: `identifierLength` `min` 2, `exceptions` [`_`], `checkGeneric` false; `browserProperties` never; `chartCoordinates` `x`, `y`; `chartFiles` `packages/browser/elements/packages/charts/**/*.{ts,tsx}`; `externalNames` `configHome`, `ConfigHome`, `CONFIG_HOME_FALLBACK`, `CONFIG_HOME_VARIABLE`, `GIT_CONFIG_NOSYSTEM`, `MECHANE_LOCAL_STATE_DIR`, `GlobalProps`, `new-cap`, `capIsNew`, `new_sqlite_classes`, `newText`; `wordReplacements` `addr` address, `arr` array, `attr` attribute, `buf` buffer, `calc` calculation, `cb` callback, `cfg` configuration, `conf` configuration, `config` configuration, `configs` configurations, `ctx` context, `cur` current, `desc` description, `dir` folder, `dst` destination, `elem` element, `env` environment, `err` error, `evt` event, `ext` extension, `fn` function, `hdr` header, `idx` index, `impl` implementation, `len` length, `mgr` manager, `mod` module, `msg` message, `num` number, `obj` object, `op` operation, `opts` options, `org` organization, `pkg` package, `pos` position, `prev` previous, `proc` process, `prop` property, `props` properties, `ref` reference, `repo` repository, `req` request, `res` response, `resp` response, `ret` result, `seq` sequence, `sig` signature, `spec` specification, `src` source, `str` string, `tmp` temporary, `tx` transaction, `txn` transaction, `util` utility, `utils` utilities, `val` value.
 - oxlint `id-length` (NM-06): enforced, `["error",{"min":2,"exceptions":["_"],"checkGeneric":false}]`
+- oxlint `id-match` (029): enforced, `["error","^(_|[a-z][A-Za-z0-9]*|[A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)$",{"onlyDeclarations":true,"properties":false}]`
 - oxlint `no-underscore-dangle` (029): enforced, `["error",{"allow":["_tag"]}]`
 - ast-grep `spelled-out-names` (NM-05): enforced
 

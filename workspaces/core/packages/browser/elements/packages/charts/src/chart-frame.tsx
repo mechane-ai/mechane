@@ -2,7 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
-import { colors, conditions, controls, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { chartToneColors } from './chart-theme.ts';
 import type { ChartTone } from './chart-theme.ts';
 
@@ -181,12 +182,12 @@ export function ChartLegend({ items, label = 'Legend' }: ChartLegendProps): Reac
 
 export function ChartDatumButton({
   label,
-  selected = false,
+  isSelected = false,
   onSelect,
   children,
 }: {
   readonly label: string;
-  readonly selected?: boolean | undefined;
+  readonly isSelected?: boolean | undefined;
   readonly onSelect?: (() => void) | undefined;
   readonly children: ReactNode;
 }): ReactNode {
@@ -198,9 +199,9 @@ export function ChartDatumButton({
     <button
       type="button"
       aria-label={label}
-      aria-pressed={selected}
+      aria-pressed={isSelected}
       onClick={onSelect}
-      {...stylex.props(styles.datum, styles.action, selected && styles.selected)}
+      {...stylex.props(styles.datum, styles.action, isSelected && styles.selected)}
     >
       {children}
     </button>

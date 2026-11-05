@@ -33,9 +33,9 @@ export function TimeSeriesLine({
             return false;
           }
 
-          const bordersGap = series.points[index - 1]?.value === null || series.points[index + 1]?.value === null;
+          const isAdjacentToGap = series.points[index - 1]?.value === null || series.points[index + 1]?.value === null;
 
-          return series.points.length === 1 || bordersGap || point.timestamp === inspectedTimestamp;
+          return series.points.length === 1 || isAdjacentToGap || point.timestamp === inspectedTimestamp;
         })
         .map((point) => (
           <circle

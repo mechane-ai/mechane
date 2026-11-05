@@ -43,7 +43,7 @@ function MenuExample(): ReactNode {
   const [action, setAction] = useState('No action selected');
 
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Menu.Root>
         <Menu.Trigger render={<Button />}>View options</Menu.Trigger>
         <Menu.Portal>

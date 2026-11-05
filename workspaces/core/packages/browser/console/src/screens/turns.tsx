@@ -28,8 +28,8 @@ export function TurnsScreen({
       {(page, notice) => {
         const hasPages = page.hasMore || cursors.length > 0;
         const showPagination = hasPages || failure !== undefined;
-        const previousDisabled = cursors.length === 0 || pending !== undefined;
-        const nextDisabled = !page.hasMore || pending !== undefined;
+        const isPreviousDisabled = cursors.length === 0 || pending !== undefined;
+        const isNextDisabled = !page.hasMore || pending !== undefined;
 
         return (
           <>
@@ -59,17 +59,17 @@ export function TurnsScreen({
                 actions={
                   <>
                     <Button
-                      pending={pending === 'previous'}
+                      isPending={pending === 'previous'}
                       pendingLabel="Loading newer runs…"
-                      disabled={previousDisabled}
+                      disabled={isPreviousDisabled}
                       onClick={() => setCursors(cursors.slice(0, -1))}
                     >
                       Newer
                     </Button>
                     <Button
-                      pending={pending === 'next'}
+                      isPending={pending === 'next'}
                       pendingLabel="Loading older runs…"
-                      disabled={nextDisabled}
+                      disabled={isNextDisabled}
                       onClick={() => {
                         const last = page.turns.at(-1);
 

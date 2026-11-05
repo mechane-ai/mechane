@@ -10,9 +10,15 @@ function ViewStackRoot({ children }: { readonly children: ReactNode }): ReactNod
   return <div {...stylex.props(styles.region)}>{children}</div>;
 }
 
-function ViewStackPanel({ active, children }: { readonly active: boolean; readonly children: ReactNode }): ReactNode {
+function ViewStackPanel({
+  isActive,
+  children,
+}: {
+  readonly isActive: boolean;
+  readonly children: ReactNode;
+}): ReactNode {
   return (
-    <section aria-hidden={!active} inert={!active} {...stylex.props(styles.region, !active && styles.concealed)}>
+    <section aria-hidden={!isActive} inert={!isActive} {...stylex.props(styles.region, !isActive && styles.concealed)}>
       {children}
     </section>
   );

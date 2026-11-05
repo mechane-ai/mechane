@@ -98,12 +98,12 @@ export function Workbench({
 export function WorkbenchScroll({
   label,
   children,
-  flush = false,
+  isFlush = false,
   scrollRestorationId,
 }: {
   readonly label: string;
   readonly children: ReactNode;
-  readonly flush?: boolean;
+  readonly isFlush?: boolean;
   readonly scrollRestorationId?: string;
 }): ReactNode {
   return (
@@ -112,7 +112,7 @@ export function WorkbenchScroll({
       aria-label={label}
       tabIndex={0}
       data-scroll-restoration-id={scrollRestorationId}
-      {...stylex.props(styles.scroll, flush && styles.flush)}
+      {...stylex.props(styles.scroll, isFlush && styles.flush)}
     >
       {children}
     </div>

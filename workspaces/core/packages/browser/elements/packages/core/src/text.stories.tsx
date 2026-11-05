@@ -34,7 +34,7 @@ export const Recommended: Story = {
 
 export const StatusLabels: Story = {
   render: () => (
-    <Stack compact>
+    <Stack isCompact>
       <Row>
         <Status>Not started</Status>
         <Status tone="positive">Completed</Status>
@@ -53,7 +53,7 @@ export const StatusLabels: Story = {
 
 export const TextRoles: Story = {
   render: () => (
-    <Stack compact>
+    <Stack isCompact>
       <Text variant="body">Ordinary UI text</Text>
       <Text variant="caption" tone="muted">
         Supporting label

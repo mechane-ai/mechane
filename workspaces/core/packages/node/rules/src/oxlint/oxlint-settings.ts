@@ -1,6 +1,6 @@
 import { FileRole, RuleTool, Severity } from '@mechane/rule-shapes';
 import type { OxlintRule, RestrictedRule, Rule } from '@mechane/rule-shapes';
-import { Record } from 'effect';
+import { Option, Record } from 'effect';
 import { CONTRACTS } from '../contracts.ts';
 import { FILE_ROLES } from '../file-roles.ts';
 import { RestrictedKey } from './constants.ts';
@@ -28,20 +28,47 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
   const restricted = rules.filter((rule) => rule.tool === RuleTool.Restricted);
   const interaction = CONTRACTS['ui-react-interaction-ownership'];
   const interactionRules = interaction.rules.map(({ name, value }) => [name, value] as const);
+  const naming = CONTRACTS['code-spelled-out-names'].values;
+  const browserIdentifierLength = { ...naming.identifierLength, properties: naming.browserProperties };
 
   const browser = {
     files: FILE_ROLES[FileRole.Browser],
     plugins: [...oxlint.plugins, ...interaction.values.plugins],
-    rules: Record.fromEntries(interactionRules),
+    rules: { ...Record.fromEntries(interactionRules), 'id-length': [Severity.Error, browserIdentifierLength] },
   };
+
+  const charts = {
+    files: naming.chartFiles,
+    rules: {
+      'id-length': [
+        Severity.Error,
+        { ...browserIdentifierLength, exceptions: [...naming.identifierLength.exceptions, ...naming.chartCoordinates] },
+      ],
+    },
+  };
+
+  const scoped = configured.flatMap((rule) => {
+    if (Option.isNone(rule.files)) {
+      return [];
+    }
+
+    return [{ files: rule.files.value, rules: { [rule.name]: rule.value } }];
+  });
+
+  const global = configured.filter((rule) => Option.isNone(rule.files));
 
   return {
     plugins: oxlint.plugins,
     categories: Record.fromEntries(oxlint.categories.map((category) => [category, Severity.Error])),
     options: oxlint.options,
     ignorePatterns: oxlint.ignorePatterns,
-    rules: oxlintRules({ configured, restricted, optOuts }),
-    overrides: [browser, ...Record.values(FileRole).flatMap((role) => roleOverride({ role, configured, restricted }))],
+    rules: oxlintRules({ configured: global, restricted, optOuts }),
+    overrides: [
+      browser,
+      charts,
+      ...scoped,
+      ...Record.values(FileRole).flatMap((role) => roleOverride({ role, configured, restricted })),
+    ],
   };
 }
 

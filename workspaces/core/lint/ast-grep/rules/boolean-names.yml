@@ -4,13 +4,27 @@ language: TypeScript
 severity: error
 message: "Start a boolean's name with a declared predicate or option prefix, such as `isPassed` or `includeArchived` (NM-07)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', 'packages/browser/elements/packages/**']
+ignores: ['**/node_modules/**']
 utils:
   boolean-type:
     kind: type_annotation
-    has:
-      kind: predefined_type
-      regex: ^boolean$
+    any:
+      - has:
+          kind: predefined_type
+          regex: ^boolean$
+      - has:
+          kind: literal_type
+          regex: ^(true|false)$
+      - has:
+          kind: union_type
+          regex: ^(?:\s*(?:boolean|true|false|null|undefined)\s*\|)*\s*(?:boolean|true|false|null|undefined)\s*$
+          has:
+            any:
+              - kind: predefined_type
+                regex: ^boolean$
+              - kind: literal_type
+                regex: ^(true|false)$
+            stopBy: end
   boolean-value:
     any:
       - kind: 'true'
@@ -36,7 +50,54 @@ utils:
         - kind: satisfies_expression
   unprefixed:
     not:
-      matches: boolean-prefix
+      any:
+        - matches: boolean-prefix
+        - all:
+            - regex: ^['"]?no_bundle['"]?$
+            - inside:
+                kind: property_signature
+                field: name
+                inside:
+                  kind: type_alias_declaration
+                  has:
+                    field: name
+                    regex: ^BuiltBundle$
+                  stopBy: end
+        - all:
+            - matches: native-boolean-name
+            - inside:
+                kind: property_signature
+                field: name
+                inside:
+                  any:
+                    - kind: type_alias_declaration
+                    - kind: interface_declaration
+                  has:
+                    field: name
+                    regex: (Props|Properties)$
+                  stopBy: end
+        - all:
+            - matches: native-boolean-name
+            - inside:
+                kind: required_parameter
+                field: pattern
+                inside:
+                  kind: property_signature
+                  has:
+                    field: name
+                    regex: ^on[A-Z]
+                  stopBy: end
+        - all:
+            - matches: keyboard-modifier-name
+            - inside:
+                kind: property_signature
+                field: name
+                inside:
+                  kind: type_alias_declaration
+                  has:
+                    field: name
+                    regex: ^CommandShortcut$
+                  stopBy: end
 rule:
   any:
     - kind: property_signature
@@ -60,15 +121,39 @@ rule:
             - has:
                 field: value
                 matches: boolean-value
+    - kind: variable_declarator
+      all:
+        - has:
+            field: name
+            kind: array_pattern
+            has:
+              kind: identifier
+              nthChild: 1
+              matches: unprefixed
+        - has:
+            field: value
+            kind: call_expression
+            all:
+              - has:
+                  field: function
+                  regex: ^(React[.])?useState$
+              - has:
+                  field: arguments
+                  has:
+                    matches: boolean-literal
     - kind: required_parameter
       all:
         - has:
             field: pattern
             kind: identifier
             matches: unprefixed
-        - has:
-            field: type
-            matches: boolean-type
+        - any:
+            - has:
+                field: type
+                matches: boolean-type
+            - has:
+                field: value
+                matches: boolean-literal
     - kind: pair
       all:
         - has:

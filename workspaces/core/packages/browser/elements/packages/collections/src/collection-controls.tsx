@@ -1,18 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
-import { ChevronLeft, ChevronRight, Columns3, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings2, X } from 'lucide-react';
 import { Children } from 'react';
 import type { ReactNode } from 'react';
 import { Button, IconButton, Text } from '../../core/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
-import {
-  colors,
-  conditions,
-  controls,
-  pageGeometry,
-  radii,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Popover } from '../../overlays/src/index.ts';
 
 const styles = stylex.create({
@@ -154,42 +147,53 @@ export function FilterChips({ filters, onRemove, label = 'Applied filters' }: Fi
   );
 }
 
-export type ColumnChoice = {
+export type DisplayOption = {
   readonly id: string;
   readonly label: string;
-  readonly visible: boolean;
-  readonly required?: boolean;
+  readonly isChecked: boolean;
+  readonly isRequired?: boolean;
 };
 
-export type ColumnControlsProps = {
-  readonly columns: ReadonlyArray<ColumnChoice>;
-  readonly onVisibilityChange: (columnId: string, visible: boolean) => void;
+export type DisplayOptionsProps = {
+  readonly options: ReadonlyArray<DisplayOption>;
+  readonly onChange: (id: string, checked: boolean) => void;
+  readonly onReset?: () => void;
   readonly label?: string;
 };
 
-export function ColumnControls({ columns, onVisibilityChange, label = 'Columns' }: ColumnControlsProps): ReactNode {
+export function DisplayOptions({
+  options,
+  onChange,
+  onReset,
+  label = 'Display options',
+}: DisplayOptionsProps): ReactNode {
   return (
     <Popover.Root>
-      <Popover.Trigger render={<Button variant="outline" />}>
-        <Columns3 size={16} aria-hidden="true" />
-        {label}
+      <Popover.Trigger render={<IconButton aria-label={label} title={label} />}>
+        <Settings2 size={14} aria-hidden="true" />
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner align="end">
-          <Popover.Popup aria-label={label}>
+          <Popover.Popup>
+            <Popover.Title>Display</Popover.Title>
             <div {...stylex.props(styles.choices)}>
-              {columns.map((column) => (
-                <label key={column.id} {...stylex.props(styles.choice)}>
+              {options.map((option) => (
+                <label key={option.id} {...stylex.props(styles.choice)}>
                   <Checkbox.Root
-                    checked={column.visible}
-                    onCheckedChange={(visible) => onVisibilityChange(column.id, visible)}
-                    disabled={column.required}
+                    checked={option.isChecked}
+                    onCheckedChange={(checked) => onChange(option.id, checked)}
+                    disabled={option.isRequired}
                   >
                     <Checkbox.Indicator />
                   </Checkbox.Root>
-                  {column.label}
+                  {option.label}
                 </label>
               ))}
+              {onReset !== undefined && (
+                <Button type="button" variant="ghost" onClick={onReset}>
+                  Reset defaults
+                </Button>
+              )}
             </div>
           </Popover.Popup>
         </Popover.Positioner>

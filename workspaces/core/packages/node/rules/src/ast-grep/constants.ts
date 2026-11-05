@@ -1,4 +1,4 @@
-/** The folder of the ast-grep rules, which are authored, relative to the workspace. */
+/** The authored ast-grep matchers and their generated parser companions, relative to the workspace. */
 export const AST_GREP_RULES = 'lint/ast-grep/rules';
 
 /** The folder of the ast-grep utilities, most of which the registry generates, relative to the workspace. */

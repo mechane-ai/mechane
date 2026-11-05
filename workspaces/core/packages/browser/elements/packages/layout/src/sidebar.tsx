@@ -4,16 +4,9 @@ import { PanelLeft, X } from 'lucide-react';
 import { createContext, useContext, useId } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
 import { IconButton } from '../../core/src/index.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import {
-  colors,
-  conditions,
-  controls,
-  pageGeometry,
-  radii,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
@@ -183,12 +176,12 @@ type NavigationProps = { readonly children: ReactNode; readonly label?: string }
 
 type NavigationItemProps = ComponentProps<typeof BaseButton> & {
   readonly icon?: ReactNode;
-  readonly selected?: boolean;
+  readonly isSelected?: boolean;
 };
 
-type NavigationLinkProps = ComponentProps<'a'> & { readonly icon?: ReactNode; readonly selected?: boolean };
+type NavigationLinkProps = ComponentProps<'a'> & { readonly icon?: ReactNode; readonly isSelected?: boolean };
 
-type SidebarLabelProps = { readonly children: ReactNode; readonly grow?: boolean };
+type SidebarLabelProps = { readonly children: ReactNode; readonly shouldGrow?: boolean };
 
 type SidebarFooterLayout = 'inline' | 'navigation';
 type SidebarFooterProps = { readonly children: ReactNode; readonly layout?: SidebarFooterLayout };
@@ -260,7 +253,7 @@ export function NavigationSection({
 export function NavigationItem({
   children,
   icon,
-  selected = false,
+  isSelected = false,
   onClick,
   className,
   style,
@@ -271,7 +264,7 @@ export function NavigationItem({
   const isCollapsed = sidebar !== null && !sidebar.isExpanded;
 
   return (
-    <div {...stylex.props(styles.navigationCell, selected && styles.selected)}>
+    <div {...stylex.props(styles.navigationCell, isSelected && styles.selected)}>
       <BaseButton
         {...props}
         {...mergeStyles<BaseButton.State>({
@@ -284,7 +277,7 @@ export function NavigationItem({
             isCollapsed && styles.collapsedButton,
           ),
         })}
-        aria-current={selected ? 'page' : undefined}
+        aria-current={isSelected ? 'page' : undefined}
         aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
         title={props.title ?? (typeof children === 'string' ? children : undefined)}
         onClick={(event) => {
@@ -313,7 +306,7 @@ export function NavigationItem({
 export function NavigationLink({
   children,
   icon,
-  selected = false,
+  isSelected = false,
   onClick,
   className,
   style,
@@ -327,13 +320,13 @@ export function NavigationLink({
     styles.navigationLink,
     styles.navigationControl,
     isCollapsed && styles.collapsedButton,
-    selected && styles.selected,
+    isSelected && styles.selected,
   );
 
   return (
     <a
       {...props}
-      aria-current={selected ? 'page' : undefined}
+      aria-current={isSelected ? 'page' : undefined}
       aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
       title={props.title ?? (typeof children === 'string' ? children : undefined)}
       onClick={(event) => {
@@ -345,10 +338,10 @@ export function NavigationLink({
           return;
         }
 
-        const command = event.metaKey || event.ctrlKey;
-        const alternate = event.shiftKey || event.altKey;
+        const hasCommandModifier = event.metaKey || event.ctrlKey;
+        const hasAlternateModifier = event.shiftKey || event.altKey;
 
-        if (command || alternate) {
+        if (hasCommandModifier || hasAlternateModifier) {
           return;
         }
 
@@ -370,12 +363,14 @@ export function NavigationLink({
   );
 }
 
-export function SidebarLabel({ children, grow = false }: SidebarLabelProps): ReactNode {
+export function SidebarLabel({ children, shouldGrow = false }: SidebarLabelProps): ReactNode {
   const sidebar = useContext(SidebarContext);
   const isCollapsed = sidebar !== null && !sidebar.isExpanded;
 
   return (
-    <span {...stylex.props(styles.label, grow && styles.grow, isCollapsed && styles.collapsedLabel)}>{children}</span>
+    <span {...stylex.props(styles.label, shouldGrow && styles.grow, isCollapsed && styles.collapsedLabel)}>
+      {children}
+    </span>
   );
 }
 

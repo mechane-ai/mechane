@@ -2,11 +2,11 @@ export type {
   CollectionToolbarProps,
   FilterChip,
   FilterChipsProps,
-  ColumnChoice,
-  ColumnControlsProps,
+  DisplayOption,
+  DisplayOptionsProps,
   CollectionPaginationProps,
 } from './collection-controls.tsx';
-export { CollectionToolbar, FilterChips, ColumnControls, CollectionPagination } from './collection-controls.tsx';
+export { CollectionToolbar, FilterChips, DisplayOptions, CollectionPagination } from './collection-controls.tsx';
 export type {
   DataTableColumn,
   DataTableColumnLayout,
@@ -26,7 +26,6 @@ export type { InspectorProps } from './inspector.tsx';
 export { Inspector, Details } from './inspector.tsx';
 export { ListFooter } from './list-footer.tsx';
 export { MetricGrid, Metric } from './metrics.tsx';
-export { Table, Cell } from './table.tsx';
 export type { TimestampProps } from './timestamp.tsx';
 export { Timestamp } from './timestamp.tsx';
 export { Timeline } from './timeline.tsx';

@@ -75,7 +75,7 @@ export function InlineCitation({ source, label }: InlineCitationProps): ReactNod
         <Popover.Portal>
           <Popover.Positioner side="top">
             <Popover.Popup>
-              <Stack compact>
+              <Stack isCompact>
                 <Popover.Title>{source.title}</Popover.Title>
                 {source.description !== undefined && <Popover.Description>{source.description}</Popover.Description>}
                 <ContentLink href={source.href}>Open source</ContentLink>

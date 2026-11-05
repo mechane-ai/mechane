@@ -31,7 +31,7 @@ function RecordedSteps(): ReactNode {
         label="Request received"
         status="complete"
         statusLabel="Recorded at 09:00:00 UTC"
-        selected={selected === 'received'}
+        isSelected={selected === 'received'}
         onSelect={setSelected}
       />
       <Trace.Item
@@ -40,7 +40,7 @@ function RecordedSteps(): ReactNode {
         status="running"
         statusLabel="Awaiting settlement"
         description="Reservation evidence is available; inference timing is not."
-        selected={selected === 'request'}
+        isSelected={selected === 'request'}
         onSelect={setSelected}
         detail={<Text>Request 001 · 2,048 tokens reserved</Text>}
       >

@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, FileRole, FixBehavior, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FixBehavior, OXLINT_DEFAULTS, Severity } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 import { Option } from 'effect';
 
@@ -8,6 +8,10 @@ import { Option } from 'effect';
  * `new-cap` or Wrangler's `new_sqlite_classes`, which neither this rule nor the vocabulary's banned words hold.
  */
 const VALUES = {
+  identifierLength: { min: 2, exceptions: ['_'], checkGeneric: false },
+  browserProperties: 'never',
+  chartCoordinates: ['x', 'y'],
+  chartFiles: ['packages/browser/elements/packages/charts/**/*.{ts,tsx}'],
   externalNames: [
     'configHome',
     'ConfigHome',
@@ -89,13 +93,28 @@ export const codeSpelledOutNames = {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'id-length',
-      exemptRoles: [FileRole.Browser],
       behavior: FixBehavior.BindingNames,
-      value: [Severity.Error, { min: 2, exceptions: ['_'], checkGeneric: false }],
+      value: [Severity.Error, VALUES.identifierLength],
       note: Option.some(
         'A type parameter of one capital letter, such as `O extends Operation`, is a name the naming rules allow.',
       ),
       standard: 'NM-06',
+    },
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'id-match',
+      files: Option.some(['packages/browser/**/*.{ts,tsx}']),
+      value: [
+        Severity.Error,
+        '^(_|[a-z][A-Za-z0-9]*|[A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)$',
+        { onlyDeclarations: true, properties: false },
+      ],
+      behavior: FixBehavior.BindingNames,
+      standard: '029',
+      note: Option.some(
+        'Browser declarations use camelCase, PascalCase components, and UPPER_CASE constants; external property names retain their interface spelling.',
+      ),
     },
     {
       ...OXLINT_DEFAULTS,

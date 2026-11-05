@@ -19,20 +19,24 @@ Sortable columns require the controlled `sort` and `onSortChange` pair. Clicking
 descending and no sort. Until the application supplies another sort value and row page, the displayed values remain
 unchanged. Sort the entire query result before paging, with a unique row key as the final ordering field.
 
-For a plain table, use `satisfies` to check columns while preserving that none declares `sortable: true`:
+For a plain table, use `satisfies` to check columns while preserving that none declares `canSort: true`:
 
 ```tsx
 import type { DataTableColumn } from '@mechane-ai/elements/collections';
 
 type Item = { readonly id: string; readonly name: string };
 
-const columns = [{ id: 'name', label: 'Name', cell: (item: Item) => item.name }] satisfies ReadonlyArray<
-  DataTableColumn<Item>
->;
+const columns = [
+  { id: 'name', label: 'Name', role: 'primary', cell: (item: Item) => item.name },
+] satisfies ReadonlyArray<DataTableColumn<Item>>;
 ```
 
 An explicit `ReadonlyArray<DataTableColumn<Item>>` annotation widens that information and requires the controlled sort
 props. `satisfies` retains the precise column choices while checking their supported shape.
+
+Check metadata shared by loaded and placeholder rows against `DataTableColumnLayout` at its definition. For a named
+column map, use `satisfies Record<string, DataTableColumnLayout>` before spreading a column or calling `Object.values`.
+Checking only the final array can silently accept obsolete properties inherited through those intermediate values.
 
 Selection requires `selectedIds`, `onSelectionChange` and a label for each row's checkbox. Changes preserve selected IDs
 outside the current page. Individual cells can perform actions without turning a table row into a button.
@@ -42,23 +46,24 @@ button for a local action. Modified link clicks retain normal browser behavior. 
 actions, and text selection does not open the record. Arrow keys move between record actions; virtualized focus stays
 mounted. `activeRowId` marks the inspected record without changing selection.
 
-Mark columns `secondary` to hide them at the compact table breakpoint. `truncate` clips a cell within its column; the
-full value should remain available through the record view. `hideCaption` and `hideHeaders` keep their semantic labels
-available to assistive technology.
+Mark columns `isSecondary` to hide them at the compact table breakpoint. `shouldTruncate` clips a cell within its
+column; the full value should remain available through the record view. `hideCaption` and `hideHeaders` keep their
+semantic labels available to assistive technology.
 
 The optional `window` limits mounted rows within the supplied page. It does not fetch more records. The table retains
 the focused row and its neighbors while scrolling, exposes logical row positions, and measures the caption and header
-before positioning rows. Use the ordinary table for small pages and unusual spanning or grouped structures.
+before positioning rows. Omit `window` for small pages. Use a native table for unusual spanning or grouped structures.
 
 Set `window.height` to a pixel limit or `'fill'` inside a flex column with bounded height. `endContent` stays inside the
 scroll region; `footer` stays outside it. Supply `onEndReached` only while another page is eligible to load.
 `CollectionEnd` exposes ready, loading, retry, and complete states, including a manual load action. It never infers
 completion from an empty page. `CollectionScroll` supplies the same boundary for non-tabular content.
 
-[`CollectionToolbar`, `FilterChips`, `ColumnControls` and `CollectionPagination`](../packages/browser/elements/packages/collections/src/collection-controls.tsx)
+[`CollectionToolbar`, `FilterChips`, `DisplayOptions` and `CollectionPagination`](../packages/browser/elements/packages/collections/src/collection-controls.tsx)
 compose alongside the table. Pagination receives the result's position text and explicit previous/next availability. It
-never guesses whether another page exists from the supplied row count. Column controls report visibility changes; the
-application passes the chosen columns back to the table.
+never guesses whether another page exists from the supplied row count. Display options use the shared icon trigger and
+report changes to supplied choices. Required choices remain disabled; the application supplies reset behavior and passes
+the chosen columns back to the table. The same control supports non-column display choices.
 
 Keep toolbar search fields bounded with the Input's placement-only `xstyle`, as the table example does. Actions then
 stay on the same row when space allows and wrap below on a phone.
@@ -94,7 +99,7 @@ use the same application-owned action records. A command supplies its ID, label,
 uses Base UI's dialog and autocomplete navigation. It does not register keyboard shortcuts by mounting.
 
 Register shortcuts beside their action owner with `useCommandShortcuts`. Supply the smallest element or ref that
-contains the action and an explicit `enabled` value. Disable the view's commands while an unrelated modal is open.
+contains the action and an explicit `isEnabled` value. Disable the view's commands while an unrelated modal is open.
 Bindings ignore text fields, consumed events and key repeats. Events from a nested modal only reach commands owned
 inside that modal. Disabled commands and unmounted owners leave no active registrations.
 

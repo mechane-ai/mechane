@@ -13,20 +13,20 @@ const styles = stylex.create({
 });
 
 export type ButtonPlaceholderProps = { readonly xstyle?: PlacementStyle } & (
-  | { readonly icon: true; readonly width?: never }
-  | { readonly icon?: false; readonly width?: number | string }
+  | { readonly isIconOnly: true; readonly width?: never }
+  | { readonly isIconOnly?: false; readonly width?: number | string }
 );
 
 export type FieldPlaceholderProps = {
   readonly label?: string;
   readonly hint?: string;
-  readonly multiline?: boolean;
+  readonly isMultiline?: boolean;
   readonly rows?: number;
   readonly width?: number | string;
   readonly xstyle?: PlacementStyle;
 };
 
-export function ButtonPlaceholder({ width = '7ch', icon = false, xstyle }: ButtonPlaceholderProps): ReactNode {
+export function ButtonPlaceholder({ width = '7ch', isIconOnly = false, xstyle }: ButtonPlaceholderProps): ReactNode {
   return (
     <span
       aria-hidden
@@ -34,12 +34,12 @@ export function ButtonPlaceholder({ width = '7ch', icon = false, xstyle }: Butto
       {...stylex.props(
         controlStyles.base,
         controlStyles.button,
-        icon && controlStyles.iconButton,
+        isIconOnly && controlStyles.iconButton,
         styles.button,
         xstyle,
       )}
     >
-      {icon ? <Skeleton width={controls.iconSize} height={controls.iconSize} /> : <SkeletonText width={width} />}
+      {isIconOnly ? <Skeleton width={controls.iconSize} height={controls.iconSize} /> : <SkeletonText width={width} />}
     </span>
   );
 }
@@ -47,12 +47,12 @@ export function ButtonPlaceholder({ width = '7ch', icon = false, xstyle }: Butto
 export function FieldPlaceholder({
   label,
   hint,
-  multiline = false,
+  isMultiline = false,
   rows = 4,
   width = '100%',
   xstyle,
 }: FieldPlaceholderProps): ReactNode {
-  const lineCount = multiline ? Math.min(rows, 6) : 1;
+  const lineCount = isMultiline ? Math.min(rows, 6) : 1;
 
   return (
     <div aria-hidden {...stylex.props(controlStyles.fieldRoot, styles.width(width), xstyle)}>
@@ -61,9 +61,9 @@ export function FieldPlaceholder({
         {...stylex.props(
           controlStyles.base,
           controlStyles.field,
-          !multiline && styles.singleLine,
-          multiline && controlStyles.textarea,
-          multiline && styles.rows(rows),
+          !isMultiline && styles.singleLine,
+          isMultiline && controlStyles.textarea,
+          isMultiline && styles.rows(rows),
         )}
       >
         <SkeletonText width="60%" lines={lineCount} />

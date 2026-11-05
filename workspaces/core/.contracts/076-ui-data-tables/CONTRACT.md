@@ -1,6 +1,6 @@
 ---
 name: ui-data-tables
-paths: ["packages/browser/elements/packages/collections/src/data-table*"]
+paths: ["packages/browser/elements/packages/collections/src/data-table*", "packages/browser/console-views/src/**/*.tsx"]
 message: Render application-prepared rows as given, and report sorting and paging through controlled values and callbacks.
 ---
 
@@ -26,7 +26,7 @@ Require a caller-supplied empty-state message, so the application can say whethe
 Show the empty-state message in place of rows when the supplied rows are empty, and leave pending and failed reads to `ui-async-read-states`.
 
 Use a data table to compare several records across shared columns, not to lay out one record's labels and values or to arrange a page.
-Build custom table structures, such as grouped headers, spanning cells, or expandable rows, from the lower-level table primitive instead of adding options for them to the data table.
+Build unusual grouped or spanning table structures with semantic HTML instead of adding options for them to the data table.
 
 ## Checks
 
@@ -35,12 +35,16 @@ Supply rows in an order that no column defines, and confirm the table renders th
 Activate a sortable header and a page control with callbacks that do not apply the change, and confirm the rows, header sort state, and page position stay as supplied.
 Page through a sorted query whose sort column has tied values, and confirm no row repeats or goes missing.
 Render an empty result and inspect the caption, empty-state message, and header sort states in the accessibility tree.
-Review changed custom table layouts: are they built from the lower-level primitive rather than as data-table options?
+Review changed custom table layouts: do unusual grouped or spanning cells use semantic HTML without adding data-table options?
 
 ## Local adaptations
 
-This adoption governs the higher-level `DataTable` and its examples. The semantic `Table` primitive remains available
-for custom structures and one-off layouts. The library's typed columns and callbacks hide TanStack implementation types.
+`DataTable` is the shared renderer for comparable records, including small finite lists. The library's typed columns
+and callbacks hide TanStack implementation types.
+
+Check reusable column metadata against `DataTableColumnLayout` at its definition with an annotation or `satisfies`.
+Check complete columns against `DataTableColumn<Row>` there. A later spread or `Object.values` call must not be the
+first type check: structural assignment can accept stale extra properties and silently lose their behavior.
 TanStack Table supplies the row model; TanStack Virtual may window DOM rows without changing the supplied records.
 Neither engine owns the application's query, search, sort, grouping, or page boundaries.
 
@@ -60,10 +64,12 @@ minimum sizing for that role. Applications choose meaning instead of per-column 
 | `actions`             | End       | Role minimum that keeps controls operable  |
 
 Primary columns absorb remaining width. Use `text` for identifiers that happen to contain digits, and `number` for
-comparable quantities. Add explicit `width` or `truncate` metadata only for a concrete content need.
+comparable quantities. Add explicit `width` or `shouldTruncate` metadata only for a concrete content need.
 An explicit width is a minimum for its header and cells. Pending rows use the same roles and metadata.
 Keep readable columns inside the table's named scroll region; narrow screens scroll instead of squeezing words
 into a few characters or widening the page. The table owns cell insets from shared `pageGeometry`.
+Spanning empty and virtual spacer cells count only columns visible at the current responsive width, including selection.
+Use the same responsive condition for that count and column visibility, so empty rows do not introduce extra columns.
 
 The default row is 48px high, with vertically centered content. Use `rowSizing="content"` when
 multiline records or controls cannot fit that height. Never crop an interactive control to preserve row geometry.
@@ -84,7 +90,11 @@ controls when more records may exist.
 
 Review every changed column's role and any explicit width or truncation choice against its content. Compare headers,
 loaded cells, and placeholders at the same width, including long primary text beside numbers, timestamps, and actions.
+Confirm reusable column definitions are checked before their first spread or projection, so an unsupported property
+fails compilation at its declaration.
 At narrow widths, check horizontal keyboard scrolling, independent embedded controls, and one separator above the footer.
+Compare empty, loaded, and windowed tables across the compact breakpoint. Headers must keep the same widths and fill
+the table when secondary columns disappear, including after a viewport resize.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -1,7 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
@@ -298,7 +299,7 @@ export function RelationGraph({
               <li key={node.id}>
                 <ChartDatumButton
                   label={[node.label, node.description].filter((part) => part !== undefined).join(', ')}
-                  selected={selection?.selectedId === node.id}
+                  isSelected={selection?.selectedId === node.id}
                   onSelect={selection === undefined ? undefined : () => selection.onSelect(node.id)}
                 >
                   <span {...stylex.props(styles.record)}>

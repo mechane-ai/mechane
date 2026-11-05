@@ -752,7 +752,27 @@
       "rules": {
         "react/no-array-index-key": "error",
         "react/rules-of-hooks": "error",
-        "react/set-state-in-effect": "error"
+        "react/set-state-in-effect": "error",
+        "id-length": ["error", { "min": 2, "exceptions": ["_"], "checkGeneric": false, "properties": "never" }]
+      }
+    },
+    {
+      "files": ["packages/browser/elements/packages/charts/**/*.{ts,tsx}"],
+      "rules": {
+        "id-length": [
+          "error",
+          { "min": 2, "exceptions": ["_", "x", "y"], "checkGeneric": false, "properties": "never" }
+        ]
+      }
+    },
+    {
+      "files": ["packages/browser/**/*.{ts,tsx}"],
+      "rules": {
+        "id-match": [
+          "error",
+          "^(_|[a-z][A-Za-z0-9]*|[A-Z][A-Za-z0-9]*|[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*)$",
+          { "onlyDeclarations": true, "properties": false }
+        ]
       }
     },
     {
@@ -763,7 +783,6 @@
         "no-ternary": "off",
         "typescript/explicit-function-return-type": "off",
         "typescript/explicit-module-boundary-types": "off",
-        "id-length": "off",
         "oxc/no-optional-chaining": "off",
         "no-restricted-imports": [
           "error",

@@ -30,18 +30,18 @@ type Story = StoryObj;
 
 const records = ['Release notes', 'Review checklist', 'Launch plan'];
 
-function Example({ failed = false }: { readonly failed?: boolean }): ReactNode {
+function Example({ hasFailed = false }: { readonly hasFailed?: boolean }): ReactNode {
   const [hasMore, setHasMore] = useState(true);
   const visible = records.slice(0, hasMore ? 2 : records.length);
 
   return (
     <div {...stylex.props(styles.frame)}>
       <CollectionScroll
-        fill
+        shouldFill
         label="Example documents"
         endContent={
           hasMore ? (
-            <CollectionEnd status={failed ? 'error' : 'ready'} onLoadMore={() => setHasMore(false)} />
+            <CollectionEnd status={hasFailed ? 'error' : 'ready'} onLoadMore={() => setHasMore(false)} />
           ) : (
             <CollectionEnd status="complete" />
           )
@@ -50,7 +50,7 @@ function Example({ failed = false }: { readonly failed?: boolean }): ReactNode {
         <div {...stylex.props(styles.content)}>
           <Stack>
             {visible.map((name) => (
-              <Stack key={name} compact>
+              <Stack key={name} isCompact>
                 <Subheading>{name}</Subheading>
                 <Muted>Ready for the next review.</Muted>
               </Stack>
@@ -63,6 +63,6 @@ function Example({ failed = false }: { readonly failed?: boolean }): ReactNode {
 }
 
 export const LoadMore: Story = { render: () => <Example /> };
-export const Retry: Story = { render: () => <Example failed /> };
+export const Retry: Story = { render: () => <Example hasFailed /> };
 export const Loading: Story = { render: () => <CollectionEnd status="loading" /> };
 export const UsefulSummary: Story = { render: () => <CollectionEnd status="complete" message="3 documents loaded" /> };

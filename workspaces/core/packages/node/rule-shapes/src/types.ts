@@ -16,6 +16,8 @@ export type OxlintRule = {
    * file sets, which `rules:check` compares.
    */
   readonly value: unknown;
+  /** The source globs this rule governs; absent when it applies throughout the workspace. */
+  readonly files: Option.Option<ReadonlyArray<string>>;
   /**
    * The installed file that configures the rule, which `.oxlintrc.json` extends in place of writing `value`; absent for
    * a rule the registry configures itself.

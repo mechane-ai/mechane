@@ -2,14 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode, Ref } from 'react';
 import { Heading, Muted } from '../../core/src/index.ts';
-import {
-  colors,
-  conditions,
-  controls,
-  pageGeometry,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { DetailPage } from './detail-page.tsx';
 import { frame } from './frame.stylex.ts';
 import { PageToolbar } from './page-toolbar.tsx';
@@ -76,7 +70,7 @@ export type RecordPageToolbarProps = {
   readonly backHref: string;
   readonly onBack?: () => void;
   readonly actions?: ReactNode;
-  readonly navigation?: boolean;
+  readonly showNavigation?: boolean;
 };
 
 export type RecordPageHeaderProps = {
@@ -97,12 +91,12 @@ function RecordPageToolbar({
   backHref,
   onBack,
   actions,
-  navigation = true,
+  showNavigation = true,
 }: RecordPageToolbarProps): ReactNode {
   return (
     <PageToolbar
-      breadcrumb
-      navigation={navigation}
+      showBreadcrumb
+      showNavigation={showNavigation}
       actions={actions}
       title={
         <a
@@ -113,10 +107,10 @@ function RecordPageToolbar({
               return;
             }
 
-            const command = event.metaKey || event.ctrlKey;
-            const alternate = event.shiftKey || event.altKey;
+            const hasCommandModifier = event.metaKey || event.ctrlKey;
+            const hasAlternateModifier = event.shiftKey || event.altKey;
 
-            if (command || alternate) {
+            if (hasCommandModifier || hasAlternateModifier) {
               return;
             }
 

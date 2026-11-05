@@ -133,7 +133,7 @@ export function ECDF({
                   <ChartDatumButton
                     key={point.id}
                     label={`${valueLabel}: ${value}, ${probabilityLabel}: ${probability}`}
-                    selected={selection?.selectedId === point.id}
+                    isSelected={selection?.selectedId === point.id}
                     onSelect={selection === undefined ? undefined : () => selection.onSelect(point.id)}
                   >
                     <span {...stylex.props(distributionStyles.value)}>

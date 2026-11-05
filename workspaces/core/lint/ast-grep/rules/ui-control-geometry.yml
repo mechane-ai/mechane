@@ -1,0 +1,53 @@
+id: ui-control-geometry
+language: Tsx
+severity: error
+message: 'Use shared control geometry, such as `minHeight: controls.height`, for an ordinary control recipe (066)'
+files:
+  [
+    'packages/browser/elements/packages/core/src/actions.tsx',
+    'packages/browser/elements/packages/forms/src/forms.tsx',
+    'packages/browser/elements/packages/forms/src/select.tsx',
+    'packages/browser/elements/packages/forms/src/combobox.tsx',
+    'packages/browser/elements/packages/forms/src/selection.tsx',
+    'packages/browser/elements/packages/feedback/src/control-placeholders.tsx',
+  ]
+rule:
+  all:
+    - any:
+        - kind: number
+          regex: ^(?:[1-9]|0?\.[0-9]*[1-9])
+        - kind: string
+          regex: ^['"](?:[1-9][0-9.]*|0?\.[0-9]*[1-9][0-9]*)\s*(px|rem|em)['"]$
+        - kind: template_string
+          not:
+            has:
+              kind: template_substitution
+          regex: (?:[1-9][0-9.]*|0?\.[0-9]*[1-9][0-9]*)\s*(px|rem|em)
+    - inside:
+        kind: pair
+        has:
+          field: key
+          regex: ^['"]?(height|minHeight|maxHeight|blockSize|minBlockSize|maxBlockSize)['"]?$
+        stopBy: end
+    - inside:
+        kind: pair
+        has:
+          field: key
+          regex: ^['"]?(base|button|iconButton|choice|field|input|trigger|toggle|text|root)['"]?$
+        inside:
+          kind: object
+          inside:
+            kind: arguments
+            inside:
+              kind: call_expression
+              has:
+                field: function
+                regex: ^stylex[.]create$
+        stopBy: end
+    - not:
+        inside:
+          kind: pair
+          has:
+            field: key
+            regex: '^.{0,1}::'
+          stopBy: end

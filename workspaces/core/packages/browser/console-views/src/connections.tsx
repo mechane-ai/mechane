@@ -1,5 +1,6 @@
 import { Collapsible, Muted, Row, Stack, Status, TextLink } from '@mechane-ai/elements';
 import { DataTable, DataTablePlaceholder } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { SkeletonText } from '@mechane-ai/elements/feedback';
 import type { SlackBinding, SlackDelivery } from '@mechane/protocol';
 import type { ReactNode } from 'react';
@@ -8,11 +9,11 @@ import { timeLabel } from './format.ts';
 const deliveryColumns = {
   status: { id: 'status', label: 'Delivery', role: 'status' },
   created: { id: 'created', label: 'Created', role: 'timestamp' },
-} as const;
+} as const satisfies Record<string, DataTableColumnLayout>;
 
 export function SlackConnectionsPlaceholder(): ReactNode {
   return (
-    <Row between>
+    <Row shouldSpaceBetween>
       <SkeletonText width="18ch" />
       <SkeletonText width="24ch" />
     </Row>
@@ -21,9 +22,9 @@ export function SlackConnectionsPlaceholder(): ReactNode {
 
 export function SlackConnections({ bindings }: { readonly bindings: ReadonlyArray<SlackBinding> }): ReactNode {
   return (
-    <Stack compact>
+    <Stack isCompact>
       {bindings.map((binding) => (
-        <Row key={binding.id} between>
+        <Row key={binding.id} shouldSpaceBetween>
           <TextLink
             href={`https://app.slack.com/client/${encodeURIComponent(binding.teamId)}/${encodeURIComponent(binding.channelId)}`}
             target="_blank"
@@ -47,7 +48,7 @@ export function SlackDeliverySection({ children }: { readonly children: ReactNod
     <Collapsible.Root>
       <Collapsible.Trigger>Recent Slack deliveries</Collapsible.Trigger>
       <Collapsible.Panel keepMounted>
-        <Stack compact>
+        <Stack isCompact>
           <Muted>
             These are delivery receipts. An agent reply and a confirmed Slack delivery are separate outcomes.
           </Muted>

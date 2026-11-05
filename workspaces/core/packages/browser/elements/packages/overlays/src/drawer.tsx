@@ -2,11 +2,12 @@ import { Drawer as BaseDrawer } from '@base-ui/react/drawer';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import { accessibility } from '../../foundations/src/accessibility.ts';
+import { conditions, layers } from '../../foundations/src/constants.stylex.ts';
 import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { overlayStyles } from '../../foundations/src/overlay-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, layers, motion, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, motion, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   viewport: { position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: layers.dialog },
@@ -64,7 +65,7 @@ type DrawerRootProps<Payload> = Omit<
 type DrawerBackdropProps = ComponentProps<typeof BaseDrawer.Backdrop>;
 type DrawerViewportProps = ComponentProps<typeof BaseDrawer.Viewport>;
 type DrawerPopupProps = ComponentProps<typeof BaseDrawer.Popup> & { readonly xstyle?: PlacementStyle };
-type DrawerTitleProps = ComponentProps<typeof BaseDrawer.Title> & { readonly visuallyHidden?: boolean };
+type DrawerTitleProps = ComponentProps<typeof BaseDrawer.Title> & { readonly isVisuallyHidden?: boolean };
 type DrawerDescriptionProps = ComponentProps<typeof BaseDrawer.Description>;
 
 function DrawerRoot<Payload = unknown>(props: DrawerRootProps<Payload>): ReactNode {
@@ -106,14 +107,14 @@ function DrawerPopup({ className, style, xstyle, ...props }: DrawerPopupProps): 
   );
 }
 
-function DrawerTitle({ className, style, visuallyHidden = false, ...props }: DrawerTitleProps): ReactNode {
+function DrawerTitle({ className, style, isVisuallyHidden = false, ...props }: DrawerTitleProps): ReactNode {
   return (
     <BaseDrawer.Title
       {...props}
       {...mergeStyles<BaseDrawer.Title.State>({
         className,
         style,
-        styles: stylex.props(overlayStyles.title, visuallyHidden && accessibility.hidden),
+        styles: stylex.props(overlayStyles.title, isVisuallyHidden && accessibility.hidden),
       })}
     />
   );

@@ -23,10 +23,12 @@ const alignments = stylex.create<Record<FormActionsAlignment, stylex.CSSProperti
 export type FormActionsProps = {
   readonly children: ReactNode;
   readonly align?: FormActionsAlignment;
-  readonly separated?: boolean;
+  readonly hasSeparator?: boolean;
   readonly xstyle?: PlacementStyle;
 };
 
-export function FormActions({ children, align = 'end', separated = false, xstyle }: FormActionsProps): ReactNode {
-  return <div {...stylex.props(styles.root, alignments[align], separated && styles.separated, xstyle)}>{children}</div>;
+export function FormActions({ children, align = 'end', hasSeparator = false, xstyle }: FormActionsProps): ReactNode {
+  return (
+    <div {...stylex.props(styles.root, alignments[align], hasSeparator && styles.separated, xstyle)}>{children}</div>
+  );
 }

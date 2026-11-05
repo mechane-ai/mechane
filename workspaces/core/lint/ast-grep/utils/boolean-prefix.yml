@@ -2,4 +2,4 @@
 id: boolean-prefix
 language: TypeScript
 rule:
-  regex: '^#?(is|has|can|should|was|needs|include|allow|skip|keep|use)([A-Z_]|$)|^(IS|HAS|CAN|SHOULD|WAS|NEEDS|INCLUDE|ALLOW|SKIP|KEEP|USE)_'
+  regex: '^#?(is|has|can|should|was|needs|include|allow|skip|keep|use|show|hide)([A-Z_]|$)|^(IS|HAS|CAN|SHOULD|WAS|NEEDS|INCLUDE|ALLOW|SKIP|KEEP|USE|SHOW|HIDE)_'

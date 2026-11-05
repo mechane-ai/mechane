@@ -2,7 +2,7 @@
 name: code-boolean-names
 message: Start every owned boolean's name with a declared predicate or option prefix and every boolean function's with a predicate prefix, and decode each external boolean name at the boundary.
 requires-tenet: 0.11.0
-paths: ["**/*.ts"]
+paths: ["**/*.ts","packages/browser/**/*.tsx"]
 ---
 
 ## Rules
@@ -53,17 +53,30 @@ For each suppression of this rule that a change adds, does its reason name the s
 ## Local adaptations
 
 The predicate prefixes and option prefixes are `predicatePrefixes` and `optionPrefixes`; the protocol's `BOOLEAN_PREFIXES` holds the predicate prefixes for the wire too.
-ast-grep `boolean-names` rejects an unprefixed boolean known by its `boolean` annotation, a boolean initial value, a comparison, or a `Schema.Boolean` key, in a variable, a parameter, a property signature, a class field, or a field of an object a declaration names; it matches the generated utility `boolean-prefix`, which holds both lists.
-Wrangler's `no_bundle` key, which the stack stages, keeps its name under a suppression that names Wrangler.
+ast-grep `boolean-names` checks TypeScript and `boolean-names-tsx` checks browser TSX, including Elements and stories.
+They recognize boolean annotations, true/false types, boolean-only unions with null or undefined, boolean initializers,
+comparisons, `Schema.Boolean` keys, scalar parameters defaulting to true or false, and state initialized by `useState(true)` or `useState(false)`.
+The checked declarations are variables, parameters, property signatures, class fields, and fields of declared objects.
+The generated prefix utilities hold both lists. UI options may start with `show` or `hide`.
+Numeric or string unions with a false sentinel, such as `interval: number | false`, describe values rather than flags.
+
+Listed native and Base UI attributes retain their names in `Props` and `Properties` types and in `onX` callback parameters.
+Review that each such field forwards the same attribute; a local state binding still uses a prefix, such as `isOpen`.
+Owned data records map their flags to the native attribute at the control. `CommandShortcut` preserves the external
+hotkey library's declared modifier names. These syntax exceptions do not prove forwarding or allow arbitrary bare flags.
+Wrangler's `no_bundle` key retains its external name. That exact property on the `BuiltBundle` type is the narrow exception;
+it does not exempt ordinary boolean fields or other quoted keys.
 External names map at their boundary: the `--help` and `--version` flags decode into `isHelpRequested` and `isVersionRequested`.
 
 The v11 predicate-return naming additions are outside the current adoption baseline at commit 94f2d0f.
 The shipped assets stay unloaded until their predicate-only checks use the protocol-owned prefix list and have a shrinking baseline.
-The existing boolean-names rule continues to check every owned field and binding it recognizes; no JSX props are in scope.
+The November 5, 2026 browser adoption extends field and binding checks to TSX and component props.
+Predicate-return naming remains a review check: these rules do not infer function return types or indirect boolean values.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`.
+Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`, `show`, `hide`; `nativeAttributes` `autoFocus`, `checked`, `defaultChecked`, `defaultOpen`, `disabled`, `hidden`, `inert`, `indeterminate`, `modal`, `multiple`, `open`, `readOnly`, `required`; `keyboardModifiers` `mod`, `ctrl`, `alt`, `shift`, `meta`.
 - ast-grep `boolean-names` (NM-07): enforced
+- ast-grep `boolean-names-tsx` (NM-07): enforced
 
 <!-- End of the generated block. -->

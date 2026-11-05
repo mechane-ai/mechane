@@ -4,14 +4,19 @@ import { AST_GREP_UTILITIES, GENERATED_HEADER } from './constants.ts';
 import { yamlScalar } from './yaml-scalar.ts';
 
 /** One generated ast-grep utility: the id rules match it by, and its rule's one key and value. */
-type UtilityFileInput = { readonly utility: string; readonly key: string; readonly value: string | number };
+type UtilityFileInput = {
+  readonly utility: string;
+  readonly key: string;
+  readonly value: string | number;
+  readonly language: 'TypeScript' | 'Tsx';
+};
 
 /** A utility's file: a header naming its source, then its id, its language and its one-key rule, as YAML. */
-export function utilityFile({ utility, key, value }: UtilityFileInput): GeneratedFile {
+export function utilityFile({ utility, key, value, language }: UtilityFileInput): GeneratedFile {
   const text = [
     GENERATED_HEADER,
     `id: ${utility}`,
-    'language: TypeScript',
+    `language: ${language}`,
     'rule:',
     `  ${key}: ${yamlScalar({ value })}`,
     '',

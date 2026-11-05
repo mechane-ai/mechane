@@ -66,11 +66,12 @@ Compound APIs such as Field and Dialog are documented through their family compo
 Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
 UI props; the tables are not an exhaustive API reference.
 
-Import shared tokens directly from `@mechane-ai/elements/tokens.stylex`. StyleX needs the defining export to compile
-variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shared page insets, toolbar
-height, and section gaps live in the foundation's `pageGeometry`; other shell measurements belong to `elements/layout`.
-Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from `/theme` to the document
-root so portaled controls inherit it. Applications own theme preference and persistence.
+Import variables from `@mechane-ai/elements/tokens.stylex` and compile-time constants from
+`@mechane-ai/elements/constants.stylex`. StyleX needs their direct definitions; the consumer compiles constants
+alongside its styles. Variables are CSS values; chart scales need numeric geometry in the caller’s unit. Shared page
+insets, toolbar height, and section gaps live in the foundation's `pageGeometry`; other shell measurements belong to
+`elements/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from
+`/theme` to the document root so portaled controls inherit it. Applications own theme preference and persistence.
 
 Use CSS `calc()` when deriving CSS dimensions from imported StyleX constants. JavaScript arithmetic on a transformed
 token can emit an invalid declaration even when TypeScript accepts it. Inspect the compiled value and the resulting
@@ -155,7 +156,7 @@ decorative and noninteractive. `ContentReveal` coordinates nested entry through 
 
 ## Data and content
 
-Use `Table` for custom semantic table structures and `DataTable` for rows compared through shared columns. Pass already
+Use `DataTable` for rows compared through shared columns and native tables for custom semantic structures. Pass already
 prepared rows to DataTable. Sorting, query state, pagination, and eligibility belong to the application; virtualization
 only bounds the rendered rows. A command's shortcut calls the same eligible action as its visible control. Declare each
 column's `role`: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles determine alignment and

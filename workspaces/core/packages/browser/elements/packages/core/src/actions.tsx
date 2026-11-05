@@ -4,10 +4,11 @@ import { useRender } from '@base-ui/react/use-render';
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   button: {
@@ -71,7 +72,7 @@ const styles = stylex.create({
   text: {
     'display': 'inline-block',
     'boxSizing': 'border-box',
-    'minHeight': { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'minWidth': 0,
     'paddingBlock': 0,
     'paddingInline': 0,
@@ -119,7 +120,7 @@ const styles = stylex.create({
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost';
 type ButtonTone = 'neutral' | 'danger';
-type PendingProps = { readonly pending?: boolean; readonly pendingLabel?: string | undefined };
+type PendingProps = { readonly isPending?: boolean; readonly pendingLabel?: string | undefined };
 
 type ButtonProps = ComponentProps<typeof BaseButton> &
   PendingProps & { readonly variant?: ButtonVariant; readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
@@ -149,17 +150,17 @@ const textTones = { neutral: styles.neutralText, danger: styles.dangerText } sat
   stylex.StyleXStyles
 >;
 
-function ButtonLabels({ id, children, pending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
+function ButtonLabels({ id, children, isPending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
   if (pendingLabel === undefined) {
     return children;
   }
 
   return (
     <span id={id} {...stylex.props(styles.labels)}>
-      <span aria-hidden={pending} {...stylex.props(styles.label, pending && styles.hidden)}>
+      <span aria-hidden={isPending} {...stylex.props(styles.label, isPending && styles.hidden)}>
         {children}
       </span>
-      <span aria-hidden={!pending} {...stylex.props(styles.label, !pending && styles.hidden)}>
+      <span aria-hidden={!isPending} {...stylex.props(styles.label, !isPending && styles.hidden)}>
         {pendingLabel}
       </span>
     </span>
@@ -170,7 +171,7 @@ function ActionButton({
   variant = 'outline',
   tone = 'neutral',
   isIconOnly = false,
-  pending = false,
+  isPending = false,
   pendingLabel,
   children,
   className,
@@ -194,15 +195,15 @@ function ActionButton({
     <BaseButton
       {...props}
       {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
-      disabled={disabled || pending}
-      focusableWhenDisabled={pending || props.focusableWhenDisabled}
+      disabled={disabled || isPending}
+      focusableWhenDisabled={isPending || props.focusableWhenDisabled}
       aria-labelledby={
         props['aria-labelledby'] ??
         (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
       }
-      aria-busy={pending || props['aria-busy']}
+      aria-busy={isPending || props['aria-busy']}
     >
-      <ButtonLabels id={labelId} pending={pending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>
@@ -225,7 +226,7 @@ export function IconButton({ children, ...props }: IconButtonProps): ReactNode {
 
 export function TextButton({
   tone = 'neutral',
-  pending = false,
+  isPending = false,
   pendingLabel,
   children,
   className,
@@ -241,15 +242,15 @@ export function TextButton({
     <BaseButton
       {...props}
       {...mergeStyles<BaseButton.State>({ className, style, styles: appearance })}
-      disabled={disabled || pending}
-      focusableWhenDisabled={pending || props.focusableWhenDisabled}
+      disabled={disabled || isPending}
+      focusableWhenDisabled={isPending || props.focusableWhenDisabled}
       aria-labelledby={
         props['aria-labelledby'] ??
         (props['aria-label'] === undefined && pendingLabel !== undefined ? labelId : undefined)
       }
-      aria-busy={pending || props['aria-busy']}
+      aria-busy={isPending || props['aria-busy']}
     >
-      <ButtonLabels id={labelId} pending={pending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>

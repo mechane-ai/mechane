@@ -16,7 +16,7 @@ export function DefinitionConflict({
 }): ReactNode {
   return (
     <Panel>
-      <Stack compact>
+      <Stack isCompact>
         <Subheading>Definition changed</Subheading>
         {saved === undefined ? (
           <>

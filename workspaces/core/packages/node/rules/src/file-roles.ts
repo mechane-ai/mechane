@@ -37,6 +37,7 @@ export const FILE_ROLES = {
     'packages/**/src/index.ts',
     'packages/browser/elements/packages/**/index.ts',
     'packages/browser/elements/packages/content/src/link.ts',
+    'packages/browser/elements/packages/foundations/src/tokens.ts',
   ],
   [FileRole.Catalog]: ['packages/node/smoke/src/catalog.ts'],
   [FileRole.ObjectClass]: [

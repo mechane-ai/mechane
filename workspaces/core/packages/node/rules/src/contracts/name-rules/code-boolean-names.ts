@@ -8,7 +8,48 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
  */
 const VALUES = {
   predicatePrefixes: BOOLEAN_PREFIXES,
-  optionPrefixes: ['include', 'allow', 'skip', 'keep', 'use'],
+  optionPrefixes: ['include', 'allow', 'skip', 'keep', 'use', 'show', 'hide'],
+  nativeAttributes: [
+    'autoFocus',
+    'checked',
+    'defaultChecked',
+    'defaultOpen',
+    'disabled',
+    'hidden',
+    'inert',
+    'indeterminate',
+    'modal',
+    'multiple',
+    'open',
+    'readOnly',
+    'required',
+  ],
+  keyboardModifiers: ['mod', 'ctrl', 'alt', 'shift', 'meta'],
+} as const;
+
+const EXAMPLES = {
+  violation: [
+    'const paid = true;',
+    'type Mech = { readonly ready: boolean };',
+    'type ButtonProps = { readonly busy: boolean };',
+    'const [pending, setPending] = useState(false);',
+    'const disabled = true;',
+    'type PanelProps = { readonly busy: boolean | undefined };',
+    'type PlaceholderProps = { readonly icon: true };',
+    'function useNavigation(focusOnNavigation = true) {}',
+    "type OwnedFlags = { readonly 'no_bundle': true };",
+  ],
+  allowed: [
+    'const isPaid = true;',
+    'type ButtonProps = { readonly disabled: boolean; readonly isBusy: boolean };',
+    'type StateProperties = { readonly onChange: (checked: boolean) => void };',
+    'type CommandShortcut = { readonly ctrl: boolean };',
+    'const [isPending, setIsPending] = useState(false);',
+    'type PollingOptions = { readonly interval: number | false };',
+    'function useNavigation(shouldFocusOnNavigation = true) {}',
+    'function Control({ disabled = false }: ControlProps) {}',
+    'type BuiltBundle = { readonly no_bundle: true };',
+  ],
 } as const;
 
 /** What enforces `code-boolean-names`: the prefixes the boolean-names rule reads. */
@@ -19,10 +60,17 @@ export const codeBooleanNames = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'boolean-names',
+      ...EXAMPLES,
       behavior: FixBehavior.BindingNames,
       standard: 'NM-07',
-      violation: ['const paid = true;', 'type Mech = { readonly ready: boolean };'],
-      allowed: ['const isPaid = true;', 'type Mech = { readonly isReady: boolean };'],
+    },
+    {
+      ...AST_GREP_DEFAULTS,
+      ...ADOPTED,
+      ...EXAMPLES,
+      name: 'boolean-names-tsx',
+      behavior: FixBehavior.BindingNames,
+      standard: 'NM-07',
     },
   ],
 } as const satisfies ContractEnforcement;

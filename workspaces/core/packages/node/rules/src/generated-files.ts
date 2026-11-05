@@ -28,6 +28,7 @@ type GeneratedFilesInput = {
   readonly wordLists: WordLists;
   readonly exitStatuses: ReadonlyArray<ExitStatus>;
   readonly members: ReadonlyArray<WorkspaceMember>;
+  readonly parserCompanions: ReadonlyArray<GeneratedFile>;
 };
 
 /**
@@ -43,7 +44,13 @@ type GeneratedFiles = {
  * Every file the registry generates: the configurations, before the formatter lays them out, each contract with its
  * generated block, the sorted word lists, and the attributes that mark them all.
  */
-export function generatedFiles({ contracts, wordLists, exitStatuses, members }: GeneratedFilesInput): GeneratedFiles {
+export function generatedFiles({
+  contracts,
+  wordLists,
+  exitStatuses,
+  members,
+  parserCompanions,
+}: GeneratedFilesInput): GeneratedFiles {
   const configurations = [
     oxlintConfiguration({ contracts }),
     compilerConfiguration(),
@@ -56,6 +63,7 @@ export function generatedFiles({ contracts, wordLists, exitStatuses, members }: 
     ...formatterConfigurations(),
     astGrepConfiguration({ contracts }),
     ...astGrepUtilities({ wordLists }),
+    ...parserCompanions,
     ...astGrepTests(),
     contractNamesModule({ contracts }),
   ];

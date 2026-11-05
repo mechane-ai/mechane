@@ -20,7 +20,7 @@ const conversationEvents: ReadonlySet<Event['type']> = new Set([
 
 export function ConversationPlaceholder(): ReactNode {
   return (
-    <Conversation.Root follow={false}>
+    <Conversation.Root shouldFollow={false}>
       <Conversation.Viewport label="Conversation">
         <Conversation.Content>
           <Message author="" kind="user" avatar={<SkeletonText width="8ch" />}>
@@ -145,7 +145,7 @@ export function MechConversation({
               )}
               {event.type === EventType.MechForked && (
                 <MessageBoundary label="Conversation continued from another mech">
-                  <Stack compact>
+                  <Stack isCompact>
                     <Muted>
                       History was copied through event {event.forkedFrom.sequence}. Each mech continues independently
                       after this point.

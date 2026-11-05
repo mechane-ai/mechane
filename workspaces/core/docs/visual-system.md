@@ -92,6 +92,14 @@ import/type enforcement from the browser checks that establish timing and geomet
 
 ## Extending the system
 
+A visual role has one implementation. Comparable records use `DataTable`, including small finite lists. Display choices
+use `DisplayOptions`; applications provide their labels, checked state, and change operation. A collection has one
+action slot. Grouping actions or preserving them during a refresh is a composition decision, not a second action API.
+
+Keep distinctions that change behavior: a quick filter menu and a form with Apply have different commit semantics; an
+inline link and a toolbar action have different layout roles. Remove choices that only reproduce an existing role.
+Before adding a prop, identify the user interaction that needs it and show it in a real composition.
+
 A new component starts by choosing its role and an existing neighboring component. A shared new visual role can justify
 a token. A one-off diagram coordinate does not. Named component variants keep applications from assembling new visual
 dialects through style overrides.

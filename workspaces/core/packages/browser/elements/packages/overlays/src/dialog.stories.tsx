@@ -31,9 +31,9 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-type ArchiveDialogProps = { readonly composed?: boolean; readonly renderFromState?: boolean };
+type ArchiveDialogProps = { readonly isComposed?: boolean; readonly shouldRenderFromState?: boolean };
 
-function ArchiveDialog({ composed = false, renderFromState = false }: ArchiveDialogProps): ReactNode {
+function ArchiveDialog({ isComposed = false, shouldRenderFromState = false }: ArchiveDialogProps): ReactNode {
   const [openCount, setOpenCount] = useState(0);
 
   const trigger = (
@@ -41,7 +41,7 @@ function ArchiveDialog({ composed = false, renderFromState = false }: ArchiveDia
       onClick={() => setOpenCount(openCount + 1)}
       style={{ minWidth: 160 }}
       render={
-        renderFromState ? (
+        shouldRenderFromState ? (
           (props, state) => <Button {...props} variant={state.open ? 'solid' : 'outline'} />
         ) : (
           <Button />
@@ -54,10 +54,10 @@ function ArchiveDialog({ composed = false, renderFromState = false }: ArchiveDia
   );
 
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Tooltip.Provider>
         <Dialog.Root>
-          {composed ? (
+          {isComposed ? (
             <Tooltip.Root>
               <Tooltip.Trigger render={trigger} />
               <Tooltip.Portal>
@@ -73,7 +73,7 @@ function ArchiveDialog({ composed = false, renderFromState = false }: ArchiveDia
             <Dialog.Backdrop />
             <Dialog.Popup>
               <Stack>
-                <Stack compact>
+                <Stack isCompact>
                   <Dialog.Title>Archive release notes?</Dialog.Title>
                   <Dialog.Description>
                     The saved notes remain available, but this item will no longer appear in the active collection.
@@ -104,7 +104,7 @@ export const ComposedTooltipTrigger: Story = {
       },
     },
   },
-  render: () => <ArchiveDialog composed />,
+  render: () => <ArchiveDialog isComposed />,
 };
 
 export const RenderFromState: Story = {
@@ -116,7 +116,7 @@ export const RenderFromState: Story = {
       },
     },
   },
-  render: () => <ArchiveDialog composed renderFromState />,
+  render: () => <ArchiveDialog isComposed shouldRenderFromState />,
 };
 
 export const NarrowDialog: Story = {

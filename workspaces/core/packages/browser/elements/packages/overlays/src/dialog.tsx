@@ -1,11 +1,12 @@
 import { Dialog as BaseDialog } from '@base-ui/react/dialog';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { layers } from '../../foundations/src/constants.stylex.ts';
 import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { overlayStyles } from '../../foundations/src/overlay-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, layers, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   popup: {

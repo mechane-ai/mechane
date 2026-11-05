@@ -73,13 +73,13 @@ export const PlaceholderGeometry: Story = {
     <Stack>
       <Columns>
         <div {...stylex.props(styles.sample, styles.surface)}>
-          <Stack compact>
+          <Stack isCompact>
             <Text>Surface</Text>
             <PlaceholderSample label="Loading surface example" />
           </Stack>
         </div>
         <div {...stylex.props(styles.sample, styles.canvas)}>
-          <Stack compact>
+          <Stack isCompact>
             <Text>Canvas</Text>
             <PlaceholderSample label="Loading canvas example" />
           </Stack>
@@ -165,7 +165,7 @@ function ReadExample({ initialState = 'pending' }: { readonly initialState?: Asy
         <Button onClick={() => setState('ready')}>Complete read</Button>
         <Button onClick={() => setState('failed')}>Fail read</Button>
       </Row>
-      <Panel padded={false}>
+      <Panel isPadded={false}>
         <LoadingScope identity={attempt}>
           {state === 'pending' ? (
             <AsyncRegion state="pending" {...region} />

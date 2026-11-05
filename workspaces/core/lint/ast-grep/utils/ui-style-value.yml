@@ -1,0 +1,9 @@
+id: ui-style-value
+language: TypeScript
+rule:
+  inside:
+    kind: call_expression
+    has:
+      field: function
+      regex: ^stylex[.](create|createTheme)$
+    stopBy: end

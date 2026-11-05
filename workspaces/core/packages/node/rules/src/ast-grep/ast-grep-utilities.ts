@@ -11,13 +11,21 @@ type AstGrepUtilitiesInput = { readonly wordLists: WordLists };
  * with `matches`. Each list is a regular expression in every case style a name can use.
  */
 export function astGrepUtilities({ wordLists }: AstGrepUtilitiesInput): ReadonlyArray<GeneratedFile> {
-  const { predicatePrefixes, optionPrefixes } = CONTRACTS['code-boolean-names'].values;
+  const { predicatePrefixes, optionPrefixes, nativeAttributes, keyboardModifiers } =
+    CONTRACTS['code-boolean-names'].values;
+
   const prefixes = wordVariants({ words: [...predicatePrefixes, ...optionPrefixes] });
   const measures = wordVariants({ words: CONTRACTS['code-measured-value-names'].values.measureWords });
   const suffixes = wordVariants({ words: [...wordLists.units, ...wordLists.countedNouns] });
 
-  const alternatives = {
+  const booleans = {
     'boolean-prefix': [`^#?(${prefixes.plain})([A-Z_]|$)`, `^(${prefixes.upper})_`],
+    'native-boolean-name': [`^['"]?(${nativeAttributes.join('|')})['"]?$`],
+    'keyboard-modifier-name': [`^(${keyboardModifiers.join('|')})$`],
+  };
+
+  const alternatives = {
+    ...booleans,
     'measure-word': [
       `^#?(${measures.plain})$`,
       `[a-z0-9](${measures.capital})$`,
@@ -32,11 +40,18 @@ export function astGrepUtilities({ wordLists }: AstGrepUtilitiesInput): Readonly
   const overflow = CONTRACTS['code-guard-clauses'].values.trailingIfStatements + 1;
 
   const regexUtility: (alternative: readonly [string, ReadonlyArray<string>]) => GeneratedFile = ([utility, regexes]) =>
-    utilityFile({ utility, key: 'regex', value: regexes.join('|') });
+    utilityFile({ utility, key: 'regex', value: regexes.join('|'), language: 'TypeScript' });
+
+  const tsxUtility: (alternative: readonly [string, ReadonlyArray<string>]) => GeneratedFile = ([utility, regexes]) => {
+    const value = regexes.join('|');
+
+    return utilityFile({ utility: `${utility}-tsx`, key: 'regex', value, language: 'Tsx' });
+  };
 
   return [
     ...Record.toEntries(alternatives).map(regexUtility),
-    utilityFile({ utility: 'trailing-if-overflow', key: 'nthChild', value: overflow }),
+    ...Record.toEntries(booleans).map(tsxUtility),
+    utilityFile({ utility: 'trailing-if-overflow', key: 'nthChild', value: overflow, language: 'TypeScript' }),
   ];
 }
 

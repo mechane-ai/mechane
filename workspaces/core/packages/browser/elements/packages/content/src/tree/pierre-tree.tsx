@@ -4,7 +4,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Text } from '../../../core/src/index.ts';
 import { Input } from '../../../forms/src/index.ts';
-import { conditions, spacing } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { spacing } from '../../../foundations/src/tokens.stylex.ts';
 import { treeCSS } from '../pierre-theme.ts';
 import type { FileTreeProps } from './file-tree-types.ts';
 

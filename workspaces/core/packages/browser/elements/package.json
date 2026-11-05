@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -10,6 +10,7 @@
   },
   "files": [
     "dist",
+    "packages/foundations/src/constants.stylex.ts",
     "packages/foundations/src/tokens.stylex.ts",
     "styles.css",
     "README.md",
@@ -46,7 +47,8 @@
     "./charts/timeline": "./packages/charts/src/timeline/index.ts",
     "./theme": "./packages/foundations/src/theme.ts",
     "./csp": "./packages/foundations/src/csp/index.ts",
-    "./tokens": "./packages/foundations/src/tokens.stylex.ts",
+    "./tokens": "./packages/foundations/src/tokens.ts",
+    "./constants.stylex": "./packages/foundations/src/constants.stylex.ts",
     "./tokens.stylex": "./packages/foundations/src/tokens.stylex.ts",
     "./styles.css": "./packages/foundations/src/styles.css"
   },

@@ -29,17 +29,17 @@ export const Recommended: Story = {
   render: () => (
     <Columns>
       <Panel>
-        <Stack compact>
+        <Stack isCompact>
           <Subheading>Summary</Subheading>
           <Muted>Related information stays together.</Muted>
           <Divider />
-          <Row between>
+          <Row shouldSpaceBetween>
             <Muted>Last saved just now</Muted>
             <Button>View details</Button>
           </Row>
         </Stack>
       </Panel>
-      <Panel padded={false}>
+      <Panel isPadded={false}>
         <EmptyState title="No items yet" action={<Button variant="solid">Create item</Button>}>
           Create the first item when you are ready.
         </EmptyState>
@@ -50,10 +50,10 @@ export const Recommended: Story = {
 
 export const LinkedPanel: Story = {
   render: () => (
-    <Panel padded={false}>
+    <Panel isPadded={false}>
       <SurfaceLink href="#release-notes">
         <div {...stylex.props(styles.linkContent)}>
-          <Stack compact>
+          <Stack isCompact>
             <Subheading>Release notes and follow-up review materials</Subheading>
             <Muted>Open the saved notes and the references supplied by collaborators.</Muted>
           </Stack>
@@ -65,7 +65,7 @@ export const LinkedPanel: Story = {
 
 export const InitialFailure: Story = {
   render: () => (
-    <Notice error>
+    <Notice hasError>
       Items could not be loaded. <Button>Retry</Button>
     </Notice>
   ),

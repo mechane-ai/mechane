@@ -8,11 +8,11 @@ import type { ReactNode } from 'react';
 
 type RefreshState =
   | { readonly kind: 'idle' | 'pending' }
-  | { readonly kind: 'failed'; readonly problem: unknown; readonly retry: () => void; readonly retrying: boolean };
+  | { readonly kind: 'failed'; readonly problem: unknown; readonly retry: () => void; readonly isRetrying: boolean };
 
 export type ResourceState<T> =
   | { readonly kind: 'pending' }
-  | { readonly kind: 'failed'; readonly problem: unknown; readonly retry: () => void; readonly retrying: boolean }
+  | { readonly kind: 'failed'; readonly problem: unknown; readonly retry: () => void; readonly isRetrying: boolean }
   | { readonly kind: 'ready'; readonly value: T; readonly refresh: RefreshState };
 
 /** The producer owns a collection; readers can observe it without canceling one another. */
@@ -34,7 +34,7 @@ export function useCollectionLifetime(
 }
 
 export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>): ResourceState<T> {
-  const query = useLiveQuery({ query: (q) => q.from({ snapshot: source }), client: data.db });
+  const query = useLiveQuery({ query: (builder) => builder.from({ snapshot: source }), client: data.db });
   const subscribe = useCallback((onChange: () => void) => data.subscribeFetchStatus(source, onChange), [data, source]);
   const readStatus = useCallback(() => data.readFetchStatus(source), [data, source]);
   const fetchStatus = useSyncExternalStore(subscribe, readStatus, readStatus);
@@ -43,27 +43,27 @@ export function useResource<T>(data: ConsoleData, source: SnapshotCollection<T>)
   const queryFailure = query.health?.error ?? query.health?.failureReason;
   const failure = sourceFailure ?? queryFailure;
   const problem = failure?.cause;
-  const failed = source.health.hasErrors || query.health?.hasErrors === true;
-  const mayRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
-  const refreshing = fetchStatus !== 'idle' || source.health.reloading || query.health?.reloading === true;
+  const hasFailed = source.health.hasErrors || query.health?.hasErrors === true;
+  const canRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
+  const isRefreshing = fetchStatus !== 'idle' || source.health.reloading || query.health?.reloading === true;
 
   function retry(): void {
-    const loadFailed = source.health.error !== null || (query.health?.error ?? null) !== null;
-    const recovery = loadFailed ? query.collection.reload() : source.utils.refetch();
+    const hasLoadFailed = source.health.error !== null || (query.health?.error ?? null) !== null;
+    const recovery = hasLoadFailed ? query.collection.reload() : source.utils.refetch();
 
     // Failed retries remain observable through the collection's health state.
     void Promise.allSettled([recovery]);
   }
 
-  if (snapshot !== undefined && mayRetain) {
-    const refresh: RefreshState = failed
-      ? { kind: 'failed', problem, retry, retrying: refreshing }
-      : { kind: refreshing ? 'pending' : 'idle' };
+  if (snapshot !== undefined && canRetain) {
+    const refresh: RefreshState = hasFailed
+      ? { kind: 'failed', problem, retry, isRetrying: isRefreshing }
+      : { kind: isRefreshing ? 'pending' : 'idle' };
 
     return { kind: 'ready', value: snapshot.value, refresh };
   }
 
-  return failed ? { kind: 'failed', problem, retry, retrying: refreshing } : { kind: 'pending' };
+  return hasFailed ? { kind: 'failed', problem, retry, isRetrying: isRefreshing } : { kind: 'pending' };
 }
 
 type ResourceViewProps<T> = {
@@ -90,9 +90,9 @@ export function ResourceView<T>({
           {children(
             state.value,
             state.refresh.kind === 'failed' ? (
-              <Notice error>
+              <Notice hasError>
                 Showing the last result. Refresh failed. {problemMessage(state.refresh.problem)}{' '}
-                <Button onClick={state.refresh.retry} pending={state.refresh.retrying} pendingLabel="Retrying…">
+                <Button onClick={state.refresh.retry} isPending={state.refresh.isRetrying} pendingLabel="Retrying…">
                   Retry refresh
                 </Button>
               </Notice>
@@ -108,7 +108,7 @@ export function ResourceView<T>({
               <EmptyState
                 title="Unable to load"
                 action={
-                  <Button onClick={state.retry} pending={state.retrying} pendingLabel="Trying again…">
+                  <Button onClick={state.retry} isPending={state.isRetrying} pendingLabel="Trying again…">
                     Try again
                   </Button>
                 }

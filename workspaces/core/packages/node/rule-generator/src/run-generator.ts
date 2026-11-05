@@ -7,6 +7,7 @@ import { formattedFile } from './files/formatted-file.ts';
 import { readContracts } from './files/read-contracts.ts';
 import { readExitStatuses } from './files/read-exit-statuses.ts';
 import { readMembers } from './files/read-members.ts';
+import { readParserCompanions } from './files/read-parser-companions.ts';
 import { readWordLists } from './files/read-word-lists.ts';
 import { staleFiles } from './files/stale-files.ts';
 import { writeFiles } from './files/write-files.ts';
@@ -34,12 +35,14 @@ export const runGenerator = Effect.fn('runGenerator')(function* ({
 }: RunGeneratorInput): Effect.fn.Return<ReadonlyArray<string>, GenerateFailed> {
   const wordLists = yield* readWordLists();
   const contracts = yield* readContracts();
+  const parserCompanions = yield* readParserCompanions();
 
   const { configurations, verbatim } = generatedFiles({
     contracts,
     wordLists,
     exitStatuses: yield* readExitStatuses(),
     members: yield* readMembers(),
+    parserCompanions,
   });
 
   const formatted = yield* Effect.forEach(configurations, (file) => formattedFile({ file }), { concurrency: 1 });

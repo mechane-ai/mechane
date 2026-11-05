@@ -28,22 +28,22 @@ export default meta;
 type Story = StoryObj;
 
 function Example(): ReactNode {
-  const [focused, setFocused] = useState(false);
+  const [isFocused, setFocused] = useState(false);
   const [draft, setDraft] = useState('Keep this draft while inspecting the result.');
 
   return (
     <AppShell
-      focus={focused}
+      shouldFocus={isFocused}
       sidebar={
         <Navigation>
           <NavigationSection label="Overview">
-            <NavigationItem selected>Conversations</NavigationItem>
+            <NavigationItem isSelected>Conversations</NavigationItem>
           </NavigationSection>
         </Navigation>
       }
     >
       <ViewStack.Root>
-        <ViewStack.Panel active={!focused}>
+        <ViewStack.Panel isActive={!isFocused}>
           <PageToolbar title="Project assistant" />
           <Workbench>
             <WorkbenchScroll label="Conversation" scrollRestorationId="example-conversation">
@@ -57,7 +57,7 @@ function Example(): ReactNode {
             <WorkbenchFooter>
               <PromptInput
                 label="Message"
-                compact
+                isCompact
                 value={draft}
                 onValueChange={setDraft}
                 onSubmit={(event) => event.preventDefault()}
@@ -65,11 +65,11 @@ function Example(): ReactNode {
             </WorkbenchFooter>
           </Workbench>
         </ViewStack.Panel>
-        {focused && (
+        {isFocused && (
           <>
             <PageToolbar
               title="Run details"
-              navigation={false}
+              showNavigation={false}
               leading={<ToolbarAction onClick={() => setFocused(false)}>Back</ToolbarAction>}
             />
             <Workbench>

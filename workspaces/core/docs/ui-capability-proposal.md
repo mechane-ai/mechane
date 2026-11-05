@@ -84,10 +84,9 @@ parts. Those compositions share their real layout geometry. A labelled loading r
 skeleton pieces are hidden from assistive technology. Refreshes retain authorized content and avoid recreating a loading
 screen.
 
-Simple `Table` remains useful without sorting or virtualization. `DataTable` accepts prepared rows, stable keys,
-columns, and controlled sort/selection values. The application owns the query and shareable URL state. Virtualization
-addresses rendered rows, not API pagination. Grouped or unusual table structures compose low-level parts rather than
-expanding DataTable into an option-driven layout engine.
+`DataTable` accepts prepared rows, stable keys, columns, and optional controlled sort/selection values. The application
+owns the query and shareable URL state. Virtualization addresses rendered rows, not API pagination. Grouped or unusual
+table structures use native tables rather than expanding DataTable into an option-driven layout engine.
 
 Carousel, OTP input, a full rich-text editor, a live terminal emulator, and arbitrary workflow editing remain optional
 future additions. Current evidence does not require them. One name per concept remains preferable: Panel does not need a

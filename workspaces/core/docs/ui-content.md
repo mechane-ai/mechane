@@ -17,7 +17,7 @@ Fenced code uses CodeBlock. Streaming updates preserve partial fences without ad
 ```tsx
 import { Markdown } from '@mechane-ai/elements/content/markdown';
 
-<Markdown streaming={isStreaming}>{reply}</Markdown>;
+<Markdown isStreaming={isStreaming}>{reply}</Markdown>;
 ```
 
 Raw HTML is disabled. Images display an explicit link labelled by their alternative text without requesting their

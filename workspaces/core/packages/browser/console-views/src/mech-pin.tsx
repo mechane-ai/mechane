@@ -5,21 +5,21 @@ import type { ReactNode } from 'react';
 
 export function MechPinButton({
   name,
-  pinned,
+  isPinned,
   onToggle,
 }: {
   readonly name: string;
-  readonly pinned: boolean;
+  readonly isPinned: boolean;
   readonly onToggle: () => void;
 }): ReactNode {
-  const label = `${pinned ? 'Unpin' : 'Pin'} ${name}`;
+  const label = `${isPinned ? 'Unpin' : 'Pin'} ${name}`;
 
   return (
     <Tooltip.Root>
       <Tooltip.Trigger
-        render={<IconButton variant="ghost" aria-label={label} aria-pressed={pinned} onClick={onToggle} />}
+        render={<IconButton variant="ghost" aria-label={label} aria-pressed={isPinned} onClick={onToggle} />}
       >
-        {pinned ? <PinOff size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+        {isPinned ? <PinOff size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
       </Tooltip.Trigger>
       <Tooltip.Portal>
         <Tooltip.Positioner>

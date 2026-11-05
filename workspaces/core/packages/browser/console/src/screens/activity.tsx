@@ -13,18 +13,18 @@ import { Resource } from '../resource.tsx';
 /** Keep the displayed page until the reader asks to bring newer rows into view. */
 function ActivityPage({
   page,
-  latest,
+  isLatest,
   controls,
   runLink,
 }: {
   readonly page: EventPage;
-  readonly latest: boolean;
+  readonly isLatest: boolean;
   readonly controls: (page: EventPage) => ReactNode;
   readonly runLink: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
   const [shown, setShown] = useState(page);
-  const visible = latest ? shown : page;
-  const hasUnreadActivity = latest && page.events.at(-1)?.sequence !== visible.events.at(-1)?.sequence;
+  const visible = isLatest ? shown : page;
+  const hasUnreadActivity = isLatest && page.events.at(-1)?.sequence !== visible.events.at(-1)?.sequence;
 
   return (
     <>
@@ -59,7 +59,7 @@ export function ActivityScreen({
           <ActivityPage
             key={before ?? 'latest'}
             page={page}
-            latest={before === null}
+            isLatest={before === null}
             runLink={(turn, sequence) => (
               <ConsoleLink
                 row={`event-${sequence}`}
@@ -71,8 +71,8 @@ export function ActivityScreen({
             controls={(visible) => {
               const hasPages = visible.hasMore || cursors.length > 0;
               const showPagination = hasPages || failure !== undefined;
-              const previousDisabled = cursors.length === 0 || pending !== undefined;
-              const nextDisabled = !visible.hasMore || pending !== undefined;
+              const isPreviousDisabled = cursors.length === 0 || pending !== undefined;
+              const isNextDisabled = !visible.hasMore || pending !== undefined;
 
               return (
                 showPagination && (
@@ -80,17 +80,17 @@ export function ActivityScreen({
                     actions={
                       <Row>
                         <Button
-                          pending={pending === 'previous'}
+                          isPending={pending === 'previous'}
                           pendingLabel="Loading newer activity…"
-                          disabled={previousDisabled}
+                          disabled={isPreviousDisabled}
                           onClick={() => setCursors(cursors.slice(0, -1))}
                         >
                           Newer
                         </Button>
                         <Button
-                          pending={pending === 'next'}
+                          isPending={pending === 'next'}
                           pendingLabel="Loading older activity…"
-                          disabled={nextDisabled}
+                          disabled={isNextDisabled}
                           onClick={() => {
                             const first = visible.events[0];
 

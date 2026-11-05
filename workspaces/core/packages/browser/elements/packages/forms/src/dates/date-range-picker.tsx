@@ -56,10 +56,10 @@ export function DateRangePicker({
   disabled,
   ...environment
 }: DateRangePickerProps): ReactNode {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(false);
 
   return (
-    <Popover.Root open={open} onOpenChange={setOpen}>
+    <Popover.Root open={isOpen} onOpenChange={setOpen}>
       <Popover.Trigger disabled={disabled} render={<Button variant="outline" />} aria-label={label}>
         <CalendarDays size={16} aria-hidden="true" />
         {value === undefined ? label : formatValue(value)}

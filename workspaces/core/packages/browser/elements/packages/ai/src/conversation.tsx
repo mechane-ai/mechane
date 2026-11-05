@@ -73,7 +73,7 @@ const styles = stylex.create({
 export type ConversationRootProps = {
   readonly children: ReactNode;
   readonly initialPosition?: 'start' | 'end';
-  readonly follow?: boolean;
+  readonly shouldFollow?: boolean;
   readonly viewportRef?: RefObject<HTMLDivElement | null> | undefined;
 };
 
@@ -83,7 +83,7 @@ export type ConversationViewportProps = {
   readonly scrollRestorationId?: string;
 };
 
-export type ConversationContentProps = { readonly children: ReactNode; readonly streaming?: boolean };
+export type ConversationContentProps = { readonly children: ReactNode; readonly isStreaming?: boolean };
 export type ConversationItemProps = { readonly messageId: string; readonly children: ReactNode };
 export type ConversationJumpProps = { readonly label?: string };
 export type ConversationControlsProps = { readonly children: ReactNode };
@@ -94,7 +94,7 @@ const ViewportContext = createContext<RefObject<HTMLDivElement | null> | undefin
 function ConversationRoot({
   children,
   initialPosition = 'end',
-  follow = true,
+  shouldFollow = true,
   viewportRef,
 }: ConversationRootProps): ReactNode {
   const fallbackViewport = useRef<HTMLDivElement>(null);
@@ -102,7 +102,7 @@ function ConversationRoot({
 
   return (
     <ViewportContext.Provider value={viewport}>
-      <MessageScroller.Provider autoScroll={follow} defaultScrollPosition={initialPosition}>
+      <MessageScroller.Provider autoScroll={shouldFollow} defaultScrollPosition={initialPosition}>
         <MessageScroller.Root {...stylex.props(styles.root)}>{children}</MessageScroller.Root>
       </MessageScroller.Provider>
     </ViewportContext.Provider>
@@ -124,12 +124,12 @@ function ConversationViewport({ label, children, scrollRestorationId }: Conversa
   );
 }
 
-function ConversationContent({ children, streaming = false }: ConversationContentProps): ReactNode {
+function ConversationContent({ children, isStreaming = false }: ConversationContentProps): ReactNode {
   return (
     <MessageScroller.Content
       aria-live="polite"
       aria-relevant="additions"
-      aria-busy={streaming}
+      aria-busy={isStreaming}
       {...stylex.props(styles.content)}
     >
       {children}

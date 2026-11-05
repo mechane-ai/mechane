@@ -16,18 +16,18 @@ const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'work', 'acti
 
 export function MechPagePlaceholder({
   view,
-  focusedRun = false,
+  hasFocusedRun = false,
   traceTab = 'Overview',
 }: {
   readonly view: ConsoleView;
-  readonly focusedRun?: boolean;
+  readonly hasFocusedRun?: boolean;
   readonly traceTab?: TraceTab;
 }): ReactNode {
-  if (focusedRun) {
+  if (hasFocusedRun) {
     return (
       <>
         <PageToolbar
-          navigation={false}
+          showNavigation={false}
           title={<SkeletonText width="16ch" />}
           leading={<ButtonPlaceholder width="6ch" />}
         />
@@ -48,11 +48,11 @@ export function MechPagePlaceholder({
           <>
             <ConversationPlaceholder />
             <WorkbenchFooter>
-              <PromptInputPlaceholder compact />
+              <PromptInputPlaceholder isCompact />
             </WorkbenchFooter>
           </>
         ) : (
-          <WorkbenchScroll label="Mech content" flush={collectionViews.has(view)}>
+          <WorkbenchScroll label="Mech content" isFlush={collectionViews.has(view)}>
             <MechContentPlaceholder view={view} />
           </WorkbenchScroll>
         )}

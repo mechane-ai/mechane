@@ -2,7 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { accessibility } from '../../foundations/src/accessibility.ts';
-import { conditions, loading, motion } from '../../foundations/src/tokens.stylex.ts';
+import { conditions, loading } from '../../foundations/src/constants.stylex.ts';
+import { motion } from '../../foundations/src/tokens.stylex.ts';
 
 type LoadingClock = { readonly identity: string | number; readonly startedAt: number };
 
@@ -24,10 +25,15 @@ const styles = stylex.create({
   placeholderReveal: { animationDuration: `${loading.placeholderMs}ms` },
 });
 
-export type LoadingScopeProps = { readonly identity: string | number; readonly children: ReactNode };
+export type LoadingScopeProps = {
+  readonly identity: string | number;
+  /** Preserve elapsed loading time when a document hands its first read to React. */
+  readonly initialStartedAt?: number;
+  readonly children: ReactNode;
+};
 
-export function LoadingScope({ identity, children }: LoadingScopeProps): ReactNode {
-  const [clock, setClock] = useState(() => ({ identity, startedAt: Date.now() }));
+export function LoadingScope({ identity, initialStartedAt, children }: LoadingScopeProps): ReactNode {
+  const [clock, setClock] = useState(() => ({ identity, startedAt: initialStartedAt ?? Date.now() }));
   let current = clock;
 
   if (clock.identity !== identity) {
@@ -39,36 +45,36 @@ export function LoadingScope({ identity, children }: LoadingScopeProps): ReactNo
   return <LoadingStarted value={current}>{children}</LoadingStarted>;
 }
 
-export type ContentRevealProps = { readonly enter: boolean; readonly children: ReactNode };
+export type ContentRevealProps = { readonly shouldEnter: boolean; readonly children: ReactNode };
 
-export function ContentReveal({ enter, children }: ContentRevealProps): ReactNode {
-  const ancestorRevealing = useContext(RevealingTogether);
-  const [revealing, setRevealing] = useState(enter && !ancestorRevealing);
+export function ContentReveal({ shouldEnter, children }: ContentRevealProps): ReactNode {
+  const isAncestorRevealing = useContext(RevealingTogether);
+  const [isRevealing, setIsRevealing] = useState(shouldEnter && !isAncestorRevealing);
   const content = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const element = content.current;
 
-    if (!revealing || element === null) {
+    if (!isRevealing || element === null) {
       return;
     }
 
-    let current = true;
+    let isCurrent = true;
 
     void Promise.allSettled(element.getAnimations().map((animation) => animation.finished)).then(() => {
-      if (current) {
-        setRevealing(false);
+      if (isCurrent) {
+        setIsRevealing(false);
       }
     });
 
     return () => {
-      current = false;
+      isCurrent = false;
     };
-  }, [revealing]);
+  }, [isRevealing]);
 
   return (
-    <div ref={content} {...stylex.props(styles.content, revealing && styles.reveal)}>
-      <RevealingTogether value={ancestorRevealing || revealing}>{children}</RevealingTogether>
+    <div ref={content} {...stylex.props(styles.content, isRevealing && styles.reveal)}>
+      <RevealingTogether value={isAncestorRevealing || isRevealing}>{children}</RevealingTogether>
     </div>
   );
 }
@@ -87,7 +93,7 @@ function PendingContent({ label, placeholder, startedAt }: PendingContentProps):
     Date.now() - startedAt >= PLACEHOLDER_DELAY_MS ? startedAt : undefined,
   );
 
-  const visible = shownFor === startedAt;
+  const isVisible = shownFor === startedAt;
 
   useEffect(() => {
     const remaining = Math.max(0, PLACEHOLDER_DELAY_MS - (Date.now() - startedAt));
@@ -104,15 +110,15 @@ function PendingContent({ label, placeholder, startedAt }: PendingContentProps):
           inert
           {...stylex.props(
             styles.content,
-            !visible && styles.hidden,
-            visible && styles.reveal,
+            !isVisible && styles.hidden,
+            isVisible && styles.reveal,
             styles.placeholderReveal,
           )}
         >
           {placeholder}
         </div>
       </div>
-      {visible && (
+      {isVisible && (
         <span role="status" {...stylex.props(accessibility.hidden)}>
           {label}
         </span>
@@ -134,10 +140,10 @@ export function AsyncRegion(props: AsyncRegionProps): ReactNode {
   let current = presentation;
 
   if (presentation.scope !== scope || presentation.state !== props.state) {
-    const changedScope = presentation.scope !== scope;
+    const hasScopeChanged = presentation.scope !== scope;
     let startedAt = presentation.startedAt;
 
-    if (changedScope) {
+    if (hasScopeChanged) {
       startedAt = scope?.startedAt ?? Date.now();
     } else if (props.state === 'pending') {
       startedAt = Date.now();
@@ -147,7 +153,7 @@ export function AsyncRegion(props: AsyncRegionProps): ReactNode {
       state: props.state,
       scope,
       startedAt,
-      wasPending: props.state === 'pending' || (!changedScope && presentation.wasPending),
+      wasPending: props.state === 'pending' || (!hasScopeChanged && presentation.wasPending),
     };
 
     setPresentation(current);
@@ -160,7 +166,7 @@ export function AsyncRegion(props: AsyncRegionProps): ReactNode {
       ) : props.state === 'failed' ? (
         <div {...stylex.props(styles.content)}>{props.children}</div>
       ) : (
-        <ContentReveal enter={current.wasPending}>{props.children}</ContentReveal>
+        <ContentReveal shouldEnter={current.wasPending}>{props.children}</ContentReveal>
       )}
     </div>
   );

@@ -10,8 +10,8 @@ const AST_GREP_CONFIGURATION = 'sgconfig.yml';
 type AstGrepConfigurationInput = { readonly contracts: ReadonlyArray<ContractText> };
 
 /**
- * `sgconfig.yml`: the folder of the authored rules, then each installed rule folder a rule loads in place, the folder
- * of their utilities, and the folder of their tests.
+ * `sgconfig.yml`: the folder of the local rules, then each installed rule folder a rule loads in place, the folder of
+ * their utilities, and the folder of their tests.
  */
 export function astGrepConfiguration({ contracts }: AstGrepConfigurationInput): GeneratedFile {
   const isScanned: (entry: AssetEntry) => boolean = ({ rule }) => rule.tool === RuleTool.AstGrep;

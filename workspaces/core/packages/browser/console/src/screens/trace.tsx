@@ -40,7 +40,7 @@ export function selectedTraceTab(location: ConsoleLocation): TraceTab {
 export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly turnId: string }): ReactNode {
   if (!Schema.is(TurnId)(turnId)) {
     return (
-      <Notice error>
+      <Notice hasError>
         This run ID is invalid.{' '}
         <Button onClick={() => props.navigate({ workspace: props.data.workspace.id, mech: props.mech.id })}>
           Return to mech
@@ -107,12 +107,12 @@ function ValidTraceScreen({
         {(trace, traceNotice) => (
           <Stack>
             {traceNotice}
-            {error !== undefined && <Notice error>{error}</Notice>}
+            {error !== undefined && <Notice hasError>{error}</Notice>}
             {trace.turn.status === 'running' && (
               <Row>
                 <Button
                   disabled={cancelState !== 'idle'}
-                  pending={cancelState === 'sending'}
+                  isPending={cancelState === 'sending'}
                   pendingLabel="Requesting…"
                   onClick={cancel}
                 >

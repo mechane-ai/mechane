@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   navigation: {
@@ -67,17 +68,17 @@ export type PageNavigationProps<ItemId extends string = string> = {
   readonly selectedId: ItemId;
   readonly onNavigate?: (id: ItemId) => void;
   readonly label?: string;
-  readonly embedded?: boolean;
+  readonly isEmbedded?: boolean;
 };
 
 export type PageNavigationPlaceholderProps = {
   readonly items: ReadonlyArray<Pick<PageNavigationItem, 'id' | 'label'>>;
-  readonly embedded?: boolean;
+  readonly isEmbedded?: boolean;
 };
 
-export function PageNavigationPlaceholder({ items, embedded = false }: PageNavigationPlaceholderProps): ReactNode {
+export function PageNavigationPlaceholder({ items, isEmbedded = false }: PageNavigationPlaceholderProps): ReactNode {
   return (
-    <div aria-hidden inert {...stylex.props(styles.navigation, embedded && styles.embedded)}>
+    <div aria-hidden inert {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
       {items.map((item) => (
         <span key={item.id} {...stylex.props(styles.link)}>
           {item.label}
@@ -92,10 +93,10 @@ export function PageNavigation<ItemId extends string>({
   selectedId,
   onNavigate,
   label = 'Page sections',
-  embedded = false,
+  isEmbedded = false,
 }: PageNavigationProps<ItemId>): ReactNode {
   return (
-    <nav aria-label={label} tabIndex={0} {...stylex.props(styles.navigation, embedded && styles.embedded)}>
+    <nav aria-label={label} tabIndex={0} {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
       {items.map((item) => (
         <a
           key={item.id}
@@ -107,10 +108,10 @@ export function PageNavigation<ItemId extends string>({
               return;
             }
 
-            const command = event.metaKey || event.ctrlKey;
-            const alternate = event.shiftKey || event.altKey;
+            const hasCommandModifier = event.metaKey || event.ctrlKey;
+            const hasAlternateModifier = event.shiftKey || event.altKey;
 
-            if (command || alternate) {
+            if (hasCommandModifier || hasAlternateModifier) {
               return;
             }
 

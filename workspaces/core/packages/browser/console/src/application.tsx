@@ -11,7 +11,7 @@ import { WorkspaceScreen } from './workspace.tsx';
 type SessionState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'signed-out' }
-  | { readonly kind: 'failed'; readonly error: unknown; readonly retrying: boolean }
+  | { readonly kind: 'failed'; readonly error: unknown; readonly isRetrying: boolean }
   | { readonly kind: 'ready'; readonly session: Session };
 
 export function ConsoleApplication({ location, navigate }: ConsoleNavigation): ReactNode {
@@ -19,7 +19,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   const [attempt, setAttempt] = useState(0);
 
   function reconnect(): void {
-    setState((previous) => (previous.kind === 'failed' ? { ...previous, retrying: true } : { kind: 'loading' }));
+    setState((previous) => (previous.kind === 'failed' ? { ...previous, isRetrying: true } : { kind: 'loading' }));
     setAttempt((value) => value + 1);
   }
 
@@ -34,7 +34,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
       },
       (error: unknown) => {
         if (!controller.signal.aborted) {
-          setState(isSignedOut(error) ? { kind: 'signed-out' } : { kind: 'failed', error, retrying: false });
+          setState(isSignedOut(error) ? { kind: 'signed-out' } : { kind: 'failed', error, isRetrying: false });
         }
       },
     );
@@ -54,8 +54,8 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
     return (
       <ConsoleEntrance>
         <Stack>
-          <Notice error>{problemMessage(state.error)}</Notice>
-          <Button onClick={reconnect} pending={state.retrying} pendingLabel="Trying again…">
+          <Notice hasError>{problemMessage(state.error)}</Notice>
+          <Button onClick={reconnect} isPending={state.isRetrying} pendingLabel="Trying again…">
             Try again
           </Button>
         </Stack>

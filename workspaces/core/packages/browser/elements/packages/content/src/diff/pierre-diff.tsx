@@ -12,7 +12,7 @@ import type { DiffAnnotation, DiffFile, DiffSource } from './diff-source.ts';
 type PierreDiffProps = {
   readonly files: ReadonlyArray<FileDiffMetadata>;
   readonly layout: 'unified' | 'split';
-  readonly wrap: boolean;
+  readonly shouldWrap: boolean;
   readonly showUnchanged: boolean;
   readonly annotations: ReadonlyArray<DiffAnnotation>;
   readonly maxHeight: number;
@@ -52,7 +52,7 @@ export function prepareDiff(source: DiffSource): ReadonlyArray<FileDiffMetadata>
 export function PierreDiff({
   files,
   layout,
-  wrap,
+  shouldWrap,
   showUnchanged,
   annotations,
   maxHeight,
@@ -92,7 +92,7 @@ export function PierreDiff({
                 themeType: 'system',
                 unsafeCSS: pierreCSS,
                 diffStyle: layout,
-                overflow: wrap ? 'wrap' : 'scroll',
+                overflow: shouldWrap ? 'wrap' : 'scroll',
                 // The header control replaces Pierre's pointer-only hunk expanders.
                 hunkSeparators: 'metadata',
                 expandUnchanged: showUnchanged,

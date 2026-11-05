@@ -12,11 +12,11 @@ the rest of Elements by Mechane.
 and each item a stable `messageId`. Key the root by conversation identity when switching conversations.
 
 A height-constrained parent creates a scrolling transcript. Without that constraint, the content grows in ordinary
-document flow. `initialPosition="start"` and `follow={false}` suit a historical page. Live conversations default to the
-end and follow new content while the reader remains there. Prepending older rows preserves the reader's position. The
-jump action returns focus to the viewport. Updates and streamed text do not move focus.
+document flow. `initialPosition="start"` and `shouldFollow={false}` suit a historical page. Live conversations default
+to the end and follow new content while the reader remains there. Prepending older rows preserves the reader's position.
+The jump action returns focus to the viewport. Updates and streamed text do not move focus.
 
-Pass `streaming` to `Content` while a reply is incomplete. The transcript announces added records and waits for a busy
+Pass `isStreaming` to `Content` while a reply is incomplete. The transcript announces added records and waits for a busy
 region to settle. It does not announce each text mutation. `Message` presents an author, metadata, content, attachments,
 and actions. Render message text with `Markdown` from `/content/markdown`; use `MessageAttachment` for supplied file
 records. Both attachments and sources use the content module's safe destination policy.
@@ -36,12 +36,12 @@ Newline is the default Enter behavior. `enterBehavior="submit"` submits through 
 Shift+Enter adds a line. Composition input and held Enter do not submit. Pending input becomes read-only to preserve
 keyboard focus. Explicitly disabled input retains normal disabled semantics.
 
-Use `compact` for a composer pinned below a conversation. It starts with a smaller input and bounds manual resizing to
+Use `isCompact` for a composer pinned below a conversation. It starts with a smaller input and bounds manual resizing to
 keep the conversation visible. The default remains suitable for a larger standalone prompt.
 
 Supplying `onStop` shows Stop in place of Send. Enter cannot submit while Stop is visible. Pending, disabled, and
-`submitDisabled` also gate programmatic form submission. Model controls, suggestions, attachments, and context capacity
-compose through the `controls` and `attachments` slots. Applications supply their availability and actions.
+`isSubmitDisabled` also gate programmatic form submission. Model controls, suggestions, attachments, and context
+capacity compose through the `controls` and `attachments` slots. Applications supply their availability and actions.
 
 ## Activity and sources
 

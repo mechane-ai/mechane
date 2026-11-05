@@ -1,14 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
-import {
-  colors,
-  conditions,
-  controls,
-  layers,
-  radii,
-  shadows,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions, layers } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export const selectionStyles = stylex.create({
   trigger: {

@@ -1,0 +1,22 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: boolean-names-tsx
+valid:
+  - 'const isPaid = true;'
+  - 'type ButtonProps = { readonly disabled: boolean; readonly isBusy: boolean };'
+  - 'type StateProperties = { readonly onChange: (checked: boolean) => void };'
+  - 'type CommandShortcut = { readonly ctrl: boolean };'
+  - 'const [isPending, setIsPending] = useState(false);'
+  - 'type PollingOptions = { readonly interval: number | false };'
+  - 'function useNavigation(shouldFocusOnNavigation = true) {}'
+  - 'function Control({ disabled = false }: ControlProps) {}'
+  - 'type BuiltBundle = { readonly no_bundle: true };'
+invalid:
+  - 'const paid = true;'
+  - 'type Mech = { readonly ready: boolean };'
+  - 'type ButtonProps = { readonly busy: boolean };'
+  - 'const [pending, setPending] = useState(false);'
+  - 'const disabled = true;'
+  - 'type PanelProps = { readonly busy: boolean | undefined };'
+  - 'type PlaceholderProps = { readonly icon: true };'
+  - 'function useNavigation(focusOnNavigation = true) {}'
+  - "type OwnedFlags = { readonly 'no_bundle': true };"

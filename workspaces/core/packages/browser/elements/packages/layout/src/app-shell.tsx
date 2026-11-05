@@ -46,7 +46,7 @@ type AppShellProps = {
   readonly footer?: ReactNode;
   readonly children: ReactNode;
   readonly mainId?: string;
-  readonly focus?: boolean;
+  readonly shouldFocus?: boolean;
 };
 
 export function AppShell({
@@ -55,7 +55,7 @@ export function AppShell({
   footer,
   children,
   mainId = 'main',
-  focus = false,
+  shouldFocus = false,
 }: AppShellProps): ReactNode {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -94,8 +94,8 @@ export function AppShell({
         <aside
           id={sidebarId}
           aria-label="Navigation"
-          hidden={focus}
-          {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed, focus && styles.hidden)}
+          hidden={shouldFocus}
+          {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed, shouldFocus && styles.hidden)}
         >
           <Sidebar header={sidebarHeader} footer={footer}>
             {sidebar}
@@ -106,7 +106,7 @@ export function AppShell({
         </main>
       </div>
       {/* Screen dialogs must not inherit the navigation drawer's modal context. */}
-      <Drawer.Root handle={drawerHandle} open={isOpen && !focus} onOpenChange={setIsOpen}>
+      <Drawer.Root handle={drawerHandle} open={isOpen && !shouldFocus} onOpenChange={setIsOpen}>
         <Drawer.Portal>
           <Drawer.Backdrop />
           <Drawer.Viewport>
@@ -120,7 +120,7 @@ export function AppShell({
                 return mobileNavigationToggleRef.current;
               }}
             >
-              <Drawer.Title visuallyHidden>Navigation</Drawer.Title>
+              <Drawer.Title isVisuallyHidden>Navigation</Drawer.Title>
               <Sidebar header={sidebarHeader} footer={footer} close={<SidebarClose />}>
                 {sidebar}
               </Sidebar>

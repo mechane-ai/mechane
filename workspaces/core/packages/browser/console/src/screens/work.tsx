@@ -91,7 +91,7 @@ function WorkPage({
   return (
     <ViewStack.Root>
       {notice}
-      <ViewStack.Panel active={selected === undefined}>
+      <ViewStack.Panel isActive={selected === undefined}>
         <WorkList
           page={page}
           selected={selectedId}

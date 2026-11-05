@@ -1,4 +1,5 @@
 import type { ContractEnforcement } from '@mechane/rule-shapes';
+import { PARSER_COMPANIONS } from '../../../ast-grep/parser-companions.ts';
 
 /** The smallest copied block jscpd reports, in tokens and lines. */
 const CLONE = { cloneTokens: 50, cloneLines: 6 } as const;
@@ -13,7 +14,13 @@ const VALUES = {
   jscpd: {
     path: ['packages', 'lint'],
     format: ['typescript', 'javascript', 'yaml', 'json'],
-    ignore: ['**/node_modules/**', '**/dist/**', '**/reference.json', 'lint/baseline/**'],
+    ignore: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/reference.json',
+      'lint/baseline/**',
+      ...PARSER_COMPANIONS.map(({ path }) => path),
+    ],
     minTokens: CLONE.cloneTokens,
     minLines: CLONE.cloneLines,
     maxLines: 1_000_000,

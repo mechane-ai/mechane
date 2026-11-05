@@ -11,7 +11,7 @@ import { ConversationActivity } from './conversation-activity.tsx';
 export function MessageForm({ data, mech }: { readonly data: ConsoleData; readonly mech: Mech }): ReactNode {
   const [text, setText] = useState('');
   const [id, setId] = useState(() => crypto.randomUUID());
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setBusy] = useState(false);
   const [received, setReceived] = useState<InboxItem>();
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
@@ -19,7 +19,7 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (busy || text.trim().length === 0 || mech.status === 'archived') {
+    if (isBusy || text.trim().length === 0 || mech.status === 'archived') {
       return;
     }
 
@@ -54,7 +54,7 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
 
   return (
     <PromptInput
-      compact
+      isCompact
       name="message"
       label={`Message ${mech.name}`}
       placeholder={`Message ${mech.name}…`}
@@ -67,9 +67,9 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
       }}
       onSubmit={submit}
       maxLength={INBOX_TEXT_MAX_CHARS}
-      pending={busy}
+      isPending={isBusy}
       disabled={mech.status === 'archived'}
-      submitDisabled={text.trim().length === 0}
+      isSubmitDisabled={text.trim().length === 0}
       enterBehavior="submit"
       error={error}
       controls={<ConversationActivity data={data} mech={mech} received={received} />}

@@ -34,8 +34,8 @@ export function MechSettingsPlaceholder(): ReactNode {
   return (
     <div aria-hidden inert>
       <Stack>
-        <Stack compact>
-          <Row between>
+        <Stack isCompact>
+          <Row shouldSpaceBetween>
             <Subheading>Definition</Subheading>
             <ButtonPlaceholder width="12ch" />
           </Row>
@@ -75,7 +75,7 @@ export function MechSettingsPlaceholder(): ReactNode {
 
 export function MechSettings({
   mech,
-  busy,
+  isBusy,
   error,
   connections,
   appearance,
@@ -85,7 +85,7 @@ export function MechSettings({
   onArchive,
 }: {
   readonly mech: Mech;
-  readonly busy: boolean;
+  readonly isBusy: boolean;
   readonly error: string | undefined;
   readonly connections: ReactNode;
   readonly appearance: AgentAppearance | undefined;
@@ -94,13 +94,13 @@ export function MechSettings({
   readonly onEdit: () => void;
   readonly onArchive: () => void;
 }): ReactNode {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(false);
   const cancel = useRef<HTMLButtonElement>(null);
 
   return (
     <Stack>
-      <Stack compact>
-        <Row between>
+      <Stack isCompact>
+        <Row shouldSpaceBetween>
           <Subheading>Definition</Subheading>
           <Button onClick={onEdit}>Edit definition</Button>
         </Row>
@@ -126,15 +126,15 @@ export function MechSettings({
           </Row>
         </Collapsible.Trigger>
         <Collapsible.Panel>
-          <Stack compact>
+          <Stack isCompact>
             <AgentAvatarPicker value={appearance ?? agentAppearance(mech.id)} onValueChange={onAppearance} />
-            <Row between>
+            <Row shouldSpaceBetween>
               <Muted>For you in this browser.</Muted>
               <Button variant="ghost" disabled={appearance === undefined} onClick={() => onAppearance(undefined)}>
                 Reset icon
               </Button>
             </Row>
-            {appearanceError !== undefined && <Notice error>{appearanceError}</Notice>}
+            {appearanceError !== undefined && <Notice hasError>{appearanceError}</Notice>}
           </Stack>
         </Collapsible.Panel>
       </Collapsible.Root>
@@ -152,16 +152,16 @@ export function MechSettings({
       </Collapsible.Root>
       <ArchiveSection>
         <Dialog.Root
-          open={open && mech.status !== 'archived'}
+          open={isOpen && mech.status !== 'archived'}
           onOpenChange={(next, details) => {
-            if (busy) {
+            if (isBusy) {
               details.cancel();
             } else {
               setOpen(next);
             }
           }}
         >
-          <Dialog.Trigger render={<Button tone="danger" disabled={mech.status === 'archived' || busy} />}>
+          <Dialog.Trigger render={<Button tone="danger" disabled={mech.status === 'archived' || isBusy} />}>
             Archive mech
           </Dialog.Trigger>
           <Dialog.Portal>
@@ -170,12 +170,18 @@ export function MechSettings({
               <Stack>
                 <Dialog.Title>Archive {mech.name}?</Dialog.Title>
                 <Dialog.Description>It will stop accepting new work. Its history and files remain.</Dialog.Description>
-                {error !== undefined && <Notice error>{error}</Notice>}
+                {error !== undefined && <Notice hasError>{error}</Notice>}
                 <Row>
-                  <Button variant="solid" tone="danger" pending={busy} pendingLabel="Archiving…" onClick={onArchive}>
+                  <Button
+                    variant="solid"
+                    tone="danger"
+                    isPending={isBusy}
+                    pendingLabel="Archiving…"
+                    onClick={onArchive}
+                  >
                     Archive mech
                   </Button>
-                  <Dialog.Close render={<Button ref={cancel} disabled={busy} />}>Cancel</Dialog.Close>
+                  <Dialog.Close render={<Button ref={cancel} disabled={isBusy} />}>Cancel</Dialog.Close>
                 </Row>
               </Stack>
             </Dialog.Popup>

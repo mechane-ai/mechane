@@ -159,15 +159,16 @@ if (sampleMech === undefined) {
 }
 
 const scout = sampleMech;
+const encodedScout = Schema.encodeSync(MechSummary)(scout);
 
 const scoutDefinition = Schema.decodeUnknownSync(Mech)({
-  ...Schema.encodeSync(MechSummary)(scout),
+  ...encodedScout,
   instructions:
     'Inspect the repository before each release. Report the checks that ran and preserve the running installation.',
   daily_cap_micros: 5_000_000,
   active_revision: scout.revision,
-  updated_at: scout.createdAt,
-  updater_id: scout.creatorId,
+  updated_at: encodedScout.created_at,
+  updater_id: encodedScout.creator_id,
 });
 
 const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
@@ -294,10 +295,10 @@ const completedTrace = Schema.decodeUnknownSync(Trace)({
 
 function StoryShell({
   children,
-  focus = false,
+  shouldFocus = false,
 }: {
   readonly children: ReactNode;
-  readonly focus?: boolean;
+  readonly shouldFocus?: boolean;
 }): ReactNode {
   const [workspaceId, setWorkspaceId] = useState<string>(
     workspaceList.workspaces[1]?.id ?? workspaceList.workspaces[0].id,
@@ -308,11 +309,11 @@ function StoryShell({
       workspaceId={workspaceId}
       workspaces={workspaceList.workspaces}
       onWorkspace={setWorkspaceId}
-      focus={focus}
+      shouldFocus={shouldFocus}
       homeLink={
         <Navigation>
           <NavigationSection label="Overview">
-            <NavigationLink href="#mechs" icon={<Bot size={16} />} selected>
+            <NavigationLink href="#mechs" icon={<Bot size={16} />} isSelected>
               Mechs
             </NavigationLink>
           </NavigationSection>
@@ -404,9 +405,9 @@ function TraceStory({
   const [request, setRequest] = useState<string>();
 
   return (
-    <StoryShell focus>
+    <StoryShell shouldFocus>
       <PageToolbar
-        navigation={false}
+        showNavigation={false}
         title={scout.name}
         leading={
           <ToolbarAction icon={<ArrowLeft size={16} aria-hidden />} onClick={onBack}>
@@ -433,7 +434,7 @@ function TraceStory({
               `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
             replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full reply →</TextButton>}
-            events={<Activity label="Run events" inset={false} page={events} />}
+            events={<Activity label="Run events" hasInset={false} page={events} />}
           />
         </WorkbenchScroll>
       </Workbench>
@@ -464,7 +465,7 @@ export const FailedRefresh: Story = {
     <TraceStory
       trace={completedTrace}
       notice={
-        <Notice error>
+        <Notice hasError>
           Refresh failed. Showing the last saved result. <Button>Retry refresh</Button>
         </Notice>
       }
@@ -475,7 +476,7 @@ export const FailedRefresh: Story = {
 export const DefinitionConflict: Story = {
   render: () => (
     <StoryShell>
-      <PageToolbar breadcrumb title="Repository scout / Edit definition" />
+      <PageToolbar showBreadcrumb title="Repository scout / Edit definition" />
       <DetailPage>
         <Stack>
           <Heading>Edit Repository scout</Heading>
@@ -539,12 +540,12 @@ export const ConversationLoading: Story = {
 
 export const RunLoading: Story = {
   render: () => (
-    <StoryShell focus>
+    <StoryShell shouldFocus>
       <ResourceView
         state={{ kind: 'pending' }}
         identity="run-loading-story"
         label="Loading run"
-        placeholder={<MechPagePlaceholder view="conversation" focusedRun />}
+        placeholder={<MechPagePlaceholder view="conversation" hasFocusedRun />}
       >
         {() => null}
       </ResourceView>
@@ -666,14 +667,14 @@ const collectionViews: ReadonlySet<ConsoleView> = new Set(['work', 'runs', 'acti
 
 function WorkspaceStory({
   initialView = 'conversation',
-  longName = false,
+  hasLongName = false,
 }: {
   readonly initialView?: ConsoleView;
-  readonly longName?: boolean;
+  readonly hasLongName?: boolean;
 }): ReactNode {
   const [view, setView] = useState<ConsoleView>(initialView);
-  const [focusedRun, setFocusedRun] = useState(false);
-  const [pinned, setPinned] = useState(true);
+  const [hasFocusedRun, setFocusedRun] = useState(false);
+  const [isPinned, setPinned] = useState(true);
   const [draft, setDraft] = useState('Verify the release and preserve the running installation.');
   const [selectedWork, setSelectedWork] = useState<string>();
   const [appearance, setAppearance] = useState<AgentAppearance>();
@@ -681,10 +682,10 @@ function WorkspaceStory({
 
   const mech = {
     ...scoutDefinition,
-    name: longName ? 'Repository scout for infrastructure, releases, and deployment verification' : scout.name,
+    name: hasLongName ? 'Repository scout for infrastructure, releases, and deployment verification' : scout.name,
   };
 
-  if (focusedRun) {
+  if (hasFocusedRun) {
     return <TraceStory trace={completedTrace} onBack={() => setFocusedRun(false)} />;
   }
 
@@ -694,11 +695,11 @@ function WorkspaceStory({
         mech={mech}
         appearance={appearance}
         view={view}
-        pinned={pinned}
-        busy={false}
+        isPinned={isPinned}
+        isBusy={false}
         viewHref={(next) => `?mech=${mech.id}&view=${next}`}
         onView={setView}
-        onPin={() => setPinned(!pinned)}
+        onPin={() => setPinned(!isPinned)}
         onStatus={() => undefined}
       />
       <Workbench>
@@ -723,7 +724,7 @@ function WorkspaceStory({
                 onValueChange={setDraft}
                 onSubmit={(event) => event.preventDefault()}
                 enterBehavior="submit"
-                compact
+                isCompact
               />
             </WorkbenchFooter>
           </>
@@ -741,7 +742,7 @@ function WorkspaceStory({
                       : 'Memory'
             }
             scrollRestorationId={`story-${view}`}
-            flush={collectionViews.has(view)}
+            isFlush={collectionViews.has(view)}
           >
             {view === 'runs' && (
               <TurnList
@@ -779,12 +780,12 @@ function WorkspaceStory({
                 appearance={appearance}
                 onAppearance={setAppearance}
                 appearanceError={undefined}
-                busy={false}
+                isBusy={false}
                 error={undefined}
                 onEdit={() => undefined}
                 onArchive={() => undefined}
                 connections={
-                  <Stack compact>
+                  <Stack isCompact>
                     <Subheading>Slack</Subheading>
                     <TextLink href="https://example.com/slack">#repository-scout</TextLink>
                     <Muted>Listening · Replies on</Muted>
@@ -800,7 +801,7 @@ function WorkspaceStory({
 }
 
 export const ConversationWorkspace: Story = { render: () => <WorkspaceStory /> };
-export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialView="runs" longName /> };
+export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialView="runs" hasLongName /> };
 export const HistoryWorkspace: Story = { render: () => <WorkspaceStory initialView="activity" /> };
 export const TrackedWork: Story = { render: () => <WorkspaceStory initialView="work" /> };
 export const SavedMemory: Story = { render: () => <WorkspaceStory initialView="memory" /> };

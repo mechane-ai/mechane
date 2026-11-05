@@ -48,7 +48,7 @@ const requestTraceStatuses = {
 
 export function TurnTracePlaceholder({ tab = 'Overview' }: { readonly tab?: TraceTab }): ReactNode {
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Subheading>
         <SkeletonText width="32ch" />
       </Subheading>
@@ -75,7 +75,7 @@ export function TurnTracePlaceholder({ tab = 'Overview' }: { readonly tab?: Trac
 
 function TraceSectionPlaceholder({ tab }: { readonly tab: TraceTab }): ReactNode {
   if (tab === 'Events') {
-    return <ActivityPlaceholder inset={false} />;
+    return <ActivityPlaceholder hasInset={false} />;
   }
 
   if (tab === 'Requests') {
@@ -84,7 +84,7 @@ function TraceSectionPlaceholder({ tab }: { readonly tab: TraceTab }): ReactNode
         label="Selected model request"
         masterLabel="Model requests"
         master={
-          <Stack compact>
+          <Stack isCompact>
             <Subheading>
               <SkeletonText width="16ch" />
             </Subheading>
@@ -121,7 +121,7 @@ function TraceSectionPlaceholder({ tab }: { readonly tab: TraceTab }): ReactNode
   return (
     <div {...stylex.props(styles.reading)}>
       <Stack>
-        <Stack compact>
+        <Stack isCompact>
           <Subheading>
             <SkeletonText width="12ch" />
           </Subheading>
@@ -148,11 +148,11 @@ export function TurnTrace({
   const { turn, start, finished } = evidence;
 
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Subheading title={runLabel(trace.turn)} {...stylex.props(styles.title)}>
         {runLabel(trace.turn)}
       </Subheading>
-      <Row between>
+      <Row shouldSpaceBetween>
         <Row>
           <Status
             tone={
@@ -233,7 +233,7 @@ function TraceOverview({
           <Collapsible.Root>
             <Collapsible.Trigger>Input preview</Collapsible.Trigger>
             <Collapsible.Panel>
-              <Stack compact>
+              <Stack isCompact>
                 <Prose>{turn.inputExcerpt}</Prose>
                 <Row>
                   <TextButton onClick={onEvents}>View original messages</TextButton>
@@ -246,7 +246,7 @@ function TraceOverview({
           <Collapsible.Root>
             <Collapsible.Trigger>{count === 1 ? '1 model request' : `${count} model requests`}</Collapsible.Trigger>
             <Collapsible.Panel>
-              <Stack compact>
+              <Stack isCompact>
                 <RequestTrace.Root label="Recorded model requests">
                   {items.slice(0, OVERVIEW_REQUESTS).map((item) => (
                     <RequestTrace.Item
@@ -256,7 +256,7 @@ function TraceOverview({
                       description={item.detail}
                       status={requestTraceStatuses[item.status]}
                       statusLabel={item.summary}
-                      selected={false}
+                      isSelected={false}
                       onSelect={onRequest}
                     />
                   ))}
@@ -304,7 +304,7 @@ function RecordedOutcome({
   const latest = items.at(-1);
 
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Subheading>
         {trace.turn.status === 'answered'
           ? replyLabel

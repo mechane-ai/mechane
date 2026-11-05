@@ -119,7 +119,7 @@ function ConversationExample(): ReactNode {
       <div {...stylex.props(styles.frame)}>
         <Conversation.Root>
           <Conversation.Viewport label="Evaluation conversation">
-            <Conversation.Content streaming={isStreaming}>
+            <Conversation.Content isStreaming={isStreaming}>
               {messages.map((message) => (
                 <Conversation.Item key={message.id} messageId={message.id}>
                   <Message author={message.author} kind={message.kind}>
@@ -140,7 +140,7 @@ function ConversationExample(): ReactNode {
                     />
                   }
                 >
-                  <Markdown streaming={isStreaming}>{response}</Markdown>
+                  <Markdown isStreaming={isStreaming}>{response}</Markdown>
                 </Message>
               </Conversation.Item>
               {sent.map((message) => (
@@ -266,7 +266,7 @@ export const MessageParts: Story = {
         <Muted>This conversation contains a partial history. Earlier records are available separately.</Muted>
       </Message>
       <MessageBoundary label="Conversation continued from another assistant">
-        <Stack compact>
+        <Stack isCompact>
           <Muted>The earlier history was copied. Each assistant continues independently from this point.</Muted>
           <TextLink href="#source-assistant">Source assistant</TextLink>
         </Stack>

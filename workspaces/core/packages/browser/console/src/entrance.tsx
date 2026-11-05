@@ -24,7 +24,7 @@ export function Welcome(): ReactNode {
   return (
     <ConsoleEntrance>
       <Stack>
-        <Stack compact>
+        <Stack isCompact>
           <Heading>Your agents, at work.</Heading>
           <Muted>Pick up a conversation. Follow the work. See how it happened.</Muted>
         </Stack>

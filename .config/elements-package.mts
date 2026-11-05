@@ -29,10 +29,12 @@ export function buildElementsPackage(source: string, destination: string) {
   const staged = join(output, 'package');
   const distribution = join(staged, 'dist');
   cpSync(join(sourcePackage, 'dist'), distribution, { recursive: true });
-  // StyleX hashes variable names from the package and defining path, which must match the compiled CSS.
-  const tokenDefinition = manifest.exports['./tokens.stylex'];
-  mkdirSync(dirname(join(staged, tokenDefinition)), { recursive: true });
-  copyFileSync(join(sourcePackage, tokenDefinition), join(staged, tokenDefinition));
+  // StyleX hashes references from the package and defining path, which must match the compiled CSS.
+  for (const [name, definition] of Object.entries(manifest.exports as Record<string, string>)) {
+    if (!name.endsWith('.stylex')) continue;
+    mkdirSync(dirname(join(staged, definition)), { recursive: true });
+    copyFileSync(join(sourcePackage, definition), join(staged, definition));
+  }
   copyFileSync(join(sourcePackage, 'README.md'), join(staged, 'README.md'));
   copyFileSync(join(sourcePackage, 'styles.css'), join(staged, 'styles.css'));
   for (const name of ['LICENSE', 'NOTICE']) copyFileSync(join(root, name), join(staged, name));
@@ -51,7 +53,7 @@ export function buildElementsPackage(source: string, destination: string) {
   const exports = Object.fromEntries(
     Object.entries(manifest.exports as Record<string, string>).map(([name, source]) => {
       if (name === './styles.css') return [name, './styles.css'];
-      if (name === './tokens.stylex') return [name, source];
+      if (name.endsWith('.stylex')) return [name, source];
       const types = `./dist/${source.slice(2).replace(/\.tsx?$/, '.d.ts')}`;
       const entry = `./dist/${name === '.' ? 'index' : name.slice(2)}.js`;
       assert.ok(existsSync(join(staged, types)), `Missing declaration for ${name}`);

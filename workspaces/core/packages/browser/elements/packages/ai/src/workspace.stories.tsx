@@ -5,7 +5,8 @@ import type { ReactNode } from 'react';
 import { CodeBlock } from '../../content/src/code/index.ts';
 import { FileTree } from '../../content/src/tree/index.ts';
 import { Muted } from '../../core/src/index.ts';
-import { conditions, spacing } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { spacing } from '../../foundations/src/tokens.stylex.ts';
 
 const meta = {
   title: 'AI/Workspace',

@@ -44,7 +44,7 @@ export function ConnectionsScreen({
               <Button
                 variant="ghost"
                 onClick={bindingsState.retry}
-                pending={bindingsState.retrying}
+                isPending={bindingsState.isRetrying}
                 pendingLabel="Retrying connections…"
               >
                 Retry connections
@@ -54,7 +54,7 @@ export function ConnectionsScreen({
         }
       >
         {(page, notice) => (
-          <Stack compact>
+          <Stack isCompact>
             {notice}
             <SlackConnections bindings={page.bindings.filter((binding) => binding.mechId === mechId)} />
           </Stack>

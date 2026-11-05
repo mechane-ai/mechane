@@ -72,10 +72,10 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: ()
       const failure = result.failure;
 
       if (failure instanceof OperationFailed && !lifetime.aborted) {
-        const sessionChanged =
+        const hasSessionChanged =
           failure.family === ErrorFamily.Unauthenticated || SESSION_CHANGES.has(failure.failure._tag);
 
-        if (sessionChanged) {
+        if (hasSessionChanged) {
           onSessionEnded();
         }
       }

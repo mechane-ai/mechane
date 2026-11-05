@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: keyboard-modifier-name-tsx
+language: Tsx
+rule:
+  regex: '^(mod|ctrl|alt|shift|meta)$'

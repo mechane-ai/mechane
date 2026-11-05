@@ -47,7 +47,7 @@ function CollectionSelect({
   const [value, setValue] = useState<string | null>('personal');
 
   return (
-    <Stack compact>
+    <Stack isCompact>
       <Field.Root name="collection" disabled={disabled}>
         <Field.Label>Collection</Field.Label>
         <Select.Root<string> items={options} value={value} onValueChange={setValue} disabled={disabled}>

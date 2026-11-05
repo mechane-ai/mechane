@@ -37,7 +37,7 @@ export const Recommended: Story = {
 
 export const EmphasisAndIntent: Story = {
   render: () => (
-    <Stack compact>
+    <Stack isCompact>
       <Row>
         <Button variant="solid">Solid</Button>
         <Button variant="outline">Outline</Button>
@@ -80,13 +80,13 @@ export const IconsAndNavigation: Story = {
 
 export const PendingAndDisabled: Story = {
   render: () => (
-    <Stack compact>
+    <Stack isCompact>
       <Row>
-        <Button variant="solid" pending pendingLabel="Saving changes…">
+        <Button variant="solid" isPending pendingLabel="Saving changes…">
           Save changes
         </Button>
         <Button disabled>Save changes</Button>
-        <IconButton pending aria-label="Refresh items">
+        <IconButton isPending aria-label="Refresh items">
           <RefreshCw size={16} aria-hidden />
         </IconButton>
       </Row>
@@ -119,9 +119,9 @@ export const KeyboardNavigation: Story = {
 export const LongLabels: Story = {
   render: () => (
     <div {...stylex.props(styles.narrow)}>
-      <Stack compact>
+      <Stack isCompact>
         <Button variant="solid">Save the reviewed changes and notify collaborators</Button>
-        <Button pending pendingLabel="Saving the reviewed changes and notifying collaborators…">
+        <Button isPending pendingLabel="Saving the reviewed changes and notifying collaborators…">
           Save the reviewed changes and notify collaborators
         </Button>
         <Button disabled>Save the reviewed changes and notify collaborators</Button>

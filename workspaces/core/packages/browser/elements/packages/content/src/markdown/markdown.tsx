@@ -95,7 +95,7 @@ type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type MarkdownProps = {
   readonly children: string;
-  readonly streaming?: boolean;
+  readonly isStreaming?: boolean;
   readonly label?: string;
   readonly headingLevel?: HeadingLevel;
 };
@@ -124,7 +124,7 @@ function CodeFence({ children, className }: MarkdownCodeProps): ReactNode {
 
   return (
     <div {...stylex.props(styles.block)}>
-      <CodeBlock code={parts.join('')} language={language} streaming={isIncomplete} />
+      <CodeBlock code={parts.join('')} language={language} isStreaming={isIncomplete} />
     </div>
   );
 }
@@ -225,7 +225,7 @@ const allowedElements = [
   'section',
 ];
 
-export function Markdown({ children, streaming = false, label, headingLevel = 1 }: MarkdownProps): ReactNode {
+export function Markdown({ children, isStreaming = false, label, headingLevel = 1 }: MarkdownProps): ReactNode {
   const headingComponents: Components = {
     h1: (props) => <MarkdownHeading {...props} level={1} headingLevel={headingLevel} />,
     h2: (props) => <MarkdownHeading {...props} level={2} headingLevel={headingLevel} />,
@@ -242,8 +242,8 @@ export function Markdown({ children, streaming = false, label, headingLevel = 1 
       {...stylex.props(styles.root)}
       aria-label={label}
       components={{ ...components, ...headingComponents }}
-      mode={streaming ? 'streaming' : 'static'}
-      isAnimating={streaming}
+      mode={isStreaming ? 'streaming' : 'static'}
+      isAnimating={isStreaming}
       animated={false}
       controls={false}
       linkSafety={{ enabled: false }}

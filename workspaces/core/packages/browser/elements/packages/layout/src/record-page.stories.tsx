@@ -52,7 +52,7 @@ function RecordExample(): ReactNode {
       sidebarHeader={<SidebarLabel>Example workspace</SidebarLabel>}
       sidebar={
         <Navigation label="Workspace">
-          <NavigationLink href="#example-records" icon={<Folder size={16} />} selected>
+          <NavigationLink href="#example-records" icon={<Folder size={16} />} isSelected>
             Records
           </NavigationLink>
         </Navigation>
@@ -88,11 +88,11 @@ function RecordExample(): ReactNode {
             </div>
           </RecordPage.Content>
           <RecordPage.Aside>
-            <Stack compact>
+            <Stack isCompact>
               <Subheading>Owner</Subheading>
               <Text>Example team</Text>
             </Stack>
-            <Stack compact>
+            <Stack isCompact>
               <Subheading>Review</Subheading>
               <Muted>Two reviewers can edit this document.</Muted>
             </Stack>
@@ -141,7 +141,7 @@ export const PageLinks: Story = {
   render: () => (
     <Stack>
       <PageNavigation label="Document pages" items={pages} selectedId="overview" />
-      <PageNavigation label="Embedded document pages" items={pages} selectedId="history" embedded />
+      <PageNavigation label="Embedded document pages" items={pages} selectedId="history" isEmbedded />
       <Muted>These native links retain browser navigation, copying, and opening in another tab.</Muted>
     </Stack>
   ),

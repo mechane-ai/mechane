@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-control-style-overrides
+valid:
+  - "import { Button } from '@mechane-ai/elements'; const control = <Button xstyle={styles.placement} {...injectedProps} />;"
+  - "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Positioner style={{ left: position }} />;"
+  - 'const control = <input style={{ width: measuredWidth }} />;'
+  - "import { Input } from './local-input'; const control = <Input className={styles.input} />;"
+invalid:
+  - "import { Button } from '@mechane-ai/elements'; const control = <Button style={{ height: 40 }} />;"
+  - "import { Input as Field } from '@mechane-ai/elements/forms'; const control = <Field className={styles.field} />;"
+  - "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Trigger {...stylex.props(styles.trigger)} />;"

@@ -9,27 +9,27 @@ const RouteLink = createLink(TextLink);
 
 /** One transition policy preserves a run's origin and clears reader state when its owner changes. */
 export function consoleTransition(from: ConsoleLocation, to: ConsoleLocation) {
-  const sameMech = from.mech !== undefined && from.mech === to.mech;
-  const implicitWorkspace = sameMech ? (from.workspace ?? to.workspace) : undefined;
+  const isSameMech = from.mech !== undefined && from.mech === to.mech;
+  const implicitWorkspace = isSameMech ? (from.workspace ?? to.workspace) : undefined;
   const fromWorkspace = from.workspace ?? implicitWorkspace;
   const toWorkspace = to.workspace ?? implicitWorkspace;
-  const sameOwner = fromWorkspace === toWorkspace && from.mech === to.mech;
-  const sameTurn = from.turn !== undefined && from.turn === to.turn;
-  const withinRun = sameOwner && sameTurn;
-  const sameEventScope = withinRun && from.event === to.event;
+  const hasSameOwner = fromWorkspace === toWorkspace && from.mech === to.mech;
+  const isSameTurn = from.turn !== undefined && from.turn === to.turn;
+  const isWithinRun = hasSameOwner && isSameTurn;
+  const isSameEventScope = isWithinRun && from.event === to.event;
 
   return {
-    replace: withinRun,
-    resetScroll: !sameOwner,
+    replace: isWithinRun,
+    resetScroll: !hasSameOwner,
     state: (prior: HistoryState): HistoryState => {
-      const retained: HistoryState = sameOwner ? prior : {};
+      const retained: HistoryState = hasSameOwner ? prior : {};
 
       const state =
-        sameEventScope || retained.consolePages === undefined
+        isSameEventScope || retained.consolePages === undefined
           ? retained
           : { ...retained, consolePages: { ...retained.consolePages, events: [] } };
 
-      return to.turn === undefined || withinRun ? state : { ...state, consoleRunOrigin: from };
+      return to.turn === undefined || isWithinRun ? state : { ...state, consoleRunOrigin: from };
     },
   };
 }
@@ -163,15 +163,15 @@ export function ConsoleLink({
       onClick={(event) => {
         onClick?.(event);
 
-        const command = event.metaKey || event.ctrlKey;
-        const alternate = event.shiftKey || event.altKey;
-        const currentTab = props.target === undefined || props.target === '_self';
+        const hasCommandModifier = event.metaKey || event.ctrlKey;
+        const hasAlternateModifier = event.shiftKey || event.altKey;
+        const isCurrentTab = props.target === undefined || props.target === '_self';
 
         if (row === undefined || event.button !== 0 || event.defaultPrevented) {
           return;
         }
 
-        if (command || alternate || !currentTab) {
+        if (hasCommandModifier || hasAlternateModifier || !isCurrentTab) {
           return;
         }
 

@@ -26,7 +26,7 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Placeholder: Story = { render: () => <PromptInputPlaceholder compact /> };
+export const Placeholder: Story = { render: () => <PromptInputPlaceholder isCompact /> };
 
 const models = [
   { id: 'balanced', name: 'Balanced', description: 'General research and editing' },
@@ -157,7 +157,7 @@ function PendingExample(): ReactNode {
       value={draft}
       onValueChange={setDraft}
       onSubmit={(event) => event.preventDefault()}
-      pending
+      isPending
     />
   );
 }
@@ -179,7 +179,7 @@ function CompactExample(): ReactNode {
       onValueChange={setDraft}
       onSubmit={(event) => event.preventDefault()}
       enterBehavior="submit"
-      compact
+      isCompact
     />
   );
 }
@@ -205,7 +205,7 @@ export const Stopping: Story = {
       onValueChange={() => undefined}
       onSubmit={() => undefined}
       onStop={() => undefined}
-      stopPending
+      isStopPending
     />
   ),
 };

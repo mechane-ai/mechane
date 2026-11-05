@@ -1,5 +1,6 @@
 import { Accordion, Button, Muted, Row, Stack, Status, Subheading, Text, TextButton } from '@mechane-ai/elements';
 import { DataTable, DataTablePlaceholder, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
 import { EmptyState, SkeletonText } from '@mechane-ai/elements/feedback';
 import { DetailPage } from '@mechane-ai/elements/layout';
@@ -12,8 +13,8 @@ import { ConsoleTimestamp } from './record-time.tsx';
 const workColumns = {
   title: { id: 'title', label: 'Work', role: 'primary' },
   state: { id: 'state', label: 'State', role: 'status', width: 128 },
-  updated: { id: 'updated', label: 'Updated', role: 'timestamp', secondary: true, width: 144 },
-} as const;
+  updated: { id: 'updated', label: 'Updated', role: 'timestamp', isSecondary: true, width: 144 },
+} as const satisfies Record<string, DataTableColumnLayout>;
 
 export function WorkListPlaceholder(): ReactNode {
   return <DataTablePlaceholder columns={Object.values(workColumns)} />;
@@ -64,8 +65,8 @@ export function WorkList({
 }): ReactNode {
   const showPagination = page.hasMore || hasPrevious;
   const showFooter = showPagination || pageNotice !== undefined;
-  const previousDisabled = !hasPrevious || loadingPage !== undefined;
-  const nextDisabled = !page.hasMore || loadingPage !== undefined;
+  const isPreviousDisabled = !hasPrevious || loadingPage !== undefined;
+  const isNextDisabled = !page.hasMore || loadingPage !== undefined;
 
   return (
     <>
@@ -101,17 +102,17 @@ export function WorkList({
             showPagination ? (
               <>
                 <Button
-                  pending={loadingPage === 'previous'}
+                  isPending={loadingPage === 'previous'}
                   pendingLabel="Loading previous work…"
-                  disabled={previousDisabled}
+                  disabled={isPreviousDisabled}
                   onClick={onPrevious}
                 >
                   Previous
                 </Button>
                 <Button
-                  pending={loadingPage === 'next'}
+                  isPending={loadingPage === 'next'}
                   pendingLabel="Loading next work…"
-                  disabled={nextDisabled}
+                  disabled={isNextDisabled}
                   onClick={onNext}
                 >
                   Next
@@ -144,7 +145,7 @@ export function WorkDetails({
             <ArrowLeft size={14} aria-hidden /> Back to work
           </TextButton>
         </Row>
-        <Stack compact>
+        <Stack isCompact>
           <Subheading ref={headingRef} tabIndex={-1}>
             {thread.title}
           </Subheading>
@@ -201,7 +202,7 @@ export function MemoryList({
             </Accordion.Trigger>
           </Accordion.Header>
           <Accordion.Panel>
-            <Stack compact>
+            <Stack isCompact>
               <Row>
                 <Muted>Saved</Muted>
                 <ConsoleTimestamp value={memory.savedAt} />

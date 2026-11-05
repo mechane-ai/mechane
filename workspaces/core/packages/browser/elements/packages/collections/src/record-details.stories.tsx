@@ -16,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Inspector places a supplied collection beside its sticky selected detail in a wide container and stacks them in a narrow one. The surrounding page owns scrolling; Inspector adds no nested scroll region or outer card. Supply the required masterLabel for the collection and label for its selected detail. Existing consumers must add masterLabel when upgrading. A changed revealKey explicitly reveals and focuses the detail on narrow containers; omit it for default selection and passive keyboard movement. Pass returnFocusRef to restore the selected control from the compact Back button. Selection and reveal intent belong to the application. Details is a key/value list. MetricGrid groups Metric values; layout="columns" follows the available container width. CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use Table for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
+          'Inspector places a supplied collection beside its sticky selected detail in a wide container and stacks them in a narrow one. The surrounding page owns scrolling; Inspector adds no nested scroll region or outer card. Supply the required masterLabel for the collection and label for its selected detail. Existing consumers must add masterLabel when upgrading. A changed revealKey explicitly reveals and focuses the detail on narrow containers; omit it for default selection and passive keyboard movement. Pass returnFocusRef to restore the selected control from the compact Back button. Selection and reveal intent belong to the application. Details is a key/value list. MetricGrid groups Metric values; layout="columns" follows the available container width. CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use DataTable for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
       },
     },
   },
@@ -32,7 +32,7 @@ export const Recommended: Story = {
       masterLabel="Operations"
       master={
         <div {...stylex.props(styles.master)}>
-          <Stack compact>
+          <Stack isCompact>
             <Subheading>Prepare release notes</Subheading>
             <Muted>The selected operation’s summary remains available.</Muted>
           </Stack>
@@ -133,7 +133,7 @@ function InspectionExample() {
       revealKey={reveal === undefined ? undefined : String(reveal)}
       returnFocusRef={selectedRow}
       master={
-        <Stack compact>
+        <Stack isCompact>
           {operations.map((operation) => (
             <Button
               key={operation.id}
@@ -150,7 +150,7 @@ function InspectionExample() {
         </Stack>
       }
       detail={
-        <Stack compact>
+        <Stack isCompact>
           <Subheading>{current?.label}</Subheading>
           <Prose>{current?.result}</Prose>
         </Stack>

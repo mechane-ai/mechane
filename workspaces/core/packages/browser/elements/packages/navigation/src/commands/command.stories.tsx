@@ -6,7 +6,7 @@ import type { CommandAction } from './command.tsx';
 
 function CommandsExample() {
   const scope = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(false);
   const [lastAction, setLastAction] = useState('Choose an action.');
 
   const commands: ReadonlyArray<CommandAction> = [
@@ -21,7 +21,7 @@ function CommandsExample() {
       id: 'archive',
       label: 'Archive project',
       description: 'Unavailable until a project is selected',
-      disabled: true,
+      isDisabled: true,
       onSelect: () => setLastAction('Archive requested.'),
     },
   ];
@@ -33,13 +33,13 @@ function CommandsExample() {
     onSelect: () => setOpen(true),
   };
 
-  useCommandShortcuts({ target: scope, enabled: !open, commands: [opener] });
+  useCommandShortcuts({ target: scope, isEnabled: !isOpen, commands: [opener] });
 
   return (
     <div ref={scope}>
       <Stack>
         <CommandPalette
-          open={open}
+          open={isOpen}
           onOpenChange={setOpen}
           title="Commands"
           commands={commands}

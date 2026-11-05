@@ -68,7 +68,17 @@ function SourceDisclosure({ source, maxHeight }: SourcePreviewProps): ReactNode 
 }
 
 export function DiffViewer(props: DiffViewerProps): ReactNode {
-  const { label, layout = 'split', wrap = false, annotations = [], maxHeight = 480, patch, before, after } = props;
+  const {
+    label,
+    layout = 'split',
+    shouldWrap = false,
+    annotations = [],
+    maxHeight = 480,
+    patch,
+    before,
+    after,
+  } = props;
+
   const [source, setSource] = useState<DiffSource>(props);
   const [result, setResult] = useState<DiffResult>();
   const [showUnchanged, setShowUnchanged] = useState(false);
@@ -153,7 +163,7 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
             files={current.files}
             label={label}
             layout={layout}
-            wrap={wrap}
+            shouldWrap={shouldWrap}
             showUnchanged={hasFullContext && showUnchanged}
             annotations={annotations}
             maxHeight={maxHeight}

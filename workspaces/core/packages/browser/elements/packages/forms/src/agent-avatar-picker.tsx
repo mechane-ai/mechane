@@ -5,7 +5,8 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { AgentAvatar, agentAvatarColors, agentAvatarShapes } from '../../core/src/index.ts';
 import type { AgentAppearance, AgentAvatarColor, AgentAvatarShape } from '../../core/src/index.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   root: {

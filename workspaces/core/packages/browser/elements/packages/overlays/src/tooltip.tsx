@@ -1,9 +1,10 @@
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import { layers } from '../../foundations/src/constants.stylex.ts';
 import type { OpenStateProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import { colors, layers, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   positioner: { zIndex: layers.tooltip },

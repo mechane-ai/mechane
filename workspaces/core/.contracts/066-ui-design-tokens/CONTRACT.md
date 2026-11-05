@@ -47,7 +47,8 @@ Run the repository's lint from the repository root and confirm that it reports a
 
 ## Local adaptations
 
-Shared visual roles live in `packages/browser/elements/packages/foundations/src/tokens.stylex.ts`.
+Shared variable roles live in `packages/browser/elements/packages/foundations/src/tokens.stylex.ts`.
+Literal conditions and constants live beside them in `constants.stylex.ts`; both are defining StyleX modules.
 The foundation's `pageGeometry` owns page insets, toolbar height, and section gaps for layout and collections.
 Keep those families independent; neither imports the other to obtain shared geometry. Other shell measurements belong to `elements/layout`.
 The supported themes are light and dark. Apply the chosen theme to the document root so portaled content inherits it.
@@ -72,9 +73,23 @@ The registry loads both shipped `variant-style-comparisons` rules from `assets/a
 Their examples distinguish a named variant from a comparison between two runtime record identifiers.
 Exhaustive maps remain a TypeScript requirement; the syntax rule alone does not prove exhaustiveness.
 
-The UI package rejects literal color, font-size, font-weight, nonzero gap, shadow, and nonzero transition timing values in component styles.
-Define those roles in `tokens.stylex.ts`; zero-duration motion remains available for reduced motion and direct dragging.
-Review other visual literals and external theme overrides against the same ownership boundary.
+The visual-token rules run separately over TypeScript and TSX. In browser StyleX creation calls and TSX inline styles,
+they reject raw colors, font sizes and weights, nonzero gaps, padding and margins, radii, shadows, and transition values.
+Keep token definitions outside component style creation. Zero resets and reduced-motion timing remain valid.
+The canonical clipped, one-pixel, absolutely positioned accessibility recipe retains its negative one-pixel margin.
+The TypeScript visual-token matcher and TSX control-geometry matcher each own their generated parser companion.
+The language-specific style-scope utilities distinguish StyleX calls from JSX inline attributes.
+
+The control-geometry rules reject raw height and block-size values in named ordinary control recipes in actions,
+forms, shared control styles, and placeholders. Chart coordinates, measured widths, viewport sizing, glyphs,
+pseudo-elements, and content-sized textareas retain their geometry. Express related measured dimensions once;
+for example, derive a switch thumb's travel from its track and thumb dimensions. Review opaque expressions and styles
+outside these syntax patterns against the same ownership boundary.
+
+The Console and ConsoleViews control-override rule resolves named Elements imports and aliases. It rejects explicit
+`className`, `style`, and `stylex.props` spreads on the listed controls and control parts. Use supported variants and
+typed `xstyle` placement. Base UI's injected prop spreads, rendered native elements, and Positioner styles remain valid.
+This rule does not resolve arbitrary stylesheet references or prove that a prop spread contains only composition data.
 
 Compose page headers with `PageToolbar` and `ToolbarAction`, including navigation links and copy behavior through
 `render`. Use `RecordPage` for record bodies and `PageContent` for report sections inside an existing page frame.
@@ -95,6 +110,7 @@ the last scrolling item. Inspect the last navigation item and footer with a shor
 Responsive groups follow their container width. Metric columns use `MetricGrid layout="columns"`.
 Settings sections constrain grid tracks so wide tables scroll inside their region without expanding the page.
 Multiple toolbar actions supply concise labels and icons so compact toolbars preserve navigation and accessible actions.
+Keep toolbar action groups at their intrinsic width while the title shrinks and truncates within the remaining space.
 Keep chart frames unboxed; a caller may group them in a Panel. Chart titles and action groups wrap independently.
 
 Choose typography and weight by role: body for records and ordinary controls, caption for metadata and chart inspection
@@ -116,6 +132,10 @@ viewport; a passing style or type check does not establish these visual properti
 
 Values: `textContrast` 4.5; `largeTextContrast` 3.
 - ast-grep `ui-visual-token-values` (066): enforced
+- ast-grep `ui-visual-token-values-typescript` (066): enforced
+- ast-grep `ui-control-geometry` (066): enforced
+- ast-grep `ui-control-geometry-typescript` (066): enforced
+- ast-grep `ui-control-style-overrides` (066): enforced
 - asset `assets/ast-grep/rules` `variant-style-comparisons-typescript` (066): enforced
 - asset `assets/ast-grep/rules` `variant-style-comparisons-tsx` (066): enforced
 

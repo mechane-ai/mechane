@@ -1,0 +1,20 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-visual-token-values-typescript
+valid:
+  - 'stylex.create({ root: { fontSize: typography.bodySize, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radii.sm } });'
+  - "stylex.create({ root: { margin: 'auto', gap: 0, width: '14px', height: 320, color: 'inherit' } });"
+  - "stylex.create({ root: { transitionDuration: { default: motion.duration, [conditions.reducedMotion]: '0ms' } } });"
+  - 'stylex.create({ root: { paddingBlock: `calc((${controls.height} - 1px) / 2)` } });'
+  - "stylex.create({ hidden: { position: 'absolute', width: 1, height: 1, margin: -1, clipPath: 'inset(50%)' } });"
+  - "stylex.defineVars({ ink: '#0a0a0a', inputSize: '14px' });"
+  - 'const measurements = { gap: 12, height: 320 };'
+invalid:
+  - "stylex.create({ root: { fontSize: '14px' } });"
+  - "stylex.create({ root: { backgroundColor: { ':hover': '#eeeeee' } } });"
+  - 'stylex.create({ root: { fontWeight: 500, gap: 12 } });'
+  - "stylex.create({ root: { paddingInline: '12px' } });"
+  - 'stylex.create({ root: { marginBlock: -4 } });'
+  - "stylex.create({ root: { borderRadius: { default: '4px' } } });"
+  - 'stylex.create({ root: { padding: 0.5 } });'
+  - 'stylex.create({ root: { padding: `12px` } });'
+  - "stylex.create({ root: { transitionDuration: '140ms', boxShadow: '0 4px 16px #00000014' } });"

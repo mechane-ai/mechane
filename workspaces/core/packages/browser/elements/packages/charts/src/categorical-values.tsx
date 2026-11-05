@@ -67,7 +67,7 @@ export function CategoricalValues({
         <li key={item.id}>
           <ChartDatumButton
             label={`${item.label}: ${item.valueLabel}`}
-            selected={selection?.selectedId === item.id}
+            isSelected={selection?.selectedId === item.id}
             onSelect={selection === undefined ? undefined : () => selection.onSelect(item.id)}
           >
             <span {...stylex.props(styles.name)}>

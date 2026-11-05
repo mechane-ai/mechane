@@ -3,7 +3,8 @@
 Status: accepted, November 3, 2026. This records the initial design and adoption decisions behind Elements by Mechane
 and its Console consumers. The later [UI expansion](ui-capability-proposal.md) supersedes the source layout and
 Console-consumer prerequisite below. The [component guide](components.md) describes supported APIs, and the
-[Console guide](console.md) describes the shipped application.
+[Console guide](console.md) describes the shipped application. The collection API has since consolidated comparable
+records on `DataTable`; the proposed `Table` parts below are retired.
 
 The design system should make a new screen feel like the rest of Mechane with little custom styling. Controls share
 interaction behavior, typography, spacing, and states. Layout and chart components remain useful without importing

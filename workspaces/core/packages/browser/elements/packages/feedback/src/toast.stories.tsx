@@ -84,7 +84,7 @@ function ActionExample(): ReactNode {
 
 function LoadingExample(): ReactNode {
   const toasterId = useId();
-  const [pending, setPending] = useState(false);
+  const [isPending, setPending] = useState(false);
 
   return (
     <Stack>
@@ -99,7 +99,7 @@ function LoadingExample(): ReactNode {
           Start export
         </Button>
         <Button
-          disabled={!pending}
+          disabled={!isPending}
           onClick={() => {
             toast.success('Export ready', { toasterId, id: toasterId, duration: Infinity });
             setPending(false);
@@ -108,7 +108,7 @@ function LoadingExample(): ReactNode {
           Complete export
         </Button>
         <Button
-          disabled={!pending}
+          disabled={!isPending}
           onClick={() => {
             toast.error('Export failed', { toasterId, id: toasterId, duration: Infinity });
             setPending(false);
@@ -125,7 +125,7 @@ function LoadingExample(): ReactNode {
 function RefreshFailureExample(): ReactNode {
   const toasterId = useId();
   const notificationId = `${toasterId}-refresh`;
-  const [failed, setFailed] = useState(false);
+  const [hasFailed, setFailed] = useState(false);
 
   useEffect(
     () => () => {
@@ -157,7 +157,7 @@ function RefreshFailureExample(): ReactNode {
       </Panel>
       <Row>
         <Button onClick={reportFailure}>Simulate refresh failure</Button>
-        <Button disabled={!failed} onClick={recover}>
+        <Button disabled={!hasFailed} onClick={recover}>
           Resolve refresh
         </Button>
       </Row>
@@ -169,7 +169,7 @@ function RefreshFailureExample(): ReactNode {
 
 function LongMessageExample(): ReactNode {
   const toasterId = useId();
-  const [opened, setOpened] = useState(false);
+  const [isOpen, setOpened] = useState(false);
 
   return (
     <Stack>
@@ -186,7 +186,7 @@ function LongMessageExample(): ReactNode {
       >
         Show long notification
       </Button>
-      {opened && (
+      {isOpen && (
         <Panel>
           <Text>The synthetic export options are open.</Text>
         </Panel>

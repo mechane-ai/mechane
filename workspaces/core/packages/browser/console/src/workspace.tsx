@@ -41,7 +41,7 @@ export function WorkspaceScreen({
           workspaces={session.workspaces}
           workspaceId={workspace.id}
           onWorkspace={(id) => navigate({ workspace: id })}
-          focus={selected.turn !== undefined && selected.mech !== undefined}
+          shouldFocus={selected.turn !== undefined && selected.mech !== undefined}
           homeLink={<WorkspaceNavigation data={data} location={selected} />}
           accountLink={
             <WorkspaceAccount workspaceId={workspace.id} name={session.principal.name} location={selected} />

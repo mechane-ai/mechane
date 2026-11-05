@@ -1,11 +1,12 @@
 import { AgentAvatar, IconButton } from '@mechane-ai/elements';
 import type { AgentAppearance } from '@mechane-ai/elements';
+import { conditions } from '@mechane-ai/elements/constants.stylex';
 import { ButtonPlaceholder, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
 import { Select } from '@mechane-ai/elements/forms';
 import { PageToolbar } from '@mechane-ai/elements/layout';
 import { PageNavigation, PageNavigationPlaceholder } from '@mechane-ai/elements/navigation';
 import { Menu } from '@mechane-ai/elements/overlays';
-import { colors, conditions, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
+import { colors, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { ConsoleView, Mech } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import {
@@ -83,7 +84,7 @@ export function MechHeaderPlaceholder(): ReactNode {
         <>
           <div {...stylex.props(styles.wide)}>
             <PageNavigationPlaceholder
-              embedded
+              isEmbedded
               items={sections
                 .filter((section) => primaryViews.has(section.value))
                 .map((section) => ({ id: section.value, label: section.label }))}
@@ -94,7 +95,7 @@ export function MechHeaderPlaceholder(): ReactNode {
           </div>
         </>
       }
-      actions={<ButtonPlaceholder icon />}
+      actions={<ButtonPlaceholder isIconOnly />}
     />
   );
 }
@@ -103,8 +104,8 @@ export function MechHeader({
   mech,
   appearance,
   view,
-  pinned,
-  busy,
+  isPinned,
+  isBusy,
   viewHref,
   onView,
   onPin,
@@ -113,20 +114,20 @@ export function MechHeader({
   readonly mech: Pick<Mech, 'id' | 'name' | 'status'>;
   readonly appearance?: AgentAppearance | undefined;
   readonly view: ConsoleView;
-  readonly pinned: boolean;
-  readonly busy: boolean;
+  readonly isPinned: boolean;
+  readonly isBusy: boolean;
   readonly viewHref: (view: ConsoleView) => string;
   readonly onView: (view: ConsoleView) => void;
   readonly onPin: () => void;
   readonly onStatus: () => void;
 }): ReactNode {
-  const pinLabel = pinned ? 'Unpin mech' : 'Pin mech';
+  const pinLabel = isPinned ? 'Unpin mech' : 'Pin mech';
   const statusLabel = mech.status === 'active' ? 'Pause mech' : 'Resume mech';
   const pendingLabel = mech.status === 'active' ? 'Pausing mech…' : 'Resuming mech…';
   const currentSection = sections.find((section) => section.value === view);
   const secondaryName = secondaryViews.has(view) ? currentSection?.label : undefined;
 
-  const stateLabel = busy
+  const stateLabel = isBusy
     ? 'Updating…'
     : mech.status === 'paused'
       ? 'Paused'
@@ -139,10 +140,10 @@ export function MechHeader({
       return;
     }
 
-    const command = event.metaKey || event.ctrlKey;
-    const alternate = event.shiftKey || event.altKey;
+    const hasCommandModifier = event.metaKey || event.ctrlKey;
+    const hasAlternateModifier = event.shiftKey || event.altKey;
 
-    if (command || alternate) {
+    if (hasCommandModifier || hasAlternateModifier) {
       return;
     }
 
@@ -157,8 +158,8 @@ export function MechHeader({
           <AgentAvatar seed={mech.id} appearance={appearance} size="sm" />
           <span {...stylex.props(styles.name)}>{mech.name}</span>
           {stateLabel !== undefined && <span {...stylex.props(styles.state)}>{stateLabel}</span>}
-          <span {...stylex.props(styles.pin, pinned && styles.pinned)}>
-            <MechPinButton name={mech.name} pinned={pinned} onToggle={onPin} />
+          <span {...stylex.props(styles.pin, isPinned && styles.pinned)}>
+            <MechPinButton name={mech.name} isPinned={isPinned} onToggle={onPin} />
           </span>
         </span>
       }
@@ -167,7 +168,7 @@ export function MechHeader({
           <div {...stylex.props(styles.wide)}>
             <PageNavigation
               label="Mech views"
-              embedded
+              isEmbedded
               items={sections
                 .filter((section) => primaryViews.has(section.value))
                 .map((section) => ({ id: section.value, label: section.label, href: viewHref(section.value) }))}
@@ -217,7 +218,7 @@ export function MechHeader({
             {secondaryName !== undefined && (
               <span {...stylex.props(styles.wide, styles.secondaryName)}>{secondaryName}</span>
             )}
-            <Menu.Trigger render={<IconButton variant="ghost" aria-label="More mech options" aria-busy={busy} />}>
+            <Menu.Trigger render={<IconButton variant="ghost" aria-label="More mech options" aria-busy={isBusy} />}>
               <MoreHorizontal size={16} aria-hidden />
             </Menu.Trigger>
           </div>
@@ -258,13 +259,13 @@ export function MechHeader({
                 <Menu.Group>
                   <Menu.GroupLabel>Mech</Menu.GroupLabel>
                   <Menu.Item onClick={onPin}>
-                    {pinned ? <PinOff size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
+                    {isPinned ? <PinOff size={16} aria-hidden /> : <Pin size={16} aria-hidden />}
                     {pinLabel}
                   </Menu.Item>
                   {mech.status !== 'archived' && (
-                    <Menu.Item onClick={onStatus} disabled={busy} aria-busy={busy}>
+                    <Menu.Item onClick={onStatus} disabled={isBusy} aria-busy={isBusy}>
                       {mech.status === 'active' ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
-                      {busy ? pendingLabel : statusLabel}
+                      {isBusy ? pendingLabel : statusLabel}
                     </Menu.Item>
                   )}
                 </Menu.Group>

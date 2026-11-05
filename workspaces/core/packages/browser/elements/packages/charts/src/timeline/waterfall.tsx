@@ -3,7 +3,8 @@ import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode, Ref } from 'react';
 import { Text } from '../../../core/src/index.ts';
-import { colors, conditions, controls, shadows, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { colors, controls, shadows, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 
 type WaterfallGeometry =
@@ -35,6 +36,7 @@ type WaterfallProps = {
 };
 
 const NARROW_LAYOUT = '@container (max-width:650px)';
+const POINT_RADIUS_PX = 5;
 
 const styles = stylex.create({
   frame: { minWidth: 0, fontFamily: typography.fontFamily, containerType: 'inline-size' },
@@ -88,7 +90,7 @@ const styles = stylex.create({
   selectedDetail: { whiteSpace: 'normal', overflowWrap: 'anywhere' },
   plot: {
     minWidth: 0,
-    marginInline: 5,
+    marginInline: POINT_RADIUS_PX,
     gridColumn: { default: '2', [NARROW_LAYOUT]: '1 / -1' },
     gridRow: { default: 1, [NARROW_LAYOUT]: 2 },
   },
@@ -305,7 +307,10 @@ function WaterfallMark({
         case 'diamond':
           return (
             <svg x={`${x}%`} y={9} width={1} height={1} overflow="visible">
-              <path d="M0 -5 5 0 0 5 -5 0Z" {...stylex.props(styles.filled)} />
+              <path
+                d={`M0 -${POINT_RADIUS_PX} ${POINT_RADIUS_PX} 0 0 ${POINT_RADIUS_PX} -${POINT_RADIUS_PX} 0Z`}
+                {...stylex.props(styles.filled)}
+              />
             </svg>
           );
       }

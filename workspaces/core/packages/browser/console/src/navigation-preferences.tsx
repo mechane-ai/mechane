@@ -9,13 +9,13 @@ const preferencesSchema = Schema.Struct({ pinned: Schema.Array(MechId), recent: 
 
 type NavigationPreferences = { readonly pinned: ReadonlyArray<Mech['id']>; readonly recent: ReadonlyArray<Mech['id']> };
 
-type PreferenceSnapshot = { readonly preferences: NavigationPreferences; readonly error: boolean };
+type PreferenceSnapshot = { readonly preferences: NavigationPreferences; readonly hasError: boolean };
 
 type NavigationPreferenceState = NavigationPreferences & {
   readonly visit: (id: Mech['id']) => void;
   readonly togglePin: (id: Mech['id']) => void;
   readonly forget: (id: Mech['id']) => void;
-  readonly persistenceError: boolean;
+  readonly hasPersistenceError: boolean;
 };
 
 const NavigationPreferenceContext = createContext<NavigationPreferenceState | undefined>(undefined);
@@ -25,7 +25,7 @@ function readPreferences(key: string): PreferenceSnapshot {
     const stored = localStorage.getItem(key);
 
     if (stored === null) {
-      return { preferences: { pinned: [], recent: [] }, error: false };
+      return { preferences: { pinned: [], recent: [] }, hasError: false };
     }
 
     const decoded: unknown = JSON.parse(stored);
@@ -36,23 +36,23 @@ function readPreferences(key: string): PreferenceSnapshot {
           pinned: [...new Set(decoded.pinned)],
           recent: [...new Set(decoded.recent)].slice(0, RECENT_LIMIT),
         },
-        error: false,
+        hasError: false,
       };
     }
   } catch {
     // Navigation remains available when the browser blocks preference storage.
   }
 
-  return { preferences: { pinned: [], recent: [] }, error: true };
+  return { preferences: { pinned: [], recent: [] }, hasError: true };
 }
 
 function writePreferences(key: string, preferences: NavigationPreferences): PreferenceSnapshot {
   try {
     localStorage.setItem(key, JSON.stringify(preferences));
 
-    return { preferences, error: false };
+    return { preferences, hasError: false };
   } catch {
-    return { preferences, error: true };
+    return { preferences, hasError: true };
   }
 }
 
@@ -84,7 +84,7 @@ function NavigationPreferenceOwner({
   const [snapshot, setSnapshot] = useState(() => readPreferences(storageKey));
   const latest = useRef(snapshot);
 
-  const { preferences, error: persistenceError } = snapshot;
+  const { preferences, hasError: hasPersistenceError } = snapshot;
 
   const save = useCallback(
     (next: NavigationPreferences): void => {
@@ -145,7 +145,7 @@ function NavigationPreferenceOwner({
   );
 
   return (
-    <NavigationPreferenceContext.Provider value={{ ...preferences, visit, togglePin, forget, persistenceError }}>
+    <NavigationPreferenceContext.Provider value={{ ...preferences, visit, togglePin, forget, hasPersistenceError }}>
       {children}
     </NavigationPreferenceContext.Provider>
   );

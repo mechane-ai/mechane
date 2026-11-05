@@ -54,7 +54,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
   const source = useMemo(() => data.mech(mechId), [data, mechId]);
   const reads = useMechPageReads(data, mechId, location);
   const state = useResource(data, source);
-  const [opened, setOpened] = useState(false);
+  const [isOpen, setOpened] = useState(false);
   const records = useRecordNavigation();
 
   useCollectionLifetime(data, source);
@@ -62,14 +62,14 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
 
   const canOpen = state.kind === 'ready' && reads.status !== 'pending';
 
-  if (!opened && canOpen) {
+  if (!isOpen && canOpen) {
     setOpened(true);
   }
 
   let pageState: ResourceState<Mech> = state;
 
   const primaryFailed = failedPrimaryStates.has(reads.status);
-  const canShowPrimaryFailure = !opened && state.kind !== 'failed';
+  const canShowPrimaryFailure = !isOpen && state.kind !== 'failed';
 
   if (canShowPrimaryFailure && primaryFailed && reads.primary !== undefined) {
     const primary = reads.primary;
@@ -78,14 +78,14 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
     pageState = {
       kind: 'failed',
       problem: failure?.cause,
-      retrying: reads.status === 'failed-retrying',
+      isRetrying: reads.status === 'failed-retrying',
       retry: () => {
         const recovery = primary.health.error === null ? primary.utils.refetch() : primary.reload();
 
         void Promise.allSettled([recovery]);
       },
     };
-  } else if (!opened && !canOpen && state.kind === 'ready') {
+  } else if (!isOpen && !canOpen && state.kind === 'ready') {
     pageState = { kind: 'pending' };
   }
 
@@ -96,7 +96,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
       placeholder={
         <MechPagePlaceholder
           view={reads.viewRead.view}
-          focusedRun={location.turn !== undefined}
+          hasFocusedRun={location.turn !== undefined}
           traceTab={selectedTraceTab(location)}
         />
       }
@@ -106,7 +106,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
           <>
             <PageToolbar
               title={location.turn === undefined ? 'Mech' : 'Run'}
-              navigation={location.turn === undefined}
+              showNavigation={location.turn === undefined}
               leading={
                 <ToolbarAction
                   icon={<ArrowLeft size={16} aria-hidden />}
@@ -131,7 +131,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
                   <EmptyState
                     title="Unable to load"
                     action={
-                      <Button onClick={pageState.retry} pending={pageState.retrying} pendingLabel="Retrying…">
+                      <Button onClick={pageState.retry} isPending={pageState.isRetrying} pendingLabel="Retrying…">
                         Try again
                       </Button>
                     }
@@ -168,7 +168,7 @@ function MechDetails({
   const viewLabel = viewLabels[view] ?? 'Conversation';
 
   const base = { workspace: data.workspace.id, mech: mech.id };
-  const [editing, setEditing] = useState(false);
+  const [isEditing, setEditing] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
   const [statusError, setStatusError] = useState<{ readonly status: MechStatus; readonly message: string }>();
 
@@ -184,24 +184,24 @@ function MechDetails({
   const entry = useRouterState({ select: (state) => state.location.state });
   const readerPositions = useRef(new Map<ConsoleView, ReadonlyArray<ReaderPosition>>());
   const runBack = useRef<HTMLButtonElement>(null);
-  const busy = pendingStatus !== undefined;
-  const focusedRun = location.turn !== undefined;
-  const previousRun = useRef(focusedRun);
-  const conversationVisible = view === 'conversation';
-  const conversationActive = conversationVisible && !focusedRun && !editing;
+  const isBusy = pendingStatus !== undefined;
+  const hasFocusedRun = location.turn !== undefined;
+  const previousRun = useRef(hasFocusedRun);
+  const isConversationVisible = view === 'conversation';
+  const isConversationActive = isConversationVisible && !hasFocusedRun && !isEditing;
   const archiveError = statusError?.status === MechStatus.Archived ? statusError.message : undefined;
   const lifecycleError = statusError?.status === MechStatus.Archived ? undefined : statusError?.message;
 
-  if (conversationVisible && !focusedRun && !conversationVisited) {
+  if (isConversationVisible && !hasFocusedRun && !conversationVisited) {
     setConversationVisited(true);
   }
 
-  if (editing && (view !== 'definition' || focusedRun)) {
+  if (isEditing && (view !== 'definition' || hasFocusedRun)) {
     setEditing(false);
   }
 
   useLayoutEffect(() => {
-    if (focusedRun || editing) {
+    if (hasFocusedRun || isEditing) {
       return;
     }
 
@@ -218,17 +218,17 @@ function MechDetails({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [consumeReturn, editing, entry.consoleReturn, focusedRun, view]);
+  }, [consumeReturn, isEditing, entry.consoleReturn, hasFocusedRun, view]);
 
   useLayoutEffect(() => {
-    const enteringRun = focusedRun && !previousRun.current;
+    const isEnteringRun = hasFocusedRun && !previousRun.current;
 
-    previousRun.current = focusedRun;
+    previousRun.current = hasFocusedRun;
 
-    if (enteringRun) {
+    if (isEnteringRun) {
       runBack.current?.focus({ preventScroll: true });
     }
-  }, [focusedRun]);
+  }, [hasFocusedRun]);
 
   function selectView(next: ConsoleView): void {
     readerPositions.current.set(view, readReaderPositions());
@@ -236,7 +236,7 @@ function MechDetails({
   }
 
   function setStatus(status: MechStatus): void {
-    if (busy) {
+    if (isBusy) {
       return;
     }
 
@@ -278,7 +278,7 @@ function MechDetails({
         return (
           <MechSettings
             mech={mech}
-            busy={busy}
+            isBusy={isBusy}
             error={archiveError}
             connections={<ConnectionsScreen data={data} mechId={mech.id} />}
             appearance={appearance}
@@ -298,13 +298,13 @@ function MechDetails({
 
   return (
     <ViewStack.Root>
-      <ViewStack.Panel active={!focusedRun && !editing}>
+      <ViewStack.Panel isActive={!hasFocusedRun && !isEditing}>
         <MechHeader
           mech={mech}
           appearance={appearance}
           view={view}
-          pinned={preferences.pinned.includes(mech.id)}
-          busy={busy}
+          isPinned={preferences.pinned.includes(mech.id)}
+          isBusy={isBusy}
           viewHref={(next) => records.href({ ...base, view: next })}
           onView={selectView}
           onPin={() => preferences.togglePin(mech.id)}
@@ -312,30 +312,35 @@ function MechDetails({
         />
         <Workbench>
           {notice}
-          {lifecycleError !== undefined && <Notice error>{lifecycleError}</Notice>}
+          {lifecycleError !== undefined && <Notice hasError>{lifecycleError}</Notice>}
           {mech.status === 'paused' && (
             <Notice>Paused. New messages wait until you resume. A running execution may still finish.</Notice>
           )}
           {conversationVisited && (
-            <ViewStack.Panel active={conversationVisible}>
-              <ConversationScreen data={data} mech={mech} pageSource={reads.conversation} active={conversationActive} />
+            <ViewStack.Panel isActive={isConversationVisible}>
+              <ConversationScreen
+                data={data}
+                mech={mech}
+                pageSource={reads.conversation}
+                isActive={isConversationActive}
+              />
               <WorkbenchFooter>
                 <MessageForm data={data} mech={mech} />
               </WorkbenchFooter>
             </ViewStack.Panel>
           )}
-          {!conversationVisible && (
-            <WorkbenchScroll label={viewLabel} scrollRestorationId={`mech-${view}`} flush={collectionViews.has(view)}>
+          {!isConversationVisible && (
+            <WorkbenchScroll label={viewLabel} scrollRestorationId={`mech-${view}`} isFlush={collectionViews.has(view)}>
               {sectionContent()}
             </WorkbenchScroll>
           )}
         </Workbench>
       </ViewStack.Panel>
-      {editing && <EditMechForm data={data} mech={mech} notice={notice} onClose={() => setEditing(false)} />}
+      {isEditing && <EditMechForm data={data} mech={mech} notice={notice} onClose={() => setEditing(false)} />}
       {location.turn !== undefined && (
         <>
           <PageToolbar
-            navigation={false}
+            showNavigation={false}
             title={mech.name}
             leading={
               <ToolbarAction
@@ -351,7 +356,7 @@ function MechDetails({
           <Workbench>
             <WorkbenchScroll label="Run details" scrollRestorationId="run">
               {reads.trace === undefined ? (
-                <Notice error>This run ID is invalid.</Notice>
+                <Notice hasError>This run ID is invalid.</Notice>
               ) : (
                 <TraceScreen
                   key={location.turn}

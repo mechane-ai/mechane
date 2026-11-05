@@ -7,6 +7,7 @@ import {
   DataTableTextPlaceholder,
   ListFooter,
 } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { ButtonPlaceholder, EmptyState, Skeleton } from '@mechane-ai/elements/feedback';
 import { PageToolbar } from '@mechane-ai/elements/layout';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
@@ -18,7 +19,7 @@ const mechColumns = {
   name: { id: 'name', label: 'Mech', role: 'primary' },
   status: { id: 'status', label: 'Availability', role: 'status', width: 120 },
   pin: { id: 'pin', label: 'Pin', role: 'actions', width: 80 },
-} as const;
+} as const satisfies Record<string, DataTableColumnLayout>;
 
 export function MechsPagePlaceholder(): ReactNode {
   return (
@@ -27,7 +28,7 @@ export function MechsPagePlaceholder(): ReactNode {
         title="Mechs"
         actions={
           <>
-            <ButtonPlaceholder icon />
+            <ButtonPlaceholder isIconOnly />
             <ButtonPlaceholder width="11ch" />
           </>
         }
@@ -43,7 +44,7 @@ function MechListPlaceholder(): ReactNode {
       columns={[
         {
           ...mechColumns.name,
-          placeholder: <DataTableTextPlaceholder secondary leading={<Skeleton width={24} height={24} />} />,
+          placeholder: <DataTableTextPlaceholder isSecondary leading={<Skeleton width={24} height={24} />} />,
         },
         mechColumns.status,
         { ...mechColumns.pin, placeholder: <Skeleton width={16} height={16} /> },
@@ -85,10 +86,10 @@ export function MechList({
 }): ReactNode {
   const showPagination = page.hasMore || hasPrevious;
   const hasRecords = page.mechs.length > 0 || hasPrevious;
-  const footerRequested = allowance !== undefined || showPagination;
-  const showFooter = (hasRecords && footerRequested) || pageNotice !== undefined;
-  const previousDisabled = !hasPrevious || loadingPage !== undefined;
-  const nextDisabled = !page.hasMore || loadingPage !== undefined;
+  const shouldShowFooter = allowance !== undefined || showPagination;
+  const showFooter = (hasRecords && shouldShowFooter) || pageNotice !== undefined;
+  const isPreviousDisabled = !hasPrevious || loadingPage !== undefined;
+  const isNextDisabled = !page.hasMore || loadingPage !== undefined;
 
   return (
     <>
@@ -122,7 +123,7 @@ export function MechList({
           {
             ...mechColumns.pin,
             cell: (mech) => (
-              <MechPinButton name={mech.name} pinned={pinnedIds.has(mech.id)} onToggle={() => onTogglePin(mech)} />
+              <MechPinButton name={mech.name} isPinned={pinnedIds.has(mech.id)} onToggle={() => onTogglePin(mech)} />
             ),
           },
         ]}
@@ -145,17 +146,17 @@ export function MechList({
             showPagination ? (
               <>
                 <Button
-                  pending={loadingPage === 'previous'}
+                  isPending={loadingPage === 'previous'}
                   pendingLabel="Loading previous mechs…"
-                  disabled={previousDisabled}
+                  disabled={isPreviousDisabled}
                   onClick={onPrevious}
                 >
                   Previous
                 </Button>
                 <Button
-                  pending={loadingPage === 'next'}
+                  isPending={loadingPage === 'next'}
                   pendingLabel="Loading next mechs…"
-                  disabled={nextDisabled}
+                  disabled={isNextDisabled}
                   onClick={onNext}
                 >
                   Next
@@ -164,7 +165,7 @@ export function MechList({
             ) : undefined
           }
         >
-          <Stack compact>
+          <Stack isCompact>
             {pageNotice}
             {allowance !== undefined &&
               `Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}

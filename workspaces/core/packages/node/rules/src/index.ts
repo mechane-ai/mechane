@@ -1,6 +1,8 @@
 export { assetEntries } from './assets/asset-entries.ts';
 export { loadedAsset } from './assets/loaded-asset.ts';
 export { AST_GREP_RULES } from './ast-grep/constants.ts';
+export { PARSER_COMPANIONS, parserCompanion } from './ast-grep/parser-companions.ts';
+export type { ParserCompanion } from './ast-grep/parser-companions.ts';
 export { ruleText } from './contract-blocks/rule-text.ts';
 export { CONTRACTS } from './contracts.ts';
 export { FILE_ROLES } from './file-roles.ts';

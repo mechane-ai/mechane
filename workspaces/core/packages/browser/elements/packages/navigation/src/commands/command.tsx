@@ -3,7 +3,8 @@ import * as stylex from '@stylexjs/stylex';
 import { useFormatForDisplay, useHotkeys } from '@tanstack/react-hotkeys';
 import type { ReactElement, ReactNode, RefObject } from 'react';
 import { Input } from '../../../forms/src/index.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { Dialog } from '../../../overlays/src/index.ts';
 import { Kbd } from '../navigation.tsx';
 
@@ -59,19 +60,19 @@ export type CommandAction = {
   readonly label: string;
   readonly description?: string;
   readonly shortcut?: CommandShortcut;
-  readonly disabled?: boolean;
+  readonly isDisabled?: boolean;
   readonly onSelect: () => void;
 };
 
 export type CommandShortcutsOptions = {
   readonly commands: ReadonlyArray<CommandAction>;
   readonly target: RefObject<HTMLElement | null> | HTMLElement | null;
-  readonly enabled: boolean;
+  readonly isEnabled: boolean;
 };
 
-export function useCommandShortcuts({ commands, target, enabled }: CommandShortcutsOptions): void {
+export function useCommandShortcuts({ commands, target, isEnabled }: CommandShortcutsOptions): void {
   const bindings = commands.flatMap((command) => {
-    if (!enabled || command.disabled === true || command.shortcut === undefined) {
+    if (!isEnabled || command.isDisabled === true || command.shortcut === undefined) {
       return [];
     }
 
@@ -161,7 +162,7 @@ export function CommandPalette({
                   <Autocomplete.Item
                     key={command.id}
                     value={command}
-                    disabled={command.disabled}
+                    disabled={command.isDisabled}
                     {...stylex.props(styles.item)}
                     onClick={() => {
                       onOpenChange(false);

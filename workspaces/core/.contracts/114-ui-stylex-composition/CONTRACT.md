@@ -33,9 +33,12 @@ Run the existing `stylex-longhands` lint rule and its allowed/violation examples
 
 ## Local adaptations
 
-The token definition export is `@mechane-ai/elements/tokens.stylex`.
-Compiler resolution and the package export map describe the same source. Normal package exports remain named exports;
-the direct token definition path is the compiler-required exception.
+The variable definition export is `@mechane-ai/elements/tokens.stylex`; compile-time constants use
+`@mechane-ai/elements/constants.stylex`. Compiler resolution and the package export map describe the same source.
+Normal package exports remain named exports; direct definition paths are the compiler-required exception.
+Consumers compile the constants module alongside their styles so imported conditions resolve to media queries.
+Bundle variable references through `/tokens` to avoid emitting defaults over an active theme, as the package README
+shows. Verify imported conditions at fine and coarse pointer sizes from the packed archive.
 Composition review is development evidence. It does not require a new browser suite or automatic Storybook play tests.
 
 Published components and consumer StyleX rules share the compiler's top-level priority layers after `reset`. Do not

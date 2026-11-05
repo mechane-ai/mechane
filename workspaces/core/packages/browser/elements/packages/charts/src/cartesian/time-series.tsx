@@ -30,7 +30,7 @@ export type TimeSeriesChartProps = {
   readonly actions?: ReactNode;
 };
 
-export type AreaChartProps = TimeSeriesChartProps & { readonly stacked?: boolean | undefined };
+export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boolean | undefined };
 
 export type SmallMultiplesProps = Omit<
   TimeSeriesChartProps,
@@ -128,11 +128,11 @@ const styles = stylex.create({
 });
 
 export function LineChart(props: TimeSeriesChartProps): ReactNode {
-  return <TimeChart {...props} kind="line" stacked={false} />;
+  return <TimeChart {...props} kind="line" isStacked={false} />;
 }
 
-export function AreaChart({ stacked = false, ...props }: AreaChartProps): ReactNode {
-  return <TimeChart {...props} kind="area" stacked={stacked} />;
+export function AreaChart({ isStacked = false, ...props }: AreaChartProps): ReactNode {
+  return <TimeChart {...props} kind="area" isStacked={isStacked} />;
 }
 
 export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): ReactNode {
@@ -224,7 +224,7 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
           formatValue={chart.formatValue}
           markers={chart.markers}
           kind="line"
-          stacked={false}
+          isStacked={false}
           sharedInspection={sharedInspection}
           axisWidth={axisWidth}
         />
@@ -244,30 +244,30 @@ function TimeChart({
   height = 180,
   actions,
   kind,
-  stacked,
+  isStacked,
   sharedInspection,
   axisWidth,
 }: TimeSeriesChartProps & {
   readonly kind: 'line' | 'area';
-  readonly stacked: boolean;
+  readonly isStacked: boolean;
   readonly sharedInspection?: SharedInspection;
   readonly axisWidth?: number;
 }): ReactNode {
   const issue =
     !Number.isFinite(height) || height < 48
       ? 'Chart height must be at least 48 pixels.'
-      : validateTimeSeries({ series, isStacked: stacked, markers });
+      : validateTimeSeries({ series, isStacked, markers });
 
   const prepared = useMemo(
-    () => (issue === undefined ? prepareTimeSeries(series, stacked) : []),
-    [series, stacked, issue],
+    () => (issue === undefined ? prepareTimeSeries(series, isStacked) : []),
+    [series, isStacked, issue],
   );
 
   const points = prepared[0]?.points ?? [];
   const { ref, width, element } = usePlotWidth();
   const rootRef = useRef<HTMLDivElement>(null);
   const [inspection, setInspection] = useState<Inspection | undefined>();
-  const signature = timeSeriesSignature({ series, markers, timestampUnit, isStacked: stacked });
+  const signature = timeSeriesSignature({ series, markers, timestampUnit, isStacked });
 
   const active =
     sharedInspection === undefined
@@ -449,7 +449,7 @@ function TimeChart({
                       y1={(point) => y((point.value ?? 0) + point.base)}
                       yScale={y}
                       fill={chartToneColors[item.tone]}
-                      fillOpacity={stacked ? 0.65 : 0.15}
+                      fillOpacity={isStacked ? 0.65 : 0.15}
                     />
                   )}
                   <TimeSeriesLine series={item} x={x} y={y} inspectedTimestamp={active?.timestamp} />

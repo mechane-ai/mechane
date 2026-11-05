@@ -97,7 +97,7 @@ function SelectableWaterfall({
 
   return (
     <Stack>
-      <Panel padded={false}>
+      <Panel isPadded={false}>
         <Waterfall
           items={items}
           start={0}

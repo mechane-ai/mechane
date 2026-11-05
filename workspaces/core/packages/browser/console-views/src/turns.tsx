@@ -1,5 +1,6 @@
 import { Status } from '@mechane-ai/elements';
 import { DataTable, DataTablePlaceholder, DataTableText } from '@mechane-ai/elements/collections';
+import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
@@ -13,9 +14,9 @@ import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 const turnColumns = {
   input: { id: 'input', label: 'Run', role: 'primary' },
   outcome: { id: 'outcome', label: 'Outcome', role: 'status', width: 148 },
-  started: { id: 'started', label: 'Started', role: 'timestamp', secondary: true, width: 172 },
-  elapsed: { id: 'elapsed', label: 'Elapsed', role: 'number', secondary: true, width: 100 },
-} as const;
+  started: { id: 'started', label: 'Started', role: 'timestamp', isSecondary: true, width: 172 },
+  elapsed: { id: 'elapsed', label: 'Elapsed', role: 'number', isSecondary: true, width: 100 },
+} as const satisfies Record<string, DataTableColumnLayout>;
 
 export function TurnListPlaceholder(): ReactNode {
   return <DataTablePlaceholder columns={Object.values(turnColumns)} />;
@@ -64,11 +65,11 @@ export function TurnList({
               {runInput(turn) ?? 'Input unavailable'}
             </DataTableText>
           ),
-          truncate: true,
+          shouldTruncate: true,
         },
         {
           ...turnColumns.outcome,
-          truncate: false,
+          shouldTruncate: false,
           cell: (turn) => (
             <Status
               tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
@@ -79,12 +80,12 @@ export function TurnList({
         },
         {
           ...turnColumns.started,
-          truncate: false,
+          shouldTruncate: false,
           cell: (turn) => (Schema.is(Turn)(turn) ? <ConsoleTimestamp value={turn.startedAt} /> : 'Unavailable'),
         },
         {
           ...turnColumns.elapsed,
-          truncate: false,
+          shouldTruncate: false,
           cell: (turn) =>
             Schema.is(Turn)(turn) && turn.status !== 'running'
               ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))

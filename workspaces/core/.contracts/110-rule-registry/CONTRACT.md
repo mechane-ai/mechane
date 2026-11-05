@@ -34,6 +34,11 @@ Does a new value belong in the entry of the contract that asks for it, and does 
 
 ## Local adaptations
 
+`ast-grep/parser-companions.ts` names the three rules that share an authored matcher across TypeScript and TSX.
+The generator reads that matcher, changes only its parser metadata and language-specific utility references, and
+marks the companion as generated. Both variants keep their registry examples. Duplicate detection scans the authored
+matcher and excludes only the declared generated paths; `rules:check` holds those outputs to their source.
+
 `rule-shapes` holds the types shared by the registry and its consumers.
 `rules/src/contracts` holds the contract groups inside one registry owner.
 `rules` gathers them into `CONTRACTS` and renders every generated file, which `rule-generator` writes.

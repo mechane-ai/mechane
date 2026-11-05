@@ -34,7 +34,7 @@ export type ResizablePaneProps = {
   readonly initialSizePercent?: number;
   readonly minimumSizePercent?: number;
   readonly maximumSizePercent?: number;
-  readonly collapsible?: boolean;
+  readonly canCollapse?: boolean;
 } & Omit<ComponentProps<'div'>, 'id' | 'onResize'>;
 
 export type ResizableHandleProps = { readonly 'aria-label': string; readonly 'disabled'?: boolean } & Omit<
@@ -72,7 +72,7 @@ function ResizablePane({
   initialSizePercent,
   minimumSizePercent = 10,
   maximumSizePercent = 100,
-  collapsible = false,
+  canCollapse = false,
   ref,
   ...props
 }: ResizablePaneProps): ReactNode {
@@ -82,7 +82,7 @@ function ResizablePane({
       defaultSize={initialSizePercent === undefined ? undefined : `${initialSizePercent}%`}
       minSize={`${minimumSizePercent}%`}
       maxSize={`${maximumSizePercent}%`}
-      collapsible={collapsible}
+      collapsible={canCollapse}
       elementRef={ref}
       {...mergeProps(stylex.props(styles.panel), props)}
     />

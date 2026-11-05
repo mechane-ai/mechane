@@ -16,7 +16,7 @@ export function WorkspaceSettings({
   readonly session: Session;
   readonly workspace: Workspace;
 }): ReactNode {
-  const { persistenceError } = useNavigationPreferences();
+  const { hasPersistenceError } = useNavigationPreferences();
 
   return (
     <>
@@ -25,7 +25,7 @@ export function WorkspaceSettings({
         <Stack>
           <SettingsSection title="Workspace">
             <Details items={[{ label: 'Name', value: workspace.name }]} />
-            {persistenceError && <Notice error>This browser could not save your pins and recent mechs.</Notice>}
+            {hasPersistenceError && <Notice hasError>This browser could not save your pins and recent mechs.</Notice>}
           </SettingsSection>
           <SettingsSection title="Account">
             <Details
@@ -43,7 +43,7 @@ export function WorkspaceSettings({
             />
           </SettingsSection>
           <SettingsSection title="About">
-            <Stack compact>
+            <Stack isCompact>
               <TextLink href="https://github.com/mechane-ai/mechane" target="_blank" rel="noreferrer">
                 Documentation
               </TextLink>

@@ -1,7 +1,8 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
-import { colors, controls, layers, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { layers } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   link: {

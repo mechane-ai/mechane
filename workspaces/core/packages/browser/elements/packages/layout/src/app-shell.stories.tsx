@@ -53,12 +53,16 @@ function CollectionShell(): ReactNode {
         <Navigation label="Collection">
           <NavigationItem
             icon={<FileText size={16} />}
-            selected={view === 'Release notes'}
+            isSelected={view === 'Release notes'}
             onClick={() => setView('Release notes')}
           >
             Release notes
           </NavigationItem>
-          <NavigationItem icon={<Archive size={16} />} selected={view === 'Archive'} onClick={() => setView('Archive')}>
+          <NavigationItem
+            icon={<Archive size={16} />}
+            isSelected={view === 'Archive'}
+            onClick={() => setView('Archive')}
+          >
             Archive
           </NavigationItem>
           <NavigationLink icon={<Folder size={16} />} href="#shared-collection">
@@ -88,7 +92,7 @@ function CollectionShell(): ReactNode {
         <Stack>
           <Heading>{view}</Heading>
           <Panel>
-            <Stack compact>
+            <Stack isCompact>
               <Muted>
                 This content remains readable when the sidebar collapses or the navigation moves into a drawer.
               </Muted>
@@ -109,7 +113,7 @@ export const PhoneNavigation: Story = { ...Recommended, globals: { viewport: { v
 export const ToolbarWithoutNavigation: Story = {
   render: () => (
     <PageToolbar
-      navigation={false}
+      showNavigation={false}
       title="An item with a long descriptive name and a bounded toolbar"
       actions={<ToolbarAction icon={<Plus size={16} aria-hidden />}>Create item</ToolbarAction>}
     />

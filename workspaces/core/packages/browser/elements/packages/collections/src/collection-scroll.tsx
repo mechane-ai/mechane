@@ -68,7 +68,7 @@ export type CollectionScrollProps = {
   readonly children: ReactNode;
   readonly endContent?: ReactNode;
   readonly onEndReached?: (() => void) | undefined;
-  readonly fill?: boolean;
+  readonly shouldFill?: boolean;
   readonly endPosition?: 'start' | 'end';
   readonly label?: string;
 };
@@ -77,14 +77,14 @@ export function CollectionScroll({
   children,
   endContent,
   onEndReached,
-  fill = false,
+  shouldFill = false,
   endPosition = 'end',
   label = 'Collection',
 }: CollectionScrollProps): ReactNode {
   const viewport = useRef<HTMLDivElement>(null);
   const end = useRef<HTMLDivElement>(null);
 
-  useEndReached({ end, viewport: fill ? viewport : undefined, onEndReached, content: children });
+  useEndReached({ end, viewport: shouldFill ? viewport : undefined, onEndReached, content: children });
 
   const boundary = (
     <div ref={end} {...stylex.props(endContent !== undefined && styles.end)}>
@@ -95,10 +95,10 @@ export function CollectionScroll({
   return (
     <div
       ref={viewport}
-      role={fill ? 'region' : undefined}
-      aria-label={fill ? label : undefined}
-      tabIndex={fill ? 0 : undefined}
-      {...stylex.props(styles.root, fill && styles.viewport)}
+      role={shouldFill ? 'region' : undefined}
+      aria-label={shouldFill ? label : undefined}
+      tabIndex={shouldFill ? 0 : undefined}
+      {...stylex.props(styles.root, shouldFill && styles.viewport)}
     >
       {endPosition === 'start' && boundary}
       {children}

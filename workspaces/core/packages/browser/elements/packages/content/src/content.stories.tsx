@@ -32,7 +32,7 @@ export const MarkdownContent: Story = {
 
 export const StreamingMarkdown: Story = {
   args: {
-    streaming: true,
+    isStreaming: true,
     children:
       'The worker is preparing **two files**.\n\n```typescript\nconst files = [\n  "src/main.ts",\n  "src/config.ts"',
   },

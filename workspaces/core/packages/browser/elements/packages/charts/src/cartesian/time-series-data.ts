@@ -121,13 +121,17 @@ export function timeSeriesSignature({
   ]);
 }
 
-export function observationDomain(minimum: number, maximum: number, startsAtZero = false): readonly [number, number] {
+export function observationDomain(
+  minimum: number,
+  maximum: number,
+  shouldStartAtZero = false,
+): readonly [number, number] {
   if (minimum !== maximum) {
     return [minimum, maximum];
   }
 
   const padding = Math.max(1, Math.abs(minimum) * DOMAIN_PADDING_RATIO);
-  const lower = startsAtZero ? 0 : minimum - padding;
+  const lower = shouldStartAtZero ? 0 : minimum - padding;
   const upper = maximum + padding;
 
   return [Number.isFinite(lower) ? lower : minimum, Number.isFinite(upper) ? upper : maximum];

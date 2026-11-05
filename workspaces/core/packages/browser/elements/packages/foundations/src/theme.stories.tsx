@@ -37,7 +37,7 @@ export const Dark: Story = {
               Include archived records
             </Field.Label>
           </Field.Root>
-          <Notice error>The refresh failed. Your current results remain available.</Notice>
+          <Notice hasError>The refresh failed. Your current results remain available.</Notice>
           <Row>
             <Button variant="solid">Save changes</Button>
             <Button variant="outline">Cancel</Button>

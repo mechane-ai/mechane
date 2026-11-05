@@ -17,7 +17,7 @@ export type DiffSource =
 export type DiffViewerProps = DiffSource & {
   readonly label: string;
   readonly layout?: 'unified' | 'split';
-  readonly wrap?: boolean;
+  readonly shouldWrap?: boolean;
   readonly annotations?: ReadonlyArray<DiffAnnotation>;
   readonly maxHeight?: number;
 };

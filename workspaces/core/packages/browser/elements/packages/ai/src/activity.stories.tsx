@@ -248,7 +248,7 @@ export const UnavailableDecisions: Story = {
         status="pending"
         title="Write the recorded measurement-comparison report?"
         description="The application has made this decision unavailable while access is checked."
-        disabled
+        isDisabled
         onApprove={() => undefined}
         onDeny={() => undefined}
       />

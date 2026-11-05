@@ -31,7 +31,7 @@ export function WorkspaceNavigation({
         <WorkspaceLink
           to="/"
           search={{ workspace: data.workspace.id }}
-          selected={location.mech === undefined && location.view !== 'definition'}
+          isSelected={location.mech === undefined && location.view !== 'definition'}
           icon={<Grid2X2 size={16} aria-hidden />}
         >
           Mechs
@@ -40,7 +40,7 @@ export function WorkspaceNavigation({
       {pinned.length > 0 && (
         <NavigationSection label="Pinned">
           {pinned.map((id) => (
-            <MechShortcut key={id} data={data} mechId={id} selected={location.mech === id} />
+            <MechShortcut key={id} data={data} mechId={id} isSelected={location.mech === id} />
           ))}
         </NavigationSection>
       )}
@@ -49,7 +49,7 @@ export function WorkspaceNavigation({
           {recent
             .filter((id) => !pinned.includes(id))
             .map((id) => (
-              <MechShortcut key={id} data={data} mechId={id} selected={location.mech === id} />
+              <MechShortcut key={id} data={data} mechId={id} isSelected={location.mech === id} />
             ))}
         </NavigationSection>
       )}
@@ -70,7 +70,7 @@ export function WorkspaceAccount({
     <WorkspaceLink
       to="/"
       search={{ workspace: workspaceId, view: 'definition' }}
-      selected={location.mech === undefined && location.view === 'definition'}
+      isSelected={location.mech === undefined && location.view === 'definition'}
       icon={<Settings size={16} aria-hidden />}
       aria-label={`Settings for ${name}`}
       title={`${name} · Settings`}
@@ -83,11 +83,11 @@ export function WorkspaceAccount({
 function MechShortcut({
   data,
   mechId,
-  selected,
+  isSelected,
 }: {
   readonly data: ConsoleData;
   readonly mechId: Mech['id'];
-  readonly selected: boolean;
+  readonly isSelected: boolean;
 }): ReactNode {
   const source = useMemo(() => data.mech(mechId), [data, mechId]);
 
@@ -95,11 +95,11 @@ function MechShortcut({
 
   const state = useResource(data, source);
   const { appearance } = useMechAppearance(mechId);
-  const removed = state.kind === 'failed' && !canRetainResult(state.problem);
+  const isRemoved = state.kind === 'failed' && !canRetainResult(state.problem);
 
   useMechNavigationResource({ source, mechId });
 
-  if (removed) {
+  if (isRemoved) {
     return null;
   }
 
@@ -122,7 +122,12 @@ function MechShortcut({
       }
     >
       {(mech) => (
-        <WorkspaceLink to="/" search={{ workspace: data.workspace.id, mech: mechId }} selected={selected} icon={icon}>
+        <WorkspaceLink
+          to="/"
+          search={{ workspace: data.workspace.id, mech: mechId }}
+          isSelected={isSelected}
+          icon={icon}
+        >
           {mech.name}
         </WorkspaceLink>
       )}

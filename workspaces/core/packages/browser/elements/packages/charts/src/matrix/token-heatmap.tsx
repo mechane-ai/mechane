@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
@@ -185,7 +186,7 @@ export function TokenHeatmap({
                   <td {...stylex.props(styles.cell, styles.index)}>
                     <ChartDatumButton
                       label={`Select token ${token.index}: ${JSON.stringify(token.text)}`}
-                      selected={selection?.selectedId === token.id}
+                      isSelected={selection?.selectedId === token.id}
                       onSelect={selection === undefined ? undefined : () => selection.onSelect(token.id)}
                     >
                       {token.index}

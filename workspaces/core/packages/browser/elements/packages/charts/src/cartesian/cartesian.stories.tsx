@@ -171,7 +171,7 @@ export const AreasAndSparklines: Story = {
             points: candidate.points.map((point) => ({ ...point, value: point.value === null ? 0 : point.value / 2 })),
           },
         ]}
-        stacked
+        isStacked
         timestampUnit="seconds"
         formatTimestamp={formatTime}
         formatValue={formatTokens}
@@ -393,18 +393,18 @@ const loadingSeries: ReadonlyArray<BarSeries> = [
 ];
 
 function BarLoadingGeometry(): ReactNode {
-  const [pending, setPending] = useState(true);
+  const [isPending, setPending] = useState(true);
   const title = 'Recorded tokens by operation';
   const description = 'Synthetic observations for the selected period.';
   const knownSeries = loadingSeries.map(({ id, label, tone }) => ({ id, label, tone }));
 
   return (
     <Stack>
-      <Button variant="outline" onClick={() => setPending(!pending)}>
-        {pending ? 'Show recorded values' : 'Show loading state'}
+      <Button variant="outline" onClick={() => setPending(!isPending)}>
+        {isPending ? 'Show recorded values' : 'Show loading state'}
       </Button>
       <Panel>
-        {pending ? (
+        {isPending ? (
           <AsyncRegion
             state="pending"
             label="Loading recorded token values"

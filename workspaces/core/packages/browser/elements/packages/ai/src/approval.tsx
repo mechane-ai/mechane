@@ -36,7 +36,7 @@ type PendingApproval = {
   readonly onApprove: () => void;
   readonly onDeny: () => void;
   readonly busy?: 'approve' | 'deny' | undefined;
-  readonly disabled?: boolean;
+  readonly isDisabled?: boolean;
   readonly approveLabel?: string;
   readonly denyLabel?: string;
   readonly statusLabel?: never;
@@ -71,16 +71,16 @@ export function Approval(props: ApprovalProps): ReactNode {
           <Button
             variant="solid"
             onClick={props.onApprove}
-            disabled={props.disabled === true || props.busy !== undefined}
-            pending={props.busy === 'approve'}
+            disabled={props.isDisabled === true || props.busy !== undefined}
+            isPending={props.busy === 'approve'}
             pendingLabel="Approving…"
           >
             {props.approveLabel ?? 'Approve'}
           </Button>
           <Button
             onClick={props.onDeny}
-            disabled={props.disabled === true || props.busy !== undefined}
-            pending={props.busy === 'deny'}
+            disabled={props.isDisabled === true || props.busy !== undefined}
+            isPending={props.busy === 'deny'}
             pendingLabel="Denying…"
           >
             {props.denyLabel ?? 'Deny'}

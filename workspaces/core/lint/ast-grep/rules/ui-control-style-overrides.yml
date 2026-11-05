@@ -1,0 +1,72 @@
+id: ui-control-style-overrides
+language: Tsx
+severity: error
+message: 'Use a named control variant or placement, such as `xstyle={styles.placement}`, and spread injected composition props (066)'
+files: ['packages/browser/console/**/*.tsx', 'packages/browser/console-views/**/*.tsx']
+utils:
+  control-export:
+    regex: ^(Button|IconButton|TextButton|TextLink|IconLink|Input|Textarea|FilePicker|ToolbarAction|ButtonPlaceholder|FieldPlaceholder|Select|Combobox|Checkbox|RadioGroup|Switch|ToggleGroup|Field|Fieldset|InputGroup|NumberField|Slider|DateRangePicker|AgentAvatarPicker|Dialog|Drawer|Menu|Popover|Tooltip)$
+  control-import:
+    kind: program
+    has:
+      kind: import_statement
+      all:
+        - has:
+            field: source
+            regex: ^['"]@mechane-ai/elements(?:/[^'"]+)?['"]$
+        - has:
+            kind: import_specifier
+            any:
+              - all:
+                  - has:
+                      field: name
+                      pattern: $CONTROL
+                      matches: control-export
+                  - not:
+                      has:
+                        field: alias
+                        kind: identifier
+              - all:
+                  - has:
+                      field: name
+                      matches: control-export
+                  - has:
+                      field: alias
+                      pattern: $CONTROL
+            stopBy: end
+rule:
+  any:
+    - kind: jsx_attribute
+      has:
+        kind: property_identifier
+        regex: ^(className|style)$
+    - kind: jsx_expression
+      has:
+        kind: spread_element
+        has:
+          kind: call_expression
+          has:
+            field: function
+            regex: ^stylex[.]props$
+  inside:
+    any:
+      - kind: jsx_opening_element
+      - kind: jsx_self_closing_element
+    all:
+      - has:
+          field: name
+          any:
+            - kind: identifier
+              pattern: $CONTROL
+            - kind: member_expression
+              all:
+                - has:
+                    field: object
+                    pattern: $CONTROL
+                - has:
+                    field: property
+                    not:
+                      regex: ^(Positioner|Portal|Collection)$
+      - inside:
+          matches: control-import
+          stopBy: end

@@ -22,7 +22,7 @@ type Story = StoryObj<typeof meta>;
 
 export const EmptyCollection: Story = {
   render: () => (
-    <Panel padded={false}>
+    <Panel isPadded={false}>
       <EmptyState title="No saved views" action={<Button>Create a saved view</Button>}>
         Save a useful set of filters to return to it later.
       </EmptyState>
@@ -41,7 +41,7 @@ export const LongContent: Story = {
       >
         Change the current filters to include records from another workspace or a longer date range.
       </EmptyState>
-      <Notice error>
+      <Notice hasError>
         The initial read for workspace_platform_observability_archive_20261105 failed. Try again when the connection is
         available.
       </Notice>
@@ -50,9 +50,9 @@ export const LongContent: Story = {
 };
 
 function InitialFailureExample() {
-  const [failed, setFailed] = useState(true);
+  const [hasFailed, setFailed] = useState(true);
 
-  if (!failed) {
+  if (!hasFailed) {
     return (
       <Stack>
         <Notice>The synthetic read completed.</Notice>
@@ -62,8 +62,8 @@ function InitialFailureExample() {
   }
 
   return (
-    <Notice error>
-      <Stack compact>
+    <Notice hasError>
+      <Stack isCompact>
         <span>The records could not be loaded. Try the read again.</span>
         <Row>
           <Button onClick={() => setFailed(false)}>Retry</Button>

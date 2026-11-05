@@ -90,6 +90,7 @@ export type FixBehavior = (typeof FixBehavior)[keyof typeof FixBehavior];
  */
 export const OXLINT_DEFAULTS = {
   tool: RuleTool.Oxlint,
+  files: Option.none<ReadonlyArray<string>>(),
   asset: Option.none(),
   note: Option.none<string>(),
   violation: [],

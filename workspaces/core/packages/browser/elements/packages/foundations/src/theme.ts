@@ -1,16 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
-import {
-  avatarColors,
-  chartColors,
-  colors,
-  darkAvatarColors,
-  darkChartColors,
-  darkColors,
-  darkShadows,
-  darkSyntaxColors,
-  shadows,
-  syntaxColors,
-} from './tokens.stylex.ts';
+import { darkAvatarColors, darkChartColors, darkColors, darkShadows, darkSyntaxColors } from './constants.stylex.ts';
+import { avatarColors, chartColors, colors, shadows, syntaxColors } from './tokens.stylex.ts';
 
 const styles = stylex.create({
   root: { color: colors.ink },

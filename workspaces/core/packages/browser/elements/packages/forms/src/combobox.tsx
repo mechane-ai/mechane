@@ -2,6 +2,7 @@ import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 import * as stylex from '@stylexjs/stylex';
 import { Check, ChevronDown, X } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type {
   OpenStateProperties,
   ReadOnlyValueProperties,
@@ -10,7 +11,7 @@ import type {
 import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { fieldStyles } from './field-styles.ts';
 import { selectionStyles } from './selection-styles.ts';
 

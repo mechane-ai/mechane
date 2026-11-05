@@ -32,7 +32,7 @@ type TextareaProps = Omit<NativeTextareaProps, 'value' | 'defaultValue' | 'onCha
     NonNullable<NativeTextareaProps['value']>,
     NonNullable<NativeTextareaProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly xstyle?: PlacementStyle; readonly compact?: boolean; readonly appearance?: TextareaAppearance };
+  > & { readonly xstyle?: PlacementStyle; readonly isCompact?: boolean; readonly appearance?: TextareaAppearance };
 
 function FieldRoot({ className, style, xstyle, ...props }: FieldRootProps): ReactNode {
   return (
@@ -94,7 +94,7 @@ export function Input({ className, style, xstyle, ...props }: InputProps): React
 }
 
 export function Textarea({
-  compact = false,
+  isCompact = false,
   appearance = 'field',
   value,
   defaultValue,
@@ -126,7 +126,7 @@ export function Textarea({
           controlStyles.field,
           styles.input,
           controlStyles.textarea,
-          compact && styles.compactTextarea,
+          isCompact && styles.compactTextarea,
           textareaAppearanceStyles[appearance],
           xstyle,
         ),

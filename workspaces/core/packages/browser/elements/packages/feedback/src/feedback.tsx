@@ -53,7 +53,7 @@ const styles = stylex.create({
 
 type EmptyStateProps = Omit<ComponentProps<'div'>, 'title'> & { readonly title: string; readonly action?: ReactNode };
 
-type NoticeProps = ComponentProps<'div'> & { readonly error?: boolean };
+type NoticeProps = ComponentProps<'div'> & { readonly hasError?: boolean };
 
 export function EmptyState({ title, children, action, ...props }: EmptyStateProps): ReactNode {
   return (
@@ -66,12 +66,12 @@ export function EmptyState({ title, children, action, ...props }: EmptyStateProp
   );
 }
 
-export function Notice({ error = false, ...props }: NoticeProps): ReactNode {
+export function Notice({ hasError = false, ...props }: NoticeProps): ReactNode {
   return (
     <div
       {...mergeProps(
-        { role: error ? 'alert' : 'status' },
-        stylex.props(styles.notice, error && styles.negative),
+        { role: hasError ? 'alert' : 'status' },
+        stylex.props(styles.notice, hasError && styles.negative),
         props,
       )}
     />

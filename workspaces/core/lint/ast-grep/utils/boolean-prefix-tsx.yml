@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: boolean-prefix-tsx
+language: Tsx
+rule:
+  regex: '^#?(is|has|can|should|was|needs|include|allow|skip|keep|use|show|hide)([A-Z_]|$)|^(IS|HAS|CAN|SHOULD|WAS|NEEDS|INCLUDE|ALLOW|SKIP|KEEP|USE|SHOW|HIDE)_'

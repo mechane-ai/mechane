@@ -49,8 +49,8 @@ export type TraceRootProps = { readonly label: string; readonly children: ReactN
 export type TraceGroupProps = { readonly label: string; readonly children: ReactNode };
 
 type TraceSelection =
-  | { readonly selected: boolean; readonly onSelect: (id: string) => void }
-  | { readonly selected?: never; readonly onSelect?: never };
+  | { readonly isSelected: boolean; readonly onSelect: (id: string) => void }
+  | { readonly isSelected?: never; readonly onSelect?: never };
 
 export type TraceItemProps = TraceSelection & {
   readonly id: string;
@@ -103,7 +103,7 @@ function TraceItem({
   statusLabel,
   description,
   detail,
-  selected,
+  isSelected,
   onSelect,
   children,
 }: TraceItemProps): ReactNode {
@@ -116,11 +116,11 @@ function TraceItem({
         <span {...stylex.props(styles.line)} />
       </div>
       <div {...stylex.props(styles.content)}>
-        <div {...stylex.props(styles.label, selected === true && styles.selected)}>
+        <div {...stylex.props(styles.label, isSelected === true && styles.selected)}>
           {onSelect === undefined ? (
             label
           ) : (
-            <TextButton aria-pressed={selected} onClick={() => onSelect(id)}>
+            <TextButton aria-pressed={isSelected} onClick={() => onSelect(id)}>
               {label}
             </TextButton>
           )}

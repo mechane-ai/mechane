@@ -22,7 +22,7 @@ export function CreateMechForm({
   const [name, setName] = useState('');
   const [instructions, setInstructions] = useState('');
   const [requestId, setRequestId] = useState(() => Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()));
-  const [busy, setBusy] = useState(false);
+  const [isBusy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
 
@@ -34,7 +34,7 @@ export function CreateMechForm({
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (busy) {
+    if (isBusy) {
       return;
     }
 
@@ -65,7 +65,7 @@ export function CreateMechForm({
   return (
     <>
       <PageToolbar
-        breadcrumb
+        showBreadcrumb
         title={
           <>
             <TextButton onClick={onCancel}>Mechs</TextButton> / Create
@@ -80,7 +80,7 @@ export function CreateMechForm({
           </Muted>
           <form onSubmit={submit}>
             <Stack>
-              <Field.Root name="name" disabled={busy}>
+              <Field.Root name="name" disabled={isBusy}>
                 <Field.Label>Name</Field.Label>
                 <Input
                   required
@@ -95,7 +95,7 @@ export function CreateMechForm({
                 <Field.Description>A name people can recognize in this workspace.</Field.Description>
                 <Field.Error />
               </Field.Root>
-              <Field.Root name="instructions" disabled={busy}>
+              <Field.Root name="instructions" disabled={isBusy}>
                 <Field.Label>Instructions</Field.Label>
                 <Textarea
                   maxLength={65_536}
@@ -109,12 +109,12 @@ export function CreateMechForm({
                 <Field.Description>Optional guidance for this mech’s work.</Field.Description>
                 <Field.Error />
               </Field.Root>
-              {error !== undefined && <Notice error>{error}</Notice>}
+              {error !== undefined && <Notice hasError>{error}</Notice>}
               <Row>
-                <Button type="submit" variant="solid" pending={busy} pendingLabel="Creating…">
+                <Button type="submit" variant="solid" isPending={isBusy} pendingLabel="Creating…">
                   Create mech
                 </Button>
-                <Button type="button" onClick={onCancel} disabled={busy}>
+                <Button type="button" onClick={onCancel} disabled={isBusy}>
                   Cancel
                 </Button>
               </Row>

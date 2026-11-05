@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
-import { colors, conditions, controls, layers, radii, shadows, spacing, typography } from './tokens.stylex.ts';
+import { conditions, layers } from './constants.stylex.ts';
+import { colors, controls, radii, shadows, spacing, typography } from './tokens.stylex.ts';
 
 export const popupStyles = stylex.create({
   positioner: { zIndex: layers.popup, outlineWidth: 0 },

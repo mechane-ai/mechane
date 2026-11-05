@@ -15,12 +15,12 @@ import { Resource } from '../resource.tsx';
 export function ConversationScreen({
   data,
   mech,
-  active,
+  isActive,
   pageSource,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
-  readonly active: boolean;
+  readonly isActive: boolean;
   readonly pageSource: PageSource<'conversation', ReturnType<ConsoleData['events']>>;
 }): ReactNode {
   const { source, cursors, setCursors, pending, failure } = pageSource;
@@ -28,14 +28,14 @@ export function ConversationScreen({
   const before = cursors.at(-1) ?? null;
 
   useLayoutEffect(() => {
-    if (!active) {
+    if (!isActive) {
       pendingLatestFocus.current = false;
     }
-  }, [active]);
+  }, [isActive]);
 
   const focusLatestViewport = useCallback(
     (viewport: HTMLDivElement) => {
-      if (!pendingLatestFocus.current || !active || !viewport.isConnected) {
+      if (!pendingLatestFocus.current || !isActive || !viewport.isConnected) {
         return;
       }
 
@@ -47,7 +47,7 @@ export function ConversationScreen({
 
       viewport.focus({ preventScroll: true });
     },
-    [active],
+    [isActive],
   );
 
   return (
@@ -58,7 +58,7 @@ export function ConversationScreen({
           data={data}
           mech={mech}
           page={page}
-          latest={before === null}
+          isLatest={before === null}
           onViewportReady={before === null ? focusLatestViewport : undefined}
           notice={
             <>
@@ -89,7 +89,7 @@ function ConversationPage({
   data,
   mech,
   page,
-  latest,
+  isLatest,
   onViewportReady,
   notice,
   earlier,
@@ -99,7 +99,7 @@ function ConversationPage({
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly page: EventPage;
-  readonly latest: boolean;
+  readonly isLatest: boolean;
   readonly onViewportReady: ((viewport: HTMLDivElement) => void) | undefined;
   readonly notice: ReactNode;
   readonly earlier: (page: EventPage) => void;
@@ -120,9 +120,9 @@ function ConversationPage({
     setShown(page);
   }
 
-  const visible = latest ? shown : page;
-  const shifted = latest && page.events.at(-1)?.sequence !== visible.events.at(-1)?.sequence;
-  const hasUpdates = !latest || shifted;
+  const visible = isLatest ? shown : page;
+  const hasShifted = isLatest && page.events.at(-1)?.sequence !== visible.events.at(-1)?.sequence;
+  const hasUpdates = !isLatest || hasShifted;
 
   return (
     <MechConversation
@@ -148,7 +148,7 @@ function ConversationPage({
           {visible.hasMore && (
             <Button
               variant="ghost"
-              pending={pending === 'next'}
+              isPending={pending === 'next'}
               pendingLabel="Loading earlier messages…"
               disabled={pending !== undefined}
               onClick={() => earlier(visible)}
@@ -160,11 +160,11 @@ function ConversationPage({
       }
       updates={
         hasUpdates ? (
-          latest ? (
+          isLatest ? (
             <Conversation.LatestButton label="Show new messages" onActivate={() => setShown(page)} />
           ) : (
             <Button
-              pending={pending === 'previous'}
+              isPending={pending === 'previous'}
               pendingLabel="Loading latest messages…"
               disabled={pending !== undefined}
               onClick={recent}

@@ -32,8 +32,8 @@ export function MechsScreen({
   const records = useRecordNavigation();
   const appearances = useMechAppearances();
   const { pinned, togglePin } = useNavigationPreferences();
-  const [creating, setCreating] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [isCreating, setCreating] = useState(false);
+  const [isRefreshing, setRefreshing] = useState(false);
   const isScreenActive = useScreenLifetime();
 
   const allowanceSource = useMemo(() => data.allowance(), [data]);
@@ -53,16 +53,16 @@ export function MechsScreen({
 
   const allowanceNotice =
     allowanceFailure === undefined ? null : (
-      <Notice error>
+      <Notice hasError>
         Workspace usage could not be refreshed.{' '}
-        <Button pending={allowanceFailure.retrying} pendingLabel="Retrying usage…" onClick={allowanceFailure.retry}>
+        <Button isPending={allowanceFailure.isRetrying} pendingLabel="Retrying usage…" onClick={allowanceFailure.retry}>
           Retry usage
         </Button>
       </Notice>
     );
 
   async function refresh(): Promise<void> {
-    if (refreshing) {
+    if (isRefreshing) {
       return;
     }
 
@@ -74,7 +74,7 @@ export function MechsScreen({
     }
   }
 
-  if (creating) {
+  if (isCreating) {
     return <CreateMechForm data={data} onCancel={() => setCreating(false)} onCreated={onOpen} />;
   }
 
@@ -91,7 +91,7 @@ export function MechsScreen({
                     render={
                       <ToolbarAction
                         aria-label="Refresh mechs"
-                        pending={refreshing}
+                        isPending={isRefreshing}
                         pendingLabel="Refreshing mechs…"
                         onClick={() => {
                           void refresh();

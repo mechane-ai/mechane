@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: native-boolean-name
+language: TypeScript
+rule:
+  regex: '^[''"]?(autoFocus|checked|defaultChecked|defaultOpen|disabled|hidden|inert|indeterminate|modal|multiple|open|readOnly|required)[''"]?$'

@@ -27,7 +27,7 @@ export default meta;
 type Story = StoryObj;
 
 function Example(): ReactNode {
-  const [open, setOpen] = useState(false);
+  const [isOpen, setOpen] = useState(false);
   const [text, setText] = useState('');
 
   return (
@@ -40,11 +40,11 @@ function Example(): ReactNode {
     >
       <PageToolbar title="Conversation" />
       <Workbench
-        header={<Heading compact>Project assistant</Heading>}
+        header={<Heading isCompact>Project assistant</Heading>}
         inspector={
-          open ? (
+          isOpen ? (
             <Stack>
-              <Row between>
+              <Row shouldSpaceBetween>
                 <Subheading>Execution details</Subheading>
                 <Button onClick={() => setOpen(false)}>Close inspector</Button>
               </Row>
@@ -75,7 +75,7 @@ function Example(): ReactNode {
         </Conversation.Root>
         <WorkbenchFooter>
           <PromptInput
-            compact
+            isCompact
             label="Message"
             value={text}
             onValueChange={setText}
@@ -94,7 +94,7 @@ export const Narrow: Story = { ...Recommended, globals: { viewport: { value: 'na
 export const EmbeddedInspector: Story = {
   render: () => (
     <div style={{ width: 720, maxWidth: '100%' }}>
-      <PageToolbar navigation={false} title="Selected operation" />
+      <PageToolbar showNavigation={false} title="Selected operation" />
       <Workbench
         header={<Subheading>Prepare release notes</Subheading>}
         inspector={

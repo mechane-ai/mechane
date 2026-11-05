@@ -77,7 +77,8 @@ Every path below belongs to `@mechane-ai/elements`. There is one package, versio
 | `/theme`               | Light and dark theme props.                                                         |
 | `/csp`                 | Application-supplied content security policy configuration.                         |
 | `/tokens`              | Compiled token references for runtime styles.                                       |
-| `/tokens.stylex`       | Direct definitions for StyleX authoring and themes.                                 |
+| `/tokens.stylex`       | Variable definitions for StyleX authoring and themes.                               |
+| `/constants.stylex`    | Compile-time conditions, palette values, layers, and shared geometry.               |
 | `/styles.css`          | Component styles and token defaults.                                                |
 
 Focused entries keep renderer and chart dependencies out of basic controls. There is no all-components barrel. Renderers
@@ -98,10 +99,10 @@ Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit 
 navigation and reserve the divided sidebar footer for persistent account controls. Use
 `SidebarFooter layout="navigation"` for a group of commands; its intrinsic height keeps the scrolling navigation clear.
 
-`AppShell focus` temporarily hides navigation while retaining its expansion state. `ViewStack.Panel` keeps inactive
-content mounted and measurable but removes it from keyboard and assistive-technology navigation. The application owns
-which view is active and when to unmount it; use this for a draft or reading position that must survive inspection.
-`WorkbenchScroll` requires an accessible `label`; its `flush` mode leaves list insets to the table. Its
+`AppShell shouldFocus` temporarily hides navigation while retaining its expansion state. `ViewStack.Panel` keeps
+inactive content mounted and measurable but removes it from keyboard and assistive-technology navigation. The
+application owns which view is active and when to unmount it; use this for a draft or reading position that must survive
+inspection. `WorkbenchScroll` requires an accessible `label`; its `isFlush` mode leaves list insets to the table. Its
 `scrollRestorationId` identifies the actual scroll region for application-owned restoration.
 
 Each `DataTable` column declares a role: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles own
@@ -136,13 +137,35 @@ The default theme is light, with system fonts and a compact spacing scale. Impor
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content
 then inherits the same theme. The application owns the preference; no theme provider is required.
 
-For custom StyleX themes, import definitions from `@mechane-ai/elements/tokens.stylex`, enable `useCSSLayers: true` and
-CommonJS module resolution in the StyleX plugin, and use `stylex.createTheme`. The defining path is preserved in the
-archive so generated variables match its compiled CSS. The ordinary `/tokens` entry supplies runtime references rather
-than compile-time definitions.
+For custom StyleX styles and themes, import variables from `@mechane-ai/elements/tokens.stylex` and compile-time
+constants from `@mechane-ai/elements/constants.stylex`. The archive preserves both defining paths. Variables retain the
+same names as the packaged CSS; constants need their source compiled with the consuming styles. The ordinary `/tokens`
+entry supplies runtime references and values for both groups.
 
-Set the consumer compiler's `debug: false` so placement overrides use the archive's property keys. Keep definition
-resolution for compilation; bundle `/tokens` runtime references to avoid reinjecting defaults over a chosen theme.
+With Vite and StyleX 0.19.1, configure the consumer as follows:
+
+```ts
+import stylex from '@stylexjs/unplugin/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: [
+    stylex({
+      useCSSLayers: true,
+      debug: false,
+      runtimeInjection: false,
+      unstable_moduleResolution: { type: 'commonJS' },
+      externalPackages: ['@mechane-ai/elements'],
+    }),
+  ],
+  resolve: { alias: [{ find: /^@mechane-ai\/elements\/tokens\.stylex$/, replacement: '@mechane-ai/elements/tokens' }] },
+});
+```
+
+The bundler alias uses compiled variable references without re-emitting defaults over the selected theme. StyleX still
+resolves the original defining path during compilation. Keep `/constants.stylex` direct so its metadata reaches the
+compiler. Consumer styles can then use `[conditions.coarsePointer]` from that entry, and
+`stylex.createTheme(colors, ...)` with `colors` from `/tokens.stylex`.
 
 When an application's Content Security Policy requires nonces, wrap its component tree in `CSPProvider` from
 `@mechane-ai/elements/csp` and pass the same request nonce used in its policy. Preserve that nonce during hydration.
@@ -162,7 +185,8 @@ Use `AsyncRegion` from `/feedback` with an explicit `pending`, `ready`, or `fail
 loading duration, and ordinary callers do not configure timing.
 
 Wrap a page in `LoadingScope` and pass its navigation `identity` to share one clock across dependent reads. Updating the
-identity resets pending presentation without remounting ready children. Keep refreshes in the ready state and retain
+identity resets pending presentation without remounting ready children. Use `initialStartedAt` only to preserve elapsed
+document loading time at hydration; later identities start their own clock. Keep refreshes in the ready state and retain
 their content, focus, and drafts; display progress or failure alongside the last result.
 
 Build placeholders from the same layouts as their destinations. `DataTablePlaceholder` accepts the real table's

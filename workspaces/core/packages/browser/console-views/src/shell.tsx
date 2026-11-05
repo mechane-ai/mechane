@@ -44,7 +44,7 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
         xstyle={styles.workspaceTrigger}
       >
         <Avatar label={selectedLabel} fallback={selectedLabel.slice(0, 1).toUpperCase()} size="sm" />
-        <SidebarLabel grow>
+        <SidebarLabel shouldGrow>
           <Select.Value />
           <Select.Icon>
             <ChevronDown size={16} aria-hidden />
@@ -79,7 +79,7 @@ export function ConsoleShell({
   homeLink,
   accountLink,
   children,
-  focus = false,
+  shouldFocus = false,
 }: {
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceId: string;
@@ -87,13 +87,13 @@ export function ConsoleShell({
   readonly homeLink: ReactNode;
   readonly accountLink: ReactNode;
   readonly children: ReactNode;
-  readonly focus?: boolean;
+  readonly shouldFocus?: boolean;
 }): ReactNode {
   return (
     <AppShell
       sidebarHeader={<WorkspaceSwitcher workspaces={workspaces} workspaceId={workspaceId} onWorkspace={onWorkspace} />}
       sidebar={homeLink}
-      focus={focus}
+      shouldFocus={shouldFocus}
       footer={
         <SidebarFooter layout="navigation">
           <Navigation label="Account">{accountLink}</Navigation>

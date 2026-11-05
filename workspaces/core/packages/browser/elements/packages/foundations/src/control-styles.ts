@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
-import { colors, conditions, controls, radii, spacing, typography } from './tokens.stylex.ts';
+import { conditions } from './constants.stylex.ts';
+import { colors, controls, radii, spacing, typography } from './tokens.stylex.ts';
 
 export const controlStyles = stylex.create({
   base: {

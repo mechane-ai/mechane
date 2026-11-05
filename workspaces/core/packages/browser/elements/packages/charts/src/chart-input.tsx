@@ -23,7 +23,7 @@ export function ChartInputError({
 }): ReactNode {
   return (
     <ChartFrame title={title} description={description}>
-      <Notice error>{message}</Notice>
+      <Notice hasError>{message}</Notice>
     </ChartFrame>
   );
 }

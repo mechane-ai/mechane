@@ -2,27 +2,19 @@ import * as stylex from '@stylexjs/stylex';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { SkeletonText } from '../../feedback/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
-import {
-  colors,
-  conditions,
-  controls,
-  layers,
-  pageGeometry,
-  radii,
-  spacing,
-  tableGeometry,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions, layers, tableGeometry } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
 const selectionColumnWidth = 76;
+const compactTableQuery = conditions.compactTable.slice('@media '.length);
 
 const rowControlSelector =
   'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"], [role="tab"], [role^="menuitem"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
@@ -213,15 +205,15 @@ type RowSizing = 'fixed' | 'content';
 
 export type DataTableColumnRole = 'primary' | 'text' | 'status' | 'number' | 'timestamp' | 'actions';
 
-type ColumnGeometry = { readonly minimumWidth: number; readonly flexible: boolean; readonly truncate: boolean };
+type ColumnGeometry = { readonly minimumWidth: number; readonly isFlexible: boolean; readonly shouldTruncate: boolean };
 
 const columnGeometry = {
-  primary: { minimumWidth: 240, flexible: true, truncate: true },
-  text: { minimumWidth: 160, flexible: false, truncate: true },
-  status: { minimumWidth: 160, flexible: false, truncate: false },
-  number: { minimumWidth: 112, flexible: false, truncate: false },
-  timestamp: { minimumWidth: 160, flexible: false, truncate: false },
-  actions: { minimumWidth: 112, flexible: false, truncate: false },
+  primary: { minimumWidth: 240, isFlexible: true, shouldTruncate: true },
+  text: { minimumWidth: 160, isFlexible: false, shouldTruncate: true },
+  status: { minimumWidth: 160, isFlexible: false, shouldTruncate: false },
+  number: { minimumWidth: 112, isFlexible: false, shouldTruncate: false },
+  timestamp: { minimumWidth: 160, isFlexible: false, shouldTruncate: false },
+  actions: { minimumWidth: 112, isFlexible: false, shouldTruncate: false },
 } satisfies Record<DataTableColumnRole, ColumnGeometry>;
 
 const cellSizingStyles = { fixed: styles.content, content: styles.contentCell } satisfies Record<
@@ -253,13 +245,13 @@ export type DataTableColumnLayout = {
   readonly label: string;
   readonly role: DataTableColumnRole;
   readonly width?: number;
-  readonly secondary?: boolean;
+  readonly isSecondary?: boolean;
 };
 
 export type DataTableColumn<Row> = DataTableColumnLayout & {
   readonly cell: (row: Row) => ReactNode;
-  readonly truncate?: boolean;
-  readonly sortable?: boolean;
+  readonly shouldTruncate?: boolean;
+  readonly canSort?: boolean;
 };
 
 export type DataTablePlaceholderProps = {
@@ -272,7 +264,7 @@ export type DataTablePlaceholderProps = {
 function prepareColumns<Column extends DataTableColumnLayout>(columns: ReadonlyArray<Column>) {
   return columns.map((column) => {
     const geometry = columnGeometry[column.role];
-    const width = column.width ?? (geometry.flexible ? undefined : geometry.minimumWidth);
+    const width = column.width ?? (geometry.isFlexible ? undefined : geometry.minimumWidth);
 
     return { ...column, ...(width === undefined ? {} : { width }) };
   });
@@ -285,28 +277,40 @@ function tableWidths(columns: ReadonlyArray<DataTableColumnLayout>, selectionWid
   );
 
   const compactWidth = columns
-    .filter((column) => column.secondary !== true)
+    .filter((column) => column.isSecondary !== true)
     .reduce((total, column) => total + (column.width ?? columnGeometry[column.role].minimumWidth), selectionWidth);
 
   return { minimumWidth, compactWidth };
 }
 
+function subscribeToCompactTable(onChange: () => void): () => void {
+  const query = globalThis.matchMedia(compactTableQuery);
+
+  query.addEventListener('change', onChange);
+
+  return () => query.removeEventListener('change', onChange);
+}
+
+function isCompactTable(): boolean {
+  return globalThis.matchMedia(compactTableQuery).matches;
+}
+
 function ColumnGroup({
   columns,
-  selectable = false,
+  canSelect = false,
 }: {
   readonly columns: ReadonlyArray<DataTableColumnLayout>;
-  readonly selectable?: boolean;
+  readonly canSelect?: boolean;
 }): ReactNode {
   return (
     <colgroup>
-      {selectable && <col {...stylex.props(styles.selection)} />}
+      {canSelect && <col {...stylex.props(styles.selection)} />}
       {columns.map((column) => (
         <col
           key={column.id}
           {...stylex.props(
             column.width !== undefined && styles.width(column.width),
-            column.secondary === true && styles.secondary,
+            column.isSecondary === true && styles.secondary,
           )}
         />
       ))}
@@ -337,7 +341,7 @@ export function DataTablePlaceholder({
                     styles.header,
                     columnRoleStyles[column.role],
                     column.width !== undefined && styles.width(column.width),
-                    column.secondary === true && styles.secondary,
+                    column.isSecondary === true && styles.secondary,
                   )}
                 >
                   <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
@@ -356,10 +360,10 @@ export function DataTablePlaceholder({
                       cellSizingStyles[rowSizing],
                       columnRoleStyles[column.role],
                       column.width !== undefined && styles.width(column.width),
-                      column.secondary === true && styles.secondary,
+                      column.isSecondary === true && styles.secondary,
                     )}
                   >
-                    <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={undefined}>
+                    <TableCellContent role={column.role} isFixed={rowSizing === 'fixed'} shouldTruncate={undefined}>
                       {column.placeholder ?? <SkeletonText width="60%" />}
                     </TableCellContent>
                   </td>
@@ -380,19 +384,19 @@ export type DataTableTextProps = {
   readonly trailing?: ReactNode;
 };
 
-export type DataTableTextPlaceholderProps = { readonly leading?: ReactNode; readonly secondary?: boolean };
+export type DataTableTextPlaceholderProps = { readonly leading?: ReactNode; readonly isSecondary?: boolean };
 
 function TextCellLayout({
   children,
   leading,
-  decorative = false,
+  isDecorative = false,
 }: {
   readonly children: ReactNode;
   readonly leading?: ReactNode;
-  readonly decorative?: boolean;
+  readonly isDecorative?: boolean;
 }): ReactNode {
   return (
-    <span aria-hidden={decorative || undefined} inert={decorative || undefined} {...stylex.props(styles.textRow)}>
+    <span aria-hidden={isDecorative || undefined} inert={isDecorative || undefined} {...stylex.props(styles.textRow)}>
       {leading !== undefined && (
         <span aria-hidden {...stylex.props(styles.adornment)}>
           {leading}
@@ -421,13 +425,13 @@ export function DataTableText({ children, secondary, leading, trailing }: DataTa
   );
 }
 
-export function DataTableTextPlaceholder({ leading, secondary = false }: DataTableTextPlaceholderProps): ReactNode {
+export function DataTableTextPlaceholder({ leading, isSecondary = false }: DataTableTextPlaceholderProps): ReactNode {
   return (
-    <TextCellLayout leading={leading} decorative>
+    <TextCellLayout leading={leading} isDecorative>
       <span {...stylex.props(styles.text)}>
         <SkeletonText width="70%" />
       </span>
-      {secondary && (
+      {isSecondary && (
         <span {...stylex.props(styles.text, styles.secondaryText)}>
           <SkeletonText width="45%" />
         </span>
@@ -452,7 +456,7 @@ type SortProperties<Row> =
       readonly onSortChange: (sort: DataTableSort | undefined) => void;
     }
   | {
-      readonly columns: ReadonlyArray<DataTableColumn<Row> & { readonly sortable?: false }>;
+      readonly columns: ReadonlyArray<DataTableColumn<Row> & { readonly canSort?: false }>;
       readonly sort?: never;
       readonly onSortChange?: never;
     };
@@ -508,6 +512,7 @@ export function DataTable<Row extends object>({
   footer,
 }: DataTableProps<Row>): ReactNode {
   const columns = useMemo(() => prepareColumns(suppliedColumns), [suppliedColumns]);
+  const isCompact = useSyncExternalStore(subscribeToCompactTable, isCompactTable, () => false);
 
   const model = useMemo(() => {
     const helper = createColumnHelper<typeof features, Row>();
@@ -525,10 +530,10 @@ export function DataTable<Row extends object>({
   const pendingFocusId = useRef<string | undefined>(undefined);
   const restoredFocusId = useRef<string | undefined>(undefined);
   const focusedIndex = rows.findIndex((row) => getRowId(row) === focusedId);
-  const primaryColumnIndex = columns.findIndex((column) => column.role === 'primary' && column.secondary !== true);
+  const primaryColumnIndex = columns.findIndex((column) => column.role === 'primary' && column.isSecondary !== true);
 
   const actionColumnIndex =
-    primaryColumnIndex === -1 ? columns.findIndex((column) => column.secondary !== true) : primaryColumnIndex;
+    primaryColumnIndex === -1 ? columns.findIndex((column) => column.isSecondary !== true) : primaryColumnIndex;
 
   const sizing = typeof window?.height === 'string' ? window.height : 'content';
 
@@ -655,10 +660,10 @@ export function DataTable<Row extends object>({
   });
 
   function moveFocus(event: KeyboardEvent<HTMLElement>, index: number) {
-    const command = event.metaKey || event.ctrlKey;
-    const alternate = event.altKey || event.shiftKey;
+    const hasCommandModifier = event.metaKey || event.ctrlKey;
+    const hasAlternateModifier = event.altKey || event.shiftKey;
 
-    if (command || alternate) {
+    if (hasCommandModifier || hasAlternateModifier) {
       return;
     }
 
@@ -686,7 +691,8 @@ export function DataTable<Row extends object>({
     }
   }
 
-  const columnCount = columns.length + (selectedIds === undefined ? 0 : 1);
+  const visibleColumnCount = columns.filter((column) => !isCompact || column.isSecondary !== true).length;
+  const columnCount = visibleColumnCount + (selectedIds === undefined ? 0 : 1);
   const selectionWidth = selectedIds === undefined ? 0 : selectionColumnWidth;
   const showFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean';
   const { minimumWidth, compactWidth } = tableWidths(columns, selectionWidth);
@@ -714,7 +720,7 @@ export function DataTable<Row extends object>({
           <caption ref={captionElement} {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}>
             {caption}
           </caption>
-          <ColumnGroup columns={columns} selectable={selectedIds !== undefined} />
+          <ColumnGroup columns={columns} canSelect={selectedIds !== undefined} />
           <thead ref={headerElement} {...stylex.props(hideHeaders && accessibility.hidden)}>
             <tr>
               {selectedIds !== undefined && (
@@ -735,10 +741,10 @@ export function DataTable<Row extends object>({
                       styles.header,
                       columnRoleStyles[column.role],
                       column.width !== undefined && styles.width(column.width),
-                      column.secondary === true && styles.secondary,
+                      column.isSecondary === true && styles.secondary,
                     )}
                   >
-                    {column.sortable === true && onSortChange !== undefined ? (
+                    {column.canSort === true && onSortChange !== undefined ? (
                       <button
                         type="button"
                         {...stylex.props(styles.sort)}
@@ -838,22 +844,30 @@ export function DataTable<Row extends object>({
                         cellSizingStyles[rowSizing],
                         columnRoleStyles[column.role],
                         column.width !== undefined && styles.width(column.width),
-                        column.secondary === true && styles.secondary,
+                        column.isSecondary === true && styles.secondary,
                       )}
                     >
                       {rowAction !== undefined && columnIndex === actionColumnIndex ? (
                         <RowTrigger
                           row={row.original}
                           action={rowAction}
-                          active={activeRowId === row.id}
+                          isActive={activeRowId === row.id}
                           onKeyDown={(event) => moveFocus(event, index)}
                         >
-                          <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={column.truncate}>
+                          <TableCellContent
+                            role={column.role}
+                            isFixed={rowSizing === 'fixed'}
+                            shouldTruncate={column.shouldTruncate}
+                          >
                             {column.cell(row.original)}
                           </TableCellContent>
                         </RowTrigger>
                       ) : (
-                        <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={column.truncate}>
+                        <TableCellContent
+                          role={column.role}
+                          isFixed={rowSizing === 'fixed'}
+                          shouldTruncate={column.shouldTruncate}
+                        >
                           {column.cell(row.original)}
                         </TableCellContent>
                       )}
@@ -887,27 +901,27 @@ export function DataTable<Row extends object>({
 
 function TableCellContent({
   role,
-  fixed,
-  truncate,
+  isFixed,
+  shouldTruncate,
   children,
 }: {
   readonly role: DataTableColumnRole;
-  readonly fixed: boolean;
-  readonly truncate: boolean | undefined;
+  readonly isFixed: boolean;
+  readonly shouldTruncate: boolean | undefined;
   readonly children: ReactNode;
 }): ReactNode {
   const geometry = columnGeometry[role];
-  const defaultTruncation = fixed && geometry.truncate;
-  const isTruncated = typeof children === 'string' && (truncate ?? defaultTruncation);
+  const shouldTruncateByDefault = isFixed && geometry.shouldTruncate;
+  const isTruncated = typeof children === 'string' && (shouldTruncate ?? shouldTruncateByDefault);
 
   return (
-    <span {...stylex.props(styles.cellViewport, !fixed && styles.contentViewport)}>
+    <span {...stylex.props(styles.cellViewport, !isFixed && styles.contentViewport)}>
       <span
         title={typeof children === 'string' ? children : undefined}
         {...stylex.props(
           styles.cellContent,
-          fixed && styles.fixedContent,
-          fixed && !geometry.truncate && styles.readable,
+          isFixed && styles.fixedContent,
+          isFixed && !geometry.shouldTruncate && styles.readable,
           isTruncated && styles.truncated,
         )}
       >
@@ -922,10 +936,10 @@ function isPlainActivation(event: MouseEvent<HTMLElement>): boolean {
     return false;
   }
 
-  const command = event.metaKey || event.ctrlKey;
-  const alternate = event.altKey || event.shiftKey;
+  const hasCommandModifier = event.metaKey || event.ctrlKey;
+  const hasAlternateModifier = event.altKey || event.shiftKey;
 
-  if (command || alternate) {
+  if (hasCommandModifier || hasAlternateModifier) {
     return false;
   }
 
@@ -935,12 +949,12 @@ function isPlainActivation(event: MouseEvent<HTMLElement>): boolean {
 type RowTriggerProps<Row> = {
   readonly row: Row;
   readonly action: DataTableRowAction<Row>;
-  readonly active: boolean;
+  readonly isActive: boolean;
   readonly children: ReactNode;
   readonly onKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
 };
 
-function RowTrigger<Row>({ row, action, active, children, onKeyDown }: RowTriggerProps<Row>): ReactNode {
+function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTriggerProps<Row>): ReactNode {
   const label = action.label?.(row);
 
   const trigger =
@@ -948,7 +962,7 @@ function RowTrigger<Row>({ row, action, active, children, onKeyDown }: RowTrigge
       <button
         type="button"
         aria-label={label}
-        aria-pressed={active}
+        aria-pressed={isActive}
         data-row-action
         onKeyDown={onKeyDown}
         onClick={(event) => {

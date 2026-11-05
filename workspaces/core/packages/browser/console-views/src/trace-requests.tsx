@@ -47,7 +47,7 @@ export function TraceRequests({
       revealKey={revealKey}
       returnFocusRef={selectedRow}
       master={
-        <Stack compact>
+        <Stack isCompact>
           <Subheading>{count === 1 ? '1 model request' : `${count} model requests`}</Subheading>
           <Muted>Timing covers reservation to settlement.</Muted>
           <RequestWaterfall

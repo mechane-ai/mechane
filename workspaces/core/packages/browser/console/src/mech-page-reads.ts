@@ -36,12 +36,12 @@ function sourceStatus(data: ConsoleData, source: PrimarySource | undefined): Rea
 
   const failure = source.health.error ?? source.health.failureReason;
   const snapshot = source.get(source.id);
-  const mayRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
+  const canRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
 
-  if (source.health.hasErrors && (snapshot === undefined || !mayRetain)) {
-    const retrying = source.health.reloading || data.readFetchStatus(source) !== 'idle';
+  if (source.health.hasErrors && (snapshot === undefined || !canRetain)) {
+    const isRetrying = source.health.reloading || data.readFetchStatus(source) !== 'idle';
 
-    return retrying ? 'failed-retrying' : 'failed';
+    return isRetrying ? 'failed-retrying' : 'failed';
   }
 
   return snapshot === undefined ? 'pending' : 'ready';
@@ -101,7 +101,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     data,
     key: 'turns',
     scope: mechId,
-    enabled: requestedView === 'runs',
+    isEnabled: requestedView === 'runs',
     create: (cursors) => data.turns(mechId, Option.fromNullishOr(cursors.at(-1))),
   });
 
@@ -109,7 +109,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     data,
     key: 'work',
     scope: mechId,
-    enabled: requestedView === 'work',
+    isEnabled: requestedView === 'work',
     create: (cursors) => data.threads(mechId, Option.fromNullishOr(cursors.at(-1))),
   });
 
@@ -117,7 +117,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     data,
     key: 'activity',
     scope: mechId,
-    enabled: requestedView === 'activity',
+    isEnabled: requestedView === 'activity',
     create: (cursors) => data.events(mechId, cursors.at(-1) ?? null),
   });
 

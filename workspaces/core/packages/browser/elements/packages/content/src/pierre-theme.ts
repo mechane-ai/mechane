@@ -1,12 +1,6 @@
 import type { Theme } from '@pierre/highlights';
-import {
-  colors,
-  conditions,
-  controls,
-  spacing,
-  syntaxColors,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { colors, controls, spacing, syntaxColors, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export const highlightTheme = {
   name: 'Elements',

@@ -5,8 +5,9 @@ import { Check, Copy } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { accessibility } from '../../foundations/src/accessibility.ts';
+import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   button: {
