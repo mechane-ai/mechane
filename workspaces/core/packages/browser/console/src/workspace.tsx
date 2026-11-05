@@ -1,12 +1,13 @@
 import { NavigationLink } from '@mechane-ai/elements/layout';
 import { createConsoleData } from '@mechane/console-data';
-import type { Session } from '@mechane/console-data';
+import type { ConsoleData, Session } from '@mechane/console-data';
 import { ConsoleShell } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
 import { createLink } from '@tanstack/react-router';
 import { Bot } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useResource } from './resource.tsx';
 import { MechScreen } from './screens/mech.tsx';
 import { MechsScreen } from './screens/mechs.tsx';
 import type { ConsoleNavigation } from './types.ts';
@@ -43,14 +44,17 @@ export function WorkspaceScreen({
       workspaceId={workspace.id}
       onWorkspace={(id) => navigate({ workspace: id })}
       homeLink={
-        <HomeLink
-          to="/"
-          search={{ workspace: workspace.id }}
-          selected={selected.mech === undefined}
-          icon={<Bot size={16} aria-hidden />}
-        >
-          Mechs
-        </HomeLink>
+        <>
+          <HomeLink
+            to="/"
+            search={{ workspace: workspace.id }}
+            selected={selected.mech === undefined}
+            icon={<Bot size={16} aria-hidden />}
+          >
+            Mechs
+          </HomeLink>
+          <WorkspaceMechs data={data} selectedId={selected.mech} />
+        </>
       }
     >
       {selected.mech === undefined ? (
@@ -59,5 +63,41 @@ export function WorkspaceScreen({
         <MechScreen key={selected.mech} data={data} mechId={selected.mech} location={selected} navigate={navigate} />
       )}
     </ConsoleShell>
+  );
+}
+
+function WorkspaceMechs({
+  data,
+  selectedId,
+}: {
+  readonly data: ConsoleData;
+  readonly selectedId: string | undefined;
+}): ReactNode {
+  const source = useMemo(() => data.mechs(null), [data]);
+  const state = useResource(data, source);
+
+  switch (state.kind) {
+    case 'pending':
+    case 'failed':
+      return null;
+    case 'ready':
+    case 'stale':
+      break;
+  }
+
+  return (
+    <>
+      {state.value.mechs.slice(0, 12).map((mech) => (
+        <HomeLink
+          key={mech.id}
+          to="/"
+          search={{ workspace: data.workspace.id, mech: mech.id }}
+          selected={selectedId === mech.id}
+          icon={<Bot size={16} aria-hidden />}
+        >
+          {mech.name}
+        </HomeLink>
+      ))}
+    </>
   );
 }

@@ -17,8 +17,11 @@ export type ConsoleOperation =
   | 'listTurnEvents'
   | 'cancelTurn'
   | 'listRecentEvents'
-  | 'listEvents'
   | 'listMechRevisions'
+  | 'listThreads'
+  | 'listSlackBindings'
+  | 'listSlackDeliveries'
+  | 'listMemories'
   | 'showAllowance';
 
 export type Input<N extends ConsoleOperation> = OperationInput<(typeof catalog)[N]>;

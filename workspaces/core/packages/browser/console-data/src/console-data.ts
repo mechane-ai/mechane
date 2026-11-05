@@ -1,11 +1,11 @@
-import { Event, EventType, WAIT_MAX } from '@mechane/protocol';
-import type { EventPage, InboxItem, Mech, Turn, Workspace } from '@mechane/protocol';
+import type { Mech, Workspace } from '@mechane/protocol';
+import { MechId, WorkspaceId } from '@mechane/records';
 import { createCollection, DbClient, safeRandomUUID } from '@tanstack/db';
 import type { Collection } from '@tanstack/db';
 import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import type { QueryCollectionUtils } from '@tanstack/query-db-collection';
-import { Duration, Option, Schema } from 'effect';
+import { Duration, Option } from 'effect';
 import { canRetainResult, createApi } from './api.ts';
 import type { ConsoleApi, ConsoleOperation, Input, Output } from './api.ts';
 
@@ -112,6 +112,14 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
       resource('listMechs', { workspaceId, after: Option.fromNullishOr(after) }, { key: `mechs:${after ?? 'first'}` }),
     mech: (mechId: string) =>
       resource('showMech', { workspaceId, mechId }, { key: `mech:${mechId}`, interval: REFRESH_MS }),
+    threads: (mechId: string, after: Input<'listThreads'>['after']) =>
+      resource(
+        'listThreads',
+        { workspaceId, mechId, after },
+        { key: `threads:${mechId}:${Option.getOrNull(after) ?? 'first'}`, interval: REFRESH_MS },
+      ),
+    memories: (mechId: string) =>
+      resource('listMemories', { workspaceId, mechId }, { key: `memories:${mechId}`, interval: REFRESH_MS }),
     turns: (mechId: string, after: Input<'listTurns'>['after']) =>
       resource(
         'listTurns',
@@ -132,25 +140,19 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
         { workspaceId, mechId, before: Option.fromNullishOr(before) },
         { key: `events:${mechId}:${before ?? 'latest'}`, interval: before === null ? ACTIVITY_REFRESH_MS : false },
       ),
+    slackBindings: () =>
+      resource(
+        'listSlackBindings',
+        { workspaceId: WorkspaceId.make(workspaceId) },
+        { key: 'slack-bindings', interval: REFRESH_MS },
+      ),
+    slackDeliveries: (mechId: string) =>
+      resource(
+        'listSlackDeliveries',
+        { workspaceId: WorkspaceId.make(workspaceId), mechId: MechId.make(mechId) },
+        { key: `slack-deliveries:${mechId}`, interval: REFRESH_MS },
+      ),
     allowance: () => resource('showAllowance', { workspaceId }, { key: 'allowance', interval: ALLOWANCE_REFRESH_MS }),
-    /** Follow the receipt cursor until this specific item joins a turn. Unmount aborts its pending long poll. */
-    async messageTurn(mechId: string, receipt: InboxItem, signal: AbortSignal): Promise<Turn['id']> {
-      let after: number = receipt.receivedSequence;
-
-      let turn = Option.none<Turn['id']>();
-
-      do {
-        const page = await api('listEvents', { workspaceId, mechId, after, wait: WAIT_MAX }, signal);
-        turn = Option.fromNullishOr(findMessageTurn(page.events, receipt.id));
-        const last = page.events.at(-1);
-
-        if (last !== undefined) {
-          after = last.sequence;
-        }
-      } while (Option.isNone(turn));
-
-      return turn.value;
-    },
     async update(
       mech: Mech,
       changes: Omit<Input<'updateMech'>, 'workspaceId' | 'mechId' | 'expectedRevision'>,
@@ -192,28 +194,3 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
 
 /** The requests and collections owned by one mounted workspace. */
 export type ConsoleData = ReturnType<typeof createConsoleData>;
-
-/** Only the start or join carrying this inbox receipt can identify its turn. */
-function findMessageTurn(events: EventPage['events'], itemId: string): Turn['id'] | undefined {
-  const event = events.filter(Schema.is(Event)).find((candidate) => {
-    if (candidate.type === EventType.TurnStarted) {
-      return candidate.inboxItemIds.includes(itemId);
-    }
-
-    return candidate.type === EventType.TurnJoined && candidate.inboxItemId === itemId;
-  });
-
-  if (event === undefined || !Schema.is(Event)(event)) {
-    return undefined;
-  }
-
-  if (event.type === EventType.TurnStarted) {
-    return event.turnId;
-  }
-
-  if (event.type === EventType.TurnJoined) {
-    return event.turnId;
-  }
-
-  return undefined;
-}

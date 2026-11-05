@@ -1,5 +1,5 @@
 import { Muted, Stack, Status } from '@mechane-ai/elements';
-import { Cell, Table } from '@mechane-ai/elements/collections';
+import { DataTable } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
@@ -10,63 +10,80 @@ import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 export function TurnList({
   page,
-  turnLink,
+  turnHref,
+  onOpen,
+  focusRowId,
   emptyAction,
   emptyDescription,
 }: {
   readonly page: TurnPage;
-  readonly turnLink: (id: Turn['id'], children: ReactNode) => ReactNode;
+  readonly turnHref: (id: Turn['id']) => string;
+  readonly onOpen: (id: Turn['id']) => void;
+  readonly focusRowId?: string | undefined;
   readonly emptyAction?: ReactNode;
   readonly emptyDescription: string;
 }): ReactNode {
-  if (page.turns.length === 0) {
-    return (
-      <EmptyState title="No turns yet" action={emptyAction}>
-        {emptyDescription}
-      </EmptyState>
-    );
-  }
-
   return (
-    <Table
-      label="Recent turns"
-      headers={[
-        { label: 'Turn', width: 52 },
-        { label: 'Started', width: 30, secondary: true },
-        { label: 'Elapsed', width: 18 },
+    <DataTable
+      caption="Recent runs"
+      hideCaption
+      rows={page.turns}
+      getRowId={(turn) => turn.id}
+      focusRowId={focusRowId}
+      rowAction={{
+        href: (turn) => turnHref(turn.id),
+        onActivate: (turn) => onOpen(turn.id),
+        label: (turn) =>
+          `Inspect ${Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0 ? turn.inputExcerpt : 'run'}`,
+      }}
+      columns={[
+        {
+          id: 'input',
+          label: 'Run',
+          cell: (turn) => (
+            <Stack compact>
+              <span>
+                {Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0
+                  ? turn.inputExcerpt
+                  : 'Input unavailable'}
+              </span>
+              {Schema.is(Turn)(turn) && turn.status === 'unanswered' && <Muted>{outcomeReason(turn.reason)}</Muted>}
+            </Stack>
+          ),
+          truncate: true,
+        },
+        {
+          id: 'outcome',
+          label: 'Outcome',
+          cell: (turn) => (
+            <Status
+              tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
+            >
+              {outcomeLabel(turn.status)}
+            </Status>
+          ),
+        },
+        {
+          id: 'started',
+          label: 'Started',
+          secondary: true,
+          cell: (turn) => (Schema.is(Turn)(turn) ? timeLabel(turn.startedAt) : 'Unavailable'),
+        },
+        {
+          id: 'elapsed',
+          label: 'Elapsed',
+          secondary: true,
+          cell: (turn) =>
+            Schema.is(Turn)(turn) && turn.status !== 'running'
+              ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))
+              : '—',
+        },
       ]}
-    >
-      {page.turns.map((turn) => {
-        const known = Schema.is(Turn)(turn);
-        const time = known ? timeLabel(turn.startedAt) : 'Time unavailable';
-
-        const duration =
-          known && turn.status !== 'running'
-            ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))
-            : '—';
-
-        return (
-          <tr key={turn.id}>
-            <Cell mobileLabel={time}>
-              <Stack compact>
-                {turnLink(
-                  turn.id,
-                  <Status
-                    tone={
-                      turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'
-                    }
-                  >
-                    {outcomeLabel(turn.status)}
-                  </Status>,
-                )}
-                {known && turn.status === 'unanswered' && <Muted>{outcomeReason(turn.reason)}</Muted>}
-              </Stack>
-            </Cell>
-            <Cell secondary>{time}</Cell>
-            <Cell>{duration}</Cell>
-          </tr>
-        );
-      })}
-    </Table>
+      empty={
+        <EmptyState title="No runs yet" action={emptyAction}>
+          {emptyDescription}
+        </EmptyState>
+      }
+    />
   );
 }

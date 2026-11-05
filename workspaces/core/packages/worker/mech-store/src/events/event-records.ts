@@ -1,9 +1,10 @@
 import { Event, EventType, ListedEvent, REPLY_EXCERPT_MAX_CHARS } from '@mechane/protocol';
 import type { TurnReplyExcerpt } from '@mechane/protocol';
-import { RecordText, Sequence } from '@mechane/records';
+import { InboxItemId, RecordText, Sequence } from '@mechane/records';
 import { decodeFirst, decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, RowsPage, SqlCall } from '@mechane/store';
 import { Option, Schema } from 'effect';
+import { slackOriginRecords } from '../slack/slack-origin-records.ts';
 import type {
   AppendEventInput,
   EventRecords,
@@ -86,9 +87,7 @@ function turnEvents({ sql, turnId, after }: SqlCall<TurnEventsAfterInput>): Rows
     EVENTS_PER_PAGE + 1,
   );
 
-  const events = decodeRows({ cursor, schema: RecentEventRow }).map(({ event }) => event);
-
-  return { rows: events.slice(0, EVENTS_PER_PAGE), hasMore: events.length > EVENTS_PER_PAGE };
+  return readEventPage({ sql, cursor, isReversed: false });
 }
 
 function eventsBefore({ sql, before }: SqlCall<EventsBeforeInput>): RowsPage<ListedEvent> {
@@ -101,9 +100,7 @@ function eventsBefore({ sql, before }: SqlCall<EventsBeforeInput>): RowsPage<Lis
     EVENTS_PER_PAGE + 1,
   );
 
-  const events = decodeRows({ cursor, schema: RecentEventRow }).map(({ event }) => event);
-
-  return { rows: events.slice(0, EVENTS_PER_PAGE).toReversed(), hasMore: events.length > EVENTS_PER_PAGE };
+  return readEventPage({ sql, cursor, isReversed: true });
 }
 
 /**
@@ -137,4 +134,41 @@ function lastSequence({ sql }: RecordsInput): Sequence {
   const cursor = sql.exec('SELECT COALESCE(MAX(sequence), 0) AS sequence FROM events');
 
   return decodeOne({ cursor, schema: SequenceRow }).sequence;
+}
+
+type EventSourceInput = RecordsInput & { readonly event: ListedEvent };
+
+function readEventSource({ sql, event }: EventSourceInput): ListedEvent {
+  if (!Schema.is(Event)(event) || event.type !== EventType.InboxItemReceived) {
+    return event;
+  }
+
+  const inboxItemId = InboxItemId.make(event.inboxItemId);
+  const origin = slackOriginRecords({ sql }).slackInboxOrigin({ inboxItemId });
+
+  return Option.match(origin, {
+    onNone: () => event,
+    onSome: ({ destination, messageTimestamp, userId }) => ({
+      ...event,
+      source: { teamId: destination.teamId, channelId: destination.channelId, messageTimestamp, userId },
+    }),
+  });
+}
+
+type EventPageInput = RecordsInput & {
+  readonly cursor: ReturnType<RecordsInput['sql']['exec']>;
+  readonly isReversed: boolean;
+};
+
+function readEventPage({ sql, cursor, isReversed }: EventPageInput): RowsPage<ListedEvent> {
+  const events = decodeRows({ cursor, schema: RecentEventRow });
+  const visible = events.slice(0, EVENTS_PER_PAGE);
+  const rows = visible.map(({ event }) => readEventSource({ sql, event }));
+  const hasMore = events.length > EVENTS_PER_PAGE;
+
+  if (isReversed) {
+    return { rows: rows.toReversed(), hasMore };
+  }
+
+  return { rows, hasMore };
 }

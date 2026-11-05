@@ -1,5 +1,7 @@
 export { AppShell } from './app-shell.tsx';
 export { DetailPage } from './detail-page.tsx';
+export { FocusPage } from './focus-page.tsx';
+export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';
 export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 export type {
   RecordPageRootProps,

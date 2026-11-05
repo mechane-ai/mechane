@@ -1,4 +1,4 @@
-import { Button, Stack } from '@mechane-ai/elements';
+import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
 import { isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
@@ -62,10 +62,67 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
     );
   }
 
-  const workspace =
-    location.workspace === undefined
-      ? state.session.workspaces[0]
-      : state.session.workspaces.find((candidate) => candidate.id === location.workspace);
+  return (
+    <WorkspaceSelection
+      key={state.session.principal.id}
+      session={state.session}
+      location={location}
+      navigate={navigate}
+      reconnect={reconnect}
+    />
+  );
+}
+
+function WorkspaceSelection({
+  session,
+  location,
+  navigate,
+  reconnect,
+}: ConsoleNavigation & { readonly session: Session; readonly reconnect: () => void }): ReactNode {
+  const preferenceKey = `mechane:workspace:${session.principal.id}`;
+
+  const [preferred] = useState(() => {
+    try {
+      return localStorage.getItem(preferenceKey);
+    } catch {
+      // Storage can be disabled independently of an authenticated browser session.
+      return null;
+    }
+  });
+
+  const remembered = session.workspaces.find((candidate) => candidate.id === preferred);
+  const shared = session.workspaces.slice(1);
+  const defaultWorkspace = shared.length === 1 ? shared[0] : shared.length === 0 ? session.workspaces[0] : undefined;
+  const selectedId = location.workspace ?? remembered?.id ?? defaultWorkspace?.id;
+  const workspace = session.workspaces.find((candidate) => candidate.id === selectedId);
+
+  useEffect(() => {
+    if (workspace === undefined) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(preferenceKey, workspace.id);
+    } catch {
+      // A blocked preference store must not prevent opening an admitted workspace.
+    }
+  }, [preferenceKey, workspace]);
+
+  if (selectedId === undefined) {
+    return (
+      <ConsoleEntrance>
+        <Stack>
+          <Heading>Choose a workspace</Heading>
+          <Muted>Your choice will be remembered on this browser.</Muted>
+          {[...shared, session.workspaces[0]].map((candidate) => (
+            <Button key={candidate.id} onClick={() => navigate({ workspace: candidate.id })}>
+              {candidate.id === session.workspaces[0].id ? `Personal · ${candidate.name}` : candidate.name}
+            </Button>
+          ))}
+        </Stack>
+      </ConsoleEntrance>
+    );
+  }
 
   if (workspace === undefined) {
     return (
@@ -83,8 +140,8 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   return (
     <Suspense fallback={<ConsoleEntrance />}>
       <WorkspaceScreen
-        key={`${state.session.principal.id}:${workspace.id}`}
-        session={state.session}
+        key={`${session.principal.id}:${workspace.id}`}
+        session={session}
         workspace={workspace}
         location={location}
         navigate={navigate}

@@ -3,7 +3,9 @@ import {
   DispatchId,
   memberOrUnknown,
   Micros,
+  ModelToolCallId,
   RecordId,
+  RecordName,
   RecordText,
   Sequence,
   Tokens,
@@ -13,6 +15,7 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
+import { BoundedCallStatus } from '../bounded-turns/constants.ts';
 import { DispatchStatus, SettlementBasis, TurnStatus, UnansweredReason } from './constants.ts';
 
 /** The path of one turn of a mech. */
@@ -26,6 +29,7 @@ const TURN_FIELDS = {
   inboxItemIds: Schema.Array(RecordId),
   startedAt: WireTime,
   definitionRevision: Schema.Int,
+  inputExcerpt: Schema.optionalKey(RecordText),
 } as const;
 
 /** One turn of a mech's work, from its inbox items to its reply or its reason for none. */
@@ -135,6 +139,21 @@ export const TurnReplyExcerpt = wireStruct({
 
 export type TurnReplyExcerpt = typeof TurnReplyExcerpt.Type;
 
+/** Console evidence deliberately excludes raw tool arguments and outputs, which can contain credentials. */
+export const TurnToolCall = wireStruct({
+  fields: {
+    id: ModelToolCallId,
+    name: RecordName,
+    status: Schema.Enum(BoundedCallStatus),
+    /** Absent when the result does not record a tool duration. */
+    startedAt: Schema.OptionFromNullOr(WireTime),
+    /** Absent until a tool result is committed. */
+    endedAt: Schema.OptionFromNullOr(WireTime),
+  },
+});
+
+export type TurnToolCall = typeof TurnToolCall.Type;
+
 /** A turn with its dispatches in decision order and its recorded reply when available. */
 export const Trace = wireStruct({
   fields: {
@@ -142,6 +161,10 @@ export const Trace = wireStruct({
     dispatches: Schema.Array(TracedDispatch),
     /** Absent while unanswered or when the deployment cannot read a recorded reply. */
     replyExcerpt: Schema.OptionFromOptionalKey(TurnReplyExcerpt),
+    /** Absent when the serving deployment does not expose tool evidence. */
+    toolCalls: Schema.optionalKey(Schema.Array(TurnToolCall)),
+    /** Absent when the serving deployment does not expose evidence notices. */
+    evidenceNotices: Schema.optionalKey(Schema.Array(RecordText)),
   },
 });
 

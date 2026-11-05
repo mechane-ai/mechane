@@ -36,6 +36,9 @@ Newline is the default Enter behavior. `enterBehavior="submit"` submits through 
 Shift+Enter adds a line. Composition input and held Enter do not submit. Pending input becomes read-only to preserve
 keyboard focus. Explicitly disabled input retains normal disabled semantics.
 
+Use `compact` for a composer pinned below a conversation. It starts with a smaller input and bounds manual resizing to
+keep the conversation visible. The default remains suitable for a larger standalone prompt.
+
 Supplying `onStop` shows Stop in place of Send. Enter cannot submit while Stop is visible. Pending, disabled, and
 `submitDisabled` also gate programmatic form submission. Model controls, suggestions, attachments, and context capacity
 compose through the `controls` and `attachments` slots. Applications supply their availability and actions.

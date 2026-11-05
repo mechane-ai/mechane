@@ -84,7 +84,7 @@ import { readSourceGrant } from './sources/configuration/read-source-grant.ts';
 import { readThreads } from './threads/read-threads.ts';
 import { decideTurnCancel } from './turns/decide-turn-cancel.ts';
 import { readTurnEvents } from './turns/read-turn-events.ts';
-import { readTurn } from './turns/read-turn.ts';
+import { readTurnTrace } from './turns/read-turn-trace.ts';
 import { readTurns } from './turns/read-turns.ts';
 import type { AlarmDecision, MechHandle, OpenedMech } from './types.ts';
 import { decideWatchStatus } from './watches/decide-watch-status.ts';
@@ -350,7 +350,9 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
   }
 
   async turn({ turnId }: TurnInput): Promise<TurnReading> {
-    return await this.#mech.atomic({ run: (tables) => readTurn({ store: tables, turnId }) });
+    const mech = await this.#mech.current();
+
+    return await readTurnTrace({ mech, turnId });
   }
 
   async turnEvents({ turnId, query }: TurnEventsInput): Promise<typeof TurnEventsAnswer.Encoded> {

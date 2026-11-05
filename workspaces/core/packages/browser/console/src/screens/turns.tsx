@@ -6,7 +6,7 @@ import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { ConsoleLink, usePageCursors } from '../navigation.tsx';
+import { usePageCursors, useRecordNavigation } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
 
 export function TurnsScreen({
@@ -18,6 +18,7 @@ export function TurnsScreen({
   readonly mech: Mech;
   readonly onMessage: () => void;
 }): ReactNode {
+  const records = useRecordNavigation();
   const [cursors, setCursors] = usePageCursors('turns', []);
   const after = cursors.at(-1);
   const source = useMemo(() => data.turns(mech.id, Option.fromNullishOr(after)), [data, mech.id, after]);
@@ -29,11 +30,9 @@ export function TurnsScreen({
           {notice}
           <TurnList
             page={page}
-            turnLink={(id, children) => (
-              <ConsoleLink to={{ workspace: data.workspace.id, mech: mech.id, turn: id }} row={id} title="Open turn">
-                {children}
-              </ConsoleLink>
-            )}
+            turnHref={(turn) => records.href({ workspace: data.workspace.id, mech: mech.id, view: 'runs', turn })}
+            onOpen={(turn) => records.open({ workspace: data.workspace.id, mech: mech.id, view: 'runs', turn }, turn)}
+            focusRowId={records.focusRowId}
             emptyAction={
               mech.status === 'active' ? (
                 <Button variant="solid" onClick={onMessage}>
@@ -71,7 +70,7 @@ export function TurnsScreen({
                 </>
               }
             >
-              Newest turns first
+              Newest runs first
             </ListFooter>
           )}
         </>

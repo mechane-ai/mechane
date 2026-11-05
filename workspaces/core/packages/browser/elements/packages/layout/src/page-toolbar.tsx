@@ -37,24 +37,17 @@ const styles = stylex.create({
     fontWeight: 400,
   },
   label: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  actions: { display: 'flex', alignItems: 'stretch', minWidth: 0, flexShrink: 0, marginLeft: 'auto' },
-  actionCell: {
-    boxSizing: 'border-box',
+  actions: {
     display: 'flex',
-    alignItems: 'stretch',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingInline: spacing.sm,
     minWidth: 0,
-    borderLeftWidth: 1,
-    borderLeftStyle: 'solid',
-    borderLeftColor: colors.line,
+    flexShrink: 0,
+    marginLeft: 'auto',
   },
-  action: {
-    height: '100%',
-    minWidth: frame.toolbarHeight,
-    paddingBlock: 0,
-    paddingInline: spacing.lg,
-    borderRadius: 0,
-    gap: spacing.sm,
-  },
+  actionCell: { boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', minWidth: 0 },
+  action: { gap: spacing.sm },
   actionLabel: { display: { default: 'inline', [frameConditions.toolbarCompact]: 'none' } },
 });
 
@@ -95,7 +88,7 @@ export function ToolbarAction({ icon, children, ...props }: ToolbarActionProps):
       <Button
         {...props}
         variant="ghost"
-        size="md"
+        size="sm"
         aria-label={props['aria-label'] ?? (typeof children === 'string' ? children : undefined)}
         xstyle={styles.action}
       >

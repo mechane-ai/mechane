@@ -183,6 +183,7 @@ export {
   TokenUsage,
   REPLY_EXCERPT_MAX_CHARS,
   TurnReplyExcerpt,
+  TurnToolCall,
   Trace,
   TracedDispatch,
   Turn,

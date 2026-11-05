@@ -13,6 +13,7 @@ export const Route = createFileRoute('/')({
     ...(typeof search['mech'] === 'string' ? { mech: search['mech'] } : {}),
     ...(typeof search['turn'] === 'string' ? { turn: search['turn'] } : {}),
     ...(isConsoleView(search['view']) ? { view: search['view'] } : {}),
+    ...(isConsoleView(search['inspect']) ? { inspect: search['inspect'] } : {}),
     ...(typeof search['request'] === 'string' ? { request: search['request'] } : {}),
     ...(typeof search['event'] === 'number' && Number.isSafeInteger(search['event']) && search['event'] > 0
       ? { event: search['event'] }
@@ -31,8 +32,7 @@ function ConsoleRoute(): ReactNode {
       navigate={(search) => {
         void navigate({
           search,
-          resetScroll:
-            search.mech !== location.mech || search.turn !== location.turn || search.workspace !== location.workspace,
+          resetScroll: search.mech !== location.mech || search.workspace !== location.workspace,
         });
       }}
     />

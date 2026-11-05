@@ -28,6 +28,7 @@ export type PromptInputProps = {
   readonly submitLabel?: string;
   readonly pendingLabel?: string;
   readonly enterBehavior?: 'newline' | 'submit';
+  readonly compact?: boolean;
   readonly description?: ReactNode;
   readonly error?: string | undefined;
   readonly controls?: ReactNode;
@@ -52,6 +53,7 @@ export function PromptInput({
   submitLabel = 'Send message',
   pendingLabel = 'Sending…',
   enterBehavior = 'newline',
+  compact = false,
   description,
   error,
   controls,
@@ -99,6 +101,7 @@ export function PromptInput({
       <Field.Root invalid={error !== undefined}>
         <Field.Label>{label}</Field.Label>
         <Textarea
+          compact={compact}
           name={name}
           value={value}
           onChange={(event) => onValueChange(event.currentTarget.value)}

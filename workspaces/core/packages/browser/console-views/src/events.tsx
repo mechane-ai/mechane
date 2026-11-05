@@ -81,6 +81,15 @@ function EventItem({ event }: { readonly event: ListedEvent }): ReactNode {
 }
 
 function EventContent({ event }: { readonly event: Event }): ReactNode {
+  if ('forkedFrom' in event) {
+    return (
+      <Muted>
+        Created from mech {event.forkedFrom.mechId}, copying history through event {event.forkedFrom.sequence}. This is
+        event {event.sequence} in the log, not a fork count.
+      </Muted>
+    );
+  }
+
   if ('text' in event) {
     return <Prose>{event.text}</Prose>;
   }
@@ -122,6 +131,8 @@ function eventLabel(type: string): string {
       return 'Turn ended';
     case 'drone.reported':
       return 'Drone report';
+    case 'mech.forked':
+      return 'Conversation forked';
     default:
       return type.replaceAll(/[._]/g, ' ');
   }

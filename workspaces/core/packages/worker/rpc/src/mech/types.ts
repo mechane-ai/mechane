@@ -1,4 +1,4 @@
-import type { catalog, Delivery, SlackDeliveries, TurnStatus, UnansweredReason } from '@mechane/protocol';
+import type { catalog, Delivery, SlackDeliveries, TurnStatus, TurnToolCall, UnansweredReason } from '@mechane/protocol';
 import type { CopyRows, DroneId, PrincipalId, TurnId } from '@mechane/records';
 import type { BoundedTurnAnswer } from '../bounded-turn.schemas.ts';
 import type { BoundedTurnInput, CancelBoundedTurnInput, SubmitBoundedTurnInput } from '../bounded-turn.types.ts';
@@ -89,17 +89,20 @@ export type TurnFields = {
   readonly inboxItemIds: ReadonlyArray<string>;
   readonly startedAtMs: number;
   readonly definitionRevision: number;
+  readonly inputExcerpt: string;
   /** When the turn ended, null while it runs. */
   readonly endedAtMs: number | null;
   /** Why the turn ended unanswered, null while it runs and for a turn that was answered. */
   readonly reason: UnansweredReason | null;
 };
 
-/** A turn read that found the turn. */
-type FoundTurn = {
+/** A retained turn and the evidence available from its owning mech. */
+export type FoundTurn = {
   readonly _tag: 'Found';
   readonly turn: TurnFields;
   readonly replyExcerpt: typeof TurnReplyRecord.Encoded;
+  readonly toolCalls: ReadonlyArray<typeof TurnToolCall.Encoded>;
+  readonly evidenceNotices: ReadonlyArray<string>;
 };
 
 /** A turn read of an object that holds no mech. */

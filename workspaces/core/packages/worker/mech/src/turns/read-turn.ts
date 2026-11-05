@@ -2,6 +2,7 @@ import { TurnReplyExcerpt, TurnStatus } from '@mechane/protocol';
 import type { TurnInput, TurnReading } from '@mechane/rpc';
 import { Option, Schema } from 'effect';
 import type { TablesInput } from '../types.ts';
+import { readTurnInputExcerpt } from './read-turn-input-excerpt.ts';
 import { turnFields } from './turn-fields.ts';
 
 /** A turn with the inbox items it took up, read in one transaction. */
@@ -16,8 +17,10 @@ export function readTurn({ store, turnId }: TablesInput & TurnInput): TurnReadin
     return { _tag: 'TurnMissing' };
   }
 
-  const fields = turnFields({ turn: turn.value, inboxItemIds: store.turnInboxItemIds({ turnId }) });
-  const found = { _tag: 'Found', turn: fields, replyExcerpt: null } as const;
+  const inboxItemIds = store.turnInboxItemIds({ turnId });
+  const inputExcerpt = readTurnInputExcerpt({ store, inboxItemIds });
+  const fields = turnFields({ turn: turn.value, inboxItemIds, inputExcerpt });
+  const found = { _tag: 'Found', turn: fields, replyExcerpt: null, toolCalls: [], evidenceNotices: [] } as const;
 
   if (turn.value.status !== TurnStatus.Answered) {
     return found;

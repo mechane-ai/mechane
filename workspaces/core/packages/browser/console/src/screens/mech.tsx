@@ -1,26 +1,36 @@
-import { Button, CopyValue, Heading, Muted, Panel, Prose, Row, Stack, Status, Subheading } from '@mechane-ai/elements';
+import { Heading, Muted, Row, Stack, Status } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
-import { DetailPage, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
-import { Tabs } from '@mechane-ai/elements/navigation';
-import { Dialog } from '@mechane-ai/elements/overlays';
+import { PageToolbar, ToolbarAction, Workbench, WorkbenchFooter, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageNavigation } from '@mechane-ai/elements/navigation';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { moneyLabel } from '@mechane/console-views';
 import { MechStatus } from '@mechane/protocol';
-import type { Mech } from '@mechane/protocol';
-import { Option } from 'effect';
-import { Pause, Pencil, Play, Send } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import type { ConsoleView, Mech } from '@mechane/protocol';
+import { useRouter } from '@tanstack/react-router';
+import { Pause, Play, Settings } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
 import type { ConsoleNavigation } from '../types.ts';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { ActivityScreen } from './activity.tsx';
+import { ConnectionsScreen } from './connections.tsx';
+import { ConversationScreen } from './conversation.tsx';
 import { EditMechForm } from './edit-mech.tsx';
+import { MechSettings } from './mech-settings.tsx';
 import { MessageForm } from './message.tsx';
 import { TraceScreen } from './trace.tsx';
 import { TurnsScreen } from './turns.tsx';
+import { MemoryScreen, WorkScreen } from './work.tsx';
+
+const sections: ReadonlyArray<{ readonly id: ConsoleView; readonly label: string }> = [
+  { id: 'conversation', label: 'Conversation' },
+  { id: 'work', label: 'Work' },
+  { id: 'runs', label: 'Runs' },
+  { id: 'memory', label: 'Memory' },
+  { id: 'activity', label: 'History' },
+];
 
 type MechNavigation = ConsoleNavigation & { readonly data: ConsoleData; readonly mechId: string };
 
@@ -43,18 +53,19 @@ function MechDetails({
   navigate,
   notice,
 }: Omit<MechNavigation, 'mechId'> & { readonly mech: Mech; readonly notice: ReactNode }): ReactNode {
-  const tab = location.view === 'activity' ? 'Activity' : location.view === 'definition' ? 'Definition' : 'Turns';
+  const router = useRouter();
+
+  const view =
+    sections.some((section) => section.id === location.view) || location.view === 'definition'
+      ? location.view
+      : 'conversation';
+
   const base = { workspace: data.workspace.id, mech: mech.id };
   const [editing, setEditing] = useState(false);
-  const [message, setMessage] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
   const [error, setError] = useState<string>();
-  const [archiveConfirm, setArchiveConfirm] = useState(false);
-  const archiveCancel = useRef<HTMLButtonElement>(null);
-  const statusAction = useRef<HTMLButtonElement>(null);
   const isScreenActive = useScreenLifetime();
   const busy = pendingStatus !== undefined;
-  const isArchiveDisabled = mech.status === 'archived' || busy;
 
   function setStatus(status: MechStatus): void {
     if (busy) {
@@ -67,7 +78,6 @@ function MechDetails({
       () => {
         if (isScreenActive()) {
           setPendingStatus(undefined);
-          setArchiveConfirm(false);
         }
       },
       (cause: unknown) => {
@@ -83,19 +93,29 @@ function MechDetails({
     return <EditMechForm data={data} mech={mech} notice={notice} onClose={() => setEditing(false)} />;
   }
 
-  if (location.turn !== undefined) {
-    return (
-      <TraceScreen
-        key={location.turn}
-        data={data}
-        mech={mech}
-        notice={notice}
-        turnId={location.turn}
-        location={location}
-        navigate={navigate}
+  const header = (
+    <Stack compact>
+      <Row between>
+        <Row>
+          <Heading compact>{mech.name}</Heading>
+          <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>
+            {mech.status === 'active' ? 'Enabled' : mech.status === 'paused' ? 'Paused' : 'Archived'}
+          </Status>
+        </Row>
+        <Muted>{mech.model}</Muted>
+      </Row>
+      <PageNavigation
+        embedded
+        label="Mech sections"
+        selectedId={view ?? 'conversation'}
+        items={sections.map((section) => ({
+          ...section,
+          href: router.buildLocation({ to: '/', search: { ...base, view: section.id } }).publicHref,
+        }))}
+        onNavigate={(next) => navigate({ ...base, view: next })}
       />
-    );
-  }
+    </Stack>
+  );
 
   return (
     <>
@@ -108,138 +128,77 @@ function MechDetails({
         }
         actions={
           <>
+            {mech.status !== 'archived' && (
+              <ToolbarAction
+                icon={mech.status === 'active' ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
+                disabled={busy}
+                pending={busy}
+                pendingLabel="Saving…"
+                onClick={() => setStatus(mech.status === 'active' ? MechStatus.Paused : MechStatus.Active)}
+              >
+                {mech.status === 'active' ? 'Pause' : 'Resume'}
+              </ToolbarAction>
+            )}
             <ToolbarAction
-              ref={statusAction}
-              icon={mech.status === 'active' ? <Pause size={16} aria-hidden /> : <Play size={16} aria-hidden />}
-              disabled={busy}
-              pending={busy && pendingStatus !== MechStatus.Archived}
-              pendingLabel={pendingStatus === MechStatus.Paused ? 'Pausing…' : 'Activating…'}
-              onClick={() => setStatus(mech.status === 'active' ? MechStatus.Paused : MechStatus.Active)}
+              icon={<Settings size={16} aria-hidden />}
+              onClick={() => navigate({ ...base, view: 'definition' })}
             >
-              {mech.status === 'active' ? 'Pause' : 'Activate'}
-            </ToolbarAction>
-            <ToolbarAction icon={<Pencil size={16} aria-hidden />} onClick={() => setEditing(true)}>
-              Edit definition
-            </ToolbarAction>
-            <ToolbarAction
-              icon={<Send size={16} aria-hidden />}
-              disabled={mech.status === 'archived'}
-              onClick={() => setMessage(true)}
-            >
-              Send message
+              Settings
             </ToolbarAction>
           </>
         }
       />
-      {notice}
-      <DetailPage>
-        <Stack>
-          <Stack compact>
-            <Row>
-              <Heading>{mech.name}</Heading>
-              <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>{mech.status}</Status>
-            </Row>
-            <Muted>
-              {mech.model} · Revision {mech.revision}
-            </Muted>
-            <Row>
-              <CopyValue label="mech ID" value={mech.id} />
-            </Row>
-          </Stack>
-          {error !== undefined && !archiveConfirm && <Notice error>{error}</Notice>}
-          {mech.status === 'paused' && (
-            <Notice>
-              Paused. New messages wait in the inbox until you activate this mech. A running turn may still finish.
-            </Notice>
-          )}
-          {message && <MessageForm data={data} mech={mech} onClose={() => setMessage(false)} />}
-          <Tabs.Root
-            value={tab}
-            onValueChange={(next) =>
-              navigate(next === 'Turns' ? base : { ...base, view: next === 'Activity' ? 'activity' : 'definition' })
-            }
-          >
-            <Tabs.List aria-label="Mech details">
-              <Tabs.Tab value="Turns">Turns</Tabs.Tab>
-              <Tabs.Tab value="Activity">Activity</Tabs.Tab>
-              <Tabs.Tab value="Definition">Definition</Tabs.Tab>
-            </Tabs.List>
-            <Tabs.Panel value="Turns">
-              {tab === 'Turns' && <TurnsScreen data={data} mech={mech} onMessage={() => setMessage(true)} />}
-            </Tabs.Panel>
-            <Tabs.Panel value="Activity">
-              {tab === 'Activity' && <ActivityScreen data={data} mechId={mech.id} />}
-            </Tabs.Panel>
-            <Tabs.Panel value="Definition">
-              {tab === 'Definition' && (
-                <Stack>
-                  <Panel>
-                    <Stack>
-                      <Row between>
-                        <Subheading>Saved definition</Subheading>
-                        <Muted>Active revision {mech.activeRevision}</Muted>
-                      </Row>
-                      <Muted>Daily cap: {moneyLabel(mech.dailyCapMicros)}</Muted>
-                      <Prose>{Option.getOrElse(mech.instructions, () => 'No additional instructions.')}</Prose>
-                    </Stack>
-                  </Panel>
-                  <Row>
-                    <Dialog.Root
-                      open={archiveConfirm}
-                      onOpenChange={(open, details) => {
-                        if (busy) {
-                          details.cancel();
-
-                          return;
-                        }
-
-                        setArchiveConfirm(open);
-
-                        if (open) {
-                          setError(undefined);
-                        }
-                      }}
-                    >
-                      <Dialog.Trigger render={<Button tone="danger" disabled={isArchiveDisabled} />}>
-                        Archive mech
-                      </Dialog.Trigger>
-                      <Dialog.Portal>
-                        <Dialog.Backdrop />
-                        <Dialog.Popup
-                          initialFocus={archiveCancel}
-                          finalFocus={() => (mech.status === 'archived' ? statusAction.current : true)}
-                        >
-                          <Stack>
-                            <Dialog.Title>Archive {mech.name}?</Dialog.Title>
-                            <Dialog.Description>
-                              This mech will stop accepting new work. Its history and files remain.
-                            </Dialog.Description>
-                            {error !== undefined && <Notice error>{error}</Notice>}
-                            <Row>
-                              <Button
-                                variant="solid"
-                                tone="danger"
-                                pending={pendingStatus === MechStatus.Archived}
-                                pendingLabel="Archiving…"
-                                onClick={() => setStatus(MechStatus.Archived)}
-                              >
-                                Archive mech
-                              </Button>
-                              <Dialog.Close render={<Button ref={archiveCancel} disabled={busy} />}>
-                                Cancel
-                              </Dialog.Close>
-                            </Row>
-                          </Stack>
-                        </Dialog.Popup>
-                      </Dialog.Portal>
-                    </Dialog.Root>
-                  </Row>
-                </Stack>
-              )}
-            </Tabs.Panel>
-          </Tabs.Root>
-        </Stack>
-      </DetailPage>
+      <Workbench
+        header={header}
+        inspector={
+          location.turn === undefined ? undefined : (
+            <TraceScreen
+              key={location.turn}
+              data={data}
+              mech={mech}
+              notice={null}
+              turnId={location.turn}
+              location={location}
+              navigate={navigate}
+            />
+          )
+        }
+      >
+        {notice}
+        {error !== undefined && <Notice error>{error}</Notice>}
+        {mech.status === 'paused' && (
+          <Notice>Paused. New messages wait until you resume. A running execution may still finish.</Notice>
+        )}
+        {view === 'conversation' ? (
+          <>
+            <ConversationScreen data={data} mech={mech} />
+            <WorkbenchFooter>
+              <MessageForm data={data} mech={mech} />
+            </WorkbenchFooter>
+          </>
+        ) : (
+          <WorkbenchScroll>
+            {view === 'runs' && (
+              <TurnsScreen data={data} mech={mech} onMessage={() => navigate({ ...base, view: 'conversation' })} />
+            )}
+            {view === 'work' && <WorkScreen data={data} mech={mech} />}
+            {view === 'memory' && <MemoryScreen data={data} mech={mech} />}
+            {view === 'activity' && <ActivityScreen data={data} mechId={mech.id} />}
+            {view === 'definition' && (
+              <Stack>
+                <MechSettings
+                  mech={mech}
+                  busy={busy}
+                  error={error}
+                  onEdit={() => setEditing(true)}
+                  onArchive={() => setStatus(MechStatus.Archived)}
+                />
+                <ConnectionsScreen data={data} mechId={mech.id} />
+              </Stack>
+            )}
+          </WorkbenchScroll>
+        )}
+      </Workbench>
     </>
   );
 }

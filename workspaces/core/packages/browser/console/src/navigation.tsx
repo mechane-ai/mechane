@@ -1,10 +1,26 @@
 import { TextLink } from '@mechane-ai/elements';
-import { createLink, useNavigate, useRouterState } from '@tanstack/react-router';
+import { createLink, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { ConsoleLocation, PageCursors } from './types.ts';
 
 const RouteLink = createLink(TextLink);
+
+export function useRecordNavigation() {
+  const router = useRouter();
+  const navigate = useNavigate({ from: '/' });
+  const entry = useRouterState({ select: (state) => state.location.state });
+  const selectedTurn = useRouterState({ select: (state) => state.location.search.turn });
+
+  return {
+    focusRowId: selectedTurn === undefined ? entry.consoleReturn?.row : undefined,
+    href: (search: ConsoleLocation) => router.buildLocation({ to: '/', search }).publicHref,
+    open: (search: ConsoleLocation, row: string) => {
+      globalThis.history.replaceState({ ...entry, consoleReturn: { row, scrollTop: globalThis.scrollY } }, '');
+      void navigate({ to: '/', search, resetScroll: false });
+    },
+  };
+}
 
 export function ConsoleLink({
   to,
@@ -19,17 +35,26 @@ export function ConsoleLink({
 }): ReactNode {
   const anchor = useRef<HTMLAnchorElement>(null);
   const entry = useRouterState({ select: (state) => state.location.state });
+  const selectedTurn = useRouterState({ select: (state) => state.location.search.turn });
 
   useLayoutEffect(() => {
+    if (selectedTurn !== undefined) {
+      return;
+    }
+
     const target = entry.consoleReturn;
 
     if (target === undefined || target.row !== row || anchor.current === null) {
       return;
     }
 
-    anchor.current.focus({ preventScroll: true });
-    globalThis.scrollTo({ top: target.scrollTop, behavior: 'instant' });
-  }, [entry, row]);
+    const frame = requestAnimationFrame(() => {
+      anchor.current?.focus({ preventScroll: true });
+      globalThis.scrollTo({ top: target.scrollTop, behavior: 'instant' });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [entry, row, selectedTurn]);
 
   return (
     <RouteLink

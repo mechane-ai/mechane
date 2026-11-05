@@ -208,7 +208,8 @@ export type DataTableProps<Row> = SortProperties<Row> &
     readonly caption: string;
     readonly empty: ReactNode;
     readonly rowAction?: DataTableRowAction<Row>;
-    readonly activeRowId?: string;
+    readonly activeRowId?: string | undefined;
+    readonly focusRowId?: string | undefined;
     readonly hideCaption?: boolean;
     readonly hideHeaders?: boolean;
     readonly window?: DataTableWindow;
@@ -230,6 +231,7 @@ export function DataTable<Row extends object>({
   selectionLabel,
   rowAction,
   activeRowId,
+  focusRowId,
   hideCaption = false,
   hideHeaders = false,
   window,
@@ -251,9 +253,38 @@ export function DataTable<Row extends object>({
   const [headerHeight, setHeaderHeight] = useState(0);
   const [focusedId, setFocusedId] = useState<string>();
   const pendingFocusId = useRef<string | undefined>(undefined);
+  const restoredFocusId = useRef<string | undefined>(undefined);
   const focusedIndex = rows.findIndex((row) => getRowId(row) === focusedId);
   const actionColumnIndex = columns.findIndex((column) => column.secondary !== true);
   const sizing = typeof window?.height === 'string' ? window.height : 'content';
+
+  useLayoutEffect(() => {
+    if (focusRowId === undefined) {
+      restoredFocusId.current = undefined;
+
+      return;
+    }
+
+    if (restoredFocusId.current === focusRowId) {
+      return;
+    }
+
+    const row = viewport.current?.querySelector<HTMLElement>(
+      `[data-row-id="${CSS.escape(focusRowId)}"] [data-row-action]`,
+    );
+
+    if (row === undefined || row === null) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      row.focus({ preventScroll: true });
+
+      restoredFocusId.current = focusRowId;
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [rows, focusRowId]);
 
   useEndReached({
     end: endElement,

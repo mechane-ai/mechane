@@ -13,6 +13,7 @@ type ReadTurnEvidenceInput = HarnessHandle & InboxItemQuery;
 
 type EntryScan = {
   readonly entries: ReadonlyArray<EntryRecord>;
+  readonly isTruncated: boolean;
   /** Absent at the request's last transcript page. */
   readonly next: Option.Option<Cursor>;
 };
@@ -27,6 +28,7 @@ type ResultStatusInput = {
 };
 
 const ENTRY_PAGE_ITEMS = 100;
+const EVIDENCE_MAX_ENTRIES = 1000;
 const PiMessageRole = { Assistant: 'assistant', ToolResult: 'toolResult' } as const;
 const PiContentType = { ToolCall: 'toolCall' } as const;
 const ToolResultJson = Schema.fromJsonString(Schema.Json);
@@ -46,7 +48,7 @@ export async function readTurnEvidence({ harness, inboxItemId }: ReadTurnEvidenc
     const answerId = Option.flatMapNullishOr(submission, (record) => record.answer);
     const query = Option.match(answerId, { onNone: () => base, onSome: (maxEntryId) => ({ ...base, maxEntryId }) });
 
-    const empty: EntryScan = { entries: [], next: Option.none() };
+    const empty: EntryScan = { entries: [], next: Option.none(), isTruncated: false };
     let scan = await scanEvidenceEntries({ transaction, query, scan: empty });
 
     while (Option.isSome(scan.next)) {
@@ -66,11 +68,17 @@ export async function readTurnEvidence({ harness, inboxItemId }: ReadTurnEvidenc
     const toolCalls = calls.map((call) => toolEvidence({ call, messages }));
     const hasUnknown = toolCalls.some((call) => call.status === BoundedCallStatus.Unknown);
 
-    if (hasUnknown) {
-      return { toolCalls, unknowns: ['Some tool calls have no committed result; execution outcome is unknown.'] };
+    const unknowns: Array<string> = [];
+
+    if (scan.isTruncated) {
+      unknowns.push('Tool evidence reached its read limit; later steps may be missing.');
     }
 
-    return { toolCalls, unknowns: [] };
+    if (hasUnknown) {
+      unknowns.push('Some tool calls have no committed result; execution outcome is unknown.');
+    }
+
+    return { toolCalls, unknowns };
   }, BACKGROUND_CONTEXT);
 }
 
@@ -83,10 +91,17 @@ async function scanEvidenceEntries({ transaction, query, scan }: EntryScanInput)
   );
 
   if (boundary !== -1) {
-    return { entries: [...scan.entries, ...page.items.slice(0, boundary)], next: Option.none() };
+    return { entries: [...scan.entries, ...page.items.slice(0, boundary)], next: Option.none(), isTruncated: false };
   }
 
-  return { entries: [...scan.entries, ...page.items], next: Option.fromNullishOr(page.next) };
+  const entries = [...scan.entries, ...page.items];
+  const next = Option.fromNullishOr(page.next);
+
+  if (entries.length >= EVIDENCE_MAX_ENTRIES && Option.isSome(next)) {
+    return { entries, next: Option.none(), isTruncated: true };
+  }
+
+  return { entries, next, isTruncated: false };
 }
 
 function toolEvidence({ call, messages }: ToolEvidenceInput): BoundedToolCall {

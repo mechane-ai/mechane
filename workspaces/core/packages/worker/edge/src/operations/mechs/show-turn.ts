@@ -2,7 +2,7 @@ import { callMech, callWorkspace } from '@mechane/bindings';
 import { MechNotFound, TurnNotFound } from '@mechane/protocol';
 import type { catalog, ObjectUnavailable, Trace } from '@mechane/protocol';
 import { TurnAnswer, WorkDispatchesAnswer } from '@mechane/rpc';
-import { Effect, Match } from 'effect';
+import { Effect, Match, Option } from 'effect';
 import type { WorkInput } from '../../routing/types.ts';
 
 /** Joins a turn, which the mech keeps, with its dispatches, which the workspace's ledger keeps. */
@@ -33,5 +33,14 @@ export const showTurn = Effect.fn('showTurn')(function* ({
     answer: WorkDispatchesAnswer,
   });
 
-  return { turn: detail.turn, replyExcerpt: detail.replyExcerpt, dispatches };
+  const tools = Option.fromNullishOr(detail.toolCalls);
+  const notices = Option.fromNullishOr(detail.evidenceNotices);
+
+  return {
+    turn: detail.turn,
+    replyExcerpt: detail.replyExcerpt,
+    dispatches,
+    toolCalls: Option.getOrElse(tools, () => []),
+    evidenceNotices: Option.getOrElse(notices, () => ['Tool evidence is unavailable from this runtime.']),
+  };
 });

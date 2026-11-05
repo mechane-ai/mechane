@@ -481,7 +481,7 @@
   "packages/worker/mech/src/threads/read-threads.ts": 1,
   "packages/worker/mech/src/turns/decide-turn-cancel.ts": 1,
   "packages/worker/mech/src/turns/end-item-turn.ts": 6,
-  "packages/worker/mech/src/turns/read-turn.ts": 2,
+  "packages/worker/mech/src/turns/read-turn.ts": 1,
   "packages/worker/mech/src/turns/record-turn-cancel.ts": 1,
   "packages/worker/pages/src/device/review-device.ts": 4,
   "packages/worker/pages/src/device/submit-device-form.ts": 1,

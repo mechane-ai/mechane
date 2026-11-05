@@ -31,6 +31,12 @@ export function consoleDestination({ value, origin }: ConsoleDestinationInput): 
     next.searchParams.set('view', view);
   }
 
+  const inspect = incoming.searchParams.get('inspect');
+
+  if (isView(inspect)) {
+    next.searchParams.set('inspect', inspect);
+  }
+
   const rawEvent = incoming.searchParams.get('event');
   const event = Number(rawEvent);
 

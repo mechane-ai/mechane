@@ -4,20 +4,36 @@ Open `/console` on any Mechane installation. Sign in through its configured GitH
 the same workspaces and permissions as the CLI, without creating or storing a browser API key. It is a workspace
 management interface; it does not grant installation-wide administrative access.
 
-Open a mech to see its turns, activity and definition. The list and turn names are links. Open one in another tab or use
-Back to return to the row and page you were reading. On a phone, the mech list puts the name and model beside its state.
+The signed-out page is a standalone entrance. After sign-in, an explicit workspace link wins, then the last valid
+workspace remembered for that account in this browser. With no preference, a single shared workspace opens before the
+personal workspace. Multiple shared workspaces open a chooser. The personal workspace is labeled **Personal**; workspace
+names and permissions remain unchanged.
 
-A turn opens on **Overview**. An answered turn shows the start of its recorded reply. **Read full reply** opens the
-exact event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance
-decision and settlement for each model request. A bar has both endpoints, a hollow point is awaiting settlement, and a
-diamond is a refusal before a call. Select a row to inspect its model, cost and reported usage. **Copy link** shares
-that selection with someone who can access the workspace. **Events** pages through the original messages and replies in
-commit order.
+Open a mech to read its continuous **Conversation**, with an inline composer and Markdown replies. **Work** shows the
+agent's durable threads and notes; these are work records, not separate chat sessions. **Runs** shows executions with
+their input excerpts. **Memory** contains explicitly saved notes, separately from conversation history. **History**
+keeps the original durable events. A fork explains the source and copied event boundary: its event number is a position
+in the log, not a count of forks. Forked mechs continue independently.
+
+List rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the row and
+page you were reading. **Inspect run** opens a contextual pane; on a phone it occupies the content area while the
+conversation and draft stay mounted. Closing the inspector returns focus to the originating record.
+
+A run opens on **Overview**. An answered run shows the start of its recorded reply. **Read full reply** opens the exact
+event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance decision
+and settlement for each model request. A bar has both endpoints, a hollow point is awaiting settlement, and a diamond is
+a refusal before a call. Select a row to inspect its model, cost and reported usage. **Copy link** shares that selection
+with someone who can access the workspace. **Events** pages through the original messages and replies in commit order.
+**Tools** shows recorded tool names, outcomes and timing; raw tool arguments and results do not enter this browser
+projection. Evidence reads are bounded, and missing or truncated evidence is labeled.
 
 Activate a timestamp to copy its exact UTC value. A transient refresh failure keeps the last result visible and offers a
-retry. New activity waits behind **Show new activity** while you read. When you send a message, its receipt links to the
-turn once the mech takes it up. When you edit a definition someone else has changed, compare the saved revision with
-your draft before saving. Continuing keeps your edits and adopts the latest values for untouched fields.
+retry. New activity waits behind **Show new activity** while you read. A message clears only after receipt; failed sends
+retain the draft and request identity for retry. Enabled means the mech can run, while Running comes from an execution
+record. **Settings** holds the definition, lifecycle actions, existing Slack connections and delivery receipts. An
+answered run and a delivered Slack reply are separate outcomes. The console does not change Slack bindings or
+permissions. When you edit a definition someone else has changed, compare the saved revision with your draft before
+saving. Continuing keeps your edits and adopts the latest values for untouched fields.
 
 ## Package boundaries
 
@@ -27,7 +43,7 @@ your draft before saving. Continuing keeps your edits and adopts the latest valu
 | `@mechane/console-data`       | Validated requests, TanStack DB snapshots, cancellation          | shared client and protocol            |
 | `@mechane/console-views`      | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts |
 | `@mechane-ai/elements`        | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries          |
-| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, and DetailPage                   | UI and tokens                         |
+| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, FocusPage, Workbench, DetailPage | UI and tokens                         |
 | `@mechane-ai/elements/charts` | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
 | `@mechane-ai/elements/tokens` | Semantic visual tokens                                           | StyleX                                |
 

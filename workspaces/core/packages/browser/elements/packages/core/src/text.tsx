@@ -95,7 +95,7 @@ type TextProps = ComponentProps<'span'> & {
   readonly xstyle?: PlacementStyle;
 };
 
-type HeadingProps = ComponentProps<'h1'>;
+type HeadingProps = ComponentProps<'h1'> & { readonly compact?: boolean };
 type SubheadingProps = ComponentProps<'h2'>;
 type MutedProps = ComponentProps<'p'>;
 type IdentifierProps = ComponentProps<'span'>;
@@ -135,8 +135,8 @@ export function Text({ variant = 'body', tone = 'ink', xstyle, ...props }: TextP
   return <span {...mergeProps(stylex.props(styles.text, textVariants[variant], textTones[tone], xstyle), props)} />;
 }
 
-export function Heading(props: HeadingProps): ReactNode {
-  return <h1 {...mergeProps(stylex.props(styles.heading), props)} />;
+export function Heading({ compact = false, ...props }: HeadingProps): ReactNode {
+  return <h1 {...mergeProps(stylex.props(compact ? styles.subheading : styles.heading), props)} />;
 }
 
 export function Subheading(props: SubheadingProps): ReactNode {

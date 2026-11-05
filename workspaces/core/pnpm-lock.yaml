@@ -296,6 +296,9 @@ importers:
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol
+      '@mechane/records':
+        specifier: workspace:*
+        version: link:../../shared/records
       '@tanstack/db':
         specifier: 1.0.0-rc.1.1
         version: 1.0.0-rc.1.1(typescript@7.0.2)

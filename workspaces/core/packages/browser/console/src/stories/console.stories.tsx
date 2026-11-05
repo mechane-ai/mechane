@@ -1,4 +1,4 @@
-import { Button, Heading, Muted, Row, Stack, TextButton, TextLink } from '@mechane-ai/elements';
+import { Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
 import { Loading as LoadingRows, Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input } from '@mechane-ai/elements/forms';
 import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
@@ -275,7 +275,8 @@ function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
         hasPrevious={false}
         page={page}
         allowance={allowance}
-        nameLink={(mech) => <TextLink href={`?mech=${mech.id}`}>{mech.name}</TextLink>}
+        mechHref={(mech) => `?mech=${mech.id}`}
+        onOpen={() => undefined}
         onCreate={() => undefined}
         onPrevious={() => undefined}
         onNext={() => undefined}

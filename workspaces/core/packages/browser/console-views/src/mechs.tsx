@@ -1,14 +1,16 @@
-import { Button, CopyValue, Status } from '@mechane-ai/elements';
-import { Cell, ListFooter, Table } from '@mechane-ai/elements/collections';
+import { Button, Status } from '@mechane-ai/elements';
+import { DataTable, ListFooter } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
 import type { ReactNode } from 'react';
-import { moneyLabel, preciseTimeLabel, timeLabel } from './format.ts';
+import { moneyLabel, timeLabel } from './format.ts';
 
 export function MechList({
   page,
   allowance,
-  nameLink,
+  mechHref,
+  onOpen,
+  focusRowId,
   onCreate,
   onNext,
   onPrevious,
@@ -16,72 +18,73 @@ export function MechList({
 }: {
   readonly page: MechPage;
   readonly allowance: Allowance | undefined;
-  readonly nameLink: (mech: MechSummary) => ReactNode;
+  readonly mechHref: (mech: MechSummary) => string;
+  readonly onOpen: (mech: MechSummary) => void;
+  readonly focusRowId?: string | undefined;
   readonly onCreate: () => void;
   readonly onNext: () => void;
   readonly onPrevious: () => void;
   readonly hasPrevious: boolean;
 }): ReactNode {
+  const showFooter = page.mechs.length > 0 || hasPrevious;
+  const showPagination = page.hasMore || hasPrevious;
+
   return (
     <>
-      {page.mechs.length === 0 ? (
-        <EmptyState
-          title="No mechs yet"
-          action={
-            <Button variant="solid" onClick={onCreate}>
-              Create your first mech
-            </Button>
+      <DataTable
+        caption="Mechs"
+        hideCaption
+        rows={page.mechs}
+        getRowId={(mech) => mech.id}
+        focusRowId={focusRowId}
+        rowAction={{ href: mechHref, onActivate: onOpen, label: (mech) => `Open ${mech.name}` }}
+        columns={[
+          { id: 'name', label: 'Mech', cell: (mech) => mech.name, truncate: true },
+          {
+            id: 'status',
+            label: 'Availability',
+            cell: (mech) => (
+              <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>
+                {mech.status === 'active' ? 'Enabled' : mech.status === 'paused' ? 'Paused' : 'Archived'}
+              </Status>
+            ),
+          },
+          { id: 'model', label: 'Model', secondary: true, cell: (mech) => mech.model },
+          { id: 'created', label: 'Created', secondary: true, cell: (mech) => timeLabel(mech.createdAt) },
+        ]}
+        empty={
+          <EmptyState
+            title="No mechs yet"
+            action={
+              <Button variant="solid" onClick={onCreate}>
+                Create your first mech
+              </Button>
+            }
+          >
+            Give a mech instructions, then start a conversation.
+          </EmptyState>
+        }
+      />
+      {showFooter && (
+        <ListFooter
+          actions={
+            showPagination ? (
+              <>
+                <Button disabled={!hasPrevious} onClick={onPrevious}>
+                  Previous
+                </Button>
+                <Button disabled={!page.hasMore} onClick={onNext}>
+                  Next
+                </Button>
+              </>
+            ) : undefined
           }
         >
-          Give a mech instructions, then send it something to work on.
-        </EmptyState>
-      ) : (
-        <Table
-          label="Mechs"
-          headers={[
-            { label: 'Mech name', width: 30 },
-            { label: 'Status', width: 15 },
-            { label: 'Model', width: 25, secondary: true },
-            { label: 'Revision', width: 10, secondary: true },
-            { label: 'Created', width: 20, secondary: true },
-          ]}
-        >
-          {page.mechs.map((mech) => (
-            <tr key={mech.id}>
-              <Cell mobileLabel={mech.model}>{nameLink(mech)}</Cell>
-              <Cell>
-                <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>{mech.status}</Status>
-              </Cell>
-              <Cell secondary>
-                <span title={mech.model}>{mech.model}</span>
-              </Cell>
-              <Cell secondary>{mech.revision}</Cell>
-              <Cell secondary>
-                <CopyValue label={`${mech.name} creation time in UTC`} value={preciseTimeLabel(mech.createdAt)}>
-                  {timeLabel(mech.createdAt)}
-                </CopyValue>
-              </Cell>
-            </tr>
-          ))}
-        </Table>
+          {page.mechs.length} {page.mechs.length === 1 ? 'mech' : 'mechs'}
+          {allowance !== undefined &&
+            ` · Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}
+        </ListFooter>
       )}
-      <ListFooter
-        actions={
-          <>
-            <Button disabled={!hasPrevious} onClick={onPrevious}>
-              Previous
-            </Button>
-            <Button disabled={!page.hasMore} onClick={onNext}>
-              Next
-            </Button>
-          </>
-        }
-      >
-        {page.mechs.length} {page.mechs.length === 1 ? 'mech' : 'mechs'} on this page
-        {allowance !== undefined &&
-          ` · Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}
-        {page.hasMore && ' · More available'}
-      </ListFooter>
     </>
   );
 }

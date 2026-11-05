@@ -4,16 +4,20 @@ import type { TurnFields } from '@mechane/rpc';
 import { DateTime } from 'effect';
 
 /** A turn of the mech, and the inbox items it took up. */
-type TurnFieldsInput = { readonly turn: TurnRow; readonly inboxItemIds: TurnFields['inboxItemIds'] };
+type TurnFieldsInput = {
+  readonly turn: TurnRow;
+  readonly inboxItemIds: TurnFields['inboxItemIds'];
+  readonly inputExcerpt: string;
+};
 
 /**
  * A turn as the mech's object answers it, with its times in milliseconds since the epoch. A turn that runs has no end,
  * and only an unanswered one has a reason, which the answer gives as null.
  */
-export function turnFields({ turn, inboxItemIds }: TurnFieldsInput): TurnFields {
+export function turnFields({ turn, inboxItemIds, inputExcerpt }: TurnFieldsInput): TurnFields {
   const startedAtMs = DateTime.toEpochMillis(turn.startedAt);
   const definitionRevision = turn.definitionRevision;
-  const fields = { id: turn.id, status: turn.status, inboxItemIds, startedAtMs, definitionRevision };
+  const fields = { id: turn.id, status: turn.status, inboxItemIds, inputExcerpt, startedAtMs, definitionRevision };
 
   switch (turn.status) {
     case TurnStatus.Running:

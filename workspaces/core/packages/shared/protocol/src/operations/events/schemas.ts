@@ -6,6 +6,9 @@ import {
   RecordText,
   renamedWireStruct,
   Sequence,
+  SlackChannelId,
+  SlackTeamId,
+  SlackUserId,
   ThreadId,
   TurnId,
   unknownMember,
@@ -31,6 +34,17 @@ export const Event = Schema.Union([
       senderId: RecordId,
       text: RecordText,
       delivery: memberOrUnknown({ set: Delivery }),
+      /** Absent when this message has no recorded Slack origin. */
+      source: Schema.optionalKey(
+        wireStruct({
+          fields: {
+            channelId: SlackChannelId,
+            teamId: SlackTeamId,
+            messageTimestamp: Schema.NonEmptyString,
+            userId: SlackUserId,
+          },
+        }),
+      ),
     },
   }),
   // A silent item entered the mech's conversation without waking it.

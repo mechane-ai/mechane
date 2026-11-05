@@ -1,3 +1,4 @@
+import { Muted } from '@mechane-ai/elements';
 import { Select } from '@mechane-ai/elements/forms';
 import {
   AppShell,
@@ -11,7 +12,7 @@ import { colors, controls, radii, spacing, typography } from '@mechane-ai/elemen
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
 import * as stylex from '@stylexjs/stylex';
-import { BookOpen, Check, ChevronDown, FileText, Layers3, LogOut } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, FileText, LogOut } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const styles = stylex.create({
@@ -45,7 +46,6 @@ const styles = stylex.create({
     minWidth: 0,
     fontFamily: typography.fontFamily,
   },
-  brandIcon: { flexShrink: 0 },
 });
 
 type WorkspaceSwitcherProps = {
@@ -56,8 +56,16 @@ type WorkspaceSwitcherProps = {
 
 function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSwitcherProps): ReactNode {
   const selected = workspaces.find((workspace) => workspace.id === workspaceId);
-  const selectedLabel = selected === undefined ? 'Workspace' : selected.name;
-  const options = workspaces.map((workspace) => ({ value: workspace.id, label: workspace.name }));
+  const personal = workspaces[0];
+
+  const selectedLabel =
+    selected === undefined ? 'Workspace' : selected.id === personal?.id ? 'Personal' : selected.name;
+
+  const options = [...workspaces.slice(1), ...workspaces.slice(0, 1)].map((workspace) => ({
+    value: workspace.id,
+    label: workspace.id === personal?.id ? 'Personal' : workspace.name,
+    description: workspace.id === personal?.id ? workspace.name : 'Team workspace',
+  }));
 
   return (
     <Select.Root<string>
@@ -92,6 +100,7 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
               {options.map((option) => (
                 <Select.Item key={option.value} value={option.value}>
                   <Select.ItemText>{option.label}</Select.ItemText>
+                  <Muted>{option.description}</Muted>
                   <Select.ItemIndicator>
                     <Check size={16} aria-hidden />
                   </Select.ItemIndicator>
@@ -105,10 +114,9 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
   );
 }
 
-export function ConsoleBrand(): ReactNode {
+function ConsoleBrand(): ReactNode {
   return (
     <span {...stylex.props(styles.brand)}>
-      <Layers3 size={16} aria-hidden {...stylex.props(styles.brandIcon)} />
       <SidebarLabel>mechane</SidebarLabel>
     </span>
   );

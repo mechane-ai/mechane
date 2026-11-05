@@ -1,5 +1,5 @@
-import { EventPage, TurnReplyExcerpt, TurnStatus, UnansweredReason } from '@mechane/protocol';
-import { TurnId } from '@mechane/records';
+import { EventPage, TurnReplyExcerpt, TurnStatus, TurnToolCall, UnansweredReason } from '@mechane/protocol';
+import { RecordText, TurnId } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 import { RECORD_TIME_KEYS } from './mech.schemas.ts';
 
@@ -9,6 +9,7 @@ const TURN_RECORD_FIELDS = {
   inboxItemIds: Schema.Array(Schema.String),
   startedAt: Schema.DateTimeUtcFromMillis,
   definitionRevision: Schema.Int,
+  inputExcerpt: Schema.optionalKey(RecordText),
 } as const;
 
 /** A turn as the mech's object answers it, by its status: its unended fields are null. */
@@ -40,7 +41,14 @@ export type TurnReplyRecord = typeof TurnReplyRecord.Type;
 
 /** What a turn read found, which decodes each state of the turn into the wire's turn. */
 export const TurnAnswer = Schema.Union([
-  Schema.TaggedStruct('Found', { turn: TurnRecord, replyExcerpt: TurnReplyRecord }),
+  Schema.TaggedStruct('Found', {
+    turn: TurnRecord,
+    replyExcerpt: TurnReplyRecord,
+    /** Absent when the object version does not expose tool evidence. */
+    toolCalls: Schema.optionalKey(Schema.Array(TurnToolCall)),
+    /** Absent when the object version does not expose evidence notices. */
+    evidenceNotices: Schema.optionalKey(Schema.Array(RecordText)),
+  }),
   Schema.TaggedStruct('MechMissing', {}),
   Schema.TaggedStruct('TurnMissing', {}),
 ]);

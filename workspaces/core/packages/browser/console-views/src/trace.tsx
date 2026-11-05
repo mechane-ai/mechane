@@ -1,4 +1,4 @@
-import { CopyValue, Divider, Heading, Muted, Prose, Row, Stack, Subheading, TextButton } from '@mechane-ai/elements';
+import { CopyValue, Divider, Muted, Prose, Row, Stack, Subheading, TextButton } from '@mechane-ai/elements';
 import { Details, Inspector, Metric, MetricGrid } from '@mechane-ai/elements/collections';
 import { Trace as RequestTrace } from '@mechane-ai/elements/content';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
@@ -32,7 +32,7 @@ const styles = stylex.create({
   },
 });
 
-export type TraceTab = 'Overview' | 'Requests' | 'Events';
+export type TraceTab = 'Overview' | 'Requests' | 'Tools' | 'Events';
 
 type TraceProps = {
   readonly trace: Trace;
@@ -77,14 +77,15 @@ export function TurnTrace({
     <Stack>
       <Stack compact>
         <Row>
-          <Muted>Turn outcome</Muted>
+          <Muted>Execution</Muted>
           {turn !== undefined && (
             <CopyValue label="start time in UTC" value={preciseTimeLabel(turn.startedAt)}>
               {timeLabel(turn.startedAt)}
             </CopyValue>
           )}
         </Row>
-        <Heading>{trace.turn.status === 'running' ? 'Turn in progress' : outcomeLabel(trace.turn.status)}</Heading>
+        <Subheading>{trace.turn.status === 'running' ? 'Running' : outcomeLabel(trace.turn.status)}</Subheading>
+        {turn?.inputExcerpt !== undefined && turn.inputExcerpt.length > 0 && <Prose>{turn.inputExcerpt}</Prose>}
         <MetricGrid>
           {finished !== undefined && <Metric label="elapsed" value={durationLabel(finished - start)} />}
           <Metric label={count === 1 ? 'model request' : 'model requests'} value={String(count)} />
@@ -92,9 +93,10 @@ export function TurnTrace({
         </MetricGrid>
       </Stack>
       <Tabs.Root value={tab} onValueChange={onTab}>
-        <Tabs.List aria-label="Turn details">
+        <Tabs.List aria-label="Run details">
           <Tabs.Tab value="Overview">Overview</Tabs.Tab>
           <Tabs.Tab value="Requests">Requests</Tabs.Tab>
+          <Tabs.Tab value="Tools">Tools</Tabs.Tab>
           <Tabs.Tab value="Events">Events</Tabs.Tab>
         </Tabs.List>
         <Tabs.Panel value="Overview">
@@ -140,6 +142,36 @@ export function TurnTrace({
             <Muted>
               Bars measure reservation to settlement. A hollow point marks an open reservation. A diamond marks a
               refusal before a model call.
+            </Muted>
+          </Stack>
+        </Tabs.Panel>
+        <Tabs.Panel value="Tools">
+          <Stack compact>
+            {(trace.evidenceNotices ?? []).map((message) => (
+              <Notice key={message}>{message}</Notice>
+            ))}
+            {(trace.toolCalls ?? []).length === 0 ? (
+              <EmptyState title="No tool steps recorded">
+                This execution has no retained tool calls in the inspected transcript. Model requests and original
+                messages are available in the other views.
+              </EmptyState>
+            ) : (
+              <RequestTrace.Root label="Recorded tool steps">
+                {trace.toolCalls?.map((call) => (
+                  <RequestTrace.Item
+                    key={call.id}
+                    id={call.id}
+                    label={call.name}
+                    description={Option.isSome(call.endedAt) ? timeLabel(call.endedAt.value) : 'No committed result'}
+                    status={call.status === 'completed' ? 'complete' : call.status === 'failed' ? 'failed' : 'unknown'}
+                    statusLabel={call.status}
+                  />
+                ))}
+              </RequestTrace.Root>
+            )}
+            <Muted>
+              Tool names, outcomes, and recorded times are shown. Raw arguments and outputs are kept out of the console
+              because they can contain credentials.
             </Muted>
           </Stack>
         </Tabs.Panel>

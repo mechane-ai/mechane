@@ -34,6 +34,7 @@ export const fieldStyles = stylex.create({
     '::placeholder': { color: colors.muted },
   },
   textarea: { minHeight: 144, resize: 'vertical', lineHeight: typography.multilineLineHeight },
+  compactTextarea: { minHeight: 80, maxHeight: '30dvh' },
 });
 
 export const inputSizeStyles = stylex.create({

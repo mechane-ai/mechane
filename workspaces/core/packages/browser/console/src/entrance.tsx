@@ -1,24 +1,30 @@
-import { TextLink } from '@mechane-ai/elements';
-import { EmptyState, Loading } from '@mechane-ai/elements/feedback';
-import { AppShell, DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
-import { ConsoleBrand } from '@mechane/console-views';
+import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
+import { Loading } from '@mechane-ai/elements/feedback';
+import { FocusPage } from '@mechane-ai/elements/layout';
 import type { ReactNode } from 'react';
 
 export function ConsoleEntrance({ children }: { readonly children?: ReactNode }): ReactNode {
   return (
-    <AppShell sidebar={<ConsoleBrand />}>
-      <PageToolbar title="Mechane Console" navigation={false} />
-      <DetailPage>{children ?? <Loading shape="detail" label="Opening console" />}</DetailPage>
-    </AppShell>
+    <FocusPage>
+      <strong>mechane</strong>
+      {children ?? <Loading shape="detail" label="Opening your workspace" />}
+    </FocusPage>
   );
 }
 
 export function Welcome(): ReactNode {
   return (
     <ConsoleEntrance>
-      <EmptyState title="Welcome to Mechane" action={<TextLink href="/auth/sign-in">Sign in →</TextLink>}>
-        Sign in to open your workspace and follow your mechs.
-      </EmptyState>
+      <Stack>
+        <Stack compact>
+          <Heading>Your agents, at work.</Heading>
+          <Muted>Pick up a conversation. Follow the work. See how it happened.</Muted>
+        </Stack>
+        <Button variant="solid" nativeButton={false} render={<a href="/auth/sign-in" />}>
+          Continue with GitHub →
+        </Button>
+        <Muted>Sign in to your Mechane workspace.</Muted>
+      </Stack>
     </ConsoleEntrance>
   );
 }

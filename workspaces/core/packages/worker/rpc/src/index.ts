@@ -82,6 +82,7 @@ export type {
   MechRpc,
   TurnFields,
   TurnReading,
+  FoundTurn,
   CancelDroneInput,
   CancelTurnInput,
   CreateMechInput,
