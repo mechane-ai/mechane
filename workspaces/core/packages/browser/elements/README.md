@@ -104,8 +104,10 @@ which view is active and when to unmount it; use this for a draft or reading pos
 `WorkbenchScroll` requires an accessible `label`; its `flush` mode leaves list insets to the table. Its
 `scrollRestorationId` identifies the actual scroll region for application-owned restoration.
 
-`DataTable` uses 48px rows by default and truncates text to preserve stable column and virtualization geometry. Set
-`rowSizing="content"` for records that need multiline cells; virtualization then measures those rows. Long content
+Each `DataTable` column declares a role: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles own
+alignment and minimum sizing; the primary column uses available space. Headers and placeholders follow the same
+geometry. The table uses 48px rows by default and truncates text to preserve stable column and virtualization geometry.
+Set `rowSizing="content"` for records that need multiline cells; virtualization then measures those rows. Long content
 belongs in a detail view or a deliberately content-sized row, not behind a clipped control. Use `DataTableText` for a
 primary string and optional secondary string inside one cell; both text elements own their ellipsis. Arbitrary nested
 layouts do not inherit text truncation. Give dates and numeric values sufficient column width or explicit content
@@ -125,8 +127,10 @@ acknowledgement, and draft retention.
 record and store named choices rather than catalog indexes. Identity palettes remain separate from status colors.
 
 `MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
-record summaries. `SettingsSection` keeps wide tables inside their scroll region; group sections with `Stack` and align
-form actions with `Row`.
+record summaries. `PageContent` owns report insets and section gaps; keep full-width tables outside it so their cell
+insets remain the only gutter. `SettingsSection` keeps wide tables inside their scroll region, and `SettingsRow` aligns
+labels and controls. `FormActions` owns submission rows and their internal spacing. The enclosing section owns the gap
+before and after the actions.
 
 The default theme is light, with system fonts and a compact spacing scale. Import `themeProps` from
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content

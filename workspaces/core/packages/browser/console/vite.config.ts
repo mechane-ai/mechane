@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: '/console/',
+  preview: { host: '127.0.0.1' },
   build: { license: { fileName: 'THIRD_PARTY_LICENSES.txt' } },
   plugins: [
     stylexPlugin,
