@@ -54,6 +54,16 @@ its header and cells; ordinary columns retain a readable text measure. Narrow sc
 squeezing words into a few characters or widening the page. Check header alignment, horizontal keyboard scrolling,
 and a single separator above the footer at a narrow viewport.
 
+The default row is 48px high, with vertically centered content and truncated text. Use `rowSizing="content"` when
+multiline records or controls cannot fit that height. Never crop an interactive control to preserve row geometry.
+The virtualizer's fixed estimate must equal the rendered row height; measure only content-sized rows. Keep row keys,
+keyboard navigation, and focused-row retention stable when scrolling. Inspect a long identifier beside a short one,
+then scroll beyond the initial viewport and return by keyboard. Placeholders use the same table geometry.
+
+Completed collection boundaries are silent by default. An explicit useful summary may remain, but do not show generic
+"End of results" messages or reserve an empty footer block after the last row. Preserve loading, retry, and load-more
+controls when more records may exist.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

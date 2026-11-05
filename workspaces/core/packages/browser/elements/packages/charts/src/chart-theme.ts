@@ -38,6 +38,7 @@ export const chartStyles = stylex.create({
   mark: { strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' },
   selected: { stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
   focus: {
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',

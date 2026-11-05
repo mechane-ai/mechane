@@ -56,6 +56,7 @@ export function CopyValue({
   style,
   disabled = false,
   onClick,
+  render,
   ...props
 }: CopyValueProps): ReactNode {
   const [feedback, setFeedback] = useState<CopyFeedback>({ value, status: 'idle' });
@@ -121,13 +122,19 @@ export function CopyValue({
   return (
     <BaseButton
       {...props}
+      render={render}
       {...events}
-      {...mergeStyles<BaseButton.State>({ className, style, styles: stylex.props(styles.button) })}
+      {...mergeStyles<BaseButton.State>({
+        className,
+        style,
+        styles: stylex.props(render === undefined && styles.button),
+      })}
       type="button"
       aria-label={`Copy ${label}`}
       aria-busy={status === 'pending' || props['aria-busy']}
       disabled={disabled || status === 'pending'}
-      title={typeof value === 'string' ? value : label}
+      focusableWhenDisabled={status === 'pending' || props.focusableWhenDisabled}
+      title={props.title ?? (typeof value === 'string' ? value : label)}
     >
       <span {...stylex.props(styles.value)}>
         {status === 'copied' ? 'Copied' : (children ?? (typeof value === 'string' ? value : label))}

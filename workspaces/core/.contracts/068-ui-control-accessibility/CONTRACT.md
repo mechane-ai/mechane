@@ -20,6 +20,9 @@ Make scrollable content regions keyboard-focusable and give them accessible name
 
 Support the keyboard actions that the platform's interaction pattern defines for each control, such as Enter, Space, arrow keys, Home, End, and Escape.
 Show a visible focus indicator during keyboard navigation.
+Style chart and scroll-region focus with `:focus-visible`, with no browser outline on pointer focus. Do not remove
+keyboard focusability to hide an unwanted pointer ring. Programmatically focused, noninteractive page titles may
+omit the outline. Verify a pointer click followed by Tab and arrow-key inspection; a screenshot alone cannot prove this.
 Keep interactive targets at or above the declared minimum size on coarse pointers.
 Change a selection only on activation by click, tap, or key press; hover or focus alone must not change a selection, start requests, or change destinations.
 

@@ -58,7 +58,7 @@ Every path below belongs to `@mechane-ai/elements`. There is one package, versio
 | `/navigation`          | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.              |
 | `/navigation/commands` | Command palette and scoped application-owned shortcuts.                           |
 | `/layout`              | Application shell, sidebar, toolbars, compound record pages, and resizable panes. |
-| `/collections`         | Tables, inspectors, collection controls, metrics, and timestamps.                 |
+| `/collections`         | Tables, inspectors, collection controls, timelines, metrics, and timestamps.      |
 | `/content`             | Trace, JSON, recorded logs, and stack traces.                                     |
 | `/content/link`        | Safe content links without a renderer dependency.                                 |
 | `/content/markdown`    | Completed and streaming Markdown, embedded headings, and inert previews.          |
@@ -89,6 +89,22 @@ input limits, and readable fallbacks.
 Use Base UI's `render` composition and named variants for appearance. Native attributes, events, and refs remain
 available. Typed `xstyle` inputs permit placement styles compiled by the application's StyleX setup. Applications own
 asynchronous work and pass its pending, success, or failure state to controls.
+
+Use `ToolbarAction` for page-header actions, including links composed with `render`. A clipboard action can compose
+`CopyValue render={<ToolbarAction />}`; the rendered control owns its appearance and CopyValue owns copy feedback. Use
+`Row` for aligned inline actions, `Stack` for related content, and `RecordPage.Content` for separated page sections.
+Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Put scrolling commands with the
+navigation and reserve the divided sidebar footer for persistent account information.
+
+`DataTable` uses 48px rows by default and truncates text to preserve stable column and virtualization geometry. Set
+`rowSizing="content"` for records that need multiline cells; virtualization then measures those rows. Long content
+belongs in a detail view or a deliberately content-sized row, not behind a clipped control. `CollectionEnd` renders
+nothing when complete unless an explicit summary is supplied. `Timeline.Root` and `Timeline.Item` compose readable
+activity with supplied titles, icons, timestamps, metadata, and body content, without interpreting domain events.
+
+`MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
+record summaries. `SettingsSection` keeps wide tables inside their scroll region; group sections with `Stack` and align
+form actions with `Row`.
 
 The default theme is light, with system fonts and a compact spacing scale. Import `themeProps` from
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content

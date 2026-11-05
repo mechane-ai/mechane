@@ -22,7 +22,7 @@ const styles = stylex.create({
   explanation: { display: 'flex', flexDirection: 'column', gap: spacing.xs, minWidth: 0, flex: '1 1 240px' },
   label: { fontWeight: 500 },
   description: { margin: 0, color: colors.muted, overflowWrap: 'anywhere' },
-  control: { minWidth: 0, flexShrink: 0 },
+  control: { minWidth: 0, maxWidth: '100%', flexShrink: 0 },
 });
 
 export type SettingsRowProps = {

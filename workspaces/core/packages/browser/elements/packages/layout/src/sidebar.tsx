@@ -38,6 +38,7 @@ const styles = stylex.create({
     'minHeight': 0,
     'overflowY': 'auto',
     'overscrollBehavior': 'contain',
+    'outlineStyle': 'none',
     'paddingBlock': frame.navigationInset,
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -47,7 +48,7 @@ const styles = stylex.create({
     },
   },
   footerRegion: { marginTop: 'auto', color: colors.muted },
-  navigation: { display: 'flex', flexDirection: 'column', gap: spacing.xxs, paddingInline: frame.navigationPadding },
+  navigation: { display: 'flex', flexDirection: 'column', paddingInline: frame.navigationPadding },
   collapsedNavigation: { paddingInline: { default: frame.navigationPadding, [frameConditions.sidebarCoarse]: 0 } },
   selected: { backgroundColor: colors.canvas },
   navigationCell: { display: 'flex', minWidth: 0, borderRadius: radii.sm },

@@ -81,3 +81,14 @@ export const LongValues: Story = {
     />
   ),
 };
+
+export const MetricColumns: Story = {
+  render: () => (
+    <MetricGrid layout="columns">
+      <Metric label="completed" value="472" />
+      <Metric label="failed" value="8" />
+      <Metric label="median duration" value="350 ms" />
+      <Metric label="reported total" value="Unknown" />
+    </MetricGrid>
+  ),
+};

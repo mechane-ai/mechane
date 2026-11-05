@@ -57,6 +57,7 @@ const styles = stylex.create({
   frame: { minWidth: 0 },
   plot: {
     'minWidth': 0,
+    'outlineStyle': 'none',
     'outlineOffset': 2,
     ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: controls.focusWidth },
   },

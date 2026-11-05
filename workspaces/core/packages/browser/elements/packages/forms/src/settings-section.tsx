@@ -5,7 +5,7 @@ import { Muted, Subheading } from '../../core/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
-  section: { display: 'grid', gap: spacing.md, minWidth: 0 },
+  section: { display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: spacing.md, minWidth: 0 },
   heading: { display: 'grid', gap: spacing.xs, minWidth: 0 },
 });
 

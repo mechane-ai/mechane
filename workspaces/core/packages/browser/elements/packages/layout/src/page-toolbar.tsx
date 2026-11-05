@@ -35,6 +35,7 @@ const styles = stylex.create({
     margin: 0,
     fontSize: 'inherit',
     fontWeight: 400,
+    outlineStyle: 'none',
   },
   label: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   actions: {

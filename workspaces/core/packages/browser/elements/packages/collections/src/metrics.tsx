@@ -5,6 +5,13 @@ import { colors, spacing, typography } from '../../foundations/src/tokens.stylex
 
 const styles = stylex.create({
   grid: { display: 'flex', flexWrap: 'wrap', rowGap: spacing.sm, columnGap: spacing.xl, margin: 0 },
+  columns: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
+    gap: spacing.xl,
+    minWidth: 0,
+    margin: 0,
+  },
   metric: {
     display: 'inline-flex',
     alignItems: 'baseline',
@@ -19,11 +26,14 @@ const styles = stylex.create({
   value: { margin: 0, color: colors.ink, fontWeight: 500, fontVariantNumeric: 'tabular-nums' },
 });
 
-type MetricGridProps = ComponentProps<'dl'>;
+type MetricLayout = 'inline' | 'columns';
+const layouts = { inline: styles.grid, columns: styles.columns } satisfies Record<MetricLayout, stylex.StyleXStyles>;
+
+type MetricGridProps = ComponentProps<'dl'> & { readonly layout?: MetricLayout };
 type MetricProps = ComponentProps<'div'> & { readonly label: string; readonly value: string };
 
-export function MetricGrid(props: MetricGridProps): ReactNode {
-  return <dl {...mergeProps(stylex.props(styles.grid), props)} />;
+export function MetricGrid({ layout = 'inline', ...props }: MetricGridProps): ReactNode {
+  return <dl {...mergeProps(stylex.props(layouts[layout]), props)} />;
 }
 
 export function Metric({ label, value, ...props }: MetricProps): ReactNode {

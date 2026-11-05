@@ -39,11 +39,12 @@ const styles = stylex.create({
     flexDirection: 'column',
     flexBasis: frame.recordContentWidth,
     flexGrow: 1,
-    gap: spacing.xl,
+    gap: spacing.xxl,
     minWidth: 0,
   },
   header: { display: 'grid', gap: spacing.md, minWidth: 0 },
   identity: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0 },
+  title: { minWidth: 0, outlineStyle: 'none' },
   icon: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
   aside: {
     display: 'flex',
@@ -141,7 +142,7 @@ function RecordPageHeader({ title, description, icon, titleRef }: RecordPageHead
             {icon}
           </span>
         )}
-        <Heading ref={titleRef} tabIndex={-1}>
+        <Heading ref={titleRef} tabIndex={-1} {...stylex.props(styles.title)}>
           {title}
         </Heading>
       </div>

@@ -8,11 +8,12 @@ import { useEndReached } from './use-end-reached.ts';
 const styles = stylex.create({
   viewport: { flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' },
   end: {
-    minHeight: controls.coarseTarget,
-    padding: spacing.lg,
-    color: colors.muted,
-    fontSize: typography.captionSize,
-    textAlign: 'center',
+    ':empty': { minHeight: 0, padding: 0 },
+    'minHeight': controls.coarseTarget,
+    'padding': spacing.lg,
+    'color': colors.muted,
+    'fontSize': typography.captionSize,
+    'textAlign': 'center',
   },
 });
 
@@ -25,7 +26,7 @@ export function CollectionEnd(props: CollectionEndProps): ReactNode {
     case 'loading':
       return <span role="status">{props.message ?? 'Loading…'}</span>;
     case 'complete':
-      return <Muted>{props.message ?? 'End of results'}</Muted>;
+      return props.message === undefined ? null : <Muted>{props.message}</Muted>;
     case 'ready':
       return <Button onClick={props.onLoadMore}>{props.message ?? 'Load more'}</Button>;
     case 'error':

@@ -72,6 +72,21 @@ Keep chart frames unboxed and use caption typography for inspection hints. A cal
 Let chart titles and action groups wrap independently when they cannot share a row.
 Review these compositions at desktop and narrow widths, including an open disclosure and an inspected chart value.
 
+Compose page-header actions with `ToolbarAction`, including navigation links through `render`. The toolbar owns their
+alignment and outer inset; a raw text link or clipboard value does not define header geometry. Use `Row` for centered
+inline actions and `RecordPage.Content` for section spacing. Structural gaps use the shared 4px spacing scale; thin
+borders and measured optical alignment are separate geometry. Detail titles and prose wrap within their containing
+column. Do not let a flex child's intrinsic text width widen the page.
+
+Keep navigation hit areas contiguous within a group. Scrolling commands belong in the navigation region. Reserve
+fixed footer regions for persistent content with an explicit separator and opaque surface; never float a command over
+the last scrolling item. Inspect the last navigation item and footer with a short viewport as well as the first screen.
+
+Responsive groups follow their container width. Metric columns use `MetricGrid layout="columns"`; a narrow embedded
+panel must not retain a desktop column count because the browser window is wide. Settings sections constrain grid tracks
+so wide tables scroll inside their own region instead of expanding the page. Multiple toolbar actions supply concise
+labels and icons so the compact toolbar can preserve navigation and accessible actions.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `textContrast` 4.5; `largeTextContrast` 3.
