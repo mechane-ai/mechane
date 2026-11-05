@@ -10,7 +10,7 @@ const styles = stylex.create({
     'lineHeight': typography.captionLineHeight,
     'color': colors.muted,
     'fontVariantNumeric': 'tabular-nums',
-    'whiteSpace': 'nowrap',
+    'overflowWrap': 'anywhere',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',

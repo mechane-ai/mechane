@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Archive, FileText, Folder, Plus, RefreshCw } from 'lucide-react';
+import { Archive, FileText, Folder, LogOut, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
@@ -34,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. Navigation groups NavigationLink destinations or NavigationItem actions. SidebarLabel hides supporting text on the collapsed rail; SidebarFooter groups a persistent identity. PageToolbar owns its continuous outer border, while ToolbarAction supplies resource actions. DetailPage centers a form or detail view; tables stay flush in the main area. The application supplies routing, selection, branding, account controls, and commands. Use the toolbar toggle to inspect collapsed labels, then use the phone example to inspect focus and drawer dismissal.',
+          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. Its focus mode hides navigation while retaining the expansion preference. Navigation groups NavigationLink destinations or NavigationItem actions; NavigationSection labels related groups. SidebarLabel hides supporting text on the collapsed rail. SidebarFooter groups a persistent identity; use layout="navigation" for a persistent Navigation group whose content sets the footer height. Keep other commands in the scrolling navigation. PageToolbar owns its outer border, optional leading control, and view choices. ToolbarAction supplies resource actions; give compact actions an icon and a concise accessible label. DetailPage centers a form or detail view; tables stay flush in the main area. The application supplies routing, selection, branding, account controls, and commands. Inspect the last navigation item above the footer in a short viewport, then use the phone example to inspect focus and drawer dismissal.',
       },
     },
   },
@@ -87,7 +87,6 @@ function CollectionShell(): ReactNode {
       <DetailPage>
         <Stack>
           <Heading>{view}</Heading>
-          <Muted>A shared frame keeps navigation, toolbar borders, and content spacing consistent.</Muted>
           <Panel>
             <Stack compact>
               <Muted>
@@ -114,5 +113,37 @@ export const ToolbarWithoutNavigation: Story = {
       title="An item with a long descriptive name and a bounded toolbar"
       actions={<ToolbarAction icon={<Plus size={16} aria-hidden />}>Create item</ToolbarAction>}
     />
+  ),
+};
+
+export const PersistentNavigation: Story = {
+  render: () => (
+    <AppShell
+      sidebarHeader={<SidebarLabel>Example workspace</SidebarLabel>}
+      sidebar={
+        <Navigation label="Collections">
+          {Array.from({ length: 18 }, (_, index) => `Collection ${index + 1}`).map((label) => (
+            <NavigationLink key={label} icon={<Folder size={16} />} href={`#${label.replaceAll(' ', '-')}`}>
+              {label}
+            </NavigationLink>
+          ))}
+        </Navigation>
+      }
+      footer={
+        <SidebarFooter layout="navigation">
+          <Navigation label="Account">
+            <NavigationLink icon={<Settings size={16} />} href="#account-settings">
+              Account settings
+            </NavigationLink>
+            <NavigationItem icon={<LogOut size={16} />}>Sign out</NavigationItem>
+          </Navigation>
+        </SidebarFooter>
+      }
+    >
+      <PageToolbar title="Collections" />
+      <DetailPage>
+        <Muted>The account controls remain below the scrolling collection list.</Muted>
+      </DetailPage>
+    </AppShell>
   ),
 };

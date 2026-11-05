@@ -19,6 +19,7 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
   },
   viewport: {
     'flex': 1,
@@ -28,6 +29,7 @@ const styles = stylex.create({
     'overflowAnchor': 'auto',
     'scrollbarGutter': 'stable',
     'borderRadius': radii.sm,
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -48,7 +50,14 @@ const styles = stylex.create({
     minWidth: 0,
   },
   item: { minWidth: 0, overflowWrap: 'anywhere' },
-  jump: { position: 'absolute', bottom: spacing.lg, left: '50%', transform: 'translateX(-50%)' },
+  jump: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: '50%',
+    transform: 'translateX(-50%)',
+    maxWidth: `calc(100% - ${spacing.xxl})`,
+    minWidth: 0,
+  },
 });
 
 export type ConversationRootProps = {

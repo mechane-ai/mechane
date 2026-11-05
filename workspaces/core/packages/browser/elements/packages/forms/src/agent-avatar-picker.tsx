@@ -13,12 +13,18 @@ const styles = stylex.create({
     flexDirection: 'column',
     gap: spacing.lg,
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     minWidth: 0,
     maxWidth: '100%',
     width: 352,
   },
   section: { display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0 },
-  label: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
+  label: {
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontWeight: typography.mediumWeight,
+  },
   choices: {
     display: 'grid',
     gridTemplateColumns: {
@@ -42,7 +48,8 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'cursor': 'pointer',
     ':is([data-checked])': { borderColor: colors.ink, backgroundColor: colors.canvas },
-    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':hover:not(:active, [data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',

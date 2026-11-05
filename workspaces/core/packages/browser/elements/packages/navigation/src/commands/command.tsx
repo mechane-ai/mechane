@@ -12,6 +12,7 @@ const styles = stylex.create({
   list: { padding: 0, margin: 0, maxHeight: 320, overflowY: 'auto', overscrollBehavior: 'contain' },
   item: {
     'display': 'flex',
+    'boxSizing': 'border-box',
     'alignItems': 'center',
     'gap': spacing.lg,
     'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
@@ -21,13 +22,15 @@ const styles = stylex.create({
     'color': colors.ink,
     'backgroundColor': colors.surface,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
     'cursor': 'pointer',
     ':is([data-highlighted])': { backgroundColor: colors.canvas },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':is([data-disabled])': { color: colors.muted, opacity: controls.disabledOpacity, cursor: 'default' },
   },
-  text: { flex: 1, minWidth: 0 },
+  text: { flex: 1, minWidth: 0, overflowWrap: 'anywhere' },
   description: {
     display: 'block',
     color: colors.muted,
@@ -141,8 +144,8 @@ export function CommandPalette({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       {trigger !== undefined && <Dialog.Trigger render={trigger} />}
       <Dialog.Portal>
-        <Dialog.Backdrop />
-        <Dialog.Popup>
+        <Dialog.Backdrop motion="none" />
+        <Dialog.Popup motion="none">
           <div {...stylex.props(styles.content)}>
             <Dialog.Title>{title}</Dialog.Title>
             <Autocomplete.Root

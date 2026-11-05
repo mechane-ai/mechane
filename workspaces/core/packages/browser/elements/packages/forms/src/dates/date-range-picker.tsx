@@ -21,6 +21,7 @@ const styles = stylex.create({
   },
   footer: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: spacing.lg,
@@ -29,6 +30,8 @@ const styles = stylex.create({
     borderTopStyle: 'solid',
     borderTopColor: colors.line,
     fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
     color: colors.muted,
   },
 });

@@ -1,5 +1,4 @@
 import * as stylex from '@stylexjs/stylex';
-import { ExternalLink } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContentLink } from '../../content/src/link.ts';
 import { Stack, TextButton } from '../../core/src/index.ts';
@@ -15,12 +14,18 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     color: colors.ink,
   },
-  heading: { margin: 0, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight, fontWeight: 500 },
+  heading: {
+    margin: 0,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.mediumWeight,
+    overflowWrap: 'anywhere',
+  },
   list: { display: 'flex', flexDirection: 'column', gap: spacing.md, margin: 0, padding: 0, listStyleType: 'none' },
   item: { display: 'flex', flexDirection: 'column', gap: spacing.xxs, minWidth: 0, overflowWrap: 'anywhere' },
-  link: { display: 'inline-flex', alignItems: 'baseline', gap: spacing.xs, flexWrap: 'wrap' },
   description: {
     margin: 0,
     color: colors.muted,
@@ -28,7 +33,6 @@ const styles = stylex.create({
     lineHeight: typography.captionLineHeight,
     overflowWrap: 'anywhere',
   },
-  icon: { flexShrink: 0, color: colors.muted },
   citation: { display: 'inline', verticalAlign: 'baseline', fontVariantNumeric: 'tabular-nums' },
 });
 
@@ -46,12 +50,12 @@ export function Sources({ sources, label = 'Sources' }: SourcesProps): ReactNode
   return (
     <section aria-label={label} {...stylex.props(styles.root)}>
       <h3 {...stylex.props(styles.heading)}>{label}</h3>
+      {sources.length === 0 && <p {...stylex.props(styles.description)}>No sources supplied.</p>}
       <ol {...stylex.props(styles.list)}>
         {sources.map((source) => (
           <li key={source.id} {...stylex.props(styles.item)}>
-            <span {...stylex.props(styles.link)}>
+            <span>
               <ContentLink href={source.href}>{source.title}</ContentLink>
-              <ExternalLink size={12} aria-hidden {...stylex.props(styles.icon)} />
             </span>
             {source.description !== undefined && <p {...stylex.props(styles.description)}>{source.description}</p>}
           </li>

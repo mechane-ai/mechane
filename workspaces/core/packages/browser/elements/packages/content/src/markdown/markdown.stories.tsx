@@ -60,3 +60,11 @@ export const NarrowTable: Story = {
       '| Check | Result | Evidence |\n| --- | --- | --- |\n| Restore | Passed | The recorded files match the archived snapshot. |\n| Runtime | Pending | The integration suite has not been run in this environment. |\n\n| Artifact | Location |\n| --- | --- |\n| Report | `/workspace/evaluation/artifacts/production/observations/archived-results/comparison-summary.json` |\n\nThe same path outside a table stays within the page: `/workspace/evaluation/artifacts/production/observations/archived-results/comparison-summary.json`.',
   },
 };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  args: {
+    children:
+      '# Measurements for the recorded evaluation-comparison request\n\nReview the [complete measurement-comparison record](https://example.com/reports/comparison) and keep missing values separate from zero.\n\n- A matched baseline and candidate\n  - A long identifier: `evaluation-comparison-record-with-a-long-unbroken-identifier`\n- A supplied observation\n\n> The available evidence covers one recorded run.\n\n| Record | Observation |\n| --- | --- |\n| evaluation-comparison-record-with-a-long-unbroken-identifier | A complete measurement was recorded. |\n\n```text\nA source line remains horizontally inspectable even when the prose around it wraps inside a narrow column.\n```',
+  },
+};

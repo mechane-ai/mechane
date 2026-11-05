@@ -15,6 +15,7 @@ const styles = stylex.create({
     backgroundColor: colors.ink,
     color: colors.inverse,
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
@@ -33,7 +34,7 @@ function TooltipRoot<Payload = unknown>(props: TooltipRootProps<Payload>): React
   return <BaseTooltip.Root<Payload> {...props} />;
 }
 
-function TooltipPositioner({ className, style, sideOffset = 6, ...props }: TooltipPositionerProps): ReactNode {
+function TooltipPositioner({ className, style, sideOffset = 4, ...props }: TooltipPositionerProps): ReactNode {
   return (
     <BaseTooltip.Positioner
       {...props}

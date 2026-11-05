@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -75,6 +75,7 @@
     "@visx/shape": "4.0.0",
     "lucide-react": "1.66.0",
     "react-resizable-panels": "4.18.0",
+    "sonner": "2.0.8",
     "streamdown": "2.7.1",
     "strip-ansi": "7.2.0"
   },

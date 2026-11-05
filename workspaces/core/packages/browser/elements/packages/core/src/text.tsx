@@ -3,10 +3,16 @@ import * as stylex from '@stylexjs/stylex';
 import { Circle, CircleCheck, CircleX, Clock } from 'lucide-react';
 import type { ComponentProps, ReactNode } from 'react';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
-  text: { margin: 0, fontFamily: typography.fontFamily, WebkitFontSmoothing: 'antialiased', overflowWrap: 'anywhere' },
+  text: {
+    margin: 0,
+    fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
+    WebkitFontSmoothing: 'antialiased',
+    overflowWrap: 'anywhere',
+  },
   body: { fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
   caption: { fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
   ink: { color: colors.ink },
@@ -20,7 +26,7 @@ const styles = stylex.create({
       default: typography.headingLineHeight,
       [conditions.compactText]: typography.compactHeadingLineHeight,
     },
-    fontWeight: 600,
+    fontWeight: typography.strongWeight,
     letterSpacing: typography.headingTracking,
     color: colors.ink,
     overflowWrap: 'anywhere',
@@ -31,8 +37,9 @@ const styles = stylex.create({
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.sectionSize,
     lineHeight: typography.sectionLineHeight,
-    fontWeight: 600,
+    fontWeight: typography.strongWeight,
     color: colors.ink,
+    overflowWrap: 'anywhere',
   },
   mono: {
     fontFamily: typography.monoFamily,
@@ -45,21 +52,23 @@ const styles = stylex.create({
     whiteSpace: 'pre-wrap',
     overflowWrap: 'anywhere',
     fontSize: typography.inputSize,
-    lineHeight: 1.7,
+    lineHeight: typography.proseLineHeight,
   },
   badge: {
     display: 'inline-flex',
+    flexShrink: 0,
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.xs,
     borderRadius: radii.sm,
     paddingBlock: spacing.xxs,
-    paddingInline: 6,
+    paddingInline: spacing.sm,
     fontFamily: typography.fontFamily,
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.captionSize,
     lineHeight: typography.bodyLineHeight,
-    fontWeight: 500,
-    whiteSpace: 'nowrap',
+    fontWeight: typography.mediumWeight,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
     width: 'fit-content',
   },
   neutral: { color: colors.muted, backgroundColor: colors.canvas },
@@ -69,15 +78,16 @@ const styles = stylex.create({
   status: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: 6,
+    gap: controls.gap,
     color: colors.ink,
     fontFamily: typography.fontFamily,
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
-    fontWeight: 400,
-    whiteSpace: 'nowrap',
+    fontWeight: typography.regularWeight,
+    maxWidth: '100%',
   },
+  label: { minWidth: 0, overflowWrap: 'anywhere' },
   statusIcon: { flexShrink: 0 },
   neutralIcon: { color: colors.muted },
   positiveIcon: { color: colors.accent },
@@ -158,8 +168,8 @@ export function Prose(props: ProseProps): ReactNode {
 export function Badge({ children, tone = 'neutral', ...props }: BadgeProps): ReactNode {
   return (
     <span {...mergeProps(stylex.props(styles.badge, badgeTones[tone]), props)}>
-      <Circle size={5} fill="currentColor" aria-hidden />
-      {children}
+      <Circle size={5} fill="currentColor" aria-hidden {...stylex.props(styles.statusIcon)} />
+      <span {...stylex.props(styles.label)}>{children}</span>
     </span>
   );
 }
@@ -170,7 +180,7 @@ export function Status({ children, tone = 'neutral', ...props }: StatusProps): R
   return (
     <span {...mergeProps(stylex.props(styles.status), props)}>
       <Icon size={14} aria-hidden {...stylex.props(styles.statusIcon, statusTones[tone])} />
-      {children}
+      <span {...stylex.props(styles.label)}>{children}</span>
     </span>
   );
 }

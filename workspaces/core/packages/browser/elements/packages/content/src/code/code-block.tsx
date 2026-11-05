@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { CopyValue } from '../../../core/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { viewerStyles } from '../viewer-styles.ts';
 import { useHighlightedCode } from './use-highlighted-code.ts';
 
 export type CodeAnnotation = { readonly line: number; readonly content: ReactNode };
@@ -22,31 +23,7 @@ export type CodeBlockProps = {
 };
 
 const styles = stylex.create({
-  root: {
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    marginBlock: spacing.sm,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingBlock: spacing.sm,
-    paddingInline: spacing.md,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.captionSize,
-    lineHeight: typography.bodyLineHeight,
-    color: colors.muted,
-    borderBlockEndWidth: 1,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndColor: colors.line,
-  },
-  viewport: (maxHeight: number) => ({ overflow: 'auto', maxHeight }),
+  viewport: (maxHeight: number) => ({ overflow: 'auto', maxHeight, containerType: 'inline-size' }),
   code: {
     margin: 0,
     paddingBlock: spacing.sm,
@@ -65,29 +42,27 @@ const styles = stylex.create({
     width: '4ch',
     paddingInline: spacing.sm,
     textAlign: 'end',
-    color: colors.faint,
+    color: colors.muted,
     userSelect: 'none',
   },
   source: { display: 'block', flex: '1 1 auto', paddingInline: spacing.md, minWidth: 0 },
   selected: { backgroundColor: colors.accentSoft },
   token: (color: string) => ({ color }),
   italic: { fontStyle: 'italic' },
-  bold: { fontWeight: 600 },
-  note: {
-    paddingBlock: spacing.sm,
-    paddingInline: spacing.md,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.captionSize,
-    lineHeight: typography.bodyLineHeight,
-    color: colors.muted,
-  },
+  bold: { fontWeight: typography.strongWeight },
   annotation: {
     display: 'block',
+    boxSizing: 'border-box',
+    position: 'sticky',
+    insetInlineStart: 0,
+    width: '100cqi',
     padding: spacing.md,
     backgroundColor: colors.canvas,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
     whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
   },
 });
 
@@ -124,9 +99,9 @@ export function CodeBlock({
   const label = filename ?? language;
 
   return (
-    <section aria-label={filename ?? 'Code'} {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.header)}>
-        <span>
+    <section aria-label={filename ?? 'Code'} {...stylex.props(viewerStyles.root)}>
+      <div {...stylex.props(viewerStyles.header)}>
+        <span {...stylex.props(viewerStyles.label)}>
           {label}
           {streaming && ' · streaming'}
         </span>
@@ -134,7 +109,12 @@ export function CodeBlock({
           Copy
         </CopyValue>
       </div>
-      <div role="region" aria-label={`${label} source`} tabIndex={0} {...stylex.props(styles.viewport(maxHeight))}>
+      <div
+        role="region"
+        aria-label={`${label} source`}
+        tabIndex={0}
+        {...stylex.props(viewerStyles.scrollRegion, styles.viewport(maxHeight))}
+      >
         <pre {...stylex.props(styles.code, wrap && styles.wrapped)}>
           <code {...stylex.props(styles.sourceText)}>
             {lines.map(({ text, line }) => {
@@ -170,16 +150,16 @@ export function CodeBlock({
         </pre>
       </div>
       {previewLines.length > lines.length && (
-        <div {...stylex.props(styles.note)}>Additional lines omitted. Copy includes the complete source.</div>
+        <div {...stylex.props(viewerStyles.note)}>Additional lines omitted. Copy includes the complete source.</div>
       )}
       {code.length > MAX_PREVIEW_CHARACTERS && (
-        <div {...stylex.props(styles.note)}>
+        <div {...stylex.props(viewerStyles.note)}>
           Preview limited to the first 200,000 characters. Copy includes the complete source.
         </div>
       )}
-      {code.length === 0 && <div {...stylex.props(styles.note)}>No source text.</div>}
+      {code.length === 0 && <div {...stylex.props(viewerStyles.note)}>No source text.</div>}
       {result !== undefined && result.hasFailed && (
-        <div {...stylex.props(styles.note)}>Syntax highlighting unavailable. The source is shown unchanged.</div>
+        <div {...stylex.props(viewerStyles.note)}>Syntax highlighting unavailable. The source is shown unchanged.</div>
       )}
     </section>
   );

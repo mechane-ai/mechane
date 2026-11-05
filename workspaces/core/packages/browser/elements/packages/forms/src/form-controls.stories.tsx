@@ -107,6 +107,20 @@ function Settings(): ReactNode {
 
 export const Recommended: Story = { render: () => <Settings /> };
 
+export const InvalidInputGroup: Story = {
+  render: () => (
+    <Field.Root invalid>
+      <Field.Label>Endpoint</Field.Label>
+      <InputGroup.Root>
+        <InputGroup.Addon>https://</InputGroup.Addon>
+        <InputGroup.Input defaultValue="" required />
+        <InputGroup.Addon>/api</InputGroup.Addon>
+      </InputGroup.Root>
+      <Field.Error match>Choose a host before saving this endpoint.</Field.Error>
+    </Field.Root>
+  ),
+};
+
 export const RangeAndDisabled: Story = {
   render: () => (
     <Stack>

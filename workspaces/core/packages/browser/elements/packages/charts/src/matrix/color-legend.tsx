@@ -13,15 +13,20 @@ const styles = stylex.create({
   root: {
     display: 'grid',
     gap: spacing.xs,
+    margin: 0,
+    minWidth: 0,
     maxWidth: 280,
     color: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
   },
   scale: { display: 'flex', height: 8, borderWidth: 1, borderStyle: 'solid', borderColor: colors.line },
   sample: (color: string) => ({ flex: 1, backgroundColor: color }),
   labels: { display: 'flex', justifyContent: 'space-between', gap: spacing.md, fontVariantNumeric: 'tabular-nums' },
+  bound: { minWidth: 0 },
+  endBound: { textAlign: 'end' },
 });
 
 const SAMPLE_COUNT = 20;
@@ -54,8 +59,8 @@ export function ColorLegend({ label, domain, palette, formatValue }: ColorLegend
         ))}
       </div>
       <div aria-hidden {...stylex.props(styles.labels)}>
-        <span>{formatValue(domain[0])}</span>
-        <span>{formatValue(domain[1])}</span>
+        <span {...stylex.props(styles.bound)}>{formatValue(domain[0])}</span>
+        <span {...stylex.props(styles.bound, styles.endBound)}>{formatValue(domain[1])}</span>
       </div>
     </div>
   );

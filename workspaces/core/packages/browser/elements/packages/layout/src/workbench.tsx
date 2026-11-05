@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
-import { frame } from './frame.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { frame, frameConditions } from './frame.stylex.ts';
 
 const styles = stylex.create({
   root: {
@@ -10,8 +10,18 @@ const styles = stylex.create({
     height: `calc(100dvh - ${frame.toolbarHeight})`,
     minWidth: 0,
     minHeight: 0,
+    containerType: 'inline-size',
+    containerName: 'workbench',
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
+    WebkitFontSmoothing: 'antialiased',
   },
   header: {
+    minWidth: 0,
+    flexShrink: 0,
     paddingBlock: spacing.lg,
     paddingInline: spacing.xl,
     borderBottomWidth: 1,
@@ -20,7 +30,21 @@ const styles = stylex.create({
   },
   body: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0, overflow: 'clip' },
   main: { position: 'relative', display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 },
-  scroll: { overflowY: 'auto', flex: 1, minWidth: 0, minHeight: 0, padding: spacing.xl },
+  scroll: {
+    'overflowY': 'auto',
+    'overscrollBehaviorY': 'contain',
+    'flex': 1,
+    'minWidth': 0,
+    'minHeight': 0,
+    'padding': spacing.xl,
+    'outlineStyle': 'none',
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: -2,
+    },
+  },
   flush: { padding: 0 },
   footer: {
     flexShrink: 0,
@@ -32,16 +56,17 @@ const styles = stylex.create({
   },
   aside: {
     boxSizing: 'border-box',
-    width: { 'default': '440px', '@media (max-width:1100px)': '100%' },
+    width: { default: '440px', [frameConditions.workbenchCompact]: '100%' },
+    minWidth: 0,
     flexShrink: 0,
     overflowY: 'auto',
     padding: spacing.lg,
     backgroundColor: colors.surface,
-    borderLeftWidth: 1,
+    borderLeftWidth: { default: 1, [frameConditions.workbenchCompact]: 0 },
     borderLeftStyle: 'solid',
     borderLeftColor: colors.line,
   },
-  obscured: { display: { 'default': 'flex', '@media (max-width:1100px)': 'none' } },
+  obscured: { display: { default: 'flex', [frameConditions.workbenchCompact]: 'none' } },
 });
 
 export function Workbench({

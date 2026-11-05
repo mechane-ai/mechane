@@ -11,15 +11,27 @@ const styles = stylex.create({
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
+    minWidth: 0,
     gap: spacing.sm,
     paddingInline: spacing.lg,
     paddingBlock: spacing.sm,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
   },
-  actions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, marginInlineStart: 'auto' },
-  filters: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm },
+  actions: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    minWidth: 0,
+    marginInlineStart: 'auto',
+  },
+  filters: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
   filter: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -36,7 +48,10 @@ const styles = stylex.create({
     color: colors.ink,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
   },
+  filterLabel: { minWidth: 0, overflowWrap: 'anywhere' },
+  remove: { flexShrink: 0 },
   choices: { display: 'grid', gap: spacing.md, minWidth: 180 },
   choice: {
     display: 'flex',
@@ -45,6 +60,9 @@ const styles = stylex.create({
     color: colors.ink,
     fontSize: typography.bodySize,
     fontFamily: typography.fontFamily,
+    lineHeight: typography.bodyLineHeight,
+    minWidth: 0,
+    overflowWrap: 'anywhere',
   },
   pagination: {
     display: 'flex',
@@ -52,6 +70,7 @@ const styles = stylex.create({
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: spacing.lg,
+    minWidth: 0,
   },
 });
 
@@ -65,7 +84,7 @@ export function CollectionToolbar({ label, children, actions }: CollectionToolba
   return (
     <div role="group" aria-label={label} {...stylex.props(styles.toolbar)}>
       {children}
-      {actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>}
+      {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );
 }
@@ -83,8 +102,13 @@ export function FilterChips({ filters, onRemove, label = 'Applied filters' }: Fi
     <div role="group" aria-label={label} {...stylex.props(styles.filters)}>
       {filters.map((filter) => (
         <span key={filter.id} {...stylex.props(styles.filter)}>
-          {filter.label}
-          <IconButton aria-label={`Remove ${filter.label}`} variant="ghost" onClick={() => onRemove(filter.id)}>
+          <span {...stylex.props(styles.filterLabel)}>{filter.label}</span>
+          <IconButton
+            aria-label={`Remove ${filter.label}`}
+            variant="ghost"
+            onClick={() => onRemove(filter.id)}
+            xstyle={styles.remove}
+          >
             <X size={14} aria-hidden="true" />
           </IconButton>
         </span>

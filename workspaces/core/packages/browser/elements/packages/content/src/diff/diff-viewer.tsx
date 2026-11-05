@@ -2,9 +2,10 @@ import type { FileDiffMetadata } from '@pierre/diffs';
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Collapsible, CopyValue } from '../../../core/src/index.ts';
-import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { Collapsible, CopyValue, TextButton } from '../../../core/src/index.ts';
+import { spacing } from '../../../foundations/src/tokens.stylex.ts';
 import { CodeBlock } from '../code/code-block.tsx';
+import { viewerStyles } from '../viewer-styles.ts';
 import type { DiffSource, DiffViewerProps } from './diff-source.ts';
 import type { PierreDiff } from './pierre-diff.tsx';
 
@@ -19,35 +20,8 @@ type DiffResult =
 const MAX_DIFF_CHARACTERS = 500_000;
 
 const styles = stylex.create({
-  root: {
-    minWidth: 0,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingBlock: spacing.sm,
-    paddingInline: spacing.md,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
-    borderBlockEndWidth: 1,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndColor: colors.line,
-  },
-  note: {
-    padding: spacing.md,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.captionSize,
-    lineHeight: typography.bodyLineHeight,
-    color: colors.muted,
-  },
+  sources: { display: 'flex', flexDirection: 'column', gap: spacing.md, minWidth: 0 },
+  preview: { padding: spacing.md },
   disclosure: { paddingInline: spacing.md },
 });
 
@@ -59,7 +33,7 @@ function SourcePreview({ source, maxHeight }: SourcePreviewProps): ReactNode {
   }
 
   return (
-    <>
+    <div {...stylex.props(styles.sources)}>
       {source.before !== null && (
         <CodeBlock
           code={source.before.code}
@@ -76,7 +50,7 @@ function SourcePreview({ source, maxHeight }: SourcePreviewProps): ReactNode {
           maxHeight={maxHeight}
         />
       )}
-    </>
+    </div>
   );
 }
 
@@ -97,6 +71,8 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
   const { label, layout = 'split', wrap = false, annotations = [], maxHeight = 480, patch, before, after } = props;
   const [source, setSource] = useState<DiffSource>(props);
   const [result, setResult] = useState<DiffResult>();
+  const [showUnchanged, setShowUnchanged] = useState(false);
+  const hasFullContext = patch === undefined && before !== null && after !== null;
 
   const hasSameBefore =
     before?.name === source.before?.name &&
@@ -152,14 +128,24 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
   const hasNoChanges = current?.files?.length === 0;
 
   return (
-    <section aria-label={label} {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.header)}>
-        <span>{label}</span>
-        {patch !== undefined && (
-          <CopyValue value={patch} label={label}>
-            Copy patch
-          </CopyValue>
-        )}
+    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
+      <div {...stylex.props(viewerStyles.header)}>
+        <span {...stylex.props(viewerStyles.label)}>{label}</span>
+        <div {...stylex.props(viewerStyles.actions)}>
+          {hasFullContext && (
+            <TextButton
+              disabled={current === undefined || current.Component === null}
+              onClick={() => setShowUnchanged(!showUnchanged)}
+            >
+              {showUnchanged ? 'Show changes only' : 'Show unchanged lines'}
+            </TextButton>
+          )}
+          {patch !== undefined && (
+            <CopyValue value={patch} label={label}>
+              Copy patch
+            </CopyValue>
+          )}
+        </div>
       </div>
       {current !== undefined && current.Component !== null ? (
         <>
@@ -168,6 +154,7 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
             label={label}
             layout={layout}
             wrap={wrap}
+            showUnchanged={hasFullContext && showUnchanged}
             annotations={annotations}
             maxHeight={maxHeight}
           />
@@ -176,16 +163,18 @@ export function DiffViewer(props: DiffViewerProps): ReactNode {
       ) : (
         <>
           {(isBounded || current !== undefined) && (
-            <div {...stylex.props(styles.note)}>
+            <div {...stylex.props(viewerStyles.note)}>
               {isBounded
                 ? 'This diff exceeds the rendering limit. Supplied source is shown below.'
                 : 'Diff rendering is unavailable. Supplied source is shown below.'}
             </div>
           )}
-          <SourcePreview source={source} maxHeight={maxHeight} />
+          <div {...stylex.props(styles.preview)}>
+            <SourcePreview source={source} maxHeight={maxHeight} />
+          </div>
         </>
       )}
-      {hasNoChanges && <div {...stylex.props(styles.note)}>No file changes in this patch.</div>}
+      {hasNoChanges && <div {...stylex.props(viewerStyles.note)}>No file changes in this patch.</div>}
     </section>
   );
 }

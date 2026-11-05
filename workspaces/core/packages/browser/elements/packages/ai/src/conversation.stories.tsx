@@ -183,7 +183,16 @@ export const MessageParts: Story = {
           </MessageAction>
         }
         attachments={
-          <MessageAttachment name="evaluation.csv" description="24 cases · CSV" href="/examples/evaluation.csv" />
+          <MessageAttachment
+            name="evaluation-comparison-record-with-complete-request-identifiers.csv"
+            description="24 cases · CSV"
+            href="/examples/evaluation.csv"
+            actions={
+              <CopyValue value="evaluation-comparison-record-with-complete-request-identifiers.csv" label="file name">
+                Copy name
+              </CopyValue>
+            }
+          />
         }
       >
         <Markdown>Use these cases for the comparison.</Markdown>
@@ -276,4 +285,9 @@ export const LongContent: Story = {
       </Conversation.Root>
     </div>
   ),
+};
+
+export const NarrowMessageParts: Story = {
+  ...MessageParts,
+  globals: { viewport: { value: 'narrow', isRotated: false } },
 };

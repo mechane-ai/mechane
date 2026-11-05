@@ -3,6 +3,7 @@ import { scaleBand, scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import { useId, useState } from 'react';
 import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
+import { Skeleton } from '../../../feedback/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-values.tsx';
 import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
@@ -18,16 +19,23 @@ const styles = stylex.create({
   inspection: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    columnGap: spacing.md,
+    rowGap: spacing.xs,
     minHeight: typography.captionLineHeight,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
+    overflowWrap: 'anywhere',
   },
   guide: { fill: colors.canvas },
+  placeholderHint: { position: 'relative', minWidth: 0 },
+  placeholderDecoration: { position: 'absolute', inset: 0 },
+  hidden: { visibility: 'hidden' },
 });
 
 const selectionKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
+const DEFAULT_HEIGHT = 200;
+const INSPECTION_HINT = 'Point, tap, or use the arrow keys to inspect values.';
 
 export type BarSeries = {
   readonly id: string;
@@ -51,6 +59,69 @@ export type BarChartProps = {
   readonly selection?: ChartSelection | undefined;
   readonly height?: number | undefined;
 };
+
+export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'height'> & {
+  readonly title?: string | undefined;
+  readonly series?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
+};
+
+type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description'> & {
+  readonly series: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>>;
+  readonly children: ReactNode;
+};
+
+function BarChartFrame({ title, description, series, children }: BarChartFrameProps): ReactNode {
+  const legend = series.map((item, index) => ({ id: item.id, label: item.label, tone: colorTone(item.tone, index) }));
+
+  return (
+    <ChartFrame title={title} description={description}>
+      <ChartLegend items={legend} />
+      {children}
+    </ChartFrame>
+  );
+}
+
+export function BarChartPlaceholder({
+  title = 'Loading chart',
+  description,
+  series = [],
+  height = DEFAULT_HEIGHT,
+}: BarChartPlaceholderProps): ReactNode {
+  const issue = barHeightError(height);
+
+  if (issue !== undefined) {
+    return <ChartInputError title={title} description={description} message={issue} />;
+  }
+
+  return (
+    <div aria-hidden inert>
+      <BarChartFrame title={title} description={description} series={series}>
+        <div {...stylex.props(chartStyles.plot, styles.plot)}>
+          <Skeleton height={height} />
+        </div>
+        <div {...stylex.props(styles.inspection)}>
+          <span {...stylex.props(styles.placeholderHint)}>
+            <span {...stylex.props(styles.hidden)}>{INSPECTION_HINT}</span>
+            <span {...stylex.props(styles.placeholderDecoration)}>
+              <Skeleton height="100%" />
+            </span>
+          </span>
+        </div>
+        <div {...stylex.props(styles.hidden)}>
+          <ChartDataDisclosure>{null}</ChartDataDisclosure>
+        </div>
+      </BarChartFrame>
+    </div>
+  );
+}
+
+function barHeightError(height: number): string | undefined {
+  if (!Number.isFinite(height) || height < 48) {
+    return 'Chart height must be at least 48 pixels.';
+  }
+
+  return undefined;
+}
 
 function validateBars({
   categories,
@@ -107,23 +178,21 @@ export function BarChart({
   mode = 'grouped',
   formatValue,
   selection,
-  height = 200,
+  height = DEFAULT_HEIGHT,
 }: BarChartProps): ReactNode {
-  const issue = validateBars({ categories, series, domain, mode });
+  const issue = validateBars({ categories, series, domain, mode }) ?? barHeightError(height);
   const { ref, width } = usePlotWidth();
   const inspectionId = useId();
   const [inspection, setInspection] = useState<{ readonly id: string; readonly source: 'pointer' | 'keyboard' }>();
   const activeIndex = categories.findIndex((category) => category.id === inspection?.id);
   const active = categories[activeIndex];
+  const selectedIndex = categories.findIndex((category) => category.id === selection?.selectedId);
+  const selected = categories[selectedIndex];
+  const readout = active ?? selected;
+  const readoutIndex = active === undefined ? selectedIndex : activeIndex;
 
-  if (issue !== undefined || !Number.isFinite(height) || height < 48) {
-    return (
-      <ChartInputError
-        title={title}
-        description={description}
-        message={issue ?? 'Chart height must be at least 48 pixels.'}
-      />
-    );
+  if (issue !== undefined) {
+    return <ChartInputError title={title} description={description} message={issue} />;
   }
 
   const bottom = height - 28;
@@ -140,7 +209,6 @@ export function BarChart({
 
   const labelEvery = Math.max(1, Math.ceil((labelWidth + 16) / x.step()));
   const labelCharacters = Math.max(1, Math.floor((x.step() * labelEvery - 16) / 7));
-  const legend = series.map((item, index) => ({ id: item.id, label: item.label, tone: colorTone(item.tone, index) }));
 
   function inspectPointer(event: PointerEvent<SVGSVGElement>): void {
     const rectangle = event.currentTarget.getBoundingClientRect();
@@ -191,8 +259,7 @@ export function BarChart({
   }
 
   return (
-    <ChartFrame title={title} description={description}>
-      <ChartLegend items={legend} />
+    <BarChartFrame title={title} description={description} series={series}>
       <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
         {categories.length === 0 || series.length === 0 ? (
           <p {...stylex.props(styles.empty)}>No categories</p>
@@ -301,20 +368,20 @@ export function BarChart({
       {categories.length > 0 && series.length > 0 && (
         <div
           id={inspectionId}
-          aria-live={inspection?.source === 'keyboard' ? 'polite' : 'off'}
+          aria-live={inspection?.source === 'pointer' ? 'off' : 'polite'}
           {...stylex.props(styles.inspection)}
         >
-          {active === undefined ? (
-            <span {...stylex.props(styles.empty)}>Point, tap, or use the arrow keys to inspect values.</span>
+          {readout === undefined ? (
+            <span {...stylex.props(styles.empty)}>{INSPECTION_HINT}</span>
           ) : (
             <>
-              <span>{active.label}</span>
+              <span>{readout.label}</span>
               {series.map((item) => (
                 <span key={item.id}>
                   {item.label}:{' '}
-                  {item.values[activeIndex] === null || item.values[activeIndex] === undefined
+                  {item.values[readoutIndex] === null || item.values[readoutIndex] === undefined
                     ? 'Unavailable'
-                    : formatValue(item.values[activeIndex])}
+                    : formatValue(item.values[readoutIndex])}
                 </span>
               ))}
             </>
@@ -326,17 +393,26 @@ export function BarChart({
           items={categories.map((category, index) => ({
             id: category.id,
             label: category.label,
-            valueLabel: series
-              .map(
-                (item) =>
-                  `${item.label}: ${item.values[index] === null || item.values[index] === undefined ? 'Unavailable' : formatValue(item.values[index])}`,
-              )
-              .join(' · '),
+            valueLabel: barValueLabel(series, index, formatValue),
             tone: 'neutral',
           }))}
           selection={selection}
         />
       </ChartDataDisclosure>
-    </ChartFrame>
+    </BarChartFrame>
   );
+}
+
+function barValueLabel(
+  series: ReadonlyArray<BarSeries>,
+  index: number,
+  formatValue: (value: number) => string,
+): string {
+  return series
+    .map((item) => {
+      const value = item.values[index];
+
+      return `${item.label}: ${value === null || value === undefined ? 'Unavailable' : formatValue(value)}`;
+    })
+    .join(' · ');
 }

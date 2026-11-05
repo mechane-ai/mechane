@@ -49,8 +49,17 @@ const styles = stylex.create({
       '::before': { backgroundColor: colors.ink, borderColor: colors.ink },
     },
     ':is([data-invalid])': { '::before': { borderColor: colors.danger } },
-    ':hover:not([data-disabled], [data-checked], [data-indeterminate])': {
+    ':hover:not(:active, [data-disabled], [data-checked], [data-indeterminate])': {
       '::before': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    },
+    ':active:not([data-disabled], [data-checked], [data-indeterminate])': {
+      '::before': { backgroundColor: colors.line },
+    },
+    ':hover:is([data-checked], [data-indeterminate]):not([data-disabled])': {
+      '::before': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } },
+    },
+    ':active:is([data-checked], [data-indeterminate]):not([data-disabled])': {
+      '::before': { backgroundColor: colors.inkHover },
     },
   },
   indicator: {
@@ -77,7 +86,17 @@ const styles = stylex.create({
   },
   radio: { 'borderRadius': '50%', '::before': { borderRadius: '50%' } },
   radioIndicator: { width: 6, height: 6, borderRadius: '50%', backgroundColor: colors.inverse },
-  group: { display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0, fontFamily: typography.fontFamily },
+  group: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
+    minWidth: 0,
+    fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    color: colors.ink,
+  },
   switch: {
     'position': 'relative',
     'display': 'inline-flex',
@@ -108,6 +127,7 @@ const styles = stylex.create({
     },
     ':is([data-checked])': { '::before': { backgroundColor: colors.ink } },
     ':hover:not([data-disabled])': { '::before': { backgroundColor: { [conditions.hoverPointer]: colors.inkHover } } },
+    ':active:not([data-disabled])': { '::before': { backgroundColor: colors.inkHover } },
   },
   thumb: {
     'position': 'relative',
@@ -121,6 +141,10 @@ const styles = stylex.create({
   toggles: {
     'display': 'inline-flex',
     'alignItems': 'center',
+    'flexWrap': 'wrap',
+    'minWidth': 0,
+    'maxWidth': '100%',
+    'boxSizing': 'border-box',
     'gap': spacing.xxs,
     'padding': spacing.xxs,
     'borderWidth': 1,
@@ -137,18 +161,22 @@ const styles = stylex.create({
     'gap': spacing.xs,
     'minWidth': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
     'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'maxWidth': '100%',
     'paddingBlock': 0,
     'paddingInline': controls.paddingInline,
     'borderWidth': 0,
     'borderRadius': radii.sm,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
+    'overflowWrap': 'anywhere',
     'color': colors.muted,
     'backgroundColor': 'transparent',
     'cursor': 'pointer',
     ':is([data-pressed])': { backgroundColor: colors.canvas, color: colors.ink },
-    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':hover:not(:active, [data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'not-allowed' },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,

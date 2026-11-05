@@ -4,7 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
-  grid: { display: 'flex', flexWrap: 'wrap', rowGap: spacing.sm, columnGap: spacing.xl, margin: 0 },
+  grid: { display: 'flex', flexWrap: 'wrap', rowGap: spacing.sm, columnGap: spacing.xl, minWidth: 0, margin: 0 },
   columns: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
@@ -15,6 +15,7 @@ const styles = stylex.create({
   metric: {
     display: 'inline-flex',
     alignItems: 'baseline',
+    flexWrap: 'wrap',
     gap: spacing.xs,
     minWidth: 0,
     fontFamily: typography.fontFamily,
@@ -22,8 +23,15 @@ const styles = stylex.create({
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
-  label: { color: colors.muted, order: 1 },
-  value: { margin: 0, color: colors.ink, fontWeight: 500, fontVariantNumeric: 'tabular-nums' },
+  label: { minWidth: 0, color: colors.muted, order: 1, overflowWrap: 'anywhere' },
+  value: {
+    minWidth: 0,
+    margin: 0,
+    color: colors.ink,
+    fontWeight: typography.mediumWeight,
+    fontVariantNumeric: 'tabular-nums',
+    overflowWrap: 'anywhere',
+  },
 });
 
 type MetricLayout = 'inline' | 'columns';

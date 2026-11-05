@@ -5,7 +5,7 @@ import type { PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
@@ -80,13 +80,14 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'cursor': 'pointer',
     'pointerEvents': 'auto',
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineColor: colors.focus,
       outlineStyle: 'solid',
       outlineOffset: -8,
     },
-    ':hover': {
+    ':hover:not(:focus-visible)': {
       outlineWidth: { [conditions.hoverPointer]: controls.focusWidth },
       outlineColor: { [conditions.hoverPointer]: colors.line },
       outlineStyle: { [conditions.hoverPointer]: 'solid' },
@@ -96,7 +97,7 @@ const styles = stylex.create({
   location: (left: number, top: number) => ({ left, top }),
   dot: (color: string) => ({ width: 8, height: 8, borderRadius: '50%', backgroundColor: color }),
   selected: { outlineWidth: controls.focusWidth, outlineColor: colors.ink, outlineStyle: 'solid', outlineOffset: 3 },
-  values: { fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: colors.muted },
+  values: { minWidth: 0, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere', color: colors.muted },
   rangeControls: {
     display: 'grid',
     gap: spacing.md,
@@ -108,10 +109,12 @@ const styles = stylex.create({
   legend: { color: colors.muted, fontSize: typography.captionSize, marginBlockEnd: spacing.sm },
   rangeTitle: {
     display: 'flex',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     gap: spacing.sm,
     color: colors.muted,
     fontSize: typography.captionSize,
+    overflowWrap: 'anywhere',
   },
   empty: { margin: 0, color: colors.muted },
 });
@@ -145,9 +148,22 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   });
 
   const scaleY = scaleLinear({ domain: [...yDomain], range: [PLOT_HEIGHT - BOTTOM_MARGIN, TOP_MARGIN] });
+  const selected = points.find((point) => point.id === selection?.selectedId);
 
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame
+      title={title}
+      description={description}
+      footer={
+        selection !== undefined && points.length > 0 ? (
+          <ChartReadout>
+            {selected === undefined
+              ? 'Select a point to inspect its label and coordinates.'
+              : `${selected.label}, ${xLabel}: ${formatX(selected.x)}, ${yLabel}: ${formatY(selected.y)}`}
+          </ChartReadout>
+        ) : undefined
+      }
+    >
       {points.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (

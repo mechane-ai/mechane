@@ -6,6 +6,7 @@ import type { Components } from 'streamdown';
 import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { CodeBlock } from '../code/code-block.tsx';
 import { ContentLink } from '../content-link.tsx';
+import { viewerStyles } from '../viewer-styles.ts';
 import { markdownOptions } from './markdown-options.ts';
 
 const styles = stylex.create({
@@ -15,15 +16,23 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
+    lineHeight: typography.proseLineHeight,
+    fontWeight: typography.regularWeight,
     overflowWrap: 'anywhere',
   },
-  paragraph: { marginBlock: spacing.sm },
-  heading: { marginBlockStart: spacing.lg, marginBlockEnd: spacing.sm, fontWeight: 600 },
+  block: {
+    marginBlockStart: { 'default': spacing.sm, ':first-child': 0 },
+    marginBlockEnd: { 'default': spacing.sm, ':last-child': 0 },
+  },
+  heading: {
+    marginBlockStart: { 'default': spacing.lg, ':first-child': 0 },
+    marginBlockEnd: { 'default': spacing.sm, ':last-child': 0 },
+    fontWeight: typography.strongWeight,
+  },
   title: { fontSize: typography.sectionSize, lineHeight: typography.sectionLineHeight },
   section: { fontSize: typography.inputSize, lineHeight: typography.bodyLineHeight },
   minor: { fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
-  list: { marginBlock: spacing.sm, paddingInlineStart: spacing.xl },
+  list: { paddingInlineStart: spacing.xl },
   listItem: { paddingInlineStart: spacing.xxs, marginBlock: spacing.xxs },
   inlineCode: {
     fontFamily: typography.monoFamily,
@@ -35,7 +44,6 @@ const styles = stylex.create({
     whiteSpace: 'break-spaces',
   },
   quote: {
-    marginBlock: spacing.md,
     marginInline: 0,
     paddingInlineStart: spacing.md,
     borderInlineStartWidth: 2,
@@ -47,8 +55,8 @@ const styles = stylex.create({
     minWidth: 0,
     maxWidth: '100%',
     overflowX: 'auto',
-    marginBlock: spacing.md,
     borderWidth: 1,
+    borderBlockEndWidth: 0,
     borderStyle: 'solid',
     borderColor: colors.line,
   },
@@ -58,6 +66,7 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     textAlign: 'start',
     overflowWrap: 'normal',
+    lineHeight: typography.bodyLineHeight,
   },
   cell: {
     paddingBlock: spacing.sm,
@@ -68,7 +77,7 @@ const styles = stylex.create({
     verticalAlign: 'top',
     textAlign: 'start',
   },
-  header: { color: colors.muted, fontWeight: 500, backgroundColor: colors.canvas },
+  header: { color: colors.muted, fontWeight: typography.mediumWeight, backgroundColor: colors.canvas },
   rule: {
     marginBlock: spacing.lg,
     borderWidth: 0,
@@ -77,7 +86,7 @@ const styles = stylex.create({
     borderBlockStartColor: colors.line,
   },
   checkbox: { accentColor: colors.ink, marginInlineEnd: spacing.xs },
-  strong: { fontWeight: 600 },
+  strong: { fontWeight: typography.strongWeight },
   emphasis: { fontStyle: 'italic' },
   deleted: { textDecorationLine: 'line-through' },
 });
@@ -113,7 +122,11 @@ function CodeFence({ children, className }: MarkdownCodeProps): ReactNode {
     return <code {...stylex.props(styles.inlineCode)}>{children}</code>;
   }
 
-  return <CodeBlock code={parts.join('')} language={language} streaming={isIncomplete} />;
+  return (
+    <div {...stylex.props(styles.block)}>
+      <CodeBlock code={parts.join('')} language={language} streaming={isIncomplete} />
+    </div>
+  );
 }
 
 function MarkdownHeading({ level, headingLevel, children, id }: MarkdownHeadingProps): ReactNode {
@@ -124,15 +137,15 @@ function MarkdownHeading({ level, headingLevel, children, id }: MarkdownHeadingP
 }
 
 const components: Components = {
-  p: ({ children }) => <p {...stylex.props(styles.paragraph)}>{children}</p>,
-  ul: ({ children }) => <ul {...stylex.props(styles.list)}>{children}</ul>,
+  p: ({ children }) => <p {...stylex.props(styles.block)}>{children}</p>,
+  ul: ({ children }) => <ul {...stylex.props(styles.block, styles.list)}>{children}</ul>,
   ol: ({ children, start }) => (
-    <ol start={start} {...stylex.props(styles.list)}>
+    <ol start={start} {...stylex.props(styles.block, styles.list)}>
       {children}
     </ol>
   ),
   li: ({ children }) => <li {...stylex.props(styles.listItem)}>{children}</li>,
-  blockquote: ({ children }) => <blockquote {...stylex.props(styles.quote)}>{children}</blockquote>,
+  blockquote: ({ children }) => <blockquote {...stylex.props(styles.block, styles.quote)}>{children}</blockquote>,
   code: ({ children, className }) => <CodeFence className={className}>{children}</CodeFence>,
   inlineCode: ({ children }) => <code {...stylex.props(styles.inlineCode)}>{children}</code>,
   a: ({ href, children, title }) => (
@@ -146,7 +159,12 @@ const components: Components = {
     </ContentLink>
   ),
   table: ({ children }) => (
-    <div role="region" aria-label="Markdown table" tabIndex={0} {...stylex.props(styles.tableRegion)}>
+    <div
+      role="region"
+      aria-label="Markdown table"
+      tabIndex={0}
+      {...stylex.props(viewerStyles.scrollRegion, styles.block, styles.tableRegion)}
+    >
       <table {...stylex.props(styles.table)}>{children}</table>
     </div>
   ),

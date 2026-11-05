@@ -9,6 +9,7 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
+    minWidth: 0,
     gap: spacing.md,
     paddingBlock: spacing.md,
     paddingInline: spacing.lg,
@@ -21,7 +22,8 @@ const styles = stylex.create({
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
-  actions: { display: 'flex', alignItems: 'center', gap: spacing.sm },
+  content: { minWidth: 0, overflowWrap: 'anywhere' },
+  actions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
 });
 
 type ListFooterProps = ComponentProps<'div'> & { readonly actions?: ReactNode };
@@ -29,7 +31,7 @@ type ListFooterProps = ComponentProps<'div'> & { readonly actions?: ReactNode };
 export function ListFooter({ children, actions, ...props }: ListFooterProps): ReactNode {
   return (
     <div {...mergeProps(stylex.props(styles.footer), props)}>
-      <div>{children}</div>
+      <div {...stylex.props(styles.content)}>{children}</div>
       {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );

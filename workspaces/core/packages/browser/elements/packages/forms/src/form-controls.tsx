@@ -28,18 +28,20 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
-    fontWeight: 600,
+    fontWeight: typography.strongWeight,
     color: colors.ink,
+    overflowWrap: 'anywhere',
   },
   inputGroup: {
-    display: 'flex',
-    alignItems: 'stretch',
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    backgroundColor: colors.surface,
+    'display': 'flex',
+    'alignItems': 'stretch',
+    'minWidth': 0,
+    'borderWidth': 1,
+    'borderStyle': 'solid',
+    'borderColor': colors.line,
+    'borderRadius': radii.sm,
+    'backgroundColor': colors.surface,
+    ':has(input[aria-invalid="true"])': { borderColor: colors.danger },
   },
   embedded: { 'flex': 1, 'minWidth': 0, 'width': 0, 'borderWidth': 0, ':focus-visible': { outlineOffset: -2 } },
   addon: {
@@ -49,6 +51,7 @@ const styles = stylex.create({
     paddingInline: controls.paddingInline,
     color: colors.muted,
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
@@ -58,16 +61,22 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'width': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': {
+      default: `calc(${controls.mdHeight} - 2px)`,
+      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+    },
     'padding': 0,
     'borderWidth': 0,
     'borderRadius': radii.sm,
     'backgroundColor': 'transparent',
     'color': colors.ink,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
     'fontSize': typography.sectionSize,
+    'lineHeight': typography.sectionLineHeight,
     'cursor': 'pointer',
-    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':hover:not(:active, [data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'not-allowed' },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -83,6 +92,9 @@ const styles = stylex.create({
     'gap': spacing.sm,
     'minWidth': 0,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
     'color': colors.ink,
     ':is([data-disabled])': { opacity: controls.disabledOpacity },
   },
@@ -113,6 +125,7 @@ const styles = stylex.create({
   },
   thumb: {
     'display': 'block',
+    'boxSizing': 'border-box',
     'width': 16,
     'height': 16,
     'borderWidth': 1,
@@ -120,6 +133,8 @@ const styles = stylex.create({
     'borderColor': colors.ink,
     'borderRadius': radii.sm,
     'backgroundColor': colors.surface,
+    ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':is([data-dragging]):not([data-disabled])': { backgroundColor: colors.canvas },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -144,13 +159,17 @@ const styles = stylex.create({
     color: colors.muted,
   },
   file: {
-    'padding': 0,
-    'lineHeight': controls.mdHeight,
+    'paddingBlock': 0,
+    'paddingInline': 0,
+    'lineHeight': `calc(${controls.mdHeight} - 2px)`,
     '::file-selector-button': {
       marginInlineEnd: spacing.sm,
       paddingBlock: 0,
       paddingInline: controls.paddingInline,
-      minHeight: { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+      minHeight: {
+        default: `calc(${controls.mdHeight} - 2px)`,
+        [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+      },
       borderWidth: 0,
       borderInlineEndWidth: 1,
       borderStyle: 'solid',
@@ -158,10 +177,30 @@ const styles = stylex.create({
       backgroundColor: colors.canvas,
       color: colors.ink,
       fontFamily: typography.fontFamily,
+      fontWeight: typography.mediumWeight,
       fontSize: typography.bodySize,
       cursor: 'pointer',
     },
+    ':hover:not(:disabled)': {
+      '::file-selector-button': { backgroundColor: { [conditions.hoverPointer]: colors.line } },
+    },
+    ':active:not(:disabled)': { '::file-selector-button': { backgroundColor: colors.line } },
     ':disabled': { '::file-selector-button': { cursor: 'not-allowed', color: colors.muted } },
+  },
+});
+
+const embeddedSizeStyles = stylex.create({
+  sm: {
+    minHeight: {
+      default: `calc(${controls.smHeight} - 2px)`,
+      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+    },
+  },
+  md: {
+    minHeight: {
+      default: `calc(${controls.mdHeight} - 2px)`,
+      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+    },
   },
 });
 
@@ -237,7 +276,13 @@ function InputGroupInput({ className, style, xstyle, size = 'md', ...props }: In
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, inputSizeStyles[size], styles.embedded, xstyle),
+        styles: stylex.props(
+          fieldStyles.input,
+          inputSizeStyles[size],
+          styles.embedded,
+          embeddedSizeStyles[size],
+          xstyle,
+        ),
       })}
     />
   );
@@ -268,7 +313,7 @@ function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps)
       {...mergeStyles<BaseNumberField.Input.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, styles.embedded, styles.numberInput),
+        styles: stylex.props(fieldStyles.input, styles.embedded, embeddedSizeStyles.md, styles.numberInput),
       })}
     />
   );

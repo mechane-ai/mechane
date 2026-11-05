@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
@@ -55,9 +55,22 @@ export function Histogram({
   }
 
   const yScale = scaleLinear({ domain: [0, maximumCount], range: [distributionGeometry.height, 0] });
+  const selected = bins.find((bin) => bin.id === selection?.selectedId);
 
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame
+      title={title}
+      description={description}
+      footer={
+        selection !== undefined && bins.length > 0 ? (
+          <ChartReadout>
+            {selected === undefined
+              ? 'Select a bin in View data to inspect its count.'
+              : `${selected.label}, ${formatValue(selected.lowerBound)} – ${formatValue(selected.upperBound)}, ${countLabel}: ${selected.count === null ? 'Unavailable' : formatCount(selected.count)}`}
+          </ChartReadout>
+        ) : undefined
+      }
+    >
       {bins.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (
@@ -77,7 +90,7 @@ export function Histogram({
                 const left = xScale(bin.lowerBound);
                 const width = xScale(bin.upperBound) - left;
                 const gap = Math.min(2, width * 0.2);
-                const selected = selection?.selectedId === bin.id;
+                const isSelected = selection?.selectedId === bin.id;
 
                 if (bin.count === null) {
                   return (
@@ -102,7 +115,7 @@ export function Histogram({
                     width={width - gap}
                     height={distributionGeometry.height - top}
                     fill={chartToneColors[tone]}
-                    opacity={selection?.selectedId === undefined || selected ? 1 : 0.45}
+                    opacity={selection?.selectedId === undefined || isSelected ? 1 : 0.45}
                   />
                 );
               });

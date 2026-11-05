@@ -9,10 +9,16 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     color: colors.ink,
   },
   row: { display: 'flex', flexWrap: 'wrap', gap: spacing.md },
-  heading: { margin: 0, fontSize: typography.sectionSize, lineHeight: typography.sectionLineHeight },
+  heading: {
+    margin: 0,
+    fontSize: typography.sectionSize,
+    lineHeight: typography.sectionLineHeight,
+    fontWeight: typography.strongWeight,
+  },
   surface: {
     display: 'grid',
     gap: spacing.sm,

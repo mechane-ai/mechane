@@ -147,9 +147,14 @@ export const spacing = stylex.defineVars({
 export const typography = stylex.defineVars({
   fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif',
   monoFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+  regularWeight: '400',
+  mediumWeight: '500',
+  strongWeight: '600',
+  boldWeight: '700',
   bodySize: '13px',
   bodyLineHeight: '20px',
   multilineLineHeight: '1.6',
+  proseLineHeight: '1.7',
   captionSize: '12px',
   captionLineHeight: '18px',
   inputSize: '14px',
@@ -189,6 +194,8 @@ export const shadows = stylex.defineVars({ popup: '0 4px 16px #00000014' });
 export const darkShadows = stylex.defineConsts({ popup: '0 4px 16px #00000066' });
 
 export const layers = stylex.defineConsts({ backdrop: '20', dialog: '21', popup: '30', tooltip: '40', skipLink: '50' });
+
+export const tableGeometry = stylex.defineConsts({ rowHeight: 48, headerHeight: 36 });
 
 export const conditions = stylex.defineConsts({
   coarsePointer: '@media (pointer: coarse)',

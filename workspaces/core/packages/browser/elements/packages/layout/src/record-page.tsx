@@ -23,6 +23,8 @@ const styles = stylex.create({
     'alignItems': 'center',
     'gap': spacing.sm,
     'minHeight': controls.coarseTarget,
+    'minWidth': 0,
+    'maxWidth': '100%',
     'color': colors.ink,
     'textDecorationLine': 'none',
     ':hover': { textDecorationLine: { [conditions.hoverPointer]: 'underline' } },
@@ -33,6 +35,8 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
+  backIcon: { flexShrink: 0 },
+  backLabel: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   body: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: spacing.xxl, minWidth: 0 },
   content: {
     display: 'flex',
@@ -113,8 +117,8 @@ function RecordPageToolbar({
             onBack();
           }}
         >
-          <ArrowLeft size={16} aria-hidden />
-          {backLabel}
+          <ArrowLeft size={16} aria-hidden {...stylex.props(styles.backIcon)} />
+          <span {...stylex.props(styles.backLabel)}>{backLabel}</span>
         </a>
       }
     />

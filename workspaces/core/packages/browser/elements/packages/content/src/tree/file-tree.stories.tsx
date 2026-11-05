@@ -3,7 +3,14 @@ import { useState } from 'react';
 import { Button, Stack, Text } from '../../../core/src/index.ts';
 import { FileTree } from './file-tree.tsx';
 
-const paths = ['src/main.ts', 'src/config.ts', 'src/styles.css', 'docs/setup.md', 'README.md'];
+const paths = [
+  'src/main.ts',
+  'src/config.ts',
+  'src/styles.css',
+  'docs/setup.md',
+  'docs/evaluation/measurement-comparison-with-complete-request-identifiers.md',
+  'README.md',
+];
 
 const meta = {
   title: 'Content/File tree',
@@ -25,6 +32,11 @@ export const Workspace: Story = { render: () => <TreeExample /> };
 
 export const Empty: Story = {
   render: () => <FileTree label="Files" paths={[]} selectedPaths={[]} onSelectedPathsChange={() => undefined} />,
+};
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <TreeExample />,
 };
 
 function TreeExample() {

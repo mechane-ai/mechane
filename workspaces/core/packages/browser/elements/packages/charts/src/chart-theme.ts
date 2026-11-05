@@ -33,6 +33,7 @@ export const chartStyles = stylex.create({
     fill: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
+    fontWeight: typography.regularWeight,
     fontVariantNumeric: 'tabular-nums',
   },
   mark: { strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' },
@@ -43,7 +44,7 @@ export const chartStyles = stylex.create({
       outlineColor: colors.focus,
       outlineStyle: 'solid',
       outlineWidth: controls.focusWidth,
-      outlineOffset: 2,
+      outlineOffset: `calc(-1 * ${controls.focusWidth})`,
     },
   },
 });

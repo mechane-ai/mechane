@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Panel, Row, Stack, Text } from '../../../core/src/index.ts';
+import { AsyncRegion } from '../../../feedback/src/index.ts';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame, ChartLegend } from '../chart-frame.tsx';
-import { BarChart } from './bar-chart.tsx';
+import { BarChart, BarChartPlaceholder } from './bar-chart.tsx';
+import type { BarSeries } from './bar-chart.tsx';
 import { BreakdownBar } from './breakdown-bar.tsx';
 import { Sparkline } from './sparkline.tsx';
 import type { TimeSeries } from './time-series-data.ts';
@@ -13,12 +15,21 @@ import { AreaChart, LineChart, SmallMultiples } from './time-series.tsx';
 const meta = {
   title: 'Charts/Cartesian',
   component: LineChart,
-  subcomponents: { AreaChart, Sparkline, SmallMultiples, BarChart, BreakdownBar, ChartFrame, ChartLegend },
+  subcomponents: {
+    AreaChart,
+    Sparkline,
+    SmallMultiples,
+    BarChart,
+    BarChartPlaceholder,
+    BreakdownBar,
+    ChartFrame,
+    ChartLegend,
+  },
   parameters: {
     docs: {
       description: {
         component:
-          'Application-prepared observations and categories. Formatters own units and time zones. Missing observations remain gaps. LineChart, AreaChart, and SmallMultiples support pointer, touch, and arrow-key value inspection; Escape dismisses it. These full charts retain exact records under View data and preserve inspection when equivalent values replace their input arrays. Choose LineChart for trends, AreaChart for magnitude or explicit stacking, Sparkline for a passive inline trend with an application-written summary and explicit value domain, and SmallMultiples for aligned panels. BarChart compares categories with pointer, touch, and arrow-key inspection; optional axisLabel keeps ticks concise while full labels remain inspectable; BreakdownBar shows nonnegative parts of a whole. ChartFrame supplies a title, description, actions and footer for a custom plot. ChartLegend labels supplied tones. Full charts already own their frame and legend; do not wrap them in a second frame.',
+          'Application-prepared observations and categories. Formatters own units and time zones. Missing observations remain gaps. LineChart, AreaChart, and SmallMultiples support pointer, touch, and arrow-key value inspection; Escape dismisses it. These full charts retain exact records under View data and preserve inspection when equivalent values replace their input arrays. Choose LineChart for trends, AreaChart for magnitude or explicit stacking, Sparkline for a passive inline trend with an application-written summary and explicit value domain, and SmallMultiples for aligned panels. BarChart compares categories with pointer, touch, and arrow-key inspection; optional axisLabel keeps ticks concise while full labels remain inspectable. BarChartPlaceholder shares its frame, legend, plot height, idle inspection, and closed disclosure geometry. Pass the known title, description, series labels, and matching height through AsyncRegion; the placeholder is inert and supplies no data or loading announcement. Unknown titles use the explicit label Loading chart. BreakdownBar shows nonnegative parts of a whole. ChartFrame supplies a title, description, actions and footer for a custom plot. ChartLegend labels supplied tones. Full charts already own their frame and legend; do not wrap them in a second frame.',
       },
     },
   },
@@ -281,4 +292,150 @@ export const InvalidEvidence: Story = {
       <BreakdownBar title="Inconsistent total" items={allocation} total={1000} formatValue={formatTokens} />
     </Stack>
   ),
+};
+
+function NarrowInspection(): ReactNode {
+  const [selectedId, onSelect] = useState<string>('review');
+
+  return (
+    <Stack>
+      <LineChart
+        title="Latency across the complete validation and review sequence"
+        description="Synthetic observations with full timestamps and long series labels."
+        series={[
+          { ...baseline, label: 'Baseline across the complete validation sequence' },
+          { ...candidate, label: 'Candidate across the complete validation sequence' },
+        ]}
+        timestampUnit="seconds"
+        formatTimestamp={(value) =>
+          `2026-11-05 09:${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')} UTC`
+        }
+        formatValue={formatLatency}
+      />
+      <BarChart
+        title="Recorded tokens by operation"
+        categories={[
+          { id: 'assemble', label: 'Assemble all source references for the review', axisLabel: 'Assemble' },
+          { id: 'review', label: 'Review the complete collection of supplied references', axisLabel: 'Review' },
+          { id: 'publish', label: 'Publish the accepted reference collection', axisLabel: 'Publish' },
+        ]}
+        series={[
+          { id: 'input', label: 'Recorded input tokens', values: [40, 70, 20] },
+          { id: 'output', label: 'Recorded output tokens', values: [25, null, 0] },
+        ]}
+        domain={[0, 100]}
+        formatValue={formatTokens}
+        selection={{ selectedId, onSelect }}
+      />
+    </Stack>
+  );
+}
+
+export const NarrowLongLabels: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <NarrowInspection />,
+};
+
+export const PassiveTrendStates: Story = {
+  render: () => (
+    <Stack>
+      <Row>
+        <Text>Missing sample</Text>
+        <Sparkline
+          title="Baseline latency"
+          summary="The sample at 90 seconds is missing."
+          unit="milliseconds"
+          timestampUnit="seconds"
+          series={baseline}
+          valueDomain={[0, 24]}
+        />
+      </Row>
+      <Row>
+        <Text>One observation</Text>
+        <Sparkline
+          title="Single latency"
+          summary="One recorded value of zero milliseconds at 30 seconds."
+          unit="milliseconds"
+          timestampUnit="seconds"
+          series={{ id: 'single', label: 'Latency', points: [{ timestamp: 30, value: 0 }] }}
+          valueDomain={[0, 24]}
+        />
+      </Row>
+      <Row>
+        <Text>No observations</Text>
+        <Sparkline
+          title="Unavailable latency"
+          summary="No latency observations were supplied."
+          unit="milliseconds"
+          timestampUnit="seconds"
+          series={{ id: 'empty', label: 'Latency', points: [] }}
+          valueDomain={[0, 24]}
+        />
+      </Row>
+      <Row>
+        <Text>Invalid domain</Text>
+        <Sparkline
+          title="Invalid latency"
+          summary="The supplied values exceed the displayed domain."
+          unit="milliseconds"
+          timestampUnit="seconds"
+          series={candidate}
+          valueDomain={[0, 8]}
+        />
+      </Row>
+    </Stack>
+  ),
+};
+
+const loadingSeries: ReadonlyArray<BarSeries> = [
+  { id: 'input', label: 'Recorded input tokens', tone: 'series1', values: [40, 70, 20] },
+  { id: 'output', label: 'Recorded output tokens', tone: 'series2', values: [25, 10, 0] },
+];
+
+function BarLoadingGeometry(): ReactNode {
+  const [pending, setPending] = useState(true);
+  const title = 'Recorded tokens by operation';
+  const description = 'Synthetic observations for the selected period.';
+  const knownSeries = loadingSeries.map(({ id, label, tone }) => ({ id, label, tone }));
+
+  return (
+    <Stack>
+      <Button variant="outline" onClick={() => setPending(!pending)}>
+        {pending ? 'Show recorded values' : 'Show loading state'}
+      </Button>
+      <Panel>
+        <AsyncRegion
+          pending={pending}
+          label="Loading recorded token values"
+          placeholder={
+            <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
+          }
+        >
+          <BarChart
+            title={title}
+            description={description}
+            categories={[
+              { id: 'assemble', label: 'Assemble' },
+              { id: 'review', label: 'Review' },
+              { id: 'publish', label: 'Publish' },
+            ]}
+            series={loadingSeries}
+            domain={[0, 100]}
+            formatValue={formatTokens}
+            height={180}
+          />
+        </AsyncRegion>
+      </Panel>
+      <Text variant="caption" tone="muted">
+        This text follows the same chart frame in both states.
+      </Text>
+    </Stack>
+  );
+}
+
+export const LoadingGeometry: Story = { render: () => <BarLoadingGeometry /> };
+
+export const NarrowLoadingGeometry: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <BarLoadingGeometry />,
 };

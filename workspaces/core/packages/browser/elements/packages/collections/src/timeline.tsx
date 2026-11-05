@@ -9,11 +9,12 @@ const styles = stylex.create({
   item: {
     'position': 'relative',
     'display': 'grid',
-    'gridTemplateColumns': '16px minmax(0, 1fr)',
+    'gridTemplateColumns': `${controls.iconSize} minmax(0, 1fr)`,
     'columnGap': spacing.lg,
     'paddingBottom': spacing.xl,
     'minWidth': 0,
     'fontFamily': typography.fontFamily,
+    'WebkitFontSmoothing': 'antialiased',
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
     'color': colors.ink,
@@ -29,17 +30,36 @@ const styles = stylex.create({
     ':last-child::before': { display: 'none' },
     ':last-child': { paddingBottom: 0 },
   },
-  icon: { display: 'flex', alignItems: 'center', height: 20, color: colors.muted },
+  icon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: typography.bodyLineHeight,
+    color: colors.muted,
+  },
   content: { display: 'grid', gap: spacing.sm, minWidth: 0 },
   header: { display: 'flex', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
-  title: { minWidth: 0, fontWeight: 500, overflowWrap: 'anywhere' },
-  time: { color: colors.muted, fontSize: typography.captionSize, fontVariantNumeric: 'tabular-nums' },
+  title: { minWidth: 0, fontWeight: typography.mediumWeight, overflowWrap: 'anywhere' },
+  time: {
+    minWidth: 0,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontVariantNumeric: 'tabular-nums',
+    overflowWrap: 'anywhere',
+  },
   body: { minWidth: 0, maxWidth: '72ch', overflowWrap: 'anywhere' },
-  metadata: { color: colors.muted, fontSize: typography.captionSize },
+  metadata: {
+    minWidth: 0,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
+  },
   disclosure: { minWidth: 0, width: '100%' },
   trigger: {
     width: 'auto',
-    minHeight: { default: 20, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
     paddingBlock: 0,
     justifyContent: 'start',
   },
@@ -85,17 +105,18 @@ function TimelineItem({
           <Collapsible.Trigger {...stylex.props(styles.trigger)}>{title}</Collapsible.Trigger>
         )}
       </div>
-      {time !== undefined && <div {...stylex.props(styles.time)}>{time}</div>}
+      {time !== undefined && time !== null && <div {...stylex.props(styles.time)}>{time}</div>}
     </div>
   );
 
+  const hasPreview = children !== undefined && children !== null;
   const showPreview = !open || details === undefined;
 
   const content = (
     <>
       {header}
-      {children !== undefined && showPreview && <div {...stylex.props(styles.body)}>{children}</div>}
-      {metadata !== undefined && <div {...stylex.props(styles.metadata)}>{metadata}</div>}
+      {hasPreview && showPreview && <div {...stylex.props(styles.body)}>{children}</div>}
+      {metadata !== undefined && metadata !== null && <div {...stylex.props(styles.metadata)}>{metadata}</div>}
       {details !== undefined && <Collapsible.Panel>{details}</Collapsible.Panel>}
     </>
   );

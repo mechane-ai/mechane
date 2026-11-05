@@ -39,7 +39,7 @@ export function Sparkline({ title, summary, unit, timestampUnit, series, valueDo
     return (
       <span
         role="img"
-        aria-label={`${title}. ${issue ?? 'No recorded values. Missing observations remain unavailable.'}`}
+        aria-label={`${title}. ${summary} Values in ${unit}; timestamps in ${timestampUnit}. ${issue ?? 'No recorded values. Missing observations remain unavailable.'}`}
         title={issue ?? 'No recorded values'}
         {...stylex.props(styles.trend, styles.unavailable)}
       >

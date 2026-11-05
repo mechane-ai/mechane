@@ -5,7 +5,7 @@ import type { ComponentProps, KeyboardEvent, ReactNode, SubmitEvent } from 'reac
 import { IconButton } from '../../core/src/index.ts';
 import { Field, Textarea } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
-import { colors, controls as controlTokens, radii, spacing } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls as controlTokens, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 
 const styles = stylex.create({
@@ -17,6 +17,11 @@ const styles = stylex.create({
     width: '100%',
     maxWidth: '80ch',
     marginInline: 'auto',
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
   },
   frame: {
     'display': 'flex',

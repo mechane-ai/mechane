@@ -9,6 +9,7 @@ const reveal = stylex.keyframes({ from: { opacity: 0 }, to: { opacity: 1 } });
 
 const styles = stylex.create({
   region: { position: 'relative', minWidth: 0 },
+  content: { minWidth: 0 },
   fillRegion: { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' },
   hidden: { visibility: 'hidden' },
   reveal: {
@@ -36,7 +37,7 @@ export function ContentReveal({ enter, fill = false, children }: ContentRevealPr
   }, []);
 
   return (
-    <div {...stylex.props(fill && styles.fillRegion, animate && styles.reveal)}>
+    <div {...stylex.props(styles.content, fill && styles.fillRegion, animate && styles.reveal)}>
       <RevealedTogether value={coordinating}>{children}</RevealedTogether>
     </div>
   );
@@ -66,13 +67,15 @@ function PendingContent({ label, placeholder, fill = false, startedAt, delayMs =
   }, [started, delayMs]);
 
   return (
-    <div {...stylex.props(fill && styles.fillRegion, !visible && styles.hidden, visible && styles.reveal)}>
+    <div
+      {...stylex.props(styles.content, fill && styles.fillRegion, !visible && styles.hidden, visible && styles.reveal)}
+    >
       {visible && (
         <span role="status" {...stylex.props(accessibility.hidden)}>
           {label}
         </span>
       )}
-      <div aria-hidden="true" inert {...stylex.props(fill && styles.fillRegion)}>
+      <div aria-hidden="true" inert {...stylex.props(styles.content, fill && styles.fillRegion)}>
         {placeholder}
       </div>
     </div>

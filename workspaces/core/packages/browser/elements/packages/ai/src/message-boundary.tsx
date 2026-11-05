@@ -12,7 +12,7 @@ const styles = stylex.create({
     color: colors.muted,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
   },
   icon: { flexShrink: 0 },
   label: { minWidth: 0, overflowWrap: 'anywhere' },

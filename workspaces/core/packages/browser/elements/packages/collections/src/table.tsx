@@ -1,13 +1,21 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  spacing,
+  tableGeometry,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   scroll: {
     'minWidth': 0,
     'width': '100%',
     'overflowX': 'auto',
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -35,18 +43,18 @@ const styles = stylex.create({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
   },
-  compactWidth: { width: { [conditions.compactTable]: 'auto' } },
-  column: (width: number) => ({ width: `${width}%` }),
+  column: (width: number) => ({ width: { default: `${width}%`, [conditions.compactTable]: 'auto' } }),
   th: {
     'position': 'relative',
-    'height': 36,
+    'height': tableGeometry.headerHeight,
     'boxSizing': 'border-box',
     'paddingBlock': 0,
     'paddingInline': spacing.lg,
     'backgroundColor': colors.surface,
     'color': colors.muted,
     'fontSize': typography.captionSize,
-    'fontWeight': 400,
+    'fontWeight': typography.regularWeight,
+    'lineHeight': typography.captionLineHeight,
     'whiteSpace': 'nowrap',
     '::after': {
       content: '""',
@@ -58,12 +66,13 @@ const styles = stylex.create({
       backgroundColor: colors.line,
     },
   },
+  headerLabel: { display: 'block', overflow: 'hidden', textOverflow: 'ellipsis' },
   lastHeader: { '::after': { display: 'none' } },
   lastPrimaryHeader: { '::after': { display: { [conditions.compactTable]: 'none' } } },
   td: {
-    height: 39,
+    height: tableGeometry.rowHeight,
     boxSizing: 'border-box',
-    paddingBlock: 6,
+    paddingBlock: spacing.xs,
     paddingInline: spacing.lg,
     color: colors.ink,
     verticalAlign: 'middle',
@@ -99,13 +108,14 @@ export function Table({ headers, children, label, ...props }: TableProps): React
                 {...stylex.props(
                   styles.th,
                   typeof header !== 'string' && styles.column(header.width),
-                  typeof header !== 'string' && styles.compactWidth,
                   typeof header !== 'string' && header.secondary === true && styles.secondary,
                   index === headers.length - 1 && styles.lastHeader,
                   index === lastPrimaryHeader && styles.lastPrimaryHeader,
                 )}
               >
-                {typeof header === 'string' ? header : header.label}
+                <span title={typeof header === 'string' ? header : header.label} {...stylex.props(styles.headerLabel)}>
+                  {typeof header === 'string' ? header : header.label}
+                </span>
               </th>
             ))}
           </tr>

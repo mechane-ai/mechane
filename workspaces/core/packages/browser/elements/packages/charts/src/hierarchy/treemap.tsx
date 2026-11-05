@@ -76,6 +76,12 @@ export function Treemap({ title, description, items, formatValue, selection, hei
               {(tree) =>
                 tree.leaves().map((node) => {
                   const hasLabelRoom = node.x1 - node.x0 > 96 && node.y1 - node.y0 > 40;
+                  const labelCharacters = Math.max(1, Math.floor((node.x1 - node.x0 - 16) / 7));
+
+                  const label =
+                    node.data.label.length > labelCharacters
+                      ? `${node.data.label.slice(0, labelCharacters - 1)}…`
+                      : node.data.label;
 
                   return (
                     <g key={node.data.id}>
@@ -103,7 +109,7 @@ export function Treemap({ title, description, items, formatValue, selection, hei
                           overflow="hidden"
                         >
                           <text x={8} y={18} {...stylex.props(styles.treeLabel)}>
-                            {node.data.label.slice(0, Math.floor((node.x1 - node.x0 - 16) / 7))}
+                            {label}
                           </text>
                           {formatValue(node.data.value).length * 12 < node.x1 - node.x0 - 16 && (
                             <text x={8} y={34} {...stylex.props(styles.treeLabel)}>

@@ -227,6 +227,35 @@ export const Subagent: Story = {
 };
 
 export const Confirmation: Story = { render: () => <ApprovalExample /> };
+
+export const NarrowConfirmation: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <ApprovalExample />,
+};
+
+export const UnavailableDecisions: Story = {
+  render: () => (
+    <Stack>
+      <Approval
+        requestId="expired-report"
+        status="expired"
+        statusLabel="Request expired"
+        title="Write the recorded measurement-comparison report?"
+        description="The application reports that this request has expired."
+      />
+      <Approval
+        requestId="unavailable-report"
+        status="pending"
+        title="Write the recorded measurement-comparison report?"
+        description="The application has made this decision unavailable while access is checked."
+        disabled
+        onApprove={() => undefined}
+        onDeny={() => undefined}
+      />
+    </Stack>
+  ),
+};
+
 export const Checkpoint: Story = { render: () => <CheckpointExample /> };
 
 export const RecordedOutput: Story = {

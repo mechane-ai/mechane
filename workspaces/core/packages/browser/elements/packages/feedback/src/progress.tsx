@@ -14,7 +14,9 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     color: colors.ink,
+    overflowWrap: 'anywhere',
   },
   heading: {
     display: 'flex',
@@ -23,7 +25,8 @@ const styles = stylex.create({
     gap: spacing.md,
     flexWrap: 'wrap',
   },
-  value: { color: colors.muted, fontVariantNumeric: 'tabular-nums' },
+  label: { minWidth: 0, maxWidth: '100%' },
+  value: { minWidth: 0, maxWidth: '100%', color: colors.muted, fontVariantNumeric: 'tabular-nums' },
   track: { height: 4, width: '100%', borderRadius: radii.sm, backgroundColor: colors.line, overflow: 'hidden' },
   indicator: { height: '100%', backgroundColor: colors.ink, borderRadius: radii.sm },
   unknown: {
@@ -54,7 +57,7 @@ export function Progress({ label, value, max, valueLabel }: ProgressProps): Reac
       {...stylex.props(styles.root)}
     >
       <div {...stylex.props(styles.heading)}>
-        <BaseProgress.Label>{label}</BaseProgress.Label>
+        <BaseProgress.Label {...stylex.props(styles.label)}>{label}</BaseProgress.Label>
         <span {...stylex.props(styles.value)}>{valueLabel}</span>
       </div>
       <BaseProgress.Track {...stylex.props(styles.track, value === null && styles.unknown)}>
@@ -69,7 +72,7 @@ export function Meter({ label, value, max, valueLabel }: MeterProps): ReactNode 
     return (
       <div {...stylex.props(styles.root)}>
         <div {...stylex.props(styles.heading)}>
-          <span>{label}</span>
+          <span {...stylex.props(styles.label)}>{label}</span>
           <span {...stylex.props(styles.value)}>{valueLabel}</span>
         </div>
         <div aria-hidden {...stylex.props(styles.track, styles.unknown)} />
@@ -86,7 +89,7 @@ export function Meter({ label, value, max, valueLabel }: MeterProps): ReactNode 
       {...stylex.props(styles.root)}
     >
       <div {...stylex.props(styles.heading)}>
-        <BaseMeter.Label>{label}</BaseMeter.Label>
+        <BaseMeter.Label {...stylex.props(styles.label)}>{label}</BaseMeter.Label>
         <span {...stylex.props(styles.value)}>{valueLabel}</span>
       </div>
       <BaseMeter.Track {...stylex.props(styles.track)}>

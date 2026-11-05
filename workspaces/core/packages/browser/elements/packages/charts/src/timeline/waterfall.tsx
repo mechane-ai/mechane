@@ -4,6 +4,7 @@ import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { Text } from '../../../core/src/index.ts';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 
 type WaterfallGeometry =
   | { readonly kind: 'interval'; readonly start: number; readonly end: number }
@@ -32,10 +33,10 @@ type WaterfallProps = {
   readonly formatOffset: (offset: number) => string;
 };
 
-const NARROW_LAYOUT = '@media (max-width:650px)';
+const NARROW_LAYOUT = '@container (max-width:650px)';
 
 const styles = stylex.create({
-  frame: { minWidth: 0, fontFamily: typography.fontFamily },
+  frame: { minWidth: 0, fontFamily: typography.fontFamily, containerType: 'inline-size' },
   grid: {
     display: 'grid',
     gridTemplateColumns: {
@@ -43,14 +44,14 @@ const styles = stylex.create({
       [NARROW_LAYOUT]: 'minmax(0, 1fr) minmax(0, 1fr)',
     },
     alignItems: 'center',
-    rowGap: controls.gap,
-    columnGap: 18,
+    rowGap: spacing.xs,
+    columnGap: spacing.lg,
     width: '100%',
     boxSizing: 'border-box',
-    paddingInline: 14,
+    paddingInline: spacing.md,
   },
   head: {
-    minHeight: 36,
+    minHeight: controls.mdHeight,
     color: colors.muted,
     fontSize: typography.captionSize,
     borderBottomWidth: 1,
@@ -69,7 +70,9 @@ const styles = stylex.create({
     'fontFamily': typography.fontFamily,
     'textAlign': 'start',
     'cursor': 'pointer',
+    'outlineStyle': 'none',
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',
@@ -80,8 +83,8 @@ const styles = stylex.create({
   },
   active: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
   name: { minWidth: 0, display: 'grid', gap: spacing.xxs },
-  label: { fontWeight: 500, overflowWrap: 'anywhere' },
   detail: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+  selectedDetail: { whiteSpace: 'normal', overflowWrap: 'anywhere' },
   plot: {
     minWidth: 0,
     marginInline: 5,
@@ -104,6 +107,8 @@ const styles = stylex.create({
   filled: { fill: 'currentColor' },
   hollow: { fill: colors.surface, stroke: 'currentColor', strokeWidth: 2 },
   summary: {
+    display: 'grid',
+    gap: spacing.xxs,
     minWidth: 0,
     gridColumn: { default: '3', [NARROW_LAYOUT]: '2' },
     gridRow: 1,
@@ -134,6 +139,12 @@ export function Waterfall({
   onSelect,
   formatOffset,
 }: WaterfallProps): ReactNode {
+  const problem = waterfallProblem({ items, start, end });
+
+  if (problem !== undefined) {
+    return <ChartInputError title={label} message={problem} />;
+  }
+
   const span = end - start;
   const scale = scaleLinear({ domain: [start, end], range: [0, span === 0 ? 0 : PERCENT] });
   const ticks = span > 0 ? TICKS : [0];
@@ -173,10 +184,11 @@ export function Waterfall({
             {...stylex.props(styles.grid, styles.row, selectedId === item.id && styles.active)}
           >
             <span {...stylex.props(styles.name)}>
-              <span {...stylex.props(styles.label)}>
-                <Text>{item.label}</Text>
-              </span>
-              <span title={item.detail} {...stylex.props(styles.detail)}>
+              <Text>{item.label}</Text>
+              <span
+                title={item.detail}
+                {...stylex.props(styles.detail, selectedId === item.id && styles.selectedDetail)}
+              >
                 <Text variant="caption" tone="muted">
                   {item.detail}
                 </Text>
@@ -207,12 +219,53 @@ export function Waterfall({
               <Text variant="caption" tone="muted">
                 {item.summary}
               </Text>
+              {selectedId === item.id && (
+                <Text variant="caption" tone="muted">
+                  {timing}
+                </Text>
+              )}
             </span>
           </button>
         );
       })}
     </div>
   );
+}
+
+function waterfallProblem({ items, start, end }: Pick<WaterfallProps, 'items' | 'start' | 'end'>): string | undefined {
+  const hasNonfiniteEndpoints = !Number.isFinite(start) || !Number.isFinite(end);
+
+  if (hasNonfiniteEndpoints || !Number.isFinite(end - start) || end < start) {
+    return 'The timing domain must have finite, ordered endpoints.';
+  }
+
+  if (!hasUniqueIds(items)) {
+    return 'Timing records must have unique identifiers.';
+  }
+
+  for (const item of items) {
+    const geometry = item.geometry;
+
+    if (geometry.kind === 'interval') {
+      if (!Number.isFinite(geometry.start) || !Number.isFinite(geometry.end) || geometry.end < geometry.start) {
+        return 'Timing intervals must have finite, ordered endpoints.';
+      }
+
+      if (geometry.start < start || geometry.end > end) {
+        return 'Timing intervals must fit inside the supplied domain.';
+      }
+    }
+
+    if (geometry.kind === 'point') {
+      const hasInvalidInstant = !Number.isFinite(geometry.at) || geometry.at < start || geometry.at > end;
+
+      if (hasInvalidInstant) {
+        return 'Timing points must be finite and fit inside the supplied domain.';
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function WaterfallMark({

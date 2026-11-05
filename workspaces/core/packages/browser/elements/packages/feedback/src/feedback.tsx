@@ -12,21 +12,38 @@ const styles = stylex.create({
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
-    paddingBlock: 64,
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    paddingBlock: spacing.xxl,
     paddingInline: spacing.xl,
     gap: spacing.md,
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     WebkitFontSmoothing: 'antialiased',
+    overflowWrap: 'anywhere',
   },
-  emptyIcon: { color: colors.muted, marginBottom: spacing.xs },
+  emptyIcon: { color: colors.muted, flexShrink: 0 },
+  emptyAction: {
+    display: 'flex',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    minWidth: 0,
+    maxWidth: '100%',
+  },
   notice: {
-    paddingBlock: 10,
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+    paddingBlock: spacing.md,
     paddingInline: spacing.md,
     borderRadius: radii.sm,
     fontFamily: typography.fontFamily,
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     backgroundColor: colors.warningSoft,
     color: colors.warning,
     overflowWrap: 'anywhere',
@@ -43,8 +60,8 @@ export function EmptyState({ title, children, action, ...props }: EmptyStateProp
     <div {...mergeProps(stylex.props(styles.empty), props)}>
       <Box size={22} aria-hidden {...stylex.props(styles.emptyIcon)} />
       <Subheading>{title}</Subheading>
-      <Muted>{children}</Muted>
-      {action}
+      {children !== undefined && children !== null && <Muted>{children}</Muted>}
+      {action !== undefined && action !== null && <div {...stylex.props(styles.emptyAction)}>{action}</div>}
     </div>
   );
 }

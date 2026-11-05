@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
@@ -46,9 +46,22 @@ export function ECDF({
   }
 
   const yScale = scaleLinear({ domain: [0, 1], range: [distributionGeometry.height, 0] });
+  const selected = points.find((point) => point.id === selection?.selectedId);
 
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame
+      title={title}
+      description={description}
+      footer={
+        selection !== undefined && points.length > 0 ? (
+          <ChartReadout>
+            {selected === undefined
+              ? 'Select a point in View data to inspect its probability.'
+              : `${valueLabel}: ${formatValue(selected.value)}, ${probabilityLabel}: ${selected.probability === null ? 'Unavailable' : formatProbability(selected.probability)}`}
+          </ChartReadout>
+        ) : undefined
+      }
+    >
       {points.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (

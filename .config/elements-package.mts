@@ -36,6 +36,11 @@ export function buildElementsPackage(source: string, destination: string) {
   copyFileSync(join(sourcePackage, 'README.md'), join(staged, 'README.md'));
   copyFileSync(join(sourcePackage, 'styles.css'), join(staged, 'styles.css'));
   for (const name of ['LICENSE', 'NOTICE']) copyFileSync(join(root, name), join(staged, name));
+  const sonnerLicense = readFileSync(join(sourcePackage, 'node_modules/sonner/LICENSE.md'), 'utf8');
+  writeFileSync(
+    join(staged, 'NOTICE'),
+    `${readFileSync(join(root, 'NOTICE'), 'utf8')}\nBundled Sonner\n\n${sonnerLicense}`,
+  );
   const { scripts, devDependencies, publishConfig, ...published } = manifest;
   assert.ok(scripts.build && devDependencies.typescript, 'Elements by Mechane needs its canonical build and compiler');
   for (const [dependency, range] of Object.entries(published.dependencies)) {

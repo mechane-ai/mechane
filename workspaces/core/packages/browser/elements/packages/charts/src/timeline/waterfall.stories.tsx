@@ -13,7 +13,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. Select a row with the pointer or Enter/Space to inspect the same evidence below.',
+          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Invalid or out-of-domain timing produces an error. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. Select a row with the pointer or Enter/Space to expose its full detail and exact timing.',
       },
     },
   },
@@ -164,5 +164,36 @@ export const NarrowLongLabels: Story = {
         ...intervals,
       ]}
     />
+  ),
+};
+
+export const InvalidTiming: Story = {
+  render: () => (
+    <Stack>
+      <SelectableWaterfall
+        items={[
+          {
+            id: 'reversed',
+            label: 'Reversed interval',
+            detail: 'The end precedes the start',
+            summary: 'Invalid timing',
+            tone: 'neutral',
+            geometry: { kind: 'interval', start: 350, end: 0 },
+          },
+        ]}
+      />
+      <SelectableWaterfall
+        items={[
+          {
+            id: 'outside',
+            label: 'Point outside the domain',
+            detail: 'The event is later than the supplied domain',
+            summary: 'Invalid timing',
+            tone: 'neutral',
+            geometry: { kind: 'point', at: 1500, marker: 'filled' },
+          },
+        ]}
+      />
+    </Stack>
   ),
 };

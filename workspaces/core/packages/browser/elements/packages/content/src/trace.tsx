@@ -13,6 +13,7 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     color: colors.ink,
   },
   item: {
@@ -20,14 +21,19 @@ const styles = stylex.create({
     display: 'grid',
     gridTemplateColumns: '16px minmax(0, 1fr)',
     columnGap: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: { 'default': spacing.lg, ':last-child': 0 },
   },
   marker: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing.xs, paddingTop: spacing.xxs },
   line: { width: 1, minHeight: spacing.lg, flex: 1, backgroundColor: colors.line },
   content: { display: 'flex', flexDirection: 'column', gap: spacing.xs, minWidth: 0 },
-  label: { fontWeight: 500, overflowWrap: 'anywhere' },
+  label: { fontWeight: typography.mediumWeight, overflowWrap: 'anywhere' },
   selected: { textDecorationLine: 'underline', textUnderlineOffset: 3 },
-  status: { fontSize: typography.captionSize, lineHeight: typography.captionLineHeight, color: colors.muted },
+  status: {
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    color: colors.muted,
+    overflowWrap: 'anywhere',
+  },
   description: { margin: 0, color: colors.muted, overflowWrap: 'anywhere' },
   pending: { color: colors.muted },
   running: { color: colors.ink },
@@ -35,7 +41,7 @@ const styles = stylex.create({
   failed: { color: colors.danger },
   skipped: { color: colors.muted },
   unknown: { color: colors.muted },
-  group: { marginTop: spacing.md },
+  group: { paddingTop: spacing.sm },
 });
 
 export type TraceStatus = 'pending' | 'running' | 'complete' | 'failed' | 'skipped' | 'unknown';

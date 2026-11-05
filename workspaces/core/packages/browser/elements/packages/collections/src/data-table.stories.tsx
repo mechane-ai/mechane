@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Badge, Stack, TextLink } from '../../core/src/index.ts';
+import { Badge, Button, Stack, Text } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
 import { CollectionPagination, CollectionToolbar, ColumnControls, FilterChips } from './collection-controls.tsx';
 import { DataTable, DataTableText } from './data-table.tsx';
@@ -24,7 +24,7 @@ const runs: ReadonlyArray<Run> = [
 ];
 
 const columns: ReadonlyArray<DataTableColumn<Run>> = [
-  { id: 'name', label: 'Name', cell: (run) => <TextLink href={`#${run.id}`}>{run.name}</TextLink>, sortable: true },
+  { id: 'name', label: 'Name', cell: (run) => run.name, sortable: true },
   { id: 'status', label: 'Status', cell: (run) => <Badge>{run.status}</Badge> },
   { id: 'tokens', label: 'Tokens', cell: (run) => run.tokens.toLocaleString('en-US'), align: 'end', sortable: true },
 ];
@@ -95,6 +95,7 @@ function PreparedRows() {
         getRowId={(run) => run.id}
         caption="Runs — all results"
         empty="No runs match this search."
+        rowAction={{ href: (run) => `#${run.id}`, label: (run) => `Open ${run.name}` }}
         sort={sort}
         onSortChange={setSort}
         selectedIds={selected}
@@ -120,7 +121,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. The table only renders the supplied page, reports sort intent, and optionally windows the rows already supplied. DataTableText owns ellipsis for primary and secondary strings, including a leading icon. Arbitrary composed cells own their text layout. Supply a complete row-action label so pointer and keyboard users can inspect it before opening the record. Choose Table for custom structures. Collection controls report supplied filter, sort, visibility and page intent.',
+          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. The table renders the supplied page, reports sort intent, and optionally windows those rows. Ordinary rows stay 48px high; use rowSizing="content" for multiline operational details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Arbitrary composed cells own their text layout. rowAction puts a native link or button in the first primary cell and adds arrow-key navigation; supply a complete label for its pointer and keyboard tooltip. Other cell controls keep their own actions. Choose Table for custom semantic structures. Collection controls report supplied filter, visibility, and page intent without inventing a total. Inspect narrow tables through their named horizontal scroll region.',
       },
     },
   },
@@ -156,6 +157,7 @@ export const Windowed: Story = {
       getRowId={(run) => run.id}
       caption="1,000 prepared samples"
       empty="No samples"
+      rowAction={{ href: (run) => `#${run.id}`, label: (run) => `Open ${run.name}` }}
       window={{ height: 360 }}
     />
   ),
@@ -182,7 +184,8 @@ export const LongLabels: Story = {
       columns={[
         {
           id: 'name',
-          label: 'Run',
+          label: 'Evaluation name and source reference',
+          width: 320,
           cell: (run) => (
             <DataTableText
               leading={<FileCheck size={20} />}
@@ -192,7 +195,13 @@ export const LongLabels: Story = {
             </DataTableText>
           ),
         },
-        { id: 'status', label: 'Status', width: 128, truncate: false, cell: (run) => <Badge>{run.status}</Badge> },
+        {
+          id: 'status',
+          label: 'Latest recorded result',
+          width: 128,
+          truncate: false,
+          cell: (run) => <Badge>{run.status}</Badge>,
+        },
         {
           id: 'tokens',
           label: 'Tokens',
@@ -206,6 +215,34 @@ export const LongLabels: Story = {
       getRowId={(run) => run.id}
       caption="Recorded runs with long titles"
       empty="No recorded runs"
+    />
+  ),
+};
+
+export const Narrow: Story = { ...LongLabels, globals: { viewport: { value: 'narrow', isRotated: false } } };
+
+export const OperationalDetails: Story = {
+  render: () => (
+    <DataTable
+      rowSizing="content"
+      rows={[
+        { id: 'complete', name: 'Release notes', detail: 'All records are available.', complete: true },
+        {
+          id: 'retry',
+          name: 'Quarterly review',
+          detail:
+            'The source stopped responding before its last page arrived. Retry to continue from the saved position.',
+          complete: false,
+        },
+      ]}
+      columns={[
+        { id: 'name', label: 'Import', width: 180, cell: (row) => row.name },
+        { id: 'detail', label: 'Latest result', width: 320, cell: (row) => <Text>{row.detail}</Text> },
+        { id: 'action', label: 'Action', width: 120, cell: (row) => <Button disabled={row.complete}>Retry</Button> },
+      ]}
+      getRowId={(row) => row.id}
+      caption="Import health"
+      empty="No imports."
     />
   ),
 };

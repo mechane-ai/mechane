@@ -15,7 +15,7 @@ function PreviewRoot<Payload = unknown>(props: PreviewRootProps<Payload>): React
   return <BasePreview.Root<Payload> {...props} />;
 }
 
-function PreviewPositioner({ className, style, sideOffset = 6, ...props }: PreviewPositionerProps): ReactNode {
+function PreviewPositioner({ className, style, sideOffset = 4, ...props }: PreviewPositionerProps): ReactNode {
   return (
     <BasePreview.Positioner
       {...props}

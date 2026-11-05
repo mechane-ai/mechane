@@ -18,7 +18,7 @@ function PopoverRoot<Payload = unknown>(props: PopoverRootProps<Payload>): React
   return <BasePopover.Root<Payload> {...props} />;
 }
 
-function PopoverPositioner({ className, style, sideOffset = 6, ...props }: PopoverPositionerProps): ReactNode {
+function PopoverPositioner({ className, style, sideOffset = 4, ...props }: PopoverPositionerProps): ReactNode {
   return (
     <BasePopover.Positioner
       {...props}

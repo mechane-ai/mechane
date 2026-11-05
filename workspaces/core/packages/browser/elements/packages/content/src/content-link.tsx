@@ -1,5 +1,8 @@
+import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { TextLink } from '../../core/src/index.ts';
+
+const styles = stylex.create({ label: { textDecorationLine: 'underline', textUnderlineOffset: 3 } });
 
 export type ContentLinkProps = {
   readonly href?: string | undefined;
@@ -29,7 +32,7 @@ export function ContentLink({ href, children, title }: ContentLinkProps): ReactN
 
   return (
     <TextLink href={destination} title={title} rel="noreferrer noopener">
-      {children}
+      <span {...stylex.props(styles.label)}>{children}</span>
     </TextLink>
   );
 }

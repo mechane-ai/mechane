@@ -12,6 +12,10 @@ const styles = stylex.create({
     borderColor: colors.line,
     borderRadius: radii.sm,
     backgroundColor: colors.surface,
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
     overflow: 'hidden',
   },
   master: { minWidth: 0 },
@@ -26,7 +30,7 @@ const styles = stylex.create({
   list: {
     margin: 0,
     display: 'grid',
-    gridTemplateColumns: 'minmax(90px, 1fr) minmax(0, 1.6fr)',
+    gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.6fr)',
     columnGap: spacing.xl,
     rowGap: spacing.md,
     fontFamily: typography.fontFamily,
@@ -34,9 +38,9 @@ const styles = stylex.create({
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
-  label: { color: colors.muted },
+  label: { minWidth: 0, color: colors.muted, overflowWrap: 'anywhere' },
   item: { display: 'contents' },
-  value: { margin: 0, color: colors.ink, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' },
+  value: { minWidth: 0, margin: 0, color: colors.ink, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums' },
 });
 
 type InspectorProps = ComponentProps<'div'> & {

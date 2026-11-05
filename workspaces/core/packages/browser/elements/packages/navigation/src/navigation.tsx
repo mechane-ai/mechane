@@ -7,6 +7,7 @@ import { colors, radii, spacing, typography } from '../../foundations/src/tokens
 const styles = stylex.create({
   root: {
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
     color: colors.muted,
@@ -37,6 +38,7 @@ const styles = stylex.create({
     backgroundColor: colors.canvas,
     color: colors.muted,
     fontFamily: typography.monoFamily,
+    fontWeight: typography.regularWeight,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     whiteSpace: 'nowrap',

@@ -181,6 +181,32 @@ function CompactExample(): ReactNode {
   );
 }
 
+export const Unavailable: Story = {
+  render: () => (
+    <PromptInput
+      label="Message"
+      value="Keep the prepared draft while this conversation is unavailable."
+      onValueChange={() => undefined}
+      onSubmit={() => undefined}
+      disabled
+      description="The application has made this conversation unavailable."
+    />
+  ),
+};
+
+export const Stopping: Story = {
+  render: () => (
+    <PromptInput
+      label="Follow-up message"
+      value="Keep this follow-up while the application confirms the stop request."
+      onValueChange={() => undefined}
+      onSubmit={() => undefined}
+      onStop={() => undefined}
+      stopPending
+    />
+  ),
+};
+
 export const UnknownContext: Story = {
   render: () => <Meter label="Context capacity" value={null} max={128_000} valueLabel="Usage is unavailable" />,
 };

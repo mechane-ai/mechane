@@ -63,3 +63,28 @@ export const UnsafeDestination: Story = {
     />
   ),
 };
+
+export const Empty: Story = { render: () => <Sources sources={[]} /> };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <Stack>
+      <Text>
+        The supplied report includes matched-case measurements <InlineCitation source={source} label="[1]" />.
+      </Text>
+      <Sources
+        label="Sources for the recorded measurement-comparison request"
+        sources={[
+          ...sources,
+          {
+            id: 'long-reference',
+            title: 'evaluation-comparison-record-with-a-long-unbroken-identifier',
+            href: '/examples/evaluation-comparison-record-with-a-long-unbroken-identifier',
+            description: 'A supplied local record with a long title remains readable within the source list.',
+          },
+        ]}
+      />
+    </Stack>
+  ),
+};

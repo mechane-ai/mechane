@@ -58,10 +58,23 @@ const styles = stylex.create({
   plot: {
     'minWidth': 0,
     'outlineStyle': 'none',
-    'outlineOffset': 2,
+    'outlineOffset': -2,
     ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: controls.focusWidth },
   },
   body: { display: 'grid', gap: spacing.md },
+  timeAxis: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    columnGap: spacing.md,
+    marginBlockStart: spacing.xs,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    color: colors.muted,
+    fontVariantNumeric: 'tabular-nums',
+  },
+  timeAxisInset: (left: number, right: number) => ({ paddingInlineStart: left, paddingInlineEnd: right }),
+  timestamp: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
+  lastTimestamp: { textAlign: 'end' },
   inspection: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -71,9 +84,17 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     minHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
   },
-  values: { display: 'flex', flexWrap: 'wrap', gap: spacing.md, margin: 0 },
-  value: { display: 'flex', gap: spacing.xs, margin: 0, fontVariantNumeric: 'tabular-nums' },
+  values: { display: 'flex', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, margin: 0, minWidth: 0 },
+  value: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    margin: 0,
+    minWidth: 0,
+    fontVariantNumeric: 'tabular-nums',
+  },
   valueText: { margin: 0, color: colors.ink },
   muted: { color: colors.muted },
   markerList: {
@@ -85,6 +106,7 @@ const styles = stylex.create({
     listStyle: 'none',
     fontSize: typography.captionSize,
     color: colors.muted,
+    overflowWrap: 'anywhere',
   },
   table: {
     width: '100%',
@@ -99,7 +121,7 @@ const styles = stylex.create({
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
   },
   multiples: { display: 'grid', gap: spacing.xl },
   guide: { stroke: colors.muted, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
@@ -292,6 +314,7 @@ function TimeChart({
 
   const top = 12;
   const bottom = height - 28;
+  const svgHeight = bottom + 12;
   const first = points[0]?.timestamp ?? 0;
   const last = points.at(-1)?.timestamp ?? first;
 
@@ -340,6 +363,10 @@ function TimeChart({
   }
 
   function inspectKey(event: KeyboardEvent<SVGSVGElement>): void {
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+
     const currentIndex = points.findIndex((point) => point.timestamp === active?.timestamp);
 
     const navigation = {
@@ -352,6 +379,7 @@ function TimeChart({
     switch (event.key) {
       case 'Escape':
         event.preventDefault();
+        event.stopPropagation();
         updateInspection(undefined);
 
         break;
@@ -385,8 +413,8 @@ function TimeChart({
               aria-label={`${title}. Use arrow keys to inspect observations.`}
               aria-describedby={inspectionId}
               tabIndex={0}
-              viewBox={`0 0 ${width} ${height}`}
-              height={height}
+              viewBox={`0 0 ${width} ${svgHeight}`}
+              height={svgHeight}
               onKeyDown={inspectKey}
               onPointerMove={(event) => {
                 if (event.pointerType === 'mouse') {
@@ -465,15 +493,13 @@ function TimeChart({
                   {...stylex.props(styles.guide)}
                 />
               )}
-              <text x={left} y={height - 4} {...stylex.props(chartStyles.label)}>
-                {formatTimestamp(first)}
-              </text>
-              {last !== first && (
-                <text x={right} y={height - 4} textAnchor="end" {...stylex.props(chartStyles.label)}>
-                  {formatTimestamp(last)}
-                </text>
-              )}
             </svg>
+            <div aria-hidden {...stylex.props(styles.timeAxis, styles.timeAxisInset(left, Math.max(0, width - right)))}>
+              <span {...stylex.props(styles.timestamp)}>{formatTimestamp(first)}</span>
+              {last !== first && (
+                <span {...stylex.props(styles.timestamp, styles.lastTimestamp)}>{formatTimestamp(last)}</span>
+              )}
+            </div>
           </div>
           <div
             id={inspectionId}
@@ -523,7 +549,9 @@ function TimeChart({
             <caption>{title} observations</caption>
             <thead>
               <tr>
-                <th {...stylex.props(styles.cell)}>Time ({timestampUnit})</th>
+                <th scope="col" {...stylex.props(styles.cell)}>
+                  Time ({timestampUnit})
+                </th>
                 {prepared.map((item) => (
                   <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
                     {item.label}

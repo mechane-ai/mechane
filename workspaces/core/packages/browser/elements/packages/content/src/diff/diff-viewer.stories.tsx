@@ -21,7 +21,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'DiffViewer compares supplied file revisions or presents a supplied patch. Choose CodeBlock when only one source version matters. Applications own revision identity, redaction and patch application; this view never edits files. File inputs distinguish additions and deletions with a missing side. Annotations identify both the old or new side and its one-based source line. The original inputs remain available while the lazy renderer loads or fails, and copy preserves the exact input.',
+          'DiffViewer compares supplied file revisions or presents a supplied patch. Choose CodeBlock when only one source version matters. Applications own revision identity, redaction and patch application; this view never edits files. File inputs distinguish additions and deletions with a missing side. Show unchanged lines reveals full-file context through one keyboard-accessible control. Patches retain exactly their supplied context. Annotations identify both the old or new side and its one-based source line. The original inputs remain available while the lazy renderer loads or fails, and copy preserves the exact input.',
       },
     },
   },
@@ -57,3 +57,26 @@ export const Patch: Story = {
 };
 
 export const EmptyPatch: Story = { render: () => <DiffViewer label="No changes" patch="" /> };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  args: {
+    label: 'Configuration changes for the recorded measurement-comparison request',
+    before: { ...before, name: 'workspaces/evaluation/configuration/measurement-comparison.ts' },
+    after: { ...after, name: 'workspaces/evaluation/configuration/measurement-comparison.ts' },
+  },
+};
+
+const contextLines = Array.from({ length: 80 }, (_, index) => `export const recordedValue${index + 1} = ${index + 1};`);
+const contextSource = contextLines.join('\n');
+
+export const CollapsedContext: Story = {
+  args: {
+    before: { name: 'src/recorded-values.ts', language: 'typescript', code: contextSource },
+    after: {
+      name: 'src/recorded-values.ts',
+      language: 'typescript',
+      code: contextSource.replace('recordedValue40 = 40', 'recordedValue40 = 41'),
+    },
+  },
+};

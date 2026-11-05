@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
@@ -55,6 +55,8 @@ const styles = stylex.create({
   viewport: {
     'overflow': 'auto',
     'maxHeight': 520,
+    'minWidth': 0,
+    'outlineStyle': 'none',
     'borderWidth': 1,
     'borderStyle': 'solid',
     'borderColor': colors.line,
@@ -88,6 +90,7 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     textAlign: 'start',
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
     minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
   },
   position: (left: number, top: number) => ({ left, top }),
@@ -95,28 +98,37 @@ const styles = stylex.create({
   tone: (color: string) => ({ borderLeftColor: color }),
   action: {
     'cursor': 'pointer',
+    'outlineStyle': 'none',
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineColor: colors.focus,
       outlineStyle: 'solid',
-      outlineOffset: 2,
+      outlineOffset: -2,
     },
   },
-  selected: { outlineWidth: controls.focusWidth, outlineColor: colors.focus, outlineStyle: 'solid', outlineOffset: 1 },
+  selected: { outlineWidth: controls.focusWidth, outlineColor: colors.focus, outlineStyle: 'solid', outlineOffset: -2 },
   label: {
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
-    fontWeight: 500,
-    overflowWrap: 'anywhere',
+    fontWeight: typography.mediumWeight,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
   detail: {
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     color: colors.muted,
-    overflowWrap: 'anywhere',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
   },
-  list: { paddingInlineStart: spacing.lg, marginBlock: spacing.sm, color: colors.muted },
+  list: { paddingInlineStart: spacing.lg, marginBlock: spacing.sm, color: colors.muted, overflowWrap: 'anywhere' },
+  data: { margin: 0, padding: 0, listStyle: 'none' },
+  record: { display: 'grid', gap: spacing.xxs, minWidth: 0, width: '100%' },
+  recordDetail: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
   empty: { margin: 0, color: colors.muted },
 });
 
@@ -145,6 +157,8 @@ export function RelationGraph({
 
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const links = resolveRelationships(edges, nodeMap);
+  const selected = selection?.selectedId === undefined ? undefined : nodeMap.get(selection.selectedId);
+  const hasNodes = nodes.length > 0;
 
   if (links === null) {
     return (
@@ -157,10 +171,20 @@ export function RelationGraph({
   }
 
   return (
-    <ChartFrame title={title} description={description}>
-      {nodes.length === 0 ? (
-        <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
-      ) : (
+    <ChartFrame
+      title={title}
+      description={description}
+      footer={
+        selection !== undefined && hasNodes ? (
+          <ChartReadout>
+            {selected === undefined
+              ? 'Select a node to inspect its record.'
+              : [selected.label, selected.description].filter((part) => part !== undefined).join(' · ')}
+          </ChartReadout>
+        ) : undefined
+      }
+    >
+      {hasNodes ? (
         <div role="region" aria-label={`${title} graph`} tabIndex={0} {...stylex.props(styles.viewport)}>
           <div {...stylex.props(styles.canvas(width, height))}>
             <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
@@ -186,9 +210,11 @@ export function RelationGraph({
                     height={group.height}
                     {...stylex.props(styles.group)}
                   />
-                  <text x={group.x + 12} y={group.y + 20} {...stylex.props(styles.groupLabel)}>
-                    {group.label}
-                  </text>
+                  <svg x={group.x} y={group.y} width={group.width} height={group.height} overflow="hidden">
+                    <text x={12} y={20} {...stylex.props(styles.groupLabel)}>
+                      {group.label}
+                    </text>
+                  </svg>
                 </g>
               ))}
               {links.map(({ edge, source, target }) => {
@@ -236,12 +262,14 @@ export function RelationGraph({
               const content = (
                 <>
                   <span {...stylex.props(styles.label)}>{node.label}</span>
-                  {node.description !== undefined && <span {...stylex.props(styles.detail)}>{node.description}</span>}
+                  {node.description !== undefined && node.height >= 56 && (
+                    <span {...stylex.props(styles.detail)}>{node.description}</span>
+                  )}
                 </>
               );
 
               return selection === undefined ? (
-                <div key={node.id} role="group" aria-label={accessibleLabel} {...appearance}>
+                <div key={node.id} role="group" aria-label={accessibleLabel} title={accessibleLabel} {...appearance}>
                   {content}
                 </div>
               ) : (
@@ -249,6 +277,7 @@ export function RelationGraph({
                   key={node.id}
                   type="button"
                   aria-label={accessibleLabel}
+                  title={accessibleLabel}
                   aria-pressed={selection.selectedId === node.id}
                   onClick={() => selection.onSelect(node.id)}
                   {...appearance}
@@ -259,11 +288,31 @@ export function RelationGraph({
             })}
           </div>
         </div>
+      ) : (
+        <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       )}
-      {edges.length > 0 && (
-        <ChartDataDisclosure label="Relationships">
+      {hasNodes ? (
+        <ChartDataDisclosure label="Graph data">
+          <ul aria-label="Nodes" {...stylex.props(styles.data)}>
+            {nodes.map((node) => (
+              <li key={node.id}>
+                <ChartDatumButton
+                  label={[node.label, node.description].filter((part) => part !== undefined).join(', ')}
+                  selected={selection?.selectedId === node.id}
+                  onSelect={selection === undefined ? undefined : () => selection.onSelect(node.id)}
+                >
+                  <span {...stylex.props(styles.record)}>
+                    <span>{node.label}</span>
+                    {node.description !== undefined && (
+                      <span {...stylex.props(styles.recordDetail)}>{node.description}</span>
+                    )}
+                  </span>
+                </ChartDatumButton>
+              </li>
+            ))}
+          </ul>
           {groups.length > 0 && (
-            <ul {...stylex.props(styles.list)}>
+            <ul aria-label="Groups" {...stylex.props(styles.list)}>
               {groups.map((group) => (
                 <li key={group.id}>
                   {group.label}: {group.nodeIds.map((nodeId) => nodeMap.get(nodeId)?.label).join(', ')}
@@ -271,15 +320,17 @@ export function RelationGraph({
               ))}
             </ul>
           )}
-          <ul {...stylex.props(styles.list)}>
-            {links.map(({ edge, source, target }) => (
-              <li key={edge.id}>
-                {source.label} {edge.direction === 'directed' ? '→' : '↔'} {target.label}: {edge.label}
-              </li>
-            ))}
-          </ul>
+          {links.length > 0 && (
+            <ul aria-label="Relationships" {...stylex.props(styles.list)}>
+              {links.map(({ edge, source, target }) => (
+                <li key={edge.id}>
+                  {source.label} {edge.direction === 'directed' ? '→' : '↔'} {target.label}: {edge.label}
+                </li>
+              ))}
+            </ul>
+          )}
         </ChartDataDisclosure>
-      )}
+      ) : null}
     </ChartFrame>
   );
 }

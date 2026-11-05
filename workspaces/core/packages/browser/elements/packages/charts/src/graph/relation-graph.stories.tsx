@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Panel, Stack, Text } from '../../../core/src/index.ts';
+import { Panel } from '../../../core/src/index.ts';
 import { RelationGraph } from './relation-graph.tsx';
 import type { RelationEdge, RelationGroup, RelationNode } from './relation-graph.tsx';
 
@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'RelationGraph renders a supplied layout and supplied relationships. It does not infer edges from proximity, run a layout algorithm, or expose editing commands. Node selection uses native buttons. The labelled scrolling region preserves node sizes on narrow screens. Group membership is explicit. The relationship disclosure presents the same directed or undirected records as text. Node, edge, and group identifiers must be unique; references and geometry must be valid. The bounded view accepts up to 256 nodes, 1,024 edges, and 256 groups on a canvas no larger than 8,192 pixels per side. Supply a labelled neighborhood for larger analyses.',
+          'RelationGraph renders a supplied layout and supplied relationships. It does not infer edges from proximity, run a layout algorithm, or expose editing commands. Node selection uses native buttons. The labelled scrolling region preserves node sizes on narrow screens. Group membership is explicit. Graph data preserves full node labels, descriptions, groups, and directed or undirected relationships as text, including isolated nodes. Node, edge, and group identifiers must be unique; references and geometry must be valid. The bounded view accepts up to 256 nodes, 1,024 edges, and 256 groups on a canvas no larger than 8,192 pixels per side. Supply a labelled neighborhood for larger analyses.',
       },
     },
   },
@@ -95,28 +95,20 @@ const groups: ReadonlyArray<RelationGroup> = [
 
 function Lineage(): ReactNode {
   const [selectedId, setSelectedId] = useState<string>();
-  const selected = nodes.find((node) => node.id === selectedId);
 
   return (
     <Panel>
-      <Stack>
-        <RelationGraph
-          title="Checkpoint lineage"
-          description="Five synthetic artifacts with recorded initialization and evaluation relationships. Positions are supplied by the application."
-          nodes={nodes}
-          edges={edges}
-          groups={groups}
-          width={784}
-          height={356}
-          selection={{ selectedId, onSelect: setSelectedId }}
-          emptyLabel="No related artifacts were supplied."
-        />
-        <Text tone="muted">
-          {selected === undefined
-            ? 'Select a node to inspect the supplied record.'
-            : `${selected.label} · ${selected.description}`}
-        </Text>
-      </Stack>
+      <RelationGraph
+        title="Checkpoint lineage"
+        description="Five synthetic artifacts with recorded initialization and evaluation relationships. Positions are supplied by the application."
+        nodes={nodes}
+        edges={edges}
+        groups={groups}
+        width={784}
+        height={356}
+        selection={{ selectedId, onSelect: setSelectedId }}
+        emptyLabel="No related artifacts were supplied."
+      />
     </Panel>
   );
 }
@@ -183,3 +175,44 @@ export const Narrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <Lineage />,
 };
+
+function LongNodeLabel(): ReactNode {
+  const [selectedId, onSelect] = useState<string>();
+
+  return (
+    <RelationGraph
+      title="Full records in compact node boxes"
+      description="Synthetic isolated nodes keep the supplied size. Graph data retains each full label and description."
+      nodes={[
+        {
+          id: 'compact',
+          label: 'Checkpoint from the complete validation and review sequence',
+          description:
+            'The supplied 44-pixel box has room for one label. This complete description stays available in Graph data and selection.',
+          x: 24,
+          y: 24,
+          width: 176,
+          height: 44,
+          tone: 'series1',
+        },
+        {
+          id: 'detail',
+          label: 'Independent checkpoint with an extended display name',
+          description: 'Prepared measurements from the full held-out evaluation window',
+          x: 24,
+          y: 96,
+          width: 240,
+          height: 72,
+          tone: 'series2',
+        },
+      ]}
+      edges={[]}
+      width={288}
+      height={192}
+      selection={{ selectedId, onSelect }}
+      emptyLabel="No records were supplied."
+    />
+  );
+}
+
+export const LongLabels: Story = { render: () => <LongNodeLabel /> };

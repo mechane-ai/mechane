@@ -29,17 +29,33 @@ const styles = stylex.create({
     'backgroundColor': colors.surface,
     'color': colors.ink,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
+    'overflowWrap': 'anywhere',
     'WebkitFontSmoothing': 'antialiased',
     'outlineWidth': 0,
     ':is([data-starting-style], [data-ending-style])': { opacity: 0, transform: 'translate(-50%, -50%) scale(0.98)' },
   },
 });
 
+type DialogMotion = 'standard' | 'none';
+
+const motionStyles = stylex.create<Record<DialogMotion, stylex.CSSProperties>>({
+  standard: {},
+  none: { transitionDuration: '0ms' },
+});
+
 type DialogRootProps<Payload> = Omit<BaseDialog.Root.Props<Payload>, 'open' | 'defaultOpen' | 'onOpenChange'> &
   OpenStateProperties<NonNullable<BaseDialog.Root.Props<Payload>['onOpenChange']>>;
 
-type DialogBackdropProps = ComponentProps<typeof BaseDialog.Backdrop>;
-type DialogPopupProps = ComponentProps<typeof BaseDialog.Popup> & { readonly xstyle?: PlacementStyle };
+type DialogBackdropProps = ComponentProps<typeof BaseDialog.Backdrop> & { readonly motion?: DialogMotion };
+
+type DialogPopupProps = ComponentProps<typeof BaseDialog.Popup> & {
+  readonly xstyle?: PlacementStyle;
+  readonly motion?: DialogMotion;
+};
+
 type DialogTitleProps = ComponentProps<typeof BaseDialog.Title>;
 type DialogDescriptionProps = ComponentProps<typeof BaseDialog.Description>;
 
@@ -47,27 +63,33 @@ function DialogRoot<Payload = unknown>(props: DialogRootProps<Payload>): ReactNo
   return <BaseDialog.Root<Payload> {...props} />;
 }
 
-function DialogBackdrop({ className, style, ...props }: DialogBackdropProps): ReactNode {
+function DialogBackdrop({ className, style, motion = 'standard', ...props }: DialogBackdropProps): ReactNode {
   return (
     <BaseDialog.Backdrop
       {...props}
       {...mergeStyles<BaseDialog.Backdrop.State>({
         className,
         style,
-        styles: stylex.props(overlayStyles.transition, overlayStyles.backdrop),
+        styles: stylex.props(overlayStyles.transition, overlayStyles.backdrop, motionStyles[motion]),
       })}
     />
   );
 }
 
-function DialogPopup({ className, style, xstyle, ...props }: DialogPopupProps): ReactNode {
+function DialogPopup({ className, style, xstyle, motion = 'standard', ...props }: DialogPopupProps): ReactNode {
   return (
     <BaseDialog.Popup
       {...props}
       {...mergeStyles<BaseDialog.Popup.State>({
         className,
         style,
-        styles: stylex.props(overlayStyles.content, overlayStyles.transition, styles.popup, xstyle),
+        styles: stylex.props(
+          overlayStyles.content,
+          overlayStyles.transition,
+          styles.popup,
+          motionStyles[motion],
+          xstyle,
+        ),
       })}
     />
   );

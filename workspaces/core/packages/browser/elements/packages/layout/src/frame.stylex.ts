@@ -24,4 +24,5 @@ export const frameConditions = stylex.defineConsts({
   sidebarCoarse: '@media (min-width:801px) and (pointer: coarse)',
   detailMobile: '@media (max-width:720px)',
   toolbarCompact: '@container toolbar (max-width:600px)',
+  workbenchCompact: '@container workbench (max-width:860px)',
 });

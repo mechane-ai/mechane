@@ -95,7 +95,8 @@ Use `ToolbarAction` for page-header actions, including links composed with `rend
 `CopyValue render={<ToolbarAction />}`; the rendered control owns its appearance and CopyValue owns copy feedback. Use
 `Row` for aligned inline actions, `Stack` for related content, and `RecordPage.Content` for separated page sections.
 Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Put scrolling commands with the
-navigation and reserve the divided sidebar footer for persistent account information.
+navigation and reserve the divided sidebar footer for persistent account controls. Use
+`SidebarFooter layout="navigation"` for a group of commands; its intrinsic height keeps the scrolling navigation clear.
 
 `AppShell focus` temporarily hides navigation while retaining its expansion state. `ViewStack.Panel` keeps inactive
 content mounted and measurable but removes it from keyboard and assistive-technology navigation. The application owns
@@ -143,6 +144,11 @@ When an application's Content Security Policy requires nonces, wrap its componen
 `@mechane-ai/elements/csp` and pass the same request nonce used in its policy. Preserve that nonce during hydration.
 This is [Base UI's CSP provider](https://base-ui.com/react/utils/csp-provider); it authorizes component style tags such
 as Select's scrollbar rules. The application owns nonce generation and its security policy.
+
+Mount one `Toaster` from `/feedback` and call its exported `toast` API for notifications. Elements includes Sonner's
+structural styles in the published stylesheet, so the production package injects no additional toast style tag. Keep
+initial-read failures and field validation local; retained-content refresh failures can use one notification with Retry.
+The application owns stable notification IDs and dismissal on recovery or navigation.
 
 ## Develop and release
 

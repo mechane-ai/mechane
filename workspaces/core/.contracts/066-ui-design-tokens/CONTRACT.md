@@ -54,16 +54,18 @@ surface, with WCAG 2.2 AA's exceptions for inactive controls and decorative text
 
 The upstream clause "Do not accept unrestricted style overrides, such as arbitrary style classes or style values,
 on public components." is replaced by this composition boundary: expose named variants and constrained root placement
-to application code, while preserving the `className` and `style` transport that Base UI injects.
+to application code, while preserving the `className` and `style` transport that Base UI and Sonner inject.
 Application code must not use that transport to restyle internal parts, typography, focus, or disabled states.
-Base UI's injected positioning and state styles participate in the component's composition; they are not a second
-application styling system. Contract 114 owns preservation of those props and the production compiler checks.
+Their injected positioning and state styles participate in the component's composition; they are not a second
+application styling system. Sonner's standard notification API remains intact; use it for content and behavior,
+not per-notification visual overrides. The Elements Toaster owns appearance. Contract 114 owns preservation of
+composition props and the production compiler checks.
 
 The registry loads both shipped `variant-style-comparisons` rules from `assets/ast-grep/rules` in place.
 Their examples distinguish a named variant from a comparison between two runtime record identifiers.
 Exhaustive maps remain a TypeScript requirement; the syntax rule alone does not prove exhaustiveness.
 
-The UI package rejects literal color, font-size, shadow, and nonzero transition timing values in component styles.
+The UI package rejects literal color, font-size, font-weight, nonzero gap, shadow, and nonzero transition timing values in component styles.
 Define those roles in `tokens.stylex.ts`; zero-duration motion remains available for reduced motion and direct dragging.
 Review other visual literals and external theme overrides against the same ownership boundary.
 
@@ -90,6 +92,18 @@ Responsive groups follow their container width. Metric columns use `MetricGrid l
 panel must not retain a desktop column count because the browser window is wide. Settings sections constrain grid tracks
 so wide tables scroll inside their own region instead of expanding the page. Multiple toolbar actions supply concise
 labels and icons so the compact toolbar can preserve navigation and accessible actions.
+
+Choose typography by role: body for records and actions, caption for metadata, input for text entry, section for grouped
+content, and heading for record identity. Choose weight from the same token source. Parent layout owns gaps; do not
+combine a parent gap with child margins for the same separation. Center inline controls and count/badge pairs in Row.
+Use semantic tokens in pending compositions as well as loaded ones.
+When base, variant, and responsive styles set the same property, preserve each intended condition in the final
+composition. Inspect computed desktop and narrow geometry; a later conditional width must not erase the base column
+width or make a loaded table disagree with its placeholder.
+
+Page titles stand alone by default. Keep record-supplied descriptions and explanations needed to make a decision, but
+omit generic subtitles that restate the destination. Put field help beside its field. Comparable records use shared
+table geometry; event prose uses a timeline or detail view rather than an uneven grid of record cards.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

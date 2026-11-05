@@ -14,19 +14,24 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
   },
   header: { display: 'flex', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
   avatar: { display: 'inline-flex', flexShrink: 0 },
-  author: { fontWeight: 500, overflowWrap: 'anywhere' },
-  meta: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
-  content: { minWidth: 0, overflowWrap: 'anywhere' },
+  author: { fontWeight: typography.mediumWeight, minWidth: 0, overflowWrap: 'anywhere' },
+  meta: {
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    minWidth: 0,
+    overflowWrap: 'anywhere',
+  },
+  content: { minWidth: 0, overflowWrap: 'anywhere', lineHeight: typography.proseLineHeight },
   user: { paddingBlock: spacing.md, paddingInline: spacing.lg, borderRadius: radii.sm, backgroundColor: colors.canvas },
   assistant: {},
   system: { color: colors.muted, paddingBlock: spacing.sm },
-  actions: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
+  actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  messageActions: {
     gap: spacing.xs,
     opacity: {
       default: 1,
@@ -37,9 +42,10 @@ const styles = stylex.create({
       },
     },
   },
-  attachments: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: spacing.sm },
+  attachments: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: spacing.sm, minWidth: 0 },
   attachment: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: spacing.md,
     minWidth: 0,
@@ -53,8 +59,16 @@ const styles = stylex.create({
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
   },
-  attachmentText: { display: 'flex', flexDirection: 'column', gap: spacing.xxs, minWidth: 0, overflowWrap: 'anywhere' },
+  attachmentText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.xxs,
+    flex: '1 1 12ch',
+    minWidth: 0,
+    overflowWrap: 'anywhere',
+  },
   icon: { color: colors.muted, flexShrink: 0 },
 });
 
@@ -102,7 +116,7 @@ export function Message({
       </header>
       <div {...stylex.props(styles.content)}>{children}</div>
       {attachments !== undefined && <div {...stylex.props(styles.attachments)}>{attachments}</div>}
-      {actions !== undefined && <footer {...stylex.props(styles.actions)}>{actions}</footer>}
+      {actions !== undefined && <footer {...stylex.props(styles.actions, styles.messageActions)}>{actions}</footer>}
     </article>
   );
 }
@@ -115,7 +129,7 @@ export function MessageAttachment({ name, description, href, actions }: MessageA
         {href === undefined ? <span>{name}</span> : <ContentLink href={href}>{name}</ContentLink>}
         {description !== undefined && <span {...stylex.props(styles.meta)}>{description}</span>}
       </div>
-      {actions}
+      {actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );
 }

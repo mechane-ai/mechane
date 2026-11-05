@@ -9,9 +9,9 @@ import type { ChartTone } from './chart-theme.ts';
 
 const styles = stylex.create({
   rows: { display: 'grid', margin: 0, padding: 0, listStyle: 'none' },
-  name: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  name: { display: 'flex', alignItems: 'center', gap: spacing.sm, flex: '1 1 12ch', minWidth: 0 },
   swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
-  value: { color: colors.muted, textAlign: 'end' },
+  value: { color: colors.muted, textAlign: 'end', minWidth: 0, maxWidth: '100%' },
 });
 
 export type BreakdownItem = {

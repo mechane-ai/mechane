@@ -5,14 +5,15 @@ import { colors, conditions, controls, spacing, typography } from '../../foundat
 const styles = stylex.create({
   navigation: {
     'display': 'flex',
-    'gap': spacing.xl,
+    'gap': 0,
     'minWidth': 0,
     'overflowX': 'auto',
     'borderBottomWidth': 1,
     'borderBottomStyle': 'solid',
     'borderBottomColor': colors.line,
     'fontFamily': typography.fontFamily,
-    'fontSize': typography.inputSize,
+    'fontSize': typography.bodySize,
+    'fontWeight': typography.regularWeight,
     'lineHeight': typography.bodyLineHeight,
     'WebkitFontSmoothing': 'antialiased',
     ':focus-visible': {
@@ -24,19 +25,27 @@ const styles = stylex.create({
   },
   embedded: { borderBottomWidth: 0 },
   link: {
+    'position': 'relative',
     'boxSizing': 'border-box',
     'display': 'inline-flex',
     'alignItems': 'center',
     'flexShrink': 0,
     'minHeight': controls.coarseTarget,
     'paddingBlock': spacing.sm,
-    'borderBottomWidth': 2,
-    'borderBottomStyle': 'solid',
-    'borderBottomColor': 'transparent',
+    'paddingInline': spacing.md,
     'textDecorationLine': 'none',
     'whiteSpace': 'nowrap',
     'color': colors.muted,
     ':hover': { color: { [conditions.hoverPointer]: colors.ink } },
+    ':active': { backgroundColor: colors.canvas, color: colors.ink },
+    '::after': {
+      content: '""',
+      position: 'absolute',
+      insetInline: spacing.md,
+      bottom: 0,
+      height: 2,
+      backgroundColor: 'transparent',
+    },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -44,7 +53,7 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  selected: { color: colors.ink, borderBottomColor: colors.ink },
+  selected: { 'color': colors.ink, '::after': { backgroundColor: colors.ink } },
 });
 
 export type PageNavigationItem<ItemId extends string = string> = {

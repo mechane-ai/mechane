@@ -8,6 +8,14 @@ const meta = {
   title: 'Collections/Timeline',
   component: Timeline.Root,
   subcomponents: { Item: Timeline.Item, Timestamp },
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Supported. Timeline presents an ordered sequence of supplied events. Item separates a short event title, formatted time, optional body, and metadata. Supplying details turns a string title into a disclosure and replaces the preview with expanded content when opened. Long event text wraps in its column. Timestamp renders supplied display text and an optional exact-time tooltip accessible by pointer and keyboard. The application owns order, identity, time formatting, and links. Use DataTable when records need comparison through shared columns.',
+      },
+    },
+  },
 } satisfies Meta<typeof Timeline.Root>;
 
 export default meta;
@@ -70,6 +78,23 @@ export const Expandable: Story = {
         time="5:23 PM"
         details="Verify the restore and report which checks actually ran."
       />
+    </Timeline.Root>
+  ),
+};
+
+export const LongEventAtNarrowWidth: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <Timeline.Root label="Review activity">
+      <Timeline.Item
+        icon={<MessageSquare size={16} />}
+        title="A reviewer added a longer update to the shared release checklist"
+        time="November 5, 2026 at 10:44 AM UTC"
+        metadata="reference0123456789abcdef0123456789abcdef0123456789abcdef"
+      >
+        The release remains ready for review. One source has not supplied its final result, so the latest successful
+        result stays visible while the application waits for that source.
+      </Timeline.Item>
     </Timeline.Root>
   ),
 };

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ComponentProps } from 'react';
 import { Muted } from '../../core/src/index.ts';
 import { Tabs } from './tabs.tsx';
 
@@ -19,9 +20,9 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-export const Recommended: Story = {
-  render: () => (
-    <Tabs.Root defaultValue="summary">
+function ExampleTabs({ orientation = 'horizontal' }: Pick<ComponentProps<typeof Tabs.Root>, 'orientation'>) {
+  return (
+    <Tabs.Root defaultValue="summary" orientation={orientation}>
       <Tabs.List aria-label="Item details">
         <Tabs.Tab value="summary">Summary</Tabs.Tab>
         <Tabs.Tab value="history">Change history</Tabs.Tab>
@@ -39,7 +40,11 @@ export const Recommended: Story = {
         <Muted>Attachments are unavailable.</Muted>
       </Tabs.Panel>
     </Tabs.Root>
-  ),
-};
+  );
+}
+
+export const Recommended: Story = { render: () => <ExampleTabs /> };
 
 export const NarrowTabs: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
+
+export const VerticalTabs: Story = { render: () => <ExampleTabs orientation="vertical" /> };

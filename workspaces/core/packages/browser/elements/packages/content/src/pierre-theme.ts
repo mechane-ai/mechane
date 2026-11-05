@@ -1,5 +1,12 @@
 import type { Theme } from '@pierre/highlights';
-import { colors, controls, spacing, syntaxColors, typography } from '../../foundations/src/tokens.stylex.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  spacing,
+  syntaxColors,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 
 export const highlightTheme = {
   name: 'Elements',
@@ -40,6 +47,8 @@ export const pierreCSS = `
   --diffs-header-font-family: ${typography.fontFamily};
   --diffs-font-size: ${typography.captionSize};
   --diffs-line-height: ${typography.bodyLineHeight};
+  --diffs-gap-inline: ${spacing.sm};
+  --diffs-gap-block: ${spacing.sm};
   --diffs-bg: ${colors.surface};
   --diffs-fg: ${colors.ink};
   --diffs-fg-number: ${colors.muted};
@@ -59,7 +68,17 @@ export const pierreCSS = `
 }
 pre { font-family: ${typography.monoFamily}; font-size: ${typography.captionSize}; line-height: ${typography.bodyLineHeight}; }
 [data-line-number] { color: ${colors.muted}; }
-[data-diffs-header] { min-height: ${controls.mdHeight}; border-bottom: 1px solid ${colors.line}; }
+[data-diffs-header] {
+  min-height: ${controls.mdHeight};
+  padding-block: ${spacing.sm};
+  padding-inline: ${spacing.md};
+  border-bottom: 1px solid ${colors.line};
+  font-size: ${typography.captionSize};
+  line-height: ${typography.captionLineHeight};
+  font-weight: ${typography.mediumWeight};
+  flex-wrap: wrap;
+}
+[data-header-content] { flex: 1 1 12ch; }
 `;
 
 export const treeCSS = `
@@ -71,6 +90,12 @@ export const treeCSS = `
   font-size: ${typography.bodySize};
   --trees-font-family-override: ${typography.fontFamily};
   --trees-font-size-override: ${typography.bodySize};
+  --trees-font-weight-regular-override: ${typography.regularWeight};
+  --trees-font-weight-semibold-override: ${typography.strongWeight};
+  --trees-search-font-weight-override: ${typography.strongWeight};
+  --trees-padding-inline-override: ${spacing.md};
+  --trees-item-padding-x-override: ${spacing.sm};
+  --trees-item-row-gap-override: ${controls.gap};
   --trees-bg-override: ${colors.surface};
   --trees-fg-override: ${colors.ink};
   --trees-fg-muted-override: ${colors.muted};
@@ -81,6 +106,7 @@ export const treeCSS = `
   --trees-accent-override: ${colors.focus};
   --trees-focus-ring-color-override: ${colors.focus};
   --trees-focus-ring-width-override: ${controls.focusWidth};
+  --trees-focus-ring-offset-override: -2px;
   --trees-selected-fg-override: ${colors.ink};
   --trees-selected-bg-override: ${colors.canvas};
   --trees-selected-focused-border-color-override: ${colors.focus};
@@ -91,7 +117,18 @@ export const treeCSS = `
   --trees-status-renamed-override: ${colors.warning};
   --trees-status-untracked-override: ${colors.accent};
 }
-[role="treeitem"] { border-radius: 0; padding-inline: ${spacing.sm}; }
-[role="treeitem"][aria-selected="true"] { background: ${colors.canvas}; color: ${colors.ink}; }
-[role="treeitem"]:focus-visible { outline: ${controls.focusWidth} solid ${colors.focus}; outline-offset: -2px; }
+[data-type="item"]:hover:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
+  background-color: ${colors.surface};
+  --truncate-marker-background-overlay-color: transparent;
+}
+${conditions.hoverPointer} {
+  [data-type="item"]:hover:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
+    background-color: ${colors.canvas};
+    --truncate-marker-background-overlay-color: ${colors.canvas};
+  }
+}
+[data-type="item"]:active:not([data-item-selected="true"]):not([data-item-context-hover="true"]) {
+  background-color: ${colors.canvas};
+  --truncate-marker-background-overlay-color: ${colors.canvas};
+}
 `;

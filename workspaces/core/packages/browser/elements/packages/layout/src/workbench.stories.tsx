@@ -17,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Workbench fills the remaining viewport beneath PageToolbar. Its optional header is for content that needs a second heading. Place Conversation directly inside for its own scroll anchoring; WorkbenchScroll owns one gutter for other content, or uses flush when a collection owns row insets. WorkbenchScroll requires an accessible label and remains keyboard focusable. Applications supply scrollRestorationId when their router restores the region. WorkbenchFooter holds a composer. For a full-page detail that preserves an inactive conversation, use ViewStack with AppShell focus. The optional inspector remains available for smaller contextual details; applications own navigation, closing, focus restoration, and data.',
+          'Supported. Workbench fills the remaining viewport beneath PageToolbar. Its optional header is for content that needs a second heading. Place Conversation directly inside for its own scroll anchoring. WorkbenchScroll owns one gutter for other content, or uses flush when a collection owns row insets. It requires an accessible label and remains keyboard focusable; applications supply scrollRestorationId when their router restores the region. WorkbenchFooter separates a persistent composer from the scroll region. For a full-page detail that preserves an inactive conversation, use ViewStack with AppShell focus. The optional inspector remains available for smaller contextual details. At a workbench width of at most 860px, it fills the content area while the main column stays mounted. Applications own navigation, closing, focus restoration, and data.',
       },
     },
   },
@@ -90,3 +90,24 @@ function Example(): ReactNode {
 
 export const Recommended: Story = { render: () => <Example /> };
 export const Narrow: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
+
+export const EmbeddedInspector: Story = {
+  render: () => (
+    <div style={{ width: 720, maxWidth: '100%' }}>
+      <PageToolbar navigation={false} title="Selected operation" />
+      <Workbench
+        header={<Subheading>Prepare release notes</Subheading>}
+        inspector={
+          <Stack>
+            <Subheading>Execution details</Subheading>
+            <Muted>The inspector uses the full available column at this width.</Muted>
+          </Stack>
+        }
+      >
+        <WorkbenchScroll label="Recorded output">
+          <Muted>The main content remains mounted while its inspector is open.</Muted>
+        </WorkbenchScroll>
+      </Workbench>
+    </div>
+  ),
+};

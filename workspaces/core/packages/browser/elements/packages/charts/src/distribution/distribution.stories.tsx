@@ -38,7 +38,14 @@ const bins: ReadonlyArray<HistogramBin> = [
 const intervalItems: ReadonlyArray<IntervalDatum> = [
   { id: 'baseline', label: 'Baseline', lower: 0.67, estimate: 0.73, upper: 0.78 },
   { id: 'candidate', label: 'Candidate', lower: 0.72, estimate: 0.79, upper: 0.85, tone: 'series2' },
-  { id: 'point-only', label: 'Point estimate only', lower: null, estimate: 0.76, upper: null, tone: 'series3' },
+  {
+    id: 'point-only',
+    label: 'Point estimate from a run without recorded interval endpoints',
+    lower: null,
+    estimate: 0.76,
+    upper: null,
+    tone: 'series3',
+  },
   { id: 'unknown', label: 'Evaluation pending', lower: null, estimate: null, upper: null },
 ];
 
@@ -47,7 +54,7 @@ const rankedItems: ReadonlyArray<RankedBarDatum> = [
   { id: 'separator', rank: '2', label: 'Separator feature', value: -1.1, tone: 'series4' },
   { id: 'indent', rank: '3', label: 'Indentation feature', value: 0.6, tone: 'series1' },
   { id: 'zero', rank: '4', label: 'Measured zero', value: 0 },
-  { id: 'missing', label: 'Feature with no recorded score', value: null },
+  { id: 'missing', label: 'Feature with no recorded score in the selected analysis window', value: null },
 ];
 
 function formatNumber(value: number): string {

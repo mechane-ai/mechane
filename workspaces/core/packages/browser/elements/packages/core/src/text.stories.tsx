@@ -65,15 +65,19 @@ export const TextRoles: Story = {
 };
 
 export const LongContent: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => (
     <Stack>
       <Heading>A release name that needs enough room to remain readable</Heading>
+      <Subheading>Notes for example-reference-0123456789abcdef0123456789abcdef</Subheading>
       <Identifier>example-reference-with-a-long-unbroken-suffix-0123456789abcdef0123456789abcdef</Identifier>
       <Prose>
         {
           'Long text wraps within its container.\n\nhttps://example.invalid/a/long/reference/that-must-remain-readable-without-making-the-entire-page-wider'
         }
       </Prose>
+      <Badge tone="warning">Waiting for the final review from every required collaborator</Badge>
+      <Status tone="negative">The requested operation is unavailable until the current review has completed</Status>
     </Stack>
   ),
 };

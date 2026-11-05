@@ -118,3 +118,39 @@ export const SafeLinks: Story = {
     </Stack>
   ),
 };
+
+export const EmptyFrames: Story = { render: () => <StackTrace message="No error frames were supplied." frames={[]} /> };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <Stack>
+      <JsonViewer
+        label="Recorded measurement-comparison request with complete source identifiers"
+        value={{
+          request: 'evaluation-comparison-record-with-a-long-unbroken-identifier',
+          result: { status: 'complete', missing: null, notes: 'Source values remain available for copying.' },
+        }}
+      />
+      <LogViewer
+        label="Recorded measurement-comparison output with complete source identifiers"
+        isRunning
+        output={'Preparing source\nInspecting evaluation-comparison-record-with-a-long-unbroken-identifier\n'}
+      />
+      <StackTrace
+        message="Could not inspect evaluation-comparison-record-with-a-long-unbroken-identifier"
+        frames={[
+          {
+            id: 'comparison',
+            name: 'resolveRecordedMeasurementComparisonSource',
+            file: 'workspaces/evaluation/reports/measurement-comparison.ts',
+            line: 18,
+            code: 'return resolveRecordedMeasurementComparisonSource(recordedRequestIdentifier);',
+            language: 'typescript',
+          },
+          { id: 'untrusted', name: 'Untrusted frame destination remains plain text', href: unsafeDestination },
+        ]}
+      />
+    </Stack>
+  ),
+};

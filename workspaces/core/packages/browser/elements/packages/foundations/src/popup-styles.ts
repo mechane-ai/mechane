@@ -20,6 +20,7 @@ export const popupStyles = stylex.create({
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     outlineWidth: 0,
   },
   content: { display: 'flex', flexDirection: 'column', gap: spacing.md, padding: spacing.lg },
@@ -28,6 +29,8 @@ export const popupStyles = stylex.create({
     'display': 'flex',
     'boxSizing': 'border-box',
     'alignItems': 'center',
+    'minWidth': 0,
+    'overflowWrap': 'anywhere',
     'gap': spacing.sm,
     'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
     'paddingInline': spacing.sm,
@@ -38,6 +41,7 @@ export const popupStyles = stylex.create({
     'color': colors.ink,
     'outlineWidth': 0,
     ':is([data-highlighted])': { backgroundColor: colors.canvas },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -52,6 +56,7 @@ export const popupStyles = stylex.create({
     color: colors.muted,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
+    fontWeight: typography.mediumWeight,
   },
   separator: { height: 1, borderWidth: 0, backgroundColor: colors.line, marginBlock: spacing.xs },
   indicator: {

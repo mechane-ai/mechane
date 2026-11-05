@@ -20,8 +20,9 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     color: colors.ink,
     fontFamily: typography.fontFamily,
-    fontSize: typography.inputSize,
+    fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     WebkitFontSmoothing: 'antialiased',
     minWidth: 0,
   },
@@ -34,7 +35,7 @@ const styles = stylex.create({
     flexShrink: 1,
     margin: 0,
     fontSize: 'inherit',
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
     outlineStyle: 'none',
   },
   label: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
@@ -44,13 +45,14 @@ const styles = stylex.create({
     gap: spacing.xs,
     paddingInline: spacing.sm,
     minWidth: 0,
-    flexShrink: 0,
+    flexShrink: 1,
     marginLeft: 'auto',
   },
   views: { display: 'flex', alignItems: 'center', minWidth: 0, flexShrink: 0 },
   leading: { display: 'flex', alignItems: 'center', paddingInlineStart: spacing.sm, flexShrink: 0 },
   actionCell: { boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', minWidth: 0 },
-  action: { gap: spacing.sm },
+  action: { gap: spacing.sm, minWidth: 0, maxWidth: '100%' },
+  icon: { display: 'inline-flex', flexShrink: 0, alignItems: 'center' },
   actionLabel: { display: { default: 'inline', [frameConditions.toolbarCompact]: 'none' } },
 });
 
@@ -105,8 +107,16 @@ export function ToolbarAction({ icon, children, ...props }: ToolbarActionProps):
         aria-label={props['aria-label'] ?? (typeof children === 'string' ? children : undefined)}
         xstyle={styles.action}
       >
-        {icon}
-        {hasIcon ? <span {...stylex.props(styles.label, styles.actionLabel)}>{children}</span> : children}
+        {hasIcon && (
+          <span aria-hidden {...stylex.props(styles.icon)}>
+            {icon}
+          </span>
+        )}
+        {hasIcon || typeof children === 'string' ? (
+          <span {...stylex.props(styles.label, hasIcon && styles.actionLabel)}>{children}</span>
+        ) : (
+          children
+        )}
       </Button>
     </div>
   );

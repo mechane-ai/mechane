@@ -45,7 +45,6 @@ const points: ReadonlyArray<ScatterPoint> = [
 function Embedding(): ReactNode {
   const [selectedId, setSelectedId] = useState<string>();
   const [range, setRange] = useState<ScatterRange | null>(null);
-  const selected = points.find((point) => point.id === selectedId);
 
   const selectedCount =
     range === null
@@ -74,11 +73,6 @@ function Embedding(): ReactNode {
           rangeSelection={{ value: range, onChange: setRange, xStep: 0.1, yStep: 0.1, locale: 'en-US' }}
           emptyLabel="No projected points were supplied."
         />
-        <Text tone="muted">
-          {selected === undefined
-            ? 'Select a point to inspect its label and coordinates.'
-            : `${selected.label}: (${formatCoordinate(selected.x)}, ${formatCoordinate(selected.y)})`}
-        </Text>
         <Text tone="muted">
           {range === null
             ? 'No range is selected.'

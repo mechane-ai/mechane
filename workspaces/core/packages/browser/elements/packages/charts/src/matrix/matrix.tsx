@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ColorLegend } from './color-legend.tsx';
@@ -32,6 +32,8 @@ const styles = stylex.create({
   scroll: {
     'overflow': 'auto',
     'maxHeight': 480,
+    'minWidth': 0,
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineColor: colors.focus,
@@ -44,7 +46,7 @@ const styles = stylex.create({
     padding: 0,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
     color: colors.muted,
     textAlign: 'start',
     whiteSpace: 'nowrap',
@@ -80,22 +82,21 @@ const styles = stylex.create({
     padding: 0,
     fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
+    fontWeight: typography.regularWeight,
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
   },
   interactive: {
     'cursor': 'pointer',
+    'outlineStyle': 'none',
+    ':active': { borderColor: colors.ink },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineColor: colors.focus,
       outlineStyle: 'solid',
       outlineOffset: -2,
     },
-    ':hover': {
-      outlineWidth: { [conditions.hoverPointer]: controls.focusWidth },
-      outlineStyle: { [conditions.hoverPointer]: 'solid' },
-      outlineColor: { [conditions.hoverPointer]: colors.ink },
-    },
+    ':hover': { borderColor: { [conditions.hoverPointer]: colors.ink } },
   },
   selected: { outlineWidth: controls.focusWidth, outlineColor: colors.focus, outlineStyle: 'solid', outlineOffset: -2 },
   measured: (color: string) => ({ backgroundImage: `linear-gradient(${color}, ${color})` }),
@@ -114,7 +115,6 @@ const styles = stylex.create({
     color: colors.muted,
     fontSize: typography.captionSize,
   },
-  inspector: { margin: 0, color: colors.ink, minHeight: typography.bodyLineHeight, overflowWrap: 'anywhere' },
   data: { listStyle: 'none', margin: 0, padding: 0 },
 });
 
@@ -182,9 +182,7 @@ export function Matrix({
             )}
           </ul>
           {selection !== undefined && (
-            <p aria-live="polite" {...stylex.props(styles.inspector)}>
-              {selectedLabel ?? 'Select a cell to inspect its value.'}
-            </p>
+            <ChartReadout>{selectedLabel ?? 'Select a cell to inspect its value.'}</ChartReadout>
           )}
           {rows.length > 0 && columns.length > 0 && (
             <ChartDataDisclosure>
@@ -304,8 +302,8 @@ function MatrixValue({
     cellStyles[cell.kind],
     measuredColor !== undefined && styles.measured(measuredColor),
     isOutsideDomain && styles.missing,
-    selection?.selectedId === cell.id && styles.selected,
     selection !== undefined && styles.interactive,
+    selection?.selectedId === cell.id && styles.selected,
   );
 
   const glyph = matrixCellGlyph(cell, text, isOutsideDomain);

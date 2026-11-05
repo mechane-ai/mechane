@@ -6,6 +6,7 @@ const styles = stylex.create({
   page: {
     boxSizing: 'border-box',
     minHeight: '100dvh',
+    minWidth: 0,
     display: 'grid',
     placeItems: 'center',
     padding: spacing.xl,
@@ -16,7 +17,14 @@ const styles = stylex.create({
     lineHeight: typography.bodyLineHeight,
     WebkitFontSmoothing: 'antialiased',
   },
-  content: { width: '100%', maxWidth: '360px', display: 'grid', gap: spacing.xl },
+  content: {
+    width: '100%',
+    maxWidth: '360px',
+    minWidth: 0,
+    display: 'grid',
+    gridTemplateColumns: 'minmax(0, 1fr)',
+    gap: spacing.xl,
+  },
 });
 
 export function FocusPage({ children }: { readonly children: ReactNode }): ReactNode {

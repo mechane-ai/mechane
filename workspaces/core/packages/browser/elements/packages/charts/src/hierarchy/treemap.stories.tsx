@@ -56,3 +56,24 @@ function UsageAllocation(): ReactNode {
 }
 
 export const Allocation: Story = { render: () => <UsageAllocation /> };
+
+export const NarrowLongLabels: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <Treemap
+      title="Supplied allocation with complete category labels"
+      description="Synthetic values. Missing and zero categories keep their text without receiving an area."
+      items={[
+        { id: 'input', label: 'Input for the complete validation and review sequence', value: 840 },
+        { id: 'output', label: 'Output from the accepted reference collection', value: 260 },
+        { id: 'zero', label: 'Measured zero for the unused category', value: 0 },
+        { id: 'missing', label: 'Category without recorded evidence', value: null },
+      ]}
+      formatValue={formatTokens}
+    />
+  ),
+};
+
+export const Empty: Story = {
+  render: () => <Treemap title="No allocation records" items={[]} formatValue={formatTokens} />,
+};

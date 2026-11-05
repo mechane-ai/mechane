@@ -42,7 +42,9 @@ Run the repository's automated accessibility checks where they exist; they do no
 
 ## Local adaptations
 
-Base UI is the adopted behavior library. Elements wrappers keep its native form behavior and typed callbacks.
+Base UI is the adopted control behavior library. Elements wrappers keep its native form behavior and typed callbacks.
+Sonner owns notification stacking, timing, dismissal, and keyboard access. Mount one Toaster per application; report
+each operation through one feedback owner. Elements owns the toast's shared typography, color, geometry, and motion.
 Field composition associates labels, descriptions, and errors without adding a second form-state protocol.
 Empty values and form resets keep the semantics of the chosen native or Base UI control.
 
@@ -50,7 +52,8 @@ Standalone controls meet the shared `controls.coarseTarget` token on coarse poin
 text flow. The Storybook accessibility addon assists review; keyboard operation, focus return, names, and announcements
 are also checked in the packaged Console. The addon does not make every story an automated test.
 
-Gate hover styles with `conditions.hoverPointer`. Touch and keyboard activation remain usable without hover.
+Gate hover styles with `conditions.hoverPointer`. Give clickable rows, disclosures, and navigation visible hover and
+press feedback without changing their geometry. Touch and keyboard activation remain usable without hover.
 Text-entry controls use `typography.touchInputSize` on coarse pointers so mobile focus does not require zooming.
 Pending actions preserve keyboard focus through Base UI's `focusableWhenDisabled` and keep their label space stable.
 Keep ordinary unavailable controls disabled, and honor caller-supplied accessible names during pending changes.

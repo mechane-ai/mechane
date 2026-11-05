@@ -36,6 +36,8 @@ function PickerExample(): ReactNode {
 
 export const Recommended: Story = { render: () => <PickerExample /> };
 
+export const Narrow: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
+
 export const Disabled: Story = {
   render: () => (
     <AgentAvatarPicker value={agentAppearance('release-review')} onValueChange={() => undefined} disabled />

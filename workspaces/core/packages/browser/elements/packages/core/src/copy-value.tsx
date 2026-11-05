@@ -20,12 +20,16 @@ const styles = stylex.create({
     'backgroundColor': 'transparent',
     'color': colors.muted,
     'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
     'WebkitFontSmoothing': 'antialiased',
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
     'textAlign': 'start',
     'cursor': 'pointer',
     ':hover:not([data-disabled])': { color: { [conditions.hoverPointer]: colors.ink } },
+    ':active:not([data-disabled])': { color: colors.ink },
+    ':is([data-disabled]):not([aria-busy="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
+    ':is([aria-busy="true"])': { cursor: 'progress' },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',
@@ -33,7 +37,16 @@ const styles = stylex.create({
       outlineOffset: 2,
     },
   },
-  value: { minWidth: 0, overflowWrap: 'anywhere', fontVariantNumeric: 'tabular-nums', userSelect: 'text' },
+  labels: { display: 'inline-grid', minWidth: 0 },
+  value: {
+    gridArea: '1 / 1',
+    minWidth: 0,
+    overflowWrap: 'anywhere',
+    fontVariantNumeric: 'tabular-nums',
+    userSelect: 'text',
+  },
+  visible: {},
+  hidden: { visibility: 'hidden' },
   icon: { flexShrink: 0 },
 });
 
@@ -42,6 +55,20 @@ type CopyStatus = 'idle' | 'pending' | 'copied' | 'failed';
 const feedbackStates: ReadonlySet<CopyStatus> = new Set(['copied', 'failed']);
 type CopySource = string | (() => string);
 type CopyFeedback = { readonly value: CopySource; readonly status: CopyStatus };
+
+const valueVisibility = {
+  idle: styles.visible,
+  pending: styles.visible,
+  copied: styles.hidden,
+  failed: styles.visible,
+} satisfies Record<CopyStatus, stylex.StyleXStyles>;
+
+const copiedVisibility = {
+  idle: styles.hidden,
+  pending: styles.hidden,
+  copied: styles.visible,
+  failed: styles.hidden,
+} satisfies Record<CopyStatus, stylex.StyleXStyles>;
 
 type CopyValueProps = Omit<ComponentProps<typeof BaseButton>, 'value'> & {
   readonly value: CopySource;
@@ -139,8 +166,13 @@ export function CopyValue({
       title={props.title ?? (typeof value === 'string' ? value : label)}
     >
       {display === 'value' && (
-        <span {...stylex.props(styles.value)}>
-          {status === 'copied' ? 'Copied' : (children ?? (typeof value === 'string' ? value : label))}
+        <span {...stylex.props(styles.labels)}>
+          <span aria-hidden={status === 'copied'} {...stylex.props(styles.value, valueVisibility[status])}>
+            {children ?? (typeof value === 'string' ? value : label)}
+          </span>
+          <span aria-hidden={status !== 'copied'} {...stylex.props(styles.value, copiedVisibility[status])}>
+            Copied
+          </span>
         </span>
       )}
       <Icon size={display === 'icon' ? 16 : 12} aria-hidden {...stylex.props(styles.icon)} />

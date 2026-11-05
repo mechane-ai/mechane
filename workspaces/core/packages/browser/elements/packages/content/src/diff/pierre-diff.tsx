@@ -4,19 +4,32 @@ import { FileDiff, VirtualizerContext } from '@pierre/diffs/react';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
+import { spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { highlightTheme, pierreCSS } from '../pierre-theme.ts';
+import { viewerStyles } from '../viewer-styles.ts';
 import type { DiffAnnotation, DiffFile, DiffSource } from './diff-source.ts';
 
 type PierreDiffProps = {
   readonly files: ReadonlyArray<FileDiffMetadata>;
   readonly layout: 'unified' | 'split';
   readonly wrap: boolean;
+  readonly showUnchanged: boolean;
   readonly annotations: ReadonlyArray<DiffAnnotation>;
   readonly maxHeight: number;
   readonly label: string;
 };
 
-const styles = stylex.create({ viewport: (maxHeight: number) => ({ maxHeight, overflow: 'auto' }) });
+const styles = stylex.create({
+  viewport: (maxHeight: number) => ({ maxHeight, overflow: 'auto' }),
+  annotation: {
+    padding: spacing.md,
+    minWidth: 0,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    overflowWrap: 'anywhere',
+  },
+});
 
 registerCustomTheme('mechane', () => Promise.resolve(highlightTheme), 'zed');
 
@@ -36,7 +49,15 @@ export function prepareDiff(source: DiffSource): ReadonlyArray<FileDiffMetadata>
   return [parseDiffFromFile(pierreFile(source.before), pierreFile(source.after), {}, true)];
 }
 
-export function PierreDiff({ files, layout, wrap, annotations, maxHeight, label }: PierreDiffProps): ReactNode {
+export function PierreDiff({
+  files,
+  layout,
+  wrap,
+  showUnchanged,
+  annotations,
+  maxHeight,
+  label,
+}: PierreDiffProps): ReactNode {
   const [virtualizer] = useState(() => new Virtualizer());
 
   const viewport = useCallback(
@@ -57,7 +78,7 @@ export function PierreDiff({ files, layout, wrap, annotations, maxHeight, label 
         role="region"
         aria-label={`${label} changes`}
         tabIndex={0}
-        {...stylex.props(styles.viewport(maxHeight))}
+        {...stylex.props(viewerStyles.scrollRegion, styles.viewport(maxHeight))}
       >
         <div>
           {files.map((file) => (
@@ -72,7 +93,9 @@ export function PierreDiff({ files, layout, wrap, annotations, maxHeight, label 
                 unsafeCSS: pierreCSS,
                 diffStyle: layout,
                 overflow: wrap ? 'wrap' : 'scroll',
-                hunkSeparators: 'line-info',
+                // The header control replaces Pierre's pointer-only hunk expanders.
+                hunkSeparators: 'metadata',
+                expandUnchanged: showUnchanged,
                 tokenizeMaxLength: 200_000,
                 tokenizeMaxLineLength: 4096,
               }}
@@ -83,7 +106,7 @@ export function PierreDiff({ files, layout, wrap, annotations, maxHeight, label 
                   lineNumber: annotation.line,
                   metadata: annotation.content,
                 }))}
-              renderAnnotation={(annotation) => annotation.metadata}
+              renderAnnotation={(annotation) => <div {...stylex.props(styles.annotation)}>{annotation.metadata}</div>}
             />
           ))}
         </div>

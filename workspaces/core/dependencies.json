@@ -603,6 +603,7 @@
       "@visx/scale",
       "@visx/shape",
       "react-resizable-panels",
+      "sonner",
       "streamdown",
       "strip-ansi"
     ]

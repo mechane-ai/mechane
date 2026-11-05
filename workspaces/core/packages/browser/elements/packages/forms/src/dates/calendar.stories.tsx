@@ -61,3 +61,8 @@ export default meta;
 type Story = StoryObj;
 export const Single: Story = { render: () => <SingleExample /> };
 export const RangePicker: Story = { render: () => <RangeExample /> };
+
+export const NarrowRangePicker: Story = {
+  ...RangePicker,
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+};

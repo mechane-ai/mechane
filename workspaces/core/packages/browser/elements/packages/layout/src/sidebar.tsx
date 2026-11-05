@@ -47,16 +47,19 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  footerRegion: { marginTop: 'auto', color: colors.muted },
+  footerRegion: { flexShrink: 0, minWidth: 0, marginTop: 'auto', backgroundColor: colors.surface, color: colors.muted },
   navigation: { display: 'flex', flexDirection: 'column', paddingInline: frame.navigationPadding },
   section: { paddingBlock: spacing.sm },
   sectionTitle: {
+    minWidth: 0,
     paddingBlock: spacing.sm,
     paddingInline: frame.navigationPadding,
     color: colors.muted,
+    fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
-    fontWeight: 500,
+    fontWeight: typography.mediumWeight,
+    overflowWrap: 'anywhere',
   },
   collapsedNavigation: { paddingInline: { default: frame.navigationPadding, [frameConditions.sidebarCoarse]: 0 } },
   selected: { backgroundColor: colors.canvas },
@@ -81,11 +84,12 @@ const styles = stylex.create({
     'fontFamily': typography.fontFamily,
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
-    'fontWeight': 400,
+    'fontWeight': typography.regularWeight,
     'WebkitFontSmoothing': 'antialiased',
     'textAlign': 'left',
     'textDecorationLine': 'none',
-    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':hover:not(:active)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -110,20 +114,27 @@ const styles = stylex.create({
     display: 'flex',
     alignItems: 'center',
     gap: spacing.sm,
-    height: frame.footerHeight,
+    minHeight: frame.footerHeight,
+    minWidth: 0,
+    flexShrink: 0,
     paddingInline: frame.footerPadding,
     borderTopWidth: 1,
     borderTopStyle: 'solid',
     borderTopColor: colors.line,
+    backgroundColor: colors.surface,
     color: colors.muted,
+    fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
+    fontWeight: typography.regularWeight,
     whiteSpace: 'nowrap',
   },
   collapsedFooter: {
     justifyContent: { default: 'center', [frameConditions.sidebarMobile]: 'flex-start' },
     paddingInline: { default: 0, [frameConditions.sidebarMobile]: frame.footerPadding },
   },
+  inlineFooter: {},
+  navigationFooter: { display: 'block', paddingInline: 0, paddingBlock: spacing.sm },
   toggleCell: {
     boxSizing: 'border-box',
     flexShrink: 0,
@@ -163,7 +174,13 @@ type NavigationLinkProps = ComponentProps<'a'> & { readonly icon?: ReactNode; re
 
 type SidebarLabelProps = { readonly children: ReactNode; readonly grow?: boolean };
 
-type SidebarFooterProps = { readonly children: ReactNode };
+type SidebarFooterLayout = 'inline' | 'navigation';
+type SidebarFooterProps = { readonly children: ReactNode; readonly layout?: SidebarFooterLayout };
+
+const footerLayouts = { inline: styles.inlineFooter, navigation: styles.navigationFooter } satisfies Record<
+  SidebarFooterLayout,
+  stylex.StyleXStyles
+>;
 
 export function Sidebar({ header, footer, close, children }: SidebarProps): ReactNode {
   const hasHeader = header !== undefined && header !== null;
@@ -239,7 +256,7 @@ export function NavigationItem({
         {...props}
         variant="ghost"
         aria-current={selected ? 'page' : undefined}
-        aria-labelledby={props['aria-labelledby'] ?? labelId}
+        aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
         title={props.title ?? (typeof children === 'string' ? children : undefined)}
         onClick={(event) => {
           if (onClick !== undefined) {
@@ -289,7 +306,7 @@ export function NavigationLink({
     <a
       {...props}
       aria-current={selected ? 'page' : undefined}
-      aria-labelledby={props['aria-labelledby'] ?? labelId}
+      aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
       title={props.title ?? (typeof children === 'string' ? children : undefined)}
       onClick={(event) => {
         if (onClick !== undefined) {
@@ -334,11 +351,13 @@ export function SidebarLabel({ children, grow = false }: SidebarLabelProps): Rea
   );
 }
 
-export function SidebarFooter({ children }: SidebarFooterProps): ReactNode {
+export function SidebarFooter({ children, layout = 'inline' }: SidebarFooterProps): ReactNode {
   const sidebar = useContext(SidebarContext);
   const isCollapsed = sidebar !== null && !sidebar.isExpanded;
 
-  return <div {...stylex.props(styles.footer, isCollapsed && styles.collapsedFooter)}>{children}</div>;
+  return (
+    <div {...stylex.props(styles.footer, isCollapsed && styles.collapsedFooter, footerLayouts[layout])}>{children}</div>
+  );
 }
 
 export function SidebarToggle(): ReactNode {

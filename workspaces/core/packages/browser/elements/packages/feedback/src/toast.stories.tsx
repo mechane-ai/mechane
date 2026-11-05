@@ -1,76 +1,215 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { useEffect, useId, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Row } from '../../core/src/index.ts';
-import { Toast } from './toast.tsx';
+import { toast } from 'sonner';
+import { Button, Panel, Row, Stack, Text } from '../../core/src/index.ts';
+import { Toaster } from './toast.tsx';
 
 const meta = {
   title: 'Feedback/Toast',
-  component: Toast.Provider,
-  subcomponents: {
-    Portal: Toast.Portal,
-    Viewport: Toast.Viewport,
-    Root: Toast.Root,
-    Content: Toast.Content,
-    Title: Toast.Title,
-    Description: Toast.Description,
-    Close: Toast.Close,
-    Action: Toast.Action,
-  },
+  component: Toaster,
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Toast reports nonessential acknowledgement outside the current region. Keep actionable errors beside their operation with Notice. Install one Provider and Viewport, then use Toast.useManager in an event handler. Toast.createManager supports an application-owned manager outside React; it must share that Provider. The Base UI manager owns timing, focus/hover pause, announcements, limits and dismissal. The application supplies text and actions. This example uses timeout zero for inspection.',
+          'Toaster reports outcomes outside the current region. A failed first read uses a local Notice with Retry. A failed refresh retains usable content and reports once through a resource-owned toast with Retry. The application owns stable notification ids and dismisses them on recovery or navigation. Field validation stays beside its field. Mount one Toaster near the application root and call toast from an event handler; no provider is needed. Elements supplies token-based appearance. Sonner owns timing, stacking, swipe, announcements, and keyboard focus. Alt+T focuses notifications; Tab reaches actions and dismiss buttons. Apply the Elements theme to the document root. These synthetic examples persist and use scoped ids to separate documentation previews. Applications normally omit the toaster id.',
       },
     },
   },
-} satisfies Meta;
+} satisfies Meta<typeof Toaster>;
 
 export default meta;
-type Story = StoryObj;
+type Story = StoryObj<typeof meta>;
 
-function ToastExample(): ReactNode {
-  const manager = Toast.useManager();
+function AcknowledgementExample(): ReactNode {
+  const toasterId = useId();
 
   return (
     <>
       <Button
         onClick={() =>
-          manager.add({
-            title: 'View saved',
+          toast.success('View saved', {
+            toasterId,
             description: 'The current filters are available in your saved views.',
-            timeout: 0,
+            duration: Infinity,
           })
         }
       >
-        Show acknowledgement
+        Save view
       </Button>
-      <Toast.Portal>
-        <Toast.Viewport>
-          {manager.toasts.map((toast) => (
-            <Toast.Root key={toast.id} toast={toast}>
-              <Toast.Content>
-                <Toast.Title />
-                <Toast.Description />
-                <Row>
-                  <Toast.Action render={<Button size="sm" />} onClick={() => manager.close(toast.id)}>
-                    View saved item
-                  </Toast.Action>
-                  <Toast.Close render={<Button size="sm" variant="ghost" />}>Dismiss</Toast.Close>
-                </Row>
-              </Toast.Content>
-            </Toast.Root>
-          ))}
-        </Toast.Viewport>
-      </Toast.Portal>
+      <Toaster id={toasterId} />
     </>
   );
 }
 
-export const Acknowledgement: Story = {
-  render: () => (
-    <Toast.Provider limit={3}>
-      <ToastExample />
-    </Toast.Provider>
-  ),
+function StatusExample(): ReactNode {
+  const toasterId = useId();
+  const options = { toasterId, duration: Infinity };
+
+  return (
+    <>
+      <Row>
+        <Button onClick={() => toast('Copied to clipboard', options)}>Neutral</Button>
+        <Button onClick={() => toast.success('Changes saved', options)}>Success</Button>
+        <Button onClick={() => toast.info('A new version is available', options)}>Information</Button>
+        <Button onClick={() => toast.warning('The connection is slow', options)}>Warning</Button>
+        <Button onClick={() => toast.error('Export failed', options)}>Error</Button>
+      </Row>
+      <Toaster id={toasterId} />
+    </>
+  );
+}
+
+function ActionExample(): ReactNode {
+  const toasterId = useId();
+
+  return (
+    <>
+      <Button
+        onClick={() =>
+          toast('Item archived', {
+            toasterId,
+            description: 'You can restore it from the archive at any time.',
+            duration: Infinity,
+            action: { label: 'Undo', onClick: () => toast.success('Item restored', { toasterId, duration: Infinity }) },
+          })
+        }
+      >
+        Archive item
+      </Button>
+      <Toaster id={toasterId} />
+    </>
+  );
+}
+
+function LoadingExample(): ReactNode {
+  const toasterId = useId();
+  const [pending, setPending] = useState(false);
+
+  return (
+    <Stack>
+      <Text tone="muted">Start a synthetic export, then choose its result.</Text>
+      <Row>
+        <Button
+          onClick={() => {
+            toast.loading('Exporting records', { toasterId, id: toasterId });
+            setPending(true);
+          }}
+        >
+          Start export
+        </Button>
+        <Button
+          disabled={!pending}
+          onClick={() => {
+            toast.success('Export ready', { toasterId, id: toasterId, duration: Infinity });
+            setPending(false);
+          }}
+        >
+          Complete export
+        </Button>
+        <Button
+          disabled={!pending}
+          onClick={() => {
+            toast.error('Export failed', { toasterId, id: toasterId, duration: Infinity });
+            setPending(false);
+          }}
+        >
+          Fail export
+        </Button>
+      </Row>
+      <Toaster id={toasterId} />
+    </Stack>
+  );
+}
+
+function RefreshFailureExample(): ReactNode {
+  const toasterId = useId();
+  const notificationId = `${toasterId}-refresh`;
+  const [failed, setFailed] = useState(false);
+
+  useEffect(
+    () => () => {
+      toast.dismiss(notificationId);
+    },
+    [notificationId],
+  );
+
+  function recover() {
+    setFailed(false);
+    toast.dismiss(notificationId);
+  }
+
+  function reportFailure() {
+    setFailed(true);
+    toast.error('Refresh failed', {
+      toasterId,
+      id: notificationId,
+      description: 'The last successful result is still available.',
+      duration: Infinity,
+      action: { label: 'Retry', onClick: recover },
+    });
+  }
+
+  return (
+    <Stack>
+      <Panel>
+        <Text>48 records in the selected scope</Text>
+      </Panel>
+      <Row>
+        <Button onClick={reportFailure}>Simulate refresh failure</Button>
+        <Button disabled={!failed} onClick={recover}>
+          Resolve refresh
+        </Button>
+      </Row>
+      <Text tone="muted">Retry completes this synthetic read. Repeated failures update the same notification.</Text>
+      <Toaster id={toasterId} />
+    </Stack>
+  );
+}
+
+function LongMessageExample(): ReactNode {
+  const toasterId = useId();
+  const [opened, setOpened] = useState(false);
+
+  return (
+    <Stack>
+      <Button
+        onClick={() =>
+          toast('Export ready for workspace_platform_observability_archive_20261105', {
+            toasterId,
+            description:
+              'The selected records are available under /exports/workspace_platform_observability_archive_20261105.',
+            duration: Infinity,
+            action: { label: 'Open export activity and download options', onClick: () => setOpened(true) },
+          })
+        }
+      >
+        Show long notification
+      </Button>
+      {opened && (
+        <Panel>
+          <Text>The synthetic export options are open.</Text>
+        </Panel>
+      )}
+      <Toaster id={toasterId} />
+    </Stack>
+  );
+}
+
+export const Acknowledgement: Story = { render: () => <AcknowledgementExample /> };
+export const Status: Story = { render: () => <StatusExample /> };
+export const Action: Story = { render: () => <ActionExample /> };
+export const RefreshFailure: Story = { render: () => <RefreshFailureExample /> };
+export const LongMessage: Story = { render: () => <LongMessageExample /> };
+
+export const Loading: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Update a loading toast with the same id when the operation finishes. toast.promise can own this transition when a Promise represents the operation. The static loading icon follows the package’s loading treatment and remains legible with reduced motion.',
+      },
+    },
+  },
+  render: () => <LoadingExample />,
 };

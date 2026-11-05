@@ -1,8 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { TextLink } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { CodeBlock } from './code/code-block.tsx';
+import { ContentLink } from './content-link.tsx';
+import { viewerStyles } from './viewer-styles.ts';
 
 export type StackFrame = {
   readonly id: string;
@@ -18,17 +19,6 @@ export type StackFrame = {
 export type StackTraceProps = { readonly message: string; readonly frames: ReadonlyArray<StackFrame> };
 
 const styles = stylex.create({
-  root: {
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-  },
   message: {
     margin: 0,
     padding: spacing.md,
@@ -36,13 +26,18 @@ const styles = stylex.create({
     borderBlockEndStyle: 'solid',
     borderBlockEndColor: colors.line,
     color: colors.danger,
-    fontWeight: 500,
+    fontWeight: typography.mediumWeight,
     overflowWrap: 'anywhere',
   },
   frames: { margin: 0, padding: 0, listStyleType: 'none' },
   frame: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
+    minWidth: 0,
+    overflowWrap: 'anywhere',
     padding: spacing.md,
-    borderBlockEndWidth: 1,
+    borderBlockEndWidth: { 'default': 1, ':last-child': 0 },
     borderBlockEndStyle: 'solid',
     borderBlockEndColor: colors.line,
   },
@@ -58,7 +53,7 @@ const styles = stylex.create({
 
 export function StackTrace({ message, frames }: StackTraceProps): ReactNode {
   return (
-    <section aria-label="Stack trace" {...stylex.props(styles.root)}>
+    <section aria-label="Stack trace" {...stylex.props(viewerStyles.root)}>
       <p {...stylex.props(styles.message)}>{message}</p>
       {frames.length === 0 ? (
         <p {...stylex.props(styles.empty)}>No frames recorded.</p>
@@ -69,12 +64,10 @@ export function StackTrace({ message, frames }: StackTraceProps): ReactNode {
 
             return (
               <li key={frame.id} {...stylex.props(styles.frame)}>
-                {frame.href === undefined ? (
-                  <span>{frame.name}</span>
-                ) : (
-                  <TextLink href={frame.href}>{frame.name}</TextLink>
-                )}
-                <span {...stylex.props(styles.location)}>{location}</span>
+                <div>
+                  <ContentLink href={frame.href}>{frame.name}</ContentLink>
+                  {location.length > 0 && <span {...stylex.props(styles.location)}>{location}</span>}
+                </div>
                 {frame.code !== undefined && (
                   <CodeBlock code={frame.code} language={frame.language} filename={frame.file} />
                 )}

@@ -2,7 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import { useCallback, useState } from 'react';
 import type { ReactNode } from 'react';
 import { CopyValue } from '../../core/src/index.ts';
-import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { viewerStyles } from './viewer-styles.ts';
 
 export type JsonValue =
   | null
@@ -27,29 +28,8 @@ type JsonEntryProps = Required<Pick<JsonViewerProps, 'maxDepth' | 'maxEntries'>>
 };
 
 const styles = stylex.create({
-  root: {
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    color: colors.ink,
-    backgroundColor: colors.surface,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    padding: spacing.sm,
-    borderBlockEndWidth: 1,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndColor: colors.line,
-  },
   body: {
-    padding: spacing.sm,
+    padding: spacing.md,
     overflow: 'auto',
     maxHeight: 400,
     fontFamily: typography.monoFamily,
@@ -64,12 +44,20 @@ const styles = stylex.create({
     marginInlineStart: spacing.xs,
   },
   summary: {
+    'boxSizing': 'border-box',
     'cursor': 'pointer',
+    'minHeight': { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'paddingBlock': { default: 0, [conditions.coarsePointer]: spacing.md },
+    'backgroundColor': {
+      'default': 'transparent',
+      ':hover': { default: null, [conditions.hoverPointer]: colors.canvas },
+      ':active': colors.canvas,
+    },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
-      outlineOffset: 2,
+      outlineOffset: -2,
     },
   },
   key: { color: colors.muted },
@@ -152,14 +140,19 @@ export function JsonViewer({ value, label, maxDepth = 6, maxEntries = 50 }: Json
   const copyValue = useCallback(() => JSON.stringify(value, null, 2), [value]);
 
   return (
-    <section aria-label={label} {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.header)}>
-        <span>{label}</span>
+    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
+      <div {...stylex.props(viewerStyles.header)}>
+        <span {...stylex.props(viewerStyles.label)}>{label}</span>
         <CopyValue label={label} value={copyValue}>
           Copy JSON
         </CopyValue>
       </div>
-      <div role="region" aria-label={`${label} fields`} tabIndex={0} {...stylex.props(styles.body)}>
+      <div
+        role="region"
+        aria-label={`${label} fields`}
+        tabIndex={0}
+        {...stylex.props(viewerStyles.scrollRegion, styles.body)}
+      >
         <JsonEntry
           name="root"
           path=""

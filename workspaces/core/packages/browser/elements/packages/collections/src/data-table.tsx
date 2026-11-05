@@ -6,12 +6,19 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  radii,
+  spacing,
+  tableGeometry,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
-const ROW_HEIGHT = 48;
 
 const rowControlSelector =
   'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"], [role="tab"], [role^="menuitem"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
@@ -22,7 +29,15 @@ const rowFocusOffsets: ReadonlyMap<string, number> = new Map([
 ]);
 
 const styles = stylex.create({
-  frame: { minWidth: 0 },
+  frame: {
+    minWidth: 0,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
+    color: colors.ink,
+    WebkitFontSmoothing: 'antialiased',
+  },
   content: {},
   fillFrame: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
   viewport: {
@@ -42,9 +57,6 @@ const styles = stylex.create({
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
     fontVariantNumeric: 'tabular-nums',
     textAlign: 'left',
     color: colors.ink,
@@ -54,12 +66,19 @@ const styles = stylex.create({
   minimumWidth: (width: number, compactWidth: number) => ({
     minWidth: { default: width, [conditions.compactTable]: compactWidth },
   }),
-  caption: { textAlign: 'left', padding: spacing.lg, color: colors.muted, fontSize: typography.captionSize },
+  caption: {
+    textAlign: 'left',
+    padding: spacing.lg,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+  },
   header: {
+    boxSizing: 'border-box',
     position: 'sticky',
     top: 0,
     zIndex: 1,
-    height: 36,
+    height: tableGeometry.headerHeight,
     paddingBlock: 0,
     paddingInline: spacing.lg,
     borderBottomWidth: 1,
@@ -67,15 +86,22 @@ const styles = stylex.create({
     borderBottomColor: colors.line,
     color: colors.muted,
     backgroundColor: colors.surface,
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
     fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
     whiteSpace: 'nowrap',
   },
+  headerLabel: { display: 'block', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   sort: {
     'display': 'inline-flex',
     'alignItems': 'center',
     'gap': spacing.sm,
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'maxWidth': '100%',
+    'minWidth': 0,
+    'minHeight': {
+      default: `calc(${tableGeometry.headerHeight}px - 1px)`,
+      [conditions.coarsePointer]: controls.coarseTarget,
+    },
     'padding': 0,
     'borderWidth': 0,
     'color': 'inherit',
@@ -86,6 +112,7 @@ const styles = stylex.create({
     'lineHeight': 'inherit',
     'cursor': 'pointer',
     ':hover': { color: { [conditions.hoverPointer]: colors.ink } },
+    ':active': { backgroundColor: colors.canvas },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
@@ -93,15 +120,17 @@ const styles = stylex.create({
       outlineOffset: 2,
     },
   },
+  sortIcon: { flexShrink: 0 },
   row: {
-    'height': ROW_HEIGHT,
+    'height': tableGeometry.rowHeight,
     'borderBottomWidth': 1,
     'borderBottomStyle': 'solid',
     'borderBottomColor': colors.line,
-    ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':hover:not(:active)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':last-child': { borderBottomWidth: 0 },
   },
   selected: { backgroundColor: colors.accentSoft },
-  actionable: { cursor: 'pointer' },
+  actionable: { 'cursor': 'pointer', ':active': { backgroundColor: colors.line } },
   trigger: {
     'WebkitUserSelect': 'text',
     'userSelect': 'text',
@@ -112,7 +141,7 @@ const styles = stylex.create({
     'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': 0,
     'borderWidth': 0,
-    'borderRadius': 2,
+    'borderRadius': radii.sm,
     'color': 'inherit',
     'backgroundColor': 'transparent',
     'fontFamily': 'inherit',
@@ -147,15 +176,28 @@ const styles = stylex.create({
   textRow: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0, width: '100%' },
   leading: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
   secondaryText: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
-  cellViewport: { display: 'flex', alignItems: 'center', minWidth: 0, width: '100%', height: ROW_HEIGHT - 1 },
-  fixedContent: { width: '100%', maxHeight: ROW_HEIGHT - 1 },
+  cellViewport: {
+    display: 'flex',
+    alignItems: 'center',
+    minWidth: 0,
+    width: '100%',
+    height: `calc(${tableGeometry.rowHeight}px - 1px)`,
+  },
+  fixedContent: { width: '100%', maxHeight: `calc(${tableGeometry.rowHeight}px - 1px)` },
   contentCell: { paddingBlock: spacing.sm },
   contentViewport: { height: 'auto' },
-  selection: { width: 44, minWidth: 0, paddingInline: spacing.lg },
+  selection: { width: 44, minWidth: 0, paddingInline: spacing.md },
   spacer: (height: number) => ({ height, padding: 0, borderWidth: 0 }),
   empty: { padding: spacing.xxl, textAlign: 'center', color: colors.muted },
   footer: { padding: spacing.lg, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
-  endContent: { 'minHeight': controls.coarseTarget, 'padding': spacing.lg, ':empty': { minHeight: 0, padding: 0 } },
+  endContent: {
+    'minHeight': controls.coarseTarget,
+    'padding': spacing.lg,
+    'color': colors.muted,
+    'fontSize': typography.captionSize,
+    'lineHeight': typography.captionLineHeight,
+    ':empty': { minHeight: 0, padding: 0 },
+  },
 });
 
 type ColumnAlignment = 'start' | 'end';
@@ -371,7 +413,8 @@ export function DataTable<Row extends object>({
 
       return getRowId(row);
     },
-    estimateSize: () => (rowSizing === 'fixed' ? ROW_HEIGHT : (window?.estimatedRowHeight ?? ROW_HEIGHT)),
+    estimateSize: () =>
+      rowSizing === 'fixed' ? tableGeometry.rowHeight : (window?.estimatedRowHeight ?? tableGeometry.rowHeight),
     scrollMargin: headerHeight,
     scrollPaddingStart: headerHeight,
     overscan: 6,
@@ -391,7 +434,7 @@ export function DataTable<Row extends object>({
 
   const rendered =
     window === undefined
-      ? table.getRowModel().rows.map((row, index) => ({ row, index, gap: 0 }))
+      ? table.getRowModel().rows.map((row, index) => ({ row, index, spacerHeight: 0 }))
       : virtualizer.getVirtualItems().flatMap((item, index, items) => {
           const row = table.getRowModel().rows[item.index];
 
@@ -399,7 +442,7 @@ export function DataTable<Row extends object>({
             return [];
           }
 
-          return [{ row, index: item.index, gap: item.start - (items[index - 1]?.end ?? headerHeight) }];
+          return [{ row, index: item.index, spacerHeight: item.start - (items[index - 1]?.end ?? headerHeight) }];
         });
 
   // Row measurements can move a footer out of view before its intersection callback runs.
@@ -513,7 +556,7 @@ export function DataTable<Row extends object>({
             <tr>
               {selectedIds !== undefined && (
                 <th scope="col" {...stylex.props(styles.header, styles.selection)}>
-                  Select
+                  <span {...stylex.props(accessibility.hidden)}>Select</span>
                 </th>
               )}
               {columns.map((column) => {
@@ -523,6 +566,7 @@ export function DataTable<Row extends object>({
                   <th
                     key={column.id}
                     scope="col"
+                    title={column.label}
                     aria-sort={direction}
                     {...stylex.props(
                       styles.header,
@@ -545,17 +589,17 @@ export function DataTable<Row extends object>({
                           }
                         }}
                       >
-                        {column.label}
+                        <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
                         {direction === 'ascending' ? (
-                          <ArrowUp size={14} aria-hidden="true" />
+                          <ArrowUp size={14} aria-hidden="true" {...stylex.props(styles.sortIcon)} />
                         ) : direction === 'descending' ? (
-                          <ArrowDown size={14} aria-hidden="true" />
+                          <ArrowDown size={14} aria-hidden="true" {...stylex.props(styles.sortIcon)} />
                         ) : (
-                          <ArrowUpDown size={14} aria-hidden="true" />
+                          <ArrowUpDown size={14} aria-hidden="true" {...stylex.props(styles.sortIcon)} />
                         )}
                       </button>
                     ) : (
-                      column.label
+                      <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
                     )}
                   </th>
                 );
@@ -569,11 +613,11 @@ export function DataTable<Row extends object>({
               }
             }}
           >
-            {rendered.map(({ row, index, gap }) => (
+            {rendered.map(({ row, index, spacerHeight }) => (
               <Fragment key={row.id}>
-                {gap > 0 && (
+                {spacerHeight > 0 && (
                   <tr aria-hidden="true">
-                    <td colSpan={columnCount} {...stylex.props(styles.spacer(gap))} />
+                    <td colSpan={columnCount} {...stylex.props(styles.spacer(spacerHeight))} />
                   </tr>
                 )}
                 <tr

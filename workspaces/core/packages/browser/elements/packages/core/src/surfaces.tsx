@@ -1,7 +1,8 @@
 import { mergeProps } from '@base-ui/react/merge-props';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
-import { colors, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
+import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   panel: {
@@ -12,9 +13,37 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     overflow: 'hidden',
     fontFamily: typography.fontFamily,
+    fontWeight: typography.regularWeight,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    color: colors.ink,
     WebkitFontSmoothing: 'antialiased',
   },
   padded: { padding: spacing.xl },
+  link: {
+    'display': 'block',
+    'boxSizing': 'border-box',
+    'minWidth': 0,
+    'minHeight': { default: 0, [conditions.coarsePointer]: controls.coarseTarget },
+    'borderRadius': 'inherit',
+    'backgroundColor': 'transparent',
+    'color': colors.ink,
+    'fontFamily': typography.fontFamily,
+    'fontWeight': typography.regularWeight,
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
+    'WebkitFontSmoothing': 'antialiased',
+    'textDecorationLine': 'none',
+    'overflowWrap': 'anywhere',
+    ':hover:not(:active)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: `calc(0px - ${controls.focusWidth})`,
+    },
+  },
   row: { display: 'flex', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
   between: { justifyContent: 'space-between' },
   stack: { display: 'flex', flexDirection: 'column', gap: spacing.xl, minWidth: 0 },
@@ -30,6 +59,8 @@ const styles = stylex.create({
 
 type PanelProps = ComponentProps<'section'> & { readonly padded?: boolean };
 
+type SurfaceLinkProps = ComponentProps<'a'> & { readonly xstyle?: PlacementStyle };
+
 type RowProps = ComponentProps<'div'> & { readonly between?: boolean };
 
 type StackProps = ComponentProps<'div'> & { readonly compact?: boolean };
@@ -40,6 +71,10 @@ type DividerProps = ComponentProps<'hr'>;
 
 export function Panel({ padded = true, ...props }: PanelProps): ReactNode {
   return <section {...mergeProps(stylex.props(styles.panel, padded && styles.padded), props)} />;
+}
+
+export function SurfaceLink({ xstyle, ...props }: SurfaceLinkProps): ReactNode {
+  return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
 }
 
 export function Row({ between = false, ...props }: RowProps): ReactNode {

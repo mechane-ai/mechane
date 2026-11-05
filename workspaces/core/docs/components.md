@@ -18,6 +18,33 @@ version.
 
 The [package guide](../packages/browser/elements/README.md) covers installing the npm package and its compiled CSS.
 
+The [visual system](visual-system.md) explains the design decisions. Component geometry follows roles: compact actions
+are 32px, ordinary controls 36px, coarse-pointer targets at least 44px, and ordinary table rows 48px. The source tokens
+own these values. Body text, captions, controls, section headings, and record titles use their respective typography
+roles. Small radii soften controls; page frames and shared dividers stay square.
+
+## Add or change a component
+
+1. Choose an existing family and neighboring composition. Reuse its control behavior, tokens, and named variants. Add a
+   token only for a reusable visual decision that existing roles cannot express.
+2. Let parents own layout. Use Row for centered controls, Stack for related groups, RecordPage.Content for separated
+   sections, and DataTable for comparable records. Keep explanatory copy near the field or decision that needs it.
+3. Keep pointer hover, press, keyboard focus, pending, unavailable, and selection states distinct. Repeated navigation
+   stays immediate. Use the adopted behavior library for focus and dismissal instead of writing another state machine.
+4. Add useful synthetic catalog examples. Inspect long text, narrow layouts, both themes, empty and failed content, and
+   the changed keyboard interaction. Compare pending and loaded geometry in the same composition.
+5. Review the final source against the scoped contracts and run the package checks. Inspect the built catalog and an
+   actual consuming page. Keep temporary screenshots and geometry probes outside source; retain automated tests only
+   under the repository's test-curation policy.
+
+Structural spacing uses 4, 8, 12, 16, 24, and 32px roles. The 2px token handles fine metadata separation. Border widths,
+glyph dimensions, and measured optical padding are geometry, not new layout scales. Avoid section-specific margins that
+duplicate a parent gap. A count and badge share a Row; a label and control share a Field.
+
+A page title normally stands alone. Preserve descriptions supplied by records and explanations of unavailable or
+restricted content. Avoid subtitles that merely narrate a page's purpose. Give every edge one border owner and every
+fixed region an explicit divider; content must not scroll behind an unseparated command.
+
 ## Choose
 
 | Need                                     | Owner and guide                                                                                                                                                                  |
@@ -44,9 +71,17 @@ variables. These are CSS values; chart scales need numeric geometry in the calle
 `elements/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from
 `/theme` to the document root so portaled controls inherit it. Applications own theme preference and persistence.
 
+Use CSS `calc()` when deriving CSS dimensions from imported StyleX constants. JavaScript arithmetic on a transformed
+token can emit an invalid declaration even when TypeScript accepts it. Inspect the compiled value and the resulting
+geometry. Likewise, conditionally applied styles must preserve their base values; verify both desktop and narrow
+layouts.
+
 Keep the compact desktop type and spacing scale. Text-entry controls use 16px text on coarse pointers, and standalone
 controls provide 44px touch targets. Hover styles apply only to a fine pointer that supports hover. Shared tokens own
 these decisions so applications do not repair individual controls.
+
+Where hover and press have different colors, exclude `:active` from the hover selector. Media-conditioned hover styles
+can otherwise outrank unconditional pressed styles. Verify the computed pressed state rather than only its declaration.
 
 Keep buttons, tab selection, tooltips, and refreshes immediate. Dialogs fade and scale slightly; drawers follow their
 edge and the user's swipe. Reduced motion removes transition time. Base UI owns focus, dismissal, and removal after

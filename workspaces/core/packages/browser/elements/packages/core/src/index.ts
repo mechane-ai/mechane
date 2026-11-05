@@ -7,5 +7,5 @@ export type { AgentAppearance, AgentAvatarColor, AgentAvatarProps, AgentAvatarSi
 export { AgentAvatar, agentAppearance, agentAvatarColors } from './agent-avatar.tsx';
 export { CopyValue } from './copy-value.tsx';
 export { Accordion, Collapsible } from './disclosure.tsx';
-export { Panel, Row, Stack, Columns, Divider } from './surfaces.tsx';
+export { Panel, SurfaceLink, Row, Stack, Columns, Divider } from './surfaces.tsx';
 export { Text, Heading, Subheading, Muted, Identifier, Prose, Badge, Status } from './text.tsx';

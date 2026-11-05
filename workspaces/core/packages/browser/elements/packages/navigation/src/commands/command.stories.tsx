@@ -12,8 +12,8 @@ function CommandsExample() {
   const commands: ReadonlyArray<CommandAction> = [
     {
       id: 'create',
-      label: 'Create a project',
-      description: 'Start a new workspace',
+      label: 'Create a project for the next release review',
+      description: 'Start a workspace with the documents and collaborators needed for the review.',
       onSelect: () => setLastAction('Create project requested.'),
     },
     { id: 'view', label: 'Open recent activity', onSelect: () => setLastAction('Recent activity requested.') },

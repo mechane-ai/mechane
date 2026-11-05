@@ -1,0 +1,56 @@
+import * as stylex from '@stylexjs/stylex';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+
+export const viewerStyles = stylex.create({
+  root: {
+    minWidth: 0,
+    borderWidth: 1,
+    borderStyle: 'solid',
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+    color: colors.ink,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
+  },
+  header: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    minWidth: 0,
+    paddingBlock: spacing.sm,
+    paddingInline: spacing.md,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontWeight: typography.mediumWeight,
+    color: colors.muted,
+    borderBlockEndWidth: 1,
+    borderBlockEndStyle: 'solid',
+    borderBlockEndColor: colors.line,
+  },
+  label: { flex: '1 1 24ch', minWidth: 0, overflowWrap: 'anywhere' },
+  actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  scrollRegion: {
+    'minWidth': 0,
+    'outlineStyle': 'none',
+    ':focus-visible': {
+      outlineWidth: controls.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: `calc(-1 * ${controls.focusWidth})`,
+    },
+  },
+  note: {
+    margin: 0,
+    paddingBlock: spacing.sm,
+    paddingInline: spacing.md,
+    color: colors.muted,
+    fontFamily: typography.fontFamily,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
+  },
+});

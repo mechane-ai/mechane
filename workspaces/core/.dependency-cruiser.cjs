@@ -1290,6 +1290,17 @@ module.exports = {
       to: { path: '/node_modules/react-resizable-panels/' },
     },
     {
+      name: 'confine:sonner',
+      comment:
+        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
+      severity: 'error',
+      from: {
+        pathNot:
+          '^(?:packages/browser/elements/packages|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
+      },
+      to: { path: '/node_modules/sonner/' },
+    },
+    {
       name: 'confine:streamdown',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',

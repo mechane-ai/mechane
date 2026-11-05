@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
+import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ColorLegend } from './color-legend.tsx';
@@ -54,6 +54,7 @@ const styles = stylex.create({
   missing: { borderBottomStyle: 'dotted', borderBottomColor: colors.muted },
   interactive: {
     'cursor': 'pointer',
+    'outlineStyle': 'none',
     'lineHeight': { default: typography.bodyLineHeight, [conditions.coarsePointer]: controls.coarseTarget },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -62,6 +63,7 @@ const styles = stylex.create({
       outlineOffset: 1,
     },
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
   },
   selected: { outlineWidth: controls.focusWidth, outlineColor: colors.focus, outlineStyle: 'solid', outlineOffset: 1 },
   table: {
@@ -78,10 +80,11 @@ const styles = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
     textAlign: 'start',
-    fontWeight: 400,
+    fontWeight: typography.regularWeight,
   },
   literal: { fontFamily: typography.monoFamily, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
   index: { minWidth: controls.coarseTarget },
+  footer: { display: 'grid', gap: spacing.md },
   empty: { margin: 0, color: colors.muted, fontSize: typography.bodySize, lineHeight: typography.bodyLineHeight },
 });
 
@@ -104,11 +107,24 @@ export function TokenHeatmap({
     return <ChartInputError title={title} description={description} message={problem} />;
   }
 
+  const selected = tokens.find((token) => token.id === selection?.selectedId);
+
   return (
     <ChartFrame
       title={title}
       description={description}
-      footer={<ColorLegend label={valueLabel} domain={domain} palette={palette} formatValue={formatValue} />}
+      footer={
+        <div {...stylex.props(styles.footer)}>
+          <ColorLegend label={valueLabel} domain={domain} palette={palette} formatValue={formatValue} />
+          {selection !== undefined && tokens.length > 0 && (
+            <ChartReadout>
+              {selected === undefined
+                ? 'Select a token to inspect its exact text and score.'
+                : `Token ${selected.index}, ${JSON.stringify(selected.text)}, ${valueLabel}: ${tokenScoreText(selected, domain, formatValue)}`}
+            </ChartReadout>
+          )}
+        </div>
+      }
     >
       {tokens.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
@@ -117,12 +133,7 @@ export function TokenHeatmap({
           {tokens.map((token) => {
             const isOutsideDomain = token.score !== null && !isHeatmapValueInDomain(token.score, domain);
 
-            const score =
-              token.score === null
-                ? 'Unavailable'
-                : `${formatValue(token.score)}${isOutsideDomain ? ' (outside domain)' : ''}`;
-
-            const label = `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${score}`;
+            const label = `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${tokenScoreText(token, domain, formatValue)}`;
 
             const appearance = stylex.props(
               styles.token,
@@ -181,11 +192,7 @@ export function TokenHeatmap({
                     </ChartDatumButton>
                   </td>
                   <td {...stylex.props(styles.cell, styles.literal)}>{JSON.stringify(token.text)}</td>
-                  <td {...stylex.props(styles.cell)}>
-                    {token.score === null
-                      ? 'Unavailable'
-                      : `${formatValue(token.score)}${isHeatmapValueInDomain(token.score, domain) ? '' : ' (outside domain)'}`}
-                  </td>
+                  <td {...stylex.props(styles.cell)}>{tokenScoreText(token, domain, formatValue)}</td>
                 </tr>
               ))}
             </tbody>
@@ -194,6 +201,18 @@ export function TokenHeatmap({
       )}
     </ChartFrame>
   );
+}
+
+function tokenScoreText(
+  token: HeatmapToken,
+  domain: HeatmapScale['domain'],
+  formatValue: (value: number) => string,
+): string {
+  if (token.score === null) {
+    return 'Unavailable';
+  }
+
+  return `${formatValue(token.score)}${isHeatmapValueInDomain(token.score, domain) ? '' : ' (outside domain)'}`;
 }
 
 function tokenProblem({

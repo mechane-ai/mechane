@@ -22,7 +22,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Dialog.Root owns the open state. Trigger opens a Popup through Portal and Backdrop; Title and Description give the dialog its accessible name and context. Close composes the dismissal control. Use a dialog for a focused decision, and an inline Notice for a recoverable page error. The application supplies the decision, action, permissions, and pending state. Keep the trigger mounted so dismissal can restore focus. Use render to compose triggers instead of nesting buttons.',
+          'Supported. Dialog.Root owns the open state. Trigger opens a Popup through Portal and Backdrop; Title and Description give the dialog its accessible name and context. Close composes the dismissal control. Use a dialog for a focused decision, and an inline Notice for a recoverable page error. The application supplies the decision, action, permissions, and pending state. Keep the trigger mounted so dismissal can restore focus. Use render to compose triggers instead of nesting buttons. Frequent compositions such as CommandPalette set motion="none" on Popup and Backdrop; ordinary dialogs use the standard motion and respect reduced motion.',
       },
     },
   },

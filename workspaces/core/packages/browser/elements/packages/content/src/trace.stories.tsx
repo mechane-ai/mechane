@@ -76,3 +76,23 @@ export const DistinctOutcomes: Story = {
     </Trace.Root>
   ),
 };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <Trace.Root label="Recorded comparison activity">
+      <Trace.Item
+        id="comparison"
+        label="Compare the recorded measurement-comparison request with the preceding baseline"
+        status="running"
+        statusLabel="Awaiting the application's acknowledgement of completion"
+        description="The request and its supplied source remain available while the comparison is running."
+        detail={<Text>Request evaluation-comparison-record-with-a-long-unbroken-identifier</Text>}
+      >
+        <Trace.Group label="Related evidence">
+          <Trace.Item id="input" label="Input accepted" status="complete" statusLabel="Confirmed" />
+        </Trace.Group>
+      </Trace.Item>
+    </Trace.Root>
+  ),
+};

@@ -1,7 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { CopyValue, Muted, Panel, Prose, Stack, Subheading } from '../../core/src/index.ts';
+import * as stylex from '@stylexjs/stylex';
+import { CopyValue, Muted, Prose, Stack, Subheading } from '../../core/src/index.ts';
+import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Details, Inspector } from './inspector.tsx';
 import { Metric, MetricGrid } from './metrics.tsx';
+
+const styles = stylex.create({ master: { padding: spacing.xl }, narrow: { maxWidth: 280 } });
 
 const meta = {
   title: 'Data display/Record details',
@@ -11,7 +15,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Inspector groups a selected detail with its master content and requires a contextual accessible label. Details is a key/value list. MetricGrid groups Metric values, and CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use Table for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
+          'Supported. Inspector groups a selected detail with its master content and requires a contextual accessible label. It owns the outer frame and the divider above its detail; place unframed content in the master area. Details is a key/value list. MetricGrid groups Metric values; layout="columns" follows the available container width. CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use Table for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
       },
     },
   },
@@ -25,12 +29,12 @@ export const Recommended: Story = {
     <Inspector
       label="Selected example operation"
       master={
-        <Panel>
+        <div {...stylex.props(styles.master)}>
           <Stack compact>
             <Subheading>Prepare release notes</Subheading>
             <Muted>The selected operation’s summary remains available.</Muted>
           </Stack>
-        </Panel>
+        </div>
       }
       detail={
         <Stack>
@@ -64,7 +68,7 @@ export const LongValues: Story = {
     <Details
       items={[
         {
-          label: 'Reference',
+          label: 'Source reference with a long descriptive label',
           value: (
             <CopyValue
               label="reference"
@@ -92,3 +96,17 @@ export const MetricColumns: Story = {
     </MetricGrid>
   ),
 };
+
+export const NarrowMetrics: Story = {
+  render: () => (
+    <div {...stylex.props(styles.narrow)}>
+      <MetricGrid layout="columns">
+        <Metric label="completed evaluations with recorded output" value="472" />
+        <Metric label="median duration across successful evaluations" value="350 ms" />
+        <Metric label="reportedtotalwithoutseparators" value="Unknown" />
+      </MetricGrid>
+    </div>
+  ),
+};
+
+export const NarrowDetails: Story = { ...LongValues, globals: { viewport: { value: 'narrow', isRotated: false } } };

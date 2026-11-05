@@ -5,30 +5,29 @@ import { accessibility } from '../../foundations/src/accessibility.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
-  skeleton: {
-    display: 'block',
-    maxWidth: '100%',
-    backgroundColor: colors.canvas,
-    borderRadius: radii.sm,
-    flexShrink: 0,
-  },
+  skeleton: { display: 'block', maxWidth: '100%', backgroundColor: colors.line, borderRadius: radii.sm, flexShrink: 0 },
   dimensions: (width: number | string, height: number | string) => ({ width, height }),
   width: (width: number | string) => ({ width }),
   circle: { borderRadius: '50%' },
   rectangle: {},
-  text: { display: 'inline-flex', flexDirection: 'column', maxWidth: '100%', verticalAlign: 'top' },
+  text: { display: 'inline-flex', flexDirection: 'column', minWidth: 0, maxWidth: '100%', verticalAlign: 'top' },
   line: { display: 'flex', alignItems: 'center', height: '1lh' },
   spinner: {
     display: 'inline-flex',
     position: 'relative',
     alignItems: 'center',
+    minWidth: 0,
+    maxWidth: '100%',
     gap: spacing.sm,
     color: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
+    overflowWrap: 'anywhere',
   },
   icon: { width: controls.iconSize, height: controls.iconSize, flexShrink: 0 },
+  label: { minWidth: 0 },
 });
 
 type SkeletonShape = 'rectangle' | 'circle';
@@ -67,7 +66,7 @@ export function Spinner({ label, showLabel = false }: SpinnerProps): ReactNode {
   return (
     <span role="status" {...stylex.props(styles.spinner)}>
       <LoaderCircle aria-hidden {...stylex.props(styles.icon)} />
-      <span {...stylex.props(!showLabel && accessibility.hidden)}>{label}</span>
+      <span {...stylex.props(styles.label, !showLabel && accessibility.hidden)}>{label}</span>
     </span>
   );
 }

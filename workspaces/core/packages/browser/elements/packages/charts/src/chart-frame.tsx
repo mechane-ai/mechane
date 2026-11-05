@@ -28,6 +28,7 @@ const styles = stylex.create({
     backgroundColor: colors.surface,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
+    fontWeight: typography.regularWeight,
     lineHeight: typography.bodyLineHeight,
   },
   heading: {
@@ -39,14 +40,33 @@ const styles = stylex.create({
     paddingBlockEnd: spacing.lg,
   },
   title: { flex: '1 1 200px', minWidth: 0, overflowWrap: 'anywhere' },
-  caption: { margin: 0, fontSize: typography.inputSize, lineHeight: typography.bodyLineHeight, fontWeight: 400 },
-  description: { margin: 0, marginBlockStart: spacing.xs, color: colors.muted, fontSize: typography.captionSize },
+  caption: {
+    margin: 0,
+    fontSize: typography.inputSize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.mediumWeight,
+  },
+  description: {
+    margin: 0,
+    marginBlockStart: spacing.xs,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+  },
   actions: { display: 'flex', flexWrap: 'wrap', gap: spacing.sm, maxWidth: '100%' },
-  footer: { marginBlockStart: spacing.md, color: colors.muted, fontSize: typography.captionSize },
+  footer: {
+    marginBlockStart: spacing.md,
+    minWidth: 0,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    overflowWrap: 'anywhere',
+  },
   legend: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: spacing.md,
+    columnGap: spacing.md,
+    rowGap: spacing.xs,
     listStyle: 'none',
     margin: 0,
     padding: 0,
@@ -55,13 +75,22 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
   },
-  legendItem: { display: 'inline-flex', alignItems: 'center', gap: spacing.xs },
+  legendItem: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minWidth: 0,
+    maxWidth: '100%',
+    overflowWrap: 'anywhere',
+  },
   swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
   datum: {
     display: 'flex',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: spacing.md,
+    columnGap: spacing.md,
+    rowGap: spacing.xs,
     minWidth: 0,
     minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
     boxSizing: 'border-box',
@@ -71,6 +100,7 @@ const styles = stylex.create({
     paddingInline: spacing.sm,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
+    fontWeight: typography.regularWeight,
     lineHeight: typography.bodyLineHeight,
     textAlign: 'start',
     overflowWrap: 'anywhere',
@@ -80,7 +110,9 @@ const styles = stylex.create({
   },
   action: {
     'cursor': 'pointer',
+    'outlineStyle': 'none',
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',
@@ -89,11 +121,22 @@ const styles = stylex.create({
     },
   },
   selected: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
+  readout: {
+    margin: 0,
+    minWidth: 0,
+    minHeight: typography.captionLineHeight,
+    color: colors.ink,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontVariantNumeric: 'tabular-nums',
+    overflowWrap: 'anywhere',
+  },
   disclosure: { marginBlockStart: spacing.md, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
   data: {
     'minWidth': 0,
     'maxHeight': 320,
     'overflow': 'auto',
+    'outlineStyle': 'none',
     ':focus-visible': {
       outlineColor: colors.focus,
       outlineStyle: 'solid',
@@ -161,6 +204,14 @@ export function ChartDatumButton({
     >
       {children}
     </button>
+  );
+}
+
+export function ChartReadout({ children }: { readonly children: ReactNode }): ReactNode {
+  return (
+    <p aria-live="polite" {...stylex.props(styles.readout)}>
+      {children}
+    </p>
   );
 }
 

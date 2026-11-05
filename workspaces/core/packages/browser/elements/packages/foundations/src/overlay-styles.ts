@@ -25,8 +25,9 @@ export const overlayStyles = stylex.create({
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.sectionSize,
     lineHeight: typography.sectionLineHeight,
-    fontWeight: 600,
+    fontWeight: typography.strongWeight,
     color: colors.ink,
+    overflowWrap: 'anywhere',
   },
   description: {
     margin: 0,
@@ -34,6 +35,7 @@ export const overlayStyles = stylex.create({
     WebkitFontSmoothing: 'antialiased',
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
     color: colors.muted,
     overflowWrap: 'anywhere',
   },

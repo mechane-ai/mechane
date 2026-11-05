@@ -1,18 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as stylex from '@stylexjs/stylex';
 import { EmptyState, Loading, Notice } from '../../feedback/src/index.ts';
+import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Button } from './actions.tsx';
-import { Columns, Divider, Panel, Row, Stack } from './surfaces.tsx';
+import { Columns, Divider, Panel, Row, Stack, SurfaceLink } from './surfaces.tsx';
 import { Muted, Subheading } from './text.tsx';
+
+const styles = stylex.create({ linkContent: { padding: spacing.lg } });
 
 const meta = {
   title: 'Feedback/Surfaces',
   component: Panel,
-  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, Loading },
+  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, Loading, SurfaceLink },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Panel groups related content; Stack, Row, Columns, and Divider provide ordinary flow and separation. EmptyState explains an empty result and its next action. Notice announces progress or an error; Loading names missing initial content while preserving its shape. The application chooses the read state, retry handler, and permission-aware action. Keep existing content mounted during refreshes, and place a failed-refresh Notice beside it. Reserve Loading and full errors for an initial read with no usable result.',
+          'Supported. Panel groups related content; Stack, Row, Columns, and Divider provide ordinary flow and separation. SurfaceLink makes supplied content one native navigation target with shared hover, press, and inset keyboard focus. Put it inside an unpadded Panel when a border is needed; its child owns content layout and padding. Use TextLink for inline navigation and Button for actions. Keep other interactive controls outside SurfaceLink. EmptyState explains an empty result and its next action. Notice announces progress or a local error; Loading names missing initial content while preserving its shape. The application chooses the read state, retry handler, and permission-aware action. Keep existing content mounted during refreshes and report a failed refresh through one resource-owned toast with Retry. Reserve Loading and local failure content for an initial read with no usable result.',
       },
     },
   },
@@ -44,6 +48,21 @@ export const Recommended: Story = {
   ),
 };
 
+export const LinkedPanel: Story = {
+  render: () => (
+    <Panel padded={false}>
+      <SurfaceLink href="#release-notes">
+        <div {...stylex.props(styles.linkContent)}>
+          <Stack compact>
+            <Subheading>Release notes and follow-up review materials</Subheading>
+            <Muted>Open the saved notes and the references supplied by collaborators.</Muted>
+          </Stack>
+        </div>
+      </SurfaceLink>
+    </Panel>
+  ),
+};
+
 export const InitialLoading: Story = {
   render: () => (
     <Stack>
@@ -62,22 +81,6 @@ export const InitialFailure: Story = {
     <Notice error>
       Items could not be loaded. <Button>Retry</Button>
     </Notice>
-  ),
-};
-
-export const RefreshFailure: Story = {
-  render: () => (
-    <Stack>
-      <Notice error>
-        Refresh failed. Showing the last saved result. <Button>Retry refresh</Button>
-      </Notice>
-      <Panel>
-        <Stack compact>
-          <Subheading>Release notes</Subheading>
-          <Muted>The existing result remains available while a retry is possible.</Muted>
-        </Stack>
-      </Panel>
-    </Stack>
   ),
 };
 

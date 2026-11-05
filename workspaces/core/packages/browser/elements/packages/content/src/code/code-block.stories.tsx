@@ -53,6 +53,17 @@ export const UnsupportedLanguage: Story = {
 };
 
 export const Bounded: Story = { args: { maxLines: 3 } };
+export const Empty: Story = { args: { code: '' } };
+
+export const Narrow: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  args: {
+    filename: 'workspaces/evaluation/reports/measurement-comparison-with-complete-request-identifiers.ts',
+    code: `const request = "${'recorded-request-identifier-'.repeat(10)}";\n\n${code}`,
+    annotations: [{ line: 1, content: 'The full request identifier remains available in the supplied source.' }],
+  },
+};
+
 export const Streaming: Story = { render: () => <StreamingExample /> };
 
 function StreamingExample() {

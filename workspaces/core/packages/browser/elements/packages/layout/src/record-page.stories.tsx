@@ -113,7 +113,7 @@ export const StackedProperties: Story = {
 export const WithoutProperties: Story = {
   render: () => (
     <RecordPage.Root>
-      <RecordPage.Toolbar backLabel="Documents" backHref="#example-documents" />
+      <RecordPage.Toolbar backLabel="Shared documents and review checklists" backHref="#example-documents" />
       <RecordPage.Body>
         <RecordPage.Content>
           <RecordPage.Header
@@ -129,6 +129,11 @@ export const WithoutProperties: Story = {
       </RecordPage.Body>
     </RecordPage.Root>
   ),
+};
+
+export const LongRecordAtNarrowWidth: Story = {
+  ...WithoutProperties,
+  globals: { viewport: { value: 'narrow', isRotated: false } },
 };
 
 export const PageLinks: Story = {

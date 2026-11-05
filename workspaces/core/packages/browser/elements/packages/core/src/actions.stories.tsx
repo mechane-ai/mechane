@@ -1,14 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as stylex from '@stylexjs/stylex';
 import { ExternalLink, Plus, RefreshCw } from 'lucide-react';
 import { SkipLink } from '../../navigation/src/index.ts';
 import { Button, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
+import { CopyValue } from './copy-value.tsx';
 import { Row, Stack } from './surfaces.tsx';
 import { Muted } from './text.tsx';
+
+const styles = stylex.create({ narrow: { width: 240, maxWidth: '100%' } });
 
 const meta = {
   title: 'Controls/Actions',
   component: Button,
-  subcomponents: { IconButton, IconLink, TextButton, TextLink, SkipLink },
+  subcomponents: { IconButton, IconLink, TextButton, TextLink, SkipLink, CopyValue },
   parameters: {
     docs: {
       description: {
@@ -113,5 +117,28 @@ export const KeyboardNavigation: Story = {
         <Button>First content action</Button>
       </main>
     </Stack>
+  ),
+};
+
+export const LongLabels: Story = {
+  render: () => (
+    <div {...stylex.props(styles.narrow)}>
+      <Stack compact>
+        <Button variant="solid">Save the reviewed changes and notify collaborators</Button>
+        <Button pending pendingLabel="Saving the reviewed changes and notifying collaborators…">
+          Save the reviewed changes and notify collaborators
+        </Button>
+        <Button disabled>Save the reviewed changes and notify collaborators</Button>
+      </Stack>
+    </div>
+  ),
+};
+
+export const StableCopyFeedback: Story = {
+  render: () => (
+    <Row>
+      <CopyValue label="record reference" value="record-2026-11-05-0123456789abcdef" />
+      <TextLink href="#record">Open record</TextLink>
+    </Row>
   ),
 };

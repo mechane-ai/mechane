@@ -1,15 +1,16 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, conditions, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import type { NumericDomain } from './distribution-input.ts';
 
 export const distributionGeometry = { height: 160 } as const;
 
 const tickFractions = [0, 0.5, 1] as const;
+const NARROW_ROW = '@container (max-width:420px)';
 
 export const distributionStyles = stylex.create({
-  plot: { minWidth: 0, display: 'grid', gridTemplateColumns: 'max-content minmax(0, 1fr)', gap: spacing.sm },
+  plot: { minWidth: 0, display: 'grid', gridTemplateColumns: 'minmax(0, max-content) minmax(0, 1fr)', gap: spacing.sm },
   yAxis: {
     height: distributionGeometry.height,
     display: 'flex',
@@ -20,7 +21,10 @@ export const distributionStyles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
+    maxWidth: 120,
+    overflowWrap: 'anywhere',
   },
+  plotArea: { minWidth: 0 },
   svg: { display: 'block', width: '100%', height: distributionGeometry.height, overflow: 'hidden' },
   grid: { stroke: colors.line, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
   axis: {
@@ -32,6 +36,9 @@ export const distributionStyles = stylex.create({
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
   },
+  tick: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
+  middleTick: { textAlign: 'center' },
+  endTick: { textAlign: 'end' },
   axisNames: { gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', gap: spacing.md },
   label: {
     color: colors.muted,
@@ -39,22 +46,27 @@ export const distributionStyles = stylex.create({
     lineHeight: typography.captionLineHeight,
     overflowWrap: 'anywhere',
   },
-  values: { display: 'grid', minWidth: 0 },
-  value: { display: 'flex', justifyContent: 'space-between', gap: spacing.lg, minWidth: 0, width: '100%' },
-  summary: { fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere', textAlign: 'end' },
+  values: { display: 'grid', minWidth: 0, containerType: 'inline-size' },
+  value: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    columnGap: spacing.lg,
+    rowGap: spacing.xs,
+    minWidth: 0,
+    width: '100%',
+  },
+  summary: { minWidth: 0, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere', textAlign: 'end' },
   row: {
     display: 'grid',
-    gridTemplateColumns: {
-      default: 'minmax(100px, 1fr) minmax(120px, 2fr)',
-      [conditions.compactText]: 'minmax(0, 1fr)',
-    },
+    gridTemplateColumns: { default: 'minmax(100px, 1fr) minmax(120px, 2fr)', [NARROW_ROW]: 'minmax(0, 1fr)' },
     gap: spacing.md,
     alignItems: 'center',
     minWidth: 0,
     width: '100%',
   },
   rowAxis: { boxSizing: 'border-box', paddingInline: spacing.sm },
-  axisSpacer: { display: { default: 'block', [conditions.compactText]: 'none' } },
+  axisSpacer: { display: { default: 'block', [NARROW_ROW]: 'none' } },
   rowLabel: { minWidth: 0, display: 'grid', gap: spacing.xxs, overflowWrap: 'anywhere' },
   rowValue: { color: colors.muted, fontVariantNumeric: 'tabular-nums' },
   rowSvg: { display: 'block', width: '100%', height: 28, overflow: 'hidden' },
@@ -97,7 +109,7 @@ export function NumericPlot({
           <span key={tick}>{formatY(tick)}</span>
         ))}
       </div>
-      <div ref={ref}>
+      <div ref={ref} {...stylex.props(distributionStyles.plotArea)}>
         <svg
           aria-hidden
           viewBox={`0 0 ${width} ${distributionGeometry.height}`}
@@ -119,8 +131,17 @@ export function NumericPlot({
       </div>
       <span />
       <div aria-hidden {...stylex.props(distributionStyles.axis)}>
-        {xTicks.map((tick) => (
-          <span key={tick}>{formatX(tick)}</span>
+        {xTicks.map((tick, index) => (
+          <span
+            key={tick}
+            {...stylex.props(
+              distributionStyles.tick,
+              index === 1 && distributionStyles.middleTick,
+              index === 2 && distributionStyles.endTick,
+            )}
+          >
+            {formatX(tick)}
+          </span>
         ))}
       </div>
     </div>
@@ -136,8 +157,8 @@ export function DomainLabels({
 }): ReactNode {
   return (
     <div {...stylex.props(distributionStyles.axis)}>
-      <span>{formatValue(domain[0])}</span>
-      <span>{formatValue(domain[1])}</span>
+      <span {...stylex.props(distributionStyles.tick)}>{formatValue(domain[0])}</span>
+      <span {...stylex.props(distributionStyles.tick, distributionStyles.endTick)}>{formatValue(domain[1])}</span>
     </div>
   );
 }

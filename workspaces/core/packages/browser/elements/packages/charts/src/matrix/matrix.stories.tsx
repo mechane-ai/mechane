@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Panel, Stack, Text } from '../../../core/src/index.ts';
+import { Panel, Stack } from '../../../core/src/index.ts';
 import { ColorLegend } from './color-legend.tsx';
 import { Matrix } from './matrix.tsx';
 import type { MatrixAxisItem, MatrixCell } from './matrix.tsx';
@@ -91,28 +91,20 @@ function Attention(): ReactNode {
 
 function Tokens(): ReactNode {
   const [selectedId, setSelectedId] = useState<string>();
-  const selected = tokens.find((token) => token.id === selectedId);
 
   return (
     <Panel>
-      <Stack>
-        <TokenHeatmap
-          title="Token contributions"
-          description="Synthetic signed attribution values supplied by an analysis. This is a seven-token window, with exact spaces, a newline, and a tab retained."
-          tokens={tokens}
-          domain={[-1, 1]}
-          palette="diverging"
-          valueLabel="Contribution (logit units)"
-          formatValue={formatValue}
-          selection={{ selectedId, onSelect: setSelectedId }}
-          emptyLabel="No tokens were supplied."
-        />
-        <Text tone="muted">
-          {selected === undefined
-            ? 'Select a token to inspect it.'
-            : `Index ${selected.index}: ${JSON.stringify(selected.text)} · ${selected.score === null ? 'Unavailable' : formatValue(selected.score)}`}
-        </Text>
-      </Stack>
+      <TokenHeatmap
+        title="Token contributions"
+        description="Synthetic signed attribution values supplied by an analysis. This is a seven-token window, with exact spaces, a newline, and a tab retained."
+        tokens={tokens}
+        domain={[-1, 1]}
+        palette="diverging"
+        valueLabel="Contribution (logit units)"
+        formatValue={formatValue}
+        selection={{ selectedId, onSelect: setSelectedId }}
+        emptyLabel="No tokens were supplied."
+      />
     </Panel>
   );
 }
@@ -220,4 +212,37 @@ export const InvalidInput: Story = {
       />
     </Stack>
   ),
+};
+
+function LongMatrixLabels(): ReactNode {
+  const [selectedId, onSelect] = useState<string>('the-map');
+
+  const longAxes = axes.map((axis) => ({
+    ...axis,
+    label: `Prepared representation for ${JSON.stringify(axis.label)} in the selected sample`,
+  }));
+
+  return (
+    <Stack>
+      <Matrix
+        title="Full labels in a compact matrix"
+        description="Synthetic long labels remain available in selected values and View data."
+        rows={longAxes}
+        columns={longAxes}
+        cells={attention}
+        domain={[0, 1]}
+        palette="sequential"
+        valueLabel="Normalized attention weight for the selected layer and head"
+        formatValue={formatValue}
+        selection={{ selectedId, onSelect }}
+        emptyLabel="No values were supplied."
+      />
+      <Tokens />
+    </Stack>
+  );
+}
+
+export const NarrowLongLabels: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <LongMatrixLabels />,
 };

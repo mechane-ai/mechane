@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import stripAnsi from 'strip-ansi';
 import { Button, CopyValue } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { viewerStyles } from './viewer-styles.ts';
 
 export type LogViewerProps = {
   readonly output: string;
@@ -14,28 +15,6 @@ export type LogViewerProps = {
 };
 
 const styles = stylex.create({
-  root: {
-    minWidth: 0,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    padding: spacing.sm,
-    borderBlockEndWidth: 1,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndColor: colors.line,
-  },
-  actions: { display: 'flex', alignItems: 'center', gap: spacing.md },
   output: (maxHeight: number) => ({
     maxHeight,
     overflow: 'auto',
@@ -48,14 +27,7 @@ const styles = stylex.create({
     overflowWrap: 'anywhere',
     tabSize: 2,
   }),
-  notice: {
-    color: colors.muted,
-    paddingInline: spacing.md,
-    paddingBlock: spacing.xs,
-    borderBlockEndWidth: 1,
-    borderBlockEndStyle: 'solid',
-    borderBlockEndColor: colors.line,
-  },
+  notice: { borderBlockEndWidth: 1, borderBlockEndStyle: 'solid', borderBlockEndColor: colors.line },
 });
 
 const MAX_PREVIEW_CHARACTERS = 200_000;
@@ -81,13 +53,13 @@ export function LogViewer({
   }, [output, isFollowing]);
 
   return (
-    <section aria-label={label} {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.header)}>
-        <span>
+    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
+      <div {...stylex.props(viewerStyles.header)}>
+        <span {...stylex.props(viewerStyles.label)}>
           {label}
           {isRunning && ' · running'}
         </span>
-        <div {...stylex.props(styles.actions)}>
+        <div {...stylex.props(viewerStyles.actions)}>
           <Button size="sm" variant="ghost" onClick={() => setFollowing(!isFollowing)}>
             {isFollowing ? 'Pause following' : 'Follow output'}
           </Button>
@@ -97,12 +69,12 @@ export function LogViewer({
         </div>
       </div>
       {omittedLines > 0 && (
-        <div {...stylex.props(styles.notice)}>
+        <div {...stylex.props(viewerStyles.note, styles.notice)}>
           {omittedLines} earlier lines omitted from this view. Copy includes the supplied output.
         </div>
       )}
       {text.length > MAX_PREVIEW_CHARACTERS && (
-        <div {...stylex.props(styles.notice)}>
+        <div {...stylex.props(viewerStyles.note, styles.notice)}>
           Preview limited to the last 200,000 characters. Copy includes the supplied output.
         </div>
       )}
@@ -116,7 +88,7 @@ export function LogViewer({
 
           setFollowing(node.scrollHeight - node.scrollTop - node.clientHeight < 8);
         }}
-        {...stylex.props(styles.output(maxHeight))}
+        {...stylex.props(viewerStyles.scrollRegion, styles.output(maxHeight))}
       >
         {text.length === 0 ? 'No output recorded.' : retainedLines.join('\n')}
       </pre>
