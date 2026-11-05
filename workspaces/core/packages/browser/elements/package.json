@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -94,7 +94,13 @@
     "vite": "8.3.5"
   },
   "peerDependencies": {
+    "@types/react": "^19.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
   }
 }

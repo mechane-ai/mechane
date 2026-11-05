@@ -7,7 +7,8 @@ receive values and callbacks; applications own routing, data, identity, and pers
 ## Install
 
 Install [Elements from npm](https://www.npmjs.com/package/@mechane-ai/elements). React and React DOM are peer
-dependencies.
+dependencies. TypeScript consumers also supply the optional `@types/react` peer so declarations resolve in isolated
+builds without relying on hoisted development dependencies.
 
 ```sh
 pnpm add @mechane-ai/elements react react-dom

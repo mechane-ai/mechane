@@ -35,6 +35,9 @@ release builder derives compiled declaration and JavaScript paths from the same 
 private helpers and catalog files out of published exports. Preserve the token definition's path in the archive so
 consumer themes and compiled component styles address the same variables. Validate the archive in an independent
 React consumer and a StyleX theme consumer when its defining paths or build change.
+Published declarations must resolve external types from declared dependencies or peers in an isolated consumer.
+Declare optional type peers when only TypeScript consumers need them; development dependencies and hoisting must not
+silently supply published types.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
