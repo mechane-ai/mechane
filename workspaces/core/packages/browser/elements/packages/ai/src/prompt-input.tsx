@@ -2,13 +2,43 @@ import * as stylex from '@stylexjs/stylex';
 import { ArrowUp, Square } from 'lucide-react';
 import { useId } from 'react';
 import type { ComponentProps, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
-import { Button } from '../../core/src/index.ts';
+import { IconButton } from '../../core/src/index.ts';
 import { Field, Textarea } from '../../forms/src/index.ts';
-import { spacing } from '../../foundations/src/tokens.stylex.ts';
+import { accessibility } from '../../foundations/src/accessibility.ts';
+import { colors, controls as controlTokens, radii, spacing } from '../../foundations/src/tokens.stylex.ts';
+import { Tooltip } from '../../overlays/src/index.ts';
 
 const styles = stylex.create({
-  form: { display: 'flex', flexDirection: 'column', gap: spacing.md, minWidth: 0 },
-  footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.sm,
+    minWidth: 0,
+    width: '100%',
+    maxWidth: '80ch',
+    marginInline: 'auto',
+  },
+  frame: {
+    'display': 'flex',
+    'flexDirection': 'column',
+    'gap': spacing.sm,
+    'minWidth': 0,
+    'padding': spacing.md,
+    'borderWidth': 1,
+    'borderStyle': 'solid',
+    'borderColor': colors.line,
+    'borderRadius': radii.md,
+    'backgroundColor': colors.canvas,
+    ':focus-within': {
+      borderColor: colors.focus,
+      outlineWidth: controlTokens.focusWidth,
+      outlineStyle: 'solid',
+      outlineColor: colors.focus,
+      outlineOffset: -1,
+    },
+  },
+  invalid: { borderColor: colors.danger },
+  footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: '1 1 auto' },
   action: { marginInlineStart: 'auto' },
 });
@@ -64,6 +94,15 @@ export function PromptInput({
 }: PromptInputProps): ReactNode {
   const feedbackId = useId();
   const inputDisabled = disabled || pending;
+  let tooltipLabel = submitLabel;
+
+  if (onStop !== undefined) {
+    tooltipLabel = stopPending ? 'Stopping…' : stopLabel;
+  } else if (pending) {
+    tooltipLabel = pendingLabel;
+  } else if (enterBehavior === 'submit') {
+    tooltipLabel = `${submitLabel} · Enter`;
+  }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
     if (enterBehavior !== 'submit' || event.key !== 'Enter' || event.repeat) {
@@ -99,20 +138,66 @@ export function PromptInput({
   return (
     <form onSubmit={handleSubmit} {...stylex.props(styles.form)}>
       <Field.Root invalid={error !== undefined}>
-        <Field.Label>{label}</Field.Label>
-        <Textarea
-          compact={compact}
-          name={name}
-          value={value}
-          onChange={(event) => onValueChange(event.currentTarget.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          maxLength={maxLength}
-          required={required}
-          disabled={disabled}
-          readOnly={pending}
-          aria-errormessage={error === undefined ? undefined : feedbackId}
-        />
+        <Field.Label {...stylex.props(accessibility.hidden)}>{label}</Field.Label>
+        <div {...stylex.props(styles.frame, error !== undefined && styles.invalid)}>
+          <Textarea
+            appearance="plain"
+            rows={compact ? 1 : 2}
+            compact={compact}
+            name={name}
+            value={value}
+            onChange={(event) => onValueChange(event.currentTarget.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={placeholder ?? label}
+            maxLength={maxLength}
+            required={required}
+            disabled={disabled}
+            readOnly={pending}
+            aria-errormessage={error === undefined ? undefined : feedbackId}
+          />
+          {attachments}
+          <div {...stylex.props(styles.footer)}>
+            {controls !== undefined && <div {...stylex.props(styles.controls)}>{controls}</div>}
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                render={
+                  onStop === undefined ? (
+                    <IconButton
+                      xstyle={styles.action}
+                      type="submit"
+                      variant="solid"
+                      aria-label={pending ? pendingLabel : submitLabel}
+                      disabled={disabled || submitDisabled}
+                      pending={pending}
+                    >
+                      <ArrowUp size={16} aria-hidden />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      xstyle={styles.action}
+                      type="button"
+                      aria-label={stopPending ? 'Stopping…' : stopLabel}
+                      onClick={(event) => {
+                        // The action can replace this button with Send before the click default runs.
+                        event.preventDefault();
+                        onStop();
+                      }}
+                      disabled={disabled}
+                      pending={stopPending}
+                    >
+                      <Square size={14} aria-hidden />
+                    </IconButton>
+                  )
+                }
+              />
+              <Tooltip.Portal>
+                <Tooltip.Positioner>
+                  <Tooltip.Popup>{tooltipLabel}</Tooltip.Popup>
+                </Tooltip.Positioner>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          </div>
+        </div>
         {description !== undefined && <Field.Description>{description}</Field.Description>}
         {error !== undefined && (
           <Field.Error id={feedbackId} match={true} role="alert">
@@ -120,39 +205,6 @@ export function PromptInput({
           </Field.Error>
         )}
       </Field.Root>
-      {attachments}
-      <div {...stylex.props(styles.footer)}>
-        <div {...stylex.props(styles.controls)}>{controls}</div>
-        {onStop === undefined ? (
-          <Button
-            xstyle={styles.action}
-            type="submit"
-            variant="solid"
-            disabled={disabled || submitDisabled}
-            pending={pending}
-            pendingLabel={pendingLabel}
-          >
-            <ArrowUp size={16} aria-hidden />
-            {submitLabel}
-          </Button>
-        ) : (
-          <Button
-            xstyle={styles.action}
-            type="button"
-            onClick={(event) => {
-              // The action can replace this button with Send before the click default runs.
-              event.preventDefault();
-              onStop();
-            }}
-            disabled={disabled}
-            pending={stopPending}
-            pendingLabel="Stopping…"
-          >
-            <Square size={14} aria-hidden />
-            {stopLabel}
-          </Button>
-        )}
-      </div>
     </form>
   );
 }

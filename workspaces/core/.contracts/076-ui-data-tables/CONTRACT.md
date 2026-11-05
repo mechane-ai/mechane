@@ -60,6 +60,12 @@ The virtualizer's fixed estimate must equal the rendered row height; measure onl
 keyboard navigation, and focused-row retention stable when scrolling. Inspect a long identifier beside a short one,
 then scroll beyond the initial viewport and return by keyboard. Placeholders use the same table geometry.
 
+Plain string cells use the table's truncation behavior. Compose a primary and secondary text value with
+`DataTableText`, whose string inputs put ellipsis on the text-bearing elements. An arbitrary nested layout does not
+inherit an ellipsis guarantee from its cell. Preserve the full value in accessible text and a reachable detail or
+disclosure. Keep dates, amounts, and comparable numeric values readable with adequate width or explicit content sizing.
+Inspect a long composed text cell beside these values; neither a clipped glyph nor a hidden control counts as truncation.
+
 Completed collection boundaries are silent by default. An explicit useful summary may remain, but do not show generic
 "End of results" messages or reserve an empty footer block after the last row. Preserve loading, retry, and load-more
 controls when more records may exist.

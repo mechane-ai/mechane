@@ -37,14 +37,23 @@ remains reachable when it falls beyond the first event page. A message receipt i
 start or join event. A cancellation receipt precedes the recorded terminal outcome.
 
 Record links reopen the selected workspace, mech, turn, request or event. Returning through browser history restores
-the originating list page. Refreshing activity preserves the rows being read until the reader requests the newer page.
+the originating page, its focused record, and the position in its actual scrolling region. Run inspection occupies a
+full page and temporarily hides workspace navigation without changing the saved sidebar preference. Preserve the
+same mech's conversation and draft while inspecting its runs. A direct run link has a usable return to its mech even
+without an originating history entry. Refreshing activity preserves the rows being read until the reader requests the newer page.
 The public entry contains no private snapshot. A transient read failure may retain the last authorized result; access
 loss and removal clear it. A revision conflict preserves edited fields and accepts concurrent changes to untouched fields.
 
+Separate workspace navigation from pinned and recently opened mechs. Recent shortcuts follow explicit visits, not
+the order of a bounded mech-list page. Keep browser-local shortcuts and appearance preferences scoped to the principal
+and workspace. Persist identifiers and presentation choices, not protected record content. Resolve shortcut records
+through the normal authorized reads; prune confirmed unavailable records without treating a transient failure or
+absence from one list page as removal.
+
 Compose every screen with the shared frame and toolbar. The frame owns presentation state for the sidebar and mobile
 drawer; screens own their resource operations and toolbar actions. Keep lists flush with the content edges and use
-the shared detail container for resource details and forms. Keep shell measurements with `elements/layout` and shared colors
-and typography with `ui/tokens`. The shell owns outer separators; child actions own only their internal dividers.
+the shared detail container for resource details and forms. Keep shell measurements with the Elements layout family
+and shared colors and typography with foundations. The shell owns outer separators; child actions own only their internal dividers.
 Navigation controls expose their names in collapsed and mobile states. Storybook examples use the same frame and
 presentation components as the application. Generic component requirements belong to contracts 065–075 and 114–115.
 
@@ -72,6 +81,11 @@ Check browser and backend types, the production console build, package boundarie
 real browser against the packaged celld Worker to verify sign-in/out, workspace isolation, a completed turn, trace
 navigation, revision conflicts, and rejected cross-origin writes. Verify the Cloudflare release and an empty subsequent
 OpenTofu plan before declaring an installation upgraded.
+
+Open a run from a scrolled conversation and a later list page, then use browser Back and the run's return control.
+Check row focus, scroll position, draft text, and the sidebar preference. Open the same run URL in a new tab.
+Switch principal or workspace and confirm shortcuts and appearance choices stay within their owner. Exercise a
+shortcut outside the first mech page, a rejected access read, and a transient read failure.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

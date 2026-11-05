@@ -2,8 +2,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Check, MessageSquare, Play } from 'lucide-react';
 import { Row, TextLink } from '../../core/src/index.ts';
 import { Timeline } from './timeline.tsx';
+import { Timestamp } from './timestamp.tsx';
 
-const meta = { title: 'Collections/Timeline', component: Timeline.Root } satisfies Meta<typeof Timeline.Root>;
+const meta = {
+  title: 'Collections/Timeline',
+  component: Timeline.Root,
+  subcomponents: { Item: Timeline.Item, Timestamp },
+} satisfies Meta<typeof Timeline.Root>;
+
 export default meta;
 type Story = StoryObj;
 
@@ -30,6 +36,39 @@ export const Activity: Story = {
         title="Evaluation complete"
         time="10:48 AM"
         metadata="24 results available"
+      />
+    </Timeline.Root>
+  ),
+};
+
+export const Expandable: Story = {
+  render: () => (
+    <Timeline.Root label="Recorded execution history">
+      <Timeline.Item
+        icon={<Check size={16} />}
+        title="Reply"
+        time={
+          <Timestamp
+            dateTime="2026-11-04T17:24:16.000Z"
+            label="Nov 4, 5:24 PM"
+            title="November 4, 2026 at 17:24:16 UTC"
+          />
+        }
+        details="The restored source and recorded manifest agree. The integration suite remains unverified because the execution did not run it."
+      >
+        The restored source and recorded manifest agree.
+      </Timeline.Item>
+      <Timeline.Item
+        icon={<Play size={16} />}
+        title="Run started"
+        time="5:24 PM"
+        details="Execution record: restore-verification"
+      />
+      <Timeline.Item
+        icon={<MessageSquare size={16} />}
+        title="Message received"
+        time="5:23 PM"
+        details="Verify the restore and report which checks actually ran."
       />
     </Timeline.Root>
   ),

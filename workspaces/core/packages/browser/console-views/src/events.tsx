@@ -1,91 +1,132 @@
-import { Badge, CopyValue, Divider, Identifier, Muted, Panel, Prose, Row, Stack } from '@mechane-ai/elements';
-import { Conversation, Message } from '@mechane-ai/elements/ai';
-import { Markdown } from '@mechane-ai/elements/content/markdown';
+import { CopyValue, Identifier, Muted, Prose, Row, Stack } from '@mechane-ai/elements';
+import { Timeline } from '@mechane-ai/elements/collections';
+import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
 import { EmptyState } from '@mechane-ai/elements/feedback';
+import { colors, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import { Event } from '@mechane/protocol';
 import type { EventPage, ListedEvent } from '@mechane/protocol';
+import * as stylex from '@stylexjs/stylex';
 import { Schema } from 'effect';
+import { Circle, GitFork, MessageSquare, Play, Reply } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { preciseTimeLabel, timeLabel } from './format.ts';
+import { preciseTimeLabel } from './format.ts';
+import { ConsoleTimestamp } from './record-time.tsx';
+
+const styles = stylex.create({
+  inset: { padding: spacing.lg, minWidth: 0 },
+  preview: {
+    margin: 0,
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    overflow: 'hidden',
+    overflowWrap: 'anywhere',
+    color: colors.muted,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+  },
+});
 
 export function Activity({
   page,
-  chronological = false,
+  label = 'Mech history',
+  inset = true,
+  expandedSequence,
 }: {
   readonly page: EventPage;
-  readonly chronological?: boolean;
+  readonly label?: string;
+  readonly inset?: boolean;
+  readonly expandedSequence?: number | undefined;
 }): ReactNode {
-  if (page.events.length === 0) {
-    return (
-      <Panel>
-        <EmptyState title="No activity yet">
-          Inbox messages, turns, and replies appear here as the mech works.
-        </EmptyState>
-      </Panel>
-    );
-  }
-
   return (
-    <Panel>
-      <Conversation.Root initialPosition="start" follow={false}>
-        <Conversation.Viewport label={chronological ? 'Turn messages and events' : 'Recent messages and events'}>
-          <Conversation.Content>
-            {(chronological ? page.events : page.events.toReversed()).map((event) => (
-              <Conversation.Item key={event.sequence} messageId={String(event.sequence)}>
-                <EventItem event={event} />
-              </Conversation.Item>
-            ))}
-          </Conversation.Content>
-        </Conversation.Viewport>
-      </Conversation.Root>
-    </Panel>
+    <div {...stylex.props(inset && styles.inset)}>
+      {page.events.length === 0 ? (
+        <EmptyState title="No activity yet">Messages and execution events appear here as the mech works.</EmptyState>
+      ) : (
+        <Timeline.Root label={label}>
+          {page.events.map((event) => (
+            <EventItem key={event.sequence} event={event} expanded={event.sequence === expandedSequence} />
+          ))}
+        </Timeline.Root>
+      )}
+    </div>
   );
 }
 
-function EventItem({ event }: { readonly event: ListedEvent }): ReactNode {
+function EventItem({ event, expanded }: { readonly event: ListedEvent; readonly expanded: boolean }): ReactNode {
   const known = Schema.is(Event)(event);
-
-  const meta = (
-    <Row>
-      <Identifier>#{event.sequence}</Identifier>
-      {known ? (
-        <CopyValue label={`time of event ${event.sequence} in UTC`} value={preciseTimeLabel(event.occurredAt)}>
-          {timeLabel(event.occurredAt)}
-        </CopyValue>
-      ) : (
-        <Muted>Newer event format</Muted>
-      )}
-    </Row>
-  );
-
-  const isMessage = 'text' in event || 'reply' in event || 'report' in event;
-
-  if (known && isMessage) {
-    return (
-      <Message author={eventLabel(event.type)} kind={'text' in event ? 'user' : 'assistant'} meta={meta}>
-        <EventContent event={event} />
-      </Message>
-    );
-  }
+  const preview = known ? eventPreview(event) : undefined;
 
   return (
-    <Stack compact>
-      <Row between>
-        <Badge>{eventLabel(event.type)}</Badge>
-        {meta}
-      </Row>
-      {known && <EventContent event={event} />}
-      <Divider />
-    </Stack>
+    <Timeline.Item
+      icon={<EventIcon type={event.type} />}
+      title={eventLabel(event.type)}
+      time={known ? <ConsoleTimestamp value={event.occurredAt} /> : undefined}
+      defaultOpen={expanded}
+      details={
+        <Stack compact>
+          {known ? <EventContent event={event} /> : <Muted>Newer event format</Muted>}
+          <Row>
+            <Identifier>Event #{event.sequence}</Identifier>
+            {known && <CopyValue label="event timestamp" value={preciseTimeLabel(event.occurredAt)} />}
+          </Row>
+        </Stack>
+      }
+    >
+      {preview !== undefined && <p {...stylex.props(styles.preview)}>{preview}</p>}
+    </Timeline.Item>
   );
+}
+
+const PREVIEW_LENGTH = 200;
+
+function eventPreview(event: Event): ReactNode {
+  if ('text' in event) {
+    return previewLine(event.text);
+  }
+
+  if ('reply' in event) {
+    return <MarkdownPreview>{previewLine(event.reply)}</MarkdownPreview>;
+  }
+
+  if ('report' in event) {
+    return <MarkdownPreview>{previewLine(event.report)}</MarkdownPreview>;
+  }
+
+  return undefined;
+}
+
+function previewLine(text: string): string {
+  const line = text.trim().split('\n', 1)[0] ?? '';
+
+  if (line.length <= PREVIEW_LENGTH) {
+    return line;
+  }
+
+  return `${line.slice(0, PREVIEW_LENGTH).replace(/\s+\S*$/, '')}…`;
+}
+
+function EventIcon({ type }: { readonly type: string }): ReactNode {
+  switch (type) {
+    case 'inbox_item.received':
+      return <MessageSquare size={14} />;
+    case 'turn.answered':
+      return <Reply size={14} />;
+    case 'mech.forked':
+      return <GitFork size={14} />;
+    case 'turn.started':
+      return <Play size={14} />;
+    default:
+      return <Circle size={12} />;
+  }
 }
 
 function EventContent({ event }: { readonly event: Event }): ReactNode {
   if ('forkedFrom' in event) {
     return (
       <Muted>
-        Created from mech {event.forkedFrom.mechId}, copying history through event {event.forkedFrom.sequence}. This is
-        event {event.sequence} in the log, not a fork count.
+        History was copied through event {event.forkedFrom.sequence} from mech {event.forkedFrom.mechId}. Each mech
+        continues independently from this point.
       </Muted>
     );
   }
@@ -107,7 +148,7 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
   }
 
   if ('turnId' in event) {
-    return <Identifier>{event.turnId}</Identifier>;
+    return <CopyValue label="run ID" value={event.turnId} />;
   }
 
   return null;
@@ -120,7 +161,7 @@ function eventLabel(type: string): string {
     case 'inbox_item.written':
       return 'Message saved';
     case 'turn.started':
-      return 'Turn started';
+      return 'Run started';
     case 'turn.joined':
       return 'Message joined';
     case 'turn.canceled':
@@ -128,11 +169,11 @@ function eventLabel(type: string): string {
     case 'turn.answered':
       return 'Reply';
     case 'turn.unanswered':
-      return 'Turn ended';
+      return 'Run ended';
     case 'drone.reported':
-      return 'Drone report';
+      return 'Delegated work reported';
     case 'mech.forked':
-      return 'Conversation forked';
+      return 'Conversation continued';
     default:
       return type.replaceAll(/[._]/g, ' ');
   }

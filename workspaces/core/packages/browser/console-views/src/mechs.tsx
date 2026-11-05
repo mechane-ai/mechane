@@ -1,9 +1,11 @@
-import { Button, Status } from '@mechane-ai/elements';
-import { DataTable, ListFooter } from '@mechane-ai/elements/collections';
+import { AgentAvatar, Button, Status } from '@mechane-ai/elements';
+import type { AgentAppearance } from '@mechane-ai/elements';
+import { DataTable, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
 import type { ReactNode } from 'react';
-import { moneyLabel, timeLabel } from './format.ts';
+import { moneyLabel } from './format.ts';
+import { ConsoleTimestamp } from './record-time.tsx';
 
 export function MechList({
   page,
@@ -15,6 +17,7 @@ export function MechList({
   onNext,
   onPrevious,
   hasPrevious,
+  appearances = {},
 }: {
   readonly page: MechPage;
   readonly allowance: Allowance | undefined;
@@ -25,6 +28,7 @@ export function MechList({
   readonly onNext: () => void;
   readonly onPrevious: () => void;
   readonly hasPrevious: boolean;
+  readonly appearances?: Readonly<Record<string, AgentAppearance>>;
 }): ReactNode {
   const showFooter = page.mechs.length > 0 || hasPrevious;
   const showPagination = page.hasMore || hasPrevious;
@@ -39,18 +43,33 @@ export function MechList({
         focusRowId={focusRowId}
         rowAction={{ href: mechHref, onActivate: onOpen, label: (mech) => `Open ${mech.name}` }}
         columns={[
-          { id: 'name', label: 'Mech', cell: (mech) => mech.name, truncate: true },
+          {
+            id: 'name',
+            label: 'Mech',
+            cell: (mech) => (
+              <DataTableText leading={<AgentAvatar seed={mech.id} appearance={appearances[mech.id]} />}>
+                {mech.name}
+              </DataTableText>
+            ),
+          },
           {
             id: 'status',
             label: 'Availability',
+            width: 128,
             cell: (mech) => (
               <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>
                 {mech.status === 'active' ? 'Enabled' : mech.status === 'paused' ? 'Paused' : 'Archived'}
               </Status>
             ),
           },
-          { id: 'model', label: 'Model', secondary: true, cell: (mech) => mech.model },
-          { id: 'created', label: 'Created', secondary: true, cell: (mech) => timeLabel(mech.createdAt) },
+          { id: 'model', label: 'Model', secondary: true, cell: (mech) => <DataTableText>{mech.model}</DataTableText> },
+          {
+            id: 'created',
+            label: 'Created',
+            secondary: true,
+            width: 144,
+            cell: (mech) => <ConsoleTimestamp value={mech.createdAt} />,
+          },
         ]}
         empty={
           <EmptyState

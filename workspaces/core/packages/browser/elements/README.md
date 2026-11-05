@@ -48,36 +48,36 @@ override token defaults.
 
 Every path below belongs to `@mechane-ai/elements`. There is one package, version, and stylesheet.
 
-| Entry                  | Responsibility                                                                    |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| Root                   | Buttons, text, surfaces, disclosure, Avatar, and CopyValue.                       |
-| `/forms`               | Fields, inputs, selection, file picking, and settings sections.                   |
-| `/forms/dates`         | Civil-date calendars and range selection.                                         |
-| `/overlays`            | Dialog, Drawer, Menu, Popover, Preview, Tooltip, and AlertDialog.                 |
-| `/feedback`            | Async regions, skeletons, progress, meters, notices, empty states, and toasts.    |
-| `/navigation`          | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.              |
-| `/navigation/commands` | Command palette and scoped application-owned shortcuts.                           |
-| `/layout`              | Application shell, sidebar, toolbars, compound record pages, and resizable panes. |
-| `/collections`         | Tables, inspectors, collection controls, timelines, metrics, and timestamps.      |
-| `/content`             | Trace, JSON, recorded logs, and stack traces.                                     |
-| `/content/link`        | Safe content links without a renderer dependency.                                 |
-| `/content/markdown`    | Completed and streaming Markdown, embedded headings, and inert previews.          |
-| `/content/code`        | Source-preserving code highlighting.                                              |
-| `/content/diff`        | File changes and patches.                                                         |
-| `/content/tree`        | File paths, statuses, and controlled selection.                                   |
-| `/ai`                  | Conversations, messages, prompts, approvals, sources, and citations.              |
-| `/charts`              | Shared frames, legends, selection, and category types.                            |
-| `/charts/cartesian`    | Lines, areas, sparklines, small multiples, bars, and scatter plots.               |
-| `/charts/distribution` | Histograms, cumulative distributions, intervals, and ranked values.               |
-| `/charts/matrix`       | Matrices, token heatmaps, and color legends.                                      |
-| `/charts/graph`        | Supplied relationships and node selection.                                        |
-| `/charts/hierarchy`    | Treemaps.                                                                         |
-| `/charts/timeline`     | Waterfall intervals and instants.                                                 |
-| `/theme`               | Light and dark theme props.                                                       |
-| `/csp`                 | Application-supplied content security policy configuration.                       |
-| `/tokens`              | Compiled token references for runtime styles.                                     |
-| `/tokens.stylex`       | Direct definitions for StyleX authoring and themes.                               |
-| `/styles.css`          | Component styles and token defaults.                                              |
+| Entry                  | Responsibility                                                                      |
+| ---------------------- | ----------------------------------------------------------------------------------- |
+| Root                   | Buttons, text, surfaces, disclosure, avatars, and CopyValue.                        |
+| `/forms`               | Fields, inputs, selection, appearance picking, file picking, and settings sections. |
+| `/forms/dates`         | Civil-date calendars and range selection.                                           |
+| `/overlays`            | Dialog, Drawer, Menu, Popover, Preview, Tooltip, and AlertDialog.                   |
+| `/feedback`            | Async regions, skeletons, progress, meters, notices, empty states, and toasts.      |
+| `/navigation`          | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.                |
+| `/navigation/commands` | Command palette and scoped application-owned shortcuts.                             |
+| `/layout`              | Application shell, sidebar, toolbars, compound record pages, and resizable panes.   |
+| `/collections`         | Tables, inspectors, collection controls, timelines, metrics, and timestamps.        |
+| `/content`             | Trace, JSON, recorded logs, and stack traces.                                       |
+| `/content/link`        | Safe content links without a renderer dependency.                                   |
+| `/content/markdown`    | Completed and streaming Markdown, embedded headings, and inert previews.            |
+| `/content/code`        | Source-preserving code highlighting.                                                |
+| `/content/diff`        | File changes and patches.                                                           |
+| `/content/tree`        | File paths, statuses, and controlled selection.                                     |
+| `/ai`                  | Conversations, messages, prompts, approvals, sources, and citations.                |
+| `/charts`              | Shared frames, legends, selection, and category types.                              |
+| `/charts/cartesian`    | Lines, areas, sparklines, small multiples, bars, and scatter plots.                 |
+| `/charts/distribution` | Histograms, cumulative distributions, intervals, and ranked values.                 |
+| `/charts/matrix`       | Matrices, token heatmaps, and color legends.                                        |
+| `/charts/graph`        | Supplied relationships and node selection.                                          |
+| `/charts/hierarchy`    | Treemaps.                                                                           |
+| `/charts/timeline`     | Waterfall intervals and instants.                                                   |
+| `/theme`               | Light and dark theme props.                                                         |
+| `/csp`                 | Application-supplied content security policy configuration.                         |
+| `/tokens`              | Compiled token references for runtime styles.                                       |
+| `/tokens.stylex`       | Direct definitions for StyleX authoring and themes.                                 |
+| `/styles.css`          | Component styles and token defaults.                                                |
 
 Focused entries keep renderer and chart dependencies out of basic controls. There is no all-components barrel. Renderers
 initialize when used, without a consumer-managed worker pool or grammar CDN. The
@@ -96,11 +96,31 @@ Use `ToolbarAction` for page-header actions, including links composed with `rend
 Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Put scrolling commands with the
 navigation and reserve the divided sidebar footer for persistent account information.
 
+`AppShell focus` temporarily hides navigation while retaining its expansion state. `ViewStack.Panel` keeps inactive
+content mounted and measurable but removes it from keyboard and assistive-technology navigation. The application owns
+which view is active and when to unmount it; use this for a draft or reading position that must survive inspection.
+`WorkbenchScroll` requires an accessible `label`; its `flush` mode leaves list insets to the table. Its
+`scrollRestorationId` identifies the actual scroll region for application-owned restoration.
+
 `DataTable` uses 48px rows by default and truncates text to preserve stable column and virtualization geometry. Set
 `rowSizing="content"` for records that need multiline cells; virtualization then measures those rows. Long content
-belongs in a detail view or a deliberately content-sized row, not behind a clipped control. `CollectionEnd` renders
-nothing when complete unless an explicit summary is supplied. `Timeline.Root` and `Timeline.Item` compose readable
-activity with supplied titles, icons, timestamps, metadata, and body content, without interpreting domain events.
+belongs in a detail view or a deliberately content-sized row, not behind a clipped control. Use `DataTableText` for a
+primary string and optional secondary string inside one cell; both text elements own their ellipsis. Arbitrary nested
+layouts do not inherit text truncation. Give dates and numeric values sufficient column width or explicit content
+sizing. The table owns its cell insets, so an enclosing page should not add another gutter around its rows.
+`CollectionEnd` renders nothing when complete unless an explicit summary is supplied. `Timeline.Root` and
+`Timeline.Item` compose readable activity with supplied titles, icons, timestamps, metadata, and body content, without
+interpreting domain events.
+
+`Message` reserves space for secondary actions and reveals them on hover and keyboard focus; touch devices keep them
+visible. `MessageAction` supplies a named icon button and tooltip. Keep errors, decisions, and current activity outside
+that action region. `MessageBoundary` groups expandable context between messages. `PromptInput` keeps its label
+accessible while integrating the submit control into the input frame. The application owns submission identity,
+acknowledgement, and draft retention.
+
+`AgentAvatar` derives a repeatable shape and palette from a supplied seed, or renders an explicit appearance.
+`AgentAvatarPicker` accepts that appearance and reports changes; applications own storage. Keep the same seed for a
+record and store named choices rather than catalog indexes. Identity palettes remain separate from status colors.
 
 `MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
 record summaries. `SettingsSection` keeps wide tables inside their scroll region; group sections with `Stack` and align

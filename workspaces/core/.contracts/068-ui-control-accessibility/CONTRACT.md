@@ -42,11 +42,11 @@ Run the repository's automated accessibility checks where they exist; they do no
 
 ## Local adaptations
 
-Base UI is the adopted behavior library. Mechane's `ui` wrappers keep its native form behavior and typed callbacks.
+Base UI is the adopted behavior library. Elements wrappers keep its native form behavior and typed callbacks.
 Field composition associates labels, descriptions, and errors without adding a second form-state protocol.
 Empty values and form resets keep the semantics of the chosen native or Base UI control.
 
-Standalone controls meet `controls.coarseTarget` from `ui/tokens` on coarse pointers. Inline text links retain normal
+Standalone controls meet the shared `controls.coarseTarget` token on coarse pointers. Inline text links retain normal
 text flow. The Storybook accessibility addon assists review; keyboard operation, focus return, names, and announcements
 are also checked in the packaged Console. The addon does not make every story an automated test.
 
@@ -56,6 +56,11 @@ Pending actions preserve keyboard focus through Base UI's `focusableWhenDisabled
 Keep ordinary unavailable controls disabled, and honor caller-supplied accessible names during pending changes.
 
 The hover rule checks the named condition's presence. Browser review verifies its effect, pending focus, and touch sizing.
+
+Reveal secondary actions on hover only when the same controls remain reachable by keyboard and visible while focused.
+Keep them visible on coarse pointers. Revealing an action must not move the content being read or another control's
+target. Pending decisions, errors, and current activity remain visible without hover. Inspect the idle, hover, focus,
+and coarse-pointer states separately; a tooltip supplements an accessible control name and never supplies it alone.
 
 Use the shared Collapsible or Accordion for application disclosures, including chart data and supplied source.
 Their chevrons point right when closed and down when open. Derive that shape from Base UI's trigger state, without

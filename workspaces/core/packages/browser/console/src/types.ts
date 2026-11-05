@@ -24,6 +24,9 @@ export type ConsoleNavigation = {
   readonly navigate: (location: ConsoleLocation) => void;
 };
 
+/** History restores pixel offsets inside the named scrolling region, independently of the document. */
+export type ReaderPosition = { readonly region: string; readonly top: number; readonly left: number };
+
 /** Cursor trails retained by one browser history entry. */
 export type PageCursors = {
   readonly mechs: ReadonlyArray<string>;

@@ -57,7 +57,7 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
       compact
       name="message"
       label={`Message ${mech.name}`}
-      placeholder="What should we work on?"
+      placeholder={`Message ${mech.name}…`}
       value={text}
       onValueChange={(value) => {
         setText(value);
@@ -73,13 +73,11 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
       enterBehavior="submit"
       error={error}
       controls={
-        <Muted>
-          {received
-            ? mech.status === 'paused'
-              ? 'Received · queued while paused'
-              : 'Received · queued for the next run'
-            : 'Enter to send · Shift + Enter for a new line'}
-        </Muted>
+        received ? (
+          <span role="status">
+            <Muted>{mech.status === 'paused' ? 'Queued while paused' : 'Message received'}</Muted>
+          </span>
+        ) : undefined
       }
     />
   );

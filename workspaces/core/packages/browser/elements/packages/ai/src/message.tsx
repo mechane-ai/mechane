@@ -2,34 +2,41 @@ import * as stylex from '@stylexjs/stylex';
 import { File } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContentLink } from '../../content/src/link.ts';
-import { colors, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, conditions, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    gap: spacing.md,
+    gap: spacing.sm,
     minWidth: 0,
     color: colors.ink,
     fontFamily: typography.fontFamily,
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
-  header: { display: 'flex', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
+  header: { display: 'flex', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap', minWidth: 0 },
+  avatar: { display: 'inline-flex', flexShrink: 0 },
   author: { fontWeight: 500, overflowWrap: 'anywhere' },
   meta: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
   content: { minWidth: 0, overflowWrap: 'anywhere' },
-  user: {
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    backgroundColor: colors.canvas,
-  },
+  user: { paddingBlock: spacing.md, paddingInline: spacing.lg, borderRadius: radii.sm, backgroundColor: colors.canvas },
   assistant: {},
   system: { color: colors.muted, paddingBlock: spacing.sm },
-  actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
+  actions: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+    opacity: {
+      default: 1,
+      [conditions.hoverPointer]: {
+        default: 0,
+        [stylex.when.ancestor(':hover')]: 1,
+        [stylex.when.ancestor(':focus-within')]: 1,
+      },
+    },
+  },
   attachments: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: spacing.sm },
   attachment: {
     display: 'flex',
@@ -59,6 +66,7 @@ export type MessageProps = {
   readonly id?: string;
   readonly kind?: MessageKind;
   readonly meta?: ReactNode;
+  readonly avatar?: ReactNode;
   readonly actions?: ReactNode;
   readonly attachments?: ReactNode;
 };
@@ -81,12 +89,14 @@ export function Message({
   id,
   kind = 'assistant',
   meta,
+  avatar,
   actions,
   attachments,
 }: MessageProps): ReactNode {
   return (
-    <article id={id} aria-label={author} {...stylex.props(styles.root, kinds[kind])}>
+    <article id={id} aria-label={author} {...stylex.props(styles.root, kinds[kind], stylex.defaultMarker())}>
       <header {...stylex.props(styles.header)}>
+        {avatar !== undefined && <span {...stylex.props(styles.avatar)}>{avatar}</span>}
         <span {...stylex.props(styles.author)}>{author}</span>
         {meta !== undefined && <div {...stylex.props(styles.meta)}>{meta}</div>}
       </header>

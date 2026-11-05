@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { inputSizeStyles, fieldStyles as styles } from './field-styles.ts';
+import { inputSizeStyles, fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
 
 type FieldRootProps = ComponentProps<typeof BaseField.Root> & { readonly xstyle?: PlacementStyle };
 type FieldLabelProps = ComponentProps<typeof BaseField.Label>;
@@ -30,7 +30,7 @@ type TextareaProps = Omit<NativeTextareaProps, 'value' | 'defaultValue' | 'onCha
     NonNullable<NativeTextareaProps['value']>,
     NonNullable<NativeTextareaProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly xstyle?: PlacementStyle; readonly compact?: boolean };
+  > & { readonly xstyle?: PlacementStyle; readonly compact?: boolean; readonly appearance?: 'field' | 'plain' };
 
 function FieldRoot({ className, style, xstyle, ...props }: FieldRootProps): ReactNode {
   return (
@@ -85,6 +85,7 @@ export function Input({ className, style, xstyle, size = 'md', ...props }: Input
 
 export function Textarea({
   compact = false,
+  appearance = 'field',
   value,
   defaultValue,
   onValueChange,
@@ -110,7 +111,13 @@ export function Textarea({
       {...mergeStyles<BaseField.Control.State>({
         className,
         style,
-        styles: stylex.props(styles.input, styles.textarea, compact && styles.compactTextarea, xstyle),
+        styles: stylex.props(
+          styles.input,
+          styles.textarea,
+          compact && styles.compactTextarea,
+          textareaAppearanceStyles[appearance],
+          xstyle,
+        ),
       })}
     />
   );

@@ -49,6 +49,15 @@ const styles = stylex.create({
   },
   footerRegion: { marginTop: 'auto', color: colors.muted },
   navigation: { display: 'flex', flexDirection: 'column', paddingInline: frame.navigationPadding },
+  section: { paddingBlock: spacing.sm },
+  sectionTitle: {
+    paddingBlock: spacing.sm,
+    paddingInline: frame.navigationPadding,
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    fontWeight: 500,
+  },
   collapsedNavigation: { paddingInline: { default: frame.navigationPadding, [frameConditions.sidebarCoarse]: 0 } },
   selected: { backgroundColor: colors.canvas },
   navigationCell: { display: 'flex', minWidth: 0, borderRadius: radii.sm },
@@ -189,6 +198,27 @@ export function Navigation({ children, label = 'Main' }: NavigationProps): React
     <nav aria-label={label} {...stylex.props(styles.navigation, isCollapsed && styles.collapsedNavigation)}>
       {children}
     </nav>
+  );
+}
+
+export function NavigationSection({
+  children,
+  label,
+}: {
+  readonly children: ReactNode;
+  readonly label: string;
+}): ReactNode {
+  const sidebar = useContext(SidebarContext);
+  const isCollapsed = sidebar !== null && !sidebar.isExpanded;
+  const labelId = useId();
+
+  return (
+    <section aria-labelledby={labelId} {...stylex.props(styles.section)}>
+      <div id={labelId} {...stylex.props(styles.sectionTitle, isCollapsed && styles.collapsedLabel)}>
+        {label}
+      </div>
+      {children}
+    </section>
   );
 }
 

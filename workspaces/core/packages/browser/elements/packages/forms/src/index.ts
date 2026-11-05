@@ -1,4 +1,6 @@
 export { Combobox } from './combobox.tsx';
+export type { AgentAvatarPickerProps } from './agent-avatar-picker.tsx';
+export { AgentAvatarPicker } from './agent-avatar-picker.tsx';
 export { FilePicker, Fieldset, InputGroup, NumberField, Slider } from './form-controls.tsx';
 export { Field, Input, Textarea } from './forms.tsx';
 export { Select } from './select.tsx';

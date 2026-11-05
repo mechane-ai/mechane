@@ -46,11 +46,13 @@ type CopyFeedback = { readonly value: CopySource; readonly status: CopyStatus };
 type CopyValueProps = Omit<ComponentProps<typeof BaseButton>, 'value'> & {
   readonly value: CopySource;
   readonly label: string;
+  readonly display?: 'value' | 'icon';
 };
 
 export function CopyValue({
   value,
   label,
+  display = 'value',
   children,
   className,
   style,
@@ -136,10 +138,12 @@ export function CopyValue({
       focusableWhenDisabled={status === 'pending' || props.focusableWhenDisabled}
       title={props.title ?? (typeof value === 'string' ? value : label)}
     >
-      <span {...stylex.props(styles.value)}>
-        {status === 'copied' ? 'Copied' : (children ?? (typeof value === 'string' ? value : label))}
-      </span>
-      <Icon size={12} aria-hidden {...stylex.props(styles.icon)} />
+      {display === 'value' && (
+        <span {...stylex.props(styles.value)}>
+          {status === 'copied' ? 'Copied' : (children ?? (typeof value === 'string' ? value : label))}
+        </span>
+      )}
+      <Icon size={display === 'icon' ? 16 : 12} aria-hidden {...stylex.props(styles.icon)} />
       <span role="status" {...stylex.props(accessibility.hidden)}>
         {messages[status]}
       </span>

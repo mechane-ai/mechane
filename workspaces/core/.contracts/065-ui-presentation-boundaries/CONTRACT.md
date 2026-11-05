@@ -72,7 +72,7 @@ Give each implementation library one job inside its owning family:
 | Library | Owner and responsibility |
 | --- | --- |
 | Base UI | Accessible controls, focus, overlays, and composition in the family owning that interaction. |
-| Lucide | One icon vocabulary and shared icon sizing. |
+| Lucide | Control and navigation icons with shared sizing. |
 | StyleX | `foundations/src/tokens.stylex.ts` defines shared visual roles; components own their styles. |
 | TanStack Table and Virtual | `collections` models prepared rows and bounds their rendered window. |
 | TanStack Hotkeys | `navigation/src/commands` binds application-owned commands within their focus scope. |
@@ -82,6 +82,9 @@ Give each implementation library one job inside its owning family:
 | Streamdown | `content` parses supplied Markdown through Elements renderers. |
 | shadcn message scroller | `ai` owns scroll anchoring and live-edge following through its headless primitive. |
 | visx | `charts` computes and renders geometry from supplied presentation records. |
+
+`AgentAvatar` owns its finite catalog of original identity glyphs. Their stable names are presentation data, not a
+second control-icon vocabulary. The forms picker reports an appearance choice; the application owns its persistence.
 
 The application supplies resource reads, mutations, routing, permissions, and record-to-presentation mappings.
 The `/csp` entry exposes Base UI's provider for an application-supplied nonce. Applications own the security policy,

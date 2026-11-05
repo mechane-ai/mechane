@@ -44,13 +44,21 @@ const styles = stylex.create({
     color: colors.muted,
   },
   tableRegion: {
+    minWidth: 0,
+    maxWidth: '100%',
     overflowX: 'auto',
     marginBlock: spacing.md,
     borderWidth: 1,
     borderStyle: 'solid',
     borderColor: colors.line,
   },
-  table: { width: '100%', borderCollapse: 'collapse', fontVariantNumeric: 'tabular-nums', textAlign: 'start' },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    fontVariantNumeric: 'tabular-nums',
+    textAlign: 'start',
+    overflowWrap: 'normal',
+  },
   cell: {
     paddingBlock: spacing.sm,
     paddingInline: spacing.md,

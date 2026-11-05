@@ -1,20 +1,47 @@
-import { Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
+import { AgentAvatar, Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
+import { MessageAction, PromptInput } from '@mechane-ai/elements/ai';
 import { Loading as LoadingRows, Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input } from '@mechane-ai/elements/forms';
-import { DetailPage, NavigationLink, PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
+import {
+  DetailPage,
+  Navigation,
+  NavigationLink,
+  NavigationSection,
+  PageToolbar,
+  ToolbarAction,
+  Workbench,
+  WorkbenchFooter,
+  WorkbenchScroll,
+} from '@mechane-ai/elements/layout';
 import type { TraceTab } from '@mechane/console-views';
 import {
   Activity,
   ConsoleShell,
+  MechConversation,
+  MechHeader,
   MechList,
+  MemoryList,
   DefinitionConflict as SavedDefinition,
+  TurnList,
   TurnTrace,
+  WorkList,
 } from '@mechane/console-views';
-import { Allowance, EventPage, MechPage, REPLY_EXCERPT_MAX_CHARS, Trace, WorkspaceList } from '@mechane/protocol';
+import {
+  Allowance,
+  EventPage,
+  MechPage,
+  MemoryList as MemoryPage,
+  REPLY_EXCERPT_MAX_CHARS,
+  ThreadPage,
+  Trace,
+  TurnPage,
+  WorkspaceList,
+} from '@mechane/protocol';
+import type { ConsoleView } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Option, Schema } from 'effect';
-import { Bot, Plus, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Bot, ListTree, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
@@ -22,7 +49,16 @@ const meta = {
   title: 'Screens/Console',
   tags: ['!supported'],
   component: ConsoleShell,
-  subcomponents: { Activity, MechList, DefinitionConflict: SavedDefinition, TurnTrace },
+  subcomponents: {
+    Activity,
+    MechConversation,
+    MechHeader,
+    MechList,
+    MemoryList,
+    WorkList,
+    DefinitionConflict: SavedDefinition,
+    TurnTrace,
+  },
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -228,8 +264,16 @@ const completedTrace = Schema.decodeUnknownSync(Trace)({
   ],
 });
 
-function StoryShell({ children }: { readonly children: ReactNode }): ReactNode {
-  const [workspaceId, setWorkspaceId] = useState<string>(workspaceList.workspaces[0].id);
+function StoryShell({
+  children,
+  focus = false,
+}: {
+  readonly children: ReactNode;
+  readonly focus?: boolean;
+}): ReactNode {
+  const [workspaceId, setWorkspaceId] = useState<string>(
+    workspaceList.workspaces[1]?.id ?? workspaceList.workspaces[0].id,
+  );
 
   return (
     <ConsoleShell
@@ -238,10 +282,30 @@ function StoryShell({ children }: { readonly children: ReactNode }): ReactNode {
       workspaceId={workspaceId}
       workspaces={workspaceList.workspaces}
       onWorkspace={setWorkspaceId}
+      focus={focus}
       homeLink={
-        <NavigationLink href="#mechs" icon={<Bot size={16} />} selected>
-          Mechs
-        </NavigationLink>
+        <Navigation>
+          <NavigationSection label="Overview">
+            <NavigationLink href="#mechs" icon={<Bot size={16} />} selected>
+              Mechs
+            </NavigationLink>
+          </NavigationSection>
+          <NavigationSection label="Pinned">
+            <NavigationLink href="#scout" icon={<AgentAvatar seed={scout.id} />}>
+              {scout.name}
+            </NavigationLink>
+          </NavigationSection>
+          <NavigationSection label="Recent">
+            {mechPage.mechs.slice(1).map((mech) => (
+              <NavigationLink key={mech.id} href={`#${mech.id}`} icon={<AgentAvatar seed={mech.id} />}>
+                {mech.name}
+              </NavigationLink>
+            ))}
+          </NavigationSection>
+          <NavigationLink href="#settings" icon={<Settings size={16} />}>
+            Settings
+          </NavigationLink>
+        </Navigation>
       }
     >
       {children}
@@ -290,31 +354,34 @@ function TraceStory({
   notice,
   events = completedEvents,
   initialTab = 'Overview',
+  onBack,
 }: {
   readonly trace: Trace;
   readonly notice?: ReactNode;
   readonly events?: EventPage;
   readonly initialTab?: TraceTab;
+  readonly onBack?: () => void;
 }): ReactNode {
   const [tab, setTab] = useState<TraceTab>(initialTab);
   const [request, setRequest] = useState<string>();
 
   return (
-    <StoryShell>
+    <StoryShell focus>
       <PageToolbar
-        breadcrumb
-        title={
-          <>
-            <TextButton onClick={() => undefined}>Repository scout / Turns</TextButton> / Turn trace
-          </>
+        navigation={false}
+        title={scout.name}
+        leading={
+          <ToolbarAction icon={<ArrowLeft size={16} aria-hidden />} onClick={onBack}>
+            Back
+          </ToolbarAction>
         }
         actions={
           trace.turn.status === 'running' && <ToolbarAction onClick={() => undefined}>Cancel turn</ToolbarAction>
         }
       />
       {notice}
-      <DetailPage>
-        <Stack>
+      <Workbench>
+        <WorkbenchScroll label="Run details" scrollRestorationId="run">
           <TurnTrace
             trace={trace}
             tab={tab}
@@ -328,10 +395,10 @@ function TraceStory({
               `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
             replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full reply →</TextButton>}
-            events={<Activity chronological page={events} />}
+            events={<Activity label="Run events" inset={false} page={events} />}
           />
-        </Stack>
-      </DetailPage>
+        </WorkbenchScroll>
+      </Workbench>
     </StoryShell>
   );
 }
@@ -481,3 +548,149 @@ export const NewerEventFormat: Story = {
     />
   ),
 };
+
+const longRunPage = Schema.decodeUnknownSync(TurnPage)({
+  has_more: false,
+  turns: Array.from({ length: 18 }, (_, index) => ({
+    ...encodedTrace.turn,
+    id: `52d0e964-811d-44f4-a96e-${String(index).padStart(12, '0')}`,
+    input_excerpt:
+      index === 0
+        ? 'Verify the release'
+        : 'Review the database restore, confirm every source hash, and summarize the full deployment verification without changing the running installation',
+  })),
+});
+
+const workPage = Schema.decodeUnknownSync(ThreadPage)({
+  has_more: false,
+  threads: [
+    {
+      id: '82d0e964-811d-44f4-a96e-d38ca5df748b',
+      title: 'Prepare the console release and verify the installation',
+      state: 'open',
+      note: 'The release checks passed. The deployment is waiting for review.',
+      opened_at: '2026-11-02T10:00:00Z',
+      updated_at: '2026-11-02T12:00:00Z',
+    },
+  ],
+});
+
+const memoryPage = Schema.decodeUnknownSync(MemoryPage)({
+  memories: [
+    {
+      path: 'workspace/release-process',
+      text: 'Run the complete checks before publishing. Verify readiness after updating the installation.',
+      digest: 'a'.repeat(64),
+      version: 2,
+      turn_id: turnId,
+      saved_at: '2026-11-02T12:00:00Z',
+    },
+  ],
+});
+
+function WorkspaceStory({
+  initialView = 'conversation',
+  longName = false,
+}: {
+  readonly initialView?: ConsoleView;
+  readonly longName?: boolean;
+}): ReactNode {
+  const [view, setView] = useState<ConsoleView>(initialView);
+  const [focusedRun, setFocusedRun] = useState(false);
+  const [pinned, setPinned] = useState(true);
+  const [draft, setDraft] = useState('Verify the release and preserve the running installation.');
+  const [selectedWork, setSelectedWork] = useState<string>();
+
+  const mech = {
+    ...scout,
+    name: longName ? 'Repository scout for infrastructure, releases, and deployment verification' : scout.name,
+    instructions: Option.none<string>(),
+    dailyCapMicros: Micros.make(5_000_000),
+  };
+
+  if (focusedRun) {
+    return <TraceStory trace={completedTrace} onBack={() => setFocusedRun(false)} />;
+  }
+
+  return (
+    <StoryShell>
+      <MechHeader
+        mech={mech}
+        view={view}
+        pinned={pinned}
+        busy={false}
+        onView={(next) => {
+          if (next !== 'definition') {
+            setView(next);
+          }
+        }}
+        onPin={() => setPinned(!pinned)}
+        onStatus={() => undefined}
+        onSettings={() => undefined}
+      />
+      <Workbench>
+        {view === 'conversation' ? (
+          <>
+            <MechConversation
+              page={completedEvents}
+              name={mech.name}
+              avatar={<AgentAvatar seed={mech.id} size="xs" />}
+              controls={null}
+              inspect={() => (
+                <MessageAction label="Inspect run" onClick={() => setFocusedRun(true)}>
+                  <ListTree size={16} aria-hidden />
+                </MessageAction>
+              )}
+              sourceLink={() => <TextButton>Source mech</TextButton>}
+            />
+            <WorkbenchFooter>
+              <PromptInput
+                label={`Message ${mech.name}`}
+                value={draft}
+                onValueChange={setDraft}
+                onSubmit={(event) => event.preventDefault()}
+                enterBehavior="submit"
+                compact
+              />
+            </WorkbenchFooter>
+          </>
+        ) : (
+          <WorkbenchScroll
+            label={view === 'activity' ? 'History' : view === 'runs' ? 'Runs' : view === 'work' ? 'Work' : 'Memory'}
+            scrollRestorationId={`story-${view}`}
+            flush={view !== 'memory'}
+          >
+            {view === 'runs' && (
+              <TurnList
+                page={longRunPage}
+                turnHref={(id) => `?turn=${id}`}
+                onOpen={() => setFocusedRun(true)}
+                emptyDescription="Executions appear here."
+              />
+            )}
+            {view === 'activity' && (
+              <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
+            )}
+            {view === 'work' && (
+              <WorkList
+                page={workPage}
+                selected={selectedWork}
+                onSelect={setSelectedWork}
+                hasPrevious={false}
+                onPrevious={() => undefined}
+                onNext={() => undefined}
+              />
+            )}
+            {view === 'memory' && <MemoryList page={memoryPage} />}
+          </WorkbenchScroll>
+        )}
+      </Workbench>
+    </StoryShell>
+  );
+}
+
+export const ConversationWorkspace: Story = { render: () => <WorkspaceStory /> };
+export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialView="runs" longName /> };
+export const HistoryWorkspace: Story = { render: () => <WorkspaceStory initialView="activity" /> };
+export const TrackedWork: Story = { render: () => <WorkspaceStory initialView="work" /> };
+export const SavedMemory: Story = { render: () => <WorkspaceStory initialView="memory" /> };

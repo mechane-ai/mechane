@@ -1,4 +1,4 @@
-import { Button, Row, Stack, Subheading } from '@mechane-ai/elements';
+import { Button, Row, Stack } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
@@ -8,7 +8,7 @@ import type { ConsoleView, Mech, Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
@@ -30,7 +30,7 @@ export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly 
       <Notice error>
         This run ID is invalid.{' '}
         <Button onClick={() => props.navigate({ workspace: props.data.workspace.id, mech: props.mech.id })}>
-          Close inspector
+          Return to mech
         </Button>
       </Notice>
     );
@@ -51,7 +51,6 @@ function ValidTraceScreen({
   const source = useMemo(() => data.trace(mech.id, turnId), [data, mech.id, turnId]);
   const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
   const [error, setError] = useState<string>();
-  const close = useRef<HTMLButtonElement>(null);
   const isScreenActive = useScreenLifetime();
 
   const mainView = inspectorViews.has(location.view ?? 'conversation') ? 'conversation' : location.view;
@@ -62,8 +61,6 @@ function ValidTraceScreen({
 
   const tab: TraceTab =
     inspect === 'requests' ? 'Requests' : inspect === 'events' ? 'Events' : inspect === 'tools' ? 'Tools' : 'Overview';
-
-  useEffect(() => close.current?.focus({ preventScroll: true }), []);
 
   function cancel(): void {
     if (cancelState !== 'idle') {
@@ -90,23 +87,6 @@ function ValidTraceScreen({
 
   return (
     <Stack>
-      <Row between>
-        <Subheading>Run details</Subheading>
-        <Button
-          ref={close}
-          size="sm"
-          onClick={() => {
-            void router.navigate({
-              to: '/',
-              search: base,
-              resetScroll: false,
-              state: (prior) => ({ ...prior, consoleReturn: { row: turnId, scrollTop: 0 } }),
-            });
-          }}
-        >
-          Close inspector
-        </Button>
-      </Row>
       {notice}
       <Resource data={data} source={source} label="Loading execution evidence">
         {(trace, traceNotice) => (
@@ -114,14 +94,17 @@ function ValidTraceScreen({
             {traceNotice}
             {error !== undefined && <Notice error>{error}</Notice>}
             {trace.turn.status === 'running' && (
-              <Button
-                disabled={cancelState !== 'idle'}
-                pending={cancelState === 'sending'}
-                pendingLabel="Requesting…"
-                onClick={cancel}
-              >
-                {cancelState === 'received' ? 'Cancellation requested' : 'Cancel run'}
-              </Button>
+              <Row>
+                <Button
+                  size="sm"
+                  disabled={cancelState !== 'idle'}
+                  pending={cancelState === 'sending'}
+                  pendingLabel="Requesting…"
+                  onClick={cancel}
+                >
+                  {cancelState === 'received' ? 'Cancellation requested' : 'Cancel run'}
+                </Button>
+              </Row>
             )}
             {cancelState === 'received' && trace.turn.status === 'running' && (
               <Notice>Waiting for the execution to stop.</Notice>
@@ -151,7 +134,7 @@ function ValidTraceScreen({
                 ).href
               }
               replyLink={(sequence) => (
-                <ConsoleLink to={{ ...selected, inspect: 'events', event: sequence }}>Read full reply →</ConsoleLink>
+                <ConsoleLink to={{ ...selected, inspect: 'events', event: sequence }}>Read full reply</ConsoleLink>
               )}
               events={
                 tab === 'Events' && (

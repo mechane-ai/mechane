@@ -35,7 +35,18 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  content: { display: 'flex', flexDirection: 'column', gap: spacing.xl, padding: spacing.lg, minWidth: 0 },
+  content: {
+    boxSizing: 'border-box',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: spacing.xl,
+    paddingBlock: spacing.xl,
+    paddingInline: spacing.lg,
+    marginInline: 'auto',
+    width: '100%',
+    maxWidth: '80ch',
+    minWidth: 0,
+  },
   item: { minWidth: 0, overflowWrap: 'anywhere' },
   jump: { position: 'absolute', bottom: spacing.lg, left: '50%', transform: 'translateX(-50%)' },
 });
@@ -46,7 +57,12 @@ export type ConversationRootProps = {
   readonly follow?: boolean;
 };
 
-export type ConversationViewportProps = { readonly label: string; readonly children: ReactNode };
+export type ConversationViewportProps = {
+  readonly label: string;
+  readonly children: ReactNode;
+  readonly scrollRestorationId?: string;
+};
+
 export type ConversationContentProps = { readonly children: ReactNode; readonly streaming?: boolean };
 export type ConversationItemProps = { readonly messageId: string; readonly children: ReactNode };
 export type ConversationJumpProps = { readonly label?: string };
@@ -65,11 +81,16 @@ function ConversationRoot({ children, initialPosition = 'end', follow = true }: 
   );
 }
 
-function ConversationViewport({ label, children }: ConversationViewportProps): ReactNode {
+function ConversationViewport({ label, children, scrollRestorationId }: ConversationViewportProps): ReactNode {
   const viewport = useContext(ViewportContext);
 
   return (
-    <MessageScroller.Viewport ref={viewport} aria-label={label} {...stylex.props(styles.viewport)}>
+    <MessageScroller.Viewport
+      ref={viewport}
+      aria-label={label}
+      data-scroll-restoration-id={scrollRestorationId}
+      {...stylex.props(styles.viewport)}
+    >
       {children}
     </MessageScroller.Viewport>
   );

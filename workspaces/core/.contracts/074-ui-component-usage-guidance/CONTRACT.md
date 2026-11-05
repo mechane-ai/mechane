@@ -54,7 +54,8 @@ The pinned Storybook extractor does not infer every compound object's props. Doc
 metadata, representative compositions, and the linked source or exported types. Verify whatever inputs the catalog
 extracts, but do not claim exhaustive prop tables or add a custom extractor to duplicate the TypeScript interface.
 
-Lucide components remain the icon vocabulary. There is no separate finite icon-name catalog to document.
+Lucide components supply control and navigation icons without a separate name registry. The original `AgentAvatar`
+identity catalog uses stable shape and palette names; its avatar and picker stories show those named choices.
 Keep component guidance beside its owner; the Console guide explains application composition and workflows.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->

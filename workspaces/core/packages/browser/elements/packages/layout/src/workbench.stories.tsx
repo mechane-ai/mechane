@@ -17,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Workbench fills the remaining viewport beneath PageToolbar. It holds a header, a persistent content column, and an optional execution inspector. Below 1100px the inspector takes the content area while the main column remains mounted, preserving drafts and reading position. Applications own inspector navigation, closing, focus restoration, and data. Place Conversation directly inside Workbench for its own scroll anchoring; use WorkbenchScroll for other content and WorkbenchFooter for a composer.',
+          'Supported. Workbench fills the remaining viewport beneath PageToolbar. Its optional header is for content that needs a second heading. Place Conversation directly inside for its own scroll anchoring; WorkbenchScroll owns one gutter for other content, or uses flush when a collection owns row insets. WorkbenchScroll requires an accessible label and remains keyboard focusable. Applications supply scrollRestorationId when their router restores the region. WorkbenchFooter holds a composer. For a full-page detail that preserves an inactive conversation, use ViewStack with AppShell focus. The optional inspector remains available for smaller contextual details; applications own navigation, closing, focus restoration, and data.',
       },
     },
   },

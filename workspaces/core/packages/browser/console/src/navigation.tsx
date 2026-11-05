@@ -1,23 +1,77 @@
 import { TextLink } from '@mechane-ai/elements';
 import { createLink, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
-import { useLayoutEffect, useRef } from 'react';
-import type { ReactNode } from 'react';
-import type { ConsoleLocation, PageCursors } from './types.ts';
+import { useCallback, useLayoutEffect, useRef } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
+import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
 
 const RouteLink = createLink(TextLink);
+
+export function readReaderPositions(): ReadonlyArray<ReaderPosition> {
+  return [...document.querySelectorAll<HTMLElement>('[data-scroll-restoration-id]')]
+    .filter((element) => element.checkVisibility({ visibilityProperty: true }))
+    .map((element) => ({
+      region: element.dataset['scrollRestorationId'] ?? '',
+      top: element.scrollTop,
+      left: element.scrollLeft,
+    }));
+}
+
+export function restoreReaderPositions(positions: ReadonlyArray<ReaderPosition>): void {
+  for (const position of positions) {
+    const element = document.querySelector<HTMLElement>(
+      `[data-scroll-restoration-id="${CSS.escape(position.region)}"]`,
+    );
+
+    if (element?.checkVisibility({ visibilityProperty: true }) === true) {
+      element.scrollTo({ top: position.top, left: position.left, behavior: 'instant' });
+    }
+  }
+}
 
 export function useRecordNavigation() {
   const router = useRouter();
   const navigate = useNavigate({ from: '/' });
   const entry = useRouterState({ select: (state) => state.location.state });
   const selectedTurn = useRouterState({ select: (state) => state.location.search.turn });
+  const location = useRouterState({ select: (state) => state.location.search });
+
+  const consumeReturn = useCallback(() => {
+    void navigate({
+      to: '/',
+      search: true,
+      replace: true,
+      resetScroll: false,
+      state: (prior) => {
+        const rest = { ...prior };
+
+        delete rest.consoleReturn;
+
+        return rest;
+      },
+    });
+  }, [navigate]);
 
   return {
+    consumeReturn,
     focusRowId: selectedTurn === undefined ? entry.consoleReturn?.row : undefined,
     href: (search: ConsoleLocation) => router.buildLocation({ to: '/', search }).publicHref,
     open: (search: ConsoleLocation, row: string) => {
-      globalThis.history.replaceState({ ...entry, consoleReturn: { row, scrollTop: globalThis.scrollY } }, '');
-      void navigate({ to: '/', search, resetScroll: false });
+      globalThis.history.replaceState({ ...entry, consoleReturn: { row, positions: readReaderPositions() } }, '');
+      void navigate({
+        to: '/',
+        search,
+        resetScroll: false,
+        state: (prior) => ({ ...prior, consoleRunOrigin: location }),
+      });
+    },
+    back: (fallback: ConsoleLocation) => {
+      if (entry.consoleRunOrigin !== undefined) {
+        router.history.back();
+
+        return;
+      }
+
+      void navigate({ to: '/', search: fallback, resetScroll: false, replace: true });
     },
   };
 }
@@ -27,15 +81,17 @@ export function ConsoleLink({
   row,
   title,
   children,
-}: {
-  readonly to: ConsoleLocation;
-  readonly row?: string;
-  readonly title?: string;
-  readonly children: ReactNode;
-}): ReactNode {
+  onClick,
+  ...props
+}: { readonly to: ConsoleLocation; readonly row?: string; readonly title?: string } & Omit<
+  ComponentProps<'a'>,
+  'href'
+>): ReactNode {
   const anchor = useRef<HTMLAnchorElement>(null);
+  const forwardedRef = props.ref;
   const entry = useRouterState({ select: (state) => state.location.state });
   const selectedTurn = useRouterState({ select: (state) => state.location.search.turn });
+  const location = useRouterState({ select: (state) => state.location.search });
 
   useLayoutEffect(() => {
     if (selectedTurn !== undefined) {
@@ -50,7 +106,7 @@ export function ConsoleLink({
 
     const frame = requestAnimationFrame(() => {
       anchor.current?.focus({ preventScroll: true });
-      globalThis.scrollTo({ top: target.scrollTop, behavior: 'instant' });
+      restoreReaderPositions(target.positions);
     });
 
     return () => cancelAnimationFrame(frame);
@@ -58,15 +114,31 @@ export function ConsoleLink({
 
   return (
     <RouteLink
-      ref={anchor}
+      {...props}
+      ref={(element) => {
+        anchor.current = element;
+
+        if (typeof forwardedRef === 'function') {
+          return forwardedRef(element);
+        }
+
+        if (forwardedRef !== undefined && forwardedRef !== null) {
+          forwardedRef.current = element;
+        }
+      }}
       to="/"
       search={to}
       title={title}
+      target={props.target ?? '_self'}
+      resetScroll={false}
+      state={(prior) => (to.turn === undefined ? prior : { ...prior, consoleRunOrigin: location })}
       onClick={(event) => {
+        onClick?.(event);
+
         const command = event.metaKey || event.ctrlKey;
         const alternate = event.shiftKey || event.altKey;
 
-        if (row === undefined || event.button !== 0) {
+        if (row === undefined || event.button !== 0 || event.defaultPrevented) {
           return;
         }
 
@@ -74,7 +146,7 @@ export function ConsoleLink({
           return;
         }
 
-        globalThis.history.replaceState({ ...entry, consoleReturn: { row, scrollTop: globalThis.scrollY } }, '');
+        globalThis.history.replaceState({ ...entry, consoleReturn: { row, positions: readReaderPositions() } }, '');
       }}
     >
       {children}

@@ -16,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'PromptInput presents an application-owned draft and native form. The application supplies submission, model selection, attachments and stop eligibility. It never clears a draft or creates a request identity. Newline is the default Enter behavior; submit mode respects IME composition and Shift+Enter. Stop replaces Send and prevents hidden Enter submission.',
+          'PromptInput presents an application-owned draft in one framed composer. Its label stays accessible while the placeholder supplies the visible prompt. Text grows within a bounded input region. Optional controls, attachments and a named send or stop action remain inside the frame; feedback stays visible below it. The application owns submission, request identity and acknowledgement. Pending submission makes the draft read-only. Newline is the default Enter behavior; submit mode respects IME composition and Shift+Enter. Stop replaces Send and prevents hidden Enter submission.',
       },
     },
   },
@@ -162,6 +162,24 @@ function PendingExample(): ReactNode {
 export const Composer: Story = { render: () => <ComposerExample /> };
 export const StopAndDraft: Story = { render: () => <StoppableExample /> };
 export const Pending: Story = { render: () => <PendingExample /> };
+
+export const Compact: Story = { render: () => <CompactExample /> };
+
+function CompactExample(): ReactNode {
+  const [draft, setDraft] = useState('');
+
+  return (
+    <PromptInput
+      label="Message assistant"
+      placeholder="Message assistant…"
+      value={draft}
+      onValueChange={setDraft}
+      onSubmit={(event) => event.preventDefault()}
+      enterBehavior="submit"
+      compact
+    />
+  );
+}
 
 export const UnknownContext: Story = {
   render: () => <Meter label="Context capacity" value={null} max={128_000} valueLabel="Usage is unavailable" />,

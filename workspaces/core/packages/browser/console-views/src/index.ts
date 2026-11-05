@@ -1,6 +1,8 @@
 export { DefinitionConflict } from './definition-conflict.tsx';
 export { ConsoleShell } from './shell.tsx';
+export { MechHeader } from './mech-header.tsx';
 export { MechList } from './mechs.tsx';
+export { MemoryList, WorkList } from './work.tsx';
 export { TurnList } from './turns.tsx';
 export { Activity } from './events.tsx';
 export { MechConversation } from './conversation.tsx';

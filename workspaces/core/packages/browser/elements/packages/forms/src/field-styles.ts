@@ -37,6 +37,22 @@ export const fieldStyles = stylex.create({
   compactTextarea: { minHeight: 80, maxHeight: '30dvh' },
 });
 
+export const textareaAppearanceStyles = stylex.create({
+  field: {},
+  plain: {
+    'minHeight': typography.bodyLineHeight,
+    'maxHeight': '30dvh',
+    'fieldSizing': 'content',
+    'resize': 'none',
+    'padding': 0,
+    'borderWidth': 0,
+    'borderRadius': 0,
+    'backgroundColor': 'transparent',
+    ':focus-visible': { outlineStyle: 'none' },
+    ':disabled': { backgroundColor: 'transparent' },
+  },
+});
+
 export const inputSizeStyles = stylex.create({
   sm: {
     minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },

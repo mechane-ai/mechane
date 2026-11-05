@@ -47,6 +47,8 @@ const styles = stylex.create({
     flexShrink: 0,
     marginLeft: 'auto',
   },
+  views: { display: 'flex', alignItems: 'center', minWidth: 0, flexShrink: 0 },
+  leading: { display: 'flex', alignItems: 'center', paddingInlineStart: spacing.sm, flexShrink: 0 },
   actionCell: { boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', minWidth: 0 },
   action: { gap: spacing.sm },
   actionLabel: { display: { default: 'inline', [frameConditions.toolbarCompact]: 'none' } },
@@ -57,18 +59,27 @@ type PageToolbarProps = {
   readonly actions?: ReactNode;
   readonly breadcrumb?: boolean;
   readonly navigation?: boolean;
+  readonly views?: ReactNode;
+  readonly leading?: ReactNode;
 };
 
 type ToolbarActionProps = Omit<ComponentProps<typeof Button>, 'variant' | 'size' | 'xstyle'> & {
   readonly icon?: ReactNode;
 };
 
-export function PageToolbar({ title, actions, breadcrumb = false, navigation = true }: PageToolbarProps): ReactNode {
+export function PageToolbar({
+  title,
+  actions,
+  breadcrumb = false,
+  navigation = true,
+  views,
+  leading,
+}: PageToolbarProps): ReactNode {
   const Title = breadcrumb ? 'nav' : 'h1';
 
   return (
     <div {...stylex.props(styles.toolbar)}>
-      {navigation && <SidebarToggle />}
+      {leading === undefined ? navigation && <SidebarToggle /> : <div {...stylex.props(styles.leading)}>{leading}</div>}
       <Title
         tabIndex={breadcrumb ? undefined : -1}
         aria-label={breadcrumb ? 'Breadcrumb' : undefined}
@@ -76,6 +87,7 @@ export function PageToolbar({ title, actions, breadcrumb = false, navigation = t
       >
         <span {...stylex.props(styles.label)}>{title}</span>
       </Title>
+      {views !== undefined && views !== null && <div {...stylex.props(styles.views)}>{views}</div>}
       {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );

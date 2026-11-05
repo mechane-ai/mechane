@@ -7,6 +7,7 @@ import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
 import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { Tooltip } from '../../overlays/src/index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
@@ -107,6 +108,7 @@ const styles = stylex.create({
     'display': 'flex',
     'alignItems': 'center',
     'width': '100%',
+    'minWidth': 0,
     'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': 0,
     'borderWidth': 0,
@@ -140,8 +142,13 @@ const styles = stylex.create({
   secondary: { display: { [conditions.compactTable]: 'none' } },
   truncated: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
   cellContent: { display: 'block', minWidth: 0, maxWidth: '100%' },
+  text: { display: 'block', minWidth: 0, width: '100%' },
+  textColumn: { flex: 1, minWidth: 0 },
+  textRow: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0, width: '100%' },
+  leading: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
+  secondaryText: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
   cellViewport: { display: 'flex', alignItems: 'center', minWidth: 0, width: '100%', height: ROW_HEIGHT - 1 },
-  fixedContent: { width: '100%', maxHeight: ROW_HEIGHT - 1, overflow: 'hidden' },
+  fixedContent: { width: '100%', maxHeight: ROW_HEIGHT - 1 },
   contentCell: { paddingBlock: spacing.sm },
   contentViewport: { height: 'auto' },
   selection: { width: 44, minWidth: 0, paddingInline: spacing.lg },
@@ -182,6 +189,34 @@ export type DataTableColumn<Row> = {
   readonly truncate?: boolean;
   readonly sortable?: boolean;
 };
+
+export type DataTableTextProps = {
+  readonly children: string;
+  readonly secondary?: string | undefined;
+  readonly leading?: ReactNode;
+};
+
+export function DataTableText({ children, secondary, leading }: DataTableTextProps): ReactNode {
+  return (
+    <span {...stylex.props(styles.textRow)}>
+      {leading !== undefined && (
+        <span aria-hidden {...stylex.props(styles.leading)}>
+          {leading}
+        </span>
+      )}
+      <span {...stylex.props(styles.textColumn)}>
+        <span title={children} {...stylex.props(styles.text, styles.truncated)}>
+          {children}
+        </span>
+        {secondary !== undefined && (
+          <span title={secondary} {...stylex.props(styles.text, styles.truncated, styles.secondaryText)}>
+            {secondary}
+          </span>
+        )}
+      </span>
+    </span>
+  );
+}
 
 export type DataTableSort = { readonly columnId: string; readonly direction: 'ascending' | 'descending' };
 
@@ -428,6 +463,7 @@ export function DataTable<Row extends object>({
 
   const columnCount = columns.length + (selectedIds === undefined ? 0 : 1);
   const selectionWidth = selectedIds === undefined ? 0 : 44;
+  const showFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean';
   const minimumWidth = columns.reduce((total, column) => total + (column.width ?? 160), selectionWidth);
 
   const compactWidth = columns
@@ -637,7 +673,7 @@ export function DataTable<Row extends object>({
           {endContent}
         </div>
       </div>
-      {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+      {showFooter && <div {...stylex.props(styles.footer)}>{footer}</div>}
     </div>
   );
 }
@@ -651,11 +687,13 @@ function TableCellContent({
   readonly truncate: boolean | undefined;
   readonly children: ReactNode;
 }): ReactNode {
+  const isTruncated = typeof children === 'string' && (truncate ?? fixed);
+
   return (
     <span {...stylex.props(styles.cellViewport, !fixed && styles.contentViewport)}>
       <span
         title={typeof children === 'string' ? children : undefined}
-        {...stylex.props(styles.cellContent, fixed && styles.fixedContent, (truncate ?? fixed) && styles.truncated)}
+        {...stylex.props(styles.cellContent, fixed && styles.fixedContent, isTruncated && styles.truncated)}
       >
         {children}
       </span>
@@ -687,11 +725,29 @@ type RowTriggerProps<Row> = {
 };
 
 function RowTrigger<Row>({ row, action, active, children, onKeyDown }: RowTriggerProps<Row>): ReactNode {
-  if (action.href !== undefined) {
-    return (
+  const label = action.label?.(row);
+
+  const trigger =
+    action.href === undefined ? (
+      <button
+        type="button"
+        aria-label={label}
+        aria-pressed={active}
+        data-row-action
+        onKeyDown={onKeyDown}
+        onClick={(event) => {
+          if (isPlainActivation(event)) {
+            action.onActivate(row);
+          }
+        }}
+        {...stylex.props(styles.trigger)}
+      >
+        {children}
+      </button>
+    ) : (
       <a
         href={action.href(row)}
-        aria-label={action.label?.(row)}
+        aria-label={label}
         data-row-action
         onKeyDown={onKeyDown}
         onClick={(event) => {
@@ -705,23 +761,19 @@ function RowTrigger<Row>({ row, action, active, children, onKeyDown }: RowTrigge
         {children}
       </a>
     );
+
+  if (label === undefined) {
+    return trigger;
   }
 
   return (
-    <button
-      type="button"
-      aria-label={action.label?.(row)}
-      aria-pressed={active}
-      data-row-action
-      onKeyDown={onKeyDown}
-      onClick={(event) => {
-        if (isPlainActivation(event)) {
-          action.onActivate(row);
-        }
-      }}
-      {...stylex.props(styles.trigger)}
-    >
-      {children}
-    </button>
+    <Tooltip.Root>
+      <Tooltip.Trigger render={trigger} />
+      <Tooltip.Portal>
+        <Tooltip.Positioner side="top" align="start">
+          <Tooltip.Popup>{label}</Tooltip.Popup>
+        </Tooltip.Positioner>
+      </Tooltip.Portal>
+    </Tooltip.Root>
   );
 }

@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
+import { ExternalLink, ScanLine } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Markdown } from '../../content/src/markdown/index.ts';
-import { Button, CopyValue, Muted, Row, Stack } from '../../core/src/index.ts';
+import { AgentAvatar, Button, CopyValue, Muted, Row, Stack, TextLink } from '../../core/src/index.ts';
 import { colors, radii } from '../../foundations/src/tokens.stylex.ts';
 import { Conversation } from './conversation.tsx';
+import { MessageAction } from './message-action.tsx';
+import { MessageBoundary } from './message-boundary.tsx';
 import { Message, MessageAttachment } from './message.tsx';
 import type { MessageKind } from './message.tsx';
 import { PromptInput } from './prompt-input.tsx';
@@ -19,13 +22,15 @@ const meta = {
     Item: Conversation.Item,
     JumpToLatest: Conversation.JumpToLatest,
     Message,
+    MessageAction,
     MessageAttachment,
+    MessageBoundary,
   },
   parameters: {
     docs: {
       description: {
         component:
-          'Conversation owns scrolling through the headless MessageScroller primitive. Supply stable message IDs, message content and streaming state. It follows the live edge, preserves a reader’s position when history is prepended, and offers a keyboard-accessible return to latest. Viewport is the scroll owner, Content reports streaming state, Item preserves message identity, and JumpToLatest returns to the live edge. Message presents authorship, body and actions; MessageAttachment presents a supplied file reference without uploading or fetching it. Use ordinary Stack layout for content that needs no transcript scrolling. A height-constrained parent creates a scrolling transcript; ordinary document flow stays natural. Key the root by conversation identity when switching conversations.',
+          'Conversation owns scrolling through MessageScroller. Supply stable message IDs, content and streaming state. Viewport owns the scroll region and can expose its identity for application route restoration. Content constrains the reading measure; Item preserves message identity; JumpToLatest returns to the live edge. Message presents authorship, body and optional avatar. Its action area reserves space and reveals controls on hover or keyboard focus; touch keeps them visible. MessageAction composes a named icon button or link with a tooltip. MessageBoundary discloses supplied lineage details. The application owns data, routing and draft lifetime. Use a height-constrained parent for a scrolling transcript, and key the root only when the conversation identity changes.',
       },
     },
   },
@@ -123,10 +128,14 @@ function ConversationExample(): ReactNode {
               <Conversation.Item messageId="response">
                 <Message
                   author="Assistant"
+                  avatar={<AgentAvatar seed="evaluation-assistant" size="sm" />}
                   actions={
-                    <CopyValue value={response} label="Copy response">
-                      Copy
-                    </CopyValue>
+                    <CopyValue
+                      value={response}
+                      label="response"
+                      display="icon"
+                      render={<MessageAction label="Copy response" />}
+                    />
                   }
                 >
                   <Markdown streaming={isStreaming}>{response}</Markdown>
@@ -168,6 +177,11 @@ export const MessageParts: Story = {
         author="You"
         kind="user"
         meta="Submitted"
+        avatar={
+          <MessageAction label="Open source message" kind="link" href="#source-message">
+            <ExternalLink size={16} aria-hidden />
+          </MessageAction>
+        }
         attachments={
           <MessageAttachment name="evaluation.csv" description="24 cases · CSV" href="/examples/evaluation.csv" />
         }
@@ -177,10 +191,19 @@ export const MessageParts: Story = {
       <Message
         author="Assistant"
         meta="Complete"
+        avatar={<AgentAvatar seed="evaluation-assistant" size="sm" />}
         actions={
-          <CopyValue value="The supplied cases are ready for comparison." label="Copy message">
-            Copy
-          </CopyValue>
+          <>
+            <MessageAction label="Open execution" kind="link" href="#execution">
+              <ScanLine size={16} aria-hidden />
+            </MessageAction>
+            <CopyValue
+              value="The supplied cases are ready for comparison."
+              label="message"
+              display="icon"
+              render={<MessageAction label="Copy message" />}
+            />
+          </>
         }
       >
         <Markdown>The supplied cases are ready for comparison.</Markdown>
@@ -188,6 +211,12 @@ export const MessageParts: Story = {
       <Message author="System" kind="system">
         <Muted>This conversation contains a partial history. Earlier records are available separately.</Muted>
       </Message>
+      <MessageBoundary label="Conversation continued from another assistant">
+        <Stack compact>
+          <Muted>The earlier history was copied. Each assistant continues independently from this point.</Muted>
+          <TextLink href="#source-assistant">Source assistant</TextLink>
+        </Stack>
+      </MessageBoundary>
     </Stack>
   ),
 };
@@ -212,4 +241,39 @@ export const Empty: Story = {
 export const Narrow: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <ConversationExample />,
+};
+
+export const LongContent: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => (
+    <div {...stylex.props(styles.frame)}>
+      <Conversation.Root initialPosition="start">
+        <Conversation.Viewport label="Long content conversation">
+          <Conversation.Content>
+            <Conversation.Item messageId="long-response">
+              <Message
+                author="Evaluation assistant for archived production observations"
+                avatar={<AgentAvatar seed="long-content-assistant" size="sm" />}
+                meta="Nov 4, 5:24 PM"
+                actions={
+                  <CopyValue
+                    value="The comparison is ready."
+                    label="message"
+                    display="icon"
+                    render={<MessageAction label="Copy message" />}
+                  />
+                }
+              >
+                <Markdown>
+                  {
+                    'The comparison is saved at `/workspace/evaluation/artifacts/production/observations/2026-11-04/archived-results/comparison-summary.json`.\n\n```ts\nconst artifact = "/workspace/evaluation/artifacts/production/observations/archived-results/comparison-summary.json";\n```'
+                  }
+                </Markdown>
+              </Message>
+            </Conversation.Item>
+          </Conversation.Content>
+        </Conversation.Viewport>
+      </Conversation.Root>
+    </div>
+  ),
 };

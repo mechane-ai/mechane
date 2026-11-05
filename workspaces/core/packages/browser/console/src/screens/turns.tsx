@@ -48,7 +48,7 @@ export function TurnsScreen({
                   : 'Give this mech something to work on. Its answer and requests will appear here.'
             }
           />
-          {page.turns.length > 0 && (
+          {(page.hasMore || cursors.length > 0) && (
             <ListFooter
               actions={
                 <>
@@ -69,9 +69,7 @@ export function TurnsScreen({
                   </Button>
                 </>
               }
-            >
-              Newest runs first
-            </ListFooter>
+            />
           )}
         </>
       )}

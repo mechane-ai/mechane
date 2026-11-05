@@ -39,6 +39,11 @@ Presentation collection ordering remains with its application owner under contra
 governs an owner that is allowed to sort; it does not permit generic UI to reorder supplied records.
 Contract 113 defines which request timestamps and usage records exist, and contract 115 defines their generic geometry.
 
+Agent avatars derive their default appearance from a stable seed and a frozen selection pool. Adding picker choices
+must not change the appearance of existing seeds. Persist explicit shape and palette names rather than array indexes.
+Keep identity color separate from operational status, and retain the record name alongside avatars in record navigation. Inspect repeated seeds,
+an explicit override, and reset to default in both themes; additions to the picker must preserve prior seed mappings.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

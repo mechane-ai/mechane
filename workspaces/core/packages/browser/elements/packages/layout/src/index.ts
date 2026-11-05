@@ -2,6 +2,7 @@ export { AppShell } from './app-shell.tsx';
 export { DetailPage } from './detail-page.tsx';
 export { FocusPage } from './focus-page.tsx';
 export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';
+export { ViewStack } from './view-stack.tsx';
 export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 export type {
   RecordPageRootProps,
@@ -14,4 +15,11 @@ export type {
 export { RecordPage } from './record-page.tsx';
 export type { ResizableRootProps, ResizablePaneProps, ResizableHandleProps } from './resizable.tsx';
 export { Resizable } from './resizable.tsx';
-export { Navigation, NavigationItem, NavigationLink, SidebarLabel, SidebarFooter } from './sidebar.tsx';
+export {
+  Navigation,
+  NavigationSection,
+  NavigationItem,
+  NavigationLink,
+  SidebarLabel,
+  SidebarFooter,
+} from './sidebar.tsx';

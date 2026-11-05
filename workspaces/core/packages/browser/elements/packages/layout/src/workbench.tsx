@@ -19,8 +19,9 @@ const styles = stylex.create({
     borderBottomColor: colors.line,
   },
   body: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0, overflow: 'clip' },
-  main: { display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 },
+  main: { position: 'relative', display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 },
   scroll: { overflowY: 'auto', flex: 1, minWidth: 0, minHeight: 0, padding: spacing.xl },
+  flush: { padding: 0 },
   footer: {
     flexShrink: 0,
     padding: spacing.lg,
@@ -48,13 +49,13 @@ export function Workbench({
   children,
   inspector,
 }: {
-  readonly header: ReactNode;
+  readonly header?: ReactNode;
   readonly children: ReactNode;
   readonly inspector?: ReactNode;
 }): ReactNode {
   return (
     <div {...stylex.props(styles.root)}>
-      <div {...stylex.props(styles.header)}>{header}</div>
+      {header !== undefined && header !== null && <div {...stylex.props(styles.header)}>{header}</div>}
       <div {...stylex.props(styles.body)}>
         <div {...stylex.props(styles.main, inspector !== undefined && inspector !== null && styles.obscured)}>
           {children}
@@ -69,8 +70,28 @@ export function Workbench({
   );
 }
 
-export function WorkbenchScroll({ children }: { readonly children: ReactNode }): ReactNode {
-  return <div {...stylex.props(styles.scroll)}>{children}</div>;
+export function WorkbenchScroll({
+  label,
+  children,
+  flush = false,
+  scrollRestorationId,
+}: {
+  readonly label: string;
+  readonly children: ReactNode;
+  readonly flush?: boolean;
+  readonly scrollRestorationId?: string;
+}): ReactNode {
+  return (
+    <div
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      data-scroll-restoration-id={scrollRestorationId}
+      {...stylex.props(styles.scroll, flush && styles.flush)}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function WorkbenchFooter({ children }: { readonly children: ReactNode }): ReactNode {

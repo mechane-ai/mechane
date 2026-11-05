@@ -35,6 +35,7 @@ const styles = stylex.create({
     minWidth: 0,
   },
   collapsed: { width: frame.toolbarHeight },
+  hidden: { display: 'none' },
   main: { minWidth: 0, flex: 1 },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },
 });
@@ -45,9 +46,17 @@ type AppShellProps = {
   readonly footer?: ReactNode;
   readonly children: ReactNode;
   readonly mainId?: string;
+  readonly focus?: boolean;
 };
 
-export function AppShell({ sidebarHeader, sidebar, footer, children, mainId = 'main' }: AppShellProps): ReactNode {
+export function AppShell({
+  sidebarHeader,
+  sidebar,
+  footer,
+  children,
+  mainId = 'main',
+  focus = false,
+}: AppShellProps): ReactNode {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [drawerHandle] = useState(() => Drawer.createHandle());
@@ -85,7 +94,8 @@ export function AppShell({ sidebarHeader, sidebar, footer, children, mainId = 'm
         <aside
           id={sidebarId}
           aria-label="Navigation"
-          {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed)}
+          hidden={focus}
+          {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed, focus && styles.hidden)}
         >
           <Sidebar header={sidebarHeader} footer={footer}>
             {sidebar}
@@ -96,7 +106,7 @@ export function AppShell({ sidebarHeader, sidebar, footer, children, mainId = 'm
         </main>
       </div>
       {/* Screen dialogs must not inherit the navigation drawer's modal context. */}
-      <Drawer.Root handle={drawerHandle} open={isOpen} onOpenChange={setIsOpen}>
+      <Drawer.Root handle={drawerHandle} open={isOpen && !focus} onOpenChange={setIsOpen}>
         <Drawer.Portal>
           <Drawer.Backdrop />
           <Drawer.Viewport>

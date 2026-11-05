@@ -1,13 +1,25 @@
-import { Button, CopyValue, Muted, Row, Stack, Subheading } from '@mechane-ai/elements';
+import {
+  agentAppearance,
+  AgentAvatar,
+  Button,
+  Collapsible,
+  CopyValue,
+  Muted,
+  Row,
+  Stack,
+  Subheading,
+} from '@mechane-ai/elements';
 import { Details } from '@mechane-ai/elements/collections';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
 import { Notice } from '@mechane-ai/elements/feedback';
+import { AgentAvatarPicker } from '@mechane-ai/elements/forms';
 import { Dialog } from '@mechane-ai/elements/overlays';
 import { moneyLabel } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useMechAppearance } from '../mech-appearance.tsx';
 
 export function MechSettings({
   mech,
@@ -24,9 +36,30 @@ export function MechSettings({
 }): ReactNode {
   const [open, setOpen] = useState(false);
   const cancel = useRef<HTMLButtonElement>(null);
+  const { appearance, setAppearance, persistenceError } = useMechAppearance(mech.id);
 
   return (
     <Stack>
+      <Collapsible.Root>
+        <Collapsible.Trigger>
+          <Row>
+            <AgentAvatar seed={mech.id} appearance={appearance} size="md" />
+            <span>Appearance</span>
+          </Row>
+        </Collapsible.Trigger>
+        <Collapsible.Panel>
+          <Stack compact>
+            <AgentAvatarPicker value={appearance ?? agentAppearance(mech.id)} onValueChange={setAppearance} />
+            <Row between>
+              <Muted>For you in this browser.</Muted>
+              <Button variant="ghost" disabled={appearance === undefined} onClick={() => setAppearance(undefined)}>
+                Reset icon
+              </Button>
+            </Row>
+            {persistenceError !== undefined && <Notice error>{persistenceError}</Notice>}
+          </Stack>
+        </Collapsible.Panel>
+      </Collapsible.Root>
       <Row between>
         <Subheading>Definition</Subheading>
         <Button onClick={onEdit}>Edit definition</Button>

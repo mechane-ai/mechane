@@ -1,6 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen.ts';
-import type { PageCursors } from './types.ts';
+import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
 
 export function getRouter() {
   return createRouter({ routeTree, basepath: '/console', scrollRestoration: true, defaultPreload: false });
@@ -9,7 +9,8 @@ export function getRouter() {
 declare module '@tanstack/react-router' {
   interface HistoryState {
     readonly consolePages?: Partial<PageCursors>;
-    readonly consoleReturn?: { readonly row: string; readonly scrollTop: number };
+    readonly consoleReturn?: { readonly row: string; readonly positions: ReadonlyArray<ReaderPosition> };
+    readonly consoleRunOrigin?: ConsoleLocation;
   }
 
   interface Register {

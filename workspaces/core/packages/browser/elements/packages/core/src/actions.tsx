@@ -1,5 +1,6 @@
 import { Button as BaseButton } from '@base-ui/react/button';
 import { mergeProps } from '@base-ui/react/merge-props';
+import { useRender } from '@base-ui/react/use-render';
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
@@ -152,6 +153,12 @@ type ButtonProps = ComponentProps<typeof BaseButton> &
 
 type IconButtonProps = Omit<ButtonProps, 'aria-label' | 'pendingLabel'> & { readonly 'aria-label': string };
 
+type IconLinkProps = Omit<useRender.ComponentProps<'a'>, 'aria-label'> & {
+  readonly 'aria-label': string;
+  readonly 'size'?: ControlSize;
+  readonly 'xstyle'?: PlacementStyle;
+};
+
 type TextButtonProps = ComponentProps<typeof BaseButton> &
   PendingProps & { readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
 
@@ -268,4 +275,15 @@ export function TextButton({
 
 export function TextLink({ xstyle, ...props }: TextLinkProps): ReactNode {
   return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
+}
+
+export function IconLink({ size = 'sm', children, xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
+  return useRender({
+    defaultTagName: 'a',
+    render,
+    ref,
+    props: mergeProps(stylex.props(styles.button, sizes[size], styles.ghostNeutral, iconSizes[size], xstyle), props, {
+      children: <span {...stylex.props(styles.icon)}>{children}</span>,
+    }),
+  });
 }

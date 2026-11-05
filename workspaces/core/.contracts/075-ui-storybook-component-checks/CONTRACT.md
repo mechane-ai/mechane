@@ -58,6 +58,16 @@ Storybook's accessibility addon supports inspection without making every story a
 The root test-curation and assertion-integrity contracts govern any retained interaction assertion.
 The Storybook build proves catalog composition and compilation, not browser focus, authorization, or actual requests.
 
+Review shared layout changes in the affected application page families as well as isolated component stories.
+Use realistic long titles, unbroken paths, multiline output, missing values, and empty or single-record collections.
+Inspect the actual containing width, a narrow viewport, and enlarged text in both themes. Open popups and disclosures;
+check the last row, footer, and scrolled state as well as the first screen. Keep these inputs in the owning synthetic
+story when they explain a supported composition, without adding automatic assertions by default.
+
+After the changed screens are assembled, repeat a complete user journey through navigation, editing, detail inspection,
+and return. Check for lost drafts, reader position, hidden actions, doubled insets, and inconsistent component defaults.
+Resolve failures in their owning component or application state before treating individual story checks as sufficient.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - dependency-cruiser `no-browser-catalog-imports` (075): enforced: Keep catalog examples in development, such as `import { Button } from "@mechane-ai/elements"`

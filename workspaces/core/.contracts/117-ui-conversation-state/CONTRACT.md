@@ -1,7 +1,7 @@
 ---
 name: ui-conversation-state
 message: Preserve the reader's position and the author's draft while presenting supplied messages and activity.
-paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/message.tsx","packages/browser/console-views/src/events.tsx"]
+paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
 ---
 
 ## Rules
@@ -42,6 +42,15 @@ input? Catalog examples use fixed synthetic data. Temporary browser probes verif
 rules govern retained assertions.
 
 ## Local adaptations
+
+The Console retains the conversation and submission lifecycle while a reader inspects a run or another view of the
+same mech. Hiding and revealing the conversation must not change whether the reader follows the live edge. A send
+acknowledgement settles the identified submission even while its form is hidden. It clears only that submitted draft;
+a rejected or uncertain send preserves the text and request identity. Switching the owning mech or workspace keeps
+state from appearing in another record.
+
+Inspect a run while reading older content and while a send is pending, then return before and after completion.
+Confirm the same message and draft state return without a duplicate send or a jump to the latest message.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -6,7 +6,14 @@ import { Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
-import { Navigation, NavigationItem, NavigationLink, SidebarFooter, SidebarLabel } from './sidebar.tsx';
+import {
+  Navigation,
+  NavigationItem,
+  NavigationLink,
+  NavigationSection,
+  SidebarFooter,
+  SidebarLabel,
+} from './sidebar.tsx';
 
 const meta = {
   title: 'Layout/AppShell',
@@ -18,6 +25,7 @@ const meta = {
     Navigation,
     NavigationItem,
     NavigationLink,
+    NavigationSection,
     SidebarLabel,
     SidebarFooter,
   },

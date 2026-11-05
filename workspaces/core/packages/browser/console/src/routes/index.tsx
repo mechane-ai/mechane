@@ -33,6 +33,8 @@ function ConsoleRoute(): ReactNode {
         void navigate({
           search,
           resetScroll: search.mech !== location.mech || search.workspace !== location.workspace,
+          replace: location.turn !== undefined && search.turn === location.turn,
+          state: (prior) => (search.mech === location.mech && search.workspace === location.workspace ? prior : {}),
         });
       }}
     />

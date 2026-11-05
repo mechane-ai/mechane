@@ -10,6 +10,10 @@ export type {
 export { Conversation } from './conversation.tsx';
 export type { MessageKind, MessageProps, MessageAttachmentProps } from './message.tsx';
 export { Message, MessageAttachment } from './message.tsx';
+export type { MessageActionProps } from './message-action.tsx';
+export { MessageAction } from './message-action.tsx';
+export type { MessageBoundaryProps } from './message-boundary.tsx';
+export { MessageBoundary } from './message-boundary.tsx';
 export type { PromptInputProps } from './prompt-input.tsx';
 export { PromptInput } from './prompt-input.tsx';
 export type { Source, SourcesProps, InlineCitationProps } from './sources.tsx';

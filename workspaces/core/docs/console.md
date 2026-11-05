@@ -9,15 +9,24 @@ workspace remembered for that account in this browser. With no preference, a sin
 personal workspace. Multiple shared workspaces open a chooser. The personal workspace is labeled **Personal**; workspace
 names and permissions remain unchanged.
 
+The sidebar separates **Overview**, **Pinned**, and **Recent**. Recent shows the last five unpinned mechs you opened;
+pin a mech to keep it above that list. These shortcuts and appearance choices belong to your account and workspace in
+this browser. **Settings** holds account actions and the documentation and software notices under **About**.
+
 Open a mech to read its continuous **Conversation**, with an inline composer and Markdown replies. **Work** shows the
 agent's durable threads and notes; these are work records, not separate chat sessions. **Runs** shows executions with
 their input excerpts. **Memory** contains explicitly saved notes, separately from conversation history. **History**
 keeps the original durable events. A fork explains the source and copied event boundary: its event number is a position
 in the log, not a count of forks. Forked mechs continue independently.
 
-List rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the row and
-page you were reading. **Inspect run** opens a contextual pane; on a phone it occupies the content area while the
-conversation and draft stay mounted. Closing the inspector returns focus to the originating record.
+The mech header combines its identity, status, and view selector. Conversation actions appear on hover or keyboard focus
+and remain visible on touch devices. Copy and run controls have named icons; fork details expand from a compact
+conversation boundary.
+
+List rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the row,
+page, and scroll position you were reading. **Open run** opens a full page, temporarily hiding workspace navigation. The
+conversation and draft stay mounted. The return control and browser Back restore the originating view; a run opened
+directly returns to its mech. Opening run details does not change the saved sidebar preference.
 
 A run opens on **Overview**. An answered run shows the start of its recorded reply. **Read full reply** opens the exact
 event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance decision
@@ -27,13 +36,14 @@ with someone who can access the workspace. **Events** pages through the original
 **Tools** shows recorded tool names, outcomes and timing; raw tool arguments and results do not enter this browser
 projection. Evidence reads are bounded, and missing or truncated evidence is labeled.
 
-Activate a timestamp to copy its exact UTC value. A transient refresh failure keeps the last result visible and offers a
-retry. New activity waits behind **Show new activity** while you read. A message clears only after receipt; failed sends
-retain the draft and request identity for retry. Enabled means the mech can run, while Running comes from an execution
-record. **Settings** holds the definition, lifecycle actions, existing Slack connections and delivery receipts. An
-answered run and a delivered Slack reply are separate outcomes. The console does not change Slack bindings or
-permissions. When you edit a definition someone else has changed, compare the saved revision with your draft before
-saving. Continuing keeps your edits and adopts the latest values for untouched fields.
+Compact timestamps expose the full UTC date and time on hover or keyboard focus. A transient refresh failure keeps the
+last result visible and offers a retry. New activity waits behind **Show new activity** while you read. A message clears
+only after receipt; failed sends retain the draft and request identity for retry, including while you inspect a run.
+Enabled means the mech can run, while Running comes from an execution record. The mech's **Settings** holds its
+appearance, definition, lifecycle actions, existing Slack connections and delivery receipts. An answered run and a
+delivered Slack reply are separate outcomes. The console does not change Slack bindings or permissions. When you edit a
+definition someone else has changed, compare the saved revision with your draft before saving. Continuing keeps your
+edits and adopts the latest values for untouched fields.
 
 ## Package boundaries
 
@@ -51,14 +61,14 @@ Only `console-data` crosses from the shared Effect client into browser Promises.
 one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and
 persistence. No browser code imports Worker storage or installation secrets.
 
-UI modules group controls, forms, typography, and data presentation by responsibility. A shared frame owns the 240-pixel
-sidebar, its 48-pixel collapsed rail, and the mobile navigation drawer. Every screen uses the same 48-pixel toolbar;
-screens supply its resource actions. Tables fill the main surface, while `DetailPage` centers forms and resource
-details. Frame dimensions belong to layout; semantic colors and type roles belong to the tokens module. Base UI owns
-button, select, tab, and dialog interactions. StyleX uses explicit border and outline longhands; the contract's syntax
-check prevents unsupported shorthands from silently losing styles. The trace maps recorded requests into the generic
-visx Waterfall. Turn events come from the existing durable event log, with indexed turn and inbox lookup; there is no
-separate tracing store.
+UI modules group controls, forms, typography, and data presentation by responsibility. The shared frame owns sidebar
+geometry and the mobile navigation drawer. Screens supply resource actions to the shared toolbar. Tables fill the main
+surface; their cells own the row insets. Conversation prose has a reading width, while `DetailPage` centers forms and
+resource details. Frame dimensions belong to layout; semantic colors and type roles belong to the tokens module. Base UI
+owns button, select, tab, and dialog interactions. StyleX uses explicit border and outline longhands; the contract's
+syntax check prevents unsupported shorthands from silently losing styles. The trace maps recorded requests into the
+generic visx Waterfall. Turn events come from the existing durable event log, with indexed turn and inbox lookup; there
+is no separate tracing store.
 
 ## Local development
 

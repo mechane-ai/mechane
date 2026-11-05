@@ -52,3 +52,11 @@ export const PreviewInsideLink: Story = {
     </TextLink>
   ),
 };
+
+export const NarrowTable: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  args: {
+    children:
+      '| Check | Result | Evidence |\n| --- | --- | --- |\n| Restore | Passed | The recorded files match the archived snapshot. |\n| Runtime | Pending | The integration suite has not been run in this environment. |\n\n| Artifact | Location |\n| --- | --- |\n| Report | `/workspace/evaluation/artifacts/production/observations/archived-results/comparison-summary.json` |\n\nThe same path outside a table stays within the page: `/workspace/evaluation/artifacts/production/observations/archived-results/comparison-summary.json`.',
+  },
+};

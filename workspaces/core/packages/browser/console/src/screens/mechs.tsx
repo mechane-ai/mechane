@@ -8,6 +8,7 @@ import type { Allowance } from '@mechane/protocol';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useMechAppearances } from '../mech-appearance.tsx';
 import { usePageCursors, useRecordNavigation } from '../navigation.tsx';
 import { Resource, useResource } from '../resource.tsx';
 import { CreateMechForm } from './create-mech.tsx';
@@ -21,6 +22,7 @@ export function MechsScreen({
 }): ReactNode {
   const [cursors, setCursors] = usePageCursors('mechs', []);
   const records = useRecordNavigation();
+  const appearances = useMechAppearances();
   const [creating, setCreating] = useState(false);
   const after = cursors.at(-1) ?? null;
   const source = useMemo(() => data.mechs(after), [data, after]);
@@ -93,6 +95,7 @@ export function MechsScreen({
             <MechList
               page={page}
               allowance={allowanceValue}
+              appearances={appearances}
               mechHref={(mech) => records.href({ workspace: data.workspace.id, mech: mech.id })}
               onOpen={(mech) => records.open({ workspace: data.workspace.id, mech: mech.id }, mech.id)}
               focusRowId={records.focusRowId}

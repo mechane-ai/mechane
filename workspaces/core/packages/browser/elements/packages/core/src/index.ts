@@ -1,6 +1,10 @@
-export { Button, IconButton, TextButton, TextLink } from './actions.tsx';
+export { Button, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
 export type { AvatarProps } from './avatar.tsx';
 export { Avatar } from './avatar.tsx';
+export type { AgentAvatarShape } from './agent-avatar-glyphs.tsx';
+export { agentAvatarShapes } from './agent-avatar-glyphs.tsx';
+export type { AgentAppearance, AgentAvatarColor, AgentAvatarProps, AgentAvatarSize } from './agent-avatar.tsx';
+export { AgentAvatar, agentAppearance, agentAvatarColors } from './agent-avatar.tsx';
 export { CopyValue } from './copy-value.tsx';
 export { Accordion, Collapsible } from './disclosure.tsx';
 export { Panel, Row, Stack, Columns, Divider } from './surfaces.tsx';

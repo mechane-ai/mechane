@@ -13,8 +13,9 @@ export type {
   DataTableWindow,
   DataTableProps,
   DataTableRowAction,
+  DataTableTextProps,
 } from './data-table.tsx';
-export { DataTable } from './data-table.tsx';
+export { DataTable, DataTableText } from './data-table.tsx';
 export type { CollectionEndProps, CollectionScrollProps } from './collection-scroll.tsx';
 export { CollectionEnd, CollectionScroll } from './collection-scroll.tsx';
 export { Inspector, Details } from './inspector.tsx';

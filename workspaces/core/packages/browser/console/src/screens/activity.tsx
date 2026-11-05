@@ -1,4 +1,5 @@
-import { Button, Muted, Row, Stack } from '@mechane-ai/elements';
+import { Button, Row, Stack } from '@mechane-ai/elements';
+import { CollectionToolbar, ListFooter } from '@mechane-ai/elements/collections';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
 import type { EventPage } from '@mechane/protocol';
@@ -23,13 +24,15 @@ function ActivityPage({
 
   return (
     <>
-      {controls(visible)}
       {hasUnreadActivity && (
-        <Row>
-          <Button onClick={() => setShown(page)}>Show new activity ↑</Button>
-        </Row>
+        <CollectionToolbar label="New activity">
+          <Button size="sm" onClick={() => setShown(page)}>
+            Show new activity
+          </Button>
+        </CollectionToolbar>
       )}
-      <Activity page={visible} />
+      <Activity page={{ ...visible, events: visible.events.toReversed() }} />
+      {controls(visible)}
     </>
   );
 }
@@ -48,30 +51,31 @@ export function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; r
             key={before ?? 'latest'}
             page={page}
             latest={before === null}
-            controls={(visible) => (
-              <Row between>
-                <Muted>
-                  {before === null ? 'Recent activity · updates while this page is visible' : 'Earlier activity'}
-                </Muted>
-                <Row>
-                  <Button disabled={cursors.length === 0} onClick={() => setCursors(cursors.slice(0, -1))}>
-                    Newer
-                  </Button>
-                  <Button
-                    disabled={!visible.hasMore}
-                    onClick={() => {
-                      const first = visible.events[0];
+            controls={(visible) =>
+              (visible.hasMore || cursors.length > 0) && (
+                <ListFooter
+                  actions={
+                    <Row>
+                      <Button disabled={cursors.length === 0} onClick={() => setCursors(cursors.slice(0, -1))}>
+                        Newer
+                      </Button>
+                      <Button
+                        disabled={!visible.hasMore}
+                        onClick={() => {
+                          const first = visible.events[0];
 
-                      if (first !== undefined) {
-                        setCursors([...cursors, first.sequence]);
-                      }
-                    }}
-                  >
-                    Older
-                  </Button>
-                </Row>
-              </Row>
-            )}
+                          if (first !== undefined) {
+                            setCursors([...cursors, first.sequence]);
+                          }
+                        }}
+                      >
+                        Older
+                      </Button>
+                    </Row>
+                  }
+                />
+              )
+            }
           />
         </Stack>
       )}

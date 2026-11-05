@@ -1,11 +1,12 @@
-import { Muted, Stack, Status } from '@mechane-ai/elements';
-import { DataTable } from '@mechane-ai/elements/collections';
+import { Status } from '@mechane-ai/elements';
+import { DataTable, DataTableText } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
-import { durationLabel, timeLabel } from './format.ts';
+import { durationLabel } from './format.ts';
+import { ConsoleTimestamp } from './record-time.tsx';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 export function TurnList({
@@ -41,20 +42,21 @@ export function TurnList({
           id: 'input',
           label: 'Run',
           cell: (turn) => (
-            <Stack compact>
-              <span>
-                {Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0
-                  ? turn.inputExcerpt
-                  : 'Input unavailable'}
-              </span>
-              {Schema.is(Turn)(turn) && turn.status === 'unanswered' && <Muted>{outcomeReason(turn.reason)}</Muted>}
-            </Stack>
+            <DataTableText
+              secondary={Schema.is(Turn)(turn) && turn.status === 'unanswered' ? outcomeReason(turn.reason) : undefined}
+            >
+              {Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0
+                ? turn.inputExcerpt
+                : 'Input unavailable'}
+            </DataTableText>
           ),
           truncate: true,
         },
         {
           id: 'outcome',
           label: 'Outcome',
+          width: 148,
+          truncate: false,
           cell: (turn) => (
             <Status
               tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
@@ -67,12 +69,16 @@ export function TurnList({
           id: 'started',
           label: 'Started',
           secondary: true,
-          cell: (turn) => (Schema.is(Turn)(turn) ? timeLabel(turn.startedAt) : 'Unavailable'),
+          width: 172,
+          truncate: false,
+          cell: (turn) => (Schema.is(Turn)(turn) ? <ConsoleTimestamp value={turn.startedAt} /> : 'Unavailable'),
         },
         {
           id: 'elapsed',
           label: 'Elapsed',
           secondary: true,
+          width: 100,
+          truncate: false,
           cell: (turn) =>
             Schema.is(Turn)(turn) && turn.status !== 'running'
               ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))

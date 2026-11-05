@@ -1,19 +1,19 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Plus, RefreshCw } from 'lucide-react';
+import { ExternalLink, Plus, RefreshCw } from 'lucide-react';
 import { SkipLink } from '../../navigation/src/index.ts';
-import { Button, IconButton, TextButton, TextLink } from './actions.tsx';
+import { Button, IconButton, IconLink, TextButton, TextLink } from './actions.tsx';
 import { Row, Stack } from './surfaces.tsx';
 import { Muted } from './text.tsx';
 
 const meta = {
   title: 'Controls/Actions',
   component: Button,
-  subcomponents: { IconButton, TextButton, TextLink, SkipLink },
+  subcomponents: { IconButton, IconLink, TextButton, TextLink, SkipLink },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Button performs an action; variant sets emphasis and tone sets destructive intent. IconButton requires its own accessible label. TextButton fits an inline action, while TextLink is an anchor for navigation. SkipLink precedes navigation and moves keyboard focus to a main region with a stable ID and tabIndex={-1}; use TextLink for ordinary navigation. The application supplies handlers, destinations, permissions, and pending state. Use render to compose Base UI triggers; keep refs, events, classes, and styles intact. Tab through these examples to inspect keyboard focus. Pending actions prevent duplicate activation and keep their label space.',
+          'Supported. Button performs an action; variant sets emphasis and tone sets destructive intent. IconButton and IconLink require accessible labels. IconLink preserves anchor behavior and accepts render composition with a router link. TextButton fits an inline action, while TextLink is an anchor for navigation. SkipLink precedes navigation and moves keyboard focus to a main region with a stable ID and tabIndex={-1}; use TextLink for ordinary navigation. The application supplies handlers, destinations, permissions, and pending state. Use render to compose Base UI triggers; keep refs, events, classes, and styles intact. Tab through these examples to inspect keyboard focus. Pending actions prevent duplicate activation and keep their label space.',
       },
     },
   },
@@ -71,6 +71,9 @@ export const SizesAndIcons: Story = {
       <IconButton size="md" aria-label="Refresh items">
         <RefreshCw size={16} aria-hidden />
       </IconButton>
+      <IconLink aria-label="Open source" href="#example-source">
+        <ExternalLink size={16} aria-hidden />
+      </IconLink>
     </Row>
   ),
 };

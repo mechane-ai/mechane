@@ -68,6 +68,10 @@ Define those roles in `tokens.stylex.ts`; zero-duration motion remains available
 Review other visual literals and external theme overrides against the same ownership boundary.
 
 Assign each shared edge to one separator owner. Adjacent rows, footers, and panels must not produce doubled borders.
+Assign each outer gutter to one layout owner. A table owns its cell insets; its containing page does not add a second
+inset around the rows. A reading column may constrain prose width without constraining the page's toolbar or tables.
+Use a supported layout mode for these differences rather than negative margins or application selectors targeting
+component internals. Inspect the boundary between the toolbar, content, and footer as one composition.
 Keep chart frames unboxed and use caption typography for inspection hints. A caller may group charts in a Panel.
 Let chart titles and action groups wrap independently when they cannot share a row.
 Review these compositions at desktop and narrow widths, including an open disclosure and an inspected chart value.

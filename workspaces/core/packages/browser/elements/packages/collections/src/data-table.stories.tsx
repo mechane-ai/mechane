@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
+import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Badge, Stack, TextLink } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
 import { CollectionPagination, CollectionToolbar, ColumnControls, FilterChips } from './collection-controls.tsx';
-import { DataTable } from './data-table.tsx';
+import { DataTable, DataTableText } from './data-table.tsx';
 import type { DataTableColumn, DataTableSort } from './data-table.tsx';
 
 const styles = stylex.create({ search: { width: 280, maxWidth: '100%' } });
@@ -114,12 +115,12 @@ function PreparedRows() {
 const meta = {
   title: 'Collections/Data table',
   component: DataTable,
-  subcomponents: { CollectionToolbar, FilterChips, ColumnControls, CollectionPagination },
+  subcomponents: { DataTableText, CollectionToolbar, FilterChips, ColumnControls, CollectionPagination },
   parameters: {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. The table only renders the supplied page, reports sort intent, and optionally windows the rows already supplied. Choose Table for a custom semantic table without this row model. CollectionToolbar groups controls, FilterChips removes supplied filters, ColumnControls reports visibility intent, and CollectionPagination navigates supplied pages without inventing a total. Cells compose ordinary controls and links; rows are never simulated buttons.',
+          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. The table only renders the supplied page, reports sort intent, and optionally windows the rows already supplied. DataTableText owns ellipsis for primary and secondary strings, including a leading icon. Arbitrary composed cells own their text layout. Supply a complete row-action label so pointer and keyboard users can inspect it before opening the record. Choose Table for custom structures. Collection controls report supplied filter, sort, visibility and page intent.',
       },
     },
   },
@@ -156,6 +157,55 @@ export const Windowed: Story = {
       caption="1,000 prepared samples"
       empty="No samples"
       window={{ height: 360 }}
+    />
+  ),
+};
+
+export const LongLabels: Story = {
+  render: () => (
+    <DataTable
+      rows={[
+        {
+          id: 'restore',
+          name: 'Verify the restored repository and compare every recorded artifact against its immutable manifest',
+          status: 'Complete',
+          tokens: 128_456,
+        },
+        { id: 'short', name: 'Hi', status: 'Complete', tokens: 1 },
+        {
+          id: 'path',
+          name: 'packages/production-verification/src/restore/checks/repository-artifact-integrity.ts',
+          status: 'Running',
+          tokens: 6218,
+        },
+      ]}
+      columns={[
+        {
+          id: 'name',
+          label: 'Run',
+          cell: (run) => (
+            <DataTableText
+              leading={<FileCheck size={20} />}
+              secondary="Recorded against the repository’s current definition"
+            >
+              {run.name}
+            </DataTableText>
+          ),
+        },
+        { id: 'status', label: 'Status', width: 128, truncate: false, cell: (run) => <Badge>{run.status}</Badge> },
+        {
+          id: 'tokens',
+          label: 'Tokens',
+          width: 96,
+          truncate: false,
+          align: 'end',
+          cell: (run) => run.tokens.toLocaleString('en-US'),
+        },
+      ]}
+      rowAction={{ href: (run) => `#${run.id}`, label: (run) => `Open ${run.name}` }}
+      getRowId={(run) => run.id}
+      caption="Recorded runs with long titles"
+      empty="No recorded runs"
     />
   ),
 };

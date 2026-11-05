@@ -1,18 +1,10 @@
 import { Muted } from '@mechane-ai/elements';
 import { Select } from '@mechane-ai/elements/forms';
-import {
-  AppShell,
-  Navigation,
-  NavigationItem,
-  NavigationLink,
-  SidebarFooter,
-  SidebarLabel,
-} from '@mechane-ai/elements/layout';
+import { AppShell, SidebarFooter, SidebarLabel } from '@mechane-ai/elements/layout';
 import { colors, controls, radii, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { Workspace } from '@mechane/protocol';
-import { HttpMethod } from '@mechane/records';
 import * as stylex from '@stylexjs/stylex';
-import { BookOpen, Check, ChevronDown, FileText, LogOut } from 'lucide-react';
+import { Check, ChevronDown, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const styles = stylex.create({
@@ -114,14 +106,6 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
   );
 }
 
-function ConsoleBrand(): ReactNode {
-  return (
-    <span {...stylex.props(styles.brand)}>
-      <SidebarLabel>mechane</SidebarLabel>
-    </span>
-  );
-}
-
 export function ConsoleShell({
   name,
   origin,
@@ -130,6 +114,7 @@ export function ConsoleShell({
   onWorkspace,
   homeLink,
   children,
+  focus = false,
 }: {
   readonly name: string;
   readonly origin: string;
@@ -138,42 +123,20 @@ export function ConsoleShell({
   readonly onWorkspace: (id: string) => void;
   readonly homeLink: ReactNode;
   readonly children: ReactNode;
+  readonly focus?: boolean;
 }): ReactNode {
   return (
     <AppShell
       sidebarHeader={<WorkspaceSwitcher workspaces={workspaces} workspaceId={workspaceId} onWorkspace={onWorkspace} />}
-      sidebar={<Navigation label="Console">{homeLink}</Navigation>}
+      sidebar={homeLink}
+      focus={focus}
       footer={
-        <>
-          <Navigation label="Help and account">
-            <NavigationLink
-              href="https://github.com/mechane-ai/mechane"
-              icon={<BookOpen size={14} strokeWidth={1.75} aria-hidden />}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Documentation
-            </NavigationLink>
-            <NavigationLink
-              href="/console/THIRD_PARTY_LICENSES.txt"
-              icon={<FileText size={14} strokeWidth={1.75} aria-hidden />}
-            >
-              Open-source licenses
-            </NavigationLink>
-            <form method={HttpMethod.Post} action="/auth/sign-out">
-              <NavigationItem
-                type="submit"
-                icon={<LogOut size={14} strokeWidth={1.75} aria-hidden />}
-                title={`Signed in as ${name} on ${origin}`}
-              >
-                Sign out
-              </NavigationItem>
-            </form>
-          </Navigation>
-          <SidebarFooter>
-            <ConsoleBrand />
-          </SidebarFooter>
-        </>
+        <SidebarFooter>
+          <span title={`Signed in as ${name} on ${origin}`} {...stylex.props(styles.brand)}>
+            <UserRound size={14} aria-hidden />
+            <SidebarLabel>{name}</SidebarLabel>
+          </span>
+        </SidebarFooter>
       }
     >
       {children}

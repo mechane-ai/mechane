@@ -1,4 +1,4 @@
-import { Button, Muted, Row, Stack, Subheading, TextButton } from '@mechane-ai/elements';
+import { Button, Row, Stack, TextButton } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
@@ -28,14 +28,11 @@ export function TurnHistory({
 
   return (
     <Stack compact>
-      <Row between>
-        <Subheading>Messages & events</Subheading>
-        {target === undefined ? (
-          <Muted>This turn · chronological order</Muted>
-        ) : (
-          <TextButton onClick={onStart}>From the beginning →</TextButton>
-        )}
-      </Row>
+      {target !== undefined && (
+        <Row>
+          <TextButton onClick={onStart}>From the beginning</TextButton>
+        </Row>
+      )}
       <Resource data={data} source={source}>
         {(page, notice) => (
           <Stack>
@@ -43,7 +40,7 @@ export function TurnHistory({
             {linkedPage && page.events[0]?.sequence !== target && (
               <Notice>The linked event is unavailable in this turn.</Notice>
             )}
-            <Activity page={page} chronological />
+            <Activity page={page} label="Run events" inset={false} expandedSequence={target} />
             {(page.hasMore || cursors.length > 0) && (
               <Row between>
                 <Button disabled={cursors.length === 0} onClick={() => setCursors(cursors.slice(0, -1))}>

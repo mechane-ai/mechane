@@ -1,6 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { Collapsible } from '../../core/src/index.ts';
+import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   list: { listStyle: 'none', margin: 0, padding: 0, minWidth: 0 },
@@ -34,17 +36,26 @@ const styles = stylex.create({
   time: { color: colors.muted, fontSize: typography.captionSize, fontVariantNumeric: 'tabular-nums' },
   body: { minWidth: 0, maxWidth: '72ch', overflowWrap: 'anywhere' },
   metadata: { color: colors.muted, fontSize: typography.captionSize },
+  disclosure: { minWidth: 0, width: '100%' },
+  trigger: {
+    width: 'auto',
+    minHeight: { default: 20, [conditions.coarsePointer]: controls.coarseTarget },
+    paddingBlock: 0,
+    justifyContent: 'start',
+  },
 });
 
 export type TimelineProps = { readonly label: string; readonly children: ReactNode };
 
 export type TimelineItemProps = {
   readonly icon: ReactNode;
-  readonly title: ReactNode;
   readonly time?: ReactNode;
   readonly metadata?: ReactNode;
   readonly children?: ReactNode;
-};
+} & (
+  | { readonly title: ReactNode; readonly details?: never; readonly defaultOpen?: never }
+  | { readonly title: string; readonly details: ReactNode; readonly defaultOpen?: boolean }
+);
 
 function TimelineRoot({ label, children }: TimelineProps): ReactNode {
   return (
@@ -54,20 +65,53 @@ function TimelineRoot({ label, children }: TimelineProps): ReactNode {
   );
 }
 
-function TimelineItem({ icon, title, time, metadata, children }: TimelineItemProps): ReactNode {
+function TimelineItem({
+  icon,
+  title,
+  time,
+  metadata,
+  children,
+  details,
+  defaultOpen = false,
+}: TimelineItemProps): ReactNode {
+  const [open, setOpen] = useState(defaultOpen);
+
+  const header = (
+    <div {...stylex.props(styles.header)}>
+      <div {...stylex.props(styles.title)}>
+        {details === undefined ? (
+          title
+        ) : (
+          <Collapsible.Trigger {...stylex.props(styles.trigger)}>{title}</Collapsible.Trigger>
+        )}
+      </div>
+      {time !== undefined && <div {...stylex.props(styles.time)}>{time}</div>}
+    </div>
+  );
+
+  const showPreview = !open || details === undefined;
+
+  const content = (
+    <>
+      {header}
+      {children !== undefined && showPreview && <div {...stylex.props(styles.body)}>{children}</div>}
+      {metadata !== undefined && <div {...stylex.props(styles.metadata)}>{metadata}</div>}
+      {details !== undefined && <Collapsible.Panel>{details}</Collapsible.Panel>}
+    </>
+  );
+
   return (
     <li {...stylex.props(styles.item)}>
       <span aria-hidden {...stylex.props(styles.icon)}>
         {icon}
       </span>
-      <div {...stylex.props(styles.content)}>
-        <div {...stylex.props(styles.header)}>
-          <div {...stylex.props(styles.title)}>{title}</div>
-          {time !== undefined && <div {...stylex.props(styles.time)}>{time}</div>}
-        </div>
-        {children !== undefined && <div {...stylex.props(styles.body)}>{children}</div>}
-        {metadata !== undefined && <div {...stylex.props(styles.metadata)}>{metadata}</div>}
-      </div>
+      {details === undefined ? (
+        <div {...stylex.props(styles.content)}>{content}</div>
+      ) : (
+        <Collapsible.Root open={open} onOpenChange={setOpen} {...stylex.props(styles.content, styles.disclosure)}>
+          {content}
+        </Collapsible.Root>
+      )}
     </li>
   );
 }
