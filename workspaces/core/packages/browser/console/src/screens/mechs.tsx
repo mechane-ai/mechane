@@ -1,4 +1,4 @@
-import { Button } from '@mechane-ai/elements';
+import { Button, IconButton } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
 import { Tooltip } from '@mechane-ai/elements/overlays';
@@ -89,10 +89,10 @@ export function MechsScreen({
                 <Tooltip.Root>
                   <Tooltip.Trigger
                     render={
-                      <ToolbarAction
+                      <IconButton
+                        variant="ghost"
                         aria-label="Refresh mechs"
                         isPending={isRefreshing}
-                        pendingLabel="Refreshing mechs…"
                         onClick={() => {
                           void refresh();
                         }}

@@ -66,7 +66,16 @@ const styles = stylex.create({
     ':active:not([data-disabled])': { backgroundColor: colors.dangerSoft },
   },
   labels: { display: 'inline-grid', minWidth: 0, maxWidth: '100%' },
-  label: { gridArea: '1 / 1', minWidth: 0 },
+  label: {
+    gridArea: '1 / 1',
+    display: 'grid',
+    gridAutoFlow: 'column',
+    gridAutoColumns: 'auto',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: controls.gap,
+    minWidth: 0,
+  },
   hidden: { visibility: 'hidden' },
   icon: { width: controls.iconSize, height: controls.iconSize, flexShrink: 0, display: 'inline-flex' },
   text: {
@@ -151,18 +160,21 @@ const textTones = { neutral: styles.neutralText, danger: styles.dangerText } sat
 >;
 
 function ButtonLabels({ id, children, isPending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
-  if (pendingLabel === undefined) {
-    return children;
-  }
+  const shouldShowPendingLabel = isPending && pendingLabel !== undefined;
 
   return (
     <span id={id} {...stylex.props(styles.labels)}>
-      <span aria-hidden={isPending} {...stylex.props(styles.label, isPending && styles.hidden)}>
+      <span
+        aria-hidden={shouldShowPendingLabel}
+        {...stylex.props(styles.label, shouldShowPendingLabel && styles.hidden)}
+      >
         {children}
       </span>
-      <span aria-hidden={!isPending} {...stylex.props(styles.label, !isPending && styles.hidden)}>
-        {pendingLabel}
-      </span>
+      {pendingLabel !== undefined && (
+        <span aria-hidden={!isPending} {...stylex.props(styles.label, !isPending && styles.hidden)}>
+          {pendingLabel}
+        </span>
+      )}
     </span>
   );
 }

@@ -60,6 +60,10 @@ height, including borders. Use the shared `controlStyles` recipe and body typogr
 `controls.coarseTarget` and text entry uses `typography.touchInputSize`. Keep multiline text entry content-sized.
 Expose emphasis and intent through named variants, without public control size, padding, or radius choices.
 `ButtonPlaceholder` and `FieldPlaceholder` reuse that recipe; pending and loaded controls have the same geometry.
+Use the same intrinsic content row for ordinary and reserved button labels. Keep icons at their supplied size while
+text wraps; inline SVG baseline space can turn a 32px control into 33px, and flex shrink can compress a 16px glyph.
+Reserve visible pending text only. Icon-only actions use `IconButton` and keep their accessible name and busy state
+without reserving hidden text width.
 
 The upstream clause "Do not accept unrestricted style overrides, such as arbitrary style classes or style values,
 on public components." is replaced by this composition boundary: expose named variants and `PlacementStyle` for root

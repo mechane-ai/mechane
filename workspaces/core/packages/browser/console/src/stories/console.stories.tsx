@@ -2,6 +2,7 @@ import {
   AgentAvatar,
   Button,
   Heading,
+  IconButton,
   Muted,
   Row,
   Stack,
@@ -348,9 +349,9 @@ function MechsToolbar(): ReactNode {
       title="Mechs"
       actions={
         <>
-          <ToolbarAction aria-label="Refresh mechs" onClick={() => undefined}>
+          <IconButton variant="ghost" aria-label="Refresh mechs" onClick={() => undefined}>
             <RefreshCw size={16} aria-hidden />
-          </ToolbarAction>
+          </IconButton>
           <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => undefined}>
             Create mech
           </ToolbarAction>

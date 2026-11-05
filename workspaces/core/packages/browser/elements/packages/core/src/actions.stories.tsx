@@ -7,7 +7,7 @@ import { CopyValue } from './copy-value.tsx';
 import { Row, Stack } from './surfaces.tsx';
 import { Muted } from './text.tsx';
 
-const styles = stylex.create({ narrow: { width: 240, maxWidth: '100%' } });
+const styles = stylex.create({ narrow: { width: 180, maxWidth: '100%' } });
 
 const meta = {
   title: 'Controls/Actions',
@@ -82,6 +82,16 @@ export const PendingAndDisabled: Story = {
   render: () => (
     <Stack isCompact>
       <Row>
+        <Button pendingLabel="Refreshing items…">
+          <RefreshCw size={16} aria-hidden />
+          Refresh items
+        </Button>
+        <Button isPending pendingLabel="Refreshing items…">
+          <RefreshCw size={16} aria-hidden />
+          Refresh items
+        </Button>
+      </Row>
+      <Row>
         <Button variant="solid" isPending pendingLabel="Saving changes…">
           Save changes
         </Button>
@@ -120,11 +130,22 @@ export const LongLabels: Story = {
   render: () => (
     <div {...stylex.props(styles.narrow)}>
       <Stack isCompact>
-        <Button variant="solid">Save the reviewed changes and notify collaborators</Button>
-        <Button isPending pendingLabel="Saving the reviewed changes and notifying collaborators…">
-          Save the reviewed changes and notify collaborators
+        <Button variant="solid">
+          <RefreshCw size={16} aria-hidden />
+          Refresh workspace details and execution history
         </Button>
-        <Button disabled>Save the reviewed changes and notify collaborators</Button>
+        <Button pendingLabel="Refreshing workspace details and execution history…">
+          <RefreshCw size={16} aria-hidden />
+          Refresh workspace details and execution history
+        </Button>
+        <Button isPending pendingLabel="Refreshing workspace details and execution history…">
+          <RefreshCw size={16} aria-hidden />
+          Refresh workspace details and execution history
+        </Button>
+        <Button disabled>
+          <RefreshCw size={16} aria-hidden />
+          Refresh workspace details and execution history
+        </Button>
       </Stack>
     </div>
   ),
