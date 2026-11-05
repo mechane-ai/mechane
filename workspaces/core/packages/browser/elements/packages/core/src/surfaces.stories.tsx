@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
-import { EmptyState, Loading, Notice } from '../../feedback/src/index.ts';
+import { EmptyState, Notice } from '../../feedback/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Button } from './actions.tsx';
 import { Columns, Divider, Panel, Row, Stack, SurfaceLink } from './surfaces.tsx';
@@ -11,12 +11,12 @@ const styles = stylex.create({ linkContent: { padding: spacing.lg } });
 const meta = {
   title: 'Feedback/Surfaces',
   component: Panel,
-  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, Loading, SurfaceLink },
+  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, SurfaceLink },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Panel groups related content; Stack, Row, Columns, and Divider provide ordinary flow and separation. SurfaceLink makes supplied content one native navigation target with shared hover, press, and inset keyboard focus. Put it inside an unpadded Panel when a border is needed; its child owns content layout and padding. Use TextLink for inline navigation and Button for actions. Keep other interactive controls outside SurfaceLink. EmptyState explains an empty result and its next action. Notice announces progress or a local error; Loading names missing initial content while preserving its shape. The application chooses the read state, retry handler, and permission-aware action. Keep existing content mounted during refreshes and report a failed refresh through one resource-owned toast with Retry. Reserve Loading and local failure content for an initial read with no usable result.',
+          'Supported. Panel groups related content; Stack, Row, Columns, and Divider provide ordinary flow and separation. SurfaceLink makes supplied content one native navigation target with shared hover, press, and inset keyboard focus. Put it inside an unpadded Panel when a border is needed; its child owns content layout and padding. Use TextLink for inline navigation and Button for actions. Keep other interactive controls outside SurfaceLink. EmptyState explains an empty result and its next action. Notice announces progress or a local error. AsyncRegion owns delayed loading presentation with a destination-specific placeholder. The application chooses the read state, retry handler, and permission-aware action. Keep existing content mounted during refreshes and report a failed refresh alongside it with Retry. Reserve the pending and initial-failure views for reads with no usable result.',
       },
     },
   },
@@ -60,19 +60,6 @@ export const LinkedPanel: Story = {
         </div>
       </SurfaceLink>
     </Panel>
-  ),
-};
-
-export const InitialLoading: Story = {
-  render: () => (
-    <Stack>
-      <Panel padded={false}>
-        <Loading label="Loading items" />
-      </Panel>
-      <Panel>
-        <Loading label="Loading item details" shape="detail" />
-      </Panel>
-    </Stack>
   ),
 };
 

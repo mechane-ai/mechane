@@ -1,11 +1,10 @@
 import { Button, Row, Stack, TextButton } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import type { ConsoleData } from '@mechane/console-data';
-import { Activity } from '@mechane/console-views';
+import { Activity, ActivityPlaceholder } from '@mechane/console-views';
 import type { Turn } from '@mechane/protocol';
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { usePageCursors } from '../navigation.tsx';
+import { PageLoadNotice, usePageSource } from '../page-source.tsx';
 import { Resource } from '../resource.tsx';
 
 export function TurnHistory({
@@ -21,10 +20,14 @@ export function TurnHistory({
   readonly target: number | undefined;
   readonly onStart: () => void;
 }): ReactNode {
-  const [cursors, setCursors] = usePageCursors('events', []);
-  const after = cursors.at(-1) ?? (target === undefined ? 0 : target - 1);
+  const { source, cursors, setCursors, pending, failure } = usePageSource({
+    data,
+    key: 'events',
+    scope: `${mechId}:${turnId}:${target ?? 'start'}`,
+    create: (pages) => data.turnEvents(mechId, turnId, pages.at(-1) ?? (target === undefined ? 0 : target - 1)),
+  });
+
   const linkedPage = target !== undefined && cursors.length === 0;
-  const source = useMemo(() => data.turnEvents(mechId, turnId, after), [data, mechId, turnId, after]);
 
   return (
     <Stack compact>
@@ -33,35 +36,52 @@ export function TurnHistory({
           <TextButton onClick={onStart}>From the beginning</TextButton>
         </Row>
       )}
-      <Resource data={data} source={source}>
-        {(page, notice) => (
-          <Stack>
-            {notice}
-            {linkedPage && page.events[0]?.sequence !== target && (
-              <Notice>The linked event is unavailable in this turn.</Notice>
-            )}
-            <Activity page={page} label="Run events" inset={false} expandedSequence={target} />
-            {(page.hasMore || cursors.length > 0) && (
-              <Row between>
-                <Button disabled={cursors.length === 0} onClick={() => setCursors(cursors.slice(0, -1))}>
-                  Previous events
-                </Button>
-                <Button
-                  disabled={!page.hasMore}
-                  onClick={() => {
-                    const last = page.events.at(-1);
+      <Resource data={data} source={source} placeholder={<ActivityPlaceholder inset={false} />}>
+        {(page, notice) => {
+          const hasPages = page.hasMore || cursors.length > 0;
+          const showPagination = hasPages || failure !== undefined;
+          const previousDisabled = cursors.length === 0 || pending !== undefined;
+          const nextDisabled = !page.hasMore || pending !== undefined;
 
-                    if (last !== undefined) {
-                      setCursors([...cursors, last.sequence]);
-                    }
-                  }}
-                >
-                  Next events
-                </Button>
-              </Row>
-            )}
-          </Stack>
-        )}
+          return (
+            <Stack>
+              {notice}
+              {linkedPage && page.events[0]?.sequence !== target && (
+                <Notice>The linked event is unavailable in this turn.</Notice>
+              )}
+              <Activity page={page} label="Run events" inset={false} expandedSequence={target} />
+              {showPagination && (
+                <Stack compact>
+                  <PageLoadNotice failure={failure} />
+                  <Row between>
+                    <Button
+                      pending={pending === 'previous'}
+                      pendingLabel="Loading previous events…"
+                      disabled={previousDisabled}
+                      onClick={() => setCursors(cursors.slice(0, -1))}
+                    >
+                      Previous events
+                    </Button>
+                    <Button
+                      pending={pending === 'next'}
+                      pendingLabel="Loading next events…"
+                      disabled={nextDisabled}
+                      onClick={() => {
+                        const last = page.events.at(-1);
+
+                        if (last !== undefined) {
+                          setCursors([...cursors, last.sequence]);
+                        }
+                      }}
+                    >
+                      Next events
+                    </Button>
+                  </Row>
+                </Stack>
+              )}
+            </Stack>
+          );
+        }}
       </Resource>
     </Stack>
   );

@@ -1,13 +1,14 @@
 import { Collapsible, CopyValue, Muted, Prose, Row, Stack, Status, Subheading, TextButton } from '@mechane-ai/elements';
-import { Details } from '@mechane-ai/elements/collections';
+import { Details, Inspector } from '@mechane-ai/elements/collections';
 import { Trace as RequestTrace } from '@mechane-ai/elements/content';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
-import { Notice } from '@mechane-ai/elements/feedback';
+import { Notice, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
 import { Tabs } from '@mechane-ai/elements/navigation';
 import type { Trace } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
+import { ActivityPlaceholder } from './events.tsx';
 import { durationLabel, moneyLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
 import { runLabel } from './run-label.ts';
@@ -16,7 +17,9 @@ import { TraceRequests } from './trace-requests.tsx';
 import { TraceTools } from './trace-tools.tsx';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
-export type TraceTab = 'Overview' | 'Requests' | 'Tools' | 'Events';
+const traceTabs = ['Overview', 'Requests', 'Tools', 'Events'] as const;
+
+export type TraceTab = (typeof traceTabs)[number];
 
 type TraceProps = {
   readonly trace: Trace;
@@ -42,6 +45,94 @@ const requestTraceStatuses = {
   settled: 'complete',
   unavailable: 'unknown',
 } as const;
+
+export function TurnTracePlaceholder({ tab = 'Overview' }: { readonly tab?: TraceTab }): ReactNode {
+  return (
+    <Stack compact>
+      <Subheading>
+        <SkeletonText width="32ch" />
+      </Subheading>
+      <Row>
+        <SkeletonText width="10ch" />
+        <SkeletonText width="16ch" />
+        <SkeletonText width="6ch" />
+      </Row>
+      <Tabs.Root defaultValue={tab}>
+        <Tabs.List aria-label="Run details">
+          {traceTabs.map((value) => (
+            <Tabs.Tab key={value} value={value} disabled>
+              {value}
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
+        <Tabs.Panel value={tab}>
+          <TraceSectionPlaceholder tab={tab} />
+        </Tabs.Panel>
+      </Tabs.Root>
+    </Stack>
+  );
+}
+
+function TraceSectionPlaceholder({ tab }: { readonly tab: TraceTab }): ReactNode {
+  if (tab === 'Events') {
+    return <ActivityPlaceholder inset={false} />;
+  }
+
+  if (tab === 'Requests') {
+    return (
+      <Inspector
+        label="Selected model request"
+        masterLabel="Model requests"
+        master={
+          <Stack compact>
+            <Subheading>
+              <SkeletonText width="16ch" />
+            </Subheading>
+            <SkeletonText width="28ch" />
+            <Skeleton height={180} />
+          </Stack>
+        }
+        detail={
+          <Stack>
+            <Subheading>
+              <SkeletonText width="18ch" />
+            </Subheading>
+            <SkeletonText lines={4} />
+            <SkeletonText lines={3} />
+          </Stack>
+        }
+      />
+    );
+  }
+
+  if (tab === 'Tools') {
+    return (
+      <Stack>
+        {[0, 1, 2].map((item) => (
+          <Row key={item}>
+            <Skeleton width={16} height={16} shape="circle" />
+            <SkeletonText lines={2} width="24ch" />
+          </Row>
+        ))}
+      </Stack>
+    );
+  }
+
+  return (
+    <div {...stylex.props(styles.reading)}>
+      <Stack>
+        <Stack compact>
+          <Subheading>
+            <SkeletonText width="12ch" />
+          </Subheading>
+          <SkeletonText lines={4} />
+        </Stack>
+        <SkeletonText width="18ch" />
+        <SkeletonText width="16ch" />
+      </Stack>
+    </div>
+  );
+}
 
 export function TurnTrace({
   trace,
@@ -85,10 +176,11 @@ export function TurnTrace({
       ))}
       <Tabs.Root value={tab} onValueChange={onTab}>
         <Tabs.List aria-label="Run details">
-          <Tabs.Tab value="Overview">Overview</Tabs.Tab>
-          <Tabs.Tab value="Requests">Requests</Tabs.Tab>
-          <Tabs.Tab value="Tools">Tools</Tabs.Tab>
-          <Tabs.Tab value="Events">Events</Tabs.Tab>
+          {traceTabs.map((value) => (
+            <Tabs.Tab key={value} value={value}>
+              {value}
+            </Tabs.Tab>
+          ))}
         </Tabs.List>
         <Tabs.Panel value="Overview">
           <TraceOverview

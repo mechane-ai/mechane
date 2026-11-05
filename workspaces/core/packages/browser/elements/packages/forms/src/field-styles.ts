@@ -1,4 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export const fieldStyles = stylex.create({
@@ -24,23 +25,9 @@ export const fieldStyles = stylex.create({
 
 export type TextareaAppearance = 'field' | 'plain';
 
-const textareaStyles = stylex.create({
-  field: {},
-  plain: {
-    'minHeight': typography.bodyLineHeight,
-    'maxHeight': '30dvh',
-    'fieldSizing': 'content',
-    'resize': 'none',
-    'padding': 0,
-    'borderWidth': 0,
-    'borderRadius': 0,
-    'backgroundColor': 'transparent',
-    ':focus-visible': { outlineStyle: 'none' },
-    ':disabled': { backgroundColor: 'transparent' },
-  },
-});
+const textareaStyles = stylex.create({ field: {} });
 
 export const textareaAppearanceStyles: Readonly<Record<TextareaAppearance, stylex.StyleXStyles>> = {
   field: textareaStyles.field,
-  plain: textareaStyles.plain,
+  plain: controlStyles.plainTextarea,
 };

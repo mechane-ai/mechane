@@ -3,8 +3,10 @@ import { ArrowUp, Square } from 'lucide-react';
 import { useId } from 'react';
 import type { ComponentProps, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
 import { IconButton } from '../../core/src/index.ts';
+import { ButtonPlaceholder, SkeletonText } from '../../feedback/src/index.ts';
 import { Field, Textarea } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { colors, controls as controlTokens, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 
@@ -46,7 +48,35 @@ const styles = stylex.create({
   footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: '1 1 auto' },
   action: { marginInlineStart: 'auto' },
+  placeholderControls: { fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
 });
+
+export type PromptInputPlaceholderProps = { readonly compact?: boolean };
+
+export function PromptInputPlaceholder({ compact = false }: PromptInputPlaceholderProps): ReactNode {
+  return (
+    <div aria-hidden inert {...stylex.props(styles.form)}>
+      <div {...stylex.props(styles.frame)}>
+        <div
+          {...stylex.props(
+            controlStyles.base,
+            controlStyles.field,
+            controlStyles.textarea,
+            controlStyles.plainTextarea,
+          )}
+        >
+          <SkeletonText lines={compact ? 1 : 2} width="22ch" />
+        </div>
+        <div {...stylex.props(styles.footer)}>
+          <div {...stylex.props(styles.controls, styles.placeholderControls)}>
+            <SkeletonText width="8ch" />
+          </div>
+          <ButtonPlaceholder icon xstyle={styles.action} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export type PromptInputProps = {
   readonly label: string;

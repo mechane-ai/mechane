@@ -1,0 +1,4 @@
+id: console-loading-boundary-import
+language: TypeScript
+rule:
+  regex: ^(AsyncRegion|ContentReveal)$

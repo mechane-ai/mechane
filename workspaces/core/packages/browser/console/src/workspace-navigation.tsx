@@ -1,4 +1,5 @@
 import { AgentAvatar } from '@mechane-ai/elements';
+import { Skeleton } from '@mechane-ai/elements/feedback';
 import { Navigation, NavigationLink, NavigationSection } from '@mechane-ai/elements/layout';
 import { canRetainResult } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
@@ -9,7 +10,7 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useMechAppearance } from './mech-appearance.tsx';
 import { useNavigationPreferences } from './navigation-preferences.tsx';
-import { useResource } from './resource.tsx';
+import { ResourceView, useCollectionLifetime, useResource } from './resource.tsx';
 import type { ConsoleLocation } from './types.ts';
 import { useMechNavigationResource } from './use-mech-navigation-resource.ts';
 
@@ -89,6 +90,9 @@ function MechShortcut({
   readonly selected: boolean;
 }): ReactNode {
   const source = useMemo(() => data.mech(mechId), [data, mechId]);
+
+  useCollectionLifetime(data, source);
+
   const state = useResource(data, source);
   const { appearance } = useMechAppearance(mechId);
   const removed = state.kind === 'failed' && !canRetainResult(state.problem);
@@ -99,26 +103,29 @@ function MechShortcut({
     return null;
   }
 
-  function shortcutLabel(): string {
-    switch (state.kind) {
-      case 'ready':
-      case 'stale':
-        return state.value.name;
-      case 'pending':
-        return 'Loading mech…';
-      case 'failed':
-        return 'Mech unavailable';
-    }
-  }
+  const icon = <AgentAvatar seed={mechId} appearance={appearance} size="sm" />;
 
   return (
-    <WorkspaceLink
-      to="/"
-      search={{ workspace: data.workspace.id, mech: mechId }}
-      selected={selected}
-      icon={<AgentAvatar seed={mechId} appearance={appearance} size="sm" />}
+    <ResourceView
+      state={state}
+      identity={source.id}
+      label="Loading mech shortcut"
+      placeholder={
+        <NavigationLink icon={icon}>
+          <Skeleton width={96} />
+        </NavigationLink>
+      }
+      failure={
+        <WorkspaceLink to="/" search={{ workspace: data.workspace.id, mech: mechId }} icon={icon}>
+          Mech unavailable
+        </WorkspaceLink>
+      }
     >
-      {shortcutLabel()}
-    </WorkspaceLink>
+      {(mech) => (
+        <WorkspaceLink to="/" search={{ workspace: data.workspace.id, mech: mechId }} selected={selected} icon={icon}>
+          {mech.name}
+        </WorkspaceLink>
+      )}
+    </ResourceView>
   );
 }

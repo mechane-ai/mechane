@@ -1,13 +1,45 @@
 import { Accordion, Button, Muted, Row, Stack, Status, Subheading, Text, TextButton } from '@mechane-ai/elements';
-import { DataTable, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
+import { DataTable, DataTablePlaceholder, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
 import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
-import { EmptyState } from '@mechane-ai/elements/feedback';
+import { EmptyState, SkeletonText } from '@mechane-ai/elements/feedback';
 import { DetailPage } from '@mechane-ai/elements/layout';
 import type { MemoryList as MemoryPage, Thread, ThreadPage } from '@mechane/protocol';
 import { Option } from 'effect';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode, Ref } from 'react';
 import { ConsoleTimestamp } from './record-time.tsx';
+
+const workColumns = {
+  title: { id: 'title', label: 'Work', role: 'primary' },
+  state: { id: 'state', label: 'State', role: 'status', width: 128 },
+  updated: { id: 'updated', label: 'Updated', role: 'timestamp', secondary: true, width: 144 },
+} as const;
+
+export function WorkListPlaceholder(): ReactNode {
+  return <DataTablePlaceholder columns={Object.values(workColumns)} />;
+}
+
+export function MemoryListPlaceholder(): ReactNode {
+  return (
+    <Accordion.Root>
+      {[0, 1, 2].map((item) => (
+        <Accordion.Item key={item} value={item}>
+          <Accordion.Header>
+            <Accordion.Trigger disabled>
+              <span>
+                <SkeletonText width="28ch" />
+                <br />
+                <Text variant="caption" tone="muted">
+                  <SkeletonText width="16ch" />
+                </Text>
+              </span>
+            </Accordion.Trigger>
+          </Accordion.Header>
+        </Accordion.Item>
+      ))}
+    </Accordion.Root>
+  );
+}
 
 export function WorkList({
   page,
@@ -17,6 +49,8 @@ export function WorkList({
   hasPrevious,
   onPrevious,
   onNext,
+  loadingPage,
+  pageNotice,
 }: {
   readonly page: ThreadPage;
   readonly selected: string | undefined;
@@ -25,7 +59,14 @@ export function WorkList({
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
+  readonly loadingPage?: 'previous' | 'next' | undefined;
+  readonly pageNotice?: ReactNode;
 }): ReactNode {
+  const showPagination = page.hasMore || hasPrevious;
+  const showFooter = showPagination || pageNotice !== undefined;
+  const previousDisabled = !hasPrevious || loadingPage !== undefined;
+  const nextDisabled = !page.hasMore || loadingPage !== undefined;
+
   return (
     <>
       <DataTable
@@ -37,31 +78,16 @@ export function WorkList({
         focusRowId={focusRowId}
         rowAction={{ onActivate: (thread) => onSelect(thread.id), label: (thread) => `Open ${thread.title}` }}
         columns={[
+          { ...workColumns.title, cell: (thread) => <DataTableText>{thread.title}</DataTableText> },
           {
-            id: 'title',
-            label: 'Work',
-            role: 'primary',
-            cell: (thread) => <DataTableText>{thread.title}</DataTableText>,
-          },
-          {
-            id: 'state',
-            label: 'State',
-            role: 'status',
-            width: 128,
+            ...workColumns.state,
             cell: (thread) => (
               <Status tone={thread.state === 'resolved' ? 'positive' : 'neutral'}>
                 {workStateLabel(thread.state)}
               </Status>
             ),
           },
-          {
-            id: 'updated',
-            label: 'Updated',
-            role: 'timestamp',
-            secondary: true,
-            width: 144,
-            cell: (thread) => <ConsoleTimestamp value={thread.updatedAt} />,
-          },
+          { ...workColumns.updated, cell: (thread) => <ConsoleTimestamp value={thread.updatedAt} /> },
         ]}
         empty={
           <EmptyState title="No tracked work yet">
@@ -69,19 +95,33 @@ export function WorkList({
           </EmptyState>
         }
       />
-      {(page.hasMore || hasPrevious) && (
+      {showFooter && (
         <ListFooter
           actions={
-            <>
-              <Button disabled={!hasPrevious} onClick={onPrevious}>
-                Previous
-              </Button>
-              <Button disabled={!page.hasMore} onClick={onNext}>
-                Next
-              </Button>
-            </>
+            showPagination ? (
+              <>
+                <Button
+                  pending={loadingPage === 'previous'}
+                  pendingLabel="Loading previous work…"
+                  disabled={previousDisabled}
+                  onClick={onPrevious}
+                >
+                  Previous
+                </Button>
+                <Button
+                  pending={loadingPage === 'next'}
+                  pendingLabel="Loading next work…"
+                  disabled={nextDisabled}
+                  onClick={onNext}
+                >
+                  Next
+                </Button>
+              </>
+            ) : undefined
           }
-        />
+        >
+          {pageNotice}
+        </ListFooter>
       )}
     </>
   );

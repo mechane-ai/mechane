@@ -79,8 +79,8 @@ The [Base UI catalog](https://base-ui.com/react/overview/quick-start) supplies b
 [DayPicker](https://daypicker.dev/) and [Resizable Panels](https://react-resizable-panels.vercel.app/) are focused
 owners for behavior outside Base UI's current public surface. Dependencies enter only with their owning feature.
 
-Loading composes shared Skeleton parts. Table, chart, message, inspector, and form placeholders use the same parts.
-Those compositions share their real layout geometry. A labelled loading region owns the announcement; decorative
+Loading placeholders compose shared Skeleton parts. Table, chart, message, inspector, and form placeholders use the same
+parts. Those compositions share their real layout geometry. A labelled loading region owns the announcement; decorative
 skeleton pieces are hidden from assistive technology. Refreshes retain authorized content and avoid recreating a loading
 screen.
 

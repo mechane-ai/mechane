@@ -1,13 +1,21 @@
 import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
-import { Loading } from '@mechane-ai/elements/feedback';
+import { AsyncRegion } from '@mechane-ai/elements/feedback';
 import { FocusPage } from '@mechane-ai/elements/layout';
 import type { ReactNode } from 'react';
 
-export function ConsoleEntrance({ children }: { readonly children?: ReactNode }): ReactNode {
+export function ConsoleEntrance({ children }: { readonly children: ReactNode }): ReactNode {
   return (
     <FocusPage>
       <strong>mechane</strong>
-      {children ?? <Loading shape="detail" label="Opening your workspace" />}
+      {children}
+    </FocusPage>
+  );
+}
+
+export function ConsolePending(): ReactNode {
+  return (
+    <FocusPage>
+      <AsyncRegion state="pending" label="Opening your workspace" placeholder={<Muted>Opening workspace…</Muted>} />
     </FocusPage>
   );
 }

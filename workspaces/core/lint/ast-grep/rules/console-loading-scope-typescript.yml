@@ -1,0 +1,19 @@
+id: console-loading-scope-typescript
+language: TypeScript
+severity: error
+message: 'Keep the page clock at the root route, such as `<LoadingScope identity={pageIdentity}>` (071)'
+files: ['packages/browser/console/src/**/*.ts', 'packages/browser/console-views/src/**/*.ts']
+rule:
+  kind: import_statement
+  has:
+    field: source
+    regex: ^['"]@mechane-ai/elements/feedback['"]$
+  any:
+    - has:
+        stopBy: end
+        has:
+          field: name
+          matches: console-loading-scope-import
+    - has:
+        stopBy: end
+        kind: namespace_import

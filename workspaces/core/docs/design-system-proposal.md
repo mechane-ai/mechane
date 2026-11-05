@@ -275,6 +275,10 @@ Record these decisions under `Local adaptations`, quoting the upstream clauses t
 | Pending view headings, actions, and content reveal together.            | Render the neutral public shell immediately; reveal each independently authorized resource region with its own state.                                                                   | Preserve the existing initial render and independent resource reads without showing invented permissions.    |
 | Stories may add plays for a primary interaction.                        | Every retained play must also meet Mechane's consequential-regression retention rule and use an approved runner.                                                                        | A primary interaction alone is insufficient justification for a permanent test.                              |
 
+The independent-reveal adaptation above was superseded by the November 5, 2026 loading decision. Contract 071 now
+coordinates a page's heading, actions, and primary content under one loading clock. Optional reads remain independent.
+The [visual system guide](visual-system.md#loading-without-movement) describes the accepted presentation.
+
 Mechane-owned interactive controls reject mixed controlled/default values and require their change callback. Preserve
 explicit read-only modes where the upstream control supports them. Exercise invalid prop combinations with temporary
 compiler probes; retain a compile-time assertion only for a consequential gap under the same test-curation policy.

@@ -1,11 +1,13 @@
 import { Button, Row, Stack } from '@mechane-ai/elements';
 import { CollectionToolbar, ListFooter } from '@mechane-ai/elements/collections';
 import type { ConsoleData } from '@mechane/console-data';
-import { Activity } from '@mechane/console-views';
+import { Activity, ActivityPlaceholder } from '@mechane/console-views';
 import type { EventPage, Turn } from '@mechane/protocol';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { ConsoleLink, usePageCursors } from '../navigation.tsx';
+import { ConsoleLink } from '../navigation.tsx';
+import { PageLoadNotice } from '../page-source.tsx';
+import type { PageSource } from '../page-source.tsx';
 import { Resource } from '../resource.tsx';
 
 /** Keep the displayed page until the reader asks to bring newer rows into view. */
@@ -37,13 +39,20 @@ function ActivityPage({
   );
 }
 
-export function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; readonly mechId: string }): ReactNode {
-  const [cursors, setCursors] = usePageCursors('activity', []);
+export function ActivityScreen({
+  data,
+  mechId,
+  pageSource,
+}: {
+  readonly data: ConsoleData;
+  readonly mechId: string;
+  readonly pageSource: PageSource<'activity', ReturnType<ConsoleData['events']>>;
+}): ReactNode {
+  const { source, cursors, setCursors, pending, failure } = pageSource;
   const before = cursors.at(-1) ?? null;
-  const source = useMemo(() => data.events(mechId, before), [data, mechId, before]);
 
   return (
-    <Resource data={data} source={source}>
+    <Resource data={data} source={source} placeholder={<ActivityPlaceholder />}>
       {(page, notice) => (
         <Stack>
           {notice}
@@ -59,31 +68,47 @@ export function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; r
                 Open run
               </ConsoleLink>
             )}
-            controls={(visible) =>
-              (visible.hasMore || cursors.length > 0) && (
-                <ListFooter
-                  actions={
-                    <Row>
-                      <Button disabled={cursors.length === 0} onClick={() => setCursors(cursors.slice(0, -1))}>
-                        Newer
-                      </Button>
-                      <Button
-                        disabled={!visible.hasMore}
-                        onClick={() => {
-                          const first = visible.events[0];
+            controls={(visible) => {
+              const hasPages = visible.hasMore || cursors.length > 0;
+              const showPagination = hasPages || failure !== undefined;
+              const previousDisabled = cursors.length === 0 || pending !== undefined;
+              const nextDisabled = !visible.hasMore || pending !== undefined;
 
-                          if (first !== undefined) {
-                            setCursors([...cursors, first.sequence]);
-                          }
-                        }}
-                      >
-                        Older
-                      </Button>
-                    </Row>
-                  }
-                />
-              )
-            }
+              return (
+                showPagination && (
+                  <ListFooter
+                    actions={
+                      <Row>
+                        <Button
+                          pending={pending === 'previous'}
+                          pendingLabel="Loading newer activity…"
+                          disabled={previousDisabled}
+                          onClick={() => setCursors(cursors.slice(0, -1))}
+                        >
+                          Newer
+                        </Button>
+                        <Button
+                          pending={pending === 'next'}
+                          pendingLabel="Loading older activity…"
+                          disabled={nextDisabled}
+                          onClick={() => {
+                            const first = visible.events[0];
+
+                            if (first !== undefined) {
+                              setCursors([...cursors, first.sequence]);
+                            }
+                          }}
+                        >
+                          Older
+                        </Button>
+                      </Row>
+                    }
+                  >
+                    <PageLoadNotice failure={failure} />
+                  </ListFooter>
+                )
+              );
+            }}
           />
         </Stack>
       )}

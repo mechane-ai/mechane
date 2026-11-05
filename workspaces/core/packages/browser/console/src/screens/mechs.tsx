@@ -3,15 +3,16 @@ import { Notice } from '@mechane-ai/elements/feedback';
 import { PageToolbar, ToolbarAction } from '@mechane-ai/elements/layout';
 import { Tooltip } from '@mechane-ai/elements/overlays';
 import type { ConsoleData } from '@mechane/console-data';
-import { MechList } from '@mechane/console-views';
-import type { Allowance } from '@mechane/protocol';
+import { MechList, MechsPagePlaceholder } from '@mechane/console-views';
 import { Plus, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useMechAppearances } from '../mech-appearance.tsx';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
-import { usePageCursors, useRecordNavigation } from '../navigation.tsx';
-import { Resource, useResource } from '../resource.tsx';
+import { useRecordNavigation } from '../navigation.tsx';
+import { PageLoadNotice, usePageSource } from '../page-source.tsx';
+import { ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { CreateMechForm } from './create-mech.tsx';
 
 export function MechsScreen({
@@ -21,37 +22,56 @@ export function MechsScreen({
   readonly data: ConsoleData;
   readonly onOpen: (id: string) => void;
 }): ReactNode {
-  const [cursors, setCursors] = usePageCursors('mechs', []);
+  const { source, cursors, setCursors, pending, failure, cancel } = usePageSource({
+    data,
+    key: 'mechs',
+    scope: data.workspace.id,
+    create: (pages) => data.mechs(pages.at(-1) ?? null),
+  });
+
   const records = useRecordNavigation();
   const appearances = useMechAppearances();
   const { pinned, togglePin } = useNavigationPreferences();
   const [creating, setCreating] = useState(false);
-  const after = cursors.at(-1) ?? null;
-  const source = useMemo(() => data.mechs(after), [data, after]);
+  const [refreshing, setRefreshing] = useState(false);
+  const isScreenActive = useScreenLifetime();
 
   const allowanceSource = useMemo(() => data.allowance(), [data]);
   const allowance = useResource(data, allowanceSource);
-  let allowanceValue: Allowance | undefined = undefined;
-  let allowanceNotice: ReactNode = null;
+  const mechs = useResource(data, source);
 
-  switch (allowance.kind) {
-    case 'ready':
-      allowanceValue = allowance.value;
-      break;
-    case 'failed':
-    case 'stale':
-      allowanceValue = allowance.kind === 'stale' ? allowance.value : undefined;
+  useCollectionLifetime(data, allowanceSource);
 
-      allowanceNotice = (
-        <Notice error>
-          Workspace usage could not be refreshed. <Button onClick={allowance.retry}>Retry usage</Button>
-        </Notice>
-      );
+  const allowanceValue = allowance.kind === 'ready' ? allowance.value : undefined;
 
-      break;
-    case 'pending':
-      allowanceValue = undefined;
-      break;
+  const allowanceFailure =
+    allowance.kind === 'failed'
+      ? allowance
+      : allowance.kind === 'ready' && allowance.refresh.kind === 'failed'
+        ? allowance.refresh
+        : undefined;
+
+  const allowanceNotice =
+    allowanceFailure === undefined ? null : (
+      <Notice error>
+        Workspace usage could not be refreshed.{' '}
+        <Button pending={allowanceFailure.retrying} pendingLabel="Retrying usage…" onClick={allowanceFailure.retry}>
+          Retry usage
+        </Button>
+      </Notice>
+    );
+
+  async function refresh(): Promise<void> {
+    if (refreshing) {
+      return;
+    }
+
+    setRefreshing(true);
+    await Promise.allSettled([data.refresh()]);
+
+    if (isScreenActive()) {
+      setRefreshing(false);
+    }
   }
 
   if (creating) {
@@ -59,64 +79,75 @@ export function MechsScreen({
   }
 
   return (
-    <>
-      <PageToolbar
-        title="Mechs"
-        actions={
-          <>
-            <Tooltip.Root>
-              <Tooltip.Trigger
-                render={
-                  <ToolbarAction
-                    aria-label="Refresh mechs"
-                    onClick={() => {
-                      void data.refresh();
-                    }}
-                  />
-                }
-              >
-                <RefreshCw size={16} aria-hidden />
-              </Tooltip.Trigger>
-              <Tooltip.Portal>
-                <Tooltip.Positioner>
-                  <Tooltip.Popup>Refresh mechs</Tooltip.Popup>
-                </Tooltip.Positioner>
-              </Tooltip.Portal>
-            </Tooltip.Root>
-            <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
-              Create mech
-            </ToolbarAction>
-          </>
-        }
-      />
-      <Resource data={data} source={source} label="Loading mechs">
-        {(page, notice) => (
-          <>
-            {notice}
-            {allowanceNotice}
-            <MechList
-              page={page}
-              allowance={allowanceValue}
-              appearances={appearances}
-              pinnedIds={new Set(pinned)}
-              onTogglePin={(mech) => togglePin(mech.id)}
-              mechHref={(mech) => records.href({ workspace: data.workspace.id, mech: mech.id })}
-              onOpen={(mech) => records.open({ workspace: data.workspace.id, mech: mech.id }, mech.id)}
-              focusRowId={records.focusRowId}
-              onCreate={() => setCreating(true)}
-              hasPrevious={cursors.length > 0}
-              onPrevious={() => setCursors(cursors.slice(0, -1))}
-              onNext={() => {
-                const last = page.mechs.at(-1);
+    <ResourceView state={mechs} identity={source.id} placeholder={<MechsPagePlaceholder />} label="Loading mechs">
+      {(page, notice) => (
+        <>
+          <PageToolbar
+            title="Mechs"
+            actions={
+              <>
+                <Tooltip.Root>
+                  <Tooltip.Trigger
+                    render={
+                      <ToolbarAction
+                        aria-label="Refresh mechs"
+                        pending={refreshing}
+                        pendingLabel="Refreshing mechs…"
+                        onClick={() => {
+                          void refresh();
+                        }}
+                      />
+                    }
+                  >
+                    <RefreshCw size={16} aria-hidden />
+                  </Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Positioner>
+                      <Tooltip.Popup>Refresh mechs</Tooltip.Popup>
+                    </Tooltip.Positioner>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+                <ToolbarAction
+                  icon={<Plus size={16} aria-hidden />}
+                  onClick={() => {
+                    cancel();
+                    setCreating(true);
+                  }}
+                >
+                  Create mech
+                </ToolbarAction>
+              </>
+            }
+          />
+          {notice}
+          {allowanceNotice}
+          <MechList
+            page={page}
+            allowance={allowanceValue}
+            appearances={appearances}
+            pinnedIds={new Set(pinned)}
+            onTogglePin={(mech) => togglePin(mech.id)}
+            mechHref={(mech) => records.href({ workspace: data.workspace.id, mech: mech.id })}
+            onOpen={(mech) => records.open({ workspace: data.workspace.id, mech: mech.id }, mech.id)}
+            focusRowId={records.focusRowId}
+            onCreate={() => {
+              cancel();
+              setCreating(true);
+            }}
+            hasPrevious={cursors.length > 0}
+            loadingPage={pending}
+            pageNotice={failure === undefined ? undefined : <PageLoadNotice failure={failure} />}
+            onPrevious={() => setCursors(cursors.slice(0, -1))}
+            onNext={() => {
+              const last = page.mechs.at(-1);
 
-                if (last !== undefined) {
-                  setCursors([...cursors, last.id]);
-                }
-              }}
-            />
-          </>
-        )}
-      </Resource>
-    </>
+              if (last !== undefined) {
+                setCursors([...cursors, last.id]);
+              }
+            }}
+          />
+        </>
+      )}
+    </ResourceView>
   );
 }

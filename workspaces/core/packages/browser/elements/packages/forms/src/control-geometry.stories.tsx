@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Button, Row, Stack } from '../../core/src/index.ts';
+import { Button, IconButton, Row, Stack } from '../../core/src/index.ts';
 import { ButtonPlaceholder, FieldPlaceholder } from '../../feedback/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Combobox } from './combobox.tsx';
@@ -139,6 +139,10 @@ export const Recommended: Story = {
           Open settings
         </Button>
         <ButtonPlaceholder />
+        <IconButton aria-label="Settings">
+          <Settings size={16} aria-hidden />
+        </IconButton>
+        <ButtonPlaceholder icon />
       </Row>
     </Stack>
   ),

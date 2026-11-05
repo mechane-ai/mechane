@@ -1,8 +1,9 @@
 import { AgentAvatar, IconButton } from '@mechane-ai/elements';
 import type { AgentAppearance } from '@mechane-ai/elements';
+import { ButtonPlaceholder, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
 import { Select } from '@mechane-ai/elements/forms';
 import { PageToolbar } from '@mechane-ai/elements/layout';
-import { PageNavigation } from '@mechane-ai/elements/navigation';
+import { PageNavigation, PageNavigationPlaceholder } from '@mechane-ai/elements/navigation';
 import { Menu } from '@mechane-ai/elements/overlays';
 import { colors, conditions, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { ConsoleView, Mech } from '@mechane/protocol';
@@ -68,6 +69,35 @@ const styles = stylex.create({
   secondaryName: { color: colors.ink, fontSize: typography.bodySize, paddingInlineEnd: spacing.xs },
   menuTrigger: { display: 'flex', alignItems: 'center', gap: spacing.xs },
 });
+
+export function MechHeaderPlaceholder(): ReactNode {
+  return (
+    <PageToolbar
+      title={
+        <span {...stylex.props(styles.identity)}>
+          <Skeleton width={20} height={20} />
+          <SkeletonText width="16ch" />
+        </span>
+      }
+      views={
+        <>
+          <div {...stylex.props(styles.wide)}>
+            <PageNavigationPlaceholder
+              embedded
+              items={sections
+                .filter((section) => primaryViews.has(section.value))
+                .map((section) => ({ id: section.value, label: section.label }))}
+            />
+          </div>
+          <div {...stylex.props(styles.narrow)}>
+            <SkeletonText width="12ch" />
+          </div>
+        </>
+      }
+      actions={<ButtonPlaceholder icon />}
+    />
+  );
+}
 
 export function MechHeader({
   mech,

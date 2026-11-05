@@ -404,27 +404,37 @@ function BarLoadingGeometry(): ReactNode {
         {pending ? 'Show recorded values' : 'Show loading state'}
       </Button>
       <Panel>
-        <AsyncRegion
-          pending={pending}
-          label="Loading recorded token values"
-          placeholder={
-            <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
-          }
-        >
-          <BarChart
-            title={title}
-            description={description}
-            categories={[
-              { id: 'assemble', label: 'Assemble' },
-              { id: 'review', label: 'Review' },
-              { id: 'publish', label: 'Publish' },
-            ]}
-            series={loadingSeries}
-            domain={[0, 100]}
-            formatValue={formatTokens}
-            height={180}
+        {pending ? (
+          <AsyncRegion
+            state="pending"
+            label="Loading recorded token values"
+            placeholder={
+              <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
+            }
           />
-        </AsyncRegion>
+        ) : (
+          <AsyncRegion
+            state="ready"
+            label="Loading recorded token values"
+            placeholder={
+              <BarChartPlaceholder title={title} description={description} series={knownSeries} height={180} />
+            }
+          >
+            <BarChart
+              title={title}
+              description={description}
+              categories={[
+                { id: 'assemble', label: 'Assemble' },
+                { id: 'review', label: 'Review' },
+                { id: 'publish', label: 'Publish' },
+              ]}
+              series={loadingSeries}
+              domain={[0, 100]}
+              formatValue={formatTokens}
+              height={180}
+            />
+          </AsyncRegion>
+        )}
       </Panel>
       <Text variant="caption" tone="muted">
         This text follows the same chart frame in both states.

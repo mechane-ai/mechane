@@ -2,7 +2,7 @@ import type { Mech, Workspace } from '@mechane/protocol';
 import { MechId, WorkspaceId } from '@mechane/records';
 import { createCollection, DbClient, safeRandomUUID } from '@tanstack/db';
 import type { Collection } from '@tanstack/db';
-import { QueryClient } from '@tanstack/query-core';
+import { hashKey, QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import type { QueryCollectionUtils } from '@tanstack/query-db-collection';
 import { Duration, Option } from 'effect';
@@ -170,6 +170,18 @@ export function createConsoleData(origin: URL, workspace: Workspace, onSessionEn
     },
     async refresh(): Promise<void> {
       await cache.invalidateQueries();
+    },
+    readFetchStatus(collection: OwnedCollection) {
+      return cache.getQueryState([collection.id])?.fetchStatus ?? 'idle';
+    },
+    subscribeFetchStatus(collection: OwnedCollection, onChange: () => void): () => void {
+      const queryHash = hashKey([collection.id]);
+
+      return cache.getQueryCache().subscribe((event) => {
+        if (event.query.queryHash === queryHash) {
+          onChange();
+        }
+      });
     },
     retain(collection: OwnedCollection): void {
       resources.add(collection);

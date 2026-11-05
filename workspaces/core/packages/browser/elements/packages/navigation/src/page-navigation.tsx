@@ -70,6 +70,23 @@ export type PageNavigationProps<ItemId extends string = string> = {
   readonly embedded?: boolean;
 };
 
+export type PageNavigationPlaceholderProps = {
+  readonly items: ReadonlyArray<Pick<PageNavigationItem, 'id' | 'label'>>;
+  readonly embedded?: boolean;
+};
+
+export function PageNavigationPlaceholder({ items, embedded = false }: PageNavigationPlaceholderProps): ReactNode {
+  return (
+    <div aria-hidden inert {...stylex.props(styles.navigation, embedded && styles.embedded)}>
+      {items.map((item) => (
+        <span key={item.id} {...stylex.props(styles.link)}>
+          {item.label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function PageNavigation<ItemId extends string>({
   items,
   selectedId,

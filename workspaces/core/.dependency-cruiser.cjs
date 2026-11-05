@@ -182,7 +182,9 @@ module.exports = {
       comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
       severity: 'error',
       from: { path: '^(?:packages/browser/elements/packages)/(?:collections)/', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:collections|foundations|core|forms|overlays)/)' },
+      to: {
+        path: '^(?:packages/browser/elements/packages)/(?!(?:collections|foundations|core|forms|overlays|feedback)/)',
+      },
     },
     {
       name: 'ui-content-public-entry',
@@ -220,7 +222,9 @@ module.exports = {
       comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
       severity: 'error',
       from: { path: '^(?:packages/browser/elements/packages)/(?:ai)/', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:ai|foundations|core|forms|overlays|content)/)' },
+      to: {
+        path: '^(?:packages/browser/elements/packages)/(?!(?:ai|foundations|core|forms|overlays|content|feedback)/)',
+      },
     },
     {
       name: 'ui-charts-public-entry',

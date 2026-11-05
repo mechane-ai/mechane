@@ -4,6 +4,7 @@ import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import { SkeletonText } from '../../feedback/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
 import {
@@ -42,6 +43,7 @@ const styles = stylex.create({
     WebkitFontSmoothing: 'antialiased',
   },
   content: {},
+  placeholder: { pointerEvents: 'none' },
   fillFrame: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
   viewport: {
     'minWidth': 0,
@@ -246,16 +248,130 @@ const viewportStyles = { content: styles.content, fill: styles.fillViewport } sa
   stylex.StyleXStyles
 >;
 
-export type DataTableColumn<Row> = {
+export type DataTableColumnLayout = {
   readonly id: string;
   readonly label: string;
   readonly role: DataTableColumnRole;
-  readonly cell: (row: Row) => ReactNode;
   readonly width?: number;
   readonly secondary?: boolean;
+};
+
+export type DataTableColumn<Row> = DataTableColumnLayout & {
+  readonly cell: (row: Row) => ReactNode;
   readonly truncate?: boolean;
   readonly sortable?: boolean;
 };
+
+export type DataTablePlaceholderProps = {
+  readonly columns: ReadonlyArray<DataTableColumnLayout & { readonly placeholder?: ReactNode }>;
+  readonly sizing?: TableSizing;
+  readonly rowSizing?: RowSizing;
+  readonly hideHeaders?: boolean;
+};
+
+function prepareColumns<Column extends DataTableColumnLayout>(columns: ReadonlyArray<Column>) {
+  return columns.map((column) => {
+    const geometry = columnGeometry[column.role];
+    const width = column.width ?? (geometry.flexible ? undefined : geometry.minimumWidth);
+
+    return { ...column, ...(width === undefined ? {} : { width }) };
+  });
+}
+
+function tableWidths(columns: ReadonlyArray<DataTableColumnLayout>, selectionWidth = 0) {
+  const minimumWidth = columns.reduce(
+    (total, column) => total + (column.width ?? columnGeometry[column.role].minimumWidth),
+    selectionWidth,
+  );
+
+  const compactWidth = columns
+    .filter((column) => column.secondary !== true)
+    .reduce((total, column) => total + (column.width ?? columnGeometry[column.role].minimumWidth), selectionWidth);
+
+  return { minimumWidth, compactWidth };
+}
+
+function ColumnGroup({
+  columns,
+  selectable = false,
+}: {
+  readonly columns: ReadonlyArray<DataTableColumnLayout>;
+  readonly selectable?: boolean;
+}): ReactNode {
+  return (
+    <colgroup>
+      {selectable && <col {...stylex.props(styles.selection)} />}
+      {columns.map((column) => (
+        <col
+          key={column.id}
+          {...stylex.props(
+            column.width !== undefined && styles.width(column.width),
+            column.secondary === true && styles.secondary,
+          )}
+        />
+      ))}
+    </colgroup>
+  );
+}
+
+export function DataTablePlaceholder({
+  columns: suppliedColumns,
+  sizing = 'content',
+  rowSizing = 'fixed',
+  hideHeaders = false,
+}: DataTablePlaceholderProps): ReactNode {
+  const columns = prepareColumns(suppliedColumns);
+  const { minimumWidth, compactWidth } = tableWidths(columns);
+
+  return (
+    <div aria-hidden inert {...stylex.props(styles.frame, frameStyles[sizing], styles.placeholder)}>
+      <div {...stylex.props(styles.viewport, viewportStyles[sizing])}>
+        <table {...stylex.props(styles.table, styles.fixed, styles.minimumWidth(minimumWidth, compactWidth))}>
+          <ColumnGroup columns={columns} />
+          <thead {...stylex.props(hideHeaders && accessibility.hidden)}>
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.id}
+                  {...stylex.props(
+                    styles.header,
+                    columnRoleStyles[column.role],
+                    column.width !== undefined && styles.width(column.width),
+                    column.secondary === true && styles.secondary,
+                  )}
+                >
+                  <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {['first', 'second', 'third'].map((row) => (
+              <tr key={row} {...stylex.props(styles.row)}>
+                {columns.map((column) => (
+                  <td
+                    key={column.id}
+                    {...stylex.props(
+                      styles.cell,
+                      cellSizingStyles[rowSizing],
+                      columnRoleStyles[column.role],
+                      column.width !== undefined && styles.width(column.width),
+                      column.secondary === true && styles.secondary,
+                    )}
+                  >
+                    <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={undefined}>
+                      {column.placeholder ?? <SkeletonText width="60%" />}
+                    </TableCellContent>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export type DataTableTextProps = {
   readonly children: string;
@@ -264,28 +380,59 @@ export type DataTableTextProps = {
   readonly trailing?: ReactNode;
 };
 
-export function DataTableText({ children, secondary, leading, trailing }: DataTableTextProps): ReactNode {
+export type DataTableTextPlaceholderProps = { readonly leading?: ReactNode; readonly secondary?: boolean };
+
+function TextCellLayout({
+  children,
+  leading,
+  decorative = false,
+}: {
+  readonly children: ReactNode;
+  readonly leading?: ReactNode;
+  readonly decorative?: boolean;
+}): ReactNode {
   return (
-    <span {...stylex.props(styles.textRow)}>
+    <span aria-hidden={decorative || undefined} inert={decorative || undefined} {...stylex.props(styles.textRow)}>
       {leading !== undefined && (
         <span aria-hidden {...stylex.props(styles.adornment)}>
           {leading}
         </span>
       )}
-      <span {...stylex.props(styles.textColumn)}>
-        <span {...stylex.props(styles.primaryRow)}>
-          <span title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
-            {children}
-          </span>
-          {trailing !== undefined && trailing !== null && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
-        </span>
-        {secondary !== undefined && (
-          <span title={secondary} {...stylex.props(styles.text, styles.truncated, styles.secondaryText)}>
-            {secondary}
-          </span>
-        )}
-      </span>
+      <span {...stylex.props(styles.textColumn)}>{children}</span>
     </span>
+  );
+}
+
+export function DataTableText({ children, secondary, leading, trailing }: DataTableTextProps): ReactNode {
+  return (
+    <TextCellLayout leading={leading}>
+      <span {...stylex.props(styles.primaryRow)}>
+        <span title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
+          {children}
+        </span>
+        {trailing !== undefined && trailing !== null && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
+      </span>
+      {secondary !== undefined && (
+        <span title={secondary} {...stylex.props(styles.text, styles.truncated, styles.secondaryText)}>
+          {secondary}
+        </span>
+      )}
+    </TextCellLayout>
+  );
+}
+
+export function DataTableTextPlaceholder({ leading, secondary = false }: DataTableTextPlaceholderProps): ReactNode {
+  return (
+    <TextCellLayout leading={leading} decorative>
+      <span {...stylex.props(styles.text)}>
+        <SkeletonText width="70%" />
+      </span>
+      {secondary && (
+        <span {...stylex.props(styles.text, styles.secondaryText)}>
+          <SkeletonText width="45%" />
+        </span>
+      )}
+    </TextCellLayout>
   );
 }
 
@@ -360,19 +507,7 @@ export function DataTable<Row extends object>({
   onEndReached,
   footer,
 }: DataTableProps<Row>): ReactNode {
-  const columns = useMemo(
-    () =>
-      suppliedColumns.map((column) => {
-        const geometry = columnGeometry[column.role];
-
-        return {
-          ...column,
-          minimumWidth: column.width ?? geometry.minimumWidth,
-          width: column.width ?? (geometry.flexible ? undefined : geometry.minimumWidth),
-        };
-      }),
-    [suppliedColumns],
-  );
+  const columns = useMemo(() => prepareColumns(suppliedColumns), [suppliedColumns]);
 
   const model = useMemo(() => {
     const helper = createColumnHelper<typeof features, Row>();
@@ -554,11 +689,7 @@ export function DataTable<Row extends object>({
   const columnCount = columns.length + (selectedIds === undefined ? 0 : 1);
   const selectionWidth = selectedIds === undefined ? 0 : selectionColumnWidth;
   const showFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean';
-  const minimumWidth = columns.reduce((total, column) => total + column.minimumWidth, selectionWidth);
-
-  const compactWidth = columns
-    .filter((column) => column.secondary !== true)
-    .reduce((total, column) => total + column.minimumWidth, selectionWidth);
+  const { minimumWidth, compactWidth } = tableWidths(columns, selectionWidth);
 
   const trailingSpace =
     virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? headerHeight) + headerHeight;
@@ -583,18 +714,7 @@ export function DataTable<Row extends object>({
           <caption ref={captionElement} {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}>
             {caption}
           </caption>
-          <colgroup>
-            {selectedIds !== undefined && <col {...stylex.props(styles.selection)} />}
-            {columns.map((column) => (
-              <col
-                key={column.id}
-                {...stylex.props(
-                  column.width !== undefined && styles.width(column.width),
-                  column.secondary === true && styles.secondary,
-                )}
-              />
-            ))}
-          </colgroup>
+          <ColumnGroup columns={columns} selectable={selectedIds !== undefined} />
           <thead ref={headerElement} {...stylex.props(hideHeaders && accessibility.hidden)}>
             <tr>
               {selectedIds !== undefined && (

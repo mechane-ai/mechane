@@ -7,16 +7,17 @@ import { Meter } from '../../feedback/src/index.ts';
 import { Combobox } from '../../forms/src/index.ts';
 import { Popover } from '../../overlays/src/index.ts';
 import { MessageAttachment } from './message.tsx';
-import { PromptInput } from './prompt-input.tsx';
+import { PromptInput, PromptInputPlaceholder } from './prompt-input.tsx';
 
 const meta = {
   title: 'AI/Prompt input',
   component: PromptInput,
+  subcomponents: { PromptInputPlaceholder },
   parameters: {
     docs: {
       description: {
         component:
-          'PromptInput presents an application-owned draft in one framed composer. Its label stays accessible while the placeholder supplies the visible prompt. Text grows within a bounded input region. Optional controls, attachments and a named send or stop action remain inside the frame; feedback stays visible below it. The application owns submission, request identity and acknowledgement. Pending submission makes the draft read-only. Newline is the default Enter behavior; submit mode respects IME composition and Shift+Enter. Stop replaces Send and prevents hidden Enter submission.',
+          'PromptInput presents an application-owned draft in one framed composer. Its label stays accessible while the placeholder supplies the visible prompt. Text grows within a bounded input region. Optional controls, attachments and a named send or stop action remain inside the frame; feedback stays visible below it. The application owns submission, request identity and acknowledgement. Pending submission makes the draft read-only. Newline is the default Enter behavior; submit mode respects IME composition and Shift+Enter. Stop replaces Send and prevents hidden Enter submission. PromptInputPlaceholder reserves the same empty composer geometry without mounting a form or editor. Place it inside AsyncRegion for an initial read; keep the real composer mounted during refresh.',
       },
     },
   },
@@ -24,6 +25,8 @@ const meta = {
 
 export default meta;
 type Story = StoryObj;
+
+export const Placeholder: Story = { render: () => <PromptInputPlaceholder compact /> };
 
 const models = [
   { id: 'balanced', name: 'Balanced', description: 'General research and editing' },

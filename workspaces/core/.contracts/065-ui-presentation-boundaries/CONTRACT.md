@@ -52,9 +52,9 @@ The family graph permits these dependencies:
 | `feedback` | `foundations`, `core` |
 | `navigation` | `foundations`, `forms`, `overlays` |
 | `layout` | `foundations`, `core`, `overlays` |
-| `collections` | `foundations`, `core`, `forms`, `overlays` |
+| `collections` | `foundations`, `core`, `forms`, `overlays`, `feedback` |
 | `content` | `foundations`, `core`, `forms` |
-| `ai` | `foundations`, `core`, `forms`, `overlays`, `content` |
+| `ai` | `foundations`, `core`, `forms`, `overlays`, `content`, `feedback` |
 | `charts` | `foundations`, `core`, `forms`, `feedback` |
 
 Import another family through a declared public entry. The registry explicitly permits shared foundations for
@@ -62,6 +62,8 @@ accessibility, controlled state, style composition, overlay geometry, and popup 
 consumers. Import token definitions directly, as contract 114 requires. Foundations import no other family.
 Catalog stories may compose public entries together. Applications compose charts, layout, content, and AI without
 adding reverse dependencies. Keep the sidebar context with its layout owner and shared chart geometry with charts.
+Collections and AI use feedback's skeleton primitives to reserve table and composer geometry; feedback does not depend
+on either family.
 
 The root entry contains basic controls, text, surfaces, and disclosure. It must not re-export heavier families.
 Focused dates, commands, Markdown, code, diff, tree, and chart entries import only their required capabilities.

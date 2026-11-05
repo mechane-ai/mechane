@@ -1,10 +1,16 @@
-import { Muted, Row, Stack, Status, Subheading, TextLink } from '@mechane-ai/elements';
-import { DataTable } from '@mechane-ai/elements/collections';
+import { Button, Row, Stack, Subheading, Text } from '@mechane-ai/elements';
+import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { timeLabel } from '@mechane/console-views';
+import {
+  SlackConnections,
+  SlackConnectionsPlaceholder,
+  SlackDeliveries,
+  SlackDeliveriesPlaceholder,
+  SlackDeliverySection,
+} from '@mechane/console-views';
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Resource } from '../resource.tsx';
+import { Resource, ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
 
 export function ConnectionsScreen({
   data,
@@ -16,84 +22,59 @@ export function ConnectionsScreen({
   const bindings = useMemo(() => data.slackBindings(), [data]);
   const deliveries = useMemo(() => data.slackDeliveries(mechId), [data, mechId]);
 
+  useCollectionLifetime(data, bindings);
+  useCollectionLifetime(data, deliveries);
+
+  const bindingsState = useResource(data, bindings);
+
   return (
     <Stack>
       <Subheading>Slack</Subheading>
-      <Resource data={data} source={bindings}>
+      <ResourceView
+        state={bindingsState}
+        identity={bindings.id}
+        placeholder={<SlackConnectionsPlaceholder />}
+        label="Loading Slack connections"
+        failure={
+          bindingsState.kind === 'failed' ? (
+            <Row>
+              <Text tone="muted" role="alert">
+                {problemMessage(bindingsState.problem)}
+              </Text>
+              <Button
+                variant="ghost"
+                onClick={bindingsState.retry}
+                pending={bindingsState.retrying}
+                pendingLabel="Retrying connections…"
+              >
+                Retry connections
+              </Button>
+            </Row>
+          ) : undefined
+        }
+      >
         {(page, notice) => (
           <Stack compact>
             {notice}
-            {page.bindings
-              .filter((binding) => binding.mechId === mechId)
-              .map((binding) => (
-                <Row key={binding.id} between>
-                  <TextLink
-                    href={`https://app.slack.com/client/${encodeURIComponent(binding.teamId)}/${encodeURIComponent(binding.channelId)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open Slack channel ↗
-                  </TextLink>
-                  <Muted>
-                    {binding.isListening ? 'Listening' : 'Listening off'} ·{' '}
-                    {binding.isReplyEnabled ? 'Replies on' : 'Replies off'}
-                  </Muted>
-                </Row>
-              ))}
-            {!page.bindings.some((binding) => binding.mechId === mechId) && (
-              <Muted>No Slack channel is connected to this mech.</Muted>
-            )}
+            <SlackConnections bindings={page.bindings.filter((binding) => binding.mechId === mechId)} />
           </Stack>
         )}
-      </Resource>
-      <Resource data={data} source={deliveries}>
-        {(page, notice) => (
-          <>
-            {notice}
-            {page.deliveries.length > 0 && (
-              <Stack compact>
-                <Subheading>Recent Slack deliveries</Subheading>
-                <Muted>
-                  These are delivery receipts. An agent reply and a confirmed Slack delivery are separate outcomes.
-                </Muted>
-                <DataTable
-                  caption="Slack delivery receipts"
-                  hideCaption
-                  rows={page.deliveries}
-                  getRowId={(receipt) => receipt.id}
-                  columns={[
-                    {
-                      id: 'status',
-                      label: 'Delivery',
-                      role: 'status',
-                      cell: (receipt) => (
-                        <Status
-                          tone={
-                            receipt.status === 'sent'
-                              ? 'positive'
-                              : receipt.status === 'blocked'
-                                ? 'negative'
-                                : 'neutral'
-                          }
-                        >
-                          {receipt.status}
-                        </Status>
-                      ),
-                    },
-                    {
-                      id: 'created',
-                      label: 'Created',
-                      role: 'timestamp',
-                      cell: (receipt) => timeLabel(receipt.createdAt),
-                    },
-                  ]}
-                  empty="No delivery receipts"
-                />
-              </Stack>
-            )}
-          </>
-        )}
-      </Resource>
+      </ResourceView>
+      <SlackDeliverySection>
+        <Resource
+          data={data}
+          source={deliveries}
+          placeholder={<SlackDeliveriesPlaceholder />}
+          label="Loading Slack deliveries"
+        >
+          {(page, notice) => (
+            <>
+              {notice}
+              <SlackDeliveries deliveries={page.deliveries} />
+            </>
+          )}
+        </Resource>
+      </SlackDeliverySection>
     </Stack>
   );
 }

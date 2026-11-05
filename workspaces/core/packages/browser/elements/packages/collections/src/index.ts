@@ -9,14 +9,17 @@ export type {
 export { CollectionToolbar, FilterChips, ColumnControls, CollectionPagination } from './collection-controls.tsx';
 export type {
   DataTableColumn,
+  DataTableColumnLayout,
+  DataTablePlaceholderProps,
   DataTableColumnRole,
   DataTableSort,
   DataTableWindow,
   DataTableProps,
   DataTableRowAction,
   DataTableTextProps,
+  DataTableTextPlaceholderProps,
 } from './data-table.tsx';
-export { DataTable, DataTableText } from './data-table.tsx';
+export { DataTable, DataTableText, DataTablePlaceholder, DataTableTextPlaceholder } from './data-table.tsx';
 export type { CollectionEndProps, CollectionScrollProps } from './collection-scroll.tsx';
 export { CollectionEnd, CollectionScroll } from './collection-scroll.tsx';
 export type { InspectorProps } from './inspector.tsx';

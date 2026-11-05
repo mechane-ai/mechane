@@ -1,6 +1,6 @@
 ---
 name: ui-async-read-states
-paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/elements/packages/feedback/src/loading.tsx","packages/browser/elements/packages/feedback/src/skeleton.tsx","packages/browser/elements/packages/feedback/src/async-region.tsx"]
+paths: ["packages/browser/console/src/**","packages/browser/console-views/src/**","packages/browser/elements/packages/feedback/src/skeleton.tsx","packages/browser/elements/packages/feedback/src/async-region.tsx","packages/browser/elements/packages/collections/src/data-table.tsx","packages/browser/elements/packages/ai/src/prompt-input.tsx","packages/browser/elements/packages/foundations/src/tokens.stylex.ts"]
 message: Present pending, empty, failed, and refreshing reads truthfully, without false empties, flashing loaders, or displaced content.
 ---
 
@@ -43,31 +43,55 @@ Inspect the pending region in the accessibility tree for its busy state and a si
 
 ## Local adaptations
 
-The existing resource boundary in `packages/browser/console/src/resource.tsx` projects reads into pending, failed,
-or ready presentation. It owns the distinction between initial failure and stale retained data.
-Shared loading presentation does not fetch data.
+`packages/browser/console/src/resource.tsx` projects reads into pending, failed, or ready presentation. It owns the
+distinction between initial failure and stale retained data. Screens supply a required placeholder composition with
+the loaded view's layout.
 
-Elements accepts an optional caller-owned visibility delay and epoch. A new epoch may reset pending presentation,
-but must not remount ready children or erase drafts. Skeleton text reserves inherited line boxes; placeholders share
-the loaded control and column geometry. Generic components do not inspect document startup markers or router state.
+The upstream instruction to show refresh progress applies visibly to an explicit refresh action: its control exposes
+the pending state immediately. Periodic background reads may stay visually quiet while retaining refresh state for
+their consumers. Both paths keep usable content mounted and report a refresh failure with its retry beside that content.
+Keep pagination failure and retry state beside their controls, including during a retry. A long list must not put the
+only recovery affordance above the reader's visible region.
 
-The upstream clause "Delay placeholder visibility by one shared declared delay, so a fast read completes without a
-visible loader." is replaced by this baseline: the stable initial frame and skeleton may render immediately.
-Keep already-visible content mounted during refresh. Delay an ephemeral indicator only when it replaces visible content,
-and centralize that delay at its presentation owner. Pending actions keep stable geometry.
-The upstream delayed-placeholder and delayed-announcement checks apply only to that optional indicator; initial pending
-regions expose their busy state and one announcement immediately. No timer is required solely to adopt this contract.
+Sidebar navigation label enrichment is the narrow exception to refresh-failure presentation: a transient refresh
+failure may keep the usable native link and its last-known name without a separate error or retry control. An initial
+failure shows an unavailable label. Denied or deleted records still clear the protected label and shortcut. This
+exception does not apply to the opened record, activity, usage, or other result surfaces.
 
-The upstream clause "Reveal a view's heading, permission-dependent actions, and primary content together." is replaced
-by this rule: render the neutral public shell immediately, then reveal each independently authorized resource region
-with its own read state. Show resource actions only when that region has established their availability.
-A pending shell must not imply records, counts, or permissions that have not arrived.
+Elements owns loading visibility and reveal motion in `feedback/src/async-region.tsx`. Use the shared `loading.delaySeconds`,
+`loading.placeholderMs`, and `loading.revealMs` definitions. Reserve the pending layout immediately and
+keep its decoration invisible until the delay expires. A result ends pending presentation as soon as it is available;
+neither the delay nor an unfinished placeholder fade imposes a minimum dwell. Failed reads and action feedback appear
+immediately. Cached ready content starts fully visible.
+
+The Console route owns `LoadingScope` identity. Its initial page reads share one elapsed clock instead of restarting
+the delay as each dependent read mounts. The application coordinates the heading, resource actions, and selected
+view's primary content before their single reveal. Optional reads report their own state without delaying the primary
+view or restarting its reveal. The neutral shell may reserve space before authorization, but must not imply records,
+counts, or permissions that have not arrived.
+
+Only `resource.tsx` and `entrance.tsx` import `AsyncRegion` or `ContentReveal` in the Console. Only `routes/__root.tsx`
+imports `LoadingScope`. Screens and console-views compose static placeholders and consume the resource boundary;
+they do not add their own loading clock, delay, or reveal. Use named feedback imports so these owners remain explicit.
+
+Changing loading identity resets pending presentation without keying or remounting ready children. Skeleton text
+reserves inherited line boxes; tables and their placeholders share column layout definitions. Generic components do
+not inspect document startup markers or router state. Keep the same view's content, viewport, and controls mounted
+during refresh; loading visibility never owns the lifetime of a form or editor.
 
 Contract 113 still owns clearing data after an access or workspace change. Retaining a result during a refresh never
 authorizes showing data from another resource or viewer.
 
+TypeScript checks the required placeholder and `AsyncRegion`'s pending/ready/failed prop union. The registry checks
+Console loading imports, not rendered geometry or asynchronous behavior. In the packaged browser, hold startup and
+dependent reads separately, then verify one delay and one primary reveal. Compare viewport and composer bounds before
+and after ready; fail and recover a same-view refresh while preserving scroll, focus, and a draft.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-No rule of the registry decides this contract; review does.
+- ast-grep `console-loading-boundary` (071): enforced
+- ast-grep `console-loading-boundary-typescript` (071): enforced
+- ast-grep `console-loading-scope` (071): enforced
+- ast-grep `console-loading-scope-typescript` (071): enforced
 
 <!-- End of the generated block. -->

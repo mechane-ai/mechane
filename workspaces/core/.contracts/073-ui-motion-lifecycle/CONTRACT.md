@@ -47,6 +47,11 @@ small-scale transition. The left drawer follows Base UI's swipe displacement and
 Use the shared duration and easing tokens; reduced motion removes transition time, while dragging follows the pointer
 without easing. Do not add a timer, animation library, or second open-state owner for these transitions.
 
+Loading presentation uses the shared loading duration tokens: a short opacity entrance for a delayed placeholder and
+a shorter ready-content entrance. Contract 071 owns the visibility delay. Nested reveals share the active ancestor
+entrance instead of multiplying opacity animations. Cached ready content, refreshes, errors, and action feedback do
+not replay an entrance. Reduced motion removes both entrances without changing read availability or the delay policy.
+
 The registry permits only explicit opacity and transform transition properties and rejects transition shorthand.
 It does not establish focus preservation, interruption, or reduced-motion behavior; check those in the browser.
 

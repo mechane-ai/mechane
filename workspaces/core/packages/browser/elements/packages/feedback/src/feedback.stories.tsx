@@ -1,23 +1,24 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
-import { Cell, Table } from '../../collections/src/index.ts';
+import { DataTable, DataTablePlaceholder } from '../../collections/src/index.ts';
+import type { DataTableColumn } from '../../collections/src/index.ts';
 import { Button, Columns, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { AsyncRegion, ContentReveal } from './async-region.tsx';
-import { Loading } from './loading.tsx';
+import { AsyncRegion, ContentReveal, LoadingScope } from './async-region.tsx';
+import type { AsyncRegionState } from './async-region.tsx';
 import { Meter, Progress } from './progress.tsx';
 import { Skeleton, SkeletonText, Spinner } from './skeleton.tsx';
 
 const meta = {
   title: 'Feedback/Loading and progress',
   component: Progress,
-  subcomponents: { Meter, Skeleton, SkeletonText, Spinner, Loading, AsyncRegion, ContentReveal },
+  subcomponents: { Meter, Skeleton, SkeletonText, Spinner, AsyncRegion, ContentReveal, LoadingScope },
   parameters: {
     docs: {
       description: {
         component:
-          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. Loading shares row and header measurements with tables. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion owns initial pending presentation; ContentReveal supplies its short, reduced-motion-aware entrance. Keep usable content mounted while refreshing and place the refresh indicator beside it.',
+          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
       },
     },
   },
@@ -107,9 +108,6 @@ export const RetainedContent: Story = {
   ),
 };
 
-export const InitialRows: Story = { render: () => <Loading label="Loading records" /> };
-export const InitialDetail: Story = { render: () => <Loading label="Loading detail" shape="detail" /> };
-
 export const LongLabels: Story = {
   render: () => (
     <Stack>
@@ -130,61 +128,74 @@ export const LongLabels: Story = {
   ),
 };
 
-function RowTransitionExample() {
-  const [pending, setPending] = useState(true);
+interface RecordExample {
+  readonly name: string;
+  readonly state: string;
+  readonly owner: string;
+}
+
+const records: ReadonlyArray<RecordExample> = [
+  { name: 'Getting started', state: 'Ready', owner: 'Design' },
+  { name: 'Review queues', state: 'Ready', owner: 'Support' },
+  { name: 'Release notes', state: 'Ready', owner: 'Platform' },
+];
+
+const recordColumns = [
+  { id: 'name', label: 'Name', role: 'primary', cell: (record) => record.name },
+  { id: 'state', label: 'State', role: 'status', cell: (record) => record.state },
+  { id: 'owner', label: 'Owner', role: 'text', cell: (record) => record.owner },
+] satisfies ReadonlyArray<DataTableColumn<RecordExample>>;
+
+function ReadExample({ initialState = 'pending' }: { readonly initialState?: AsyncRegionState }) {
+  const [state, setState] = useState(initialState);
+  const [attempt, setAttempt] = useState(0);
+  const region = { label: 'Loading records', placeholder: <DataTablePlaceholder columns={recordColumns} /> };
 
   return (
     <Stack>
-      <Button onClick={() => setPending(!pending)}>{pending ? 'Complete read' : 'Show initial loading'}</Button>
+      <Row>
+        <Button
+          onClick={() => {
+            setAttempt(attempt + 1);
+            setState('pending');
+          }}
+        >
+          Start read
+        </Button>
+        <Button onClick={() => setState('ready')}>Complete read</Button>
+        <Button onClick={() => setState('failed')}>Fail read</Button>
+      </Row>
       <Panel padded={false}>
-        <AsyncRegion pending={pending} label="Loading records" placeholder={<Loading label="Loading records" />}>
-          <Table
-            label="Synthetic records"
-            headers={[
-              { label: 'Name', width: 50 },
-              { label: 'State', width: 25 },
-              { label: 'Owner', width: 25 },
-            ]}
-          >
-            <tr>
-              <Cell>Getting started</Cell>
-              <Cell>Ready</Cell>
-              <Cell>Design</Cell>
-            </tr>
-            <tr>
-              <Cell>Review queues</Cell>
-              <Cell>Ready</Cell>
-              <Cell>Support</Cell>
-            </tr>
-            <tr>
-              <Cell>Release notes</Cell>
-              <Cell>Ready</Cell>
-              <Cell>Platform</Cell>
-            </tr>
-          </Table>
-        </AsyncRegion>
+        <LoadingScope identity={attempt}>
+          {state === 'pending' ? (
+            <AsyncRegion state="pending" {...region} />
+          ) : state === 'failed' ? (
+            <AsyncRegion state="failed" {...region}>
+              <Text>The read failed. Start another read to retry.</Text>
+            </AsyncRegion>
+          ) : (
+            <AsyncRegion state="ready" {...region}>
+              <DataTable
+                caption="Synthetic records"
+                hideCaption
+                rows={records}
+                columns={recordColumns}
+                getRowId={(record) => record.name}
+                empty="No records"
+              />
+            </AsyncRegion>
+          )}
+        </LoadingScope>
       </Panel>
-      <Muted>The initial placeholder and loaded table share header height, row height, and column insets.</Muted>
+      <Muted>
+        The placeholder shares the table's column definitions. Complete the read before two seconds to skip loading
+        visuals; after two seconds the same reserved geometry becomes visible. Completion never waits for a minimum
+        loading duration. A failure appears immediately.
+      </Muted>
     </Stack>
   );
 }
 
-export const RowTransition: Story = { render: () => <RowTransitionExample /> };
-
-function PendingExample() {
-  const [pending, setPending] = useState(true);
-
-  return (
-    <Stack>
-      <Button onClick={() => setPending(!pending)}>{pending ? 'Complete read' : 'Start another read'}</Button>
-      <AsyncRegion pending={pending} delayMs={1200} label="Loading example" placeholder={<SkeletonText lines={3} />}>
-        <Panel>
-          <Text>The completed result is available immediately.</Text>
-        </Panel>
-      </AsyncRegion>
-      <Muted>The application supplies the pending state and its visibility delay. There is no minimum wait.</Muted>
-    </Stack>
-  );
-}
-
-export const DelayedRegion: Story = { render: () => <PendingExample /> };
+export const DelayedRegion: Story = { render: () => <ReadExample /> };
+export const CachedRegion: Story = { render: () => <ReadExample initialState="ready" /> };
+export const FailedRegion: Story = { render: () => <ReadExample initialState="failed" /> };

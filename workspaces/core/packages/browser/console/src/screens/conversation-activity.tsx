@@ -1,4 +1,5 @@
 import { Button, Row, Status, Text } from '@mechane-ai/elements';
+import { SkeletonText } from '@mechane-ai/elements/feedback';
 import type { ConsoleData } from '@mechane/console-data';
 import { Turn } from '@mechane/protocol';
 import type { InboxItem, Mech } from '@mechane/protocol';
@@ -6,7 +7,7 @@ import { Option, Schema } from 'effect';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
-import { useResource } from '../resource.tsx';
+import { ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
 
 export function ConversationActivity({
   data,
@@ -18,72 +19,90 @@ export function ConversationActivity({
   readonly received: InboxItem | undefined;
 }): ReactNode {
   const source = useMemo(() => data.turns(mech.id, Option.none()), [data, mech.id]);
+
+  useCollectionLifetime(data, source);
+
   const state = useResource(data, source);
-  const snapshot = 'value' in state ? state.value : undefined;
+  const snapshot = state.kind === 'ready' ? state.value : undefined;
   const turns = snapshot?.turns.filter(Schema.is(Turn)) ?? [];
   const observed = received === undefined ? undefined : turns.find((turn) => turn.inboxItemIds.includes(received.id));
   const [recorded, setRecorded] = useState<Turn>();
+  const retainRecorded = state.kind !== 'failed';
+
+  if (!retainRecorded && recorded !== undefined) {
+    setRecorded(undefined);
+  }
 
   if (observed !== undefined && observed !== recorded) {
     setRecorded(observed);
   }
 
-  const associated = received !== undefined && recorded?.inboxItemIds.includes(received.id) === true;
+  const associated = retainRecorded && received !== undefined && recorded?.inboxItemIds.includes(received.id) === true;
   const receivedTurn = observed ?? (associated ? recorded : undefined);
   const receipt = received === undefined ? undefined : <MessageReceipt turn={receivedTurn} />;
 
-  if (state.kind === 'pending') {
-    return (
-      <Row>
-        {receipt}
-        <Text variant="caption" tone="muted" role="status">
-          Checking activity…
-        </Text>
-      </Row>
-    );
-  }
-
-  if (state.kind === 'failed') {
-    return (
-      <Row>
-        {receipt}
-        <Text variant="caption" tone="muted" role="status">
-          Activity unavailable
-        </Text>
-        <Button variant="ghost" onClick={state.retry}>
-          Retry activity
-        </Button>
-      </Row>
-    );
-  }
-
   const running = turns.find((turn) => turn.status === 'running');
-  const latest = state.value.turns[0];
+  const latest = snapshot?.turns[0];
   const unknown = latest !== undefined && !Schema.is(Turn)(latest);
   const current = running ?? receivedTurn;
   const label = activityLabel(mech, running, unknown);
   const failedMessage = receivedTurn?.status === 'unanswered';
   const inspectable = running !== undefined || failedMessage;
 
-  return (
-    <Row>
-      <Text variant="caption" tone="muted" role="status">
-        {state.kind === 'stale' ? `Refresh failed · last seen ${label.toLowerCase()}` : label}
-      </Text>
-      {receipt}
-      {inspectable && current !== undefined && (
-        <ConsoleLink
-          to={{ workspace: data.workspace.id, mech: mech.id, view: 'conversation', turn: current.id }}
-          row={current.id}
-        >
-          Open run
-        </ConsoleLink>
-      )}
-      {state.kind === 'stale' && (
-        <Button variant="ghost" onClick={state.retry}>
+  const refreshFailure = state.kind === 'ready' && state.refresh.kind === 'failed' ? state.refresh : undefined;
+
+  const failure =
+    state.kind === 'failed' ? (
+      <Row>
+        <Text variant="caption" tone="muted" role="status">
+          Activity unavailable
+        </Text>
+        <Button variant="ghost" onClick={state.retry} pending={state.retrying} pendingLabel="Retrying activity…">
           Retry activity
         </Button>
-      )}
+      </Row>
+    ) : undefined;
+
+  return (
+    <Row>
+      <ResourceView
+        state={state}
+        identity={source.id}
+        label="Loading activity"
+        placeholder={
+          <Text variant="caption">
+            <SkeletonText width="8ch" />
+          </Text>
+        }
+        failure={failure}
+      >
+        {() => (
+          <Row>
+            <Text variant="caption" tone="muted" role="status">
+              {refreshFailure === undefined ? label : `Refresh failed · last seen ${label.toLowerCase()}`}
+            </Text>
+            {inspectable && current !== undefined && (
+              <ConsoleLink
+                to={{ workspace: data.workspace.id, mech: mech.id, view: 'conversation', turn: current.id }}
+                row={current.id}
+              >
+                Open run
+              </ConsoleLink>
+            )}
+            {refreshFailure !== undefined && (
+              <Button
+                variant="ghost"
+                onClick={refreshFailure.retry}
+                pending={refreshFailure.retrying}
+                pendingLabel="Retrying activity…"
+              >
+                Retry activity
+              </Button>
+            )}
+          </Row>
+        )}
+      </ResourceView>
+      {receipt}
     </Row>
   );
 }

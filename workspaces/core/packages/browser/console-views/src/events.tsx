@@ -1,8 +1,9 @@
 import { CopyValue, Identifier, Muted, Prose, Row, Stack } from '@mechane-ai/elements';
 import { Timeline } from '@mechane-ai/elements/collections';
 import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
-import { EmptyState } from '@mechane-ai/elements/feedback';
-import { colors, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
+import { EmptyState, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
+import { PageContent } from '@mechane-ai/elements/layout';
+import { colors, typography } from '@mechane-ai/elements/tokens.stylex';
 import { Event } from '@mechane/protocol';
 import type { EventPage, ListedEvent, Turn } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
@@ -13,7 +14,6 @@ import { preciseTimeLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
 
 const styles = stylex.create({
-  inset: { padding: spacing.lg, minWidth: 0 },
   preview: {
     margin: 0,
     display: '-webkit-box',
@@ -26,6 +26,25 @@ const styles = stylex.create({
     lineHeight: typography.bodyLineHeight,
   },
 });
+
+export function ActivityPlaceholder({ inset = true }: { readonly inset?: boolean }): ReactNode {
+  return (
+    <ActivityFrame inset={inset}>
+      <Timeline.Root label="History">
+        {[0, 1, 2].map((item) => (
+          <Timeline.Item
+            key={item}
+            icon={<Skeleton width={14} height={14} shape="circle" />}
+            title={<SkeletonText width="14ch" />}
+            time={<SkeletonText width="10ch" />}
+          >
+            <SkeletonText lines={2} width="80%" />
+          </Timeline.Item>
+        ))}
+      </Timeline.Root>
+    </ActivityFrame>
+  );
+}
 
 export function Activity({
   page,
@@ -41,7 +60,7 @@ export function Activity({
   readonly runLink?: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
   return (
-    <div {...stylex.props(inset && styles.inset)}>
+    <ActivityFrame inset={inset}>
       {page.events.length === 0 ? (
         <EmptyState title="No activity yet">Messages and execution events appear here as the mech works.</EmptyState>
       ) : (
@@ -56,8 +75,12 @@ export function Activity({
           ))}
         </Timeline.Root>
       )}
-    </div>
+    </ActivityFrame>
   );
+}
+
+function ActivityFrame({ children, inset }: { readonly children: ReactNode; readonly inset: boolean }): ReactNode {
+  return inset ? <PageContent>{children}</PageContent> : children;
 }
 
 function EventItem({

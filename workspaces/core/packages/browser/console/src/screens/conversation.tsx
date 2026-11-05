@@ -1,28 +1,31 @@
 import { AgentAvatar, Button } from '@mechane-ai/elements';
 import { Conversation, MessageAction } from '@mechane-ai/elements/ai';
 import type { ConsoleData } from '@mechane/console-data';
-import { MechConversation } from '@mechane/console-views';
+import { ConversationPlaceholder, MechConversation } from '@mechane/console-views';
 import type { EventPage, Mech } from '@mechane/protocol';
 import { ScanLine } from 'lucide-react';
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useMechAppearance } from '../mech-appearance.tsx';
-import { ConsoleLink, usePageCursors } from '../navigation.tsx';
+import { ConsoleLink } from '../navigation.tsx';
+import { PageLoadNotice } from '../page-source.tsx';
+import type { PageSource } from '../page-source.tsx';
 import { Resource } from '../resource.tsx';
 
 export function ConversationScreen({
   data,
   mech,
   active,
+  pageSource,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly active: boolean;
+  readonly pageSource: PageSource<'conversation', ReturnType<ConsoleData['events']>>;
 }): ReactNode {
-  const [cursors, setCursors] = usePageCursors('conversation', []);
+  const { source, cursors, setCursors, pending, failure } = pageSource;
   const pendingLatestFocus = useRef(false);
   const before = cursors.at(-1) ?? null;
-  const source = useMemo(() => data.events(mech.id, before), [data, mech.id, before]);
 
   useLayoutEffect(() => {
     if (!active) {
@@ -48,7 +51,7 @@ export function ConversationScreen({
   );
 
   return (
-    <Resource data={data} source={source} label="Loading conversation">
+    <Resource data={data} source={source} placeholder={<ConversationPlaceholder />} label="Loading conversation">
       {(page, notice) => (
         <ConversationPage
           key={before ?? 'latest'}
@@ -57,7 +60,13 @@ export function ConversationScreen({
           page={page}
           latest={before === null}
           onViewportReady={before === null ? focusLatestViewport : undefined}
-          notice={notice}
+          notice={
+            <>
+              {notice}
+              <PageLoadNotice failure={failure} />
+            </>
+          }
+          pending={pending}
           earlier={(visible) => {
             const first = visible.events[0];
 
@@ -85,6 +94,7 @@ function ConversationPage({
   notice,
   earlier,
   recent,
+  pending,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
@@ -94,6 +104,7 @@ function ConversationPage({
   readonly notice: ReactNode;
   readonly earlier: (page: EventPage) => void;
   readonly recent: () => void;
+  readonly pending: 'previous' | 'next' | undefined;
 }): ReactNode {
   const [shown, setShown] = useState(page);
   const { appearance } = useMechAppearance(mech.id);
@@ -135,7 +146,13 @@ function ConversationPage({
         <>
           {notice}
           {visible.hasMore && (
-            <Button variant="ghost" onClick={() => earlier(visible)}>
+            <Button
+              variant="ghost"
+              pending={pending === 'next'}
+              pendingLabel="Loading earlier messages…"
+              disabled={pending !== undefined}
+              onClick={() => earlier(visible)}
+            >
               Earlier messages
             </Button>
           )}
@@ -143,10 +160,18 @@ function ConversationPage({
       }
       updates={
         hasUpdates ? (
-          <Conversation.LatestButton
-            label={latest ? 'Show new messages' : 'Return to latest'}
-            onActivate={latest ? () => setShown(page) : recent}
-          />
+          latest ? (
+            <Conversation.LatestButton label="Show new messages" onActivate={() => setShown(page)} />
+          ) : (
+            <Button
+              pending={pending === 'previous'}
+              pendingLabel="Loading latest messages…"
+              disabled={pending !== undefined}
+              onClick={recent}
+            >
+              Return to latest
+            </Button>
+          )
         ) : undefined
       }
     />

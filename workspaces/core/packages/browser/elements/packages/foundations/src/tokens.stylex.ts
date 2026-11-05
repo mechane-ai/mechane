@@ -190,6 +190,8 @@ export const motion = stylex.defineVars({
   drawerEasing: 'cubic-bezier(0.32, 0.72, 0, 1)',
 });
 
+export const loading = stylex.defineConsts({ delaySeconds: 2, revealMs: 80, placeholderMs: 120 });
+
 export const shadows = stylex.defineVars({ popup: '0 4px 16px #00000014', selection: 'inset 2px 0 currentColor' });
 
 export const darkShadows = stylex.defineConsts({ popup: '0 4px 16px #00000066' });

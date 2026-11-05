@@ -12,14 +12,66 @@ import {
 import type { AgentAppearance } from '@mechane-ai/elements';
 import { Details } from '@mechane-ai/elements/collections';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
-import { Notice } from '@mechane-ai/elements/feedback';
+import { ButtonPlaceholder, Notice, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
 import { AgentAvatarPicker, SettingsSection } from '@mechane-ai/elements/forms';
 import { Dialog } from '@mechane-ai/elements/overlays';
 import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { SlackConnectionsPlaceholder, SlackDeliverySection } from './connections.tsx';
 import { moneyLabel } from './format.ts';
+
+function ArchiveSection({ children }: { readonly children: ReactNode }): ReactNode {
+  return (
+    <SettingsSection title="Archive" description="Stop accepting new work while keeping this mech’s history and files.">
+      {children}
+    </SettingsSection>
+  );
+}
+
+export function MechSettingsPlaceholder(): ReactNode {
+  return (
+    <div aria-hidden inert>
+      <Stack>
+        <Stack compact>
+          <Row between>
+            <Subheading>Definition</Subheading>
+            <ButtonPlaceholder width="12ch" />
+          </Row>
+          <Details
+            items={[
+              { label: 'Model', value: <SkeletonText width="22ch" /> },
+              { label: 'Daily cap', value: <SkeletonText width="8ch" /> },
+            ]}
+          />
+          <Collapsible.Root>
+            <Collapsible.Trigger disabled>Instructions</Collapsible.Trigger>
+          </Collapsible.Root>
+        </Stack>
+        <Stack>
+          <Subheading>Slack</Subheading>
+          <SlackConnectionsPlaceholder />
+          <SlackDeliverySection>{null}</SlackDeliverySection>
+        </Stack>
+        <Collapsible.Root>
+          <Collapsible.Trigger disabled>
+            <Row>
+              <Skeleton width={24} height={24} />
+              <span>Appearance</span>
+            </Row>
+          </Collapsible.Trigger>
+        </Collapsible.Root>
+        <Collapsible.Root>
+          <Collapsible.Trigger disabled>Technical details</Collapsible.Trigger>
+        </Collapsible.Root>
+        <ArchiveSection>
+          <ButtonPlaceholder width="12ch" />
+        </ArchiveSection>
+      </Stack>
+    </div>
+  );
+}
 
 export function MechSettings({
   mech,
@@ -98,10 +150,7 @@ export function MechSettings({
           />
         </Collapsible.Panel>
       </Collapsible.Root>
-      <SettingsSection
-        title="Archive"
-        description="Stop accepting new work while keeping this mech’s history and files."
-      >
+      <ArchiveSection>
         <Dialog.Root
           open={open && mech.status !== 'archived'}
           onOpenChange={(next, details) => {
@@ -132,7 +181,7 @@ export function MechSettings({
             </Dialog.Popup>
           </Dialog.Portal>
         </Dialog.Root>
-      </SettingsSection>
+      </ArchiveSection>
     </Stack>
   );
 }

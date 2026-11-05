@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: console-loading-scope
+valid:
+  - "import { Notice } from '@mechane-ai/elements/feedback';"
+  - "import type { LoadingScopeProps } from '@mechane-ai/elements/feedback';"
+invalid:
+  - "import { LoadingScope } from '@mechane-ai/elements/feedback';"
+  - "import { LoadingScope as Scope } from '@mechane-ai/elements/feedback';"
+  - "import * as feedback from '@mechane-ai/elements/feedback';"

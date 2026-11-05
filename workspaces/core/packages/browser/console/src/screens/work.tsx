@@ -1,25 +1,33 @@
 import { ViewStack } from '@mechane-ai/elements/layout';
 import type { ConsoleData } from '@mechane/console-data';
-import { MemoryList, WorkDetails, WorkList } from '@mechane/console-views';
+import { MemoryList, MemoryListPlaceholder, WorkDetails, WorkList, WorkListPlaceholder } from '@mechane/console-views';
 import type { Mech, Thread, ThreadPage } from '@mechane/protocol';
-import { Option } from 'effect';
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ConsoleLink, readReaderPositions, restoreReaderPositions, usePageCursors } from '../navigation.tsx';
+import { ConsoleLink, readReaderPositions, restoreReaderPositions } from '../navigation.tsx';
+import { PageLoadNotice } from '../page-source.tsx';
+import type { PageSource } from '../page-source.tsx';
 import { Resource } from '../resource.tsx';
 import type { ReaderPosition } from '../types.ts';
 
-export function WorkScreen({ data, mech }: { readonly data: ConsoleData; readonly mech: Mech }): ReactNode {
-  const [cursors, setCursors] = usePageCursors('work', []);
-  const after = cursors.at(-1);
-  const source = useMemo(() => data.threads(mech.id, Option.fromNullishOr(after)), [data, mech.id, after]);
+export function WorkScreen({
+  data,
+  pageSource,
+}: {
+  readonly data: ConsoleData;
+  readonly pageSource: PageSource<'work', ReturnType<ConsoleData['threads']>>;
+}): ReactNode {
+  const { source, cursors, setCursors, pending, failure, cancel } = pageSource;
 
   return (
-    <Resource data={data} source={source}>
+    <Resource data={data} source={source} placeholder={<WorkListPlaceholder />}>
       {(page, notice) => (
         <WorkPage
           page={page}
           notice={notice}
+          pageNotice={failure === undefined ? undefined : <PageLoadNotice failure={failure} />}
+          pending={pending}
+          onSelect={cancel}
           hasPrevious={cursors.length > 0}
           onPrevious={() => setCursors(cursors.slice(0, -1))}
           onNext={() => {
@@ -38,15 +46,21 @@ export function WorkScreen({ data, mech }: { readonly data: ConsoleData; readonl
 function WorkPage({
   page,
   notice,
+  pageNotice,
   hasPrevious,
   onPrevious,
   onNext,
+  pending,
+  onSelect,
 }: {
   readonly page: ThreadPage;
   readonly notice: ReactNode;
+  readonly pageNotice?: ReactNode;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
+  readonly pending: 'previous' | 'next' | undefined;
+  readonly onSelect: () => void;
 }): ReactNode {
   const [selected, setSelected] = useState<Thread>();
   const selectedId = selected?.id;
@@ -83,6 +97,8 @@ function WorkPage({
           selected={selectedId}
           focusRowId={focusRowId}
           onSelect={(id) => {
+            onSelect();
+
             const thread = page.threads.find((candidate) => candidate.id === id);
 
             if (thread === undefined) {
@@ -95,6 +111,8 @@ function WorkPage({
             setSelected(thread);
           }}
           hasPrevious={hasPrevious}
+          loadingPage={pending}
+          pageNotice={pageNotice}
           onPrevious={onPrevious}
           onNext={onNext}
         />
@@ -113,11 +131,17 @@ function WorkPage({
   );
 }
 
-export function MemoryScreen({ data, mech }: { readonly data: ConsoleData; readonly mech: Mech }): ReactNode {
-  const source = useMemo(() => data.memories(mech.id), [data, mech.id]);
-
+export function MemoryScreen({
+  data,
+  mech,
+  source,
+}: {
+  readonly data: ConsoleData;
+  readonly mech: Mech;
+  readonly source: ReturnType<ConsoleData['memories']>;
+}): ReactNode {
   return (
-    <Resource data={data} source={source}>
+    <Resource data={data} source={source} placeholder={<MemoryListPlaceholder />}>
       {(page, notice) => (
         <>
           {notice}

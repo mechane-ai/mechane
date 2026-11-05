@@ -65,6 +65,31 @@ versioned stylesheet into the package's existing CSS asset and bundles the notif
 consumer's normal stylesheet and CSP setup sufficient. The build refuses a changed injection format for review; the
 archive retains Sonner's MIT notice. A production-browser check must include notifications and CSP events.
 
+## Loading without movement
+
+Pending content occupies its final layout immediately. The decoration stays invisible for the shared two-second delay,
+then enters with a 120ms opacity fade. Ready content uses an 80ms entrance. These values live in the shared `loading`
+definitions in the token source; applications do not choose their own delays. Reduced motion removes the entrances.
+Errors, action results, and cached ready data appear immediately. There is no minimum loader duration.
+
+The route supplies one loading identity. Dependent initial reads share its clock, and the application coordinates the
+heading, available actions, and primary content before revealing them together. An optional read can remain pending
+without holding the rest of the page. A neutral shell reserves geometry before protected records arrive. Before the
+session identifies a destination, the neutral entry shows only its quiet opening message after the same delay. It does
+not guess whether a sign-in screen or an authorized workspace will follow.
+
+Placeholders reuse the loaded layout's rows, columns, headings, and control dimensions. A conversation reserves its
+viewport and composer; a table uses its actual column definitions. This avoids a generic stack of bars that changes the
+page shape when it disappears. Collections and AI compose feedback's skeleton primitives inside their table and composer
+geometry; feedback remains independent of both families. Decorative placeholders are inert and hidden from assistive
+technology; the pending region exposes its busy state and announces once after the delay.
+
+Same-view refresh keeps mounted content, focus, scroll, and drafts. An explicit refresh marks its control pending;
+routine polling stays visually quiet. Refresh failures and retry belong beside the retained content. Loading identity
+resets presentation timing without remounting the page. The resource boundary owns read state, and Elements owns the
+clock and reveal; screens provide a named placeholder composition. Contract 071 defines this boundary and separates
+import/type enforcement from the browser checks that establish timing and geometry.
+
 ## Extending the system
 
 A new component starts by choosing its role and an existing neighboring component. A shared new visual role can justify

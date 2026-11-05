@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: console-loading-boundary
+valid:
+  - "import { ResourceView } from '../resource.tsx';"
+  - "import { Notice, SkeletonText } from '@mechane-ai/elements/feedback';"
+  - "import type { AsyncRegionState } from '@mechane-ai/elements/feedback';"
+invalid:
+  - "import { AsyncRegion } from '@mechane-ai/elements/feedback';"
+  - "import { ContentReveal as Reveal } from '@mechane-ai/elements/feedback';"
+  - "import * as feedback from '@mechane-ai/elements/feedback';"

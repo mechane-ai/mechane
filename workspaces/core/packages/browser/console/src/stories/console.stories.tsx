@@ -11,7 +11,7 @@ import {
 } from '@mechane-ai/elements';
 import type { AgentAppearance } from '@mechane-ai/elements';
 import { MessageAction, PromptInput } from '@mechane-ai/elements/ai';
-import { Loading as LoadingRows, Notice } from '@mechane-ai/elements/feedback';
+import { Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input } from '@mechane-ai/elements/forms';
 import {
   DetailPage,
@@ -31,7 +31,9 @@ import {
   MechConversation,
   MechHeader,
   MechList,
+  MechPagePlaceholder,
   MechSettings,
+  MechsPagePlaceholder,
   MemoryList,
   DefinitionConflict as SavedDefinition,
   TurnList,
@@ -59,6 +61,7 @@ import { Option, Schema } from 'effect';
 import { ArrowLeft, Bot, ListTree, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { ResourceView } from '../resource.tsx';
 
 const meta = {
   title: 'Screens/Console',
@@ -507,8 +510,44 @@ export const DefinitionConflict: Story = {
 export const Loading: Story = {
   render: () => (
     <StoryShell>
-      <MechsToolbar />
-      <LoadingRows label="Loading mechs" />
+      <ResourceView
+        state={{ kind: 'pending' }}
+        identity="mechs-loading-story"
+        label="Loading mechs"
+        placeholder={<MechsPagePlaceholder />}
+      >
+        {() => null}
+      </ResourceView>
+    </StoryShell>
+  ),
+};
+
+export const ConversationLoading: Story = {
+  render: () => (
+    <StoryShell>
+      <ResourceView
+        state={{ kind: 'pending' }}
+        identity="conversation-loading-story"
+        label="Loading conversation"
+        placeholder={<MechPagePlaceholder view="conversation" />}
+      >
+        {() => null}
+      </ResourceView>
+    </StoryShell>
+  ),
+};
+
+export const RunLoading: Story = {
+  render: () => (
+    <StoryShell focus>
+      <ResourceView
+        state={{ kind: 'pending' }}
+        identity="run-loading-story"
+        label="Loading run"
+        placeholder={<MechPagePlaceholder view="conversation" focusedRun />}
+      >
+        {() => null}
+      </ResourceView>
     </StoryShell>
   ),
 };

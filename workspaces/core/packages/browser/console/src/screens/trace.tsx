@@ -2,17 +2,17 @@ import { Button, Row, Stack } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { TurnTrace } from '@mechane/console-views';
+import { TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
 import type { ConsoleView, Mech, Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
-import type { ConsoleNavigation } from '../types.ts';
+import type { ConsoleLocation, ConsoleNavigation } from '../types.ts';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { TurnHistory } from './turn-history.tsx';
 
@@ -22,7 +22,20 @@ type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly notice: ReactNode;
+  readonly source: ReturnType<ConsoleData['trace']>;
 };
+
+export function selectedTraceTab(location: ConsoleLocation): TraceTab {
+  const inspect = location.inspect ?? location.view;
+
+  return inspect === 'requests'
+    ? 'Requests'
+    : inspect === 'events'
+      ? 'Events'
+      : inspect === 'tools'
+        ? 'Tools'
+        : 'Overview';
+}
 
 export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly turnId: string }): ReactNode {
   if (!Schema.is(TurnId)(turnId)) {
@@ -46,9 +59,9 @@ function ValidTraceScreen({
   location,
   navigate,
   notice,
+  source,
 }: TraceScreenProps & { readonly turnId: Turn['id'] }): ReactNode {
   const router = useRouter();
-  const source = useMemo(() => data.trace(mech.id, turnId), [data, mech.id, turnId]);
   const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
@@ -57,10 +70,7 @@ function ValidTraceScreen({
 
   const base = { workspace: data.workspace.id, mech: mech.id, ...(mainView === undefined ? {} : { view: mainView }) };
   const selected = { ...base, turn: turnId };
-  const inspect = location.inspect ?? location.view;
-
-  const tab: TraceTab =
-    inspect === 'requests' ? 'Requests' : inspect === 'events' ? 'Events' : inspect === 'tools' ? 'Tools' : 'Overview';
+  const tab = selectedTraceTab(location);
 
   function cancel(): void {
     if (cancelState !== 'idle') {
@@ -88,7 +98,12 @@ function ValidTraceScreen({
   return (
     <Stack>
       {notice}
-      <Resource data={data} source={source} label="Loading execution evidence">
+      <Resource
+        data={data}
+        source={source}
+        placeholder={<TurnTracePlaceholder tab={tab} />}
+        label="Loading execution evidence"
+      >
         {(trace, traceNotice) => (
           <Stack>
             {traceNotice}

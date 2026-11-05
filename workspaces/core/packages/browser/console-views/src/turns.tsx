@@ -1,5 +1,5 @@
 import { Status } from '@mechane-ai/elements';
-import { DataTable, DataTableText } from '@mechane-ai/elements/collections';
+import { DataTable, DataTablePlaceholder, DataTableText } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
@@ -9,6 +9,17 @@ import { durationLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
 import { runIdentifier, runInput, runLabel } from './run-label.ts';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
+
+const turnColumns = {
+  input: { id: 'input', label: 'Run', role: 'primary' },
+  outcome: { id: 'outcome', label: 'Outcome', role: 'status', width: 148 },
+  started: { id: 'started', label: 'Started', role: 'timestamp', secondary: true, width: 172 },
+  elapsed: { id: 'elapsed', label: 'Elapsed', role: 'number', secondary: true, width: 100 },
+} as const;
+
+export function TurnListPlaceholder(): ReactNode {
+  return <DataTablePlaceholder columns={Object.values(turnColumns)} />;
+}
 
 export function TurnList({
   page,
@@ -39,9 +50,7 @@ export function TurnList({
       }}
       columns={[
         {
-          id: 'input',
-          label: 'Run',
-          role: 'primary',
+          ...turnColumns.input,
           cell: (turn) => (
             <DataTableText
               secondary={
@@ -58,10 +67,7 @@ export function TurnList({
           truncate: true,
         },
         {
-          id: 'outcome',
-          label: 'Outcome',
-          role: 'status',
-          width: 148,
+          ...turnColumns.outcome,
           truncate: false,
           cell: (turn) => (
             <Status
@@ -72,20 +78,12 @@ export function TurnList({
           ),
         },
         {
-          id: 'started',
-          label: 'Started',
-          role: 'timestamp',
-          secondary: true,
-          width: 172,
+          ...turnColumns.started,
           truncate: false,
           cell: (turn) => (Schema.is(Turn)(turn) ? <ConsoleTimestamp value={turn.startedAt} /> : 'Unavailable'),
         },
         {
-          id: 'elapsed',
-          label: 'Elapsed',
-          role: 'number',
-          secondary: true,
-          width: 100,
+          ...turnColumns.elapsed,
           truncate: false,
           cell: (turn) =>
             Schema.is(Turn)(turn) && turn.status !== 'running'

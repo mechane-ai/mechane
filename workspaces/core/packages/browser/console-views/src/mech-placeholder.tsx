@@ -1,0 +1,82 @@
+import { PromptInputPlaceholder } from '@mechane-ai/elements/ai';
+import { ButtonPlaceholder, SkeletonText } from '@mechane-ai/elements/feedback';
+import { PageToolbar, Workbench, WorkbenchFooter, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import type { ConsoleView } from '@mechane/protocol';
+import type { ReactNode } from 'react';
+import { ConversationPlaceholder } from './conversation.tsx';
+import { ActivityPlaceholder } from './events.tsx';
+import { MechHeaderPlaceholder } from './mech-header.tsx';
+import { MechSettingsPlaceholder } from './mech-settings.tsx';
+import { TurnTracePlaceholder } from './trace.tsx';
+import type { TraceTab } from './trace.tsx';
+import { TurnListPlaceholder } from './turns.tsx';
+import { MemoryListPlaceholder, WorkListPlaceholder } from './work.tsx';
+
+const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'work', 'activity']);
+
+export function MechPagePlaceholder({
+  view,
+  focusedRun = false,
+  traceTab = 'Overview',
+}: {
+  readonly view: ConsoleView;
+  readonly focusedRun?: boolean;
+  readonly traceTab?: TraceTab;
+}): ReactNode {
+  if (focusedRun) {
+    return (
+      <>
+        <PageToolbar
+          navigation={false}
+          title={<SkeletonText width="16ch" />}
+          leading={<ButtonPlaceholder width="6ch" />}
+        />
+        <Workbench>
+          <WorkbenchScroll label="Run details">
+            <TurnTracePlaceholder tab={traceTab} />
+          </WorkbenchScroll>
+        </Workbench>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <MechHeaderPlaceholder />
+      <Workbench>
+        {view === 'conversation' ? (
+          <>
+            <ConversationPlaceholder />
+            <WorkbenchFooter>
+              <PromptInputPlaceholder compact />
+            </WorkbenchFooter>
+          </>
+        ) : (
+          <WorkbenchScroll label="Mech content" flush={collectionViews.has(view)}>
+            <MechContentPlaceholder view={view} />
+          </WorkbenchScroll>
+        )}
+      </Workbench>
+    </>
+  );
+}
+
+function MechContentPlaceholder({ view }: { readonly view: ConsoleView }): ReactNode {
+  switch (view) {
+    case 'runs':
+      return <TurnListPlaceholder />;
+    case 'work':
+      return <WorkListPlaceholder />;
+    case 'memory':
+      return <MemoryListPlaceholder />;
+    case 'activity':
+      return <ActivityPlaceholder />;
+    case 'definition':
+      return <MechSettingsPlaceholder />;
+    case 'conversation':
+    case 'requests':
+    case 'events':
+    case 'tools':
+      return <ConversationPlaceholder />;
+  }
+}

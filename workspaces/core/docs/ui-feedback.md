@@ -25,9 +25,16 @@ rather than showing it as both a banner and a toast.
 are mutually exclusive. They contain supplied content and do not fetch on opening. `Breadcrumb` describes location using
 application-owned links. `Kbd` displays a declared shortcut and registers no listener.
 
-`Skeleton` and `SkeletonText` provide decorative geometry inside a labelled loading region. `Loading` supplies the
-existing row and detail compositions. `Spinner` is a steady busy glyph with an accessible label. These parts add no
-continuous decorative motion. Keep usable content mounted during refreshes.
+`AsyncRegion` owns initial loading presentation with an explicit pending, ready, or failed state. It reserves its
+destination-specific placeholder immediately, reveals it after two seconds, and fades ready content in over 80ms. Cached
+ready content and failures appear immediately. `LoadingScope` shares the initial clock by navigation identity without
+remounting ready children; a retry starts a fresh delay. Timing is shared, and reduced motion removes fades.
+
+`Skeleton` and `SkeletonText` provide decorative geometry inside that region. Table placeholders share the real table's
+column roles, row sizing, and text layout. Button and field placeholders use the shared control recipes; the icon button
+variant and composer placeholder also preserve coarse-pointer geometry. The region owns one delayed announcement, while
+its placeholders remain inert and hidden from assistive technology. `Spinner` is a steady busy glyph with an accessible
+label. These parts add no continuous motion. Keep usable content mounted in the ready state during refreshes.
 
 `Progress` describes task completion. `Meter` describes capacity or another bounded measurement. Both require a maximum,
 a value and caller-formatted text. Null remains unavailable or indeterminate; zero remains zero. Unknown capacity has no

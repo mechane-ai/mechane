@@ -68,10 +68,6 @@ const styles = stylex.create({
   label: { gridArea: '1 / 1', minWidth: 0 },
   hidden: { visibility: 'hidden' },
   icon: { width: controls.iconSize, height: controls.iconSize, flexShrink: 0, display: 'inline-flex' },
-  iconButton: {
-    minWidth: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
-    paddingInline: 0,
-  },
   text: {
     'display': 'inline-block',
     'boxSizing': 'border-box',
@@ -190,7 +186,7 @@ function ActionButton({
     controlStyles.button,
     styles.button,
     variants[tone][variant],
-    isIconOnly && styles.iconButton,
+    isIconOnly && controlStyles.iconButton,
     xstyle,
   );
 
@@ -275,7 +271,7 @@ export function IconLink({ children, xstyle, render, ref, ...props }: IconLinkPr
         controlStyles.button,
         styles.button,
         styles.ghostNeutral,
-        styles.iconButton,
+        controlStyles.iconButton,
         xstyle,
       ),
       props,

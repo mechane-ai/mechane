@@ -18,6 +18,10 @@
 /lint/ast-grep/tests/check-name-sequence-marker.yml linguist-generated merge=ours
 /lint/ast-grep/tests/class-accessibility-keyword.yml linguist-generated merge=ours
 /lint/ast-grep/tests/class-field-form.yml linguist-generated merge=ours
+/lint/ast-grep/tests/console-loading-boundary-typescript.yml linguist-generated merge=ours
+/lint/ast-grep/tests/console-loading-boundary.yml linguist-generated merge=ours
+/lint/ast-grep/tests/console-loading-scope-typescript.yml linguist-generated merge=ours
+/lint/ast-grep/tests/console-loading-scope.yml linguist-generated merge=ours
 /lint/ast-grep/tests/copy-outside-forks.yml linguist-generated merge=ours
 /lint/ast-grep/tests/date-constructor.yml linguist-generated merge=ours
 /lint/ast-grep/tests/declaration-file-role.yml linguist-generated merge=ours

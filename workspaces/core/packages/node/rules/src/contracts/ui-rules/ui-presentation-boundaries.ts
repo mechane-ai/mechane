@@ -40,9 +40,9 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
   { name: 'feedback', dependencies: ['foundations', 'core'] },
   { name: 'navigation', dependencies: ['foundations', 'forms', 'overlays'] },
   { name: 'layout', dependencies: ['foundations', 'core', 'overlays'] },
-  { name: 'collections', dependencies: ['foundations', 'core', 'forms', 'overlays'] },
+  { name: 'collections', dependencies: ['foundations', 'core', 'forms', 'overlays', 'feedback'] },
   { name: 'content', dependencies: ['foundations', 'core', 'forms'] },
-  { name: 'ai', dependencies: ['foundations', 'core', 'forms', 'overlays', 'content'] },
+  { name: 'ai', dependencies: ['foundations', 'core', 'forms', 'overlays', 'content', 'feedback'] },
   { name: 'charts', dependencies: ['foundations', 'core', 'forms', 'feedback'] },
 ];
 

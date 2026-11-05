@@ -27,6 +27,10 @@ export const controlStyles = stylex.create({
     overflowWrap: 'anywhere',
     textAlign: 'center',
   },
+  iconButton: {
+    minWidth: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    paddingInline: 0,
+  },
   field: {
     display: 'block',
     width: '100%',
@@ -60,6 +64,19 @@ export const controlStyles = stylex.create({
     overflowWrap: 'anywhere',
   },
   textarea: { minHeight: 144, resize: 'vertical', lineHeight: typography.multilineLineHeight },
+  plainTextarea: {
+    'minHeight': typography.bodyLineHeight,
+    'maxHeight': '30dvh',
+    'fieldSizing': 'content',
+    'resize': 'none',
+    'paddingBlock': 0,
+    'paddingInline': 0,
+    'borderWidth': 0,
+    'borderRadius': 0,
+    'backgroundColor': 'transparent',
+    ':focus-visible': { outlineStyle: 'none' },
+    ':disabled': { backgroundColor: 'transparent' },
+  },
   // An inset border lets each child keep the full control hit target.
   group: {
     'position': 'relative',

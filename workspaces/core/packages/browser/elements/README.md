@@ -154,6 +154,21 @@ structural styles in the published stylesheet, so the production package injects
 initial-read failures and field validation local; retained-content refresh failures can use one notification with Retry.
 The application owns stable notification IDs and dismissal on recovery or navigation.
 
+## Loading content
+
+Use `AsyncRegion` from `/feedback` with an explicit `pending`, `ready`, or `failed` state and a destination-specific
+`placeholder`. Pending reserves that geometry immediately and reveals it after two seconds. Ready content enters in
+80ms; ready-at-mount and failed content appear immediately. Reduced motion removes the fades. There is no minimum
+loading duration, and ordinary callers do not configure timing.
+
+Wrap a page in `LoadingScope` and pass its navigation `identity` to share one clock across dependent reads. Updating the
+identity resets pending presentation without remounting ready children. Keep refreshes in the ready state and retain
+their content, focus, and drafts; display progress or failure alongside the last result.
+
+Build placeholders from the same layouts as their destinations. `DataTablePlaceholder` accepts the real table's
+`DataTableColumnLayout` definitions and optional decorative cells. The async region owns the loading announcement; its
+placeholders must not contain interactive controls, invented records, or independent status announcements.
+
 ## Develop and release
 
 From `workspaces/core`:

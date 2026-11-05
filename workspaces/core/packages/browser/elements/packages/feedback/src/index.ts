@@ -1,7 +1,6 @@
 export { EmptyState, Notice } from './feedback.tsx';
 export type { ButtonPlaceholderProps, FieldPlaceholderProps } from './control-placeholders.tsx';
 export { ButtonPlaceholder, FieldPlaceholder } from './control-placeholders.tsx';
-export { Loading } from './loading.tsx';
 export type { ProgressProps, MeterProps } from './progress.tsx';
 export { Progress, Meter } from './progress.tsx';
 export type { SkeletonProps, SkeletonTextProps, SpinnerProps } from './skeleton.tsx';
@@ -10,5 +9,5 @@ export type { ExternalToast as ToastOptions } from 'sonner';
 export { toast } from 'sonner';
 export type { ToasterProps } from './toast.tsx';
 export { Toaster } from './toast.tsx';
-export type { AsyncRegionProps, ContentRevealProps } from './async-region.tsx';
-export { AsyncRegion, ContentReveal } from './async-region.tsx';
+export type { AsyncRegionProps, AsyncRegionState, ContentRevealProps, LoadingScopeProps } from './async-region.tsx';
+export { AsyncRegion, ContentReveal, LoadingScope } from './async-region.tsx';

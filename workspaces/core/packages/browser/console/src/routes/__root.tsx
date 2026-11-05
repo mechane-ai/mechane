@@ -1,9 +1,9 @@
 import { TextLink } from '@mechane-ai/elements';
-import { EmptyState } from '@mechane-ai/elements/feedback';
+import { EmptyState, LoadingScope } from '@mechane-ai/elements/feedback';
 import { SkipLink } from '@mechane-ai/elements/navigation';
-import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts } from '@tanstack/react-router';
+import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts, useRouterState } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
-import { ConsoleEntrance } from '../entrance.tsx';
+import { ConsoleEntrance, ConsolePending } from '../entrance.tsx';
 import css from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -25,6 +25,9 @@ export const Route = createRootRoute({
 });
 
 function Root({ children }: { readonly children: ReactNode }): ReactNode {
+  const location = useRouterState({ select: (state) => state.location });
+  const loadingIdentity = JSON.stringify([location.href, location.state.consolePages]);
+
   return (
     <html lang="en">
       <head>
@@ -32,7 +35,9 @@ function Root({ children }: { readonly children: ReactNode }): ReactNode {
       </head>
       <body>
         <SkipLink href="#main">Skip to content</SkipLink>
-        <ClientOnly fallback={<ConsoleEntrance />}>{children}</ClientOnly>
+        <LoadingScope identity={loadingIdentity}>
+          <ClientOnly fallback={<ConsolePending />}>{children}</ClientOnly>
+        </LoadingScope>
         <Scripts />
       </body>
     </html>

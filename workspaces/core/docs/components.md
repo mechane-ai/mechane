@@ -129,17 +129,29 @@ props, and choose named variants from its state. The
 Tooltip. Base UI documents [render functions](https://base-ui.com/react/handbook/composition#render-function) and their
 [explicit prop merging](https://base-ui.com/react/utils/merge-props).
 
-Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use Loading for
-missing initial data and EmptyState for a successful empty result. The application decides when access loss or a
-resource change requires clearing data.
+Keep a successful result mounted during refreshes. Show refresh progress or failure beside that result. Use
+`AsyncRegion` for missing initial data and `EmptyState` for a successful empty result. The application decides when
+access loss or a resource change requires clearing data.
 
-`AsyncRegion` renders a caller-supplied pending state with an inert placeholder. Its optional `delayMs` and epoch
-`startedAt` let an application share one visibility deadline across regions. Changing that epoch resets only the pending
-placeholder. Ready children are not keyed or remounted by a navigation clock. Keep `pending` false during a refresh that
-retains authorized content. `SkeletonText` reserves inherited line boxes and accepts a width; use one line for labels or
-explicit `lines` for prose. `ContentReveal` coordinates nested entry using shared motion tokens. Use `ButtonPlaceholder`
-and `FieldPlaceholder` from `/feedback` inside the loaded form or settings layout. They share control recipes, including
-coarse-pointer geometry. Do not mount hidden live controls to measure a placeholder.
+`AsyncRegion` requires an explicit `state`, accessible `label`, and destination-specific `placeholder`. Pending reserves
+the placeholder geometry immediately and reveals it after two seconds with a 120ms entrance. Ready content enters in
+80ms; ready-at-mount and failed content appear immediately. The failed and ready states require children; pending
+forbids them. Reduced motion removes the fades, and completion never waits for a minimum loading duration.
+
+`LoadingScope identity={navigationIdentity}` shares one initial clock across a page. A new identity resets pending
+presentation without keying or remounting ready children. A later transition back to pending within the same scope
+starts a fresh delay. Keep `state="ready"` during refreshes that retain authorized content, and keep a failed result
+visible while its retry action is pending. Ordinary callers do not configure timing.
+
+Use `DataTablePlaceholder` with the real table's column roles, layout metadata, and row sizing, and
+`DataTableTextPlaceholder` for cells with a leading icon or secondary line. Use `ButtonPlaceholder` and
+`FieldPlaceholder` from `/feedback` inside the loaded form or settings layout; they share control recipes, including
+coarse-pointer geometry. `ButtonPlaceholder icon` matches an icon-only action without accepting text width.
+`PromptInputPlaceholder` reserves the composer frame, and `PageNavigationPlaceholder` reserves supplied navigation
+labels without mounting a form or live anchors. Do not mount hidden live controls to measure a placeholder.
+
+`SkeletonText` reserves inherited line boxes; use one line for labels or explicit `lines` for prose. Placeholders are
+decorative and noninteractive. `ContentReveal` coordinates nested entry through the actual ancestor animation lifecycle.
 
 ## Data and content
 

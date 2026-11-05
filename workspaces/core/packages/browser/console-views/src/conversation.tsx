@@ -1,7 +1,7 @@
 import { CopyValue, Muted, Row, Stack, Status } from '@mechane-ai/elements';
 import { Conversation, Message, MessageAction, MessageBoundary } from '@mechane-ai/elements/ai';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
-import { EmptyState } from '@mechane-ai/elements/feedback';
+import { EmptyState, SkeletonText } from '@mechane-ai/elements/feedback';
 import { Event, EventType } from '@mechane/protocol';
 import type { EventPage } from '@mechane/protocol';
 import { Schema } from 'effect';
@@ -17,6 +17,23 @@ const conversationEvents: ReadonlySet<Event['type']> = new Set([
   EventType.MechForked,
   EventType.DroneReported,
 ]);
+
+export function ConversationPlaceholder(): ReactNode {
+  return (
+    <Conversation.Root follow={false}>
+      <Conversation.Viewport label="Conversation">
+        <Conversation.Content>
+          <Message author="" kind="user" avatar={<SkeletonText width="8ch" />}>
+            <SkeletonText lines={2} width="70%" />
+          </Message>
+          <Message author="" avatar={<SkeletonText width="12ch" />}>
+            <SkeletonText lines={4} />
+          </Message>
+        </Conversation.Content>
+      </Conversation.Viewport>
+    </Conversation.Root>
+  );
+}
 
 export function MechConversation({
   page,

@@ -1,0 +1,4 @@
+id: console-loading-scope-import
+language: TypeScript
+rule:
+  regex: ^LoadingScope$

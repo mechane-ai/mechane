@@ -1,0 +1,20 @@
+id: console-loading-boundary
+language: Tsx
+severity: error
+message: 'Use the resource presentation owner, such as `<ResourceView state={state} placeholder={placeholder} />` (071)'
+files: ['packages/browser/console/src/**/*.tsx', 'packages/browser/console-views/src/**/*.tsx']
+ignores: ['packages/browser/console/src/resource.tsx', 'packages/browser/console/src/entrance.tsx']
+rule:
+  kind: import_statement
+  has:
+    field: source
+    regex: ^['"]@mechane-ai/elements/feedback['"]$
+  any:
+    - has:
+        stopBy: end
+        has:
+          field: name
+          matches: console-loading-boundary-import
+    - has:
+        stopBy: end
+        kind: namespace_import

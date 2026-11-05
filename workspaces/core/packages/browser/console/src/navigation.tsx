@@ -16,14 +16,20 @@ export function consoleTransition(from: ConsoleLocation, to: ConsoleLocation) {
   const sameOwner = fromWorkspace === toWorkspace && from.mech === to.mech;
   const sameTurn = from.turn !== undefined && from.turn === to.turn;
   const withinRun = sameOwner && sameTurn;
+  const sameEventScope = withinRun && from.event === to.event;
 
   return {
     replace: withinRun,
     resetScroll: !sameOwner,
     state: (prior: HistoryState): HistoryState => {
-      const retained = sameOwner ? prior : {};
+      const retained: HistoryState = sameOwner ? prior : {};
 
-      return to.turn === undefined || withinRun ? retained : { ...retained, consoleRunOrigin: from };
+      const state =
+        sameEventScope || retained.consolePages === undefined
+          ? retained
+          : { ...retained, consolePages: { ...retained.consolePages, events: [] } };
+
+      return to.turn === undefined || withinRun ? state : { ...state, consoleRunOrigin: from };
     },
   };
 }
@@ -190,9 +196,8 @@ export function usePageCursors<K extends keyof PageCursors>(
   const pages = useRouterState({ select: (state) => state.location.state.consolePages });
   const cursors = pages?.[key] ?? initial;
 
-  return [
-    cursors,
-    (next) => {
+  const setCursors = useCallback(
+    (next: PageCursors[K]) => {
       void navigate({
         to: '/',
         search: true,
@@ -201,5 +206,8 @@ export function usePageCursors<K extends keyof PageCursors>(
         state: (prior) => ({ ...prior, consolePages: { ...prior.consolePages, [key]: next } }),
       });
     },
-  ];
+    [key, navigate],
+  );
+
+  return [cursors, setCursors];
 }

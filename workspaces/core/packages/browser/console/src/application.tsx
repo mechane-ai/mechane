@@ -2,17 +2,16 @@ import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
 import { isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
 import type { Session } from '@mechane/console-data';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
-import { ConsoleEntrance, Welcome } from './entrance.tsx';
+import { ConsoleEntrance, ConsolePending, Welcome } from './entrance.tsx';
 import type { ConsoleNavigation } from './types.ts';
-
-const WorkspaceScreen = lazy(() => import('./workspace.tsx').then((module) => ({ default: module.WorkspaceScreen })));
+import { WorkspaceScreen } from './workspace.tsx';
 
 type SessionState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'signed-out' }
-  | { readonly kind: 'failed'; readonly error: unknown }
+  | { readonly kind: 'failed'; readonly error: unknown; readonly retrying: boolean }
   | { readonly kind: 'ready'; readonly session: Session };
 
 export function ConsoleApplication({ location, navigate }: ConsoleNavigation): ReactNode {
@@ -20,7 +19,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   const [attempt, setAttempt] = useState(0);
 
   function reconnect(): void {
-    setState({ kind: 'loading' });
+    setState((previous) => (previous.kind === 'failed' ? { ...previous, retrying: true } : { kind: 'loading' }));
     setAttempt((value) => value + 1);
   }
 
@@ -35,7 +34,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
       },
       (error: unknown) => {
         if (!controller.signal.aborted) {
-          setState(isSignedOut(error) ? { kind: 'signed-out' } : { kind: 'failed', error });
+          setState(isSignedOut(error) ? { kind: 'signed-out' } : { kind: 'failed', error, retrying: false });
         }
       },
     );
@@ -44,7 +43,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   }, [attempt]);
 
   if (state.kind === 'loading') {
-    return <ConsoleEntrance />;
+    return <ConsolePending />;
   }
 
   if (state.kind === 'signed-out') {
@@ -56,7 +55,9 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
       <ConsoleEntrance>
         <Stack>
           <Notice error>{problemMessage(state.error)}</Notice>
-          <Button onClick={reconnect}>Try again</Button>
+          <Button onClick={reconnect} pending={state.retrying} pendingLabel="Trying again…">
+            Try again
+          </Button>
         </Stack>
       </ConsoleEntrance>
     );
@@ -138,15 +139,13 @@ function WorkspaceSelection({
   }
 
   return (
-    <Suspense fallback={<ConsoleEntrance />}>
-      <WorkspaceScreen
-        key={`${session.principal.id}:${workspace.id}`}
-        session={session}
-        workspace={workspace}
-        location={location}
-        navigate={navigate}
-        onSessionEnded={reconnect}
-      />
-    </Suspense>
+    <WorkspaceScreen
+      key={`${session.principal.id}:${workspace.id}`}
+      session={session}
+      workspace={workspace}
+      location={location}
+      navigate={navigate}
+      onSessionEnded={reconnect}
+    />
   );
 }

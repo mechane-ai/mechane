@@ -53,6 +53,11 @@ Keep current activity beside the composer, outside the paginated transcript. Its
 not the history page. The compact presentation preserves the read states required by contract 071; an unavailable or
 pending activity read must not imply that the mech is idle.
 
+Reserve the conversation viewport and composer in the initial pending layout. Loading and ready use the same flex and
+scroll owners; placeholder arrival must not move the composer. Once authorized controls exist, a transcript or activity
+refresh cannot unmount the form, restart its submission lifecycle, or replace usable conversation content. Activity
+loading follows the shared resource boundary without delaying a send acknowledgement or failure.
+
 A message receipt acknowledges acceptance, not execution. Distinguish a message waiting to run from a recorded running
 turn, and associate it only through its recorded input identity. Once that association is known, the run falling outside
 a bounded page must not make the message appear queued again. Preserve independently known receipt information when
