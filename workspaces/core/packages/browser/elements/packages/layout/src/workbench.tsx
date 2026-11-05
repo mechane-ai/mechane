@@ -18,7 +18,7 @@ const styles = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
   },
-  body: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0, overflow: 'hidden' },
+  body: { display: 'flex', flex: 1, minWidth: 0, minHeight: 0, overflow: 'clip' },
   main: { display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0 },
   scroll: { overflowY: 'auto', flex: 1, minWidth: 0, minHeight: 0, padding: spacing.xl },
   footer: {
