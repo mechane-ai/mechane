@@ -1,7 +1,7 @@
 ---
 name: ui-stylex-composition
 message: Preserve control composition and token imports through the production StyleX compiler.
-paths: ["packages/browser/elements/**","packages/browser/catalog/src/stylex-plugin.ts","packages/browser/console/vite.config.ts","packages/browser/console/.storybook/**"]
+paths: ["packages/browser/elements/**","packages/browser/catalog/src/stylex-*.ts","packages/browser/console/vite.config.ts","packages/browser/console/.storybook/**"]
 ---
 
 ## Rules
@@ -40,9 +40,15 @@ Composition review is development evidence. It does not require a new browser su
 
 Published components and consumer StyleX rules share the compiler's top-level priority layers after `reset`. Do not
 nest the package's rules in a separate layer: identical consumer base declarations must not outrank packaged hover,
-focus, disabled, or responsive states. Consumer themes can override token defaults. Preserve the defining token's
+focus, disabled, or responsive states. Put packaged token defaults and themes in `priority1`, including conditional
+rules, so an independently compiled theme can override them. Preserve existing layers and non-token rules when
+normalizing compiler output. Consumer themes can override token defaults. Preserve the defining token's
 package-relative path so separately compiled themes target the same variables. Verify both an ordinary React consumer
 and a StyleX consumer with overlapping base declarations, including navigation hover and portaled overlays.
+Verify default, dark, and separately compiled custom themes against the packed stylesheet. Check nested conditional
+tokens and an ordinary unlayered application override of a packaged theme. A component's base or hover declarations
+retain their layers. Check consumer builds with and without priority-zero rules; consumer-owned themes follow their
+emitted layers and selector specificity.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

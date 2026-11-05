@@ -41,8 +41,9 @@ export function Example() {
 Elements supplies compiled ESM, TypeScript declarations, and CSS. Ordinary React consumers need no StyleX compiler.
 Applications install their own reset and fonts. Put reset rules in the `reset` CSS layer. Elements and consumer StyleX
 rules share the compiler's ordered `priority` layers. Keep those layers at the top level: wrapping Elements in another
-layer lets consumer base declarations override component hover and focus states. Unlayered application themes can
-override token defaults.
+layer lets consumer base declarations override component hover and focus states. Packaged token defaults and themes use
+`priority1`; ordinary unlayered application rules can override the package. Consumer-generated themes follow their own
+emitted layers and selector specificity.
 
 ## Imports
 
@@ -130,10 +131,10 @@ The default theme is light, with system fonts and a compact spacing scale. Impor
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content
 then inherits the same theme. The application owns the preference; no theme provider is required.
 
-For custom StyleX themes, import definitions from `@mechane-ai/elements/tokens.stylex`, enable CommonJS module
-resolution in the StyleX plugin, and use `stylex.createTheme`. The defining path is preserved in the archive so
-generated variables match its compiled CSS. The ordinary `/tokens` entry supplies runtime references rather than
-compile-time definitions.
+For custom StyleX themes, import definitions from `@mechane-ai/elements/tokens.stylex`, enable `useCSSLayers: true` and
+CommonJS module resolution in the StyleX plugin, and use `stylex.createTheme`. The defining path is preserved in the
+archive so generated variables match its compiled CSS. The ordinary `/tokens` entry supplies runtime references rather
+than compile-time definitions.
 
 Set the consumer compiler's `debug: false` so placement overrides use the archive's property keys. Keep definition
 resolution for compilation; bundle `/tokens` runtime references to avoid reinjecting defaults over a chosen theme.
