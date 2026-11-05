@@ -23,6 +23,7 @@ const entryPattern: (target: string) => string = (target) => {
 const FOUNDATION_ENTRIES = [
   'accessibility.ts',
   'control-state.ts',
+  'control-styles.ts',
   'style-composition.ts',
   'overlay-styles.ts',
   'popup-styles.ts',

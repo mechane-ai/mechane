@@ -10,6 +10,8 @@ import {
   colors,
   conditions,
   controls,
+  layers,
+  pageGeometry,
   radii,
   spacing,
   tableGeometry,
@@ -19,6 +21,7 @@ import { Tooltip } from '../../overlays/src/index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
 const features = tableFeatures({});
+const selectionColumnWidth = 76;
 
 const rowControlSelector =
   'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"], [role="tab"], [role^="menuitem"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
@@ -68,7 +71,7 @@ const styles = stylex.create({
   }),
   caption: {
     textAlign: 'left',
-    padding: spacing.lg,
+    padding: pageGeometry.inset,
     color: colors.muted,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
@@ -77,10 +80,10 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     position: 'sticky',
     top: 0,
-    zIndex: 1,
+    zIndex: layers.sticky,
     height: tableGeometry.headerHeight,
     paddingBlock: 0,
-    paddingInline: spacing.lg,
+    paddingInline: pageGeometry.inset,
     borderBottomWidth: 1,
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
@@ -138,7 +141,7 @@ const styles = stylex.create({
     'alignItems': 'center',
     'width': '100%',
     'minWidth': 0,
-    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': 0,
     'borderWidth': 0,
     'borderRadius': radii.sm,
@@ -159,9 +162,9 @@ const styles = stylex.create({
     },
   },
   cell: {
-    minWidth: '12ch',
+    boxSizing: 'border-box',
     paddingBlock: 0,
-    paddingInline: spacing.lg,
+    paddingInline: pageGeometry.inset,
     verticalAlign: 'middle',
     overflowWrap: 'anywhere',
   },
@@ -170,11 +173,13 @@ const styles = stylex.create({
   width: (width: number) => ({ width, minWidth: width }),
   secondary: { display: { [conditions.compactTable]: 'none' } },
   truncated: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
-  cellContent: { display: 'block', minWidth: 0, maxWidth: '100%' },
+  cellContent: { display: 'block', minWidth: 0, width: '100%', maxWidth: '100%' },
   text: { display: 'block', minWidth: 0, width: '100%' },
   textColumn: { flex: 1, minWidth: 0 },
   textRow: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0, width: '100%' },
-  leading: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
+  primaryRow: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
+  primaryText: { width: 'auto', flexShrink: 1 },
+  adornment: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
   secondaryText: { color: colors.muted, fontSize: typography.captionSize, lineHeight: typography.captionLineHeight },
   cellViewport: {
     display: 'flex',
@@ -183,16 +188,17 @@ const styles = stylex.create({
     width: '100%',
     height: `calc(${tableGeometry.rowHeight}px - 1px)`,
   },
-  fixedContent: { width: '100%', maxHeight: `calc(${tableGeometry.rowHeight}px - 1px)` },
+  fixedContent: { maxHeight: `calc(${tableGeometry.rowHeight}px - 1px)` },
+  readable: { whiteSpace: 'nowrap' },
   contentCell: { paddingBlock: spacing.sm },
   contentViewport: { height: 'auto' },
-  selection: { width: 44, minWidth: 0, paddingInline: spacing.md },
+  selection: { width: selectionColumnWidth, minWidth: 0, paddingInline: pageGeometry.inset },
   spacer: (height: number) => ({ height, padding: 0, borderWidth: 0 }),
   empty: { padding: spacing.xxl, textAlign: 'center', color: colors.muted },
-  footer: { padding: spacing.lg, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
+  footer: { padding: pageGeometry.inset, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
   endContent: {
     'minHeight': controls.coarseTarget,
-    'padding': spacing.lg,
+    'padding': pageGeometry.inset,
     'color': colors.muted,
     'fontSize': typography.captionSize,
     'lineHeight': typography.captionLineHeight,
@@ -200,16 +206,35 @@ const styles = stylex.create({
   },
 });
 
-type ColumnAlignment = 'start' | 'end';
 type TableSizing = 'content' | 'fill';
 type RowSizing = 'fixed' | 'content';
+
+export type DataTableColumnRole = 'primary' | 'text' | 'status' | 'number' | 'timestamp' | 'actions';
+
+type ColumnGeometry = { readonly minimumWidth: number; readonly flexible: boolean; readonly truncate: boolean };
+
+const columnGeometry = {
+  primary: { minimumWidth: 240, flexible: true, truncate: true },
+  text: { minimumWidth: 160, flexible: false, truncate: true },
+  status: { minimumWidth: 160, flexible: false, truncate: false },
+  number: { minimumWidth: 112, flexible: false, truncate: false },
+  timestamp: { minimumWidth: 160, flexible: false, truncate: false },
+  actions: { minimumWidth: 112, flexible: false, truncate: false },
+} satisfies Record<DataTableColumnRole, ColumnGeometry>;
 
 const cellSizingStyles = { fixed: styles.content, content: styles.contentCell } satisfies Record<
   RowSizing,
   stylex.StyleXStyles
 >;
 
-const alignmentStyles = { start: styles.start, end: styles.end } satisfies Record<ColumnAlignment, stylex.StyleXStyles>;
+const columnRoleStyles = {
+  primary: styles.start,
+  text: styles.start,
+  status: styles.start,
+  number: styles.end,
+  timestamp: styles.end,
+  actions: styles.end,
+} satisfies Record<DataTableColumnRole, stylex.StyleXStyles>;
 
 const frameStyles = { content: styles.content, fill: styles.fillFrame } satisfies Record<
   TableSizing,
@@ -224,8 +249,8 @@ const viewportStyles = { content: styles.content, fill: styles.fillViewport } sa
 export type DataTableColumn<Row> = {
   readonly id: string;
   readonly label: string;
+  readonly role: DataTableColumnRole;
   readonly cell: (row: Row) => ReactNode;
-  readonly align?: ColumnAlignment;
   readonly width?: number;
   readonly secondary?: boolean;
   readonly truncate?: boolean;
@@ -236,19 +261,23 @@ export type DataTableTextProps = {
   readonly children: string;
   readonly secondary?: string | undefined;
   readonly leading?: ReactNode;
+  readonly trailing?: ReactNode;
 };
 
-export function DataTableText({ children, secondary, leading }: DataTableTextProps): ReactNode {
+export function DataTableText({ children, secondary, leading, trailing }: DataTableTextProps): ReactNode {
   return (
     <span {...stylex.props(styles.textRow)}>
       {leading !== undefined && (
-        <span aria-hidden {...stylex.props(styles.leading)}>
+        <span aria-hidden {...stylex.props(styles.adornment)}>
           {leading}
         </span>
       )}
       <span {...stylex.props(styles.textColumn)}>
-        <span title={children} {...stylex.props(styles.text, styles.truncated)}>
-          {children}
+        <span {...stylex.props(styles.primaryRow)}>
+          <span title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
+            {children}
+          </span>
+          {trailing !== undefined && trailing !== null && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
         </span>
         {secondary !== undefined && (
           <span title={secondary} {...stylex.props(styles.text, styles.truncated, styles.secondaryText)}>
@@ -311,7 +340,7 @@ export type DataTableProps<Row> = SortProperties<Row> &
 
 export function DataTable<Row extends object>({
   rows,
-  columns,
+  columns: suppliedColumns,
   getRowId,
   caption,
   empty,
@@ -331,6 +360,20 @@ export function DataTable<Row extends object>({
   onEndReached,
   footer,
 }: DataTableProps<Row>): ReactNode {
+  const columns = useMemo(
+    () =>
+      suppliedColumns.map((column) => {
+        const geometry = columnGeometry[column.role];
+
+        return {
+          ...column,
+          minimumWidth: column.width ?? geometry.minimumWidth,
+          width: column.width ?? (geometry.flexible ? undefined : geometry.minimumWidth),
+        };
+      }),
+    [suppliedColumns],
+  );
+
   const model = useMemo(() => {
     const helper = createColumnHelper<typeof features, Row>();
 
@@ -347,7 +390,11 @@ export function DataTable<Row extends object>({
   const pendingFocusId = useRef<string | undefined>(undefined);
   const restoredFocusId = useRef<string | undefined>(undefined);
   const focusedIndex = rows.findIndex((row) => getRowId(row) === focusedId);
-  const actionColumnIndex = columns.findIndex((column) => column.secondary !== true);
+  const primaryColumnIndex = columns.findIndex((column) => column.role === 'primary' && column.secondary !== true);
+
+  const actionColumnIndex =
+    primaryColumnIndex === -1 ? columns.findIndex((column) => column.secondary !== true) : primaryColumnIndex;
+
   const sizing = typeof window?.height === 'string' ? window.height : 'content';
 
   useLayoutEffect(() => {
@@ -505,13 +552,13 @@ export function DataTable<Row extends object>({
   }
 
   const columnCount = columns.length + (selectedIds === undefined ? 0 : 1);
-  const selectionWidth = selectedIds === undefined ? 0 : 44;
+  const selectionWidth = selectedIds === undefined ? 0 : selectionColumnWidth;
   const showFooter = footer !== undefined && footer !== null && typeof footer !== 'boolean';
-  const minimumWidth = columns.reduce((total, column) => total + (column.width ?? 160), selectionWidth);
+  const minimumWidth = columns.reduce((total, column) => total + column.minimumWidth, selectionWidth);
 
   const compactWidth = columns
     .filter((column) => column.secondary !== true)
-    .reduce((total, column) => total + (column.width ?? 160), selectionWidth);
+    .reduce((total, column) => total + column.minimumWidth, selectionWidth);
 
   const trailingSpace =
     virtualizer.getTotalSize() - (virtualizer.getVirtualItems().at(-1)?.end ?? headerHeight) + headerHeight;
@@ -531,11 +578,7 @@ export function DataTable<Row extends object>({
       >
         <table
           aria-rowcount={window === undefined ? undefined : Math.max(1, rows.length) + 1}
-          {...stylex.props(
-            styles.table,
-            (rowSizing === 'fixed' || columns.some((column) => column.truncate === true)) && styles.fixed,
-            styles.minimumWidth(minimumWidth, compactWidth),
-          )}
+          {...stylex.props(styles.table, styles.fixed, styles.minimumWidth(minimumWidth, compactWidth))}
         >
           <caption ref={captionElement} {...stylex.props(styles.caption, hideCaption && accessibility.hidden)}>
             {caption}
@@ -570,7 +613,7 @@ export function DataTable<Row extends object>({
                     aria-sort={direction}
                     {...stylex.props(
                       styles.header,
-                      alignmentStyles[column.align ?? 'start'],
+                      columnRoleStyles[column.role],
                       column.width !== undefined && styles.width(column.width),
                       column.secondary === true && styles.secondary,
                     )}
@@ -673,7 +716,7 @@ export function DataTable<Row extends object>({
                       {...stylex.props(
                         styles.cell,
                         cellSizingStyles[rowSizing],
-                        alignmentStyles[column.align ?? 'start'],
+                        columnRoleStyles[column.role],
                         column.width !== undefined && styles.width(column.width),
                         column.secondary === true && styles.secondary,
                       )}
@@ -685,12 +728,12 @@ export function DataTable<Row extends object>({
                           active={activeRowId === row.id}
                           onKeyDown={(event) => moveFocus(event, index)}
                         >
-                          <TableCellContent fixed={rowSizing === 'fixed'} truncate={column.truncate}>
+                          <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={column.truncate}>
                             {column.cell(row.original)}
                           </TableCellContent>
                         </RowTrigger>
                       ) : (
-                        <TableCellContent fixed={rowSizing === 'fixed'} truncate={column.truncate}>
+                        <TableCellContent role={column.role} fixed={rowSizing === 'fixed'} truncate={column.truncate}>
                           {column.cell(row.original)}
                         </TableCellContent>
                       )}
@@ -723,21 +766,30 @@ export function DataTable<Row extends object>({
 }
 
 function TableCellContent({
+  role,
   fixed,
   truncate,
   children,
 }: {
+  readonly role: DataTableColumnRole;
   readonly fixed: boolean;
   readonly truncate: boolean | undefined;
   readonly children: ReactNode;
 }): ReactNode {
-  const isTruncated = typeof children === 'string' && (truncate ?? fixed);
+  const geometry = columnGeometry[role];
+  const defaultTruncation = fixed && geometry.truncate;
+  const isTruncated = typeof children === 'string' && (truncate ?? defaultTruncation);
 
   return (
     <span {...stylex.props(styles.cellViewport, !fixed && styles.contentViewport)}>
       <span
         title={typeof children === 'string' ? children : undefined}
-        {...stylex.props(styles.cellContent, fixed && styles.fixedContent, isTruncated && styles.truncated)}
+        {...stylex.props(
+          styles.cellContent,
+          fixed && styles.fixedContent,
+          fixed && !geometry.truncate && styles.readable,
+          isTruncated && styles.truncated,
+        )}
       >
         {children}
       </span>

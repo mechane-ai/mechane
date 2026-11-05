@@ -51,6 +51,7 @@ export function MechList({
           {
             id: 'name',
             label: 'Mech',
+            role: 'primary',
             cell: (mech) => (
               <DataTableText
                 secondary={mech.model}
@@ -63,6 +64,7 @@ export function MechList({
           {
             id: 'status',
             label: 'Availability',
+            role: 'status',
             width: 120,
             cell: (mech) => (
               <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>
@@ -73,8 +75,8 @@ export function MechList({
           {
             id: 'pin',
             label: 'Pin',
+            role: 'actions',
             width: 80,
-            align: 'end',
             cell: (mech) => (
               <MechPinButton name={mech.name} pinned={pinnedIds.has(mech.id)} onToggle={() => onTogglePin(mech)} />
             ),

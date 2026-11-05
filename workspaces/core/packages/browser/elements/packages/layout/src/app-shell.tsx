@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { colors, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, pageGeometry, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
@@ -34,7 +34,7 @@ const styles = stylex.create({
     minHeight: 0,
     minWidth: 0,
   },
-  collapsed: { width: frame.toolbarHeight },
+  collapsed: { width: pageGeometry.toolbarHeight },
   hidden: { display: 'none' },
   main: { minWidth: 0, flex: 1 },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },

@@ -2,7 +2,6 @@ import * as stylex from '@stylexjs/stylex';
 
 export const frame = stylex.defineVars({
   sidebarWidth: '240px',
-  toolbarHeight: '48px',
   navigationHeight: '34px',
   navigationInset: '8px',
   navigationPadding: '7px',

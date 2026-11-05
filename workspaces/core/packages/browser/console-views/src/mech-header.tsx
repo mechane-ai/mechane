@@ -49,7 +49,7 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     display: { 'default': 'inline', '@container toolbar (max-width:600px)': 'none' },
   },
-  trigger: { gap: spacing.xs, minWidth: 0 },
+  trigger: { minWidth: 0 },
   menu: { minWidth: 180 },
   wide: { display: { 'default': 'flex', '@container toolbar (max-width:600px)': 'none' }, alignItems: 'center' },
   narrow: { display: { 'default': 'none', '@container toolbar (max-width:600px)': 'flex' } },

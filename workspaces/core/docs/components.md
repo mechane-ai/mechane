@@ -18,17 +18,17 @@ version.
 
 The [package guide](../packages/browser/elements/README.md) covers installing the npm package and its compiled CSS.
 
-The [visual system](visual-system.md) explains the design decisions. Component geometry follows roles: compact actions
-are 32px, ordinary controls 36px, coarse-pointer targets at least 44px, and ordinary table rows 48px. The source tokens
-own these values. Body text, captions, controls, section headings, and record titles use their respective typography
-roles. Small radii soften controls; page frames and shared dividers stay square.
+The [visual system](visual-system.md) explains the design decisions and shared geometry. Ordinary controls share one
+outer height and body typography; coarse pointers use the shared target and text-entry sizes. The source tokens own
+these values. Body text, captions, section headings, and record titles use their respective typography roles. Small
+radii soften controls; page frames and shared dividers stay square.
 
 ## Add or change a component
 
 1. Choose an existing family and neighboring composition. Reuse its control behavior, tokens, and named variants. Add a
    token only for a reusable visual decision that existing roles cannot express.
-2. Let parents own layout. Use Row for centered controls, Stack for related groups, RecordPage.Content for separated
-   sections, and DataTable for comparable records. Keep explanatory copy near the field or decision that needs it.
+2. Let parents own layout. Use Row for centered controls, Stack for related groups, RecordPage for details, PageContent
+   for report sections, and DataTable for comparable records. Keep explanatory copy beside the decision it informs.
 3. Keep pointer hover, press, keyboard focus, pending, unavailable, and selection states distinct. Repeated navigation
    stays immediate. Use the adopted behavior library for focus and dismissal instead of writing another state machine.
 4. Add useful synthetic catalog examples. Inspect long text, narrow layouts, both themes, empty and failed content, and
@@ -67,9 +67,10 @@ Storybook prop tables are partial with the pinned compiler. Read the owning sour
 UI props; the tables are not an exhaustive API reference.
 
 Import shared tokens directly from `@mechane-ai/elements/tokens.stylex`. StyleX needs the defining export to compile
-variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shell measurements belong to
-`elements/layout`. Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from
-`/theme` to the document root so portaled controls inherit it. Applications own theme preference and persistence.
+variables. These are CSS values; chart scales need numeric geometry in the caller’s unit. Shared page insets, toolbar
+height, and section gaps live in the foundation's `pageGeometry`; other shell measurements belong to `elements/layout`.
+Light and dark themes share the same roles. Apply `themeProps.light` or `themeProps.dark` from `/theme` to the document
+root so portaled controls inherit it. Applications own theme preference and persistence.
 
 Use CSS `calc()` when deriving CSS dimensions from imported StyleX constants. JavaScript arithmetic on a transformed
 token can emit an invalid declaration even when TypeScript accepts it. Inspect the compiled value and the resulting
@@ -102,16 +103,23 @@ that describe the operation; a refresh failure belongs beside the retained conte
 Use `RecordPage.Root`, `Toolbar`, `Body`, `Content`, `Header`, and `Aside` to compose a resource detail. The toolbar
 owns the shared top edge and optional back link; the header owns a focusable record heading. Body content and an aside
 wrap naturally at narrow widths. `PageNavigation` exposes ordinary anchors with controlled current-item state.
-`SettingsSection` groups settings; each `SettingsRow` binds a real control ID to its label and description.
+`SettingsSection` groups settings; each `SettingsRow` binds a real control ID to its label and description. Its bounded
+field column aligns ordinary controls across rows, with smaller toggles at the trailing edge. Use `PageContent` for
+report sections inside their existing page frame. It owns the common inset and section gap; keep tables at their
+containing frame's edge because table cells already own their insets.
 
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a
 disabled control is unavailable. The [form example](../packages/browser/elements/packages/forms/src/forms.stories.tsx)
-shows native validation and local draft state.
+shows native validation and local draft state. Use `FormActions` for the submission row; its parent owns separation from
+the preceding fields. Buttons, inputs, selects, comboboxes, and their grouped forms share the same outer control
+geometry. Named variants express emphasis and intent; there is no consumer size, padding, or radius choice. Multiline
+text entry retains its content height.
 
 Multi-part controls retain Base UI names such as `Root`, `Trigger`, and `Popup`. Use `render` to compose triggers.
 Shared styles apply first, then concrete native classes and style objects are merged for upstream composition. The typed
-`xstyle` input permits placement adjustments without replacing focus, typography, or disabled styles.
+`xstyle` input accepts `PlacementStyle`, including width and placement, without replacing control height, padding,
+radius, typography, focus, or disabled styles. Preserve Base UI's DOM and state transport through wrappers.
 
 State callbacks for `className` and `style` work on a directly rendered control or the outermost trigger. The pinned
 Base UI release cannot preserve those callbacks on an inner React element supplied through `render`. Use concrete
@@ -129,13 +137,18 @@ resource change requires clearing data.
 `startedAt` let an application share one visibility deadline across regions. Changing that epoch resets only the pending
 placeholder. Ready children are not keyed or remounted by a navigation clock. Keep `pending` false during a refresh that
 retains authorized content. `SkeletonText` reserves inherited line boxes and accepts a width; use one line for labels or
-explicit `lines` for prose. `ContentReveal` coordinates nested entry using shared motion tokens.
+explicit `lines` for prose. `ContentReveal` coordinates nested entry using shared motion tokens. Use `ButtonPlaceholder`
+and `FieldPlaceholder` from `/feedback` inside the loaded form or settings layout. They share control recipes, including
+coarse-pointer geometry. Do not mount hidden live controls to measure a placeholder.
 
 ## Data and content
 
 Use `Table` for custom semantic table structures and `DataTable` for rows compared through shared columns. Pass already
 prepared rows to DataTable. Sorting, query state, pagination, and eligibility belong to the application; virtualization
-only bounds the rendered rows. A command's shortcut calls the same eligible action as its visible control.
+only bounds the rendered rows. A command's shortcut calls the same eligible action as its visible control. Declare each
+column's `role`: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles determine alignment and
+readable minimum sizing; primary columns use remaining width. Numbers, timestamps, and actions align to the end. Use
+explicit `width` or `truncate` only when content needs it, and share that metadata with pending rows.
 
 Use `Trace` for ordered activity and disclosure, `Waterfall` for supplied temporal evidence, and `RelationGraph` for
 explicit relationships. Charts receive prepared measurements, formatters, units, and missing-value meaning. They do not

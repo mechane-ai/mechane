@@ -1,37 +1,12 @@
-import { Muted } from '@mechane-ai/elements';
+import { Avatar, Muted } from '@mechane-ai/elements';
 import { Select } from '@mechane-ai/elements/forms';
 import { AppShell, Navigation, SidebarFooter, SidebarLabel } from '@mechane-ai/elements/layout';
-import { colors, controls, radii, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { Workspace } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
-const styles = stylex.create({
-  workspaceTrigger: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingBlock: 0,
-    paddingInline: controls.gap,
-    borderRadius: 0,
-  },
-  workspaceIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: controls.smHeight,
-    height: controls.smHeight,
-    flexShrink: 0,
-    borderRadius: radii.sm,
-    backgroundColor: colors.canvas,
-    color: colors.ink,
-    fontSize: typography.captionSize,
-    fontWeight: 500,
-  },
-  workspacePositioner: { minWidth: 224 },
-});
+const styles = stylex.create({ workspaceTrigger: { width: '100%' }, workspacePositioner: { minWidth: 224 } });
 
 type WorkspaceSwitcherProps = {
   readonly workspaces: ReadonlyArray<Workspace>;
@@ -68,9 +43,7 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
         title={selectedLabel}
         xstyle={styles.workspaceTrigger}
       >
-        <span aria-hidden {...stylex.props(styles.workspaceIcon)}>
-          {selectedLabel.slice(0, 1).toUpperCase()}
-        </span>
+        <Avatar label={selectedLabel} fallback={selectedLabel.slice(0, 1).toUpperCase()} size="sm" />
         <SidebarLabel grow>
           <Select.Value />
           <Select.Icon>

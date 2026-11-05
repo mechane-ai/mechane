@@ -114,7 +114,7 @@ export function Inspector({
         </div>
         <aside ref={selected} aria-label={label} tabIndex={-1} {...stylex.props(styles.detail)}>
           <div {...stylex.props(styles.return)}>
-            <Button size="sm" variant="ghost" onClick={returnToMaster}>
+            <Button variant="ghost" onClick={returnToMaster}>
               Back to {masterLabel.toLowerCase()}
             </Button>
           </div>

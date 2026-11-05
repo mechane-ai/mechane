@@ -32,7 +32,7 @@ export const popupStyles = stylex.create({
     'minWidth': 0,
     'overflowWrap': 'anywhere',
     'gap': spacing.sm,
-    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'paddingInline': spacing.sm,
     'paddingBlock': spacing.xs,
     'borderRadius': radii.sm,

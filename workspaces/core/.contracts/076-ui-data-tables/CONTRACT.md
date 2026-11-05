@@ -49,19 +49,31 @@ checks supplied order and controlled callbacks without inventing a database or r
 Types, source review, and temporary interaction probes verify the table's contract. Existing test-curation rules decide
 whether a discovered regression warrants a retained assertion; this adoption adds no test runner.
 
-Preserve readable column widths inside the table's named scroll region. An explicit column width is a minimum for
-its header and cells; ordinary columns retain a readable text measure. Narrow screens scroll the table instead of
-squeezing words into a few characters or widening the page. Check header alignment, horizontal keyboard scrolling,
-and a single separator above the footer at a narrow viewport.
+Require a semantic `role` on every `DataTableColumn`. The table owns matching header and cell alignment and readable
+minimum sizing for that role. Applications choose meaning instead of per-column alignment.
 
-The default row is 48px high, with vertically centered content and truncated text. Use `rowSizing="content"` when
+| Role                  | Alignment | Sizing                                    |
+| --------------------- | --------- | ----------------------------------------- |
+| `primary`             | Start     | Flexible record identity                  |
+| `text`, `status`      | Start     | Role minimum                              |
+| `number`, `timestamp` | End       | Role minimum that keeps the value readable |
+| `actions`             | End       | Role minimum that keeps controls operable  |
+
+Primary columns absorb remaining width. Use `text` for identifiers that happen to contain digits, and `number` for
+comparable quantities. Add explicit `width` or `truncate` metadata only for a concrete content need.
+An explicit width is a minimum for its header and cells. Pending rows use the same roles and metadata.
+Keep readable columns inside the table's named scroll region; narrow screens scroll instead of squeezing words
+into a few characters or widening the page. The table owns cell insets from shared `pageGeometry`.
+
+The default row is 48px high, with vertically centered content. Use `rowSizing="content"` when
 multiline records or controls cannot fit that height. Never crop an interactive control to preserve row geometry.
 The virtualizer's fixed estimate must equal the rendered row height; measure only content-sized rows. Keep row keys,
 keyboard navigation, and focused-row retention stable when scrolling. Inspect a long identifier beside a short one,
 then scroll beyond the initial viewport and return by keyboard. Placeholders use the same table geometry.
 
-Plain string cells use the table's truncation behavior. Compose a primary and secondary text value with
-`DataTableText`, whose string inputs put ellipsis on the text-bearing elements. An arbitrary nested layout does not
+Fixed primary and text cells truncate by default; numbers, timestamps, and actions remain readable.
+Compose a primary and secondary text value with `DataTableText`, whose string inputs put ellipsis on the text-bearing
+elements. An arbitrary nested layout does not
 inherit an ellipsis guarantee from its cell. Preserve the full value in accessible text and a reachable detail or
 disclosure. Keep dates, amounts, and comparable numeric values readable with adequate width or explicit content sizing.
 Inspect a long composed text cell beside these values; neither a clipped glyph nor a hidden control counts as truncation.
@@ -69,6 +81,10 @@ Inspect a long composed text cell beside these values; neither a clipped glyph n
 Completed collection boundaries are silent by default. An explicit useful summary may remain, but do not show generic
 "End of results" messages or reserve an empty footer block after the last row. Preserve loading, retry, and load-more
 controls when more records may exist.
+
+Review every changed column's role and any explicit width or truncation choice against its content. Compare headers,
+loaded cells, and placeholders at the same width, including long primary text beside numbers, timestamps, and actions.
+At narrow widths, check horizontal keyboard scrolling, independent embedded controls, and one separator above the footer.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

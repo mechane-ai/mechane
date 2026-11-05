@@ -96,7 +96,6 @@ function ValidTraceScreen({
             {trace.turn.status === 'running' && (
               <Row>
                 <Button
-                  size="sm"
                   disabled={cancelState !== 'idle'}
                   pending={cancelState === 'sending'}
                   pendingLabel="Requesting…"

@@ -50,7 +50,7 @@ export function ConversationActivity({
         <Text variant="caption" tone="muted" role="status">
           Activity unavailable
         </Text>
-        <Button variant="ghost" size="sm" onClick={state.retry}>
+        <Button variant="ghost" onClick={state.retry}>
           Retry activity
         </Button>
       </Row>
@@ -80,7 +80,7 @@ export function ConversationActivity({
         </ConsoleLink>
       )}
       {state.kind === 'stale' && (
-        <Button variant="ghost" size="sm" onClick={state.retry}>
+        <Button variant="ghost" onClick={state.retry}>
           Retry activity
         </Button>
       )}

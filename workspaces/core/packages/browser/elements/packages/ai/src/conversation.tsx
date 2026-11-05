@@ -169,7 +169,6 @@ function ConversationLatestButton({ label, onActivate }: ConversationLatestButto
 
   return (
     <Button
-      size="sm"
       onClick={() => {
         onActivate?.();
         requestAnimationFrame(() => {

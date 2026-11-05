@@ -73,7 +73,6 @@ export function DateRangePicker({
                   {presets.map((preset) => (
                     <Button
                       key={preset.id}
-                      size="sm"
                       variant="ghost"
                       onClick={() => {
                         onValueChange(preset.value);

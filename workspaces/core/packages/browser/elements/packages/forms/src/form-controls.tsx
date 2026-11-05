@@ -6,10 +6,11 @@ import { Slider as BaseSlider } from '@base-ui/react/slider';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ReadOnlyValueProperties, ValueStateProperties } from '../../foundations/src/control-state.ts';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { fieldStyles, inputSizeStyles } from './field-styles.ts';
+import { fieldStyles } from './field-styles.ts';
 import type { InputProps } from './forms.tsx';
 
 const styles = stylex.create({
@@ -32,18 +33,6 @@ const styles = stylex.create({
     color: colors.ink,
     overflowWrap: 'anywhere',
   },
-  inputGroup: {
-    'display': 'flex',
-    'alignItems': 'stretch',
-    'minWidth': 0,
-    'borderWidth': 1,
-    'borderStyle': 'solid',
-    'borderColor': colors.line,
-    'borderRadius': radii.sm,
-    'backgroundColor': colors.surface,
-    ':has(input[aria-invalid="true"])': { borderColor: colors.danger },
-  },
-  embedded: { 'flex': 1, 'minWidth': 0, 'width': 0, 'borderWidth': 0, ':focus-visible': { outlineOffset: -2 } },
   addon: {
     display: 'inline-flex',
     flexShrink: 0,
@@ -60,11 +49,9 @@ const styles = stylex.create({
     'flexShrink': 0,
     'alignItems': 'center',
     'justifyContent': 'center',
-    'width': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': {
-      default: `calc(${controls.mdHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
+    'boxSizing': 'border-box',
+    'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': 0,
     'borderWidth': 0,
     'borderRadius': radii.sm,
@@ -103,7 +90,7 @@ const styles = stylex.create({
     'display': 'flex',
     'alignItems': 'center',
     'minWidth': 0,
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'touchAction': 'none',
     'userSelect': 'none',
     ':is([data-orientation="vertical"])': { width: controls.coarseTarget, minHeight: 160, justifyContent: 'center' },
@@ -161,13 +148,16 @@ const styles = stylex.create({
   file: {
     'paddingBlock': 0,
     'paddingInline': 0,
-    'lineHeight': `calc(${controls.mdHeight} - 2px)`,
+    'lineHeight': {
+      default: `calc(${controls.height} - 2px)`,
+      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+    },
     '::file-selector-button': {
       marginInlineEnd: spacing.sm,
       paddingBlock: 0,
       paddingInline: controls.paddingInline,
       minHeight: {
-        default: `calc(${controls.mdHeight} - 2px)`,
+        default: `calc(${controls.height} - 2px)`,
         [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
       },
       borderWidth: 0,
@@ -177,8 +167,8 @@ const styles = stylex.create({
       backgroundColor: colors.canvas,
       color: colors.ink,
       fontFamily: typography.fontFamily,
-      fontWeight: typography.mediumWeight,
-      fontSize: typography.bodySize,
+      fontWeight: typography.regularWeight,
+      fontSize: { default: typography.bodySize, [conditions.coarsePointer]: typography.touchInputSize },
       cursor: 'pointer',
     },
     ':hover:not(:disabled)': {
@@ -186,21 +176,6 @@ const styles = stylex.create({
     },
     ':active:not(:disabled)': { '::file-selector-button': { backgroundColor: colors.line } },
     ':disabled': { '::file-selector-button': { cursor: 'not-allowed', color: colors.muted } },
-  },
-});
-
-const embeddedSizeStyles = stylex.create({
-  sm: {
-    minHeight: {
-      default: `calc(${controls.smHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
-  },
-  md: {
-    minHeight: {
-      default: `calc(${controls.mdHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
   },
 });
 
@@ -262,14 +237,14 @@ function FieldsetLegend({ className, style, ...props }: FieldsetLegendProps): Re
 }
 
 function InputGroupRoot({ xstyle, ...props }: InputGroupRootProps): ReactNode {
-  return <div {...mergeProps<'div'>(stylex.props(styles.inputGroup, xstyle), props)} />;
+  return <div {...mergeProps<'div'>(stylex.props(controlStyles.group, xstyle), props)} />;
 }
 
 function InputGroupAddon(props: InputGroupAddonProps): ReactNode {
   return <span {...mergeProps<'span'>(stylex.props(styles.addon), props)} />;
 }
 
-function InputGroupInput({ className, style, xstyle, size = 'md', ...props }: InputProps): ReactNode {
+function InputGroupInput({ className, style, xstyle, ...props }: InputProps): ReactNode {
   return (
     <BaseInput
       {...props}
@@ -277,10 +252,10 @@ function InputGroupInput({ className, style, xstyle, size = 'md', ...props }: In
         className,
         style,
         styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
           fieldStyles.input,
-          inputSizeStyles[size],
-          styles.embedded,
-          embeddedSizeStyles[size],
+          controlStyles.embedded,
           xstyle,
         ),
       })}
@@ -292,7 +267,11 @@ function NumberFieldRoot({ className, style, xstyle, ...props }: NumberFieldRoot
   return (
     <BaseNumberField.Root
       {...props}
-      {...mergeStyles<BaseNumberField.Root.State>({ className, style, styles: stylex.props(fieldStyles.root, xstyle) })}
+      {...mergeStyles<BaseNumberField.Root.State>({
+        className,
+        style,
+        styles: stylex.props(controlStyles.fieldRoot, xstyle),
+      })}
     />
   );
 }
@@ -301,7 +280,7 @@ function NumberFieldGroup({ className, style, ...props }: NumberFieldGroupProps)
   return (
     <BaseNumberField.Group
       {...props}
-      {...mergeStyles<BaseNumberField.Group.State>({ className, style, styles: stylex.props(styles.inputGroup) })}
+      {...mergeStyles<BaseNumberField.Group.State>({ className, style, styles: stylex.props(controlStyles.group) })}
     />
   );
 }
@@ -313,7 +292,13 @@ function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps)
       {...mergeStyles<BaseNumberField.Input.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, styles.embedded, embeddedSizeStyles.md, styles.numberInput),
+        styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
+          fieldStyles.input,
+          controlStyles.embedded,
+          styles.numberInput,
+        ),
       })}
     />
   );
@@ -409,7 +394,7 @@ function SliderLabel({ className, style, ...props }: SliderLabelProps): ReactNod
   return (
     <BaseSlider.Label
       {...props}
-      {...mergeStyles<BaseSlider.Label.State>({ className, style, styles: stylex.props(fieldStyles.label) })}
+      {...mergeStyles<BaseSlider.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
     />
   );
 }
@@ -431,7 +416,7 @@ export function FilePicker({ className, style, xstyle, ...props }: FilePickerPro
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, styles.file, xstyle),
+        styles: stylex.props(controlStyles.base, controlStyles.field, fieldStyles.input, styles.file, xstyle),
       })}
     />
   );

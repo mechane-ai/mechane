@@ -58,23 +58,19 @@ export const EmphasisAndIntent: Story = {
   ),
 };
 
-export const SizesAndIcons: Story = {
+export const IconsAndNavigation: Story = {
   render: () => (
     <Row>
-      <Button size="sm">
-        <Plus size={16} aria-hidden />
-        Add item
-      </Button>
-      <Button size="md">
+      <Button>
         <Plus size={16} aria-hidden />
         Add item
       </Button>
       <IconButton aria-label="Refresh items">
         <RefreshCw size={16} aria-hidden />
       </IconButton>
-      <IconButton size="md" aria-label="Refresh items">
-        <RefreshCw size={16} aria-hidden />
-      </IconButton>
+      <Button nativeButton={false} render={<a href="#example-source" />}>
+        Open source
+      </Button>
       <IconLink aria-label="Open source" href="#example-source">
         <ExternalLink size={16} aria-hidden />
       </IconLink>

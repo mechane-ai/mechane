@@ -41,6 +41,7 @@ export function TurnList({
         {
           id: 'input',
           label: 'Run',
+          role: 'primary',
           cell: (turn) => (
             <DataTableText
               secondary={
@@ -59,6 +60,7 @@ export function TurnList({
         {
           id: 'outcome',
           label: 'Outcome',
+          role: 'status',
           width: 148,
           truncate: false,
           cell: (turn) => (
@@ -72,6 +74,7 @@ export function TurnList({
         {
           id: 'started',
           label: 'Started',
+          role: 'timestamp',
           secondary: true,
           width: 172,
           truncate: false,
@@ -80,6 +83,7 @@ export function TurnList({
         {
           id: 'elapsed',
           label: 'Elapsed',
+          role: 'number',
           secondary: true,
           width: 100,
           truncate: false,

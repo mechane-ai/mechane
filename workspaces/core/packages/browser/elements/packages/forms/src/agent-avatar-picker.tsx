@@ -43,7 +43,7 @@ const styles = stylex.create({
   choices: {
     display: 'grid',
     gridTemplateColumns: {
-      default: `repeat(auto-fill, minmax(${controls.mdHeight}, 1fr))`,
+      default: `repeat(auto-fill, minmax(${controls.height}, 1fr))`,
       [conditions.coarsePointer]: `repeat(auto-fill, minmax(${controls.coarseTarget}, 1fr))`,
     },
     gap: spacing.xs,
@@ -53,8 +53,8 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'boxSizing': 'border-box',
-    'minWidth': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minWidth': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': spacing.xs,
     'borderWidth': 1,
     'borderStyle': 'solid',

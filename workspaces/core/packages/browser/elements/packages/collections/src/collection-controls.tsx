@@ -1,27 +1,42 @@
 import * as stylex from '@stylexjs/stylex';
 import { ChevronLeft, ChevronRight, Columns3, X } from 'lucide-react';
+import { Children } from 'react';
 import type { ReactNode } from 'react';
 import { Button, IconButton, Text } from '../../core/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
-import { colors, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  pageGeometry,
+  radii,
+  spacing,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 import { Popover } from '../../overlays/src/index.ts';
 
 const styles = stylex.create({
   toolbar: {
-    display: 'flex',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    minWidth: 0,
-    gap: spacing.sm,
-    paddingInline: spacing.lg,
-    paddingBlock: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
-    color: colors.ink,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
+    'boxSizing': 'border-box',
+    'display': 'flex',
+    'alignItems': 'center',
+    'flexWrap': 'wrap',
+    'minWidth': 0,
+    'minHeight': pageGeometry.toolbarHeight,
+    'gap': spacing.sm,
+    'paddingInline': pageGeometry.inset,
+    'paddingBlock': {
+      default: `calc((${pageGeometry.toolbarHeight} - ${controls.height} - 1px) / 2)`,
+      [conditions.coarsePointer]: `calc((${pageGeometry.toolbarHeight} - ${controls.coarseTarget} - 1px) / 2)`,
+    },
+    'borderBottomWidth': 1,
+    'borderBottomStyle': 'solid',
+    'borderBottomColor': colors.line,
+    'color': colors.ink,
+    'fontFamily': typography.fontFamily,
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
+    ':empty': { display: 'none' },
   },
   actions: {
     display: 'flex',
@@ -33,24 +48,33 @@ const styles = stylex.create({
   },
   filters: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0 },
   filter: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingInlineStart: spacing.sm,
-    borderWidth: 1,
-    borderStyle: 'solid',
-    borderColor: colors.line,
-    borderRadius: radii.sm,
-    minWidth: 0,
-    maxWidth: '100%',
-    overflowWrap: 'anywhere',
-    backgroundColor: colors.surface,
-    color: colors.ink,
-    fontFamily: typography.fontFamily,
-    fontSize: typography.bodySize,
-    lineHeight: typography.bodyLineHeight,
+    'position': 'relative',
+    'boxSizing': 'border-box',
+    'display': 'inline-flex',
+    'alignItems': 'center',
+    'gap': spacing.xs,
+    'height': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    'paddingInlineStart': spacing.sm,
+    'borderRadius': radii.sm,
+    'minWidth': 0,
+    'maxWidth': '100%',
+    'backgroundColor': colors.surface,
+    'color': colors.ink,
+    'fontFamily': typography.fontFamily,
+    'fontSize': typography.bodySize,
+    'lineHeight': typography.bodyLineHeight,
+    '::after': {
+      content: '""',
+      position: 'absolute',
+      inset: 0,
+      borderWidth: 1,
+      borderStyle: 'solid',
+      borderColor: colors.line,
+      borderRadius: 'inherit',
+      pointerEvents: 'none',
+    },
   },
-  filterLabel: { minWidth: 0, overflowWrap: 'anywhere' },
+  filterLabel: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   remove: { flexShrink: 0 },
   choices: { display: 'grid', gap: spacing.md, minWidth: 180 },
   choice: {
@@ -76,15 +100,22 @@ const styles = stylex.create({
 
 export type CollectionToolbarProps = {
   readonly label: string;
-  readonly children: ReactNode;
+  readonly children?: ReactNode;
   readonly actions?: ReactNode;
 };
 
 export function CollectionToolbar({ label, children, actions }: CollectionToolbarProps): ReactNode {
+  const hasChildren = Children.toArray(children).length > 0;
+  const hasActions = Children.toArray(actions).length > 0;
+
+  if (!hasChildren && !hasActions) {
+    return null;
+  }
+
   return (
     <div role="group" aria-label={label} {...stylex.props(styles.toolbar)}>
       {children}
-      {actions !== undefined && actions !== null && <div {...stylex.props(styles.actions)}>{actions}</div>}
+      {hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );
 }
@@ -98,11 +129,17 @@ export type FilterChipsProps = {
 };
 
 export function FilterChips({ filters, onRemove, label = 'Applied filters' }: FilterChipsProps): ReactNode {
+  if (filters.length === 0) {
+    return null;
+  }
+
   return (
     <div role="group" aria-label={label} {...stylex.props(styles.filters)}>
       {filters.map((filter) => (
         <span key={filter.id} {...stylex.props(styles.filter)}>
-          <span {...stylex.props(styles.filterLabel)}>{filter.label}</span>
+          <span title={filter.label} {...stylex.props(styles.filterLabel)}>
+            {filter.label}
+          </span>
           <IconButton
             aria-label={`Remove ${filter.label}`}
             variant="ghost"
@@ -133,7 +170,7 @@ export type ColumnControlsProps = {
 export function ColumnControls({ columns, onVisibilityChange, label = 'Columns' }: ColumnControlsProps): ReactNode {
   return (
     <Popover.Root>
-      <Popover.Trigger render={<Button variant="outline" size="md" />}>
+      <Popover.Trigger render={<Button variant="outline" />}>
         <Columns3 size={16} aria-hidden="true" />
         {label}
       </Popover.Trigger>

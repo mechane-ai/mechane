@@ -3,9 +3,11 @@ import { Input as BaseInput } from '@base-ui/react/input';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { inputSizeStyles, fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
+import { fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
+import type { TextareaAppearance } from './field-styles.ts';
 
 type FieldRootProps = ComponentProps<typeof BaseField.Root> & { readonly xstyle?: PlacementStyle };
 type FieldLabelProps = ComponentProps<typeof BaseField.Label>;
@@ -21,7 +23,7 @@ export type InputProps = Omit<
     NonNullable<BaseInputProps['value']>,
     NonNullable<BaseInputProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly size?: 'sm' | 'md'; readonly xstyle?: PlacementStyle };
+  > & { readonly xstyle?: PlacementStyle };
 
 type NativeTextareaProps = ComponentProps<'textarea'>;
 
@@ -30,13 +32,17 @@ type TextareaProps = Omit<NativeTextareaProps, 'value' | 'defaultValue' | 'onCha
     NonNullable<NativeTextareaProps['value']>,
     NonNullable<NativeTextareaProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly xstyle?: PlacementStyle; readonly compact?: boolean; readonly appearance?: 'field' | 'plain' };
+  > & { readonly xstyle?: PlacementStyle; readonly compact?: boolean; readonly appearance?: TextareaAppearance };
 
 function FieldRoot({ className, style, xstyle, ...props }: FieldRootProps): ReactNode {
   return (
     <BaseField.Root
       {...props}
-      {...mergeStyles<BaseField.Root.State>({ className, style, styles: stylex.props(styles.root, xstyle) })}
+      {...mergeStyles<BaseField.Root.State>({
+        className,
+        style,
+        styles: stylex.props(controlStyles.fieldRoot, xstyle),
+      })}
     />
   );
 }
@@ -45,7 +51,7 @@ function FieldLabel({ className, style, ...props }: FieldLabelProps): ReactNode 
   return (
     <BaseField.Label
       {...props}
-      {...mergeStyles<BaseField.Label.State>({ className, style, styles: stylex.props(styles.label) })}
+      {...mergeStyles<BaseField.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
     />
   );
 }
@@ -54,7 +60,11 @@ function FieldDescription({ className, style, ...props }: FieldDescriptionProps)
   return (
     <BaseField.Description
       {...props}
-      {...mergeStyles<BaseField.Description.State>({ className, style, styles: stylex.props(styles.description) })}
+      {...mergeStyles<BaseField.Description.State>({
+        className,
+        style,
+        styles: stylex.props(controlStyles.description),
+      })}
     />
   );
 }
@@ -70,14 +80,14 @@ function FieldError({ className, style, ...props }: FieldErrorProps): ReactNode 
 
 export const Field = { Root: FieldRoot, Label: FieldLabel, Description: FieldDescription, Error: FieldError };
 
-export function Input({ className, style, xstyle, size = 'md', ...props }: InputProps): ReactNode {
+export function Input({ className, style, xstyle, ...props }: InputProps): ReactNode {
   return (
     <BaseInput
       {...props}
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(styles.input, inputSizeStyles[size], xstyle),
+        styles: stylex.props(controlStyles.base, controlStyles.field, styles.input, xstyle),
       })}
     />
   );
@@ -112,8 +122,10 @@ export function Textarea({
         className,
         style,
         styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
           styles.input,
-          styles.textarea,
+          controlStyles.textarea,
           compact && styles.compactTextarea,
           textareaAppearanceStyles[appearance],
           xstyle,

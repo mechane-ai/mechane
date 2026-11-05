@@ -169,16 +169,17 @@ export const typography = stylex.defineVars({
 });
 
 export const controls = stylex.defineVars({
-  smHeight: '32px',
-  mdHeight: '36px',
+  height: '32px',
   coarseTarget: '44px',
   iconSize: '16px',
   paddingInline: '10px',
-  paddingBlock: '7px',
+  paddingBlock: '5px',
   gap: '6px',
   focusWidth: '2px',
   disabledOpacity: '0.45',
 });
+
+export const pageGeometry = stylex.defineVars({ inset: '16px', toolbarHeight: '48px', sectionGap: '32px' });
 
 export const radii = stylex.defineVars({ sm: '4px', md: '6px' });
 
@@ -189,11 +190,18 @@ export const motion = stylex.defineVars({
   drawerEasing: 'cubic-bezier(0.32, 0.72, 0, 1)',
 });
 
-export const shadows = stylex.defineVars({ popup: '0 4px 16px #00000014' });
+export const shadows = stylex.defineVars({ popup: '0 4px 16px #00000014', selection: 'inset 2px 0 currentColor' });
 
 export const darkShadows = stylex.defineConsts({ popup: '0 4px 16px #00000066' });
 
-export const layers = stylex.defineConsts({ backdrop: '20', dialog: '21', popup: '30', tooltip: '40', skipLink: '50' });
+export const layers = stylex.defineConsts({
+  sticky: '1',
+  backdrop: '20',
+  dialog: '21',
+  popup: '30',
+  tooltip: '40',
+  skipLink: '50',
+});
 
 export const tableGeometry = stylex.defineConsts({ rowHeight: 48, headerHeight: 36 });
 

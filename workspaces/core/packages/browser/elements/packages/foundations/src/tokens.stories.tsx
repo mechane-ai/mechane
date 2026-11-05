@@ -39,6 +39,7 @@ const styles = stylex.create({
   mono: { fontFamily: typography.monoFamily },
   control: {
     display: 'inline-flex',
+    boxSizing: 'border-box',
     alignItems: 'center',
     paddingInline: controls.paddingInline,
     borderWidth: 1,
@@ -46,8 +47,7 @@ const styles = stylex.create({
     borderColor: colors.line,
     borderRadius: radii.sm,
   },
-  small: { minHeight: controls.smHeight },
-  medium: { minHeight: controls.mdHeight },
+  standard: { minHeight: controls.height },
   coarse: { minHeight: controls.coarseTarget },
   popup: { borderRadius: radii.md, boxShadow: shadows.popup },
 });
@@ -101,8 +101,7 @@ export const Geometry: Story = {
     <div {...stylex.props(styles.page)}>
       <h2 {...stylex.props(styles.heading)}>Control sizes</h2>
       <div {...stylex.props(styles.row)}>
-        <div {...stylex.props(styles.control, styles.small)}>Compact</div>
-        <div {...stylex.props(styles.control, styles.medium)}>Standard</div>
+        <div {...stylex.props(styles.control, styles.standard)}>Standard</div>
         <div {...stylex.props(styles.control, styles.coarse)}>Coarse pointer target</div>
       </div>
       <div {...stylex.props(styles.surface, styles.popup)}>Popup radius and shadow</div>

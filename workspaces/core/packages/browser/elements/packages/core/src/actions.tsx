@@ -4,33 +4,15 @@ import { useRender } from '@base-ui/react/use-render';
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import type { ControlStyle, PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
+import { colors, conditions, controls, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   button: {
-    'display': 'inline-flex',
-    'boxSizing': 'border-box',
-    'alignItems': 'center',
-    'justifyContent': 'center',
-    'gap': controls.gap,
-    'paddingBlock': spacing.xs,
-    'paddingInline': controls.paddingInline,
-    'borderRadius': radii.sm,
-    'borderWidth': 1,
-    'borderStyle': 'solid',
-    'fontFamily': typography.fontFamily,
-    'WebkitFontSmoothing': 'antialiased',
-    'fontWeight': typography.mediumWeight,
-    'fontSize': typography.bodySize,
-    'lineHeight': typography.bodyLineHeight,
     'textDecorationLine': 'none',
     'cursor': 'pointer',
-    'minWidth': 0,
-    'maxWidth': '100%',
-    'overflowWrap': 'anywhere',
-    'textAlign': 'center',
     ':is([data-disabled]):not([aria-busy="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },
     ':is([aria-busy="true"])': { cursor: 'progress' },
     ':focus-visible': {
@@ -40,8 +22,6 @@ const styles = stylex.create({
       outlineOffset: 2,
     },
   },
-  sm: { minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget } },
-  md: { minHeight: { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget } },
   solidNeutral: {
     'backgroundColor': colors.ink,
     'borderColor': colors.ink,
@@ -59,9 +39,7 @@ const styles = stylex.create({
   ghostNeutral: {
     'backgroundColor': 'transparent',
     'borderColor': 'transparent',
-    'borderWidth': 0,
     'color': colors.ink,
-    'fontWeight': typography.regularWeight,
     ':hover:not(:active, [data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
     ':active:not([data-disabled])': { backgroundColor: colors.line },
   },
@@ -82,9 +60,7 @@ const styles = stylex.create({
   ghostDanger: {
     'backgroundColor': 'transparent',
     'borderColor': 'transparent',
-    'borderWidth': 0,
     'color': colors.danger,
-    'fontWeight': typography.regularWeight,
     ':hover:not([data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.dangerSoft } },
     ':active:not([data-disabled])': { backgroundColor: colors.dangerSoft },
   },
@@ -92,12 +68,8 @@ const styles = stylex.create({
   label: { gridArea: '1 / 1', minWidth: 0 },
   hidden: { visibility: 'hidden' },
   icon: { width: controls.iconSize, height: controls.iconSize, flexShrink: 0, display: 'inline-flex' },
-  iconSm: {
-    minWidth: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    paddingInline: 0,
-  },
-  iconMd: {
-    minWidth: { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+  iconButton: {
+    minWidth: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     paddingInline: 0,
   },
   text: {
@@ -151,22 +123,17 @@ const styles = stylex.create({
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost';
 type ButtonTone = 'neutral' | 'danger';
-type ControlSize = 'sm' | 'md';
 type PendingProps = { readonly pending?: boolean; readonly pendingLabel?: string | undefined };
 
 type ButtonProps = ComponentProps<typeof BaseButton> &
-  PendingProps & {
-    readonly variant?: ButtonVariant;
-    readonly tone?: ButtonTone;
-    readonly size?: ControlSize;
-    readonly xstyle?: ControlStyle;
-  };
+  PendingProps & { readonly variant?: ButtonVariant; readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
+
+type ActionButtonProps = ButtonProps & { readonly isIconOnly?: boolean };
 
 type IconButtonProps = Omit<ButtonProps, 'aria-label' | 'pendingLabel'> & { readonly 'aria-label': string };
 
 type IconLinkProps = Omit<useRender.ComponentProps<'a'>, 'aria-label'> & {
   readonly 'aria-label': string;
-  readonly 'size'?: ControlSize;
   readonly 'xstyle'?: PlacementStyle;
 };
 
@@ -180,9 +147,6 @@ const variants = {
   neutral: { solid: styles.solidNeutral, outline: styles.outlineNeutral, ghost: styles.ghostNeutral },
   danger: { solid: styles.solidDanger, outline: styles.outlineDanger, ghost: styles.ghostDanger },
 } satisfies Record<ButtonTone, Record<ButtonVariant, stylex.StyleXStyles>>;
-
-const sizes = { sm: styles.sm, md: styles.md } satisfies Record<ControlSize, stylex.StyleXStyles>;
-const iconSizes = { sm: styles.iconSm, md: styles.iconMd } satisfies Record<ControlSize, stylex.StyleXStyles>;
 
 const textTones = { neutral: styles.neutralText, danger: styles.dangerText } satisfies Record<
   ButtonTone,
@@ -206,10 +170,10 @@ function ButtonLabels({ id, children, pending = false, pendingLabel }: ButtonLab
   );
 }
 
-export function Button({
+function ActionButton({
   variant = 'outline',
   tone = 'neutral',
-  size = 'sm',
+  isIconOnly = false,
   pending = false,
   pendingLabel,
   children,
@@ -218,9 +182,17 @@ export function Button({
   xstyle,
   disabled = false,
   ...props
-}: ButtonProps): ReactNode {
+}: ActionButtonProps): ReactNode {
   const labelId = useId();
-  const appearance = stylex.props(styles.button, sizes[size], variants[tone][variant], xstyle);
+
+  const appearance = stylex.props(
+    controlStyles.base,
+    controlStyles.button,
+    styles.button,
+    variants[tone][variant],
+    isIconOnly && styles.iconButton,
+    xstyle,
+  );
 
   return (
     <BaseButton
@@ -241,13 +213,17 @@ export function Button({
   );
 }
 
-export function IconButton({ size = 'sm', children, xstyle, ...props }: IconButtonProps): ReactNode {
+export function Button(props: ButtonProps): ReactNode {
+  return <ActionButton {...props} />;
+}
+
+export function IconButton({ children, ...props }: IconButtonProps): ReactNode {
   return (
-    <Button {...props} size={size} xstyle={[iconSizes[size], xstyle]}>
+    <ActionButton {...props} isIconOnly>
       <span aria-hidden {...stylex.props(styles.icon)}>
         {children}
       </span>
-    </Button>
+    </ActionButton>
   );
 }
 
@@ -288,13 +264,22 @@ export function TextLink({ xstyle, ...props }: TextLinkProps): ReactNode {
   return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
 }
 
-export function IconLink({ size = 'sm', children, xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
+export function IconLink({ children, xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
   return useRender({
     defaultTagName: 'a',
     render,
     ref,
-    props: mergeProps(stylex.props(styles.button, sizes[size], styles.ghostNeutral, iconSizes[size], xstyle), props, {
-      children: <span {...stylex.props(styles.icon)}>{children}</span>,
-    }),
+    props: mergeProps(
+      stylex.props(
+        controlStyles.base,
+        controlStyles.button,
+        styles.button,
+        styles.ghostNeutral,
+        styles.iconButton,
+        xstyle,
+      ),
+      props,
+      { children: <span {...stylex.props(styles.icon)}>{children}</span> },
+    ),
   });
 }

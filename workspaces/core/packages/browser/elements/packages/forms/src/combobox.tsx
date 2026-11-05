@@ -7,6 +7,7 @@ import type {
   ReadOnlyValueProperties,
   ValueStateProperties,
 } from '../../foundations/src/control-state.ts';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
@@ -14,41 +15,16 @@ import { fieldStyles } from './field-styles.ts';
 import { selectionStyles } from './selection-styles.ts';
 
 const styles = stylex.create({
-  inputGroup: {
-    'position': 'relative',
-    'display': 'flex',
-    'alignItems': 'center',
-    'gap': spacing.xs,
-    'minWidth': 0,
-    'borderWidth': 1,
-    'borderStyle': 'solid',
-    'borderColor': colors.line,
-    'borderRadius': radii.sm,
-    'backgroundColor': colors.surface,
-    ':has(input[aria-invalid="true"])': { borderColor: colors.danger },
-  },
-  input: {
-    'flex': '1 1 12ch',
-    'width': '12ch',
-    'minWidth': 0,
-    'minHeight': {
-      default: `calc(${controls.mdHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
-    'borderWidth': 0,
-    'backgroundColor': 'transparent',
-    ':focus-visible': { outlineOffset: -2 },
-  },
+  inputGroup: { gap: spacing.xs },
+  input: { flex: '1 1 12ch', width: '12ch' },
   action: {
     'display': 'inline-flex',
     'alignItems': 'center',
     'justifyContent': 'center',
     'flexShrink': 0,
-    'width': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': {
-      default: `calc(${controls.mdHeight} - 2px)`,
-      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
-    },
+    'boxSizing': 'border-box',
+    'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'borderWidth': 0,
     'borderRadius': radii.sm,
     'padding': 0,
@@ -105,11 +81,6 @@ const styles = stylex.create({
     'minWidth': 0,
     'maxWidth': '100%',
     'overflowWrap': 'anywhere',
-    'minHeight': controls.smHeight,
-    'borderWidth': 1,
-    'borderStyle': 'solid',
-    'borderColor': colors.line,
-    'borderRadius': radii.sm,
     'backgroundColor': colors.canvas,
     'paddingInlineStart': spacing.sm,
     'fontFamily': typography.fontFamily,
@@ -118,10 +89,6 @@ const styles = stylex.create({
     'lineHeight': typography.bodyLineHeight,
     'color': colors.ink,
     ':is([data-disabled])': { opacity: controls.disabledOpacity },
-  },
-  chipRemove: {
-    width: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
   },
 });
 
@@ -193,7 +160,7 @@ function ComboboxInputGroup({ className, style, xstyle, ...props }: ComboboxInpu
       {...mergeStyles<BaseCombobox.InputGroup.State>({
         className,
         style,
-        styles: stylex.props(styles.inputGroup, xstyle),
+        styles: stylex.props(controlStyles.group, styles.inputGroup, xstyle),
       })}
     />
   );
@@ -203,7 +170,7 @@ function ComboboxLabel({ className, style, ...props }: ComboboxLabelProps): Reac
   return (
     <BaseCombobox.Label
       {...props}
-      {...mergeStyles<BaseCombobox.Label.State>({ className, style, styles: stylex.props(fieldStyles.label) })}
+      {...mergeStyles<BaseCombobox.Label.State>({ className, style, styles: stylex.props(controlStyles.label) })}
     />
   );
 }
@@ -219,7 +186,13 @@ function ComboboxInput({ className, style, ...props }: ComboboxInputProps): Reac
       {...mergeStyles<BaseCombobox.Input.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, styles.input),
+        styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
+          fieldStyles.input,
+          controlStyles.embedded,
+          styles.input,
+        ),
       })}
     />
   );
@@ -368,7 +341,11 @@ function ComboboxChip({ className, style, ...props }: ComboboxChipProps): ReactN
   return (
     <BaseCombobox.Chip
       {...props}
-      {...mergeStyles<BaseCombobox.Chip.State>({ className, style, styles: stylex.props(styles.chip) })}
+      {...mergeStyles<BaseCombobox.Chip.State>({
+        className,
+        style,
+        styles: stylex.props(controlStyles.group, styles.chip),
+      })}
     />
   );
 }
@@ -382,11 +359,7 @@ function ComboboxChipRemove({
   return (
     <BaseCombobox.ChipRemove
       {...props}
-      {...mergeStyles<BaseCombobox.ChipRemove.State>({
-        className,
-        style,
-        styles: stylex.props(styles.action, styles.chipRemove),
-      })}
+      {...mergeStyles<BaseCombobox.ChipRemove.State>({ className, style, styles: stylex.props(styles.action) })}
     >
       {children}
     </BaseCombobox.ChipRemove>

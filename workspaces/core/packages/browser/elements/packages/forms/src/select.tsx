@@ -6,8 +6,9 @@ import type {
   ReadOnlyValueProperties,
   ValueStateProperties,
 } from '../../foundations/src/control-state.ts';
+import { controlStyles } from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import type { ControlStyle, PlacementStyle } from '../../foundations/src/style-composition.ts';
+import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { selectionStyles as styles } from './selection-styles.ts';
 
 type SelectVariant = 'outline' | 'ghost';
@@ -30,7 +31,7 @@ type SelectRootProps<Value, Multiple extends boolean | undefined> = Omit<
 
 type SelectTriggerProps = ComponentProps<typeof BaseSelect.Trigger> & {
   readonly variant?: SelectVariant;
-  readonly xstyle?: ControlStyle;
+  readonly xstyle?: PlacementStyle;
 };
 
 type SelectValueProps = ComponentProps<typeof BaseSelect.Value> & { readonly xstyle?: PlacementStyle };
@@ -56,7 +57,7 @@ function SelectTrigger({ variant = 'outline', className, style, xstyle, ...props
       {...mergeStyles<BaseSelect.Trigger.State>({
         className,
         style,
-        styles: stylex.props(styles.trigger, variants[variant], xstyle),
+        styles: stylex.props(controlStyles.base, styles.trigger, variants[variant], xstyle),
       })}
     />
   );

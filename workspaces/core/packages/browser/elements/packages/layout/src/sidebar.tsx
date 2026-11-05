@@ -1,9 +1,19 @@
+import { Button as BaseButton } from '@base-ui/react/button';
 import * as stylex from '@stylexjs/stylex';
 import { PanelLeft, X } from 'lucide-react';
 import { createContext, useContext, useId } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
-import { Button, IconButton } from '../../core/src/index.ts';
-import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { IconButton } from '../../core/src/index.ts';
+import { mergeStyles } from '../../foundations/src/style-composition.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  pageGeometry,
+  radii,
+  spacing,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
 
@@ -24,7 +34,7 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     display: 'flex',
     alignItems: 'stretch',
-    height: frame.toolbarHeight,
+    height: pageGeometry.toolbarHeight,
     flexShrink: 0,
     minWidth: 0,
     borderBottomWidth: 1,
@@ -88,14 +98,19 @@ const styles = stylex.create({
     'WebkitFontSmoothing': 'antialiased',
     'textAlign': 'left',
     'textDecorationLine': 'none',
-    ':hover:not(:active)': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
-    ':active': { backgroundColor: colors.line },
+    ':hover:not(:active, [data-disabled])': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
+    ':active:not([data-disabled])': { backgroundColor: colors.line },
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
       outlineStyle: 'solid',
       outlineColor: colors.focus,
       outlineOffset: -2,
     },
+  },
+  navigationButton: {
+    'borderWidth': 0,
+    'cursor': 'pointer',
+    ':is([data-disabled])': { opacity: controls.disabledOpacity, cursor: 'default' },
   },
   collapsedButton: { justifyContent: { default: 'center', [frameConditions.sidebarMobile]: 'flex-start' } },
   icon: {
@@ -137,20 +152,21 @@ const styles = stylex.create({
   navigationFooter: { display: 'block', paddingInline: 0, paddingBlock: spacing.sm },
   toggleCell: {
     boxSizing: 'border-box',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     flexShrink: 0,
-    width: frame.toolbarHeight,
+    width: pageGeometry.toolbarHeight,
     borderRightWidth: 1,
     borderRightStyle: 'solid',
     borderRightColor: colors.line,
   },
-  toggle: { height: '100%', width: '100%', minWidth: 0, borderRadius: 0, paddingBlock: 0, paddingInline: 0 },
-  close: {
-    height: '100%',
-    width: frame.toolbarHeight,
+  closeCell: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: pageGeometry.toolbarHeight,
     flexShrink: 0,
-    borderRadius: 0,
-    paddingBlock: 0,
-    paddingInline: 0,
   },
   desktop: { display: { default: 'flex', [frameConditions.sidebarMobile]: 'none' } },
   mobile: { display: { default: 'none', [frameConditions.sidebarMobile]: 'flex' } },
@@ -165,7 +181,7 @@ type SidebarProps = {
 
 type NavigationProps = { readonly children: ReactNode; readonly label?: string };
 
-type NavigationItemProps = Omit<ComponentProps<typeof Button>, 'variant' | 'tone' | 'size' | 'xstyle'> & {
+type NavigationItemProps = ComponentProps<typeof BaseButton> & {
   readonly icon?: ReactNode;
   readonly selected?: boolean;
 };
@@ -201,9 +217,11 @@ export function Sidebar({ header, footer, close, children }: SidebarProps): Reac
 
 export function SidebarClose(): ReactNode {
   return (
-    <Drawer.Close render={<IconButton variant="ghost" aria-label="Close navigation" xstyle={styles.close} />}>
-      <X size={16} aria-hidden />
-    </Drawer.Close>
+    <div {...stylex.props(styles.closeCell)}>
+      <Drawer.Close render={<IconButton variant="ghost" aria-label="Close navigation" />}>
+        <X size={16} aria-hidden />
+      </Drawer.Close>
+    </div>
   );
 }
 
@@ -244,6 +262,8 @@ export function NavigationItem({
   icon,
   selected = false,
   onClick,
+  className,
+  style,
   ...props
 }: NavigationItemProps): ReactNode {
   const sidebar = useContext(SidebarContext);
@@ -252,9 +272,18 @@ export function NavigationItem({
 
   return (
     <div {...stylex.props(styles.navigationCell, selected && styles.selected)}>
-      <Button
+      <BaseButton
         {...props}
-        variant="ghost"
+        {...mergeStyles<BaseButton.State>({
+          className,
+          style,
+          styles: stylex.props(
+            styles.navigationLink,
+            styles.navigationButton,
+            styles.navigationControl,
+            isCollapsed && styles.collapsedButton,
+          ),
+        })}
         aria-current={selected ? 'page' : undefined}
         aria-labelledby={props['aria-labelledby'] ?? (props['aria-label'] === undefined ? labelId : undefined)}
         title={props.title ?? (typeof children === 'string' ? children : undefined)}
@@ -267,7 +296,6 @@ export function NavigationItem({
             sidebar.onNavigate();
           }
         }}
-        xstyle={[styles.navigationControl, isCollapsed && styles.collapsedButton]}
       >
         {icon !== undefined && icon !== null && (
           <span aria-hidden {...stylex.props(styles.icon)}>
@@ -277,7 +305,7 @@ export function NavigationItem({
         <span id={labelId} {...stylex.props(styles.label, isCollapsed && styles.collapsedLabel)}>
           {children}
         </span>
-      </Button>
+      </BaseButton>
     </div>
   );
 }
@@ -377,7 +405,6 @@ export function SidebarToggle(): ReactNode {
           aria-controls={sidebar.sidebarId}
           aria-expanded={sidebar.isExpanded}
           onClick={sidebar.onToggle}
-          xstyle={styles.toggle}
         >
           <PanelLeft size={16} aria-hidden />
         </IconButton>
@@ -386,7 +413,7 @@ export function SidebarToggle(): ReactNode {
         <Drawer.Trigger
           ref={sidebar.mobileNavigationToggleRef}
           handle={sidebar.drawerHandle}
-          render={<IconButton variant="ghost" aria-label="Open navigation" xstyle={styles.toggle} />}
+          render={<IconButton variant="ghost" aria-label="Open navigation" />}
         >
           <PanelLeft size={16} aria-hidden />
         </Drawer.Trigger>

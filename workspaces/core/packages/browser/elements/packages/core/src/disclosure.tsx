@@ -25,7 +25,7 @@ const styles = stylex.create({
     'justifyContent': 'space-between',
     'gap': spacing.sm,
     'width': '100%',
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'paddingInline': 0,
     'paddingBlock': spacing.sm,
     'borderWidth': 0,

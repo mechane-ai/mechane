@@ -2,6 +2,8 @@ export { Combobox } from './combobox.tsx';
 export type { AgentAvatarPickerProps } from './agent-avatar-picker.tsx';
 export { AgentAvatarPicker } from './agent-avatar-picker.tsx';
 export { FilePicker, Fieldset, InputGroup, NumberField, Slider } from './form-controls.tsx';
+export type { FormActionsProps } from './form-actions.tsx';
+export { FormActions } from './form-actions.tsx';
 export { Field, Input, Textarea } from './forms.tsx';
 export { Select } from './select.tsx';
 export { Checkbox, RadioGroup, Switch, ToggleGroup } from './selection.tsx';

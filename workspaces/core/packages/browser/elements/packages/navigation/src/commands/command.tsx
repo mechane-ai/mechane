@@ -15,7 +15,7 @@ const styles = stylex.create({
     'boxSizing': 'border-box',
     'alignItems': 'center',
     'gap': spacing.lg,
-    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'paddingBlock': spacing.sm,
     'paddingInline': spacing.sm,
     'borderRadius': radii.sm,

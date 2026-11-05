@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode, Ref } from 'react';
 import { Text } from '../../../core/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { colors, conditions, controls, shadows, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 
 type WaterfallGeometry =
@@ -52,7 +52,7 @@ const styles = stylex.create({
     paddingInline: spacing.md,
   },
   head: {
-    minHeight: controls.mdHeight,
+    minHeight: controls.height,
     color: colors.muted,
     fontSize: typography.captionSize,
     borderBottomWidth: 1,
@@ -82,7 +82,7 @@ const styles = stylex.create({
     },
     ':last-child': { borderBottomWidth: 0 },
   },
-  active: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
+  active: { backgroundColor: colors.canvas, boxShadow: shadows.selection },
   name: { minWidth: 0, display: 'grid', gap: spacing.xxs },
   detail: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
   selectedDetail: { whiteSpace: 'normal', overflowWrap: 'anywhere' },

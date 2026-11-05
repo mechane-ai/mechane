@@ -3,6 +3,7 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Stack } from '../../core/src/index.ts';
 import { Notice } from '../../feedback/src/index.ts';
+import { FormActions } from './form-actions.tsx';
 import { Field, Input, Textarea } from './forms.tsx';
 
 const meta = {
@@ -13,7 +14,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Input keeps native input events; use size="sm" for compact toolbars and the default size for forms. Both sizes retain touch targets on coarse pointers. Textarea is for longer plain text. Its plain appearance is reserved for a framed composition such as PromptInput, which owns the visible focus indicator. The application owns drafts, submission, permissions, and server errors. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Ordinary form labels remain visible when a placeholder is present.',
+          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Ordinary controls share a 32px outer height and grow to 44px on coarse pointers. Input keeps native input events. Textarea is for longer plain text. Its plain appearance is reserved for a framed composition such as PromptInput, which owns the visible focus indicator. FormActions owns action alignment, gap, and wrapping; the form owns spacing between sections. The application owns drafts, submission, permissions, and server errors. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Ordinary form labels remain visible when a placeholder is present.',
       },
     },
   },
@@ -53,11 +54,11 @@ function EditableForm(): ReactNode {
           <Textarea value={description} onChange={(event) => setDescription(event.target.value)} />
           <Field.Description>Describe the result, without credentials or private configuration.</Field.Description>
         </Field.Root>
-        <div>
+        <FormActions>
           <Button type="submit" variant="solid">
             Save changes
           </Button>
-        </div>
+        </FormActions>
         {isSaved && <Notice>Example saved locally.</Notice>}
       </Stack>
     </form>

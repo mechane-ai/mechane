@@ -60,7 +60,7 @@ export function LogViewer({
           {isRunning && ' · running'}
         </span>
         <div {...stylex.props(viewerStyles.actions)}>
-          <Button size="sm" variant="ghost" onClick={() => setFollowing(!isFollowing)}>
+          <Button variant="ghost" onClick={() => setFollowing(!isFollowing)}>
             {isFollowing ? 'Pause following' : 'Follow output'}
           </Button>
           <CopyValue value={output} label={label}>

@@ -1,13 +1,13 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { frame, frameConditions } from './frame.stylex.ts';
+import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { frameConditions } from './frame.stylex.ts';
 
 const styles = stylex.create({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    height: `calc(100dvh - ${frame.toolbarHeight})`,
+    height: `calc(100dvh - ${pageGeometry.toolbarHeight})`,
     minWidth: 0,
     minHeight: 0,
     containerType: 'inline-size',

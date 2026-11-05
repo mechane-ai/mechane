@@ -25,7 +25,7 @@ const styles = stylex.create({
     'padding': spacing.lg,
     ':has([data-close-button])': {
       paddingInlineEnd: {
-        default: `calc(${spacing.md} + ${controls.smHeight})`,
+        default: `calc(${spacing.md} + ${controls.height})`,
         [conditions.coarsePointer]: `calc(${spacing.md} + ${controls.coarseTarget})`,
       },
     },
@@ -89,7 +89,7 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     minWidth: 0,
     maxWidth: '100%',
-    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     paddingBlock: spacing.xs,
     paddingInline: controls.paddingInline,
     borderWidth: 0,
@@ -118,7 +118,7 @@ const styles = stylex.create({
     'position': 'absolute',
     'insetBlockStart': spacing.xs,
     'insetInlineEnd': spacing.xs,
-    'minWidth': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minWidth': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'paddingInline': 0,
     'backgroundColor': 'transparent',
     'color': colors.muted,

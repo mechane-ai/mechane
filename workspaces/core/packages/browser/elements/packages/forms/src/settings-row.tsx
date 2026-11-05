@@ -5,6 +5,8 @@ import { colors, spacing, typography } from '../../foundations/src/tokens.stylex
 
 const styles = stylex.create({
   setting: {
+    containerType: 'inline-size',
+    containerName: 'setting',
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
@@ -23,7 +25,16 @@ const styles = stylex.create({
   explanation: { display: 'flex', flexDirection: 'column', gap: spacing.xs, minWidth: 0, flex: '1 1 240px' },
   label: { fontWeight: typography.mediumWeight, overflowWrap: 'anywhere' },
   description: { margin: 0, color: colors.muted, overflowWrap: 'anywhere' },
-  control: { minWidth: 0, maxWidth: '100%', flexShrink: 0 },
+  control: {
+    'display': 'grid',
+    'alignItems': 'center',
+    'gridTemplateColumns': 'minmax(0, 1fr)',
+    'width': { 'default': 192, '@container setting (max-width: 480px)': '100%' },
+    'minWidth': 0,
+    'maxWidth': '100%',
+    'flexShrink': 0,
+    ':has(> [role="switch"], > [role="checkbox"])': { justifyItems: 'end' },
+  },
 });
 
 export type SettingsRowProps = {

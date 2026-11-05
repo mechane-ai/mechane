@@ -2,7 +2,14 @@ import * as stylex from '@stylexjs/stylex';
 import { ArrowLeft } from 'lucide-react';
 import type { ReactNode, Ref } from 'react';
 import { Heading, Muted } from '../../core/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import {
+  colors,
+  conditions,
+  controls,
+  pageGeometry,
+  spacing,
+  typography,
+} from '../../foundations/src/tokens.stylex.ts';
 import { DetailPage } from './detail-page.tsx';
 import { frame } from './frame.stylex.ts';
 import { PageToolbar } from './page-toolbar.tsx';
@@ -37,13 +44,13 @@ const styles = stylex.create({
   },
   backIcon: { flexShrink: 0 },
   backLabel: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
-  body: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: spacing.xxl, minWidth: 0 },
+  body: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: pageGeometry.sectionGap, minWidth: 0 },
   content: {
     display: 'flex',
     flexDirection: 'column',
     flexBasis: frame.recordContentWidth,
     flexGrow: 1,
-    gap: spacing.xxl,
+    gap: pageGeometry.sectionGap,
     minWidth: 0,
   },
   header: { display: 'grid', gap: spacing.md, minWidth: 0 },

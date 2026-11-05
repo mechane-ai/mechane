@@ -27,28 +27,9 @@ type PlacementProperties = Pick<
   | 'minWidth'
 >;
 
-type ControlGeometry = Pick<
-  CSSProperties,
-  | 'height'
-  | 'minHeight'
-  | 'maxHeight'
-  | 'padding'
-  | 'paddingBlock'
-  | 'paddingInline'
-  | 'paddingTop'
-  | 'paddingRight'
-  | 'paddingBottom'
-  | 'paddingLeft'
-  | 'borderRadius'
-  | 'justifyContent'
-  | 'alignItems'
-  | 'gap'
->;
-
 type DefinedProperties<Properties> = { readonly [Key in keyof Properties]?: Exclude<Properties[Key], undefined> };
 
 export type PlacementStyle = StyleXStyles<DefinedProperties<PlacementProperties>>;
-export type ControlStyle = StyleXStyles<DefinedProperties<PlacementProperties & ControlGeometry>>;
 
 type StyleProperties<State> = {
   readonly className?: string | ((state: State) => string | undefined) | undefined;

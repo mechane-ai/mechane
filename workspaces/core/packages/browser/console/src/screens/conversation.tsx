@@ -116,7 +116,7 @@ function ConversationPage({
   return (
     <MechConversation
       name={mech.name}
-      avatar={<AgentAvatar seed={mech.id} appearance={appearance} size="sm" />}
+      avatar={<AgentAvatar seed={mech.id} appearance={appearance} />}
       page={visible}
       viewportRef={viewport}
       inspect={(turn) => (
@@ -135,7 +135,7 @@ function ConversationPage({
         <>
           {notice}
           {visible.hasMore && (
-            <Button variant="ghost" size="sm" onClick={() => earlier(visible)}>
+            <Button variant="ghost" onClick={() => earlier(visible)}>
               Earlier messages
             </Button>
           )}

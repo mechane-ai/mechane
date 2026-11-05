@@ -28,9 +28,7 @@ function ActivityPage({
     <>
       {hasUnreadActivity && (
         <CollectionToolbar label="New activity">
-          <Button size="sm" onClick={() => setShown(page)}>
-            Show new activity
-          </Button>
+          <Button onClick={() => setShown(page)}>Show new activity</Button>
         </CollectionToolbar>
       )}
       <Activity page={{ ...visible, events: visible.events.toReversed() }} runLink={runLink} />

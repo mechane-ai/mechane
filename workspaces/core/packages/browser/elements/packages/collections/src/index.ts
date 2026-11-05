@@ -9,6 +9,7 @@ export type {
 export { CollectionToolbar, FilterChips, ColumnControls, CollectionPagination } from './collection-controls.tsx';
 export type {
   DataTableColumn,
+  DataTableColumnRole,
   DataTableSort,
   DataTableWindow,
   DataTableProps,

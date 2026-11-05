@@ -4,6 +4,8 @@ export { FocusPage } from './focus-page.tsx';
 export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';
 export { ViewStack } from './view-stack.tsx';
 export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
+export type { PageContentProps } from './page-content.tsx';
+export { PageContent } from './page-content.tsx';
 export type {
   RecordPageRootProps,
   RecordPageToolbarProps,

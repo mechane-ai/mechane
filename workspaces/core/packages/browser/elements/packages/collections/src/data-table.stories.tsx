@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { FileCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Badge, Button, Stack, Text } from '../../core/src/index.ts';
+import { Badge, Button, Text } from '../../core/src/index.ts';
 import { Input } from '../../forms/src/index.ts';
 import { CollectionPagination, CollectionToolbar, ColumnControls, FilterChips } from './collection-controls.tsx';
 import { DataTable, DataTableText } from './data-table.tsx';
@@ -24,9 +24,9 @@ const runs: ReadonlyArray<Run> = [
 ];
 
 const columns: ReadonlyArray<DataTableColumn<Run>> = [
-  { id: 'name', label: 'Name', cell: (run) => run.name, sortable: true },
-  { id: 'status', label: 'Status', cell: (run) => <Badge>{run.status}</Badge> },
-  { id: 'tokens', label: 'Tokens', cell: (run) => run.tokens.toLocaleString('en-US'), align: 'end', sortable: true },
+  { id: 'name', label: 'Name', role: 'primary', cell: (run) => run.name, sortable: true },
+  { id: 'status', label: 'Status', role: 'status', cell: (run) => <Badge>{run.status}</Badge> },
+  { id: 'tokens', label: 'Tokens', role: 'number', cell: (run) => run.tokens.toLocaleString('en-US'), sortable: true },
 ];
 
 const displayColumns = columns.map(({ sortable: _sortable, ...column }) => column);
@@ -53,7 +53,7 @@ function PreparedRows() {
   }, [query, sort]);
 
   return (
-    <Stack compact>
+    <>
       <CollectionToolbar
         label="Run controls"
         actions={
@@ -85,10 +85,10 @@ function PreparedRows() {
           placeholder="Search runs…"
           xstyle={styles.search}
         />
+        {query !== '' && (
+          <FilterChips filters={[{ id: 'search', label: `Name: ${query}` }]} onRemove={() => setQuery('')} />
+        )}
       </CollectionToolbar>
-      {query !== '' && (
-        <FilterChips filters={[{ id: 'search', label: `Name: ${query}` }]} onRemove={() => setQuery('')} />
-      )}
       <DataTable
         rows={rows}
         columns={columns.filter((column) => visible.has(column.id))}
@@ -109,7 +109,7 @@ function PreparedRows() {
           />
         }
       />
-    </Stack>
+    </>
   );
 }
 
@@ -121,7 +121,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. The table renders the supplied page, reports sort intent, and optionally windows those rows. Ordinary rows stay 48px high; use rowSizing="content" for multiline operational details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Arbitrary composed cells own their text layout. rowAction puts a native link or button in the first primary cell and adds arrow-key navigation; supply a complete label for its pointer and keyboard tooltip. Other cell controls keep their own actions. Choose Table for custom semantic structures. Collection controls report supplied filter, visibility, and page intent without inventing a total. Inspect narrow tables through their named horizontal scroll region.',
+          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. Arbitrary composed cells own their text layout. rowAction puts a native link or button in the first visible primary cell and adds arrow-key navigation; supply a complete label for its tooltip. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. Inspect narrow tables through their named horizontal scroll region.',
       },
     },
   },
@@ -131,6 +131,43 @@ export default meta;
 type Story = StoryObj;
 
 export const Controlled: Story = { render: () => <PreparedRows /> };
+
+export const ColumnRoles: Story = {
+  render: () => (
+    <DataTable
+      rows={[
+        {
+          id: '1042',
+          name: 'Release checklist for production readiness and recorded artifact verification',
+          status: 'Ready',
+          count: 12,
+          updated: 'Nov 4, 2026',
+        },
+        { id: '8', name: 'Quarterly plan', status: 'In review', count: 3, updated: 'Nov 3, 2026' },
+      ]}
+      columns={[
+        {
+          id: 'name',
+          label: 'Name',
+          role: 'primary',
+          cell: (record) => (
+            <DataTableText secondary={`Record ${record.id}`} trailing={<Badge>Automatic</Badge>}>
+              {record.name}
+            </DataTableText>
+          ),
+        },
+        { id: 'identifier', label: 'Record ID', role: 'text', cell: (record) => record.id },
+        { id: 'status', label: 'Status', role: 'status', cell: (record) => <Badge>{record.status}</Badge> },
+        { id: 'count', label: 'Reviews', role: 'number', cell: (record) => record.count.toString() },
+        { id: 'updated', label: 'Updated', role: 'timestamp', cell: (record) => record.updated },
+        { id: 'actions', label: 'Actions', role: 'actions', cell: () => <Button>Review</Button> },
+      ]}
+      getRowId={(record) => record.id}
+      caption="Records awaiting review"
+      empty="No records await review."
+    />
+  ),
+};
 
 export const Empty: Story = {
   render: () => (
@@ -185,7 +222,7 @@ export const LongLabels: Story = {
         {
           id: 'name',
           label: 'Evaluation name and source reference',
-          width: 320,
+          role: 'primary',
           cell: (run) => (
             <DataTableText
               leading={<FileCheck size={20} />}
@@ -195,21 +232,8 @@ export const LongLabels: Story = {
             </DataTableText>
           ),
         },
-        {
-          id: 'status',
-          label: 'Latest recorded result',
-          width: 128,
-          truncate: false,
-          cell: (run) => <Badge>{run.status}</Badge>,
-        },
-        {
-          id: 'tokens',
-          label: 'Tokens',
-          width: 96,
-          truncate: false,
-          align: 'end',
-          cell: (run) => run.tokens.toLocaleString('en-US'),
-        },
+        { id: 'status', label: 'Latest recorded result', role: 'status', cell: (run) => <Badge>{run.status}</Badge> },
+        { id: 'tokens', label: 'Tokens', role: 'number', cell: (run) => run.tokens.toLocaleString('en-US') },
       ]}
       rowAction={{ href: (run) => `#${run.id}`, label: (run) => `Open ${run.name}` }}
       getRowId={(run) => run.id}
@@ -236,9 +260,14 @@ export const OperationalDetails: Story = {
         },
       ]}
       columns={[
-        { id: 'name', label: 'Import', width: 180, cell: (row) => row.name },
-        { id: 'detail', label: 'Latest result', width: 320, cell: (row) => <Text>{row.detail}</Text> },
-        { id: 'action', label: 'Action', width: 120, cell: (row) => <Button disabled={row.complete}>Retry</Button> },
+        { id: 'name', label: 'Import', role: 'primary', cell: (row) => row.name },
+        { id: 'detail', label: 'Latest result', role: 'text', width: 320, cell: (row) => <Text>{row.detail}</Text> },
+        {
+          id: 'action',
+          label: 'Action',
+          role: 'actions',
+          cell: (row) => <Button disabled={row.complete}>Retry</Button>,
+        },
       ]}
       getRowId={(row) => row.id}
       caption="Import health"

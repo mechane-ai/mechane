@@ -1,4 +1,6 @@
 export { EmptyState, Notice } from './feedback.tsx';
+export type { ButtonPlaceholderProps, FieldPlaceholderProps } from './control-placeholders.tsx';
+export { ButtonPlaceholder, FieldPlaceholder } from './control-placeholders.tsx';
 export { Loading } from './loading.tsx';
 export type { ProgressProps, MeterProps } from './progress.tsx';
 export { Progress, Meter } from './progress.tsx';

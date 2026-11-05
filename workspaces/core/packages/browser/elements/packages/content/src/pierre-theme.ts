@@ -69,7 +69,7 @@ export const pierreCSS = `
 pre { font-family: ${typography.monoFamily}; font-size: ${typography.captionSize}; line-height: ${typography.bodyLineHeight}; }
 [data-line-number] { color: ${colors.muted}; }
 [data-diffs-header] {
-  min-height: ${controls.mdHeight};
+  min-height: ${controls.height};
   padding-block: ${spacing.sm};
   padding-inline: ${spacing.md};
   border-bottom: 1px solid ${colors.line};

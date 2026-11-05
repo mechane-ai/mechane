@@ -91,7 +91,7 @@ const styles = stylex.create({
     textAlign: 'start',
     fontFamily: typography.fontFamily,
     fontWeight: typography.regularWeight,
-    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
   },
   position: (left: number, top: number) => ({ left, top }),
   size: (width: number, height: number) => ({ width, height }),

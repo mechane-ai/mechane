@@ -65,6 +65,7 @@ export function ConnectionsScreen({
                     {
                       id: 'status',
                       label: 'Delivery',
+                      role: 'status',
                       cell: (receipt) => (
                         <Status
                           tone={
@@ -79,7 +80,12 @@ export function ConnectionsScreen({
                         </Status>
                       ),
                     },
-                    { id: 'created', label: 'Created', cell: (receipt) => timeLabel(receipt.createdAt) },
+                    {
+                      id: 'created',
+                      label: 'Created',
+                      role: 'timestamp',
+                      cell: (receipt) => timeLabel(receipt.createdAt),
+                    },
                   ]}
                   empty="No delivery receipts"
                 />

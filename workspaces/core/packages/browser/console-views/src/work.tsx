@@ -37,10 +37,16 @@ export function WorkList({
         focusRowId={focusRowId}
         rowAction={{ onActivate: (thread) => onSelect(thread.id), label: (thread) => `Open ${thread.title}` }}
         columns={[
-          { id: 'title', label: 'Work', cell: (thread) => <DataTableText>{thread.title}</DataTableText> },
+          {
+            id: 'title',
+            label: 'Work',
+            role: 'primary',
+            cell: (thread) => <DataTableText>{thread.title}</DataTableText>,
+          },
           {
             id: 'state',
             label: 'State',
+            role: 'status',
             width: 128,
             cell: (thread) => (
               <Status tone={thread.state === 'resolved' ? 'positive' : 'neutral'}>
@@ -51,6 +57,7 @@ export function WorkList({
           {
             id: 'updated',
             label: 'Updated',
+            role: 'timestamp',
             secondary: true,
             width: 144,
             cell: (thread) => <ConsoleTimestamp value={thread.updatedAt} />,

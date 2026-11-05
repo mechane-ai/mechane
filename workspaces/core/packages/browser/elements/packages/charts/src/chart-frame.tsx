@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
-import { colors, conditions, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, conditions, controls, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { chartToneColors } from './chart-theme.ts';
 import type { ChartTone } from './chart-theme.ts';
 
@@ -92,7 +92,7 @@ const styles = stylex.create({
     columnGap: spacing.md,
     rowGap: spacing.xs,
     minWidth: 0,
-    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     boxSizing: 'border-box',
     width: '100%',
     borderWidth: 0,
@@ -120,7 +120,7 @@ const styles = stylex.create({
       outlineOffset: -2,
     },
   },
-  selected: { backgroundColor: colors.canvas, boxShadow: 'inset 2px 0 currentColor' },
+  selected: { backgroundColor: colors.canvas, boxShadow: shadows.selection },
   readout: {
     margin: 0,
     minWidth: 0,
