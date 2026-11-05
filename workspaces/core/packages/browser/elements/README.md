@@ -39,8 +39,10 @@ export function Example() {
 ```
 
 Elements supplies compiled ESM, TypeScript declarations, and CSS. Ordinary React consumers need no StyleX compiler.
-Applications install their own reset and fonts. Put reset rules in the `reset` CSS layer; the package's `elements` layer
-comes after it. Application styles and StyleX themes can override that layer.
+Applications install their own reset and fonts. Put reset rules in the `reset` CSS layer. Elements and consumer StyleX
+rules share the compiler's ordered `priority` layers. Keep those layers at the top level: wrapping Elements in another
+layer lets consumer base declarations override component hover and focus states. Unlayered application themes can
+override token defaults.
 
 ## Imports
 

@@ -35,3 +35,12 @@ export const fieldStyles = stylex.create({
   },
   textarea: { minHeight: 144, resize: 'vertical', lineHeight: typography.multilineLineHeight },
 });
+
+export const inputSizeStyles = stylex.create({
+  sm: {
+    minHeight: { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    paddingBlock: spacing.xs,
+    fontSize: { default: typography.bodySize, [conditions.coarsePointer]: typography.touchInputSize },
+  },
+  md: {},
+});

@@ -62,6 +62,10 @@ calculate a new embedding or select a dataset outside the supplied window.
 
 ## Evidence
 
+BarChart supports pointer, tap, and arrow-key inspection. Home and End reach the boundary categories; Escape dismisses
+the readout. An optional controlled selection responds to click or Enter. Category `label` retains the full meaning in
+inspection and View data; optional `axisLabel` supplies a concise tick such as “Oct 6” without changing record identity.
+
 Bar domains include zero. Grouped bars can show signed values; stacked bars require nonnegative observations. Missing
 values remain unavailable, and a zero remains a zero. BreakdownBar receives a declared total, shows any unassigned
 portion, and tolerates arithmetic rounding without changing the displayed measurements.

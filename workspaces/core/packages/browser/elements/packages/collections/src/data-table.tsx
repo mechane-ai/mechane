@@ -92,9 +92,9 @@ const styles = stylex.create({
   },
   row: {
     'height': { default: 39, [conditions.coarsePointer]: controls.coarseTarget },
-    'borderTopWidth': 1,
-    'borderTopStyle': 'solid',
-    'borderTopColor': colors.line,
+    'borderBottomWidth': 1,
+    'borderBottomStyle': 'solid',
+    'borderBottomColor': colors.line,
     ':hover': { backgroundColor: { [conditions.hoverPointer]: colors.canvas } },
   },
   selected: { backgroundColor: colors.accentSoft },

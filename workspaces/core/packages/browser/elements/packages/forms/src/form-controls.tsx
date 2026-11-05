@@ -9,7 +9,7 @@ import type { ReadOnlyValueProperties, ValueStateProperties } from '../../founda
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, conditions, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { fieldStyles } from './field-styles.ts';
+import { fieldStyles, inputSizeStyles } from './field-styles.ts';
 import type { InputProps } from './forms.tsx';
 
 const styles = stylex.create({
@@ -230,14 +230,14 @@ function InputGroupAddon(props: InputGroupAddonProps): ReactNode {
   return <span {...mergeProps<'span'>(stylex.props(styles.addon), props)} />;
 }
 
-function InputGroupInput({ className, style, xstyle, ...props }: InputProps): ReactNode {
+function InputGroupInput({ className, style, xstyle, size = 'md', ...props }: InputProps): ReactNode {
   return (
     <BaseInput
       {...props}
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(fieldStyles.input, styles.embedded, xstyle),
+        styles: stylex.props(fieldStyles.input, inputSizeStyles[size], styles.embedded, xstyle),
       })}
     />
   );

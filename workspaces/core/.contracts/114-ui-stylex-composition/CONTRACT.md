@@ -38,10 +38,11 @@ Compiler resolution and the package export map describe the same source. Normal 
 the direct token definition path is the compiler-required exception.
 Composition review is development evidence. It does not require a new browser suite or automatic Storybook play tests.
 
-The published stylesheet places component rules and token defaults in the `elements` cascade layer after `reset`.
-Consumer themes and application styles can override that layer. Preserve the defining token's package-relative path
-when packaging so separately compiled themes target the same variables. Verify both an ordinary React consumer and a
-StyleX theme applied to the document root, including portaled overlays.
+Published components and consumer StyleX rules share the compiler's top-level priority layers after `reset`. Do not
+nest the package's rules in a separate layer: identical consumer base declarations must not outrank packaged hover,
+focus, disabled, or responsive states. Consumer themes can override token defaults. Preserve the defining token's
+package-relative path so separately compiled themes target the same variables. Verify both an ordinary React consumer
+and a StyleX consumer with overlapping base declarations, including navigation hover and portaled overlays.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -24,6 +24,7 @@ const styles = stylex.create({
     'fontWeight': 500,
     'fontSize': typography.bodySize,
     'lineHeight': typography.bodyLineHeight,
+    'textDecorationLine': 'none',
     'cursor': 'pointer',
     'whiteSpace': 'nowrap',
     ':is([data-disabled]):not([aria-busy="true"])': { opacity: controls.disabledOpacity, cursor: 'default' },

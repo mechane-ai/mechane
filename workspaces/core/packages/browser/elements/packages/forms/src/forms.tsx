@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
-import { fieldStyles as styles } from './field-styles.ts';
+import { inputSizeStyles, fieldStyles as styles } from './field-styles.ts';
 
 type FieldRootProps = ComponentProps<typeof BaseField.Root> & { readonly xstyle?: PlacementStyle };
 type FieldLabelProps = ComponentProps<typeof BaseField.Label>;
@@ -13,12 +13,15 @@ type FieldDescriptionProps = ComponentProps<typeof BaseField.Description>;
 type FieldErrorProps = ComponentProps<typeof BaseField.Error>;
 type BaseInputProps = ComponentProps<typeof BaseInput>;
 
-export type InputProps = Omit<BaseInputProps, 'value' | 'defaultValue' | 'onChange' | 'onValueChange' | 'readOnly'> &
+export type InputProps = Omit<
+  BaseInputProps,
+  'value' | 'defaultValue' | 'onChange' | 'onValueChange' | 'readOnly' | 'size'
+> &
   TextValueProperties<
     NonNullable<BaseInputProps['value']>,
     NonNullable<BaseInputProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly xstyle?: PlacementStyle };
+  > & { readonly size?: 'sm' | 'md'; readonly xstyle?: PlacementStyle };
 
 type NativeTextareaProps = ComponentProps<'textarea'>;
 
@@ -67,11 +70,15 @@ function FieldError({ className, style, ...props }: FieldErrorProps): ReactNode 
 
 export const Field = { Root: FieldRoot, Label: FieldLabel, Description: FieldDescription, Error: FieldError };
 
-export function Input({ className, style, xstyle, ...props }: InputProps): ReactNode {
+export function Input({ className, style, xstyle, size = 'md', ...props }: InputProps): ReactNode {
   return (
     <BaseInput
       {...props}
-      {...mergeStyles<BaseInput.State>({ className, style, styles: stylex.props(styles.input, xstyle) })}
+      {...mergeStyles<BaseInput.State>({
+        className,
+        style,
+        styles: stylex.props(styles.input, inputSizeStyles[size], xstyle),
+      })}
     />
   );
 }

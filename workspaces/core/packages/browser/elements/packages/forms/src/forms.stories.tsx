@@ -13,7 +13,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Input keeps native input events; Textarea is for longer plain text. The application owns drafts, submission, permissions, and server errors. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Labels remain visible when a placeholder is present.',
+          'Supported. Field.Root associates a control with Field.Label, optional Field.Description, and Field.Error. Input keeps native input events; use size="sm" for compact toolbars and the default size for forms. Both sizes retain touch targets on coarse pointers. Textarea is for longer plain text. The application owns drafts, submission, permissions, and server errors. Choose defaultValue for an uncontrolled field, or value with its change callback for a controlled field. Use readOnly for a value that stays selectable; disabled means the control is unavailable. Labels remain visible when a placeholder is present.',
       },
     },
   },
