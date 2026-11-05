@@ -1,18 +1,18 @@
-import { Muted } from '@mechane-ai/elements';
 import { PromptInput } from '@mechane-ai/elements/ai';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { Delivery, INBOX_TEXT_MAX_CHARS } from '@mechane/protocol';
-import type { Mech } from '@mechane/protocol';
+import type { InboxItem, Mech } from '@mechane/protocol';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
+import { ConversationActivity } from './conversation-activity.tsx';
 
 export function MessageForm({ data, mech }: { readonly data: ConsoleData; readonly mech: Mech }): ReactNode {
   const [text, setText] = useState('');
   const [id, setId] = useState(() => crypto.randomUUID());
   const [busy, setBusy] = useState(false);
-  const [received, setReceived] = useState(false);
+  const [received, setReceived] = useState<InboxItem>();
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
 
@@ -34,11 +34,11 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
         delivery: Delivery.WhenIdle,
       })
       .then(
-        () => {
+        (item) => {
           if (isScreenActive()) {
             setText('');
             setId(crypto.randomUUID());
-            setReceived(true);
+            setReceived(item);
             setBusy(false);
             void data.refresh();
           }
@@ -63,7 +63,7 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
         setText(value);
         setId(crypto.randomUUID());
         setError(undefined);
-        setReceived(false);
+        setReceived(undefined);
       }}
       onSubmit={submit}
       maxLength={INBOX_TEXT_MAX_CHARS}
@@ -72,13 +72,7 @@ export function MessageForm({ data, mech }: { readonly data: ConsoleData; readon
       submitDisabled={text.trim().length === 0}
       enterBehavior="submit"
       error={error}
-      controls={
-        received ? (
-          <span role="status">
-            <Muted>{mech.status === 'paused' ? 'Queued while paused' : 'Message received'}</Muted>
-          </span>
-        ) : undefined
-      }
+      controls={<ConversationActivity data={data} mech={mech} received={received} />}
     />
   );
 }

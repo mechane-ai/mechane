@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
-import { CopyValue, Muted, Prose, Stack, Subheading } from '../../core/src/index.ts';
+import { useRef, useState } from 'react';
+import { Button, CopyValue, Muted, Prose, Stack, Subheading } from '../../core/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Details, Inspector } from './inspector.tsx';
 import { Metric, MetricGrid } from './metrics.tsx';
@@ -15,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Inspector groups a selected detail with its master content and requires a contextual accessible label. It owns the outer frame and the divider above its detail; place unframed content in the master area. Details is a key/value list. MetricGrid groups Metric values; layout="columns" follows the available container width. CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use Table for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
+          'Inspector places a supplied collection beside its sticky selected detail in a wide container and stacks them in a narrow one. The surrounding page owns scrolling; Inspector adds no nested scroll region or outer card. Supply the required masterLabel for the collection and label for its selected detail. Existing consumers must add masterLabel when upgrading. A changed revealKey explicitly reveals and focuses the detail on narrow containers; omit it for default selection and passive keyboard movement. Pass returnFocusRef to restore the selected control from the compact Back button. Selection and reveal intent belong to the application. Details is a key/value list. MetricGrid groups Metric values; layout="columns" follows the available container width. CopyValue copies an exact value while allowing a shorter visible label. The application supplies selection, labels, bounded content, and formatted values. Keep unknown values visibly unknown. Use Table for comparable rows and Prose for plain text; these components do not parse resource records or choose units. CopyValue announces success and exposes the original value if clipboard access fails.',
       },
     },
   },
@@ -28,6 +29,7 @@ export const Recommended: Story = {
   render: () => (
     <Inspector
       label="Selected example operation"
+      masterLabel="Operations"
       master={
         <div {...stylex.props(styles.master)}>
           <Stack compact>
@@ -110,3 +112,52 @@ export const NarrowMetrics: Story = {
 };
 
 export const NarrowDetails: Story = { ...LongValues, globals: { viewport: { value: 'narrow', isRotated: false } } };
+
+function InspectionExample() {
+  const [selected, setSelected] = useState('verify');
+  const [reveal, setReveal] = useState<number>();
+  const selectedRow = useRef<HTMLButtonElement>(null);
+
+  const operations = [
+    { id: 'verify', label: 'Verify restored files', result: 'Recorded source and manifest agree.' },
+    { id: 'compile', label: 'Compile browser packages', result: 'Build completed in 8.4s.' },
+    { id: 'review', label: 'Review release notes', result: 'No committed result is available yet.' },
+  ];
+
+  const current = operations.find((operation) => operation.id === selected);
+
+  return (
+    <Inspector
+      label="Selected operation"
+      masterLabel="Operations"
+      revealKey={reveal === undefined ? undefined : String(reveal)}
+      returnFocusRef={selectedRow}
+      master={
+        <Stack compact>
+          {operations.map((operation) => (
+            <Button
+              key={operation.id}
+              ref={operation.id === selected ? selectedRow : undefined}
+              aria-pressed={operation.id === selected}
+              onClick={() => {
+                setSelected(operation.id);
+                setReveal((prior) => (prior ?? 0) + 1);
+              }}
+            >
+              {operation.label}
+            </Button>
+          ))}
+        </Stack>
+      }
+      detail={
+        <Stack compact>
+          <Subheading>{current?.label}</Subheading>
+          <Prose>{current?.result}</Prose>
+        </Stack>
+      }
+    />
+  );
+}
+
+export const Selection: Story = { render: () => <InspectionExample /> };
+export const NarrowSelection: Story = { ...Selection, globals: { viewport: { value: 'narrow', isRotated: false } } };

@@ -11,39 +11,48 @@ names and permissions remain unchanged.
 
 The sidebar separates **Overview**, **Pinned**, and **Recent**. Recent shows the last five unpinned mechs you opened;
 pin a mech to keep it above that list. These shortcuts and appearance choices belong to your account and workspace in
-this browser. **Settings** holds account actions and the documentation and software notices under **About**.
+this browser. Open your account at the bottom of the sidebar for settings, account actions, and the documentation and
+software notices under **About**.
 
 Open a mech to read its continuous **Conversation**, with an inline composer and Markdown replies. **Work** shows the
-agent's durable threads and notes; these are work records, not separate chat sessions. **Runs** shows executions with
-their input excerpts. **Memory** contains explicitly saved notes, separately from conversation history. **History**
-keeps the original durable events. A fork explains the source and copied event boundary: its event number is a position
-in the log, not a count of forks. Forked mechs continue independently.
+agent's durable threads and notes; these are work records, not separate chat sessions. Selecting one opens its detail in
+place of the list. **Back to work** restores the originating row and scroll position. **Runs** shows executions with
+their input excerpts. **Memory** contains explicitly saved notes and links each note to its source run. **History**
+keeps the original durable events, with run links where the event records one. A fork explains the source and copied
+event boundary: its event number is a position in the log, not a count of forks. Forked mechs continue independently.
 
-The mech header combines its identity, status, and view selector. Conversation actions appear on hover or keyboard focus
-and remain visible on touch devices. Copy and run controls have named icons; fork details expand from a compact
-conversation boundary.
+The mech header combines its identity and primary views in one bar. **More mech options** holds Memory, History,
+Settings, and lifecycle actions; a view selector replaces the primary links at narrow widths. Conversation actions
+appear on hover or keyboard focus and remain visible on touch devices. Copy and run controls have named icons; fork
+details expand from a compact conversation boundary.
 
-List rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the row,
-page, and scroll position you were reading. **Open run** opens a full page, temporarily hiding workspace navigation. The
-conversation and draft stay mounted. The return control and browser Back restore the originating view; a run opened
-directly returns to its mech. Opening run details does not change the saved sidebar preference.
+Mech and run rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the
+row, page, and scroll position you were reading. **Open run** opens a full page, temporarily hiding workspace
+navigation. The conversation and draft stay mounted. Selecting requests or events within that run keeps the original
+return destination. The return control and browser Back restore the originating view; a run opened directly returns to
+its mech. Opening run details does not change the saved sidebar preference.
 
 A run opens on **Overview**. An answered run shows the start of its recorded reply. **Read full reply** opens the exact
 event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance decision
 and settlement for each model request. A bar has both endpoints, a hollow point is awaiting settlement, and a diamond is
-a refusal before a call. Select a row to inspect its model, cost and reported usage. **Copy link** shares that selection
-with someone who can access the workspace. **Events** pages through the original messages and replies in commit order.
-**Tools** shows recorded tool names, outcomes and timing; raw tool arguments and results do not enter this browser
-projection. Evidence reads are bounded, and missing or truncated evidence is labeled.
+a refusal before a call. Select a row to inspect its model, cost and reported usage. Details sit beside the request list
+when space permits; at narrow widths, selection brings them into view and a return control restores the selected row.
+**Copy link** shares that selection with someone who can access the workspace. **Events** pages through the original
+messages and replies in commit order. **Tools** shows recorded tool names, outcomes and timing; a duration needs both
+recorded endpoints. Raw tool arguments and results do not enter this browser projection. Evidence reads are bounded, and
+missing or truncated evidence is labeled beside the run summary across all its views.
 
 Compact timestamps expose the full UTC date and time on hover or keyboard focus. A transient refresh failure keeps the
 last result visible and offers a retry. New activity waits behind **Show new activity** while you read. A message clears
 only after receipt; failed sends retain the draft and request identity for retry, including while you inspect a run.
-Enabled means the mech can run, while Running comes from an execution record. The mech's **Settings** holds its
-appearance, definition, lifecycle actions, existing Slack connections and delivery receipts. An answered run and a
-delivered Slack reply are separate outcomes. The console does not change Slack bindings or permissions. When you edit a
-definition someone else has changed, compare the saved revision with your draft before saving. Continuing keeps your
-edits and adopts the latest values for untouched fields.
+Current activity stays beside the composer while you read earlier conversation pages. A receipt means the message was
+accepted; it may still be waiting for the active run to finish or for a paused mech to resume. Enabled means the mech
+can run, while Running comes from an execution record. Unavailable activity is labeled with a retry action.
+
+The mech's **Settings** holds its appearance, definition, lifecycle actions, existing Slack connections and delivery
+receipts. An answered run and a delivered Slack reply are separate outcomes. The console does not change Slack bindings
+or permissions. When you edit a definition someone else has changed, compare the saved revision with your draft before
+saving. Continuing keeps your edits and adopts the latest values for untouched fields.
 
 ## Package boundaries
 

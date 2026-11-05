@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { ConsoleApplication } from '../application.tsx';
+import { consoleTransition } from '../navigation.tsx';
 import type { ConsoleLocation } from '../types.ts';
 
 const isConsoleView = Schema.is(Schema.Enum(ConsoleView));
@@ -30,12 +31,7 @@ function ConsoleRoute(): ReactNode {
     <ConsoleApplication
       location={location}
       navigate={(search) => {
-        void navigate({
-          search,
-          resetScroll: search.mech !== location.mech || search.workspace !== location.workspace,
-          replace: location.turn !== undefined && search.turn === location.turn,
-          state: (prior) => (search.mech === location.mech && search.workspace === location.workspace ? prior : {}),
-        });
+        void navigate({ search, ...consoleTransition(location, search) });
       }}
     />
   );

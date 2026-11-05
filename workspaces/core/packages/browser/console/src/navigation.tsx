@@ -1,10 +1,32 @@
 import { TextLink } from '@mechane-ai/elements';
 import { createLink, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
+import type { HistoryState } from '@tanstack/react-router';
 import { useCallback, useLayoutEffect, useRef } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
 
 const RouteLink = createLink(TextLink);
+
+/** One transition policy preserves a run's origin and clears reader state when its owner changes. */
+export function consoleTransition(from: ConsoleLocation, to: ConsoleLocation) {
+  const sameMech = from.mech !== undefined && from.mech === to.mech;
+  const implicitWorkspace = sameMech ? (from.workspace ?? to.workspace) : undefined;
+  const fromWorkspace = from.workspace ?? implicitWorkspace;
+  const toWorkspace = to.workspace ?? implicitWorkspace;
+  const sameOwner = fromWorkspace === toWorkspace && from.mech === to.mech;
+  const sameTurn = from.turn !== undefined && from.turn === to.turn;
+  const withinRun = sameOwner && sameTurn;
+
+  return {
+    replace: withinRun,
+    resetScroll: !sameOwner,
+    state: (prior: HistoryState): HistoryState => {
+      const retained = sameOwner ? prior : {};
+
+      return to.turn === undefined || withinRun ? retained : { ...retained, consoleRunOrigin: from };
+    },
+  };
+}
 
 export function readReaderPositions(): ReadonlyArray<ReaderPosition> {
   return [...document.querySelectorAll<HTMLElement>('[data-scroll-restoration-id]')]
@@ -56,13 +78,13 @@ export function useRecordNavigation() {
     focusRowId: selectedTurn === undefined ? entry.consoleReturn?.row : undefined,
     href: (search: ConsoleLocation) => router.buildLocation({ to: '/', search }).publicHref,
     open: (search: ConsoleLocation, row: string) => {
-      globalThis.history.replaceState({ ...entry, consoleReturn: { row, positions: readReaderPositions() } }, '');
-      void navigate({
-        to: '/',
-        search,
-        resetScroll: false,
-        state: (prior) => ({ ...prior, consoleRunOrigin: location }),
-      });
+      const transition = consoleTransition(location, search);
+
+      if (!transition.replace) {
+        globalThis.history.replaceState({ ...entry, consoleReturn: { row, positions: readReaderPositions() } }, '');
+      }
+
+      void navigate({ to: '/', search, ...transition });
     },
     back: (fallback: ConsoleLocation) => {
       if (entry.consoleRunOrigin !== undefined) {
@@ -92,6 +114,7 @@ export function ConsoleLink({
   const entry = useRouterState({ select: (state) => state.location.state });
   const selectedTurn = useRouterState({ select: (state) => state.location.search.turn });
   const location = useRouterState({ select: (state) => state.location.search });
+  const transition = consoleTransition(location, to);
 
   useLayoutEffect(() => {
     if (selectedTurn !== undefined) {
@@ -130,19 +153,23 @@ export function ConsoleLink({
       search={to}
       title={title}
       target={props.target ?? '_self'}
-      resetScroll={false}
-      state={(prior) => (to.turn === undefined ? prior : { ...prior, consoleRunOrigin: location })}
+      {...transition}
       onClick={(event) => {
         onClick?.(event);
 
         const command = event.metaKey || event.ctrlKey;
         const alternate = event.shiftKey || event.altKey;
+        const currentTab = props.target === undefined || props.target === '_self';
 
         if (row === undefined || event.button !== 0 || event.defaultPrevented) {
           return;
         }
 
-        if (command || alternate) {
+        if (command || alternate || !currentTab) {
+          return;
+        }
+
+        if (transition.replace) {
           return;
         }
 

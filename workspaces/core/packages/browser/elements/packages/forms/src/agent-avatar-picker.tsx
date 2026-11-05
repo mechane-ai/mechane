@@ -18,6 +18,21 @@ const styles = stylex.create({
     maxWidth: '100%',
     width: 352,
   },
+  preview: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0 },
+  identity: { display: 'flex', flexDirection: 'column', minWidth: 0 },
+  name: {
+    color: colors.ink,
+    fontSize: typography.bodySize,
+    fontWeight: typography.mediumWeight,
+    lineHeight: typography.bodyLineHeight,
+    textTransform: 'capitalize',
+  },
+  color: {
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+    textTransform: 'capitalize',
+  },
   section: { display: 'flex', flexDirection: 'column', gap: spacing.sm, minWidth: 0 },
   label: {
     color: colors.muted,
@@ -28,7 +43,7 @@ const styles = stylex.create({
   choices: {
     display: 'grid',
     gridTemplateColumns: {
-      default: `repeat(auto-fill, minmax(${controls.smHeight}, 1fr))`,
+      default: `repeat(auto-fill, minmax(${controls.mdHeight}, 1fr))`,
       [conditions.coarsePointer]: `repeat(auto-fill, minmax(${controls.coarseTarget}, 1fr))`,
     },
     gap: spacing.xs,
@@ -38,13 +53,13 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'boxSizing': 'border-box',
-    'minWidth': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': { default: controls.smHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minWidth': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    'minHeight': { default: controls.mdHeight, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': spacing.xs,
     'borderWidth': 1,
     'borderStyle': 'solid',
     'borderColor': 'transparent',
-    'borderRadius': radii.sm,
+    'borderRadius': radii.md,
     'backgroundColor': 'transparent',
     'cursor': 'pointer',
     ':is([data-checked])': { borderColor: colors.ink, backgroundColor: colors.canvas },
@@ -72,6 +87,13 @@ export function AgentAvatarPicker({ value, onValueChange, disabled = false }: Ag
 
   return (
     <div {...stylex.props(styles.root)}>
+      <div {...stylex.props(styles.preview)}>
+        <AgentAvatar seed="preview" appearance={value} size="lg" />
+        <div {...stylex.props(styles.identity)}>
+          <span {...stylex.props(styles.name)}>{value.shape}</span>
+          <span {...stylex.props(styles.color)}>{value.color}</span>
+        </div>
+      </div>
       <div {...stylex.props(styles.section)}>
         <span id={shapeLabel} {...stylex.props(styles.label)}>
           Shape
@@ -85,7 +107,7 @@ export function AgentAvatarPicker({ value, onValueChange, disabled = false }: Ag
         >
           {agentAvatarShapes.map((shape) => (
             <BaseRadio.Root key={shape} value={shape} aria-label={shape} title={shape} {...stylex.props(styles.choice)}>
-              <AgentAvatar seed={shape} appearance={{ ...value, shape }} />
+              <AgentAvatar seed={shape} appearance={{ ...value, shape }} size="md" />
             </BaseRadio.Root>
           ))}
         </BaseRadioGroup>
@@ -103,7 +125,7 @@ export function AgentAvatarPicker({ value, onValueChange, disabled = false }: Ag
         >
           {agentAvatarColors.map((color) => (
             <BaseRadio.Root key={color} value={color} aria-label={color} title={color} {...stylex.props(styles.choice)}>
-              <AgentAvatar seed={color} appearance={{ ...value, color }} />
+              <AgentAvatar seed={color} appearance={{ ...value, color }} size="md" />
             </BaseRadio.Root>
           ))}
         </BaseRadioGroup>

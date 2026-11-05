@@ -1,7 +1,7 @@
 ---
 name: ui-conversation-state
 message: Preserve the reader's position and the author's draft while presenting supplied messages and activity.
-paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
+paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console/src/screens/conversation-activity.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
 ---
 
 ## Rules
@@ -49,8 +49,20 @@ acknowledgement settles the identified submission even while its form is hidden.
 a rejected or uncertain send preserves the text and request identity. Switching the owning mech or workspace keeps
 state from appearing in another record.
 
+Keep current activity beside the composer, outside the paginated transcript. Its resource lifetime follows the mech,
+not the history page. The compact presentation preserves the read states required by contract 071; an unavailable or
+pending activity read must not imply that the mech is idle.
+
+A message receipt acknowledges acceptance, not execution. Distinguish a message waiting to run from a recorded running
+turn, and associate it only through its recorded input identity. Once that association is known, the run falling outside
+a bounded page must not make the message appear queued again. Preserve independently known receipt information when
+the activity read fails.
+
 Inspect a run while reading older content and while a send is pending, then return before and after completion.
 Confirm the same message and draft state return without a duplicate send or a jump to the latest message.
+Observe a receipt before its run starts, while another run is active, and while the mech is paused. Change the history
+page and fail the activity read before and after a successful result. Confirm current activity remains reachable beside
+the composer and that missing page data does not reverse a known message outcome.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

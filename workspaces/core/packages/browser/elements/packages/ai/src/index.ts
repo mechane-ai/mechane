@@ -6,6 +6,8 @@ export type {
   ConversationContentProps,
   ConversationItemProps,
   ConversationJumpProps,
+  ConversationControlsProps,
+  ConversationLatestButtonProps,
 } from './conversation.tsx';
 export { Conversation } from './conversation.tsx';
 export type { MessageKind, MessageProps, MessageAttachmentProps } from './message.tsx';

@@ -18,6 +18,7 @@ export type {
 export { DataTable, DataTableText } from './data-table.tsx';
 export type { CollectionEndProps, CollectionScrollProps } from './collection-scroll.tsx';
 export { CollectionEnd, CollectionScroll } from './collection-scroll.tsx';
+export type { InspectorProps } from './inspector.tsx';
 export { Inspector, Details } from './inspector.tsx';
 export { ListFooter } from './list-footer.tsx';
 export { MetricGrid, Metric } from './metrics.tsx';

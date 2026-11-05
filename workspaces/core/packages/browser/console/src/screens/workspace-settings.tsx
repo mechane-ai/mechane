@@ -1,5 +1,6 @@
 import { Button, Muted, Stack, TextLink } from '@mechane-ai/elements';
 import { Details } from '@mechane-ai/elements/collections';
+import { Notice } from '@mechane-ai/elements/feedback';
 import { SettingsSection } from '@mechane-ai/elements/forms';
 import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
 import type { Session } from '@mechane/console-data';
@@ -23,15 +24,8 @@ export function WorkspaceSettings({
       <DetailPage>
         <Stack>
           <SettingsSection title="Workspace">
-            <Details
-              items={[
-                { label: 'Name', value: workspace.name },
-                {
-                  label: 'Navigation',
-                  value: persistenceError ? 'Browser storage unavailable' : 'Pins and recents saved on this browser',
-                },
-              ]}
-            />
+            <Details items={[{ label: 'Name', value: workspace.name }]} />
+            {persistenceError && <Notice error>This browser could not save your pins and recent mechs.</Notice>}
           </SettingsSection>
           <SettingsSection title="Account">
             <Details

@@ -1,4 +1,3 @@
-import { Stack } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import {
   PageToolbar,
@@ -10,7 +9,7 @@ import {
 } from '@mechane-ai/elements/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { MechHeader } from '@mechane/console-views';
+import { MechHeader, MechSettings } from '@mechane/console-views';
 import { MechStatus } from '@mechane/protocol';
 import type { ConsoleView, Mech } from '@mechane/protocol';
 import { useRouterState } from '@tanstack/react-router';
@@ -28,7 +27,6 @@ import { ActivityScreen } from './activity.tsx';
 import { ConnectionsScreen } from './connections.tsx';
 import { ConversationScreen } from './conversation.tsx';
 import { EditMechForm } from './edit-mech.tsx';
-import { MechSettings } from './mech-settings.tsx';
 import { MessageForm } from './message.tsx';
 import { TraceScreen } from './trace.tsx';
 import { TurnsScreen } from './turns.tsx';
@@ -89,7 +87,7 @@ function MechDetails({
   const base = { workspace: data.workspace.id, mech: mech.id };
   const [editing, setEditing] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
-  const [error, setError] = useState<string>();
+  const [statusError, setStatusError] = useState<{ readonly status: MechStatus; readonly message: string }>();
 
   const [conversationVisited, setConversationVisited] = useState(
     view === 'conversation' && location.turn === undefined,
@@ -97,7 +95,7 @@ function MechDetails({
 
   const isScreenActive = useScreenLifetime();
   const preferences = useNavigationPreferences();
-  const { appearance } = useMechAppearance(mech.id);
+  const { appearance, setAppearance, persistenceError: appearanceError } = useMechAppearance(mech.id);
   const records = useRecordNavigation();
   const { consumeReturn } = records;
   const entry = useRouterState({ select: (state) => state.location.state });
@@ -105,7 +103,11 @@ function MechDetails({
   const runBack = useRef<HTMLButtonElement>(null);
   const busy = pendingStatus !== undefined;
   const focusedRun = location.turn !== undefined;
+  const previousRun = useRef(focusedRun);
   const conversationVisible = view === 'conversation';
+  const conversationActive = conversationVisible && !focusedRun && !editing;
+  const archiveError = statusError?.status === MechStatus.Archived ? statusError.message : undefined;
+  const lifecycleError = statusError?.status === MechStatus.Archived ? undefined : statusError?.message;
 
   if (conversationVisible && !focusedRun && !conversationVisited) {
     setConversationVisited(true);
@@ -136,7 +138,11 @@ function MechDetails({
   }, [consumeReturn, editing, entry.consoleReturn, focusedRun, view]);
 
   useLayoutEffect(() => {
-    if (focusedRun) {
+    const enteringRun = focusedRun && !previousRun.current;
+
+    previousRun.current = focusedRun;
+
+    if (enteringRun) {
       runBack.current?.focus({ preventScroll: true });
     }
   }, [focusedRun]);
@@ -152,7 +158,7 @@ function MechDetails({
     }
 
     setPendingStatus(status);
-    setError(undefined);
+    setStatusError(undefined);
     void data.update(mech, { status }).then(
       () => {
         if (isScreenActive()) {
@@ -162,7 +168,7 @@ function MechDetails({
       (cause: unknown) => {
         if (isScreenActive()) {
           setPendingStatus(undefined);
-          setError(problemMessage(cause));
+          setStatusError({ status, message: problemMessage(cause) });
         }
       },
     );
@@ -180,19 +186,20 @@ function MechDetails({
         return <ActivityScreen data={data} mechId={mech.id} />;
       case 'definition':
         return (
-          <Stack>
-            <MechSettings
-              mech={mech}
-              busy={busy}
-              error={error}
-              onEdit={() => {
-                readerPositions.current.set(view, readReaderPositions());
-                setEditing(true);
-              }}
-              onArchive={() => setStatus(MechStatus.Archived)}
-            />
-            <ConnectionsScreen data={data} mechId={mech.id} />
-          </Stack>
+          <MechSettings
+            mech={mech}
+            busy={busy}
+            error={archiveError}
+            connections={<ConnectionsScreen data={data} mechId={mech.id} />}
+            appearance={appearance}
+            onAppearance={setAppearance}
+            appearanceError={appearanceError}
+            onEdit={() => {
+              readerPositions.current.set(view, readReaderPositions());
+              setEditing(true);
+            }}
+            onArchive={() => setStatus(MechStatus.Archived)}
+          />
         );
       case 'conversation':
       case 'events':
@@ -211,20 +218,20 @@ function MechDetails({
           view={view}
           pinned={preferences.pinned.includes(mech.id)}
           busy={busy}
+          viewHref={(next) => records.href({ ...base, view: next })}
           onView={selectView}
           onPin={() => preferences.togglePin(mech.id)}
           onStatus={() => setStatus(mech.status === 'active' ? MechStatus.Paused : MechStatus.Active)}
-          onSettings={() => selectView('definition')}
         />
         <Workbench>
           {notice}
-          {error !== undefined && <Notice error>{error}</Notice>}
+          {lifecycleError !== undefined && <Notice error>{lifecycleError}</Notice>}
           {mech.status === 'paused' && (
             <Notice>Paused. New messages wait until you resume. A running execution may still finish.</Notice>
           )}
           {conversationVisited && (
             <ViewStack.Panel active={conversationVisible}>
-              <ConversationScreen data={data} mech={mech} />
+              <ConversationScreen data={data} mech={mech} active={conversationActive} />
               <WorkbenchFooter>
                 <MessageForm data={data} mech={mech} />
               </WorkbenchFooter>

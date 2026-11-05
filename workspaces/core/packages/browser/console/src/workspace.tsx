@@ -10,7 +10,7 @@ import { MechScreen } from './screens/mech.tsx';
 import { MechsScreen } from './screens/mechs.tsx';
 import { WorkspaceSettings } from './screens/workspace-settings.tsx';
 import type { ConsoleNavigation } from './types.ts';
-import { WorkspaceNavigation } from './workspace-navigation.tsx';
+import { WorkspaceAccount, WorkspaceNavigation } from './workspace-navigation.tsx';
 
 export function WorkspaceScreen({
   session,
@@ -38,13 +38,14 @@ export function WorkspaceScreen({
     <MechAppearanceProvider principalId={session.principal.id} workspaceId={workspace.id}>
       <NavigationPreferenceProvider principalId={session.principal.id} workspaceId={workspace.id}>
         <ConsoleShell
-          name={session.principal.name}
-          origin={globalThis.location.host}
           workspaces={session.workspaces}
           workspaceId={workspace.id}
           onWorkspace={(id) => navigate({ workspace: id })}
           focus={selected.turn !== undefined && selected.mech !== undefined}
           homeLink={<WorkspaceNavigation data={data} location={selected} />}
+          accountLink={
+            <WorkspaceAccount workspaceId={workspace.id} name={session.principal.name} location={selected} />
+          }
         >
           {selected.mech === undefined ? (
             selected.view === 'definition' ? (

@@ -1,10 +1,10 @@
 import { Muted } from '@mechane-ai/elements';
 import { Select } from '@mechane-ai/elements/forms';
-import { AppShell, SidebarFooter, SidebarLabel } from '@mechane-ai/elements/layout';
+import { AppShell, Navigation, SidebarFooter, SidebarLabel } from '@mechane-ai/elements/layout';
 import { colors, controls, radii, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { Workspace } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
-import { Check, ChevronDown, UserRound } from 'lucide-react';
+import { Check, ChevronDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 const styles = stylex.create({
@@ -31,13 +31,6 @@ const styles = stylex.create({
     fontWeight: 500,
   },
   workspacePositioner: { minWidth: 224 },
-  brand: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minWidth: 0,
-    fontFamily: typography.fontFamily,
-  },
 });
 
 type WorkspaceSwitcherProps = {
@@ -107,21 +100,19 @@ function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSw
 }
 
 export function ConsoleShell({
-  name,
-  origin,
   workspaces,
   workspaceId,
   onWorkspace,
   homeLink,
+  accountLink,
   children,
   focus = false,
 }: {
-  readonly name: string;
-  readonly origin: string;
   readonly workspaces: ReadonlyArray<Workspace>;
   readonly workspaceId: string;
   readonly onWorkspace: (id: string) => void;
   readonly homeLink: ReactNode;
+  readonly accountLink: ReactNode;
   readonly children: ReactNode;
   readonly focus?: boolean;
 }): ReactNode {
@@ -131,11 +122,8 @@ export function ConsoleShell({
       sidebar={homeLink}
       focus={focus}
       footer={
-        <SidebarFooter>
-          <span title={`Signed in as ${name} on ${origin}`} {...stylex.props(styles.brand)}>
-            <UserRound size={14} aria-hidden />
-            <SidebarLabel>{name}</SidebarLabel>
-          </span>
+        <SidebarFooter layout="navigation">
+          <Navigation label="Account">{accountLink}</Navigation>
         </SidebarFooter>
       }
     >

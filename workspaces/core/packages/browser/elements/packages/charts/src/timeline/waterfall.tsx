@@ -1,7 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { Text } from '../../../core/src/index.ts';
 import { colors, conditions, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
@@ -29,6 +29,7 @@ type WaterfallProps = {
   readonly summaryLabel: string;
   readonly emptyLabel: string;
   readonly selectedId: string | undefined;
+  readonly selectedRef?: Ref<HTMLButtonElement> | undefined;
   readonly onSelect: (id: string) => void;
   readonly formatOffset: (offset: number) => string;
 };
@@ -136,6 +137,7 @@ export function Waterfall({
   summaryLabel,
   emptyLabel,
   selectedId,
+  selectedRef,
   onSelect,
   formatOffset,
 }: WaterfallProps): ReactNode {
@@ -148,6 +150,7 @@ export function Waterfall({
   const span = end - start;
   const scale = scaleLinear({ domain: [start, end], range: [0, span === 0 ? 0 : PERCENT] });
   const ticks = span > 0 ? TICKS : [0];
+  const hasTiming = items.some((item) => item.geometry.kind !== 'unavailable');
 
   return (
     <div role="group" aria-label={label} {...stylex.props(styles.frame)}>
@@ -156,9 +159,11 @@ export function Waterfall({
           {rowLabel}
         </Text>
         <div {...stylex.props(styles.plot, styles.axis)}>
-          {ticks.map((tick) => (
-            <span key={tick}>{formatOffset(span * tick)}</span>
-          ))}
+          {hasTiming ? (
+            ticks.map((tick) => <span key={tick}>{formatOffset(span * tick)}</span>)
+          ) : (
+            <span>Timing unavailable</span>
+          )}
         </div>
         <span {...stylex.props(styles.summary)}>
           <Text variant="caption" tone="muted">
@@ -177,6 +182,7 @@ export function Waterfall({
         return (
           <button
             key={item.id}
+            ref={selectedId === item.id ? selectedRef : undefined}
             type="button"
             aria-pressed={selectedId === item.id}
             aria-label={`${item.label} · ${item.detail} · ${item.summary} · ${timing}`}

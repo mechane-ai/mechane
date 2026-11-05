@@ -1,4 +1,15 @@
-import { AgentAvatar, Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
+import {
+  AgentAvatar,
+  Button,
+  Heading,
+  Muted,
+  Row,
+  Stack,
+  Subheading,
+  TextButton,
+  TextLink,
+} from '@mechane-ai/elements';
+import type { AgentAppearance } from '@mechane-ai/elements';
 import { MessageAction, PromptInput } from '@mechane-ai/elements/ai';
 import { Loading as LoadingRows, Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input } from '@mechane-ai/elements/forms';
@@ -20,16 +31,20 @@ import {
   MechConversation,
   MechHeader,
   MechList,
+  MechSettings,
   MemoryList,
   DefinitionConflict as SavedDefinition,
   TurnList,
   TurnTrace,
+  WorkDetails,
   WorkList,
 } from '@mechane/console-views';
 import {
   Allowance,
   EventPage,
+  Mech,
   MechPage,
+  MechSummary,
   MemoryList as MemoryPage,
   REPLY_EXCERPT_MAX_CHARS,
   ThreadPage,
@@ -141,6 +156,16 @@ if (sampleMech === undefined) {
 }
 
 const scout = sampleMech;
+
+const scoutDefinition = Schema.decodeUnknownSync(Mech)({
+  ...Schema.encodeSync(MechSummary)(scout),
+  instructions:
+    'Inspect the repository before each release. Report the checks that ran and preserve the running installation.',
+  daily_cap_micros: 5_000_000,
+  active_revision: scout.revision,
+  updated_at: scout.createdAt,
+  updater_id: scout.creatorId,
+});
 
 const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
 const turnId = '52d0e964-811d-44f4-a96e-d38ca5df748b';
@@ -277,8 +302,6 @@ function StoryShell({
 
   return (
     <ConsoleShell
-      name="Jordan Lee"
-      origin="https://mechane.example"
       workspaceId={workspaceId}
       workspaces={workspaceList.workspaces}
       onWorkspace={setWorkspaceId}
@@ -302,10 +325,12 @@ function StoryShell({
               </NavigationLink>
             ))}
           </NavigationSection>
-          <NavigationLink href="#settings" icon={<Settings size={16} />}>
-            Settings
-          </NavigationLink>
         </Navigation>
+      }
+      accountLink={
+        <NavigationLink href="#settings" icon={<Settings size={16} />} aria-label="Settings for Jordan Lee">
+          Jordan Lee
+        </NavigationLink>
       }
     >
       {children}
@@ -332,6 +357,8 @@ function MechsToolbar(): ReactNode {
 }
 
 function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
+  const [pinned, setPinned] = useState<ReadonlySet<string>>(new Set([scout.id]));
+
   return (
     <StoryShell>
       <MechsToolbar />
@@ -339,6 +366,14 @@ function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
         hasPrevious={false}
         page={page}
         allowance={allowance}
+        pinnedIds={pinned}
+        onTogglePin={(mech) =>
+          setPinned((previous) =>
+            previous.has(mech.id)
+              ? new Set([...previous].filter((id) => id !== mech.id))
+              : new Set([...previous, mech.id]),
+          )
+        }
         mechHref={(mech) => `?mech=${mech.id}`}
         onOpen={() => undefined}
         onCreate={() => undefined}
@@ -588,6 +623,8 @@ const memoryPage = Schema.decodeUnknownSync(MemoryPage)({
   ],
 });
 
+const collectionViews: ReadonlySet<ConsoleView> = new Set(['work', 'runs', 'activity']);
+
 function WorkspaceStory({
   initialView = 'conversation',
   longName = false,
@@ -600,12 +637,12 @@ function WorkspaceStory({
   const [pinned, setPinned] = useState(true);
   const [draft, setDraft] = useState('Verify the release and preserve the running installation.');
   const [selectedWork, setSelectedWork] = useState<string>();
+  const [appearance, setAppearance] = useState<AgentAppearance>();
+  const currentWork = workPage.threads.find((thread) => thread.id === selectedWork);
 
   const mech = {
-    ...scout,
+    ...scoutDefinition,
     name: longName ? 'Repository scout for infrastructure, releases, and deployment verification' : scout.name,
-    instructions: Option.none<string>(),
-    dailyCapMicros: Micros.make(5_000_000),
   };
 
   if (focusedRun) {
@@ -616,17 +653,14 @@ function WorkspaceStory({
     <StoryShell>
       <MechHeader
         mech={mech}
+        appearance={appearance}
         view={view}
         pinned={pinned}
         busy={false}
-        onView={(next) => {
-          if (next !== 'definition') {
-            setView(next);
-          }
-        }}
+        viewHref={(next) => `?mech=${mech.id}&view=${next}`}
+        onView={setView}
         onPin={() => setPinned(!pinned)}
         onStatus={() => undefined}
-        onSettings={() => undefined}
       />
       <Workbench>
         {view === 'conversation' ? (
@@ -656,9 +690,19 @@ function WorkspaceStory({
           </>
         ) : (
           <WorkbenchScroll
-            label={view === 'activity' ? 'History' : view === 'runs' ? 'Runs' : view === 'work' ? 'Work' : 'Memory'}
+            label={
+              view === 'activity'
+                ? 'History'
+                : view === 'runs'
+                  ? 'Runs'
+                  : view === 'work'
+                    ? 'Work'
+                    : view === 'definition'
+                      ? 'Mech settings'
+                      : 'Memory'
+            }
             scrollRestorationId={`story-${view}`}
-            flush={view !== 'memory'}
+            flush={collectionViews.has(view)}
           >
             {view === 'runs' && (
               <TurnList
@@ -671,17 +715,44 @@ function WorkspaceStory({
             {view === 'activity' && (
               <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
             )}
-            {view === 'work' && (
-              <WorkList
-                page={workPage}
-                selected={selectedWork}
-                onSelect={setSelectedWork}
-                hasPrevious={false}
-                onPrevious={() => undefined}
-                onNext={() => undefined}
+            {view === 'work' &&
+              (currentWork === undefined ? (
+                <WorkList
+                  page={workPage}
+                  selected={selectedWork}
+                  onSelect={setSelectedWork}
+                  hasPrevious={false}
+                  onPrevious={() => undefined}
+                  onNext={() => undefined}
+                />
+              ) : (
+                <WorkDetails thread={currentWork} onBack={() => setSelectedWork(undefined)} />
+              ))}
+            {view === 'memory' && (
+              <MemoryList
+                page={memoryPage}
+                runLink={() => <TextButton onClick={() => setFocusedRun(true)}>Open source run</TextButton>}
               />
             )}
-            {view === 'memory' && <MemoryList page={memoryPage} />}
+            {view === 'definition' && (
+              <MechSettings
+                mech={mech}
+                appearance={appearance}
+                onAppearance={setAppearance}
+                appearanceError={undefined}
+                busy={false}
+                error={undefined}
+                onEdit={() => undefined}
+                onArchive={() => undefined}
+                connections={
+                  <Stack compact>
+                    <Subheading>Slack</Subheading>
+                    <TextLink href="https://example.com/slack">#repository-scout</TextLink>
+                    <Muted>Listening · Replies on</Muted>
+                  </Stack>
+                }
+              />
+            )}
           </WorkbenchScroll>
         )}
       </Workbench>
@@ -694,3 +765,4 @@ export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialV
 export const HistoryWorkspace: Story = { render: () => <WorkspaceStory initialView="activity" /> };
 export const TrackedWork: Story = { render: () => <WorkspaceStory initialView="work" /> };
 export const SavedMemory: Story = { render: () => <WorkspaceStory initialView="memory" /> };
+export const MechSettingsWorkspace: Story = { render: () => <WorkspaceStory initialView="definition" /> };

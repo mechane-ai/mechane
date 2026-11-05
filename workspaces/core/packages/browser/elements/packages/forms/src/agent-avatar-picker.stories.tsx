@@ -11,7 +11,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Controlled shape and color choices for an agent identity. Radio groups provide named choices, arrow-key selection, and a single tab stop per group. Applications own the saved preference and any reset action. The picker works without a backend or application provider.',
+          'Controlled shape and color choices with an immediate preview and named selection. Use this for an agent identity; use a file input for a person’s photograph. Radio groups provide named choices, arrow-key selection, and a single tab stop per group. Controls grow for touch without changing their order. Applications own saved preferences, persistence errors, and reset actions. No backend or application provider is required.',
       },
     },
   },

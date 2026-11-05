@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
+import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { avatarColors } from '../../foundations/src/tokens.stylex.ts';
+import { avatarColors, colors } from '../../foundations/src/tokens.stylex.ts';
 import { agentAvatarGlyphs, seededAgentAvatarShapes } from './agent-avatar-glyphs.tsx';
 import type { AgentAvatarShape } from './agent-avatar-glyphs.tsx';
 
@@ -38,7 +39,7 @@ export type AgentAvatarSize = 'xs' | 'sm' | 'md' | 'lg';
 export type AgentAppearance = { readonly shape: AgentAvatarShape; readonly color: AgentAvatarColor };
 
 const styles = stylex.create({
-  root: { display: 'inline-flex', flexShrink: 0, verticalAlign: 'middle' },
+  root: { display: 'inline-flex', flexShrink: 0, verticalAlign: 'middle', stroke: colors.surface },
   xs: { width: 16, height: 16 },
   sm: { width: 20, height: 20 },
   md: { width: 24, height: 24 },
@@ -124,13 +125,15 @@ export type AgentAvatarProps = {
 
 export function AgentAvatar({ seed, appearance, size = 'sm', label }: AgentAvatarProps): ReactNode {
   const selected = appearance ?? agentAppearance(seed);
+  const paintId = useId();
 
   return (
     <svg
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
+      fill={`url(#${paintId})`}
+      fillOpacity=".76"
+      strokeWidth=".65"
+      strokeOpacity=".9"
       strokeLinecap="round"
       strokeLinejoin="round"
       role={label === undefined ? undefined : 'img'}
@@ -138,6 +141,13 @@ export function AgentAvatar({ seed, appearance, size = 'sm', label }: AgentAvata
       aria-hidden={label === undefined ? true : undefined}
       {...stylex.props(styles.root, sizes[size], palettes[selected.color])}
     >
+      <defs>
+        <linearGradient id={paintId} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity=".6" />
+          <stop offset=".65" stopColor="currentColor" stopOpacity="1" />
+          <stop offset="1" stopColor="currentColor" stopOpacity=".8" />
+        </linearGradient>
+      </defs>
       {agentAvatarGlyphs[selected.shape]}
     </svg>
   );

@@ -5,7 +5,7 @@ import { EmptyState } from '@mechane-ai/elements/feedback';
 import type { Allowance, MechPage, MechSummary } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { moneyLabel } from './format.ts';
-import { ConsoleTimestamp } from './record-time.tsx';
+import { MechPinButton } from './mech-pin.tsx';
 
 export function MechList({
   page,
@@ -17,6 +17,8 @@ export function MechList({
   onNext,
   onPrevious,
   hasPrevious,
+  pinnedIds,
+  onTogglePin,
   appearances = {},
 }: {
   readonly page: MechPage;
@@ -28,10 +30,13 @@ export function MechList({
   readonly onNext: () => void;
   readonly onPrevious: () => void;
   readonly hasPrevious: boolean;
+  readonly pinnedIds: ReadonlySet<MechSummary['id']>;
+  readonly onTogglePin: (mech: MechSummary) => void;
   readonly appearances?: Readonly<Record<string, AgentAppearance>>;
 }): ReactNode {
-  const showFooter = page.mechs.length > 0 || hasPrevious;
   const showPagination = page.hasMore || hasPrevious;
+  const hasRecords = page.mechs.length > 0 || hasPrevious;
+  const showFooter = hasRecords && (allowance !== undefined || showPagination);
 
   return (
     <>
@@ -47,7 +52,10 @@ export function MechList({
             id: 'name',
             label: 'Mech',
             cell: (mech) => (
-              <DataTableText leading={<AgentAvatar seed={mech.id} appearance={appearances[mech.id]} />}>
+              <DataTableText
+                secondary={mech.model}
+                leading={<AgentAvatar seed={mech.id} appearance={appearances[mech.id]} size="md" />}
+              >
                 {mech.name}
               </DataTableText>
             ),
@@ -55,20 +63,21 @@ export function MechList({
           {
             id: 'status',
             label: 'Availability',
-            width: 128,
+            width: 120,
             cell: (mech) => (
               <Status tone={mech.status === 'active' ? 'positive' : 'neutral'}>
                 {mech.status === 'active' ? 'Enabled' : mech.status === 'paused' ? 'Paused' : 'Archived'}
               </Status>
             ),
           },
-          { id: 'model', label: 'Model', secondary: true, cell: (mech) => <DataTableText>{mech.model}</DataTableText> },
           {
-            id: 'created',
-            label: 'Created',
-            secondary: true,
-            width: 144,
-            cell: (mech) => <ConsoleTimestamp value={mech.createdAt} />,
+            id: 'pin',
+            label: 'Pin',
+            width: 80,
+            align: 'end',
+            cell: (mech) => (
+              <MechPinButton name={mech.name} pinned={pinnedIds.has(mech.id)} onToggle={() => onTogglePin(mech)} />
+            ),
           },
         ]}
         empty={
@@ -99,9 +108,8 @@ export function MechList({
             ) : undefined
           }
         >
-          {page.mechs.length} {page.mechs.length === 1 ? 'mech' : 'mechs'}
           {allowance !== undefined &&
-            ` · Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}
+            `Today ${moneyLabel(allowance.committedMicros)} of ${moneyLabel(allowance.dailyAllowanceMicros)}`}
         </ListFooter>
       )}
     </>

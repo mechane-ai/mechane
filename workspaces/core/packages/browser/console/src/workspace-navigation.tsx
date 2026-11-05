@@ -52,17 +52,30 @@ export function WorkspaceNavigation({
             ))}
         </NavigationSection>
       )}
-      <NavigationSection label="Workspace">
-        <WorkspaceLink
-          to="/"
-          search={{ workspace: data.workspace.id, view: 'definition' }}
-          selected={location.mech === undefined && location.view === 'definition'}
-          icon={<Settings size={16} aria-hidden />}
-        >
-          Settings
-        </WorkspaceLink>
-      </NavigationSection>
     </Navigation>
+  );
+}
+
+export function WorkspaceAccount({
+  workspaceId,
+  name,
+  location,
+}: {
+  readonly workspaceId: string;
+  readonly name: string;
+  readonly location: ConsoleLocation;
+}): ReactNode {
+  return (
+    <WorkspaceLink
+      to="/"
+      search={{ workspace: workspaceId, view: 'definition' }}
+      selected={location.mech === undefined && location.view === 'definition'}
+      icon={<Settings size={16} aria-hidden />}
+      aria-label={`Settings for ${name}`}
+      title={`${name} · Settings`}
+    >
+      {name}
+    </WorkspaceLink>
   );
 }
 

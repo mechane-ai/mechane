@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as stylex from '@stylexjs/stylex';
+import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { agentAvatarShapes } from './agent-avatar-glyphs.tsx';
 import { AgentAvatar, agentAvatarColors } from './agent-avatar.tsx';
 import { Row, Stack } from './surfaces.tsx';
@@ -11,7 +13,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Original geometric identities, selected deterministically from a stable seed. A supplied appearance overrides the seed. The application owns persistence. Omit the label when the identity is beside a visible name; provide it when the avatar stands alone. Shape and color names are stable stored values. Keep the initial seeded catalogs frozen when extending picker choices so existing default identities never change.',
+          'Original layered identities with translucent petals, woven forms, and geometric facets. Use these to distinguish agents; use Icon for controls and Avatar for a person or photograph. Color identifies an agent and never communicates status. Omit the label beside a visible name; supply it when the mark stands alone. The application owns saved choices. Existing seed mappings and stored shape/color names remain stable when the picker catalog grows. Per-instance gradient IDs keep adjacent avatars independent in either theme.',
       },
     },
   },
@@ -19,6 +21,11 @@ const meta = {
 
 export default meta;
 type Story = StoryObj;
+
+const styles = stylex.create({
+  gallery: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: spacing.lg },
+  identity: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing.xs, minWidth: 0 },
+});
 
 export const Recommended: Story = {
   render: () => (
@@ -41,21 +48,30 @@ export const Recommended: Story = {
 
 export const Shapes: Story = {
   render: () => (
-    <Row>
+    <div {...stylex.props(styles.gallery)}>
       {agentAvatarShapes.map((shape) => (
-        <AgentAvatar key={shape} seed={shape} appearance={{ shape, color: 'cobalt' }} size="md" label={shape} />
+        <div key={shape} {...stylex.props(styles.identity)}>
+          <Row>
+            <AgentAvatar seed={shape} appearance={{ shape, color: 'cobalt' }} size="xs" />
+            <AgentAvatar seed={shape} appearance={{ shape, color: 'cobalt' }} size="lg" />
+          </Row>
+          <Text>{shape}</Text>
+        </div>
       ))}
-    </Row>
+    </div>
   ),
 };
 
 export const Colors: Story = {
   render: () => (
-    <Row>
+    <div {...stylex.props(styles.gallery)}>
       {agentAvatarColors.map((color) => (
-        <AgentAvatar key={color} seed={color} appearance={{ shape: 'facet', color }} size="md" label={color} />
+        <div key={color} {...stylex.props(styles.identity)}>
+          <AgentAvatar seed={color} appearance={{ shape: 'rosette', color }} size="lg" />
+          <Text>{color}</Text>
+        </div>
       ))}
-    </Row>
+    </div>
   ),
 };
 

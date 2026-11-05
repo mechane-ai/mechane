@@ -20,6 +20,8 @@ const meta = {
     Viewport: Conversation.Viewport,
     Content: Conversation.Content,
     Item: Conversation.Item,
+    Controls: Conversation.Controls,
+    LatestButton: Conversation.LatestButton,
     JumpToLatest: Conversation.JumpToLatest,
     Message,
     MessageAction,
@@ -30,7 +32,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Conversation owns scrolling through MessageScroller. Supply stable message IDs, content and streaming state. Viewport owns the scroll region and can expose its identity for application route restoration. Content constrains the reading measure; Item preserves message identity; JumpToLatest returns to the live edge. Message presents authorship, body and optional avatar. Its action area reserves space and reveals controls on hover or keyboard focus; touch keeps them visible. MessageAction composes a named icon button or link with a tooltip. MessageBoundary discloses supplied lineage details. The application owns data, routing and draft lifetime. Use a height-constrained parent for a scrolling transcript, and key the root only when the conversation identity changes.',
+          'Conversation owns scrolling through MessageScroller. Supply stable message IDs, content and streaming state. Viewport owns the scroll region and can expose its identity for application route restoration. Content constrains the reading measure; Item preserves message identity; JumpToLatest returns to the live edge. Controls keeps application-supplied updates outside the scroll region. When a bounded page has newer content, replace JumpToLatest with Controls containing LatestButton: onActivate updates the same mounted page before the button moves focus and scrolling to the live edge. For asynchronous or remounted pages, use Root.viewportRef and retain focus intent in the application until the new viewport mounts; cancel that intent when the view is hidden. Message presents authorship, body and optional avatar. Its action area reserves space and reveals controls on hover or keyboard focus; touch keeps them visible. MessageAction composes a named icon button or link with a tooltip. MessageBoundary discloses supplied lineage details. The application owns data, routing and draft lifetime. Use a height-constrained parent for a scrolling transcript, and key the root only when the conversation identity changes.',
       },
     },
   },
@@ -169,6 +171,49 @@ function ConversationExample(): ReactNode {
 }
 
 export const Chat: Story = { render: () => <ConversationExample /> };
+
+function WindowedHistoryExample(): ReactNode {
+  const [available, setAvailable] = useState(1);
+  const [shown, setShown] = useState(1);
+
+  return (
+    <Stack>
+      <Row>
+        <Button onClick={() => setAvailable(available + 1)}>Receive a newer page</Button>
+        <Muted>The current page stays readable until you choose the newer messages.</Muted>
+      </Row>
+      <div {...stylex.props(styles.frame)}>
+        <Conversation.Root initialPosition="start">
+          <Conversation.Viewport label="Bounded conversation history">
+            <Conversation.Content>
+              {initialMessages.map((message) => (
+                <Conversation.Item key={message.id} messageId={`${shown}-${message.id}`}>
+                  <Message author={message.author} kind={message.kind}>
+                    <Markdown>{message.text}</Markdown>
+                  </Message>
+                </Conversation.Item>
+              ))}
+              <Conversation.Item messageId={`page-${shown}`}>
+                <Message author="Assistant">
+                  <Markdown>{`Page ${shown} is the most recently selected history window.`}</Markdown>
+                </Message>
+              </Conversation.Item>
+            </Conversation.Content>
+          </Conversation.Viewport>
+          {available === shown ? (
+            <Conversation.JumpToLatest />
+          ) : (
+            <Conversation.Controls>
+              <Conversation.LatestButton label="Show new messages" onActivate={() => setShown(available)} />
+            </Conversation.Controls>
+          )}
+        </Conversation.Root>
+      </div>
+    </Stack>
+  );
+}
+
+export const BoundedHistory: Story = { render: () => <WindowedHistoryExample /> };
 
 export const MessageParts: Story = {
   render: () => (

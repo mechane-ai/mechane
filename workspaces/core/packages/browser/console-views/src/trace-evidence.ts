@@ -36,5 +36,51 @@ export function traceEvidence(trace: Trace) {
   const finished = turn !== undefined && turn.status !== 'running' ? DateTime.toEpochMillis(turn.endedAt) : undefined;
   const end = Math.max(start, finished ?? start, ...times);
 
-  return { turn, items, start, end, finished, cost, tokens, reported: reported.length, settled: settled.length };
+  const notices = [...new Set(trace.evidenceNotices)];
+
+  if (trace.toolCalls === undefined) {
+    notices.push('Tool evidence is unavailable for this run.');
+  }
+
+  const usageLabel = tokenUsageLabel({
+    totalRequests: trace.dispatches.length,
+    reportedRequests: reported.length,
+    tokens,
+  });
+
+  return {
+    turn,
+    items,
+    start,
+    end,
+    finished,
+    cost,
+    tokens,
+    reported: reported.length,
+    settled: settled.length,
+    notices,
+    usageLabel,
+  };
+}
+
+function tokenUsageLabel({
+  totalRequests,
+  reportedRequests,
+  tokens,
+}: {
+  readonly totalRequests: number;
+  readonly reportedRequests: number;
+  readonly tokens: number;
+}): string | undefined {
+  if (totalRequests === 0) {
+    return undefined;
+  }
+
+  if (reportedRequests === 0) {
+    return 'Tokens not reported';
+  }
+
+  const coverage = reportedRequests < totalRequests ? ` · ${reportedRequests}/${totalRequests} requests` : '';
+
+  return `${tokens.toLocaleString('en-US')} tokens reported${coverage}`;
 }

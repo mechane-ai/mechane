@@ -2,10 +2,10 @@ import { Button, Row, Stack } from '@mechane-ai/elements';
 import { CollectionToolbar, ListFooter } from '@mechane-ai/elements/collections';
 import type { ConsoleData } from '@mechane/console-data';
 import { Activity } from '@mechane/console-views';
-import type { EventPage } from '@mechane/protocol';
+import type { EventPage, Turn } from '@mechane/protocol';
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { usePageCursors } from '../navigation.tsx';
+import { ConsoleLink, usePageCursors } from '../navigation.tsx';
 import { Resource } from '../resource.tsx';
 
 /** Keep the displayed page until the reader asks to bring newer rows into view. */
@@ -13,10 +13,12 @@ function ActivityPage({
   page,
   latest,
   controls,
+  runLink,
 }: {
   readonly page: EventPage;
   readonly latest: boolean;
   readonly controls: (page: EventPage) => ReactNode;
+  readonly runLink: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
   const [shown, setShown] = useState(page);
   const visible = latest ? shown : page;
@@ -31,7 +33,7 @@ function ActivityPage({
           </Button>
         </CollectionToolbar>
       )}
-      <Activity page={{ ...visible, events: visible.events.toReversed() }} />
+      <Activity page={{ ...visible, events: visible.events.toReversed() }} runLink={runLink} />
       {controls(visible)}
     </>
   );
@@ -51,6 +53,14 @@ export function ActivityScreen({ data, mechId }: { readonly data: ConsoleData; r
             key={before ?? 'latest'}
             page={page}
             latest={before === null}
+            runLink={(turn, sequence) => (
+              <ConsoleLink
+                row={`event-${sequence}`}
+                to={{ workspace: data.workspace.id, mech: mechId, view: 'activity', turn }}
+              >
+                Open run
+              </ConsoleLink>
+            )}
             controls={(visible) =>
               (visible.hasMore || cursors.length > 0) && (
                 <ListFooter

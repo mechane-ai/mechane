@@ -13,7 +13,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Invalid or out-of-domain timing produces an error. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. Select a row with the pointer or Enter/Space to expose its full detail and exact timing.',
+          'Supported. Waterfall compares recorded intervals and points on one scale, with controlled selection and accessible textual timing. The application supplies stable IDs, labels, units, domain bounds, and explicit geometry. An interval needs both endpoints; a point records one known instant; unavailable means no drawable timing. Invalid or out-of-domain timing produces an error. Keep a missing endpoint unknown instead of substituting the current time. Use a table when ordering and values matter more than timing. Select a row with the pointer or Enter/Space to expose its full detail and exact timing. The optional selectedRef exposes the selected native button so an owning Inspector can restore focus when returning from narrow detail. Selection alone never moves focus or scrolls.',
       },
     },
   },
@@ -128,6 +128,13 @@ function SelectableWaterfall({
 
 export const Recommended: Story = { render: () => <SelectableWaterfall items={intervals} /> };
 export const PointsAndUnavailableTiming: Story = { render: () => <SelectableWaterfall items={partialTiming} /> };
+
+export const UnavailableTiming: Story = {
+  render: () => (
+    <SelectableWaterfall items={partialTiming.filter((item) => item.geometry.kind === 'unavailable')} end={0} />
+  ),
+};
+
 export const Empty: Story = { render: () => <SelectableWaterfall items={[]} end={0} /> };
 
 export const ZeroDuration: Story = {

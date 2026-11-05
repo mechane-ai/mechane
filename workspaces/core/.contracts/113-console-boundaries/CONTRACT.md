@@ -75,6 +75,20 @@ The resource-query owner in `console-data/src/console-data.ts` uses native async
 to clear data after access loss or removal, then rethrow the same failure so TanStack retains its error state.
 This query exception does not permit running Effects outside the API adapter or swallowing a failed read.
 
+The Console's navigation owner applies the same run-entry policy to links and programmatic navigation. Capture the
+origin when entering a run; changing its request, event, or subview preserves that origin and replaces the current run
+entry. Modified clicks and links targeting another tab retain native link behavior without changing the current
+reader's history state.
+
+Selecting a work record replaces the list with its detail and provides a return to the originating row. Selecting a
+model request makes its evidence reachable without scrolling past the entire request collection. Keep the selected
+record's identity separate from its position in a bounded page. Supplied memory and event provenance links to the
+identified run; do not substitute the latest run.
+
+Show trace-wide evidence limits beside the trace summary across all subviews. A complete-looking overview must not
+hide unavailable or truncated evidence in a different tab. Use recorded endpoints for tool duration; an absent endpoint
+does not become a zero-duration step.
+
 ## Evidence
 
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
@@ -86,6 +100,11 @@ Open a run from a scrolled conversation and a later list page, then use browser 
 Check row focus, scroll position, draft text, and the sidebar preference. Open the same run URL in a new tab.
 Switch principal or workspace and confirm shortcuts and appearance choices stay within their owner. Exercise a
 shortcut outside the first mech page, a rejected access read, and a transient read failure.
+
+From one run, select requests and original reply events through both links and controls, then return once to the
+originating view. Repeat with a modified click and a new-tab link. Open a later work row, return to its list, and open a
+memory or history source run. With a long request collection, select its last row at desktop and narrow widths. Confirm
+the selected evidence is reachable, focus can return to its control, and supplied trace limits remain visible on every tab.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -3,7 +3,7 @@ import type { WaterfallItem } from '@mechane-ai/elements/charts/timeline';
 import { Dispatch } from '@mechane/protocol';
 import type { TracedDispatch } from '@mechane/protocol';
 import { DateTime, Schema } from 'effect';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { durationLabel, moneyLabel } from './format.ts';
 
 type RequestWaterfallItem = WaterfallItem & { readonly status: Dispatch['status'] | 'unavailable' };
@@ -13,10 +13,18 @@ type RequestWaterfallProps = {
   readonly start: number;
   readonly end: number;
   readonly selectedId: string | undefined;
+  readonly selectedRef?: Ref<HTMLButtonElement>;
   readonly onRequest: (id: string) => void;
 };
 
-export function RequestWaterfall({ items, start, end, selectedId, onRequest }: RequestWaterfallProps): ReactNode {
+export function RequestWaterfall({
+  items,
+  start,
+  end,
+  selectedId,
+  selectedRef,
+  onRequest,
+}: RequestWaterfallProps): ReactNode {
   return (
     <Waterfall
       items={items}
@@ -27,6 +35,7 @@ export function RequestWaterfall({ items, start, end, selectedId, onRequest }: R
       summaryLabel="Recorded outcome"
       emptyLabel="No model requests recorded"
       selectedId={selectedId}
+      selectedRef={selectedRef}
       onSelect={onRequest}
       formatOffset={durationLabel}
     />

@@ -1,16 +1,18 @@
-import { Accordion, Button, Muted, Row, Stack, Status, Subheading } from '@mechane-ai/elements';
+import { Accordion, Button, Muted, Row, Stack, Status, Subheading, Text, TextButton } from '@mechane-ai/elements';
 import { DataTable, DataTableText, ListFooter } from '@mechane-ai/elements/collections';
-import { Markdown } from '@mechane-ai/elements/content/markdown';
+import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { DetailPage } from '@mechane-ai/elements/layout';
-import type { MemoryList as MemoryPage, ThreadPage } from '@mechane/protocol';
+import type { MemoryList as MemoryPage, Thread, ThreadPage } from '@mechane/protocol';
 import { Option } from 'effect';
-import type { ReactNode } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import type { ReactNode, Ref } from 'react';
 import { ConsoleTimestamp } from './record-time.tsx';
 
 export function WorkList({
   page,
   selected,
+  focusRowId,
   onSelect,
   hasPrevious,
   onPrevious,
@@ -18,13 +20,12 @@ export function WorkList({
 }: {
   readonly page: ThreadPage;
   readonly selected: string | undefined;
+  readonly focusRowId?: string | undefined;
   readonly onSelect: (id: string) => void;
   readonly hasPrevious: boolean;
   readonly onPrevious: () => void;
   readonly onNext: () => void;
 }): ReactNode {
-  const detail = page.threads.find((thread) => thread.id === selected);
-
   return (
     <>
       <DataTable
@@ -33,6 +34,7 @@ export function WorkList({
         rows={page.threads}
         getRowId={(thread) => thread.id}
         activeRowId={selected}
+        focusRowId={focusRowId}
         rowAction={{ onActivate: (thread) => onSelect(thread.id), label: (thread) => `Open ${thread.title}` }}
         columns={[
           { id: 'title', label: 'Work', cell: (thread) => <DataTableText>{thread.title}</DataTableText> },
@@ -41,7 +43,9 @@ export function WorkList({
             label: 'State',
             width: 128,
             cell: (thread) => (
-              <Status tone={thread.state === 'resolved' ? 'positive' : 'neutral'}>{thread.state}</Status>
+              <Status tone={thread.state === 'resolved' ? 'positive' : 'neutral'}>
+                {workStateLabel(thread.state)}
+              </Status>
             ),
           },
           {
@@ -72,25 +76,60 @@ export function WorkList({
           }
         />
       )}
-      {detail !== undefined && (
-        <DetailPage>
-          <Stack>
-            <Subheading>{detail.title}</Subheading>
-            <Markdown>{Option.getOrElse(detail.note, () => 'No progress note has been recorded yet.')}</Markdown>
-            <Row>
-              <Muted>Opened</Muted>
-              <ConsoleTimestamp value={detail.openedAt} />
-              <Muted>· Updated</Muted>
-              <ConsoleTimestamp value={detail.updatedAt} />
-            </Row>
-          </Stack>
-        </DetailPage>
-      )}
     </>
   );
 }
 
-export function MemoryList({ page }: { readonly page: MemoryPage }): ReactNode {
+export function WorkDetails({
+  thread,
+  onBack,
+  headingRef,
+}: {
+  readonly thread: Thread;
+  readonly onBack: () => void;
+  readonly headingRef?: Ref<HTMLHeadingElement>;
+}): ReactNode {
+  return (
+    <DetailPage>
+      <Stack>
+        <Row>
+          <TextButton onClick={onBack}>
+            <ArrowLeft size={14} aria-hidden /> Back to work
+          </TextButton>
+        </Row>
+        <Stack compact>
+          <Subheading ref={headingRef} tabIndex={-1}>
+            {thread.title}
+          </Subheading>
+          <Row>
+            <Status tone={thread.state === 'resolved' ? 'positive' : 'neutral'}>{workStateLabel(thread.state)}</Status>
+            <Muted>Updated</Muted>
+            <ConsoleTimestamp value={thread.updatedAt} />
+          </Row>
+        </Stack>
+        <Markdown headingLevel={3}>
+          {Option.getOrElse(thread.note, () => 'No progress note has been recorded yet.')}
+        </Markdown>
+        <Row>
+          <Muted>Opened</Muted>
+          <ConsoleTimestamp value={thread.openedAt} />
+        </Row>
+      </Stack>
+    </DetailPage>
+  );
+}
+
+function workStateLabel(state: Thread['state']): string {
+  return state.charAt(0).toUpperCase() + state.slice(1).replaceAll('_', ' ');
+}
+
+export function MemoryList({
+  page,
+  runLink,
+}: {
+  readonly page: MemoryPage;
+  readonly runLink: (turnId: string, path: string) => ReactNode;
+}): ReactNode {
   if (page.memories.length === 0) {
     return (
       <EmptyState title="No saved notes yet">
@@ -104,19 +143,35 @@ export function MemoryList({ page }: { readonly page: MemoryPage }): ReactNode {
       {page.memories.map((memory) => (
         <Accordion.Item key={memory.path} value={memory.path}>
           <Accordion.Header>
-            <Accordion.Trigger>{memory.path}</Accordion.Trigger>
+            <Accordion.Trigger>
+              <span>
+                <MarkdownPreview>{memorySummary(memory.text, memory.path)}</MarkdownPreview>
+                <br />
+                <Text variant="caption" tone="muted">
+                  {memory.path}
+                </Text>
+              </span>
+            </Accordion.Trigger>
           </Accordion.Header>
           <Accordion.Panel>
             <Stack compact>
               <Row>
-                <Muted>Version {memory.version} · Saved</Muted>
+                <Muted>Saved</Muted>
                 <ConsoleTimestamp value={memory.savedAt} />
+                {runLink(memory.turnId, memory.path)}
               </Row>
-              <Markdown>{memory.text}</Markdown>
+              <Markdown headingLevel={3}>{memory.text}</Markdown>
+              <Muted>Version {memory.version}</Muted>
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
       ))}
     </Accordion.Root>
   );
+}
+
+function memorySummary(text: string, path: string): string {
+  const summary = text.split('\n')[0];
+
+  return summary === undefined || summary.length === 0 ? path : summary;
 }

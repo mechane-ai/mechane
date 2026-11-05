@@ -7,6 +7,7 @@ import { DateTime, Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
+import { runIdentifier, runInput, runLabel } from './run-label.ts';
 import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 export function TurnList({
@@ -34,8 +35,7 @@ export function TurnList({
       rowAction={{
         href: (turn) => turnHref(turn.id),
         onActivate: (turn) => onOpen(turn.id),
-        label: (turn) =>
-          `Inspect ${Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0 ? turn.inputExcerpt : 'run'}`,
+        label: (turn) => `Inspect ${runInput(turn) ?? runLabel(turn)}`,
       }}
       columns={[
         {
@@ -43,11 +43,15 @@ export function TurnList({
           label: 'Run',
           cell: (turn) => (
             <DataTableText
-              secondary={Schema.is(Turn)(turn) && turn.status === 'unanswered' ? outcomeReason(turn.reason) : undefined}
+              secondary={
+                runInput(turn) === undefined
+                  ? runIdentifier(turn)
+                  : Schema.is(Turn)(turn) && turn.status === 'unanswered'
+                    ? outcomeReason(turn.reason)
+                    : undefined
+              }
             >
-              {Schema.is(Turn)(turn) && turn.inputExcerpt !== undefined && turn.inputExcerpt.length > 0
-                ? turn.inputExcerpt
-                : 'Input unavailable'}
+              {runInput(turn) ?? 'Input unavailable'}
             </DataTableText>
           ),
           truncate: true,

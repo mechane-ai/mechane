@@ -50,6 +50,16 @@ const styles = stylex.create({
     minWidth: 0,
   },
   item: { minWidth: 0, overflowWrap: 'anywhere' },
+  controls: {
+    boxSizing: 'border-box',
+    flexShrink: 0,
+    minWidth: 0,
+    width: '100%',
+    maxWidth: '80ch',
+    marginInline: 'auto',
+    paddingBlock: spacing.sm,
+    paddingInline: spacing.lg,
+  },
   jump: {
     position: 'absolute',
     bottom: spacing.lg,
@@ -64,6 +74,7 @@ export type ConversationRootProps = {
   readonly children: ReactNode;
   readonly initialPosition?: 'start' | 'end';
   readonly follow?: boolean;
+  readonly viewportRef?: RefObject<HTMLDivElement | null> | undefined;
 };
 
 export type ConversationViewportProps = {
@@ -75,11 +86,19 @@ export type ConversationViewportProps = {
 export type ConversationContentProps = { readonly children: ReactNode; readonly streaming?: boolean };
 export type ConversationItemProps = { readonly messageId: string; readonly children: ReactNode };
 export type ConversationJumpProps = { readonly label?: string };
+export type ConversationControlsProps = { readonly children: ReactNode };
+export type ConversationLatestButtonProps = { readonly label: string; readonly onActivate?: () => void };
 
 const ViewportContext = createContext<RefObject<HTMLDivElement | null> | undefined>(undefined);
 
-function ConversationRoot({ children, initialPosition = 'end', follow = true }: ConversationRootProps): ReactNode {
-  const viewport = useRef<HTMLDivElement>(null);
+function ConversationRoot({
+  children,
+  initialPosition = 'end',
+  follow = true,
+  viewportRef,
+}: ConversationRootProps): ReactNode {
+  const fallbackViewport = useRef<HTMLDivElement>(null);
+  const viewport = viewportRef ?? fallbackViewport;
 
   return (
     <ViewportContext.Provider value={viewport}>
@@ -126,10 +145,12 @@ function ConversationItem({ messageId, children }: ConversationItemProps): React
   );
 }
 
+function ConversationControls({ children }: ConversationControlsProps): ReactNode {
+  return <div {...stylex.props(styles.controls)}>{children}</div>;
+}
+
 function ConversationJumpToLatest({ label = 'Jump to latest' }: ConversationJumpProps): ReactNode {
-  const { scrollToEnd } = useMessageScroller();
   const { end } = useMessageScrollerScrollable();
-  const viewport = useContext(ViewportContext);
 
   if (!end) {
     return null;
@@ -137,16 +158,33 @@ function ConversationJumpToLatest({ label = 'Jump to latest' }: ConversationJump
 
   return (
     <div {...stylex.props(styles.jump)}>
-      <Button
-        onClick={() => {
-          scrollToEnd({ behavior: 'instant' });
-          viewport?.current?.focus({ preventScroll: true });
-        }}
-      >
-        <ArrowDown size={16} aria-hidden />
-        {label}
-      </Button>
+      <ConversationLatestButton label={label} />
     </div>
+  );
+}
+
+function ConversationLatestButton({ label, onActivate }: ConversationLatestButtonProps): ReactNode {
+  const { scrollToEnd } = useMessageScroller();
+  const viewport = useContext(ViewportContext);
+
+  return (
+    <Button
+      size="sm"
+      onClick={() => {
+        onActivate?.();
+        requestAnimationFrame(() => {
+          const target = viewport?.current;
+
+          if (target !== undefined && target !== null) {
+            scrollToEnd({ behavior: 'instant' });
+            target.focus({ preventScroll: true });
+          }
+        });
+      }}
+    >
+      <ArrowDown size={14} aria-hidden />
+      {label}
+    </Button>
   );
 }
 
@@ -155,5 +193,7 @@ export const Conversation = {
   Viewport: ConversationViewport,
   Content: ConversationContent,
   Item: ConversationItem,
+  Controls: ConversationControls,
+  LatestButton: ConversationLatestButton,
   JumpToLatest: ConversationJumpToLatest,
 };

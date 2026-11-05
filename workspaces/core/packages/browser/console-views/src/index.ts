@@ -1,12 +1,12 @@
 export { DefinitionConflict } from './definition-conflict.tsx';
 export { ConsoleShell } from './shell.tsx';
 export { MechHeader } from './mech-header.tsx';
+export { MechSettings } from './mech-settings.tsx';
 export { MechList } from './mechs.tsx';
-export { MemoryList, WorkList } from './work.tsx';
+export { MemoryList, WorkDetails, WorkList } from './work.tsx';
 export { TurnList } from './turns.tsx';
 export { Activity } from './events.tsx';
 export { MechConversation } from './conversation.tsx';
 export { timeLabel } from './format.ts';
 export type { TraceTab } from './trace.tsx';
 export { TurnTrace } from './trace.tsx';
-export { moneyLabel } from './format.ts';

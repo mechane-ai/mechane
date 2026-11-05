@@ -4,7 +4,7 @@ import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { colors, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import { Event } from '@mechane/protocol';
-import type { EventPage, ListedEvent } from '@mechane/protocol';
+import type { EventPage, ListedEvent, Turn } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Schema } from 'effect';
 import { Circle, GitFork, MessageSquare, Play, Reply } from 'lucide-react';
@@ -32,11 +32,13 @@ export function Activity({
   label = 'Mech history',
   inset = true,
   expandedSequence,
+  runLink,
 }: {
   readonly page: EventPage;
   readonly label?: string;
   readonly inset?: boolean;
   readonly expandedSequence?: number | undefined;
+  readonly runLink?: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
   return (
     <div {...stylex.props(inset && styles.inset)}>
@@ -45,7 +47,12 @@ export function Activity({
       ) : (
         <Timeline.Root label={label}>
           {page.events.map((event) => (
-            <EventItem key={event.sequence} event={event} expanded={event.sequence === expandedSequence} />
+            <EventItem
+              key={event.sequence}
+              event={event}
+              expanded={event.sequence === expandedSequence}
+              runLink={runLink}
+            />
           ))}
         </Timeline.Root>
       )}
@@ -53,7 +60,15 @@ export function Activity({
   );
 }
 
-function EventItem({ event, expanded }: { readonly event: ListedEvent; readonly expanded: boolean }): ReactNode {
+function EventItem({
+  event,
+  expanded,
+  runLink,
+}: {
+  readonly event: ListedEvent;
+  readonly expanded: boolean;
+  readonly runLink: ((turnId: Turn['id'], sequence: number) => ReactNode) | undefined;
+}): ReactNode {
   const known = Schema.is(Event)(event);
   const preview = known ? eventPreview(event) : undefined;
 
@@ -69,6 +84,7 @@ function EventItem({ event, expanded }: { readonly event: ListedEvent; readonly 
           <Row>
             <Identifier>Event #{event.sequence}</Identifier>
             {known && <CopyValue label="event timestamp" value={preciseTimeLabel(event.occurredAt)} />}
+            {known && runLink !== undefined && <RunLink event={event} render={runLink} />}
           </Row>
         </Stack>
       }
@@ -76,6 +92,16 @@ function EventItem({ event, expanded }: { readonly event: ListedEvent; readonly 
       {preview !== undefined && <p {...stylex.props(styles.preview)}>{preview}</p>}
     </Timeline.Item>
   );
+}
+
+function RunLink({
+  event,
+  render,
+}: {
+  readonly event: Event;
+  readonly render: (turnId: Turn['id'], sequence: number) => ReactNode;
+}): ReactNode {
+  return 'turnId' in event ? render(event.turnId, event.sequence) : null;
 }
 
 const PREVIEW_LENGTH = 200;

@@ -1,4 +1,4 @@
-import { CopyValue, Muted, Prose, Row, Stack } from '@mechane-ai/elements';
+import { CopyValue, Muted, Row, Stack, Status } from '@mechane-ai/elements';
 import { Conversation, Message, MessageAction, MessageBoundary } from '@mechane-ai/elements/ai';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
 import { EmptyState } from '@mechane-ai/elements/feedback';
@@ -6,7 +6,7 @@ import { Event, EventType } from '@mechane/protocol';
 import type { EventPage } from '@mechane/protocol';
 import { Schema } from 'effect';
 import { MessageSquare } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { ConsoleTimestamp } from './record-time.tsx';
 import { outcomeReason } from './turn-outcome.ts';
 
@@ -23,6 +23,8 @@ export function MechConversation({
   name,
   avatar,
   controls,
+  updates,
+  viewportRef,
   inspect,
   sourceLink,
 }: {
@@ -30,6 +32,8 @@ export function MechConversation({
   readonly name: string;
   readonly avatar?: ReactNode;
   readonly controls: ReactNode;
+  readonly updates?: ReactNode;
+  readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly inspect: (turnId: string) => ReactNode;
   readonly sourceLink: (mechId: string) => ReactNode;
 }): ReactNode {
@@ -37,7 +41,7 @@ export function MechConversation({
   const messages = events.filter((event) => conversationEvents.has(event.type));
 
   return (
-    <Conversation.Root>
+    <Conversation.Root viewportRef={viewportRef}>
       <Conversation.Viewport label={`${name} conversation`} scrollRestorationId="conversation">
         <Conversation.Content>
           {controls}
@@ -53,6 +57,15 @@ export function MechConversation({
                   author={event.source === undefined ? 'Workspace member' : 'Slack'}
                   kind="user"
                   meta={<ConsoleTimestamp value={event.occurredAt} />}
+                  actions={
+                    <CopyValue
+                      value={event.text}
+                      label="message"
+                      title="Copy message"
+                      display="icon"
+                      render={<MessageAction label="Copy message" />}
+                    />
+                  }
                   avatar={
                     event.source === undefined ? undefined : (
                       <MessageAction
@@ -71,7 +84,7 @@ export function MechConversation({
                     )
                   }
                 >
-                  <Prose>{event.text}</Prose>
+                  <Markdown headingLevel={3}>{event.text}</Markdown>
                 </Message>
               )}
               {event.type === EventType.TurnAnswered && (
@@ -92,7 +105,7 @@ export function MechConversation({
                     </>
                   }
                 >
-                  <Markdown>{event.reply}</Markdown>
+                  <Markdown headingLevel={3}>{event.reply}</Markdown>
                 </Message>
               )}
               {event.type === EventType.TurnUnanswered && (
@@ -103,12 +116,14 @@ export function MechConversation({
                   meta={<ConsoleTimestamp value={event.occurredAt} />}
                   actions={inspect(event.turnId)}
                 >
-                  <Prose>{outcomeReason(event.reason)}</Prose>
+                  <Status tone={event.reason === 'canceled' ? 'neutral' : 'negative'}>
+                    {outcomeReason(event.reason)}
+                  </Status>
                 </Message>
               )}
               {event.type === EventType.DroneReported && (
                 <Message author="Delegated work" kind="assistant" meta={<ConsoleTimestamp value={event.occurredAt} />}>
-                  <Markdown>{event.report}</Markdown>
+                  <Markdown headingLevel={3}>{event.report}</Markdown>
                 </Message>
               )}
               {event.type === EventType.MechForked && (
@@ -129,7 +144,7 @@ export function MechConversation({
           ))}
         </Conversation.Content>
       </Conversation.Viewport>
-      <Conversation.JumpToLatest />
+      {updates === undefined ? <Conversation.JumpToLatest /> : <Conversation.Controls>{updates}</Conversation.Controls>}
     </Conversation.Root>
   );
 }
