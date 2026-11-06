@@ -57,6 +57,11 @@ For each environment variable a test changes or deletes, does the test restore i
 
 ## Local adaptations
 
+`console-data/src/collections.ts` owns two native TanStack collection writes: assigning a validated record to the
+draft supplied by `Collection.update`, and deleting a canonical row through `Collection.delete`. Each has one
+`parameter-mutation` site suppression because the dependency owns those mutation interfaces. This allowance does
+not permit changing a caller's ordinary record, array, or map.
+
 oxlint `no-param-reassign` with `props: true`, `unicorn/no-array-sort` and `unicorn/no-array-reverse` with `allowExpressionStatement: false`, so even a statement that discards the result fails, and ast-grep `parameter-mutation`, enforce these rules.
 Every type is read-only (TD-06): ast-grep `readonly-type-members` rejects a property signature without `readonly`, and `readonly-collections` an `Array`, `Set`, `Map`, `T[]`, a tuple or a `Record` that no `Readonly` wraps, so a collection type is `ReadonlyArray`, `ReadonlySet`, `ReadonlyMap`, `readonly [A, B]` or `Readonly<Record<…>>`. Only a `const` local inside a function body, such as a listener's buffer, and a call's type argument there, such as `new Map<string, Turn>()`, may be mutable.
 

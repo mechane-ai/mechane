@@ -608,14 +608,30 @@
       "strip-ansi"
     ]
   },
+  "@mechane/console-cache": {
+    "owns": "The admitted browser cache's scoped file and Web Lock, dedicated Turso Worker, native SQLite persistence driver, and bounded storage lifecycle",
+    "layer": 4,
+    "lane": "browser",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "state",
+    "consumers": ["@mechane/console-data"],
+    "confines": ["@tursodatabase/database-wasm", "@tanstack/db-sqlite-persistence-core"]
+  },
   "@mechane/console-data": {
-    "owns": "Browser sessions, workspace-scoped reactive collections, bounded activity queries, and acknowledged API commands",
+    "owns": "Browser admission, scoped canonical records, native demand queries and ordered page membership, persistence composition, and acknowledged API commands",
     "layer": 5,
     "lane": "browser",
     "dialect": "plain",
     "kind": "library",
     "criterion": "closure",
-    "consumers": ["@mechane/console"]
+    "consumers": ["@mechane/console"],
+    "confines": [
+      "@tanstack/db",
+      "@tanstack/db-sqlite-persistence-core",
+      "@tanstack/query-core",
+      "@tanstack/query-db-collection"
+    ]
   },
   "@mechane/console-views": {
     "owns": "Mechane resource views and user interactions without network or session ownership",
@@ -633,7 +649,8 @@
     "dialect": "plain",
     "kind": "app",
     "criterion": "program",
-    "consumers": []
+    "consumers": [],
+    "confines": ["@tanstack/react-db"]
   },
   "@mechane/catalog": {
     "owns": "Shared development-only Storybook configuration, theme controls, and StyleX compiler settings",

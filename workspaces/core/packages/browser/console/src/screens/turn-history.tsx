@@ -4,8 +4,9 @@ import type { ConsoleData } from '@mechane/console-data';
 import { Activity, ActivityPlaceholder } from '@mechane/console-views';
 import type { Turn } from '@mechane/protocol';
 import type { ReactNode } from 'react';
-import { PageLoadNotice, usePageSource } from '../page-source.tsx';
-import { Resource } from '../resource.tsx';
+import { PageLoadNotice, usePageRead } from '../page-read.tsx';
+import { useEvents } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 
 export function TurnHistory({
   data,
@@ -20,13 +21,14 @@ export function TurnHistory({
   readonly target: number | undefined;
   readonly onStart: () => void;
 }): ReactNode {
-  const { source, cursors, setCursors, pending, failure } = usePageSource({
+  const { request, cursors, setCursors, pending, failure } = usePageRead({
     data,
     key: 'events',
     scope: `${mechId}:${turnId}:${target ?? 'start'}`,
-    create: (pages) => data.turnEvents(mechId, turnId, pages.at(-1) ?? (target === undefined ? 0 : target - 1)),
+    create: (pages) => data.reads.turnEvents(mechId, turnId, pages.at(-1) ?? (target === undefined ? 0 : target - 1)),
   });
 
+  const state = useEvents(data, request);
   const isLinkedPage = target !== undefined && cursors.length === 0;
 
   return (
@@ -36,7 +38,7 @@ export function TurnHistory({
           <TextButton onClick={onStart}>From the beginning</TextButton>
         </Row>
       )}
-      <Resource data={data} source={source} placeholder={<ActivityPlaceholder hasInset={false} />}>
+      <ResourceView state={state} placeholder={<ActivityPlaceholder hasInset={false} />}>
         {(page, notice) => {
           const hasPages = page.hasMore || cursors.length > 0;
           const showPagination = hasPages || failure !== undefined;
@@ -82,7 +84,7 @@ export function TurnHistory({
             </Stack>
           );
         }}
-      </Resource>
+      </ResourceView>
     </Stack>
   );
 }

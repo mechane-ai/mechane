@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /**
@@ -20,6 +20,7 @@ export const dataSqlStoreBoundaries = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'sql-statement-not-literal',
+      exemptRoles: [FileRole.BrowserCacheWorker],
       maxSuppressions: 3,
       standard: 'DO-06',
       violation: ['sql.exec(statement);', "sql.exec('SELECT ' + column);"],

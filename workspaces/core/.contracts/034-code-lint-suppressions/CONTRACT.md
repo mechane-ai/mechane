@@ -51,6 +51,18 @@ The owned checks of `mise -C workspaces/core run checks` honor no suppression, s
 Each rule's entry declares its suppression budget, `maxSuppressions`, 0 by default and at most `maxRuleSuppressions`; `rules:check` counts each rule that a suppression of a TypeScript file names, with or without its plugin, and fails on a rule suppressed more often than its budget allows. The rules with a budget above 0 are `consistent-type-assertions` and `no-unsafe-type-assertion`, for `wireKeys`, `sql-statement-not-literal`, for a fork's copy, `consistent-type-definitions`, for the two global augmentations, and `no-bitwise`, for three masks; their entries state each budget.
 `rules:check` also counts each `// <check>-allow <rule> -- <reason>` against the owned rule's budget, which is 0, and each `// jscpd:ignore-start -- <reason>` against 035's `jscpdSuppressions`.
 oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/name-rules/src/oxlint-opt-outs.json`.
+The native `SQLiteDriver.query<T>` bridge in `packages/browser/console-cache/src/store/connection.ts` uses the second
+budgeted suppression of `consistent-type-assertions` and `no-unsafe-type-assertion`. Contract 017 limits it to the
+decoded row array returned through that dependency's schema-free generic interface.
+The same native method permits one `return-only-type-parameter` site suppression because `SQLiteDriver` declares
+the generic row type without a schema argument. No other generic declaration gains this allowance.
+The two native canonical collection write sites in `console-data/src/collections.ts` permit the
+`parameter-mutation` suppressions described in contract 016. The admission invalidation broadcast in
+`console-data/src/console-data.ts` permits the one `unicorn/require-post-message-target-origin` suppression described
+in contract 113. Each directive still names its API constraint and must suppress a current finding.
+The one `defect-sites` suppression in `console-data/src/records.ts` belongs to `restoreRecord`, the synchronous
+native collection decoder described in contract 024. Other schema boundaries retain their typed failure handling.
+
 One `typescript/no-deprecated` suppression is permitted at the `nativeEvent.keyCode` read in
 `packages/browser/elements/packages/ai/src/prompt-input.tsx`. It recognizes composition-confirming Enter events whose
 `isComposing` flag is already false in affected WebKit versions. The reason cites the browser behavior;

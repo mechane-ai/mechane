@@ -5,13 +5,15 @@ import { Tooltip } from '@mechane-ai/elements/overlays';
 import type { ConsoleData } from '@mechane/console-data';
 import { MechList, MechsPagePlaceholder } from '@mechane/console-views';
 import { Plus, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
+import { useWorkspaceDrafts } from '../drafts.tsx';
 import { useMechAppearances } from '../mech-appearance.tsx';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
 import { useRecordNavigation } from '../navigation.tsx';
-import { PageLoadNotice, usePageSource } from '../page-source.tsx';
-import { ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
+import { PageLoadNotice, usePageRead } from '../page-read.tsx';
+import { useAllowance, useMechs } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { CreateMechForm } from './create-mech.tsx';
 
@@ -22,25 +24,23 @@ export function MechsScreen({
   readonly data: ConsoleData;
   readonly onOpen: (id: string) => void;
 }): ReactNode {
-  const { source, cursors, setCursors, pending, failure, cancel } = usePageSource({
+  const { request, cursors, setCursors, pending, failure, cancel } = usePageRead({
     data,
     key: 'mechs',
     scope: data.workspace.id,
-    create: (pages) => data.mechs(pages.at(-1) ?? null),
+    create: (pages) => data.reads.mechs(pages.at(-1) ?? null),
   });
 
   const records = useRecordNavigation();
   const appearances = useMechAppearances();
   const { pinned, togglePin } = useNavigationPreferences();
-  const [isCreating, setCreating] = useState(false);
+  const drafts = useWorkspaceDrafts();
   const [isRefreshing, setRefreshing] = useState(false);
   const isScreenActive = useScreenLifetime();
 
-  const allowanceSource = useMemo(() => data.allowance(), [data]);
-  const allowance = useResource(data, allowanceSource);
-  const mechs = useResource(data, source);
-
-  useCollectionLifetime(data, allowanceSource);
+  const allowanceRequest = data.reads.allowance();
+  const allowance = useAllowance(data, allowanceRequest);
+  const mechs = useMechs(data, request);
 
   const allowanceValue = allowance.kind === 'ready' ? allowance.value : undefined;
 
@@ -67,19 +67,19 @@ export function MechsScreen({
     }
 
     setRefreshing(true);
-    await Promise.allSettled([data.refresh()]);
+    await Promise.allSettled([data.refresh(request), data.refresh(allowanceRequest)]);
 
     if (isScreenActive()) {
       setRefreshing(false);
     }
   }
 
-  if (isCreating) {
-    return <CreateMechForm data={data} onCancel={() => setCreating(false)} onCreated={onOpen} />;
+  if (drafts.creation !== undefined) {
+    return <CreateMechForm data={data} onCancel={drafts.closeCreation} onCreated={onOpen} />;
   }
 
   return (
-    <ResourceView state={mechs} identity={source.id} placeholder={<MechsPagePlaceholder />} label="Loading mechs">
+    <ResourceView state={mechs} placeholder={<MechsPagePlaceholder />} label="Loading mechs">
       {(page, notice) => (
         <>
           <PageToolbar
@@ -111,7 +111,7 @@ export function MechsScreen({
                   icon={<Plus size={16} aria-hidden />}
                   onClick={() => {
                     cancel();
-                    setCreating(true);
+                    drafts.openCreation();
                   }}
                 >
                   Create mech
@@ -132,7 +132,7 @@ export function MechsScreen({
             focusRowId={records.focusRowId}
             onCreate={() => {
               cancel();
-              setCreating(true);
+              drafts.openCreation();
             }}
             hasPrevious={cursors.length > 0}
             loadingPage={pending}

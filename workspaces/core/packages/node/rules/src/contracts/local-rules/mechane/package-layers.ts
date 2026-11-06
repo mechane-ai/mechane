@@ -10,7 +10,10 @@ const VALUES = {
     [Lane.Browser]: [Lane.Shared, Lane.Browser],
   },
   sourceFolders: ['src', 'scripts', '.storybook', 'vite.config.ts'],
-  memberSourceFolders: { '@mechane-ai/elements': ['packages', '.storybook', 'vite.config.ts'] },
+  memberSourceFolders: {
+    '@mechane-ai/elements': ['packages', '.storybook', 'vite.config.ts'],
+    '@mechane/console': ['src', 'scripts', '.storybook', 'vite.config.ts', 'worker-licenses.ts'],
+  },
   libraryExports: { '.': './src/index.ts' },
   // StyleX imports resolve directly to their definition. The UI's other subpaths expose cohesive public modules.
   definitionExports: {

@@ -1,40 +1,59 @@
 import { Button, Row, Stack } from '@mechane-ai/elements';
 import { CollectionToolbar, ListFooter } from '@mechane-ai/elements/collections';
-import type { ConsoleData } from '@mechane/console-data';
+import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { Activity, ActivityPlaceholder } from '@mechane/console-views';
 import type { EventPage, Turn } from '@mechane/protocol';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
-import { PageLoadNotice } from '../page-source.tsx';
-import type { PageSource } from '../page-source.tsx';
-import { Resource } from '../resource.tsx';
+import { PageLoadNotice } from '../page-read.tsx';
+import type { PageRead } from '../page-read.tsx';
+import { eventWindow, useEvents, useEventWindow } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 
 /** Keep the displayed page until the reader asks to bring newer rows into view. */
 function ActivityPage({
+  data,
+  request,
   page,
   isLatest,
   controls,
   runLink,
 }: {
+  readonly data: ConsoleData;
+  readonly request: ReadRequest<'events'>;
   readonly page: EventPage;
   readonly isLatest: boolean;
   readonly controls: (page: EventPage) => ReactNode;
   readonly runLink: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
-  const [shown, setShown] = useState(page);
-  const visible = isLatest ? shown : page;
-  const hasUnreadActivity = isLatest && page.events.at(-1)?.sequence !== visible.events.at(-1)?.sequence;
+  const currentWindow = useMemo(() => eventWindow(page), [page]);
+  const [shown, setShown] = useState(currentWindow);
+  const visibleWindow = isLatest ? shown : currentWindow;
+  const lastShown = visibleWindow.sequences.at(-1);
+  const hasUnreadActivity = isLatest && currentWindow.sequences.at(-1) !== lastShown;
+
+  const visibleRequest =
+    hasUnreadActivity && lastShown !== undefined ? data.reads.events(request.mechId, lastShown + 1) : request;
+
+  const visibleState = useEventWindow(data, visibleRequest, visibleWindow);
 
   return (
     <>
       {hasUnreadActivity && (
         <CollectionToolbar label="New activity">
-          <Button onClick={() => setShown(page)}>Show new activity</Button>
+          <Button onClick={() => setShown(currentWindow)}>Show new activity</Button>
         </CollectionToolbar>
       )}
-      <Activity page={{ ...visible, events: visible.events.toReversed() }} runLink={runLink} />
-      {controls(visible)}
+      <ResourceView state={visibleState} placeholder={<ActivityPlaceholder />}>
+        {(visible, notice) => (
+          <>
+            {visibleRequest.id !== request.id && notice}
+            <Activity page={{ ...visible, events: visible.events.toReversed() }} runLink={runLink} />
+            {controls(visible)}
+          </>
+        )}
+      </ResourceView>
     </>
   );
 }
@@ -42,21 +61,24 @@ function ActivityPage({
 export function ActivityScreen({
   data,
   mechId,
-  pageSource,
+  pageRead,
 }: {
   readonly data: ConsoleData;
   readonly mechId: string;
-  readonly pageSource: PageSource<'activity', ReturnType<ConsoleData['events']>>;
+  readonly pageRead: PageRead<'activity', ReadRequest<'events'>>;
 }): ReactNode {
-  const { source, cursors, setCursors, pending, failure } = pageSource;
+  const { request, cursors, setCursors, pending, failure } = pageRead;
+  const state = useEvents(data, request);
   const before = cursors.at(-1) ?? null;
 
   return (
-    <Resource data={data} source={source} placeholder={<ActivityPlaceholder />}>
+    <ResourceView state={state} placeholder={<ActivityPlaceholder />}>
       {(page, notice) => (
         <Stack>
           {notice}
           <ActivityPage
+            data={data}
+            request={request}
             key={before ?? 'latest'}
             page={page}
             isLatest={before === null}
@@ -112,6 +134,6 @@ export function ActivityScreen({
           />
         </Stack>
       )}
-    </Resource>
+    </ResourceView>
   );
 }

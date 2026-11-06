@@ -1,53 +1,41 @@
 import { canRetainResult } from '@mechane/console-data';
-import type { SnapshotCollection } from '@mechane/console-data';
 import type { Mech } from '@mechane/protocol';
 import { useEffect } from 'react';
 import { useNavigationPreferences } from './navigation-preferences.tsx';
+import type { ResourceState } from './resource.tsx';
 
-/** Navigation changes follow protected resource settlement and stop when its screen leaves. */
+/** Records explicit visits and forgets a shortcut only after confirmed loss of access. */
 export function useMechNavigationResource({
-  source,
+  state,
   mechId,
   shouldRecordVisit = false,
 }: {
-  readonly source: SnapshotCollection<Mech>;
+  readonly state: ResourceState<Mech>;
   readonly mechId: Mech['id'];
-  /** An absent value keeps this resource lookup out of Recents. */
+  /** Omission observes shortcut availability without adding a recent visit. */
   readonly shouldRecordVisit?: boolean;
 }): void {
   const { visit, forget } = useNavigationPreferences();
+  const isRemoved = state.kind === 'failed' && !canRetainResult(state.problem);
+  const isAvailable = state.kind === 'ready';
 
   useEffect(() => {
     let isActive = true;
 
-    function onResourceChange(): void {
+    queueMicrotask(() => {
       if (!isActive) {
         return;
       }
 
-      const failure = source.health.error ?? source.health.failureReason;
-
-      if (failure !== null && !canRetainResult(failure.cause)) {
+      if (isRemoved) {
         forget(mechId);
-
-        return;
-      }
-
-      if (shouldRecordVisit && source.get(source.id) !== undefined) {
+      } else if (shouldRecordVisit && isAvailable) {
         visit(mechId);
       }
-    }
-
-    const changes = source.subscribeChanges(onResourceChange, { includeInitialState: false });
-    const unsubscribeHealth = source.on('health:change', onResourceChange);
-
-    void source.preload().then(onResourceChange, onResourceChange);
+    });
 
     return () => {
       isActive = false;
-
-      unsubscribeHealth();
-      changes.unsubscribe();
     };
-  }, [forget, mechId, shouldRecordVisit, source, visit]);
+  }, [forget, isAvailable, isRemoved, mechId, shouldRecordVisit, visit]);
 }

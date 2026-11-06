@@ -33,6 +33,10 @@ For each entry a change adds to the check's configuration, does a runtime, a fra
 
 ## Local adaptations
 
+Knip's Vite plugin discovers the Console's configuration, while its registered build helpers are development project
+files. It follows their actual imports to check build dependencies; the Worker license dependency is not ignored.
+The helpers remain outside the production application entry set.
+
 Within the published `@mechane-ai/elements` library, each manifest subpath is a public module boundary. Its documented,
 implemented exports are supported APIs for npm consumers. They need not also be used by Mechane's Console.
 This replaces the upstream requirement for a named external consumer on each such entry-point export. It does not

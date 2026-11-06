@@ -2,12 +2,9 @@ import { Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elem
 import { Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input, Textarea } from '@mechane-ai/elements/forms';
 import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
-import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { CreationRequestId } from '@mechane/records';
-import { Schema } from 'effect';
-import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
+import { useWorkspaceDrafts } from '../drafts.tsx';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
 export function CreateMechForm({
@@ -19,47 +16,37 @@ export function CreateMechForm({
   readonly onCancel: () => void;
   readonly onCreated: (id: string) => void;
 }): ReactNode {
-  const [name, setName] = useState('');
-  const [instructions, setInstructions] = useState('');
-  const [requestId, setRequestId] = useState(() => Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()));
-  const [isBusy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const { creation, changeCreation, createMech } = useWorkspaceDrafts();
   const isScreenActive = useScreenLifetime();
 
-  function changed(): void {
-    setRequestId(Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()));
-    setError(undefined);
+  if (creation === undefined) {
+    return null;
   }
+
+  const { name, instructions, isPending: isBusy, error, created } = creation;
 
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (isBusy) {
-      return;
-    }
+    void createMech(data).then((mech) => {
+      if (mech !== undefined && isScreenActive()) {
+        onCreated(mech.id);
+      }
+    });
+  }
 
-    setBusy(true);
-    setError(undefined);
-    void data
-      .api('createMech', {
-        workspaceId: data.workspace.id,
-        name,
-        requestId,
-        ...(instructions.trim() === '' ? {} : { instructions }),
-      })
-      .then(
-        (mech) => {
-          if (isScreenActive()) {
-            onCreated(mech.id);
-          }
-        },
-        (cause: unknown) => {
-          if (isScreenActive()) {
-            setError(problemMessage(cause));
-            setBusy(false);
-          }
-        },
-      );
+  if (created !== undefined) {
+    return (
+      <>
+        <PageToolbar title="Mech created" />
+        <DetailPage>
+          <Stack>
+            <Heading>{created.name} is ready</Heading>
+            <Button onClick={() => onCreated(created.id)}>Open mech</Button>
+          </Stack>
+        </DetailPage>
+      </>
+    );
   }
 
   return (
@@ -68,7 +55,10 @@ export function CreateMechForm({
         showBreadcrumb
         title={
           <>
-            <TextButton onClick={onCancel}>Mechs</TextButton> / Create
+            <TextButton onClick={onCancel} disabled={isBusy}>
+              Mechs
+            </TextButton>{' '}
+            / Create
           </>
         }
       />
@@ -86,10 +76,7 @@ export function CreateMechForm({
                   required
                   maxLength={64}
                   value={name}
-                  onChange={(event) => {
-                    setName(event.target.value);
-                    changed();
-                  }}
+                  onChange={(event) => changeCreation({ name: event.target.value })}
                   autoFocus
                 />
                 <Field.Description>A name people can recognize in this workspace.</Field.Description>
@@ -100,10 +87,7 @@ export function CreateMechForm({
                 <Textarea
                   maxLength={65_536}
                   value={instructions}
-                  onChange={(event) => {
-                    setInstructions(event.target.value);
-                    changed();
-                  }}
+                  onChange={(event) => changeCreation({ instructions: event.target.value })}
                   placeholder="What should this mech do?"
                 />
                 <Field.Description>Optional guidance for this mech’s work.</Field.Description>

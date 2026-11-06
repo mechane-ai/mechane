@@ -17,12 +17,14 @@ import { useRouterState } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { useWorkspaceDrafts } from '../drafts.tsx';
 import { useMechAppearance } from '../mech-appearance.tsx';
 import { useMechPageReads } from '../mech-page-reads.ts';
 import type { MechPageReads } from '../mech-page-reads.ts';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
 import { readReaderPositions, restoreReaderPositions, useRecordNavigation } from '../navigation.tsx';
-import { ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
+import { useMech } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 import type { ResourceState } from '../resource.tsx';
 import type { ConsoleNavigation, ReaderPosition } from '../types.ts';
 import { useMechNavigationResource } from '../use-mech-navigation-resource.ts';
@@ -39,7 +41,6 @@ import { MemoryScreen, WorkScreen } from './work.tsx';
 type MechNavigation = ConsoleNavigation & { readonly data: ConsoleData; readonly mechId: string };
 
 const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity', 'work']);
-const failedPrimaryStates: ReadonlySet<MechPageReads['status']> = new Set(['failed', 'failed-retrying']);
 
 const viewLabels: Readonly<Partial<Record<ConsoleView, string>>> = {
   conversation: 'Conversation',
@@ -51,16 +52,16 @@ const viewLabels: Readonly<Partial<Record<ConsoleView, string>>> = {
 };
 
 export function MechScreen({ data, mechId, location, navigate }: MechNavigation): ReactNode {
-  const source = useMemo(() => data.mech(mechId), [data, mechId]);
+  const request = useMemo(() => data.reads.mech(mechId), [data, mechId]);
   const reads = useMechPageReads(data, mechId, location);
-  const state = useResource(data, source);
+  const state = useMech(data, request);
   const [isOpen, setOpened] = useState(false);
   const records = useRecordNavigation();
 
-  useCollectionLifetime(data, source);
-  useMechNavigationResource({ source, mechId, shouldRecordVisit: true });
+  useMechNavigationResource({ state, mechId, shouldRecordVisit: true });
 
-  const canOpen = state.kind === 'ready' && reads.status !== 'pending';
+  const hasPrimary = reads.primary === undefined || reads.primary.kind === 'ready';
+  const canOpen = state.kind === 'ready' && hasPrimary;
 
   if (!isOpen && canOpen) {
     setOpened(true);
@@ -68,30 +69,16 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
 
   let pageState: ResourceState<Mech> = state;
 
-  const primaryFailed = failedPrimaryStates.has(reads.status);
   const canShowPrimaryFailure = !isOpen && state.kind !== 'failed';
 
-  if (canShowPrimaryFailure && primaryFailed && reads.primary !== undefined) {
-    const primary = reads.primary;
-    const failure = primary.health.error ?? primary.health.failureReason;
-
-    pageState = {
-      kind: 'failed',
-      problem: failure?.cause,
-      isRetrying: reads.status === 'failed-retrying',
-      retry: () => {
-        const recovery = primary.health.error === null ? primary.utils.refetch() : primary.reload();
-
-        void Promise.allSettled([recovery]);
-      },
-    };
+  if (canShowPrimaryFailure && reads.primary?.kind === 'failed') {
+    pageState = reads.primary;
   } else if (!isOpen && !canOpen && state.kind === 'ready') {
     pageState = { kind: 'pending' };
   }
 
   return (
     <ResourceView
-      identity={source.id}
       state={pageState}
       placeholder={
         <MechPagePlaceholder
@@ -168,7 +155,7 @@ function MechDetails({
   const viewLabel = viewLabels[view] ?? 'Conversation';
 
   const base = { workspace: data.workspace.id, mech: mech.id };
-  const [isEditing, setEditing] = useState(false);
+  const drafts = useWorkspaceDrafts();
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
   const [statusError, setStatusError] = useState<{ readonly status: MechStatus; readonly message: string }>();
 
@@ -186,6 +173,7 @@ function MechDetails({
   const runBack = useRef<HTMLButtonElement>(null);
   const isBusy = pendingStatus !== undefined;
   const hasFocusedRun = location.turn !== undefined;
+  const isEditing = drafts.definition !== undefined && view === 'definition' && !hasFocusedRun;
   const previousRun = useRef(hasFocusedRun);
   const isConversationVisible = view === 'conversation';
   const isConversationActive = isConversationVisible && !hasFocusedRun && !isEditing;
@@ -194,10 +182,6 @@ function MechDetails({
 
   if (isConversationVisible && !hasFocusedRun && !conversationVisited) {
     setConversationVisited(true);
-  }
-
-  if (isEditing && (view !== 'definition' || hasFocusedRun)) {
-    setEditing(false);
   }
 
   useLayoutEffect(() => {
@@ -242,7 +226,7 @@ function MechDetails({
 
     setPendingStatus(status);
     setStatusError(undefined);
-    void data.update(mech, { status }).then(
+    void data.commands.updateMech({ mechId: mech.id, expectedRevision: mech.revision, status }).then(
       () => {
         if (isScreenActive()) {
           setPendingStatus(undefined);
@@ -264,16 +248,16 @@ function MechDetails({
           <TurnsScreen
             data={data}
             mech={mech}
-            pageSource={reads.viewRead.pageSource}
+            pageRead={reads.viewRead.pageRead}
             onMessage={() => selectView('conversation')}
           />
         );
       case 'work':
-        return <WorkScreen data={data} pageSource={reads.viewRead.pageSource} />;
+        return <WorkScreen data={data} pageRead={reads.viewRead.pageRead} />;
       case 'memory':
-        return <MemoryScreen data={data} mech={mech} source={reads.viewRead.source} />;
+        return <MemoryScreen data={data} mech={mech} request={reads.viewRead.request} />;
       case 'activity':
-        return <ActivityScreen data={data} mechId={mech.id} pageSource={reads.viewRead.pageSource} />;
+        return <ActivityScreen data={data} mechId={mech.id} pageRead={reads.viewRead.pageRead} />;
       case 'definition':
         return (
           <MechSettings
@@ -286,7 +270,7 @@ function MechDetails({
             appearanceError={appearanceError}
             onEdit={() => {
               readerPositions.current.set(view, readReaderPositions());
-              setEditing(true);
+              drafts.openDefinition(mech);
             }}
             onArchive={() => setStatus(MechStatus.Archived)}
           />
@@ -321,7 +305,7 @@ function MechDetails({
               <ConversationScreen
                 data={data}
                 mech={mech}
-                pageSource={reads.conversation}
+                pageRead={reads.conversation}
                 isActive={isConversationActive}
               />
               <WorkbenchFooter>
@@ -336,7 +320,7 @@ function MechDetails({
           )}
         </Workbench>
       </ViewStack.Panel>
-      {isEditing && <EditMechForm data={data} mech={mech} notice={notice} onClose={() => setEditing(false)} />}
+      {isEditing && <EditMechForm data={data} mech={mech} notice={notice} onClose={drafts.closeDefinition} />}
       {location.turn !== undefined && (
         <>
           <PageToolbar
@@ -364,7 +348,7 @@ function MechDetails({
                   mech={mech}
                   notice={notice}
                   turnId={location.turn}
-                  source={reads.trace}
+                  request={reads.trace}
                   location={location}
                   navigate={navigate}
                 />

@@ -1,170 +1,114 @@
-import { canRetainResult } from '@mechane/console-data';
-import type { ConsoleData } from '@mechane/console-data';
+import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { TurnId } from '@mechane/records';
-import { Option, Schema } from 'effect';
-import { useCallback, useMemo, useSyncExternalStore } from 'react';
-import { usePageSource } from './page-source.tsx';
-import type { PageSource } from './page-source.tsx';
-import { useCollectionLifetime } from './resource.tsx';
+import { Schema } from 'effect';
+import { usePageRead } from './page-read.tsx';
+import type { PageRead } from './page-read.tsx';
+import { useEvents, useMemories, useThreads, useTrace, useTurns } from './reads.ts';
+import type { ResourceState } from './resource.tsx';
 import type { ConsoleLocation } from './types.ts';
 
 type MechViewRead =
   | { readonly view: 'conversation' | 'definition' }
-  | { readonly view: 'runs'; readonly pageSource: PageSource<'turns', ReturnType<ConsoleData['turns']>> }
-  | { readonly view: 'work'; readonly pageSource: PageSource<'work', ReturnType<ConsoleData['threads']>> }
-  | { readonly view: 'memory'; readonly source: ReturnType<ConsoleData['memories']> }
-  | { readonly view: 'activity'; readonly pageSource: PageSource<'activity', ReturnType<ConsoleData['events']>> };
+  | { readonly view: 'runs'; readonly pageRead: PageRead<'turns', ReadRequest<'turns'>> }
+  | { readonly view: 'work'; readonly pageRead: PageRead<'work', ReadRequest<'threads'>> }
+  | { readonly view: 'memory'; readonly request: ReadRequest<'memories'> }
+  | { readonly view: 'activity'; readonly pageRead: PageRead<'activity', ReadRequest<'events'>> };
 
-type PrimarySource = Parameters<ConsoleData['retain']>[0] & {
-  readonly id: ReturnType<ConsoleData['events']>['id'];
-  readonly health: ReturnType<ConsoleData['events']>['health'];
-  readonly get: (key: string) => unknown;
-  readonly preload: () => Promise<void>;
-  readonly subscribeChanges: (
-    notify: () => void,
-    options: { readonly includeInitialState: boolean },
-  ) => { readonly unsubscribe: () => void };
-  readonly on: (event: 'health:change', notify: () => void) => () => void;
-};
-
-type ReadStatus = 'pending' | 'failed' | 'failed-retrying' | 'ready';
-
-function sourceStatus(data: ConsoleData, source: PrimarySource | undefined): ReadStatus {
-  if (source === undefined) {
-    return 'ready';
-  }
-
-  const failure = source.health.error ?? source.health.failureReason;
-  const snapshot = source.get(source.id);
-  const canRetain = failure?.errors.every((error) => canRetainResult(error.cause)) ?? true;
-
-  if (source.health.hasErrors && (snapshot === undefined || !canRetain)) {
-    const isRetrying = source.health.reloading || data.readFetchStatus(source) !== 'idle';
-
-    return isRetrying ? 'failed-retrying' : 'failed';
-  }
-
-  return snapshot === undefined ? 'pending' : 'ready';
-}
-
-function usePrimaryStatus(data: ConsoleData, source: PrimarySource | undefined): ReadStatus {
-  const subscribe = useCallback(
-    (notify: () => void) => {
-      if (source === undefined) {
-        return () => undefined;
-      }
-
-      let isActive = true;
-
-      function changed(): void {
-        if (isActive) {
-          notify();
-        }
-      }
-
-      const changes = source.subscribeChanges(changed, { includeInitialState: false });
-      const health = source.on('health:change', changed);
-      const fetch = data.subscribeFetchStatus(source, changed);
-
-      void source.preload().then(changed, changed);
-
-      return () => {
-        isActive = false;
-
-        changes.unsubscribe();
-        health();
-        fetch();
-      };
-    },
-    [data, source],
-  );
-
-  return useSyncExternalStore(
-    subscribe,
-    () => sourceStatus(data, source),
-    () => 'pending',
-  );
-}
-
-/** The page preloads its primary view without transferring collection ownership to its readers. */
+/** Coordinates exact primary readiness while keeping conversation pagination owned across run inspection. */
 export function useMechPageReads(data: ConsoleData, mechId: string, location: ConsoleLocation) {
   const requestedView = location.view ?? 'conversation';
 
-  const conversation = usePageSource({
+  const conversation = usePageRead({
     data,
     key: 'conversation',
     scope: mechId,
-    create: (cursors) => data.events(mechId, cursors.at(-1) ?? null),
+    create: (cursors) => data.reads.events(mechId, cursors.at(-1) ?? null),
   });
 
-  const turns = usePageSource({
+  const turns = usePageRead({
     data,
     key: 'turns',
     scope: mechId,
     isEnabled: requestedView === 'runs',
-    create: (cursors) => data.turns(mechId, Option.fromNullishOr(cursors.at(-1))),
+    create: (cursors) => data.reads.turns(mechId, cursors.at(-1) ?? null),
   });
 
-  const work = usePageSource({
+  const work = usePageRead({
     data,
     key: 'work',
     scope: mechId,
     isEnabled: requestedView === 'work',
-    create: (cursors) => data.threads(mechId, Option.fromNullishOr(cursors.at(-1))),
+    create: (cursors) => data.reads.threads(mechId, cursors.at(-1) ?? null),
   });
 
-  const activity = usePageSource({
+  const activity = usePageRead({
     data,
     key: 'activity',
     scope: mechId,
     isEnabled: requestedView === 'activity',
-    create: (cursors) => data.events(mechId, cursors.at(-1) ?? null),
+    create: (cursors) => data.reads.events(mechId, cursors.at(-1) ?? null),
   });
 
-  const memory = useMemo(
-    () => (requestedView === 'memory' ? data.memories(mechId) : undefined),
-    [data, mechId, requestedView],
+  const memory = requestedView === 'memory' ? data.reads.memories(mechId) : undefined;
+  const turnId = location.turn;
+  const trace = Schema.is(TurnId)(turnId) ? data.reads.trace(mechId, turnId) : undefined;
+  const hasFocusedRun = turnId !== undefined;
+  const viewRead = readView();
+
+  const conversationState = useEvents(
+    data,
+    !hasFocusedRun && viewRead.view === 'conversation' ? conversation.request : undefined,
   );
+
+  const turnsState = useTurns(data, hasFocusedRun ? undefined : turns?.request);
+  const workState = useThreads(data, hasFocusedRun ? undefined : work?.request);
+  const activityState = useEvents(data, hasFocusedRun ? undefined : activity?.request);
+  const memoryState = useMemories(data, hasFocusedRun ? undefined : memory);
+  const traceState = useTrace(data, trace);
 
   function readView(): MechViewRead {
     if (turns !== undefined) {
-      return { view: 'runs', pageSource: turns };
+      return { view: 'runs', pageRead: turns };
     }
 
     if (work !== undefined) {
-      return { view: 'work', pageSource: work };
+      return { view: 'work', pageRead: work };
     }
 
     if (activity !== undefined) {
-      return { view: 'activity', pageSource: activity };
+      return { view: 'activity', pageRead: activity };
     }
 
     if (memory !== undefined) {
-      return { view: 'memory', source: memory };
+      return { view: 'memory', request: memory };
     }
 
     return { view: requestedView === 'definition' ? 'definition' : 'conversation' };
   }
 
-  const viewRead = readView();
+  function primaryState(): ResourceState<unknown> | undefined {
+    if (hasFocusedRun) {
+      return trace === undefined ? undefined : traceState;
+    }
 
-  const turnId = location.turn;
+    switch (viewRead.view) {
+      case 'conversation':
+        return conversationState;
+      case 'runs':
+        return turnsState;
+      case 'work':
+        return workState;
+      case 'activity':
+        return activityState;
+      case 'memory':
+        return memoryState;
+      case 'definition':
+        return undefined;
+    }
+  }
 
-  const trace = useMemo(
-    () => (Schema.is(TurnId)(turnId) ? data.trace(mechId, turnId) : undefined),
-    [data, mechId, turnId],
-  );
-
-  const viewSource = 'pageSource' in viewRead ? viewRead.pageSource.source : memory;
-  const primary = turnId === undefined ? (viewRead.view === 'conversation' ? conversation.source : viewSource) : trace;
-
-  useCollectionLifetime(data, memory);
-  useCollectionLifetime(data, trace);
-
-  const status = usePrimaryStatus(data, primary);
-
-  return { conversation, viewRead, trace, primary, status };
+  return { conversation, viewRead, trace, primary: primaryState() };
 }
 
-/** These borrowed sources remain owned by the mech page while its readers mount and unmount. */
+/** The current view's read demand and the independent conversation cursor owner. */
 export type MechPageReads = ReturnType<typeof useMechPageReads>;

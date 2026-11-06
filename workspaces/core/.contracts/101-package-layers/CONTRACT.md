@@ -37,12 +37,17 @@ For each new edge, does the depending package need the dependency's own concept,
 
 The `browser` lane owns the Console's React application and generic UI packages. Its ownership and dependency edges
 are declared in `dependencies.json`; contract 113 describes the browser package map.
+The exact Console build files `packages/browser/console/vite.config.ts` and
+`packages/browser/console/worker-licenses.ts` run under Node through Vite's bundled configuration loader. They keep
+the existing Bundler-mode typecheck that matches that loader, and the registry confines imports of either to those
+build files. The license helper reads upstream legal text with Node's filesystem API and updates the build's emitted
+notice asset through the public plugin lifecycle; browser runtime modules cannot import it.
 The direct `ui/tokens` definition export follows the compiler-required exception in contract 114.
 Declared export resolution preserves the layer, lane, consumer, and confined-dependency rules.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`; `memberSourceFolders` `@mechane-ai/elements` [`packages`, `.storybook`, `vite.config.ts`]; `libraryExports` `.` ./src/index.ts.
+Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`; `memberSourceFolders` `@mechane-ai/elements` [`packages`, `.storybook`, `vite.config.ts`], `@mechane/console` [`src`, `scripts`, `.storybook`, `vite.config.ts`, `worker-licenses.ts`]; `libraryExports` `.` ./src/index.ts.
 The generated configurations carry `definitionExports`.
 - dependency-cruiser family `layer` (ST-02): enforced in phase E: Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`
 - dependency-cruiser family `lane` (ST-02): enforced in phase E: Import Node's modules only outside the shared lane and the Workers runtime's only in the worker lane, such as `node:path` in `@mechane/cli` and `cloudflare:workers` in `@mechane/mech`

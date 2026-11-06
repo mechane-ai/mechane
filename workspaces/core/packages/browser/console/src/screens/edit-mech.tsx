@@ -2,15 +2,11 @@ import { Button, Heading, Muted, Row, Stack, TextButton } from '@mechane-ai/elem
 import { Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input, Textarea } from '@mechane-ai/elements/forms';
 import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
-import { isRevisionConflict, problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { DefinitionConflict } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
-import { Micros } from '@mechane/records';
-import { Option, Schema } from 'effect';
-import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
-import { useScreenLifetime } from '../use-screen-lifetime.ts';
+import { useWorkspaceDrafts } from '../drafts.tsx';
 
 export function EditMechForm({
   data,
@@ -23,85 +19,21 @@ export function EditMechForm({
   readonly onClose: () => void;
   readonly notice?: ReactNode;
 }): ReactNode {
-  const [original, setOriginal] = useState(mech);
-  const [hasRevisionConflict, setConflict] = useState(false);
-  const [name, setName] = useState(mech.name);
-  const [model, setModel] = useState(mech.model);
-  const [instructions, setInstructions] = useState(Option.getOrElse(mech.instructions, () => ''));
-  const [cap, setCap] = useState(String(mech.dailyCapMicros / 1_000_000));
-  const [isBusy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
-  const isScreenActive = useScreenLifetime();
-  const hasConflict = hasRevisionConflict || original.revision !== mech.revision;
+  const { definition, changeDefinition, continueDefinition, saveDefinition } = useWorkspaceDrafts();
 
-  function continueDraft(): void {
-    if (name === original.name) {
-      setName(mech.name);
-    }
-
-    if (model === original.model) {
-      setModel(mech.model);
-    }
-
-    if (instructions === Option.getOrElse(original.instructions, () => '')) {
-      setInstructions(Option.getOrElse(mech.instructions, () => ''));
-    }
-
-    if (cap === String(original.dailyCapMicros / 1_000_000)) {
-      setCap(String(mech.dailyCapMicros / 1_000_000));
-    }
-
-    setOriginal(mech);
-    setConflict(false);
+  if (definition === undefined) {
+    return null;
   }
+
+  const { original, name, model, instructions, cap, hasRevisionConflict, isPending: isBusy, error } = definition;
+  const hasConflict = hasRevisionConflict || original.revision !== mech.revision;
 
   function submit(event: SubmitEvent): void {
     event.preventDefault();
 
-    if (isBusy || hasConflict) {
-      return;
+    if (!hasConflict) {
+      saveDefinition(data);
     }
-
-    setBusy(true);
-    setError(undefined);
-
-    const amount = Math.round(Number(cap) * 1_000_000);
-
-    if (!Schema.is(Micros)(amount)) {
-      setBusy(false);
-      setError('Enter a valid daily cap.');
-
-      return;
-    }
-
-    void data
-      .update(original, {
-        name,
-        model,
-        instructions: instructions === '' ? Option.none() : Option.some(instructions),
-        dailyCapMicros: amount,
-      })
-      .then(
-        () => {
-          if (isScreenActive()) {
-            onClose();
-          }
-        },
-        (cause: unknown) => {
-          if (!isScreenActive()) {
-            return;
-          }
-
-          setBusy(false);
-
-          if (isRevisionConflict(cause)) {
-            setConflict(true);
-            void data.refresh();
-          } else {
-            setError(problemMessage(cause));
-          }
-        },
-      );
   }
 
   return (
@@ -110,7 +42,10 @@ export function EditMechForm({
         showBreadcrumb
         title={
           <>
-            <TextButton onClick={onClose}>{original.name}</TextButton> / Edit definition
+            <TextButton onClick={onClose} disabled={isBusy}>
+              {original.name}
+            </TextButton>{' '}
+            / Edit definition
           </>
         }
       />
@@ -123,21 +58,26 @@ export function EditMechForm({
             <DefinitionConflict
               saved={mech.revision === original.revision ? undefined : mech}
               onRefresh={() => {
-                void data.refresh();
+                void Promise.allSettled([data.refresh(data.reads.mech(mech.id))]);
               }}
-              onContinue={continueDraft}
+              onContinue={() => continueDefinition(mech)}
             />
           )}
           <form onSubmit={submit}>
             <Stack>
               <Field.Root name="name" disabled={isBusy}>
                 <Field.Label>Name</Field.Label>
-                <Input required maxLength={64} value={name} onChange={(event) => setName(event.target.value)} />
+                <Input
+                  required
+                  maxLength={64}
+                  value={name}
+                  onChange={(event) => changeDefinition({ name: event.target.value })}
+                />
                 <Field.Error />
               </Field.Root>
               <Field.Root name="model" disabled={isBusy}>
                 <Field.Label>Model</Field.Label>
-                <Input required value={model} onChange={(event) => setModel(event.target.value)} />
+                <Input required value={model} onChange={(event) => changeDefinition({ model: event.target.value })} />
                 <Field.Error />
               </Field.Root>
               <Field.Root name="dailyCap" disabled={isBusy}>
@@ -148,7 +88,7 @@ export function EditMechForm({
                   step="0.000001"
                   required
                   value={cap}
-                  onChange={(event) => setCap(event.target.value)}
+                  onChange={(event) => changeDefinition({ cap: event.target.value })}
                 />
                 <Field.Description>Maximum daily model spend for this mech.</Field.Description>
                 <Field.Error />
@@ -158,7 +98,7 @@ export function EditMechForm({
                 <Textarea
                   maxLength={65_536}
                   value={instructions}
-                  onChange={(event) => setInstructions(event.target.value)}
+                  onChange={(event) => changeDefinition({ instructions: event.target.value })}
                 />
                 <Field.Error />
               </Field.Root>

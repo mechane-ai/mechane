@@ -512,12 +512,7 @@ export const DefinitionConflict: Story = {
 export const Loading: Story = {
   render: () => (
     <StoryShell>
-      <ResourceView
-        state={{ kind: 'pending' }}
-        identity="mechs-loading-story"
-        label="Loading mechs"
-        placeholder={<MechsPagePlaceholder />}
-      >
+      <ResourceView state={{ kind: 'pending' }} label="Loading mechs" placeholder={<MechsPagePlaceholder />}>
         {() => null}
       </ResourceView>
     </StoryShell>
@@ -529,7 +524,6 @@ export const ConversationLoading: Story = {
     <StoryShell>
       <ResourceView
         state={{ kind: 'pending' }}
-        identity="conversation-loading-story"
         label="Loading conversation"
         placeholder={<MechPagePlaceholder view="conversation" />}
       >
@@ -544,7 +538,6 @@ export const RunLoading: Story = {
     <StoryShell shouldFocus>
       <ResourceView
         state={{ kind: 'pending' }}
-        identity="run-loading-story"
         label="Loading run"
         placeholder={<MechPagePlaceholder view="conversation" hasFocusedRun />}
       >

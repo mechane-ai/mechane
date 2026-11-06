@@ -18,6 +18,7 @@ const ENTRANCE_PATHS = [INDEX_PATH, '/console/welcome.html'] as const;
 const CONSOLE_TYPES: Readonly<Record<string, MediaType>> = {
   '.html': MediaType.Html,
   '.js': MediaType.JavaScript,
+  '.wasm': MediaType.WebAssembly,
   '.css': MediaType.Css,
   '.svg': MediaType.Svg,
   '.png': MediaType.Png,

@@ -207,6 +207,7 @@
     // An outbound call keeps its `.then` with both handlers, such as `.then(() => undefined, onRejected)`.
     "unicorn/no-useless-undefined": ["error", { "checkArguments": false, "checkArrowFunctionBody": false }],
     "typescript/no-deprecated": "error",
+    "unicorn/require-post-message-target-origin": "error",
     "oxc/no-optional-chaining": "error",
     "no-restricted-imports": [
       "error",
@@ -1173,6 +1174,7 @@
       "files": [
         "packages/browser/catalog/src/**",
         "packages/browser/console/vite.config.ts",
+        "packages/browser/console/worker-licenses.ts",
         "packages/browser/elements/vite.config.ts",
         "packages/browser/console/src/router.tsx",
         "packages/browser/console/src/vite-env.d.ts",

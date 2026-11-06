@@ -1,7 +1,7 @@
 import { Button, Row, Stack } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
-import type { ConsoleData } from '@mechane/console-data';
+import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
 import type { ConsoleView, Mech, Turn } from '@mechane/protocol';
@@ -11,7 +11,8 @@ import { Schema } from 'effect';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
-import { Resource } from '../resource.tsx';
+import { useTrace } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 import type { ConsoleLocation, ConsoleNavigation } from '../types.ts';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { TurnHistory } from './turn-history.tsx';
@@ -22,7 +23,7 @@ type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly notice: ReactNode;
-  readonly source: ReturnType<ConsoleData['trace']>;
+  readonly request: ReadRequest<'trace'>;
 };
 
 export function selectedTraceTab(location: ConsoleLocation): TraceTab {
@@ -59,12 +60,13 @@ function ValidTraceScreen({
   location,
   navigate,
   notice,
-  source,
+  request,
 }: TraceScreenProps & { readonly turnId: Turn['id'] }): ReactNode {
   const router = useRouter();
   const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
   const [error, setError] = useState<string>();
   const isScreenActive = useScreenLifetime();
+  const state = useTrace(data, request);
 
   const mainView = inspectorViews.has(location.view ?? 'conversation') ? 'conversation' : location.view;
 
@@ -79,11 +81,10 @@ function ValidTraceScreen({
 
     setCancelState('sending');
     setError(undefined);
-    void data.api('cancelTurn', { workspaceId: data.workspace.id, mechId: mech.id, turnId }).then(
+    void data.commands.cancelTurn({ mechId: mech.id, turnId }).then(
       () => {
         if (isScreenActive()) {
           setCancelState('received');
-          void source.utils.refetch();
         }
       },
       (cause: unknown) => {
@@ -98,12 +99,7 @@ function ValidTraceScreen({
   return (
     <Stack>
       {notice}
-      <Resource
-        data={data}
-        source={source}
-        placeholder={<TurnTracePlaceholder tab={tab} />}
-        label="Loading execution evidence"
-      >
+      <ResourceView state={state} placeholder={<TurnTracePlaceholder tab={tab} />} label="Loading execution evidence">
         {(trace, traceNotice) => (
           <Stack>
             {traceNotice}
@@ -140,10 +136,11 @@ function ValidTraceScreen({
                           : 'conversation',
                 })
               }
-              onRequest={(request) => navigate({ ...selected, inspect: 'requests', request })}
-              requestHref={(request) =>
+              onRequest={(requestId) => navigate({ ...selected, inspect: 'requests', request: requestId })}
+              requestHref={(requestId) =>
                 new URL(
-                  router.buildLocation({ to: '/', search: { ...selected, inspect: 'requests', request } }).publicHref,
+                  router.buildLocation({ to: '/', search: { ...selected, inspect: 'requests', request: requestId } })
+                    .publicHref,
                   globalThis.location.origin,
                 ).href
               }
@@ -165,7 +162,7 @@ function ValidTraceScreen({
             />
           </Stack>
         )}
-      </Resource>
+      </ResourceView>
     </Stack>
   );
 }

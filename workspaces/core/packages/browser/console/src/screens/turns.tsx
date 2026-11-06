@@ -1,30 +1,32 @@
 import { Button } from '@mechane-ai/elements';
 import { ListFooter } from '@mechane-ai/elements/collections';
-import type { ConsoleData } from '@mechane/console-data';
+import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { TurnList, TurnListPlaceholder } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { useRecordNavigation } from '../navigation.tsx';
-import { PageLoadNotice } from '../page-source.tsx';
-import type { PageSource } from '../page-source.tsx';
-import { Resource } from '../resource.tsx';
+import { PageLoadNotice } from '../page-read.tsx';
+import type { PageRead } from '../page-read.tsx';
+import { useTurns } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 
 export function TurnsScreen({
   data,
   mech,
   onMessage,
-  pageSource,
+  pageRead,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
   readonly onMessage: () => void;
-  readonly pageSource: PageSource<'turns', ReturnType<ConsoleData['turns']>>;
+  readonly pageRead: PageRead<'turns', ReadRequest<'turns'>>;
 }): ReactNode {
   const records = useRecordNavigation();
-  const { source, cursors, setCursors, pending, failure } = pageSource;
+  const { request, cursors, setCursors, pending, failure } = pageRead;
+  const state = useTurns(data, request);
 
   return (
-    <Resource data={data} source={source} placeholder={<TurnListPlaceholder />}>
+    <ResourceView state={state} placeholder={<TurnListPlaceholder />}>
       {(page, notice) => {
         const hasPages = page.hasMore || cursors.length > 0;
         const showPagination = hasPages || failure !== undefined;
@@ -89,6 +91,6 @@ export function TurnsScreen({
           </>
         );
       }}
-    </Resource>
+    </ResourceView>
   );
 }

@@ -1,6 +1,6 @@
 ---
 name: console-boundaries
-message: Keep the console an ordinary client of the installation API, with bounded session-owned data and one release.
+message: Keep the console an ordinary client of the installation API, with scoped session-owned data and one release.
 paths: ["packages/browser/**", "packages/worker/authentication/**", "packages/worker/pages/**", "packages/worker/app/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
@@ -9,17 +9,39 @@ paths: ["packages/browser/**", "packages/worker/authentication/**", "packages/wo
 The console ships at `/console` in the same immutable release as the Worker. `/api/v1` owns runtime operations;
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
-`console` owns routes, application composition, and the Storybook runner. `console-data` owns requests and reactive
-state; `console-views` owns resource presentation and domain formatting. `@mechane-ai/elements` owns shared visual roles,
+`console` owns routes, application composition, drafts, and the Storybook runner. `console-data` owns admission,
+requests, canonical records, page membership, and acknowledged commands. `console-cache` owns the native persistence
+driver and file lifecycle under [contract 119](../119-console-cache-lifecycle/CONTRACT.md).
+`console-views` owns resource presentation and domain formatting. `@mechane-ai/elements` owns shared visual roles,
 accessible controls, generic data presentation, layouts, and charts behind its declared public entry points. Browser packages import only shared or lower browser packages. No browser package imports Worker, Node,
 private Factory, or installation credentials.
 
-The shared client validates wire data. TanStack DB collections describe bounded server pages or individual resources;
-one loaded page must not be presented as an exhaustive dataset. Session or workspace changes cancel pending reads,
-dispose collections, and clear caches. Commands wait for
-server acknowledgement, retain request IDs across uncertain retries, and use revision checks for definition changes.
-Revisiting a page must not reuse a collection ID for a different instance while its querying hook remains mounted.
-Each released collection cancels and removes only its own query.
+The shared client validates wire data. Within one admitted installation, principal, and workspace, each record kind
+has one canonical TanStack DB collection. A record key includes its resource owner when its identifier is only locally
+unique. Pages hold ordered record identities and continuation metadata separately from canonical record values.
+Receiving a newer record updates its readers without silently changing the membership of a page they are reading.
+One loaded page or the union of loaded pages never establishes an exhaustive dataset.
+
+Use native on-demand queries for the entity and page reads whose server API supplies the required bounds. Preserve
+the server's cursor, ordering, and coverage meaning. `showTurn` returns its selected turn's dispatch collection without
+a server page bound. Merge its turn into the canonical turn collection and retain the remaining trace evidence in one
+document. `listSlackBindings` returns the workspace's binding collection without pagination. Keep these API coverage
+limits explicit. Slack deliveries expose only the latest bounded window, without a continuation cursor. These API
+exceptions do not authorize an eager download of another resource's history or a custom query or synchronization engine.
+The native query receipts and server reads are on demand. Canonical tables restore their retained local rows eagerly
+within contract 119's per-scope age and size limits; this local hydration is not a claim that every SQLite read uses a
+bounded subset or that the cache holds complete server history.
+
+Session or workspace changes cancel pending reads and dispose the prior runtime. Persistent copies become available
+only through contract 119's fresh admission gate for each runtime. `console-data` owns that gate for workspace returns
+and cache recovery as well as initial entry; a retained application session cannot authorize a replacement runtime.
+Within one runtime, returning to a page reuses its canonical records and native collection instances. Releasing a page
+removes only its own read subscription; it does not clear another page's canonical records or query.
+
+Commands settle from the server acknowledgement. A later refresh, collection update, or cache failure reports its own
+degradation without reversing that outcome or repeating the command. Retain request IDs across uncertain retries and
+use revision checks for definition changes. Keep drafts, submitted text, pending request identity, and acknowledged
+outcomes outside the replaceable data runtime. Cache recovery must not clear or resubmit them.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -46,7 +68,8 @@ loss and removal clear it. A revision conflict preserves edited fields and accep
 
 Separate workspace navigation from pinned and recently opened mechs. Recent shortcuts follow explicit visits, not
 the order of a bounded mech-list page. Keep browser-local shortcuts and appearance preferences scoped to the principal
-and workspace. Persist identifiers and presentation choices, not protected record content. Resolve shortcut records
+and workspace. Shortcut and appearance storage contains identifiers and presentation choices; protected record copies
+belong only to the admitted cache in contract 119. Resolve shortcut records
 through the normal authorized reads; prune confirmed unavailable records without treating a transient failure or
 absence from one list page as removal.
 
@@ -60,6 +83,9 @@ presentation components as the application. Generic component requirements belon
 Both celld and Cloudflare serve the same verified asset inventory. The installation manifest binds the console and
 Worker digests; failed or incomplete asset uploads must not activate a new Worker. Public source includes every browser
 package, its development tools, and dependency notices.
+The build collects notices from its main application and nested Worker bundles into the shipped license asset.
+Retained native WASM legal notices join that asset, and missing required text fails the build. The Node-only build
+helper belongs to the exact configuration owner in contract 101, outside application imports.
 
 ## Local adaptations
 
@@ -76,9 +102,18 @@ with its subscription and cleanup; this allowance does not cover counters, branc
 Only `console-data/src/api.ts` runs shared Effects and translates their typed failures to rejected Promises.
 Presentation code does not introduce a second error transport. The generated TanStack route map is regenerated by
 the pinned build plugin, ignored by authored-source checks, and still consumed by the browser typecheck and build.
-The resource-query owner in `console-data/src/console-data.ts` uses native async callbacks. It may catch a rejected read
-to clear data after access loss or removal, then rethrow the same failure so TanStack retains its error state.
-This query exception does not permit running Effects outside the API adapter or swallowing a failed read.
+The runtime and query owner in `console-data/src/console-data.ts` uses native async callbacks. It may catch a rejected
+read to clear data after access loss or removal, then rethrow the failure so TanStack retains its error state.
+It also owns bounded disposal and recovery from failed local persistence. Its native read readiness operation in
+`console-data/src/read-ready.ts` may catch a rejected read, repair, or cancellation to release its live query and
+subscription, report local failures, and preserve the original failure. Revocation stays with the runtime owner.
+`console-data/src/commands.ts` may catch a post-acknowledgement local failure to record degradation while returning
+the acknowledged result.
+These exceptions permit neither running Effects outside the API adapter nor treating a failed server command as a success.
+
+The admission invalidation broadcast in `console-data/src/console-data.ts` permits one
+`unicorn/require-post-message-target-origin` site suppression: `BroadcastChannel.postMessage` has no target-origin
+argument and its channel is already origin-scoped. Its decoded payload identifies the affected principal.
 
 The route owns page loading identity, `resource.tsx` owns read-state presentation, and Elements owns the visibility
 clock and reveal. Coordinate the reads needed for the current heading, actions, and primary content at the application
@@ -122,8 +157,16 @@ Delay startup, the selected view's primary read, and an auxiliary read independe
 stable, primary content reveals together, and auxiliary state cannot block it. Repeat from cached content and through
 a failed same-view refresh. Loading must not reset a draft, selection, originating history entry, or scrolling region.
 
+Open overlapping pages and the same record through a detail read. Change that record and confirm that all readers
+receive its canonical value while a held page keeps its ordered membership. Advance the page only through its declared
+refresh or pagination action. Fail refresh and persistence after an acknowledged command, then replace the data runtime.
+Confirm that the outcome, a later draft, and an uncertain submission's request identity retain their application owner.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+- dependency-cruiser `console-build-owner` (113): enforced: Import Console build helpers only from its build configuration, such as `worker-licenses.ts` in `vite.config.ts`
+- dependency-cruiser `console-api-owner` (113): enforced: Import the Console data owner for browser requests, such as `@mechane/console-data`
+- oxlint `unicorn/require-post-message-target-origin` (113): enforced, `"error"`
 - oxlint `oxc/no-optional-chaining` (113): enforced, `"error"`
 
 <!-- End of the generated block. -->

@@ -10,6 +10,7 @@ from 101 are Mechane's own.
 ## Boundaries
 
 - [Console boundaries](113-console-boundaries/CONTRACT.md): browser package ownership, session data, and release assets.
+- [Console cache lifecycle](119-console-cache-lifecycle/CONTRACT.md): admitted copies, native persistence, and one file-owning tab.
 
 - [Ownership and boundaries](001-code-ownership-and-boundaries/CONTRACT.md): one owner per decision and fact.
 - [Dependency boundaries](002-code-dependency-boundaries/CONTRACT.md): every member declared once, and each edge once in its `package.json`.

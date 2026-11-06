@@ -1,11 +1,17 @@
 import { FileRole } from '@mechane/rule-shapes';
 
+/** Node runs these Console build files; application modules cannot import them. */
+const BROWSER_BUILD_CONFIGURATION = [
+  'packages/browser/console/vite.config.ts',
+  'packages/browser/console/worker-licenses.ts',
+] as const;
+
 /** The files of each role, as paths or globs relative to the workspace, which the configurations treat apart. */
 export const FILE_ROLES = {
   [FileRole.Browser]: ['packages/browser/**'],
   [FileRole.BrowserConfiguration]: [
     'packages/browser/catalog/src/**',
-    'packages/browser/console/vite.config.ts',
+    ...BROWSER_BUILD_CONFIGURATION,
     'packages/browser/elements/vite.config.ts',
     'packages/browser/console/src/router.tsx',
     'packages/browser/console/src/vite-env.d.ts',
@@ -13,8 +19,16 @@ export const FILE_ROLES = {
     'packages/browser/*/src/**/*.stories.tsx',
     'packages/browser/elements/packages/**/*.stories.tsx',
   ],
+  [FileRole.BrowserBuildConfiguration]: BROWSER_BUILD_CONFIGURATION,
   [FileRole.BrowserAdapter]: ['packages/browser/console-data/src/api.ts'],
-  [FileRole.BrowserQuery]: ['packages/browser/console-data/src/console-data.ts'],
+  [FileRole.BrowserQuery]: [
+    'packages/browser/console-data/src/console-data.ts',
+    'packages/browser/console-data/src/read-ready.ts',
+  ],
+  [FileRole.BrowserCommand]: ['packages/browser/console-data/src/commands.ts'],
+  [FileRole.BrowserCacheWorker]: ['packages/browser/console-cache/src/store/worker/main.ts'],
+  [FileRole.BrowserCacheConnection]: ['packages/browser/console-cache/src/store/connection.ts'],
+  [FileRole.BrowserCacheLifecycle]: ['packages/browser/console-cache/src/store/storage.ts'],
   [FileRole.Settings]: [
     'packages/node/cli/src/settings/load-invocation.ts',
     'packages/node/guest/src/load-guest-settings.ts',

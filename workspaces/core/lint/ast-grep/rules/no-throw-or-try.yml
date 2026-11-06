@@ -8,6 +8,11 @@ ignores:
     '**/node_modules/**',
     'packages/browser/console-data/src/api.ts',
     'packages/browser/console-data/src/console-data.ts',
+    'packages/browser/console-data/src/read-ready.ts',
+    'packages/browser/console-data/src/commands.ts',
+    'packages/browser/console-cache/src/store/worker/main.ts',
+    'packages/browser/console-cache/src/store/connection.ts',
+    'packages/browser/console-cache/src/store/storage.ts',
     'packages/browser/elements/packages/content/src/code/use-highlighted-code.ts',
   ]
 rule:

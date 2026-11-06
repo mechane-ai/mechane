@@ -10,7 +10,8 @@ import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { useMechAppearance } from './mech-appearance.tsx';
 import { useNavigationPreferences } from './navigation-preferences.tsx';
-import { ResourceView, useCollectionLifetime, useResource } from './resource.tsx';
+import { useMech } from './reads.ts';
+import { ResourceView } from './resource.tsx';
 import type { ConsoleLocation } from './types.ts';
 import { useMechNavigationResource } from './use-mech-navigation-resource.ts';
 
@@ -89,15 +90,12 @@ function MechShortcut({
   readonly mechId: Mech['id'];
   readonly isSelected: boolean;
 }): ReactNode {
-  const source = useMemo(() => data.mech(mechId), [data, mechId]);
-
-  useCollectionLifetime(data, source);
-
-  const state = useResource(data, source);
+  const request = useMemo(() => data.reads.mech(mechId), [data, mechId]);
+  const state = useMech(data, request);
   const { appearance } = useMechAppearance(mechId);
   const isRemoved = state.kind === 'failed' && !canRetainResult(state.problem);
 
-  useMechNavigationResource({ source, mechId });
+  useMechNavigationResource({ state, mechId });
 
   if (isRemoved) {
     return null;
@@ -108,7 +106,6 @@ function MechShortcut({
   return (
     <ResourceView
       state={state}
-      identity={source.id}
       label="Loading mech shortcut"
       placeholder={
         <NavigationLink icon={icon}>

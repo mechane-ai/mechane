@@ -8,9 +8,9 @@ import {
   SlackDeliveriesPlaceholder,
   SlackDeliverySection,
 } from '@mechane/console-views';
-import { useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { Resource, ResourceView, useCollectionLifetime, useResource } from '../resource.tsx';
+import { useSlackBindings, useSlackDeliveries } from '../reads.ts';
+import { ResourceView } from '../resource.tsx';
 
 export function ConnectionsScreen({
   data,
@@ -19,20 +19,14 @@ export function ConnectionsScreen({
   readonly data: ConsoleData;
   readonly mechId: string;
 }): ReactNode {
-  const bindings = useMemo(() => data.slackBindings(), [data]);
-  const deliveries = useMemo(() => data.slackDeliveries(mechId), [data, mechId]);
-
-  useCollectionLifetime(data, bindings);
-  useCollectionLifetime(data, deliveries);
-
-  const bindingsState = useResource(data, bindings);
+  const bindingsState = useSlackBindings(data, data.reads.slackBindings());
+  const deliveriesState = useSlackDeliveries(data, data.reads.slackDeliveries(mechId));
 
   return (
     <Stack>
       <Subheading>Slack</Subheading>
       <ResourceView
         state={bindingsState}
-        identity={bindings.id}
         placeholder={<SlackConnectionsPlaceholder />}
         label="Loading Slack connections"
         failure={
@@ -61,9 +55,8 @@ export function ConnectionsScreen({
         )}
       </ResourceView>
       <SlackDeliverySection>
-        <Resource
-          data={data}
-          source={deliveries}
+        <ResourceView
+          state={deliveriesState}
           placeholder={<SlackDeliveriesPlaceholder />}
           label="Loading Slack deliveries"
         >
@@ -73,7 +66,7 @@ export function ConnectionsScreen({
               <SlackDeliveries deliveries={page.deliveries} />
             </>
           )}
-        </Resource>
+        </ResourceView>
       </SlackDeliverySection>
     </Stack>
   );

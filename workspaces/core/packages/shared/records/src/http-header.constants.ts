@@ -9,6 +9,8 @@ export const HttpHeader = {
   ContentLength: 'content-length',
   ContentSecurityPolicy: 'content-security-policy',
   ContentType: 'content-type',
+  CrossOriginEmbedderPolicy: 'cross-origin-embedder-policy',
+  CrossOriginOpenerPolicy: 'cross-origin-opener-policy',
   Cookie: 'cookie',
   ETag: 'etag',
   GitHubApiVersion: 'x-github-api-version',

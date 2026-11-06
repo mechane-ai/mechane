@@ -3,20 +3,40 @@ import { Details } from '@mechane-ai/elements/collections';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { SettingsSection } from '@mechane-ai/elements/forms';
 import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
-import type { Session } from '@mechane/console-data';
+import type { ConsoleData, Session } from '@mechane/console-data';
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
-import type { ReactNode } from 'react';
+import { useState } from 'react';
+import type { ReactNode, SubmitEvent } from 'react';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
 
 export function WorkspaceSettings({
+  data,
   session,
   workspace,
 }: {
+  readonly data: ConsoleData;
   readonly session: Session;
   readonly workspace: Workspace;
 }): ReactNode {
   const { hasPersistenceError } = useNavigationPreferences();
+  const [isSigningOut, setSigningOut] = useState(false);
+
+  function signOut(event: SubmitEvent<HTMLFormElement>): void {
+    event.preventDefault();
+
+    if (isSigningOut) {
+      return;
+    }
+
+    const form = event.currentTarget;
+
+    setSigningOut(true);
+    void data.clearScope().then(
+      () => form.submit(),
+      () => form.submit(),
+    );
+  }
 
   return (
     <>
@@ -34,8 +54,10 @@ export function WorkspaceSettings({
                 {
                   label: 'Session',
                   value: (
-                    <form method={HttpMethod.Post} action="/auth/sign-out">
-                      <Button type="submit">Sign out</Button>
+                    <form method={HttpMethod.Post} action="/auth/sign-out" onSubmit={signOut}>
+                      <Button type="submit" isPending={isSigningOut} pendingLabel="Signing out…">
+                        Sign out
+                      </Button>
                     </form>
                   ),
                 },

@@ -1,6 +1,7 @@
 /** The media types Mechane sends and reads, each with its charset parameter where it names one. */
 export const MediaType = {
   JavaScript: 'text/javascript; charset=utf-8',
+  WebAssembly: 'application/wasm',
   Css: 'text/css; charset=utf-8',
   Svg: 'image/svg+xml',
   Png: 'image/png',

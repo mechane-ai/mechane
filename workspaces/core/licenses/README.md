@@ -10,9 +10,17 @@ notices, and the Worker imports every JavaScript notice here. The guest image al
 
 ## Browser assets
 
-Vite generates `THIRD_PARTY_LICENSES.txt` from the packages actually bundled into the Console. The file is part of
+Vite generates `THIRD_PARTY_LICENSES.txt` from the packages actually bundled into the Console. The Console's
+`worker-licenses.ts` adds the worker bundles' dependencies through `rollup-plugin-license`. The file is part of
 `console.json`, so local and Cloudflare releases retain the same notices. The Console links to it at
 `/console/THIRD_PARTY_LICENSES.txt`. Check this generated inventory when changing browser dependencies.
+
+Turso's npm packages omit their license text. `turso-0.8.3.txt` preserves the upstream `LICENSE.md`, `NOTICE.md`, and
+`licenses/` collection at
+[the 0.8.3 release commit](https://github.com/tursodatabase/turso/tree/607bff9fd0e547a25a97b3bf06e83bcc5d99d53c). The
+worker collector requires this exact package version before adding that supplement. It fails the build when a worker
+dependency has neither packaged license text nor a reviewed supplement. The upstream collection includes other language
+bindings and tools; it is not an audit of the precompiled WASM's native dependency graph.
 
 ## Application dependencies
 

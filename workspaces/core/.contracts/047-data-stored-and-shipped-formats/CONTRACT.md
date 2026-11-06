@@ -44,6 +44,11 @@ Does a released client read a removed field, route, or literal value at any rele
 
 ## Local adaptations
 
+The admitted Console cache contains only derived server records and page metadata, as contract 119 requires.
+Its owner may advance the format generation and discard incompatible copies instead of migrating every browser's
+cache. Fresh server admission still gates their replacement. This exception does not cover authoritative server data,
+credentials, unsent commands, drafts, or application submission state.
+
 The Console release relocates `/v1` to `/api/v1` without runtime aliases, as explicitly authorized before use.
 Upgrade admission normalizes only previous operation, field, and enum-member addresses for this move. Stored wire categories
 and migration entries keep their exact comparison. This exception does not authorize other removals or data resets.

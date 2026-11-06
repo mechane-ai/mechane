@@ -13,6 +13,8 @@
     "packages/browser/console/src",
     "packages/browser/console/.storybook",
     "packages/browser/console/vite.config.ts",
+    "packages/browser/console/worker-licenses.ts",
+    "packages/browser/console-cache/src",
     "packages/browser/console-data/src",
     "packages/browser/console-views/src",
     "packages/browser/elements/packages",

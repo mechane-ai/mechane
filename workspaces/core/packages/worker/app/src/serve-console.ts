@@ -10,7 +10,7 @@ const CONSOLE_ROOTS: ReadonlySet<string> = new Set([PagePath.Console, CONSOLE_PR
 const EXTERNAL_NAVIGATION: ReadonlySet<string> = new Set(['cross-site', 'same-site']);
 const CONSOLE_INDEX = `${CONSOLE_PREFIX}index.html`;
 const CONSOLE_WELCOME = `${CONSOLE_PREFIX}welcome.html`;
-const HASHED_ASSET = /^\/console\/assets\/[^/]+-[A-Za-z0-9_-]+\.(?:js|css)$/;
+const HASHED_ASSET = /^\/console\/assets\/[^/]+-[A-Za-z0-9_-]+\.(?:js|css|wasm)$/;
 
 type ServeConsoleInput = { readonly request: Request; readonly url: URL; readonly settings: WorkerSettings };
 
@@ -62,6 +62,8 @@ export const serveConsole = Effect.fn('serveConsole')(function* ({
 
   headers.set(HttpHeader.XContentTypeOptions, 'nosniff');
   headers.set(HttpHeader.ReferrerPolicy, 'same-origin');
+  headers.set(HttpHeader.CrossOriginOpenerPolicy, 'same-origin');
+  headers.set(HttpHeader.CrossOriginEmbedderPolicy, 'require-corp');
   headers.set(HttpHeader.CacheControl, 'no-store');
 
   if (response.ok && HASHED_ASSET.test(target.pathname)) {

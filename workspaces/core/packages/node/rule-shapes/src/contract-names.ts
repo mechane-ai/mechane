@@ -91,6 +91,7 @@ export const CONTRACT_NAMES = [
   'ui-content-rendering',
   'ui-conversation-state',
   'ui-analytical-graphics',
+  'console-cache-lifecycle',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

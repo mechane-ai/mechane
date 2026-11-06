@@ -12,7 +12,7 @@ export const codeTypescriptTypeAssertions = {
       fix: RuleFix.Oxlint,
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, { assertionStyle: 'never' }],
-      maxSuppressions: 1,
+      maxSuppressions: 2,
       standard: 'TD-07',
     },
     {
@@ -20,7 +20,7 @@ export const codeTypescriptTypeAssertions = {
       ...ADOPTED,
       name: 'typescript/no-unsafe-type-assertion',
       value: Severity.Error,
-      maxSuppressions: 1,
+      maxSuppressions: 2,
       standard: 'TD-07',
     },
     {
@@ -70,6 +70,7 @@ export const codeTypescriptTypeAssertions = {
       ...ADOPTED,
       name: 'return-only-type-parameter',
       behavior: FixBehavior.TypeOnly,
+      maxSuppressions: 1,
       standard: 'TD-07',
       violation: ['function read<T>(): T { return value; }'],
       allowed: ['function first<T>({ items }: ItemsInput<T>): T { return items[0]; }'],

@@ -186,8 +186,13 @@ export type Severity = (typeof Severity)[keyof typeof Severity];
 export const FileRole = {
   Browser: 'browser',
   BrowserConfiguration: 'browser-configuration',
+  BrowserBuildConfiguration: 'browser-build-configuration',
   BrowserAdapter: 'browser-adapter',
   BrowserQuery: 'browser-query',
+  BrowserCommand: 'browser-command',
+  BrowserCacheWorker: 'browser-cache-worker',
+  BrowserCacheConnection: 'browser-cache-connection',
+  BrowserCacheLifecycle: 'browser-cache-lifecycle',
   Settings: 'settings',
   Output: 'output',
   WorkerModule: 'worker-module',

@@ -37,6 +37,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'defect-sites',
+    maxSuppressions: 1,
     standard: 'ER-06',
     status: RuleStatus.Ratchet,
     phase: RolloutPhase.EffectDialect,

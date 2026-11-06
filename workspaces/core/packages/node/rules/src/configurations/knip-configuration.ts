@@ -1,8 +1,9 @@
-import { Lane, PackageKind } from '@mechane/rule-shapes';
+import { FileRole, Lane, PackageKind } from '@mechane/rule-shapes';
 import { Option, Record } from 'effect';
 import { posix } from 'node:path';
 import { ConfigurationPath, Syntax } from '../constants.ts';
 import { CONTRACTS } from '../contracts.ts';
+import { FILE_ROLES } from '../file-roles.ts';
 import type { GeneratedFile, WorkspaceMember } from '../types.ts';
 import { configurationText } from './configuration-text.ts';
 import type { ConfigurationNote } from './types.ts';
@@ -30,6 +31,10 @@ const GENERATOR_ENTRIES = '*/main.ts!';
 const PROJECT_FILES = '**/*.{ts,tsx}!';
 
 const ELEMENTS_PACKAGE = '@mechane-ai/elements';
+const VITE_CONFIGURATION = 'vite.config.ts';
+
+/** Development-only build files whose imports still need real dependency consumers. */
+const BUILD_FILES: ReadonlySet<string> = new Set(FILE_ROLES[FileRole.BrowserBuildConfiguration]);
 
 /** A member's entries and project files, as knip's workspace takes them. */
 type MemberWorkspace = Readonly<Record<string, ReadonlyArray<string> | boolean>>;
@@ -69,10 +74,15 @@ export function knipConfiguration({ members }: KnipConfigurationInput): Generate
 /** A member's workspace: each program's `main.ts` and each generator's, and every file of its roots. */
 function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
   if (member.entry.lane === Lane.Browser && member.entry.kind === PackageKind.App) {
+    const buildFiles = member.roots
+      .filter((root) => BUILD_FILES.has(root))
+      .map((root) => posix.relative(member.folder, root))
+      .filter((file) => file !== VITE_CONFIGURATION);
+
     return {
       includeEntryExports: false,
       entry: ['src/routes/**/*.tsx!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
-      project: ['src/**/*.{ts,tsx,mdx}!'],
+      project: ['src/**/*.{ts,tsx,mdx}!', ...buildFiles],
     };
   }
 
@@ -81,7 +91,7 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
     return {
       includeEntryExports: false,
       vite: false,
-      entry: ['vite.config.ts', '.storybook/*.{ts,tsx}', 'packages/**/*.stories.tsx'],
+      entry: [VITE_CONFIGURATION, '.storybook/*.{ts,tsx}', 'packages/**/*.stories.tsx'],
       project: ['packages/**/*.{ts,tsx,mdx}!'],
       // Trees loads this peer through its theming dependency; Diffs requires a separate major version.
       ignoreDependencies: ['@pierre/theme'],

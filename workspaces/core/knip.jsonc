@@ -31,8 +31,9 @@
     "packages/browser/console": {
       "includeEntryExports": false,
       "entry": ["src/routes/**/*.tsx!", ".storybook/*.{ts,tsx}", "src/stories/**/*.stories.tsx"],
-      "project": ["src/**/*.{ts,tsx,mdx}!"],
+      "project": ["src/**/*.{ts,tsx,mdx}!", "worker-licenses.ts"],
     },
+    "packages/browser/console-cache": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/console-data": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/console-views": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/browser/elements": {

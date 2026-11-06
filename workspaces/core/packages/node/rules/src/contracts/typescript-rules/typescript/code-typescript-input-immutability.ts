@@ -43,6 +43,7 @@ export const codeTypescriptInputImmutability = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'parameter-mutation',
+      maxSuppressions: 2,
       standard: 'EF-23',
       violation: [
         'function add({ rows, row }: AddInput) { rows.push(row); }',

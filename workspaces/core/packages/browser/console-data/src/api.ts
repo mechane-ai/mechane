@@ -1,4 +1,11 @@
-import { BROWSER_CREDENTIAL, call, OperationFailed, RequestTimedOut, ResponseUnreadable } from '@mechane/client';
+import {
+  BROWSER_CREDENTIAL,
+  call,
+  OperationFailed,
+  OriginUnreachable,
+  RequestTimedOut,
+  ResponseUnreadable,
+} from '@mechane/client';
 import { ErrorFamily } from '@mechane/protocol';
 import type { catalog, OperationInput, OperationOutput } from '@mechane/protocol';
 import { Duration, Effect, Option, Result } from 'effect';
@@ -41,11 +48,19 @@ const REMOVED_ACCESS: ReadonlySet<ErrorFamily> = new Set([
   ErrorFamily.NotFound,
 ]);
 
+const SCOPE_FAILURE_FAMILIES: ReadonlySet<ErrorFamily> = new Set([ErrorFamily.Unauthenticated, ErrorFamily.Forbidden]);
+
+const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope' | 'mech' | 'turn'> = new Map([
+  ['WorkspaceNotFound', 'scope'],
+  ['MechNotFound', 'mech'],
+  ['TurnNotFound', 'turn'],
+]);
+
 const SESSION_CHANGES: ReadonlySet<string> = new Set(['IdentityNotAdmitted', 'WorkspaceNotFound']);
 const REQUEST_TIMEOUT = Duration.seconds(40);
 
 /** One Promise boundary for the browser libraries; the shared client owns wire validation and typed failures. */
-export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: () => void): ConsoleApi {
+export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (failure?: unknown) => void): ConsoleApi {
   return async function request<N extends ConsoleOperation>(
     name: N,
     input: Input<N>,
@@ -76,7 +91,7 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: ()
           failure.family === ErrorFamily.Unauthenticated || SESSION_CHANGES.has(failure.failure._tag);
 
         if (hasSessionChanged) {
-          onSessionEnded();
+          onSessionEnded(failure);
         }
       }
 
@@ -101,7 +116,11 @@ export function problemMessage(error: unknown): string {
     return 'The request was canceled.';
   }
 
-  return 'Could not reach this Mechane installation. Check the connection and try again.';
+  if (error instanceof OriginUnreachable) {
+    return 'Could not reach this Mechane installation. Check the connection and try again.';
+  }
+
+  return 'Could not load this data. Try again.';
 }
 
 /** A conflicting edit must be reconciled against the newer saved definition. */
@@ -117,4 +136,23 @@ export function isSignedOut(error: unknown): boolean {
 /** Transient failures may retain a snapshot; authorization or removal failures must hide it. */
 export function canRetainResult(error: unknown): boolean {
   return !(error instanceof OperationFailed && REMOVED_ACCESS.has(error.family));
+}
+
+/** The smallest confirmed removal boundary; undefined leaves admitted content available. */
+export function readFailureScope(error: unknown): 'scope' | 'mech' | 'turn' | 'request' | undefined {
+  if (!(error instanceof OperationFailed)) {
+    return undefined;
+  }
+
+  if (SCOPE_FAILURE_FAMILIES.has(error.family)) {
+    return 'scope';
+  }
+
+  const scope = READ_FAILURE_SCOPES.get(error.failure._tag);
+
+  if (scope !== undefined) {
+    return scope;
+  }
+
+  return error.family === ErrorFamily.NotFound ? 'request' : undefined;
 }
