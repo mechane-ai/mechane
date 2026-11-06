@@ -4,6 +4,7 @@ import { DateTime, Deferred, Duration, Effect, Option } from 'effect';
 import type { Scope } from 'effect';
 import type { ExecutionUnstarted } from '../errors.ts';
 import type { GuestSettings } from '../types.ts';
+import { redactExecutionOutput } from './redact-execution-output.ts';
 import { spawnBash } from './spawn-bash.ts';
 import type { BashRun } from './types.ts';
 
@@ -41,7 +42,8 @@ export const runExecution = Effect.fn('runExecution')(function* ({
 
   yield* Deferred.await(run.closed).pipe(Effect.timeoutOption(CLOSE_GRACE));
 
-  const output = run.output();
+  const retained = run.output();
+  const output = redactExecutionOutput({ output: retained, request });
   const duration = DateTime.distance(startedAt, DateTime.nowUnsafe());
 
   return Option.match(exitCode, {

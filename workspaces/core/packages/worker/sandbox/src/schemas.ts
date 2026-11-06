@@ -6,6 +6,11 @@ import { Schema } from 'effect';
  * that it still runs or the request fails, or lost. A lost machine stopped, or its port reaches another machine's
  * guest.
  */
-export const GuestAnswer = Schema.TaggedUnion({ Settled: { receipt: SettledReceipt }, Unsettled: {}, Lost: {} });
+export const GuestAnswer = Schema.TaggedUnion({
+  Settled: { receipt: SettledReceipt },
+  Unsettled: {},
+  NotStarted: {},
+  Lost: {},
+});
 
 export type GuestAnswer = typeof GuestAnswer.Type;

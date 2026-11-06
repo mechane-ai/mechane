@@ -20,6 +20,8 @@ import { putCredential } from '../operations/credentials/put-credential.ts';
 import { cancelDrone } from '../operations/drones/cancel-drone.ts';
 import { listDrones } from '../operations/drones/list-drones.ts';
 import { showDrone } from '../operations/drones/show-drone.ts';
+import { configureExecutionAccess } from '../operations/execution-access/configure-execution-access.ts';
+import { showExecutionAccess } from '../operations/execution-access/show-execution-access.ts';
 import { listFindings } from '../operations/findings/list-findings.ts';
 import { cancelTurn } from '../operations/mechs/cancel-turn.ts';
 import { cloneMech } from '../operations/mechs/clone-mech.ts';
@@ -74,6 +76,8 @@ export const OPERATIONS: Readonly<OperationWorks> = {
   deleteCredential,
   manageSource,
   showSourceGrant,
+  showExecutionAccess,
+  configureExecutionAccess,
   configureSlackBinding,
   configureSlackInstallation,
   listSlackInstallations,

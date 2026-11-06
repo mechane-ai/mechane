@@ -18,6 +18,8 @@ import { runDroneCancel } from './drones/run-drone-cancel.ts';
 import { runDroneList } from './drones/run-drone-list.ts';
 import { runDroneShow } from './drones/run-drone-show.ts';
 import { runThreadList } from './drones/run-thread-list.ts';
+import { runExecutionAccessSet } from './execution-access/run-execution-access-set.ts';
+import { runExecutionAccessShow } from './execution-access/run-execution-access-show.ts';
 import { runKeyCreate } from './keys/run-key-create.ts';
 import { runKeyList } from './keys/run-key-list.ts';
 import { runKeyRevoke } from './keys/run-key-revoke.ts';
@@ -54,6 +56,8 @@ type Runs = { readonly [N in CommandName]: Run<N> };
 
 /** The run of each command; a command without one fails to compile. Only a command that streams writes as it goes. */
 export const RUNS: Readonly<Runs> = {
+  'execution-access show': documentRun({ run: runExecutionAccessShow }),
+  'execution-access set': documentRun({ run: runExecutionAccessSet }),
   'credential put': documentRun({ run: runCredentialPut }),
   'credential list': documentRun({ run: runCredentialList }),
   'credential delete': documentRun({ run: runCredentialDelete }),

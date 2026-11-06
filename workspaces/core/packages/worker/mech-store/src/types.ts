@@ -15,6 +15,7 @@ import type { slackDeliveryRecords } from './slack/slack-delivery-records.ts';
 import type { slackOriginRecords } from './slack/slack-origin-records.ts';
 import type { sourceRecords } from './sources/source-records.ts';
 import type { ThreadRecords } from './thread.types.ts';
+import type { threadContinuationRecords } from './threads/thread-continuation-records.ts';
 import type { TurnEndRecords, TurnRecords } from './turn.types.ts';
 import type { WatchRecords } from './watches/watch-records.ts';
 
@@ -138,6 +139,7 @@ export type CursorInput = { readonly cursor: SqlStorageCursor<Readonly<Record<st
 
 /** Every record function of a mech's own tables, which only a run of the store's transaction receives. */
 export type MechTables = MechRecords &
+  ReturnType<typeof threadContinuationRecords> &
   ReturnType<typeof boundedTurnRecords> &
   ReturnType<typeof dispatchEvidenceRecords> &
   ReturnType<typeof sourceRecords> &

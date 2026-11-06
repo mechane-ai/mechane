@@ -1,18 +1,21 @@
-import type { SourceGrant } from '@mechane/protocol';
+import type { GitHubRepositoryAccess } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
 import { Option, Result } from 'effect';
 import { GITHUB_UNKNOWN_STATUS } from '../constants.ts';
 import type { GitHubFailed } from '../errors.ts';
 import { failGitHub } from '../requests/fail-github.ts';
 import { requestGitHub } from '../requests/request-github.ts';
-import type { GitHubRepositoryInput } from '../types.ts';
+import type { GitHubAuthorization } from '../types.ts';
 import type { GitHubTokenPermission } from './constants.ts';
 import { githubTokenPermissions } from './github-token-permissions.ts';
 import { isGitHubTokenGranted } from './is-github-token-granted.ts';
 import { revokeGitHubToken } from './revoke-github-token.ts';
 import { GitHubToken } from './schemas.ts';
 
-type MintGitHubTokenInput = GitHubRepositoryInput & { readonly permission: GitHubTokenPermission };
+type MintGitHubTokenInput = GitHubAuthorization & {
+  readonly grant: GitHubRepositoryAccess;
+  readonly permission: GitHubTokenPermission;
+};
 
 /** Verifies the credential's effective grant before allowing any repository operation. */
 export async function mintGitHubToken({
@@ -45,6 +48,6 @@ export async function mintGitHubToken({
   return minted;
 }
 
-function githubAccessTokensPath({ installationId }: Pick<SourceGrant, 'installationId'>): string {
+function githubAccessTokensPath({ installationId }: Pick<GitHubRepositoryAccess, 'installationId'>): string {
   return `/app/installations/${installationId}/access_tokens`;
 }

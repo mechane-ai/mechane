@@ -1,6 +1,6 @@
 import { ExecutionStatus } from '@mechane/sandbox-store';
 import type { ExecutionRow } from '@mechane/sandbox-store';
-import type { ExecutionProgress } from '@mechane/sandbox-wire';
+import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
 import type { StatusOf, WorkspaceProviderStepInput } from '../types.ts';
@@ -12,6 +12,7 @@ type PendingExecution = Extract<ExecutionRow, StatusOf<typeof ExecutionStatus.Pe
 
 /** A pending execution to send, and the time by which the call answers that it still runs. */
 type DispatchPendingInput = WorkspaceProviderStepInput & {
+  readonly environment: ExecutionEnvironment;
   readonly execution: PendingExecution;
   readonly deadline: DateTime.Utc;
 };
@@ -27,7 +28,8 @@ export async function dispatchPending({
   workspace,
   execution,
   deadline,
-}: DispatchPendingInput): Promise<ExecutionProgress> {
+  environment,
+}: DispatchPendingInput): Promise<ExecutionAttempt> {
   const machine = await readyWorkspaceMachine({ store, provider, workspace, deadline });
 
   if (Option.isNone(machine)) {
@@ -40,7 +42,9 @@ export async function dispatchPending({
   const dispatched = Option.getOrThrow(store.execution({ executionId: execution.id }));
 
   if (dispatched.status === ExecutionStatus.Dispatched) {
-    return await askGuest({ store, provider, workspace, execution: dispatched, deadline });
+    const granted = Option.some(environment);
+
+    return await askGuest({ store, provider, workspace, execution: dispatched, deadline, environment: granted });
   }
 
   return executionProgress({ execution: dispatched });

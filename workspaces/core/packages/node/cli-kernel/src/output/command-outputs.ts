@@ -10,6 +10,7 @@ import {
   DroneCancel,
   DroneList,
   DroneTrace,
+  ExecutionAccessState,
   FindingList,
   InboxItem,
   ListedEvent,
@@ -46,6 +47,8 @@ import { WORKSPACE_OUTPUTS } from './workspace-outputs.ts';
  * result is one of its records. A command without one fails to compile.
  */
 export const COMMAND_OUTPUTS = {
+  'execution-access show': ExecutionAccessState,
+  'execution-access set': ExecutionAccessState,
   'credential put': CredentialMetadata,
   'credential list': CredentialList,
   'credential delete': CredentialDeletion,

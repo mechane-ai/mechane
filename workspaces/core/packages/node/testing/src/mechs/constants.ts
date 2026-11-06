@@ -9,6 +9,7 @@ export const ScriptedTool = {
   MemoryRead: 'memory_read',
   Handoff: 'handoff',
   OpenThread: 'open_thread',
+  UpdateThread: 'update_thread',
   StartDrone: 'start_drone',
 } as const;
 

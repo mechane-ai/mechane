@@ -1,5 +1,5 @@
 import type { ExecutionRow, ExecutionStatus, SandboxStore } from '@mechane/sandbox-store';
-import type { GuestStart } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment, GuestStart } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
 import type { GuestAnswer } from './schemas.ts';
 
@@ -17,7 +17,12 @@ export type MachineIdInput = { readonly machineId: GuestStart['machineId'] };
 /** One machine's guest, reached by HTTP. */
 export type GuestTransport = { readonly fetch: (input: GuestRequestInput) => Promise<Response> };
 
-export type ExecuteMachineInput = { readonly execution: DispatchedExecution; readonly wait: Duration.Duration };
+export type ExecuteMachineInput = {
+  readonly execution: DispatchedExecution;
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
+  readonly wait: Duration.Duration;
+};
 
 /** The guest's health and idempotent execution protocol, independent of its hosting service. */
 export type GuestConnection = {

@@ -31,7 +31,9 @@ export async function advanceSandbox({
   const active = store.activeExecution();
 
   if (Option.isSome(active) && active.value.id !== executionId && active.value.status === ExecutionStatus.Dispatched) {
-    await askGuest({ store, provider, workspace, execution: active.value, deadline });
+    const environment = Option.none();
+
+    await askGuest({ store, provider, workspace, execution: active.value, deadline, environment });
 
     return false;
   }

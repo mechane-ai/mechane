@@ -10,7 +10,7 @@ type PassEgressInput = { readonly request: Request; readonly settings: EgressVar
 
 /** Every upstream uses TLS; redirects return to the caller without forwarding its credentials to another host. */
 export async function passEgress({ request, settings }: PassEgressInput): Promise<Response> {
-  const destination = readEgressDestination({ request, origin: settings.origin });
+  const destination = readEgressDestination({ request, origin: settings.origin, hosts: settings.hosts });
 
   if (Option.isNone(destination)) {
     writeLog({ line: { event: LogEvent.EgressRefused, reason: 'destination' } });

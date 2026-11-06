@@ -13,19 +13,14 @@ type IsGitHubTokenGrantedInput = {
 };
 
 /** Refuses extra repositories or permissions, allowing GitHub's mandatory read-only metadata scope. */
-export function isGitHubTokenGranted({
-  credential,
-  repositoryId,
-  permission,
-  permissions,
-}: IsGitHubTokenGrantedInput): boolean {
+export function isGitHubTokenGranted({ credential, repositoryId, permissions }: IsGitHubTokenGrantedInput): boolean {
   const repository = Array.head(credential.repositories);
 
   if (credential.repositories.length !== 1 || Option.isNone(repository)) {
     return false;
   }
 
-  if (repository.value.id !== repositoryId || credential.permissions['contents'] !== permission) {
+  if (repository.value.id !== repositoryId) {
     return false;
   }
 
@@ -39,5 +34,8 @@ export function isGitHubTokenGranted({
     return permissions[name] === level;
   };
 
-  return entries.every(isAllowed);
+  return (
+    entries.every(isAllowed) &&
+    Record.toEntries(permissions).every(([name, level]) => credential.permissions[name] === level)
+  );
 }

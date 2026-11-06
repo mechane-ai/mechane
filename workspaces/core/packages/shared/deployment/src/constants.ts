@@ -42,6 +42,7 @@ export const WORKER_VARIABLES = {
   modelOffers: 'MECHANE_MODEL_OFFERS',
   sandboxProvider: 'MECHANE_SANDBOX_PROVIDER',
   sandboxEgress: 'MECHANE_SANDBOX_EGRESS',
+  sandboxHosts: 'MECHANE_SANDBOX_HOSTS',
   workspaceMachines: 'MECHANE_WORKSPACE_MACHINES',
   isSandboxEnabled: 'MECHANE_SANDBOXES_ENABLED',
   isWorkspaceSandboxEnabledByDefault: 'MECHANE_WORKSPACE_SANDBOXES_DEFAULT',

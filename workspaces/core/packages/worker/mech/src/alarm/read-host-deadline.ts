@@ -1,4 +1,5 @@
 import { DateTime, Option } from 'effect';
+import { readContinuationOwner } from '../threads/read-continuation-owner.ts';
 import type { TablesInput } from '../types.ts';
 
 type EarliestInput = {
@@ -15,7 +16,12 @@ export function readHostDeadline({ store }: TablesInput): Option.Option<DateTime
   const bounded = store.nextBoundedTurnAt();
   const scheduled = earliestDeadline({ left: watch, right: delivery });
 
-  return earliestDeadline({ left: scheduled, right: bounded });
+  const idle = readContinuationOwner({ store });
+  const continuation = Option.flatMap(idle, () => store.nextThreadContinuationAt());
+
+  const next = earliestDeadline({ left: scheduled, right: bounded });
+
+  return earliestDeadline({ left: next, right: continuation });
 }
 
 function earliestDeadline({ left, right }: EarliestInput): Option.Option<DateTime.Utc> {

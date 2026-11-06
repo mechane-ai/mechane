@@ -123,6 +123,7 @@ variable "sandboxes" {
     workspace_default_enabled = optional(bool)
     rollout_grace_seconds     = optional(number, 60)
     rollout_deadline_seconds  = optional(number, 1200)
+    additional_hosts          = optional(set(string), [])
   })
   default  = {}
   nullable = false
@@ -133,6 +134,14 @@ variable "sandboxes" {
       (var.sandboxes.workspace_machine_limit == null ? true : var.sandboxes.workspace_machine_limit >= 1 && floor(var.sandboxes.workspace_machine_limit) == var.sandboxes.workspace_machine_limit)
     )
     error_message = "Machine counts must be positive integers; a workspace cannot exceed installation capacity."
+  }
+
+  validation {
+    condition = length(var.sandboxes.additional_hosts) <= 64 && alltrue([
+      for hostname in var.sandboxes.additional_hosts :
+      length(hostname) <= 253 && can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,63}$", hostname))
+    ])
+    error_message = "Use at most 64 exact public hostnames without schemes, ports, wildcards or literal addresses."
   }
 }
 

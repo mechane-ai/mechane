@@ -48,7 +48,25 @@ export function executionLedger({ settings, fibers }: ExecutionLedgerInput): Exe
     return receipts.receipt({ executionId });
   });
 
-  return { answer, quiesce: gate.quiesce, resume: gate.resume };
+  const observe = Effect.fn('observe')(function* ({
+    executionId,
+    wait,
+  }: Pick<AnswerInput, 'executionId' | 'wait'>): Effect.fn.Return<Option.Option<ExecutionReceipt>> {
+    const pending = runs.get(executionId);
+    const settled = Option.fromNullishOr(pending);
+
+    if (Option.isNone(settled)) {
+      return Option.none();
+    }
+
+    yield* Deferred.await(settled.value).pipe(Effect.timeoutOption(wait));
+
+    const receipt = receipts.receipt({ executionId });
+
+    return Option.some(receipt);
+  });
+
+  return { answer, observe, quiesce: gate.quiesce, resume: gate.resume };
 }
 
 type RememberRunInput = { readonly executionId: ExecutionId; readonly settled: Deferred.Deferred<void> };

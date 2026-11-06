@@ -2,6 +2,7 @@ import type { ItemProgressReport } from '@mechane/harness';
 import type { MechRow, MechTables, PendingItemRow, RunningDroneRow } from '@mechane/mech-store';
 import { DateTime, Option } from 'effect';
 import { advanceBoundedTurns } from '../bounded-turns/decide-bounded-turn.ts';
+import { advanceThreadContinuations } from '../threads/advance-thread-continuations.ts';
 import { readOwedNotes } from '../turns/read-owed-notes.ts';
 import type { OpenedMech } from '../types.ts';
 import { advanceWatches } from '../watches/advance-watches.ts';
@@ -56,6 +57,7 @@ function readCaught({ store, mech, pending, drones, unstopped, report }: ReadCau
   const now = DateTime.nowUnsafe();
 
   advanceWatches({ store, now });
+  advanceThreadContinuations({ store, now });
   advanceBoundedTurns({ store, now });
 
   const examinedIds = pending.map(({ id }) => id);

@@ -1,5 +1,5 @@
 import type { SecureOrigin } from '@mechane/deployment';
-import type { SourceGrant } from '@mechane/protocol';
+import type { GitHubRepositoryAccess } from '@mechane/protocol';
 import type { WorkspaceId } from '@mechane/records';
 import { Result } from 'effect';
 import type { IntegrationSettings } from '../../types.ts';
@@ -14,7 +14,7 @@ type CreateGitHubTokenInput = {
   readonly origin: SecureOrigin;
   readonly settings: IntegrationSettings;
   readonly workspaceId: typeof WorkspaceId.Encoded;
-  readonly grant: SourceGrant;
+  readonly grant: GitHubRepositoryAccess;
   readonly permission: GitHubTokenPermission;
 };
 

@@ -1,6 +1,7 @@
 import { HttpStatusCode } from '@mechane/records';
-import { ExecutionReceipt, ReceiptStatus } from '@mechane/sandbox-wire';
-import { Schema } from 'effect';
+import { ExecutionObservation, ReceiptStatus } from '@mechane/sandbox-wire';
+import type { ExecutionReceipt } from '@mechane/sandbox-wire';
+import { Option, Schema } from 'effect';
 import { GuestAnswer } from '../schemas.ts';
 import type { GuestReply } from './types.ts';
 
@@ -9,7 +10,7 @@ import type { GuestReply } from './types.ts';
  * malformed request's 400 decodes as neither, so it fails the call with what the guest said.
  */
 const GuestAnswerBody = Schema.Union([
-  Schema.Struct({ status: Schema.Literal(HttpStatusCode.Ok), body: Schema.fromJsonString(ExecutionReceipt) }),
+  Schema.Struct({ status: Schema.Literal(HttpStatusCode.Ok), body: Schema.fromJsonString(ExecutionObservation) }),
   Schema.Struct({ status: Schema.Literal(HttpStatusCode.NotFound) }),
 ]);
 
@@ -28,7 +29,10 @@ export function guestAnswer({ reply }: GuestAnswerInput): GuestAnswer {
     case HttpStatusCode.NotFound:
       return GuestAnswer.cases.Lost.make({});
     case HttpStatusCode.Ok:
-      return receiptAnswer({ receipt: answered.body });
+      return Option.match(answered.body, {
+        onNone: () => GuestAnswer.cases.NotStarted.make({}),
+        onSome: (receipt) => receiptAnswer({ receipt }),
+      });
   }
 }
 

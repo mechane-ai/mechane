@@ -1,6 +1,6 @@
 import { SandboxReport } from '@mechane/protocol';
 import { DroneId } from '@mechane/records';
-import { ExecutionProgress, SourceFenceReport, SourceGuestAnswer } from '@mechane/sandbox-wire';
+import { ExecutionAttempt, SourceFenceReport, SourceGuestAnswer } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 
 /** The mech authorizes ownership before reaching a sandbox object. */
@@ -20,7 +20,7 @@ export const MachineRefusal = Schema.TaggedUnion({ Disabled: {}, CapacityReached
 export type MachineRefusal = typeof MachineRefusal.Type;
 
 /** A persisted command result, ongoing execution, or a retryable machine refusal. */
-export const SandboxExecutionAnswer = Schema.Union([ExecutionProgress, MachineRefusal]);
+export const SandboxExecutionAnswer = Schema.Union([ExecutionAttempt, MachineRefusal]);
 export type SandboxExecutionAnswer = typeof SandboxExecutionAnswer.Type;
 
 /** Source credential and file state remains independent of transient capacity refusal. */

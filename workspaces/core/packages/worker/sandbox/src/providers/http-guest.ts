@@ -18,8 +18,8 @@ export function httpGuest({ fetch }: GuestTransport): GuestConnection {
     return Option.isSome(response) && response.value.status === HttpStatusCode.NoContent;
   };
 
-  const execute: GuestConnection['execute'] = async ({ execution, wait }) => {
-    const reply = await guestReply({ guest: { fetch }, execution, wait });
+  const execute: GuestConnection['execute'] = async ({ execution, wait, environment }) => {
+    const reply = await guestReply({ guest: { fetch }, execution, wait, environment });
 
     return Option.match(reply, {
       onNone: () => GuestAnswer.cases.Unsettled.make({}),

@@ -4,6 +4,7 @@ import {
   ConnectionConfiguration,
   ConnectionList,
   CredentialList,
+  ExecutionAccessChange,
   IntegrationSecretReference,
   SlackBinding,
   SlackBindingResult,
@@ -22,6 +23,7 @@ import type { WorkDispatchesInput } from '@mechane/records';
 import type {
   AdmitSlackEventInput,
   CommittedToday,
+  ConfigureExecutionAccessInput,
   ConfigureSlackBindingInput,
   ConfigureSlackInstallationInput,
   ConnectionIdInput,
@@ -50,6 +52,7 @@ import {
   ConnectionMutation,
   CredentialMutation,
   CredentialReading,
+  ExecutionAccessReading,
   GrantedConnectionReading,
   GrantedConnections,
   MechCreationAnswer,
@@ -274,6 +277,42 @@ export class WorkspaceObject extends DurableObject<unknown> implements Workspace
     const grants = this.#store.listToolGrants({ mechId: mech });
 
     return Schema.encodeSync(ToolGrantList)({ grants });
+  }
+
+  executionAccess({ mechId }: MechIdInput): typeof ExecutionAccessReading.Encoded {
+    const mech = MechId.make(mechId);
+    const exists = this.#store.connectionMech({ mechId: mech });
+
+    if (Option.isNone(exists)) {
+      const missing = ExecutionAccessReading.cases.MechNotFound.make({});
+
+      return Schema.encodeSync(ExecutionAccessReading)(missing);
+    }
+
+    const access = this.#store.executionAccess({ mechId: mech });
+    const answer = ExecutionAccessReading.cases.Found.make({ configuration: { access } });
+
+    return Schema.encodeSync(ExecutionAccessReading)(answer);
+  }
+
+  configureExecutionAccess({
+    mechId,
+    configuration,
+  }: ConfigureExecutionAccessInput): typeof ExecutionAccessReading.Encoded {
+    const current = this.executionAccess({ mechId });
+    const reading = Schema.decodeUnknownSync(ExecutionAccessReading)(current);
+
+    if (ExecutionAccessReading.guards.MechNotFound(reading)) {
+      return current;
+    }
+
+    const mech = MechId.make(mechId);
+
+    const decoded = Schema.decodeUnknownSync(ExecutionAccessChange)(configuration);
+
+    this.#store.saveExecutionAccess({ mechId: mech, access: decoded.access });
+
+    return this.executionAccess({ mechId });
   }
 
   grantedConnections({ mechId }: MechIdInput): typeof GrantedConnections.Encoded {

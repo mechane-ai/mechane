@@ -12,6 +12,7 @@ export const LogEvent = {
   IdentitySignedUp: 'auth.identity_signed_up',
   KeyIssued: 'auth.key_issued',
   KeyRevoked: 'auth.key_revoked',
+  ExecutionAccessChanged: 'execution_access.changed',
   WorkspaceCreated: 'workspace.created',
   WorkspacePolicyChanged: 'workspace.policy_changed',
   WorkspaceMemberSet: 'workspace.member_set',

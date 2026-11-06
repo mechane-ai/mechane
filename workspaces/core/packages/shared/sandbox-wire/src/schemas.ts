@@ -18,6 +18,7 @@ import {
   HostMachineStatus,
   ReceiptStatus,
 } from './constants.ts';
+import { ExecutionEnvironment, ExecutionEnvironmentRequired } from './execution-environment.ts';
 
 /**
  * The id of an execution: the pi tool task it runs for, so a rerun of the task asks for the execution it already
@@ -58,6 +59,8 @@ const BashText = boundedText({ maxBytes: EXECUTION_MAX_BYTES });
 export const ExecutionRequest = renamedWireStruct({
   fields: {
     command: BashText,
+    /** None runs without an owner-supplied environment. */
+    environment: Schema.OptionFromOptionalKey(ExecutionEnvironment),
     timeout: WholeMillis.check(isBetweenDuration({ minimum: Duration.millis(1), maximum: EXECUTION_TIMEOUT_MAX })),
   },
   renames: { timeout: 'timeout_ms' },
@@ -97,6 +100,11 @@ export const ExecutionReceipt = Schema.Union([
 
 export type ExecutionReceipt = typeof ExecutionReceipt.Type;
 
+/** An absent observation proves this guest has never started the named execution. */
+export const ExecutionObservation = Schema.OptionFromNullOr(ExecutionReceipt);
+
+export type ExecutionObservation = typeof ExecutionObservation.Type;
+
 /** A receipt's output as the RPC carries it: the guest wire's decoded form, since an RPC answer is plain data. */
 const SettledOutput = Schema.toType(ExecutionOutput);
 
@@ -115,6 +123,10 @@ export const ExecutionProgress = Schema.TaggedUnion({
 });
 
 export type ExecutionProgress = typeof ExecutionProgress.Type;
+
+/** Observing an execution can request credentials only when that command has not started. */
+export const ExecutionAttempt = Schema.Union([ExecutionProgress, ExecutionEnvironmentRequired]);
+export type ExecutionAttempt = typeof ExecutionAttempt.Type;
 
 /** The one line a guest writes to standard output once it listens, so its starter learns a port the system chose. */
 export const GuestListening = Schema.Struct({ port: Schema.Int });

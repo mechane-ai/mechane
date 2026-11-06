@@ -10,18 +10,10 @@ import {
   wireStruct,
 } from '@mechane/records';
 import { Schema } from 'effect';
-import { IntegrationSecretReference } from '../connections/schemas.ts';
+import { GITHUB_REPOSITORY_FIELDS, GITHUB_REPOSITORY_RECORD_FIELDS } from '../github-repository-fields.ts';
 import { SourceAction, SourcePublicationStatus, SourceStatus } from './constants.ts';
 
-const GITHUB_NAME_MAX_CHARS = 100;
 const GIT_BRANCH_MAX_CHARS = 200;
-
-const GitHubName = Schema.NonEmptyString.check(
-  Schema.isMaxLength(GITHUB_NAME_MAX_CHARS),
-  Schema.isPattern(/^[a-zA-Z0-9_.-]+$/u),
-);
-
-const GitHubIdentifier = Schema.Int.check(Schema.isGreaterThan(0));
 
 const SOURCE_DESCRIPTION_MAX_CHARS = 16_384;
 const SourceDescription = Schema.String.check(Schema.isMaxLength(SOURCE_DESCRIPTION_MAX_CHARS));
@@ -37,13 +29,8 @@ const GitBranch = Schema.NonEmptyString.check(
  */
 export const SourceGrant = wireStruct({
   fields: {
-    appId: GitHubIdentifier,
-    installationId: GitHubIdentifier,
-    repositoryId: GitHubIdentifier,
-    owner: GitHubName,
-    repository: GitHubName,
+    ...GITHUB_REPOSITORY_FIELDS,
     baseBranch: GitBranch,
-    secretReference: IntegrationSecretReference,
     writePaths: Schema.Array(SourcePathPrefix).check(Schema.isBetweenLength(1, SOURCE_GRANT_MAX_PATHS)),
   },
 });
@@ -100,16 +87,7 @@ const SourceSummary = wireStruct({
 });
 
 const SourceGrantRecord = wireStruct({
-  fields: {
-    appId: Schema.Number,
-    installationId: Schema.Number,
-    repositoryId: Schema.Number,
-    owner: RecordText,
-    repository: RecordText,
-    baseBranch: RecordText,
-    secretReference: RecordText,
-    writePaths: Schema.Array(RecordText),
-  },
+  fields: { ...GITHUB_REPOSITORY_RECORD_FIELDS, baseBranch: RecordText, writePaths: Schema.Array(RecordText) },
 });
 
 /** A read distinguishes absent repository authority from a missing or inaccessible mech. */

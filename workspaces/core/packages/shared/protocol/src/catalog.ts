@@ -6,6 +6,7 @@ import { CREDENTIAL_OPERATIONS } from './operations/credentials/credential-opera
 import { DRONE_OPERATIONS } from './operations/drones/drone-operations.ts';
 import { listEvents } from './operations/events/list-events.ts';
 import { listRecentEvents } from './operations/events/list-recent-events.ts';
+import { EXECUTION_ACCESS_OPERATIONS } from './operations/execution-access/execution-access-operations.ts';
 import { listFindings } from './operations/findings/list-findings.ts';
 import { sendInboxItem } from './operations/inbox/send-inbox-item.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
@@ -30,6 +31,7 @@ export const catalog = {
   ...CONNECTION_OPERATIONS,
   ...CREDENTIAL_OPERATIONS,
   ...DRONE_OPERATIONS,
+  ...EXECUTION_ACCESS_OPERATIONS,
   listEvents,
   listRecentEvents,
   listFindings,

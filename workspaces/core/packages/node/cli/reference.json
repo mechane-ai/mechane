@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.23.1",
+  "release": "0.24.0",
   "flags": [
     {
       "name": "origin",
@@ -665,6 +665,45 @@
         {
           "name": "connection-id",
           "summary": "the connection id"
+        }
+      ]
+    },
+    {
+      "name": "execution-access show",
+      "summary": "show a mech execution grant without resolving its credentials",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showExecutionAccess"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "execution-access set",
+      "summary": "replace execution access for future commands; pass null to revoke",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "configureExecutionAccess"
+      ],
+      "flags": [
+        {
+          "name": "access",
+          "kind": "text",
+          "summary": "JSON grant with github, variables and secrets; null revokes access",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
         }
       ]
     },

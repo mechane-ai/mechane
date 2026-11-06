@@ -1,8 +1,8 @@
 import { ThreadOpeningOutcome } from '@mechane/harness-tools';
 import type { ThreadOpening } from '@mechane/harness-tools';
 import { OPEN_THREADS_PER_MECH } from '@mechane/protocol';
-import { ThreadId } from '@mechane/records';
-import { Option } from 'effect';
+import { InboxItemId, ThreadId } from '@mechane/records';
+import { Array, Option } from 'effect';
 import type { PortDecisionInput } from './types.ts';
 
 /** An open_thread call, decided in one transaction at the time of the call. */
@@ -26,6 +26,22 @@ export function decideThreadOpening({ store, taskId, title, now }: ThreadOpening
   const threadId = ThreadId.make(crypto.randomUUID());
 
   store.openThread({ threadId, taskId, title, now });
+
+  const running = store.runningTurn();
+
+  if (Option.isSome(running)) {
+    const items = store.turnInboxItemIds({ turnId: running.value });
+
+    const only = Array.head(items);
+
+    if (items.length === 1 && Option.isSome(only)) {
+      const inboxItemId = InboxItemId.make(only.value);
+      const continuedFrom = store.continuationOrigin({ inboxItemId });
+      const origin = Option.getOrElse(continuedFrom, () => inboxItemId);
+
+      store.recordThreadOrigin({ threadId, inboxItemId: origin });
+    }
+  }
 
   return ThreadOpeningOutcome.cases.Opened.make({ threadId });
 }

@@ -52,7 +52,9 @@ export async function runFileCheckpoint({
   const active = store.activeExecution();
 
   if (Option.isSome(active) && active.value.status === ExecutionStatus.Dispatched) {
-    await askGuest({ ...input, execution: active.value, deadline });
+    const environment = Option.none();
+
+    await askGuest({ ...input, execution: active.value, deadline, environment });
 
     return current.result;
   }

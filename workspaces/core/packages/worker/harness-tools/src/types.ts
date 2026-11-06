@@ -1,11 +1,12 @@
 import type { ToolRegistration } from '@earendil-works/pi-durable';
 import type { ThreadState } from '@mechane/protocol';
+import type { ThreadId } from '@mechane/records';
 import type { ExecutionProgress } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
-import type { HandsRefusal } from './schemas.ts';
+import type { ExecutionAccessUnavailable, HandsRefusal } from './schemas.ts';
 
 /** How an execution of the mech's hands ended: as its sandbox settled it, or refused before it reached one. */
-export type HandsOutcome = ExecutionOutcome | HandsRefusal;
+export type HandsOutcome = ExecutionOutcome | HandsRefusal | ExecutionAccessUnavailable;
 
 /** Whom a conversation of the mech's Harness works for: the mech, or one of its drones. */
 export type ConversationRole = MechRole | DroneRole;
@@ -14,7 +15,7 @@ export type ConversationRole = MechRole | DroneRole;
 type DroneRole = { readonly _tag: 'Drone'; readonly sessionId: string };
 
 /** A start_drone task's drone to start on a thread with its brief. */
-export type DroneStart = { readonly taskId: number; readonly threadId: string; readonly brief: string };
+export type DroneStart = { readonly taskId: number; readonly threadId: ThreadId; readonly brief: string };
 
 /** How an execution ended, as the sandbox answers it: its progress, once it no longer runs. */
 export type ExecutionOutcome = Exclude<ExecutionProgress, typeof ExecutionProgress.cases.Running.Type>;
@@ -40,10 +41,13 @@ type MechRole = { readonly _tag: 'Mech' };
 
 /** A thread's new state, and its new note. */
 export type ThreadChange = {
-  readonly threadId: string;
+  readonly taskId: number;
+  readonly threadId: ThreadId;
   readonly state: ThreadState;
   /** The note that replaces what the thread says of where its work stands; none keeps the one it has. */
   readonly note: Option.Option<string>;
+  /** None clears the scheduled continuation while preserving the thread. */
+  readonly resumeAfter: Option.Option<Duration.Duration>;
 };
 
 /** An open_thread task's thread to open with its title. */

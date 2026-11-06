@@ -1,5 +1,6 @@
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { ExecutionRequest, guestExecutionPath } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { Duration, Option, Schema } from 'effect';
 import { ANSWER_SLACK } from '../constants.ts';
 import type { DispatchedExecution, GuestTransport } from '../types.ts';
@@ -7,6 +8,8 @@ import type { GuestReply } from './types.ts';
 
 /** The guest a dispatched execution's request goes to, and how long the request waits for it to settle. */
 type GuestReplyInput = {
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
   readonly guest: GuestTransport;
   readonly execution: DispatchedExecution;
   readonly wait: Duration.Duration;
@@ -16,17 +19,29 @@ type GuestReplyInput = {
  * Sends a dispatched execution's request to its guest and reads the reply, none when the request or its reading failed.
  * The guest joins the run the execution's id names, so a repeat is a wait, not a second run.
  */
-export async function guestReply({ guest, execution, wait }: GuestReplyInput): Promise<Option.Option<GuestReply>> {
+export async function guestReply({
+  guest,
+  execution,
+  wait,
+  environment,
+}: GuestReplyInput): Promise<Option.Option<GuestReply>> {
   const { id: executionId, machineId, command, timeout } = execution;
-  const body = Schema.encodeSync(Schema.fromJsonString(ExecutionRequest))({ command, timeout });
+
+  const submission: RequestInit = Option.match(environment, {
+    onNone: () => ({ method: HttpMethod.Get }),
+    onSome: () => {
+      const body = Schema.encodeSync(Schema.fromJsonString(ExecutionRequest))({ command, timeout, environment });
+
+      return { method: HttpMethod.Put, body };
+    },
+  });
 
   const response = await guest
     .fetch({
       path: guestExecutionPath({ machineId, executionId, wait }),
       init: {
-        method: HttpMethod.Put,
+        ...submission,
         headers: { [HttpHeader.ContentType]: MediaType.Json },
-        body,
         signal: AbortSignal.timeout(Duration.toMillis(Duration.sum(wait, ANSWER_SLACK))),
       },
     })

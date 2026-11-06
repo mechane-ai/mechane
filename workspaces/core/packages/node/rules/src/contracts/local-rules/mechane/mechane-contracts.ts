@@ -1,4 +1,5 @@
 import type { ContractEnforcement, ContractName } from '@mechane/rule-shapes';
+import { developerEnvironments, executionAccess, threadContinuations } from './agent-runtime.ts';
 import { codeStyle } from './code-style.ts';
 import { consoleBoundaries } from './console-boundaries.ts';
 import { consoleCacheLifecycle } from './console-cache-lifecycle.ts';
@@ -24,4 +25,7 @@ export const MECHANE_CONTRACTS = {
   'ui-conversation-state': uiConversationState,
   'ui-analytical-graphics': uiAnalyticalGraphics,
   'console-cache-lifecycle': consoleCacheLifecycle,
+  'execution-access': executionAccess,
+  'thread-continuations': threadContinuations,
+  'developer-environments': developerEnvironments,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

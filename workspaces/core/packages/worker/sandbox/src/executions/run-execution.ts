@@ -1,6 +1,7 @@
 import { ExecutionStatus } from '@mechane/sandbox-store';
 import type { ExecutionClaim, ExecutionRow } from '@mechane/sandbox-store';
-import type { ExecutionProgress } from '@mechane/sandbox-wire';
+import { ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
+import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { DateTime, Option, Result } from 'effect';
 import type { Duration } from 'effect';
 import type { WorkspaceProviderStepInput } from '../types.ts';
@@ -13,7 +14,11 @@ import { executionProgress } from './execution-progress.ts';
 /** An execution to run once under its id, and how long a call waits for it to settle. */
 type ExecutionRun = ExecutionClaim & { readonly wait: Duration.Duration };
 
-type RunExecutionInput = WorkspaceProviderStepInput & { readonly request: ExecutionRun };
+type RunExecutionInput = WorkspaceProviderStepInput & {
+  readonly request: ExecutionRun;
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
+};
 
 /** The statuses of an execution whose receipt is not stored yet: a call observes its machine before it goes on. */
 const UNSETTLED_STATUSES: ReadonlySet<ExecutionStatus> = new Set([ExecutionStatus.Pending, ExecutionStatus.Dispatched]);
@@ -29,7 +34,8 @@ export async function runExecution({
   provider,
   workspace,
   request,
-}: RunExecutionInput): Promise<ExecutionProgress> {
+  environment,
+}: RunExecutionInput): Promise<ExecutionAttempt> {
   const { executionId, command, timeout, wait } = request;
   const now = DateTime.nowUnsafe();
   const deadline = DateTime.addDuration(now, wait);
@@ -50,10 +56,12 @@ export async function runExecution({
     return executionProgress({ execution });
   }
 
-  return await continueExecution({ store, provider, workspace, execution, deadline });
+  return await continueExecution({ store, provider, workspace, execution, deadline, environment });
 }
 
 type ContinueExecutionInput = WorkspaceProviderStepInput & {
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
   readonly execution: ExecutionRow;
   readonly deadline: DateTime.Utc;
 };
@@ -64,12 +72,18 @@ async function continueExecution({
   workspace,
   execution,
   deadline,
-}: ContinueExecutionInput): Promise<ExecutionProgress> {
+  environment: access,
+}: ContinueExecutionInput): Promise<ExecutionAttempt> {
   switch (execution.status) {
     case ExecutionStatus.Pending:
-      return await dispatchPending({ store, provider, workspace, execution, deadline });
+      if (Option.isNone(access)) {
+        return ExecutionEnvironmentRequired.make({});
+      }
+
+      return await dispatchPending({ store, provider, workspace, execution, deadline, environment: access.value });
+
     case ExecutionStatus.Dispatched:
-      return await askGuest({ store, provider, workspace, execution, deadline });
+      return await askGuest({ store, provider, workspace, execution, deadline, environment: access });
     case ExecutionStatus.Exited:
     case ExecutionStatus.TimedOut:
     case ExecutionStatus.Uncertain:

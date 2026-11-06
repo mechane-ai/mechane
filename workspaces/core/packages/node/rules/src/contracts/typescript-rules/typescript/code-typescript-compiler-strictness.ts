@@ -24,6 +24,8 @@ const VALUES = {
     'boundedTurnRecords',
     'connectionRecords',
     'credentialRecords',
+    'executionAccessRecords',
+    'threadContinuationRecords',
     'dispatchEvidenceRecords',
     'fileCheckpointRecords',
     'capacityRecords',

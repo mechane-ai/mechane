@@ -3,6 +3,7 @@ import type {
   ConnectionList,
   CredentialList,
   DispatchRow,
+  ExecutionAccessChange,
   Settlement,
   SlackBindingResult,
   SlackBindings,
@@ -27,6 +28,7 @@ import type {
 } from './connections.types.ts';
 import type { CredentialMutation, CredentialReading } from './credentials.schemas.ts';
 import type { CredentialReferenceInput, SaveCredentialInput } from './credentials.types.ts';
+import type { ExecutionAccessReading } from './execution-access.schemas.ts';
 import type { SlackBindingAnswer, SlackEventAdmission, SlackInstallationAnswer } from './slack.schemas.ts';
 import type {
   AdmitSlackEventInput,
@@ -68,6 +70,8 @@ type ConnectionMethods = {
 
 /** Each RPC method of a workspace's object. */
 type WorkspaceMethods = {
+  readonly executionAccess: (input: MechIdInput) => typeof ExecutionAccessReading.Encoded;
+  readonly configureExecutionAccess: (input: ConfigureExecutionAccessInput) => typeof ExecutionAccessReading.Encoded;
   readonly policy: (input: ReadWorkspacePolicyInput) => typeof WorkspacePolicy.Encoded;
   readonly savePolicy: (input: SaveWorkspacePolicyInput) => typeof WorkspacePolicyMutation.Encoded;
   readonly configureSlackInstallation: (
@@ -122,6 +126,10 @@ export type DispatchSettlement = { readonly dispatchId: string; readonly settlem
 export type ReserveMachineInput = ReleaseMachineInput & { readonly isAdopting: boolean };
 
 export type MechIdInput = { readonly mechId: string };
+
+export type ConfigureExecutionAccessInput = MechIdInput & {
+  readonly configuration: typeof ExecutionAccessChange.Encoded;
+};
 
 /** A page of the workspace's mechs, as the Worker asks for it: the list's query as `/api/v1` encodes it. */
 export type MechsInput = { readonly query: typeof catalog.listMechs.query.Encoded };

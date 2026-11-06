@@ -1,4 +1,4 @@
-import { SourceGrantState, SourceReport } from '@mechane/protocol';
+import { ExecutionAccessState, SourceGrantState, SourceReport } from '@mechane/protocol';
 import { Effect, Option, Redacted, Schema } from 'effect';
 import { savedLoginToken } from '../accounts/saved-login-token.ts';
 import { check } from '../check.ts';
@@ -24,6 +24,16 @@ export const verifySourceGrantAccess = Effect.fn('verifySourceGrantAccess')(func
   const credential = Redacted.make(saved.token);
   const input = { workspaceId: workspace.workspaceId, mechId };
   const refused = yield* refusedOperation({ stack, name: 'showSourceGrant', input, credential });
+  const executionRead = yield* refusedOperation({ stack, name: 'showExecutionAccess', input, credential });
+  const access = Option.none();
+
+  const executionChange = yield* refusedOperation({
+    stack,
+    name: 'configureExecutionAccess',
+    input: { ...input, access },
+    credential,
+  });
+
   const command = { stack, environment: workspace.owner.environment };
   const selection = ['--workspace', workspace.workspaceId, 'source'];
 
@@ -33,12 +43,21 @@ export const verifySourceGrantAccess = Effect.fn('verifySourceGrantAccess')(func
   const before = grantStateText({ state: first });
   const after = grantStateText({ state: repeated });
 
+  const execution = yield* runCli({
+    ...command,
+    args: ['--workspace', workspace.workspaceId, 'execution-access', 'show', mechId],
+    result: ExecutionAccessState,
+  });
+
   const conditions = [
     Option.isNone(absent.grant),
     Option.isSome(first.grant),
     before === after,
     Option.isNone(revoked.result.grant),
     refused === RefusalCode.WorkspaceOwnerRequired,
+    executionRead === RefusalCode.WorkspaceOwnerRequired,
+    executionChange === RefusalCode.WorkspaceOwnerRequired,
+    Option.isNone(execution.result.access),
   ];
 
   const detail = `source grant is unchanged by repeated reads; member refusal ${refused}`;

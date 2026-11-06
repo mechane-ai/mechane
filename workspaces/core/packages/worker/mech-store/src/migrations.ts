@@ -105,4 +105,13 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
     );
     sql.exec('CREATE INDEX bounded_evidence_by_request ON bounded_dispatch_evidence (request_id, started_at_ms)');
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE thread_origins (thread_id TEXT PRIMARY KEY REFERENCES threads(id), inbox_item_id TEXT NOT NULL REFERENCES inbox_items(id)) STRICT',
+    );
+    sql.exec(
+      'CREATE TABLE thread_updates (pi_task_id INTEGER PRIMARY KEY, thread_id TEXT NOT NULL REFERENCES threads(id), resume_at_ms INTEGER, inbox_item_id TEXT NOT NULL UNIQUE) STRICT',
+    );
+    sql.exec('CREATE INDEX thread_updates_due ON thread_updates (resume_at_ms) WHERE resume_at_ms IS NOT NULL');
+  },
 ];

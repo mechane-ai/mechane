@@ -65,6 +65,8 @@ const BASH_RESULTS: Readonly<OutcomeResults<HandsOutcome & Pick<BashResultInput,
   },
   Uncertain: () => failedResult({ code: BashDiagnostic.Uncertain, message: UNCERTAIN_MESSAGE }),
   Unavailable: () => failedResult({ code: BashDiagnostic.Unavailable, message: UNAVAILABLE_MESSAGE }),
+  ExecutionAccessUnavailable: ({ reason }) =>
+    failedResult({ code: BashDiagnostic.ExecutionAccessUnavailable, message: `The command did not run: ${reason}` }),
   PersistenceFailed: ({ output, reason }) => {
     const diagnostic = errorDiagnostic({
       code: BashDiagnostic.PersistenceFailed,

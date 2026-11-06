@@ -1,10 +1,12 @@
 import { EXECUTION_VARIABLES } from '@mechane/sandbox-wire';
 import type { ExecutionId, ExecutionRequest } from '@mechane/sandbox-wire';
-import { Effect } from 'effect';
+import { Effect, Option, Record, Redacted } from 'effect';
 import { spawn } from 'node:child_process';
+import { delimiter, join } from 'node:path';
 import { ExecutionUnstarted } from '../errors.ts';
 import { gatewayCertificates } from '../gateway-certificates.ts';
 import type { GuestSettings } from '../types.ts';
+import { GITHUB_ENVIRONMENT } from './github-environment.ts';
 import { spawnedBash } from './spawned-bash.ts';
 import type { BashRun } from './types.ts';
 
@@ -25,7 +27,23 @@ export const spawnBash = Effect.fn('spawnBash')(function* ({
   settings,
 }: SpawnBashInput): Effect.fn.Return<BashRun, ExecutionUnstarted> {
   const certificates = gatewayCertificates();
-  const environment = { PATH: settings.path, HOME: settings.home, ...EXECUTION_VARIABLES, ...certificates };
+
+  const access = Option.getOrElse(request.environment, () => ({ variables: {}, secrets: {} }));
+  const secrets = Record.map(access.secrets, (value) => Redacted.value(value));
+  const token = Record.get(secrets, 'GH_TOKEN');
+  const github = Option.match(token, { onNone: () => ({}), onSome: () => GITHUB_ENVIRONMENT });
+  const localCommands = join(settings.home, '.local', 'bin');
+  const commandPath = [localCommands, settings.path].join(delimiter);
+
+  const environment = {
+    ...access.variables,
+    ...secrets,
+    ...github,
+    PATH: commandPath,
+    HOME: settings.home,
+    ...EXECUTION_VARIABLES,
+    ...certificates,
+  };
 
   return yield* Effect.callback<BashRun, ExecutionUnstarted>((resume) => {
     const child = spawn('bash', ['-c', '--', request.command], {

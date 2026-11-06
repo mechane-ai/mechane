@@ -172,3 +172,5 @@ export type { BrowserPrincipalInput } from './directory.types.ts';
 
 export { TurnAnswer, TurnsAnswer, TurnEventsAnswer } from './turn.schemas.ts';
 export type { TurnsInput, RecentEventsInput } from './mech/types.ts';
+export { ExecutionAccessReading } from './execution-access.schemas.ts';
+export type { ConfigureExecutionAccessInput } from './workspace.types.ts';

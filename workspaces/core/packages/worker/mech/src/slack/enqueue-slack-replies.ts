@@ -22,7 +22,9 @@ export function enqueueSlackReplies({ store, turnId, reply, now }: EnqueueSlackR
 
   for (const itemId of store.turnInboxItemIds({ turnId })) {
     const inboxItemId = InboxItemId.make(itemId);
-    const origin = store.slackInboxOrigin({ inboxItemId });
+    const continuedFrom = store.continuationOrigin({ inboxItemId });
+    const source = Option.getOrElse(continuedFrom, () => inboxItemId);
+    const origin = store.slackInboxOrigin({ inboxItemId: source });
 
     if (Option.isSome(origin)) {
       const deliveryId = SlackDeliveryId.make(inboxItemId);

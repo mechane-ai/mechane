@@ -9,8 +9,10 @@ import { cloudflareRestoresWorkspace } from './deployment/cloudflare-restores-wo
 import { freshStackServesStagedWorker } from './deployment/fresh-stack-serves-staged-worker.ts';
 import { droneReadsMemoryAsSavedAtItsStart } from './drones/drone-reads-memory-as-saved-at-its-start.ts';
 import { droneReportsOnceThroughTheInbox } from './drones/drone-reports-once-through-the-inbox.ts';
+import { threadWakeupSurvivesRestart } from './drones/thread-wakeup-survives-restart.ts';
 import { evalRunGradesEachCaseThroughTheDeployment } from './evals/eval-run-grades-each-case-through-the-deployment.ts';
 import { forkedMechKeepsItsParentsPastAndNoLaterTurn } from './forks/forked-mech-keeps-its-parents-past-and-no-later-turn.ts';
+import { executionAccessIsScopedAndTransient } from './hands/execution-access-is-scoped-and-transient.ts';
 import { interruptedCommandRunsOnce } from './hands/interrupted-command-runs-once.ts';
 import { mechClonesARepositoryIntoItsOwnSandbox } from './hands/mech-clones-a-repository-into-its-own-sandbox.ts';
 import { burstFromOneAddressIsRefusedAndOthersAreServed } from './limits/burst-from-one-address-is-refused-and-others-are-served.ts';
@@ -37,6 +39,18 @@ type Scenario = {
  * runs last, so it reads the stored state and the sandboxes every other scenario left.
  */
 export const CATALOG: ReadonlyArray<Scenario> = [
+  {
+    guarantee:
+      'execution access survives restart, is revoked for subsequent commands, and never exposes injected credentials in receipts',
+    regression:
+      'a command inherits unauthorized credentials, retains revoked access, or copies a credential into the model transcript or durable execution state',
+    run: executionAccessIsScopedAndTransient,
+  },
+  {
+    guarantee: 'a waiting work thread wakes once after a runtime restart without another user message',
+    regression: 'a CI wait disappears when the runtime stops, or repeats the same continuation after recovery',
+    run: threadWakeupSurvivesRestart,
+  },
   {
     guarantee: 'retained local state refuses unsafe releases and verifies legacy adoption before runtime startup',
     regression:

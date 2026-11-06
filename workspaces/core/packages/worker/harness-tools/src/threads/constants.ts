@@ -14,6 +14,8 @@ export const ThreadDescription = {
     "Change a thread's state: working, waiting on someone or something, idle while set aside, or resolved, which is",
     'final. A note, if you give one, replaces what the thread says of where its work stands.',
     'The change stands however this turn ends.',
+    'When waiting for CI or another external change, set resume_after_seconds to wake this work without keeping a command running.',
+    'Record the PR or deployment reference and the next check in the note. Replacing or resolving the work cancels its prior wakeup.',
   ].join(' '),
   StartDrone: [
     'Start a drone on an open thread: a fresh agent with a sandbox of its own that works from the brief alone, reads',

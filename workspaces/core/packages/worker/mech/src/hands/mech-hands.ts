@@ -1,11 +1,14 @@
 import type { Hands, HandsExecution } from '@mechane/harness-tools';
 import type { MechRow, MechStore, MechTables, SessionIdInput } from '@mechane/mech-store';
+import { MechId, WorkspaceId } from '@mechane/records';
 import type { DroneId } from '@mechane/records';
 import { readWorkspacePolicy, sandboxStub } from '@mechane/rpc';
 import type { ObjectSettings } from '@mechane/rpc';
 import { untilAborted } from '@mechane/utilities';
-import { Match, Option } from 'effect';
+import { Match, Option, Result } from 'effect';
+import { prepareExecutionEnvironment } from './prepare-execution-environment.ts';
 import { settledExecution } from './settled-execution.ts';
+import type { SettledExecutionInput } from './types.ts';
 
 /** What the mech's hands read its record from, and the settings that bind its sandboxes. */
 type MechHandsInput = { readonly store: MechStore; readonly settings: ObjectSettings };
@@ -37,13 +40,23 @@ export function mechHands({ store, settings }: MechHandsInput): Hands {
     const unaborted: () => AbortSignal = () => new AbortController().signal;
     const signal = Option.getOrElse(execution.signal, unaborted);
 
-    return await settledExecution({
-      sandbox: await sandboxStub({ bindings: settings, workspaceId, mechId: id, droneId }),
-      target,
-      execution,
-      signal,
-      aborted: untilAborted({ signal }),
-    });
+    const mechId = MechId.make(id);
+    const workspace = WorkspaceId.make(workspaceId);
+
+    const prepareEnvironment: SettledExecutionInput['prepareEnvironment'] = () =>
+      Option.match(droneId, {
+        onNone: () => prepareExecutionEnvironment({ settings, workspaceId: workspace, mechId }),
+        onSome: async () => {
+          const release = Option.none<() => Promise<void>>();
+
+          return Result.succeed({ environment: { variables: {}, secrets: {} }, release });
+        },
+      });
+
+    const sandbox = await sandboxStub({ bindings: settings, workspaceId, mechId: id, droneId });
+    const aborted = untilAborted({ signal });
+
+    return await settledExecution({ sandbox, target, execution, prepareEnvironment, signal, aborted });
   };
 
   return { run };

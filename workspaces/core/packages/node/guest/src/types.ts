@@ -1,7 +1,7 @@
 import type { SandboxArchive } from '@mechane/protocol';
 import type { HttpStatusCode, RecordId, SourceId } from '@mechane/records';
 import type { ExecutionId, ExecutionReceipt, ExecutionRequest, SourceStep, WorkspaceStep } from '@mechane/sandbox-wire';
-import type { Duration, Effect } from 'effect';
+import type { Duration, Effect, Option } from 'effect';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type {
   ExecutionUnstarted,
@@ -24,6 +24,10 @@ export type AnswerInput = {
 
 /** Every execution of the machine: the receipt of one, after waiting at most `wait` for it to settle. */
 export type ExecutionLedger = {
+  /** None means this guest has never started the named command. */
+  readonly observe: (
+    input: Pick<AnswerInput, 'executionId' | 'wait'>,
+  ) => Effect.Effect<Option.Option<ExecutionReceipt>>;
   readonly answer: (input: AnswerInput) => Effect.Effect<ExecutionReceipt>;
   readonly quiesce: () => boolean;
   readonly resume: () => void;

@@ -1,4 +1,5 @@
-import type { ExecutionProgress } from '@mechane/sandbox-wire';
+import { ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
+import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { DateTime, Duration, Match, Option } from 'effect';
 import { beginCheckpoint } from '../checkpoints/begin-checkpoint.ts';
 import { GuestAnswer } from '../schemas.ts';
@@ -8,6 +9,8 @@ import { executionProgress } from './execution-progress.ts';
 
 /** A dispatched execution to ask its machine about, and the time by which the call answers that it still runs. */
 type AskGuestInput = WorkspaceProviderStepInput & {
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
   readonly execution: DispatchedExecution;
   readonly deadline: DateTime.Utc;
 };
@@ -19,10 +22,20 @@ type PutExecutionInput = Omit<AskGuestInput, 'store' | 'workspace'>;
  * receipt once. A machine that stopped, or whose port reaches another machine's guest, ends with its unsettled
  * executions uncertain. So does one whose execution outlived its timeout and the grace.
  */
-export async function askGuest({ store, provider, execution, deadline }: AskGuestInput): Promise<ExecutionProgress> {
+export async function askGuest({
+  store,
+  provider,
+  execution,
+  deadline,
+  environment,
+}: AskGuestInput): Promise<ExecutionAttempt> {
   const { id: executionId, machineId } = execution;
-  const answer = await putExecution({ provider, execution, deadline });
+  const answer = await putExecution({ provider, execution, deadline, environment });
   const now = DateTime.nowUnsafe();
+
+  if (GuestAnswer.guards.NotStarted(answer)) {
+    return ExecutionEnvironmentRequired.make({});
+  }
 
   await Match.valueTags(answer, {
     Settled: ({ receipt }) => beginCheckpoint({ store, executionId, machineId, receipt, now }),
@@ -35,7 +48,7 @@ export async function askGuest({ store, provider, execution, deadline }: AskGues
 }
 
 /** Sends the stored request again to the machine it was sent to while that machine runs, for the rest of the wait. */
-async function putExecution({ provider, execution, deadline }: PutExecutionInput): Promise<GuestAnswer> {
+async function putExecution({ provider, execution, deadline, environment }: PutExecutionInput): Promise<GuestAnswer> {
   const guest = await provider.connect({ machineId: execution.machineId });
 
   if (Option.isNone(guest)) {
@@ -44,5 +57,5 @@ async function putExecution({ provider, execution, deadline }: PutExecutionInput
 
   const wait = Duration.max(DateTime.distance(DateTime.nowUnsafe(), deadline), Duration.zero);
 
-  return await guest.value.execute({ execution, wait });
+  return await guest.value.execute({ execution, wait, environment });
 }

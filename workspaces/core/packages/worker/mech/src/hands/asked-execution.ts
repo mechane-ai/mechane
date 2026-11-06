@@ -1,14 +1,18 @@
 import type { HandsOutcome } from '@mechane/harness-tools';
 import { SandboxRefusal } from '@mechane/harness-tools';
 import { SandboxExecutionAnswer } from '@mechane/rpc';
-import { EXECUTION_WAIT_MAX } from '@mechane/sandbox-wire';
+import { EXECUTION_WAIT_MAX, OptionalExecutionEnvironment } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment, ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
 import { unlessStopped } from '@mechane/utilities';
 import { Duration, Match, Option, Result, Schema } from 'effect';
 import { refusedOutcome } from './refused-outcome.ts';
 import type { SettledExecutionInput } from './types.ts';
 
 /** The sandbox an execution runs in, the execution, and how its tool call ends early. */
-type AskedExecutionInput = SettledExecutionInput;
+type AskedExecutionInput = Omit<SettledExecutionInput, 'prepareEnvironment'> & {
+  /** None observes an existing command without submitting credentials. */
+  readonly environment: Option.Option<ExecutionEnvironment>;
+};
 
 /**
  * Asks the sandbox for the execution with the same input each time, returning none while it runs within its own
@@ -19,19 +23,23 @@ export async function askedExecution({
   sandbox,
   target,
   execution,
+  environment,
   signal,
   aborted,
-}: AskedExecutionInput): Promise<Option.Option<HandsOutcome>> {
+}: AskedExecutionInput): Promise<Option.Option<HandsOutcome | ExecutionEnvironmentRequired>> {
   signal.throwIfAborted();
 
   const { executionId, command, timeout } = execution;
 
   // The answer decodes below, so the wait reads it as unknown.
+  const encodedEnvironment = Schema.encodeSync(OptionalExecutionEnvironment)(environment);
+
   const asked: Promise<unknown> = sandbox.runExecution({
     executionId,
     command,
     timeoutMs: Duration.toMillis(timeout),
     waitMs: Duration.toMillis(EXECUTION_WAIT_MAX),
+    environment: encodedEnvironment,
   });
 
   const answer = await unlessStopped({ promise: asked, stop: aborted });
@@ -45,6 +53,7 @@ export async function askedExecution({
 
     return Match.valueTags(value, {
       Running: () => Option.none(),
+      ExecutionEnvironmentRequired: (required) => Option.some(required),
       Exited: (ended) => Option.some(ended),
       TimedOut: (ended) => Option.some(ended),
       Uncertain: (ended) => Option.some(ended),

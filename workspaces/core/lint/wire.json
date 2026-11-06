@@ -59,7 +59,9 @@
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events",
     "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/bounded-turns/:request_id",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/bounded-turns/:request_id",
-    "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/bounded-turns/:request_id/cancel"
+    "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/bounded-turns/:request_id/cancel",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access"
   ],
   "errors": [
     "RouteNotFound",
@@ -288,7 +290,9 @@
     "workspace import",
     "bounded-turn submit",
     "bounded-turn show",
-    "bounded-turn cancel"
+    "bounded-turn cancel",
+    "execution-access show",
+    "execution-access set"
   ],
   "flags": [
     "--origin",
@@ -393,7 +397,8 @@
     "workspace import --file",
     "bounded-turn submit --max-model-dispatches",
     "bounded-turn submit --max-output-tokens",
-    "bounded-turn submit --deadline-at"
+    "bounded-turn submit --deadline-at",
+    "execution-access set --access"
   ],
   "variables": [
     "MECHANE_ORIGIN",
@@ -1471,7 +1476,37 @@
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=inbox_item.received].source.channel_id",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=inbox_item.received].source.team_id",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=inbox_item.received].source.message_timestamp",
-    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=inbox_item.received].source.user_id"
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events output.events[][type=inbox_item.received].source.user_id",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.owner",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.secret_reference",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.variables",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.secrets",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.app_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.installation_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.repository_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.owner",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.repository",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.github.secret_reference",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.variables",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.secrets",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.owner",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.secret_reference",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.variables",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.secrets"
   ],
   "members": [
     "GET /api/v1/readiness output.durable_objects[].object_class=DirectoryObject",
@@ -1719,7 +1754,25 @@
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].status=running",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].status=completed",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].status=failed",
-    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].status=unknown"
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].status=unknown",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=-Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=NaN",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=-Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=NaN",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=-Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=NaN",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=-Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.app_id=NaN",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=-Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=NaN",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=-Infinity",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=NaN"
   ],
   "families": [
     "invalid_request=400",

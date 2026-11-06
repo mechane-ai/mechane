@@ -23,8 +23,15 @@ import {
 } from '@mechane/rpc';
 import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
 import type { SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
-import { ExecutionProgress, SandboxOwner, SourceCapture, SourceCheckout, SourceClone } from '@mechane/sandbox-wire';
-import type { RunExecutionInput } from '@mechane/sandbox-wire';
+import {
+  ExecutionProgress,
+  OptionalExecutionEnvironment,
+  SandboxOwner,
+  SourceCapture,
+  SourceCheckout,
+  SourceClone,
+} from '@mechane/sandbox-wire';
+import type { ExecutionAttempt, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise, serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
@@ -168,6 +175,7 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     command,
     timeoutMs,
     waitMs,
+    environment,
   }: RunExecutionInput): Promise<typeof SandboxExecutionAnswer.Encoded> {
     const timeout = Duration.millis(timeoutMs);
     const now = DateTime.nowUnsafe();
@@ -181,13 +189,20 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     }
 
     const answer = await machineCall({
-      run: () => this.#calls.run({ run: () => this.#runExecution({ executionId, command, timeoutMs, waitMs }) }),
+      run: () =>
+        this.#calls.run({ run: () => this.#runExecution({ executionId, command, timeoutMs, waitMs, environment }) }),
     });
 
     return Schema.encodeSync(SandboxExecutionAnswer)(answer);
   }
 
-  async #runExecution({ executionId, command, timeoutMs, waitMs }: RunExecutionInput): Promise<ExecutionProgress> {
+  async #runExecution({
+    executionId,
+    command,
+    timeoutMs,
+    waitMs,
+    environment,
+  }: RunExecutionInput): Promise<ExecutionAttempt> {
     await Promise.all(this.#stops);
     await this.#capacity.requireEnabled();
 
@@ -208,11 +223,14 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     const timeout = Duration.millis(timeoutMs);
     const wait = Duration.millis(waitMs);
 
+    const credentials = Schema.decodeUnknownSync(OptionalExecutionEnvironment)(environment);
+
     const progress = await runExecution({
       store: this.#store,
       provider: this.#provider,
       workspace: this.#workspace,
       request: { executionId, command, timeout, wait },
+      environment: credentials,
     });
 
     return progress;

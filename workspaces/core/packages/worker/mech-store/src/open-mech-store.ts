@@ -15,6 +15,7 @@ import { slackDeliveryProgressRecords } from './slack/slack-delivery-progress-re
 import { slackDeliveryRecords } from './slack/slack-delivery-records.ts';
 import { slackOriginRecords } from './slack/slack-origin-records.ts';
 import { sourceRecords } from './sources/source-records.ts';
+import { threadContinuationRecords } from './threads/thread-continuation-records.ts';
 import { threadRecords } from './threads/thread-records.ts';
 import { turnEndRecords } from './turns/turn-end-records.ts';
 import { turnRecords } from './turns/turn-records.ts';
@@ -46,6 +47,7 @@ export async function openMechStore({ storage, transaction }: OpenMechStoreInput
     ...findingRecords({ sql }),
     ...memoryRecords({ sql }),
     ...threadRecords({ sql }),
+    ...threadContinuationRecords({ sql }),
     ...droneRecords({ sql }),
     ...droneEndRecords({ sql }),
     ...forkRecords({ sql }),

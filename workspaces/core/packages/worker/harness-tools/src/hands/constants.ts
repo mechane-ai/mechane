@@ -4,6 +4,7 @@ export const BashDiagnostic = {
   Timeout: 'timeout',
   Uncertain: 'uncertain',
   Unavailable: 'sandbox_unavailable',
+  ExecutionAccessUnavailable: 'execution_access_unavailable',
   PersistenceFailed: 'workspace_not_saved',
   Invalid: 'command_invalid',
   Dropped: 'output_dropped',

@@ -77,3 +77,4 @@ export { sourcePathAllowed } from './source-path-allowed.ts';
  * @public
  */
 export type { WireKeys, UnknownMemberSchema } from './types.ts';
+export { EXECUTION_VARIABLE_NAME_PATTERN } from './execution.constants.ts';

@@ -5,10 +5,14 @@ import { hasMatchingAuthority } from './has-matching-authority.ts';
 import { isPackageHost } from './is-package-host.ts';
 import { EgressDestination } from './schemas.ts';
 
-type ReadEgressDestinationInput = { readonly request: Request; readonly origin: URL };
+type ReadEgressDestinationInput = {
+  readonly request: Request;
+  readonly origin: URL;
+  readonly hosts: ReadonlyArray<string>;
+};
 
 /** Unlisted hosts include literal addresses, private networks, localhost, and the installation itself. */
-export function readEgressDestination({ request, origin }: ReadEgressDestinationInput): Option.Option<URL> {
+export function readEgressDestination({ request, origin, hosts }: ReadEgressDestinationInput): Option.Option<URL> {
   const decoded = Schema.decodeUnknownResult(EgressDestination)(request.url);
 
   if (Result.isFailure(decoded)) {
@@ -19,10 +23,10 @@ export function readEgressDestination({ request, origin }: ReadEgressDestination
 
   destination.hostname = destination.hostname.replace(ROOT_DOT, '');
 
-  if (
-    !isPackageHost({ hostname: destination.hostname }) ||
-    destination.hostname === origin.hostname.replace(ROOT_DOT, '')
-  ) {
+  const isAllowedHost = isPackageHost({ hostname: destination.hostname }) || hosts.includes(destination.hostname);
+  const installationHost = origin.hostname.replace(ROOT_DOT, '');
+
+  if (!isAllowedHost || destination.hostname === installationHost) {
     return Option.none();
   }
 

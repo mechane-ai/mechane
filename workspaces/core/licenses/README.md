@@ -6,7 +6,9 @@ Apache-2.0 text in `apache-2.0.js`. Third-party copyright holders and license te
 
 The CLI embeds this directory as readable assets in its executable. The guest bundle includes the Mechane and Effect
 notices, and the Worker imports every JavaScript notice here. The guest image also retains the Node image's
-`/usr/local/LICENSE`, Debian package copyright files under `/usr/share/doc`, and `/usr/share/common-licenses`.
+`/usr/local/LICENSE`, Debian package copyright files under `/usr/share/doc`, and `/usr/share/common-licenses`. GitHub
+CLI 2.92.0 and mise 2026.11.2 retain their upstream MIT notices under `/usr/local/share/licenses/mechane-tools`. The
+image's `gh-LICENSE` and `mise-LICENSE` copy each tool's `LICENSE` at its corresponding release tag.
 
 ## Browser assets
 

@@ -31,7 +31,12 @@ export function mechThreads({ store, signal, recorded }: MechThreadsInput): Mech
     const decide: (tables: MechTables) => ThreadChangeOutcome = (tables) =>
       decideThreadChange({ store: tables, ...change, now });
 
-    return await store.atomic({ run: decide });
+    const outcome = await store.atomic({ run: decide });
+
+    signal.wake();
+    recorded.mark();
+
+    return outcome;
   };
 
   const startDrone: MechThreads['startDrone'] = async (start) => {

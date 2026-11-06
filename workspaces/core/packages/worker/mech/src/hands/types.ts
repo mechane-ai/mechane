@@ -1,5 +1,14 @@
-import type { HandsExecution } from '@mechane/harness-tools';
+import type { ExecutionAccessUnavailable, HandsExecution } from '@mechane/harness-tools';
 import type { SandboxRpc } from '@mechane/rpc';
+import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
+import type { Option, Result } from 'effect';
+
+/** Transient authority for a submission and the cleanup for its terminal receipt. */
+export type PreparedExecutionEnvironment = {
+  readonly environment: ExecutionEnvironment;
+  /** None means this submission minted no revocable credential. */
+  readonly release: Option.Option<() => Promise<void>>;
+};
 
 /**
  * The sandbox a command runs in, by its mech's or drone's id, with the mech and the workspace whose machines it leases.
@@ -17,6 +26,7 @@ export type SettledExecutionInput = {
   readonly sandbox: DurableObjectStub<SandboxRpc>;
   readonly target: MachineTarget;
   readonly execution: HandsExecution;
+  readonly prepareEnvironment: () => Promise<Result.Result<PreparedExecutionEnvironment, ExecutionAccessUnavailable>>;
   /** The tool call's abort signal, one that never aborts for a call without one. */
   readonly signal: AbortSignal;
   /** Resolves once the tool call is aborted, so a wait for the sandbox's answer ends with it. */

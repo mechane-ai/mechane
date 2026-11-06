@@ -8,6 +8,7 @@ import { DRONE_COMMANDS } from './declarations/drone-commands.ts';
 import { EVAL_COMMANDS } from './declarations/eval-commands.ts';
 import { CONNECTION_COMMANDS } from './declarations/integrations/connection-commands.ts';
 import { CREDENTIAL_COMMANDS } from './declarations/integrations/credential-commands.ts';
+import { EXECUTION_ACCESS_COMMANDS } from './declarations/integrations/execution-access-commands.ts';
 import { SLACK_COMMANDS } from './declarations/integrations/slack-commands.ts';
 import { SLACK_INSTALLATION_COMMANDS } from './declarations/integrations/slack-installation-commands.ts';
 import { MECH_ADMINISTRATION_COMMANDS } from './declarations/mech-administration/mech-administration-commands.ts';
@@ -28,6 +29,7 @@ export const COMMANDS = {
   ...SLACK_COMMANDS,
   ...SLACK_INSTALLATION_COMMANDS,
   ...CONNECTION_COMMANDS,
+  ...EXECUTION_ACCESS_COMMANDS,
   ...CREDENTIAL_COMMANDS,
   ...DEPLOYMENT_COMMANDS,
   ...AUTH_COMMANDS,

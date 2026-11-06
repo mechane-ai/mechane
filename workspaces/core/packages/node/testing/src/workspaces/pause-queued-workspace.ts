@@ -25,6 +25,7 @@ export const pauseQueuedWorkspace = Effect.fn('pauseQueuedWorkspace')(function* 
   const before = stack.modelUpstream.requests();
   const original = yield* changeWorkspacePolicy({ stack, administrator, workspaceId, changes: { isSuspended: true } });
 
+  yield* gate.open;
   yield* awaitRefusedWork({ stack, workspaceId });
 
   const refusal = yield* refusedCli({ stack, args: ['mech', 'list'], environment: mech.account.environment });
@@ -36,7 +37,6 @@ export const pauseQueuedWorkspace = Effect.fn('pauseQueuedWorkspace')(function* 
 
   const isNamed = before.some(({ user }) => user === workspaceId);
 
-  yield* gate.open;
   yield* check({
     name: 'workspace suspension immediately stops admission and queued spending',
     conditions: [isNamed, refusal.code === RefusalCode.Suspended, spent.length === 0],

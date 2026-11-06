@@ -126,3 +126,7 @@ from 101 are Mechane's own.
 - [Rule registry](110-rule-registry/CONTRACT.md): every enforced value and rule declared once, and every configuration generated.
 - [Code style](111-code-style/CONTRACT.md): cohesive modules, readable callbacks, and consistent paths, units and HTTP vocabulary.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.
+
+- [Execution access](120-execution-access/CONTRACT.md): current owner grants and transient shell credentials.
+- [Thread continuations](121-thread-continuations/CONTRACT.md): durable idle wakeups and original reply routing.
+- [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.

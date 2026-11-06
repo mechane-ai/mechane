@@ -31,7 +31,9 @@ const BASH_DESCRIPTION = [
   'Files last between commands and turns. Production workspaces keep their files while idle machines sleep;',
   'local development machines are disposable.',
   'Network access is limited to configured public hosts such as GitHub, npm and PyPI, with no access to private,',
-  'link-local or metadata addresses or Mechane. The sandbox holds no project credentials; clone public repositories.',
+  'link-local or metadata addresses or Mechane. Your owner may grant repository access and application credentials.',
+  'When granted, use normal git, gh and application CLIs. Credentials are supplied per command; never print or save them.',
+  'Keep source and small reports in your home; install dependencies and build caches under /tmp so checkpoints stay small.',
   'Commands run one at a time, to completion, cancellation, or their timeout: 120 seconds unless you name up to 600.',
   'Canceling a turn stops its unfinished command; its unfinished file changes may be lost.',
   'Keep work in the foreground; background processes have no lifetime guarantee.',
@@ -95,6 +97,8 @@ export function bashTool({ hands }: BashToolInput): ToolRegistration<typeof Bash
 
 /** The model's arguments as the sandbox's request: their timeout, 120 seconds when absent, in whole milliseconds. */
 function executionRequest({ command, timeout }: BashArguments): Result.Result<ExecutionRequest, Schema.SchemaError> {
+  const environment = Option.none();
+
   const limit = Option.match(Option.fromNullishOr(timeout), {
     onNone: () => DEFAULT_EXECUTION_TIMEOUT,
     onSome: Duration.seconds,
@@ -102,6 +106,7 @@ function executionRequest({ command, timeout }: BashArguments): Result.Result<Ex
 
   return Schema.decodeUnknownResult(Schema.toType(ExecutionRequest))({
     command,
+    environment,
     timeout: Duration.millis(Math.round(Duration.toMillis(limit))),
   });
 }

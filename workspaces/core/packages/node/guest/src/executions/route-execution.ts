@@ -1,7 +1,13 @@
 import { decodeRequestPart } from '@mechane/protocol';
 import type { RequestInvalid, RouteNotFound } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
-import { ExecutionId, ExecutionReceipt, ExecutionRequest, ExecutionWait } from '@mechane/sandbox-wire';
+import {
+  ExecutionId,
+  ExecutionObservation,
+  ExecutionReceipt,
+  ExecutionRequest,
+  ExecutionWait,
+} from '@mechane/sandbox-wire';
 import { Effect, Record, Schema } from 'effect';
 import type { IncomingMessage } from 'node:http';
 import type { ExecutionLedger, ServedAnswer } from '../types.ts';
@@ -24,7 +30,9 @@ type AnswerExecutionInput = {
   readonly ledger: ExecutionLedger;
 };
 
-/** Answers a `PUT` of one execution, whose id is the path's last segment. */
+const EXECUTION_METHODS: ReadonlySet<string> = new Set([HttpMethod.Get, HttpMethod.Put]);
+
+/** PUT starts or rejoins a command; GET observes an existing command without resubmitting it. */
 export const routeExecution = Effect.fn('routeExecution')(function* ({
   request,
   url,
@@ -33,7 +41,7 @@ export const routeExecution = Effect.fn('routeExecution')(function* ({
   ledger,
   notFound,
 }: RouteExecutionInput): Effect.fn.Return<ServedAnswer, RouteNotFound | RequestInvalid> {
-  if (method !== HttpMethod.Put || rest.length !== 1) {
+  if (!EXECUTION_METHODS.has(method) || rest.length !== 1) {
     return yield* notFound;
   }
 
@@ -48,12 +56,40 @@ const answerExecution = Effect.fn('answerExecution')(function* ({
   ledger,
 }: AnswerExecutionInput): Effect.fn.Return<ServedAnswer, RequestInvalid> {
   const executionId = yield* decodeRequestPart({ schema: ExecutionId, value: idSegment });
-  const { wait } = yield* decodeRequestPart({ schema: ExecutionWait, value: Record.fromEntries(url.searchParams) });
-  const body = yield* readExecutionBody({ request });
-  const execution = yield* decodeRequestPart({ schema: Schema.fromJsonString(ExecutionRequest), value: body });
-  const receipt = yield* ledger.answer({ executionId, request: execution, wait });
+  const query = Record.fromEntries(url.searchParams);
+  const { wait } = yield* decodeRequestPart({ schema: ExecutionWait, value: query });
+
+  const headers = { [HttpHeader.ContentType]: MediaType.Json };
+
+  if (request.method === HttpMethod.Get) {
+    const observation = yield* ledger.observe({ executionId, wait });
+    const body = Schema.encodeSync(Schema.fromJsonString(ExecutionObservation))(observation);
+
+    return { status: HttpStatusCode.Ok, headers, body };
+  }
+
+  const receipt = yield* submitExecution({ request, executionId, wait, ledger });
+
   // The ledger built the receipt to its schema's type, so encoding it cannot fail.
   const text = Schema.encodeSync(Schema.fromJsonString(ExecutionReceipt))(receipt);
 
-  return { status: HttpStatusCode.Ok, headers: { [HttpHeader.ContentType]: MediaType.Json }, body: text };
+  return { status: HttpStatusCode.Ok, headers, body: text };
+});
+
+type SubmitExecutionInput = Pick<AnswerExecutionInput, 'request' | 'ledger'> & {
+  readonly executionId: ExecutionId;
+  readonly wait: (typeof ExecutionWait.Type)['wait'];
+};
+
+const submitExecution = Effect.fn('submitExecution')(function* ({
+  request,
+  executionId,
+  wait,
+  ledger,
+}: SubmitExecutionInput): Effect.fn.Return<ExecutionReceipt, RequestInvalid> {
+  const body = yield* readExecutionBody({ request });
+  const schema = Schema.fromJsonString(ExecutionRequest);
+  const execution = yield* decodeRequestPart({ schema, value: body });
+
+  return yield* ledger.answer({ executionId, request: execution, wait });
 });

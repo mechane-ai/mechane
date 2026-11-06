@@ -60,4 +60,9 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
     sql.exec('ALTER TABLE leases ADD COLUMN reservation_id INTEGER');
     sql.exec('ALTER TABLE leases ADD COLUMN active INTEGER NOT NULL DEFAULT 1');
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE mech_execution_access (mech_id TEXT PRIMARY KEY REFERENCES mechs(id), configuration TEXT NOT NULL) STRICT',
+    );
+  },
 ];

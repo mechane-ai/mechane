@@ -12,6 +12,7 @@ locals {
     MECHANE_MODEL_OFFERS             = jsonencode(var.model.offers)
     MECHANE_SANDBOX_PROVIDER         = "container"
     MECHANE_SANDBOX_EGRESS           = "gateway"
+    MECHANE_SANDBOX_HOSTS            = jsonencode(var.sandboxes.additional_hosts)
     }, { for name, value in {
       MECHANE_LOGIN_KEY_LIFETIME_SECONDS             = var.authentication.login_key_lifetime_seconds
       MECHANE_NAMED_KEY_LIFETIME_SECONDS             = var.authentication.named_key_lifetime_seconds

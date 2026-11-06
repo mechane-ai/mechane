@@ -1,11 +1,23 @@
 import { OriginProtocol, SecureOrigin, WORKER_VARIABLES } from '@mechane/deployment';
 import { renamedWireStruct } from '@mechane/records';
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 
-/** The gateway needs only the deployment origin whose host it refuses. */
+const HOSTNAME_MAX_CHARS = 253;
+const ADDITIONAL_HOSTS_MAX_COUNT = 64;
+
+const PublicHostname = Schema.String.check(
+  Schema.isMaxLength(HOSTNAME_MAX_CHARS),
+  Schema.isPattern(/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,63}$/u),
+);
+
+const AdditionalHosts = Schema.fromJsonString(
+  Schema.Array(PublicHostname).check(Schema.isMaxLength(ADDITIONAL_HOSTS_MAX_COUNT)),
+).pipe(Schema.withDecodingDefaultKey(Effect.succeed('[]')));
+
+/** The gateway rejects its own origin and admits the installation's additional public hosts. */
 export const EgressVariables = renamedWireStruct({
-  fields: { origin: SecureOrigin },
-  renames: { origin: WORKER_VARIABLES.origin },
+  fields: { origin: SecureOrigin, hosts: AdditionalHosts },
+  renames: { origin: WORKER_VARIABLES.origin, hosts: WORKER_VARIABLES.sandboxHosts },
 });
 
 export type EgressVariables = typeof EgressVariables.Type;

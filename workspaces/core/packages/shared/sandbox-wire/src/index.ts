@@ -21,6 +21,8 @@ export {
   GuestListening,
   GuestStart,
   ExecutionReceipt,
+  ExecutionObservation,
+  ExecutionAttempt,
   ExecutionRequest,
   ExecutionId,
   ExecutionWait,
@@ -42,3 +44,8 @@ export {
 export { SourceCheckout, SourceClone, SourceCapture, SourceFenceReport, SourceGuestAnswer } from './source.schemas.ts';
 export { guestSourcePath } from './guest-source-path.ts';
 export { SandboxOwner } from './sandbox-owner.ts';
+export {
+  ExecutionEnvironment,
+  ExecutionEnvironmentRequired,
+  OptionalExecutionEnvironment,
+} from './execution-environment.ts';

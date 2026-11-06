@@ -93,6 +93,17 @@ export const LogLine = Schema.Union([
   wireStruct({ fields: { event: Schema.Literal(LogEvent.KeyRevoked), keyId: LogId, principalId: LogId } }),
   wireStruct({
     fields: {
+      event: Schema.Literal(LogEvent.ExecutionAccessChanged),
+      mechId: LogId,
+      workspaceId: LogId,
+      principalId: LogId,
+      /** None identifies a browser-session owner rather than an API key. */
+      keyId: Schema.OptionFromNullOr(LogId),
+      isGranted: Schema.Boolean,
+    },
+  }),
+  wireStruct({
+    fields: {
       event: Schema.Literal(LogEvent.WorkspaceCreated),
       workspaceId: LogId,
       principalId: LogId,
