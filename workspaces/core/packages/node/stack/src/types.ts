@@ -52,7 +52,7 @@ export type ServedRequest = {
   readonly body: string;
 };
 
-/** The offers of the scripted upstream: one that echoes, and one no day's allowance covers. */
+/** The scripted echo offers, including Claude's cache protocol, and one no day's allowance covers. */
 type ScriptedOffers = typeof SCRIPTED_OFFERS;
 
 /**

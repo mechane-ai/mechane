@@ -95,6 +95,7 @@ export const CONTRACT_NAMES = [
   'execution-access',
   'thread-continuations',
   'developer-environments',
+  'model-caching',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

@@ -12,7 +12,7 @@ type EnqueueSlackRepliesInput = {
   readonly now: DateTime.Utc;
 };
 
-/** Adds reply intents in the same transaction that projects a successful inbox answer. */
+/** Adds reply intents in the same transaction that projects the inbox turn's outcome. */
 export function enqueueSlackReplies({ store, turnId, reply, now }: EnqueueSlackRepliesInput): void {
   const text = reply.slice(0, SLACK_REPLY_MAX_CHARS).toWellFormed();
 

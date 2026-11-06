@@ -20,7 +20,7 @@ export const inboxItemIsAnsweredAndChargedOnce = Effect.fn('inboxItemIsAnsweredA
   guarantee,
 }: ScenarioInput): Effect.fn.Return<void, ScenarioFailure, Scope.Scope> {
   const before = stack.modelUpstream.requests().length;
-  const mech = yield* signedInMech({ stack, offer: 'echo' });
+  const mech = yield* signedInMech({ stack, offer: 'cached' });
   const first = yield* chargedTurn({ stack, mech, text: ScenarioText.First });
 
   const renamed = yield* mech.command({

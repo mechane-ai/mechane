@@ -130,3 +130,4 @@ from 101 are Mechane's own.
 - [Execution access](120-execution-access/CONTRACT.md): current owner grants and transient shell credentials.
 - [Thread continuations](121-thread-continuations/CONTRACT.md): durable idle wakeups and original reply routing.
 - [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.
+- [Model caching](123-model-caching/CONTRACT.md): provider cache hints, isolated sessions, and conservative spend reservations.

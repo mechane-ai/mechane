@@ -4,6 +4,7 @@ import type { Stack } from '@mechane/stack';
 import { toolCallLine } from '@mechane/testing';
 import type { ScenarioFailure, TalkingMech } from '@mechane/testing';
 import { DateTime, Duration, Effect, Option, Result, Schema } from 'effect';
+import { hasConversationCache } from './has-conversation-cache.ts';
 
 type BoundedTurnProofInput = { readonly stack: Stack; readonly mech: TalkingMech };
 type BoundedTurnProof = { readonly conditions: ReadonlyArray<boolean>; readonly detail: string };
@@ -70,6 +71,7 @@ export const boundedTurnProof = Effect.fn('boundedTurnProof')(function* ({
       dispatchEvidence.length === BOUNDED_REQUESTS,
       dispatchEvidence.every((call) => call.status === BoundedCallStatus.Completed && Option.isSome(call.response)),
       dispatchEvidence.every((call) => hasOutputLimit({ payload: call.request })),
+      dispatchEvidence.every((call) => hasConversationCache({ payload: call.request })),
       capped.status === BoundedTurnStatus.Unanswered && Option.contains(capped.reason, 'dispatch_limit'),
       capped.isEvidenceComplete,
       capped.toolCalls.length === 1 && capped.toolCalls.every((call) => Option.isSome(call.output)),

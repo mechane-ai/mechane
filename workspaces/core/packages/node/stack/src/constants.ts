@@ -30,21 +30,21 @@ export const LOCAL_GITHUB = {
  */
 export const REPLY_PREFIX = '> ';
 
-/**
- * The scripted upstream's offers. The echo, `scripted`, costs 1 dollar per million input tokens and 4 per million
- * output tokens, so a day's allowance covers many of its dispatches. The costly one costs ten thousand times as much:
- * an empty context's bound of about 86 dollars passes a day's allowance of 20 and a mech's cap of 10.
- */
-export const SCRIPTED_OFFERS: Readonly<Record<'echo' | 'costly', ModelOffer>> = {
-  echo: {
-    id: 'scripted',
-    contextWindowTokens: 32_768,
-    maxOutputTokens: 1024,
-    inputMicrosPerMillionTokens: 1_000_000,
-    outputMicrosPerMillionTokens: 4_000_000,
-    cacheReadMicrosPerMillionTokens: 100_000,
-    cacheWriteMicrosPerMillionTokens: 1_250_000,
-  },
+/** The local echo rate leaves enough allowance for the runtime smoke's conversations. */
+const ECHO_OFFER: Readonly<ModelOffer> = {
+  id: 'scripted',
+  contextWindowTokens: 32_768,
+  maxOutputTokens: 1024,
+  inputMicrosPerMillionTokens: 1_000_000,
+  outputMicrosPerMillionTokens: 4_000_000,
+  cacheReadMicrosPerMillionTokens: 100_000,
+  cacheWriteMicrosPerMillionTokens: 1_250_000,
+};
+
+/** The cached offer exercises Claude's wire protocol; the costly offer cannot fit the smoke's allowance. */
+export const SCRIPTED_OFFERS: Readonly<Record<'echo' | 'cached' | 'costly', ModelOffer>> = {
+  echo: ECHO_OFFER,
+  cached: { ...ECHO_OFFER, id: 'anthropic/scripted' },
   costly: {
     id: 'scripted-costly',
     contextWindowTokens: 32_768,

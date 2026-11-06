@@ -4,6 +4,7 @@ import { BoundedTurnLimitReason, EventType, TurnStatus, UnansweredReason } from 
 import type { TurnId } from '@mechane/records';
 import { DateTime, Match, Option } from 'effect';
 import { enqueueSlackReplies } from '../slack/enqueue-slack-replies.ts';
+import { unansweredReply } from '../slack/unanswered-reply.ts';
 import { startTurn } from './start-turn.ts';
 import type { TurnEnding } from './types.ts';
 import { unansweredEnding } from './unanswered-ending.ts';
@@ -66,6 +67,12 @@ export function endItemTurn({ store, inboxItemId, progress, now }: EndItemTurnIn
 
   if (event.type === EventType.TurnAnswered) {
     enqueueSlackReplies({ store, turnId, reply: event.reply, now });
+  }
+
+  if (event.type === EventType.TurnUnanswered) {
+    const reply = unansweredReply({ reason: event.reason });
+
+    enqueueSlackReplies({ store, turnId, reply, now });
   }
 
   switch (end.status) {

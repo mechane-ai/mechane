@@ -1,4 +1,4 @@
-import type { ApiKeyAuth, Model, Models } from '@earendil-works/pi-ai';
+import type { ApiKeyAuth, Model, Models, OpenAICompletionsCompat } from '@earendil-works/pi-ai';
 import { createModels, createProvider } from '@earendil-works/pi-ai/models';
 import type { ModelOffer } from '@mechane/deployment';
 import { Redacted } from 'effect';
@@ -57,7 +57,11 @@ function offerModel({ offer, upstream }: OfferModelInput): Model<'openai-complet
     baseUrl: upstream.href,
     input: ['text'],
     reasoning: false,
-    compat: { sendSessionAffinityHeaders: true, sessionAffinityFormat: 'openrouter' },
+    compat: {
+      sendSessionAffinityHeaders: true,
+      sessionAffinityFormat: 'openrouter',
+      ...offerCacheCompatibility({ offer }),
+    },
     contextWindow: offer.contextWindowTokens,
     maxTokens: offer.maxOutputTokens,
     cost: {
@@ -67,4 +71,15 @@ function offerModel({ offer, upstream }: OfferModelInput): Model<'openai-complet
       cacheWrite: offer.cacheWriteMicrosPerMillionTokens / MICROS_PER_DOLLAR,
     },
   };
+}
+
+function offerCacheCompatibility({
+  offer,
+}: Pick<OfferModelInput, 'offer'>): Pick<OpenAICompletionsCompat, 'cacheControlFormat'> {
+  // The custom provider id prevents pi-ai from detecting Claude's OpenRouter cache protocol.
+  if (offer.id.startsWith('anthropic/')) {
+    return { cacheControlFormat: 'anthropic' };
+  }
+
+  return {};
 }

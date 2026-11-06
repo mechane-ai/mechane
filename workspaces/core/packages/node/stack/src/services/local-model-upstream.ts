@@ -20,7 +20,11 @@ export const localModelUpstream = Effect.fn('localModelUpstream')(function* (): 
       modelUpstream: upstream.upstream.href,
       modelApiKey: upstream.apiKey,
       // The offers are typed, so encoding them cannot fail; the echo comes first, so a mech gets it by default.
-      modelOffers: Schema.encodeSync(ModelOffersVariable)([upstream.offers.echo, upstream.offers.costly]),
+      modelOffers: Schema.encodeSync(ModelOffersVariable)([
+        upstream.offers.echo,
+        upstream.offers.cached,
+        upstream.offers.costly,
+      ]),
     },
   };
 });

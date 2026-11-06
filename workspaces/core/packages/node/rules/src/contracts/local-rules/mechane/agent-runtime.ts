@@ -6,3 +6,6 @@ export const executionAccess = { values: {}, rules: [] } as const satisfies Cont
 export const threadContinuations = { values: {}, rules: [] } as const satisfies ContractEnforcement;
 /** Image qualification and deployment checks enforce the developer environment. */
 export const developerEnvironments = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+
+/** Provider-request smoke and live usage qualification enforce the caching protocol. */
+export const modelCaching = { values: {}, rules: [] } as const satisfies ContractEnforcement;
