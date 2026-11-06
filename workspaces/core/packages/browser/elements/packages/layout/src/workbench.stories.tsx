@@ -42,15 +42,20 @@ function Example(): ReactNode {
       <Workbench
         header={<Heading isCompact>Project assistant</Heading>}
         inspector={
-          isOpen ? (
-            <Stack>
-              <Row shouldSpaceBetween>
-                <Subheading>Execution details</Subheading>
-                <Button onClick={() => setOpen(false)}>Close inspector</Button>
-              </Row>
-              <Muted>The application supplies recorded evidence here.</Muted>
-            </Stack>
-          ) : undefined
+          isOpen
+            ? {
+                label: 'Execution details',
+                content: (
+                  <Stack>
+                    <Row shouldSpaceBetween>
+                      <Subheading>Execution details</Subheading>
+                      <Button onClick={() => setOpen(false)}>Close inspector</Button>
+                    </Row>
+                    <Muted>The application supplies recorded evidence here.</Muted>
+                  </Stack>
+                ),
+              }
+            : undefined
         }
       >
         <Conversation.Root>
@@ -97,12 +102,15 @@ export const EmbeddedInspector: Story = {
       <PageToolbar showNavigation={false} title="Selected operation" />
       <Workbench
         header={<Subheading>Prepare release notes</Subheading>}
-        inspector={
-          <Stack>
-            <Subheading>Execution details</Subheading>
-            <Muted>The inspector uses the full available column at this width.</Muted>
-          </Stack>
-        }
+        inspector={{
+          label: 'Execution details',
+          content: (
+            <Stack>
+              <Subheading>Execution details</Subheading>
+              <Muted>The inspector uses the full available column at this width.</Muted>
+            </Stack>
+          ),
+        }}
       >
         <WorkbenchScroll label="Recorded output">
           <Muted>The main content remains mounted while its inspector is open.</Muted>

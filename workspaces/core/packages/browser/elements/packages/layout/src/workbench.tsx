@@ -76,18 +76,16 @@ export function Workbench({
 }: {
   readonly header?: ReactNode;
   readonly children: ReactNode;
-  readonly inspector?: ReactNode;
+  readonly inspector?: { readonly label: string; readonly content: ReactNode } | undefined;
 }): ReactNode {
   return (
     <div {...stylex.props(styles.root)}>
       {header !== undefined && header !== null && <div {...stylex.props(styles.header)}>{header}</div>}
       <div {...stylex.props(styles.body)}>
-        <div {...stylex.props(styles.main, inspector !== undefined && inspector !== null && styles.obscured)}>
-          {children}
-        </div>
-        {inspector !== undefined && inspector !== null && (
-          <aside aria-label="Execution inspector" {...stylex.props(styles.aside)}>
-            {inspector}
+        <div {...stylex.props(styles.main, inspector !== undefined && styles.obscured)}>{children}</div>
+        {inspector !== undefined && (
+          <aside aria-label={inspector.label} {...stylex.props(styles.aside)}>
+            {inspector.content}
           </aside>
         )}
       </div>

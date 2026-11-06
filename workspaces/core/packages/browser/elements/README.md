@@ -105,6 +105,10 @@ application owns which view is active and when to unmount it; use this for a dra
 inspection. `WorkbenchScroll` requires an accessible `label`; its `isFlush` mode leaves list insets to the table. Its
 `scrollRestorationId` identifies the actual scroll region for application-owned restoration.
 
+`Workbench` accepts an optional `inspector={{ label: 'Workspace', content: <WorkspaceFiles /> }}`. The application
+supplies the accessible name with the panel content and owns opening, closing, and focus restoration. The inspector
+replaces the main column at compact widths while keeping that column mounted.
+
 Each `DataTable` column declares a role: `primary`, `text`, `status`, `number`, `timestamp`, or `actions`. Roles own
 alignment and minimum sizing; the primary column uses available space. Headers and placeholders follow the same
 geometry. The table uses 48px rows by default and truncates text to preserve stable column and virtualization geometry.
