@@ -49,6 +49,12 @@ acknowledgement settles the identified submission even while its form is hidden.
 a rejected or uncertain send preserves the text and request identity. Switching the owning mech or workspace keeps
 state from appearing in another record.
 
+When a conversation remounts, supply its saved history position to Elements before the first paint. A supplied offset
+starts in reading mode; the default live-edge initialization and later content growth must not override it. Apply that
+initial position once, rather than treating subsequent renders as scroll commands. TanStack Router owns history
+positions; Elements accepts a position without depending on routing. Scope the scroll-region identity to the admitted
+viewer, workspace, mech, and history page so a different conversation cannot inherit the offset.
+
 Keep current activity beside the composer, outside the paginated transcript. Its resource lifetime follows the mech,
 not the history page. The compact presentation preserves the read states required by contract 071; an unavailable or
 pending activity read must not imply that the mech is idle.
@@ -65,6 +71,9 @@ the activity read fails.
 
 Inspect a run while reading older content and while a send is pending, then return before and after completion.
 Confirm the same message and draft state return without a duplicate send or a jump to the latest message.
+Switch to another mech, then use browser Back with both warm and delayed data. Repeat from an earlier history page
+and after reloading. Confirm the saved reading position appears on the first ready frame, then append content and
+use return-to-latest to distinguish restored reading mode from following mode.
 Observe a receipt before its run starts, while another run is active, and while the mech is paused. Change the history
 page and fail the activity read before and after a successful result. Confirm current activity remains reachable beside
 the composer and that missing page data does not reverse a known message outcome.

@@ -61,6 +61,8 @@ start or join event. A cancellation receipt precedes the recorded terminal outco
 Record links reopen the selected workspace, mech, turn, request or event. Returning through browser history restores
 the originating page, its focused record, and the position in its actual scrolling region. Run inspection occupies a
 full page and temporarily hides workspace navigation without changing the saved sidebar preference. Preserve the
+reader's history offset after asynchronous content mounts. The navigation owner derives scroll-region identities from
+the admitted data scope and resource; different mechs and runs must not share a region identity. Preserve the
 same mech's conversation and draft while inspecting its runs. A direct run link has a usable return to its mech even
 without an originating history entry. Refreshing activity preserves the rows being read until the reader requests the newer page.
 The public entry contains no private snapshot. A transient read failure may retain the last authorized result; access

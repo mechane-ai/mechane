@@ -7,6 +7,7 @@ import { Markdown } from '../../content/src/markdown/index.ts';
 import { AgentAvatar, Button, CopyValue, Muted, Row, Stack, TextLink } from '../../core/src/index.ts';
 import { colors, radii } from '../../foundations/src/tokens.stylex.ts';
 import { Conversation } from './conversation.tsx';
+import type { ConversationRootProps } from './conversation.tsx';
 import { MessageAction } from './message-action.tsx';
 import { MessageBoundary } from './message-boundary.tsx';
 import { Message, MessageAttachment } from './message.tsx';
@@ -88,7 +89,7 @@ const initialMessages: ReadonlyArray<ExampleMessage> = [
   { id: 'follow-up', author: 'You', kind: 'user', text: 'Can you prepare the next steps from that evidence?' },
 ];
 
-function ConversationExample(): ReactNode {
+function ConversationExample({ initialPosition }: Pick<ConversationRootProps, 'initialPosition'>): ReactNode {
   const [hasHistory, setHasHistory] = useState(false);
   const [isStreaming, setStreaming] = useState(false);
   const [response, setResponse] = useState('Start with the comparison cohort.');
@@ -117,7 +118,7 @@ function ConversationExample(): ReactNode {
         </Button>
       </Row>
       <div {...stylex.props(styles.frame)}>
-        <Conversation.Root>
+        <Conversation.Root initialPosition={initialPosition}>
           <Conversation.Viewport label="Evaluation conversation">
             <Conversation.Content isStreaming={isStreaming}>
               {messages.map((message) => (
@@ -290,6 +291,18 @@ export const Empty: Story = {
       </Conversation.Root>
     </div>
   ),
+};
+
+export const RestoredPosition: Story = {
+  render: () => <ConversationExample initialPosition={{ top: 180 }} />,
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'A supplied initial position restores the reader before paint and starts in reading mode. Append response preserves that position; Jump to latest explicitly resumes following. The application obtains the position from its navigation owner and mounts the conversation after its content is ready.',
+      },
+    },
+  },
 };
 
 export const Narrow: Story = {

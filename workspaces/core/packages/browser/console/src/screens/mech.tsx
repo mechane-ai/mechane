@@ -22,7 +22,7 @@ import { useMechAppearance } from '../mech-appearance.tsx';
 import { useMechPageReads } from '../mech-page-reads.ts';
 import type { MechPageReads } from '../mech-page-reads.ts';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
-import { readReaderPositions, restoreReaderPositions, useRecordNavigation } from '../navigation.tsx';
+import { readReaderPositions, restoreReaderPositions, useReaderPosition, useRecordNavigation } from '../navigation.tsx';
 import { useMech } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import type { ResourceState } from '../resource.tsx';
@@ -170,6 +170,8 @@ function MechDetails({
   const { consumeReturn } = records;
   const entry = useRouterState({ select: (state) => state.location.state });
   const readerPositions = useRef(new Map<ConsoleView, ReadonlyArray<ReaderPosition>>());
+  const reader = useReaderPosition(data.scope, `${mech.id}:${view}`);
+  const runReader = useReaderPosition(data.scope, `${mech.id}:run:${location.turn ?? ''}`);
   const runBack = useRef<HTMLButtonElement>(null);
   const isBusy = pendingStatus !== undefined;
   const hasFocusedRun = location.turn !== undefined;
@@ -177,6 +179,7 @@ function MechDetails({
   const previousRun = useRef(hasFocusedRun);
   const isConversationVisible = view === 'conversation';
   const isConversationActive = isConversationVisible && !hasFocusedRun && !isEditing;
+  const isPrimaryReady = reads.primary === undefined || reads.primary.kind === 'ready';
   const archiveError = statusError?.status === MechStatus.Archived ? statusError.message : undefined;
   const lifecycleError = statusError?.status === MechStatus.Archived ? undefined : statusError?.message;
 
@@ -185,12 +188,13 @@ function MechDetails({
   }
 
   useLayoutEffect(() => {
-    if (hasFocusedRun || isEditing) {
+    if (hasFocusedRun || isEditing || !isPrimaryReady) {
       return;
     }
 
     const target = entry.consoleReturn;
-    const positions = target?.positions ?? readerPositions.current.get(view) ?? [];
+    const saved = reader.position === undefined ? [] : [reader.position];
+    const positions = target?.positions ?? readerPositions.current.get(view) ?? saved;
 
     const frame = requestAnimationFrame(() => {
       restoreReaderPositions(positions);
@@ -202,7 +206,7 @@ function MechDetails({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [consumeReturn, isEditing, entry.consoleReturn, hasFocusedRun, view]);
+  }, [consumeReturn, isEditing, isPrimaryReady, entry.consoleReturn, hasFocusedRun, view, reader.position]);
 
   useLayoutEffect(() => {
     const isEnteringRun = hasFocusedRun && !previousRun.current;
@@ -314,7 +318,7 @@ function MechDetails({
             </ViewStack.Panel>
           )}
           {!isConversationVisible && (
-            <WorkbenchScroll label={viewLabel} scrollRestorationId={`mech-${view}`} isFlush={collectionViews.has(view)}>
+            <WorkbenchScroll label={viewLabel} scrollRestorationId={reader.id} isFlush={collectionViews.has(view)}>
               {sectionContent()}
             </WorkbenchScroll>
           )}
@@ -338,7 +342,7 @@ function MechDetails({
             }
           />
           <Workbench>
-            <WorkbenchScroll label="Run details" scrollRestorationId="run">
+            <WorkbenchScroll label="Run details" scrollRestorationId={runReader.id}>
               {reads.trace === undefined ? (
                 <Notice hasError>This run ID is invalid.</Notice>
               ) : (

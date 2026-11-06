@@ -4,7 +4,7 @@ import { TurnId } from '@mechane/records';
 import { Schema } from 'effect';
 import type { ConsoleLocation, PageCursors } from './types.ts';
 
-/** Starts the route's heading and primary page demand while local storage opens. */
+/** Starts the route's heading, primary content, and independent activity demand while local storage opens. */
 export function initialReads(
   location: ConsoleLocation,
   pages: Partial<PageCursors> | undefined,
@@ -39,6 +39,10 @@ export function initialReads(
     case 'events':
     case 'requests':
     case 'tools':
-      return [heading, readRequests.events(mechId, pages?.conversation?.at(-1) ?? null)];
+      return [
+        heading,
+        readRequests.events(mechId, pages?.conversation?.at(-1) ?? null),
+        readRequests.turns(mechId, null),
+      ];
   }
 }

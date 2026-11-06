@@ -47,6 +47,12 @@ Inspect the pending region in the accessibility tree for its busy state and a si
 distinction between initial failure and stale retained data. Screens supply a required placeholder composition with
 the loaded view's layout.
 
+The Console's read projection includes native live-query health as well as server request status. A successful HTTP
+refresh does not prove that a failed query has resumed. Keep its failure actionable until the native query recovers;
+retry refreshes the admitted read and reloads failed queries through their public API. Keep usable rows, drafts, and
+the failure explanation visible while that recovery is pending. Do not turn a terminal query failure into an endless
+skeleton or rebuild the data runtime to recover one read.
+
 The upstream instruction to show refresh progress applies visibly to an explicit refresh action: its control exposes
 the pending state immediately. Periodic background reads may stay visually quiet while retaining refresh state for
 their consumers. Both paths keep usable content mounted and report a refresh failure with its retry beside that content.
@@ -69,6 +75,8 @@ the delay as each dependent read mounts. The application coordinates the heading
 view's primary content before their single reveal. Optional reads report their own state without delaying the primary
 view or restarting its reveal. The neutral shell may reserve space before authorization, but must not imply records,
 counts, or permissions that have not arrived.
+Start known independent activity demand alongside the primary reads, instead of mounting its first request after the
+page reveal. A warm primary view must still open immediately when that activity remains pending or fails.
 
 Only `resource.tsx` and `entrance.tsx` import `AsyncRegion` or `ContentReveal` in the Console. Only `routes/__root.tsx`
 imports `LoadingScope`. Screens and console-views compose static placeholders and consume the resource boundary;
@@ -86,6 +94,9 @@ TypeScript checks the required placeholder and `AsyncRegion`'s pending/ready/fai
 Console loading imports, not rendered geometry or asynchronous behavior. In the packaged browser, hold startup and
 dependent reads separately, then verify one delay and one primary reveal. Compare viewport and composer bounds before
 and after ready; fail and recover a same-view refresh while preserving scroll, focus, and a draft.
+Fail a first uncached mech or run read, allow a later server response to succeed, and recover through the visible retry.
+Verify the native query becomes ready without a browser reload. Repeat a failed retry while another cached view stays
+usable, then confirm cached populated and empty views still enter without a placeholder.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

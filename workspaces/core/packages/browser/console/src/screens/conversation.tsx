@@ -7,7 +7,7 @@ import { ScanLine } from 'lucide-react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useMechAppearance } from '../mech-appearance.tsx';
-import { ConsoleLink } from '../navigation.tsx';
+import { ConsoleLink, useReaderPosition } from '../navigation.tsx';
 import { PageLoadNotice } from '../page-read.tsx';
 import type { PageRead } from '../page-read.tsx';
 import { eventWindow, sameEventWindow, useEvents, useEventWindow } from '../reads.ts';
@@ -115,6 +115,7 @@ function ConversationPage({
   const [shown, setShown] = useState(currentWindow);
   const { appearance } = useMechAppearance(mech.id);
   const viewport = useRef<HTMLDivElement>(null);
+  const reader = useReaderPosition(data.scope, request.id);
 
   if (
     !sameEventWindow(currentWindow, shown) &&
@@ -145,6 +146,8 @@ function ConversationPage({
           avatar={<AgentAvatar seed={mech.id} appearance={appearance} />}
           page={visible}
           viewportRef={viewport}
+          scrollRestorationId={reader.id}
+          initialPosition={reader.position}
           inspect={(turn) => (
             <MessageAction
               label="Open run"

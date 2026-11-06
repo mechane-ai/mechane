@@ -701,6 +701,7 @@ function WorkspaceStory({
           <>
             <MechConversation
               page={completedEvents}
+              scrollRestorationId="example-conversation"
               name={mech.name}
               avatar={<AgentAvatar seed={mech.id} size="xs" />}
               controls={null}

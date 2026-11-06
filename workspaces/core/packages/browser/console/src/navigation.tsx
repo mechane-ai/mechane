@@ -1,11 +1,30 @@
 import { TextLink } from '@mechane-ai/elements';
-import { createLink, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
+import {
+  createLink,
+  useElementScrollRestoration,
+  useNavigate,
+  useRouter,
+  useRouterState,
+} from '@tanstack/react-router';
 import type { HistoryState } from '@tanstack/react-router';
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
 
 const RouteLink = createLink(TextLink);
+
+/** Reads the router's history position with an identity that cannot carry another owner's offset. */
+export function useReaderPosition(scope: string, resource: string) {
+  const id = `reader:${encodeURIComponent(scope)}:${encodeURIComponent(resource)}`;
+  const entry = useElementScrollRestoration({ id });
+
+  const position = useMemo(
+    () => (entry === undefined ? undefined : { region: id, top: entry.scrollY, left: entry.scrollX }),
+    [entry, id],
+  );
+
+  return { id, position };
+}
 
 /** One transition policy preserves a run's origin and clears reader state when its owner changes. */
 export function consoleTransition(from: ConsoleLocation, to: ConsoleLocation) {

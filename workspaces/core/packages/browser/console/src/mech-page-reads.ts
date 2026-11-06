@@ -60,7 +60,8 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     !hasFocusedRun && viewRead.view === 'conversation' ? conversation.request : undefined,
   );
 
-  const turnsState = useTurns(data, hasFocusedRun ? undefined : turns?.request);
+  const currentActivity = viewRead.view === 'conversation' ? data.reads.turns(mechId, null) : undefined;
+  const turnsState = useTurns(data, hasFocusedRun ? undefined : (turns?.request ?? currentActivity));
   const workState = useThreads(data, hasFocusedRun ? undefined : work?.request);
   const activityState = useEvents(data, hasFocusedRun ? undefined : activity?.request);
   const memoryState = useMemories(data, hasFocusedRun ? undefined : memory);

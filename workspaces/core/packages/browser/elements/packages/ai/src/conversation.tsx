@@ -1,7 +1,7 @@
 import { MessageScroller, useMessageScroller, useMessageScrollerScrollable } from '@shadcn/react/message-scroller';
 import * as stylex from '@stylexjs/stylex';
 import { ArrowDown } from 'lucide-react';
-import { createContext, useContext, useRef } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '../../core/src/index.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
@@ -72,7 +72,8 @@ const styles = stylex.create({
 
 export type ConversationRootProps = {
   readonly children: ReactNode;
-  readonly initialPosition?: 'start' | 'end';
+  /** Captured at mount. A saved offset starts in reading mode; mount once the content is ready. */
+  readonly initialPosition?: 'start' | 'end' | { readonly top: number; readonly left?: number } | undefined;
   readonly shouldFollow?: boolean;
   readonly viewportRef?: RefObject<HTMLDivElement | null> | undefined;
 };
@@ -99,10 +100,20 @@ function ConversationRoot({
 }: ConversationRootProps): ReactNode {
   const fallbackViewport = useRef<HTMLDivElement>(null);
   const viewport = viewportRef ?? fallbackViewport;
+  const [position] = useState(initialPosition);
+
+  useLayoutEffect(() => {
+    if (typeof position === 'object') {
+      viewport.current?.scrollTo({ top: position.top, left: position.left ?? 0, behavior: 'instant' });
+    }
+  }, [position, viewport]);
 
   return (
     <ViewportContext.Provider value={viewport}>
-      <MessageScroller.Provider autoScroll={shouldFollow} defaultScrollPosition={initialPosition}>
+      <MessageScroller.Provider
+        autoScroll={shouldFollow}
+        defaultScrollPosition={typeof position === 'object' ? 'start' : position}
+      >
         <MessageScroller.Root {...stylex.props(styles.root)}>{children}</MessageScroller.Root>
       </MessageScroller.Provider>
     </ViewportContext.Provider>

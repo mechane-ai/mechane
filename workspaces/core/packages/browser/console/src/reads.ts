@@ -27,7 +27,8 @@ import type {
   TurnRow,
 } from '@mechane/console-data';
 import type { Allowance, EventPage, MechPage, MemoryList, ThreadPage, TurnPage } from '@mechane/protocol';
-import { eq, inArray, useLiveQuery } from '@tanstack/react-db';
+import { eq, findProblems, inArray, useLiveQuery } from '@tanstack/react-db';
+import type { HealthNode } from '@tanstack/react-db';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { ResourceState } from './resource.tsx';
 
@@ -94,10 +95,18 @@ function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined) {
     () => undefined,
   );
 
-  return { receipt: query.data, status, revocation };
+  return { receipt: query.data, status, revocation, query };
 }
 
 type ReadObservation = ReturnType<typeof useReadReceipt>;
+
+type ReadQuery = {
+  readonly isReady: boolean;
+  /** Absent while the read is disabled. */
+  readonly health: HealthNode | undefined;
+  /** Absent while the read is disabled. */
+  readonly collection: { readonly reload: () => Promise<void> } | undefined;
+};
 
 type ReadStateOptions<Value> = {
   readonly data: ConsoleData;
@@ -106,7 +115,7 @@ type ReadStateOptions<Value> = {
   readonly observation: ReadObservation;
   /** Undefined means the current receipt does not yet have a complete compatible projection. */
   readonly value: Value | undefined;
-  readonly hasLoadedRecords: boolean;
+  readonly records: ReadonlyArray<ReadQuery>;
 };
 
 function useReadState<Value>({
@@ -114,7 +123,7 @@ function useReadState<Value>({
   request,
   observation,
   value,
-  hasLoadedRecords,
+  records,
 }: ReadStateOptions<Value>): ResourceState<Value> {
   const [lastComplete, setLastComplete] = useState<{
     readonly scope: string;
@@ -122,12 +131,18 @@ function useReadState<Value>({
     readonly value: Value;
   }>();
 
-  const { status, revocation, receipt } = observation;
+  const { status, revocation, receipt, query } = observation;
+  const queries = [query, ...records];
+  const problems = records.flatMap((read) => (read.health === undefined ? [] : findProblems(read.health)));
+  const firstProblem = problems[0];
+  // The shared receipt source also reports failures from other read demands; only this query's error belongs here.
+  const queryProblem = query.health?.error ?? firstProblem?.error ?? firstProblem?.failureReason;
+  const localError = queryProblem?.cause ?? queryProblem;
   const isRevoked = revocation !== undefined;
-  const error = revocation ?? status?.error;
+  const error = revocation ?? status?.error ?? localError;
   const hasFailed = error !== null && error !== undefined;
   const canRetain = !isRevoked && (!hasFailed || canRetainResult(error));
-  const isRefreshing = status?.fetchStatus === 'fetching';
+  const isRefreshing = status?.fetchStatus === 'fetching' || queries.some((read) => read.health?.reloading === true);
   const hasSameOwner = lastComplete?.scope === data.scope && lastComplete.id === request?.id;
   const ready = canRetain ? (value ?? (hasSameOwner ? lastComplete.value : undefined)) : undefined;
 
@@ -139,7 +154,7 @@ function useReadState<Value>({
     setLastComplete(undefined);
   }
 
-  const hasIncompleteReceipt = receipt !== undefined && hasLoadedRecords && value === undefined;
+  const hasIncompleteReceipt = receipt !== undefined && records.every((read) => read.isReady) && value === undefined;
   const needsRepair = request !== undefined && hasIncompleteReceipt && !isRevoked;
 
   useEffect(() => {
@@ -150,8 +165,17 @@ function useReadState<Value>({
 
   function retry(): void {
     if (request !== undefined) {
-      void Promise.allSettled([data.refresh(request)]);
+      void Promise.allSettled([reload(request)]);
     }
+  }
+
+  async function reload(selected: ReadRequest): Promise<void> {
+    await data.refresh(selected);
+    await Promise.all(
+      queries.flatMap((read) =>
+        read.health?.hasErrors === true && read.collection !== undefined ? [read.collection.reload()] : [],
+      ),
+    );
   }
 
   if (ready !== undefined) {
@@ -196,7 +220,7 @@ function useCollectionRead<Row extends KeyedRecord, Value>({
     return rows === undefined || receipt === undefined ? undefined : project(rows, receipt);
   }, [project, query.data, receipt]);
 
-  return useReadState({ data, request, observation, value, hasLoadedRecords: query.isReady });
+  return useReadState({ data, request, observation, value, records: [query] });
 }
 
 function mechPage(rows: ReadonlyArray<MechSummaryRow>, receipt: ReadReceipt): MechPage {
@@ -280,7 +304,7 @@ export function useEventWindow(
     return rows === undefined ? undefined : { events: rows.map(decodeEvent), hasMore: window.hasMore };
   }, [keys, query.data, window.hasMore]);
 
-  return useReadState({ data, request, observation, value, hasLoadedRecords: query.isReady });
+  return useReadState({ data, request, observation, value, records: [query] });
 }
 
 /** Publishes a work page only when every thread referenced by its receipt is available. */
@@ -331,13 +355,7 @@ export function useMech(data: ConsoleData, request: ReadRequest<'mech'> | undefi
     return decodeMech(summary, definition);
   }, [definitions.data, receipt, summaries.data]);
 
-  return useReadState({
-    data,
-    request,
-    observation,
-    value,
-    hasLoadedRecords: summaries.isReady && definitions.isReady,
-  });
+  return useReadState({ data, request, observation, value, records: [summaries, definitions] });
 }
 
 /** Combines trace evidence with the canonical turn also used by run lists and message receipts. */
@@ -354,5 +372,5 @@ export function useTrace(data: ConsoleData, request: ReadRequest<'trace'> | unde
     return turn === undefined || detail === undefined ? undefined : decodeTrace(turn, detail);
   }, [evidence.data, receipt, turns.data]);
 
-  return useReadState({ data, request, observation, value, hasLoadedRecords: turns.isReady && evidence.isReady });
+  return useReadState({ data, request, observation, value, records: [turns, evidence] });
 }

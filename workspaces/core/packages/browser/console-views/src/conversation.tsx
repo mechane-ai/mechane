@@ -1,5 +1,6 @@
 import { CopyValue, Muted, Row, Stack, Status } from '@mechane-ai/elements';
 import { Conversation, Message, MessageAction, MessageBoundary } from '@mechane-ai/elements/ai';
+import type { ConversationRootProps } from '@mechane-ai/elements/ai';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
 import { EmptyState, SkeletonText } from '@mechane-ai/elements/feedback';
 import { Event, EventType } from '@mechane/protocol';
@@ -42,6 +43,8 @@ export function MechConversation({
   controls,
   updates,
   viewportRef,
+  initialPosition,
+  scrollRestorationId,
   inspect,
   sourceLink,
 }: {
@@ -51,6 +54,8 @@ export function MechConversation({
   readonly controls: ReactNode;
   readonly updates?: ReactNode;
   readonly viewportRef?: RefObject<HTMLDivElement | null>;
+  readonly initialPosition?: ConversationRootProps['initialPosition'];
+  readonly scrollRestorationId: string;
   readonly inspect: (turnId: string) => ReactNode;
   readonly sourceLink: (mechId: string) => ReactNode;
 }): ReactNode {
@@ -58,8 +63,8 @@ export function MechConversation({
   const messages = events.filter((event) => conversationEvents.has(event.type));
 
   return (
-    <Conversation.Root viewportRef={viewportRef}>
-      <Conversation.Viewport label={`${name} conversation`} scrollRestorationId="conversation">
+    <Conversation.Root viewportRef={viewportRef} initialPosition={initialPosition}>
+      <Conversation.Viewport label={`${name} conversation`} scrollRestorationId={scrollRestorationId}>
         <Conversation.Content>
           {controls}
           {messages.length === 0 && (
