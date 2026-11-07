@@ -17,6 +17,7 @@ type CommandOptions = {
   readonly args: ReadonlyArray<string>;
   readonly environment: Environment;
   readonly input?: string;
+  readonly output?: 'stdout' | 'combined';
 };
 
 export async function runCommand(input: CommandOptions): Promise<string> {
@@ -39,6 +40,10 @@ export async function runCommand(input: CommandOptions): Promise<string> {
     const reason = Buffer.concat(stderr).toString('utf8').trim();
 
     throw new Error(`${input.command} failed (${code}): ${reason}`);
+  }
+
+  if (input.output === 'combined') {
+    return Buffer.concat([...stdout, ...stderr]).toString('utf8');
   }
 
   return Buffer.concat(stdout).toString('utf8');

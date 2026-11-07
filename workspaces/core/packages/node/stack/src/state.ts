@@ -75,8 +75,6 @@ export async function openStackState(options: StackOptions): Promise<StackState>
       writeOwner,
       close: async (input) => {
         if (input?.shouldPreserveFiles === true) {
-          await writeOwner({ phase: 'stopped', resourcesStopped: true });
-
           return;
         }
 

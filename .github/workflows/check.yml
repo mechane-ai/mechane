@@ -35,7 +35,7 @@ jobs:
         if: failure()
         run: |
           shopt -s nullglob
-          for log in "${TMPDIR:-/tmp}"/mechane-stack-*/*.log "${TMPDIR:-/tmp}"/mechane-stack-*/sandboxes/*/guest.log; do
+          for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/miniflare.log "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/machines/*/guest.log; do
             echo "== $log"
             tail -n 80 "$log"
           done
