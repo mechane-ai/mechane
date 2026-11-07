@@ -1,4 +1,4 @@
-import { OriginProtocol } from '@mechane/deployment';
+import { OriginProtocol, SandboxWebAccess } from '@mechane/deployment';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { Option } from 'effect';
 import { readEgressDestination } from './read-egress-destination.ts';
@@ -6,9 +6,16 @@ import type { EgressVariables } from './schemas.ts';
 
 type PassEgressInput = { readonly request: Request; readonly settings: EgressVariables };
 
-/** Every upstream uses TLS; redirects return to the caller without forwarding its credentials to another host. */
+/** Redirects return to the caller, so their destinations pass admission again without forwarding credentials. */
 export async function passEgress({ request, settings }: PassEgressInput): Promise<Response> {
-  const destination = readEgressDestination({ request, origin: settings.origin, hosts: settings.hosts });
+  const destination = readEgressDestination({
+    request,
+    origin: settings.origin,
+    runtimeOrigin: settings.runtimeOrigin,
+    installationHosts: settings.installationHosts,
+    hosts: settings.hosts,
+    webAccess: settings.webAccess,
+  });
 
   if (Option.isNone(destination)) {
     const diagnostic = JSON.stringify({ event: 'egress.refused', reason: 'destination' });
@@ -20,7 +27,9 @@ export async function passEgress({ request, settings }: PassEgressInput): Promis
 
   const target = new URL(destination.value.href);
 
-  target.protocol = OriginProtocol.Secure;
+  if (settings.webAccess === SandboxWebAccess.Packages) {
+    target.protocol = OriginProtocol.Secure;
+  }
 
   const forwarded = new Request(target, request);
 

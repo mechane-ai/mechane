@@ -193,3 +193,39 @@ export { TurnPage } from './operations/turns/list-turns.ts';
 export { ExecutionAccess, ExecutionAccessState } from './operations/execution-access/schemas.ts';
 
 export { ConversationSession, SessionPage } from './operations/sessions/schemas.ts';
+
+export { EvidenceNotFound, EvidenceUnavailable } from './errors/evidence.errors.ts';
+export {
+  EvidenceArtifact,
+  EvidenceDescriptor,
+  EvidenceMediaType,
+  EvidencePage,
+  EvidencePath,
+  EvidenceQuery,
+  EvidenceSha256,
+} from './operations/evidence/schemas.ts';
+export {
+  EvidenceKind,
+  EvidenceStatus,
+  EVIDENCE_ARTIFACT_MAX_BYTES,
+  EVIDENCE_MECH_MAX_BYTES,
+  EVIDENCE_MECH_MAX_ARTIFACTS,
+  EVIDENCE_PAGE_ARTIFACTS,
+} from './operations/evidence/constants.ts';
+export {
+  evidenceContentPath,
+  evidenceViewerPath,
+  readEvidenceViewerPath,
+} from './operations/evidence/evidence-paths.ts';
+export { signInPath } from './pages/sign-in-path.ts';
+
+export { BYTES_PER_MEBIBYTE as EVIDENCE_CHUNK_MAX_BYTES } from '@mechane/records';
+export { BrowserEvidenceProgress } from './operations/evidence/browser-evidence-progress.ts';
+
+export {
+  sandboxEvidenceListPath,
+  sandboxEvidenceArtifactPath,
+  sandboxEvidenceContentPath,
+} from './operations/evidence/evidence-service-paths.ts';
+
+export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';

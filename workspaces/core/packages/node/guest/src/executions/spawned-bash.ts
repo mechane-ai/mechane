@@ -28,7 +28,7 @@ export function spawnedBash({ child }: SpawnedBashInput): BashRun {
   child.on('exit', settleExit);
   child.on('close', () => Deferred.doneUnsafe(closed, Effect.void));
 
-  return { exited, closed, kill: killGroup({ groupId }), output: tail.output };
+  return { groupId, exited, closed, kill: killGroup({ groupId }), output: tail.output };
 }
 
 /** The exit code a shell reports for the exited process: its own, or 128 plus the number of the ending signal. */

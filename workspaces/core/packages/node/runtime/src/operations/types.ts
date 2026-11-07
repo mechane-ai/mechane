@@ -7,13 +7,20 @@ export type AuthCaller =
 
 export type AuthenticatedCaller = Exclude<AuthCaller, { readonly authKind: 'public' }>;
 
-export type OperationContext = { readonly input: object; readonly caller: AuthCaller };
+export type OperationContext = {
+  readonly input: object;
+  readonly caller: AuthCaller;
+  /** Absent requests the full media; only the Range header crosses into operation handling. */
+  readonly mediaRange?: string;
+};
 
 export type NamedOperationContext = OperationContext & { readonly name: OperationName };
 
 export type TypedOperationContext<Declaration extends Operation> = {
   readonly input: OperationInput<Declaration>;
   readonly caller: AuthCaller;
+  /** Absent requests the full media body. */
+  readonly mediaRange?: string;
 };
 
 export type OperationHandler = (context: OperationContext) => Promise<unknown>;

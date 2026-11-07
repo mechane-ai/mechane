@@ -16,6 +16,7 @@
 /lint/ast-grep/tests/boolean-names-tsx.yml linguist-generated merge=ours
 /lint/ast-grep/tests/boolean-names.yml linguist-generated merge=ours
 /lint/ast-grep/tests/bound-order.yml linguist-generated merge=ours
+/lint/ast-grep/tests/browser-stored-name-outside-store.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-all-outside-boundary.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-handlers-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/catch-tags.yml linguist-generated merge=ours
@@ -161,6 +162,7 @@
 /packages/browser/console/tsconfig.json linguist-generated merge=ours
 /packages/browser/elements/tsconfig.json linguist-generated merge=ours
 /packages/node/boundaries/tsconfig.json linguist-generated merge=ours
+/packages/node/browser/tsconfig.json linguist-generated merge=ours
 /packages/node/checks-kernel/tsconfig.json linguist-generated merge=ours
 /packages/node/checks/tsconfig.json linguist-generated merge=ours
 /packages/node/cli-kernel/tsconfig.json linguist-generated merge=ours

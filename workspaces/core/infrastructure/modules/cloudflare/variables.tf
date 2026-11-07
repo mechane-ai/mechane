@@ -67,7 +67,7 @@ variable "storage" {
 }
 
 variable "sandboxes" {
-  description = "Compute capacity and explicit additional egress hosts. The Node service owns admission."
+  description = "Compute capacity, installed tools, and browser egress. The Node service owns admission."
   type = object({
     application_name         = optional(string)
     instance_type            = optional(string, "standard-1")
@@ -75,9 +75,26 @@ variable "sandboxes" {
     rollout_grace_seconds    = optional(number, 60)
     rollout_deadline_seconds = optional(number, 1200)
     additional_hosts         = optional(set(string), [])
+    web_access               = optional(string, "packages")
+    browser_sandbox_disabled = optional(bool, false)
+    additional_tools = optional(list(object({
+      name           = string
+      version        = string
+      version_output = string
+      targets = map(object({
+        url        = string
+        sha256     = string
+        executable = string
+      }))
+    })), [])
   })
   default  = {}
   nullable = false
+
+  validation {
+    condition     = contains(["packages", "public"], var.sandboxes.web_access)
+    error_message = "Sandbox web access must be packages or public. Both modes retain the outbound gateway."
+  }
 
   validation {
     condition     = var.sandboxes.max_instances >= 1 && floor(var.sandboxes.max_instances) == var.sandboxes.max_instances
@@ -90,5 +107,26 @@ variable "sandboxes" {
       length(hostname) <= 253 && can(regex("^([a-z0-9]([a-z0-9-]*[a-z0-9])?\\.)+[a-z]{2,63}$", hostname))
     ])
     error_message = "Use at most 64 exact public hostnames without schemes, ports, wildcards or literal addresses."
+  }
+
+  validation {
+    condition = length(var.sandboxes.additional_tools) <= 8 && length(distinct([
+      for tool in var.sandboxes.additional_tools : tool.name
+      ])) == length(var.sandboxes.additional_tools) && alltrue([
+      for tool in var.sandboxes.additional_tools :
+      can(regex("^[a-z][a-z0-9-]{0,63}$", tool.name)) &&
+      length(tool.version) > 0 && length(tool.version) <= 64 &&
+      length(tool.version_output) > 0 && length(tool.version_output) <= 256 &&
+      !can(regex("[[:cntrl:]]", tool.version_output)) &&
+      length(tool.targets) > 0 && alltrue([
+        for target, archive in tool.targets :
+        contains(["linux-x64", "linux-arm64", "darwin-arm64"], target) &&
+        length(archive.url) <= 2048 && can(regex("^https://[^/@?#]+/[^?#]*$", archive.url)) &&
+        can(regex("^[0-9a-f]{64}$", archive.sha256)) &&
+        length(archive.executable) <= 1024 &&
+        can(regex("^[a-zA-Z0-9_][a-zA-Z0-9._-]*(/[a-zA-Z0-9_][a-zA-Z0-9._-]*)*$", archive.executable))
+      ])
+    ])
+    error_message = "Supply at most eight distinct pinned tools with an exact version output, supported targets, credential-free HTTPS archive URLs, SHA-256 digests, and relative executable paths."
   }
 }

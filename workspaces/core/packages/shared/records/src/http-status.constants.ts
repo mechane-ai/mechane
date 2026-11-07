@@ -4,6 +4,7 @@
  */
 export const HttpStatusCode = {
   Ok: 200,
+  PartialContent: 206,
   NoContent: 204,
   MultipleChoices: 300,
   Found: 302,
@@ -14,6 +15,7 @@ export const HttpStatusCode = {
   NotFound: 404,
   MethodNotAllowed: 405,
   Conflict: 409,
+  RangeNotSatisfiable: 416,
   PayloadTooLarge: 413,
   TooManyRequests: 429,
   InternalServerError: 500,

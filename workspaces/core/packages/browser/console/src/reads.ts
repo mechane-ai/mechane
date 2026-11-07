@@ -1,10 +1,14 @@
 import {
   canRetainResult,
   decodeAllowance,
+  decodeEnvironmentProcess,
+  decodeEnvironmentProcessDetails,
   decodeEvent,
+  decodeEvidenceArtifact,
   decodeMech,
   decodeMechSummary,
   decodeMemory,
+  decodeSession,
   decodeSlackBinding,
   decodeSlackDelivery,
   decodeThread,
@@ -16,17 +20,21 @@ import type {
   AllowanceRow,
   CanonicalCollectionOptions,
   ConsoleData,
+  EnvironmentProcessDetailsRow,
+  EnvironmentProcessRow,
   EventRow,
+  EvidenceArtifactRow,
   MechSummaryRow,
   MemoryRow,
   ReadReceipt,
   ReadRequest,
+  SessionRow,
   SlackBindingRow,
   SlackDeliveryRow,
   ThreadRow,
   TurnRow,
 } from '@mechane/console-data';
-import type { Allowance, EventPage, MechPage, MemoryList, ThreadPage, TurnPage } from '@mechane/protocol';
+import type { Allowance, EventPage, MechPage, MemoryList, SessionPage, ThreadPage, TurnPage } from '@mechane/protocol';
 import { eq, findProblems, inArray, useLiveQuery } from '@tanstack/react-db';
 import type { HealthNode } from '@tanstack/react-db';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -65,7 +73,7 @@ function orderedRows<Row extends { readonly key: unknown }>(
   return ordered.every((row) => row !== undefined) ? ordered : undefined;
 }
 
-function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined) {
+function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined, isActive = true) {
   const requestId = request?.id;
 
   const query = useLiveQuery({
@@ -81,8 +89,9 @@ function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined) {
   });
 
   const subscribe = useCallback(
-    (notify: () => void) => (requestId === undefined ? () => undefined : data.subscribeReadStatus(requestId, notify)),
-    [data, requestId],
+    (notify: () => void) =>
+      requestId === undefined || !isActive ? () => undefined : data.subscribeReadStatus(requestId, notify),
+    [data, requestId, isActive],
   );
 
   const status = useSyncExternalStore(
@@ -114,6 +123,8 @@ type ReadStateOptions<Value> = {
   readonly data: ConsoleData;
   /** Undefined disables this read while another view owns the visible demand. */
   readonly request: ReadRequest | undefined;
+  /** Absent keeps network demand active; false retains local data without polling or repair. */
+  readonly isActive?: boolean;
   readonly observation: ReadObservation;
   /** Undefined means the current receipt does not yet have a complete compatible projection. */
   readonly value: Value | undefined;
@@ -123,6 +134,7 @@ type ReadStateOptions<Value> = {
 function useReadState<Value>({
   data,
   request,
+  isActive = true,
   observation,
   value,
   records,
@@ -157,7 +169,8 @@ function useReadState<Value>({
   }
 
   const hasIncompleteReceipt = receipt !== undefined && records.every((read) => read.isReady) && value === undefined;
-  const needsRepair = request !== undefined && hasIncompleteReceipt && !isRevoked;
+  const canRepair = isActive && !isRevoked;
+  const needsRepair = canRepair && request !== undefined && hasIncompleteReceipt;
 
   useEffect(() => {
     if (needsRepair && !isRefreshing && !hasFailed) {
@@ -201,6 +214,8 @@ type CollectionReadOptions<Row extends KeyedRecord, Value> = {
   readonly data: ConsoleData;
   /** Undefined keeps the read inactive without changing hook ownership. */
   readonly request: ReadRequest | undefined;
+  /** Absent keeps network demand active; false retains the query without a network observer. */
+  readonly isActive?: boolean;
   readonly collection: CanonicalCollectionOptions<Row>;
   /** Returns undefined while domain-specific record dependencies are incomplete or incompatible. */
   readonly project: (rows: ReadonlyArray<CanonicalQueryRow<Row>>, receipt: ReadReceipt) => Value | undefined;
@@ -209,10 +224,11 @@ type CollectionReadOptions<Row extends KeyedRecord, Value> = {
 function useCollectionRead<Row extends KeyedRecord, Value>({
   data,
   request,
+  isActive = true,
   collection,
   project,
 }: CollectionReadOptions<Row, Value>): ResourceState<Value> {
-  const observation = useReadReceipt(data, request);
+  const observation = useReadReceipt(data, request, isActive);
   const { receipt } = observation;
   const query = useCanonicalRows(data, collection, receipt?.keys);
 
@@ -222,7 +238,7 @@ function useCollectionRead<Row extends KeyedRecord, Value>({
     return rows === undefined || receipt === undefined ? undefined : project(rows, receipt);
   }, [project, query.data, receipt]);
 
-  return useReadState({ data, request, observation, value, records: [query] });
+  return useReadState({ data, request, isActive, observation, value, records: [query] });
 }
 
 function mechPage(rows: ReadonlyArray<MechSummaryRow>, receipt: ReadReceipt): MechPage {
@@ -259,9 +275,83 @@ function slackDeliveries(rows: ReadonlyArray<SlackDeliveryRow>) {
   return { deliveries: rows.map(decodeSlackDelivery) };
 }
 
+function evidencePage(rows: ReadonlyArray<EvidenceArtifactRow>, receipt: ReadReceipt) {
+  return { artifacts: rows.map(decodeEvidenceArtifact), hasMore: receipt.hasMore === true };
+}
+
+function evidenceArtifact(rows: ReadonlyArray<EvidenceArtifactRow>) {
+  const row = rows[0];
+
+  return row === undefined ? undefined : decodeEvidenceArtifact(row);
+}
+
+function environmentProcesses(rows: ReadonlyArray<EnvironmentProcessRow>) {
+  return rows.map(decodeEnvironmentProcess);
+}
+
+function environmentProcessDetails(rows: ReadonlyArray<EnvironmentProcessDetailsRow>) {
+  const row = rows[0];
+
+  return row === undefined ? undefined : decodeEnvironmentProcessDetails(row);
+}
+
+/** Projects exact-machine process observations while allowing covered views to release network demand. */
+export function useEnvironmentProcesses(
+  data: ConsoleData,
+  request: ReadRequest<'environmentProcesses'> | undefined,
+  isActive = true,
+) {
+  return useCollectionRead({
+    data,
+    request,
+    isActive,
+    collection: data.collections.environmentProcesses,
+    project: environmentProcesses,
+  });
+}
+
+/** Reads bounded output only while its exact process panel is visible. */
+export function useEnvironmentProcess(
+  data: ConsoleData,
+  request: ReadRequest<'environmentProcess'>,
+  isActive: boolean,
+) {
+  return useCollectionRead({
+    data,
+    request,
+    isActive,
+    collection: data.collections.environmentProcessDetails,
+    project: environmentProcessDetails,
+  });
+}
+
+/** Projects the admitted run's paginated capture metadata from canonical artifact records. */
+export function useEvidence(data: ConsoleData, request: ReadRequest<'evidence'>) {
+  return useCollectionRead({ data, request, collection: data.collections.evidenceArtifacts, project: evidencePage });
+}
+
+/** Reads one capture without retaining its projection after workspace access is revoked. */
+export function useEvidenceArtifact(data: ConsoleData, request: ReadRequest<'evidenceArtifact'> | undefined) {
+  return useCollectionRead({
+    data,
+    request,
+    collection: data.collections.evidenceArtifacts,
+    project: evidenceArtifact,
+  });
+}
+
 /** Keeps the server's mech order and waits for every summary named by the page receipt. */
 export function useMechs(data: ConsoleData, request: ReadRequest<'mechs'> | undefined) {
   return useCollectionRead({ data, request, collection: data.collections.mechs, project: mechPage });
+}
+
+function sessionPage(rows: ReadonlyArray<SessionRow>, receipt: ReadReceipt): SessionPage {
+  return { sessions: rows.map(decodeSession), hasMore: receipt.hasMore === true };
+}
+
+/** Keeps conversation picker metadata in the same persistent record and receipt path as other lists. */
+export function useSessions(data: ConsoleData, request: ReadRequest<'sessions'>) {
+  return useCollectionRead({ data, request, collection: data.collections.sessions, project: sessionPage });
 }
 
 /** Resolves activity and run history pages against the same canonical events. */

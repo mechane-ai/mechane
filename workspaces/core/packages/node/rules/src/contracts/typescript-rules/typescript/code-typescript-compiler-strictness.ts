@@ -21,6 +21,10 @@ const COMPILER_DEFAULTS = { tool: RuleTool.Compiler, fix: RuleFix.Manual, behavi
  */
 const VALUES = {
   inferredRecordFactories: [
+    'browserRecords',
+    'evidenceRecords',
+    'interactiveRuns',
+    'processRecords',
     'boundedTurnRecords',
     'connectionRecords',
     'credentialRecords',

@@ -1,5 +1,11 @@
-import { RecordId, renamedWireStruct } from '@mechane/records';
-import { GUEST_VARIABLES, GuestScope } from '@mechane/sandbox-wire';
+import { MachineId, renamedWireStruct } from '@mechane/records';
+import {
+  BrowserCertificateVariable,
+  BrowserSandboxDisabledVariable,
+  GUEST_VARIABLES,
+  GuestScope,
+  SandboxToolsVariable,
+} from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import { CONTAINER_DEFAULTS } from './constants.ts';
 
@@ -9,7 +15,7 @@ import { CONTAINER_DEFAULTS } from './constants.ts';
  */
 export const GuestEnvironment = renamedWireStruct({
   fields: {
-    machineId: RecordId,
+    machineId: MachineId,
     scope: Schema.Enum(GuestScope),
     /** The host to listen on, absent in a container's start, whose guest listens on every interface. */
     host: Schema.NonEmptyString.pipe(Schema.withDecodingDefaultKey(Effect.succeed(CONTAINER_DEFAULTS.host))),
@@ -18,6 +24,9 @@ export const GuestEnvironment = renamedWireStruct({
       Schema.withDecodingDefaultKey(Effect.succeed(CONTAINER_DEFAULTS.port)),
     ),
     path: Schema.NonEmptyString,
+    additionalTools: SandboxToolsVariable,
+    isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
+    browserCertificateFile: BrowserCertificateVariable,
   },
   renames: {
     machineId: GUEST_VARIABLES.machineId,
@@ -25,6 +34,9 @@ export const GuestEnvironment = renamedWireStruct({
     host: GUEST_VARIABLES.host,
     port: GUEST_VARIABLES.port,
     path: 'PATH',
+    additionalTools: GUEST_VARIABLES.additionalTools,
+    isBrowserSandboxDisabled: GUEST_VARIABLES.isBrowserSandboxDisabled,
+    browserCertificateFile: GUEST_VARIABLES.browserCertificateFile,
   },
 });
 

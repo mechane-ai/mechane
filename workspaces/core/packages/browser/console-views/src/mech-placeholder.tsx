@@ -4,6 +4,7 @@ import { PageToolbar, Workbench, WorkbenchFooter, WorkbenchScroll } from '@mecha
 import type { ConsoleView } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { ConversationPlaceholder } from './conversation.tsx';
+import { EnvironmentPlaceholder } from './environment.tsx';
 import { ActivityPlaceholder } from './events.tsx';
 import { MechHeaderPlaceholder } from './mech-header.tsx';
 import { MechSettingsPlaceholder } from './mech-settings.tsx';
@@ -69,6 +70,8 @@ function MechContentPlaceholder({ view }: { readonly view: ConsoleView }): React
       return <WorkListPlaceholder />;
     case 'memory':
       return <MemoryListPlaceholder />;
+    case 'environment':
+      return <EnvironmentPlaceholder />;
     case 'activity':
       return <ActivityPlaceholder />;
     case 'definition':

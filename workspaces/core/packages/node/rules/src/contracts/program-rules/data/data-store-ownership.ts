@@ -18,8 +18,16 @@ export const dataStoreOwnership = {
       ...ADOPTED,
       name: 'stored-name-outside-store',
       standard: 'DO-06',
-      violation: ["const path = 'credentials.json';"],
+      violation: ["const path = 'credentials.json';", "const query = 'SELECT * FROM managed_processes';"],
       allowed: ["const path = 'notes.json';"],
+    },
+    {
+      ...AST_GREP_DEFAULTS,
+      ...ADOPTED,
+      name: 'browser-stored-name-outside-store',
+      standard: 'DO-06',
+      violation: ["const folder = 'requests';", "const path = 'native.mp4';"],
+      allowed: ['const artifact = yield* readBrowserArtifact({ settings, artifactId });'],
     },
   ],
 } as const satisfies ContractEnforcement;

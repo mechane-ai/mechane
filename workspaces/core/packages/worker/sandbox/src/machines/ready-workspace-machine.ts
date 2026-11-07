@@ -1,3 +1,4 @@
+import { MachineId } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
 import type { LiveMachineRow } from '@mechane/sandbox-store';
 import { Option } from 'effect';
@@ -17,6 +18,13 @@ export async function readyWorkspaceMachine({
   deadline,
 }: ReadyWorkspaceMachineInput): Promise<Option.Option<LiveMachineRow>> {
   const machine = await openLiveMachine({ store, provider });
+  const machineId = MachineId.make(machine.id);
+  const drain = store.machineDrain({ machineId });
+
+  if (Option.isSome(drain)) {
+    return Option.none();
+  }
+
   const input = { store, provider, workspace, machineId: machine.id };
   const isHealthy = machine.status === MachineStatus.Ready || (await awaitHealth({ ...input, deadline }));
 

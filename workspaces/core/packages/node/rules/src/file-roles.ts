@@ -87,6 +87,7 @@ export const FILE_ROLES = {
     'packages/node/stack/src/sandbox/main.ts',
     'packages/node/smoke/src/run-scenarios.ts',
     'packages/worker/sandbox/src/egress/pass-egress.ts',
+    'packages/worker/sandbox/src/evidence/evidence-cleanup.ts',
     'packages/worker/sandbox-service/src/main.ts',
   ],
   [FileRole.WorkerModule]: ['packages/worker/sandbox-service/src/main.ts'],

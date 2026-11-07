@@ -18,6 +18,7 @@ export const ConsoleView = {
   Work: 'work',
   Runs: 'runs',
   Memory: 'memory',
+  Environment: 'environment',
   Tools: 'tools',
   Activity: 'activity',
   Definition: 'definition',

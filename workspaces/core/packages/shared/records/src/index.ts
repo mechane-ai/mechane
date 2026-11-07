@@ -60,3 +60,5 @@ export { GitCommit } from './git-commit.schemas.ts';
  */
 export type { WireKeys, UnknownMemberSchema } from './types.ts';
 export { EXECUTION_VARIABLE_NAME_PATTERN } from './execution.constants.ts';
+
+export { BrowserTabId, EvidenceArtifactId, EvidenceMachineId, EvidenceProvenance } from './evidence.schemas.ts';

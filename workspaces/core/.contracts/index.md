@@ -135,3 +135,7 @@ from 101 are Mechane's own.
 - [Native Workflow runtime](124-native-workflow-runtime/CONTRACT.md): one durable execution path, private credentials, and native UI streams.
 - [Channel delivery](125-channel-delivery/CONTRACT.md): verified admission, native formatting, and stable delivery receipts.
 - [Structured presentation](126-structured-presentation/CONTRACT.md): one bounded catalog with native Chat and Elements renderers.
+
+- [Managed processes](127-managed-processes/CONTRACT.md): machine-bound processes, checkpoint suspension, and explicit lifetime.
+- [Browser control](128-browser-control/CONTRACT.md): native Chromium actions, isolated profiles, bounded observations, and replay safety.
+- [Browser evidence](129-browser-evidence/CONTRACT.md): private durable captures, authenticated viewers, and observed provenance.

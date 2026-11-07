@@ -1,9 +1,13 @@
 import {
   Allowance,
+  ConversationSession,
+  EvidenceArtifact,
   ListedEvent,
   Mech,
   MechSummary,
   Memory,
+  ProcessObservation,
+  ProcessSummary,
   SlackBinding,
   SlackDelivery,
   Thread,
@@ -64,12 +68,24 @@ export type EventRow = typeof EventRow.Type;
 /** A thread keyed by its owning mech because forked history retains thread IDs. */
 export const ThreadRow = mechRecordSchema(Thread);
 export type ThreadRow = typeof ThreadRow.Type;
+/** Session metadata shared by conversation pickers, separate from the native Chat transcript. */
+export const SessionRow = mechRecordSchema(ConversationSession);
+export type SessionRow = typeof SessionRow.Type;
 /** A memory path and version within one mech's complete bounded memory set. */
 export const MemoryRow = mechRecordSchema(Memory);
 export type MemoryRow = typeof MemoryRow.Type;
 /** Encoded trace evidence sharing a key with its separately stored turn. */
 export const TraceEvidenceRow = mechRecordSchema(TraceEvidence);
 export type TraceEvidenceRow = typeof TraceEvidenceRow.Type;
+/** Capture metadata keyed by the admitted mech and durable artifact identity. */
+export const EvidenceArtifactRow = mechRecordSchema(EvidenceArtifact);
+export type EvidenceArtifactRow = typeof EvidenceArtifactRow.Type;
+/** A process summary keyed by mech, machine, and process identity. */
+export const EnvironmentProcessRow = mechRecordSchema(ProcessSummary);
+export type EnvironmentProcessRow = typeof EnvironmentProcessRow.Type;
+/** Bounded logs fetched only for an explicitly opened process handle. */
+export const EnvironmentProcessDetailsRow = mechRecordSchema(ProcessObservation);
+export type EnvironmentProcessDetailsRow = typeof EnvironmentProcessDetailsRow.Type;
 /** A binding from the complete workspace Slack snapshot, attributed to its mech. */
 export const SlackBindingRow = mechRecordSchema(SlackBinding);
 export type SlackBindingRow = typeof SlackBindingRow.Type;
@@ -90,6 +106,11 @@ export function restoreRecord<Value, Encoded>(schema: Schema.Codec<Value, Encode
 /** Keeps copied history IDs and event sequences distinct between forked mechs. */
 export function recordKey(mechId: string, identifier: string | number): string {
   return JSON.stringify([mechId, identifier]);
+}
+
+/** Restores a canonical conversation session for picker consumers. */
+export function decodeSession(row: SessionRow): ConversationSession {
+  return restoreRecord(ConversationSession, row.value);
 }
 
 /** Restores summary dates and optional fork metadata for view consumers. */
@@ -136,6 +157,21 @@ export function decodeTrace(turn: TurnRow, evidence: TraceEvidenceRow): Trace | 
   const decoded = decodeTurn(turn);
 
   return turnVersion(decoded) === version ? { ...fields, turn: decoded } : undefined;
+}
+
+/** Restores capture status and observed provenance from its canonical row. */
+export function decodeEvidenceArtifact(row: EvidenceArtifactRow): EvidenceArtifact {
+  return restoreRecord(EvidenceArtifact, row.value);
+}
+
+/** Restores the original process handle and status from its canonical row. */
+export function decodeEnvironmentProcess(row: EnvironmentProcessRow): ProcessSummary {
+  return restoreRecord(ProcessSummary, row.value);
+}
+
+/** Restores bounded output fetched for one exact process handle. */
+export function decodeEnvironmentProcessDetails(row: EnvironmentProcessDetailsRow): ProcessObservation {
+  return restoreRecord(ProcessObservation, row.value);
 }
 
 /** Restores the binding protocol value from its encoded canonical row. */

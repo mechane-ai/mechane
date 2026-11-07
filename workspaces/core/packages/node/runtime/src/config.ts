@@ -38,6 +38,7 @@ export type RuntimeConfiguration = {
   readonly maxMachines: number;
   readonly defaultModel: string;
   readonly githubApiOrigin: string;
+  readonly publicOrigin: string;
   readonly model: {
     readonly upstreamUrl: string;
     readonly apiKey: Redacted.Redacted;
@@ -117,6 +118,7 @@ export function loadRuntimeConfiguration(): RuntimeConfiguration {
     maxDailyAllowanceMicros: optionalInteger('MECHANE_MAX_DAILY_ALLOWANCE_MICROS', DEFAULT_DAILY_CAP_MICROS),
     maxMachines: optionalInteger('MECHANE_MAX_MACHINES', DEFAULT_MAX_MACHINES),
     defaultModel,
+    publicOrigin: publicOriginSetting(),
     githubApiOrigin: process.env['MECHANE_GITHUB_API_ORIGIN'] ?? 'https://api.github.com',
     model: {
       upstreamUrl: httpOrigin('MECHANE_MODEL_UPSTREAM_URL'),
@@ -147,4 +149,15 @@ function nexusEventSettings(): RuntimeConfiguration['nexusEvents'] {
   }
 
   return { secret: Redacted.make(secret) };
+}
+
+function publicOriginSetting(): string {
+  const value = httpOrigin('MECHANE_PUBLIC_ORIGIN');
+  const url = new URL(value);
+
+  if (url.pathname !== '/' || url.search !== '' || url.hash !== '') {
+    throw new Error('Invalid runtime setting MECHANE_PUBLIC_ORIGIN');
+  }
+
+  return url.origin;
 }

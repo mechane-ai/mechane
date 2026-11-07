@@ -68,3 +68,14 @@ versions. A new SDK version requires a compiled restart-and-resume qualification
 
 The native-runtime cutover establishes a fresh agent-store baseline. It is not a permanent reset-on-deploy policy. Later
 data changes follow the schema and execution contracts, including pending approval waits and uncertain commands.
+
+### Upgrading from schema 1
+
+Native releases 0.25.0 and 0.25.1 require domain schema 1 and cannot restart after the schema 2 migration in 0.25.2.
+Stop new admissions and qualify pending Workflow history replay, or let those histories finish. Stop every old
+application instance before migrating and starting 0.25.2. Preserve the database, vault keys, sandbox identities, and
+checkpoints throughout. Verify readiness, existing records, and resumed work before reopening admission.
+
+Recover forward if that upgrade fails; deploying the old binary against the migrated database is not a supported
+rollback. Subsequent releases validate their known migration prefix and must preserve the previous release's reads and
+writes through additive migrations. The migrator refuses to modify a database newer than its own release.

@@ -459,5 +459,14 @@
     "kind": "app",
     "criterion": "program",
     "consumers": []
+  },
+  "@mechane/browser": {
+    "owns": "The isolated Chromium session, observed browser controls, screenshots, recordings and bounded diagnostics",
+    "layer": 5,
+    "lane": "node",
+    "dialect": "effect",
+    "kind": "library",
+    "criterion": "closure",
+    "consumers": ["@mechane/guest"]
   }
 }

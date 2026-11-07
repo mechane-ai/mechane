@@ -44,6 +44,15 @@ The native-runtime cutover initializes a fresh Postgres domain schema and Workfl
 authorized in contract 047. It does not run a migration over the retired Pi agent stores. Future domain migrations
 follow the rolling-deployment rules above and use the runtime store's migration ledger.
 
+Native releases 0.25.0 and 0.25.1 use domain schema 1 and reject every later ledger revision at startup. Upgrading them
+to schema 2, introduced in 0.25.2, requires a controlled stop of all old application instances before migration.
+Preserve native records and Workflow history. Qualify existing history replay or drain active histories before switching.
+After migration, recover forward; a code-only rollback to either schema 1 release is unsupported. This single bootstrap
+boundary does not authorize data deletion or waive additive compatibility for subsequent releases.
+Serving readers validate the contiguous ledger and their known
+checksum prefix; a later suffix is allowed only under these additive rollout rules. An older migrator refuses a newer
+ledger instead of modifying it.
+
 Run schema changes with a dedicated migration connection. The runtime connection receives only the permissions its
 product tables and upstream World require. Workflow and Chat own their schema migrations; do not edit their tables
 to repair application state. Record the exact upstream versions in the release.

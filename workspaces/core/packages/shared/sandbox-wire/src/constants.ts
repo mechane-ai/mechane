@@ -11,12 +11,23 @@ export const GUEST_PORT = 8080;
 export const GuestSegment = {
   Machines: 'machines',
   Health: 'health',
+  Capabilities: 'capabilities',
+  Processes: 'processes',
+  Browser: 'browser',
+  Requests: 'requests',
+  Artifacts: 'artifacts',
   Executions: 'executions',
   Workspace: 'workspace',
 } as const;
 
 /** The independent operations of the portable archive and restoration protocol. */
-export const WorkspaceStep = { Archive: 'archive', Part: 'part', Restore: 'restore', Release: 'release' } as const;
+export const WorkspaceStep = {
+  Archive: 'archive',
+  Checkpoint: 'checkpoint',
+  Part: 'part',
+  Restore: 'restore',
+  Release: 'release',
+} as const;
 
 export type WorkspaceStep = (typeof WorkspaceStep)[keyof typeof WorkspaceStep];
 
@@ -34,6 +45,9 @@ export const GUEST_VARIABLES = {
   scope: 'MECHANE_GUEST_SCOPE',
   host: 'MECHANE_GUEST_HOST',
   port: 'MECHANE_GUEST_PORT',
+  additionalTools: 'MECHANE_GUEST_TOOLS',
+  isBrowserSandboxDisabled: 'MECHANE_GUEST_BROWSER_SANDBOX_DISABLED',
+  browserCertificateFile: 'MECHANE_GUEST_BROWSER_CERTIFICATE',
 } as const;
 
 /**
@@ -66,3 +80,6 @@ export type ReceiptStatus = (typeof ReceiptStatus)[keyof typeof ReceiptStatus];
 export const HostMachineStatus = { Starting: 'starting', Running: 'running', Exited: 'exited' } as const;
 
 export type HostMachineStatus = (typeof HostMachineStatus)[keyof typeof HostMachineStatus];
+
+/** Cloudflare injects this certificate only when HTTPS interception is enabled. */
+export const GATEWAY_CERTIFICATE = '/etc/cloudflare/certs/cloudflare-containers-ca.crt';

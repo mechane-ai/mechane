@@ -5,10 +5,9 @@ import type { ConsoleApi, Input, Output } from './api.ts';
 import { readRequests } from './requests.ts';
 import type { ReadKind, ReadRequest } from './requests.ts';
 
-type CommandInput<Name extends 'createMech' | 'updateMech' | 'sendInboxItem' | 'cancelTurn'> = Omit<
-  Input<Name>,
-  'workspaceId'
->;
+type CommandInput<
+  Name extends 'createMech' | 'updateMech' | 'sendInboxItem' | 'cancelTurn' | 'stopEnvironmentProcess',
+> = Omit<Input<Name>, 'workspaceId'>;
 
 type CommandDependencies = {
   readonly api: ConsoleApi;
@@ -64,6 +63,34 @@ export function createCommands({
   }
 
   return {
+    async stopEnvironmentProcess(
+      input: CommandInput<'stopEnvironmentProcess'>,
+    ): Promise<Output<'stopEnvironmentProcess'>> {
+      const request = readRequests.environmentProcesses(input.mechId);
+
+      const detailRequest = readRequests.environmentProcess(input.mechId, {
+        machineId: input.machineId,
+        processId: input.processId,
+      });
+
+      const commandSignal = signalForRead(request);
+
+      try {
+        const saved = await api('stopEnvironmentProcess', { ...input, workspaceId }, commandSignal);
+
+        void Promise.allSettled([refreshRequest(request), refreshRequest(detailRequest)]);
+
+        return saved;
+      } catch (error) {
+        void Promise.allSettled([
+          onFailure(request, error, commandSignal),
+          refreshRequest(request),
+          refreshRequest(detailRequest),
+        ]);
+
+        throw error;
+      }
+    },
     async createMech(input: CommandInput<'createMech'>): Promise<Mech> {
       const saved = await api('createMech', { ...input, workspaceId }, signal);
 

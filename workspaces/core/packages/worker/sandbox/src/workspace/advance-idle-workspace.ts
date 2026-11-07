@@ -1,23 +1,40 @@
+import { MachineId } from '@mechane/records';
+import { FileCheckpointPurpose, FileCheckpointResult, MachineStatus } from '@mechane/sandbox-store';
 import { Option } from 'effect';
+import { runFileCheckpoint } from '../checkpoints/run-file-checkpoint.ts';
 import { observeMachine } from '../machines/observe-machine.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
-import { advanceWorkspace } from './advance-workspace.ts';
 
-/** Completes pending transfers before idle stop and protects files whose last save failed. */
+/** A graceful stop commits a fresh frozen snapshot and preserves the machine if saving fails. */
 export async function advanceIdleWorkspace({
   store,
   provider,
   workspace,
 }: WorkspaceProviderStepInput): Promise<boolean> {
-  const state = store.workspace();
+  const input = { store, provider, workspace };
 
-  if (Option.isSome(state.recovery)) {
-    await observeMachine({ store, provider });
+  await observeMachine(input);
 
-    const live = store.liveMachine();
+  const live = store.liveMachine();
 
-    return Option.isNone(live);
+  if (Option.isNone(live) || live.value.status === MachineStatus.Starting) {
+    return true;
   }
 
-  return await advanceWorkspace({ store, provider, workspace });
+  const recovery = store.workspace().recovery;
+
+  if (Option.isSome(recovery)) {
+    return false;
+  }
+
+  const machineId = MachineId.make(live.value.id);
+  const drain = store.requestMachineDrain({ machineId });
+  const purpose = FileCheckpointPurpose.cases.Drain.make(drain);
+  const result = await runFileCheckpoint({ ...input, purpose });
+
+  if (FileCheckpointResult.guards.Failed(result)) {
+    store.clearMachineDrain({ machineId });
+  }
+
+  return FileCheckpointResult.guards.Committed(result);
 }

@@ -66,7 +66,15 @@ export function executionLedger({ settings, fibers }: ExecutionLedgerInput): Exe
     return Option.some(receipt);
   });
 
-  return { answer, observe, quiesce: gate.quiesce, resume: gate.resume };
+  return {
+    answer,
+    observe,
+    quiesce: gate.quiesce,
+    resume: gate.resume,
+    isFrozen: gate.isFrozen,
+    admitProcess: gate.admitProcess,
+    finishProcessStart: gate.finishProcessStart,
+  };
 }
 
 type RememberRunInput = { readonly executionId: ExecutionId; readonly settled: Deferred.Deferred<void> };

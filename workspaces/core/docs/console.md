@@ -75,6 +75,36 @@ network requests and their status. Shared canonical DB collections hold records 
 page never implies an exhaustive dataset. The server owns authorization and authoritative records. The required browser
 cache holds admitted, replaceable copies. No browser code imports Worker storage or installation secrets.
 
+### Adding a screen or feature
+
+| Data                                             | Owner and path                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------- |
+| Saved entities, reports, session picker metadata | Protocol-backed rows and persisted native DB tables in `console-data` |
+| HTTP demand, retries, polling, errors            | The data runtime's Query observers and exact page receipts            |
+| Displayed record projections                     | Native live queries through `console/src/reads.ts`                    |
+| Transcript history and active stream             | Native AI SDK Chat; authorized server history is authoritative        |
+| Admission                                        | Fresh server reads before opening protected storage                   |
+| Drafts, selection, cursor inputs, preferences    | Console interaction and navigation owners                             |
+
+For an ordinary resource, add its encoded row, canonical table, bounded read request, ingestion, and readiness checks in
+the existing `console-data` modules. Add a shared live-read projection and compose it with `ResourceView` in the screen.
+Use the receipt's ordered keys, including successful empty results. Adding a filter or cursor changes request identity,
+not the entity's table. Keep record values out of page-owned React state and Query response caches.
+
+Commands settle from API acknowledgments, then reconcile canonical records and invalidate affected reads. A failed
+refresh exposes recovery beside retained content; it must not turn an accepted command into a failed save. Workspace,
+principal, and storage recovery use the admitted runtime's existing lifetime.
+
+Session catalogue pages use the same persistent path as mech and run lists. AI SDK Chat owns the transcript and stream
+without a competing DB message mirror. Its retained chat instances and drafts are bounded by the workspace lifetime. The
+exact fresh-protocol exceptions and extension requirements live in
+[contract 113](../.contracts/113-console-boundaries/CONTRACT.md), with required storage in
+[contract 119](../.contracts/119-console-cache-lifecycle/CONTRACT.md). No unavailable-storage memory fallback exists.
+
+Run the browser typecheck and import boundaries, then verify the built application: successful empty results, warm
+reload, failed refresh, paging, switching owners, and returning from run inspection. Static checks establish ownership;
+the browser establishes the complete loading, access, and recovery experience.
+
 UI modules group controls, forms, typography, and data presentation by responsibility. The shared frame owns sidebar
 geometry and the mobile navigation drawer. Screens supply resource actions to the shared toolbar. Tables fill the main
 surface; their cells own the row insets. Conversation prose has a reading width, while `DetailPage` centers forms and

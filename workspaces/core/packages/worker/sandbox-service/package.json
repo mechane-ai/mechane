@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",

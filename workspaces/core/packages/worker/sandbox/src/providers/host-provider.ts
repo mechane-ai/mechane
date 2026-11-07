@@ -1,5 +1,5 @@
 import { bearerAuthorization } from '@mechane/protocol';
-import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+import { HttpHeader, HttpMethod, HttpStatusCode, MachineId, MediaType } from '@mechane/records';
 import { GuestScope, HostMachine, HostMachineStart, HostMachineStatus } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { DateTime, Duration, Option, Redacted, Result, Schema } from 'effect';
@@ -8,6 +8,7 @@ import type { GuestConnection, MachineProvider } from '../types.ts';
 import { LauncherStep } from './constants.ts';
 import { LauncherRefused } from './errors.ts';
 import { loopbackGuest } from './loopback-guest.ts';
+import { machineStartupTimeout } from './machine-startup-timeout.ts';
 import { machineUrl } from './machine-url.ts';
 import type { HostMachineInput, HostProviderInput } from './types.ts';
 
@@ -30,13 +31,32 @@ type LauncherFailureInput = {
 };
 
 /** Local guest processes: reads never start one, and stops return only after the guest has exited. */
-export function hostProvider({ launcherOrigin, launcherKey }: HostProviderInput): MachineProvider {
+export function hostProvider({
+  launcherOrigin,
+  launcherKey,
+  additionalTools,
+  isBrowserSandboxDisabled,
+}: HostProviderInput): MachineProvider {
   const start: MachineProvider['start'] = async ({ machineId }) => {
-    await hostMachine({ launcherOrigin, launcherKey, machineId, method: HttpMethod.Put });
+    await hostMachine({
+      launcherOrigin,
+      launcherKey,
+      additionalTools,
+      isBrowserSandboxDisabled,
+      machineId,
+      method: HttpMethod.Put,
+    });
   };
 
   const connect: MachineProvider['connect'] = async ({ machineId }) => {
-    const machine = await hostMachine({ launcherOrigin, launcherKey, machineId, method: HttpMethod.Get });
+    const machine = await hostMachine({
+      launcherOrigin,
+      launcherKey,
+      additionalTools,
+      isBrowserSandboxDisabled,
+      machineId,
+      method: HttpMethod.Get,
+    });
 
     switch (machine.state) {
       case HostMachineStatus.Starting:
@@ -72,7 +92,14 @@ export function hostProvider({ launcherOrigin, launcherKey }: HostProviderInput)
     let checkedAt = DateTime.nowUnsafe();
 
     while (DateTime.isLessThan(checkedAt, deadline)) {
-      const machine = await hostMachine({ launcherOrigin, launcherKey, machineId, method: HttpMethod.Get });
+      const machine = await hostMachine({
+        launcherOrigin,
+        launcherKey,
+        additionalTools,
+        isBrowserSandboxDisabled,
+        machineId,
+        method: HttpMethod.Get,
+      });
 
       if (machine.state === HostMachineStatus.Exited) {
         return;
@@ -86,11 +113,20 @@ export function hostProvider({ launcherOrigin, launcherKey }: HostProviderInput)
     launcherFailure({ url, step: LauncherStep.Stop, status: response.status, reason: 'machine stop is not confirmed' });
   };
 
-  return { start, connect, stop };
+  const startupTimeout: MachineProvider['startupTimeout'] = () => machineStartupTimeout({ tools: additionalTools });
+
+  return { start, connect, stop, startupTimeout };
 }
 
 /** PUT starts one identity once; GET observes it without allocating. The launcher returns only a machine report. */
-async function hostMachine({ launcherOrigin, launcherKey, machineId, method }: HostReportInput): Promise<HostMachine> {
+async function hostMachine({
+  launcherOrigin,
+  launcherKey,
+  additionalTools,
+  isBrowserSandboxDisabled,
+  machineId,
+  method,
+}: HostReportInput): Promise<HostMachine> {
   const url = machineUrl({ launcherOrigin, machineId });
   const token = Redacted.value(launcherKey);
   const authorization = bearerAuthorization({ token });
@@ -99,7 +135,20 @@ async function hostMachine({ launcherOrigin, launcherKey, machineId, method }: H
   let start = Option.none<string>();
 
   if (method === HttpMethod.Put) {
-    const encoded = Schema.encodeSync(StartJson)({ environment: { machineId, scope: GuestScope.Process } });
+    const browserCertificateFile = Option.none();
+
+    const identity = MachineId.make(machineId);
+
+    const encoded = Schema.encodeSync(StartJson)({
+      environment: {
+        machineId: identity,
+        scope: GuestScope.Process,
+        additionalTools,
+        isBrowserSandboxDisabled,
+        browserCertificateFile,
+      },
+    });
+
     start = Option.some(encoded);
   }
 

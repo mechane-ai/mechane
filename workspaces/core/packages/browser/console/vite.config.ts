@@ -16,7 +16,10 @@ export default defineConfig({
       [HttpHeader.CrossOriginEmbedderPolicy]: 'require-corp',
     },
   },
-  build: { license: { fileName: 'THIRD_PARTY_LICENSES.txt' } },
+  build: {
+    license: { fileName: 'THIRD_PARTY_LICENSES.txt' },
+    rolldownOptions: { output: { chunkFileNames: 'assets/chunk-[hash].js' } },
+  },
   worker: {
     format: 'es',
     plugins: workerLicenses.createPlugins,

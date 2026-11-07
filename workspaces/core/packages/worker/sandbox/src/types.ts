@@ -1,5 +1,6 @@
+import type { MachineId } from '@mechane/records';
 import type { ExecutionRow, ExecutionStatus, SandboxStore } from '@mechane/sandbox-store';
-import type { ExecutionEnvironment, GuestStart } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
 import type { GuestAnswer } from './schemas.ts';
 
@@ -12,7 +13,7 @@ export type DispatchedExecution = Extract<ExecutionRow, StatusOf<typeof Executio
 /** A request to a machine's guest: its path and query, below the machine's origin, and the rest of the request. */
 export type GuestRequestInput = { readonly path: string; readonly init: RequestInit };
 
-export type MachineIdInput = { readonly machineId: GuestStart['machineId'] };
+export type MachineIdInput = { readonly machineId: MachineId };
 
 /** One machine's guest, reached by HTTP. */
 export type GuestTransport = { readonly fetch: (input: GuestRequestInput) => Promise<Response> };
@@ -33,6 +34,8 @@ export type GuestConnection = {
 
 /** Starts, reaches, and stops machines; Mechane owns their workspace durability. */
 export type MachineProvider = {
+  /** The declared tool manifest determines the bounded cold startup deadline. */
+  readonly startupTimeout: () => Duration.Duration;
   /** Starts the requested identity; sandbox capacity coordinates replacement before calling a raw provider. */
   readonly start: (input: MachineIdInput) => Promise<void>;
   /** Reads the machine's guest without allocating; none before it runs and after it stops. */

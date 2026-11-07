@@ -6,9 +6,18 @@ language: TypeScript
 severity: error
 message: 'Name a table or a stored file only in the store module that owns it, such as `turnStore.listTurns({ mechId })` here (DO-06)'
 files: [packages/**/*.ts]
-ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**', packages/node/smoke/**, packages/node/testing/**]
+# The registry owns this rule's violation fixtures; those strings are not application storage accesses.
+ignores:
+  [
+    '**/node_modules/**',
+    '**/store/**',
+    '**/*-store/**',
+    packages/node/smoke/**,
+    packages/node/testing/**,
+    packages/node/rules/src/contracts/program-rules/data/data-store-ownership.ts,
+  ]
 rule:
   kind: string_fragment
   any:
-    - regex: \b(FROM|INTO|UPDATE|JOIN|TABLE|EXISTS|ON)\s+(?:mechane\.)?(activity|api_keys|audit_events|auth_attempts|browser_sessions|credentials|device_approvals|execution_access|execution_cancellations|execution_receipts|executions|file_checkpoint_results|identities|inputs|machines|mcp_connections|mcp_grants|mech_revisions|mechs|memberships|memories|messages|oauth_states|portable_maintenance|principals|request_events|request_waits|runs|sandbox_capacity|sandbox_workspace|schema_migrations|session_contexts|sessions|slack_bindings|slack_deliveries|slack_inbound_events|slack_installations|spend_reservations|work_items|workspace_retirements|workspaces)\b
+    - regex: \b(FROM|INTO|UPDATE|JOIN|TABLE|EXISTS|ON)\s+(?:mechane\.)?(activity|api_keys|audit_events|auth_attempts|browser_calls|browser_machine|browser_sessions|browser_tabs|credentials|device_approvals|evidence_artifacts|evidence_chunks|execution_access|execution_cancellations|execution_receipts|executions|file_checkpoint_results|identities|inputs|interactive_run_cancellations|machine_drains|machines|managed_processes|mcp_connections|mcp_grants|mech_revisions|mechs|memberships|memories|messages|oauth_states|portable_maintenance|principals|request_events|request_waits|runs|sandbox_capacity|sandbox_workspace|schema_migrations|session_contexts|sessions|slack_bindings|slack_deliveries|slack_inbound_events|slack_installations|spend_reservations|work_items|workspace_retirements|workspaces)\b
     - regex: ^(credentials\.json|lock\.json|plan\.json|report\.json|subject-intent\.json|subject\.json|grader-intent\.json|grade\.json)$

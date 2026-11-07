@@ -5,16 +5,16 @@ import { rm } from 'node:fs/promises';
 import { readWorkspacePart } from '../archive-files/read-workspace-part.ts';
 import { writeWorkspacePart } from '../archive-files/write-workspace-part.ts';
 import { WorkspaceFailed } from '../errors.ts';
-import type { ExecutionLedger, ServedAnswer, WorkspaceRequest } from '../types.ts';
+import type { ServedAnswer, WorkspaceRequest } from '../types.ts';
 import { workspaceFilePath } from './workspace-file-path.ts';
 
-type AnswerWorkspaceFileInput = WorkspaceRequest & { readonly folder: string; readonly ledger: ExecutionLedger };
+type AnswerWorkspaceFileInput = WorkspaceRequest & { readonly folder: string };
 
 /** Transfers one part or removes a completed generation and releases command execution. */
 export const answerWorkspaceFile = Effect.fn('answerWorkspaceFile')(function* (
   input: AnswerWorkspaceFileInput,
 ): Effect.fn.Return<ServedAnswer, WorkspaceFailed> {
-  const { generation, step, folder, ledger, request, part } = input;
+  const { generation, step, folder, request, part } = input;
 
   if (step === WorkspaceStep.Release) {
     const path = workspaceFilePath({ folder, generation, file: '' });
@@ -24,13 +24,7 @@ export const answerWorkspaceFile = Effect.fn('answerWorkspaceFile')(function* (
       catch: (cause) => new WorkspaceFailed({ generation, step, reason: String(cause) }),
     });
 
-    ledger.resume();
-
     return { status: HttpStatusCode.Ok, headers: {}, body: '' };
-  }
-
-  if (!ledger.quiesce()) {
-    return { status: HttpStatusCode.NoContent, headers: {}, body: '' };
   }
 
   if (request.method === HttpMethod.Put) {

@@ -2,7 +2,12 @@ import { Button } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { createConsoleData, problemMessage } from '@mechane/console-data';
 import type { ConsoleData, Session } from '@mechane/console-data';
-import { ConsoleShell, MechPagePlaceholder, MechsPagePlaceholder } from '@mechane/console-views';
+import {
+  ConsoleShell,
+  EvidencePagePlaceholder,
+  MechPagePlaceholder,
+  MechsPagePlaceholder,
+} from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
 import { useRouterState } from '@tanstack/react-router';
 import {
@@ -280,14 +285,18 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
   const selected = { ...location, workspace: workspace.id };
 
   const placeholder =
-    selected.mech === undefined ? (
-      <MechsPagePlaceholder />
+    selected.artifact === undefined ? (
+      selected.mech === undefined ? (
+        <MechsPagePlaceholder />
+      ) : (
+        <MechPagePlaceholder
+          view={selected.view ?? 'conversation'}
+          hasFocusedRun={selected.turn !== undefined}
+          traceTab={selectedTraceTab(selected)}
+        />
+      )
     ) : (
-      <MechPagePlaceholder
-        view={selected.view ?? 'conversation'}
-        hasFocusedRun={selected.turn !== undefined}
-        traceTab={selectedTraceTab(selected)}
-      />
+      <EvidencePagePlaceholder />
     );
 
   return (
@@ -295,7 +304,7 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
       workspaces={session.workspaces}
       workspaceId={workspace.id}
       onWorkspace={(id) => navigate({ workspace: id })}
-      shouldFocus={selected.turn !== undefined && selected.mech !== undefined}
+      shouldFocus={(selected.turn !== undefined || selected.artifact !== undefined) && selected.mech !== undefined}
       homeLink={
         runtime.data === undefined ? null : (
           <Activity mode={runtime.kind === 'ready' ? 'visible' : 'hidden'}>

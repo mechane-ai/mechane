@@ -1,4 +1,5 @@
-import { MechId, ThreadId, TurnId } from '@mechane/records';
+import { ProcessHandle } from '@mechane/protocol';
+import { EvidenceArtifactId, MechId, ThreadId, TurnId } from '@mechane/records';
 import { Result, Schema } from 'effect';
 import { restoreRecord } from './records.ts';
 
@@ -6,9 +7,14 @@ const READ_KIND = {
   Mechs: 'mechs',
   Mech: 'mech',
   Threads: 'threads',
+  Sessions: 'sessions',
   Memories: 'memories',
   Turns: 'turns',
   Trace: 'trace',
+  Evidence: 'evidence',
+  EvidenceArtifact: 'evidenceArtifact',
+  EnvironmentProcesses: 'environmentProcesses',
+  EnvironmentProcess: 'environmentProcess',
   TurnEvents: 'turnEvents',
   Events: 'events',
   SlackBindings: 'slackBindings',
@@ -24,9 +30,19 @@ const ReadTarget = Schema.Union([
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mechs), after: Schema.NullOr(Schema.String) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mech), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Threads), mechId: MechId, after: Schema.NullOr(ThreadId) }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Sessions), mechId: MechId, after: Schema.NullOr(Schema.String) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Memories), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Turns), mechId: MechId, after: Schema.NullOr(TurnId) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Trace), mechId: MechId, turnId: TurnId }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.Evidence),
+    mechId: MechId,
+    turnId: TurnId,
+    after: Schema.NullOr(EvidenceArtifactId),
+  }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.EvidenceArtifact), mechId: MechId, artifactId: EvidenceArtifactId }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcesses), mechId: MechId }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcess), mechId: MechId, handle: ProcessHandle.to }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.TurnEvents), mechId: MechId, turnId: TurnId, after: Schema.Number }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Events), mechId: MechId, before: Schema.NullOr(Schema.Number) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.SlackBindings) }),
@@ -76,10 +92,29 @@ export const readRequests = {
   mech: (mechId: string) => request({ kind: READ_KIND.Mech, mechId: MechId.make(mechId) }),
   threads: (mechId: string, after: ThreadId | null) =>
     request({ kind: READ_KIND.Threads, mechId: MechId.make(mechId), after }),
+  sessions: (mechId: string, after: string | null) =>
+    request({ kind: READ_KIND.Sessions, mechId: MechId.make(mechId), after }),
   memories: (mechId: string) => request({ kind: READ_KIND.Memories, mechId: MechId.make(mechId) }),
   turns: (mechId: string, after: TurnId | null) =>
     request({ kind: READ_KIND.Turns, mechId: MechId.make(mechId), after }),
   trace: (mechId: string, turnId: TurnId) => request({ kind: READ_KIND.Trace, mechId: MechId.make(mechId), turnId }),
+  evidence: (mechId: string, turnId: TurnId, after: string | null) =>
+    request({
+      kind: READ_KIND.Evidence,
+      mechId: MechId.make(mechId),
+      turnId,
+      after: after === null ? null : EvidenceArtifactId.make(after),
+    }),
+  evidenceArtifact: (mechId: string, artifactId: string) =>
+    request({
+      kind: READ_KIND.EvidenceArtifact,
+      mechId: MechId.make(mechId),
+      artifactId: EvidenceArtifactId.make(artifactId),
+    }),
+  environmentProcesses: (mechId: string) =>
+    request({ kind: READ_KIND.EnvironmentProcesses, mechId: MechId.make(mechId) }),
+  environmentProcess: (mechId: string, handle: ProcessHandle) =>
+    request({ kind: READ_KIND.EnvironmentProcess, mechId: MechId.make(mechId), handle }),
   turnEvents: (mechId: string, turnId: TurnId, after: number) =>
     request({ kind: READ_KIND.TurnEvents, mechId: MechId.make(mechId), turnId, after }),
   events: (mechId: string, before: number | null) =>
@@ -94,4 +129,19 @@ export function decodeReadRequest(id: string): ReadRequest {
   const target = restoreRecord(EncodedReadTarget, id);
 
   return { ...target, id: ReadId.make(id) };
+}
+
+/** Every capture page for the mech may hold this artifact, including a response still in flight. */
+export function isArtifactRead({
+  candidate,
+  artifact,
+}: {
+  readonly candidate: ReadRequest;
+  readonly artifact: ReadRequest<'evidenceArtifact'>;
+}): boolean {
+  if (candidate.kind === 'evidence') {
+    return candidate.mechId === artifact.mechId;
+  }
+
+  return candidate.kind === 'evidenceArtifact' && candidate.id === artifact.id;
 }

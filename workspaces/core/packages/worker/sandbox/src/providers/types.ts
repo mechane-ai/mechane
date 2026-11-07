@@ -1,3 +1,4 @@
+import type { SandboxTools } from '@mechane/sandbox-wire';
 import type { Redacted } from 'effect';
 import type { EgressGateway } from '../egress/egress-gateway.ts';
 import type { MachineIdInput } from '../types.ts';
@@ -7,6 +8,8 @@ export type ContainerProviderInput = {
   readonly container: Container;
   readonly state: DurableObjectState;
   readonly gateway: () => Fetcher;
+  readonly additionalTools: SandboxTools;
+  readonly isBrowserSandboxDisabled: boolean;
 };
 
 type GatewayModule = { readonly EgressGateway: typeof EgressGateway };
@@ -21,7 +24,12 @@ declare global {
 }
 
 /** The host launcher on this machine and the key it takes. */
-export type HostProviderInput = { readonly launcherOrigin: URL; readonly launcherKey: Redacted.Redacted };
+export type HostProviderInput = {
+  readonly launcherOrigin: URL;
+  readonly launcherKey: Redacted.Redacted;
+  readonly additionalTools: SandboxTools;
+  readonly isBrowserSandboxDisabled: boolean;
+};
 
 /** A machine's request to the host launcher, which starts the machine once and reports it after, or stops it. */
 export type HostMachineInput = HostProviderInput & MachineIdInput;

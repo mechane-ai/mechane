@@ -8,6 +8,8 @@ import { isInstallationAdministrator } from './auth/admission.ts';
 import type { AuthenticationConfiguration } from './auth/configuration.ts';
 import { createAuthOperations } from './auth/operations.ts';
 import { createConfigurationOperations } from './configuration/configuration.ts';
+import { createEnvironmentOperations } from './environment.ts';
+import { createEvidenceOperations } from './evidence.ts';
 import { createMechOperations } from './mechs/mechs.ts';
 import type { CancelWorkflow, StartAdmission } from './mechs/mechs.ts';
 import type { NamedOperationContext, OperationHandlers } from './types.ts';
@@ -35,6 +37,8 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
 
   const handlers: OperationHandlers = {
     ...createAuthOperations({ store, configuration: authentication }),
+    ...createEvidenceOperations({ store, configuration }),
+    ...createEnvironmentOperations({ store, configuration }),
     ...createConfigurationOperations({
       store,
       configuration,
@@ -72,7 +76,12 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
     }),
   };
 
-  return async function executeOperation({ name, input, caller }: NamedOperationContext): Promise<unknown> {
-    return await handlers[name]({ input, caller });
+  return async function executeOperation({
+    name,
+    input,
+    caller,
+    ...requestContext
+  }: NamedOperationContext): Promise<unknown> {
+    return await handlers[name]({ input, caller, ...requestContext });
   };
 }

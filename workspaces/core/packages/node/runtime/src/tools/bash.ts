@@ -14,6 +14,7 @@ import { prepareEnvironment } from './environment.ts';
 import { ToolUnavailableError } from './errors.ts';
 import { executionId as toolExecutionId } from './execution-id.ts';
 import { revokeGitHubToken } from './github-token.ts';
+import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { requestSandboxExecution } from './sandbox-client.ts';
 import type { BashArguments, BashInvocation, PreparedEnvironment, RuntimeToolContext } from './types.ts';
 
@@ -129,13 +130,9 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
 
   try {
     return await withRuntimeStore(async (store) => {
-      const receipt = await store.getExecution({
-        id: input.executionId,
-        workspaceId: input.workspaceId,
-        mechId: input.mechId,
-      });
+      const receipt = await readExecutionReceipt({ ...input, store, kind: 'sandbox' });
 
-      if (receipt === null || receipt.kind !== 'sandbox') {
+      if (receipt === null) {
         return { status: 'refused', executionId: input.executionId, message: 'This mech has no matching execution.' };
       }
 

@@ -46,6 +46,7 @@
       "ignoreDependencies": ["@pierre/theme"],
     },
     "packages/node/boundaries": { "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/node/browser": { "project": ["src/**/*.{ts,tsx}!"] },
     // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
     "packages/node/checks": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/checks-kernel": { "project": ["src/**/*.{ts,tsx}!"] },

@@ -1,7 +1,7 @@
 import { readRequests } from '@mechane/console-data';
 import type { ReadRequest } from '@mechane/console-data';
-import { TurnId } from '@mechane/records';
-import { Schema } from 'effect';
+import { EvidenceArtifactId, TurnId } from '@mechane/records';
+import { Result, Schema } from 'effect';
 import { turnEventCursor } from './navigation.tsx';
 import type { ConsoleLocation, PageCursors } from './types.ts';
 
@@ -18,23 +18,36 @@ export function initialReads(
   }
 
   const heading = readRequests.mech(mechId);
+
+  if (location.artifact !== undefined) {
+    const artifactId = Schema.decodeUnknownResult(EvidenceArtifactId, { onExcessProperty: 'error' })(location.artifact);
+
+    return Result.isSuccess(artifactId)
+      ? [heading, readRequests.evidenceArtifact(mechId, artifactId.success)]
+      : [heading];
+  }
+
   const turnId = location.turn;
 
   if (turnId !== undefined) {
-    if (!Schema.is(TurnId)(turnId)) {
+    const decodedTurnId = Schema.decodeUnknownResult(TurnId, { onExcessProperty: 'error' })(turnId);
+
+    if (Result.isFailure(decodedTurnId)) {
       return [heading];
     }
 
-    const primary: Array<ReadRequest> = [heading, readRequests.trace(mechId, turnId)];
+    const primary: Array<ReadRequest> = [heading, readRequests.trace(mechId, decodedTurnId.success)];
     const inspect = location.inspect ?? location.view;
 
     if (inspect === 'events') {
       const after = turnEventCursor(pages?.events, location.event);
 
-      primary.push(readRequests.turnEvents(mechId, turnId, after));
+      primary.push(readRequests.turnEvents(mechId, decodedTurnId.success, after));
     }
 
-    return primary;
+    return selection === 'primary'
+      ? primary
+      : [...primary, readRequests.evidence(mechId, decodedTurnId.success, pages?.evidence?.at(-1) ?? null)];
   }
 
   const view = location.view ?? 'conversation';
@@ -46,6 +59,8 @@ export function initialReads(
       return [heading, readRequests.threads(mechId, pages?.work?.at(-1) ?? null)];
     case 'memory':
       return [heading, readRequests.memories(mechId)];
+    case 'environment':
+      return [heading, readRequests.environmentProcesses(mechId)];
     case 'activity':
       return [heading, readRequests.events(mechId, pages?.activity?.at(-1) ?? null)];
     case 'definition':

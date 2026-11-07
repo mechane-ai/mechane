@@ -1,8 +1,14 @@
+import type { MachineId } from '@mechane/records';
 import type { SettledReceipt } from '@mechane/sandbox-wire';
 import type { AlarmTimeInput, DatabaseFunctions } from '@mechane/store';
 import type { DateTime, Duration, Option } from 'effect';
+import type { browserRecords } from './browser/browser-records.ts';
 import type { capacityRecords } from './capacity/capacity-records.ts';
+import type { evidenceRecords } from './evidence/evidence-records.ts';
+import type { interactiveRuns } from './interactive-runs.ts';
+import type { machineDrains } from './machines/machine-drains.ts';
 import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
+import type { processRecords } from './processes/process-records.ts';
 import type { ExecutionRow, LiveMachineRow, MachineIdRow } from './schemas.ts';
 import type { workspaceRecords } from './workspaces/workspace-records.ts';
 
@@ -50,20 +56,20 @@ export type ClaimExecutionInput = { readonly request: ExecutionClaim; readonly n
 
 export type DispatchExecutionInput = {
   readonly executionId: string;
-  readonly machineId: string;
+  readonly machineId: MachineId;
   readonly now: DateTime.Utc;
 };
 
 export type ExecutionIdInput = { readonly executionId: string };
 
 export type FailMachineInput = {
-  readonly machineId: string;
+  readonly machineId: MachineId;
   /** The time by which the machine had to answer its health; the executions claimed by then waited for it. */
   readonly startupDeadline: DateTime.Utc;
   readonly now: DateTime.Utc;
 };
 
-export type MachineTimeInput = { readonly machineId: string; readonly now: DateTime.Utc };
+export type MachineTimeInput = { readonly machineId: MachineId; readonly now: DateTime.Utc };
 
 /** The sandbox object's one alarm, which stops its idle machine. */
 export type SandboxAlarm = {
@@ -74,7 +80,12 @@ export type SandboxAlarm = {
 
 /** The sandbox database's operations and migration revision. */
 export type SandboxStore = DatabaseFunctions &
+  ReturnType<typeof browserRecords> &
   ReturnType<typeof capacityRecords> &
+  ReturnType<typeof evidenceRecords> &
+  ReturnType<typeof interactiveRuns> &
+  ReturnType<typeof machineDrains> &
+  ReturnType<typeof processRecords> &
   MachineRecords &
   ExecutionRecords &
   ReturnType<typeof portableMaintenanceRecords> &
@@ -83,7 +94,7 @@ export type SandboxStore = DatabaseFunctions &
 export type SettleExecutionInput = {
   readonly executionId: string;
   /** The machine the execution was sent to, whose guest answered the receipt. */
-  readonly machineId: string;
+  readonly machineId: MachineId;
   readonly receipt: SettledReceipt;
   readonly now: DateTime.Utc;
 };

@@ -1,5 +1,6 @@
 import { capturePromise } from '@mechane/utilities';
 import { Result } from 'effect';
+import { releaseMachineWorkspace } from '../workspace/release-machine-workspace.ts';
 import { advanceCheckpointStep } from './advance-checkpoint-step.ts';
 import { failCheckpoint } from './fail-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
@@ -17,5 +18,6 @@ export async function advanceCheckpoint({
 
   if (Result.isFailure(advanced)) {
     failCheckpoint({ ...input, cause: advanced.failure });
+    await releaseMachineWorkspace({ store, provider, workspace, machineId: checkpoint.machineId });
   }
 }

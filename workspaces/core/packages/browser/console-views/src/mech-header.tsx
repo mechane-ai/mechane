@@ -20,6 +20,7 @@ import {
   PinOff,
   Play,
   Settings,
+  Terminal,
 } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { MechPinButton } from './mech-pin.tsx';
@@ -29,12 +30,13 @@ const sections: ReadonlyArray<{ readonly value: ConsoleView; readonly label: str
   { value: 'work', label: 'Work' },
   { value: 'runs', label: 'Runs' },
   { value: 'memory', label: 'Memory' },
+  { value: 'environment', label: 'Environment' },
   { value: 'activity', label: 'History' },
   { value: 'definition', label: 'Settings' },
 ];
 
 const primaryViews: ReadonlySet<ConsoleView> = new Set(['conversation', 'work', 'runs']);
-const secondaryViews: ReadonlySet<ConsoleView> = new Set(['memory', 'activity', 'definition']);
+const secondaryViews: ReadonlySet<ConsoleView> = new Set(['memory', 'environment', 'activity', 'definition']);
 
 const styles = stylex.create({
   identity: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
@@ -227,6 +229,15 @@ export function MechHeader({
               <Menu.Popup>
                 <Menu.Group>
                   <Menu.GroupLabel>Views</Menu.GroupLabel>
+                  <Menu.LinkItem
+                    closeOnClick
+                    href={viewHref('environment')}
+                    aria-current={view === 'environment' ? 'page' : undefined}
+                    onClick={(event) => selectView(event, 'environment')}
+                  >
+                    <Terminal size={16} aria-hidden />
+                    Environment
+                  </Menu.LinkItem>
                   <Menu.LinkItem
                     closeOnClick
                     href={viewHref('memory')}

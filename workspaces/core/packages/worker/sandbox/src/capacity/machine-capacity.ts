@@ -28,19 +28,21 @@ type HeldInput = { readonly held: MachineReservation };
 type MachineCapacity = {
   readonly provider: MachineProvider;
   readonly bindOwner: (input: BindOwnerInput) => Promise<void>;
-  readonly requireOwner: () => void;
+  readonly requireOwner: () => SandboxOwner;
   readonly reservation: () => Option.Option<MachineReservation>;
 };
 
 export function machineCapacity({ store, provider, client, scheduleStopRetry }: MachineCapacityInput): MachineCapacity {
   const calls = serialCalls();
 
-  function requireOwner(): void {
+  function requireOwner(): SandboxOwner {
     const capacity = store.capacity();
 
     if (Option.isNone(capacity)) {
       throw new InvalidSandboxOwner({});
     }
+
+    return capacity.value.owner;
   }
 
   function reservation(): Option.Option<MachineReservation> {
@@ -193,5 +195,10 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     });
   }
 
-  return { provider: { start, connect: provider.connect, stop }, bindOwner, requireOwner, reservation };
+  return {
+    provider: { start, connect: provider.connect, stop, startupTimeout: provider.startupTimeout },
+    bindOwner,
+    requireOwner,
+    reservation,
+  };
 }

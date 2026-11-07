@@ -2,12 +2,13 @@ import {
   boundedText,
   Bytes,
   isBetweenDuration,
-  RecordId,
+  MachineId,
   RecordText,
   renamedWireStruct,
   wireStruct,
 } from '@mechane/records';
 import { Duration, Schema, SchemaTransformation } from 'effect';
+import { BrowserCertificateVariable, BrowserSandboxDisabledVariable } from './browser-environment.ts';
 import {
   EXECUTION_MAX_BYTES,
   EXECUTION_TIMEOUT_MAX,
@@ -18,6 +19,7 @@ import {
   ReceiptStatus,
 } from './constants.ts';
 import { ExecutionEnvironment, ExecutionEnvironmentRequired } from './execution-environment.ts';
+import { SandboxToolsVariable } from './tools/schemas.ts';
 
 /** Stable command identity survives workflow retries and never becomes a filesystem path. */
 export const ExecutionId = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/)).pipe(
@@ -65,7 +67,8 @@ export const ExecutionRequest = renamedWireStruct({
 export type ExecutionRequest = typeof ExecutionRequest.Type;
 
 /** The tail of an execution's combined output, and how many bytes before it the receipt left out. */
-const ExecutionOutput = wireStruct({ fields: { text: RecordText, omittedBytes: Bytes } });
+export const ExecutionOutput = wireStruct({ fields: { text: RecordText, omittedBytes: Bytes } });
+export type ExecutionOutput = typeof ExecutionOutput.Type;
 
 const Exited = renamedWireStruct({
   fields: {
@@ -134,8 +137,20 @@ export type GuestListening = typeof GuestListening.Type;
  * random bits are known only to the sandbox's object and the machine, so no other caller can name it.
  */
 export const GuestStart = renamedWireStruct({
-  fields: { machineId: RecordId, scope: Schema.Enum(GuestScope) },
-  renames: { machineId: GUEST_VARIABLES.machineId, scope: GUEST_VARIABLES.scope },
+  fields: {
+    machineId: MachineId,
+    scope: Schema.Enum(GuestScope),
+    additionalTools: SandboxToolsVariable,
+    isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
+    browserCertificateFile: BrowserCertificateVariable,
+  },
+  renames: {
+    machineId: GUEST_VARIABLES.machineId,
+    scope: GUEST_VARIABLES.scope,
+    additionalTools: GUEST_VARIABLES.additionalTools,
+    isBrowserSandboxDisabled: GUEST_VARIABLES.isBrowserSandboxDisabled,
+    browserCertificateFile: GUEST_VARIABLES.browserCertificateFile,
+  },
 });
 
 export type GuestStart = typeof GuestStart.Type;

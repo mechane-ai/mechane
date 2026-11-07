@@ -6,6 +6,8 @@ export const ContainerProcess = Schema.Struct({
   PPid: Schema.NumberFromString,
   Uid: Schema.String,
   State: Schema.String,
+  groupId: Schema.NumberFromString,
+  startedAt: Schema.String.check(Schema.isPattern(/^[0-9]+$/)),
 });
 
 export type ContainerProcess = typeof ContainerProcess.Type;

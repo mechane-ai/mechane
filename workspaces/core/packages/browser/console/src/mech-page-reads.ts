@@ -1,12 +1,20 @@
 import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { Turn } from '@mechane/protocol';
-import { TurnId } from '@mechane/records';
-import { Schema } from 'effect';
+import { EvidenceArtifactId, TurnId } from '@mechane/records';
+import { Result, Schema } from 'effect';
 import { useEffect } from 'react';
 import { useConversationEntry, useConversationState } from './conversations/provider.tsx';
 import { usePageRead } from './page-read.tsx';
 import type { PageRead } from './page-read.tsx';
-import { useEvents, useMemories, useThreads, useTrace, useTurns } from './reads.ts';
+import {
+  useEnvironmentProcesses,
+  useEvents,
+  useEvidenceArtifact,
+  useMemories,
+  useThreads,
+  useTrace,
+  useTurns,
+} from './reads.ts';
 import type { ResourceState } from './resource.tsx';
 import type { ConsoleLocation } from './types.ts';
 
@@ -15,6 +23,7 @@ type MechViewRead =
   | { readonly view: 'runs'; readonly pageRead: PageRead<'turns', ReadRequest<'turns'>> }
   | { readonly view: 'work'; readonly pageRead: PageRead<'work', ReadRequest<'threads'>> }
   | { readonly view: 'memory'; readonly request: ReadRequest<'memories'> }
+  | { readonly view: 'environment'; readonly request: ReadRequest<'environmentProcesses'> }
   | { readonly view: 'activity'; readonly pageRead: PageRead<'activity', ReadRequest<'events'>> };
 
 /** Coordinates exact primary readiness while keeping conversation pagination owned across run inspection. */
@@ -24,7 +33,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
   const conversation = useConversationEntry(
     mechId,
     location.session,
-    requestedView === 'conversation' && location.turn === undefined,
+    requestedView === 'conversation' && location.turn === undefined && location.artifact === undefined,
   );
 
   const conversationState = useConversationState(conversation);
@@ -54,19 +63,24 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
   });
 
   const memory = requestedView === 'memory' ? data.reads.memories(mechId) : undefined;
-  const turnId = location.turn;
-  const trace = Schema.is(TurnId)(turnId) ? data.reads.trace(mechId, turnId) : undefined;
-  const hasFocusedRun = turnId !== undefined;
+  const environment = requestedView === 'environment' ? data.reads.environmentProcesses(mechId) : undefined;
+  const turnId = Schema.decodeUnknownResult(TurnId, { onExcessProperty: 'error' })(location.turn);
+  const trace = Result.isSuccess(turnId) ? data.reads.trace(mechId, turnId.success) : undefined;
+  const hasFocusedDetail = location.turn !== undefined || location.artifact !== undefined;
+  const artifactId = Schema.decodeUnknownResult(EvidenceArtifactId, { onExcessProperty: 'error' })(location.artifact);
+  const artifact = Result.isSuccess(artifactId) ? data.reads.evidenceArtifact(mechId, artifactId.success) : undefined;
   const viewRead = readView();
 
   const currentActivity = viewRead.view === 'conversation' ? data.reads.turns(mechId, null) : undefined;
-  const turnsState = useTurns(data, hasFocusedRun ? undefined : (turns?.request ?? currentActivity));
-  const workState = useThreads(data, hasFocusedRun ? undefined : work?.request);
-  const activityState = useEvents(data, hasFocusedRun ? undefined : activity?.request);
-  const memoryState = useMemories(data, hasFocusedRun ? undefined : memory);
-  const traceState = useTrace(data, trace);
+  const turnsState = useTurns(data, hasFocusedDetail ? undefined : (turns?.request ?? currentActivity));
+  const workState = useThreads(data, hasFocusedDetail ? undefined : work?.request);
+  const activityState = useEvents(data, hasFocusedDetail ? undefined : activity?.request);
+  const memoryState = useMemories(data, hasFocusedDetail ? undefined : memory);
+  const environmentState = useEnvironmentProcesses(data, hasFocusedDetail ? undefined : environment);
+  const traceState = useTrace(data, location.artifact === undefined ? trace : undefined);
+  const evidenceState = useEvidenceArtifact(data, artifact);
   const sessionId = conversationState.kind === 'ready' ? conversationState.value.sessionId : undefined;
-  const isConversationOpen = !hasFocusedRun && viewRead.view === 'conversation';
+  const isConversationOpen = !hasFocusedDetail && viewRead.view === 'conversation';
 
   const conversationRevision =
     isConversationOpen && turnsState.kind === 'ready' && sessionId !== undefined
@@ -101,11 +115,19 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
       return { view: 'memory', request: memory };
     }
 
+    if (environment !== undefined) {
+      return { view: 'environment', request: environment };
+    }
+
     return { view: requestedView === 'definition' ? 'definition' : 'conversation' };
   }
 
   function primaryState(): ResourceState<unknown> | undefined {
-    if (hasFocusedRun) {
+    if (location.artifact !== undefined) {
+      return artifact === undefined ? undefined : evidenceState;
+    }
+
+    if (hasFocusedDetail) {
       return trace === undefined ? undefined : traceState;
     }
 
@@ -120,12 +142,20 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
         return activityState;
       case 'memory':
         return memoryState;
+      case 'environment':
+        return environmentState;
       case 'definition':
         return undefined;
     }
   }
 
-  return { conversation, viewRead, trace, primary: primaryState() };
+  return {
+    conversation,
+    viewRead,
+    trace,
+    evidence: artifact === undefined ? undefined : evidenceState,
+    primary: primaryState(),
+  };
 }
 
 /** The current view's read demand and the independent conversation cursor owner. */

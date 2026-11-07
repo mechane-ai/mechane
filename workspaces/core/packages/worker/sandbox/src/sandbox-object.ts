@@ -1,23 +1,52 @@
-import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
-import type { SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
 import {
+  BrowserEvidenceProgress,
+  EvidenceArtifact,
+  EvidencePage,
+  EvidenceQuery,
+  RequestInvalid,
+} from '@mechane/protocol';
+import { EvidenceArtifactId, MachineId } from '@mechane/records';
+import type { BrowserCall, SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
+import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
+import {
+  BrowserArtifactPartRequest,
+  BrowserProgress,
+  BrowserRequestId,
   ExecutionProgress,
   OptionalExecutionEnvironment,
+  ProcessHandle,
+  ProcessId,
+  ProcessObservation,
+  ProcessPending,
+  ProcessSummaries,
   SandboxAction,
+  SandboxBrowserArtifactAnswer,
+  SandboxBrowserSubmission,
   SandboxExecutionRefusal,
   SandboxExecutionResult,
   SandboxOwner,
+  SandboxProcessAnswer,
+  SandboxProcessSubmission,
   SandboxReport,
   SandboxRequest,
+  SandboxRunId,
 } from '@mechane/sandbox-wire';
 import type { ExecutionId, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise, serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
+import { browserProgress } from './browser/browser-progress.ts';
+import { observeBrowser } from './browser/observe-browser.ts';
+import { readBrowserArtifact } from './browser/read-browser-artifact.ts';
+import { runBrowser } from './browser/run-browser.ts';
 import { capacityClient } from './capacity/capacity-client.ts';
 import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
 import { MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
 import type { SandboxEnvironment } from './environment.ts';
+import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
+import { cleanupReadyEvidence } from './evidence/evidence-cleanup.ts';
+import { readEvidenceContent } from './evidence/evidence-content.ts';
+import { listEvidenceArtifacts, readEvidenceArtifact } from './evidence/read-evidence.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
 import { cancelExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
@@ -26,6 +55,8 @@ import { runExecution } from './executions/run-execution.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { maintenanceValue } from './maintenance/maintenance-value.ts';
 import { managePortable } from './maintenance/manage-portable.ts';
+import { listManagedProcesses } from './processes/list-managed-processes.ts';
+import { observeManagedProcess, startManagedProcess } from './processes/managed-processes.ts';
 import { machineProvider } from './providers/machine-provider.ts';
 import { sandboxSettings } from './providers/sandbox-settings.ts';
 import type { MachineIdInput, MachineProvider, WorkspaceFiles } from './types.ts';
@@ -37,6 +68,42 @@ type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
 type ResumeInput = ObserveInput & { readonly environment: RunExecutionInput['environment'] };
 type CancelInput = { readonly executionId: ExecutionId };
 type StopCallInput = { readonly promise: Promise<void> };
+
+type ProcessIdentityInput = { readonly processId: ProcessId };
+type ProcessHandleInput = { readonly handle: typeof ProcessHandle.Encoded };
+type ProcessReadInput = ProcessHandleInput & ProcessActivityInput;
+type ProcessActivityInput = { readonly shouldTouch: boolean };
+type InteractiveCancelInput = { readonly runId: SandboxRunId };
+type BrowserIdentityInput = { readonly requestId: BrowserRequestId };
+type BrowserEvidenceInput = { readonly call: BrowserCall; readonly shouldDispatch: boolean };
+
+type BrowserArtifactInput = {
+  readonly machineId: MachineId;
+  readonly request: typeof BrowserArtifactPartRequest.Encoded;
+};
+
+type EvidenceIdentityInput = { readonly artifactId: EvidenceArtifactId };
+
+const EvidenceContentRequest = Schema.Struct({
+  artifactId: EvidenceArtifactId,
+  /** Null requests the complete media object rather than a byte range. */
+  rangeHeader: Schema.OptionFromNullOr(Schema.String),
+});
+
+type EvidenceContentInput = typeof EvidenceContentRequest.Encoded;
+type ProcessStartResultInput = { readonly result: Result.Result<SandboxProcessAnswer, unknown> };
+
+function processStartResult({ result }: ProcessStartResultInput): SandboxProcessAnswer {
+  if (Result.isFailure(result)) {
+    const refusal = Schema.decodeUnknownResult(CapacityRefused)(result.failure);
+
+    if (Result.isSuccess(refusal)) {
+      return SandboxExecutionRefusal.cases.CapacityRefused.make({ reason: refusal.success.reason });
+    }
+  }
+
+  return Result.getOrThrow(result);
+}
 
 /** One authenticated mech's persistent files and command receipts, independent of its agent executor. */
 export class SandboxObject extends DurableObject<SandboxEnvironment> {
@@ -204,6 +271,308 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     return Result.getOrThrow(attempted);
   }
 
+  async startProcess({
+    ...input
+  }: typeof SandboxProcessSubmission.Encoded): Promise<typeof SandboxProcessAnswer.Encoded> {
+    this.#capacity.requireOwner();
+
+    const { request, runId, toolCallId } = Schema.decodeUnknownSync(SandboxProcessSubmission)(input);
+
+    this.#store.claimProcess({ processId: request.processId, runId, toolCallId, command: request.command });
+
+    const attempt = this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+
+        if (maintenanceActive({ store: this.#store })) {
+          return ProcessPending.make({});
+        }
+
+        await this.#touchInteractive();
+
+        return await startManagedProcess({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          processId: request.processId,
+          environment: request.environment,
+          requireOwner: this.#capacity.requireOwner,
+        });
+      },
+    });
+
+    const result = await capturePromise({ promise: attempt });
+    const answer = processStartResult({ result });
+
+    return Schema.encodeSync(SandboxProcessAnswer)(answer);
+  }
+
+  async observeProcessStart({ processId }: ProcessIdentityInput): Promise<typeof SandboxProcessAnswer.Encoded> {
+    const decoded = Schema.decodeUnknownSync(ProcessId)(processId);
+    const record = this.#store.process({ processId: decoded });
+
+    if (Option.isNone(record)) {
+      const refusal = SandboxExecutionRefusal.cases.ExecutionNotFound.make({});
+
+      return Schema.encodeSync(SandboxProcessAnswer)(refusal);
+    }
+
+    const answer = Option.getOrElse(record.value.observation, () => ProcessPending.make({}));
+
+    return Schema.encodeSync(SandboxProcessAnswer)(answer);
+  }
+
+  async readProcess({ handle, shouldTouch }: ProcessReadInput): Promise<typeof ProcessObservation.Encoded> {
+    const decoded = Schema.decodeUnknownSync(ProcessHandle)(handle);
+
+    const observation = await this.#calls.run({
+      run: async () => {
+        if (shouldTouch) {
+          await this.#touchInteractive();
+        }
+
+        return await observeManagedProcess({
+          store: this.#store,
+          provider: this.#provider,
+          handle: decoded,
+          shouldStop: false,
+        });
+      },
+    });
+
+    return Schema.encodeSync(ProcessObservation)(observation);
+  }
+
+  async stopProcess({ handle }: ProcessHandleInput): Promise<typeof ProcessObservation.Encoded> {
+    const decoded = Schema.decodeUnknownSync(ProcessHandle)(handle);
+
+    const observation = await this.#calls.run({
+      run: () =>
+        observeManagedProcess({ store: this.#store, provider: this.#provider, handle: decoded, shouldStop: true }),
+    });
+
+    return Schema.encodeSync(ProcessObservation)(observation);
+  }
+
+  async listProcesses({ shouldTouch }: ProcessActivityInput): Promise<typeof ProcessSummaries.Encoded> {
+    const summaries = await this.#calls.run({
+      run: async () => {
+        if (shouldTouch) {
+          await this.#touchInteractive();
+        }
+
+        return await listManagedProcesses({ store: this.#store, provider: this.#provider });
+      },
+    });
+
+    return Schema.encodeSync(ProcessSummaries)(summaries);
+  }
+
+  async cancelInteractiveRun({ runId }: InteractiveCancelInput): Promise<void> {
+    const decoded = Schema.decodeUnknownSync(SandboxRunId)(runId);
+    const identity = { runId: decoded };
+
+    this.#store.atomic({
+      run: () => {
+        this.#store.cancelInteractiveRun(identity);
+        this.#store.cancelProcessRun(identity);
+        this.#store.cancelBrowserRun(identity);
+      },
+    });
+
+    await this.#calls.run({
+      run: async () => {
+        for (const record of this.#store.processes()) {
+          if (record.runId === decoded && record.isStopRequested && Option.isSome(record.machineId)) {
+            await observeManagedProcess({
+              store: this.#store,
+              provider: this.#provider,
+              handle: { processId: record.processId, machineId: record.machineId.value },
+              shouldStop: true,
+            });
+          }
+        }
+      },
+    });
+  }
+
+  async runBrowser({
+    ...input
+  }: typeof SandboxBrowserSubmission.Encoded): Promise<typeof BrowserEvidenceProgress.Encoded> {
+    this.#capacity.requireOwner();
+
+    const submission = Schema.decodeUnknownSync(SandboxBrowserSubmission)(input);
+    const call = this.#store.claimBrowserCall(submission);
+
+    const result = await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+        await this.#touchInteractive();
+
+        return await this.#browserEvidence({ call, shouldDispatch: true });
+      },
+    });
+
+    return Schema.encodeSync(BrowserEvidenceProgress)(result);
+  }
+
+  async observeBrowser({ requestId }: BrowserIdentityInput): Promise<typeof BrowserEvidenceProgress.Encoded> {
+    const decoded = Schema.decodeUnknownSync(BrowserRequestId)(requestId);
+    const call = this.#store.browserCall({ requestId: decoded });
+
+    if (Option.isNone(call)) {
+      const progress = BrowserProgress.cases.Pending.make({
+        reason: 'The browser action has no sandbox receipt yet; this read does not dispatch it',
+      });
+
+      const evidence = Option.none();
+
+      return Schema.encodeSync(BrowserEvidenceProgress)({ progress, evidence });
+    }
+
+    const result = await this.#calls.run({
+      run: () => this.#browserEvidence({ call: call.value, shouldDispatch: false }),
+    });
+
+    return Schema.encodeSync(BrowserEvidenceProgress)(result);
+  }
+
+  async #browserEvidence({ call, shouldDispatch }: BrowserEvidenceInput): Promise<BrowserEvidenceProgress> {
+    const owner = this.#owner();
+    const identity = { ...owner, runId: call.runId, sessionId: call.sessionId, toolCallId: call.toolCallId };
+
+    return await runBrowserWithEvidence({
+      store: this.#store,
+      bucket: this.#workspace.bucket,
+      identity,
+      request: call.request,
+      dispatch: async () => {
+        const current = this.#store.requiredBrowserCall({ requestId: call.request.requestId });
+        const needsReconciliation = Option.exists(current.failure, (failure) => failure.isUncertain);
+
+        if (!shouldDispatch || needsReconciliation) {
+          return await observeBrowser({
+            store: this.#store,
+            provider: this.#provider,
+            requestId: call.request.requestId,
+          });
+        }
+
+        const completed = browserProgress({ call: current });
+
+        if (Option.isSome(completed)) {
+          return completed.value;
+        }
+
+        if (maintenanceActive({ store: this.#store })) {
+          return BrowserProgress.cases.Pending.make({ reason: 'The original browser request is still pending' });
+        }
+
+        const promise = runBrowser({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          requestId: call.request.requestId,
+        });
+
+        const result = await capturePromise({ promise });
+
+        if (Result.isFailure(result)) {
+          const refusal = Schema.decodeUnknownResult(CapacityRefused)(result.failure);
+
+          if (Result.isSuccess(refusal)) {
+            return BrowserProgress.cases.Failed.make({ reason: `Sandbox capacity refused: ${refusal.success.reason}` });
+          }
+        }
+
+        return Result.getOrThrow(result);
+      },
+      readArtifact: ({ machineId, request }) =>
+        readBrowserArtifact({ store: this.#store, provider: this.#provider, machineId, request }),
+    });
+  }
+
+  async readBrowserArtifact({
+    machineId,
+    request,
+  }: BrowserArtifactInput): Promise<typeof SandboxBrowserArtifactAnswer.Encoded> {
+    const decodedMachineId = Schema.decodeUnknownSync(MachineId)(machineId);
+    const decodedRequest = Schema.decodeUnknownSync(BrowserArtifactPartRequest)(request);
+
+    const answer = await this.#calls.run({
+      run: () =>
+        readBrowserArtifact({
+          store: this.#store,
+          provider: this.#provider,
+          machineId: decodedMachineId,
+          request: decodedRequest,
+        }),
+    });
+
+    return Schema.encodeSync(SandboxBrowserArtifactAnswer)(answer);
+  }
+
+  async listEvidence({
+    ...query
+  }: typeof EvidenceQuery.Encoded): Promise<typeof EvidencePage.Encoded | typeof RequestInvalid.Encoded | null> {
+    const decoded = Schema.decodeUnknownSync(EvidenceQuery)(query);
+    const owner = this.#owner();
+    const result = listEvidenceArtifacts({ store: this.#store, ...owner, ...decoded });
+
+    if (Result.isFailure(result)) {
+      return Schema.encodeSync(RequestInvalid)(result.failure);
+    }
+
+    const encode = Schema.encodeSync(EvidencePage);
+
+    return Option.match(result.success, { onNone: () => null, onSome: encode });
+  }
+
+  async showEvidence({ artifactId }: EvidenceIdentityInput): Promise<typeof EvidenceArtifact.Encoded | null> {
+    const decoded = Schema.decodeUnknownSync(EvidenceArtifactId)(artifactId);
+    const owner = this.#owner();
+    const found = readEvidenceArtifact({ store: this.#store, ...owner, artifactId: decoded });
+
+    if (Option.isNone(found)) {
+      return null;
+    }
+
+    await cleanupReadyEvidence({ store: this.#store, bucket: this.#workspace.bucket, artifact: found.value });
+
+    return Schema.encodeSync(EvidenceArtifact)(found.value);
+  }
+
+  async readEvidenceContent({ artifactId, rangeHeader }: EvidenceContentInput): Promise<Response> {
+    const request = Schema.decodeUnknownSync(EvidenceContentRequest)({ artifactId, rangeHeader });
+    const owner = this.#owner();
+
+    return await readEvidenceContent({ store: this.#store, bucket: this.#workspace.bucket, ...owner, ...request });
+  }
+
+  #owner(): SandboxOwner {
+    return this.#capacity.requireOwner();
+  }
+
+  async #touchInteractive(): Promise<void> {
+    const live = this.#store.liveMachine();
+
+    const drain = Option.flatMap(live, ({ id }) => {
+      const machineId = MachineId.make(id);
+
+      return this.#store.machineDrain({ machineId });
+    });
+
+    if (Option.isSome(drain)) {
+      const at = DateTime.nowUnsafe();
+
+      await this.#alarm.arm({ at });
+
+      return;
+    }
+
+    await this.#armIdle();
+  }
+
   async stop(): Promise<void> {
     await this.#calls.run({
       run: async () => {
@@ -218,8 +587,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         const latest = this.#store.latestMachine();
         const now = DateTime.nowUnsafe();
 
-        if (Option.isSome(latest) && Option.isNone(workspace.checkpoint)) {
-          this.#store.loseMachine({ machineId: latest.value.id, now });
+        if (Option.isSome(latest)) {
+          const machineId = MachineId.make(latest.value.id);
+
+          this.#store.requestMachineDrain({ machineId });
         }
 
         await this.#alarm.arm({ at: now });
@@ -314,6 +685,16 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     });
 
     if (!canStop) {
+      const checkpoint = this.#store.workspace().checkpoint;
+
+      if (Option.isSome(checkpoint)) {
+        const retryNow = DateTime.nowUnsafe();
+        const retrySpan = Duration.seconds(1);
+        const retryAt = DateTime.addDuration(retryNow, retrySpan);
+
+        await this.#alarm.arm({ at: retryAt });
+      }
+
       return;
     }
 

@@ -10,7 +10,7 @@ import {
 } from '@mechane-ai/elements/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { MechHeader, MechPagePlaceholder, MechSettings } from '@mechane/console-views';
+import { EvidencePagePlaceholder, MechHeader, MechPagePlaceholder, MechSettings } from '@mechane/console-views';
 import { MechStatus } from '@mechane/protocol';
 import type { ConsoleView, Mech } from '@mechane/protocol';
 import { useRouterState } from '@tanstack/react-router';
@@ -33,6 +33,8 @@ import { ActivityScreen } from './activity.tsx';
 import { ConnectionsScreen } from './connections.tsx';
 import { ConversationScreen } from './conversation.tsx';
 import { EditMechForm } from './edit-mech.tsx';
+import { EnvironmentScreen } from './environment.tsx';
+import { EvidenceScreen } from './evidence.tsx';
 import { MessageForm } from './message.tsx';
 import { selectedTraceTab, TraceScreen } from './trace.tsx';
 import { TurnsScreen } from './turns.tsx';
@@ -47,6 +49,7 @@ const viewLabels: Readonly<Partial<Record<ConsoleView, string>>> = {
   work: 'Work',
   runs: 'Runs',
   memory: 'Memory',
+  environment: 'Environment',
   activity: 'History',
   definition: 'Mech settings',
 };
@@ -81,11 +84,15 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
     <ResourceView
       state={pageState}
       placeholder={
-        <MechPagePlaceholder
-          view={reads.viewRead.view}
-          hasFocusedRun={location.turn !== undefined}
-          traceTab={selectedTraceTab(location)}
-        />
+        location.artifact === undefined ? (
+          <MechPagePlaceholder
+            view={reads.viewRead.view}
+            hasFocusedRun={location.turn !== undefined}
+            traceTab={selectedTraceTab(location)}
+          />
+        ) : (
+          <EvidencePagePlaceholder />
+        )
       }
       label="Loading mech"
       failure={
@@ -165,7 +172,7 @@ function MechDetails({
   const [statusError, setStatusError] = useState<{ readonly status: MechStatus; readonly message: string }>();
 
   const [conversationVisited, setConversationVisited] = useState(
-    view === 'conversation' && location.turn === undefined,
+    view === 'conversation' && location.turn === undefined && location.artifact === undefined,
   );
 
   const isScreenActive = useScreenLifetime();
@@ -180,20 +187,22 @@ function MechDetails({
   const runBack = useRef<HTMLButtonElement>(null);
   const isBusy = pendingStatus !== undefined;
   const hasFocusedRun = location.turn !== undefined;
-  const isEditing = drafts.definition !== undefined && view === 'definition' && !hasFocusedRun;
+  const hasFocusedEvidence = location.artifact !== undefined;
+  const isFocused = hasFocusedRun || hasFocusedEvidence;
+  const isEditing = drafts.definition !== undefined && view === 'definition' && !isFocused;
   const previousRun = useRef(hasFocusedRun);
   const isConversationVisible = view === 'conversation';
-  const isConversationActive = isConversationVisible && !hasFocusedRun && !isEditing;
+  const isConversationActive = isConversationVisible && !isFocused && !isEditing;
   const isPrimaryReady = reads.primary === undefined || reads.primary.kind === 'ready';
   const archiveError = statusError?.status === MechStatus.Archived ? statusError.message : undefined;
   const lifecycleError = statusError?.status === MechStatus.Archived ? undefined : statusError?.message;
 
-  if (isConversationVisible && !hasFocusedRun && !conversationVisited) {
+  if (isConversationVisible && !isFocused && !conversationVisited) {
     setConversationVisited(true);
   }
 
   useLayoutEffect(() => {
-    if (hasFocusedRun || isEditing || !isPrimaryReady) {
+    if (isFocused || isEditing || !isPrimaryReady) {
       return;
     }
 
@@ -211,7 +220,7 @@ function MechDetails({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [consumeReturn, isEditing, isPrimaryReady, entry.consoleReturn, hasFocusedRun, view, reader.position]);
+  }, [consumeReturn, isEditing, isPrimaryReady, entry.consoleReturn, isFocused, view, reader.position]);
 
   useLayoutEffect(() => {
     const isEnteringRun = hasFocusedRun && !previousRun.current;
@@ -266,6 +275,8 @@ function MechDetails({
         return <WorkScreen data={data} pageRead={reads.viewRead.pageRead} />;
       case 'memory':
         return <MemoryScreen data={data} mech={mech} request={reads.viewRead.request} />;
+      case 'environment':
+        return <EnvironmentScreen data={data} request={reads.viewRead.request} isActive={!isFocused && !isEditing} />;
       case 'activity':
         return <ActivityScreen data={data} mechId={mech.id} pageRead={reads.viewRead.pageRead} />;
       case 'definition':
@@ -292,7 +303,7 @@ function MechDetails({
 
   return (
     <ViewStack.Root>
-      <ViewStack.Panel isActive={!hasFocusedRun && !isEditing}>
+      <ViewStack.Panel isActive={!isFocused && !isEditing}>
         <MechHeader
           mech={mech}
           appearance={appearance}
@@ -347,7 +358,7 @@ function MechDetails({
       </ViewStack.Panel>
       {isEditing && <EditMechForm data={data} mech={mech} notice={notice} onClose={drafts.closeDefinition} />}
       {location.turn !== undefined && (
-        <>
+        <ViewStack.Panel isActive={!hasFocusedEvidence}>
           <PageToolbar
             showNavigation={false}
             title={mech.name}
@@ -380,8 +391,23 @@ function MechDetails({
               )}
             </WorkbenchScroll>
           </Workbench>
-        </>
+        </ViewStack.Panel>
       )}
+      {hasFocusedEvidence &&
+        (reads.evidence === undefined ? (
+          <Notice hasError>This evidence ID is invalid.</Notice>
+        ) : (
+          <EvidenceScreen
+            key={location.artifact}
+            data={data}
+            mechId={mech.id}
+            mechName={mech.name}
+            state={reads.evidence}
+            notice={notice}
+            location={location}
+            navigate={navigate}
+          />
+        ))}
     </ViewStack.Root>
   );
 }

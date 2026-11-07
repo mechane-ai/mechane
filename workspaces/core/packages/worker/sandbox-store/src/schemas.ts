@@ -1,4 +1,4 @@
-import { Bytes, renamedWireStruct } from '@mechane/records';
+import { Bytes, MachineId, renamedWireStruct } from '@mechane/records';
 import { ExecutionId } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { ExecutionStatus, MachineStatus } from './constants.ts';
@@ -6,7 +6,7 @@ import { ExecutionStatus, MachineStatus } from './constants.ts';
 /** The machine that may still run: starting, or ready; at most one is. */
 export const LiveMachineRow = renamedWireStruct({
   fields: {
-    id: Schema.String,
+    id: MachineId,
     status: Schema.Literals([MachineStatus.Starting, MachineStatus.Ready]),
     startedAt: Schema.DateTimeUtcFromMillis,
   },
@@ -46,7 +46,7 @@ export const ExecutionRow = Schema.Union([
     fields: {
       ...REQUEST_FIELDS,
       status: Schema.Literal(ExecutionStatus.Dispatched),
-      machineId: Schema.String,
+      machineId: MachineId,
       dispatchedAt: Schema.DateTimeUtcFromMillis,
     },
     renames: { ...REQUEST_RENAMES, dispatchedAt: 'dispatched_at_ms' },
@@ -77,6 +77,6 @@ export const ExecutionRow = Schema.Union([
 export type ExecutionRow = typeof ExecutionRow.Type;
 
 /** A machine's id. */
-export const MachineIdRow = Schema.Struct({ id: Schema.String });
+export const MachineIdRow = Schema.Struct({ id: MachineId });
 
 export type MachineIdRow = typeof MachineIdRow.Type;

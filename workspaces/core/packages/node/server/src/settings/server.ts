@@ -52,7 +52,6 @@ function originSetting({ value, name }: OriginInput): string {
 
 export function loadServerSettings({ runtime }: ServerSettingsInput): ServerSettings {
   const port = integerSetting({ name: 'PORT', fallback: DEFAULT_PORT });
-  const publicOrigin = requiredSetting({ name: 'MECHANE_PUBLIC_ORIGIN' });
   const githubWebOrigin = optionalSetting({ name: 'MECHANE_GITHUB_WEB_ORIGIN', fallback: 'https://github.com' });
   const allowedIdentities = jsonSetting({ name: 'MECHANE_ALLOWED_IDENTITIES', fallback: 'null' });
   const administrators = jsonSetting({ name: 'MECHANE_ADMINISTRATOR_IDENTITIES', fallback: '[]' });
@@ -82,7 +81,7 @@ export function loadServerSettings({ runtime }: ServerSettingsInput): ServerSett
         optionalSetting({ name: 'MECHANE_TRUSTED_PROXY', fallback: 'false' }),
       ) === 'true',
     authentication: {
-      origin: originSetting({ value: publicOrigin, name: 'MECHANE_PUBLIC_ORIGIN' }),
+      origin: runtime.publicOrigin,
       githubClientId: requiredSetting({ name: 'MECHANE_GITHUB_CLIENT_ID' }),
       githubClientSecret: requiredSetting({ name: 'MECHANE_GITHUB_CLIENT_SECRET' }),
       githubWebOrigin: originSetting({ value: githubWebOrigin, name: 'MECHANE_GITHUB_WEB_ORIGIN' }),

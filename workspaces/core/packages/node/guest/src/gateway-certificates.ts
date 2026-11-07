@@ -1,7 +1,6 @@
+import { GATEWAY_CERTIFICATE } from '@mechane/sandbox-wire';
 import { Record } from 'effect';
 import { existsSync } from 'node:fs';
-
-const GATEWAY_CERTIFICATE = '/etc/cloudflare/certs/cloudflare-containers-ca.crt';
 
 const CERTIFICATE_VARIABLES = [
   'GIT_SSL_CAINFO',

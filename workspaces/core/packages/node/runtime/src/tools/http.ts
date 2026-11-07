@@ -1,6 +1,6 @@
 import { TOOL_REQUEST_TIMEOUT_MS, TOOL_RESPONSE_MAX_BYTES } from './constants.ts';
 
-export async function readBoundedJson(response: Response): Promise<unknown> {
+export async function readBoundedJson(response: Response, maximumBytes = TOOL_RESPONSE_MAX_BYTES): Promise<unknown> {
   if (response.body === null) {
     throw new Error('The service returned no response body');
   }
@@ -15,7 +15,7 @@ export async function readBoundedJson(response: Response): Promise<unknown> {
     while (!current.chunk.done) {
       bytes.count += current.chunk.value.byteLength;
 
-      if (bytes.count > TOOL_RESPONSE_MAX_BYTES) {
+      if (bytes.count > maximumBytes) {
         await reader.cancel();
 
         throw new Error('The service response exceeds the tool limit');

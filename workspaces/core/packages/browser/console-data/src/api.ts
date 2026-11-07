@@ -31,6 +31,11 @@ export type ConsoleOperation =
   | 'listSlackBindings'
   | 'listSlackDeliveries'
   | 'listMemories'
+  | 'listEvidence'
+  | 'showEvidence'
+  | 'listEnvironmentProcesses'
+  | 'showEnvironmentProcess'
+  | 'stopEnvironmentProcess'
   | 'showAllowance';
 
 export type Input<N extends ConsoleOperation> = OperationInput<(typeof catalog)[N]>;
@@ -52,10 +57,11 @@ const REMOVED_ACCESS: ReadonlySet<ErrorFamily> = new Set([
 
 const SCOPE_FAILURE_FAMILIES: ReadonlySet<ErrorFamily> = new Set([ErrorFamily.Unauthenticated, ErrorFamily.Forbidden]);
 
-const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope' | 'mech' | 'turn'> = new Map([
+const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope' | 'mech' | 'turn' | 'artifact'> = new Map([
   ['WorkspaceNotFound', 'scope'],
   ['MechNotFound', 'mech'],
   ['TurnNotFound', 'turn'],
+  ['EvidenceNotFound', 'artifact'],
 ]);
 
 const SESSION_CHANGES: ReadonlySet<string> = new Set(['IdentityNotAdmitted', 'WorkspaceNotFound']);
@@ -106,6 +112,10 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (f
 
 /** A safe user-facing explanation that does not expose transport details. */
 export function problemMessage(error: unknown): string {
+  if (error instanceof OperationFailed && error.failure._tag === 'EvidenceNotFound') {
+    return 'This capture is no longer available.';
+  }
+
   if (error instanceof OperationFailed || Schema.is(ConsoleStorageFailed)(error)) {
     return error.message;
   }
@@ -141,7 +151,7 @@ export function canRetainResult(error: unknown): boolean {
 }
 
 /** The smallest confirmed removal boundary; undefined leaves admitted content available. */
-export function readFailureScope(error: unknown): 'scope' | 'mech' | 'turn' | 'request' | undefined {
+export function readFailureScope(error: unknown): 'scope' | 'mech' | 'turn' | 'artifact' | 'request' | undefined {
   if (!(error instanceof OperationFailed)) {
     return undefined;
   }

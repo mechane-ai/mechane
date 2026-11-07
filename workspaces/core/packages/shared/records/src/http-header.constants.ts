@@ -1,12 +1,15 @@
 /** The header names Mechane sends and reads, in the lower case `Headers` stores them in. */
 export const HttpHeader = {
   Accept: 'accept',
+  AcceptRanges: 'accept-ranges',
   AcceptEncoding: 'accept-encoding',
   Authorization: 'authorization',
   CacheControl: 'cache-control',
   // Cloudflare's edge names the client's address in it, which no client can set there; celld sets it on no request.
   ConnectingIp: 'cf-connecting-ip',
   ContentLength: 'content-length',
+  ContentRange: 'content-range',
+  ContentDisposition: 'content-disposition',
   ContentSecurityPolicy: 'content-security-policy',
   ContentType: 'content-type',
   CrossOriginEmbedderPolicy: 'cross-origin-embedder-policy',
@@ -23,6 +26,7 @@ export const HttpHeader = {
   NexusEventSignature: 'x-nexus-event-signature',
   Origin: 'origin',
   ProxyAuthorization: 'proxy-authorization',
+  Range: 'range',
   Referer: 'referer',
   ReferrerPolicy: 'referrer-policy',
   Refresh: 'refresh',

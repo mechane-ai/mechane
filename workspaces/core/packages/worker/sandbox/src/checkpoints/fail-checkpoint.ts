@@ -1,4 +1,5 @@
-import { ExecutionStatus, FileCheckpointResult } from '@mechane/sandbox-store';
+import { MachineId } from '@mechane/records';
+import { ExecutionStatus, FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { DateTime, Option, Schema } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { CheckpointStepInput } from './types.ts';
@@ -30,6 +31,12 @@ export function failCheckpoint({ store, checkpoint, cause }: FailedCheckpointInp
       const result = FileCheckpointResult.cases.Failed.make({ reason });
 
       store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
+
+      if (FileCheckpointPurpose.guards.Drain(checkpoint.purpose)) {
+        const identity = MachineId.make(machineId);
+
+        store.clearMachineDrain({ machineId: identity });
+      }
     }
 
     store.recoverWorkspace({ generation, machineId, reason });

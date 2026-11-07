@@ -1,0 +1,9 @@
+id: browser-stored-name-outside-store
+language: TypeScript
+severity: error
+message: 'Read and write browser receipts and media through their store, such as `readBrowserArtifact({ settings, artifactId })` (DO-06)'
+files: [packages/node/browser/src/**/*.ts]
+ignores: [packages/node/browser/src/store/**]
+rule:
+  kind: string_fragment
+  regex: ^(requests|artifacts|recordings|native\.mp4|video\.mp4|\.json|\.partial|\.preview\.jpg|\.png|\.jpg|\.mp4)$

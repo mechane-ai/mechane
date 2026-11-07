@@ -1,9 +1,13 @@
 import type { Mech } from '@mechane/protocol';
 import {
   Allowance,
+  ConversationSession,
+  EvidenceArtifact,
   ListedEvent,
   MechSummary,
   Memory,
+  ProcessObservation,
+  ProcessSummary,
   SlackBinding,
   SlackDelivery,
   Thread,
@@ -11,7 +15,7 @@ import {
   Turn,
   TurnStatus,
 } from '@mechane/protocol';
-import { MechId, WorkspaceId } from '@mechane/records';
+import { MechId, RecordId, WorkspaceId } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { deleteRows, upsertRows } from './collections.ts';
@@ -26,9 +30,14 @@ type ReadOutputs = {
   readonly mechs: Output<'listMechs'>;
   readonly mech: Output<'showMech'>;
   readonly threads: Output<'listThreads'>;
+  readonly sessions: Output<'listSessions'>;
   readonly memories: Output<'listMemories'>;
   readonly turns: Output<'listTurns'>;
   readonly trace: Output<'showTurn'>;
+  readonly evidence: Output<'listEvidence'>;
+  readonly evidenceArtifact: Output<'showEvidence'>;
+  readonly environmentProcesses: Output<'listEnvironmentProcesses'>;
+  readonly environmentProcess: Output<'showEnvironmentProcess'>;
   readonly turnEvents: Output<'listTurnEvents'>;
   readonly events: Output<'listRecentEvents'>;
   readonly slackBindings: Output<'listSlackBindings'>;
@@ -76,6 +85,20 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
           signal,
         ),
       };
+    case 'sessions':
+      return {
+        kind: request.kind,
+        request,
+        output: await api(
+          'listSessions',
+          {
+            workspaceId,
+            mechId: request.mechId,
+            after: request.after === null ? Option.none() : Option.some(RecordId.make(request.after)),
+          },
+          signal,
+        ),
+      };
     case 'memories':
       return {
         kind: request.kind,
@@ -116,6 +139,43 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
           },
           signal,
         ),
+      };
+    case 'evidence':
+      return {
+        kind: request.kind,
+        request,
+        output: await api(
+          'listEvidence',
+          {
+            workspaceId,
+            mechId: request.mechId,
+            turnId: Option.some(request.turnId),
+            after: Option.fromNullishOr(request.after),
+          },
+          signal,
+        ),
+      };
+    case 'evidenceArtifact':
+      return {
+        kind: request.kind,
+        request,
+        output: await api(
+          'showEvidence',
+          { workspaceId: WorkspaceId.make(workspaceId), mechId: request.mechId, artifactId: request.artifactId },
+          signal,
+        ),
+      };
+    case 'environmentProcesses':
+      return {
+        kind: request.kind,
+        request,
+        output: await api('listEnvironmentProcesses', { workspaceId, mechId: request.mechId }, signal),
+      };
+    case 'environmentProcess':
+      return {
+        kind: request.kind,
+        request,
+        output: await api('showEnvironmentProcess', { workspaceId, mechId: request.mechId, ...request.handle }, signal),
       };
     case 'events':
       return {
@@ -288,6 +348,31 @@ export async function applyRead({
 
       return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
     }
+    case 'sessions': {
+      const mechId = answer.request.mechId;
+
+      const rows = answer.output.sessions.map((session) => ({
+        mechId,
+        key: recordKey(mechId, session.id),
+        value: Schema.encodeSync(ConversationSession)(session),
+      }));
+
+      await writeRows({
+        signal,
+        collections: [tables.sessions],
+        write: () => {
+          for (const row of rows) {
+            const previous = tables.sessions.get(row.key);
+
+            if (previous === undefined || previous.value.updated_at <= row.value.updated_at) {
+              upsertRows(tables.sessions, [row]);
+            }
+          }
+        },
+      });
+
+      return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
+    }
     case 'memories': {
       const mechId = answer.request.mechId;
 
@@ -390,6 +475,78 @@ export async function applyRead({
       await writeRows({ signal, collections: [tables.events], write: () => upsertRows(tables.events, rows) });
 
       return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
+    }
+    case 'evidence':
+    case 'evidenceArtifact': {
+      const mechId = answer.request.mechId;
+      const artifacts = answer.kind === 'evidence' ? answer.output.artifacts : [answer.output];
+
+      const rows = artifacts.map((artifact) => ({
+        mechId,
+        key: recordKey(mechId, artifact.artifactId),
+        value: Schema.encodeSync(EvidenceArtifact)(artifact),
+      }));
+
+      await writeRows({
+        signal,
+        collections: [tables.evidenceArtifacts],
+        write: () => {
+          for (const row of rows) {
+            const previous = tables.evidenceArtifacts.get(row.key);
+
+            if (previous === undefined || previous.value.status === 'pending') {
+              upsertRows(tables.evidenceArtifacts, [row]);
+            }
+          }
+        },
+      });
+
+      return {
+        ...receipt,
+        keys: rows.map((row) => row.key),
+        hasMore: answer.kind === 'evidence' ? answer.output.hasMore : null,
+      };
+    }
+    case 'environmentProcesses': {
+      const mechId = answer.request.mechId;
+
+      const rows = answer.output.map((process) => {
+        const identity = JSON.stringify([process.handle.machineId, process.handle.processId]);
+
+        return { mechId, key: recordKey(mechId, identity), value: Schema.encodeSync(ProcessSummary)(process) };
+      });
+
+      const keys = new Set(rows.map((row) => row.key));
+
+      await writeRows({
+        signal,
+        collections: [tables.environmentProcesses],
+        write: () => {
+          const removed = [...tables.environmentProcesses.values()]
+            .filter((row) => row.mechId === mechId && !keys.has(row.key))
+            .map((row) => row.key);
+
+          deleteRows(tables.environmentProcesses, removed);
+          upsertRows(tables.environmentProcesses, rows);
+        },
+      });
+
+      return { ...receipt, keys: rows.map((row) => row.key), hasMore: null };
+    }
+    case 'environmentProcess': {
+      const mechId = answer.request.mechId;
+      const { handle } = answer.output;
+      const identity = JSON.stringify([handle.machineId, handle.processId]);
+      const key = recordKey(mechId, identity);
+      const row = { mechId, key, value: Schema.encodeSync(ProcessObservation)(answer.output) };
+
+      await writeRows({
+        signal,
+        collections: [tables.environmentProcessDetails],
+        write: () => upsertRows(tables.environmentProcessDetails, [row]),
+      });
+
+      return { ...receipt, keys: [key], hasMore: null };
     }
     case 'slackBindings': {
       const rows = answer.output.bindings.map((binding) => ({

@@ -1,11 +1,12 @@
 import { decodeRequestPart } from '@mechane/protocol';
 import type { RequestInvalid, RouteNotFound } from '@mechane/protocol';
 import { HttpMethod, RecordId } from '@mechane/records';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { ArchiveMode, WorkspaceArchiveRequest, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import type { IncomingMessage } from 'node:http';
 import type { WorkspaceFailed } from '../errors.ts';
 import type { ServedAnswer, WorkspaceJournal } from '../types.ts';
+import { readWorkspaceBody } from './read-workspace-body.ts';
 
 type RouteWorkspaceInput = {
   readonly request: IncomingMessage;
@@ -27,6 +28,7 @@ const WorkspaceRequestRoute = Schema.Union([WorkspaceRoute, WorkspacePartRoute])
 
 const WORKSPACE_METHODS: Readonly<Record<WorkspaceStep, ReadonlySet<string>>> = {
   [WorkspaceStep.Archive]: new Set([HttpMethod.Put]),
+  [WorkspaceStep.Checkpoint]: new Set([HttpMethod.Put]),
   [WorkspaceStep.Restore]: new Set([HttpMethod.Put]),
   [WorkspaceStep.Release]: new Set([HttpMethod.Delete]),
   [WorkspaceStep.Part]: new Set([HttpMethod.Get, HttpMethod.Put]),
@@ -47,5 +49,14 @@ export const routeWorkspace = Effect.fn('routeWorkspace')(function* ({
     return yield* notFound;
   }
 
-  return yield* workspace.answer({ generation, step, part, request });
+  if (step === WorkspaceStep.Checkpoint) {
+    const body = yield* readWorkspaceBody({ generation, step, part, request, archiveMode: ArchiveMode.Snapshot });
+    const schema = Schema.fromJsonString(WorkspaceArchiveRequest);
+    const value = body.toString('utf8');
+    const archive = yield* decodeRequestPart({ schema, value });
+
+    return yield* workspace.answer({ generation, step, part, request, archiveMode: archive.mode });
+  }
+
+  return yield* workspace.answer({ generation, step, part, request, archiveMode: ArchiveMode.Snapshot });
 });

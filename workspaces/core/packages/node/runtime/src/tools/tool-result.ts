@@ -1,4 +1,5 @@
 import { HttpMethod } from '@mechane/records';
+import type { ExecutionReceipt } from '../domain.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { TOOL_MODEL_RESULT_MAX_BYTES, TOOL_RESULT_CHUNK_CHARACTERS } from './constants.ts';
 import { requestSandboxExecution } from './sandbox-client.ts';
@@ -61,13 +62,17 @@ export async function readToolResult(input: ReadToolResult) {
 
 type RetainedResultInput = {
   readonly input: ReadToolResult;
-  readonly kind: 'sandbox' | 'mcp';
+  readonly kind: ExecutionReceipt['kind'];
   readonly result: Readonly<Record<string, unknown>>;
 };
 
 async function retainedResult({ input, kind, result }: RetainedResultInput): Promise<string | undefined> {
   if (kind === 'mcp') {
     return JSON.stringify(result['output']);
+  }
+
+  if (kind !== 'sandbox') {
+    return JSON.stringify(result);
   }
 
   const progress = await requestSandboxExecution({ ...input, method: HttpMethod.Get, waitMs: 0 });

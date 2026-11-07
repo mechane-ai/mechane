@@ -1,5 +1,6 @@
 import type { HttpStatusCode, RecordId } from '@mechane/records';
 import type {
+  ArchiveMode,
   ExecutionId,
   ExecutionReceipt,
   ExecutionRequest,
@@ -12,7 +13,7 @@ import type { ExecutionUnstarted, GuestMisconfigured, GuestUnreachable, Workspac
 import type { GuestEnvironment } from './schemas.ts';
 
 /** What the guest reads from its environment, and its working folder, the home every execution starts in. */
-export type GuestSettings = GuestEnvironment & { readonly home: string };
+export type GuestSettings = GuestEnvironment & { readonly home: string; readonly toolTarget: string };
 
 /** An execution to answer: its id, what it runs, and how long the answer waits for it to settle. */
 export type AnswerInput = {
@@ -30,6 +31,9 @@ export type ExecutionLedger = {
   readonly answer: (input: AnswerInput) => Effect.Effect<ExecutionReceipt>;
   readonly quiesce: () => boolean;
   readonly resume: () => void;
+  readonly isFrozen: () => boolean;
+  readonly admitProcess: () => boolean;
+  readonly finishProcessStart: () => void;
 };
 
 /** One request to answer, and its response. */
@@ -61,6 +65,7 @@ export type WorkspaceRequest = {
   readonly step: WorkspaceStep;
   readonly part: number;
   readonly request: IncomingMessage;
+  readonly archiveMode: ArchiveMode;
 };
 
 /** The guest journal that keeps archive and restore jobs alive between HTTP polls. */

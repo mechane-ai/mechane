@@ -5,6 +5,7 @@ export const MediaType = {
   Css: 'text/css; charset=utf-8',
   Svg: 'image/svg+xml',
   Png: 'image/png',
+  Mp4: 'video/mp4',
   Jpeg: 'image/jpeg',
   Gif: 'image/gif',
   Webp: 'image/webp',

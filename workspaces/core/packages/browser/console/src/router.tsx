@@ -11,6 +11,8 @@ declare module '@tanstack/react-router' {
     readonly consolePages?: Partial<PageCursors>;
     readonly consoleReturn?: { readonly row: string; readonly positions: ReadonlyArray<ReaderPosition> };
     readonly consoleRunOrigin?: ConsoleLocation;
+    readonly consoleEvidenceOrigin?: ConsoleLocation;
+    readonly consoleEvidenceReturn?: { readonly artifact: string; readonly positions: ReadonlyArray<ReaderPosition> };
   }
 
   interface Register {

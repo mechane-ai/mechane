@@ -214,4 +214,15 @@ CREATE TABLE mechane.audit_events (
 );
 `,
   },
+  {
+    version: 2,
+    sql: `
+ALTER TABLE mechane.execution_receipts DROP CONSTRAINT execution_receipts_kind_check;
+ALTER TABLE mechane.execution_receipts ADD CONSTRAINT execution_receipts_kind_check
+  CHECK(kind IN ('sandbox','mcp','process','browser'));
+ALTER TABLE mechane.execution_receipts ADD COLUMN request jsonb;
+ALTER TABLE mechane.execution_receipts ADD CONSTRAINT execution_receipts_interactive_request_check
+  CHECK(kind NOT IN ('process','browser') OR request IS NOT NULL);
+`,
+  },
 ] as const;

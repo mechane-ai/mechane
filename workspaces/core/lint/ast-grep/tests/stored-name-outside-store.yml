@@ -4,3 +4,4 @@ valid:
   - "const path = 'notes.json';"
 invalid:
   - "const path = 'credentials.json';"
+  - "const query = 'SELECT * FROM managed_processes';"

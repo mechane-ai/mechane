@@ -1,10 +1,14 @@
+import { MachineId } from '@mechane/records';
 import { decodeFirst } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
-import { DateTime } from 'effect';
-import type { Option } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
+import { browserRecords } from '../browser/browser-records.ts';
 import { ExecutionStatus, MachineStatus } from '../constants.ts';
+import { processRecords } from '../processes/process-records.ts';
 import { LiveMachineRow, MachineIdRow } from '../schemas.ts';
 import type { FailMachineInput, MachineRecords, MachineTimeInput } from '../types.ts';
+
+const InteractiveMachineRow = Schema.Struct({ id: MachineId });
 
 /** The sandbox's machines on its object's SQL storage. */
 export function machineRecords({ sql }: RecordsInput): MachineRecords {
@@ -81,6 +85,17 @@ function failMachine({ sql, machineId, startupDeadline, now }: SqlCall<FailMachi
 }
 
 function endMachine({ sql, machineId, now }: SqlCall<MachineTimeInput>): void {
+  const cursor = sql.exec('SELECT id FROM machines WHERE id = ?', machineId);
+  const machine = decodeFirst({ cursor, schema: InteractiveMachineRow });
+
+  if (Option.isSome(machine)) {
+    const processes = processRecords({ sql });
+    const browser = browserRecords({ sql });
+
+    processes.loseMachineProcesses({ machineId: machine.value.id });
+    browser.loseMachineBrowserCalls({ machineId: machine.value.id });
+  }
+
   sql.exec(
     'UPDATE machines SET status = ?, ended_at_ms = ? WHERE id = ? AND status <> ?',
     MachineStatus.Ended,

@@ -1,7 +1,9 @@
 # @mechane/console-data
 
 The browser data owner for an admitted origin, principal, and workspace. It exposes native TanStack DB collections,
-fixed read descriptors, and named API commands. The Console owns React queries, route state, and drafts.
+fixed read descriptors, and named API commands. Session catalogue metadata is canonical data. Native AI SDK Chat owns
+transcript history and streaming through the admitted conversation API; those messages do not enter canonical domain
+collections. The Console owns React queries, route state, and drafts.
 
 Call `createConsoleData` with the expected principal, workspace, current route's `initialRequests`, and an
 `AbortSignal`. Every runtime confirms the principal and workspace membership through the server before opening
@@ -39,3 +41,20 @@ Console throughout.
 The [console boundaries](../../../.contracts/113-console-boundaries/CONTRACT.md) and
 [cache lifecycle](../../../.contracts/119-console-cache-lifecycle/CONTRACT.md) contracts define persistence, membership,
 and cleanup guarantees.
+
+Evidence list and artifact reads keep their metadata in `evidenceArtifacts` with exact read receipts. Media bytes are
+read separately through the authenticated content route; they do not enter the browser's canonical record cache. Pending
+and failed captures remain records, and only ready artifacts have readable media. A confirmed missing artifact fences
+its detail and the mech’s capture-page reads before removing the canonical row and page receipts. Peers receive the
+artifact identity and perform the same invalidation; explicit retry waits for the purge.
+
+Managed process summaries use `environmentProcesses`, keyed by mech, machine, and process identity. Each list replaces
+that mech's active and recent membership; omission does not establish that an older process never existed. Bounded logs
+use `environmentProcessDetails` and are fetched only for opened handles. Stop commands target the recorded machine and
+refresh its summary and detail reads; a stale handle cannot stop a replacement machine.
+
+## Extending the Console
+
+Use the [screen guide](../../../docs/console.md#adding-a-screen-or-feature) for the data ownership decision and
+implementation path. Every new ordinary resource, report, and picker uses the same records, receipt, and live-read
+owners. Fresh admission and native chat are explicit protocol exceptions, not alternate general-purpose data APIs.

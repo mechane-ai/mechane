@@ -3,6 +3,8 @@ import type { ServerFailure } from './server-failure.errors.ts';
 
 /** The family of each failure the server answers with; the failure's tag is its code. */
 export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>> = {
+  EvidenceNotFound: ErrorFamily.NotFound,
+  EvidenceUnavailable: ErrorFamily.Unavailable,
   ReleaseSourceUnavailable: ErrorFamily.Unavailable,
   CredentialAlreadyExists: ErrorFamily.Conflict,
   IdentityNotAdmitted: ErrorFamily.Forbidden,

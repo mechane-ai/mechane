@@ -47,7 +47,9 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   }
 
   if (state.kind === 'signed-out') {
-    return <Welcome />;
+    return (
+      <Welcome returnTo={`${globalThis.location.pathname}${globalThis.location.search}${globalThis.location.hash}`} />
+    );
   }
 
   if (state.kind === 'failed') {

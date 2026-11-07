@@ -9,7 +9,8 @@ import { advanceRunVersion } from './run-version.ts';
 const ReceiptRow = Schema.Struct({
   id: Schema.String,
   run_id: Schema.String,
-  kind: Schema.Literals(['sandbox', 'mcp']),
+  kind: Schema.Literals(['sandbox', 'mcp', 'process', 'browser']),
+  request: Schema.NullOr(Schema.Record(Schema.String, Schema.Unknown)),
   status: Schema.Literals(['pending', 'running', 'completed', 'uncertain', 'failed']),
   provider_id: Schema.NullOr(Schema.String),
   result: Schema.NullOr(Schema.Record(Schema.String, Schema.Unknown)),
@@ -18,7 +19,12 @@ const ReceiptRow = Schema.Struct({
 });
 
 const TERMINAL_STATES: ReadonlySet<ExecutionReceipt['status']> = new Set(['completed', 'failed']);
-type BeginExecutionInput = { readonly id: string; readonly runId: string; readonly kind: ExecutionReceipt['kind'] };
+
+type BeginExecutionInput = { readonly id: string; readonly runId: string } & (
+  | { readonly kind: 'process' | 'browser'; readonly request: Readonly<Record<string, unknown>> }
+  | { readonly kind: 'sandbox' | 'mcp'; readonly request?: never }
+);
+
 type ExecutionAdmission = { readonly receipt: ExecutionReceipt; readonly wasCreated: boolean };
 type GetExecutionInput = { readonly id: string; readonly workspaceId: string; readonly mechId: string };
 type ListRunExecutionsInput = { readonly runId: string; readonly workspaceId: string };
@@ -38,6 +44,7 @@ function readReceipt(value: unknown): ExecutionReceipt {
     id: row.id,
     runId: row.run_id,
     kind: row.kind,
+    request: row.request,
     status: row.status,
     providerId: row.provider_id,
     result: row.result,
@@ -70,16 +77,17 @@ export function createExecutionReceiptStore(context: StoreContext) {
   return {
     beginExecution: async (input: BeginExecutionInput): Promise<ExecutionAdmission> => {
       const { id, runId, kind } = input;
+      const request = input.request ?? null;
 
       return await withRunMutation({
         context,
         scope: input,
         mutation: async ({ client }) => {
           const created = await client.query(
-            `INSERT INTO mechane.execution_receipts(id,run_id,kind,status)
-           SELECT $1,id,$3,'pending' FROM mechane.runs WHERE id=$2 AND status='running' AND cancel_requested_at IS NULL
+            `INSERT INTO mechane.execution_receipts(id,run_id,kind,status,request)
+           SELECT $1,id,$3,'pending',$4 FROM mechane.runs WHERE id=$2 AND status='running' AND cancel_requested_at IS NULL
            ON CONFLICT(id) DO NOTHING RETURNING *`,
-            [id, runId, kind],
+            [id, runId, kind, request],
           );
 
           if (created.rows.length > 0) {
@@ -98,6 +106,10 @@ export function createExecutionReceiptStore(context: StoreContext) {
 
           if (receipt.runId !== runId || receipt.kind !== kind) {
             throw new StoreConflict('Execution belongs to another run');
+          }
+
+          if (!isDeepStrictEqual(receipt.request, request)) {
+            throw new StoreConflict('Execution request is already bound to another payload');
           }
 
           return { receipt, wasCreated: false };

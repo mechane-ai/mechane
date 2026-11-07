@@ -1,4 +1,4 @@
-import { RecordId, RecordText, SandboxOperationId } from '@mechane/records';
+import { MachineId, RecordId, RecordText, SandboxOperationId } from '@mechane/records';
 import { ExecutionId, ExecutionProgress, SandboxArchive, SettledReceipt } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
@@ -35,7 +35,10 @@ export const CommandCheckpoint = Schema.Struct({
 export type CommandCheckpoint = typeof CommandCheckpoint.Type;
 
 /** Why a file checkpoint exists; none of these operations executes a shell command. */
-export const FileCheckpointPurpose = Schema.TaggedUnion({ Maintenance: { operationId: SandboxOperationId } });
+export const FileCheckpointPurpose = Schema.TaggedUnion({
+  Maintenance: { operationId: SandboxOperationId },
+  Drain: { operationId: SandboxOperationId, machineId: MachineId },
+});
 
 export type FileCheckpointPurpose = typeof FileCheckpointPurpose.Type;
 

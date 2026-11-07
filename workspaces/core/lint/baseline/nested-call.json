@@ -125,7 +125,6 @@
   "packages/node/eval/src/trial/unsaved-turns.ts": 1,
   "packages/node/guest/src/answer-next-exchange.ts": 1,
   "packages/node/guest/src/executions/output-tail.ts": 5,
-  "packages/node/guest/src/executions/read-execution-body.ts": 4,
   "packages/node/guest/src/executions/route-execution.ts": 2,
   "packages/node/guest/src/executions/run-execution.ts": 2,
   "packages/node/guest/src/executions/settled-receipts.ts": 7,

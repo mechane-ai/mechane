@@ -12,6 +12,8 @@ import {
 import type { SandboxExecutionResult } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { authenticate } from './authenticate.ts';
+import { serveEvidence } from './evidence-route.ts';
+import { serveInteractive } from './interactive-route.ts';
 import { InvalidSandboxRequestError, readBody } from './read-body.ts';
 import { sandboxStub } from './settings.ts';
 import type { ServiceEnvironment } from './settings.ts';
@@ -19,6 +21,7 @@ import type { ServiceEnvironment } from './settings.ts';
 type ServeInput = { readonly request: Request; readonly environment: ServiceEnvironment };
 type Stub = DurableObjectStub<SandboxObject>;
 const ROUTE_PREFIX_SEGMENTS = 3;
+const INTERACTIVE_RESOURCES: ReadonlySet<string> = new Set(['processes', 'browser', 'runs']);
 
 type ExecutionRoute = {
   readonly request: Request;
@@ -59,6 +62,14 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
   const stub = sandboxStub({ environment, identity });
 
   await stub.bindOwner({ owner: identity });
+
+  if (resource !== undefined && INTERACTIVE_RESOURCES.has(resource)) {
+    return await serveInteractive({ request, stub, url, resource, identity: executionId, action });
+  }
+
+  if (resource === 'evidence') {
+    return await serveEvidence({ request, stub, url, artifactId: executionId, action });
+  }
 
   if (resource === 'executions' && executionId !== undefined) {
     const decoded = Schema.decodeUnknownSync(SandboxExecutionIdentity)({

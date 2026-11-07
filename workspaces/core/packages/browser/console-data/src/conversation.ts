@@ -1,9 +1,8 @@
-import { HttpStatusCode, MechId, RecordId, WorkspaceId } from '@mechane/records';
+import { HttpStatusCode } from '@mechane/records';
 import { validateUIMessages } from 'ai';
 import type { UIMessage } from 'ai';
-import { Duration, Option } from 'effect';
+import { Duration } from 'effect';
 import { z } from 'zod';
-import type { ConsoleApi } from './api.ts';
 
 const HISTORY_TIMEOUT = Duration.seconds(40);
 const HISTORY_MAX_MESSAGES = 100;
@@ -39,12 +38,11 @@ type CreateConversationApi = {
   readonly origin: URL;
   readonly workspaceId: string;
   readonly signal: AbortSignal;
-  readonly api: ConsoleApi;
   readonly onAccessLost: () => void;
 };
 
 /** Native Chat uses same-origin credentials and the admitted workspace's abort lifetime. */
-export function createConversationApi({ origin, workspaceId, signal, api, onAccessLost }: CreateConversationApi) {
+export function createConversationApi({ origin, workspaceId, signal, onAccessLost }: CreateConversationApi) {
   const endpoint = new URL('/api/chat', origin).href;
 
   const scopedFetch: typeof fetch = async (input, init) => {
@@ -99,17 +97,6 @@ export function createConversationApi({ origin, workspaceId, signal, api, onAcce
       lifetime.throwIfAborted();
 
       return { ...envelope, messages };
-    },
-    async sessions(mechId: string, lifetime: AbortSignal, after?: string) {
-      return await api(
-        'listSessions',
-        {
-          workspaceId: WorkspaceId.make(workspaceId),
-          mechId: MechId.make(mechId),
-          after: after === undefined ? Option.none() : Option.some(RecordId.make(after)),
-        },
-        lifetime,
-      );
     },
   };
 }

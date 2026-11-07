@@ -1,6 +1,10 @@
 import { RequestInvalid } from '@mechane/protocol';
+import { Bytes, BYTES_PER_MEBIBYTE } from '@mechane/records';
 import { Effect } from 'effect';
 import type { IncomingMessage } from 'node:http';
+import { readGuestBody } from '../read-guest-body.ts';
+
+const EXECUTION_REQUEST_MAX_BYTES = BYTES_PER_MEBIBYTE;
 
 type ReadExecutionBodyInput = { readonly request: IncomingMessage };
 
@@ -8,20 +12,14 @@ type ReadExecutionBodyInput = { readonly request: IncomingMessage };
 export const readExecutionBody = Effect.fn('readExecutionBody')(function* ({
   request,
 }: ReadExecutionBodyInput): Effect.fn.Return<string, RequestInvalid> {
-  return yield* Effect.callback<string, RequestInvalid>((resume) => {
-    const chunks: Array<Buffer> = [];
+  const maximumBytes = Bytes.make(EXECUTION_REQUEST_MAX_BYTES);
 
-    const keepChunk: (chunk: Buffer) => void = (chunk) => {
-      chunks.push(chunk);
-    };
-
-    const settle: () => void = () => resume(Effect.succeed(Buffer.concat(chunks).toString('utf8')));
-
-    const refuse: (error: Error) => void = (error) =>
-      resume(Effect.fail(new RequestInvalid({ reason: error.message })));
-
-    request.on('data', keepChunk);
-    request.on('end', settle);
-    request.on('error', refuse);
+  const body = yield* readGuestBody({
+    request,
+    maximumBytes,
+    onLimit: () => new RequestInvalid({ reason: 'execution request exceeds its byte limit' }),
+    onError: (error) => new RequestInvalid({ reason: error.message }),
   });
+
+  return body.toString('utf8');
 });

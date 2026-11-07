@@ -106,6 +106,10 @@ cleanup. Temporary qualification probes stay outside tracked source under the ex
 
 ## Local adaptations
 
+Evidence collections contain admitted canonical metadata and page membership. Media bytes and private viewer access
+are fetched through the authenticated route; a cached URL or metadata record is not an authorization grant. Process
+summaries use passive reads, and detailed logs load only for an explicitly selected handle.
+
 Native async error handling is confined to `console-cache/src/store/storage.ts`. Its catches own storage health,
 retirement, and cleanup. They neither run Effects nor hide failed server commands. Contract 046 permits forwarding the
 native database's unchanged SQL and parameters solely for lifecycle checks. That guard retires only its own lifecycle

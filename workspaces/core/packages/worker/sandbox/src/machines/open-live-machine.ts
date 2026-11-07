@@ -1,4 +1,4 @@
-import { RecordId } from '@mechane/records';
+import { MachineId } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
 import type { LiveMachineRow } from '@mechane/sandbox-store';
 import { DateTime, Option } from 'effect';
@@ -9,7 +9,7 @@ import type { ProviderStepInput } from '../types.ts';
  * A starting identity retries its idempotent provider start, including admission interrupted before acknowledgement.
  */
 export async function openLiveMachine({ store, provider }: ProviderStepInput): Promise<LiveMachineRow> {
-  const machineId = RecordId.make(crypto.randomUUID());
+  const machineId = MachineId.make(crypto.randomUUID());
 
   const openMachine: () => LiveMachineRow = () => {
     const live = store.liveMachine();

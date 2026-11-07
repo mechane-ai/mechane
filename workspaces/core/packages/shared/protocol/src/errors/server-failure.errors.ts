@@ -23,6 +23,7 @@ import {
   WorkspaceOwnerRequired,
   WorkspaceSuspended,
 } from './errors.ts';
+import { EvidenceNotFound, EvidenceUnavailable } from './evidence.errors.ts';
 import {
   MechArchived,
   MechCreationConflict,
@@ -47,6 +48,8 @@ import {
 
 /** Every failure the server answers with; a client decodes a code it knows into the failure with its fields. */
 export const ServerFailure = Schema.Union([
+  EvidenceNotFound,
+  EvidenceUnavailable,
   ReleaseSourceUnavailable,
   CredentialAlreadyExists,
   IdentityNotAdmitted,

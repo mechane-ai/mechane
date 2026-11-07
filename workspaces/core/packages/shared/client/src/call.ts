@@ -5,6 +5,7 @@ import { Effect, Schema } from 'effect';
 import type { Duration, Option } from 'effect';
 import { answerWithin } from './answer-within.ts';
 import { decodeAnswer } from './decode-answer.ts';
+import { decodeMediaAnswer } from './decode-media-answer.ts';
 import { requestInit } from './request-init.ts';
 import { requestUrl } from './request-url.ts';
 import type { CallRequest, ClientFailure } from './types.ts';
@@ -44,6 +45,23 @@ export const call = Effect.fn('call')(function* <N extends OperationName>({
   const body = Schema.encodeSync(operation.body)(input);
   const url = requestUrl({ origin, path: operation.path, params, query });
   const init = requestInit({ method: operation.method, body, credential, userAgent });
+
+  if ('response' in operation) {
+    return yield* answerWithin({
+      url,
+      init,
+      timeout,
+      read: (response) =>
+        decodeMediaAnswer({
+          output: operation.output,
+          mediaType: operation.response.mediaType,
+          failures,
+          response,
+          url,
+          maxResponseBytes,
+        }),
+    });
+  }
 
   return yield* answerWithin({
     url,

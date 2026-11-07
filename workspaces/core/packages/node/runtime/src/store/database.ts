@@ -27,8 +27,33 @@ const CONNECTION_TIMEOUT_MILLISECONDS = 10_000;
 const IDLE_TIMEOUT_MILLISECONDS = 30_000;
 const MIGRATION_LOCK = 1_823_944_617;
 const MigrationRow = Schema.Struct({ version: Schema.Number, checksum: Schema.String });
+type MigrationRow = typeof MigrationRow.Type;
 type DatabaseInput = { readonly databaseUrl: string };
 type OpenStoreInput = DatabaseInput & { readonly keyring: CredentialKeyring; readonly maxConnections?: number };
+
+function validateAppliedMigrations(applied: ReadonlyArray<MigrationRow>): void {
+  for (const [index, migration] of DOMAIN_MIGRATIONS.entries()) {
+    if (migration.version !== index + 1) {
+      throw new Error('Release database migrations are not contiguous');
+    }
+  }
+
+  for (const [index, recorded] of applied.entries()) {
+    if (recorded.version !== index + 1) {
+      throw new Error('Database migration history is not contiguous');
+    }
+
+    const migration = DOMAIN_MIGRATIONS[index];
+
+    if (migration !== undefined) {
+      const checksum = createHash('sha256').update(migration.sql).digest('hex');
+
+      if (recorded.checksum !== checksum) {
+        throw new Error('An applied database migration changed');
+      }
+    }
+  }
+}
 
 function safeInteger(value: string): number {
   const number = Number(value);
@@ -102,19 +127,13 @@ function createRuntimeRecords(context: StoreContext, keyring: CredentialKeyring)
 
       const applied = Schema.decodeUnknownSync(Schema.Array(MigrationRow))(result.rows);
 
-      if (applied.length !== DOMAIN_MIGRATIONS.length) {
-        throw new Error('The database schema does not match this release');
+      validateAppliedMigrations(applied);
+
+      if (applied.length < DOMAIN_MIGRATIONS.length) {
+        throw new Error('The database schema is missing a migration required by this release');
       }
 
-      for (const migration of DOMAIN_MIGRATIONS) {
-        const checksum = createHash('sha256').update(migration.sql).digest('hex');
-        const recorded = applied.find((entry) => entry.version === migration.version);
-
-        if (recorded === undefined || recorded.checksum !== checksum) {
-          throw new Error('The database schema does not match this release');
-        }
-      }
-
+      // Migration review establishes compatibility; this check verifies only the release's required prefix.
       return applied.length;
     },
   };
@@ -170,7 +189,7 @@ export async function migrateStore({ databaseUrl }: DatabaseInput): Promise<void
 
       const table = await client.query("SELECT to_regclass('mechane.schema_migrations') AS name");
       const existing = Schema.decodeUnknownSync(Schema.Struct({ name: Schema.NullOr(Schema.String) }))(table.rows[0]);
-      const applied: Array<{ readonly version: number; readonly checksum: string }> = [];
+      const applied: Array<MigrationRow> = [];
 
       if (existing.name !== null) {
         const rows = await client.query('SELECT version,checksum FROM mechane.schema_migrations ORDER BY version');
@@ -182,19 +201,16 @@ export async function migrateStore({ databaseUrl }: DatabaseInput): Promise<void
         throw new Error('Database schema is newer than this release');
       }
 
-      for (const migration of DOMAIN_MIGRATIONS) {
-        const checksum = createHash('sha256').update(migration.sql).digest('hex');
-        const previous = applied.find((entry) => entry.version === migration.version);
+      validateAppliedMigrations(applied);
 
-        if (previous === undefined) {
-          await client.query(migration.sql);
-          await client.query('INSERT INTO mechane.schema_migrations(version,checksum) VALUES($1,$2)', [
-            migration.version,
-            checksum,
-          ]);
-        } else if (previous.checksum !== checksum) {
-          throw new Error('An applied database migration changed');
-        }
+      for (const migration of DOMAIN_MIGRATIONS.slice(applied.length)) {
+        const checksum = createHash('sha256').update(migration.sql).digest('hex');
+
+        await client.query(migration.sql);
+        await client.query('INSERT INTO mechane.schema_migrations(version,checksum) VALUES($1,$2)', [
+          migration.version,
+          checksum,
+        ]);
       }
 
       await client.query('CREATE SCHEMA IF NOT EXISTS chat');

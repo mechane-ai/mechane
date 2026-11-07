@@ -1,7 +1,13 @@
 import type { OperationName } from '@mechane/protocol';
 import type { AuthCaller } from '@mechane/runtime';
 
-export type ProtocolRequest = { readonly name: OperationName; readonly input: object; readonly caller: AuthCaller };
+export type ProtocolRequest = {
+  readonly name: OperationName;
+  readonly input: object;
+  readonly caller: AuthCaller;
+  /** Absent requests the full media; only the Range header crosses into operation handling. */
+  readonly mediaRange?: string;
+};
 
 export type ProtocolExecutor = (request: ProtocolRequest) => Promise<unknown>;
 export type RequestAuthenticator = (request: Request, peerAddress?: string | null) => Promise<AuthCaller>;

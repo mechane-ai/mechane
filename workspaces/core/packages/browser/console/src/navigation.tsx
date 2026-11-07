@@ -1,4 +1,5 @@
 import { TextLink } from '@mechane-ai/elements';
+import type { EvidenceArtifact } from '@mechane/protocol';
 import {
   createLink,
   useElementScrollRestoration,
@@ -46,7 +47,14 @@ export function consoleTransition(from: ConsoleLocation, to: ConsoleLocation) {
       const state =
         isSameEventScope || retained.consolePages === undefined
           ? retained
-          : { ...retained, consolePages: { ...retained.consolePages, events: [] } };
+          : {
+              ...retained,
+              consolePages: {
+                ...retained.consolePages,
+                events: [],
+                evidence: isWithinRun ? (retained.consolePages.evidence ?? []) : [],
+              },
+            };
 
       return to.turn === undefined || isWithinRun ? state : { ...state, consoleRunOrigin: from };
     },
@@ -208,6 +216,63 @@ export function ConsoleLink({
 
 export function turnEventCursor(pages: PageCursors['events'] | undefined, target: number | undefined): number {
   return pages?.at(-1) ?? (target === undefined ? 0 : target - 1);
+}
+
+export function EvidenceLink({
+  artifact,
+  children,
+}: {
+  readonly artifact: EvidenceArtifact;
+  readonly children: ReactNode;
+}): ReactNode {
+  const anchor = useRef<HTMLAnchorElement>(null);
+  const location = useRouterState({ select: (state) => state.location });
+
+  useLayoutEffect(() => {
+    const target = location.state.consoleEvidenceReturn;
+
+    if (target?.artifact !== artifact.artifactId) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      const element = anchor.current;
+
+      if (element?.checkVisibility({ visibilityProperty: true }) !== true) {
+        return;
+      }
+
+      element.focus({ preventScroll: true });
+      restoreReaderPositions(target.positions);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [artifact.artifactId, location.pathname, location.state.consoleEvidenceReturn]);
+
+  return (
+    <RouteLink
+      ref={anchor}
+      to="/workspaces/$workspaceId/mechs/$mechId/evidence/$artifactId"
+      params={{ workspaceId: artifact.workspaceId, mechId: artifact.mechId, artifactId: artifact.artifactId }}
+      state={(prior) => ({ ...prior, consoleEvidenceOrigin: location.search })}
+      onClick={(event) => {
+        const hasCommandModifier = event.metaKey || event.ctrlKey;
+        const hasModifier = hasCommandModifier || event.shiftKey || event.altKey;
+
+        if (event.button === 0 && !hasModifier) {
+          globalThis.history.replaceState(
+            {
+              ...location.state,
+              consoleEvidenceReturn: { artifact: artifact.artifactId, positions: readReaderPositions() },
+            },
+            '',
+          );
+        }
+      }}
+    >
+      {children}
+    </RouteLink>
+  );
 }
 
 /** Cursors belong to a history entry. Back restores its page after the protected collection is mounted again. */

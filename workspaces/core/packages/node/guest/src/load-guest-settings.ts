@@ -15,5 +15,5 @@ export const loadGuestSettings = Effect.fn('loadGuestSettings')(function* (): Ef
     Effect.mapError((error) => new GuestMisconfigured({ reason: error.message })),
   );
 
-  return { ...variables, home: process.cwd() };
+  return { ...variables, home: process.cwd(), toolTarget: `${process.platform}-${process.arch}` };
 });

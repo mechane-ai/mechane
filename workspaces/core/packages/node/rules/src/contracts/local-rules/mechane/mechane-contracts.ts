@@ -1,5 +1,13 @@
 import type { ContractEnforcement, ContractName } from '@mechane/rule-shapes';
-import { developerEnvironments, executionAccess, modelCaching, threadContinuations } from './agent-runtime.ts';
+import {
+  browserControl,
+  browserEvidence,
+  developerEnvironments,
+  executionAccess,
+  managedProcesses,
+  modelCaching,
+  threadContinuations,
+} from './agent-runtime.ts';
 import { channelDelivery } from './channel-delivery.ts';
 import { codeStyle } from './code-style.ts';
 import { consoleBoundaries } from './console-boundaries.ts';
@@ -35,4 +43,7 @@ export const MECHANE_CONTRACTS = {
   'native-workflow-runtime': nativeWorkflowRuntime,
   'channel-delivery': channelDelivery,
   'structured-presentation': structuredPresentation,
+  'managed-processes': managedProcesses,
+  'browser-control': browserControl,
+  'browser-evidence': browserEvidence,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

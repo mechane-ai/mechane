@@ -29,6 +29,15 @@ export const consoleBoundaries = {
       standard: '113',
     },
     {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: 'console-query-owner',
+      comment: 'Keep Query observers in the data runtime; screens use canonical reads, such as `useSessions`',
+      from: { path: '^packages/browser/', pathNot: '^packages/browser/console-data/src/console-data[.]ts$' },
+      to: { path: 'node_modules/@tanstack/(?:query-core|react-query)/' },
+      standard: '113',
+    },
+    {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'unicorn/require-post-message-target-origin',

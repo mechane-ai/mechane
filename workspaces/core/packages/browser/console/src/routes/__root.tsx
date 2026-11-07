@@ -1,10 +1,11 @@
 import { TextLink } from '@mechane-ai/elements';
 import { EmptyState, LoadingScope } from '@mechane-ai/elements/feedback';
 import { SkipLink } from '@mechane-ai/elements/navigation';
-import { ClientOnly, createRootRoute, HeadContent, Outlet, Scripts, useRouterState } from '@tanstack/react-router';
+import { ClientOnly, createRootRoute, HeadContent, Scripts, useRouterState } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
+import { ConsoleRoute } from '../console-route.tsx';
 import { ConsoleEntrance, ConsolePending } from '../entrance.tsx';
 import css from '../styles.css?url';
 
@@ -18,7 +19,7 @@ export const Route = createRootRoute({
     links: [{ rel: 'stylesheet', href: css }],
   }),
   shellComponent: Root,
-  component: Outlet,
+  component: ConsoleRoute,
   notFoundComponent: () => (
     <ConsoleEntrance>
       <EmptyState title="Page not found" action={<TextLink href="/console">Open the console</TextLink>} />

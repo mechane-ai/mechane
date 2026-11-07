@@ -1,15 +1,19 @@
+import { createBrowserRuntime } from '@mechane/browser';
 import { writeResult } from '@mechane/program';
 import { GuestListening } from '@mechane/sandbox-wire';
 import { Effect, FiberSet, Queue, Schema } from 'effect';
 import type { Scope } from 'effect';
 import { createServer } from 'node:http';
 import type { IncomingMessage, Server, ServerResponse } from 'node:http';
+import { delimiter, join } from 'node:path';
 import { answerNextExchange } from './answer-next-exchange.ts';
+import { prepareGuestTools } from './bootstrap/prepare-guest-tools.ts';
 import { closeServer } from './close-server.ts';
-import { GuestUnreachable } from './errors.ts';
+import { GuestMisconfigured, GuestUnreachable } from './errors.ts';
 import type { ExecutionUnstarted } from './errors.ts';
 import { executionLedger } from './executions/execution-ledger.ts';
 import { loadGuestSettings } from './load-guest-settings.ts';
+import { processLedger } from './processes/process-ledger.ts';
 import type { Exchange, GuestFailure } from './types.ts';
 import { openWorkspaceFolder } from './workspace/open-workspace-folder.ts';
 import { workspaceJournal } from './workspace/workspace-journal.ts';
@@ -28,11 +32,40 @@ type ListenInput = { readonly server: Server; readonly host: string; readonly po
  * defect, ends the guest at once, which closes the server and stops every execution.
  */
 export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return<void, GuestFailure, Scope.Scope> {
-  const settings = yield* loadGuestSettings();
+  const loadedSettings = yield* loadGuestSettings();
+  const folder = yield* openWorkspaceFolder();
+
+  const managedTools = yield* prepareGuestTools({
+    tools: loadedSettings.additionalTools,
+    target: loadedSettings.toolTarget,
+    folder,
+    path: loadedSettings.path,
+  });
+
+  const settings = { ...loadedSettings, path: [managedTools, loadedSettings.path].join(delimiter) };
   const fibers = yield* FiberSet.make<void, ExecutionUnstarted>();
   const ledger = executionLedger({ settings, fibers });
-  const folder = yield* openWorkspaceFolder();
-  const workspace = workspaceJournal({ folder, settings, ledger, fibers });
+  const processes = processLedger({ settings, ledger, fibers });
+  const browserDirectory = join(folder, 'browser');
+
+  const browser = yield* createBrowserRuntime({
+    home: settings.home,
+    scratchDirectory: browserDirectory,
+    path: settings.path,
+    chromiumExecutable: 'chromium',
+    displayExecutable: 'Xvfb',
+    encoderExecutable: 'ffmpeg',
+    mediaProbeExecutable: 'ffprobe',
+    isSandboxDisabled: settings.isBrowserSandboxDisabled,
+    certificateFile: settings.browserCertificateFile,
+    activity: { admit: ledger.admitProcess, finish: ledger.finishProcessStart },
+  }).pipe(Effect.mapError(({ reason }) => new GuestMisconfigured({ reason })));
+
+  function ownedProcessGroups(): ReadonlyArray<number> {
+    return [...processes.ownedProcessGroups(), ...browser.ownedProcessGroups()];
+  }
+
+  const workspace = workspaceJournal({ folder, settings, ledger, fibers, ownedProcessGroups, isBusy: browser.isBusy });
   const exchanges = yield* Queue.unbounded<Exchange>();
 
   const queueExchange: (request: IncomingMessage, response: ServerResponse) => void = (request, response) =>
@@ -48,7 +81,7 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
 
   writeResult({ line });
 
-  const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace });
+  const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace, processes, browser });
   const serving = Effect.forever(next);
 
   yield* FiberSet.run(fibers, serving);

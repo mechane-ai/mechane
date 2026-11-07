@@ -2,12 +2,16 @@ import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import { archiveWorkspace } from '../archives/archive-workspace.ts';
+import type { ArchiveWorkspaceInput } from '../archives/archive-workspace.ts';
 import { restoreWorkspace } from '../archives/restore-workspace.ts';
 import { WorkspaceFailed } from '../errors.ts';
+import { quiesceWorkspace } from '../quiescence/quiesce-workspace.ts';
 import type { ServedAnswer, WorkspaceFilesInput, WorkspaceRequest } from '../types.ts';
 import { readWorkspaceBody } from './read-workspace-body.ts';
 
-type WorkspaceOperationInput = WorkspaceFilesInput & WorkspaceRequest;
+type WorkspaceOperationInput = WorkspaceFilesInput &
+  WorkspaceRequest &
+  Pick<ArchiveWorkspaceInput, 'ownedProcessGroups' | 'retainFreeze'>;
 
 /** Archive transfer metadata uses the decoded record form on the guest wire. */
 const ArchiveRecord = Schema.toType(SandboxArchive);
@@ -19,11 +23,17 @@ export const workspaceOperation = Effect.fn('workspaceOperation')(function* (
 ): Effect.fn.Return<ServedAnswer, WorkspaceFailed> {
   const { generation, step } = input;
 
-  if (step === WorkspaceStep.Archive) {
-    const archive = yield* archiveWorkspace(input);
-    const body = Schema.encodeSync(ArchiveBody)(archive);
+  switch (step) {
+    case WorkspaceStep.Archive:
+      yield* quiesceWorkspace(input);
 
-    return { status: HttpStatusCode.Ok, headers: { [HttpHeader.ContentType]: MediaType.Json }, body };
+      return yield* answerArchive(input);
+    case WorkspaceStep.Checkpoint:
+      return yield* answerArchive(input);
+    case WorkspaceStep.Part:
+    case WorkspaceStep.Release:
+    case WorkspaceStep.Restore:
+      break;
   }
 
   const body = yield* readWorkspaceBody(input);
@@ -36,4 +46,13 @@ export const workspaceOperation = Effect.fn('workspaceOperation')(function* (
   yield* restoreWorkspace({ ...input, archive });
 
   return { status: HttpStatusCode.Ok, headers: {}, body: '' };
+});
+
+const answerArchive = Effect.fn('answerArchive')(function* (
+  input: WorkspaceOperationInput,
+): Effect.fn.Return<ServedAnswer, WorkspaceFailed> {
+  const archive = yield* archiveWorkspace(input);
+  const body = Schema.encodeSync(ArchiveBody)(archive);
+
+  return { status: HttpStatusCode.Ok, headers: { [HttpHeader.ContentType]: MediaType.Json }, body };
 });

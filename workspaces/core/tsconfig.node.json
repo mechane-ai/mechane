@@ -4,6 +4,7 @@
   "files": ["lint/types/node/strict-globals.d.ts"],
   "include": [
     "packages/node/boundaries/src",
+    "packages/node/browser/src",
     "packages/node/checks/src",
     "packages/node/checks-kernel/src",
     "packages/node/cli/src",

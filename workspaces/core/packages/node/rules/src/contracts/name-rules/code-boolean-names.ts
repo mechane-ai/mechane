@@ -64,6 +64,7 @@ export const codeBooleanNames = {
       ...ADOPTED,
       name: 'boolean-names',
       ...EXAMPLES,
+      maxSuppressions: 1,
       behavior: FixBehavior.BindingNames,
       standard: 'NM-07',
     },

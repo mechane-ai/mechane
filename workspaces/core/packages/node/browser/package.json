@@ -1,0 +1,16 @@
+{
+  "name": "@mechane/browser",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "effect": "4.0.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2"
+  }
+}

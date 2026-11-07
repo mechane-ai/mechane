@@ -1,15 +1,14 @@
 import type { HttpMethod } from '@mechane/records';
-import { HttpHeader, MediaType } from '@mechane/records';
 import {
   SandboxExecutionIdentity,
   sandboxExecutionPath,
   SandboxExecutionResult,
   sandboxExecutionResumePath,
 } from '@mechane/sandbox-wire';
-import { Redacted, Schema } from 'effect';
+import { Schema } from 'effect';
 import { loadRuntimeConfiguration } from '../config.ts';
-import { BASH_OBSERVE_WAIT_MS, TOOL_REQUEST_TIMEOUT_MS } from './constants.ts';
-import { readBoundedJson } from './http.ts';
+import { BASH_OBSERVE_WAIT_MS, TOOL_RESPONSE_MAX_BYTES } from './constants.ts';
+import { requestSandboxJson } from './sandbox-transport.ts';
 
 type SandboxRequest = {
   readonly workspaceId: string;
@@ -32,18 +31,13 @@ export async function requestSandboxExecution(input: SandboxRequest): Promise<Sa
 
   url.searchParams.set('waitMs', String(input.waitMs ?? BASH_OBSERVE_WAIT_MS));
 
-  const response = await fetch(url, {
+  const body = await requestSandboxJson({
+    configuration,
+    url,
     method: input.method,
-    headers: {
-      [HttpHeader.Authorization]: `Bearer ${Redacted.value(configuration.sandbox.bearer)}`,
-      [HttpHeader.ContentType]: MediaType.Json,
-    },
     body: input.body ?? null,
-    redirect: 'error',
-    signal: AbortSignal.timeout(TOOL_REQUEST_TIMEOUT_MS),
+    maximumBytes: TOOL_RESPONSE_MAX_BYTES,
   });
-
-  const body = await readBoundedJson(response);
 
   try {
     return Schema.decodeUnknownSync(SandboxExecutionResult)(body);

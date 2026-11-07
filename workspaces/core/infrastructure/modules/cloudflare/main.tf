@@ -3,11 +3,15 @@ locals {
   origin       = "https://${var.domain.hostname}"
 
   variables = merge(local.installation.defaults, {
-    MECHANE_ORIGIN           = local.origin
-    MECHANE_RUNTIME_ORIGIN   = var.runtime.origin
-    MECHANE_WORKER_REVISION  = local.installation.public_commit
-    MECHANE_SANDBOX_PROVIDER = "container"
-    MECHANE_SANDBOX_HOSTS    = jsonencode(var.sandboxes.additional_hosts)
+    MECHANE_ORIGIN                   = local.origin
+    MECHANE_RUNTIME_ORIGIN           = var.runtime.origin
+    MECHANE_INSTALLATION_HOSTS       = jsonencode(setunion(var.domain.aliases, [var.domain.hostname]))
+    MECHANE_WORKER_REVISION          = local.installation.public_commit
+    MECHANE_SANDBOX_PROVIDER         = "container"
+    MECHANE_SANDBOX_HOSTS            = jsonencode(var.sandboxes.additional_hosts)
+    MECHANE_SANDBOX_TOOLS            = jsonencode(var.sandboxes.additional_tools)
+    MECHANE_SANDBOX_WEB_ACCESS       = var.sandboxes.web_access
+    MECHANE_BROWSER_SANDBOX_DISABLED = tostring(var.sandboxes.browser_sandbox_disabled)
   })
 
   secret_names = {

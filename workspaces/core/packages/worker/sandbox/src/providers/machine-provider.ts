@@ -20,10 +20,17 @@ export function machineProvider({ settings, state }: MachineProviderInput): Mach
     case SandboxProvider.Container:
       return containerProvider({
         state,
+        additionalTools: settings.additionalTools,
+        isBrowserSandboxDisabled: settings.isBrowserSandboxDisabled,
         container: Option.getOrThrow(Option.fromNullishOr(state.container)),
         gateway: () => state.exports.EgressGateway({ props: {} }),
       });
     case SandboxProvider.Host:
-      return hostProvider({ launcherOrigin: settings.launcherOrigin, launcherKey: settings.launcherKey });
+      return hostProvider({
+        launcherOrigin: settings.launcherOrigin,
+        launcherKey: settings.launcherKey,
+        additionalTools: settings.additionalTools,
+        isBrowserSandboxDisabled: settings.isBrowserSandboxDisabled,
+      });
   }
 }

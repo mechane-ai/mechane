@@ -2,9 +2,11 @@ import { tool } from 'ai';
 import type { ToolSet } from 'ai';
 import { z } from 'zod';
 import { executeBash, observeBash } from './bash.ts';
+import { createBrowserTools } from './browser/browser-tools.ts';
 import { BASH_DEFAULT_TIMEOUT_MS, BASH_MAX_TIMEOUT_MS, MEMORY_MAX_TEXT_LENGTH } from './constants.ts';
 import { discoverMcpTools, mcpTools } from './mcp.ts';
 import { deleteMemory, readMemory, writeMemory } from './memory.ts';
+import { processTools } from './processes/process-tools.ts';
 import { readToolResult } from './tool-result.ts';
 import type { RuntimeToolContext } from './types.ts';
 import { waitForWork } from './wait.ts';
@@ -28,6 +30,8 @@ export async function prepareRuntimeTools(context: RuntimeToolContext): Promise<
 
 function createRuntimeTools(context: RuntimeToolContext): ToolSet {
   return {
+    ...createBrowserTools(context),
+    ...processTools(context),
     read_tool_result: tool({
       description:
         'Read a bounded chunk of a saved shell or MCP result without repeating the operation. Offsets count string characters and the result supplies the next offset.',

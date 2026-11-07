@@ -4,5 +4,5 @@
   "packages/node/eval/src/trial/await-turn-end.ts": 1,
   "packages/node/eval/src/types.ts": 1,
   "packages/shared/sandbox-wire/src/types.ts": 1,
-  "packages/worker/sandbox-store/src/types.ts": 8
+  "packages/worker/sandbox-store/src/types.ts": 4
 }

@@ -261,7 +261,9 @@ export type RequestWait = {
 export type ExecutionReceipt = {
   readonly id: string;
   readonly runId: string;
-  readonly kind: 'sandbox' | 'mcp';
+  readonly kind: 'sandbox' | 'mcp' | 'process' | 'browser';
+  /** Null for shell and MCP receipts; interactive requests retain their immutable, secret-free payload. */
+  readonly request: Readonly<Record<string, unknown>> | null;
   readonly status: 'pending' | 'running' | 'completed' | 'uncertain' | 'failed';
   readonly providerId: string | null;
   readonly result: Readonly<Record<string, unknown>> | null;

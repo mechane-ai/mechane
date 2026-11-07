@@ -1,6 +1,6 @@
 import type { ContainerProviderInput } from './types.ts';
 
-type StartContainerInput = Omit<ContainerProviderInput, 'state'> & {
+type StartContainerInput = Pick<ContainerProviderInput, 'container' | 'gateway'> & {
   readonly environment: Readonly<Record<string, string>>;
 };
 

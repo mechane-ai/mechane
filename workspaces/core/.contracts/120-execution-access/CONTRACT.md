@@ -17,11 +17,17 @@ Store public configuration and references in grants. Inject shell credentials on
 Keep the App signing key and Nexus request-service key host-only. Credentials never enter Workflow arguments,
 results, model serialization, tool-call traces, command receipts, managed Git configuration, or file checkpoints.
 
-Revoke a minted GitHub token after a known terminal result, independently of receipt persistence succeeding. Revoke
+For foreground commands, revoke a minted GitHub token after a known terminal result, independently of receipt persistence succeeding. Revoke
 it after a pre-dispatch failure when the command was definitely not submitted. An interrupted observation cannot
 revoke a token from a command that may still be running; its provider expiry remains the bound. Revocation prevents
 future issuance and does not undo an external effect already authorized. Repository protection remains GitHub's
 responsibility.
+
+Managed background processes receive startup credentials under the same current grant. Revoke a minted token when
+the initial start is definitely unsubmitted or already terminal. After an admitted running or uncertain start, its
+provider expiry bounds access; later process reads, stops, or machine loss do not promise immediate token revocation.
+Do not persist the token in execution state, renew it from passive observation, or add an in-memory cleanup claim that
+cannot survive a host restart. A new process requires a new grant check and cannot reuse another process's authority.
 
 Redact injected values before retaining output, including truncated output. A guest can deliberately copy credentials
 it is authorized to receive; output redaction limits accidental disclosure rather than restricting arbitrary code.
@@ -49,9 +55,11 @@ revocation, and notification delivery. Mechane rechecks the effective permission
 Exercise the packaged API and command path with a current grant, revoked grant, foreign workspace, reused execution
 ID, and lost response. Check emitted output and stored records for fixture credential values.
 
-Include a command that outlives the initial response wait. Its eventual terminal receipt must still revoke the
+Include a foreground command that outlives the initial response wait. Its eventual terminal receipt must still revoke the
 minted token; returning a running receipt must not abandon cleanup or revoke a still-running command's access.
 Inject a pre-dispatch failure and a terminal receipt-write failure; both must still attempt the required revocation.
+For managed processes, separately verify initial terminal and definitely unsubmitted cleanup, the provider-expiry
+policy after an admitted start, and absence of fresh credentials on read, list, and stop.
 
 Extend the representative compute flow with a zero limit, concurrent mechs at a one-machine limit, reuse, and a host
 restart. Refused acquisition must not start a machine. Failed checkpoint or stop must retain its slot; confirmed

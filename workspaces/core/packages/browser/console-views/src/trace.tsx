@@ -30,6 +30,7 @@ type TraceProps = {
   readonly requestHref: (id: string) => string;
   readonly replyLink: (sequence: number) => ReactNode;
   readonly events?: ReactNode;
+  readonly captures?: ReactNode;
 };
 
 const OVERVIEW_REQUESTS = 3;
@@ -143,6 +144,7 @@ export function TurnTrace({
   requestHref,
   replyLink,
   events,
+  captures,
 }: TraceProps): ReactNode {
   const evidence = traceEvidence(trace);
   const { turn, elapsed } = evidence;
@@ -190,6 +192,7 @@ export function TurnTrace({
             replyLink={replyLink}
             onRequests={() => onTab('Requests')}
             onEvents={() => onTab('Events')}
+            captures={captures}
           />
         </Tabs.Panel>
         <Tabs.Panel value="Requests">
@@ -217,7 +220,8 @@ function TraceOverview({
   replyLink,
   onRequests,
   onEvents,
-}: Pick<TraceProps, 'trace' | 'onRequest' | 'replyLink'> & {
+  captures,
+}: Pick<TraceProps, 'trace' | 'onRequest' | 'replyLink' | 'captures'> & {
   readonly evidence: ReturnType<typeof traceEvidence>;
   readonly onRequests: () => void;
   readonly onEvents: () => void;
@@ -229,6 +233,7 @@ function TraceOverview({
     <div {...stylex.props(styles.reading)}>
       <Stack>
         <RecordedOutcome trace={trace} evidence={evidence} onRequest={onRequest} replyLink={replyLink} />
+        {captures}
         {turn?.inputExcerpt !== undefined && turn.inputExcerpt.length > 0 && (
           <Collapsible.Root>
             <Collapsible.Trigger>Input preview</Collapsible.Trigger>

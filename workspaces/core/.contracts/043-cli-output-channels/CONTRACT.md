@@ -52,6 +52,8 @@ host grace period, as contract 041 requires. This exact lifecycle boundary is no
 
 The Chat SDK logger lives in `runtime/src/channels/slack-logger.ts`; server startup and shutdown report only at their
 lifecycle owners. The sandbox's `sandbox/src/egress/pass-egress.ts` may write its fixed egress-refusal event and reason.
+`sandbox/src/evidence/evidence-cleanup.ts` may report its fixed cleanup-failure tag and artifact identity while retaining
+the ready artifact and its retry receipt.
 These sites emit safe event descriptions and correlation identifiers, never raw SDK metadata, request bodies,
 credential-bearing URLs, provider errors, or command output. Do not introduce a shared event union merely to log one
 owner's fixed event. Exceptions to output checks name these owners, not entire runtime or sandbox packages.

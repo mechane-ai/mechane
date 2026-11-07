@@ -54,9 +54,15 @@ library owns its internal tables. Contract 119 governs replacing these derived c
 Register product-owned stored names with the existing storage boundary checks. Smoke support may inspect those
 records to establish a consequential invariant, but production diagnostics call the owning store's read API.
 
+`packages/node/browser/src/store` owns browser request receipts, capture staging files, and recording metadata under
+the guest's private browser root. Browser actions call its record functions; they do not name or open those files.
+The sandbox store owns durable evidence receipts and the chunk ledger for its private object storage. A ready receipt
+commits verified immutable bytes before staging cleanup, so cleanup failure cannot hide already captured evidence.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `storage-call-outside-store` (DO-06): enforced
 - ast-grep `stored-name-outside-store` (DO-06): enforced
+- ast-grep `browser-stored-name-outside-store` (DO-06): enforced
 
 <!-- End of the generated block. -->

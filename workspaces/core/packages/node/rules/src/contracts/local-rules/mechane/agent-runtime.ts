@@ -9,3 +9,10 @@ export const developerEnvironments = { values: {}, rules: [] } as const satisfie
 
 /** Provider-request smoke and live usage qualification enforce the caching protocol. */
 export const modelCaching = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+
+/** Real guest lifecycle checks establish process identity, checkpoint and shutdown behavior. */
+export const managedProcesses = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+/** Browser qualification establishes observed actions, isolation and bounded output. */
+export const browserControl = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+/** Evidence qualification checks durable capture receipts, authorization and truthful provenance. */
+export const browserEvidence = { values: {}, rules: [] } as const satisfies ContractEnforcement;

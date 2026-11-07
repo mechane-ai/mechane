@@ -1,0 +1,7 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: browser-stored-name-outside-store
+valid:
+  - 'const artifact = yield* readBrowserArtifact({ settings, artifactId });'
+invalid:
+  - "const folder = 'requests';"
+  - "const path = 'native.mp4';"

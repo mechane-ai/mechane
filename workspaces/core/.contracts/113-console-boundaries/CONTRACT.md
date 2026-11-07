@@ -55,11 +55,22 @@ outcomes outside the replaceable data runtime. Cache recovery must not clear or 
 Expose the standard AI SDK UI message stream. Convert native model-call chunks through the upstream transform and
 apply replay cursors to resulting UI chunks. Authorize every initial and resumed stream against current membership.
 Server-owned history supplies model context; a client cannot submit privileged prior messages or tool results.
+Treat every new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
+`console-data/src/records.ts`, native table to `collections.ts`, and bounded request to `requests.ts` and `load-read.ts`.
+Compose its view through the shared live-read hooks in `console/src/reads.ts`, preserving exact receipt membership,
+readiness, refresh errors, and owner disposal. React state holds cursor inputs and interaction state, never fetched
+record pages. Conversation session metadata follows this path too; it is distinct from transcript messages.
+
+The complete domain-record transport exceptions are fresh principal/workspace admission in `console-data/src/session.ts`
+and the runtime admission gate, plus the native chat protocol below. Adding another exception requires a contract change,
+a corresponding boundary update where enforceable, and a real browser check of its authority and lifetime.
+Authenticated evidence bytes use native browser image/video loads. Their metadata follows the canonical record path.
+
 The native chat transport owns conversation HTTP and stream resumption. TanStack Query remains the owner of demanded
 domain-projection reads; it does not become a parallel transport for the active transcript.
 
 The browser's native AI SDK chat owns its loaded transcript and active streamed state. Server history is authoritative.
-TanStack owns the other canonical domain projections, not a mirrored transcript. Completion refreshes those projections
+TanStack owns session catalogue metadata and the other canonical domain projections, not a mirrored transcript. Completion refreshes those projections
 without appending the same message to a competing message store. Scope disposal fences
 pending stream completions; a cache or renderer failure never reissues an acknowledged command.
 
@@ -178,10 +189,22 @@ does not become a zero-duration step.
 
 ## Evidence
 
+Environment controls observe exact managed-process handles without waking a machine or extending its lease. Load logs
+for the selected handle, preserve terminal output, and retain keyboard focus when Stop removes its own control.
+Evidence opens in a full-page viewer. Preserve the native session, draft, reader scroll, and originating link when
+returning; a direct evidence link selects its recorded session and returns to its run without a history loop.
+Pending and ready media share one frame. Canonical evidence metadata belongs to the domain data owner; native Chat
+continues to own the session transcript and stream. Neither media bytes nor another transcript copy enter TanStack.
+
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
 real browser against the packaged service to verify sign-in/out, workspace isolation, a completed turn, trace
 navigation, revision conflicts, and rejected cross-origin writes. Verify the hosted Node and compute release identities and an empty subsequent
 OpenTofu plan before declaring an installation upgraded.
+
+Review a new feature from API demand through its canonical table, exact receipt, live projection, and presentation.
+Verify successful empty results, warm reload, failed refresh with retained content, and access loss. For paginated
+pickers, load another page without dropping earlier choices; reopening must use the normal read lifecycle. The import
+boundary prevents screens from owning Query observers, but does not prove every displayed value's provenance.
 
 Open a run from a scrolled conversation and a later list page, then use browser Back and the run's return control.
 Check row focus, scroll position, draft text, and the sidebar preference. Open the same run URL in a new tab.
@@ -208,6 +231,7 @@ drafts, focus, scroll position, and browser-local preferences survive while admi
 
 - dependency-cruiser `console-build-owner` (113): enforced: Import Console build helpers only from its build configuration, such as `worker-licenses.ts` in `vite.config.ts`
 - dependency-cruiser `console-api-owner` (113): enforced: Import the Console data owner for browser requests, such as `@mechane/console-data`
+- dependency-cruiser `console-query-owner` (113): enforced: Keep Query observers in the data runtime; screens use canonical reads, such as `useSessions`
 - oxlint `unicorn/require-post-message-target-origin` (113): enforced, `"error"`
 - oxlint `oxc/no-optional-chaining` (113): enforced, `"error"`
 

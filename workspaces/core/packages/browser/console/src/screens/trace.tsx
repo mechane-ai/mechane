@@ -15,6 +15,7 @@ import { useTrace } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import type { ConsoleLocation, ConsoleNavigation } from '../types.ts';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
+import { RunEvidence } from './run-evidence.tsx';
 import { TurnHistory } from './turn-history.tsx';
 
 const inspectorViews: ReadonlySet<ConsoleView> = new Set(['requests', 'events', 'tools']);
@@ -162,6 +163,7 @@ function ValidTraceScreen({
               replyLink={(sequence) => (
                 <ConsoleLink to={{ ...selected, inspect: 'events', event: sequence }}>Read full reply</ConsoleLink>
               )}
+              captures={<RunEvidence data={data} mechId={mech.id} turnId={turnId} />}
               events={
                 tab === 'Events' && (
                   <TurnHistory

@@ -2,8 +2,10 @@ import type { Operation } from './operation/types.ts';
 import { AUTH_OPERATIONS } from './operations/auth/auth-operations.ts';
 import { CONNECTION_OPERATIONS } from './operations/connections/connection-operations.ts';
 import { CREDENTIAL_OPERATIONS } from './operations/credentials/credential-operations.ts';
+import { ENVIRONMENT_OPERATIONS } from './operations/environment/environment-operations.ts';
 import { listEvents } from './operations/events/list-events.ts';
 import { listRecentEvents } from './operations/events/list-recent-events.ts';
+import { EVIDENCE_OPERATIONS } from './operations/evidence/evidence-operations.ts';
 import { EXECUTION_ACCESS_OPERATIONS } from './operations/execution-access/execution-access-operations.ts';
 import { sendInboxItem } from './operations/inbox/send-inbox-item.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
@@ -24,6 +26,8 @@ export const catalog = {
   ...AUTH_OPERATIONS,
   ...CONNECTION_OPERATIONS,
   ...CREDENTIAL_OPERATIONS,
+  ...EVIDENCE_OPERATIONS,
+  ...ENVIRONMENT_OPERATIONS,
   ...EXECUTION_ACCESS_OPERATIONS,
   listEvents,
   listRecentEvents,

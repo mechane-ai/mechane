@@ -10,6 +10,8 @@ export type ConsoleLocation = {
   readonly session?: string;
   /** Absent opens the mech, before selecting one of its turns. */
   readonly turn?: string;
+  /** Absent leaves the run or mech visible without opening a capture. */
+  readonly artifact?: string;
   /** Absent opens the mech's conversation. */
   readonly view?: ConsoleView;
   /** Absent opens the overview or the inspector section selected by an existing view link. */
@@ -36,4 +38,5 @@ export type PageCursors = {
   readonly activity: ReadonlyArray<number>;
   readonly events: ReadonlyArray<number>;
   readonly work: ReadonlyArray<Thread['id']>;
+  readonly evidence: ReadonlyArray<string>;
 };

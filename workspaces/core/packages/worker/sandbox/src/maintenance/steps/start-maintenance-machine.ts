@@ -1,4 +1,4 @@
-import { RecordId } from '@mechane/records';
+import { MachineId } from '@mechane/records';
 import { SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { observeMachine } from '../../machines/observe-machine.ts';
@@ -9,7 +9,7 @@ export async function startMaintenanceMachine({ store, provider, job }: Portable
   if (Option.isNone(job.target)) {
     await stopPreviousMachine({ store, provider });
 
-    const machineId = RecordId.make(crypto.randomUUID());
+    const machineId = MachineId.make(crypto.randomUUID());
     const target = Option.some(machineId);
     const now = DateTime.nowUnsafe();
 

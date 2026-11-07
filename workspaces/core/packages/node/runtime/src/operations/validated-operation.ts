@@ -18,12 +18,12 @@ export function validatedOperation<Declaration extends Operation>({
   operation,
   run,
 }: ValidatedOperationInput<Declaration>): OperationHandler {
-  return async ({ input, caller }) => {
+  return async ({ input, caller, ...requestContext }) => {
     if (!isInput(operation, input)) {
       throw new RequestInvalid({ reason: 'The operation input does not match its declaration' });
     }
 
-    return await run({ input, caller });
+    return await run({ input, caller, ...requestContext });
   };
 }
 

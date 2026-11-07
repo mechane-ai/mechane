@@ -37,6 +37,8 @@ function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
       );
     case 'threads':
       return receipt.keys.every((key) => tables.threads.has(key));
+    case 'sessions':
+      return receipt.keys.every((key) => tables.sessions.has(key));
     case 'memories':
       return receipt.keys.every((key) => tables.memories.has(key));
     case 'turns':
@@ -48,6 +50,14 @@ function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
     case 'events':
     case 'turnEvents':
       return receipt.keys.every((key) => tables.events.has(key));
+    case 'evidence':
+      return receipt.keys.every((key) => tables.evidenceArtifacts.has(key));
+    case 'evidenceArtifact':
+      return receipt.keys.length === 1 && receipt.keys.every((key) => tables.evidenceArtifacts.has(key));
+    case 'environmentProcesses':
+      return receipt.keys.every((key) => tables.environmentProcesses.has(key));
+    case 'environmentProcess':
+      return receipt.keys.length === 1 && receipt.keys.every((key) => tables.environmentProcessDetails.has(key));
     case 'slackBindings':
       return receipt.keys.every((key) => tables.slackBindings.has(key));
     case 'slackDeliveries':
@@ -65,6 +75,8 @@ function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
       return [tables.mechs, tables.mechDefinitions];
     case 'threads':
       return [tables.threads];
+    case 'sessions':
+      return [tables.sessions];
     case 'memories':
       return [tables.memories];
     case 'turns':
@@ -74,6 +86,13 @@ function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
     case 'events':
     case 'turnEvents':
       return [tables.events];
+    case 'evidence':
+    case 'evidenceArtifact':
+      return [tables.evidenceArtifacts];
+    case 'environmentProcesses':
+      return [tables.environmentProcesses];
+    case 'environmentProcess':
+      return [tables.environmentProcessDetails];
     case 'slackBindings':
       return [tables.slackBindings];
     case 'slackDeliveries':

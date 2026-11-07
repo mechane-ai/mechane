@@ -1,7 +1,7 @@
 import { ConsoleStorageFailed, discardConsoleStorage, openConsoleStorage } from '@mechane/console-cache';
 import type { ConsoleStorageHealth } from '@mechane/console-cache';
 import type { Workspace } from '@mechane/protocol';
-import { MechId, PrincipalId, TurnId, WorkspaceId } from '@mechane/records';
+import { EvidenceArtifactId, MechId, PrincipalId, TurnId, WorkspaceId } from '@mechane/records';
 import { DbClient } from '@tanstack/db';
 import { QueryClient, QueryObserver } from '@tanstack/query-core';
 import type { QueryFunctionContext, QueryKey } from '@tanstack/query-core';
@@ -19,7 +19,7 @@ import { createConversationApi } from './conversation.ts';
 import { applyRead, fetchRead, saveMech } from './load-read.ts';
 import { waitForRead } from './read-ready.ts';
 import { recordKey } from './records.ts';
-import { decodeReadRequest, ReadId, readRequests } from './requests.ts';
+import { decodeReadRequest, isArtifactRead, ReadId, readRequests } from './requests.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
 import type { Session } from './session.ts';
 
@@ -38,10 +38,17 @@ const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = [
   'turnEvents',
   'trace',
   'threads',
+  'sessions',
   'memories',
 ];
 
-const INVALIDATION_KIND = { Session: 'session', Mech: 'mech', Turn: 'turn', Read: 'read' } as const;
+const INVALIDATION_KIND = {
+  Session: 'session',
+  Mech: 'mech',
+  Turn: 'turn',
+  Artifact: 'artifact',
+  Read: 'read',
+} as const;
 
 const InvalidationTarget = Schema.Union([
   Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Session) }),
@@ -51,6 +58,12 @@ const InvalidationTarget = Schema.Union([
     workspaceId: WorkspaceId,
     mechId: MechId,
     turnId: TurnId,
+  }),
+  Schema.Struct({
+    kind: Schema.Literal(INVALIDATION_KIND.Artifact),
+    workspaceId: WorkspaceId,
+    mechId: MechId,
+    artifactId: EvidenceArtifactId,
   }),
   Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Read), workspaceId: WorkspaceId, readId: ReadId }),
 ]);
@@ -113,10 +126,15 @@ function readInterval(request: ReadRequest): number | false {
     case 'allowance':
       return ALLOWANCE_REFRESH_MS;
     case 'mech':
+    case 'sessions':
     case 'threads':
     case 'memories':
     case 'turns':
     case 'trace':
+    case 'evidence':
+    case 'evidenceArtifact':
+    case 'environmentProcesses':
+    case 'environmentProcess':
     case 'slackBindings':
     case 'slackDeliveries':
       return REFRESH_MS;
@@ -191,12 +209,12 @@ async function createData(options: CreateConsoleData) {
   const readObservers = new Map<string, ReadObservation>();
   const revokedMechs = new Map<string, unknown>();
   const revokedTurns = new Map<string, unknown>();
-  const revokedReads = new Map<string, unknown>();
+  const revokedReads = MutableRef.make(new Map<string, unknown>());
   const mechLifetimes = createOwnerSignals();
   const turnLifetimes = createOwnerSignals();
   const readLifetimes = createOwnerSignals();
   const pendingWrites = new Set<Promise<unknown>>();
-  const pendingRevocations = new Map<string, Promise<void>>();
+  const pendingRevocations = MutableRef.make(new Map<string, Promise<void>>());
   const broadcast = Result.try(() => new BroadcastChannel(INVALIDATION_CHANNEL));
 
   if (Result.isFailure(broadcast)) {
@@ -358,7 +376,7 @@ async function createData(options: CreateConsoleData) {
           }
         }
 
-        revokedReads.delete(request.id);
+        revokedReads.current.delete(request.id);
 
         const receipt: ReadReceipt = await trackWrite(
           applyRead({
@@ -436,7 +454,7 @@ async function createData(options: CreateConsoleData) {
 
             const revocation = revokeMech(request.mechId);
 
-            pendingRevocations.set(request.mechId, revocation);
+            pendingRevocations.current.set(request.mechId, revocation);
             await revocation;
           }
 
@@ -460,15 +478,21 @@ async function createData(options: CreateConsoleData) {
 
             const revocation = revokeTurn(request);
 
-            pendingRevocations.set(key, revocation);
+            pendingRevocations.current.set(key, revocation);
             await revocation;
+          }
+
+          break;
+        case 'artifact':
+          if (request.kind === 'evidenceArtifact') {
+            await invalidateArtifact({ request, error, shouldBroadcast });
           }
 
           break;
         case undefined:
           break;
         case 'request':
-          revokedReads.set(request.id, error);
+          revokedReads.current.set(request.id, error);
           readLifetimes.abort(request.id);
           notifyReads();
 
@@ -624,6 +648,83 @@ async function createData(options: CreateConsoleData) {
     await writeRows({ signal, collections: [receipts], write: () => deleteRows(receipts, keys) });
   }
 
+  async function invalidateArtifact({
+    request,
+    error,
+    shouldBroadcast,
+  }: {
+    readonly error: unknown;
+    readonly request: ReadRequest<'evidenceArtifact'>;
+    readonly shouldBroadcast: boolean;
+  }): Promise<void> {
+    const { receipts } = await initialized;
+
+    const queryIds = queryClient
+      .getQueryCache()
+      .findAll()
+      .flatMap((query) => (typeof query.queryKey[4] === 'string' ? [query.queryKey[4]] : []));
+
+    const knownIds = new Set([request.id, ...queryIds, ...[...receipts.values()].map((receipt) => receipt.id)]);
+
+    const affected = [...knownIds]
+      .map((id) => decodeReadRequest(id))
+      .filter((candidate) => isArtifactRead({ candidate, artifact: request }));
+
+    revokedReads.current = new Map([
+      ...revokedReads.current,
+      ...affected.map((candidate) => [candidate.id, error] as const),
+    ]);
+
+    for (const candidate of affected) {
+      readLifetimes.abort(candidate.id);
+    }
+
+    notifyReads();
+
+    if (shouldBroadcast) {
+      broadcastInvalidation({
+        kind: INVALIDATION_KIND.Artifact,
+        workspaceId: WorkspaceId.make(workspace.id),
+        mechId: request.mechId,
+        artifactId: request.artifactId,
+      });
+    }
+
+    const revocation = revokeArtifact(request);
+
+    pendingRevocations.current = new Map([
+      ...pendingRevocations.current,
+      ...affected.map((candidate) => [candidate.id, revocation] as const),
+    ]);
+
+    await revocation;
+  }
+
+  async function revokeArtifact(request: ReadRequest<'evidenceArtifact'>): Promise<void> {
+    try {
+      await Promise.allSettled(pendingWrites);
+
+      const { writeRows, tables, receipts } = await initialized;
+      const key = recordKey(request.mechId, request.artifactId);
+
+      await writeRows({
+        signal,
+        collections: [tables.evidenceArtifacts, receipts],
+        write: () => {
+          deleteRows(tables.evidenceArtifacts, [key]);
+
+          const keys = [...receipts.values()]
+            .filter((receipt) => isArtifactRead({ candidate: decodeReadRequest(receipt.id), artifact: request }))
+            .map((receipt) => receipt.id);
+
+          deleteRows(receipts, keys);
+        },
+      });
+    } catch (error) {
+      await discardFailedPurge(error);
+    }
+  }
+
   async function revokeMech(mechId: string): Promise<void> {
     try {
       await Promise.allSettled(pendingWrites);
@@ -634,8 +735,12 @@ async function createData(options: CreateConsoleData) {
         tables.turns,
         tables.events,
         tables.threads,
+        tables.sessions,
         tables.memories,
         tables.traceEvidence,
+        tables.evidenceArtifacts,
+        tables.environmentProcesses,
+        tables.environmentProcessDetails,
         tables.slackBindings,
         tables.slackDeliveries,
       ];
@@ -677,7 +782,7 @@ async function createData(options: CreateConsoleData) {
     }
   }
 
-  async function revokeTurn(request: ReadRequest<'trace' | 'turnEvents'>): Promise<void> {
+  async function revokeTurn(request: ReadRequest<'trace' | 'turnEvents' | 'evidence'>): Promise<void> {
     try {
       await Promise.allSettled(pendingWrites);
 
@@ -812,7 +917,7 @@ async function createData(options: CreateConsoleData) {
 
     async function closeCollections(): Promise<void> {
       await queryClient.cancelQueries();
-      await Promise.allSettled([...pendingWrites, ...pendingRevocations.values()]);
+      await Promise.allSettled([...pendingWrites, ...pendingRevocations.current.values()]);
       await runtime.db.cleanup();
     }
 
@@ -951,6 +1056,18 @@ async function createData(options: CreateConsoleData) {
         ]);
 
         break;
+      case 'artifact':
+        void Promise.allSettled([
+          handleFailure({
+            request: readRequests.evidenceArtifact(target.mechId, target.artifactId),
+            error: failure,
+            signal,
+            failureScope: 'artifact',
+            shouldBroadcast: false,
+          }),
+        ]);
+
+        break;
       case 'read': {
         const decodedRequest = Result.try(() => decodeReadRequest(target.readId));
 
@@ -988,7 +1105,7 @@ async function createData(options: CreateConsoleData) {
       }
 
       if ('turnId' in request) {
-        return revokedTurns.get(recordKey(request.mechId, request.turnId)) ?? revokedReads.get(request.id);
+        return revokedTurns.get(recordKey(request.mechId, request.turnId)) ?? revokedReads.current.get(request.id);
       }
     }
 
@@ -1010,7 +1127,7 @@ async function createData(options: CreateConsoleData) {
       }
     }
 
-    return revokedReads.get(request.id);
+    return revokedReads.current.get(request.id);
   }
 
   return {
@@ -1018,7 +1135,7 @@ async function createData(options: CreateConsoleData) {
     db: runtime.db,
     collections: runtime.collections,
     workspace,
-    conversations: createConversationApi({ origin, workspaceId: workspace.id, signal, api, onAccessLost: endSession }),
+    conversations: createConversationApi({ origin, workspaceId: workspace.id, signal, onAccessLost: endSession }),
     reads: readRequests,
     refreshActivity,
     commands: createCommands({
@@ -1061,17 +1178,18 @@ async function createData(options: CreateConsoleData) {
     },
     async refresh(request: ReadRequest): Promise<void> {
       signal.throwIfAborted();
+      await pendingRevocations.current.get(request.id);
       readLifetimes.renew(request.id);
 
       if ('mechId' in request) {
-        await pendingRevocations.get(request.mechId);
+        await pendingRevocations.current.get(request.mechId);
 
         mechLifetimes.renew(request.mechId);
 
         if ('turnId' in request) {
           const key = recordKey(request.mechId, request.turnId);
 
-          await pendingRevocations.get(key);
+          await pendingRevocations.current.get(key);
 
           turnLifetimes.renew(key);
         }
