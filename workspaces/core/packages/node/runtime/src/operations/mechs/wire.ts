@@ -49,6 +49,12 @@ export function revisionRecord(revision: MechRevision) {
 }
 
 export function runRecord(run: Run) {
+  let inputExcerpt = run.inputText;
+
+  if (inputExcerpt.length > INPUT_EXCERPT_LENGTH) {
+    inputExcerpt = `${inputExcerpt.slice(0, INPUT_EXCERPT_LENGTH - 1).trimEnd()}…`;
+  }
+
   const runFields = {
     id: run.id,
     version: run.version,
@@ -57,7 +63,7 @@ export function runRecord(run: Run) {
     created_at: run.createdAt,
     started_at: run.startedAt,
     definition_revision: run.definitionRevision,
-    input_excerpt: run.inputText.slice(0, INPUT_EXCERPT_LENGTH),
+    input_excerpt: inputExcerpt,
   };
 
   switch (run.status) {

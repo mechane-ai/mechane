@@ -6,6 +6,8 @@ import type { Option } from 'effect';
 import { AnswerStep } from './constants.ts';
 import { OperationFailed, ResponseUnreadable } from './errors.ts';
 import { readResponseJson } from './read-response-json.ts';
+import { readRetryAfter } from './retry-after.ts';
+import type { RetryAfter } from './retry-after.ts';
 
 /** The answer to decode, with its success's schema and the failures its request expects. */
 type DecodeAnswerInput<S> = {
@@ -23,6 +25,7 @@ type DecodeBodyInput<S> = {
   readonly body: unknown;
   readonly response: Response;
   readonly url: URL;
+  readonly retryAfter: RetryAfter;
 };
 
 /**
@@ -36,22 +39,35 @@ export const decodeAnswer = Effect.fn('decodeAnswer')(function* <S extends Servi
   url,
   maxResponseBytes,
 }: DecodeAnswerInput<S>): Effect.fn.Return<S['Type'], OperationFailed | ResponseUnreadable> {
-  const body = yield* readResponseJson({ response, url, maxResponseBytes });
+  const retryAfter = readRetryAfter({ headers: response.headers });
+  const body = yield* readResponseJson({ response, url, maxResponseBytes, retryAfter });
 
   if (!response.ok) {
-    const { error } = yield* decodeBody({ schema: ErrorBody, body, response, url });
+    const { error } = yield* decodeBody({ schema: ErrorBody, body, response, url, retryAfter });
 
     const failure = yield* detailFailure({ detail: error, failures }).pipe(
       Effect.mapError(
         (issue) =>
-          new ResponseUnreadable({ url, status: response.status, step: AnswerStep.Decode, reason: issue.message }),
+          new ResponseUnreadable({
+            url,
+            status: response.status,
+            step: AnswerStep.Decode,
+            reason: issue.message,
+            retryAfter,
+          }),
       ),
     );
 
-    return yield* new OperationFailed({ family: error.family, message: error.message, failure });
+    return yield* new OperationFailed({
+      family: error.family,
+      message: error.message,
+      failure,
+      status: response.status,
+      retryAfter,
+    });
   }
 
-  return yield* decodeBody({ schema: output, body, response, url });
+  return yield* decodeBody({ schema: output, body, response, url, retryAfter });
 });
 
 /** Decodes a body with its schema; a body the schema refuses is an answer this client cannot read. */
@@ -60,11 +76,18 @@ const decodeBody = Effect.fn('decodeBody')(function* <S extends ServiceFreeCodec
   body,
   response,
   url,
+  retryAfter,
 }: DecodeBodyInput<S>): Effect.fn.Return<S['Type'], ResponseUnreadable> {
   return yield* Schema.decodeUnknownEffect(schema)(body).pipe(
     Effect.mapError(
       (failure) =>
-        new ResponseUnreadable({ url, status: response.status, step: AnswerStep.Decode, reason: failure.message }),
+        new ResponseUnreadable({
+          url,
+          status: response.status,
+          step: AnswerStep.Decode,
+          reason: failure.message,
+          retryAfter,
+        }),
     ),
   );
 });

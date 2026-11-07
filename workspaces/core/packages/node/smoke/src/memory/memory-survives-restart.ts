@@ -18,6 +18,8 @@ export async function memorySurvivesRestart({ stack }: ScenarioInput): Promise<v
     marker,
     replies: [
       { tools: [{ id: randomUUID(), name: 'memory_write', input: { path, text, expectedVersion: null } }] },
+      { tools: [{ id: randomUUID(), name: 'memory_read', input: { path } }] },
+      { tools: [{ id: randomUUID(), name: 'memory_read', input: { path } }] },
       { text: `Saved the memory at ${path}. Do not repeat the write. Continue the request ${marker}.` },
       { text: 'Saved' },
     ],

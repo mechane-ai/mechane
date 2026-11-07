@@ -22,9 +22,17 @@ unique. Pages hold ordered record identities and continuation metadata separatel
 Receiving a newer record updates its readers without silently changing the membership of a page they are reading.
 One loaded page or the union of loaded pages never establishes an exhaustive dataset.
 
-Use each tab's native TanStack Query observers for demanded API reads, polling, focus refresh, errors, and retries.
+Use each tab's native TanStack Query observers for demanded API reads, polling, focus refresh, errors, and manual retries.
 Keep their successful result a completion scalar. Canonical records and exact page receipts belong only to TanStack DB;
 the native browser coordinator replicates those collections, not a tab's network-request state.
+Keep temporary transport recovery in `console-data/src/read-recovery.ts`, beneath those read lifecycles. Only
+catalog-declared GET operations and native conversation history may recover explicit 502, 503, or 504 responses or
+failed network exchanges. Allow at most two additional attempts, with 1-second and 3-second minimum waits, within the
+original 40-second read deadline. Honor a valid Retry-After deadline; fail when it is invalid or cannot fit the remaining
+budget. The shared client preserves bounded retry metadata without implementing retries. Keep Query's automatic retries
+disabled so transport budgets cannot multiply. Abort interrupts both waits and attempts. Never retry authentication,
+validation, successful-response decoding, writes, or active stream resumption through this policy. Preserve the pending
+read or admitted warm content during recovery, and expose a real error with manual recovery when the budget ends.
 Use entity and page reads whose server API supplies the required bounds. Preserve
 the server's cursor, ordering, and coverage meaning. `showTurn` returns its selected turn's dispatch collection without
 a server page bound. Merge its turn into the canonical turn collection and retain the remaining trace evidence in one
@@ -188,6 +196,12 @@ hide unavailable or truncated evidence in a different tab. Use recorded endpoint
 does not become a zero-duration step.
 
 ## Evidence
+
+Return temporary unavailable responses before a successful domain read and native history read. Verify one pending
+lifecycle, retained warm content, the bounded attempt count, and no write or stream resubmission. Exercise Retry-After
+seconds and dates, an invalid or excessive deadline, permanent unavailability, auth rejection, an invalid successful
+response, and owner cancellation during backoff. Exhaustion exposes an actionable error; cancellation sends no later
+attempt and admits no late content. Keep these fault probes within the existing browser qualification owner.
 
 Environment controls observe exact managed-process handles without waking a machine or extending its lease. Load logs
 for the selected handle, preserve terminal output, and retain keyboard focus when Stop removes its own control.

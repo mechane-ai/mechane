@@ -913,7 +913,10 @@
     { "files": ["**/utilities/**"], "excludeFiles": [], "rules": { "promise/avoid-new": "off" } },
     {
       "files": ["packages/browser/**"],
-      "excludeFiles": ["packages/browser/console-data/src/api.ts"],
+      "excludeFiles": [
+        "packages/browser/console-data/src/api.ts",
+        "packages/browser/console-data/src/read-recovery.ts"
+      ],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -2427,7 +2430,7 @@
       }
     },
     {
-      "files": ["packages/browser/console-data/src/api.ts"],
+      "files": ["packages/browser/console-data/src/api.ts", "packages/browser/console-data/src/read-recovery.ts"],
       "excludeFiles": [],
       "rules": {
         "no-restricted-imports": [

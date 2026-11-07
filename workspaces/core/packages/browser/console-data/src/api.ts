@@ -7,9 +7,18 @@ import {
   ResponseUnreadable,
 } from '@mechane/client';
 import { ConsoleStorageFailed } from '@mechane/console-cache';
-import { ErrorFamily } from '@mechane/protocol';
-import type { catalog, OperationInput, OperationOutput } from '@mechane/protocol';
-import { Duration, Effect, Option, Result, Schema } from 'effect';
+import { catalog, ErrorFamily } from '@mechane/protocol';
+import type { OperationInput, OperationOutput } from '@mechane/protocol';
+import { HttpMethod } from '@mechane/records';
+import { Effect, Option, Result, Schema } from 'effect';
+import type { Duration } from 'effect';
+import {
+  isTransientReadFailure,
+  ReadResponseFailed,
+  ReadTimedOut,
+  recoverRead,
+  REQUEST_TIMEOUT,
+} from './read-recovery.ts';
 
 /** The authenticated operations the console currently exposes. */
 export type ConsoleOperation =
@@ -65,7 +74,6 @@ const READ_FAILURE_SCOPES: ReadonlyMap<string, 'scope' | 'mech' | 'turn' | 'arti
 ]);
 
 const SESSION_CHANGES: ReadonlySet<string> = new Set(['IdentityNotAdmitted', 'WorkspaceNotFound']);
-const REQUEST_TIMEOUT = Duration.seconds(40);
 
 /** One Promise boundary for the browser libraries; the shared client owns wire validation and typed failures. */
 export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (failure?: unknown) => void): ConsoleApi {
@@ -76,42 +84,61 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (f
   ): Promise<Output<N>> {
     const combined = signal === undefined ? lifetime : AbortSignal.any([lifetime, signal]);
 
-    const maxResponseBytes = Option.none();
+    async function exchange(requestSignal: AbortSignal, timeout: Duration.Duration): Promise<Output<N>> {
+      const operation = call({
+        maxResponseBytes: Option.none(),
+        name,
+        input,
+        credential: BROWSER_CREDENTIAL,
+        origin,
+        timeout,
+        userAgent: 'mechane-console',
+      });
 
-    const operation = call({
-      maxResponseBytes,
-      name,
-      input,
-      credential: BROWSER_CREDENTIAL,
-      origin,
-      timeout: REQUEST_TIMEOUT,
-      userAgent: 'mechane-console',
-    });
+      const result = await Effect.runPromise(Effect.result(operation), { signal: requestSignal });
 
-    const captured = Effect.result(operation);
-    const result = await Effect.runPromise(captured, { signal: combined });
+      if (Result.isFailure(result)) {
+        const failure = result.failure;
 
-    if (Result.isFailure(result)) {
-      const failure = result.failure;
+        if (failure instanceof OperationFailed && !lifetime.aborted) {
+          const hasSessionChanged =
+            failure.family === ErrorFamily.Unauthenticated || SESSION_CHANGES.has(failure.failure._tag);
 
-      if (failure instanceof OperationFailed && !lifetime.aborted) {
-        const hasSessionChanged =
-          failure.family === ErrorFamily.Unauthenticated || SESSION_CHANGES.has(failure.failure._tag);
-
-        if (hasSessionChanged) {
-          onSessionEnded(failure);
+          if (hasSessionChanged) {
+            onSessionEnded(failure);
+          }
         }
+
+        throw failure;
       }
 
-      throw result.failure;
+      return result.success;
     }
 
-    return result.success;
+    return catalog[name].method === HttpMethod.Get
+      ? await recoverRead({ signal: combined, read: exchange })
+      : await exchange(combined, REQUEST_TIMEOUT);
   };
 }
 
 /** A safe user-facing explanation that does not expose transport details. */
 export function problemMessage(error: unknown): string {
+  if (error instanceof OriginUnreachable) {
+    return 'Could not reach this Mechane installation. Check the connection and try again.';
+  }
+
+  if (isTransientReadFailure(error)) {
+    return 'The service is temporarily unavailable. Try again in a moment.';
+  }
+
+  if (error instanceof ReadTimedOut) {
+    return 'The service did not respond in time. Try again.';
+  }
+
+  if (error instanceof ReadResponseFailed) {
+    return 'The conversation could not be loaded. Try again.';
+  }
+
   if (error instanceof OperationFailed && error.failure._tag === 'EvidenceNotFound') {
     return 'This capture is no longer available.';
   }
@@ -126,10 +153,6 @@ export function problemMessage(error: unknown): string {
 
   if (error instanceof Error && error.name === 'AbortError') {
     return 'The request was canceled.';
-  }
-
-  if (error instanceof OriginUnreachable) {
-    return 'Could not reach this Mechane installation. Check the connection and try again.';
   }
 
   return 'Could not load this data. Try again.';

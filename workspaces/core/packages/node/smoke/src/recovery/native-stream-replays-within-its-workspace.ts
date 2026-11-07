@@ -26,8 +26,22 @@ export async function nativeStreamReplaysWithinItsWorkspace({ stack }: ScenarioI
   const marker = `stream-${randomUUID()}`;
   const expectedReply = `reply-${randomUUID()}`;
   const mech = await createMech({ stack, account, name: marker });
+  const toolCallId = randomUUID();
 
-  fixtures.model.configure({ marker, replies: [{ text: expectedReply }] });
+  const specification = {
+    root: 'result',
+    elements: {
+      result: { type: 'Card', props: {}, children: ['answer'] },
+      answer: { type: 'Text', props: { content: expectedReply }, children: [] },
+    },
+  };
+
+  const modelReplies = [
+    { tools: [{ id: toolCallId, name: 'render_ui', input: specification }] },
+    { text: expectedReply },
+  ];
+
+  fixtures.model.configure({ marker, replies: modelReplies });
 
   const started = await startNativeChat({ stack, account, mechId: mech.id, text: marker });
 
@@ -36,6 +50,10 @@ export async function nativeStreamReplaysWithinItsWorkspace({ stack }: ScenarioI
 
   assert.equal(completed[0]?.status, TurnStatus.Answered);
   assert.equal(nativeChatText(original.message), expectedReply);
+
+  const presentation = original.message.parts.find((part) => part.type === 'data-spec');
+
+  assert.deepEqual(presentation, { type: 'data-spec', id: toolCallId, data: { type: 'flat', spec: specification } });
 
   await stack.restart();
 
@@ -58,10 +76,12 @@ export async function nativeStreamReplaysWithinItsWorkspace({ stack }: ScenarioI
   });
 
   const replies = history.filter((message) => message.role === 'assistant');
+  const encodedParts = JSON.stringify(original.message.parts);
+  const expectedParts: unknown = JSON.parse(encodedParts);
 
   assert.equal(replies.length, 1);
   assert.equal(replies[0]?.id, original.message.id);
-  assert.equal(JSON.stringify(replies[0].parts), JSON.stringify(original.message.parts));
+  assert.deepEqual(replies[0].parts, expectedParts);
 
   const startIndex = Math.floor(original.chunks.length * REPLAY_START_FRACTION);
 
@@ -87,5 +107,5 @@ export async function nativeStreamReplaysWithinItsWorkspace({ stack }: ScenarioI
   const anonymous = await replayNativeChat({ origin: stack.origin, workflowRunId: started.workflowRunId });
 
   assert.equal(anonymous.status, HttpStatusCode.Unauthorized);
-  assert.equal(fixtures.model.readCalls({ marker }).length, 1);
+  assert.equal(fixtures.model.readCalls({ marker }).length, modelReplies.length);
 }

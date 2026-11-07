@@ -12,6 +12,7 @@ ignores:
     '**/main.ts',
     packages/worker/sandbox-service/src/main.ts,
     'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/read-recovery.ts',
   ]
 rule:
   pattern: Effect.$RUN

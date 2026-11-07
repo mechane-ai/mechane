@@ -1,10 +1,6 @@
 import { WorkflowAgent } from '@ai-sdk/workflow';
 import type { ModelCallStreamPart } from '@ai-sdk/workflow';
-import {
-  createPresentationOutput,
-  PresentationCatalog,
-  PresentationSpecification,
-} from '@mechane/protocol/presentation';
+import { createPresentationOutput, PresentationSpecification } from '@mechane/protocol/presentation';
 import { stepCountIs, tool } from 'ai';
 import { createHook, getWritable } from 'workflow';
 import { deliverRunOutcomeToSlack, deliverRunToSlack } from '../channels/deliver-run-to-slack.ts';
@@ -71,13 +67,13 @@ async function executeRun(runId: string): Promise<RunOutcome> {
       ...createRequestTools(context.identity),
       render_ui: tool({
         description:
-          'Present a static card, table, or chart. Use supported catalog components and HTTPS links. Do not include interactive approvals or state expressions.',
+          'Present a static card, table, or chart when a visual improves the answer. Supply the complete spec as tool arguments; keep the final reply in concise Markdown.',
         inputSchema: PresentationSpecification,
         execute: async (specification) => createPresentationOutput({ spec: specification }),
       }),
     };
 
-    const instructions = [context.instructions, ...prepared.notices, PresentationCatalog.prompt()].join('\n\n');
+    const instructions = [context.instructions, ...prepared.notices].join('\n\n');
     const reference = { ...context.identity, modelId: context.model };
 
     const policy = await prepareAgentContext({

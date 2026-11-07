@@ -1,6 +1,7 @@
 import { ErrorFamily, ServerFailure, UnknownFailure } from '@mechane/protocol';
 import { Schema } from 'effect';
 import { AnswerStep } from './constants.ts';
+import { RetryAfter } from './retry-after.ts';
 
 /**
  * The deployment answered the call with an error: its family, which decides how a caller handles it, and the
@@ -11,6 +12,8 @@ export class OperationFailed extends Schema.TaggedError<OperationFailed>()('Oper
   family: Schema.Enum(ErrorFamily),
   message: Schema.String,
   failure: Schema.Union([ServerFailure, UnknownFailure]),
+  status: Schema.Int,
+  retryAfter: RetryAfter,
 }) {}
 
 /** The request never reached a server that answered, such as when the connection was refused. */
@@ -34,4 +37,5 @@ export class ResponseUnreadable extends Schema.TaggedError<ResponseUnreadable>()
   status: Schema.Int,
   step: Schema.Enum(AnswerStep),
   reason: Schema.String,
+  retryAfter: RetryAfter,
 }) {}

@@ -2,12 +2,14 @@ import type { Bytes } from '@mechane/records';
 import { Effect, Option } from 'effect';
 import { AnswerStep } from './constants.ts';
 import { ResponseUnreadable } from './errors.ts';
+import type { RetryAfter } from './retry-after.ts';
 
 type ReadResponseJsonInput = {
   readonly response: Response;
   readonly url: URL;
   /** None keeps the server response unbounded; Some limits bytes before decoding. */
   readonly maxResponseBytes: Option.Option<Bytes>;
+  readonly retryAfter: RetryAfter;
 };
 
 type ReadInput = { readonly signal: AbortSignal };
@@ -17,6 +19,7 @@ export const readResponseJson = Effect.fn('readResponseJson')(function* ({
   response,
   url,
   maxResponseBytes,
+  retryAfter,
 }: ReadResponseJsonInput): Effect.fn.Return<unknown, ResponseUnreadable> {
   const body = Option.fromNullOr(response.body);
 
@@ -38,6 +41,7 @@ export const readResponseJson = Effect.fn('readResponseJson')(function* ({
             status: response.status,
             step: AnswerStep.ParseJson,
             reason: 'Response exceeds the requested byte limit',
+            retryAfter,
           });
 
           controller.error(failure);
@@ -58,6 +62,12 @@ export const readResponseJson = Effect.fn('readResponseJson')(function* ({
   return yield* Effect.tryPromise({
     try: (signal) => read({ signal }),
     catch: (cause) =>
-      new ResponseUnreadable({ url, status: response.status, step: AnswerStep.ParseJson, reason: String(cause) }),
+      new ResponseUnreadable({
+        url,
+        status: response.status,
+        step: AnswerStep.ParseJson,
+        reason: String(cause),
+        retryAfter,
+      }),
   });
 });

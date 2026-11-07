@@ -13,6 +13,7 @@ ignores:
     '**/node_modules/**',
     '**/*.d.ts',
     'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/read-recovery.ts',
   ]
 rule:
   kind: binary_expression

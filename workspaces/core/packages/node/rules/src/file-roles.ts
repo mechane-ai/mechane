@@ -51,7 +51,10 @@ export const FILE_ROLES = {
     'packages/browser/elements/packages/**/*.stories.tsx',
   ],
   [FileRole.BrowserBuildConfiguration]: BROWSER_BUILD_CONFIGURATION,
-  [FileRole.BrowserAdapter]: ['packages/browser/console-data/src/api.ts'],
+  [FileRole.BrowserAdapter]: [
+    'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/read-recovery.ts',
+  ],
   [FileRole.BrowserQuery]: [
     'packages/browser/console-data/src/collections.ts',
     'packages/browser/console-data/src/console-data.ts',

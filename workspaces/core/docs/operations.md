@@ -96,6 +96,13 @@ and does not request a fresh file checkpoint. Its grace period and a healthy rep
 were saved. Require a completed fresh checkpoint, guest retirement, confirmed provider stop, and released capacity
 before the image apply. Preserve the checkpoint bucket and Durable Object namespace.
 
+On Cloudflare, correlate each current machine's completed stop with its released reservation and sleeping workspace. The
+awaited [container destruction](https://developers.cloudflare.com/containers/api/durable-object-container/#destroy)
+establishes physical retirement. Reconcile the complete provider inventory with those records; require no remaining
+active, assigned, or starting placement. Provider inventory reports logical instances, so neither an `inactive` label
+nor a blanket requirement for literal `stopped` labels establishes this gate. Investigate unmatched instances or
+contradictory observations before continuing.
+
 ### Upgrade domain schema 1 to 2
 
 Releases 0.25.0 and 0.25.1 require schema 1 and cannot restart after 0.25.2 migrates it. Use this stopped-service
@@ -116,11 +123,13 @@ procedure; the old sandbox service's stop operation does not create a fresh chec
 3. Recheck idle work and save each affected workspace's exact policy. Suspend execution through its policy, preserving
    the other fields. Recheck for work admitted during that interval. If any appeared, restore the saved policies, finish
    it on the old release, and repeat the fresh checkpoint and fence. Do not migrate past an unresolved race.
-4. Retire guests through authenticated `POST /internal/sandboxes/{workspaceId}/{mechId}/stop` at
-   `MECHANE_SANDBOX_ORIGIN`, using the existing sandbox-service credential. There is no public stop CLI. Poll the
-   corresponding internal `GET .../workspace`: saved homes must report `sandbox_id: null` and `status: "sleeping"`. Also
-   require the corresponding provider instances to be stopped and capacity reservations released. An accepted stop
-   response or a sleeping report alone is insufficient. Keep old Node available through the capacity-release callbacks.
+4. Record each replacement machine's held capacity reservation. Retire guests through authenticated
+   `POST /internal/sandboxes/{workspaceId}/{mechId}/stop` at `MECHANE_SANDBOX_ORIGIN`, using the existing
+   sandbox-service credential. There is no public stop CLI. Poll the corresponding internal `GET .../workspace`: saved
+   homes must report `sandbox_id: null` and `status: "sleeping"`. Require that same reservation to be released and the
+   fresh maintenance operation to remain unchanged. Correlate the completed stop, released capacity, and complete
+   provider inventory using the retirement check above. An accepted stop response or a sleeping report alone is
+   insufficient. Keep old Node available through the capacity-release callbacks.
 5. Stop the whole old Node application, including instances maintained by minimum capacity. Audit all workspaces for
    unfinished domain/Workflow work and active runtime database sessions. Resolve any race on the old release before
    continuing. Take an authoritative database backup and retain vault keys, checkpoint files, and resource identities.

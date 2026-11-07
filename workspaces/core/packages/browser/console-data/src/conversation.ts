@@ -1,12 +1,14 @@
+import { OriginUnreachable, readRetryAfter } from '@mechane/client';
 import { HttpStatusCode } from '@mechane/records';
 import { validateUIMessages } from 'ai';
 import type { UIMessage } from 'ai';
-import { Duration } from 'effect';
+import { Schema } from 'effect';
 import { z } from 'zod';
+import { ReadResponseFailed, recoverRead } from './read-recovery.ts';
 
-const HISTORY_TIMEOUT = Duration.seconds(40);
 const HISTORY_MAX_MESSAGES = 100;
 const accessLostStatuses: ReadonlySet<number> = new Set([HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden]);
+const isNetworkFailure = Schema.is(Schema.instanceOf(TypeError));
 
 const HistoryEnvelope = z.object({
   sessionId: z.uuid(),
@@ -83,20 +85,44 @@ export function createConversationApi({ origin, workspaceId, signal, onAccessLos
         url.searchParams.set('before', target.before);
       }
 
-      const response = await scopedFetch(url, {
-        signal: AbortSignal.any([lifetime, AbortSignal.timeout(Duration.toMillis(HISTORY_TIMEOUT))]),
+      return await recoverRead({
+        signal: AbortSignal.any([signal, lifetime]),
+        read: async (readSignal) => {
+          const response = await scopedFetch(url, { signal: readSignal }).catch((failure: unknown) => {
+            readSignal.throwIfAborted();
+
+            if (isNetworkFailure(failure)) {
+              throw new OriginUnreachable({ url, reason: 'The conversation request could not reach the server' });
+            }
+
+            throw failure;
+          });
+
+          if (!response.ok) {
+            const failure = new ReadResponseFailed({
+              status: response.status,
+              retryAfter: readRetryAfter({ headers: response.headers }),
+            });
+
+            try {
+              await response.body?.cancel();
+            } catch {
+              throw failure;
+            }
+
+            throw failure;
+          }
+
+          const envelope = HistoryEnvelope.parse(await response.json());
+
+          const messages =
+            envelope.messages.length === 0 ? [] : await validateUIMessages({ messages: envelope.messages });
+
+          readSignal.throwIfAborted();
+
+          return { ...envelope, messages };
+        },
       });
-
-      if (!response.ok) {
-        throw new Error('The conversation could not be loaded.');
-      }
-
-      const envelope = HistoryEnvelope.parse(await response.json());
-      const messages = envelope.messages.length === 0 ? [] : await validateUIMessages({ messages: envelope.messages });
-
-      lifetime.throwIfAborted();
-
-      return { ...envelope, messages };
     },
   };
 }
