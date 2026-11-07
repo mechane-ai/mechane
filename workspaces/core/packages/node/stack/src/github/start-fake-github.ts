@@ -1,8 +1,9 @@
+import { serveRequests } from '@mechane/program';
+import type { ServedAnswer, ServedRequest } from '@mechane/program';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import type { StackFailed } from '../errors.ts';
-import { serveRequests } from '../loopback/serve-requests.ts';
-import type { ServedAnswer, ServedRequest } from '../types.ts';
+import { stackListenFailure } from '../loopback/stack-listen-failure.ts';
 import { answerGitHubRequest } from './answer-github-request.ts';
 import { createGitHubLedger } from './create-github-ledger.ts';
 import type { LocalGitHub } from './types.ts';
@@ -25,5 +26,7 @@ export const startFakeGitHub = Effect.fn('startFakeGitHub')(function* ({
       github,
     });
 
-  return yield* serveRequests({ answer });
+  const listening = serveRequests({ answer });
+
+  return yield* Effect.mapError(listening, stackListenFailure);
 });

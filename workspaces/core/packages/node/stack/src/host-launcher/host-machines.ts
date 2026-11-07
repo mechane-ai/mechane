@@ -1,4 +1,4 @@
-import { PrivateMode } from '@mechane/program';
+import { LOOPBACK_HOST, PrivateMode } from '@mechane/program';
 import { GUEST_VARIABLES, GuestListening, GuestStart, HostMachineStatus } from '@mechane/sandbox-wire';
 import type { HostMachine } from '@mechane/sandbox-wire';
 import { Effect, MutableRef, Option, Schema } from 'effect';
@@ -7,7 +7,7 @@ import type { ChildProcess } from 'node:child_process';
 import { closeSync, mkdirSync, openSync } from 'node:fs';
 import { join } from 'node:path';
 import { createInterface } from 'node:readline';
-import { GUEST_BUNDLE, LOOPBACK_HOST } from '../constants.ts';
+import { GUEST_BUNDLE } from '../constants.ts';
 import { killProcessGroup } from '../processes/kill-process-group.ts';
 import { stopProcessGroup } from '../processes/stop-process-group.ts';
 import type { StackSettings } from '../types.ts';

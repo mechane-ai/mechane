@@ -14,6 +14,7 @@ export const HttpStatusCode = {
   NotFound: 404,
   Conflict: 409,
   TooManyRequests: 429,
+  InternalServerError: 500,
   BadGateway: 502,
   Unavailable: 503,
 } as const;

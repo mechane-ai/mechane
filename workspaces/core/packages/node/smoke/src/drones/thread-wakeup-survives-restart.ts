@@ -1,5 +1,12 @@
 import { EventType, ThreadList } from '@mechane/protocol';
-import { check, followEvents, ScriptedTool, signedInMech, toolCallLine } from '@mechane/testing';
+import {
+  check,
+  followEvents,
+  ScriptedTool,
+  signedInMech,
+  toolCallLine,
+  verifyRequestContinuations,
+} from '@mechane/testing';
 import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
 import { Array, DateTime, Duration, Effect, Option } from 'effect';
 import type { Scope } from 'effect';
@@ -105,4 +112,6 @@ export const threadWakeupSurvivesRestart = Effect.fn('threadWakeupSurvivesRestar
     conditions: [resumed.type === EventType.TurnAnswered, wakeups.length === 1, isReplacementDue, hasReplacementNote],
     detail: `the restarted mech received ${wakeups.length} scheduled continuation and ended ${resumed.type}`,
   });
+
+  yield* verifyRequestContinuations({ stack, guarantee });
 }, Effect.scoped);

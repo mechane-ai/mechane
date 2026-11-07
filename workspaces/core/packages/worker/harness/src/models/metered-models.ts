@@ -49,13 +49,19 @@ export function meteredModels({ modelUpstream, meter }: MeteredModelsInput): Mod
  * upstream then keeps each conversation's cache apart, and a fork's never mixes with its parent's.
  */
 function offerModel({ offer, upstream }: OfferModelInput): Model<'openai-completions'> {
+  const input: Model<'openai-completions'>['input'] = ['text'];
+
+  if (offer.supportsImages === true) {
+    input.push('image');
+  }
+
   return {
     id: offer.id,
     name: offer.id,
     api: 'openai-completions',
     provider: MODEL_PROVIDER,
     baseUrl: upstream.href,
-    input: ['text'],
+    input,
     reasoning: false,
     compat: {
       sendSessionAffinityHeaders: true,

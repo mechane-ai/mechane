@@ -1,8 +1,8 @@
 import { Effect, Option, Result, Schema } from 'effect';
 import type { Scope } from 'effect';
 import type { Server } from 'node:net';
-import { LOOPBACK_HOST, StackStep } from '../constants.ts';
-import { StackFailed } from '../errors.ts';
+import { LOOPBACK_HOST } from '../constants.ts';
+import { LoopbackFailed } from '../errors.ts';
 import { closeLoopbackServer } from './close-loopback-server.ts';
 
 type ServerInput = { readonly server: Server };
@@ -18,23 +18,30 @@ type BoundAddress = typeof BoundAddress.Type;
  */
 export const serveOnLoopback = Effect.fn('serveOnLoopback')(function* ({
   server,
-}: ServerInput): Effect.fn.Return<number, StackFailed, Scope.Scope> {
-  yield* Effect.acquireRelease(listen({ server }), () => closeLoopbackServer({ server }));
+}: ServerInput): Effect.fn.Return<number, LoopbackFailed, Scope.Scope> {
+  const listening = listen({ server });
 
-  const bound = Result.getSuccess(Schema.decodeUnknownResult(BoundAddress)(server.address()));
+  yield* Effect.acquireRelease(listening, () => closeLoopbackServer({ server }));
+
+  const address = server.address();
+  const decoded = Schema.decodeUnknownResult(BoundAddress)(address);
+  const bound = Result.getSuccess(decoded);
 
   if (Option.isNone(bound)) {
-    return yield* new StackFailed({ step: StackStep.Listen, reason: `${LOOPBACK_HOST} gave no TCP address` });
+    return yield* new LoopbackFailed({ reason: `${LOOPBACK_HOST} gave no TCP address` });
   }
 
   return bound.value.port;
 });
 
 /** Starts listening on a free port of the loopback host. */
-const listen = Effect.fn('listen')(function* ({ server }: ServerInput): Effect.fn.Return<void, StackFailed> {
-  yield* Effect.callback<void, StackFailed>((resume) => {
-    const refuse: (error: Error) => void = (error) =>
-      resume(Effect.fail(new StackFailed({ step: StackStep.Listen, reason: error.message })));
+const listen = Effect.fn('listen')(function* ({ server }: ServerInput): Effect.fn.Return<void, LoopbackFailed> {
+  yield* Effect.callback<void, LoopbackFailed>((resume) => {
+    const refuse: (error: Error) => void = (error) => {
+      const failure = new LoopbackFailed({ reason: error.message });
+
+      resume(failure);
+    };
 
     const listening: () => void = () => resume(Effect.void);
 

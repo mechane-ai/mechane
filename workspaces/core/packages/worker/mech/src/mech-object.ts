@@ -1,6 +1,6 @@
 import type { MechRow, MechTables } from '@mechane/mech-store';
 import { catalog, SandboxRequest, SlackDeliveries, SourceRequest, WatchConfiguration } from '@mechane/protocol';
-import { PrincipalId, SlackInboxOrigin, WatchId } from '@mechane/records';
+import { PrincipalId, SlackDestination, SlackInboxOrigin, WatchId } from '@mechane/records';
 import {
   BoundedTurnAnswer,
   DroneAnswer,
@@ -17,6 +17,7 @@ import {
   MemoriesAnswer,
   objectSettings,
   SandboxAnswer,
+  SlackNoticeReceipt,
   SourceAnswer,
   SourceGrantAnswer,
   ThreadsAnswer,
@@ -41,6 +42,7 @@ import type {
   MechRpc,
   ObjectSettings,
   ReceiveSlackInboxItemInput,
+  ReceiveSlackNoticeInput,
   RecentEventsInput,
   SandboxManageInput,
   SendInboxItemInput,
@@ -79,6 +81,7 @@ import { readMemories } from './memories/read-memories.ts';
 import { openMech } from './open-mech.ts';
 import { manageSandbox } from './sandboxes/manage-sandbox.ts';
 import { receiveSlackItem } from './slack/receive-slack-item.ts';
+import { receiveSlackNotice } from './slack/receive-slack-notice.ts';
 import { manageSource } from './sources/configuration/manage-source.ts';
 import { readSourceGrant } from './sources/configuration/read-source-grant.ts';
 import { readThreads } from './threads/read-threads.ts';
@@ -171,6 +174,20 @@ export class MechObject extends DurableObject<unknown> implements MechRpc {
     const deliveries = await this.#mech.atomic({ run: (tables) => tables.slackDeliveries() });
 
     return Schema.encodeSync(SlackDeliveries)({ deliveries });
+  }
+
+  async receiveSlackNotice({
+    destination: encoded,
+    ...input
+  }: ReceiveSlackNoticeInput): Promise<typeof SlackNoticeReceipt.Encoded> {
+    const destination = Schema.decodeUnknownSync(SlackDestination)(encoded);
+    const now = DateTime.nowUnsafe();
+
+    const receipt = await this.#mech.recordForAlarm({
+      run: (store) => receiveSlackNotice({ store, ...input, destination, now }),
+    });
+
+    return Schema.encodeSync(SlackNoticeReceipt)(receipt);
   }
 
   async setWatch({

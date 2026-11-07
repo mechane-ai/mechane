@@ -115,7 +115,11 @@ type DeliveredItem = {
   readonly text: string;
   readonly delivery: Delivery;
   readonly receivedAt: DateTime.Utc;
+  readonly images: ReadonlyArray<InboxImage>;
 };
+
+/** Image bytes resolved by the host; provider and connector credentials never enter the transcript. */
+export type InboxImage = { readonly base64: string; readonly mediaType: string };
 
 export type DeliverInput = { readonly inboxItem: DeliveredItem; readonly agent: MechAgent };
 

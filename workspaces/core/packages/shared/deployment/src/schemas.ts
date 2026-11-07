@@ -42,6 +42,8 @@ const MicrosPerMillionTokens = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)
 /** A model the deployment sells: its id at the upstream, its limits, and its rates for each kind of token. */
 export const ModelOffer = Schema.Struct({
   id: ModelId,
+  /** Absent when image support is not declared; the offer accepts text only. */
+  supportsImages: Schema.optionalKey(Schema.Boolean),
   contextWindowTokens: PositiveCount,
   maxOutputTokens: OutputTokens,
   inputMicrosPerMillionTokens: MicrosPerMillionTokens,
@@ -50,6 +52,7 @@ export const ModelOffer = Schema.Struct({
   cacheWriteMicrosPerMillionTokens: MicrosPerMillionTokens,
 }).pipe(
   Schema.encodeKeys({
+    supportsImages: 'supports_images',
     contextWindowTokens: 'context_window_tokens',
     maxOutputTokens: 'max_output_tokens',
     inputMicrosPerMillionTokens: 'input_micros_per_million_tokens',

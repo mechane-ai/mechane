@@ -1,5 +1,6 @@
 import type { StopInput } from '@mechane/harness';
 import { DateTime, Option } from 'effect';
+import { runRequestWaits } from '../requests/run-request-waits.ts';
 import { runSlackDeliveries } from '../slack/run-slack-deliveries.ts';
 import type { OpenedMech } from '../types.ts';
 import { applyCatchUp } from './apply-catch-up.ts';
@@ -44,6 +45,8 @@ async function driveRound({ mech, caught, stop }: DriveRoundInput): Promise<Opti
   if (isStopped) {
     return Option.none();
   }
+
+  await runRequestWaits(mech);
 
   const next = await catchUp(mech);
 

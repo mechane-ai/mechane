@@ -11,3 +11,4 @@ export type { MechFindings, FindingReportInput } from './findings/types.ts';
 export { FindingReportOutcome } from './findings/schemas.ts';
 
 export type { RemoteTools, RemoteListInput, RemoteCallInput } from './remote/types.ts';
+export type { MechRequests, AccessRequestInput, RequestWaitInput, TaskContext } from './requests/types.ts';

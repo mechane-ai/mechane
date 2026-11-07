@@ -1,6 +1,6 @@
-import { Delivery } from '@mechane/protocol';
+import { Delivery, ExternalRequestStatus } from '@mechane/protocol';
 import { InboxItemReceipt } from '@mechane/rpc';
-import { Option } from 'effect';
+import { Option, Schema } from 'effect';
 import { decideInboxItemReceipt } from '../inbox/decide-inbox-item-receipt.ts';
 import type { NowInput, TablesInput } from '../types.ts';
 import { readContinuationOwner } from './read-continuation-owner.ts';
@@ -15,7 +15,18 @@ export function advanceThreadContinuations({ store, now }: TablesInput & NowInpu
 
   for (const continuation of store.dueThreadContinuations({ now }).slice(0, 1)) {
     const note = Option.getOrElse(continuation.note, () => 'Check the current external state and continue this work.');
-    const text = `[Scheduled continuation]\nWork: ${continuation.title}\nThread: ${continuation.threadId}\n${note}\nResume this work. Reconcile external results before retrying actions. If still waiting, schedule another wakeup; resolve the thread when finished.`;
+
+    const request = Option.match(continuation.requestResult, {
+      onNone: () => '',
+      onSome: (result) => {
+        const encoded = Schema.encodeSync(ExternalRequestStatus)(result);
+        const details = JSON.stringify(encoded);
+
+        return `\nExternal request: ${details}\nThe request outcome does not prove the task completed. Recheck current access before acting.`;
+      },
+    });
+
+    const text = `[Scheduled continuation]\nWork: ${continuation.title}\nThread: ${continuation.threadId}\n${note}${request}\nResume this work. Reconcile external results before retrying actions. If still waiting, schedule another wakeup; resolve the thread when finished.`;
 
     const decision = decideInboxItemReceipt({
       store,

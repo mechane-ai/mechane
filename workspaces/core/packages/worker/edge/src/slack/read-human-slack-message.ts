@@ -2,7 +2,6 @@ import { callWorkspacePolicy } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
 import { SlackMessage, SlackMessageSubtype } from '@mechane/integrations';
 import type { SlackEventCallback } from '@mechane/integrations';
-import { InboxText } from '@mechane/protocol';
 import type { ObjectUnavailable, SlackInstallation } from '@mechane/protocol';
 import type { SlackUserId } from '@mechane/records';
 import { Effect, Option, Result, Schema } from 'effect';
@@ -49,7 +48,5 @@ function humanSlackMessage({ message, botUserId }: HumanSlackMessageInput): Opti
     return Option.none();
   }
 
-  const text = Schema.decodeUnknownResult(InboxText)(message.text);
-
-  return Option.liftPredicate(message, () => Result.isSuccess(text));
+  return Option.some(message);
 }

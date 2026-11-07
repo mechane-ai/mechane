@@ -31,8 +31,9 @@ export {
 } from './constants.ts';
 export { IdentityProvider, LOCAL_OWNER_IDENTITY } from './identity-provider.constants.ts';
 export { HttpMethod } from './http-method.constants.ts';
-export { SlackDestination, SlackInboxOrigin } from './slack.schemas.ts';
+export { SlackAttachment, SlackDestination, SlackInboxOrigin } from './slack.schemas.ts';
 export { SlackDeliveryStatus, SlackOriginKind } from './slack.constants.ts';
+export { createSlackIntakeNoticeKey } from './create-slack-intake-notice-key.ts';
 export {
   SlackConnectionId,
   SlackTeamId,
@@ -59,7 +60,16 @@ export type {
   WorkDispatchesInput,
 } from './types.ts';
 export { WatchId, FindingId } from './watch.schemas.ts';
-export { MechId, WorkspaceId, PrincipalId, InboxItemId, SlackBindingId, SlackDeliveryId } from './entity.schemas.ts';
+export {
+  MechId,
+  WorkspaceId,
+  PrincipalId,
+  InboxItemId,
+  ExternalRequestId,
+  ExternalApprovalId,
+  SlackBindingId,
+  SlackDeliveryId,
+} from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';
 export { BoundedRequestId, BoundedRequestRecordId, ModelToolCallId } from './bounded-request.schemas.ts';

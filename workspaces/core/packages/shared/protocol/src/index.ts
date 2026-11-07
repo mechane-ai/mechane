@@ -270,6 +270,7 @@ export { RemoteToolDescription, RemoteToolsOutcome } from './operations/connecti
 
 export { ServerFailure } from './errors/server-failure.errors.ts';
 export { WorkspacePolicy } from './operations/workspaces/policy.schemas.ts';
+export { ExternalRequestRecovery, ExternalRequestUnavailable } from './errors/external-request.errors.ts';
 export { TurnPage } from './operations/turns/list-turns.ts';
 export {
   ExecutionAccess,
@@ -278,3 +279,10 @@ export {
   ExecutionAccessState,
   GitHubRepositoryAccess,
 } from './operations/execution-access/schemas.ts';
+export {
+  ExternalRequestAuthorization,
+  ExternalRequestKind,
+  ExternalRequestState,
+  ExternalRequestStatus,
+  RequestService,
+} from './operations/execution-access/request-service.ts';

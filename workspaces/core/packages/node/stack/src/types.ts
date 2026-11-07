@@ -1,11 +1,9 @@
 import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
 import type { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
-import type { HttpStatusCode } from '@mechane/records';
 import type { ReleaseFailed } from '@mechane/release';
 import type { BaseConfiguration } from '@mechane/wrangler';
 import type { Effect, Option } from 'effect';
 import type { ChildProcess } from 'node:child_process';
-import type { IncomingHttpHeaders } from 'node:http';
 import type { LocalCommand, SCRIPTED_OFFERS } from './constants.ts';
 import type { StackFailed } from './errors.ts';
 
@@ -24,13 +22,6 @@ export type RuntimeProject = {
 /** A child process the stack started and stops. */
 export type ChildInput = { readonly child: ChildProcess };
 
-/** An answer of a local service: a status, its headers, and its body, whole or streamed in parts as they come. */
-export type ServedAnswer = {
-  readonly status: HttpStatusCode;
-  readonly headers: Readonly<Record<string, string>>;
-  readonly body: string | AsyncIterable<string>;
-};
-
 /**
  * A request the scripted upstream answered with a reply: the offer it named, the usage it reported, its body, and the
  * provider session it named. Its end user is the id of the workspace it was sent for.
@@ -42,14 +33,6 @@ export type AnsweredRequest = {
   readonly body: string;
   readonly sessionId: string;
   readonly user: string;
-};
-
-/** A request a local service reads to its end: its method, its URL, its headers by lowercase name, and its body. */
-export type ServedRequest = {
-  readonly method: string;
-  readonly url: URL;
-  readonly headers: IncomingHttpHeaders;
-  readonly body: string;
 };
 
 /** The scripted echo offers, including Claude's cache protocol, and one no day's allowance covers. */

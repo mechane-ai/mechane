@@ -1,11 +1,13 @@
 import { SLACK_DELIVERY_FIELDS } from '@mechane/protocol';
 import { RecordText, SHA256_PATTERN, SlackDestination, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
+import { SlackDeliveryPurpose } from './constants.ts';
 
 /** A durable outbox receipt with the message and reconciliation state needed after restart. */
 export const SlackDeliveryRow = wireStruct({
   fields: {
     ...SLACK_DELIVERY_FIELDS,
+    purpose: Schema.Enum(SlackDeliveryPurpose),
     /** Absent until a binding notification freezes its audience. */
     destination: Schema.OptionFromNullOr(Schema.fromJsonString(SlackDestination)),
     text: RecordText,

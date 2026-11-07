@@ -1,12 +1,16 @@
 import { HttpStatusCode } from '@mechane/records';
 import { Option, Schema } from 'effect';
-import type { RemoteByteCount } from './types.ts';
 
 class RemoteResponseTooLarge extends Schema.TaggedError<RemoteResponseTooLarge>()('RemoteResponseTooLarge', {}) {}
 
-type BoundRemoteResponseInput = { readonly response: Response; readonly accept: (input: RemoteByteCount) => boolean };
+type BoundRemoteResponseInput = {
+  readonly response: Response;
+  readonly accept: ({ bytes }: RemoteByteCount) => boolean;
+};
 
-/** The SDK must never see a redirect target because the request can carry an operator credential. */
+type RemoteByteCount = { readonly bytes: number };
+
+/** Remote callers never see a redirect target because requests can carry an operator credential. */
 export async function boundRemoteResponse({ response, accept }: BoundRemoteResponseInput): Promise<Response> {
   if (response.status >= HttpStatusCode.MultipleChoices && response.status < HttpStatusCode.BadRequest) {
     const body = Option.fromNullOr(response.body);

@@ -17,7 +17,8 @@ import type {
 } from '../mech.schemas.ts';
 import type { SandboxAnswer } from '../sandbox.schemas.ts';
 import type { SandboxManageInput } from '../sandbox.types.ts';
-import type { ReceiveSlackInboxItemInput } from '../slack.types.ts';
+import type { SlackNoticeReceipt } from '../slack.schemas.ts';
+import type { ReceiveSlackInboxItemInput, ReceiveSlackNoticeInput } from '../slack.types.ts';
 import type { SourceAnswer, SourceGrantAnswer } from '../source.schemas.ts';
 import type { SourceManageInput } from '../source.types.ts';
 import type { TurnEventsAnswer, TurnReplyRecord, TurnsAnswer } from '../turn.schemas.ts';
@@ -145,6 +146,7 @@ type MechMethods = {
   readonly manageSource: (input: SourceManageInput) => Promise<typeof SourceAnswer.Encoded>;
   readonly sourceGrant: () => Promise<typeof SourceGrantAnswer.Encoded>;
   readonly receiveSlackInboxItem: (input: ReceiveSlackInboxItemInput) => Promise<typeof InboxItemReceipt.Encoded>;
+  readonly receiveSlackNotice: (input: ReceiveSlackNoticeInput) => Promise<typeof SlackNoticeReceipt.Encoded>;
   readonly slackDeliveries: () => Promise<typeof SlackDeliveries.Encoded>;
   readonly setWatch: (input: SetWatchInput) => Promise<typeof WatchAnswer.Encoded>;
   readonly watchStatus: (input: UpdateWatchStatusInput) => Promise<typeof WatchAnswer.Encoded>;

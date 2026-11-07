@@ -15,3 +15,4 @@ export type { WatchRow } from './watch.schemas.ts';
 export type { FindingRow } from './finding.schemas.ts';
 export { SourceTask, SourcePublication } from './sources/schemas.ts';
 export type { BoundedTurnRow, DispatchEvidenceRow } from './bounded-turns/schemas.ts';
+export type { RequestWaitRow } from './requests/schemas.ts';

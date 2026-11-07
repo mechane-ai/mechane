@@ -1,5 +1,6 @@
 import {
   DurationFromSeconds,
+  MediaType,
   renamedWireStruct,
   SlackChannelId,
   SlackEventId,
@@ -27,6 +28,15 @@ export const SlackEnvelope = Schema.Union([
 
 export type SlackEnvelope = typeof SlackEnvelope.Type;
 
+/** File metadata is untrusted content despite arriving in an authenticated event. */
+const SlackFile = Schema.Struct({
+  id: Schema.NonEmptyString,
+  name: Schema.OptionFromOptionalNullOr(Schema.String),
+  mimetype: Schema.OptionFromOptionalNullOr(Schema.String),
+  url_private: Schema.OptionFromOptionalNullOr(Schema.String),
+  url_private_download: Schema.OptionFromOptionalNullOr(Schema.String),
+});
+
 /** The provider message fields needed to admit text and preserve its original thread. */
 export const SlackMessage = Schema.Struct({
   type: Schema.Literals([SlackMessageType.Message, SlackMessageType.Mention]),
@@ -40,9 +50,23 @@ export const SlackMessage = Schema.Struct({
   bot_id: Schema.OptionFromOptionalNullOr(Schema.String),
   /** Absent for an ordinary newly posted message. */
   subtype: Schema.OptionFromOptionalKey(Schema.String),
+  /** Slack omits this on text-only messages. */
+  files: Schema.OptionFromOptionalKey(Schema.Array(SlackFile)),
 });
 
 export type SlackMessage = typeof SlackMessage.Type;
+
+/** Supported raster media read from Slack's authenticated file response. */
+export const SlackImageMediaType = Schema.Literals([MediaType.Jpeg, MediaType.Png, MediaType.Gif, MediaType.Webp]);
+export type SlackImageMediaType = typeof SlackImageMediaType.Type;
+
+/** Image bytes reach the model only after host, media type, and size checks. */
+export const SlackImageResult = Schema.TaggedUnion({
+  Image: { base64: Schema.NonEmptyString, mediaType: SlackImageMediaType },
+  Unavailable: { reason: Schema.NonEmptyString },
+});
+
+export type SlackImageResult = typeof SlackImageResult.Type;
 
 /** The provider response fields needed to establish whether a write was confirmed. */
 export const SlackResponse = renamedWireStruct({

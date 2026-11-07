@@ -4,6 +4,7 @@ import { DateTime, Option } from 'effect';
 import { projectMechIndex } from '../definitions/project-mech-index.ts';
 import { startDrone } from '../drones/start-drone.ts';
 import { stopDrone } from '../drones/stop-drone.ts';
+import { prepareSlackInput } from '../slack/prepare-slack-input.ts';
 import type { OpenedMech } from '../types.ts';
 import { cancelTurnCommands } from './cancel-turn-commands.ts';
 import type { CaughtUp } from './types.ts';
@@ -39,7 +40,9 @@ export async function applyCatchUp({ mech, caught }: ApplyCatchUpInput): Promise
   }
 
   for (const delivery of caught.deliveries) {
-    await mech.harness.deliver(delivery);
+    const prepared = await prepareSlackInput({ mech, delivery });
+
+    await mech.harness.deliver(prepared);
 
     const inboxItemId = delivery.inboxItem.id;
     const request = await mech.store.atomic({ run: (store) => store.boundedTurn({ requestId: inboxItemId }) });

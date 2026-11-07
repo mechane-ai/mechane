@@ -1,9 +1,11 @@
+import { serveRequests } from '@mechane/program';
+import type { ServedAnswer, ServedRequest } from '@mechane/program';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import { SCRIPTED_OFFERS } from '../constants.ts';
 import type { StackFailed } from '../errors.ts';
-import { serveRequests } from '../loopback/serve-requests.ts';
-import type { AnsweredRequest, ScriptedUpstream, ServedAnswer, ServedRequest } from '../types.ts';
+import { stackListenFailure } from '../loopback/stack-listen-failure.ts';
+import type { AnsweredRequest, ScriptedUpstream } from '../types.ts';
 import { answerModelRequest } from './answer-model-request.ts';
 import { SCRIPTED_MODEL_KEY, ScriptedPath } from './constants.ts';
 
@@ -27,7 +29,8 @@ export const startScriptedUpstream = Effect.fn('startScriptedUpstream')(function
     return modelAnswer;
   };
 
-  const origin = yield* serveRequests({ answer });
+  const listening = serveRequests({ answer });
+  const origin = yield* Effect.mapError(listening, stackListenFailure);
 
   return {
     upstream: new URL(ScriptedPath.Upstream, origin),

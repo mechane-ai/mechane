@@ -31,7 +31,7 @@ export const admitSlackMessage = Effect.fn('admitSlackMessage')(function* (
   const message = human.value;
   const admission = yield* prepareSlackEvent({ ...input, message });
 
-  if (!SlackEventAdmission.guards.Admitted(admission)) {
+  if (SlackEventAdmission.guards.Ignored(admission) || SlackEventAdmission.guards.Conflicting(admission)) {
     return HttpStatusCode.Ok;
   }
 
@@ -58,7 +58,13 @@ const prepareSlackEvent = Effect.fn('prepareSlackEvent')(function* ({
     catch: () => new RequestInvalid({ reason: 'Slack event fingerprint could not be computed' }),
   });
 
-  const event = { ...identity, connectionId: installation.id, eventId: envelope.event_id, fingerprint };
+  const event = {
+    ...identity,
+    connectionId: installation.id,
+    eventId: envelope.event_id,
+    fingerprint,
+    userId: message.user,
+  };
 
   return yield* callWorkspace({
     settings,

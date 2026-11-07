@@ -8,6 +8,8 @@ import type { MechMemory } from './memory/types.ts';
 import { callRemoteTool } from './remote/call-remote-tool.ts';
 import { listRemoteTools } from './remote/list-remote-tools.ts';
 import type { RemoteTools } from './remote/types.ts';
+import { requestAccessTool, taskContextTool, waitForRequestTool } from './requests/request-tools.ts';
+import type { MechRequests } from './requests/types.ts';
 import { threadsExtension } from './threads/threads-extension.ts';
 import type { MechThreads } from './threads/types.ts';
 import type { Hands } from './types.ts';
@@ -27,6 +29,7 @@ type MechExtensionsInput = {
   readonly memory: MechMemory;
   /** The mech's threads and drones, which its threads tools change and its threads section lists. */
   readonly threads: MechThreads;
+  readonly requests: MechRequests;
 };
 
 /** The threads extension and tools that only the mech conversation may call. */
@@ -39,11 +42,17 @@ type MechTools = { readonly extensions: ReadonlyArray<Extension>; readonly selec
  * The extensions every conversation of a mech selects by default, its hands, its memory and its threads, and what a
  * drone's conversation leaves out of them. The mech passes them to its Harness, which never builds a tool.
  */
-export function mechExtensions({ hands, memory, threads, remote, findings }: MechExtensionsInput): MechTools {
+export function mechExtensions({ hands, memory, threads, remote, findings, requests }: MechExtensionsInput): MechTools {
   const remembering = memoryExtension({ memory });
   const threading = threadsExtension({ threads });
   const remoteTools = [listRemoteTools({ remote }), callRemoteTool({ remote })];
   const findingTool = reportFindingTool({ findings });
+
+  const requestTools = [
+    requestAccessTool({ requests }),
+    waitForRequestTool({ requests }),
+    taskContextTool({ requests }),
+  ];
 
   return {
     extensions: [
@@ -52,7 +61,11 @@ export function mechExtensions({ hands, memory, threads, remote, findings }: Mec
       threading,
       defineExtension({ name: REMOTE_EXTENSION, tools: remoteTools }),
       defineExtension({ name: 'mechane.findings', tools: [findingTool] }),
+      defineExtension({ name: 'mechane.requests', tools: requestTools }),
     ],
-    selection: { threads: threading, rootTools: [...remembering.writingTools, ...remoteTools, findingTool] },
+    selection: {
+      threads: threading,
+      rootTools: [...remembering.writingTools, ...remoteTools, findingTool, ...requestTools],
+    },
   };
 }

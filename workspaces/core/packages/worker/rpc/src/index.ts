@@ -131,12 +131,18 @@ export {
 export { sandboxIdentity } from './stubs/sandbox-stub.ts';
 
 export type { SandboxBindInput, SandboxCancelInput, SandboxManageInput } from './sandbox.types.ts';
-export { SlackBindingAnswer, SlackEventAdmission, SlackInstallationAnswer } from './slack.schemas.ts';
+export {
+  SlackBindingAnswer,
+  SlackEventAdmission,
+  SlackInstallationAnswer,
+  SlackNoticeReceipt,
+} from './slack.schemas.ts';
 export type {
   ConfigureSlackBindingInput,
   SlackBindingInput,
   AdmitSlackEventInput,
   ReceiveSlackInboxItemInput,
+  ReceiveSlackNoticeInput,
   ConfigureSlackInstallationInput,
   SlackInstallationInput,
 } from './slack.types.ts';

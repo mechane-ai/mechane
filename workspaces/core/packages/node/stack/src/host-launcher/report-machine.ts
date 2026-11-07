@@ -1,8 +1,8 @@
+import type { ServedAnswer, ServedRequest } from '@mechane/program';
 import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
 import { HostMachine, HostMachineStart } from '@mechane/sandbox-wire';
 import { Option, Result, Schema } from 'effect';
-import type { ServedAnswer, ServedRequest } from '../types.ts';
 import type { HostMachines } from './types.ts';
 
 type ReportMachineInput = {

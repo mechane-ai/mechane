@@ -6,6 +6,7 @@ import {
   SlackChannelId,
   SlackConnectionId,
   SlackTeamId,
+  SlackUserId,
 } from '@mechane/records';
 import { Schema, SchemaTransformation } from 'effect';
 import { CommandShape, FlagKind } from '../../constants.ts';
@@ -33,6 +34,10 @@ const SlackSwitch = Schema.Enum(SlackSwitchValue).pipe(
   ),
 );
 
+const SlackAllowedUsers = Schema.NonEmptyArray(SlackUserId);
+const SlackAllowedUsersJson = Schema.fromJsonString(SlackAllowedUsers);
+const OptionalSlackAllowedUsersJson = Schema.optionalKey(SlackAllowedUsersJson);
+
 /** Owner binding commands and member-readable delivery receipts. */
 export const SLACK_COMMANDS = {
   'slack bind': {
@@ -49,6 +54,10 @@ export const SLACK_COMMANDS = {
       'channel-id': { kind: FlagKind.Text, summary: 'the existing Slack channel ID' },
       'listening': { kind: FlagKind.Text, summary: 'true to receive human messages, false to stop receiving' },
       'replies': { kind: FlagKind.Text, summary: 'true to deliver replies and notifications, false to mute them' },
+      'allowed-user-ids': {
+        kind: FlagKind.Text,
+        summary: 'a JSON array of trusted Slack user IDs; omit to trust the channel',
+      },
     },
     arguments: [MECH_ARGUMENT],
     input: renamedWireStruct({
@@ -60,6 +69,7 @@ export const SLACK_COMMANDS = {
         mechId: MechId,
         isListening: SlackSwitch,
         isReplyEnabled: SlackSwitch,
+        allowedUserIds: OptionalSlackAllowedUsersJson,
       },
       renames: {
         id: 'binding-id',
@@ -69,6 +79,7 @@ export const SLACK_COMMANDS = {
         mechId: 'mech-id',
         isListening: 'listening',
         isReplyEnabled: 'replies',
+        allowedUserIds: 'allowed-user-ids',
       },
     }),
   },

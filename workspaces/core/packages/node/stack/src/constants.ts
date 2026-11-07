@@ -98,9 +98,6 @@ export const STAGED_VARIABLE_FILES = [
   [STATE_LAYOUT.project, ...CELLD_STATE_FOLDER, `${OBJECT_STORE_FILE}-shm`],
 ] as const;
 
-/** The host celld listens on, so nothing outside this machine reaches a local stack. */
-export const LOOPBACK_HOST = '127.0.0.1';
-
 /** The steps of starting, serving and stopping the local stack, each as the diagnostic of its failure words it. */
 export const StackStep = {
   ReadSandboxProvider: 'read the sandbox provider variable',

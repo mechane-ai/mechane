@@ -1,3 +1,4 @@
+import { closeLoopbackServer } from '@mechane/program';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import { once } from 'node:events';
@@ -5,7 +6,6 @@ import { createServer } from 'node:net';
 import type { Server } from 'node:net';
 import { StackStep } from '../constants.ts';
 import { StackFailed } from '../errors.ts';
-import { closeLoopbackServer } from './close-loopback-server.ts';
 import { loopbackPort } from './loopback-port.ts';
 
 type VerifyOriginFreeInput = { readonly origin: URL };

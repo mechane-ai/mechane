@@ -10,6 +10,8 @@ export const ScriptedTool = {
   Handoff: 'handoff',
   OpenThread: 'open_thread',
   UpdateThread: 'update_thread',
+  RequestAccess: 'request_access',
+  WaitForRequest: 'wait_for_request',
   StartDrone: 'start_drone',
 } as const;
 

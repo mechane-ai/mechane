@@ -32,6 +32,7 @@ export { heldMech } from './mechs/held-mech.ts';
 export { signedInMech } from './mechs/signed-in-mech.ts';
 export { talkingMech } from './mechs/talking-mech.ts';
 export { toolCallLine } from './mechs/tool-call-line.ts';
+export { verifyRequestContinuations } from './requests/verify-request-continuations.ts';
 export { turnOutcome } from './mechs/turn-outcome.ts';
 export type { CommandGate, MechTurn, TalkingMech } from './mechs/types.ts';
 export { settleScenarios } from './outcomes/settle-scenarios.ts';

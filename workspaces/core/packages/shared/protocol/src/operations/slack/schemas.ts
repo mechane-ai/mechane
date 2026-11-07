@@ -7,6 +7,7 @@ import {
   SlackDeliveryStatus,
   SlackDestination,
   SlackTeamId,
+  SlackUserId,
   wireStruct,
 } from '@mechane/records';
 import { Schema } from 'effect';
@@ -21,6 +22,8 @@ export const SlackBinding = wireStruct({
     mechId: MechId,
     isListening: Schema.Boolean,
     isReplyEnabled: Schema.Boolean,
+    /** Omitted preserves the channel's trusted-audience policy; a list narrows who may start work. */
+    allowedUserIds: Schema.optionalKey(Schema.NonEmptyArray(SlackUserId)),
   },
 });
 

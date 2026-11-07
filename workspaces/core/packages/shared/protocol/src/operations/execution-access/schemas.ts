@@ -8,6 +8,7 @@ import {
 import { Schema } from 'effect';
 import { IntegrationSecretReference } from '../connections/schemas.ts';
 import { GITHUB_REPOSITORY_FIELDS, GITHUB_REPOSITORY_RECORD_FIELDS } from '../github-repository-fields.ts';
+import { RequestService, RequestServiceRecord } from './request-service.ts';
 
 const VARIABLE_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
 
@@ -63,6 +64,8 @@ export const ExecutionAccess = wireStruct({
     github: Schema.OptionFromNullOr(GitHubRepositoryAccess),
     variables: Schema.Record(EnvironmentName, boundedText({ maxBytes: VARIABLE_MAX_BYTES })),
     secrets: Schema.Record(EnvironmentName, IntegrationSecretReference),
+    /** None leaves external access requests unavailable; its credential is never injected into a command. */
+    requestService: Schema.OptionFromOptionalNullOr(RequestService),
   },
 });
 
@@ -85,6 +88,8 @@ export const ExecutionAccessRecord = wireStruct({
     github: Schema.OptionFromNullOr(GitHubRepositoryRecord),
     variables: Schema.Record(RecordText, RecordText),
     secrets: Schema.Record(RecordText, RecordText),
+    /** None means no request service was configured, including grants saved before this field existed. */
+    requestService: Schema.OptionFromOptionalNullOr(RequestServiceRecord),
   },
 });
 

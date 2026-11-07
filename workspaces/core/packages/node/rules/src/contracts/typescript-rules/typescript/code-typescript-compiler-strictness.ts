@@ -26,6 +26,8 @@ const VALUES = {
     'credentialRecords',
     'executionAccessRecords',
     'threadContinuationRecords',
+    'requestSubmissionRecords',
+    'requestWaitRecords',
     'dispatchEvidenceRecords',
     'fileCheckpointRecords',
     'capacityRecords',

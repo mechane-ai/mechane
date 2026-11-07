@@ -43,6 +43,7 @@ export function decideThreadChange({
   }
 
   store.updateThread({ threadId, state, note, now });
+  store.cancelThreadRequestWait({ threadId });
 
   const delay = Option.filter(resumeAfter, () => state === ThreadState.Waiting);
   const resumeAt = Option.map(delay, (duration) => DateTime.addDuration(now, duration));

@@ -1,6 +1,6 @@
+import type { ServedAnswer } from '@mechane/program';
 import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import { Option } from 'effect';
-import type { ServedAnswer } from '../types.ts';
 import { jsonAnswer } from './json-answer.ts';
 import { registeredQuery } from './registered-query.ts';
 import type { RouteInput } from './types.ts';
