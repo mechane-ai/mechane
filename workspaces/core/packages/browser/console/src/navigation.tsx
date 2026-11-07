@@ -206,6 +206,10 @@ export function ConsoleLink({
   );
 }
 
+export function turnEventCursor(pages: PageCursors['events'] | undefined, target: number | undefined): number {
+  return pages?.at(-1) ?? (target === undefined ? 0 : target - 1);
+}
+
 /** Cursors belong to a history entry. Back restores its page after the protected collection is mounted again. */
 export function usePageCursors<K extends keyof PageCursors>(
   key: K,

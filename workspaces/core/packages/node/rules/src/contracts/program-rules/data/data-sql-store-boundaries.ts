@@ -20,7 +20,7 @@ export const dataSqlStoreBoundaries = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'sql-statement-not-literal',
-      exemptRoles: [FileRole.BrowserCacheWorker],
+      exemptRoles: [FileRole.BrowserCacheLifecycle],
       maxSuppressions: 3,
       standard: 'DO-06',
       violation: ['sql.exec(statement);', "sql.exec('SELECT ' + column);"],

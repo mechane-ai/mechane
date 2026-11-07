@@ -236,8 +236,8 @@ importers:
         specifier: workspace:*
         version: link:../../shared/records
       '@tanstack/react-db':
-        specifier: 1.0.0-rc.1.3
-        version: 1.0.0-rc.1.3(react@19.3.1)(typescript@7.0.2)
+        specifier: 1.0.0-rc.1.4
+        version: 1.0.0-rc.1.4(react@19.3.1)(typescript@7.0.2)
       '@tanstack/react-router':
         specifier: 1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -296,18 +296,15 @@ importers:
 
   packages/browser/console-cache:
     dependencies:
+      '@journeyapps/wa-sqlite':
+        specifier: 1.7.2
+        version: 1.7.2
       '@mechane/records':
         specifier: workspace:*
         version: link:../../shared/records
-      '@mechane/utilities':
-        specifier: workspace:*
-        version: link:../../shared/utilities
-      '@tanstack/db-sqlite-persistence-core':
-        specifier: 1.0.0-rc.1.3
-        version: 1.0.0-rc.1.3(typescript@7.0.2)
-      '@tursodatabase/database-wasm':
-        specifier: 0.8.3
-        version: 0.8.3
+      '@tanstack/browser-db-sqlite-persistence':
+        specifier: 1.0.0-rc.1.4
+        version: 1.0.0-rc.1.4(@journeyapps/wa-sqlite@1.7.2)(typescript@7.0.2)
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -327,17 +324,14 @@ importers:
         specifier: workspace:*
         version: link:../../shared/records
       '@tanstack/db':
-        specifier: 1.0.0-rc.1.3
-        version: 1.0.0-rc.1.3(typescript@7.0.2)
+        specifier: 1.0.0-rc.1.4
+        version: 1.0.0-rc.1.4(typescript@7.0.2)
       '@tanstack/db-sqlite-persistence-core':
-        specifier: 1.0.0-rc.1.3
-        version: 1.0.0-rc.1.3(typescript@7.0.2)
+        specifier: 1.0.0-rc.1.4
+        version: 1.0.0-rc.1.4(typescript@7.0.2)
       '@tanstack/query-core':
         specifier: 5.105.2
         version: 5.105.2
-      '@tanstack/query-db-collection':
-        specifier: 1.5.1
-        version: 1.5.1(@tanstack/db@1.0.0-rc.1.3(typescript@7.0.2))(@tanstack/query-core@5.105.2)(typescript@7.0.2)
       effect:
         specifier: 4.0.7
         version: 4.0.7
@@ -2009,9 +2003,6 @@ packages:
   '@emnapi/core@1.11.2':
     resolution: {integrity: sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==}
 
-  '@emnapi/core@1.8.1':
-    resolution: {integrity: sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg==}
-
   '@emnapi/core@1.9.2':
     resolution: {integrity: sha512-UC+ZhH3XtczQYfOlu3lNEkdW/p4dsJ1r/bP7H8+rhao3TTTMO1ATq/4DdIi23XuGoFY+Cz0JmCbdVl0hz9jZcA==}
 
@@ -2024,14 +2015,8 @@ packages:
   '@emnapi/runtime@1.11.3':
     resolution: {integrity: sha512-Xz4Tpyki7XyrpbUK1jR1AhdAdaXyhhY4lZ3neLodmhpuWfy2PAQN5B46sAiU4liOXGLkHypn/qU+jvfWSCYYLA==}
 
-  '@emnapi/runtime@1.8.1':
-    resolution: {integrity: sha512-mehfKSMWjjNol8659Z8KxEMrdSJDDot5SXMq00dM8BN4o+CLNXQ0xH2V7EchNHV4RmbZLmmPdEaXZc5H2FXmDg==}
-
   '@emnapi/runtime@1.9.2':
     resolution: {integrity: sha512-3U4+MIWHImeyu1wnmVygh5WlgfYDtyf0k8AbLhMFxOipihf6nrWC4syIm/SwEeec0mNSafiiNnMJwbza/Is6Lw==}
-
-  '@emnapi/wasi-threads@1.1.0':
-    resolution: {integrity: sha512-WI0DdZ8xFSbgMjR1sFsKABJ/C5OnRrjT06JXbZKexJGrDuPTzZdDYfFlsgcCXCyf+suG5QU2e/y1Wo2V/OapLQ==}
 
   '@emnapi/wasi-threads@1.2.1':
     resolution: {integrity: sha512-uTII7OYF+/Mes/MrcIOYp5yOtSMLBWSIoLPpcgwipoiKbli6k322tcoFsxoIIxPDqW01SQGAgko4EzZi2BNv2w==}
@@ -2390,6 +2375,9 @@ packages:
       typescript:
         optional: true
 
+  '@journeyapps/wa-sqlite@1.7.2':
+    resolution: {integrity: sha512-EVRMzqHtHgJBFcTGOgQ5/YlxrYFSXLFFztC5yo6+jQx2mqFR+a1kkLV4IirquiBzIonjmYXfBtvZ26fmI8r9Nw==}
+
   '@jridgewell/gen-mapping@0.3.13':
     resolution: {integrity: sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA==}
 
@@ -2422,9 +2410,6 @@ packages:
   '@modelcontextprotocol/core@2.4.0':
     resolution: {integrity: sha512-z8QBKqdfXLPzkLQuG4xp8hrVEMm1PZ1IgxMN2sMbJiFiAKOWXnAzogXn2W4aqIBlP1ea6U5yiqVquvUNM1Cj6Q==}
     engines: {node: '>=20'}
-
-  '@napi-rs/wasm-runtime@1.0.7':
-    resolution: {integrity: sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw==}
 
   '@napi-rs/wasm-runtime@1.2.5':
     resolution: {integrity: sha512-HshSvXzmBxNzqejd3k/KemgQ3hdREUYFRRrgxOZ+gPljDIsO2SDZrVZMd4Z/HsxudQbE62OVyVFE8z9BCurfjA==}
@@ -3929,18 +3914,24 @@ packages:
   '@swc/types@0.1.28':
     resolution: {integrity: sha512-V6Mnml8v09QALx6K0elJ7o9K/MkVDtW3t6L+7Ou/JcWtb3xwId2AH4FeOceySd2JaO87IMw4+6vSZxLm34LPbw==}
 
+  '@tanstack/browser-db-sqlite-persistence@1.0.0-rc.1.4':
+    resolution: {integrity: sha512-9TbWaSZImm52ALOq5asDwURP1pWl58taRFeyBf4/ydGx8WPffu3e6hpF0A9IYc2AZthR/vW2l6tXHnYDqCr2EA==}
+    peerDependencies:
+      '@journeyapps/wa-sqlite': ^1.4.1
+      typescript: '>=4.7'
+
   '@tanstack/db-ivm@1.0.0-rc.1.2':
     resolution: {integrity: sha512-kF5XbkzNmDuJBr+p2//ijZO9CzAGp0fK8gRGRX6gzt9QZM9RNIizAPVLdXM9kcg+VlZC6xB28ZmScsX9j4LMuw==}
     peerDependencies:
       typescript: '>=4.7'
 
-  '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.3':
-    resolution: {integrity: sha512-9RJ/VHPXrK1aF6p+XBvauvs6wBFIPd7Ul4XRY2ELNVE02xwIT/GbO4S+GI8EX33mwPmtr9jj+hdvSsduVKjeWA==}
+  '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.4':
+    resolution: {integrity: sha512-sY9er5vrVBBCnBqOe0yRGmytu6N3N/BAwogPQuTk/TPSS5N0dC/ZRXUHS7bcZ+rrgk22uUww5UAjxY1aNd26xA==}
     peerDependencies:
       typescript: '>=4.7'
 
-  '@tanstack/db@1.0.0-rc.1.3':
-    resolution: {integrity: sha512-O68zGYcb/24XrZQNkIBWlON2MiqgC+sSmnM+xxC7AZSEHQAYeUDy1IQE8g4vr3in8WMwD6/Jm/Y+7EoaR5H1eA==}
+  '@tanstack/db@1.0.0-rc.1.4':
+    resolution: {integrity: sha512-UaBXdnoACdauRb0tdav0TqwGE/viWWTHssnPKOC4sd3jiLdS5Jb2KFunW4wflfQpJHxSD+12wAIO7J8uMXQGgA==}
     peerDependencies:
       typescript: '>=4.7'
 
@@ -3959,15 +3950,8 @@ packages:
   '@tanstack/query-core@5.105.2':
     resolution: {integrity: sha512-cyZGOtI1ZZ79mm905PJ42ng43Mwbc9CeqB83XuJmj9ADj/C+dzUXcgMQucRQ8yZs7atHykMzqavAXXhjxAw50g==}
 
-  '@tanstack/query-db-collection@1.5.1':
-    resolution: {integrity: sha512-KPEQHvbBm4BHpsKSoWAndCu/Xy21JyiYx/OISFj+TtPoN5o7ettoYaC8URDmqU5m1zGvji/nZv7SdVPipVcFRw==}
-    peerDependencies:
-      '@tanstack/db': ^1.0.0-rc.0
-      '@tanstack/query-core': ^5.90.15
-      typescript: '>=4.7'
-
-  '@tanstack/react-db@1.0.0-rc.1.3':
-    resolution: {integrity: sha512-lFSAD+kSP7NLNLuFi/YNZmI2V4Vg1cJBqtwEbmGMhpfVRT8zEeoOcao7P2BoRcPvNbqdFz+nFfkZKTmpGrpDgw==}
+  '@tanstack/react-db@1.0.0-rc.1.4':
+    resolution: {integrity: sha512-lA5KrIHCwfuLLvcYMoUIc6biihiFBE4K6piAKsW4DdRC2I2qssxyzyeHyYcBdGFhia+fPAel7Iu8pjvgjlgqYA==}
     peerDependencies:
       react: '>=18.0.0'
 
@@ -4139,15 +4123,6 @@ packages:
     engines: {node: '>=12', npm: '>=6'}
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
-
-  '@tursodatabase/database-common@0.8.3':
-    resolution: {integrity: sha512-T8sMfSnRjgGzKMDVkSg0lh1Jh6dDtTWzjYFK0ZJHtKzr+zs69a7Igo4Z+sxfh+rk9gEqn2njLgRYfpMEghMVMw==}
-
-  '@tursodatabase/database-wasm-common@0.8.3':
-    resolution: {integrity: sha512-lqsbszBThqLmnSLUBcCOTqLRigv6kVhOOQonz+2JKM5nU227TTNQibnl3Q3fyfn7HOuYcgiodJgcBECnVc/TXg==}
-
-  '@tursodatabase/database-wasm@0.8.3':
-    resolution: {integrity: sha512-rq4aTMKd1e8BaO4FoI2YPF8PXR9IlUIuyd4VwdZi0X9B3PBbFuoDJecwgrdYI9eZbQF8fRrb9hxX9hSQB/Nf/Q==}
 
   '@tybys/wasm-util@0.10.4':
     resolution: {integrity: sha512-W3c4gRigFS0T/Ma4qIYF3GDAc5AQdHb1yL5znJT1Zv1YaD9Kitx656wBjvr19qbiosmZT8lWDM5BEMynUqX65A==}
@@ -6724,11 +6699,6 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@emnapi/core@1.8.1':
-    dependencies:
-      '@emnapi/wasi-threads': 1.1.0
-      tslib: 2.8.1
-
   '@emnapi/core@1.9.2':
     dependencies:
       '@emnapi/wasi-threads': 1.2.1
@@ -6750,18 +6720,10 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
-  '@emnapi/runtime@1.8.1':
-    dependencies:
-      tslib: 2.8.1
-
   '@emnapi/runtime@1.9.2':
     dependencies:
       tslib: 2.8.1
     optional: true
-
-  '@emnapi/wasi-threads@1.1.0':
-    dependencies:
-      tslib: 2.8.1
 
   '@emnapi/wasi-threads@1.2.1':
     dependencies:
@@ -7001,6 +6963,8 @@ snapshots:
     optionalDependencies:
       typescript: 7.0.2
 
+  '@journeyapps/wa-sqlite@1.7.2': {}
+
   '@jridgewell/gen-mapping@0.3.13':
     dependencies:
       '@jridgewell/sourcemap-codec': 1.6.0
@@ -7044,12 +7008,6 @@ snapshots:
   '@modelcontextprotocol/core@2.4.0':
     dependencies:
       zod: 4.6.7
-
-  '@napi-rs/wasm-runtime@1.0.7':
-    dependencies:
-      '@emnapi/core': 1.8.1
-      '@emnapi/runtime': 1.8.1
-      '@tybys/wasm-util': 0.10.4
 
   '@napi-rs/wasm-runtime@1.2.5(@emnapi/core@1.11.0)(@emnapi/runtime@1.11.0)':
     dependencies:
@@ -8038,18 +7996,24 @@ snapshots:
     dependencies:
       '@swc/counter': 0.1.3
 
+  '@tanstack/browser-db-sqlite-persistence@1.0.0-rc.1.4(@journeyapps/wa-sqlite@1.7.2)(typescript@7.0.2)':
+    dependencies:
+      '@journeyapps/wa-sqlite': 1.7.2
+      '@tanstack/db-sqlite-persistence-core': 1.0.0-rc.1.4(typescript@7.0.2)
+      typescript: 7.0.2
+
   '@tanstack/db-ivm@1.0.0-rc.1.2(typescript@7.0.2)':
     dependencies:
       fractional-indexing: 3.4.0
       typescript: 7.0.2
 
-  '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.3(typescript@7.0.2)':
+  '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.4(typescript@7.0.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
-      '@tanstack/db': 1.0.0-rc.1.3(typescript@7.0.2)
+      '@tanstack/db': 1.0.0-rc.1.4(typescript@7.0.2)
       typescript: 7.0.2
 
-  '@tanstack/db@1.0.0-rc.1.3(typescript@7.0.2)':
+  '@tanstack/db@1.0.0-rc.1.4(typescript@7.0.2)':
     dependencies:
       '@standard-schema/spec': 1.1.0
       '@tanstack/db-ivm': 1.0.0-rc.1.2(typescript@7.0.2)
@@ -8064,16 +8028,9 @@ snapshots:
 
   '@tanstack/query-core@5.105.2': {}
 
-  '@tanstack/query-db-collection@1.5.1(@tanstack/db@1.0.0-rc.1.3(typescript@7.0.2))(@tanstack/query-core@5.105.2)(typescript@7.0.2)':
+  '@tanstack/react-db@1.0.0-rc.1.4(react@19.3.1)(typescript@7.0.2)':
     dependencies:
-      '@standard-schema/spec': 1.1.0
-      '@tanstack/db': 1.0.0-rc.1.3(typescript@7.0.2)
-      '@tanstack/query-core': 5.105.2
-      typescript: 7.0.2
-
-  '@tanstack/react-db@1.0.0-rc.1.3(react@19.3.1)(typescript@7.0.2)':
-    dependencies:
-      '@tanstack/db': 1.0.0-rc.1.3(typescript@7.0.2)
+      '@tanstack/db': 1.0.0-rc.1.4(typescript@7.0.2)
       react: 19.3.1
     transitivePeerDependencies:
       - typescript
@@ -8335,22 +8292,10 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.2
 
-  '@tursodatabase/database-common@0.8.3': {}
-
-  '@tursodatabase/database-wasm-common@0.8.3':
-    dependencies:
-      '@emnapi/core': 1.8.1
-      '@emnapi/runtime': 1.8.1
-      '@napi-rs/wasm-runtime': 1.0.7
-
-  '@tursodatabase/database-wasm@0.8.3':
-    dependencies:
-      '@tursodatabase/database-common': 0.8.3
-      '@tursodatabase/database-wasm-common': 0.8.3
-
   '@tybys/wasm-util@0.10.4':
     dependencies:
       tslib: 2.8.1
+    optional: true
 
   '@types/aria-query@5.0.4': {}
 

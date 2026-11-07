@@ -83,8 +83,8 @@ A wrap of a promise or of a throwing call holds one call: ast-grep `try-promise-
 A failure is told apart by its tag (EF-05): ast-grep `no-instanceof` rejects `instanceof`, which a decoded value or another realm's object fails.
 The registry owns the adopted error rules. It leaves the shipped assets unchanged; hash-pinned derivatives of the three TypeScript syntax rules exclude the browser lane, whose Promise boundary and React conventions are defined in contract 113.
 Mechane's own rules hold what the shipped ones do not: ast-grep `no-throw-or-try` rejects `throw` and `try`, including
-one with only a `finally` clause, outside the browser adapter, query, and acknowledged-command boundaries declared by
-contract 113 and the three cache lifecycle boundaries declared by contract 119.
+one with only a `finally` clause, outside the browser adapter, query, canonical-write, and acknowledged-command boundaries
+declared by contract 113 and `console-cache/src/store/storage.ts` declared by contract 119.
 Within the browser lane, only the API adapter may run an Effect. The query boundary may catch a rejected Promise to revoke cached data
 and rethrow that same failure; it must not convert a failed read into an empty success.
 The synchronous `restoreRecord` decoder in `console-data/src/records.ts` permits one `defect-sites` suppression.

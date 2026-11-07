@@ -12,11 +12,10 @@ import {
   TurnStatus,
 } from '@mechane/protocol';
 import { MechId, WorkspaceId } from '@mechane/records';
-import type { DbClient } from '@tanstack/db';
 import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
-import { commitRows, deleteRows, upsertRows } from './collections.ts';
-import type { CanonicalTables } from './collections.ts';
+import { deleteRows, upsertRows } from './collections.ts';
+import type { CanonicalTables, CanonicalWriter } from './collections.ts';
 import { MechDefinition, recordKey, TraceEvidence } from './records.ts';
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
@@ -153,19 +152,18 @@ function writeMechSummaries(
 }
 
 type SaveMech = {
-  readonly db: DbClient;
+  readonly writeRows: CanonicalWriter;
   readonly tables: CanonicalTables;
   readonly mech: Mech;
   readonly signal: AbortSignal;
 };
 
 /** Reconciles an acknowledged definition without regressing saved or active revisions. */
-export async function saveMech({ db, tables, mech, signal }: SaveMech): Promise<void> {
+export async function saveMech({ writeRows, tables, mech, signal }: SaveMech): Promise<void> {
   const summary: MechSummaryRow = { key: mech.id, value: Schema.encodeSync(MechSummary)(mech) };
   const definition: MechDefinitionRow = { key: mech.id, value: Schema.encodeSync(MechDefinition)(mech) };
 
-  await commitRows({
-    db,
+  await writeRows({
     collections: [tables.mechs, tables.mechDefinitions],
     signal,
     write: () => {
@@ -209,7 +207,7 @@ function writeTurns(tables: CanonicalTables, rows: ReadonlyArray<TurnRow>): void
 }
 
 type ApplyRead = {
-  readonly db: DbClient;
+  readonly writeRows: CanonicalWriter;
   readonly tables: CanonicalTables;
   readonly answer: ReadAnswer;
   readonly signal: AbortSignal;
@@ -219,7 +217,7 @@ type ApplyRead = {
 
 /** Ingests canonical rows before publishing the response's exact ordered membership receipt. */
 export async function applyRead({
-  db,
+  writeRows,
   tables,
   answer,
   signal,
@@ -227,14 +225,13 @@ export async function applyRead({
   isTurnAllowed,
 }: ApplyRead): Promise<ReadReceipt> {
   const { request } = answer;
-  const receipt = { id: request.id, kind: request.kind, fetchedAtMs: Date.now() };
+  const receipt = { id: request.id, kind: request.kind };
 
   switch (answer.kind) {
     case 'mechs': {
       const rows = answer.output.mechs.map((mech) => ({ key: mech.id, value: Schema.encodeSync(MechSummary)(mech) }));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.mechs],
         write: () => writeMechSummaries(tables, rows, isMechAllowed),
@@ -247,7 +244,7 @@ export async function applyRead({
       };
     }
     case 'mech':
-      await saveMech({ db, tables, mech: answer.output, signal });
+      await saveMech({ writeRows, tables, mech: answer.output, signal });
 
       return { ...receipt, keys: [answer.output.id], hasMore: null };
     case 'threads': {
@@ -259,8 +256,7 @@ export async function applyRead({
         value: Schema.encodeSync(Thread)(thread),
       }));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.threads],
         write: () => {
@@ -287,8 +283,7 @@ export async function applyRead({
 
       const keys = new Set<string>(rows.map((row) => row.key));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.memories],
         write: () => {
@@ -319,8 +314,7 @@ export async function applyRead({
         value: Schema.encodeSync(Trace.to.fields.turn)(turn),
       }));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.turns],
         write: () =>
@@ -342,8 +336,7 @@ export async function applyRead({
       const turn = { mechId, key, value: Schema.encodeSync(Trace.to.fields.turn)(answer.output.turn) };
       const evidence = { mechId, key, value: Schema.encodeSync(TraceEvidence)(answer.output) };
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.turns, tables.traceEvidence],
         write: () => {
@@ -374,7 +367,7 @@ export async function applyRead({
         value: Schema.encodeSync(ListedEvent)(event),
       }));
 
-      await commitRows({ db, signal, collections: [tables.events], write: () => upsertRows(tables.events, rows) });
+      await writeRows({ signal, collections: [tables.events], write: () => upsertRows(tables.events, rows) });
 
       return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
     }
@@ -387,8 +380,7 @@ export async function applyRead({
 
       const keys = new Set<string>(rows.map((row) => row.key));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.slackBindings],
         write: () => {
@@ -416,8 +408,7 @@ export async function applyRead({
         value: Schema.encodeSync(SlackDelivery)(delivery),
       }));
 
-      await commitRows({
-        db,
+      await writeRows({
         signal,
         collections: [tables.slackDeliveries],
         write: () => upsertRows(tables.slackDeliveries, rows),
@@ -428,12 +419,7 @@ export async function applyRead({
     case 'allowance': {
       const row = { key: 'allowance', value: Schema.encodeSync(Allowance)(answer.output) };
 
-      await commitRows({
-        db,
-        signal,
-        collections: [tables.allowance],
-        write: () => upsertRows(tables.allowance, [row]),
-      });
+      await writeRows({ signal, collections: [tables.allowance], write: () => upsertRows(tables.allowance, [row]) });
 
       return { ...receipt, keys: [row.key], hasMore: null };
     }

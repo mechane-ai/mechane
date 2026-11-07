@@ -62,16 +62,13 @@ For each type argument a change passes to a dependency's function, does that fun
 oxlint with type information enforces `typescript/consistent-type-assertions` set to `never`, `no-non-null-assertion`, `no-explicit-any`, `no-unnecessary-type-parameters`, and `no-unsafe-member-access`, `no-unsafe-call`, `no-unsafe-assignment`, `no-unsafe-return` and `no-unsafe-argument` for each use of an `any` value.
 ast-grep `return-only-type-parameter` rejects a type parameter that only a return type uses, and `type-predicate` rejects a type predicate and an assertion signature.
 A store reads each row through `Schema.decodeUnknownSync`, whose failure is a defect because only that store writes its database.
-`wireKeys` in `@mechane/protocol` holds one budgeted type assertion whose suppression names both reporting rules,
+`wireKeys` in `@mechane/records` holds one budgeted type assertion whose suppression names both reporting rules,
 `consistent-type-assertions` and `no-unsafe-type-assertion`. TypeScript types no string transform as a template literal type.
 Its key map takes `WireKeys`, the type that spells `wireKey`'s derivation.
 
-The other permitted assertion site implements the published `SQLiteDriver.query<T>` interface in
-`packages/browser/console-cache/src/store/connection.ts`. That native interface chooses its row type without accepting
-a runtime schema. Decode the Worker response envelope and row array, then assert that array as `readonly T[]` at this
-one boundary. Its site suppression names both assertion rules and explains the dependency's schema-free signature.
-The required return-only type parameter is confined to that interface implementation; it is not a product parsing API.
-No other cache file or query consumer gains an assertion, `any`, or boundary-decoding exception.
+The native browser database's `execute<Row>` wrapper in `console-cache/src/store/storage.ts` retains its published
+return-only type parameter at one budgeted suppression. It forwards the dependency's typed result without a type
+assertion. This exception does not permit schema-free product parsers, `any`, or other assertions.
 
 The registry's existing type-predicate and assertion checks retain the baseline at commit 94f2d0f.
 The shipped assets stay unloaded: their satisfies inventory uses warning severity, while local 110 permits only error or off.

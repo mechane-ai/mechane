@@ -1,45 +1,53 @@
-import { Bytes, BYTES_PER_MEBIBYTE } from '@mechane/records';
+import { BYTES_PER_KIBIBYTE } from '@mechane/records';
 import type { PrincipalId, WorkspaceId } from '@mechane/records';
-import { createSQLiteCorePersistenceAdapter } from '@tanstack/db-sqlite-persistence-core';
-import type { PersistedCollectionPersistence } from '@tanstack/db-sqlite-persistence-core';
+import {
+  BrowserCollectionCoordinator,
+  createBrowserWASQLitePersistence,
+  openBrowserWASQLiteOPFSDatabase,
+} from '@tanstack/browser-db-sqlite-persistence';
+import type { BrowserWASQLiteDatabase, PersistedCollectionPersistence } from '@tanstack/browser-db-sqlite-persistence';
 import { DateTime, Duration, Result, Schema } from 'effect';
 import type { Types } from 'effect';
-import { openConnection } from './connection';
-import type { StoreConnection } from './connection';
-import { StoreCommand, StoreFailed } from './protocol';
+import { Base64Url, Hex } from 'effect/encoding';
 
-const STORAGE_MODE = { Persistent: 'persistent', Memory: 'memory' } as const;
-const ISSUE_KIND = { Unavailable: 'unavailable', Failed: 'failed' } as const;
-const FORMAT_GENERATION = 1;
-const OPEN_TIMEOUT_MS = 500;
-const DISCARD_TIMEOUT_MS = Duration.toMillis('3 seconds');
+const CACHE_NAMESPACE = 'mechane-console-opfs';
+// The native VFS permits 64-character paths, including room for journal suffixes.
+const CACHE_DIRECTORY = 'mc2';
+const GENERATION_BYTES = 16;
+const OPEN_TIMEOUT = Duration.seconds(5);
+const OPERATION_TIMEOUT = Duration.seconds(10);
+const CLEANUP_TIMEOUT = Duration.seconds(3);
 const CACHE_MAX_AGE = Duration.hours(24);
-const CACHE_MAX_MEBIBYTES = 64;
-const CACHE_MAX_BYTES = Bytes.make(CACHE_MAX_MEBIBYTES * BYTES_PER_MEBIBYTE);
-const HEX_RADIX = 16;
-const HEX_BYTE_WIDTH = 2;
+const CACHE_PAGE_SIZE_BYTES = 4 * BYTES_PER_KIBIBYTE;
+const CACHE_MAX_PAGES = 16_384;
+const MISSING_FILE = 'NotFoundError';
 
-type ConsoleStorageIssue = { readonly kind: (typeof ISSUE_KIND)[keyof typeof ISSUE_KIND]; readonly message: string };
+const GenerationName = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9_-]{22}$/u));
+const CacheGeneration = Schema.Struct({ generation: GenerationName, createdAt: Schema.DateTimeUtcFromMillis });
+const CacheGenerationId = Schema.String.pipe(Schema.brand('ConsoleCacheGenerationId'));
+type CacheGenerationId = typeof CacheGenerationId.Type;
+type CacheGeneration = typeof CacheGeneration.Type;
 
-/** Reports the selected storage mode and its first observed failure. */
+/** Reports required persistence failures with a safe message and a separate diagnostic reason. */
+export class ConsoleStorageFailed extends Schema.TaggedError<ConsoleStorageFailed>()('ConsoleStorageFailed', {
+  reason: Schema.String,
+}) {
+  override readonly message = 'Persistent storage is unavailable. Allow site storage, then try again';
+}
+
+/** Persistence is required; an issue fences this owner until a fresh admitted runtime replaces it. */
 export type ConsoleStorageHealth = {
-  readonly mode: (typeof STORAGE_MODE)[keyof typeof STORAGE_MODE];
-  /** Absent when the selected mode has reported no storage failure. */
-  readonly issue?: ConsoleStorageIssue;
+  /** Absent while this storage owner is usable. */
+  readonly issue?: { readonly kind: 'failed'; readonly message: string };
 };
 
 type ConsoleStorage = {
-  /** Absent when this runtime selected memory storage. */
-  readonly persistence?: PersistedCollectionPersistence;
+  readonly generationId: CacheGenerationId;
+  readonly persistence: PersistedCollectionPersistence;
   readonly dispose: () => Promise<void>;
   readonly discard: () => Promise<void>;
   readonly readHealth: () => ConsoleStorageHealth;
   readonly subscribeHealth: (listener: () => void) => () => void;
-};
-
-type MemoryStorageInput = {
-  /** Absent when the caller deliberately selected memory storage. */
-  readonly issue?: ConsoleStorageIssue;
 };
 
 type ConsoleStorageScope = {
@@ -48,74 +56,112 @@ type ConsoleStorageScope = {
   readonly workspaceId: WorkspaceId;
 };
 
-type OpenConsoleStorageInput = ConsoleStorageScope & { readonly signal: AbortSignal };
+type OpenConsoleStorage = ConsoleStorageScope & { readonly signal: AbortSignal; readonly onInvalidated: () => void };
 
-type FileLease = { readonly isOwner: boolean; readonly release: () => Promise<void> };
-type AcquireFileInput = { readonly file: string; readonly signal: AbortSignal };
-type HealthState = { readonly snapshot: ConsoleStorageHealth };
+type CacheScope = { readonly name: string; readonly key: string };
+type GenerationLease = { readonly release: () => Promise<void> };
 
-type StorageHealth = {
-  readonly read: () => ConsoleStorageHealth;
-  readonly fail: () => void;
-  readonly subscribe: (listener: () => void) => () => void;
+type SelectedGeneration = {
+  readonly scope: CacheScope;
+  readonly generation: CacheGeneration;
+  readonly wire: string;
+  readonly lease: GenerationLease;
 };
 
-type ResourceState = {
-  /** Absent until a persistent storage owner has been constructed. */
-  readonly storage: ConsoleStorage | undefined;
+type Deadline<Value> = {
+  readonly operation: Promise<Value>;
+  readonly timeout: Duration.Duration;
+  readonly message: string;
 };
 
-type DisposalState = {
-  /** Absent until the first dispose or discard request. */
-  readonly pending: Promise<void> | undefined;
-  readonly hasDiscarded: boolean;
-  readonly shouldDiscard: boolean;
-};
+async function waitWithin<Value>({ operation, timeout, message }: Deadline<Value>): Promise<Value> {
+  const expired = Promise.withResolvers<never>();
 
-type PersistentStorageInput = {
-  readonly file: string;
-  readonly lease: FileLease;
-  readonly connection: StoreConnection;
-  readonly expiresAt: DateTime.Utc;
-  readonly signal: AbortSignal;
-  readonly health: StorageHealth;
-};
+  const timer = setTimeout(
+    () => expired.reject(new ConsoleStorageFailed({ reason: message })),
+    Duration.toMillis(timeout),
+  );
 
-/** Selects memory storage with no worker, file lease, or later persistence promotion. */
-export function createMemoryStorage({ issue }: MemoryStorageInput = {}): ConsoleStorage {
-  const health: ConsoleStorageHealth = { mode: STORAGE_MODE.Memory, ...(issue !== undefined && { issue }) };
-
-  return {
-    dispose: async () => undefined,
-    discard: async () => undefined,
-    readHealth: () => health,
-    subscribeHealth: () => () => undefined,
-  };
+  try {
+    return await Promise.race([operation, expired.promise]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
-async function acquireFile({ file, signal }: AcquireFileInput): Promise<FileLease> {
-  const acquired = Promise.withResolvers<boolean>();
+async function createScope({ origin, principalId, workspaceId }: ConsoleStorageScope): Promise<CacheScope> {
+  const encoded = new TextEncoder().encode(JSON.stringify([CACHE_NAMESPACE, origin, principalId, workspaceId]));
+  const digest = await crypto.subtle.digest('SHA-256', encoded);
+  const bytes = new Uint8Array(digest);
+  const hash = Hex.encode(bytes);
+  const name = Base64Url.encode(bytes.slice(0, GENERATION_BYTES));
+
+  return { name, key: createScopeKey({ hash }) };
+}
+
+function createScopeKey({ hash }: { readonly hash: string }): string {
+  return `${CACHE_NAMESPACE}:${hash}`;
+}
+
+function createDatabasePath({
+  scope,
+  generation,
+}: {
+  readonly scope: CacheScope;
+  readonly generation: string;
+}): string {
+  return `${CACHE_DIRECTORY}/${scope.name}/${generation}/db`;
+}
+
+function readGeneration(scope: CacheScope): CacheGeneration | undefined {
+  const wire = localStorage.getItem(scope.key);
+
+  if (wire === null) {
+    return undefined;
+  }
+
+  const decoded = Schema.decodeUnknownResult(Schema.fromJsonString(CacheGeneration), { onExcessProperty: 'error' })(
+    wire,
+  );
+
+  return Result.isSuccess(decoded) ? decoded.success : undefined;
+}
+
+function createGenerationKey({
+  scope,
+  generation,
+}: {
+  readonly scope: CacheScope;
+  readonly generation: string;
+}): string {
+  return `${scope.key}:${generation}`;
+}
+
+async function acquireGeneration({
+  scope,
+  generation,
+  signal,
+}: {
+  readonly scope: CacheScope;
+  readonly generation: CacheGeneration;
+  readonly signal: AbortSignal;
+}): Promise<GenerationLease> {
+  const acquired = Promise.withResolvers<void>();
   const released = Promise.withResolvers<void>();
 
-  const held = navigator.locks.request(file, { ifAvailable: true }, async (lock) => {
-    if (lock === null || signal.aborted) {
-      acquired.resolve(false);
+  const held = navigator.locks.request(
+    createGenerationKey({ scope, generation: generation.generation }),
+    { mode: 'shared', signal },
+    async () => {
+      acquired.resolve();
+      await released.promise;
+    },
+  );
 
-      return;
-    }
-
-    acquired.resolve(true);
-    await released.promise;
-  });
-
-  void held.catch((failure: unknown) => {
-    acquired.reject(failure);
-  });
-
-  const isOwner = await acquired.promise;
+  void held.catch((error: unknown) => acquired.reject(error));
+  await acquired.promise;
 
   return {
-    isOwner,
     async release() {
       released.resolve();
       await held;
@@ -123,30 +169,336 @@ async function acquireFile({ file, signal }: AcquireFileInput): Promise<FileLeas
   };
 }
 
-function createHealth(): StorageHealth {
-  const state: Types.Mutable<HealthState> = { snapshot: { mode: STORAGE_MODE.Persistent } };
+async function selectGeneration({
+  scope,
+  signal,
+}: {
+  readonly scope: CacheScope;
+  readonly signal: AbortSignal;
+}): Promise<SelectedGeneration> {
+  return await navigator.locks.request(scope.key, { signal }, async () => {
+    const previous = readGeneration(scope);
+    const now = DateTime.nowUnsafe();
+    const maxAgeMs = Duration.toMillis(CACHE_MAX_AGE);
+
+    const ageMs =
+      previous === undefined ? maxAgeMs : DateTime.toEpochMillis(now) - DateTime.toEpochMillis(previous.createdAt);
+
+    const isCurrent = previous !== undefined && ageMs >= 0 && ageMs < maxAgeMs;
+
+    const generation = isCurrent
+      ? previous
+      : { generation: Base64Url.encode(crypto.getRandomValues(new Uint8Array(GENERATION_BYTES))), createdAt: now };
+
+    const wire = JSON.stringify(Schema.encodeSync(CacheGeneration)(generation));
+
+    localStorage.setItem(scope.key, wire);
+
+    const lease = await acquireGeneration({ scope, generation, signal });
+
+    return { scope, generation, wire, lease };
+  });
+}
+
+async function retireGeneration({
+  scope,
+  wire,
+}: {
+  readonly scope: CacheScope;
+  /** Absent when the caller invalidates the scope without owning a generation. */
+  readonly wire?: string;
+}): Promise<void> {
+  await navigator.locks.request(scope.key, { signal: AbortSignal.timeout(Duration.toMillis(CLEANUP_TIMEOUT)) }, () => {
+    if (wire === undefined || localStorage.getItem(scope.key) === wire) {
+      localStorage.removeItem(scope.key);
+    }
+  });
+}
+
+async function removeRetiredGenerations(scope: CacheScope): Promise<void> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const directory = await root.getDirectoryHandle(CACHE_DIRECTORY);
+    const scopes = await directory.getDirectoryHandle(scope.name);
+
+    for await (const [name, entry] of scopes.entries()) {
+      const decoded = Schema.decodeUnknownResult(GenerationName)(name);
+
+      if (entry.kind === 'directory' && Result.isSuccess(decoded)) {
+        await navigator.locks.request(
+          createGenerationKey({ scope, generation: name }),
+          { ifAvailable: true },
+          async (lock) => {
+            if (lock !== null && readGeneration(scope)?.generation !== name) {
+              await scopes.removeEntry(name, { recursive: true });
+            }
+          },
+        );
+      }
+    }
+  } catch (error) {
+    if (!Schema.is(Schema.Struct({ name: Schema.Literal(MISSING_FILE) }))(error)) {
+      throw error;
+    }
+  }
+}
+
+async function collectRetiredGenerations(scope: CacheScope): Promise<void> {
+  try {
+    await waitWithin({
+      operation: removeRetiredGenerations(scope),
+      timeout: CLEANUP_TIMEOUT,
+      message: 'Retired local data could not be removed',
+    });
+  } catch (error) {
+    // The durable pointer already excludes these files; cleanup does not control admission.
+    globalThis.reportError(new ConsoleStorageFailed({ reason: String(error) }));
+  }
+}
+
+/** Retires the selected namespace before any attempt to remove its files. */
+export async function discardConsoleStorage(input: ConsoleStorageScope): Promise<boolean> {
+  try {
+    const scope = await createScope(input);
+
+    await retireGeneration({ scope });
+    await collectRetiredGenerations(scope);
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function limitDatabase(database: BrowserWASQLiteDatabase): Promise<void> {
+  await database.execute('PRAGMA page_size = 4096');
+  await database.execute('PRAGMA journal_mode = DELETE');
+
+  const sizes = await database.execute('PRAGMA page_size');
+  const limits = await database.execute('PRAGMA max_page_count = 16384');
+  const size = Schema.decodeUnknownResult(Schema.Array(Schema.Struct({ page_size: Schema.Int })))(sizes);
+  const limit = Schema.decodeUnknownResult(Schema.Array(Schema.Struct({ max_page_count: Schema.Int })))(limits);
+
+  const hasExpectedSize = Result.isSuccess(size) && size.success[0]?.page_size === CACHE_PAGE_SIZE_BYTES;
+  const hasExpectedLimit = Result.isSuccess(limit) && limit.success[0]?.max_page_count === CACHE_MAX_PAGES;
+
+  if (!hasExpectedSize || !hasExpectedLimit) {
+    throw new ConsoleStorageFailed({ reason: 'The SQLite page limit could not be applied' });
+  }
+}
+
+type StorageOwner = SelectedGeneration & {
+  readonly database: BrowserWASQLiteDatabase;
+  readonly onInvalidated: () => void;
+};
+
+function createStorage({ scope, generation, wire, lease, database, onInvalidated }: StorageOwner): ConsoleStorage {
+  const nativeClose = database.close;
+
+  if (nativeClose === undefined) {
+    throw new ConsoleStorageFailed({ reason: 'The native database has no close operation' });
+  }
+
+  const closeDatabase = nativeClose;
+  const generationId = CacheGenerationId.make(createGenerationKey({ scope, generation: generation.generation }));
+  const coordinator = new BrowserCollectionCoordinator({ dbName: generationId });
   const listeners = new Set<() => void>();
 
-  return {
-    read: () => state.snapshot,
-    fail() {
-      if (state.snapshot.issue !== undefined) {
+  const state: Types.Mutable<{
+    readonly health: ConsoleStorageHealth;
+    readonly isClosed: boolean;
+    readonly hasPageHidden: boolean;
+    /** Absent before the first native close request. */
+    readonly closing: Promise<void> | undefined;
+    /** Absent before retirement or after a failed retirement attempt. */
+    readonly retiring: Promise<void> | undefined;
+  }> = { health: {}, isClosed: false, hasPageHidden: false, closing: undefined, retiring: undefined };
+
+  function invalidate(message: string): void {
+    if (state.health.issue !== undefined) {
+      return;
+    }
+
+    state.isClosed = true;
+    state.health = { issue: { kind: 'failed', message } };
+
+    onInvalidated();
+
+    for (const listener of listeners) {
+      listener();
+    }
+  }
+
+  function checkGeneration(): void {
+    const nowMs = DateTime.toEpochMillis(DateTime.nowUnsafe());
+    const current = Result.try(() => localStorage.getItem(scope.key));
+    const isExpired = nowMs >= DateTime.toEpochMillis(generation.createdAt) + Duration.toMillis(CACHE_MAX_AGE);
+    const hasSelectedGeneration = Result.isSuccess(current) && current.success === wire;
+
+    if (state.isClosed || isExpired || !hasSelectedGeneration) {
+      throw new ConsoleStorageFailed({ reason: 'The cache generation is retired' });
+    }
+  }
+
+  async function retire(): Promise<void> {
+    state.retiring ??= retireGeneration({ scope, wire }).catch((error: unknown) => {
+      state.retiring = undefined;
+
+      throw new ConsoleStorageFailed({ reason: String(error) });
+    });
+
+    await state.retiring;
+  }
+
+  async function finishClose(): Promise<void> {
+    try {
+      await closeDatabase();
+    } finally {
+      // Native close terminates its Worker even when closing the connection rejects.
+      await lease.release();
+      globalThis.removeEventListener('pagehide', onPageHide, true);
+      globalThis.removeEventListener('pagehide', releaseOnPageHide);
+    }
+  }
+
+  async function close(): Promise<void> {
+    state.isClosed = true;
+
+    clearTimeout(expiration);
+    globalThis.removeEventListener('storage', onStorage);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+    coordinator.dispose();
+
+    state.closing ??= finishClose();
+
+    try {
+      await waitWithin({
+        operation: state.closing,
+        timeout: CLEANUP_TIMEOUT,
+        message: 'Local storage did not close. Reopen this workspace',
+      });
+    } catch (error) {
+      if (state.hasPageHidden && state.health.issue === undefined) {
         return;
       }
 
-      state.snapshot = {
-        mode: STORAGE_MODE.Persistent,
-        issue: {
-          kind: ISSUE_KIND.Failed,
-          message: 'Local storage stopped working. Continue online to load a fresh copy',
-        },
-      };
+      invalidate('Local storage stopped responding. Reopen this workspace');
+      await retire();
 
-      for (const listener of listeners) {
-        listener();
+      throw error;
+    }
+  }
+
+  async function discard(): Promise<void> {
+    invalidate('Local data was reset. Reopen this workspace');
+
+    try {
+      await retire();
+    } finally {
+      // Retirement failure must not leave a failed connection accepting work.
+      await close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
+    }
+
+    await collectRetiredGenerations(scope);
+  }
+
+  function onStorage(event: StorageEvent): void {
+    if (event.key !== scope.key && event.key !== null) {
+      return;
+    }
+
+    const current = Result.try(() => localStorage.getItem(scope.key));
+
+    if (Result.isFailure(current) || current.success !== wire) {
+      invalidate('Local data was reset in another tab. Reopen this workspace');
+      void close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
+    }
+  }
+
+  function onPageHide(): void {
+    state.isClosed = true;
+    state.hasPageHidden = true;
+
+    coordinator.dispose();
+  }
+
+  function releaseOnPageHide(): void {
+    // The native opener's earlier bubble listener has already terminated its Worker.
+    void lease.release();
+  }
+
+  function onVisibilityChange(): void {
+    if (document.visibilityState === 'visible' && !state.isClosed) {
+      const current = Result.try(checkGeneration);
+
+      if (Result.isFailure(current)) {
+        void discard().catch(() => invalidate('Local data could not be reset. Try again'));
       }
-    },
-    subscribe(listener) {
+    }
+  }
+
+  // This public native database method forwards its caller-owned row type without an assertion.
+  // ast-grep-ignore: return-only-type-parameter
+  async function execute<Row = unknown>(sql: string, params?: ReadonlyArray<unknown>): Promise<ReadonlyArray<Row>> {
+    try {
+      checkGeneration();
+
+      const rows = await waitWithin({
+        operation: database.execute<Row>(sql, params),
+        timeout: OPERATION_TIMEOUT,
+        message: 'Local storage stopped responding. Reopen this workspace',
+      });
+
+      checkGeneration();
+
+      return rows;
+    } catch (error) {
+      if (state.isClosed && state.health.issue === undefined) {
+        throw error;
+      }
+
+      // Native schema preparation handles expected SQLite errors, such as an existing migration column.
+      if (!Schema.is(ConsoleStorageFailed)(error)) {
+        throw error;
+      }
+
+      invalidate('Local storage could not be updated. Reopen this workspace');
+
+      try {
+        await retire();
+      } finally {
+        void close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
+      }
+
+      throw error;
+    }
+  }
+
+  const remainingMs = Math.max(
+    0,
+    DateTime.toEpochMillis(generation.createdAt) +
+      Duration.toMillis(CACHE_MAX_AGE) -
+      DateTime.toEpochMillis(DateTime.nowUnsafe()),
+  );
+
+  const expiration = setTimeout(() => {
+    void discard().catch(() => invalidate('Local data could not be reset. Try again'));
+  }, remainingMs);
+
+  globalThis.addEventListener('storage', onStorage);
+  globalThis.addEventListener('pagehide', onPageHide, { capture: true });
+  globalThis.addEventListener('pagehide', releaseOnPageHide);
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
+  const persistence = createBrowserWASQLitePersistence({ database: { execute, close }, coordinator });
+
+  return {
+    generationId,
+    persistence,
+    dispose: close,
+    discard,
+    readHealth: () => state.health,
+    subscribeHealth(listener) {
       listeners.add(listener);
 
       return () => listeners.delete(listener);
@@ -154,327 +506,98 @@ function createHealth(): StorageHealth {
   };
 }
 
-async function scopeFile({ origin, principalId, workspaceId }: ConsoleStorageScope): Promise<string> {
-  const scope = JSON.stringify([FORMAT_GENERATION, origin, principalId, workspaceId]);
-  const encoder = new TextEncoder();
-  const encoded = encoder.encode(scope);
-  const digest = await crypto.subtle.digest('SHA-256', encoded);
-  const bytes = new Uint8Array(digest);
-  const parts = Array.from(bytes, (byte) => byte.toString(HEX_RADIX).padStart(HEX_BYTE_WIDTH, '0'));
+/** Opens one required persistent owner after the caller has admitted its principal and workspace. */
+export async function openConsoleStorage(input: OpenConsoleStorage): Promise<ConsoleStorage> {
+  const signal = AbortSignal.any([input.signal, AbortSignal.timeout(Duration.toMillis(OPEN_TIMEOUT))]);
+  const startedAtMs = DateTime.toEpochMillis(DateTime.nowUnsafe());
 
-  return `mechane-console-cache-${FORMAT_GENERATION}-${parts.join('')}.db`;
-}
-
-async function discardFile(file: string, signal?: AbortSignal): Promise<void> {
-  const lifetime = new AbortController();
-  const signals = [lifetime.signal];
-
-  if (signal !== undefined) {
-    signals.push(signal);
-  }
-
-  const combined = AbortSignal.any(signals);
-
-  const timeout = setTimeout(() => {
-    const failure = new StoreFailed({ reason: 'Cache removal timed out' });
-
-    lifetime.abort(failure);
-  }, DISCARD_TIMEOUT_MS);
-
-  const command = StoreCommand.cases.Discard.make({ file });
-
-  try {
-    const connection = await openConnection({ command, signal: combined, onFailure: () => undefined });
-
-    connection.terminate();
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-function canAccessFiles(): boolean {
-  const hasWorker = typeof Worker !== 'undefined';
-  const hasLocks = Reflect.has(navigator, 'locks');
-  const hasDirectory = Reflect.has(navigator, 'storage') && Reflect.has(navigator.storage, 'getDirectory');
-
-  return hasWorker && hasLocks && hasDirectory;
-}
-
-/** Invalidates only the named scope when its file lease can be acquired within the cleanup budget. */
-export async function discardConsoleStorage(scope: ConsoleStorageScope): Promise<boolean> {
-  if (!canAccessFiles()) {
-    return false;
-  }
-
-  const lifetime = new AbortController();
-  const expired = Promise.withResolvers<false>();
-
-  const timer = setTimeout(() => {
-    const failure = new StoreFailed({ reason: 'Cache invalidation timed out' });
-
-    lifetime.abort(failure);
-    expired.resolve(false);
-  }, DISCARD_TIMEOUT_MS);
-
-  async function discard(): Promise<boolean> {
-    const file = await scopeFile(scope);
-
-    lifetime.signal.throwIfAborted();
-
-    const lease = await acquireFile({ file, signal: lifetime.signal });
-
+  async function select(): Promise<SelectedGeneration> {
     try {
-      if (!lease.isOwner) {
-        return false;
-      }
+      const scope = await createScope(input);
 
-      lifetime.signal.throwIfAborted();
-      await discardFile(file, lifetime.signal);
+      return await selectGeneration({ scope, signal });
+    } catch (error) {
+      throw new ConsoleStorageFailed({ reason: String(error) });
+    }
+  }
 
-      return true;
+  const selected = await select();
+  const { scope } = selected;
+
+  const state: Types.Mutable<{
+    /** Absent until the native opener returns a connection. */
+    readonly database: BrowserWASQLiteDatabase | undefined;
+    /** Absent until the connection has its scoped lifecycle owner. */
+    readonly storage: ConsoleStorage | undefined;
+  }> = { database: undefined, storage: undefined };
+
+  async function closeFailedOpen(): Promise<void> {
+    try {
+      await state.database?.close?.();
     } finally {
-      await lease.release();
+      await selected.lease.release();
     }
   }
 
   try {
-    const discarded = discard();
+    const databaseName = createDatabasePath({ scope, generation: selected.generation.generation });
 
-    return await Promise.race([discarded, expired.promise]);
-  } catch {
-    return false;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-function createPersistentStorage({
-  file,
-  lease,
-  connection,
-  expiresAt,
-  signal,
-  health,
-}: PersistentStorageInput): ConsoleStorage {
-  const state: Types.Mutable<DisposalState> = { pending: undefined, hasDiscarded: false, shouldDiscard: false };
-  const adapter = createSQLiteCorePersistenceAdapter({ driver: connection.driver });
-  const persistence: PersistedCollectionPersistence = { adapter };
-  const expiresAtMs = DateTime.toEpochMillis(expiresAt);
-  const remainingMs = Math.max(0, expiresAtMs - Date.now());
-
-  const expiration = setTimeout(() => {
-    connection.terminate();
-    void discard();
-    health.fail();
-  }, remainingMs);
-
-  async function close(): Promise<void> {
-    clearTimeout(expiration);
-    signal.removeEventListener('abort', abort);
-
-    try {
-      try {
-        await connection.close();
-      } catch {
-        state.shouldDiscard = true;
-
-        health.fail();
-      }
-
-      if (state.shouldDiscard) {
-        await discardFile(file);
-
-        state.hasDiscarded = true;
-      }
-    } catch {
-      health.fail();
-    } finally {
-      connection.terminate();
-      await lease.release();
-    }
-  }
-
-  async function dispose(): Promise<void> {
-    state.pending ??= close();
-
-    await state.pending;
-  }
-
-  async function discard(): Promise<void> {
-    state.shouldDiscard = true;
-
-    if (state.pending === undefined) {
-      state.pending = close();
-
-      await state.pending;
-
-      return;
-    }
-
-    await state.pending;
-
-    if (state.hasDiscarded) {
-      return;
-    }
-
-    const lifetime = new AbortController();
-    const nextLease = await acquireFile({ file, signal: lifetime.signal });
-
-    if (!nextLease.isOwner) {
-      health.fail();
-
-      return;
-    }
-
-    try {
-      await discardFile(file);
-
-      state.hasDiscarded = true;
-    } catch {
-      health.fail();
-    } finally {
-      await nextLease.release();
-    }
-  }
-
-  function abort(): void {
-    connection.terminate();
-    void discard();
-  }
-
-  signal.addEventListener('abort', abort, { once: true });
-
-  if (signal.aborted) {
-    abort();
-  }
-
-  return { persistence, dispose, discard, readHealth: health.read, subscribeHealth: health.subscribe };
-}
-
-/** Selects persistence within the startup budget; its signal owns admission, then the returned owner owns cleanup. */
-export async function openConsoleStorage({
-  origin,
-  principalId,
-  workspaceId,
-  signal,
-}: OpenConsoleStorageInput): Promise<ConsoleStorage> {
-  if (!globalThis.crossOriginIsolated || !canAccessFiles()) {
-    return createMemoryStorage({
-      issue: { kind: ISSUE_KIND.Unavailable, message: 'This browser uses memory because local storage is unavailable' },
+    state.database = await openBrowserWASQLiteOPFSDatabase({
+      databaseName,
+      timeoutMs: Duration.toMillis(OPEN_TIMEOUT),
+      signal,
     });
-  }
 
-  const lifetime = new AbortController();
-  const aborted = Promise.withResolvers<never>();
-  const state: Types.Mutable<ResourceState> = { storage: undefined };
-  const health = createHealth();
+    state.storage = createStorage({ ...selected, database: state.database, onInvalidated: input.onInvalidated });
 
-  function abort(): void {
-    const reason: unknown = signal.reason;
+    await waitWithin({
+      operation: limitDatabase(state.database),
+      timeout: Duration.millis(
+        Math.max(0, Duration.toMillis(OPEN_TIMEOUT) - (DateTime.toEpochMillis(DateTime.nowUnsafe()) - startedAtMs)),
+      ),
+      message: 'Local storage could not be prepared. Try again',
+    });
 
-    lifetime.abort(reason);
-  }
+    signal.throwIfAborted();
 
-  lifetime.signal.addEventListener(
-    'abort',
-    () => {
-      const reason: unknown = lifetime.signal.reason;
-
-      aborted.reject(reason);
-    },
-    { once: true },
-  );
-
-  signal.addEventListener('abort', abort, { once: true });
-
-  if (signal.aborted) {
-    abort();
-  }
-
-  const timeout = setTimeout(() => {
-    const failure = new StoreFailed({ reason: 'Cache initialization timed out' });
-
-    lifetime.abort(failure);
-  }, OPEN_TIMEOUT_MS);
-
-  async function open(): Promise<ConsoleStorage> {
-    const file = await scopeFile({ origin, principalId, workspaceId });
-
-    lifetime.signal.throwIfAborted();
-
-    const lease = await acquireFile({ file, signal: lifetime.signal });
-
-    if (!lease.isOwner) {
-      await lease.release();
-
-      return createMemoryStorage({
-        issue: { kind: ISSUE_KIND.Unavailable, message: 'This tab uses memory because another tab owns local storage' },
-      });
+    if (localStorage.getItem(scope.key) !== selected.wire) {
+      throw new ConsoleStorageFailed({ reason: 'The cache generation changed during startup' });
     }
 
-    try {
-      lifetime.signal.throwIfAborted();
+    void collectRetiredGenerations(scope);
 
-      const command = StoreCommand.cases.Open.make({ file, maxAge: CACHE_MAX_AGE, maxBytes: CACHE_MAX_BYTES });
+    return state.storage;
+  } catch (error) {
+    const wasCanceled = input.signal.aborted && state.storage?.readHealth().issue === undefined;
 
-      const connection = await openConnection({
-        command,
-        signal: lifetime.signal,
-        onFailure() {
-          void state.storage?.discard();
-          health.fail();
-        },
-      });
-
-      const decoded = Schema.decodeUnknownResult(Schema.DateTimeUtcFromMillis, { onExcessProperty: 'error' })(
-        connection.initialValue,
-      );
-
-      if (Result.isFailure(decoded)) {
-        connection.terminate();
-
-        throw new StoreFailed({ reason: String(decoded.failure) });
+    if (wasCanceled) {
+      if (state.storage === undefined) {
+        await waitWithin({
+          operation: closeFailedOpen(),
+          timeout: CLEANUP_TIMEOUT,
+          message: 'Local storage did not close',
+        });
+      } else {
+        await state.storage.dispose();
       }
 
-      lifetime.signal.throwIfAborted();
+      throw error;
+    }
 
-      state.storage = createPersistentStorage({
-        file,
-        lease,
-        connection,
-        expiresAt: decoded.success,
-        signal: lifetime.signal,
-        health,
-      });
-
-      return state.storage;
-    } catch (failure) {
-      lifetime.abort(failure);
-
+    if (state.storage === undefined) {
       try {
-        await discardFile(file);
-      } catch {
-        health.fail();
+        await retireGeneration({ scope, wire: selected.wire });
       } finally {
-        await lease.release();
+        await waitWithin({
+          operation: closeFailedOpen(),
+          timeout: CLEANUP_TIMEOUT,
+          message: 'Local storage did not close. Try again',
+        });
       }
-
-      throw failure;
+    } else {
+      await state.storage.discard();
     }
-  }
 
-  try {
-    const opening = open();
-    const storage = await Promise.race([opening, aborted.promise]);
-
-    return storage;
-  } catch {
-    return createMemoryStorage({
-      issue: { kind: ISSUE_KIND.Unavailable, message: 'Local storage could not open. This session uses memory' },
-    });
-  } finally {
-    clearTimeout(timeout);
-
-    signal.removeEventListener('abort', abort);
+    throw new ConsoleStorageFailed({ reason: String(error) });
   }
 }

@@ -10,10 +10,9 @@
     "@mechane/console-cache": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@tanstack/db": "1.0.0-rc.1.3",
-    "@tanstack/db-sqlite-persistence-core": "1.0.0-rc.1.3",
+    "@tanstack/db": "1.0.0-rc.1.4",
+    "@tanstack/db-sqlite-persistence-core": "1.0.0-rc.1.4",
     "@tanstack/query-core": "5.105.2",
-    "@tanstack/query-db-collection": "1.5.1",
     "effect": "4.0.7"
   },
   "devDependencies": {}

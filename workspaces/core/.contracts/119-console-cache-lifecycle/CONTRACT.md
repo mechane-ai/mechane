@@ -1,104 +1,122 @@
 ---
 name: console-cache-lifecycle
-message: Admit protected browser copies through the server and keep persistence failures within one owned cache lifecycle.
+message: Admit protected browser copies through the server and keep required persistence within one owned cache lifecycle.
 paths: ["packages/browser/console-cache/**", "packages/browser/console-data/**", "packages/browser/console/src/**"]
 ---
 
 ## Rules
 
 Treat the browser database as a replaceable copy of server records. Resolve the current principal and workspace
-membership through the server for every new data runtime, before opening its protected persisted view. This includes
-returning to a workspace and replacing the runtime through Continue online. A previously admitted application session,
-cached membership, or cached records never grant fresh admission. An inconclusive admission cannot restore a protected
-copy. The public entry and rejected admission show no protected copy.
+membership through the server before opening a protected persisted view for each data runtime. Workspace returns,
+cache recovery, and Back/Forward cache restoration pass that same admission gate. A retained application session or
+cached membership cannot grant fresh admission. Rejected or inconclusive admission exposes no protected copy.
 
-Scope cache identity to the installation, principal, workspace, and format generation. Keep the database filename and
-its Web Lock name with their owner in `console-cache/src/store`. Reject completions from a disposed owner.
-On access denial or confirmed removal, clear affected memory and invalidate the active owner's known-denied persisted
-copy before reuse. A failed purge never authorizes showing that record again. Sign-out disposes the active workspace
-and invalidates active same-principal tabs. Previously closed workspace files remain subject to retention and fresh
-server admission when reopened; sign-out does not require enumerating or physically erasing every inactive workspace
-file. A transient read failure may retain the same admitted owner's last authorized result, as contract 113 permits.
+Require native wa-sqlite persistence. Missing browser capabilities, denied storage, or failed initialization produce an
+actionable error. Retry the same backend after fresh admission; do not select memory storage or another database.
+Keep these responsibilities separate:
 
-Persist validated server records in their schema-owned serializable representation and the page metadata needed to
-interpret their coverage. Protocol codecs restore runtime values after decoding; raw Effect objects are not a stored
-format. Keep credentials, drafts, unsent commands, and application submission state out of this cache. Advance the
-cache format generation to replace incompatible derived data. This does not authorize deleting authoritative server
-data or the application's drafts.
+| Owner | Responsibility |
+| --- | --- |
+| TanStack Query in `console-data` | Each tab's demanded requests, polling, focus refresh, cancellation, errors, and retry. |
+| TanStack DB in `console-data` | Validated canonical records and exact ordered page receipts. |
+| Native browser persistence in `console-cache` | Worker, SQLite transactions, and cross-tab collection replication. |
+| Cache lifecycle in `console-cache/src/store/storage.ts` | Scoped generations, retention, recovery, and cleanup. |
 
-Use the published TanStack collection, query, and persistence APIs without dependency patches or private imports.
-`console-data` owns native collection composition and authoritative record updates. `console-cache` supplies the public
-SQLite persistence driver through its dedicated module Worker. Worker messages carry driver operations, not a second
-record synchronization, retry, or replication protocol. Console presentation imports neither the cache nor its native
-persistence library.
+Use published APIs without dependency patches, private imports, a custom Worker bridge, or a second record replication
+protocol. Console presentation imports neither the cache nor its persistence libraries. Native Query results are
+completion scalars; record values and page coverage have one owner in the canonical collections.
 
-Only the tab holding an exclusive Web Lock for the actual database file may start its file-owning Worker.
-Keep that lock until the Worker has terminated. Other tabs, unsupported browsers, and failed cache initialization use
-the same native collection model in memory without opening the file. They do not wait indefinitely for storage.
-Each scope's cache file is reusable for at most 24 hours and up to 64 MiB. Enforce age and size when opening it and
-while it is active; an expired or oversized file must be discarded before reuse. Canonical tables may restore their
-retained local rows eagerly within this file policy. This does not authorize downloading an entire server history.
+Persist records in their schema-owned serializable form. Validate restored rows and page receipts as well as new writes.
+Publish a receipt only after the native persistence API confirms its referenced canonical updates. A page is ready only
+when its exact receipt and compatible referenced rows are present; an absent receipt never means an empty page.
+Keep refresh timing in the tab's Query state. A persisted receipt describes ordered membership and pagination, so an
+unchanged successful read must not manufacture a durable mutation just to record when the request completed.
+Keep credentials, drafts, unsent commands, and submission state outside this cache. A format change replaces derived
+copies without deleting authoritative server data or application drafts.
 
-Give initialization, driver requests, and disposal explicit bounded lifetimes. A failed or hung open terminates the
-owning Worker, which releases its nested file handles. Disposal attempts graceful close and always terminates that
-Worker. Settle outstanding requests when it fails or terminates, and reject new requests after disposal.
-A timed-out operation invalidates its connection; it does not silently retry a write whose outcome is unknown.
-Retain the current file lease through the bounded attempt to invalidate a failed cache. A failed graceful close
-upgrades that disposal to invalidation before releasing its lease. Successful ordinary disposal may retain the file.
+Admit canonical writes through one short native Web Lock per generation in `console-data/src/collections.ts`.
+Under that lock, reload the touched tables through the public `forceReloadSubset({})`, evaluate domain guards against
+the current rows, construct the mutation, and await native acceptance. Use this boundary for fetched records,
+acknowledged command reconciliation, receipts, and purges. Keep HTTP waits outside the generation's write lock.
+Failed native acceptance or an uncertain write fences and retires its generation before releasing the lock; never
+replay that write.
+These locks order application decisions. Native TanStack remains the sole record replication owner, with no added queue
+or cross-tab RPC protocol.
 
-Keep Turso imports and raw connection, statement, and transaction handles inside `store/worker/main.ts`.
-The native SQLite driver's transaction callback uses one scoped transaction across its reads and writes.
-Serialize complete connection operations, including statement preparation. A transaction holds that connection order
-through its callback and commit or rollback, while its scoped operations use their own order. Bound queue waiting as
-part of the operation lifetime and reject queued calls when the connection terminates.
-Decode Worker request and response envelopes at their boundaries. Keep SQL forwarding inside this store under
-contract 046, and keep the driver's required generic row assertion at the one site contract 017 names.
-Validate restored canonical rows and page receipts before admitting them to native collections. Their schemas apply
-to disk hydration as well as server-driven writes; a type declaration alone does not validate persisted data.
+Scope cache identity to the installation, principal, workspace, and format generation. Keep the current generation's
+validated pointer in browser storage and change it under the scope's exclusive Web Lock. Give each generation a fresh
+random 128-bit identity and its own OPFS directory. Keep rendered paths within the native VFS limit, including journal
+suffixes. Never discover a usable generation by scanning old files.
+Each open runtime holds a shared lifecycle lease for its generation. This lease only prevents physical deletion while
+a Worker can use that directory; it does not order record updates.
 
-Complete a persisted canonical update only when the native persistence API confirms it.
-Report a rejected local update as cache degradation; do not report an unconfirmed disk write as settled.
-Replace or disable the failed cache without changing an acknowledged server command, its request identity, or a draft.
-The application owns those lifetimes independently of the replaceable data runtime.
+Retire the durable pointer before replacing or deleting a failed generation. Notify and fence active peers so a retired
+owner cannot accept new work or publish later completions. Delete only a retired generation for which an exclusive
+lifecycle lease is immediately available. A delayed close or blocked deletion leaves a quarantined directory, never a
+reusable cache. A failed metadata write is a visible storage failure, not permission to reuse a retired owner.
+
+Unauthenticated or forbidden reads end the admitted scope and retire its generation. Confirmed removal fences affected
+local reads and retained results before purging their canonical rows and receipts. Broadcast validated scope or resource
+invalidation; each active peer fences its affected reads when it receives the notification, before its own purge.
+The admission channel carries no records and has no peer-acknowledgment barrier.
+Sign-out invalidates the active scope and active same-principal tabs. Inactive workspace files still require fresh
+admission and obey retention; sign-out need not enumerate every closed workspace. Transient read failures may retain
+the same admitted owner's last authorized result under contract 113.
+
+Reuse a generation for at most 24 hours, enforcing expiry during open and active use. Limit its main SQLite database
+to 64 MiB with the native page-count limit and validate the resulting page size and cap. This is not a bound on transient
+journal bytes or the browser's total storage. Reject an oversized existing database before exposing it.
+Canonical tables may restore retained local rows eagerly within this policy; server history is still read on demand.
+
+Bound application waits for opening, persistent updates, and cleanup. The native opener owns startup cancellation;
+its established database exposes graceful close but no forced-termination API. Keep a retiring generation's lease until
+native close settles or page suspension terminates its Worker. A timeout fences the runtime and leaves its generation
+unavailable for reuse. Do not retry an uncertain write or create an automatic loop of replacement Workers.
+For ordinary disposal, clean up native collections and their coordinator before closing the database. A terminal native
+fault or timeout first fences the application owner, then promptly closes native resources; recovery cleans up the
+remaining collections. Successful ordinary disposal may retain the generation. Reject completions from disposed owners.
+Report failures independently of acknowledged server commands, which keep their result and request ID.
 
 ## Checks
 
-Type-check the public driver interface and run the generated package boundaries. Confirm that only the cache Worker
-imports Turso, only cache and data import persistence-core, and only data consumes the cache package.
-Inspect native API calls for dependency patches, private entry points, and a second collection or synchronization engine.
+Run the generated dependency boundaries and browser typecheck. Confirm that only the cache lifecycle composes native
+browser persistence and that no product module imports the raw wa-sqlite driver. Inspect the required persistence type,
+recovery path, and native API calls for memory branches, dependency patches, private entry points, or duplicate owners.
 
-In a real browser against the packaged Worker, reopen an admitted cache and then repeat with rejected admission.
-Switch principal and workspace while a read is pending. Confirm that protected content never crosses those owners.
-Warm one workspace, switch away, revoke its membership, then return while holding its first data read. Confirm that
-fresh admission rejects the workspace before its cached content appears. Repeat admission failure during Continue online.
-Exercise an incompatible cache generation, a transient read failure, a confirmed removal, and a failed cache write.
-Initialize all canonical collections and query receipts concurrently against a cold cache, then reopen it. Confirm
-that schema preparation and the first authorized reads finish within their operation deadlines.
+In a real browser against the packaged Worker, initialize all canonical tables concurrently, then reopen populated and
+successful-empty pages while holding their network reads. Confirm exact receipt coverage reveals cached content.
+Repeat with rejected admission, a principal or workspace switch, and an incompatible cache format. No protected content
+may cross owners. Verify current-page reads and retained drafts after Back/Forward cache restoration.
 
-Open two tabs for one file and confirm that only its lock holder opens it while both can use the Console.
-Fail and hang an open, dispose the owner, and verify that a fresh Worker can acquire and use the file afterward.
-Exercise transaction commit and rollback through the Worker bridge. Terminate it with a request pending and confirm
-that the request settles and no later request enters that connection.
-Race another tab's open with failed-cache cleanup and a failed graceful close. Confirm that invalidation holds the
-existing lease through its bounded cleanup attempt and that failures remain visible.
+Use two tabs for one generation. Check shared records and receipts, independent network error and retry state, polling,
+command invalidation, and continued use after either tab closes. Release an older response after another tab accepts a
+newer revision or terminal run state. Confirm canonical values do not regress and missing rows cannot become false empties.
+Repeat with a stale prepared mutation, overlapping unversioned snapshots, a purge, and a persistence failure while
+another writer waits. Confirm guards run after the latest persisted rows load and an uncertain writer retires its
+generation before admitting the next writer. Reopen the database to verify the accepted results persisted.
 
-After a server acknowledgement, fail persistence and refresh separately. Confirm that the command remains acknowledged,
-its controls do not repeat it, and runtime replacement preserves a later draft and any uncertain request identity.
-Continue online while ready views stay mounted. Confirm that native query observers bind the replacement client
-without a collection-identity collision, and that draft text, page membership, focus, and scroll position survive.
-Keep temporary qualification probes outside tracked source. The existing test-curation contract governs retained checks.
+Exercise expiry, the page-count cap, denied storage, failed open, rejected persistence, and interrupted cleanup.
+Race retirement with another tab's open. Confirm peers stop accepting work, the retired generation is never selected again, and
+an active generation cannot be physically removed. Verify that cleanup failures remain visible and retries stay bounded.
+
+Fail a refresh and persistence separately after a server acknowledgement. Confirm that the command stays acknowledged,
+its controls do not repeat it, and persistent recovery retains a later draft and uncertain request identity.
+Replace the data runtime while ready views remain mounted; check page membership, focus, scroll, and native observer
+cleanup. Temporary qualification probes stay outside tracked source under the existing test-curation contract.
 
 ## Local adaptations
 
-The cache uses native async error handling at exactly `src/store/storage.ts`, `src/store/connection.ts`, and
-`src/store/worker/main.ts`. Their catches own cache health, RPC failure, and cleanup. They do not run Effects or hide a
-failed server command. `src/store/protocol.ts` receives no error-handling or type-assertion exemption.
+Native async error handling is confined to `console-cache/src/store/storage.ts`. Its catches own storage health,
+retirement, and cleanup. They neither run Effects nor hide failed server commands. Contract 046 permits forwarding the
+native database's unchanged SQL and parameters solely for lifecycle checks. That guard retires only its own lifecycle
+failures; native SQL errors remain intact for the adapter to handle. There is no cache type-assertion exception.
 
-The release supplies the cross-origin isolation headers and the same verified WASM inventory to celld and Cloudflare.
-An unavailable browser capability selects memory operation; it does not load a different database implementation.
+The release supplies the required browser headers and the same verified Worker and WASM inventory to celld and
+Cloudflare. An unavailable browser capability is an error; it does not activate another storage implementation.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `console-cache-worker-driver` (119): enforced: Open Turso only in the cache Worker, such as `packages/browser/console-cache/src/store/worker/main.ts`
+- dependency-cruiser `console-cache-persistence-owner` (119): enforced: Keep native persistence composition in the cache lifecycle, such as `console-cache/src/store/storage.ts`
+- dependency-cruiser `console-cache-native-worker` (119): enforced: Use the native persistence API, such as `openBrowserWASQLiteOPFSDatabase`, instead of the raw wa-sqlite driver
 
 <!-- End of the generated block. -->

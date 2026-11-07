@@ -1,27 +1,22 @@
-import { createLiveQueryCollection, eq } from '@tanstack/db';
-import type { Collection } from '@tanstack/db';
-import type { QueryCollectionUtils } from '@tanstack/query-db-collection';
-import { MutableRef, Schema } from 'effect';
+import { Schema } from 'effect';
 import type { CanonicalTables } from './collections.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
 
 class IncompleteRead extends Schema.TaggedError<IncompleteRead>()('IncompleteRead', { read: Schema.String }) {}
 
-type ReceiptCollection = Collection<
-  ReadReceipt,
-  string,
-  QueryCollectionUtils<ReadReceipt, string, typeof ReadReceipt.Encoded>,
-  ReturnType<typeof Schema.toStandardSchemaV1<typeof ReadReceipt>>,
-  typeof ReadReceipt.Encoded
->;
-
 type WaitForRead = {
-  readonly receipts: ReceiptCollection;
+  readonly receipts: CanonicalTables['reads'];
   readonly tables: CanonicalTables;
   readonly request: ReadRequest;
   readonly signal: AbortSignal;
-  readonly refreshRead: () => Promise<ReadonlyArray<ReadReceipt>>;
-  readonly reportLocalFailure: (error: unknown) => void;
+  readonly refreshRead: () => Promise<number>;
+};
+
+type ReadSource = {
+  readonly status: CanonicalTables['mechs']['status'];
+  readonly preload: () => Promise<unknown>;
+  readonly subscribeChanges: (listener: () => void) => { readonly unsubscribe: () => void };
+  readonly on: (type: 'health:change', listener: () => void) => () => void;
 };
 
 function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
@@ -88,107 +83,63 @@ function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
   }
 }
 
-/** Holds an exact native demand until its receipt and every referenced canonical row are ready. */
-export async function waitForRead({
-  receipts,
-  tables,
-  request,
-  signal,
-  refreshRead,
-  reportLocalFailure,
-}: WaitForRead): Promise<void> {
+/** Cached coverage can satisfy readiness while its tab-owned network read refreshes. */
+export async function waitForRead({ receipts, tables, request, signal, refreshRead }: WaitForRead): Promise<void> {
   signal.throwIfAborted();
 
-  const view = createLiveQueryCollection((query) =>
-    query.from({ receipt: receipts }).where(({ receipt }) => eq(receipt.id, request.id)),
-  );
+  const sources: ReadonlyArray<ReadSource> = [receipts, ...tablesForRead(tables, request.kind)];
 
-  const applied = Promise.withResolvers<void>();
-  const repair = MutableRef.make<ReadReceipt | undefined>(undefined);
-
-  async function cancel(): Promise<void> {
-    try {
-      await view.cleanup();
-    } catch (error) {
-      if (!signal.aborted) {
-        reportLocalFailure(error);
-      }
-    }
-  }
-
-  function onAbort(): void {
-    void cancel();
-  }
-
-  function check(): void {
-    const expected = repair.current;
-    const current = receipts.get(request.id);
-
-    if (signal.aborted) {
-      applied.reject(signal.reason);
-
-      return;
-    }
-
-    if (receipts.status === 'crashed') {
-      applied.reject(new IncompleteRead({ read: request.id }));
-
-      return;
-    }
-
-    if (expected === undefined || current === undefined) {
-      return;
-    }
-
-    const isSameResponse = current.fetchedAtMs === expected.fetchedAtMs && current.hasMore === expected.hasMore;
-
-    const hasSameKeys =
-      current.keys.length === expected.keys.length && current.keys.every((key, index) => key === expected.keys[index]);
-
-    if (isSameResponse && hasSameKeys && hasReadRows(tables, current)) {
-      applied.resolve();
-    }
-  }
-
-  async function refresh(): Promise<void> {
-    const rows = await refreshRead();
-
-    repair.current = rows[0];
-
-    check();
-  }
-
-  signal.addEventListener('abort', onAbort, { once: true });
-
-  try {
-    await view.preload();
-    await Promise.all(tablesForRead(tables, request.kind).map((table) => table.preload()));
-    signal.throwIfAborted();
-
+  function isComplete(): boolean {
     const receipt = receipts.get(request.id);
 
-    if (receipt === undefined || !hasReadRows(tables, receipt)) {
-      const subscription = view.subscribeChanges(check);
-      const unsubscribeHealth = receipts.on('health:change', check);
+    return receipt !== undefined && hasReadRows(tables, receipt);
+  }
 
-      signal.addEventListener('abort', check, { once: true });
+  const ready = Promise.withResolvers<void>();
 
-      try {
-        await Promise.all([refresh(), applied.promise]);
-      } finally {
-        subscription.unsubscribe();
-        unsubscribeHealth();
-        signal.removeEventListener('abort', check);
-      }
+  function check(): void {
+    if (signal.aborted) {
+      ready.reject(signal.reason);
+    } else if (sources.some((source) => source.status === 'crashed')) {
+      ready.reject(new IncompleteRead({ read: request.id }));
+    } else if (sources.every((source) => source.status === 'ready') && isComplete()) {
+      ready.resolve();
     }
+  }
 
-    const confirmed = receipts.get(request.id);
+  const subscriptions = sources.map((source) => source.subscribeChanges(check));
+  const healthSubscriptions = sources.map((source) => source.on('health:change', check));
 
-    if (confirmed === undefined || !hasReadRows(tables, confirmed)) {
+  signal.addEventListener('abort', check, { once: true });
+  check();
+
+  async function refresh(): Promise<void> {
+    await refreshRead();
+    signal.throwIfAborted();
+
+    if (!isComplete()) {
       throw new IncompleteRead({ read: request.id });
     }
+  }
+
+  try {
+    await Promise.race([Promise.all(sources.map((source) => source.preload())), ready.promise]);
+    signal.throwIfAborted();
+
+    if (isComplete()) {
+      return;
+    }
+
+    await Promise.race([ready.promise, refresh()]);
   } finally {
-    signal.removeEventListener('abort', onAbort);
-    await cancel();
+    signal.removeEventListener('abort', check);
+
+    for (const subscription of subscriptions) {
+      subscription.unsubscribe();
+    }
+
+    for (const unsubscribe of healthSubscriptions) {
+      unsubscribe();
+    }
   }
 }

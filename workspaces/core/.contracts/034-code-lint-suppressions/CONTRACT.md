@@ -51,11 +51,9 @@ The owned checks of `mise -C workspaces/core run checks` honor no suppression, s
 Each rule's entry declares its suppression budget, `maxSuppressions`, 0 by default and at most `maxRuleSuppressions`; `rules:check` counts each rule that a suppression of a TypeScript file names, with or without its plugin, and fails on a rule suppressed more often than its budget allows. The rules with a budget above 0 are `consistent-type-assertions` and `no-unsafe-type-assertion`, for `wireKeys`, `sql-statement-not-literal`, for a fork's copy, `consistent-type-definitions`, for the two global augmentations, and `no-bitwise`, for three masks; their entries state each budget.
 `rules:check` also counts each `// <check>-allow <rule> -- <reason>` against the owned rule's budget, which is 0, and each `// jscpd:ignore-start -- <reason>` against 035's `jscpdSuppressions`.
 oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/name-rules/src/oxlint-opt-outs.json`.
-The native `SQLiteDriver.query<T>` bridge in `packages/browser/console-cache/src/store/connection.ts` uses the second
-budgeted suppression of `consistent-type-assertions` and `no-unsafe-type-assertion`. Contract 017 limits it to the
-decoded row array returned through that dependency's schema-free generic interface.
-The same native method permits one `return-only-type-parameter` site suppression because `SQLiteDriver` declares
-the generic row type without a schema argument. No other generic declaration gains this allowance.
+The native browser database's `execute<Row>` wrapper in `console-cache/src/store/storage.ts` permits one
+`return-only-type-parameter` site suppression because the published interface declares its row type without a schema
+argument. It forwards the typed result without an assertion, as contract 017 requires.
 The two native canonical collection write sites in `console-data/src/collections.ts` permit the
 `parameter-mutation` suppressions described in contract 016. The admission invalidation broadcast in
 `console-data/src/console-data.ts` permits the one `unicorn/require-post-message-target-origin` suppression described

@@ -50,8 +50,6 @@ export const codeTypescriptEffectErrors = {
         FileRole.BrowserAdapter,
         FileRole.BrowserQuery,
         FileRole.BrowserCommand,
-        FileRole.BrowserCacheWorker,
-        FileRole.BrowserCacheConnection,
         FileRole.BrowserCacheLifecycle,
       ],
       standard: 'ER-04',

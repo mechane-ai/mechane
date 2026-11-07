@@ -6,9 +6,10 @@ import {
   RequestTimedOut,
   ResponseUnreadable,
 } from '@mechane/client';
+import { ConsoleStorageFailed } from '@mechane/console-cache';
 import { ErrorFamily } from '@mechane/protocol';
 import type { catalog, OperationInput, OperationOutput } from '@mechane/protocol';
-import { Duration, Effect, Option, Result } from 'effect';
+import { Duration, Effect, Option, Result, Schema } from 'effect';
 
 /** The authenticated operations the console currently exposes. */
 export type ConsoleOperation =
@@ -104,7 +105,7 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (f
 
 /** A safe user-facing explanation that does not expose transport details. */
 export function problemMessage(error: unknown): string {
-  if (error instanceof OperationFailed) {
+  if (error instanceof OperationFailed || Schema.is(ConsoleStorageFailed)(error)) {
     return error.message;
   }
 

@@ -38,10 +38,10 @@ Does an operation that needs one transaction run its store calls inside the stor
 
 ## Local adaptations
 
-`packages/browser/console-cache/src/store/worker/main.ts` is the narrow native-driver exception to literal,
-caller-independent SQL. It executes statements and bound values supplied through TanStack's public `SQLiteDriver`
-interface. That dependency owns the generated SQL. The bridge does not accept SQL from application consumers, assemble
-statements, or expose raw Turso handles. Other product SQL remains subject to the literal-statement rules.
+`packages/browser/console-cache/src/store/storage.ts` may forward the native browser database's SQL and bound values
+unchanged to enforce generation validity and an operation deadline. TanStack owns those statements and transaction
+ordering. This boundary neither accepts application SQL, assembles statements, exposes the raw database, nor adds a
+queue or Worker protocol. Its own SQLite configuration statements remain whole literals.
 
 SQL text and client calls appear only in a store member, `@mechane/store`, an object's `*-store`, an object's internal `src/store` module, or in the stack's `packages/node/stack/src/releases/store`, which writes each release file into celld's local object store as celld's own put does; each migration is a function in its owner's declared `migrations.ts` that runs its own literal statements, and the store creates its `schema_migrations` ledger and runs the migrations it lacks in one transaction.
 A fresh object applies every step its store declares, so its schema revision is that store's step count.

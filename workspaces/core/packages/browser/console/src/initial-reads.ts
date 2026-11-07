@@ -2,12 +2,14 @@ import { readRequests } from '@mechane/console-data';
 import type { ReadRequest } from '@mechane/console-data';
 import { TurnId } from '@mechane/records';
 import { Schema } from 'effect';
+import { turnEventCursor } from './navigation.tsx';
 import type { ConsoleLocation, PageCursors } from './types.ts';
 
 /** Starts the route's heading, primary content, and independent activity demand while local storage opens. */
 export function initialReads(
   location: ConsoleLocation,
   pages: Partial<PageCursors> | undefined,
+  selection: 'primary' | 'all' = 'all',
 ): ReadonlyArray<ReadRequest> {
   const mechId = location.mech;
 
@@ -19,7 +21,20 @@ export function initialReads(
   const turnId = location.turn;
 
   if (turnId !== undefined) {
-    return Schema.is(TurnId)(turnId) ? [heading, readRequests.trace(mechId, turnId)] : [heading];
+    if (!Schema.is(TurnId)(turnId)) {
+      return [heading];
+    }
+
+    const primary: Array<ReadRequest> = [heading, readRequests.trace(mechId, turnId)];
+    const inspect = location.inspect ?? location.view;
+
+    if (inspect === 'events') {
+      const after = turnEventCursor(pages?.events, location.event);
+
+      primary.push(readRequests.turnEvents(mechId, turnId, after));
+    }
+
+    return primary;
   }
 
   const view = location.view ?? 'conversation';
@@ -38,11 +53,10 @@ export function initialReads(
     case 'conversation':
     case 'events':
     case 'requests':
-    case 'tools':
-      return [
-        heading,
-        readRequests.events(mechId, pages?.conversation?.at(-1) ?? null),
-        readRequests.turns(mechId, null),
-      ];
+    case 'tools': {
+      const primary = [heading, readRequests.events(mechId, pages?.conversation?.at(-1) ?? null)];
+
+      return selection === 'primary' ? primary : [...primary, readRequests.turns(mechId, null)];
+    }
   }
 }

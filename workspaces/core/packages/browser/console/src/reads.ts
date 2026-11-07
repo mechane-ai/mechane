@@ -66,6 +66,8 @@ function orderedRows<Row extends { readonly key: unknown }>(
 }
 
 function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined) {
+  const requestId = request?.id;
+
   const query = useLiveQuery({
     client: data.db,
     queryKey: ['console-read', data.scope, request?.id ?? null],
@@ -79,8 +81,8 @@ function useReadReceipt(data: ConsoleData, request: ReadRequest | undefined) {
   });
 
   const subscribe = useCallback(
-    (notify: () => void) => (request === undefined ? () => undefined : data.subscribeReadStatus(request, notify)),
-    [data, request],
+    (notify: () => void) => (requestId === undefined ? () => undefined : data.subscribeReadStatus(requestId, notify)),
+    [data, requestId],
   );
 
   const status = useSyncExternalStore(
@@ -126,7 +128,7 @@ function useReadState<Value>({
   records,
 }: ReadStateOptions<Value>): ResourceState<Value> {
   const [lastComplete, setLastComplete] = useState<{
-    readonly scope: string;
+    readonly data: ConsoleData;
     readonly id: ReadRequest['id'];
     readonly value: Value;
   }>();
@@ -143,12 +145,12 @@ function useReadState<Value>({
   const hasFailed = error !== null && error !== undefined;
   const canRetain = !isRevoked && (!hasFailed || canRetainResult(error));
   const isRefreshing = status?.fetchStatus === 'fetching' || queries.some((read) => read.health?.reloading === true);
-  const hasSameOwner = lastComplete?.scope === data.scope && lastComplete.id === request?.id;
+  const hasSameOwner = lastComplete?.data === data && lastComplete.id === request?.id;
   const ready = canRetain ? (value ?? (hasSameOwner ? lastComplete.value : undefined)) : undefined;
 
   if (canRetain && value !== undefined && request !== undefined) {
     if (!hasSameOwner || lastComplete.value !== value) {
-      setLastComplete({ scope: data.scope, id: request.id, value });
+      setLastComplete({ data, id: request.id, value });
     }
   } else if ((!canRetain || !hasSameOwner) && lastComplete !== undefined) {
     setLastComplete(undefined);

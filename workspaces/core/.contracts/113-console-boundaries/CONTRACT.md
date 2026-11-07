@@ -10,8 +10,8 @@ The console ships at `/console` in the same immutable release as the Worker. `/a
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
 `console` owns routes, application composition, drafts, and the Storybook runner. `console-data` owns admission,
-requests, canonical records, page membership, and acknowledged commands. `console-cache` owns the native persistence
-driver and file lifecycle under [contract 119](../119-console-cache-lifecycle/CONTRACT.md).
+requests, canonical records, page membership, and acknowledged commands. `console-cache` owns native persistence
+composition and the file lifecycle under [contract 119](../119-console-cache-lifecycle/CONTRACT.md).
 `console-views` owns resource presentation and domain formatting. `@mechane-ai/elements` owns shared visual roles,
 accessible controls, generic data presentation, layouts, and charts behind its declared public entry points. Browser packages import only shared or lower browser packages. No browser package imports Worker, Node,
 private Factory, or installation credentials.
@@ -22,21 +22,30 @@ unique. Pages hold ordered record identities and continuation metadata separatel
 Receiving a newer record updates its readers without silently changing the membership of a page they are reading.
 One loaded page or the union of loaded pages never establishes an exhaustive dataset.
 
-Use native on-demand queries for the entity and page reads whose server API supplies the required bounds. Preserve
+Use each tab's native TanStack Query observers for demanded API reads, polling, focus refresh, errors, and retries.
+Keep their successful result a completion scalar. Canonical records and exact page receipts belong only to TanStack DB;
+the native browser coordinator replicates those collections, not a tab's network-request state.
+Use entity and page reads whose server API supplies the required bounds. Preserve
 the server's cursor, ordering, and coverage meaning. `showTurn` returns its selected turn's dispatch collection without
 a server page bound. Merge its turn into the canonical turn collection and retain the remaining trace evidence in one
 document. `listSlackBindings` returns the workspace's binding collection without pagination. Keep these API coverage
 limits explicit. Slack deliveries expose only the latest bounded window, without a continuation cursor. These API
 exceptions do not authorize an eager download of another resource's history or a custom query or synchronization engine.
-The native query receipts and server reads are on demand. Canonical tables restore their retained local rows eagerly
+Server reads are on demand. Canonical record and receipt tables restore their retained local rows eagerly
 within contract 119's per-scope age and size limits; this local hydration is not a claim that every SQLite read uses a
 bounded subset or that the cache holds complete server history.
+
+Hold a native Web Lock for each exact request from its HTTP fetch through receipt publication. Scope the lock to the
+cache generation and request identity. This orders unversioned snapshots of the same request across tabs; unrelated
+requests remain parallel. Canonical updates use contract 119's shared write admission before evaluating domain guards.
 
 Session or workspace changes cancel pending reads and dispose the prior runtime. Persistent copies become available
 only through contract 119's fresh admission gate for each runtime. `console-data` owns that gate for workspace returns
 and cache recovery as well as initial entry; a retained application session cannot authorize a replacement runtime.
 Within one runtime, returning to a page reuses its canonical records and native collection instances. Releasing a page
 removes only its own read subscription; it does not clear another page's canonical records or query.
+On browser page suspension, dispose the data runtime. A Back/Forward cache restoration creates a newly admitted runtime
+for the current route and cursors. Keep drafts and navigation preferences outside that lifetime.
 
 Commands settle from the server acknowledgement. A later refresh, collection update, or cache failure reports its own
 degradation without reversing that outcome or repeating the command. Retain request IDs across uncertain retries and
@@ -107,15 +116,18 @@ the pinned build plugin, ignored by authored-source checks, and still consumed b
 The runtime and query owner in `console-data/src/console-data.ts` uses native async callbacks. It may catch a rejected
 read to clear data after access loss or removal, then rethrow the failure so TanStack retains its error state.
 It also owns bounded disposal and recovery from failed local persistence. Its native read readiness operation in
-`console-data/src/read-ready.ts` may catch a rejected read, repair, or cancellation to release its live query and
-subscription, report local failures, and preserve the original failure. Revocation stays with the runtime owner.
+`console-data/src/read-ready.ts` may catch a rejected read, repair, or cancellation to release its subscriptions,
+report local failures, and preserve the original failure. Revocation stays with the runtime owner.
+The canonical writer in `console-data/src/collections.ts` may catch a failed native write to retire its uncertain
+generation before releasing write admission, then preserve the failure for its caller.
 `console-data/src/commands.ts` may catch a post-acknowledgement local failure to record degradation while returning
 the acknowledged result.
 These exceptions permit neither running Effects outside the API adapter nor treating a failed server command as a success.
 
 The admission invalidation broadcast in `console-data/src/console-data.ts` permits one
 `unicorn/require-post-message-target-origin` site suppression: `BroadcastChannel.postMessage` has no target-origin
-argument and its channel is already origin-scoped. Its decoded payload identifies the affected principal.
+argument and its channel is already origin-scoped. Its decoded payload identifies the principal and affected resource
+scope. It carries access invalidation, never replicated records or Query state.
 
 The route owns page loading identity, `resource.tsx` owns read-state presentation, and Elements owns the visibility
 clock and reveal. Coordinate the reads needed for the current heading, actions, and primary content at the application
@@ -163,6 +175,8 @@ Open overlapping pages and the same record through a detail read. Change that re
 receive its canonical value while a held page keeps its ordered membership. Advance the page only through its declared
 refresh or pagination action. Fail refresh and persistence after an acknowledged command, then replace the data runtime.
 Confirm that the outcome, a later draft, and an uncertain submission's request identity retain their application owner.
+Repeat recovery after a persisted Back/Forward cache restoration from a different route. Confirm current-page reads,
+drafts, focus, scroll position, and browser-local preferences survive while admission is checked again.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

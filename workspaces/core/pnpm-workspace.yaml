@@ -17,12 +17,18 @@ minimumReleaseAgeExclude:
   - '@tanstack/react-virtual@3.14.26'
   - '@tanstack/virtual-core@3.19.11'
   - react-resizable-panels@4.18.0
+  - '@tanstack/browser-db-sqlite-persistence@1.0.0-rc.1.4'
+  - '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.4'
+  - '@tanstack/db@1.0.0-rc.1.4'
+  - '@tanstack/react-db@1.0.0-rc.1.4'
 
 # These install scripts place each tool's platform binary; swc's binary arrives as an optional package instead, and
 # pi-ai's Google and protobuf dependencies need no script for the one OpenAI-compatible API the Worker loads.
+# Native browser persistence ships its SQLite Worker and WASM; the optional PowerSync download is unused.
 allowBuilds:
   '@ast-grep/cli': true
   '@google/genai': false
+  '@journeyapps/wa-sqlite': false
   '@swc/core': false
   esbuild: true
   protobufjs: false

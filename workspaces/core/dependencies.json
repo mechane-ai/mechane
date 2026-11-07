@@ -609,29 +609,24 @@
     ]
   },
   "@mechane/console-cache": {
-    "owns": "The admitted browser cache's scoped file and Web Lock, dedicated Turso Worker, native SQLite persistence driver, and bounded storage lifecycle",
+    "owns": "The admitted browser cache's scoped generations, native wa-sqlite persistence and coordination, and storage lifecycle",
     "layer": 4,
     "lane": "browser",
     "dialect": "plain",
     "kind": "library",
     "criterion": "state",
     "consumers": ["@mechane/console-data"],
-    "confines": ["@tursodatabase/database-wasm", "@tanstack/db-sqlite-persistence-core"]
+    "confines": ["@journeyapps/wa-sqlite", "@tanstack/browser-db-sqlite-persistence"]
   },
   "@mechane/console-data": {
-    "owns": "Browser admission, scoped canonical records, native demand queries and ordered page membership, persistence composition, and acknowledged API commands",
+    "owns": "Browser admission, persisted canonical records and page coverage, tab-owned native network queries, and acknowledged API commands",
     "layer": 5,
     "lane": "browser",
     "dialect": "plain",
     "kind": "library",
     "criterion": "closure",
     "consumers": ["@mechane/console"],
-    "confines": [
-      "@tanstack/db",
-      "@tanstack/db-sqlite-persistence-core",
-      "@tanstack/query-core",
-      "@tanstack/query-db-collection"
-    ]
+    "confines": ["@tanstack/db", "@tanstack/db-sqlite-persistence-core", "@tanstack/query-core"]
   },
   "@mechane/console-views": {
     "owns": "Mechane resource views and user interactions without network or session ownership",

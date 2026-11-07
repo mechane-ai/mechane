@@ -1,8 +1,9 @@
-import { collectionOptions, localOnlyCollectionOptions } from '@tanstack/db';
+import type { openConsoleStorage } from '@mechane/console-cache';
+import { collectionOptions } from '@tanstack/db';
 import type { Collection, CollectionConfig, DbClient, InferSchemaOutput } from '@tanstack/db';
 import { persistedCollectionOptions } from '@tanstack/db-sqlite-persistence-core';
 import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@tanstack/db-sqlite-persistence-core';
-import { Schema } from 'effect';
+import { Duration, MutableRef, Schema } from 'effect';
 import {
   AllowanceRow,
   EventRow,
@@ -16,61 +17,108 @@ import {
   TraceEvidenceRow,
   TurnRow,
 } from './records.ts';
+import { ReadReceipt } from './requests.ts';
 
 type KeyedRow = { readonly key: string };
+const WRITE_ADMISSION_TIMEOUT_MS = Duration.toMillis('10 seconds');
+const WRITE_TIMEOUT_MS = Duration.toMillis('10 seconds');
+
+type CanonicalPersistenceOperations = PersistedCollectionUtils &
+  Required<Pick<PersistedCollectionUtils, 'forceReloadSubset'>>;
+
+class PersistenceUnavailable extends Schema.TaggedError<PersistenceUnavailable>()('PersistenceUnavailable', {}) {}
+class CanonicalWriteTimedOut extends Schema.TaggedError<CanonicalWriteTimedOut>()('CanonicalWriteTimedOut', {}) {}
+
 type RowSchema<Row extends object> = ReturnType<typeof Schema.toStandardSchemaV1<Schema.Codec<Row>>>;
 /** A native DbClient descriptor preserving a canonical row's typed encoded fields. */
 export type CanonicalCollectionOptions<Row extends KeyedRow> = ReturnType<typeof table<Row>>;
 
-type CanonicalCollection<Row extends object> = Collection<Row, string, PersistedCollectionUtils, RowSchema<Row>, Row>;
+type CanonicalCollection<Row extends object> = Collection<
+  Row,
+  string,
+  CanonicalPersistenceOperations,
+  RowSchema<Row>,
+  Row
+>;
 
-type CanonicalConfiguration<Row extends KeyedRow> = CollectionConfig<
+type CanonicalConfiguration<Row extends object> = CollectionConfig<
   InferSchemaOutput<RowSchema<Row>>,
   string,
   RowSchema<Row>,
-  PersistedCollectionUtils
+  CanonicalPersistenceOperations
 >;
 
-function table<Row extends KeyedRow>(
-  id: string,
-  row: Schema.Codec<Row>,
-  persistence: PersistedCollectionPersistence | undefined,
-) {
+type TableDefinition<Row extends object> = {
+  readonly name: string;
+  readonly row: Schema.Codec<Row>;
+  readonly persistence: PersistedCollectionPersistence;
+  readonly key: (value: Row) => string;
+};
+
+function table<Row extends object>({ name, row, persistence, key }: TableDefinition<Row>) {
   const schema = Schema.toStandardSchemaV1(row);
 
   function getKey(item: InferSchemaOutput<RowSchema<Row>>) {
-    return restoreRecord(row, item).key;
+    return key(restoreRecord(row, item));
   }
 
   function options(): CanonicalConfiguration<Row> & Required<Pick<CanonicalConfiguration<Row>, 'schema' | 'utils'>> {
-    if (persistence === undefined) {
-      return localOnlyCollectionOptions({ id, getKey, schema });
+    const persisted = persistedCollectionOptions({ id: name, getKey, schema, persistence });
+    const { forceReloadSubset } = persisted.utils;
+
+    if (forceReloadSubset === undefined) {
+      throw new PersistenceUnavailable({});
     }
 
-    return persistedCollectionOptions({ id, getKey, schema, persistence });
+    return { ...persisted, utils: { ...persisted.utils, forceReloadSubset } };
   }
 
-  return collectionOptions(id, options);
+  return collectionOptions(name, options);
+}
+
+function rowKey(row: KeyedRow): string {
+  return row.key;
 }
 
 /** Names a table within one authenticated origin, principal, and workspace. */
-export function collectionId(scope: string, name: string): string {
+function collectionId(scope: string, name: string): string {
   return JSON.stringify([scope, name]);
 }
 
-/** Declares each canonical table using the scope's selected persistent or memory storage. */
-export function createCanonicalCollections(scope: string, persistence: PersistedCollectionPersistence | undefined) {
+/** Records and exact page coverage share one admitted persistent owner. */
+export function createCanonicalCollections(scope: string, persistence: PersistedCollectionPersistence) {
   return {
-    mechs: table(collectionId(scope, 'mechs'), MechSummaryRow, persistence),
-    mechDefinitions: table(collectionId(scope, 'mech-definitions'), MechDefinitionRow, persistence),
-    turns: table(collectionId(scope, 'turns'), TurnRow, persistence),
-    events: table(collectionId(scope, 'events'), EventRow, persistence),
-    threads: table(collectionId(scope, 'threads'), ThreadRow, persistence),
-    memories: table(collectionId(scope, 'memories'), MemoryRow, persistence),
-    traceEvidence: table(collectionId(scope, 'trace-evidence'), TraceEvidenceRow, persistence),
-    slackBindings: table(collectionId(scope, 'slack-bindings'), SlackBindingRow, persistence),
-    slackDeliveries: table(collectionId(scope, 'slack-deliveries'), SlackDeliveryRow, persistence),
-    allowance: table(collectionId(scope, 'allowance'), AllowanceRow, persistence),
+    mechs: table({ name: collectionId(scope, 'mechs'), row: MechSummaryRow, persistence, key: rowKey }),
+    mechDefinitions: table({
+      name: collectionId(scope, 'mech-definitions'),
+      row: MechDefinitionRow,
+      persistence,
+      key: rowKey,
+    }),
+    turns: table({ name: collectionId(scope, 'turns'), row: TurnRow, persistence, key: rowKey }),
+    events: table({ name: collectionId(scope, 'events'), row: EventRow, persistence, key: rowKey }),
+    threads: table({ name: collectionId(scope, 'threads'), row: ThreadRow, persistence, key: rowKey }),
+    memories: table({ name: collectionId(scope, 'memories'), row: MemoryRow, persistence, key: rowKey }),
+    traceEvidence: table({
+      name: collectionId(scope, 'trace-evidence'),
+      row: TraceEvidenceRow,
+      persistence,
+      key: rowKey,
+    }),
+    slackBindings: table({
+      name: collectionId(scope, 'slack-bindings'),
+      row: SlackBindingRow,
+      persistence,
+      key: rowKey,
+    }),
+    slackDeliveries: table({
+      name: collectionId(scope, 'slack-deliveries'),
+      row: SlackDeliveryRow,
+      persistence,
+      key: rowKey,
+    }),
+    allowance: table({ name: collectionId(scope, 'allowance'), row: AllowanceRow, persistence, key: rowKey }),
+    reads: table({ name: collectionId(scope, 'reads'), row: ReadReceipt, persistence, key: (receipt) => receipt.id }),
   };
 }
 
@@ -89,47 +137,103 @@ export function materializeCanonicalCollections(db: DbClient, collections: Canon
     slackBindings: db.collection(collections.slackBindings),
     slackDeliveries: db.collection(collections.slackDeliveries),
     allowance: db.collection(collections.allowance),
+    reads: db.collection(collections.reads),
   };
 }
 
 /** The scope's native tables, shared by response ingestion and live reads. */
 export type CanonicalTables = ReturnType<typeof materializeCanonicalCollections>;
-type LocalWriter = Pick<CanonicalCollection<KeyedRow>, 'preload' | 'utils'>;
+
+type LocalWriter = Pick<CanonicalCollection<object>, 'preload' | 'utils'>;
 
 type CommitRows = {
-  readonly db: DbClient;
   readonly collections: ReadonlyArray<LocalWriter>;
   readonly signal: AbortSignal;
   readonly write: () => void;
 };
 
-/** Commits acknowledged rows and waits for every affected native persistence writer. */
-export async function commitRows({ db, collections, signal, write }: CommitRows): Promise<void> {
-  await Promise.all(collections.map((collection) => collection.preload()));
-  signal.throwIfAborted();
+type CreateCanonicalWriter = Pick<Awaited<ReturnType<typeof openConsoleStorage>>, 'generationId'> & {
+  readonly db: DbClient;
+  readonly retire: (failure: unknown) => Promise<void>;
+};
 
-  const transaction = db.createTransaction({
-    mutationFn: async ({ transaction: pending }) => {
-      await Promise.all(
-        collections.map(async (collection) => {
-          await collection.utils.acceptMutations(pending);
-        }),
-      );
-    },
-  });
+/** Domain guards run against current durable rows before any native mutation is prepared. */
+export function createCanonicalWriter({ db, generationId, retire }: CreateCanonicalWriter) {
+  const lock = JSON.stringify(['mechane-console-write', generationId]);
 
-  transaction.mutate(write);
-  await transaction.when('settled');
-  signal.throwIfAborted();
+  return async ({ collections, signal, write }: CommitRows): Promise<void> => {
+    const admission = AbortSignal.any([signal, AbortSignal.timeout(WRITE_ADMISSION_TIMEOUT_MS)]);
+
+    await navigator.locks.request(lock, { signal: admission }, async () => {
+      signal.throwIfAborted();
+
+      const lifetime = new AbortController();
+      const preparation = AbortSignal.any([signal, lifetime.signal]);
+      const hasPrepared = MutableRef.make(false);
+      const expired = Promise.withResolvers<never>();
+
+      const deadline = setTimeout(() => {
+        const failure = new CanonicalWriteTimedOut({});
+
+        lifetime.abort(failure);
+        expired.reject(failure);
+      }, WRITE_TIMEOUT_MS);
+
+      async function commit(): Promise<void> {
+        await Promise.all(collections.map((collection) => collection.preload()));
+        preparation.throwIfAborted();
+        await Promise.all(
+          collections.map(async (collection) => {
+            await collection.utils.forceReloadSubset({});
+          }),
+        );
+        preparation.throwIfAborted();
+
+        hasPrepared.current = true;
+
+        const transaction = db.createTransaction({
+          mutationFn: async ({ transaction: pending }) => {
+            await Promise.all(
+              collections.map(async (collection) => {
+                await collection.utils.acceptMutations(pending);
+              }),
+            );
+          },
+        });
+
+        transaction.mutate(write);
+        await transaction.when('settled');
+      }
+
+      try {
+        await Promise.race([commit(), expired.promise]);
+      } catch (error) {
+        if (hasPrepared.current || !signal.aborted) {
+          await retire(error);
+        }
+
+        throw error;
+      } finally {
+        clearTimeout(deadline);
+      }
+    });
+
+    signal.throwIfAborted();
+  };
 }
 
+/** Admits one guarded update to the current generation's canonical tables. */
+export type CanonicalWriter = ReturnType<typeof createCanonicalWriter>;
+
 /** Enqueues fetched or acknowledged values in the caller's native transaction. */
-export function upsertRows<Row extends KeyedRow>(collection: CanonicalCollection<Row>, rows: ReadonlyArray<Row>): void {
+export function upsertRows<Row extends object>(collection: CanonicalCollection<Row>, rows: ReadonlyArray<Row>): void {
   for (const row of rows) {
-    if (collection.has(row.key)) {
+    const key = collection.getKeyFromItem(row);
+
+    if (collection.has(key)) {
       // TanStack owns the mutable draft supplied to this native update callback.
       // ast-grep-ignore: parameter-mutation
-      collection.update(row.key, (draft) => Object.assign(draft, row));
+      collection.update(key, (draft) => Object.assign(draft, row));
     } else {
       collection.insert(row);
     }

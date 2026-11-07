@@ -1,20 +1,28 @@
 import { ADOPTED, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
-/** Terminating the owning Worker releases Turso's nested file handles after an incomplete open. */
+/** Native browser persistence owns the Worker; the cache lifecycle only composes its public API. */
 export const consoleCacheLifecycle = {
   values: {},
   rules: [
     {
       ...CRUISER_DEFAULTS,
       ...ADOPTED,
-      name: 'console-cache-worker-driver',
-      comment: 'Open Turso only in the cache Worker, such as `packages/browser/console-cache/src/store/worker/main.ts`',
-      from: {
-        path: '^packages/browser/console-cache/',
-        pathNot: '^packages/browser/console-cache/src/store/worker/main[.]ts$',
-      },
-      to: { path: 'node_modules/@tursodatabase/database-wasm/' },
+      name: 'console-cache-persistence-owner',
+      comment:
+        'Keep native persistence composition in the cache lifecycle, such as `console-cache/src/store/storage.ts`',
+      from: { path: '^packages/', pathNot: '^packages/browser/console-cache/src/store/storage[.]ts$' },
+      to: { path: 'node_modules/@tanstack/browser-db-sqlite-persistence/' },
+      standard: '119',
+    },
+    {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: 'console-cache-native-worker',
+      comment:
+        'Use the native persistence API, such as `openBrowserWASQLiteOPFSDatabase`, instead of the raw wa-sqlite driver',
+      from: { path: '^packages/' },
+      to: { path: 'node_modules/@journeyapps/wa-sqlite/' },
       standard: '119',
     },
   ],

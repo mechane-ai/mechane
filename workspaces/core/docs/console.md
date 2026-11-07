@@ -56,19 +56,21 @@ saving. Continuing keeps your edits and adopts the latest values for untouched f
 
 ## Package boundaries
 
-| Package                       | Owns                                                             | Uses                                  |
-| ----------------------------- | ---------------------------------------------------------------- | ------------------------------------- |
-| `@mechane/console`            | Start routes, screens, commands, session lifetime                | data, views, UI, layout               |
-| `@mechane/console-data`       | Validated requests, TanStack DB snapshots, cancellation          | shared client and protocol            |
-| `@mechane/console-views`      | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts |
-| `@mechane-ai/elements`        | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries          |
-| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, FocusPage, Workbench, DetailPage | UI and tokens                         |
-| `@mechane-ai/elements/charts` | Generic selectable Waterfall                                     | UI, tokens, and visx                  |
-| `@mechane-ai/elements/tokens` | Semantic visual tokens                                           | StyleX                                |
+| Package                       | Owns                                                             | Uses                                      |
+| ----------------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
+| `@mechane/console`            | Start routes, screens, commands, session lifetime                | data, views, UI, layout                   |
+| `@mechane/console-data`       | Admission, requests, canonical records, page receipts            | shared client, protocol, cache, TanStack  |
+| `@mechane/console-cache`      | Scoped persistence lifecycle                                     | native TanStack browser persistence, OPFS |
+| `@mechane/console-views`      | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts     |
+| `@mechane-ai/elements`        | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries              |
+| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, FocusPage, Workbench, DetailPage | UI and tokens                             |
+| `@mechane-ai/elements/charts` | Generic selectable Waterfall                                     | UI, tokens, and visx                      |
+| `@mechane-ai/elements/tokens` | Semantic visual tokens                                           | StyleX                                    |
 
-Only `console-data` crosses from the shared Effect client into browser Promises. It stores each bounded API response as
-one reactive snapshot; it does not pretend one fetched page contains every entity. The server owns authorization and
-persistence. No browser code imports Worker storage or installation secrets.
+Only `console-data` crosses from the shared Effect client into browser Promises. Each tab's native Query observers own
+network requests and their status. Shared canonical DB collections hold records and exact page receipts; one fetched
+page never implies an exhaustive dataset. The server owns authorization and authoritative records. The required browser
+cache holds admitted, replaceable copies. No browser code imports Worker storage or installation secrets.
 
 UI modules group controls, forms, typography, and data presentation by responsibility. The shared frame owns sidebar
 geometry and the mobile navigation drawer. Screens supply resource actions to the shared toolbar. Tables fill the main

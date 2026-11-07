@@ -1131,6 +1131,14 @@ module.exports = {
       to: { path: '/node_modules/@earendil-works/pi-durable/' },
     },
     {
+      name: 'confine:@journeyapps/wa-sqlite',
+      comment:
+        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
+      severity: 'error',
+      from: { pathNot: '^(?:packages/browser/console-cache/src)/' },
+      to: { path: '/node_modules/@journeyapps/wa-sqlite/' },
+    },
+    {
       name: 'confine:@modelcontextprotocol/client',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
@@ -1194,6 +1202,14 @@ module.exports = {
       to: { path: '/node_modules/@shadcn/react/' },
     },
     {
+      name: 'confine:@tanstack/browser-db-sqlite-persistence',
+      comment:
+        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
+      severity: 'error',
+      from: { pathNot: '^(?:packages/browser/console-cache/src)/' },
+      to: { path: '/node_modules/@tanstack/browser-db-sqlite-persistence/' },
+    },
+    {
       name: 'confine:@tanstack/db',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
@@ -1206,7 +1222,7 @@ module.exports = {
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
       severity: 'error',
-      from: { pathNot: '^(?:packages/browser/console-cache/src|packages/browser/console-data/src)/' },
+      from: { pathNot: '^(?:packages/browser/console-data/src)/' },
       to: { path: '/node_modules/@tanstack/db-sqlite-persistence-core/' },
     },
     {
@@ -1216,14 +1232,6 @@ module.exports = {
       severity: 'error',
       from: { pathNot: '^(?:packages/browser/console-data/src)/' },
       to: { path: '/node_modules/@tanstack/query-core/' },
-    },
-    {
-      name: 'confine:@tanstack/query-db-collection',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: { pathNot: '^(?:packages/browser/console-data/src)/' },
-      to: { path: '/node_modules/@tanstack/query-db-collection/' },
     },
     {
       name: 'confine:@tanstack/react-db',
@@ -1268,14 +1276,6 @@ module.exports = {
           '^(?:packages/browser/elements/packages|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
       },
       to: { path: '/node_modules/@tanstack/react-virtual/' },
-    },
-    {
-      name: 'confine:@tursodatabase/database-wasm',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: { pathNot: '^(?:packages/browser/console-cache/src)/' },
-      to: { path: '/node_modules/@tursodatabase/database-wasm/' },
     },
     {
       name: 'confine:@visx/hierarchy',
@@ -1415,14 +1415,20 @@ module.exports = {
       to: { path: '^packages/shared/client/' },
     },
     {
-      name: 'console-cache-worker-driver',
-      comment: 'Open Turso only in the cache Worker, such as `packages/browser/console-cache/src/store/worker/main.ts`',
+      name: 'console-cache-persistence-owner',
+      comment:
+        'Keep native persistence composition in the cache lifecycle, such as `console-cache/src/store/storage.ts`',
       severity: 'error',
-      from: {
-        path: '^packages/browser/console-cache/',
-        pathNot: '^packages/browser/console-cache/src/store/worker/main[.]ts$',
-      },
-      to: { path: 'node_modules/@tursodatabase/database-wasm/' },
+      from: { path: '^packages/', pathNot: '^packages/browser/console-cache/src/store/storage[.]ts$' },
+      to: { path: 'node_modules/@tanstack/browser-db-sqlite-persistence/' },
+    },
+    {
+      name: 'console-cache-native-worker',
+      comment:
+        'Use the native persistence API, such as `openBrowserWASQLiteOPFSDatabase`, instead of the raw wa-sqlite driver',
+      severity: 'error',
+      from: { path: '^packages/' },
+      to: { path: 'node_modules/@journeyapps/wa-sqlite/' },
     },
   ],
   options: {

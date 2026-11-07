@@ -3,7 +3,7 @@ language: TypeScript
 severity: error
 message: "Pass the SQL client one whole literal statement, such as `sql.exec('SELECT 1')` (DO-06)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', packages/browser/console-cache/src/store/worker/main.ts]
+ignores: ['**/node_modules/**', packages/browser/console-cache/src/store/storage.ts]
 rule:
   kind: call_expression
   all:

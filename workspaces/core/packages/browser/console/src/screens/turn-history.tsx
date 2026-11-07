@@ -4,6 +4,7 @@ import type { ConsoleData } from '@mechane/console-data';
 import { Activity, ActivityPlaceholder } from '@mechane/console-views';
 import type { Turn } from '@mechane/protocol';
 import type { ReactNode } from 'react';
+import { turnEventCursor } from '../navigation.tsx';
 import { PageLoadNotice, usePageRead } from '../page-read.tsx';
 import { useEvents } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
@@ -25,7 +26,7 @@ export function TurnHistory({
     data,
     key: 'events',
     scope: `${mechId}:${turnId}:${target ?? 'start'}`,
-    create: (pages) => data.reads.turnEvents(mechId, turnId, pages.at(-1) ?? (target === undefined ? 0 : target - 1)),
+    create: (pages) => data.reads.turnEvents(mechId, turnId, turnEventCursor(pages, target)),
   });
 
   const state = useEvents(data, request);

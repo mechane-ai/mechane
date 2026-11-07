@@ -4,12 +4,8 @@ import type { Dependency } from 'rollup-plugin-license';
 import type { Plugin } from 'vite';
 
 const LICENSE_FILE = 'THIRD_PARTY_LICENSES.txt';
-const TURSO_NOTICE: Readonly<URL> = new URL('../../../licenses/turso-0.8.3.txt', import.meta.url);
-const UPSTREAM_NOTICES: ReadonlyMap<string, URL> = new Map([
-  ['@tursodatabase/database-wasm@0.8.3', TURSO_NOTICE],
-  ['@tursodatabase/database-common@0.8.3', TURSO_NOTICE],
-  ['@tursodatabase/database-wasm-common@0.8.3', TURSO_NOTICE],
-]);
+// The native package copies a prebuilt worker, whose embedded wa-sqlite is outside the bundler's dependency graph.
+const SQLITE_NOTICE: Readonly<URL> = new URL('../../../licenses/wa-sqlite-1.5.0.txt', import.meta.url);
 
 export function createWorkerLicenses() {
   const dependencies = new Map<string, Dependency>();
@@ -36,20 +32,14 @@ export function createWorkerLicenses() {
 
         const sorted = [...dependencies].toSorted(([left], [right]) => left.localeCompare(right));
         const notices = sorted.map(([key, dependency]) => {
-          const supplementalFile = UPSTREAM_NOTICES.get(key);
-          if (dependency.licenseText === null && supplementalFile === undefined) {
+          if (dependency.licenseText === null) {
             this.error(`The worker dependency ${key} has no license text.`);
           }
 
           return dependency.text();
         });
-        const supplementalFiles = sorted.map(([key]) => UPSTREAM_NOTICES.get(key));
-        const presentFiles = supplementalFiles.filter((file) => file !== undefined);
-        const uniqueFiles = [...new Set(presentFiles)];
-        const upstream = uniqueFiles.map((source) => readFileSync(source, 'utf8'));
-        const sections = [...notices, ...upstream];
-
-        asset.source += `\n\n# Worker dependencies\n\n${sections.join('\n\n---\n\n')}\n`;
+        const sqlite = readFileSync(SQLITE_NOTICE, 'utf8');
+        asset.source += `\n\n# Worker dependencies\n\n${notices.join('\n\n---\n\n')}\n\n# Embedded wa-sqlite 1.5.0\n\n${sqlite}`;
       },
     },
   };

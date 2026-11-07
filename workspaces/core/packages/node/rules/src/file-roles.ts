@@ -22,12 +22,11 @@ export const FILE_ROLES = {
   [FileRole.BrowserBuildConfiguration]: BROWSER_BUILD_CONFIGURATION,
   [FileRole.BrowserAdapter]: ['packages/browser/console-data/src/api.ts'],
   [FileRole.BrowserQuery]: [
+    'packages/browser/console-data/src/collections.ts',
     'packages/browser/console-data/src/console-data.ts',
     'packages/browser/console-data/src/read-ready.ts',
   ],
   [FileRole.BrowserCommand]: ['packages/browser/console-data/src/commands.ts'],
-  [FileRole.BrowserCacheWorker]: ['packages/browser/console-cache/src/store/worker/main.ts'],
-  [FileRole.BrowserCacheConnection]: ['packages/browser/console-cache/src/store/connection.ts'],
   [FileRole.BrowserCacheLifecycle]: ['packages/browser/console-cache/src/store/storage.ts'],
   [FileRole.Settings]: [
     'packages/node/cli/src/settings/load-invocation.ts',

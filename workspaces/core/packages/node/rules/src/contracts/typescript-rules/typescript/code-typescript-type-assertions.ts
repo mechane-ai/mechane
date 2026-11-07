@@ -12,7 +12,7 @@ export const codeTypescriptTypeAssertions = {
       fix: RuleFix.Oxlint,
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, { assertionStyle: 'never' }],
-      maxSuppressions: 2,
+      maxSuppressions: 1,
       standard: 'TD-07',
     },
     {
@@ -20,7 +20,7 @@ export const codeTypescriptTypeAssertions = {
       ...ADOPTED,
       name: 'typescript/no-unsafe-type-assertion',
       value: Severity.Error,
-      maxSuppressions: 2,
+      maxSuppressions: 1,
       standard: 'TD-07',
     },
     {

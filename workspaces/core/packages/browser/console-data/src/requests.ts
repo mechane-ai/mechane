@@ -1,5 +1,5 @@
 import { MechId, ThreadId, TurnId } from '@mechane/records';
-import { Schema } from 'effect';
+import { Result, Schema } from 'effect';
 import { restoreRecord } from './records.ts';
 
 const READ_KIND = {
@@ -16,7 +16,8 @@ const READ_KIND = {
   Allowance: 'allowance',
 } as const;
 
-const ReadId = Schema.String.pipe(Schema.brand('ConsoleReadId'));
+/** Stable identity for one declared endpoint and cursor. */
+export const ReadId = Schema.String.pipe(Schema.brand('ConsoleReadId'));
 type ReadId = typeof ReadId.Type;
 
 const ReadTarget = Schema.Union([
@@ -34,6 +35,7 @@ const ReadTarget = Schema.Union([
 ]);
 
 type ReadTarget = typeof ReadTarget.Type;
+const EncodedReadTarget = Schema.fromJsonString(ReadTarget);
 
 const ReadKind = Schema.Enum(READ_KIND);
 /** The fixed API reads supported by the console's exact receipt source. */
@@ -46,13 +48,21 @@ export type ReadRequest<Kind extends ReadKind = ReadKind> = Extract<ReadTarget, 
 
 /** Ordered membership for one successful API read, including successful empty results. */
 export const ReadReceipt = Schema.Struct({
-  id: ReadId,
+  id: Schema.toEncoded(ReadId),
   kind: ReadKind,
   keys: Schema.Array(Schema.String),
   /** Null means the endpoint does not expose pagination metadata. */
   hasMore: Schema.NullOr(Schema.Boolean),
-  fetchedAtMs: Schema.toEncoded(Schema.DateTimeUtcFromMillis),
-});
+}).check(
+  Schema.makeFilter(
+    (receipt) => {
+      const target = Schema.decodeUnknownResult(EncodedReadTarget)(receipt.id);
+
+      return Result.isSuccess(target) && target.success.kind === receipt.kind;
+    },
+    { expected: 'a receipt matching its declared read' },
+  ),
+);
 
 export type ReadReceipt = typeof ReadReceipt.Type;
 
@@ -81,7 +91,7 @@ export const readRequests = {
 
 /** Rejects stored identities that do not name one of the declared endpoint demands. */
 export function decodeReadRequest(id: string): ReadRequest {
-  const target = restoreRecord(Schema.fromJsonString(ReadTarget), id);
+  const target = restoreRecord(EncodedReadTarget, id);
 
   return { ...target, id: ReadId.make(id) };
 }

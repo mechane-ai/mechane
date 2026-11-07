@@ -190,8 +190,6 @@ export const FileRole = {
   BrowserAdapter: 'browser-adapter',
   BrowserQuery: 'browser-query',
   BrowserCommand: 'browser-command',
-  BrowserCacheWorker: 'browser-cache-worker',
-  BrowserCacheConnection: 'browser-cache-connection',
   BrowserCacheLifecycle: 'browser-cache-lifecycle',
   Settings: 'settings',
   Output: 'output',
