@@ -10,7 +10,7 @@ provider "cloudflare" {}
 provider "mechane" {}
 
 module "mechane" {
-  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.25.0/mechane-cloudflare-v0.25.0.zip"
+  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.25.1/mechane-cloudflare-v0.25.1.zip"
   account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
   name       = "mechane-sandbox"
   domain = {
@@ -18,7 +18,7 @@ module "mechane" {
     zone_id  = "YOUR_CLOUDFLARE_ZONE_ID"
   }
   runtime = {
-    origin = "https://your-workspace--mechane-runtime.modal.run"
+    origin = "https://your-workspace--mechane-runtime.us-east.modal.direct"
   }
   secrets = {
     store_id          = "YOUR_SECRETS_STORE_ID"

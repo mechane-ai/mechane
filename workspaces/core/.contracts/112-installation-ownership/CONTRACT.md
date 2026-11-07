@@ -1,7 +1,7 @@
 ---
 name: installation-ownership
 message: Deploy immutable artifacts with one owner for each service, secret, and persistent resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/server/**", "packages/worker/sandbox-service/**", "docs/self-hosting.md"]
+paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/server/**", "packages/worker/sandbox-service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md"]
 ---
 
 ## Rules
@@ -21,6 +21,11 @@ messages, and files. An infrastructure apply cannot seed or overwrite those reco
 Give each resource one writer. The installation owner configures the managed Node host and its database. Cloudflare
 owns the narrow sandbox service, file bucket, and public ingress. The ingress forwards HTTP and streams unchanged to
 the configured Node service; it does not retain the old agent engine or independently decide product authorization.
+
+Restrict hosted runtime transport to bare HTTPS `service.modal.run` or `service.region.modal.direct` origins.
+Reject user information, explicit ports, paths, queries, fragments, and hostnames outside those shapes before reading
+transport credentials. Keep installation validation and live transport acceptance consistent. The local stack may
+explicitly use an HTTP loopback origin with a port.
 
 Use the same built Node application and supported Workflow World locally and in production. Start and stop the
 Workflow worker with the service. Readiness means the application can use its required database and execution owner,
@@ -44,6 +49,9 @@ Inspect release manifests and archives for revision, checksums, required assets,
 repository's build and infrastructure checks with no cloud credentials.
 The distribution verifier checks every Node file and required notice entry; inspect generated dependency notices when
 the bundled graph changes.
+
+Exercise supported hosted origins through installation validation and runtime transport. Verify that suffix lookalikes
+and decorated origins fail before transport credentials are read, while the explicit local loopback still works.
 
 For an authorized hosted qualification, verify health and readiness, a repeat deployment, a process restart with a
 pending approval, and the original Slack reply destination. Check that a repeated infrastructure plan changes nothing

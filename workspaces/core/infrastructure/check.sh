@@ -40,3 +40,37 @@ EOF
 export TF_CLI_CONFIG_FILE="$infrastructure_check/tofurc"
 tofu -chdir="$infrastructure_check/module" init -backend=false -input=false
 tofu -chdir="$infrastructure_check/module" validate
+
+mkdir "$infrastructure_check/runtime-origin"
+cp infrastructure/modules/cloudflare/variables.tf "$infrastructure_check/runtime-origin/main.tf"
+cat > "$infrastructure_check/runtime-origin/origin.tftest.hcl" <<'EOF'
+variables {
+  account_id = "example-account"
+  domain = {
+    hostname = "agents.example.com"
+    zone_id  = "example-zone"
+  }
+  secrets = {
+    store_id          = "example-store"
+    runtime_transport = "example-runtime"
+    sandbox_service   = "example-sandbox"
+  }
+}
+
+run "regional_runtime_origin" {
+  command = plan
+  variables {
+    runtime = { origin = "https://example--runtime.us-east.modal.direct" }
+  }
+}
+
+run "runtime_suffix_lookalike" {
+  command = plan
+  variables {
+    runtime = { origin = "https://example--runtime.us-east.modal.direct.evil.example" }
+  }
+  expect_failures = [var.runtime]
+}
+EOF
+tofu -chdir="$infrastructure_check/runtime-origin" init -backend=false -input=false
+tofu -chdir="$infrastructure_check/runtime-origin" test -no-color

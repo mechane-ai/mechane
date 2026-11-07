@@ -18,9 +18,9 @@ Required inputs are `account_id`, `domain`, `runtime`, and `secrets`. The `name`
 `storage` and `sandboxes` inputs set resource names, compute capacity, and allowed egress hosts.
 [Variable declarations](variables.tf) contain the exact types. Inputs accept secret references, never credential values.
 
-The runtime origin is an exact private Modal service origin. The transport secret authenticates proxy requests to that
-service. The separate sandbox key authenticates host requests to the compute API. Model, OAuth, and vault credentials
-belong to the Node deployment and are absent from this module.
+The runtime origin is a bare HTTPS Modal origin: `service.modal.run` or `service.region.modal.direct`. The transport
+secret authenticates proxy requests to that service. The separate sandbox key authenticates host requests to the compute
+API. Model, OAuth, and vault credentials belong to the Node deployment and are absent from this module.
 
 A new installation needs its own Worker identity. Upgrades retain its namespace and checkpoint identities.
 

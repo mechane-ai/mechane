@@ -40,8 +40,8 @@ variable "runtime" {
   nullable    = false
 
   validation {
-    condition     = can(regex("^https://[a-z0-9-]+\\.modal\\.run/?$", var.runtime.origin))
-    error_message = "Supply the exact HTTPS Modal service origin without a path or query."
+    condition     = can(regex("^https://[a-z0-9]([a-z0-9-]*[a-z0-9])?\\.(modal\\.run|[a-z0-9]([a-z0-9-]*[a-z0-9])?\\.modal\\.direct)/?$", var.runtime.origin))
+    error_message = "Supply a bare HTTPS Modal origin: service.modal.run or service.region.modal.direct."
   }
 }
 

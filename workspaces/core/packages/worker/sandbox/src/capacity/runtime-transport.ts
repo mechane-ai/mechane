@@ -13,6 +13,10 @@ const hasServiceKeyLength = Schema.isMinLength(SERVICE_KEY_MIN_CHARACTERS);
 const ServiceKey = Schema.String.check(hasServiceKeyLength);
 const MODAL_KEY_HEADER = 'Modal-Key';
 const MODAL_SECRET_HEADER = 'Modal-Secret';
+
+const HOSTED_RUNTIME_ORIGIN =
+  /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.(?:modal\.run|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.modal\.direct)\/?$/;
+
 const RuntimeProtocol = { Http: 'http:', Https: 'https:' } as const;
 const ROOT_PATH = '/';
 
@@ -23,9 +27,10 @@ export function runtimeOrigin({ settings }: RuntimeSettingsInput): URL {
   const decoded = Schema.decodeUnknownResult(Schema.URLFromString)(settings.origin);
   const origin = Result.getOrThrow(decoded);
   const isLoopback = origin.protocol === RuntimeProtocol.Http && LOOPBACK_HOSTS.has(origin.hostname);
+  const hasNoOuterWhitespace = settings.origin.trim() === settings.origin;
 
   const isHosted =
-    origin.protocol === RuntimeProtocol.Https && origin.hostname.endsWith('.modal.run') && origin.port === '';
+    origin.protocol === RuntimeProtocol.Https && hasNoOuterWhitespace && HOSTED_RUNTIME_ORIGIN.test(settings.origin);
 
   const isBareOrigin = origin.pathname === ROOT_PATH && origin.search === '' && origin.hash === '';
   const hasNoCredentials = origin.username === '' && origin.password === '';
