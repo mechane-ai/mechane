@@ -178,13 +178,21 @@ export const Severity = { Error: 'error', Off: 'off' } as const;
 export type Severity = (typeof Severity)[keyof typeof Severity];
 
 /**
- * The groups of files a rule treats apart, such as settings and output modules, the Worker module and the stack's celld
- * restart. Entry points, the scenario catalog and object classes have a length a closed set bounds, and migrations hold
- * schema steps the migration lock hashes whole. The cruiser's configuration loads as CommonJS, a utility alone builds a
- * promise, and a constants file names every number.
+ * The groups of files a rule treats apart, such as settings, output modules, and native SDK composition. Entry points,
+ * the scenario catalog and object classes have a length a closed set bounds, and migrations hold schema steps the
+ * migration lock hashes whole. The cruiser's configuration loads as CommonJS, a utility alone builds a promise, and a
+ * constants file names every number.
  */
 export const FileRole = {
   Browser: 'browser',
+  NativeRuntime: 'native-runtime',
+  NativePresentation: 'native-presentation',
+  NativeConversation: 'native-conversation',
+  NativeSandboxBoundary: 'native-sandbox-boundary',
+  SlackFixture: 'slack-fixture',
+  NativeLifecycle: 'native-lifecycle',
+  SqlMigration: 'sql-migration',
+  ProcessShutdown: 'process-shutdown',
   BrowserConfiguration: 'browser-configuration',
   BrowserBuildConfiguration: 'browser-build-configuration',
   BrowserAdapter: 'browser-adapter',
@@ -194,7 +202,6 @@ export const FileRole = {
   Settings: 'settings',
   Output: 'output',
   WorkerModule: 'worker-module',
-  CelldRestart: 'celld-restart',
   EntryPoint: 'entry-point',
   Catalog: 'catalog',
   ObjectClass: 'object-class',

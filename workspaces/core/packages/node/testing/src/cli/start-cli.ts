@@ -1,37 +1,87 @@
-import { awaitNotice, CliOutput, startProcess } from '@mechane/program';
-import type { ApprovalNotice, ProcessFailed, ProcessRun } from '@mechane/program';
-import { Duration, Effect } from 'effect';
-import type { Scope } from 'effect';
-import { CLI_BINARY, CliStep } from '../constants.ts';
-import type { CliFailed } from '../errors.ts';
-import { cliProcess } from './cli-process.ts';
-import { exitedFirst } from './exited-first.ts';
-import type { CliCommandInput } from './types.ts';
+import { spawn } from 'node:child_process';
+import { join } from 'node:path';
+import type { CliInput, CliNotice, CliResult, RunningCli } from './types.ts';
 
-/** How often a scenario reads the CLI's standard error for its notice while the CLI waits. */
-const NOTICE_POLL_INTERVAL = Duration.millis(100);
+const CLI_BINARY = join(import.meta.dirname, '..', '..', '..', 'cli', 'dist', 'mechane');
+const CLI_TIMEOUT_MS = 90_000;
+const OUTPUT_MAX_BYTES = 4_194_304;
+const APPROVAL_NOTICE = /open (\S+), sign in, and type the code ([A-Z]+-[A-Z]+)/u;
 
-/** A CLI that waits on a device approval: the approval its notice names, and its run once it ends. */
-type StartedCli = {
-  readonly approval: Effect.Effect<ApprovalNotice, CliFailed | ProcessFailed>;
-  readonly finished: Effect.Effect<ProcessRun, ProcessFailed>;
-};
+export function startCli({ stack, account, args, environment = {} }: CliInput): RunningCli {
+  const variables = {
+    PATH: process.env['PATH'] ?? '',
+    LANG: 'C.UTF-8',
+    MECHANE_ORIGIN: stack.origin.origin,
+    XDG_CONFIG_HOME: account.configurationRoot,
+    ...environment,
+  };
 
-/**
- * Starts the built CLI for a command that waits on a device approval, until the scope closes. Its `approval` waits for
- * the page and code its notice names, and fails when the CLI exits first. Its `finished` waits for the run.
- */
-export const startCli = Effect.fn('startCli')(function* ({
-  stack,
-  args,
-  environment,
-}: CliCommandInput): Effect.fn.Return<StartedCli, never, Scope.Scope> {
-  const running = yield* startProcess(
-    cliProcess({ stack, binary: CLI_BINARY, args: [...args, ...CliOutput.Json], environment }),
-  );
+  const child = spawn(CLI_BINARY, [...args, '--output', 'json'], { env: variables, stdio: ['ignore', 'pipe', 'pipe'] });
+  const output = { stdout: '', stderr: '', bytes: 0 };
+  const notices = new Set<(notice: CliNotice) => void>();
+  const timeout = setTimeout(() => child.kill('SIGKILL'), CLI_TIMEOUT_MS);
 
-  const notice = awaitNotice({ stderr: running.stderr, interval: NOTICE_POLL_INTERVAL });
-  const exited = exitedFirst({ running, command: args.join(' '), step: CliStep.Notice });
+  const finished = new Promise<CliResult>((resolve, reject) => {
+    child.once('error', () => reject(new Error('The built CLI could not start')));
+    child.once('close', (status) => {
+      clearTimeout(timeout);
+      resolve({ status, stdout: output.stdout, stderr: output.stderr });
+    });
+  });
 
-  return { approval: Effect.raceFirst(notice, exited), finished: running.exited };
-});
+  function receive(channel: 'stdout' | 'stderr', value: Buffer): void {
+    output.bytes += value.length;
+
+    if (output.bytes > OUTPUT_MAX_BYTES) {
+      child.kill('SIGKILL');
+
+      return;
+    }
+
+    output[channel] += value.toString('utf8');
+    const match = APPROVAL_NOTICE.exec(output.stderr);
+
+    if (match?.[1] === undefined || match[2] === undefined) {
+      return;
+    }
+
+    const notice = { url: new URL(match[1]), userCode: match[2] };
+
+    for (const resolve of notices) {
+      resolve(notice);
+    }
+
+    notices.clear();
+  }
+
+  child.stdout.on('data', (value: Buffer) => receive('stdout', value));
+  child.stderr.on('data', (value: Buffer) => receive('stderr', value));
+
+  async function waitForApproval(): Promise<CliNotice> {
+    const match = APPROVAL_NOTICE.exec(output.stderr);
+
+    if (match?.[1] !== undefined && match[2] !== undefined) {
+      return { url: new URL(match[1]), userCode: match[2] };
+    }
+
+    const received = new Promise<CliNotice>((resolve) => {
+      notices.add(resolve);
+    });
+
+    const stopped = finished.then(() => {
+      throw new Error('The CLI exited before requesting device approval');
+    });
+
+    return await Promise.race([received, stopped]);
+  }
+
+  async function stop(): Promise<void> {
+    if (child.exitCode === null && child.signalCode === null) {
+      child.kill('SIGKILL');
+    }
+
+    await finished;
+  }
+
+  return { finished, waitForApproval, stop };
+}

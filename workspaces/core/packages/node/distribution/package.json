@@ -7,9 +7,7 @@
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/release": "workspace:*",
-    "@mechane/stack": "workspace:*",
     "@mechane/wrangler": "workspace:*",
-    "effect": "4.0.7",
-    "smol-toml": "1.9.1"
+    "effect": "4.0.7"
   }
 }

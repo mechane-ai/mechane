@@ -1,6 +1,6 @@
 import { RuleTool } from '@mechane/rule-shapes';
 import type { CruiserRule } from '@mechane/rule-shapes';
-import { CONTRACTS, FILE_ROLES, REGISTERED_RULES } from '@mechane/rules';
+import { CONTRACTS, FILE_ROLES, REGISTERED_RULES, restrictedOverrideFailures } from '@mechane/rules';
 import { Predicate, Record } from 'effect';
 import { matchesGlob, posix } from 'node:path';
 import { REGISTRY } from '../constants.ts';
@@ -76,7 +76,12 @@ export function patternFindings({ ruleFiles, files }: PatternFindingsInput): Rea
       files,
     });
 
-  return [...globs.flatMap(unmatchedGlobs), ...cruiser.flatMap(unmatchedStarts)];
+  const roleFailures = restrictedOverrideFailures({ files }).map((file) => ({
+    path: REGISTRY,
+    message: `Compose every matching role for ${file}, such as \`excludeFiles: [...]\` on a broader scope (110)`,
+  }));
+
+  return [...globs.flatMap(unmatchedGlobs), ...cruiser.flatMap(unmatchedStarts), ...roleFailures];
 }
 
 /** Each of an owner's patterns that matches none of the files, as a finding at the owner's file. */

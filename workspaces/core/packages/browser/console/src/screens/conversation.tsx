@@ -1,200 +1,131 @@
-import { AgentAvatar, Button } from '@mechane-ai/elements';
-import { Conversation, MessageAction } from '@mechane-ai/elements/ai';
-import type { ConsoleData, ReadRequest } from '@mechane/console-data';
+import { useChat } from '@ai-sdk/react';
+import { AgentAvatar, Button, Row, TextLink } from '@mechane-ai/elements';
+import { MessageAction } from '@mechane-ai/elements/ai';
+import { Notice } from '@mechane-ai/elements/feedback';
+import type { ConsoleData } from '@mechane/console-data';
 import { ConversationPlaceholder, MechConversation } from '@mechane/console-views';
-import type { EventPage, Mech } from '@mechane/protocol';
+import type { Mech } from '@mechane/protocol';
 import { ScanLine } from 'lucide-react';
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
+import type { ConversationEntry, ConversationValue } from '../conversations/entry.ts';
+import { workingChatStatuses } from '../conversations/entry.ts';
+import { useConversationState } from '../conversations/provider.tsx';
+import { SessionPicker } from '../conversations/session-picker.tsx';
 import { useMechAppearance } from '../mech-appearance.tsx';
 import { ConsoleLink, useReaderPosition } from '../navigation.tsx';
-import { PageLoadNotice } from '../page-read.tsx';
-import type { PageRead } from '../page-read.tsx';
-import { eventWindow, sameEventWindow, useEvents, useEventWindow } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 
-export function ConversationScreen({
-  data,
-  mech,
-  isActive,
-  pageRead,
-}: {
+type ConversationScreenProps = {
   readonly data: ConsoleData;
   readonly mech: Mech;
+  readonly entry: ConversationEntry;
   readonly isActive: boolean;
-  readonly pageRead: PageRead<'conversation', ReadRequest<'events'>>;
-}): ReactNode {
-  const { request, cursors, setCursors, pending, failure } = pageRead;
-  const state = useEvents(data, request);
-  const pendingLatestFocus = useRef(false);
-  const before = cursors.at(-1) ?? null;
+  readonly onSession: (sessionId: string | undefined) => void;
+};
 
-  useLayoutEffect(() => {
-    if (!isActive) {
-      pendingLatestFocus.current = false;
-    }
-  }, [isActive]);
-
-  const focusLatestViewport = useCallback(
-    (viewport: HTMLDivElement) => {
-      if (!pendingLatestFocus.current || !isActive || !viewport.isConnected) {
-        return;
-      }
-
-      if (!viewport.checkVisibility({ visibilityProperty: true })) {
-        return;
-      }
-
-      pendingLatestFocus.current = false;
-
-      viewport.focus({ preventScroll: true });
-    },
-    [isActive],
-  );
+export function ConversationScreen(props: ConversationScreenProps): ReactNode {
+  const state = useConversationState(props.entry);
 
   return (
     <ResourceView state={state} placeholder={<ConversationPlaceholder />} label="Loading conversation">
-      {(page, notice) => (
-        <ConversationPage
-          key={before ?? 'latest'}
-          data={data}
-          request={request}
-          mech={mech}
-          page={page}
-          isLatest={before === null}
-          onViewportReady={before === null ? focusLatestViewport : undefined}
-          notice={
-            <>
-              {notice}
-              <PageLoadNotice failure={failure} />
-            </>
-          }
-          pending={pending}
-          earlier={(visible) => {
-            const first = visible.events[0];
-
-            if (first !== undefined) {
-              setCursors([...cursors, first.sequence]);
-            }
-          }}
-          recent={() => {
-            pendingLatestFocus.current = true;
-
-            setCursors([]);
-          }}
-        />
-      )}
+      {(value, notice) => <ConversationPage key={value.sessionId} {...props} value={value} notice={notice} />}
     </ResourceView>
   );
 }
 
 function ConversationPage({
   data,
-  request,
   mech,
-  page,
-  isLatest,
-  onViewportReady,
+  entry,
+  value,
   notice,
-  earlier,
-  recent,
-  pending,
-}: {
-  readonly data: ConsoleData;
-  readonly request: ReadRequest<'events'>;
-  readonly mech: Mech;
-  readonly page: EventPage;
-  readonly isLatest: boolean;
-  readonly onViewportReady: ((viewport: HTMLDivElement) => void) | undefined;
-  readonly notice: ReactNode;
-  readonly earlier: (page: EventPage) => void;
-  readonly recent: () => void;
-  readonly pending: 'previous' | 'next' | undefined;
-}): ReactNode {
-  const currentWindow = useMemo(() => eventWindow(page), [page]);
-  const [shown, setShown] = useState(currentWindow);
+  onSession,
+}: ConversationScreenProps & { readonly value: ConversationValue; readonly notice: ReactNode }): ReactNode {
+  const chat = useChat({ chat: value.chat, throttle: 50 });
   const { appearance } = useMechAppearance(mech.id);
   const viewport = useRef<HTMLDivElement>(null);
-  const reader = useReaderPosition(data.scope, request.id);
+  const reader = useReaderPosition(data.scope, `${mech.id}:conversation:${value.sessionId}`);
+  const isStreaming = workingChatStatuses.has(chat.status);
+  const latest = chat.messages.at(-1);
+  const hasCurrentActivity = latest?.role === 'assistant' && latest.parts.some((part) => part.type !== 'step-start');
 
-  if (
-    !sameEventWindow(currentWindow, shown) &&
-    (currentWindow.sequences[0] === shown.sequences[0] || shown.sequences.length === 0)
-  ) {
-    setShown(currentWindow);
-  }
-
-  const visibleWindow = isLatest ? shown : currentWindow;
-  const lastShown = visibleWindow.sequences.at(-1);
-  const hasShifted = isLatest && currentWindow.sequences.at(-1) !== lastShown;
-  const hasUpdates = !isLatest || hasShifted;
-  const visibleRequest = hasShifted && lastShown !== undefined ? data.reads.events(mech.id, lastShown + 1) : request;
-  const visibleState = useEventWindow(data, visibleRequest, visibleWindow);
-  const isWindowReady = visibleState.kind === 'ready';
-
-  useLayoutEffect(() => {
-    if (viewport.current !== null) {
-      onViewportReady?.(viewport.current);
+  useEffect(() => {
+    if (chat.status === 'streaming' && hasCurrentActivity) {
+      void data.refreshActivity(mech.id);
     }
-  }, [isWindowReady, onViewportReady]);
+  }, [chat.status, hasCurrentActivity, data, mech.id]);
 
   return (
-    <ResourceView state={visibleState} placeholder={<ConversationPlaceholder />} label="Loading conversation">
-      {(visible, windowNotice) => (
-        <MechConversation
-          name={mech.name}
-          avatar={<AgentAvatar seed={mech.id} appearance={appearance} />}
-          page={visible}
-          viewportRef={viewport}
-          scrollRestorationId={reader.id}
-          initialPosition={reader.position}
-          inspect={(turn) => (
-            <MessageAction
-              label="Open run"
-              kind="link"
-              render={<ConsoleLink to={{ workspace: data.workspace.id, mech: mech.id, turn }} row={turn} />}
-            >
-              <ScanLine size={16} aria-hidden />
-            </MessageAction>
-          )}
-          sourceLink={(mechId) => (
-            <ConsoleLink to={{ workspace: data.workspace.id, mech: mechId }}>Source mech</ConsoleLink>
-          )}
-          controls={
-            <>
-              {notice}
-              {visibleRequest.id !== request.id && windowNotice}
-              {visible.hasMore && (
-                <Button
-                  variant="ghost"
-                  isPending={pending === 'next'}
-                  pendingLabel="Loading earlier messages…"
-                  disabled={pending !== undefined}
-                  onClick={() => earlier(visible)}
-                >
-                  Earlier messages
-                </Button>
-              )}
-            </>
+    <MechConversation
+      name={mech.name}
+      avatar={<AgentAvatar seed={mech.id} appearance={appearance} />}
+      messages={chat.messages}
+      isStreaming={isStreaming}
+      viewportRef={viewport}
+      scrollRestorationId={reader.id}
+      initialPosition={reader.position}
+      inspect={(turn) => (
+        <MessageAction
+          label="Open run"
+          kind="link"
+          render={
+            <ConsoleLink
+              to={{ workspace: data.workspace.id, mech: mech.id, session: value.sessionId, turn }}
+              row={turn}
+            />
           }
-          updates={
-            hasUpdates ? (
-              isLatest ? (
-                <Conversation.LatestButton label="Show new messages" onActivate={() => setShown(currentWindow)} />
-              ) : (
-                <Button
-                  isPending={pending === 'previous'}
-                  pendingLabel="Loading latest messages…"
-                  disabled={pending !== undefined}
-                  onClick={recent}
-                >
-                  Return to latest
-                </Button>
-              )
-            ) : undefined
-          }
-        />
+        >
+          <ScanLine size={16} aria-hidden />
+        </MessageAction>
       )}
-    </ResourceView>
+      controls={
+        <>
+          <Row shouldSpaceBetween>
+            <SessionPicker
+              data={data}
+              mechId={mech.id}
+              sessionId={value.sessionId}
+              source={value.source}
+              title={value.title}
+              consoleSessionId={value.consoleSessionId}
+              onSelect={onSession}
+            />
+            {value.source === 'slack' && value.sourceUrl !== null && (
+              <TextLink href={value.sourceUrl} target="_blank" rel="noreferrer noopener">
+                Open in Slack ↗
+              </TextLink>
+            )}
+          </Row>
+          {notice}
+          {chat.error !== undefined && value.activeWorkflowId !== null && (
+            <Notice hasError>
+              The live connection was interrupted.{' '}
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  void entry.resume();
+                }}
+                disabled={isStreaming}
+              >
+                Reconnect
+              </Button>
+            </Notice>
+          )}
+          {value.hasMore && (
+            <Button
+              variant="ghost"
+              isPending={value.isLoadingEarlier}
+              pendingLabel="Loading earlier messages…"
+              onClick={() => {
+                void entry.earlier();
+              }}
+            >
+              Earlier messages
+            </Button>
+          )}
+        </>
+      }
+    />
   );
 }

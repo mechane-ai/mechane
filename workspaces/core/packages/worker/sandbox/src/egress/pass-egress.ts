@@ -1,6 +1,4 @@
 import { OriginProtocol } from '@mechane/deployment';
-import { writeLog } from '@mechane/logs';
-import { LogEvent } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { Option } from 'effect';
 import { readEgressDestination } from './read-egress-destination.ts';
@@ -13,7 +11,9 @@ export async function passEgress({ request, settings }: PassEgressInput): Promis
   const destination = readEgressDestination({ request, origin: settings.origin, hosts: settings.hosts });
 
   if (Option.isNone(destination)) {
-    writeLog({ line: { event: LogEvent.EgressRefused, reason: 'destination' } });
+    const diagnostic = JSON.stringify({ event: 'egress.refused', reason: 'destination' });
+
+    console.log(diagnostic);
 
     return new Response(null, { status: HttpStatusCode.Forbidden });
   }

@@ -1,9 +1,9 @@
+import { releaseAssetUrl } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
 import { join } from 'node:path';
 import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
-import { releaseAssetUrl } from '../files/release-asset-url.ts';
 import type { ArtifactReceipt, InstallationManifest } from '../schemas.ts';
 import type { DistributionSettings } from '../types.ts';
 import { guestImageDigest } from './guest-image-digest.ts';

@@ -1,13 +1,17 @@
-import { finish, interruptOnSignal } from '@mechane/program';
-import { smokeStatus } from '@mechane/testing';
-import { Effect } from 'effect';
+import { runStackProgram } from '@mechane/stack';
+import { CATALOG } from './catalog.ts';
 import { runScenarios } from './run-scenarios.ts';
+import { smokeSettings } from './settings.ts';
 
-/** Runs every scenario of the catalog against a fresh local stack, stops the stack, and finishes. */
 async function main(): Promise<void> {
-  const exit = await Effect.runPromiseExit(interruptOnSignal({ program: Effect.scoped(runScenarios()) }));
+  const settings = smokeSettings();
 
-  finish({ status: smokeStatus({ exit }) });
+  await runStackProgram({
+    options: { mode: 'ephemeral', useFixtures: true, sandbox: 'host-fixture', nodeExecutable: settings.nodeExecutable },
+    run: async ({ stack }) => {
+      await runScenarios({ stack, catalog: CATALOG, match: settings.match });
+    },
+  });
 }
 
 await main();

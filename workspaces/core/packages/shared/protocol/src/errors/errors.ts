@@ -1,6 +1,5 @@
-import { ConnectionId, memberOrUnknown, RecordId, WorkspaceId } from '@mechane/records';
+import { ConnectionId, RecordId, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
-import { DurableObjectClass } from '../durable-objects/constants.ts';
 import { UnknownFields, WireTime } from '../schemas.ts';
 
 /** No operation of the catalog serves the request's method and path. */
@@ -12,14 +11,13 @@ export class RouteNotFound extends Schema.TaggedError<RouteNotFound>()('RouteNot
 /** The request's path parameters, query or body do not decode with its operation's schemas. */
 export class RequestInvalid extends Schema.TaggedError<RequestInvalid>()('RequestInvalid', { reason: Schema.String }) {}
 
-/** The Worker's bindings and variables do not decode into its settings. */
-export class WorkerMisconfigured extends Schema.TaggedError<WorkerMisconfigured>()('WorkerMisconfigured', {
+/** The server cannot start a required dependency with its configured settings. */
+export class ServerMisconfigured extends Schema.TaggedError<ServerMisconfigured>()('ServerMisconfigured', {
   reason: Schema.String,
 }) {}
 
-/** A Durable Object did not answer the Worker's call. */
-export class ObjectUnavailable extends Schema.TaggedError<ObjectUnavailable>()('ObjectUnavailable', {
-  objectClass: memberOrUnknown({ set: DurableObjectClass }),
+/** A required service did not complete the operation. */
+export class ServiceUnavailable extends Schema.TaggedError<ServiceUnavailable>()('ServiceUnavailable', {
   reason: Schema.String,
 }) {}
 
@@ -27,12 +25,6 @@ export class ObjectUnavailable extends Schema.TaggedError<ObjectUnavailable>()('
 export class ReleaseFileNotFound extends Schema.TaggedError<ReleaseFileNotFound>()('ReleaseFileNotFound', {
   key: Schema.String,
 }) {}
-
-/** The releases bucket did not answer the Worker's read of a release file. */
-export class ReleasesBucketUnavailable extends Schema.TaggedError<ReleasesBucketUnavailable>()(
-  'ReleasesBucketUnavailable',
-  { key: Schema.String, reason: Schema.String },
-) {}
 
 /** A principal operation's request carries no key. */
 export class KeyMissing extends Schema.TaggedError<KeyMissing>()('KeyMissing', {}) {}
@@ -71,10 +63,7 @@ export class WorkspaceSuspended extends Schema.TaggedError<WorkspaceSuspended>()
 /** The workspace has no mech with this id. */
 export class MechNotFound extends Schema.TaggedError<MechNotFound>()('MechNotFound', { mechId: RecordId }) {}
 
-/**
- * The mech is not idle, so it cannot be forked now. A turn runs or owes its note, an inbox item waits for a turn or
- * holds one, or a drone runs or its machine has not stopped.
- */
+/** The mech has accepted or active work, so an idle-only operation cannot proceed. */
 export class MechBusy extends Schema.TaggedError<MechBusy>()('MechBusy', { mechId: RecordId }) {}
 
 /**

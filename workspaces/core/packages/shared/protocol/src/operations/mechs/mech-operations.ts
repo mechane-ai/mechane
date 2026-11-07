@@ -1,6 +1,5 @@
-import { cloneMech } from './clone-mech.ts';
+import { cloneMech, forkMech } from './copy-mech.ts';
 import { createMech } from './create-mech.ts';
-import { forkMech } from './fork-mech.ts';
 import { listMechRevisions } from './list-mech-revisions.ts';
 import { listMechs } from './list-mechs.ts';
 import { showMech } from './show-mech.ts';

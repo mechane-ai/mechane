@@ -1,6 +1,6 @@
 import { HttpMethod } from '@mechane/records';
 import { Schema } from 'effect';
-import { ObjectUnavailable, RateLimited } from '../../errors/errors.ts';
+import { RateLimited, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -23,5 +23,5 @@ export const startDeviceApproval = {
   query: NoFields,
   body: DeviceApprovalRequest,
   output: DeviceApproval,
-  errors: [ObjectUnavailable, RateLimited],
+  errors: [ServiceUnavailable, RateLimited],
 } as const satisfies Operation;

@@ -1,5 +1,5 @@
-import type { SandboxRequest } from '@mechane/protocol';
 import type { PortableMaintenance } from '@mechane/sandbox-store';
+import type { SandboxRequest } from '@mechane/sandbox-wire';
 import type { WorkspaceProviderStepInput } from '../types.ts';
 
 export type PortableMaintenanceInput = WorkspaceProviderStepInput & { readonly providerName: string };

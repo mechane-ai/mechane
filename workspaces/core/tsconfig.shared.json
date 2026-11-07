@@ -4,7 +4,6 @@
   "files": ["lint/types/shared/strict-globals.d.ts"],
   "include": [
     "packages/shared/client/src",
-    "packages/shared/credentials/src",
     "packages/shared/deployment/src",
     "packages/shared/protocol/src",
     "packages/shared/records/src",

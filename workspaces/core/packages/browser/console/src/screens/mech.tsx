@@ -154,7 +154,12 @@ function MechDetails({
   const view = reads.viewRead.view;
   const viewLabel = viewLabels[view] ?? 'Conversation';
 
-  const base = { workspace: data.workspace.id, mech: mech.id };
+  const base = {
+    workspace: data.workspace.id,
+    mech: mech.id,
+    ...(location.session === undefined ? {} : { session: location.session }),
+  };
+
   const drafts = useWorkspaceDrafts();
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
   const [statusError, setStatusError] = useState<{ readonly status: MechStatus; readonly message: string }>();
@@ -253,6 +258,7 @@ function MechDetails({
             data={data}
             mech={mech}
             pageRead={reads.viewRead.pageRead}
+            sessionId={location.session}
             onMessage={() => selectView('conversation')}
           />
         );
@@ -309,11 +315,26 @@ function MechDetails({
               <ConversationScreen
                 data={data}
                 mech={mech}
-                pageRead={reads.conversation}
+                entry={reads.conversation}
                 isActive={isConversationActive}
+                onSession={(session) =>
+                  navigate({
+                    workspace: data.workspace.id,
+                    mech: mech.id,
+                    ...(session === undefined ? {} : { session }),
+                    view: 'conversation',
+                  })
+                }
               />
               <WorkbenchFooter>
-                <MessageForm data={data} mech={mech} />
+                <MessageForm
+                  data={data}
+                  mech={mech}
+                  entry={reads.conversation}
+                  onSession={(session) =>
+                    navigate({ workspace: data.workspace.id, mech: mech.id, session, view: 'conversation' })
+                  }
+                />
               </WorkbenchFooter>
             </ViewStack.Panel>
           )}

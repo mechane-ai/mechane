@@ -5,7 +5,7 @@ import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import { TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
 import type { ConsoleView, Mech, Turn } from '@mechane/protocol';
-import { TurnId } from '@mechane/records';
+import { MechId, TurnId } from '@mechane/records';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
 import { useState } from 'react';
@@ -18,6 +18,7 @@ import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { TurnHistory } from './turn-history.tsx';
 
 const inspectorViews: ReadonlySet<ConsoleView> = new Set(['requests', 'events', 'tools']);
+const cancelableStatuses: ReadonlySet<string> = new Set(['queued', 'running', 'waiting']);
 
 type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
@@ -43,7 +44,15 @@ export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly 
     return (
       <Notice hasError>
         This run ID is invalid.{' '}
-        <Button onClick={() => props.navigate({ workspace: props.data.workspace.id, mech: props.mech.id })}>
+        <Button
+          onClick={() =>
+            props.navigate({
+              workspace: props.data.workspace.id,
+              mech: props.mech.id,
+              ...(props.location.session === undefined ? {} : { session: props.location.session }),
+            })
+          }
+        >
           Return to mech
         </Button>
       </Notice>
@@ -70,7 +79,13 @@ function ValidTraceScreen({
 
   const mainView = inspectorViews.has(location.view ?? 'conversation') ? 'conversation' : location.view;
 
-  const base = { workspace: data.workspace.id, mech: mech.id, ...(mainView === undefined ? {} : { view: mainView }) };
+  const base = {
+    workspace: data.workspace.id,
+    mech: mech.id,
+    ...(location.session === undefined ? {} : { session: location.session }),
+    ...(mainView === undefined ? {} : { view: mainView }),
+  };
+
   const selected = { ...base, turn: turnId };
   const tab = selectedTraceTab(location);
 
@@ -81,7 +96,7 @@ function ValidTraceScreen({
 
     setCancelState('sending');
     setError(undefined);
-    void data.commands.cancelTurn({ mechId: mech.id, turnId }).then(
+    void data.commands.cancelTurn({ mechId: MechId.make(mech.id), turnId }).then(
       () => {
         if (isScreenActive()) {
           setCancelState('received');
@@ -104,7 +119,7 @@ function ValidTraceScreen({
           <Stack>
             {traceNotice}
             {error !== undefined && <Notice hasError>{error}</Notice>}
-            {trace.turn.status === 'running' && (
+            {cancelableStatuses.has(trace.turn.status) && (
               <Row>
                 <Button
                   disabled={cancelState !== 'idle'}
@@ -116,7 +131,7 @@ function ValidTraceScreen({
                 </Button>
               </Row>
             )}
-            {cancelState === 'received' && trace.turn.status === 'running' && (
+            {cancelState === 'received' && cancelableStatuses.has(trace.turn.status) && (
               <Notice>Waiting for the execution to stop.</Notice>
             )}
             <TurnTrace

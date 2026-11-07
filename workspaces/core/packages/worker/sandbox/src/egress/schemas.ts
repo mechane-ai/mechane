@@ -1,4 +1,4 @@
-import { OriginProtocol, SecureOrigin, WORKER_VARIABLES } from '@mechane/deployment';
+import { OriginProtocol, SANDBOX_VARIABLES, SecureOrigin } from '@mechane/deployment';
 import { renamedWireStruct } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 
@@ -17,7 +17,7 @@ const AdditionalHosts = Schema.fromJsonString(
 /** The gateway rejects its own origin and admits the installation's additional public hosts. */
 export const EgressVariables = renamedWireStruct({
   fields: { origin: SecureOrigin, hosts: AdditionalHosts },
-  renames: { origin: WORKER_VARIABLES.origin, hosts: WORKER_VARIABLES.sandboxHosts },
+  renames: { origin: SANDBOX_VARIABLES.origin, hosts: SANDBOX_VARIABLES.sandboxHosts },
 });
 
 export type EgressVariables = typeof EgressVariables.Type;

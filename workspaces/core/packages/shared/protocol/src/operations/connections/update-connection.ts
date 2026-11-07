@@ -1,7 +1,7 @@
 import { HttpMethod } from '@mechane/records';
 import {
   ConnectionNotFound,
-  ObjectUnavailable,
+  ServiceUnavailable,
   WorkspaceNotFound,
   WorkspaceOwnerRequired,
 } from '../../errors/errors.ts';
@@ -19,5 +19,5 @@ export const updateConnection = {
   query: NoFields,
   body: ConnectionConfiguration,
   output: RemoteConnection,
-  errors: [ObjectUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired, ConnectionNotFound],
+  errors: [ServiceUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired, ConnectionNotFound],
 } as const satisfies Operation;

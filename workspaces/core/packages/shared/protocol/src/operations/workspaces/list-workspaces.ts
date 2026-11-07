@@ -1,5 +1,5 @@
 import { HttpMethod } from '@mechane/records';
-import { ObjectUnavailable } from '../../errors/errors.ts';
+import { ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -14,5 +14,5 @@ export const listWorkspaces = {
   query: NoFields,
   body: NoFields,
   output: WorkspaceList,
-  errors: [ObjectUnavailable],
+  errors: [ServiceUnavailable],
 } as const satisfies Operation;

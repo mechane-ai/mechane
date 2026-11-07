@@ -5,3 +5,5 @@ valid:
 invalid:
   - 'ctx.storage.sql.exec(statement);'
   - 'database.prepare(statement);'
+  - 'context.client.query(statement);'
+  - 'pool.query(statement);'

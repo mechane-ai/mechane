@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: native-denied-name
+language: TypeScript
+rule:
+  regex: '^(common|data|endpoint|handler|helpers|info|item|manager|misc|script)$'

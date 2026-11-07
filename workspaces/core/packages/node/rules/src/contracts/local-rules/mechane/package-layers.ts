@@ -13,10 +13,13 @@ const VALUES = {
   memberSourceFolders: {
     '@mechane-ai/elements': ['packages', '.storybook', 'vite.config.ts'],
     '@mechane/console': ['src', 'scripts', '.storybook', 'vite.config.ts', 'worker-licenses.ts'],
+    '@mechane/server': ['src', 'build'],
   },
   libraryExports: { '.': './src/index.ts' },
   // StyleX imports resolve directly to their definition. The UI's other subpaths expose cohesive public modules.
   definitionExports: {
+    '@mechane/protocol': { '.': './src/index.ts', './presentation': './src/presentation/index.ts' },
+    '@mechane/runtime': { '.': './src/index.ts', './channels': './src/channels/index.ts' },
     '@mechane/catalog': { '.': './src/index.ts', './preview': './src/preview.ts' },
     '@mechane-ai/elements': {
       '.': './packages/core/src/index.ts',

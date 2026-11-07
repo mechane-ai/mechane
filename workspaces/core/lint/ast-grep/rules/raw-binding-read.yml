@@ -3,8 +3,13 @@ id: raw-binding-read
 language: TypeScript
 severity: error
 message: "Read a binding only in the Worker's settings module and pass the decoded settings, such as `settings.origin` (ST-31)"
-files: [packages/**/*.ts]
-ignores: ['**/node_modules/**', packages/worker/bindings/src/settings/**, packages/worker/rpc/src/object-bindings.ts]
+files: [packages/worker/**/*.ts]
+ignores:
+  [
+    '**/node_modules/**',
+    packages/worker/sandbox-service/src/settings.ts,
+    packages/worker/sandbox/src/providers/sandbox-settings.ts,
+  ]
 rule:
   any:
     - kind: member_expression

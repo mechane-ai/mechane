@@ -5,8 +5,5 @@
   "packages/node/checks/src/run-checks.ts": 1,
   "packages/node/rule-generator/src/load-generate-settings.ts": 1,
   "packages/node/rule-generator/src/validate/message-findings.ts": 1,
-  "packages/node/rule-generator/src/validate/suppression-budget.ts": 1,
-  "packages/node/testing/src/mechs/events/drone-end.ts": 1,
-  "packages/node/testing/src/mechs/events/turn-end-after.ts": 1,
-  "packages/worker/mech/src/sandboxes/sandbox-access.ts": 1
+  "packages/node/rule-generator/src/validate/suppression-budget.ts": 1
 }

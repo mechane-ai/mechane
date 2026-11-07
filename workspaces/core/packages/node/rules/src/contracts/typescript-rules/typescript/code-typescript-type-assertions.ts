@@ -79,6 +79,7 @@ export const codeTypescriptTypeAssertions = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'type-predicate',
+      maxSuppressions: 2,
       standard: 'TD-07',
       violation: [
         'function isRow(value: unknown): value is Row { return true; }',

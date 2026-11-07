@@ -1,25 +1,7 @@
-import {
-  memberOrUnknown,
-  PAGE_RENAMES,
-  PrintableName,
-  RecordName,
-  renamedWireStruct,
-  ThreadId,
-  wireStruct,
-} from '@mechane/records';
+import { memberOrUnknown, PAGE_RENAMES, RecordName, renamedWireStruct, ThreadId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { THREAD_NOTE_MAX_CHARS, THREAD_TITLE_MAX_CHARS, ThreadState } from './constants.ts';
-
-/** What a thread is about, which its mech chose when it opened it. */
-export const ThreadTitle = PrintableName.check(Schema.isBetweenLength(1, THREAD_TITLE_MAX_CHARS));
-
-export type ThreadTitle = typeof ThreadTitle.Type;
-
-/** Where a thread's work stands, as its mech last wrote it. */
-export const ThreadNote = PrintableName.check(Schema.isBetweenLength(1, THREAD_NOTE_MAX_CHARS));
-
-export type ThreadNote = typeof ThreadNote.Type;
+import { ThreadState } from './constants.ts';
 
 /** A thread of a mech's work: its title and state, its note, none until the mech writes one, and when it changed. */
 export const Thread = wireStruct({

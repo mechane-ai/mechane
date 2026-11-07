@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, FixBehavior, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole, FixBehavior, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** The words that name a numeric limit or duration, whose name must end with a unit or a counted noun. */
@@ -50,6 +50,7 @@ export const codeMeasuredValueNames = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'raw-money-number',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-15',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
@@ -62,6 +63,7 @@ export const codeMeasuredValueNames = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'raw-time-number',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-16',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.Time,
@@ -71,6 +73,7 @@ export const codeMeasuredValueNames = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'raw-time-schema',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-16',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.Time,

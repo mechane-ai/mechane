@@ -1,7 +1,3 @@
 {
-  "packages/shared/protocol/src/durable-objects/types.ts": 1,
-  "packages/shared/sandbox-wire/src/types.ts": 2,
-  "packages/worker/bindings/src/limit-request.ts": 1,
-  "packages/worker/rpc/src/directory.types.ts": 3,
-  "packages/worker/rpc/src/mech/types.ts": 2
+  "packages/shared/sandbox-wire/src/types.ts": 2
 }

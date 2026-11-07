@@ -1,4 +1,3 @@
-import type { SandboxEgress } from '@mechane/deployment';
 import type { Redacted } from 'effect';
 import type { EgressGateway } from '../egress/egress-gateway.ts';
 import type { MachineIdInput } from '../types.ts';
@@ -7,7 +6,6 @@ import type { MachineIdInput } from '../types.ts';
 export type ContainerProviderInput = {
   readonly container: Container;
   readonly state: DurableObjectState;
-  readonly egress: SandboxEgress;
   readonly gateway: () => Fetcher;
 };
 

@@ -33,12 +33,13 @@ Run the repository's lint from the repository root, and confirm that it rejects 
 ## Local adaptations
 
 `tsconfig.base.json` sets each compiler option the generated block lists, three of them to false and `moduleDetection` to `force`, and the registry generates it with its other options.
-Each lane has one program, `tsconfig.shared.json`, `tsconfig.worker.json` and `tsconfig.node.json`: it extends the base, sets only its runtime's `lib` or `types` from `lanePrograms`, names its lane's strict globals, which `code-typescript-effect-schemas` describes, and includes the source roots of every member whose `lane` in `dependencies.json` is its own, never a folder glob.
+Each lane has one program, `tsconfig.shared.json`, `tsconfig.worker.json`, `tsconfig.node.json` and `tsconfig.browser.json`: it extends the base, selects its runtime settings from `lanePrograms`, names its lane's strict globals, which `code-typescript-effect-schemas` describes, and includes the source roots of every member whose `lane` in `dependencies.json` is its own, never a folder glob.
+The Node lane enables `allowJs` and `checkJs` so authored build modules in declared source roots receive the same strict checks as TypeScript. JavaScript boundaries use JSDoc types and validate external metadata; an `include` entry alone must not silently leave a release builder unchecked.
 The registry's exact `BrowserBuildConfiguration` files, currently the Console's Vite configuration and Worker-license
 helper, execute in Node through Vite's bundled loader. They retain the existing browser program's ESNext/Bundler
 typecheck because it matches that loader's module interoperability. Contract 101 keeps application imports out of
 this build boundary; this compiler placement does not make the helper browser runtime code.
-Each member's `tsconfig.json` extends its lane's program and includes only its own source roots, its `src` and `scripts` folders; the registry generates every one from the manifest, so `rules:check` fails on a configuration that differs.
+Each member's `tsconfig.json` extends its lane's program and includes only its declared source roots, such as `src`, `scripts` and `build`; the registry generates every one from the manifest, so `rules:check` fails on a configuration that differs.
 `skipLibCheck` is on because Effect's declarations name the browser globals of other runtimes; every source file of the repository is still checked whole.
 `mise -C workspaces/core run typecheck` checks each lane's program once, so every member is checked under its lane's types and none twice.
 oxlint `typescript/ban-ts-comment` rejects every `@ts-` directive, so no expected-error form is in use.

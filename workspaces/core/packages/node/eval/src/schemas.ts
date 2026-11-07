@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
 import { InboxText, Instructions } from '@mechane/protocol';
-import { isWellFormedText, Micros, RandomId, RecordId, wireStruct } from '@mechane/records';
+import { InboxItemRequestId, isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
 import { Effect, Predicate, Schema } from 'effect';
 import {
   CASES_PER_SUITE,
@@ -20,7 +20,7 @@ export const OutFolderLock = wireStruct({ fields: { processId: Schema.Int.check(
 export type OutFolderLock = typeof OutFolderLock.Type;
 
 /** A role's turn about to be sent: the fresh mech and the inbox item's id, recorded before the send. */
-export const Intent = wireStruct({ fields: { mechId: RecordId, inboxItemId: RandomId } });
+export const Intent = wireStruct({ fields: { mechId: MechId, inboxItemId: InboxItemRequestId } });
 
 export type Intent = typeof Intent.Type;
 
@@ -96,7 +96,7 @@ export const PlanBasis = wireStruct({
     version: Schema.Literal(PLAN_VERSION),
     suite: Suite,
     release: Schema.String,
-    workerRevision: Schema.String,
+    runtimeRevision: Schema.String,
     workspaceId: RecordId,
   },
 });

@@ -1,6 +1,5 @@
-import { SandboxArchive } from '@mechane/protocol';
-import { RecordId, RecordText, SandboxOperationId, SourceId } from '@mechane/records';
-import { ExecutionId, ExecutionProgress, SettledReceipt } from '@mechane/sandbox-wire';
+import { RecordId, RecordText, SandboxOperationId } from '@mechane/records';
+import { ExecutionId, ExecutionProgress, SandboxArchive, SettledReceipt } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
 
@@ -26,7 +25,7 @@ const CheckpointTransfer = Schema.Struct({
   part: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
 });
 
-/** The shipped command-checkpoint shape remains readable and writable without rewriting stored instances. */
+/** A command receipt commits atomically with its filesystem generation. */
 export const CommandCheckpoint = Schema.Struct({
   ...CheckpointTransfer.fields,
   executionId: ExecutionId,
@@ -35,16 +34,8 @@ export const CommandCheckpoint = Schema.Struct({
 
 export type CommandCheckpoint = typeof CommandCheckpoint.Type;
 
-/** Each source stage commits its own generation before the owning source operation can advance. */
-export const SourceCheckpointKind = { Preparation: 'prepare', Finalization: 'finalize' } as const;
-
-export type SourceCheckpointKind = (typeof SourceCheckpointKind)[keyof typeof SourceCheckpointKind];
-
 /** Why a file checkpoint exists; none of these operations executes a shell command. */
-export const FileCheckpointPurpose = Schema.TaggedUnion({
-  Source: { sourceId: SourceId, stage: Schema.Enum(SourceCheckpointKind) },
-  Maintenance: { operationId: SandboxOperationId },
-});
+export const FileCheckpointPurpose = Schema.TaggedUnion({ Maintenance: { operationId: SandboxOperationId } });
 
 export type FileCheckpointPurpose = typeof FileCheckpointPurpose.Type;
 

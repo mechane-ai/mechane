@@ -16,15 +16,17 @@ type WorkspaceSwitcherProps = {
 
 function WorkspaceSwitcher({ workspaces, workspaceId, onWorkspace }: WorkspaceSwitcherProps): ReactNode {
   const selected = workspaces.find((workspace) => workspace.id === workspaceId);
-  const personal = workspaces[0];
 
   const selectedLabel =
-    selected === undefined ? 'Workspace' : selected.id === personal?.id ? 'Personal' : selected.name;
+    selected === undefined ? 'Workspace' : selected.kind === 'personal' ? 'Personal' : selected.name;
 
-  const options = [...workspaces.slice(1), ...workspaces.slice(0, 1)].map((workspace) => ({
+  const shared = workspaces.filter((workspace) => workspace.kind === 'shared');
+  const personal = workspaces.filter((workspace) => workspace.kind === 'personal');
+
+  const options = [...shared, ...personal].map((workspace) => ({
     value: workspace.id,
-    label: workspace.id === personal?.id ? 'Personal' : workspace.name,
-    description: workspace.id === personal?.id ? workspace.name : 'Team workspace',
+    label: workspace.kind === 'personal' ? 'Personal' : workspace.name,
+    description: workspace.kind === 'personal' ? workspace.name : 'Team workspace',
   }));
 
   return (

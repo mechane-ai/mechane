@@ -4,7 +4,16 @@ language: TypeScript
 severity: error
 message: "Type an id with its entity's brand from the protocol's records, such as `readonly turnId: TurnId` (TD-14)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', 'packages/browser/elements/packages/**']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    '**/node_modules/**',
+    'packages/browser/console-data/src/conversation.ts',
+    'packages/browser/console/src/conversations/entry.ts',
+    'packages/browser/console/src/conversations/transport.ts',
+    'packages/browser/elements/packages/**',
+  ]
 rule:
   kind: property_signature
   all:

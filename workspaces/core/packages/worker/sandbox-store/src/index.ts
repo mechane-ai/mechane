@@ -6,7 +6,6 @@ export { sandboxAlarm } from './sandbox-alarm.ts';
 
 export type { PortableMaintenance } from './maintenance/schemas.ts';
 export type { WorkspaceSnapshot, WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';
-export { FileCheckpointPurpose, FileCheckpointResult, SourceCheckpointKind } from './workspaces/schemas.ts';
-export type { SourceFence } from './sources/schemas.ts';
+export { FileCheckpointPurpose, FileCheckpointResult } from './workspaces/schemas.ts';
 export { ReservationPhase } from './capacity/capacity-records.ts';
 export type { MachineReservation } from './capacity/capacity-records.ts';

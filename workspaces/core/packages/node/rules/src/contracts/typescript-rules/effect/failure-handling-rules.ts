@@ -18,7 +18,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...RESTRICTED,
     message: 'Handle each expected failure by its tag, such as `Effect.catchTags({ MechNotFound: … })`',
-    exemptRoles: [FileRole.BrowserAdapter],
+    exemptRoles: [FileRole.BrowserAdapter, FileRole.NativeRuntime, FileRole.NativePresentation],
     properties: {
       Effect: ['ignore', 'option', 'result', 'either', 'orElse', 'orElseSucceed', 'orElseFail', 'catchCause'],
     },
@@ -37,6 +37,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'defect-sites',
+    exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
     maxSuppressions: 1,
     standard: 'ER-06',
     status: RuleStatus.Ratchet,
@@ -93,7 +94,7 @@ export const FAILURE_HANDLING_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'no-instanceof',
-    exemptRoles: [FileRole.BrowserAdapter],
+    exemptRoles: [FileRole.BrowserAdapter, FileRole.NativeRuntime],
     standard: 'EF-05',
     status: RuleStatus.Enforced,
     phase: RolloutPhase.EffectDialect,

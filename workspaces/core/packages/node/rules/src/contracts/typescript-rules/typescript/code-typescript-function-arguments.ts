@@ -9,7 +9,7 @@ export const codeTypescriptFunctionArguments = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'object-arguments',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-01',
       violation: [
         'function parse(line: string, count: number) { return line; }',

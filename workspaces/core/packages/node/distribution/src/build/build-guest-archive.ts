@@ -5,9 +5,9 @@ import type { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
 import { fileDigest } from '../files/file-digest.ts';
 import { runCommand } from '../files/run-command.ts';
-import { guestImageName } from '../local/guest-image-name.ts';
 import type { DistributionInput, PathInput } from '../types.ts';
 import { guestImageDigest } from '../verify/guest-image-digest.ts';
+import { guestImageName } from './guest-image-name.ts';
 import type { GuestImage } from './types.ts';
 
 type GuestArtifact = GuestImage & { readonly name: string };

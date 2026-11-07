@@ -7,6 +7,9 @@ node_modules/
 crash.log
 crash.*.log
 dist/
+.output/
+.swc/
+workspaces/core/packages/node/runtime/.well-known/workflow/
 .wrangler/
 .celld/
 .dev.vars

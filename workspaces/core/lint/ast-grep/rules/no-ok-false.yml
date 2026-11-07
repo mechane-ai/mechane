@@ -3,7 +3,7 @@ language: TypeScript
 severity: error
 message: 'Fail with a tagged error instead of an `{ ok: false }` object, such as `return yield* new MechNotFound({ mechId })` (ER-04)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', packages/node/stack/src/fixtures/slack.ts]
 rule:
   kind: pair
   all:

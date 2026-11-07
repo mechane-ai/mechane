@@ -1,23 +1,17 @@
 # @mechane/deployment
 
-The deployment's variable names, secure origins, model offers and rate limits, and their schemas.
-
-Layer 0 · shared lane · data dialect · any consumer
-
-## Surface
-
-- Variables: `WORKER_VARIABLES` and `ORIGIN_VARIABLE`.
-- Origins: `SecureOrigin`, `LoopbackOrigin` and `OriginProtocol`.
-- Models: `ModelId`, `ModelOffer`, `ModelOffersVariable` and `RATE_TOKENS`.
-- Sandboxes: `SandboxProvider` and `MachinesVariable`.
-- Limits: `LimitPolicy`, `RateLimit` and `RateLimitsVariable`.
+Shared endpoint validation, model identities, and sandbox configuration names used by Mechane clients and compute. The
+Node runtime owns its application settings, credential keyring, model rates, and admission policy.
 
 ## Use
 
-Read a variable by its settings field in `WORKER_VARIABLES`, and decode its value with the schema beside it. A
-credential goes only to a `SecureOrigin`.
+Validate credential destinations with `SecureOrigin`. Use `ModelId` for an upstream model's opaque name. The CLI reads
+`ORIGIN_VARIABLE`; the sandbox provider reads the names in `SANDBOX_VARIABLES`.
 
-## Never
+Production sandboxes use Cloudflare Containers. Local verification launches the same guest through an authenticated
+loopback launcher. `SandboxProvider` names those two supported compute boundaries.
 
-Import another `@mechane` package: deployment sits at layer 0, beside `records`, so its two structs list their keys with
-`Schema.encodeKeys` until `wireStruct` sits below it.
+## Ownership
+
+`constants.ts` owns shared variable names and provider choices. `schemas.ts` owns their endpoint and identity schemas.
+This package imports no platform APIs or other Mechane packages.

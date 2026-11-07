@@ -1,6 +1,10 @@
-import { SANDBOX_ARCHIVE_PART_BYTES, SandboxArchive } from '@mechane/protocol';
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
-import { WORKSPACE_ARCHIVE_MAX_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
+import {
+  SANDBOX_ARCHIVE_PART_BYTES,
+  SandboxArchive,
+  WORKSPACE_ARCHIVE_MAX_BYTES,
+  WorkspaceStep,
+} from '@mechane/sandbox-wire';
 import { Option, Result, Schema } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { GuestConnection } from '../types.ts';

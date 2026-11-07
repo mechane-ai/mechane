@@ -1,5 +1,4 @@
 import { Schema } from 'effect';
-import { BoundedTurnConflict, BoundedTurnNotFound } from './bounded-turn.errors.ts';
 import { CredentialAlreadyExists } from './credential.errors.ts';
 import {
   ConnectionLimitReached,
@@ -13,21 +12,18 @@ import {
   KeyUnrecognized,
   MechBusy,
   MechNotFound,
-  ObjectUnavailable,
   RateLimited,
   ReleaseFileNotFound,
-  ReleasesBucketUnavailable,
   RequestInvalid,
   RouteNotFound,
+  ServerMisconfigured,
+  ServiceUnavailable,
   ToolGrantInvalid,
-  WorkerMisconfigured,
   WorkspaceNotFound,
   WorkspaceOwnerRequired,
   WorkspaceSuspended,
 } from './errors.ts';
 import {
-  DroneEnded,
-  DroneNotFound,
   MechArchived,
   MechCreationConflict,
   MechRevisionConflict,
@@ -36,8 +32,6 @@ import {
   SandboxDisabled,
   TurnEnded,
   TurnNotFound,
-  WatchLimitReached,
-  WatchNotFound,
 } from './mech.errors.ts';
 import { ReleaseSourceUnavailable } from './release-source.errors.ts';
 import {
@@ -51,10 +45,8 @@ import {
   WorkspacePolicyConflict,
 } from './workspace.errors.ts';
 
-/** Every failure the Worker answers with; a client decodes a code it knows into the failure with its fields. */
+/** Every failure the server answers with; a client decodes a code it knows into the failure with its fields. */
 export const ServerFailure = Schema.Union([
-  BoundedTurnConflict,
-  BoundedTurnNotFound,
   ReleaseSourceUnavailable,
   CredentialAlreadyExists,
   IdentityNotAdmitted,
@@ -71,10 +63,9 @@ export const ServerFailure = Schema.Union([
   ToolGrantInvalid,
   RouteNotFound,
   RequestInvalid,
-  WorkerMisconfigured,
-  ObjectUnavailable,
+  ServerMisconfigured,
+  ServiceUnavailable,
   ReleaseFileNotFound,
-  ReleasesBucketUnavailable,
   KeyMissing,
   KeyUnrecognized,
   KeyRevoked,
@@ -87,8 +78,6 @@ export const ServerFailure = Schema.Union([
   DeviceApprovalNotFound,
   KeyNotFound,
   MechNotFound,
-  WatchNotFound,
-  WatchLimitReached,
   MechBusy,
   MechRevisionConflict,
   MechCreationConflict,
@@ -97,8 +86,6 @@ export const ServerFailure = Schema.Union([
   InboxItemConflict,
   TurnNotFound,
   TurnEnded,
-  DroneNotFound,
-  DroneEnded,
 ]);
 
 export type ServerFailure = typeof ServerFailure.Type;

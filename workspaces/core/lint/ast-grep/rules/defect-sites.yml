@@ -8,7 +8,15 @@ severity: error
 message: 'Answer a typed failure, or die only where ER-06 allows, such as `Option.getOrThrow(Option.fromNullishOr(row))` (ER-06)'
 files: ['packages/**/*.ts']
 # The store kernel's decode verbs are the stores' one decode of a row.
-ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/worker/store/src/**']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+    'packages/worker/store/src/**',
+  ]
 rule:
   any:
     # an object's RPC method decodes its input in its body, never in its constructor

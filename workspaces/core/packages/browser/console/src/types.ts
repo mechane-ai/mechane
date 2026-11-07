@@ -6,6 +6,8 @@ export type ConsoleLocation = {
   readonly workspace?: string;
   /** Absent opens the workspace mech list. */
   readonly mech?: string;
+  /** Absent opens the mech's default console conversation. */
+  readonly session?: string;
   /** Absent opens the mech, before selecting one of its turns. */
   readonly turn?: string;
   /** Absent opens the mech's conversation. */
@@ -33,6 +35,5 @@ export type PageCursors = {
   readonly turns: ReadonlyArray<Turn['id']>;
   readonly activity: ReadonlyArray<number>;
   readonly events: ReadonlyArray<number>;
-  readonly conversation: ReadonlyArray<number>;
   readonly work: ReadonlyArray<Thread['id']>;
 };

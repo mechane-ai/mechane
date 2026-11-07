@@ -1,6 +1,6 @@
 # @mechane/records
 
-The shapes every stored and wire record is built from, and the rows an object's RPC and its store share.
+Shared domain identifiers, scalar schemas, HTTP vocabulary, and wire-field mapping.
 
 Layer 0 · shared lane · data dialect · any consumer
 
@@ -14,7 +14,7 @@ Layer 0 · shared lane · data dialect · any consumer
   `unknownMember`.
 - HTTP words: the closed sets `HttpMethod`, `HttpStatusCode`, `HttpHeader` and `MediaType`, each in its concept
   constants file, such as `http-method.constants.ts`.
-- Shared rows, such as `CopyRows`, `DispatchRequest` and `BrowserSessionRow`.
+- Trusted Slack destination identifiers and bounded connection names.
 
 ## Use
 

@@ -5,7 +5,15 @@ message: "Fail with a tagged error in the Effect's error type, such as `return y
 files: ['**/*.ts']
 ignores:
   [
+    'packages/worker/sandbox-service/src/**',
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/shared/protocol/src/presentation/**',
     '**/node_modules/**',
+    'packages/worker/sandbox/src/capacity/machine-capacity.ts',
+    'packages/worker/sandbox/src/maintenance/prepare-maintenance.ts',
+    'packages/browser/console-data/src/conversation.ts',
+    'packages/browser/console/src/conversations/entry.ts',
+    'packages/browser/console/src/conversations/transport.ts',
     'packages/browser/console-data/src/api.ts',
     'packages/browser/console-data/src/collections.ts',
     'packages/browser/console-data/src/console-data.ts',

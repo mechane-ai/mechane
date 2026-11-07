@@ -1,8 +1,8 @@
 # Mechane Console
 
-Open `/console` on any Mechane installation. Sign in through its configured GitHub or local sign-in. The console uses
-the same workspaces and permissions as the CLI, without creating or storing a browser API key. It is a workspace
-management interface; it does not grant installation-wide administrative access.
+Open `/console` on any Mechane installation. Sign in through its configured GitHub sign-in. The console uses the same
+workspaces and permissions as the CLI, without creating or storing a browser API key. It is a workspace management
+interface; it does not grant installation-wide administrative access.
 
 The signed-out page is a standalone entrance. After sign-in, an explicit workspace link wins, then the last valid
 workspace remembered for that account in this browser. With no preference, a single shared workspace opens before the
@@ -14,17 +14,20 @@ pin a mech to keep it above that list. These shortcuts and appearance choices be
 this browser. Open your account at the bottom of the sidebar for settings, account actions, and the documentation and
 software notices under **About**.
 
-Open a mech to read its continuous **Conversation**, with an inline composer and Markdown replies. **Work** shows the
-agent's durable threads and notes; these are work records, not separate chat sessions. Selecting one opens its detail in
-place of the list. **Back to work** restores the originating row and scroll position. **Runs** shows executions with
-their input excerpts. **Memory** contains explicitly saved notes and links each note to its source run. **History**
-keeps the original durable events, with run links where the event records one. A fork explains the source and copied
-event boundary: its event number is a position in the log, not a count of forks. Forked mechs continue independently.
+Open a mech to read **Conversation**, with an inline composer, native streamed messages, Markdown replies, and validated
+structured output. The session selector opens actual Console, Slack, or API conversations. Its selection is part of the
+URL; without an explicit selection, the latest existing session opens with its source labeled. Slack conversations are
+read-only in Console and link back to Slack. The Console conversation action opens the mech's actual Console session,
+which is the only source accepted by the Console send endpoint. The mech retains its identity, memory, and files across
+sessions. **Work** shows the agent's durable threads and notes; these are work records, not separate chat sessions.
+Selecting one opens its detail in place of the list. **Back to work** restores the originating row and scroll position.
+**Runs** shows executions with their input excerpts. **Memory** contains explicitly saved notes and links each note to
+its source run. **History** keeps durable product events, with run links where the event records one. Work records
+remain distinct from sessions.
 
 The mech header combines its identity and primary views in one bar. **More mech options** holds Memory, History,
 Settings, and lifecycle actions; a view selector replaces the primary links at narrow widths. Conversation actions
-appear on hover or keyboard focus and remain visible on touch devices. Copy and run controls have named icons; fork
-details expand from a compact conversation boundary.
+appear on hover or keyboard focus and remain visible on touch devices. Copy and run controls have named icons.
 
 Mech and run rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the
 row, page, and scroll position you were reading. **Open run** opens a full page, temporarily hiding workspace
@@ -83,29 +86,36 @@ is no separate tracing store.
 
 ## Local development
 
-From a configured checkout, `mise run dev` builds the complete release and starts a disposable celld fixture with fake
-GitHub and a scripted model. Open the printed origin plus `/console`. `mise run start` uses retained local state and
-real model credentials instead; see the [local guide](../packages/node/stack/README.md). Rebuild and restart the fixture
-after changing the application or Worker.
+From a configured checkout, `mise run dev` builds the complete release and starts a disposable Node/Postgres fixture
+with local GitHub and a scripted model. Open the printed origin plus `/console`. `mise run start` uses retained local
+state and real model credentials instead; see the [local guide](../packages/node/stack/README.md). Rebuild and restart
+the fixture after changing the application or server.
 
 For component development with hot reload, run `pnpm --filter @mechane/console storybook` from `workspaces/core`.
 `pnpm --filter @mechane/console build-storybook` checks the isolated component build. The runner discovers component
 stories beside their owning packages and screen stories inside the actual console frame. The
 [component guide](components.md) explains selection, composition, and catalog review. Screen stories cover populated,
 empty, loading, refresh-failure, and revision-conflict states. `mise run check` runs the repository checks and existing
-runtime scenarios. Browser acceptance uses the built celld Worker, including authentication and actual API responses.
+runtime scenarios. Browser acceptance uses the built Node service, including authentication and actual API responses.
+
+## Streams and presentation
+
+The active conversation uses the native AI SDK UI protocol. Its Chat instance owns the loaded transcript and live
+stream, initialized from authorized server history. TanStack owns other domain projections and does not mirror that
+transcript. Run inspection and a return to the same mech preserve the active Chat instance. Switching scope closes the
+active stream, preserves the appropriate draft, and refuses late updates from the previous owner.
+
+Structured replies use one validated json-render catalog. The Console maps its components to Mechane Elements while
+Slack receives native Chat cards. Readable fallback text remains available when a client cannot render a component or a
+streamed presentation fails validation. A card action uses current server authorization; its appearance grants no
+permission.
 
 ## Installation and upgrades
 
-The Console is part of the existing local package and Cloudflare release module. No second service, frontend deployment,
-database, public URL, or client-side secret configuration is required. Local celld and Cloudflare's ASSETS binding serve
-the same checksum-bound `console.json` inventory. OpenTofu uploads missing assets before activating the Worker and
-exports `console_url`. Upgrade the installation to upgrade both API and Console together.
+The Console ships with the Node service's immutable runtime artifact. It has no separate frontend deployment or
+client-side secret configuration. The service supplies the same checksum-bound asset inventory locally and in the hosted
+installation, including required native browser Worker/WASM assets and dependency notices.
 
-Runtime JSON operations use `/api/v1`. `/console` serves only Console files; a missing API route never returns the app
-shell. HTML is uncached and hashed assets are immutable. Bundled dependency notices are available at
-`/console/THIRD_PARTY_LICENSES.txt`.
-
-The 0.10 release moves the previous `/v1` API to `/api/v1` without aliases. Upgrade CLI binaries and integration clients
-together. The upgrade comparison recognizes that address change while retaining exact stored-format and migration
-checks. Existing agents, identities, sessions, histories, and files remain in their original stores.
+Domain JSON operations use `/api/v1`; active conversations use the native AI SDK stream routes. `/console` serves only
+Console files. A missing API route never returns the application shell. HTML is uncached and hashed assets are
+immutable. Upgrade the service and Console together after checking stream resumption and authenticated cache admission.

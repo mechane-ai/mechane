@@ -53,18 +53,19 @@ A served route's pattern and its typed call derive from its operation's one decl
 Every other request path or URL comes from an SC-10 builder named for what it returns, such as `guestExecutionPath({ machineId, executionId, wait })`. Each builder is declared in the package that owns the routes or the layout it addresses, even when one file uses it, such as `@mechane/sandbox-wire` for the guest's and the launcher's routes. A builder percent-encodes each text part with `encodeURIComponent` and builds its query from a schema's encoding with `URLSearchParams`, and the guest and the launcher decode each part as they parse a path.
 ast-grep `inline-path-string` (SC-10) enforces the lint sentence.
 It rejects a path-like template outside a builder's returned value, which it finds by the builder's name, and every `+` that forms such a string.
-It skips prose that holds a space.
+It skips prose that holds a space. Native single-use data keys, digest inputs, and repository slugs follow SC-10's
+native adaptation rather than being misclassified as request paths. Actual network and filesystem paths retain this
+contract's ownership and encoding requirements.
 
 Deviation (ST-18, SC-04, SC-06): each builder is a behavior file of its own named for it, such as `guest-health-path.ts`, re-exported by name from its package's entry point when another package imports it. So "Write each path function that the module does not derive in the module's one paths file, whose stem names the module and ends in `paths`", "Keep only path functions and their private helpers in a paths file", "Re-export the paths file from its module's entry point as one namespace", "A paths file is a namespace file under `code-module-file-roles`" and the Allowed example's `PackPaths` are not adopted.
 Deviation (D9, fixed paths): another system's fixed path is a constant beside the one client or fake that requests or serves it.
-GitHub's are members of the closed set `GitHubPath` in `@mechane/protocol`, which the Worker's pages and the local stack's GitHub both import, so the client and the fake read one declaration.
-celld's health path sits beside the stack's startup probe, and OpenRouter's paths beside the scripted upstream that serves them, as `ScriptedPath`.
+GitHub's shared authorization paths are members of `GitHubPath` in `@mechane/protocol`. Native clients and local
+HTTP fixtures may declare another system's fixed endpoint beside its sole request or handler. The service health
+path sits beside the stack's startup probe.
 This replaces "A fixed path, such as `/health`, also comes from its operation's path function" and "never by writing an origin into path text" for another system's fixed paths.
 Deviation (D9, parameterless operations): a program that does not depend on `@mechane/client` resolves a parameterless operation's declared `path` against the origin, which is the URL `requestUrl` builds for it.
 The stack's startup probe, the smoke's burst of raw requests and the live release verification do so.
 This replaces "A fixed path, such as `/health`, also comes from its operation's path function" for those programs.
-The smoke's `linkedCodeQuery` writes the query a phishing link carries, which no route declares and the device page must ignore.
-So it stays beside its one scenario and encodes its one field with `URLSearchParams`, from no schema.
 Deviation (D9, served patterns): the guest and the host launcher parse a path by splitting it against `GuestSegment`, the segment set their builders write, rather than matching a pattern derived from the builder. This replaces "When the repository serves an operation's route, derive the route pattern that the server matches and the operation's path function from one declaration" for those two servers.
 Deviation (AS-02): the lint does not load the shipped `request-paths` rules.
 They find a builder by a `-paths` file stem that no Mechane file has, and they report generated comment and attribute text that is no request path.
@@ -73,5 +74,6 @@ This replaces "Where the repository's lint can load the configuration in this co
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `inline-path-string` (SC-10): enforced in phase F2
+- ast-grep `native-inline-request-path` (SC-10): enforced in phase F2
 
 <!-- End of the generated block. -->

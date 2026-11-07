@@ -17,7 +17,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'no-optional-property',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,
@@ -39,9 +39,9 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullable-type',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-18',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: ['type Row = { readonly endedAt: number | null };', 'const Row = Schema.NullOr(Schema.Number);'],
       allowed: [
@@ -52,7 +52,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullish-comparison',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
@@ -62,7 +62,7 @@ export const dataAndApis = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'nullish-operator',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-18',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,

@@ -1,5 +1,5 @@
 import { HttpMethod, wireStruct } from '@mechane/records';
-import { DeviceApprovalNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { DeviceApprovalNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -19,5 +19,5 @@ export const pollDeviceApproval = {
   query: NoFields,
   body: PollRequest,
   output: DeviceApprovalPoll,
-  errors: [DeviceApprovalNotFound, ObjectUnavailable],
+  errors: [DeviceApprovalNotFound, ServiceUnavailable],
 } as const satisfies Operation;

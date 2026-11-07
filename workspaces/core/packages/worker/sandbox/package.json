@@ -7,10 +7,8 @@
   },
   "dependencies": {
     "@mechane/deployment": "workspace:*",
-    "@mechane/logs": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@mechane/rpc": "workspace:*",
     "@mechane/sandbox-store": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
     "@mechane/utilities": "workspace:*",

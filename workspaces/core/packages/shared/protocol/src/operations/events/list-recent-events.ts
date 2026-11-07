@@ -1,6 +1,6 @@
 import { HttpMethod } from '@mechane/records';
 import { Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -18,5 +18,5 @@ export const listRecentEvents = {
   query: Schema.Struct({ before: BeforeCursor }),
   body: NoFields,
   output: EventPage,
-  errors: [MechNotFound, ObjectUnavailable],
+  errors: [MechNotFound, ServiceUnavailable],
 } as const satisfies Operation;

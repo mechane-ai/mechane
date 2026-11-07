@@ -1,5 +1,5 @@
 import { HttpMethod } from '@mechane/records';
-import { ObjectUnavailable, WorkspaceNotFound } from '../../errors/errors.ts';
+import { ServiceUnavailable, WorkspaceNotFound } from '../../errors/errors.ts';
 import { InstallationAdministratorRequired } from '../../errors/workspace.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -16,5 +16,5 @@ export const showWorkspacePolicy = {
   query: NoFields,
   body: NoFields,
   output: WorkspacePolicy,
-  errors: [ObjectUnavailable, InstallationAdministratorRequired, WorkspaceNotFound],
+  errors: [ServiceUnavailable, InstallationAdministratorRequired, WorkspaceNotFound],
 } as const satisfies Operation;

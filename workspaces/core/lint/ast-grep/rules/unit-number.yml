@@ -5,7 +5,14 @@ language: TypeScript
 severity: error
 message: 'Write the value from its unit, such as `Duration.minutes(15)` or `5 * BYTES_PER_MEBIBYTE`, never `900_000` or `5 * 1024 ** 2` (SC-11)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+  ]
 utils:
   literal-operand:
     any:

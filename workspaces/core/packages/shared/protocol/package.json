@@ -3,11 +3,16 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./presentation": "./src/presentation/index.ts"
   },
   "dependencies": {
+    "@json-render/chat": "0.22.0",
+    "@json-render/core": "0.22.0",
     "@mechane/deployment": "workspace:*",
     "@mechane/records": "workspace:*",
-    "effect": "4.0.7"
+    "@mechane/sandbox-wire": "workspace:*",
+    "effect": "4.0.7",
+    "zod": "4.5.4"
   }
 }

@@ -19,8 +19,7 @@ export const verifyModuleContents = Effect.fn('verifyModuleContents')(function* 
   path,
 }: VerifyContentsInput): Effect.fn.Return<void, DistributionFailed> {
   const worker = { name: manifest.worker.path, sha256: manifest.worker.sha256, bytes: manifest.worker.bytes };
-  const console = { ...manifest.console, name: manifest.console.path };
-  const files = [...manifest.module_files, worker, console];
+  const files = [...manifest.module_files, worker];
 
   for (const file of files) {
     const contents = yield* runCommand({ command: 'unzip', args: ['-p', path, file.name], settings });

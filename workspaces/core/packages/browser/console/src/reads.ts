@@ -264,7 +264,7 @@ export function useMechs(data: ConsoleData, request: ReadRequest<'mechs'> | unde
   return useCollectionRead({ data, request, collection: data.collections.mechs, project: mechPage });
 }
 
-/** Resolves conversation and run history pages against the same canonical events. */
+/** Resolves activity and run history pages against the same canonical events. */
 export function useEvents(data: ConsoleData, request: ReadRequest<'events' | 'turnEvents'> | undefined) {
   return useCollectionRead({ data, request, collection: data.collections.events, project: eventPage });
 }
@@ -274,15 +274,6 @@ type EventWindow = { readonly sequences: ReadonlyArray<number>; readonly hasMore
 /** Retains the visible event identities and pagination boundary without copying records. */
 export function eventWindow(page: EventPage): EventWindow {
   return { sequences: page.events.map((event) => event.sequence), hasMore: page.hasMore };
-}
-
-/** Distinguishes a changed visible range from updates to records within that range. */
-export function sameEventWindow(left: EventWindow, right: EventWindow): boolean {
-  return (
-    left.hasMore === right.hasMore &&
-    left.sequences.length === right.sequences.length &&
-    left.sequences.every((sequence, index) => sequence === right.sequences[index])
-  );
 }
 
 /** Preserves a reader's chosen event range while its exact historical demand repairs missing records. */

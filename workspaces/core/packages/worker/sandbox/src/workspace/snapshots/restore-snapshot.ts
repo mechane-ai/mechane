@@ -1,7 +1,6 @@
-import { SandboxArchive } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
 import { DateTime, Option, Schema } from 'effect';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { workspaceRequest } from '../workspace-request.ts';

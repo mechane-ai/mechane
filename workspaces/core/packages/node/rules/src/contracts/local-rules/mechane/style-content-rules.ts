@@ -1,4 +1,4 @@
-import { AST_GREP_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { AST_GREP_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 
 /**
  * The rules of what `code-style` writes inside a function. Loops are named steps and failures tagged errors, while
@@ -14,6 +14,17 @@ export const STYLE_CONTENT_RULES = [
     violation: [
       'for (const table of tables) { while (Option.isSome(next)) { next = copyPage({ table }); } }',
       'while (true) { step(); }',
+    ],
+    allowed: ['for (const table of tables) { await copyTable({ table }); }'],
+  },
+  {
+    ...AST_GREP_DEFAULTS,
+    name: 'loop-accumulation',
+    exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
+    standard: 'SC-08',
+    status: RuleStatus.Enforced,
+    phase: RolloutPhase.EffectDialect,
+    violation: [
       'for (const file of files) { offset += 1; }',
       'for (const item of items) { seen.add(item); }',
       'function seenItems({ items }: SeenInput): ReadonlySet<Item> { const seen = new Set<Item>(); for (const item of items) { seen.add(item); } return seen; }',
@@ -22,7 +33,6 @@ export const STYLE_CONTENT_RULES = [
       'function fill({ holder, lines }: FillInput): void { const { found } = holder; for (const line of lines) { found.push(line); } }',
     ],
     allowed: [
-      'for (const table of tables) { await copyTable({ table }); }',
       'const seen = new Set(items);',
       "function itemCache(): ItemCache { const seen = new Set<Item>(); const remember: ItemCache['remember'] = ({ items }) => { for (const item of items) { seen.add(item); } }; return { remember }; }",
     ],
@@ -46,6 +56,7 @@ export const STYLE_CONTENT_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'unit-number',
+    exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
     standard: 'SC-11',
     status: RuleStatus.Enforced,
     phase: RolloutPhase.Time,

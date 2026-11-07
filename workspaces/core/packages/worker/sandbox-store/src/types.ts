@@ -1,12 +1,9 @@
-import type { RemoteSandboxId } from '@mechane/records';
 import type { SettledReceipt } from '@mechane/sandbox-wire';
 import type { AlarmTimeInput, DatabaseFunctions } from '@mechane/store';
 import type { DateTime, Duration, Option } from 'effect';
 import type { capacityRecords } from './capacity/capacity-records.ts';
-import type { MaintenanceRecords } from './lifecycle/maintenance-records.ts';
 import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import type { ExecutionRow, LiveMachineRow, MachineIdRow } from './schemas.ts';
-import type { sourceRecords } from './sources/source-records.ts';
 import type { workspaceRecords } from './workspaces/workspace-records.ts';
 
 /** A sandbox's executions, each claimed once under its id and settled once by its receipt. */
@@ -28,8 +25,6 @@ export type ExecutionRecords = {
 
 /** A sandbox's machines, one opened after another, of which at most one is starting or ready. */
 export type MachineRecords = {
-  /** Absent until the provider's first creation is bound. */
-  readonly remoteSandbox: () => Option.Option<RemoteSandboxId>;
   /** The machine that is starting or ready, none when every machine ended. */
   readonly liveMachine: () => Option.Option<LiveMachineRow>;
   /** The machine opened last, in any status; none before the first. */
@@ -82,9 +77,7 @@ export type SandboxStore = DatabaseFunctions &
   ReturnType<typeof capacityRecords> &
   MachineRecords &
   ExecutionRecords &
-  MaintenanceRecords &
   ReturnType<typeof portableMaintenanceRecords> &
-  ReturnType<typeof sourceRecords> &
   ReturnType<typeof workspaceRecords>;
 
 export type SettleExecutionInput = {

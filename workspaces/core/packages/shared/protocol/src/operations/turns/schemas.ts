@@ -1,39 +1,46 @@
 import { ModelId } from '@mechane/deployment';
 import {
-  DispatchId,
+  InboxItemId,
+  MechId,
   memberOrUnknown,
   Micros,
   ModelToolCallId,
-  RecordId,
+  PrincipalId,
   RecordName,
   RecordText,
   Sequence,
+  SessionId,
   Tokens,
   TurnId,
   unknownMember,
   wireStruct,
+  WorkspaceId,
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
-import { BoundedCallStatus } from '../bounded-turns/constants.ts';
-import { DispatchStatus, SettlementBasis, TurnStatus, UnansweredReason } from './constants.ts';
+import { DispatchStatus, SettlementBasis, ToolCallStatus, TurnStatus, UnansweredReason } from './constants.ts';
 
 /** The path of one turn of a mech. */
-export const TurnPath = wireStruct({ fields: { workspaceId: RecordId, mechId: RecordId, turnId: TurnId } });
+export const TurnPath = wireStruct({ fields: { workspaceId: WorkspaceId, mechId: MechId, turnId: TurnId } });
 
 export type TurnPath = typeof TurnPath.Type;
 
 /** The fields of a turn in each of its states: the inbox items it took up, and when it started. */
 const TURN_FIELDS = {
   id: TurnId,
-  inboxItemIds: Schema.Array(RecordId),
-  startedAt: WireTime,
+  version: Schema.Int.check(Schema.isGreaterThan(0)),
+  inboxItemIds: Schema.Array(InboxItemId),
+  sessionId: SessionId,
+  createdAt: WireTime,
+  startedAt: Schema.OptionFromNullOr(WireTime),
   definitionRevision: Schema.Int,
   inputExcerpt: Schema.optionalKey(RecordText),
 } as const;
 
 /** One turn of a mech's work, from its inbox items to its reply or its reason for none. */
 export const Turn = Schema.Union([
+  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Queued) } }),
+  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Waiting) } }),
   wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Running) } }),
   wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Answered), endedAt: WireTime } }),
   wireStruct({
@@ -57,22 +64,25 @@ export const UnknownTurn = Schema.StructWithRest(
 export type UnknownTurn = typeof UnknownTurn.Type;
 
 /** A cancel the mech recorded on a turn, when and by whom; the turn ends unanswered, `canceled`, once it stops. */
-export const TurnCancel = wireStruct({ fields: { turnId: TurnId, canceledAt: WireTime, cancelerId: RecordId } });
+export const TurnCancel = wireStruct({ fields: { turnId: TurnId, canceledAt: WireTime, cancelerId: PrincipalId } });
 
 export type TurnCancel = typeof TurnCancel.Type;
 
 /** The tokens of each kind a dispatch used, as the upstream reported them; input excludes cached tokens. */
-export const TokenUsage = Schema.Struct({
+const TokenUsage = Schema.Struct({
   inputTokens: Tokens,
   outputTokens: Tokens,
   cacheReadTokens: Tokens,
   cacheWriteTokens: Tokens,
 });
 
-export type TokenUsage = typeof TokenUsage.Type;
+type TokenUsage = typeof TokenUsage.Type;
+
+/** Provider execution identities stay opaque, including Workflow step and attempt identifiers. */
+const ModelDispatchId = Schema.NonEmptyString;
 
 /** The fields of a dispatch in each of its states: its model, the reservation it asked for, and when it was decided. */
-const DISPATCH_FIELDS = { id: DispatchId, model: ModelId, requestedMicros: Micros, decidedAt: WireTime } as const;
+const DISPATCH_FIELDS = { id: ModelDispatchId, model: ModelId, requestedMicros: Micros, decidedAt: WireTime } as const;
 
 /** The fields of a settled dispatch: what it was charged, and when. */
 const SETTLED_FIELDS = {
@@ -102,7 +112,7 @@ export const Dispatch = Schema.Union([
 export type Dispatch = typeof Dispatch.Type;
 
 /** The fields of a dispatch that a newer deployment's status or settlement keeps, as the wire names them. */
-const UNKNOWN_DISPATCH_FIELDS = { id: DispatchId, model: ModelId, requested_micros: Micros } as const;
+const UNKNOWN_DISPATCH_FIELDS = { id: ModelDispatchId, model: ModelId, requested_micros: Micros } as const;
 
 /**
  * A dispatch in a status, or settled on a basis, that a newer deployment added, which this release does not know. It
@@ -133,18 +143,16 @@ export type TracedDispatch = typeof TracedDispatch.Type;
 export const REPLY_EXCERPT_MAX_CHARS = 512;
 
 /** The recorded reply prefix with the event sequence that locates its full text. */
-export const TurnReplyExcerpt = wireStruct({
-  fields: { sequence: Sequence, text: RecordText, isTruncated: Schema.Boolean },
-});
+const TurnReplyExcerpt = wireStruct({ fields: { sequence: Sequence, text: RecordText, isTruncated: Schema.Boolean } });
 
-export type TurnReplyExcerpt = typeof TurnReplyExcerpt.Type;
+type TurnReplyExcerpt = typeof TurnReplyExcerpt.Type;
 
 /** Console evidence deliberately excludes raw tool arguments and outputs, which can contain credentials. */
 export const TurnToolCall = wireStruct({
   fields: {
     id: ModelToolCallId,
     name: RecordName,
-    status: Schema.Enum(BoundedCallStatus),
+    status: Schema.Enum(ToolCallStatus),
     /** Absent when the result does not record a tool duration. */
     startedAt: Schema.OptionFromNullOr(WireTime),
     /** Absent until a tool result is committed. */

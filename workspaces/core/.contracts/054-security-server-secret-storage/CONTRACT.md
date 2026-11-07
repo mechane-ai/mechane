@@ -1,7 +1,7 @@
 ---
 name: security-server-secret-storage
 message: Encrypt held secrets bound to their record, keep keys outside the database, and never log secret values.
-paths: ["packages/worker/*/src/**", "packages/worker/app/wrangler.jsonc", "packages/node/stack/src/**", "infrastructure/**"]
+paths: ["packages/node/runtime/**", "packages/node/server/**", "packages/node/stack/**", "packages/worker/sandbox*/**", "infrastructure/**"]
 ---
 
 ## Rules
@@ -32,22 +32,34 @@ Rotate the key version and confirm existing ciphertexts still decrypt until re-e
 
 ## Local adaptations
 
-Installation secrets include the GitHub OAuth secret, model upstream key and credential-encryption keyring. An installation using Tensorlake additionally holds its project key. Local deployments may hold a bootstrap secret, and test host stacks additionally use a launcher key. Cloud installations resolve these values from Secrets Store references; local stack credentials are private files of mode 0600. Workspace integration credentials remain encrypted records, resolved only by trusted clients for authorized operations, including explicitly granted shell execution.
-The local bootstrap secret is stable within its owner-only state directory. The server prints its file path, never its value. Only the loopback sign-in handler reads its redacted setting, and neither the model nor its guest receives it.
-The settings keep credentials redacted; only the code exchange reads the client secret, and the key reaches pi-ai only through its auth resolution, never through pi's stream settings, which pi stores in every request's checkpoint.
-The stack draws a fresh launcher key per stack, which only the sandbox's host provider presents; the launcher refuses every other bearer.
-Machine startup receives no service or integration credentials. Ungranted commands receive only the execution environment and public certificate paths. Contract 120 governs owner-granted shell credentials, resolved transiently per command and redacted before receipts are retained. Runtime-managed credentials never enter workspace archives; arbitrary granted code can deliberately copy its credentials.
-Trusted private-source preparation may give a short-lived repository token to a fresh container guest that has never run agent code. Its durable source fence blocks ordinary commands until revocation or confirmed expiry. Trusted Git receives the token only in its isolated process environment; logs, receipts, archives and model-visible results never contain it.
-The outbound gateway injects no credential. It validates URL and Host authority, forwards only to declared package and installation hosts over TLS, removes proxy authorization, and follows no redirect. Both ordinary command children and trusted Git use the same fixed certificate path without disabling TLS verification.
-The token scan looks for the staged keys, the model upstream's and the launcher's, in each object's own database, every file of the sandboxes' machines, the Worker's log and every command's output; celld redacts the staged variables in an object's console output, so the scan cannot see an object that logs one; celld's own record of the deployment holds the staged variables, as a deployment's secret store does.
-Persistent local mode keeps operator credentials in `.dev.vars` and celld's deployment record inside its state directory of mode 0700; `.dev.vars` and the local bootstrap secret have mode 0600. Every exit retains that directory, including the complete `.celld/dev` state; only `reset --confirm` removes initialized local state. Disposable fixture and smoke runs remove staged variables on failure while preserving diagnostics, and remove the whole temporary directory on a successful or interrupted exit.
-The directory stores only SHA-256 hashes of keys, poll tokens, browser sessions and sign-in states. Workspace stores additionally hold encrypted integration credentials; they never hold the credential keyring.
-Workspace credential records store AES-256-GCM ciphertext with a fresh 96-bit nonce and its key version. Associated data binds the application purpose, trusted workspace ID and credential reference. The trusted integrations package decrypts only for its provider client; owner-only write operations and metadata-only lists expose no read-value API. Remote connection records and grants contain references and permissions, never values. Schema failures, provider failures and model-visible results must not reveal credentials.
-Slack installations are workspace records whose signing, bot and optional history references resolve through that workspace’s encrypted store. The signing secret verifies the raw request HMAC and timestamp. Bot and history tokens authenticate only the configured Slack API origin; private image downloads additionally permit HTTPS on the exact `files.slack.com` host without embedded credentials or redirects. Attachment URLs and declared media types remain untrusted. Bound streamed bytes and duration, then verify the response media type before delivering image bytes to the model. Delivery content contains the reply, intake status, or notification for its trusted bound channel and thread, never credentials.
-No page, response or message quotes a token or a body that can hold one.
-A Durable Object's store runs its own migrations, so there is no separate runtime or migration credential.
-The cloud module binds OAuth, model and keyring entries by Secrets Store ID and secret name. It accepts no secret values. Runtime settings resolve Secrets Store bindings on use; local settings accept redacted strings. Workspace credentials enter through authenticated write-only APIs and never through infrastructure configuration. The optional Tensorlake key remains confined to its provider proxy and never reaches the guest.
-Provider diagnostics must omit credential headers and response bodies. Release artifacts contain code, checksums and public metadata only.
+Deployment secrets include database connections, GitHub OAuth, model access, the vault keyring, sandbox service
+access, and Nexus callback authentication. The installation's secret store supplies them privately. Logs and public
+manifests hold references and safe correlation IDs only. Local development credentials stay in owner-only files.
+
+Workspace vault records use AES-256-GCM with a fresh 96-bit nonce and key version. Associated data binds the purpose,
+workspace, and credential reference. The keyring stays outside the database. Owner-only write operations and metadata
+reads expose no credential-value API.
+
+Workflow arguments, results, and model serialization contain references rather than resolved secrets. Trusted steps
+resolve credentials immediately before use. The model adapter reconstructs its provider with live credentials inside
+the request boundary. The complete serialized workflow state is part of credential-leak verification.
+
+Command execution receives only its explicit current grant. The GitHub App private key, Nexus request-service key,
+and callback-signing secret stay host-only. Runtime-managed secrets never enter workspace checkpoints. Granted code
+can deliberately copy the credentials it receives, so authorization remains distinct from accidental-output redaction.
+
+Slack signing, bot, and history tokens resolve from workspace vault references. Authenticate only the configured Slack
+API and exact allowed private-file host, without redirects or embedded URL credentials. Provider failures, tool
+results, and attachment errors contain no raw credential-bearing bodies.
+
+The sandbox gateway injects no upstream account credential. Runtime and migration database connections remain separate;
+the runtime receives only its domain and upstream adapter privileges. Workflow and Chat schema bootstrapping belongs
+to the explicit migration process. No application code edits their private tables.
+
+The runtime may read its own migration ledger's version and checksum for startup compatibility and readiness. This
+replaces the upstream check's blanket prohibition on reading migration state. Grant SELECT for that metadata only;
+DDL and ledger writes remain exclusive to the migration credential. Use the existing ledger rather than copying its
+values into a second runtime-information table. Verify that the runtime can read metadata but cannot alter the ledger.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

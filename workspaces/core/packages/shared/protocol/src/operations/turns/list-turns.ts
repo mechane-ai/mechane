@@ -1,6 +1,6 @@
 import { HttpMethod, listQuery, PAGE_RENAMES, renamedWireStruct, TurnId } from '@mechane/records';
 import { Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable, RequestInvalid } from '../../errors/errors.ts';
+import { MechNotFound, RequestInvalid, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -24,5 +24,5 @@ export const listTurns = {
   query: listQuery({ cursor: TurnId }),
   body: NoFields,
   output: TurnPage,
-  errors: [RequestInvalid, MechNotFound, ObjectUnavailable],
+  errors: [RequestInvalid, MechNotFound, ServiceUnavailable],
 } as const satisfies Operation;

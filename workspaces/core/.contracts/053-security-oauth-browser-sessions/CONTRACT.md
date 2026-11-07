@@ -1,7 +1,7 @@
 ---
 name: security-oauth-browser-sessions
 message: Keep OAuth tokens server-side behind host-only HttpOnly cookies with exact-origin checks.
-paths: ["packages/worker/pages/src/**", "packages/worker/pages/src/github/**"]
+paths: ["packages/node/server/src/auth/**", "packages/node/runtime/src/store/api/**"]
 ---
 
 ## Rules
@@ -41,16 +41,22 @@ Exercise reload, concurrent tabs, account switching, logout during refresh, and 
 
 ## Local adaptations
 
-The Worker's pages are the one component of the GitHub OAuth web flow: they create the state, check it against the sign-in cookie, and exchange the code with the client secret that `MECHANE_GITHUB_CLIENT_SECRET` supplies.
-GitHub's access token reads the signed-in user once and is dropped; no OAuth token reaches a browser, a page, a response or storage, and the session is the deployment's own.
-Local deployments may instead configure `MECHANE_LOCAL_BOOTSTRAP_SECRET`. The Worker refuses that setting for a non-loopback origin. `/auth/local` accepts the secret only in a same-origin POST body, verifies it with WebCrypto, and opens the same browser session as GitHub sign-in. No URL, page or log carries the secret, and it grants no API or sandbox access directly.
-Sessions identify their subject by provider and stable subject text. GitHub uses its numeric id encoded as text; local bootstrap uses provider `local` and subject `owner`, never a fabricated GitHub account. The session's name is descriptive and grants no authority.
-The cookies are `mechane_session`, `SameSite=Strict` for one hour, and `mechane_sign_in`, `SameSite=Lax` for ten minutes, both host-only and `HttpOnly` with `Path=/`, and `Secure` with the `__Host-` prefix on an HTTPS origin; the Worker refuses an origin that is neither HTTPS nor a loopback host's.
-Each cookie holds a random token, and the directory keeps the session or the sign-in under the token's hash, so no cookie carries state to encrypt.
-GitHub returns only to the fixed `/auth/github/callback` of the deployment's origin, which then refreshes to the bare device page; no request chooses where a token goes. A sign-in stores no user code, and the device page ignores `?code=`, so no request without a session learns whether a code awaits approval.
-The device form has two steps: `review`, which the typed code sends, and `approve`, which the review page's form sends. Each is a same-origin `POST` with an exact `Origin` and a CSRF token derived from the session's token, which stands in for a custom header that a form without script cannot send. Each counts against `code_attempt` for the provider-qualified identity before it reads a code. Every code that awaits no approval, unknown, expired or already decided, answers one page; the pages send `Referrer-Policy: same-origin`, since a browser posts the form with `Origin: null` under `no-referrer`.
-Every page answers `Cache-Control: no-store` with a policy that loads nothing and forbids framing; an expired sign-in, a sign-in declined at GitHub, a refused code, an unreachable GitHub and a limited request, which also sends `retry-after`, each have a page of their own, and none starts another sign-in.
-The browser session only approves device approvals, so no refresh, sign-out, account switch or API call exists for it yet; it expires.
+`packages/node/server/src/auth` owns GitHub sign-in, fixed callback validation, session creation, and sign-out.
+The code exchange reads the configured OAuth secret. The returned GitHub token reads the user's stable provider ID
+once and is discarded. A descriptive login name never grants installation or workspace authority.
+
+The application stores hashed opaque session and sign-in tokens in Postgres. Cookies carry no embedded identity or
+state, so encryption is unnecessary. Sessions last at most one hour and sign-in transactions at most ten minutes.
+Production cookies are host-only, HttpOnly, Secure, and use the `__Host-` prefix. Session cookies use SameSite=Strict;
+the short callback transaction uses SameSite=Lax. Loopback development has an explicit cookie exception.
+
+GitHub returns only to `/auth/github/callback` under the configured public origin. Unsafe session-authenticated API
+calls and sign-out require the exact Origin. Bearer authentication never silently falls back to a cookie. Sign-out
+revokes the server session and expires the cookie.
+
+Device approval requires an authenticated browser and an explicitly reviewed code. No query parameter approves a key.
+Authentication and device pages send no-store responses and forbid framing. Static assets receive no cookie-bearing
+upstream request. A provider error neither clears a valid session nor starts an automatic sign-in loop.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

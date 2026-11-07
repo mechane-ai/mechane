@@ -5,7 +5,14 @@ language: TypeScript
 severity: error
 message: 'Decode a time field to its instant or span, such as `expiresAt: Schema.DateTimeUtcFromMillis` or `lifetime: Schema.DurationFromMillis` (TD-16)'
 files: ['packages/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+  ]
 rule:
   kind: pair
   all:

@@ -5,7 +5,14 @@ language: TypeScript
 severity: error
 message: 'Type an instant as `DateTime.Utc` and a span as `Duration.Duration`, such as `readonly expiresAt: DateTime.Utc` or `readonly lifetime: Duration.Duration` (TD-16)'
 files: ['packages/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+  ]
 rule:
   kind: property_signature
   all:

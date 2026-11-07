@@ -27,6 +27,7 @@ export type ConsoleOperation =
   | 'listRecentEvents'
   | 'listMechRevisions'
   | 'listThreads'
+  | 'listSessions'
   | 'listSlackBindings'
   | 'listSlackDeliveries'
   | 'listMemories'

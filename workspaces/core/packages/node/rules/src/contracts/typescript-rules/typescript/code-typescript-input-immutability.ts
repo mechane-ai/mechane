@@ -59,7 +59,10 @@ export const codeTypescriptInputImmutability = {
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Fixers,
       violation: ['type Turn = { turnId: TurnId };'],
-      allowed: ['type Turn = { readonly turnId: TurnId };'],
+      allowed: [
+        'type Turn = { readonly turnId: TurnId };',
+        'function open() { const lifetime: { process?: Process } = {}; lifetime.process = start(); return () => lifetime.process?.stop(); }',
+      ],
     },
     {
       ...AST_GREP_DEFAULTS,

@@ -98,12 +98,47 @@ Is each builder the one place its layout is written, with its parsers reading th
 The November 2, 2026 cohesion adoption replaces the callback taxonomy, single-export modules, and size-driven package splits.
 Existing named callbacks and role files remain valid; they are no longer mandatory for equivalent readable local code.
 SQL ownership, runtime lanes, migration locks, boundary decoding, and typed failure channels remain enforced by their owning contracts.
-The remaining value, collection, error, path, unit, and HTTP rules retain their generated enforcement below.
+The remaining rules retain their generated enforcement except for the explicit native SDK dialect below.
+
+### Native SDK dialect
+
+The registry's native role covers `packages/node/runtime`, `server`, `stack`, `testing`, `smoke`, and `distribution`,
+and the thin `packages/worker/sandbox-service` entry. These programs use ordinary asynchronous SDK interfaces rather
+than the retired Effect/DO application dialect. This replaces conflicting syntax requirements in SC-01, SC-03,
+SC-08, SC-09, SC-10, and SC-11 for that role only.
+
+Use native Promises, awaited composition, rejected typed errors, and owned `try`/`catch`/`finally` cleanup. Keep native
+optional and nullable values, discriminants, opaque identifiers, numeric units, and Date values when those are the
+SDK or database interface. Resolve wall-clock time inside steps; workflow code uses the SDK-supported deterministic
+clock. Optional chaining and nullish defaults are allowed for declared optional values, never to hide a failed read.
+
+SDK callbacks and native factories may use contextual parameter and return inference, ordinary arguments, and nested
+schema or value construction. Do not create an adapter or branded mirror solely to satisfy the former dialect.
+Keep exported domain operations clear, with a single authoritative type for each shape. Protocol-domain schemas
+remain Effect-owned; the native presentation catalog uses its declared Zod consumer.
+
+Native loops may accumulate a local count or collection when that keeps ordering and bounded work clear. The loop
+must state its termination condition, and nested loops in the same function remain forbidden. This SC-08 adaptation
+does not permit mutation of input records, shared globals, or another owner's private state. Use a named step when
+it explains an independent operation rather than replacing straightforward local accumulation with scaffolding.
+
+A native owner may compose a single-use data key, digest input, or repository slug inline. A separate one-line
+builder is unnecessary when it explains no behavior. Network URLs, request paths, and filesystem paths retain their
+owned builders and encoding rules. A layout shared by multiple callers still has one builder in its owning module.
+
+The shared presentation schema has the same native schema, optional-value, callback, nested-construction, error,
+and bounded local accumulation forms. It gains no permission to use Node APIs, wall-clock state, or opaque authority
+identifiers in the browser.
+
+These form choices do not relax strict TypeScript, input immutability, meaningful names, private state ownership,
+boundary validation, safe errors, or SQL and authorization rules. Keep every asynchronous failure observed. Mutable
+global state, unchecked `any`, unsafe type assertions, swallowed failures, and duplicate schemas remain violations.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `iife-form` (SC-01): enforced in phase F3
 - ast-grep `dense-loop` (SC-08): enforced in phase F3
+- ast-grep `loop-accumulation` (SC-08): enforced in phase F3
 - ast-grep `untyped-failure` (SC-09): enforced in phase F2
 - ast-grep `unit-number` (SC-11): enforced in phase F5
 - ast-grep `http-literal` (SC-12): enforced in phase F2

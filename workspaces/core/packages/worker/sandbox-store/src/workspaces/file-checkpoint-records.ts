@@ -1,6 +1,6 @@
 import { decodeOne } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { DateTime, Match, Schema } from 'effect';
+import { DateTime, Schema } from 'effect';
 import { FileCheckpointResult } from './schemas.ts';
 import type { FileCheckpointPurpose } from './schemas.ts';
 
@@ -51,8 +51,5 @@ export function fileCheckpointRecords({ sql }: RecordsInput) {
 }
 
 function operationKey({ purpose }: CheckpointOperationInput): string {
-  return Match.valueTags(purpose, {
-    Source: ({ sourceId, stage }) => `source-${stage}-${sourceId}`,
-    Maintenance: ({ operationId }) => `maintenance-${operationId}`,
-  });
+  return `maintenance-${purpose.operationId}`;
 }

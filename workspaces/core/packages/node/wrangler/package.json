@@ -8,7 +8,6 @@
   "dependencies": {
     "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
-    "@mechane/records": "workspace:*",
     "effect": "4.0.7",
     "jsonc-parser": "3.3.1"
   }

@@ -1,84 +1,45 @@
-import { SandboxAction, SandboxPhase, SandboxRequest } from '@mechane/protocol';
-import { SourceId } from '@mechane/records';
-import type {
-  MachineRefusal,
-  SandboxBindInput,
-  SandboxCancelInput,
-  SandboxManageInput,
-  SandboxRpc,
-  SourceCaptureInput,
-  SourceCloneInput,
-  SourceIdentityInput,
-  SourcePrepareInput,
-  WorkerEnvironment,
-} from '@mechane/rpc';
-import {
-  objectBindings,
-  SANDBOX_IDLE,
-  SandboxAnswer,
-  SandboxCaptureAnswer,
-  SandboxExecutionAnswer,
-  SandboxSourceAnswer,
-  STOP_RETRY,
-} from '@mechane/rpc';
 import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
 import type { SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
 import {
   ExecutionProgress,
   OptionalExecutionEnvironment,
+  SandboxAction,
+  SandboxExecutionRefusal,
+  SandboxExecutionResult,
   SandboxOwner,
-  SourceCapture,
-  SourceCheckout,
-  SourceClone,
+  SandboxReport,
+  SandboxRequest,
 } from '@mechane/sandbox-wire';
-import type { ExecutionAttempt, RunExecutionInput } from '@mechane/sandbox-wire';
+import type { ExecutionId, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise, serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
-import { MachineAccessDenied, machineCapacity } from './capacity/machine-capacity.ts';
-import { PortableMaintenanceRefused } from './errors.ts';
+import { capacityClient } from './capacity/capacity-client.ts';
+import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
+import { MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
+import type { SandboxEnvironment } from './environment.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
 import { cancelExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
 import { executionProgress } from './executions/execution-progress.ts';
 import { runExecution } from './executions/run-execution.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
-import { manageSandboxWorkspace } from './maintenance/manage-sandbox-workspace.ts';
-import { nativeWorkspacePending } from './maintenance/native-workspace-pending.ts';
+import { maintenanceValue } from './maintenance/maintenance-value.ts';
+import { managePortable } from './maintenance/manage-portable.ts';
 import { machineProvider } from './providers/machine-provider.ts';
 import { sandboxSettings } from './providers/sandbox-settings.ts';
-import { captureSource } from './sources/capture-source.ts';
-import { cloneSource } from './sources/clone-source.ts';
-import { finishSource } from './sources/finish-source.ts';
-import { prepareSource } from './sources/prepare-source.ts';
-import { revokeSource } from './sources/revoke-source.ts';
-import type { MachineIdInput, MachineProvider, WorkspaceFiles, WorkspaceProviderStepInput } from './types.ts';
+import type { MachineIdInput, MachineProvider, WorkspaceFiles } from './types.ts';
 import { advanceIdleWorkspace } from './workspace/advance-idle-workspace.ts';
 
-/** A source credential lease prevents maintenance from changing the sandbox machine. */
-class SandboxFenced extends Schema.TaggedError<SandboxFenced>()('SandboxFenced', { sourceId: SourceId }) {}
-
-type SourceCallInput<Value> = {
-  readonly run: (input: WorkspaceProviderStepInput) => Promise<Value>;
-  readonly shouldCheckPolicy: boolean;
-};
-
+type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
+type ManageInput = { readonly request: typeof SandboxRequest.Encoded };
+type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
+type ResumeInput = ObserveInput & { readonly environment: RunExecutionInput['environment'] };
+type CancelInput = { readonly executionId: ExecutionId };
 type StopCallInput = { readonly promise: Promise<void> };
-const READ_ACTIONS: ReadonlySet<SandboxAction> = new Set([SandboxAction.Show, SandboxAction.Download]);
 
-const MACHINE_ACTIONS: ReadonlySet<SandboxAction> = new Set([
-  SandboxAction.Export,
-  SandboxAction.Import,
-  SandboxAction.Upgrade,
-  SandboxAction.Upload,
-]);
-
-/**
- * One mech's or one drone's sandbox: the machines its executions run on, one at a time, and every execution's receipt.
- * Only its mech's object calls it, by RPC under the name `sandboxStub` derives and binds as its durable owner. Its
- * store decides synchronously, every intent commits before its effect, and its alarm stops an idle or ended machine.
- */
-export class SandboxObject extends DurableObject<unknown> implements SandboxRpc {
+/** One authenticated mech's persistent files and command receipts, independent of its agent executor. */
+export class SandboxObject extends DurableObject<SandboxEnvironment> {
   readonly #store: SandboxStore;
   readonly #alarm: SandboxAlarm;
   readonly #provider: MachineProvider;
@@ -88,112 +49,123 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
   readonly #calls = serialCalls();
   readonly #stops = new Set<Promise<void>>();
 
-  constructor(state: DurableObjectState, environment: WorkerEnvironment) {
+  constructor(state: DurableObjectState, environment: SandboxEnvironment) {
     super(state, environment);
 
     this.#store = openSandboxStore({ storage: state.storage });
     this.#alarm = sandboxAlarm({ storage: state.storage });
 
-    const settings = sandboxSettings({ store: this.#store, variables: environment });
-    const bindings = objectBindings({ environment });
-    const owner = state.id.toString();
+    const settings = sandboxSettings({ store: this.#store, environment });
+    const provider = machineProvider({ settings: settings.variables, state });
 
-    this.#workspace = { bucket: bindings.workspaceFiles, owner };
-    this.#providerName = settings.provider;
+    this.#workspace = { bucket: settings.workspaceBucket, owner: state.id.toString() };
+    this.#providerName = settings.variables.provider;
+    const client = capacityClient({ settings: settings.runtime });
 
-    const provider = machineProvider({ settings, state });
-
-    this.#capacity = machineCapacity({ store: this.#store, bindings, identity: owner, provider });
+    this.#capacity = machineCapacity({
+      store: this.#store,
+      provider,
+      client,
+      scheduleStopRetry: () => this.#armRetry(),
+    });
 
     this.#provider = this.#capacity.provider;
   }
 
-  async bindOwner({ owner }: SandboxBindInput): Promise<void> {
+  async bindOwner({ owner }: BindOwnerInput): Promise<void> {
     const decoded = Schema.decodeUnknownSync(SandboxOwner)(owner);
-    const isFirstBinding = await this.#capacity.bindOwner({ owner: decoded });
-    const held = this.#capacity.reservation();
 
-    if (isFirstBinding && Option.isSome(held)) {
-      await this.#armRetry();
-    }
-  }
-
-  get #isImportRequired(): boolean {
-    return nativeWorkspacePending({ store: this.#store, providerName: this.#providerName });
-  }
-
-  async manage({ request: input }: SandboxManageInput): Promise<typeof SandboxAnswer.Encoded> {
-    const answer = await machineCall({ run: () => this.#calls.run({ run: () => this.#manage({ request: input }) }) });
-
-    return Schema.encodeSync(SandboxAnswer)(answer);
-  }
-
-  async #manage({ request: input }: SandboxManageInput): Promise<SandboxAnswer> {
-    await Promise.all(this.#stops);
-
-    const request = Schema.decodeUnknownSync(SandboxRequest)(input);
-
-    this.#assertUnfenced();
-
-    if (MACHINE_ACTIONS.has(request.action)) {
-      await this.#capacity.requireEnabled();
-    }
-
-    if (!READ_ACTIONS.has(request.action)) {
-      await this.#armRetry();
-    }
-
-    const report = await manageSandboxWorkspace({
-      store: this.#store,
-      provider: this.#provider,
-      workspace: this.#workspace,
-      request,
-      providerName: this.#providerName,
-    });
-
-    if (request.action !== SandboxAction.Show && report.phase === SandboxPhase.Done) {
-      const now = DateTime.nowUnsafe();
-      const at = DateTime.addDuration(now, SANDBOX_IDLE);
-
-      await this.#alarm.arm({ at });
-    }
-
-    return SandboxAnswer.cases.Found.make({ report });
+    await this.#capacity.bindOwner({ owner: decoded });
   }
 
   async schemaRevision(): Promise<number> {
     return this.#store.schemaRevision();
   }
 
-  /**
-   * Runs the execution once under its id, waiting at most its wait for it to settle; while it answers Running, the
-   * caller asks again with the same input. A repeated id answers from the execution's receipt. Every call first moves
-   * the idle stop an idle window past it, so a machine stops only after a window in which no command reached it.
-   */
+  async manage({ request: input }: ManageInput): Promise<typeof SandboxReport.Encoded> {
+    return await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+        this.#capacity.requireOwner();
+
+        const request = Schema.decodeUnknownSync(SandboxRequest)(input);
+
+        if (request.action !== SandboxAction.Show) {
+          await this.#armMaintenance();
+        }
+
+        const report = await managePortable({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          request,
+          providerName: this.#providerName,
+        });
+
+        if (request.action !== SandboxAction.Show && !maintenanceActive({ store: this.#store })) {
+          await this.#armIdle();
+        }
+
+        return Schema.encodeSync(SandboxReport)(report);
+      },
+    });
+  }
+
   async runExecution({
     executionId,
     command,
     timeoutMs,
     waitMs,
     environment,
-  }: RunExecutionInput): Promise<typeof SandboxExecutionAnswer.Encoded> {
+  }: RunExecutionInput): Promise<typeof SandboxExecutionResult.Encoded> {
+    this.#capacity.requireOwner();
+
+    const input = { executionId, command, timeoutMs, waitMs, environment };
     const timeout = Duration.millis(timeoutMs);
+    const request = { executionId, command, timeout };
     const now = DateTime.nowUnsafe();
-    const claim = claimExecution({ store: this.#store, request: { executionId, command, timeout }, now });
+    const claim = claimExecution({ store: this.#store, request, now });
 
-    const execution = Result.getOrThrow(claim);
-    const progress = executionProgress({ execution });
+    if (Result.isFailure(claim)) {
+      const refusal = SandboxExecutionRefusal.cases.ExecutionReused.make({});
 
-    if (!ExecutionProgress.guards.Running(progress)) {
-      return Schema.encodeSync(SandboxExecutionAnswer)(progress);
+      return Schema.encodeSync(SandboxExecutionResult)(refusal);
     }
 
-    const answer = await machineCall({
-      run: () =>
-        this.#calls.run({ run: () => this.#runExecution({ executionId, command, timeoutMs, waitMs, environment }) }),
-    });
+    const progress = executionProgress({ execution: claim.success });
 
-    return Schema.encodeSync(SandboxExecutionAnswer)(answer);
+    if (!ExecutionProgress.guards.Running(progress)) {
+      return Schema.encodeSync(SandboxExecutionResult)(progress);
+    }
+
+    const answer = await this.#calls.run({ run: () => this.#runExecution(input) });
+
+    return Schema.encodeSync(SandboxExecutionResult)(answer);
+  }
+
+  async observeExecution({ executionId, waitMs }: ObserveInput): Promise<typeof SandboxExecutionResult.Encoded> {
+    return await this.resumeExecution({ executionId, waitMs, environment: null });
+  }
+
+  async resumeExecution({
+    executionId,
+    waitMs,
+    environment,
+  }: ResumeInput): Promise<typeof SandboxExecutionResult.Encoded> {
+    this.#capacity.requireOwner();
+
+    const found = this.#store.execution({ executionId });
+
+    if (Option.isNone(found)) {
+      const refusal = SandboxExecutionRefusal.cases.ExecutionNotFound.make({});
+
+      return Schema.encodeSync(SandboxExecutionResult)(refusal);
+    }
+
+    const execution = found.value;
+    const timeoutMs = Duration.toMillis(execution.timeout);
+
+    return await this.runExecution({ executionId, command: execution.command, timeoutMs, waitMs, environment });
   }
 
   async #runExecution({
@@ -202,94 +174,84 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     timeoutMs,
     waitMs,
     environment,
-  }: RunExecutionInput): Promise<ExecutionAttempt> {
+  }: RunExecutionInput): Promise<SandboxExecutionResult> {
     await Promise.all(this.#stops);
-    await this.#capacity.requireEnabled();
 
-    const fence = this.#store.activeSourceFence();
-
-    if (Option.isSome(fence) || maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
-      const pending = ExecutionProgress.cases.Running.make({});
-
-      return pending;
+    if (maintenanceActive({ store: this.#store })) {
+      return ExecutionProgress.cases.Running.make({});
     }
 
-    const now = DateTime.nowUnsafe();
-
-    const at = DateTime.addDuration(now, SANDBOX_IDLE);
-
-    await this.#alarm.arm({ at });
+    await this.#armIdle();
 
     const timeout = Duration.millis(timeoutMs);
     const wait = Duration.millis(waitMs);
+    const decodedEnvironment = Schema.decodeUnknownSync(OptionalExecutionEnvironment)(environment);
 
-    const credentials = Schema.decodeUnknownSync(OptionalExecutionEnvironment)(environment);
-
-    const progress = await runExecution({
+    const pending = runExecution({
       store: this.#store,
       provider: this.#provider,
       workspace: this.#workspace,
       request: { executionId, command, timeout, wait },
-      environment: credentials,
+      environment: decodedEnvironment,
     });
 
-    return progress;
+    const attempted = await capturePromise({ promise: pending });
+
+    if (Result.isFailure(attempted) && Schema.is(CapacityRefused)(attempted.failure)) {
+      return SandboxExecutionRefusal.cases.CapacityRefused.make({ reason: attempted.failure.reason });
+    }
+
+    return Result.getOrThrow(attempted);
   }
 
-  /** Ends the current machine identity and arms its stop, retaining persistent workspace files. */
   async stop(): Promise<void> {
-    return await this.#calls.run({ run: () => this.#stop() });
+    await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+
+        const workspace = this.#store.workspace();
+
+        if (Option.isSome(workspace.recovery) || maintenanceActive({ store: this.#store })) {
+          return;
+        }
+
+        const latest = this.#store.latestMachine();
+        const now = DateTime.nowUnsafe();
+
+        if (Option.isSome(latest) && Option.isNone(workspace.checkpoint)) {
+          this.#store.loseMachine({ machineId: latest.value.id, now });
+        }
+
+        await this.#alarm.arm({ at: now });
+      },
+    });
   }
 
-  async cancelExecution({ executionId }: SandboxCancelInput): Promise<void> {
+  async cancelExecution({ executionId }: CancelInput): Promise<void> {
     const promise = cancelExecution({ store: this.#store, provider: this.#provider, executionId });
 
-    return await this.#awaitStop({ promise });
+    await this.#awaitStop({ promise });
   }
 
   async cancelActiveExecutions(): Promise<void> {
     const promise = cancelActiveExecutions({ store: this.#store, provider: this.#provider });
 
-    return await this.#awaitStop({ promise });
+    await this.#awaitStop({ promise });
   }
 
   async #awaitStop({ promise }: StopCallInput): Promise<void> {
     this.#stops.add(promise);
 
-    const release: () => void = () => {
-      this.#stops.delete(promise);
-    };
-
-    return await afterSettling({ promise, run: release });
+    await afterSettling({
+      promise,
+      run: () => {
+        this.#stops.delete(promise);
+      },
+    });
   }
 
-  async #stop(): Promise<void> {
-    await Promise.all(this.#stops);
-    this.#assertUnfenced();
-
-    const workspace = this.#store.workspace();
-
-    if (Option.isSome(workspace.recovery) || maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
-      return;
-    }
-
-    const latest = this.#store.latestMachine();
-    const now = DateTime.nowUnsafe();
-
-    if (Option.isSome(latest) && Option.isNone(workspace.checkpoint)) {
-      this.#store.loseMachine({ machineId: latest.value.id, now });
-    }
-
-    await this.#alarm.arm({ at: now });
-  }
-
-  /**
-   * Stops the machine opened last, which no call asked about for an idle window, or whose owner asked it to stop. Its
-   * end is recorded before its stop, so a later call starts a new machine, and an execution it held without a receipt
-   * becomes uncertain. A retry armed before the stop and cleared after it outlasts the platform's own alarm retries.
-   */
   override async alarm(): Promise<void> {
-    return await this.#calls.run({ run: () => this.#onAlarm() });
+    await this.#calls.run({ run: () => this.#onAlarm() });
   }
 
   async #onAlarm(): Promise<void> {
@@ -302,29 +264,28 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       await this.#provider.stop({ machineId: reservation.value.machineId });
     }
 
-    const fence = this.#store.activeSourceFence();
+    if (maintenanceActive({ store: this.#store })) {
+      await this.#armMaintenance();
 
-    if (Option.isSome(fence)) {
-      const now = DateTime.nowUnsafe();
-      const at = DateTime.addDuration(now, STOP_RETRY);
+      const maintenance = this.#store.portableMaintenance();
+      const job = maintenanceValue({ value: maintenance, field: 'portableMaintenance' });
+      const operationId = Option.some(job.id);
 
-      await this.#alarm.arm({ at });
-      await finishSource({
+      await managePortable({
         store: this.#store,
         provider: this.#provider,
         workspace: this.#workspace,
-        sourceId: fence.value.sourceId,
-        generation: fence.value.generation,
+        request: { action: job.action, operationId },
+        providerName: this.#providerName,
       });
 
+      if (!maintenanceActive({ store: this.#store })) {
+        await this.#armIdle();
+      }
+
       return;
     }
 
-    if (maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
-      return;
-    }
-
-    const latest = this.#store.latestMachine();
     const held = this.#capacity.reservation();
 
     if (Option.isSome(held)) {
@@ -333,18 +294,18 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
       return;
     }
 
-    if (Option.isNone(latest)) {
-      return;
-    }
+    const latest = this.#store.latestMachine();
 
-    await this.#stopIdleMachine({ machineId: latest.value.id });
+    if (Option.isSome(latest)) {
+      await this.#stopIdleMachine({ machineId: latest.value.id });
+    }
   }
 
   async #stopIdleMachine({ machineId }: MachineIdInput): Promise<void> {
     const now = DateTime.nowUnsafe();
-    const retryAt = DateTime.addDuration(now, STOP_RETRY);
+    const at = DateTime.addDuration(now, STOP_RETRY);
 
-    await this.#alarm.arm({ at: retryAt });
+    await this.#alarm.arm({ at });
 
     const canStop = await advanceIdleWorkspace({
       store: this.#store,
@@ -357,99 +318,16 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
     }
 
     this.#store.loseMachine({ machineId, now });
-    await this.#alarm.arm({ at: retryAt });
+    await this.#alarm.arm({ at });
     await this.#provider.stop({ machineId });
-    await this.#alarm.disarmAt({ at: retryAt });
+    await this.#alarm.disarmAt({ at });
   }
 
-  #assertUnfenced(): void {
-    const fence = this.#store.activeSourceFence();
+  async #armIdle(): Promise<void> {
+    const now = DateTime.nowUnsafe();
+    const at = DateTime.addDuration(now, SANDBOX_IDLE);
 
-    if (Option.isNone(fence)) {
-      return;
-    }
-
-    const cause = new SandboxFenced({ sourceId: fence.value.sourceId });
-    const failure = Result.fail(cause);
-
-    Result.getOrThrow(failure);
-  }
-
-  async #sourceCall<Value>({ run, shouldCheckPolicy }: SourceCallInput<Value>): Promise<Value | MachineRefusal> {
-    const call: () => Promise<Value> = async () => {
-      await Promise.all(this.#stops);
-
-      if (shouldCheckPolicy) {
-        await this.#capacity.requireEnabled();
-      }
-
-      if (maintenanceActive({ store: this.#store }) || this.#isImportRequired) {
-        const cause = new PortableMaintenanceRefused({ reason: 'finish sandbox maintenance before source work' });
-        const failure = Result.fail(cause);
-
-        return Result.getOrThrow(failure);
-      }
-
-      const now = DateTime.nowUnsafe();
-      const at = DateTime.addDuration(now, STOP_RETRY);
-
-      await this.#alarm.arm({ at });
-
-      return await run({ store: this.#store, provider: this.#provider, workspace: this.#workspace });
-    };
-
-    return await machineCall({ run: () => this.#calls.run({ run: call }) });
-  }
-
-  async prepareSource({ checkout }: SourcePrepareInput): Promise<typeof SandboxSourceAnswer.Encoded> {
-    const decoded = Schema.decodeUnknownSync(SourceCheckout)(checkout);
-
-    const report = await this.#sourceCall({
-      shouldCheckPolicy: true,
-      run: (input) => prepareSource({ ...input, checkout: decoded }),
-    });
-
-    return Schema.encodeSync(SandboxSourceAnswer)(report);
-  }
-
-  async cloneSource({ clone }: SourceCloneInput): Promise<typeof SandboxSourceAnswer.Encoded> {
-    const decoded = Schema.decodeUnknownSync(SourceClone)(clone);
-
-    const report = await this.#sourceCall({
-      shouldCheckPolicy: true,
-      run: (input) => cloneSource({ ...input, clone: decoded }),
-    });
-
-    return Schema.encodeSync(SandboxSourceAnswer)(report);
-  }
-
-  async revokeSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SandboxSourceAnswer.Encoded> {
-    const report = await this.#sourceCall({
-      shouldCheckPolicy: false,
-      run: (input) => revokeSource({ ...input, sourceId, generation }),
-    });
-
-    return Schema.encodeSync(SandboxSourceAnswer)(report);
-  }
-
-  async finishSource({ sourceId, generation }: SourceIdentityInput): Promise<typeof SandboxSourceAnswer.Encoded> {
-    const report = await this.#sourceCall({
-      shouldCheckPolicy: false,
-      run: (input) => finishSource({ ...input, sourceId, generation }),
-    });
-
-    return Schema.encodeSync(SandboxSourceAnswer)(report);
-  }
-
-  async captureSource({ capture }: SourceCaptureInput): Promise<typeof SandboxCaptureAnswer.Encoded> {
-    const decoded = Schema.decodeUnknownSync(SourceCapture)(capture);
-
-    const report = await this.#sourceCall({
-      shouldCheckPolicy: true,
-      run: (input) => captureSource({ ...input, capture: decoded }),
-    });
-
-    return Schema.encodeSync(SandboxCaptureAnswer)(report);
+    await this.#alarm.arm({ at });
   }
 
   async #armRetry(): Promise<void> {
@@ -458,18 +336,11 @@ export class SandboxObject extends DurableObject<unknown> implements SandboxRpc 
 
     await this.#alarm.arm({ at });
   }
-}
 
-type MachineCallInput<Value> = { readonly run: () => Promise<Value> };
+  async #armMaintenance(): Promise<void> {
+    const now = DateTime.nowUnsafe();
+    const at = DateTime.addDuration(now, MAINTENANCE_RETRY);
 
-/** Expected admission failures cross RPC as data; transport failures and broken invariants still reject. */
-async function machineCall<Value>({ run }: MachineCallInput<Value>): Promise<Value | MachineRefusal> {
-  const promise = run();
-  const result = await capturePromise({ promise });
-
-  if (Result.isFailure(result) && Schema.is(MachineAccessDenied)(result.failure)) {
-    return result.failure.refusal;
+    await this.#alarm.arm({ at });
   }
-
-  return Result.getOrThrow(result);
 }

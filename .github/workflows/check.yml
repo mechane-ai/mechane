@@ -31,11 +31,11 @@ jobs:
         run: .config/bootstrap.sh
       - name: Run every check
         run: mise run check
-      - name: Print the end of each celld and guest log a failed smoke kept
+      - name: Print retained local service logs after a failed smoke
         if: failure()
         run: |
           shopt -s nullglob
-          for log in "${TMPDIR:-/tmp}"/mechane-stack-*/celld.log "${TMPDIR:-/tmp}"/mechane-stack-*/sandboxes/*/guest.log; do
+          for log in "${TMPDIR:-/tmp}"/mechane-stack-*/*.log "${TMPDIR:-/tmp}"/mechane-stack-*/sandboxes/*/guest.log; do
             echo "== $log"
             tail -n 80 "$log"
           done

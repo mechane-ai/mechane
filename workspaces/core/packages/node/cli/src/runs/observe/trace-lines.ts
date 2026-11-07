@@ -1,6 +1,6 @@
 import { TurnStatus, UnknownTurn } from '@mechane/protocol';
 import type { Trace, Turn } from '@mechane/protocol';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
 import { UNKNOWN_KIND_NOTE } from '../constants.ts';
 import { dispatchLine } from './dispatch-line.ts';
 
@@ -19,11 +19,18 @@ function turnLine({ turn }: TurnLineInput): string {
     return `turn ${turn.id} ${turn.status}, ${UNKNOWN_KIND_NOTE}`;
   }
 
-  const heading = `turn ${turn.id} ${turn.status}, started ${DateTime.formatIso(turn.startedAt)}`;
+  const time = Option.match(turn.startedAt, {
+    onNone: () => `created ${DateTime.formatIso(turn.createdAt)}`,
+    onSome: (startedAt) => `started ${DateTime.formatIso(startedAt)}`,
+  });
+
+  const heading = `turn ${turn.id} ${turn.status}, ${time}`;
   const items = `for ${turn.inboxItemIds.join(', ')}`;
 
   switch (turn.status) {
+    case TurnStatus.Queued:
     case TurnStatus.Running:
+    case TurnStatus.Waiting:
       return `${heading} ${items}`;
     case TurnStatus.Answered:
       return `${heading}, ended ${DateTime.formatIso(turn.endedAt)} ${items}`;

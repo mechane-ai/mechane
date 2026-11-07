@@ -39,17 +39,20 @@ Does each store function that a change exposes to other modules name a record or
 
 ## Local adaptations
 
-`packages/browser/console-cache/src/store` owns the browser cache's scoped filenames, file lifetime, and native driver.
-TanStack's persistence library owns its internal tables and schema. Product modules do not copy or query those table
-names; they use the native persistence adapter. Contract 119 owns admission and replacement of these derived copies.
+`packages/node/runtime/src/store` owns Mechane's Postgres domain records: identity, membership, configuration, input
+admission, runs, native messages, memory, work, usage, credentials, and delivery/request receipts. Public store methods
+name domain reads or transitions. They do not expose a pool, client, arbitrary SQL, or table-name parameter.
 
-Store modules are the objects' `*-store` members and `store` folders: `packages/worker/directory-store/src` for the directory's tables, `packages/worker/workspace-store/src` for a workspace's mech index, dispatch ledger, machine leases, policy, encrypted credentials and Slack records, `packages/worker/key-cache/src/store` for a key cache shard's cached keys and tombstones, `packages/worker/limiter-store/src` for a limiter's windows, `packages/worker/mech-store/src` for a mech's record, inbox, turns, event log, memory changes, threads, drones and alarm, `packages/worker/sandbox-store/src` for a sandbox's machines, executions and alarm, `packages/node/cli-login/src/store` for the CLI's saved login and key files, and `packages/node/eval/src/store` for an eval run's out folder: its plan, each trial's intents and records, written once through a link, and its report; `packages/worker/store/src` holds the migration ledger every object's store shares; each object's alarm is set only by its store; the smoke and `packages/node/testing/src` are exempt.
-pi's own tables in a mech's database carry the prefix `pi_`, and only pi's storage, which the harness opens, reads or writes them.
-ast-grep `stored-name-outside-store` rejects, outside its store, a table named in SQL text or a stored file such as `credentials.json`, while a word that only shares a table's name, such as the guest's `machines` segment, stays free; `storage-call-outside-store` rejects a storage call; both skip the smoke and its support, `packages/node/smoke` and `packages/node/testing`, which read stored files to check them; a new table or stored file joins the rule's list in the change that creates it, and the owned check `locks` fails when the list names a table no store creates or misses one a store does.
-The CLI's folder name `mechane` stays off that list, since the program's own name shares it.
-A fork's copy is the one exception to pi's ownership of its tables: pi's storage exports and imports no Session, and a copy through its commits would renumber the commit sequences its entries and documents keep, so the copy moves each table's rows unread from the parent's store to the new mech's, and pi opens on them only once the copy has ended.
-A limiter stores each policy's current window, since Cloudflare drops an idle object's memory after 10 seconds and a deploy drops every object's, so a limit held only in memory would forgive any client that paused.
-The key cache holds copies of the directory's rows, which only its fill writes and only the directory decides; a revocation writes the shard's tombstone before the directory's row, so the copy never outlives a revocation.
+Workflow's Postgres World owns its checkpoints, hooks, queues, and stream storage. Chat SDK's Postgres state adapter
+owns its platform state. Product code uses their public APIs and never reads or patches their internal tables.
+`packages/worker/sandbox-store` owns compute receipts and file-generation state; the sandbox's provider owns machine
+lifecycle. CLI login and eval stores retain their respective private files.
+
+`packages/browser/console-cache/src/store` owns browser cache files and generation lifetime. TanStack's persistence
+library owns its internal tables. Contract 119 governs replacing these derived copies after authenticated admission.
+
+Register product-owned stored names with the existing storage boundary checks. Smoke support may inspect those
+records to establish a consequential invariant, but production diagnostics call the owning store's read API.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

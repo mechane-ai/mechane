@@ -11,6 +11,7 @@ export { gatedGlobs } from './gated-globs.ts';
 export { generatedFiles } from './generated-files.ts';
 export { RestrictedKey } from './oxlint/constants.ts';
 export { oxlintSettings } from './oxlint/oxlint-settings.ts';
+export { restrictedOverrideFailures } from './oxlint/restricted-override-failures.ts';
 export type { OptOuts, OxlintSettings } from './oxlint/types.ts';
 export { registeredName } from './registered-name.ts';
 export { REGISTERED_RULES } from './registered-rules.ts';

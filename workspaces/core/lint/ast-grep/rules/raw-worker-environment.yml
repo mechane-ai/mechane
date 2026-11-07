@@ -6,13 +6,7 @@ message: 'Pass the decoded Worker settings, such as `settings: WorkerSettings`, 
 files: [packages/**/*.ts]
 ignores:
   - '**/node_modules/**'
-  - packages/worker/app/src/worker.ts
-  - packages/worker/app/src/serve.ts
-  - packages/worker/bindings/src/settings/**
-  - packages/worker/rpc/src/types.ts
-  - packages/worker/mech/src/mech-object.ts
-  - packages/worker/sandbox/src/sandbox-object.ts
-  - packages/worker/sandbox/src/egress/egress-gateway.ts
+  - packages/worker/sandbox-service/src/main.ts
 rule:
   kind: type_identifier
   regex: ^WorkerEnvironment$

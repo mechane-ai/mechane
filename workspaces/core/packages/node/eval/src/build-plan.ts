@@ -17,8 +17,8 @@ type PlanTrialsInput = { readonly digest: string; readonly suite: Suite };
  * encoding: the schema's fields in their declared order, without whitespace.
  */
 export function buildPlan({ suite, readiness, workspaceId }: BuildPlanInput): Plan {
-  const { release, workerRevision } = readiness;
-  const basis: PlanBasis = { version: PLAN_VERSION, suite, release, workerRevision, workspaceId };
+  const { release, runtimeRevision } = readiness;
+  const basis: PlanBasis = { version: PLAN_VERSION, suite, release, runtimeRevision, workspaceId };
 
   // The run built the basis to the schema's type, so encoding it cannot fail.
   const digest = sha256Hex({ contents: JSON.stringify(Schema.encodeSync(PlanBasis)(basis)) });

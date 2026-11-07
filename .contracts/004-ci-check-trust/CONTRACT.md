@@ -45,7 +45,7 @@ It grants `contents: read` only, pins each action to a full commit hash, restore
 It checks out the full history and sets `MECHANE_BASE_BRANCH` to the pull request's target, or `main`, so the owned checks hold each ratchet's baseline to the merge base's.
 Concurrency cancels only a superseded pull-request run, never a run on `main`.
 The owned checks fail on an action that is not pinned to a full commit hash and on a workflow without `permissions`.
-When the check fails, a last step prints the end of each celld log a failed smoke kept, so the run's log holds the stack's diagnostics.
+When the check fails, a last step prints the retained local Node service and sandbox guest logs, so the run's log holds the stack's diagnostics.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,

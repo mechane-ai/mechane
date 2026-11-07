@@ -1,5 +1,4 @@
 import {
-  DroneId,
   memberOrUnknown,
   PAGE_RENAMES,
   RecordId,
@@ -9,7 +8,6 @@ import {
   SlackChannelId,
   SlackTeamId,
   SlackUserId,
-  ThreadId,
   TurnId,
   unknownMember,
   wireStruct,
@@ -31,7 +29,8 @@ export const Event = Schema.Union([
       ...EVENT_FIELDS,
       type: Schema.Literal(EventType.InboxItemReceived),
       inboxItemId: RecordId,
-      senderId: RecordId,
+      /** None means the sender has a channel identity rather than a Mechane principal; inspect the recorded source. */
+      senderId: Schema.OptionFromNullOr(RecordId),
       text: RecordText,
       delivery: memberOrUnknown({ set: Delivery }),
       /** Absent when this message has no recorded Slack origin. */
@@ -47,8 +46,6 @@ export const Event = Schema.Union([
       ),
     },
   }),
-  // A silent item entered the mech's conversation without waking it.
-  wireStruct({ fields: { ...EVENT_FIELDS, type: Schema.Literal(EventType.InboxItemWritten), inboxItemId: RecordId } }),
   wireStruct({
     fields: {
       ...EVENT_FIELDS,
@@ -57,11 +54,6 @@ export const Event = Schema.Union([
       inboxItemIds: Schema.Array(RecordId),
     },
   }),
-  // An item sent for the next pause joined the running turn at a pause between its model requests.
-  wireStruct({
-    fields: { ...EVENT_FIELDS, type: Schema.Literal(EventType.TurnJoined), turnId: TurnId, inboxItemId: RecordId },
-  }),
-  // A member canceled the running turn, by a cancel or an interrupt item; it ends unanswered once its work stops.
   wireStruct({
     fields: { ...EVENT_FIELDS, type: Schema.Literal(EventType.TurnCanceled), turnId: TurnId, cancelerId: RecordId },
   }),
@@ -73,30 +65,6 @@ export const Event = Schema.Union([
       ...EVENT_FIELDS,
       type: Schema.Literal(EventType.TurnUnanswered),
       turnId: TurnId,
-      reason: memberOrUnknown({ set: UnansweredReason }),
-    },
-  }),
-  // The mech started a drone on one of its threads, in its own sandbox and conversation.
-  wireStruct({
-    fields: { ...EVENT_FIELDS, type: Schema.Literal(EventType.DroneStarted), droneId: DroneId, threadId: ThreadId },
-  }),
-  // A drone ended with a report, which reached its mech as the inbox item named here.
-  wireStruct({
-    fields: {
-      ...EVENT_FIELDS,
-      type: Schema.Literal(EventType.DroneReported),
-      droneId: DroneId,
-      inboxItemId: RecordId,
-      report: RecordText,
-    },
-  }),
-  // A drone ended without a report, for a reason a turn would give; its mech received that as the item named here.
-  wireStruct({
-    fields: {
-      ...EVENT_FIELDS,
-      type: Schema.Literal(EventType.DroneUnreported),
-      droneId: DroneId,
-      inboxItemId: RecordId,
       reason: memberOrUnknown({ set: UnansweredReason }),
     },
   }),

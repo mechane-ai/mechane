@@ -2,4 +2,4 @@
 id: unit-suffix
 language: TypeScript
 rule:
-  regex: '(Bytes|Chars|Micros|Minutes|Ms|Seconds|Tokens|Attempts|Dispatches|Entries|Files|Instances|Levels|Lines|Pages|Requests|Retries|Scenarios|Sentences|Statements|Suppressions|Turns|Words|Writes)$|_(BYTES|CHARS|MICROS|MINUTES|MS|SECONDS|TOKENS|ATTEMPTS|DISPATCHES|ENTRIES|FILES|INSTANCES|LEVELS|LINES|PAGES|REQUESTS|RETRIES|SCENARIOS|SENTENCES|STATEMENTS|SUPPRESSIONS|TURNS|WORDS|WRITES)$'
+  regex: '(Bytes|Chars|Micros|Minutes|Ms|Seconds|Tokens|Attempts|Connections|Dispatches|Entries|Files|Instances|Levels|Lines|Machines|Pages|Redirects|Requests|Retries|Rows|Runs|Scenarios|Sentences|Statements|Suppressions|Turns|Words|Writes)$|_(BYTES|CHARS|MICROS|MINUTES|MS|SECONDS|TOKENS|ATTEMPTS|CONNECTIONS|DISPATCHES|ENTRIES|FILES|INSTANCES|LEVELS|LINES|MACHINES|PAGES|REDIRECTS|REQUESTS|RETRIES|ROWS|RUNS|SCENARIOS|SENTENCES|STATEMENTS|SUPPRESSIONS|TURNS|WORDS|WRITES)$'

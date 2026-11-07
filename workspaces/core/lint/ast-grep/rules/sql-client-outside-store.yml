@@ -11,3 +11,7 @@ rule:
     - pattern: sql.exec
     - pattern: database.exec
     - pattern: database.prepare
+    - pattern: $HOLDER.client.query
+    - pattern: $HOLDER.pool.query
+    - pattern: client.query
+    - pattern: pool.query

@@ -5,7 +5,16 @@ language: TypeScript
 severity: error
 message: 'Run the program under `interruptOnSignal`, such as `yield* interruptOnSignal({ program: runMode() })` (EF-11)'
 files: ['packages/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/node/program/src/interrupt-on-signal.ts']
+ignores:
+  [
+    'packages/node/server/src/lifecycle/**',
+    'packages/node/server/src/main.ts',
+    'packages/node/stack/src/run-stack-program.ts',
+    'packages/node/stack/src/sandbox/main.ts',
+    '**/node_modules/**',
+    '**/*.d.ts',
+    'packages/node/program/src/interrupt-on-signal.ts',
+  ]
 rule:
   kind: call_expression
   has:

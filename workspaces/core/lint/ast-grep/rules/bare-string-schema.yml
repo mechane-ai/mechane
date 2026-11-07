@@ -8,7 +8,6 @@ message: 'Bound a boundary text, such as `name: boundedText({ maxBytes: NAME_MAX
 files:
   - 'packages/shared/protocol/src/**/*.ts'
   - 'packages/shared/sandbox-wire/src/**/*.ts'
-  - 'packages/worker/rpc/src/**/*.ts'
   - 'packages/worker/*-store/src/**/*.ts'
 ignores: ['**/node_modules/**', '**/*.d.ts']
 rule:

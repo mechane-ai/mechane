@@ -32,43 +32,21 @@ For each child process a change starts, does it inherit any parent variable that
 
 ## Local adaptations
 
-The node settings modules are registered in `packages/node/rules/src/file-roles.ts`. Each program reads its arguments and inherited variables through its registered settings module. The CLI's command model in `packages/node/commands/src` declares flags and environment fallbacks. The stack shares its pure decoders in `packages/node/stack/src/settings` across persistent local, fixture and smoke modes.
+Register each program's settings boundary in `packages/node/rules/src/file-roles.ts`. The runtime's `src/config.ts`
+loads database, model, credential-keyring, and sandbox settings. Server settings own the public origin, GitHub OAuth,
+identity admission, and Nexus callback authentication. The sandbox service decodes its Cloudflare bindings once.
+Raw environment access stays in those boundaries; tools and handlers receive validated configuration.
 
-The CLI reads `MECHANE_API_KEY` and `XDG_CONFIG_HOME` in `load-invocation.ts`, beside its flags' variables, and the command model declares both for `--help`.
-`load-invocation.ts` also reads the release stamp, which a release compiles in as `import.meta.mechaneStamp`, and `process.execPath`, the binary `mechane update` replaces.
+The deployment supplies installation defaults and secret references. Mechs, workspace integrations, Slack bindings,
+and execution grants are runtime records. Settings never overwrite those records during a deployment.
 
-The release builder reads its mode in `load-release-settings.ts`; its children inherit only `PATH` and `HOME`, as `MODE_VARIABLES` declares. The distribution builder reads its mode, destination and build environment in `load-distribution-settings.ts`. It builds or verifies public artifacts without cloud credentials. Publication and installation are separate operations.
+Resolve credentials only at the trusted operation that needs them. Store references in durable arguments and records;
+never pass resolved credentials into Workflow's serialized arguments, results, model configuration, or logs.
 
-The checks program reads its command, paths, base branch and inherited environment in `load-checks-settings.ts`. Rename, package moves and rule generation use their registered settings modules too.
-
-The Worker module hands its environment through `serve` to `packages/worker/bindings/src/settings/decode-settings.ts`. `packages/worker/rpc/src/object-settings.ts` decodes the mech's settings as its object opens. Each other object's constructor decodes its own declared settings. The registered settings boundaries alone interpret raw bindings.
-
-Settings turn a Secrets Store binding or a redacted local value into a secret reader. Trusted operations resolve OAuth, model and credential-keyring values only when needed. Runtime workspace credentials and Slack installations are records, not environment settings.
-
-`@mechane/deployment` declares the deployment's variable names once: `ORIGIN_VARIABLE`, which every client reads, and `WORKER_VARIABLES`, which the Worker decodes and the stack writes.
-When neither `--origin` nor `MECHANE_ORIGIN` names a deployment, the CLI calls production's, `DEFAULT_ORIGIN` in its command model, which repeats the origin `packages/worker/app/wrangler.jsonc` gives the Worker; dev prints the stack's origin to export, and the smoke gives every CLI child it.
-
-`packages/worker/app/wrangler.jsonc` supplies the build and local runtime configuration. Cloud installations consume an immutable release module whose `infrastructure/modules/cloudflare/variables.tf` declares resource identities, global settings and secret references. OpenTofu receives no secret values. Installation ownership defines the resource and runtime-data boundary.
-
-Fixture `.dev.vars` supplies the local GitHub client and scripted model upstream's URL, key and offers. The smoke shortens a named key's lifetime there.
-`loadStackSettings` reads every variable declared in `WORKER_VARIABLES` for persistent local mode; fixture and smoke startup ignore those operator values and use their declared fixtures.
-It reads `MECHANE_LOCAL_STATE_DIR` for persistent state, defaulting to `mechane` below `XDG_STATE_HOME` or `~/.local/state`, and `MECHANE_LOCAL_ORIGIN`, defaulting to `http://127.0.0.1:8787`; fixtures use the operating system's temporary directory as their state root.
-
-`loadStackSettings` reads `MECHANE_SANDBOX_PROVIDER` for persistent local mode and defaults to `container`, with no fallback to `host`. Local process fixtures use `host`; the stack refuses that provider beside a person's model upstream.
-The sandbox's object decodes `MECHANE_SANDBOX_PROVIDER` itself, with `MECHANE_HOST_LAUNCHER_ORIGIN` and `MECHANE_HOST_LAUNCHER_KEY` only under `host`, since only the local stack serves a launcher.
-
-The guest reads `MECHANE_GUEST_MACHINE_ID`, `MECHANE_GUEST_HOST` and `MECHANE_GUEST_PORT`, which `GUEST_VARIABLES` names. Execution children receive only `PATH`, `HOME`, `EXECUTION_VARIABLES` and fixed public gateway certificate paths, never the guest's own credentials or ambient trust overrides.
-A child of the stack inherits only `PATH`, `HOME` and `DOCKER_HOST`, which `INHERITED_VARIABLES` in `packages/node/stack/src/load-stack-settings.ts` lists, and a host machine only `PATH` beside its start's variables; celld also receives `CELLD_MAX_RSS_MB=0`, and the CLI child the stack's origin under `ORIGIN_VARIABLE` with the scenario's `XDG_CONFIG_HOME` and, where it presents a key, `MECHANE_API_KEY`.
-
-oxlint `node/no-process-env` and `no-restricted-properties` on `process.argv` and `process.execPath`, with overrides for the settings modules, and ast-grep `raw-environment-type`, `raw-worker-environment` and `raw-binding-read` enforce these rules.
-
-Installation variables define request rate limits, initial workspace defaults and global ceilings. `MECHANE_WORKSPACE_MACHINES` and `MECHANE_WORKSPACE_DAILY_ALLOWANCE_LIMIT_MICROS` bound effective workspace policy. `MECHANE_SANDBOXES_ENABLED` is the global sandbox switch; `MECHANE_WORKSPACE_SANDBOXES_DEFAULT` governs workspaces without a saved policy.
-
-Workspace suspension, sandbox admission, machine limits and daily allowance live in workspace policy records. Installation administrators change them through `workspace policy` operations without redeploying. Effective policy applies installation ceilings without replacing saved policy. Credentials and Slack installation metadata enter through their authenticated runtime APIs.
-
-`MECHANE_SANDBOX_EGRESS` decodes only under `container` and defaults to `gateway`. The cloud module supplies `gateway`. The local stack stages `fence` for containers, since celld refuses interception; Worker settings accept that mode only for a loopback origin.
-
-`Stack.restart` stages installation variables over the stack's existing values before restarting celld. Runtime policy checks change workspace records through the API while agents remain running.
+The CLI's command model owns flags and environment fallbacks, including `MECHANE_ORIGIN`, `MECHANE_API_KEY`, and
+`XDG_CONFIG_HOME`. Release and check programs use their registered settings modules. Their children inherit an
+explicit environment allowlist. Guest command environments contain public execution settings and only credentials
+that the current execution grant authorizes.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

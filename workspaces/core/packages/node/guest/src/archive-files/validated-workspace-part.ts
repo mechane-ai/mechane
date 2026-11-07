@@ -1,5 +1,4 @@
-import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/protocol';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { SANDBOX_ARCHIVE_PART_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import { WorkspaceFailed } from '../errors.ts';
 import type { WorkspaceRestoreInput } from '../types.ts';

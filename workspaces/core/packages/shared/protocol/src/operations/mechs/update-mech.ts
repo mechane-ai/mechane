@@ -1,7 +1,7 @@
 import { ModelId } from '@mechane/deployment';
 import { HttpMethod, Micros, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { MechRevisionConflict, ModelInvalid } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -30,5 +30,5 @@ export const updateMech = {
   query: NoFields,
   body: UpdateMechBody,
   output: Mech,
-  errors: [MechNotFound, MechRevisionConflict, ModelInvalid, ObjectUnavailable],
+  errors: [MechNotFound, MechRevisionConflict, ModelInvalid, ServiceUnavailable],
 } as const satisfies Operation;

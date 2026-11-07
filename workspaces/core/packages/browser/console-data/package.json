@@ -13,7 +13,9 @@
     "@tanstack/db": "1.0.0-rc.1.4",
     "@tanstack/db-sqlite-persistence-core": "1.0.0-rc.1.4",
     "@tanstack/query-core": "5.105.2",
-    "effect": "4.0.7"
+    "ai": "7.0.164",
+    "effect": "4.0.7",
+    "zod": "4.5.4"
   },
   "devDependencies": {}
 }

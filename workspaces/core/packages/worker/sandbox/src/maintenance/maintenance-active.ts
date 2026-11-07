@@ -1,15 +1,12 @@
-import { SandboxPhase } from '@mechane/protocol';
 import type { SandboxStore } from '@mechane/sandbox-store';
+import { SandboxPhase } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 
 type MaintenanceActiveInput = { readonly store: SandboxStore };
+const TERMINAL_PHASES: ReadonlySet<SandboxPhase> = new Set([SandboxPhase.Done, SandboxPhase.Failed]);
 
-/** Both maintenance journals fence commands and idle destruction until they finish. */
 export function maintenanceActive({ store }: MaintenanceActiveInput): boolean {
-  const native = store.maintenance();
-  const portable = store.portableMaintenance();
-  const isNativeActive = Option.exists(native, (job) => job.phase !== SandboxPhase.Done);
-  const isPortableActive = Option.exists(portable, (job) => job.phase !== SandboxPhase.Done);
+  const maintenance = store.portableMaintenance();
 
-  return isNativeActive || isPortableActive;
+  return Option.exists(maintenance, (job) => !TERMINAL_PHASES.has(job.phase));
 }

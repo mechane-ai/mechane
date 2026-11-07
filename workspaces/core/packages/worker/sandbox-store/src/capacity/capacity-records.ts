@@ -5,13 +5,8 @@ import type { RecordsInput } from '@mechane/store';
 import { Option, Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
 
-/** Durable intent before adoption, allocation, and confirmed stop. */
-export const ReservationPhase = {
-  Adopting: 'adopting',
-  Starting: 'starting',
-  Held: 'held',
-  Stopping: 'stopping',
-} as const;
+/** Durable intent before allocation and confirmed stop. */
+export const ReservationPhase = { Starting: 'starting', Held: 'held', Stopping: 'stopping' } as const;
 
 export type ReservationPhase = (typeof ReservationPhase)[keyof typeof ReservationPhase];
 

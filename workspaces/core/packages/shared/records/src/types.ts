@@ -1,40 +1,5 @@
 import type { Schema } from 'effect';
 import type { BOOLEAN_PREFIXES } from './constants.ts';
-import type { BrowserIdentity, Micros } from './schemas.ts';
-
-/** A browser session to open under the hash of its token. */
-export type BrowserSessionRequest = BrowserIdentity & TokenHashInput;
-
-/**
- * One table's rows as a copy moves them, each a list of values in the order the columns name them. Each value has the
- * type its object's storage reads and writes.
- */
-export type CopyRows<Value> = {
-  readonly table: string;
-  readonly columns: ReadonlyArray<string>;
-  readonly rows: ReadonlyArray<ReadonlyArray<Value>>;
-};
-
-/**
- * A dispatch of one of the workspace's mechs: the turn or drone it counts against, its model, and the reservation it
- * asks for.
- */
-export type DispatchRequest = {
-  readonly id: string;
-  readonly mechId: string;
-  readonly workId: string;
-  readonly model: string;
-  readonly requestedMicros: Micros;
-};
-
-/** The SHA-256 hash of a token, by which an object finds the record that holds it. */
-export type TokenHashInput = { readonly tokenHash: string };
-
-/** The SHA-256 hash of a sign-in's state. */
-export type StateHashInput = { readonly stateHash: string };
-
-export type WorkDispatchesInput = { readonly mechId: string; readonly workId: string };
-
 /** A closed set as its declaration names it: each member's name and its value on the wire. */
 export type ClosedSet = Readonly<Record<string, string>>;
 

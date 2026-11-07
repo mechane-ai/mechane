@@ -12,12 +12,7 @@ export const runSandboxShow = Effect.fn('runSandboxShow')(function* ({
   credentials,
   selectedWorkspaceId,
 }: RunInput<'sandbox show'>): Effect.fn.Return<CommandResult<'sandbox show'>, RunFailure> {
-  const request = {
-    action: SandboxAction.Show,
-    operationId: Option.none(),
-    droneId: Option.fromNullishOr(input.droneId),
-    part: 0,
-  };
+  const request = { action: SandboxAction.Show, operationId: Option.none() };
 
   const result = yield* withWorkspace({
     call,

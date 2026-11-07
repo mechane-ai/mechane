@@ -80,6 +80,9 @@ The v11 membership-lists rule is enforced, and member-chains is a ratchet whose 
 The shipped oxlint prefer-set-has setting is already enabled by the repository's native categories, so that redundant asset stays unloaded.
 The test-support HTTP method copy retains its prior scope: no StyleX definition occurs there, so v11's StyleX-key exemption is unnecessary.
 
+Native SDK discriminants, provider fields, and Zod literal schemas keep their upstream forms under contract 111.
+Do not wrap them in a second enum or rename an external field. Owned domain closed sets still have one declaration.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - asset `assets/ast-grep/rules` `http-method-literals-typescript` (SC-12): enforced in phase F2

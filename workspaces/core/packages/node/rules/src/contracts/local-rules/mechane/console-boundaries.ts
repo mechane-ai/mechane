@@ -5,7 +5,7 @@ import { FILE_ROLES } from '../../../file-roles.ts';
 
 const BUILD_FILES = `^(?:${FILE_ROLES[FileRole.BrowserBuildConfiguration].map((path) => escapedPath({ path })).join('|')})$`;
 
-/** React state and optional props use ordinary optional access; the backend keeps its Option convention. */
+/** Native SDK records use optional properties; Effect modules retain their Option convention. */
 export const consoleBoundaries = {
   values: {},
   rules: [
@@ -41,7 +41,7 @@ export const consoleBoundaries = {
       ...ADOPTED,
       name: 'oxc/no-optional-chaining',
       value: Severity.Error,
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: '113',
     },
   ],

@@ -1,5 +1,5 @@
-import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/protocol';
 import { Bytes } from '@mechane/records';
+import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import { WorkspaceFailed } from '../errors.ts';
 import { readGuestBody } from '../read-guest-body.ts';

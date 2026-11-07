@@ -12,19 +12,17 @@ type WithWorkspaceInput<A> = {
   readonly call: OperationCall<'listWorkspaces'>;
   readonly origin: URL;
   readonly credentials: CredentialSettings;
-  /** None selects the personal workspace. */
+  /** None selects the deployment's first workspace. */
   readonly selectedWorkspaceId: Option.Option<WorkspaceId>;
-  readonly use: (access: SelectedWorkspaceAccess) => Effect.Effect<A, RunFailure>;
+  readonly use: (access: WorkspaceAccess) => Effect.Effect<A, RunFailure>;
 };
-
-type SelectedWorkspaceAccess = Omit<WorkspaceAccess, 'workspaceId'> & { readonly workspaceId: WorkspaceId };
 
 /** The work in the caller's workspace, and the key that lists the workspace. */
 type WorkspaceUseInput<A> = Pick<WithWorkspaceInput<A>, 'call' | 'selectedWorkspaceId' | 'use'> & {
   readonly token: Redacted.Redacted;
 };
 
-/** An explicit workspace must be a current membership; omission preserves the personal default. */
+/** An explicit workspace must be a current membership. */
 export const withWorkspace = Effect.fn('withWorkspace')(function* <A>({
   call,
   origin,
@@ -48,8 +46,8 @@ const workspaceUse = Effect.fn('workspaceUse')(function* <A>({
   const { workspaces } = yield* call({ name: 'listWorkspaces', input: {}, credential: token });
 
   if (Option.isNone(selectedWorkspaceId)) {
-    const personal = Array.headNonEmpty(workspaces);
-    const workspaceId = WorkspaceId.make(personal.id);
+    const defaultWorkspace = Array.headNonEmpty(workspaces);
+    const workspaceId = WorkspaceId.make(defaultWorkspace.id);
 
     return yield* use({ token, workspaceId });
   }

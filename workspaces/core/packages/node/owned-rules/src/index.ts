@@ -4,6 +4,7 @@ export { WORKFLOWS } from './documents/constants.ts';
 export { documentFindings } from './documents/document-findings.ts';
 export { workflowFindings } from './documents/workflow-findings.ts';
 export { sourceSites } from './source-sites.ts';
+export { documentedExports } from './doc-comments/documented-exports.ts';
 export { checkSource } from './source/check-source.ts';
 export type { BannedPhrase } from './vocabulary/types.ts';
 export { checkDocuments } from './documents/check-documents.ts';

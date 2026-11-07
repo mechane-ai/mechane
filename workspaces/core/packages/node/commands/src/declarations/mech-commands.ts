@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
-import { Delivery, EventCursor, InboxText, Instructions, MechName, NoFields } from '@mechane/protocol';
-import { CreationRequestId, Micros, RandomId, RecordId, renamedWireStruct } from '@mechane/records';
+import { EventCursor, InboxText, Instructions, MechName, NoFields } from '@mechane/protocol';
+import { CreationRequestId, InboxItemRequestId, MechId, Micros, renamedWireStruct, SessionId } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 import { CommandShape, FlagKind } from '../constants.ts';
 import type { CommandDeclaration } from '../types.ts';
@@ -59,9 +59,15 @@ export const MECH_COMMANDS = {
       "fork an idle mech into a new mech of your workspace, which keeps the mech's conversation, memory and records so far but not its sandbox's files",
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'forkMech'],
-    flags: { name: { kind: FlagKind.Text, summary: 'the name that tells the new mech apart' } },
+    flags: {
+      'name': { kind: FlagKind.Text, summary: 'the name that tells the new mech apart' },
+      'request-id': { kind: FlagKind.Text, summary: 'reuse the printed request id to retry the same fork' },
+    },
     arguments: [MECH_ARGUMENT],
-    input: renamedWireStruct({ fields: { mechId: RecordId, name: MechName }, renames: { mechId: 'mech-id' } }),
+    input: renamedWireStruct({
+      fields: { mechId: MechId, name: MechName, requestId: OptionalCreationRequestId },
+      renames: { mechId: 'mech-id', requestId: 'request-id' },
+    }),
   },
   'inbox send': {
     summary:
@@ -73,28 +79,26 @@ export const MECH_COMMANDS = {
         kind: FlagKind.Text,
         summary: 'the inbox item id of a send to repeat, as an earlier send printed it; a fresh one when absent',
       },
-      'delivery': {
+      'session-id': {
         kind: FlagKind.Text,
-        summary:
-          'when_idle to wait until the mech is idle, next_pause to join its running turn at its next pause, interrupt to cancel its running turn and then wait like when_idle, or silent to enter its conversation without waking it; when_idle when absent',
+        summary: 'the conversation session to receive the message; the mech default when absent',
       },
     },
     arguments: [MECH_ARGUMENT, { name: 'text', summary: 'what to tell the mech' }],
     input: renamedWireStruct({
       fields: {
-        mechId: RecordId,
+        mechId: MechId,
         text: InboxText,
         /** Absent for a first send, which takes a fresh id. */
-        inboxItemId: Schema.optionalKey(RandomId),
-        /** Absent for `when_idle`. */
-        delivery: Schema.Enum(Delivery).pipe(Schema.withDecodingDefaultKey(Effect.succeed(Delivery.WhenIdle))),
+        inboxItemId: Schema.optionalKey(InboxItemRequestId),
+        sessionId: Schema.optionalKey(SessionId),
       },
-      renames: { mechId: 'mech-id', inboxItemId: 'inbox-item-id' },
+      renames: { mechId: 'mech-id', inboxItemId: 'inbox-item-id', sessionId: 'session-id' },
     }),
   },
   'event list': {
     summary:
-      'write the events of a mech, one record each: to the end of its log, or with --follow as they happen; a turn ends only with turn.answered or turn.unanswered, and a drone only with drone.reported or drone.unreported',
+      'write the events of a mech, one record each: to the end of its log, or with --follow as they happen; a turn ends only with turn.answered or turn.unanswered',
     shape: CommandShape.Stream,
     operations: ['listWorkspaces', 'listEvents'],
     flags: {
@@ -107,7 +111,7 @@ export const MECH_COMMANDS = {
     arguments: [MECH_ARGUMENT],
     input: renamedWireStruct({
       fields: {
-        mechId: RecordId,
+        mechId: MechId,
         /** Absent for the log's start. */
         after: EventCursor.pipe(Schema.withDecodingDefaultKey(Effect.succeed('0'))),
         /** Absent for a listing that ends at the end of the log. */

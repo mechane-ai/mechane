@@ -25,6 +25,9 @@ const VALUES = {
     // Copied license text uses legal comments for bundler retention and contains no implementation code.
     ignorePatterns: [
       '**/dist/**',
+      'packages/node/server/.output/**',
+      '**/.swc/**',
+      'packages/node/runtime/.well-known/workflow/**',
       '**/node_modules/**',
       'lint/types/**',
       'licenses/*.js',

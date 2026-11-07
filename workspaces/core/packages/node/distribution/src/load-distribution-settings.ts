@@ -16,6 +16,8 @@ const INHERITED_NAMES = [
   'XDG_CACHE_HOME',
   'MISE_CONFIG_DIR',
   'MISE_SYSTEM_CONFIG_DIR',
+  'MISE_IGNORED_CONFIG_PATHS',
+  'MISE_TRUSTED_CONFIG_PATHS',
 ] as const;
 
 const OUTPUT_URL: Readonly<URL> = new URL('../../../../dist/distribution', import.meta.url);

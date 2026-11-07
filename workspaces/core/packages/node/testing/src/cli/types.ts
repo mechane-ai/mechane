@@ -1,16 +1,22 @@
-import type { ProcessRun } from '@mechane/program';
-import type { Stack } from '@mechane/stack';
+import type { LocalStack } from '@mechane/stack';
+import type { Schema } from 'effect';
 
-/** A command to run against the stack with a CLI binary, such as one install.sh installed, and its own variables. */
-export type BinaryCommandInput = {
-  readonly stack: Stack;
-  readonly binary: string;
+export type CliAccount = { readonly configurationRoot: string };
+
+export type CliInput = {
+  readonly stack: Pick<LocalStack, 'origin'>;
+  readonly account: CliAccount;
   readonly args: ReadonlyArray<string>;
-  readonly environment: Readonly<Record<string, string>>;
+  readonly environment?: Readonly<Record<string, string>>;
 };
 
-/** A command to run with the CLI binary `mise run build:cli` compiles. */
-export type CliCommandInput = Omit<BinaryCommandInput, 'binary'>;
+export type CliResult = { readonly status: number | null; readonly stdout: string; readonly stderr: string };
+export type CliNotice = { readonly url: URL; readonly userCode: string };
 
-/** A finished CLI run: the command's arguments, and how its process ended. */
-export type FinishedCliInput = { readonly args: ReadonlyArray<string>; readonly run: ProcessRun };
+export type RunningCli = {
+  readonly finished: Promise<CliResult>;
+  readonly waitForApproval: () => Promise<CliNotice>;
+  readonly stop: () => Promise<void>;
+};
+
+export type RunCliInput<Output extends Schema.Codec<unknown, unknown>> = CliInput & { readonly schema: Output };

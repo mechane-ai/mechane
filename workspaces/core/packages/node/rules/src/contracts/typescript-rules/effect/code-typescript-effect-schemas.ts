@@ -37,7 +37,7 @@ export const codeTypescriptEffectSchemas = {
       imports: [],
       exemptRoles: [],
       standard: 'TD-22',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
     },
     {

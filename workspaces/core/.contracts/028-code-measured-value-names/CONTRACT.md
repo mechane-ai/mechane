@@ -39,6 +39,9 @@ A bound names its subject first, as `<SUBJECT>_MAX_<UNIT>`, such as `EXECUTION_M
 A measured value carries its unit's brand: ast-grep `raw-money-number` ratchets a field named for `Micros`, `Tokens`, `Bytes`, `Chars` or a sequence that is typed `number` or decoded by `Schema.Int`, `Number`, `Finite` or `NonNegativeInt`.
 A time is an instant or a span in every Type (TD-16): ast-grep `raw-time-number` ratchets a `number` property named for a time, by a unit suffix, a measure word or `At`, and `raw-time-schema` a schema field so named that a number schema decodes, since only an Encoded form keeps milliseconds; `waitFor` and `settlesWithin` take a `Duration`, as the stack's reply hold and the directory's lifespan do.
 
+Native SDK and database fields retain their published numeric units under contract 111. Keep unit meaning clear
+at an owned boundary without wrapping every timestamp, duration, or amount in Effect-specific types.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `measureWords` `timeout`, `deadline`, `delay`, `interval`, `limit`, `size`, `budget`, `duration`, `grace`, `allowance`, `cap`, `lifetime`, `window`, `ttl`, `age`, `period`, `threshold`.

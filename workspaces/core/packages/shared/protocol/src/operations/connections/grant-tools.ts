@@ -3,7 +3,7 @@ import { Schema } from 'effect';
 import {
   ConnectionNotFound,
   MechNotFound,
-  ObjectUnavailable,
+  ServiceUnavailable,
   ToolGrantInvalid,
   WorkspaceNotFound,
   WorkspaceOwnerRequired,
@@ -25,7 +25,7 @@ export const grantTools = {
   body: ToolGrantRequest,
   output: ToolGrant,
   errors: [
-    ObjectUnavailable,
+    ServiceUnavailable,
     WorkspaceNotFound,
     WorkspaceOwnerRequired,
     ConnectionNotFound,

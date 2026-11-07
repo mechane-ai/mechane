@@ -8,7 +8,7 @@ import { TOTAL_ROLE } from './constants.ts';
 import { inputsHash } from './inputs-hash.ts';
 import type { RoleHash } from './types.ts';
 
-/** The role of the inputs besides the bundles, whose hash covers their contents only, so a move keeps it. */
+/** Build inputs outside program bundles, hashed with their paths so moving a public asset invalidates reuse. */
 const INPUTS_ROLE = 'inputs';
 
 /** How many bundles build at once, which leaves CPUs to the other builders of a shared host. */

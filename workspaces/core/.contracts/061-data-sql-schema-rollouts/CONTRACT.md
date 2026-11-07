@@ -1,7 +1,7 @@
 ---
 name: data-sql-schema-rollouts
 message: Ship schema changes that the previous release and existing rows survive, in batches an interrupted deploy resumes.
-paths: ["packages/worker/*-store/src/migrations.ts", "packages/worker/*/src/store/migrations.ts", "packages/worker/store/src/**", "packages/worker/app/wrangler.jsonc"]
+paths: ["packages/node/runtime/src/store/**", "packages/node/server/src/**", "packages/worker/sandbox-store/src/**"]
 ---
 
 ## Rules
@@ -40,16 +40,20 @@ Review each bulk statement for a batched convergent loop or a stated measured ro
 
 ## Local adaptations
 
-Each Durable Object keeps its own SQLite database, and a store's `MIGRATIONS`, in its declared store module, are its schema steps.
-`openDatabase` in `packages/worker/store/src` runs the steps its `schema_migrations` ledger lacks in one transaction as the object starts, so an interrupted start rolls back whole and the next start reruns every missing step.
-A Wrangler migration in `packages/worker/app/wrangler.jsonc` adds a class; `deleted_classes` destroys a class's objects, so it lands only in a deploy after the one whose code stopped using the class.
-Cloud release admission and retained local startup reject version downgrades and removed or changed format-lock entries. The migration runner also refuses a database revision beyond its available steps. Recovery publishes compatible code as a newer release. These checks do not establish every form of behavioral compatibility or make a mixed Worker/guest rollout atomic.
-The service has deployed databases, and their existing rows must survive each added step. The name freeze preceded the first deploy and renamed tables and columns only inside steps that no deployment had applied.
-`lint/migrations.json` refuses an edit to a locked step, and tables and columns are append-only, as `data-stored-and-shipped-formats` records.
-Keep a step's private guard limits and schemas inside its callback: the lock hashes the callback's source, not the contents of imported helpers, so moving a guard outside it would let a later helper edit silently change a locked step. A direct named numeric `const` may hold one literal there under `code-numeric-literals`; the migration file still holds only imports and `MIGRATIONS`.
-Each table's first step states which nullable columns are written together, and in what order, as CHECKs that name no member of a closed set, so a new status needs no rebuild; a later step cannot add a table CHECK, so a new column carries a column CHECK naming the columns it pairs with.
-A step runs inside one object's start and cannot commit in batches, so a rewrite covers only that object's rows and states the measured row count of the largest object it runs in.
-Open: no operator query counts rows across objects, and the smoke opens every store empty, so no step has run against seeded rows; the first step that constrains or rewrites deployed rows needs both.
+The native-runtime cutover initializes a fresh Postgres domain schema and Workflow World baseline, as explicitly
+authorized in contract 047. It does not run a migration over the retired Pi agent stores. Future domain migrations
+follow the rolling-deployment rules above and use the runtime store's migration ledger.
+
+Run schema changes with a dedicated migration connection. The runtime connection receives only the permissions its
+product tables and upstream World require. Workflow and Chat own their schema migrations; do not edit their tables
+to repair application state. Record the exact upstream versions in the release.
+
+The isolated sandbox service retains its own SQLite schema ledger and persistent file checkpoints. A service restart
+must not replay a completed command or publish a checkpoint after cancellation. Destructive sandbox changes require
+an explicit data decision; the agent-store reset does not authorize deletion of unrelated persisted resources.
+
+Qualify constrained or rewritten rows against the production database engine. Repeating initial setup must leave the
+schema unchanged. A future narrowing needs both affected-row evidence and replay evidence for open workflows.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -19,7 +19,7 @@ export const PARSER_COMPANIONS: ReadonlyArray<ParserCompanion> = [
     path: posix.join(AST_GREP_RULES, 'boolean-names-tsx.yml'),
     language: 'Tsx',
     files: ['packages/browser/**/*.tsx'],
-    utilities: ['boolean-prefix', 'native-boolean-name', 'keyboard-modifier-name'],
+    utilities: ['boolean-prefix', 'native-boolean-name', 'keyboard-modifier-name', 'external-boolean-property'],
   },
   {
     source: posix.join(AST_GREP_RULES, 'ui-control-geometry.yml'),

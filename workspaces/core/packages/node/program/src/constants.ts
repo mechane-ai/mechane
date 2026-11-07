@@ -1,11 +1,5 @@
-import { TokenPrefix } from '@mechane/protocol';
-import { Record } from 'effect';
-
 /** The spaces each level of a JSON file the programs write is indented by. */
 export const JSON_INDENT_CHARS = 2;
-
-/** Local listeners bind only to this host. */
-export const LOOPBACK_HOST = '127.0.0.1';
 
 /**
  * The migration lock, relative to the product workspace: a hash of each schema step of every store and of each Wrangler
@@ -49,17 +43,3 @@ export const SUCCESS_STATUS = 0;
 
 /** The mode of a file or folder only its owner may read and write, such as a secrets file and its folder. */
 export const PrivateMode = { File: 0o600, Folder: 0o700 } as const;
-
-/** The bits of a file's mode that grant access. */
-export const PERMISSION_BITS = 0o777;
-
-/** The prefix GitHub gives its OAuth access tokens, which the local GitHub's tokens copy. */
-export const GITHUB_TOKEN_PREFIX = 'gho_';
-
-/**
- * Text shaped like a secret token: a prefix the deployment or GitHub gives its tokens, then a long run of URL-safe
- * characters. A stored hash is unprefixed hex, so only a raw token matches, wherever a run left it.
- */
-export const TOKEN_SHAPE: Readonly<RegExp> = new RegExp(
-  `(?:${[...Record.values(TokenPrefix), GITHUB_TOKEN_PREFIX].join('|')})[\\w-]{32,}`,
-);

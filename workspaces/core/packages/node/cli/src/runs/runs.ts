@@ -2,7 +2,7 @@ import type { Run } from '@mechane/cli-kernel';
 import { runAuthLogin, runAuthLogout, runAuthStatus } from '@mechane/cli-login';
 import { runUpdate } from '@mechane/cli-update';
 import type { CommandName } from '@mechane/commands';
-import { MechStatus, SandboxAction, WatchStatus } from '@mechane/protocol';
+import { MechStatus, SandboxAction } from '@mechane/protocol';
 import { runConnectionCreate } from './connections/run-connection-create.ts';
 import { runConnectionDelete } from './connections/run-connection-delete.ts';
 import { runConnectionList } from './connections/run-connection-list.ts';
@@ -14,16 +14,11 @@ import { runCredentialDelete } from './credentials/run-credential-delete.ts';
 import { runCredentialList } from './credentials/run-credential-list.ts';
 import { runCredentialPut } from './credentials/run-credential-put.ts';
 import { documentRun } from './document-run.ts';
-import { runDroneCancel } from './drones/run-drone-cancel.ts';
-import { runDroneList } from './drones/run-drone-list.ts';
-import { runDroneShow } from './drones/run-drone-show.ts';
-import { runThreadList } from './drones/run-thread-list.ts';
 import { runExecutionAccessSet } from './execution-access/run-execution-access-set.ts';
 import { runExecutionAccessShow } from './execution-access/run-execution-access-show.ts';
 import { runKeyCreate } from './keys/run-key-create.ts';
 import { runKeyList } from './keys/run-key-list.ts';
 import { runKeyRevoke } from './keys/run-key-revoke.ts';
-import { runBoundedTurnCancel, runBoundedTurnShow, runBoundedTurnSubmit } from './mechs/run-bounded-turn.ts';
 import { runInboxSend } from './mechs/run-inbox-send.ts';
 import { runMechChange } from './mechs/run-mech-change.ts';
 import { runMechClone } from './mechs/run-mech-clone.ts';
@@ -39,16 +34,9 @@ import { runTurnShow } from './observe/run-turn-show.ts';
 import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
-import { runSandboxExport } from './sandboxes/run-sandbox-export.ts';
-import { runSandboxImport } from './sandboxes/run-sandbox-import.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
 import { SLACK_RUNS } from './slack/slack-runs.ts';
-import { runSourceAccess } from './sources/run-source-access.ts';
-import { runSource } from './sources/run-source.ts';
-import { runFindingList } from './watches/run-finding-list.ts';
-import { runWatchList } from './watches/run-watch-list.ts';
-import { runWatchSet } from './watches/run-watch-set.ts';
-import { runWatchStatus } from './watches/run-watch-status.ts';
+import { runThreadList } from './threads/run-thread-list.ts';
 import { WORKSPACE_RUNS } from './workspaces/workspace-runs.ts';
 
 /** The run of each command; a command without one fails to compile. */
@@ -61,17 +49,6 @@ export const RUNS: Readonly<Runs> = {
   'credential put': documentRun({ run: runCredentialPut }),
   'credential list': documentRun({ run: runCredentialList }),
   'credential delete': documentRun({ run: runCredentialDelete }),
-  'source grant': documentRun<'source grant'>({ run: runSource }),
-  'source access': documentRun<'source access'>({ run: runSourceAccess }),
-  'source revoke': documentRun<'source revoke'>({ run: runSource }),
-  'source checkout': documentRun<'source checkout'>({ run: runSource }),
-  'source publish': documentRun<'source publish'>({ run: runSource }),
-  'source show': documentRun<'source show'>({ run: runSource }),
-  'watch set': documentRun({ run: runWatchSet }),
-  'watch list': documentRun({ run: runWatchList }),
-  'watch pause': documentRun({ run: (input) => runWatchStatus({ ...input, status: WatchStatus.Paused }) }),
-  'watch resume': documentRun({ run: (input) => runWatchStatus({ ...input, status: WatchStatus.Active }) }),
-  'finding list': documentRun({ run: runFindingList }),
   ...SLACK_RUNS,
   'connection create': documentRun({ run: runConnectionCreate }),
   'connection update': documentRun({ run: runConnectionUpdate }),
@@ -82,8 +59,6 @@ export const RUNS: Readonly<Runs> = {
   'grant revoke': documentRun({ run: runGrantRevoke }),
 
   'sandbox show': documentRun({ run: runSandboxShow }),
-  'sandbox export': documentRun({ run: runSandboxExport }),
-  'sandbox import': documentRun({ run: runSandboxImport }),
   'sandbox upgrade': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Upgrade }) }),
   'sandbox delete': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Delete }) }),
   'sandbox cancel': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Cancel }) }),
@@ -116,14 +91,8 @@ export const RUNS: Readonly<Runs> = {
   'event list': runEventList,
   'turn show': documentRun({ run: runTurnShow }),
   'turn cancel': documentRun({ run: runTurnCancel }),
-  'bounded-turn submit': documentRun({ run: runBoundedTurnSubmit }),
-  'bounded-turn show': documentRun({ run: runBoundedTurnShow }),
-  'bounded-turn cancel': documentRun({ run: runBoundedTurnCancel }),
   'memory list': documentRun({ run: runMemoryList }),
   'thread list': documentRun({ run: runThreadList }),
-  'drone list': documentRun({ run: runDroneList }),
-  'drone show': documentRun({ run: runDroneShow }),
-  'drone cancel': documentRun({ run: runDroneCancel }),
   'eval run': runEvalRun,
   'update': documentRun({ run: runUpdate }),
 };

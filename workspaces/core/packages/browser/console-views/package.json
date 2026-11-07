@@ -6,12 +6,15 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@json-render/react": "0.22.0",
     "@mechane-ai/elements": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@stylexjs/stylex": "0.19.1",
+    "ai": "7.0.164",
     "effect": "4.0.7",
     "lucide-react": "1.66.0",
-    "react": "19.3.1"
+    "react": "19.3.1",
+    "zod": "4.5.4"
   },
   "devDependencies": {
     "@types/react": "19.3.0"

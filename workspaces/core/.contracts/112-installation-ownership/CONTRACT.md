@@ -1,63 +1,55 @@
 ---
 name: installation-ownership
-message: Keep release and cloud resources declarative while preserving dynamic runtime data and one owner for each deployed resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/stack/**", "packages/node/program/src/release-descriptor.ts", "packages/node/program/src/files/artifact-digest.ts", "packages/node/wrangler/src/built-release.ts", "docs/self-hosting.md"]
+message: Deploy immutable artifacts with one owner for each service, secret, and persistent resource.
+paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/server/**", "packages/worker/sandbox-service/**", "docs/self-hosting.md"]
 ---
 
 ## Rules
 
-Install and upgrade from immutable, checksum-bound public release artifacts. Ordinary operators must not compile source,
-run Docker builds, or execute a deployment shell script through an OpenTofu provisioner.
+Build the Node service, Console assets, guest image, and sandbox service from one declared source revision. Publish
+immutable artifacts with checksums and an explicit runtime manifest. Operators consume those artifacts rather than
+rebuilding application code from a checkout or executing source through an OpenTofu provisioner.
 
-Use one release descriptor for local and cloud artifacts. Derive immutable Worker metadata from the verified manifest
-inside the provider. Infrastructure callers supply installation-specific resources, settings, and secret references.
-Product defaults come from the release; company overrides remain explicit. Preserve effective settings on adoption.
-Source startup and packaging verify build metadata recorded with the Worker, rather than pairing a stale bundle with
-the checkout's current configuration or format locks.
+Require the compiled Node metadata, archive inventory, and release receipt to agree on version and public revision.
+Include the original license, attribution, and generated Node and browser dependency notices in the verified inventory.
+Derive dependency notices from build inputs; missing package notices require reviewed, exact-version supplements.
 
-Admit retained local state before opening runtime databases. Under its process lock, record the candidate descriptor
-atomically before startup, and preserve that record after an interrupted upgrade. Refuse removed categories or entries
-and version downgrades. Legacy state requires a baseline matching its existing Worker bytes; missing metadata is not a
-fresh installation. Adoption changes the state marker so older launchers refuse it. Disposable fixtures own no retained
-upgrade guarantee. Database revision guards provide a second refusal boundary, not a substitute for admission.
+Keep infrastructure configuration responsible for service identity, domain routing, capacity, database roles, global
+settings, and secret references. Runtime APIs own principals, workspaces, mechs, credentials, grants, Slack bindings,
+messages, and files. An infrastructure apply cannot seed or overwrite those records.
 
-Keep installation version, resource identities, domains, capacity, and global settings in infrastructure configuration.
-Keep agents, missions, workspaces, credentials, grants, Slack bindings, watches, conversations, and files in Mechane's
-runtime APIs and stores. An infrastructure apply must not seed or overwrite those records.
+Give each resource one writer. The installation owner configures the managed Node host and its database. Cloudflare
+owns the narrow sandbox service, file bucket, and public ingress. The ingress forwards HTTP and streams unchanged to
+the configured Node service; it does not retain the old agent engine or independently decide product authorization.
 
-Give each cloud field one writer. Cloudflare's provider owns Worker identity, domains, and R2; Mechane's provider owns
-Worker release activation, image distribution, and container application rollout. Do not run the retired source deploy
-pipeline against resources owned by OpenTofu.
+Use the same built Node application and supported Workflow World locally and in production. Start and stop the
+Workflow worker with the service. Readiness means the application can use its required database and execution owner,
+not merely that a TCP port accepts connections. Admit overlapping service instances only with shared durable claims.
 
-Import existing resource identities before adopting an installation. Preserve Durable Object namespaces and the workspace
-bucket. Protect persistent resources from accidental replacement or deletion. Runtime imports use create-only writes
-and never become an ongoing fallback to deployment configuration.
+Protect persistent resources from accidental replacement. The owner-authorized native-runtime cutover initializes
+fresh agent state once; later releases follow contracts 047 and 061. That cutover does not authorize deletion of
+unrelated services, credentials, or sandbox files.
 
-Use real remote reads for drift detection. Reconcile interrupted operations before creating another version or rollout,
-and bound every wait. A failed or incomplete rollout is an apply failure. Deleting a release resource must not delete its
-Worker or databases; removing an image resource must not erase an image still used by a release.
+Resolve secrets through the deployment's secret store and runtime settings boundary. Release manifests, provider
+metadata, logs, and public assets contain no secret values. Use separate runtime and migration database credentials.
+Keep operational deployment evidence outside product source.
 
-Pass secret references through the module and resolve values at the runtime settings boundary. Reject secret values in
-provider metadata, and omit credentials and arbitrary server bodies from diagnostics.
+Reconcile uncertain infrastructure operations using remote reads before repeating them. Bound rollout waits and
+report an incomplete rollout as a failure. An empty follow-up plan verifies declarative convergence; it does not prove
+that Slack intake, approval resumption, or model execution works.
 
 ## Checks
 
-From `workspaces/core`, run `mise run infrastructure:check` to compile the provider, check formatting, and validate the
-packaged module against the real provider schemas without cloud credentials. This establishes schema compatibility,
-not cloud lifecycle behavior.
+Inspect release manifests and archives for revision, checksums, required assets, and secret-free metadata. Run the
+repository's build and infrastructure checks with no cloud credentials.
+The distribution verifier checks every Node file and required notice entry; inspect generated dependency notices when
+the bundled graph changes.
 
-For a changed lifecycle, use explicitly authorized disposable cloud resources to verify an empty second plan, in-place
-upgrade with stored data intact, out-of-band drift detection, and interrupted-operation recovery. Record resource IDs
-and clean up only the fixture's resources. Review an existing-installation import plan for persistent replacements.
-
-Review the module's inputs and provider resource list: none may manage an individual agent or workspace integration.
-Inspect release archives for public provenance and notices, and verify their manifest digests before publication.
+For an authorized hosted qualification, verify health and readiness, a repeat deployment, a process restart with a
+pending approval, and the original Slack reply destination. Check that a repeated infrastructure plan changes nothing
+and that persistent resources have no replacement action. Record live evidence in the delivery issue or pull request.
 
 ## Local adaptations
-
-The Console release relocates `/v1` to `/api/v1` without runtime aliases, as explicitly authorized before use.
-Upgrade admission normalizes only previous operation, field, and enum-member addresses for this move. Stored wire categories
-and migration entries keep their exact comparison. This exception does not authorize other removals or data resets.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

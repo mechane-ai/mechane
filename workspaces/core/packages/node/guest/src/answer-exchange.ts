@@ -4,19 +4,11 @@ import { GuestSegment } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import type { IncomingMessage } from 'node:http';
 import { answerHealth } from './answer-health.ts';
-import type { SourceGuestFailed, WorkspaceFailed } from './errors.ts';
+import type { WorkspaceFailed } from './errors.ts';
 import { routeExecution } from './executions/route-execution.ts';
 import { guestRequestRoute } from './guest-request-route.ts';
 import { respond } from './respond.ts';
-import { routeSource } from './sources/journal/route-source.ts';
-import type {
-  Exchange,
-  ExecutionLedger,
-  GuestSettings,
-  ServedAnswer,
-  SourceJournal,
-  WorkspaceJournal,
-} from './types.ts';
+import type { Exchange, ExecutionLedger, GuestSettings, ServedAnswer, WorkspaceJournal } from './types.ts';
 import { routeWorkspace } from './workspace/route-workspace.ts';
 
 /** The bare 404 of a request for another machine, which tells its caller it reached another machine's guest. */
@@ -30,7 +22,6 @@ type AnswerExchangeInput = {
   readonly settings: GuestSettings;
   readonly ledger: ExecutionLedger;
   readonly workspace: WorkspaceJournal;
-  readonly source: SourceJournal;
 };
 
 type RouteRequestInput = {
@@ -38,7 +29,6 @@ type RouteRequestInput = {
   readonly settings: GuestSettings;
   readonly ledger: ExecutionLedger;
   readonly workspace: WorkspaceJournal;
-  readonly source: SourceJournal;
 };
 
 /**
@@ -50,21 +40,14 @@ export const answerExchange = Effect.fn('answerExchange')(function* ({
   settings,
   ledger,
   workspace,
-  source,
 }: AnswerExchangeInput): Effect.fn.Return<void> {
-  const answer = yield* routeRequest({ request: exchange.request, settings, ledger, workspace, source }).pipe(
+  const answer = yield* routeRequest({ request: exchange.request, settings, ledger, workspace }).pipe(
     Effect.catchTags({
       RouteNotFound: () => Effect.succeed(NOT_FOUND),
       RequestInvalid: ({ reason }) =>
         Effect.succeed({ status: HttpStatusCode.BadRequest, headers: REFUSAL_HEADERS, body: reason }),
       WorkspaceFailed: ({ reason }) =>
         Effect.succeed({ status: HttpStatusCode.Unavailable, headers: REFUSAL_HEADERS, body: reason }),
-      SourceGuestFailed: () =>
-        Effect.succeed({
-          status: HttpStatusCode.Unavailable,
-          headers: REFUSAL_HEADERS,
-          body: 'source operation failed',
-        }),
     }),
   );
 
@@ -77,11 +60,7 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
   settings,
   ledger,
   workspace,
-  source,
-}: RouteRequestInput): Effect.fn.Return<
-  ServedAnswer,
-  RouteNotFound | RequestInvalid | WorkspaceFailed | SourceGuestFailed
-> {
+}: RouteRequestInput): Effect.fn.Return<ServedAnswer, RouteNotFound | RequestInvalid | WorkspaceFailed> {
   const { method, url, resource, rest, notFound } = yield* guestRequestRoute({
     request,
     machineId: settings.machineId,
@@ -94,8 +73,6 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
       return yield* routeExecution({ request, url, method, rest, ledger, notFound });
     case GuestSegment.Workspace:
       return yield* routeWorkspace({ request, method, rest, workspace, notFound });
-    case GuestSegment.Source:
-      return yield* routeSource({ request, method, rest, source, notFound });
     default:
       return yield* notFound;
   }

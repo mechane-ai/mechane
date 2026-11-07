@@ -6,11 +6,11 @@ Mechane runs agents with durable memory, persistent sandboxes, a browser console
 
 Choose where the service runs. Open `/console` there, or use the CLI. Both use the same runtime API.
 
-| Installation            | Start here                                                   | Requirements                                                                  |
-| ----------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
-| Hosted                  | [mechane.ai](https://mechane.ai)                             | GitHub sign-in                                                                |
-| Local                   | [Local guide](workspaces/core/packages/node/stack/README.md) | Packaged local release, Docker, and model credentials                         |
-| Your Cloudflare account | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | OpenTofu, Cloudflare account, domain, GitHub OAuth app, and model credentials |
+| Installation | Start here                                                   | Requirements                                               |
+| ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| Hosted       | [mechane.ai](https://mechane.ai)                             | GitHub sign-in                                             |
+| Local        | [Local guide](workspaces/core/packages/node/stack/README.md) | Node 24, Postgres, and model credentials                   |
+| Self-hosted  | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | A Node host, Postgres, a sandbox service, and GitHub OAuth |
 
 For the hosted service, download its CLI installer and sign in:
 
@@ -25,8 +25,9 @@ mechane mech create --name scout
 Use the returned agent ID with `mechane inbox send MECH_ID 'hello, scout'`. A different installation supplies its own
 origin; set `MECHANE_ORIGIN` before signing in. Workspace policy controls sandbox access and spending.
 
-Local releases retain agents, authentication, and workspace files across restarts. Cloud releases contain the OpenTofu
-module, Worker bundle, Console assets, and sandbox image. Neither installation requires compiling Mechane source.
+The Node service owns agents, authentication, conversations, and durable workflows in Postgres. The isolated sandbox
+service owns command execution and persistent files. Releases contain the compiled Node service and console, the sandbox
+Worker and image, and their checksums. Installation does not require compiling Mechane source.
 
 ## Elements
 

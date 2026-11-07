@@ -13,17 +13,26 @@ import { ResourceView } from '../resource.tsx';
 export function TurnsScreen({
   data,
   mech,
+  sessionId,
   onMessage,
   pageRead,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
+  readonly sessionId?: string | undefined;
   readonly onMessage: () => void;
   readonly pageRead: PageRead<'turns', ReadRequest<'turns'>>;
 }): ReactNode {
   const records = useRecordNavigation();
   const { request, cursors, setCursors, pending, failure } = pageRead;
   const state = useTurns(data, request);
+
+  const base = {
+    workspace: data.workspace.id,
+    mech: mech.id,
+    view: 'runs' as const,
+    ...(sessionId === undefined ? {} : { session: sessionId }),
+  };
 
   return (
     <ResourceView state={state} placeholder={<TurnListPlaceholder />}>
@@ -38,8 +47,8 @@ export function TurnsScreen({
             {notice}
             <TurnList
               page={page}
-              turnHref={(turn) => records.href({ workspace: data.workspace.id, mech: mech.id, view: 'runs', turn })}
-              onOpen={(turn) => records.open({ workspace: data.workspace.id, mech: mech.id, view: 'runs', turn }, turn)}
+              turnHref={(turn) => records.href({ ...base, turn })}
+              onOpen={(turn) => records.open({ ...base, turn }, turn)}
               focusRowId={records.focusRowId}
               emptyAction={
                 mech.status === 'active' ? (

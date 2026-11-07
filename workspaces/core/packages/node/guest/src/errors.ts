@@ -1,12 +1,6 @@
-import { RecordId, SourceId } from '@mechane/records';
+import { RecordId } from '@mechane/records';
 import { ExecutionId, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
-
-/** A source checkout, capture, or lease request failed within its admitted guest generation. */
-export class SourceGuestFailed extends Schema.TaggedError<SourceGuestFailed>()('SourceGuestFailed', {
-  sourceId: SourceId,
-  reason: Schema.String,
-}) {}
 
 /** The guest's environment does not decode into its settings. */
 export class GuestMisconfigured extends Schema.TaggedError<GuestMisconfigured>()('GuestMisconfigured', {

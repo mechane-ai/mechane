@@ -1,0 +1,81 @@
+# SC-08: the Effect dialect builds collections declaratively; native SDK loops may accumulate local results.
+id: loop-accumulation
+language: TypeScript
+severity: error
+message: 'Build the collection declaratively, such as `const rows = items.map(toRow)`, or page with `Stream.paginate` (SC-08)'
+files: ['**/*.ts']
+ignores:
+  [
+    '**/node_modules/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/*.d.ts',
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    packages/worker/sandbox-service/src/**,
+  ]
+rule:
+  any:
+    # a counter or running total updated in place
+    - any:
+        - kind: update_expression
+        - all:
+            - kind: augmented_assignment_expression
+            - has: { field: left, kind: identifier }
+        # a running value rebuilt from itself, such as `total = total + size` or `seen = [...seen, item]`
+        - all:
+            - kind: assignment_expression
+            - has: { field: left, kind: identifier, pattern: $RUNNING }
+            - has:
+                field: right
+                any:
+                  - { kind: binary_expression, has: { pattern: $RUNNING } }
+                  - { kind: array, has: { kind: spread_element, has: { pattern: $RUNNING } } }
+    # a collection filled by `push`, `unshift`, `add` or `set` inside a loop of the same function, unless it is the
+    # state a closure keeps across its calls: a `Map` or `Set` that a factory declares at its top and never returns,
+    # filled by a closure the factory declares beside it and answers in its object, such as a cache's `Map`
+    - all:
+        - any:
+            - pattern: $COLLECTION.push($$$ITEMS)
+            - pattern: $COLLECTION.unshift($$$ITEMS)
+            - pattern: $COLLECTION.add($$$ITEMS)
+            - pattern: $COLLECTION.set($$$ITEMS)
+        - inside:
+            stopBy: { matches: function-boundary }
+            matches: iteration-statement
+        - not:
+            all:
+              - any:
+                  - pattern: $COLLECTION.add($$$ITEMS)
+                  - pattern: $COLLECTION.set($$$ITEMS)
+              - has: { field: function, has: { field: object, kind: identifier } }
+              - inside:
+                  stopBy: { matches: function-boundary }
+                  matches: function-boundary
+                  not:
+                    any:
+                      - has: { field: parameters, has: { stopBy: end, pattern: $COLLECTION } }
+                      - has:
+                          field: body
+                          has: { stopBy: end, kind: variable_declarator, has: { field: name, pattern: $COLLECTION } }
+                  inside:
+                    kind: variable_declarator
+                    inside:
+                      kind: lexical_declaration
+                      inside:
+                        kind: statement_block
+                        inside:
+                          matches: function-boundary
+                          has:
+                            field: body
+                            all:
+                              - has:
+                                  kind: lexical_declaration
+                                  has:
+                                    kind: variable_declarator
+                                    all:
+                                      - has: { field: name, pattern: $COLLECTION }
+                                      - has:
+                                          field: value
+                                          kind: new_expression
+                                          has: { field: constructor, regex: '^(Map|Set)$' }
+                              - has: { kind: return_statement, has: { kind: object } }
+                              - not: { has: { kind: return_statement, has: { stopBy: end, pattern: $COLLECTION } } }

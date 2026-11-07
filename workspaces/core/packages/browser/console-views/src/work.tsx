@@ -206,7 +206,7 @@ export function MemoryList({
               <Row>
                 <Muted>Saved</Muted>
                 <ConsoleTimestamp value={memory.savedAt} />
-                {runLink(memory.turnId, memory.path)}
+                {Option.isSome(memory.turnId) && runLink(memory.turnId.value, memory.path)}
               </Row>
               <Markdown headingLevel={3}>{memory.text}</Markdown>
               <Muted>Version {memory.version}</Muted>

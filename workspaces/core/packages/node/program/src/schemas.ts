@@ -1,10 +1,5 @@
 import { Effect, Schema } from 'effect';
 
-/** A GitHub login as GitHub allows one: letters, digits and hyphens, at most 39 of them. */
-export const GitHubLogin = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9-]{1,39}$/));
-
-export type GitHubLogin = typeof GitHubLogin.Type;
-
 /** A lock: each kind of shipped name, or each store's schema steps, by key, as the entries it holds. */
 export const Lock = Schema.Record(Schema.String, Schema.Array(Schema.String));
 

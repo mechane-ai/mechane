@@ -1,15 +1,12 @@
 import { HttpMethod } from '@mechane/records';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { TurnEnded, TurnNotFound } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { TurnCancel, TurnPath } from './schemas.ts';
 
-/**
- * Cancels a running turn of a mech: it ends without a reply, and none of its memory changes save. A cancel of a turn
- * already canceled answers that first cancel, so a retry is safe; a turn that ended before any cancel conflicts.
- */
+/** Stops future work while retaining committed effects; repeating the same cancellation returns its receipt. */
 export const cancelTurn = {
   method: HttpMethod.Post,
   path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/cancel',
@@ -18,5 +15,5 @@ export const cancelTurn = {
   query: NoFields,
   body: NoFields,
   output: TurnCancel,
-  errors: [MechNotFound, TurnNotFound, TurnEnded, ObjectUnavailable],
+  errors: [MechNotFound, TurnNotFound, TurnEnded, ServiceUnavailable],
 } as const satisfies Operation;

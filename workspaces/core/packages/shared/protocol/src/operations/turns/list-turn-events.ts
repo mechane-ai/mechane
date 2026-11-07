@@ -1,6 +1,6 @@
 import { HttpMethod } from '@mechane/records';
 import { Effect, Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { TurnNotFound } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -22,5 +22,5 @@ export const listTurnEvents = {
   query: TurnEventsQuery,
   body: NoFields,
   output: EventPage,
-  errors: [MechNotFound, TurnNotFound, ObjectUnavailable],
+  errors: [MechNotFound, TurnNotFound, ServiceUnavailable],
 } as const satisfies Operation;

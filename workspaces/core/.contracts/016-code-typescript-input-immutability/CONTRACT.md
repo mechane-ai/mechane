@@ -65,6 +65,10 @@ not permit changing a caller's ordinary record, array, or map.
 oxlint `no-param-reassign` with `props: true`, `unicorn/no-array-sort` and `unicorn/no-array-reverse` with `allowExpressionStatement: false`, so even a statement that discards the result fails, and ast-grep `parameter-mutation`, enforce these rules.
 Every type is read-only (TD-06): ast-grep `readonly-type-members` rejects a property signature without `readonly`, and `readonly-collections` an `Array`, `Set`, `Map`, `T[]`, a tuple or a `Record` that no `Readonly` wraps, so a collection type is `ReadonlyArray`, `ReadonlySet`, `ReadonlyMap`, `readonly [A, B]` or `Readonly<Record<…>>`. Only a `const` local inside a function body, such as a listener's buffer, and a call's type argument there, such as `new Map<string, Turn>()`, may be mutable.
 
+A function may annotate an object literal it creates as mutable local lifetime state, such as the child-process
+handles it releases during shutdown. This does not permit mutable parameters, public return shapes, shared globals,
+or mutation of objects owned by callers. The owner exposes operations or a read-only view, not its mutable record.
+
 Deviation (TD-05, TD-06): arrays keep ReadonlyArray<Value> and locally built arrays keep Array<Value>, as the existing array-type and readonly-collections rules require.
 This replaces v11's requirement to use readonly Value[] and its ban on generic array spellings.
 The new delete-operator and deeply read-only dependency-wrapper requirements are outside the current adoption baseline at commit 94f2d0f.

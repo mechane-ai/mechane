@@ -159,7 +159,7 @@ export class CredentialsFailed extends Schema.TaggedError<CredentialsFailed>()('
   reason: Schema.String,
 }) {}
 
-/** A sandbox operation or archive transfer failed without discarding its durable server journal. */
+/** A sandbox operation failed without discarding its durable server journal. */
 export class SandboxMaintenanceFailed extends Schema.TaggedError<SandboxMaintenanceFailed>()(
   'SandboxMaintenanceFailed',
   { reason: Schema.String },

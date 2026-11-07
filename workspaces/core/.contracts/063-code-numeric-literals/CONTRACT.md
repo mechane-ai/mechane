@@ -63,6 +63,9 @@ Deviation (SC-11): the lint does not load the shipped `oxlintrc.json`.
 Its options report each unit form above and leave 2 bare, and its test overrides match `packages/node/testing`.
 This replaces "Where the repository's lint can load the configuration in this contract's `assets/` folder, load it from the repository's own lint configuration."
 
+The native SDK role in contract 111 uses native numeric units and Date values. Name consequential limits and make
+unit conversions explicit, without requiring Effect Duration construction at SDK or pg interfaces.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `magic-number` (SC-11): enforced in phase D

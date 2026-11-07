@@ -1,5 +1,11 @@
-/** Where a turn is: working on its inbox items, or ended with a reply or without one. */
-export const TurnStatus = { Running: 'running', Answered: 'answered', Unanswered: 'unanswered' } as const;
+/** A run can wait for its session, execute, wait for authority, or retain its terminal result. */
+export const TurnStatus = {
+  Queued: 'queued',
+  Running: 'running',
+  Waiting: 'waiting',
+  Answered: 'answered',
+  Unanswered: 'unanswered',
+} as const;
 
 export type TurnStatus = (typeof TurnStatus)[keyof typeof TurnStatus];
 
@@ -16,9 +22,6 @@ export const UnansweredReason = {
 
 export type UnansweredReason = (typeof UnansweredReason)[keyof typeof UnansweredReason];
 
-/** Why a turn that owes a turn note ended without a reply: a cancel, or a fault of its work. */
-export const NOTED_REASONS = [UnansweredReason.Canceled, UnansweredReason.Faulted] as const;
-
 /** Where a dispatch is: its reservation held and not yet settled, refused by the allowance, or settled once. */
 export const DispatchStatus = { Reserved: 'reserved', Refused: 'refused', Settled: 'settled' } as const;
 
@@ -28,3 +31,13 @@ export type DispatchStatus = (typeof DispatchStatus)[keyof typeof DispatchStatus
 export const SettlementBasis = { Usage: 'usage', Reservation: 'reservation' } as const;
 
 export type SettlementBasis = (typeof SettlementBasis)[keyof typeof SettlementBasis];
+
+/** Tool evidence distinguishes an observed result from an exchange whose result was lost. */
+export const ToolCallStatus = {
+  Running: 'running',
+  Completed: 'completed',
+  Failed: 'failed',
+  Unknown: 'unknown',
+} as const;
+
+export type ToolCallStatus = (typeof ToolCallStatus)[keyof typeof ToolCallStatus];

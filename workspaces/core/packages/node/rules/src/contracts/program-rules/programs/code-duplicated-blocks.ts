@@ -17,6 +17,9 @@ const VALUES = {
     ignore: [
       '**/node_modules/**',
       '**/dist/**',
+      'packages/node/server/.output/**',
+      '**/.swc/**',
+      'packages/node/runtime/.well-known/workflow/**',
       '**/reference.json',
       'lint/baseline/**',
       ...PARSER_COMPANIONS.map(({ path }) => path),

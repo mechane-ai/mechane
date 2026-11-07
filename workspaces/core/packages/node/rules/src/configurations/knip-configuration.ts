@@ -27,6 +27,9 @@ const PROGRAM_ENTRIES = '**/main.ts!';
 /** Each generator's `main.ts`, one folder below the generators' root, a production file. */
 const GENERATOR_ENTRIES = '*/main.ts!';
 
+const SERVER_PACKAGE = '@mechane/server';
+const RUNTIME_PACKAGE = '@mechane/runtime';
+
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
 
@@ -96,6 +99,14 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
       // Trees loads this peer through its theming dependency; Diffs requires a separate major version.
       ignoreDependencies: ['@pierre/theme'],
     };
+  }
+
+  if (member.name === SERVER_PACKAGE) {
+    return { entry: ['src/**/main.ts!', 'build/build.mjs'], project: ['src/**/*.ts!', 'build/**/*.mjs'] };
+  }
+
+  if (member.name === RUNTIME_PACKAGE) {
+    return { entry: ['src/execution/run-workflow.ts!'], project: ['src/**/*.ts!'] };
   }
 
   if (member.hasStories) {

@@ -33,12 +33,10 @@ export const ReleaseStep = {
   ReadMode: 'read the mode',
   ReadRevision: 'read the source revision',
   EmptyBuildFolder: 'empty the release build folder',
-  FindHostTarget: "find this machine's release target",
   CreateReleaseFolder: "create the release's folder",
   Compile: 'compile mechane',
   ReadBinary: 'read a compiled binary',
   WriteManifest: "write the release's manifest",
-  ListFiles: 'list the release files',
 } as const;
 
 export type ReleaseStep = (typeof ReleaseStep)[keyof typeof ReleaseStep];

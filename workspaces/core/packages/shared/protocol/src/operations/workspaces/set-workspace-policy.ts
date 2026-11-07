@@ -1,6 +1,6 @@
 import { HttpMethod, renamedWireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { ObjectUnavailable, RequestInvalid, WorkspaceNotFound } from '../../errors/errors.ts';
+import { RequestInvalid, ServiceUnavailable, WorkspaceNotFound } from '../../errors/errors.ts';
 import { InstallationAdministratorRequired, WorkspacePolicyConflict } from '../../errors/workspace.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -29,7 +29,7 @@ export const setWorkspacePolicy = {
   body: WorkspacePolicyUpdate,
   output: WorkspacePolicy,
   errors: [
-    ObjectUnavailable,
+    ServiceUnavailable,
     RequestInvalid,
     InstallationAdministratorRequired,
     WorkspaceNotFound,

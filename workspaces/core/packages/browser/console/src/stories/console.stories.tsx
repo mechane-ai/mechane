@@ -58,11 +58,14 @@ import {
 import type { ConsoleView } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { UIMessage } from 'ai';
 import { Option, Schema } from 'effect';
 import { ArrowLeft, Bot, ListTree, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ResourceView } from '../resource.tsx';
+
+const activeRunStatuses: ReadonlySet<string> = new Set(['queued', 'running', 'waiting']);
 
 const meta = {
   title: 'Screens/Console',
@@ -97,6 +100,7 @@ const workspaceList = Schema.decodeUnknownSync(WorkspaceList)({
     {
       id: '48cde045-0aaf-4c52-ae8e-faf1caa708e4',
       name: 'Personal workspace',
+      kind: 'personal',
       role: 'owner',
       daily_allowance_micros: 10_000_000,
       created_at: '2026-10-15T12:00:00Z',
@@ -104,6 +108,7 @@ const workspaceList = Schema.decodeUnknownSync(WorkspaceList)({
     {
       id: 'dca2ed60-d0a3-45f0-bbd1-6c7baef01512',
       name: 'Engineering',
+      kind: 'shared',
       role: 'member',
       daily_allowance_micros: 50_000_000,
       created_at: '2026-10-20T12:00:00Z',
@@ -256,8 +261,11 @@ const completedTrace = Schema.decodeUnknownSync(Trace)({
   },
   turn: {
     id: turnId,
+    version: 3,
     status: 'answered',
     inbox_item_ids: [inboxItemId],
+    session_id: 'b5f8ff80-2043-47e2-81c4-866b1e768ad1',
+    created_at: '2026-11-02T11:59:59Z',
     started_at: '2026-11-02T12:00:00Z',
     ended_at: '2026-11-02T12:00:04Z',
     definition_revision: 1,
@@ -416,7 +424,9 @@ function TraceStory({
           </ToolbarAction>
         }
         actions={
-          trace.turn.status === 'running' && <ToolbarAction onClick={() => undefined}>Cancel turn</ToolbarAction>
+          activeRunStatuses.has(trace.turn.status) && (
+            <ToolbarAction onClick={() => undefined}>Cancel run</ToolbarAction>
+          )
         }
       />
       {notice}
@@ -567,8 +577,32 @@ export const RunningTurn: Story = {
     <TraceStory
       events={runningEvents}
       trace={Schema.decodeUnknownSync(Trace)({
-        turn: { ...encodedTrace.turn, status: 'running' },
+        turn: { ...encodedTrace.turn, version: 2, status: 'running' },
         dispatches: [{ ...sampleRequest, status: 'reserved' }],
+      })}
+    />
+  ),
+};
+
+export const QueuedTurn: Story = {
+  render: () => (
+    <TraceStory
+      trace={Schema.decodeUnknownSync(Trace)({
+        turn: { ...encodedTrace.turn, version: 1, status: 'queued', started_at: null },
+        dispatches: [],
+        tool_calls: [],
+      })}
+    />
+  ),
+};
+
+export const WaitingTurn: Story = {
+  render: () => (
+    <TraceStory
+      trace={Schema.decodeUnknownSync(Trace)({
+        turn: { ...encodedTrace.turn, version: 3, status: 'waiting' },
+        dispatches: encodedTrace.dispatches,
+        tool_calls: [],
       })}
     />
   ),
@@ -700,7 +734,26 @@ function WorkspaceStory({
         {view === 'conversation' ? (
           <>
             <MechConversation
-              page={completedEvents}
+              messages={
+                [
+                  {
+                    id: 'example-user',
+                    role: 'user',
+                    parts: [
+                      {
+                        type: 'text',
+                        text: 'Review the release candidate and summarize the checks with a command to repeat them.',
+                      },
+                    ],
+                  },
+                  {
+                    id: completedTrace.turn.id,
+                    role: 'assistant',
+                    metadata: { runId: completedTrace.turn.id },
+                    parts: [{ type: 'text', text: recordedReply }],
+                  },
+                ] satisfies Array<UIMessage>
+              }
               scrollRestorationId="example-conversation"
               name={mech.name}
               avatar={<AgentAvatar seed={mech.id} size="xs" />}
@@ -710,7 +763,6 @@ function WorkspaceStory({
                   <ListTree size={16} aria-hidden />
                 </MessageAction>
               )}
-              sourceLink={() => <TextButton>Source mech</TextButton>}
             />
             <WorkbenchFooter>
               <PromptInput

@@ -1,6 +1,9 @@
 import type { ConsoleData, ReadRequest } from '@mechane/console-data';
+import { Turn } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
 import { Schema } from 'effect';
+import { useEffect } from 'react';
+import { useConversationEntry, useConversationState } from './conversations/provider.tsx';
 import { usePageRead } from './page-read.tsx';
 import type { PageRead } from './page-read.tsx';
 import { useEvents, useMemories, useThreads, useTrace, useTurns } from './reads.ts';
@@ -18,12 +21,13 @@ type MechViewRead =
 export function useMechPageReads(data: ConsoleData, mechId: string, location: ConsoleLocation) {
   const requestedView = location.view ?? 'conversation';
 
-  const conversation = usePageRead({
-    data,
-    key: 'conversation',
-    scope: mechId,
-    create: (cursors) => data.reads.events(mechId, cursors.at(-1) ?? null),
-  });
+  const conversation = useConversationEntry(
+    mechId,
+    location.session,
+    requestedView === 'conversation' && location.turn === undefined,
+  );
+
+  const conversationState = useConversationState(conversation);
 
   const turns = usePageRead({
     data,
@@ -55,17 +59,30 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
   const hasFocusedRun = turnId !== undefined;
   const viewRead = readView();
 
-  const conversationState = useEvents(
-    data,
-    !hasFocusedRun && viewRead.view === 'conversation' ? conversation.request : undefined,
-  );
-
   const currentActivity = viewRead.view === 'conversation' ? data.reads.turns(mechId, null) : undefined;
   const turnsState = useTurns(data, hasFocusedRun ? undefined : (turns?.request ?? currentActivity));
   const workState = useThreads(data, hasFocusedRun ? undefined : work?.request);
   const activityState = useEvents(data, hasFocusedRun ? undefined : activity?.request);
   const memoryState = useMemories(data, hasFocusedRun ? undefined : memory);
   const traceState = useTrace(data, trace);
+  const sessionId = conversationState.kind === 'ready' ? conversationState.value.sessionId : undefined;
+  const isConversationOpen = !hasFocusedRun && viewRead.view === 'conversation';
+
+  const conversationRevision =
+    isConversationOpen && turnsState.kind === 'ready' && sessionId !== undefined
+      ? JSON.stringify(
+          turnsState.value.turns
+            .filter(Schema.is(Turn))
+            .filter((turn) => turn.sessionId === sessionId)
+            .map((turn) => [turn.id, turn.version]),
+        )
+      : undefined;
+
+  useEffect(() => {
+    if (conversationRevision !== undefined) {
+      void conversation.refresh();
+    }
+  }, [conversation, conversationRevision]);
 
   function readView(): MechViewRead {
     if (turns !== undefined) {

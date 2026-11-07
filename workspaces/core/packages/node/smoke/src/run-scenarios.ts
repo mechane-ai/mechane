@@ -1,41 +1,34 @@
-import { SandboxProvider } from '@mechane/deployment';
-import { loadStackSettings, startStack } from '@mechane/stack';
-import type { StackFailed } from '@mechane/stack';
-import { settleScenarios } from '@mechane/testing';
-import type { ScenarioFailure, ScenariosFailed } from '@mechane/testing';
-import { Effect } from 'effect';
-import type { Exit, Scope } from 'effect';
-import { CATALOG } from './catalog.ts';
+import type { LocalStack } from '@mechane/stack';
+import type { Scenario } from '@mechane/testing';
 
-/**
- * The variables the smoke's stack sets: a named key lives three seconds, so a scenario sees one expire, and a login key
- * keeps the deployment's lifetime. The CLI polls a device approval again at once, since the smoke's browser approves
- * within a fraction of a second. Each wait of the deployment's two seconds would hold a scenario that long.
- */
-const STACK_VARIABLES = { namedKeyLifetimeSeconds: '3', approvalPollIntervalSeconds: '0' } as const;
+type RunScenariosInput = {
+  readonly stack: LocalStack;
+  readonly catalog: ReadonlyArray<Scenario>;
+  readonly match?: string | undefined;
+};
 
-/** One scenario of the catalog. */
-type Scenario = (typeof CATALOG)[number];
+const SCENARIO_DEADLINE_MS = 180_000;
 
-/**
- * Starts a fresh local stack with host sandboxes, whose scenarios need no Docker. Runs every scenario of the catalog
- * against it, one after another, in the scope that stops the stack.
- */
-export const runScenarios = Effect.fn('runScenarios')(function* (): Effect.fn.Return<
-  void,
-  StackFailed | ScenariosFailed,
-  Scope.Scope
-> {
-  const stack = yield* startStack({
-    settings: yield* loadStackSettings(),
-    variables: STACK_VARIABLES,
-    sandboxProvider: SandboxProvider.Host,
-  });
+export async function runScenarios({ stack, catalog, match }: RunScenariosInput): Promise<void> {
+  const selected = catalog.filter((scenario) => match === undefined || scenario.guarantee.includes(match));
 
-  const runOne: (scenario: Scenario) => Effect.Effect<Exit.Exit<void, ScenarioFailure>> = ({ run, guarantee }) =>
-    Effect.exit(run({ stack, guarantee }));
+  if (selected.length === 0) {
+    throw new Error('No smoke scenario matches the requested name');
+  }
 
-  const exits = yield* Effect.forEach(CATALOG, runOne, { concurrency: 1 });
+  for (const scenario of selected) {
+    const deadline = Promise.withResolvers<never>();
 
-  yield* settleScenarios({ stack, exits });
-});
+    const timer = setTimeout(
+      () => deadline.reject(new Error(`The smoke timed out: ${scenario.guarantee}`)),
+      SCENARIO_DEADLINE_MS,
+    );
+
+    try {
+      await Promise.race([scenario.run({ stack, guarantee: scenario.guarantee }), deadline.promise]);
+      process.stdout.write(`PASS ${scenario.guarantee}\n`);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}

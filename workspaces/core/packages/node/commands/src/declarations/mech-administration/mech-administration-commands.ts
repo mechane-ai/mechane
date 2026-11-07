@@ -64,8 +64,7 @@ type MechRenameInput = typeof MechRenameInput.Type;
 /** Commands for inspecting, changing, and copying definitions while preserving existing identities and history. */
 export const MECH_ADMINISTRATION_COMMANDS = {
   'mech clone': {
-    summary:
-      'copy a definition into a fresh identity with empty history and no connection grants, bindings, or watches',
+    summary: 'copy a definition into a fresh identity with empty history and no connection grants or bindings',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'cloneMech'],
     flags: {
@@ -84,7 +83,7 @@ export const MECH_ADMINISTRATION_COMMANDS = {
     input: MechCommandInput,
   },
   'mech update': {
-    summary: 'update a definition with a revision check; running work keeps its definition until the next safe turn',
+    summary: 'update a definition with a revision check; new runs use the saved definition',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'updateMech'],
     flags: {

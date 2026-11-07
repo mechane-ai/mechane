@@ -1,8 +1,8 @@
 import { AUTHENTICATION_FAILURES } from '../errors/authentication-failures.ts';
 import {
-  ObjectUnavailable,
   RateLimited,
   RequestInvalid,
+  ServiceUnavailable,
   WorkspaceNotFound,
   WorkspaceSuspended,
 } from '../errors/errors.ts';
@@ -16,17 +16,13 @@ export const Access = { Public: 'public', Principal: 'principal', Member: 'membe
 
 export type Access = (typeof Access)[keyof typeof Access];
 
-/**
- * The failures each access's admission adds to its operations' own. A principal's key may be refused, the key cache or
- * the limiter may not answer, or the principal may be past its limit. A member's workspace path may also be malformed,
- * name no workspace of the caller's, or name one the operator suspended.
- */
+/** Admission checks live identity and membership before an operation can read or change workspace data. */
 export const ACCESS_FAILURES = {
   [Access.Public]: [],
-  [Access.Principal]: [...AUTHENTICATION_FAILURES, ObjectUnavailable, RateLimited],
+  [Access.Principal]: [...AUTHENTICATION_FAILURES, ServiceUnavailable, RateLimited],
   [Access.Member]: [
     ...AUTHENTICATION_FAILURES,
-    ObjectUnavailable,
+    ServiceUnavailable,
     RateLimited,
     RequestInvalid,
     WorkspaceNotFound,

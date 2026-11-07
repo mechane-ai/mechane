@@ -10,7 +10,8 @@ Layer 3 · worker · plain · consumers: `@mechane/sandbox`
 - `machines/`: the machines a sandbox opened, the live one and how each ended.
 - `workspaces/`: provider binding, committed generation, checkpoint/restore cursors, failed-save recovery and
   retirement.
-- `sources/`: credential fences that survive Worker restarts until revocation or confirmed expiry.
+- `capacity/`: bound owner identity and durable machine start/stop intent.
+- `maintenance/`: the current explicit replacement or deletion operation.
 
 ## Use
 

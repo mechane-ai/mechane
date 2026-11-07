@@ -1,0 +1,18 @@
+id: path-builder-return
+language: TypeScript
+utils:
+  builder-name: { regex: '(Path|Url|Query|Key|Name|Ref|Glob|Specifier|Header|Authorization|Control)$' }
+rule:
+  inside:
+    kind: return_statement
+    not:
+      precedes:
+        stopBy: end
+        any: [{ kind: expression_statement }, { kind: return_statement }, { kind: lexical_declaration }]
+    inside:
+      kind: statement_block
+      inside:
+        any:
+          - { kind: function_declaration, has: { field: name, matches: builder-name } }
+          - kind: arrow_function
+            inside: { kind: variable_declarator, has: { field: name, matches: builder-name } }

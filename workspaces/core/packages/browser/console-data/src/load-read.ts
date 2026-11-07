@@ -16,9 +16,11 @@ import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { deleteRows, upsertRows } from './collections.ts';
 import type { CanonicalTables, CanonicalWriter } from './collections.ts';
-import { MechDefinition, recordKey, TraceEvidence } from './records.ts';
+import { MechDefinition, recordKey, TraceEvidence, turnVersion } from './records.ts';
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
+
+const terminalTurnStatuses: ReadonlySet<string> = new Set([TurnStatus.Answered, TurnStatus.Unanswered]);
 
 type ReadOutputs = {
   readonly mechs: Output<'listMechs'>;
@@ -94,7 +96,11 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
       return {
         kind: request.kind,
         request,
-        output: await api('showTurn', { workspaceId, mechId: request.mechId, turnId: request.turnId }, signal),
+        output: await api(
+          'showTurn',
+          { workspaceId: WorkspaceId.make(workspaceId), mechId: request.mechId, turnId: request.turnId },
+          signal,
+        ),
       };
     case 'turnEvents':
       return {
@@ -102,7 +108,12 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
         request,
         output: await api(
           'listTurnEvents',
-          { workspaceId, mechId: request.mechId, turnId: request.turnId, after: request.after },
+          {
+            workspaceId: WorkspaceId.make(workspaceId),
+            mechId: request.mechId,
+            turnId: request.turnId,
+            after: request.after,
+          },
           signal,
         ),
       };
@@ -188,13 +199,18 @@ function writeTurns(tables: CanonicalTables, rows: ReadonlyArray<TurnRow>): void
   for (const row of rows) {
     const previous = tables.turns.get(row.key);
 
-    const isOlderRunning =
-      previous !== undefined && previous.value.status !== TurnStatus.Running && row.value.status === TurnStatus.Running;
+    const incoming = Schema.decodeUnknownResult(Schema.toEncoded(Turn))(row.value);
+    const known = Schema.decodeUnknownResult(Schema.toEncoded(Turn))(previous?.value);
 
-    if (!isOlderRunning) {
-      const incoming = Schema.decodeUnknownResult(Schema.toEncoded(Turn))(row.value);
-      const known = Schema.decodeUnknownResult(Schema.toEncoded(Turn))(previous?.value);
+    const isOlderVersion =
+      Result.isSuccess(incoming) && Result.isSuccess(known) && known.success.version > incoming.success.version;
 
+    const isNonterminalAfterTerminal =
+      previous !== undefined &&
+      terminalTurnStatuses.has(previous.value.status) &&
+      !terminalTurnStatuses.has(row.value.status);
+
+    if (!isNonterminalAfterTerminal && !isOlderVersion) {
       if (Result.isSuccess(incoming) && Result.isSuccess(known)) {
         const inboxItemIds = new Set([...known.success.inbox_item_ids, ...incoming.success.inbox_item_ids]);
 
@@ -334,22 +350,26 @@ export async function applyRead({
       const mechId = answer.request.mechId;
       const key = recordKey(mechId, answer.output.turn.id);
       const turn = { mechId, key, value: Schema.encodeSync(Trace.to.fields.turn)(answer.output.turn) };
-      const evidence = { mechId, key, value: Schema.encodeSync(TraceEvidence)(answer.output) };
+
+      const evidence = {
+        mechId,
+        key,
+        value: Schema.encodeSync(TraceEvidence)({ ...answer.output, version: turnVersion(answer.output.turn) }),
+      };
 
       await writeRows({
         signal,
         collections: [tables.turns, tables.traceEvidence],
         write: () => {
-          const previous = tables.turns.get(key);
+          const previous = tables.traceEvidence.get(key)?.value.version;
+          const incoming = evidence.value.version;
+          const hasKnownVersion = previous !== undefined && previous !== null;
 
-          const isOlderRunning =
-            previous !== undefined &&
-            previous.value.status !== TurnStatus.Running &&
-            turn.value.status === TurnStatus.Running;
+          const isOlderEvidence = hasKnownVersion && incoming !== null && previous > incoming;
 
           writeTurns(tables, [turn]);
 
-          if (!isOlderRunning || !tables.traceEvidence.has(key)) {
+          if (!isOlderEvidence) {
             upsertRows(tables.traceEvidence, [evidence]);
           }
         },

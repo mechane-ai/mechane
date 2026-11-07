@@ -1,76 +1,41 @@
 # @mechane/sandbox
 
-The sandbox Durable Object: one mech's or drone's machines and execution receipts.
-
-Layer 4 · worker · plain · consumers: `@mechane/app`
+One mech’s persistent developer environment and command receipts. The authenticated sandbox service calls its Durable
+Object; the Node runtime owns user authorization, execution grants, and budgets.
 
 ## Layout
 
-- `capacity/`: trusted ownership, workspace admission and durable machine reservations.
-- `executions/`: command admission, dispatch, cancellation and receipts.
-- `machines/`: machine creation, health, restoration and startup deadlines.
-- `providers/`: local host and container machines behind `MachineProvider`.
-- `egress/`: the Cloudflare package-host gateway; `constants.ts` owns its host list.
-- `maintenance/`: portable export, import, replacement and deletion.
-- `checkpoints/` and `workspace/`: portable R2 generations, transfers and retirement.
-- `sources/`: source credential fences and trusted checkout preparation.
+- `capacity/`: owner binding and the intent to start or stop the object’s one machine.
+- `executions/`: command admission, observation, cancellation, and receipts.
+- `machines/` and `providers/`: machine creation, health, startup deadlines, and the guest transport.
+- `checkpoints/` and `workspace/`: committed R2 generations, transfer, restoration, and retirement.
+- `maintenance/`: explicit inspection, replacement, deletion, and cancellation.
+- `egress/`: the Cloudflare gateway’s admitted HTTPS destinations.
 
-## Use
+## Execution
 
-`runExecution` runs a command once under its execution id. While it answers Running, repeat the same request. `manage`
-inspects, exports, imports, replaces or deletes workspace files. `stop` ends an ordinary idle machine. A failed
-checkpoint preserves its live machine for recovery; an active source fence refuses maintenance and stop.
+An execution ID names one command and timeout. Repeating it observes the same receipt; changing either input returns a
+conflict. Observation carries no command or credentials. A missing guest after dispatch becomes `Uncertain`, and the
+command never runs again automatically. Cancellation records its intent before stopping an active machine. An accepted
+command that has not reached its guest can resume with fresh credentials under the same execution ID.
 
-## Workspace durability
+Commands run serially against the mech’s shared files. Before returning a settled receipt, the object saves `/home/node`
+as independent R2 parts and commits the generation with the receipt. Replacement machines verify and restore the last
+committed generation before running commands. A failed restore never becomes an empty workspace.
 
-Container commands run serially. Before returning Exited or TimedOut, the object saves the settled command's
-`/home/node` files as independent R2 objects of at most 1 MiB, then commits the generation and receipt together.
-Replacement machines restore that generation before becoming ready. Missing parts or a failed archive checksum prevent
-dispatch. Incomplete command outcomes become Uncertain and never rerun automatically.
+`PersistenceFailed` retains command output and the live files for recovery. It keeps the previous committed head intact.
+A later command can inspect or clean those files and retry the save. Losing that machine restores the previous head.
 
-Source preparation, finalization, and maintenance use explicit file checkpoints. They share the command checkpoint's
-transfer and recovery steps, while keeping their own operation receipts. A retry reads that receipt even after another
-generation becomes the head. Saving files never creates a synthetic shell command. Patch capture reads committed files
-on a restored guest without manufacturing a command or checkpoint.
+Maintenance progresses through durable alarms even when its caller disconnects. Failed checkpoints and replacement
+deadlines end maintenance without blocking recovery commands. Cancellation preserves the source and discards only an
+uncommitted replacement.
 
-The store keeps the shipped command-checkpoint shape and records file operations separately. Existing interrupted
-command checkpoints remain readable without rewriting their receipt or generation.
+## Limits
 
-The guest stops remaining command processes before archiving; background work and unfinished writes have no persistence
-guarantee. Archives allow at most 512 MiB of uncompressed tar data and 256 MiB compressed. Archive creation has a
-five-minute timeout; transfers check the same operation deadline between parts. Native R2 calls retain their runtime
-completion behavior.
+The guest stops command-owned processes before archiving. Archives permit at most 512 MiB uncompressed and 256 MiB
+compressed, with a five-minute operation deadline. Each command copies the full home; large repositories need workload
+qualification. Generated caches belong outside the committed home.
 
-Every command copies the full home, so large repositories require further qualification.
-
-PersistenceFailed retains command output and explains that live files were not saved. The previous committed head stays
-intact, and idle or voluntary stop preserves the current machine. A new command can inspect, export or remove files and
-try another checkpoint; success clears recovery. Unavoidable machine loss restores the previous head. Obsolete and
-failed generations remain queued until their R2 objects are deleted.
-
-Private checkout first checkpoints existing files, destroys the old container, and restores into a fresh guest that has
-never run agent code. Only then may it receive a repository token. The durable fence blocks agent commands until token
-revocation or confirmed expiry. A failed preparatory save retains the live workspace. Process scope, used by host
-fixtures, refuses real repository credentials before minting.
-
-Provider choice is stored per sandbox. The retired Tensorlake provider has no execution adapter. Historical native
-workspaces remain fenced until an explicit import verifies their archive in a fresh guest. Export native files and
-finish any pending native maintenance using the previous release before upgrading. Failed imports preserve the previous
-head. Export generations remain downloadable while commands advance that head; a new maintenance operation invalidates
-the export. See [self-hosting](../../../docs/self-hosting.md) for backup and migration commands.
-
-## Networking
-
-Cloudflare starts containers with direct internet disabled. HTTP and HTTPS pass through `EgressGateway`, which admits
-only the package hosts declared in `src/constants.ts`, forwards over TLS and never follows redirects. Invalid or
-mismatching URL and Host authorities are refused. Local celld uses its own node/private-network fence; it does not
-filter package hosts. Cloud deployment validation rejects that local mode.
-
-A running container retains its startup network setting. Drain and recreate existing machines through their checkpoint
-lifecycle when rolling out a network-policy change; constructing a Durable Object never discards their files or work.
-
-## Never
-
-- Never rerun an execution whose outcome is unknown.
-- Never call a provider before recording its intent.
-- Never replace a committed snapshot with an empty workspace after restore failure.
+Cloudflare containers have direct internet disabled. HTTP and HTTPS pass through `EgressGateway`, which validates
+matching URL and Host authorities, admits configured public hosts, uses TLS, and follows no redirects. The local process
+provider exercises the same guest and checkpoint protocol without claiming container isolation.

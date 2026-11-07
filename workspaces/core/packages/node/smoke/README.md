@@ -1,32 +1,27 @@
 # @mechane/smoke
 
-The scenario catalog and one function per guarantee: the one test `mise run check` runs, which drives the built CLI
-against a fresh local stack.
+The maintained integration catalog checks user guarantees against the compiled CLI and a relocated Node server with real
+Postgres and Workflow persistence. Each scenario names the regression it prevents.
 
-Layer 6 · node lane · effect dialect · no consumers
+Layer 6 · node lane · plain dialect · no consumers
 
-## Layout
+## Run
 
-- `src/catalog.ts`: every scenario, with the guarantee it checks and the regression it guards, in the order they run.
-- `src/run-scenarios.ts`: the stack the scenarios share, and the run of the catalog against it.
-- `src/<resource>/`: one folder per resource a guarantee is about (`auth`, `deployment`, `drones`, `evals`, `forks`,
-  `hands`, `limits`, `mechs`, `memory`, `releases`, `workspaces`), one scenario per file named for its guarantee, beside
-  the steps and declarations only that folder's scenarios use.
+Start Docker, then run `mise run smoke` with the repository's pinned tools. The task builds the CLI, server, sandbox
+service, and guest before executing the catalog. No provider account or paid model is required. The model, GitHub,
+Slack, and Nexus fixtures are actual local HTTP services; Mechane's implementation is never mocked.
 
-## Rules
+The sandbox fixture uses the real sandbox service and guest protocol, with synthetic commands running in owned host
+directories. It checks execution receipts, workspace persistence, and transient credentials. It does not establish
+container or operating-system isolation; that boundary requires qualification on the hosted sandbox provider.
 
-The [repository's test curation](../../../../../.contracts/001-test-curation/CONTRACT.md) and the
-[product contracts](../../../.contracts/index.md) apply.
+`src/main.ts` owns one stack and always stops it. `src/catalog.ts` orders checks that share this stack; authentication
+limits run first and credential leak checks run last. `src/run-scenarios.ts` applies a bounded deadline and can select
+one guarantee by a command-line substring. Each resource folder contains the scenarios for its guarantees.
 
-## Use
+## Maintain
 
-`mise -C workspaces/core run smoke` builds the Worker, the CLI and the guest, and runs every scenario in the catalog's
-order against one stack with host sandboxes, so it needs no Docker, no account and no paid model. A scenario reaches the
-deployment only through the built CLI, a browser of `@mechane/testing` and the stack's local services, and ends with one
-named check.
-
-## Never
-
-- Never add, drop or reword a scenario of the catalog without maintainer approval.
-- Never mock Mechane's code, call a paid model or reach a cloud account.
-- Never share a fixture across resource folders here: move it to a family of `@mechane/testing`.
+Follow the [repository's test curation](../../../../../.contracts/001-test-curation/CONTRACT.md) and the
+[product contracts](../../../.contracts/index.md). Change the catalog only within an authorized product change and
+account for any removed guarantee. Keep reusable public-boundary helpers in `@mechane/testing` and external service
+fixtures in `@mechane/stack`. Never retain credentials in assertions or logs.

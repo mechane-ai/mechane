@@ -1,20 +1,4 @@
 /**
- * The paths of the pages a browser opens, which no client calls; they are fixed because the production GitHub OAuth App
- * registers the callback's URL.
- */
-export const PagePath = {
-  Home: '/',
-  Console: '/console',
-  SignIn: '/auth/sign-in',
-  SignOut: '/auth/sign-out',
-  Device: '/device',
-  GitHubCallback: '/auth/github/callback',
-  LocalSignIn: '/auth/local',
-} as const;
-
-export type PagePath = (typeof PagePath)[keyof typeof PagePath];
-
-/**
  * The steps of the device page's form: a signed-in browser reviews the approval of the code its person typed, and then
  * approves that approval from the review.
  */

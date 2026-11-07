@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["node"] },
+  "compilerOptions": { "types": ["node"], "allowJs": true, "checkJs": true },
   "files": ["lint/types/node/strict-globals.d.ts"],
   "include": [
     "packages/node/boundaries/src",
@@ -25,6 +25,9 @@
     "packages/node/rule-generator/src",
     "packages/node/rule-shapes/src",
     "packages/node/rules/src",
+    "packages/node/runtime/src",
+    "packages/node/server/src",
+    "packages/node/server/build",
     "packages/node/smoke/src",
     "packages/node/stack/src",
     "packages/node/testing/src",

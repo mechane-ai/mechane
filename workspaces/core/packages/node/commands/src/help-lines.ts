@@ -2,10 +2,7 @@ import { Option } from 'effect';
 import { commandReference } from './command-reference.ts';
 import type { CommandReference } from './schemas.ts';
 
-/**
- * The column widths of `--help`: names of commands, global flags, command options and variables, then statuses. The
- * options' column holds the longest, `[--daily-cap-micros]`, and two spaces.
- */
+/** Labels keep their separator when a name exceeds its minimum column width. */
 const HELP_COLUMNS = { commandChars: 16, flagChars: 10, optionChars: 22, variableChars: 18, statusChars: 5 } as const;
 
 /** A command as the reference publishes it. */
@@ -19,13 +16,13 @@ export function helpLines(): ReadonlyArray<string> {
   const readFrom: (variable: string) => string = (variable) => `; read from ${variable} when absent`;
 
   const flagLine: (flag: CommandReference['flags'][number]) => string = ({ name, summary, variable }) =>
-    `  --${name.padEnd(HELP_COLUMNS.flagChars)}${summary}${Option.match(variable, { onNone: () => '', onSome: readFrom })}`;
+    `  --${name.padEnd(HELP_COLUMNS.flagChars)}  ${summary}${Option.match(variable, { onNone: () => '', onSome: readFrom })}`;
 
   const variableLine: (variable: CommandReference['variables'][number]) => string = ({ name, summary }) =>
-    `  ${name.padEnd(HELP_COLUMNS.variableChars)}${summary}`;
+    `  ${name.padEnd(HELP_COLUMNS.variableChars)}  ${summary}`;
 
   const statusLine: (exit: CommandReference['exitStatuses'][number]) => string = ({ name, status }) =>
-    `  ${String(status).padEnd(HELP_COLUMNS.statusChars)}${name}`;
+    `  ${String(status).padEnd(HELP_COLUMNS.statusChars)}  ${name}`;
 
   return [
     `${program} ${release}`,
@@ -49,7 +46,7 @@ export function helpLines(): ReadonlyArray<string> {
 /** A command's line, then one line for each argument it requires and each flag it accepts, in brackets if optional. */
 function commandLines({ command }: CommandLinesInput): ReadonlyArray<string> {
   const argumentLine: (argument: ReferenceCommand['arguments'][number]) => string = ({ name, summary }) =>
-    `    ${`<${name}>`.padEnd(HELP_COLUMNS.optionChars)}${summary}`;
+    `    ${`<${name}>`.padEnd(HELP_COLUMNS.optionChars)}  ${summary}`;
 
   const flagLine: (flag: ReferenceCommand['flags'][number]) => string = ({ name, summary, isRequired }) => {
     const usage: string = (() => {
@@ -60,11 +57,11 @@ function commandLines({ command }: CommandLinesInput): ReadonlyArray<string> {
       return `[--${name}]`;
     })();
 
-    return `    ${usage.padEnd(HELP_COLUMNS.optionChars)}${summary}`;
+    return `    ${usage.padEnd(HELP_COLUMNS.optionChars)}  ${summary}`;
   };
 
   return [
-    `  ${command.name.padEnd(HELP_COLUMNS.commandChars)}${command.summary}`,
+    `  ${command.name.padEnd(HELP_COLUMNS.commandChars)}  ${command.summary}`,
     ...command.arguments.map(argumentLine),
     ...command.flags.map(flagLine),
   ];

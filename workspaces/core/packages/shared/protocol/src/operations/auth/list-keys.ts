@@ -1,5 +1,5 @@
 import { HttpMethod, listQuery, RecordId } from '@mechane/records';
-import { ObjectUnavailable, RequestInvalid } from '../../errors/errors.ts';
+import { RequestInvalid, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -14,5 +14,5 @@ export const listKeys = {
   query: listQuery({ cursor: RecordId }),
   body: NoFields,
   output: KeyPage,
-  errors: [RequestInvalid, ObjectUnavailable],
+  errors: [RequestInvalid, ServiceUnavailable],
 } as const satisfies Operation;

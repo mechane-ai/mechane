@@ -37,63 +37,56 @@ Run the existing lifecycle tests; a passing type check does not establish recove
 
 ## Local adaptations
 
-`packages/node/stack/src` owns the celld lifecycle through an Effect scope: startup waits at most 90 seconds for the health routes, 10 minutes when sandboxes run as containers, whose first start builds images, and fails at once when celld exits, quoting the end of its log, and shutdown sends SIGTERM to celld's process group and SIGKILL after 40 seconds, except that a passing run, which removes the state directory, kills the group at once, since celld's SIGTERM stop waits for each pending 20-second wait for an event.
-`Stack.restart` kills celld's process group with SIGKILL, as a crash would, and starts celld again on the same state in the stack's scope; the killed group's own release then does nothing.
-`interruptOnSignal` in `packages/node/program/src` makes SIGINT, SIGTERM and SIGHUP interrupt dev, smoke and guest work. It keeps its handlers until scoped finalizers finish, so repeated signals cannot cut cleanup short.
-A failed run keeps its state directory without the files that hold the staged variables, and names its celld log, so the log and the objects' databases stay readable; a passing or interrupted run removes it.
-Deadlines: a CLI call waits 30 seconds for the deployment's whole answer, the smoke gives each CLI run 60 seconds, and `git describe` gets 10 seconds. Release and distribution builders pass explicit build deadlines through `@mechane/program`. `startProcess` fails a child that outlives its deadline and kills a child that outlives its scope.
-A device approval expires after 10 minutes, and the CLI polls it at the interval the deployment names, 2 seconds in `packages/worker/app/wrangler.jsonc` and none on the smoke's stack, polls again after a poll that no server answered or that met an unavailable deployment, since a key is delivered at most once, and stops waiting at its expiry; the Worker gives each call to GitHub 10 seconds.
-The local GitHub, the scripted model upstream and the host launcher listen on loopback ports of the stack's scope, which closes them with celld; closing the launcher stops each host machine's process group as celld's is stopped.
-A list of events waits at most 20 seconds, `WAIT_MAX`, for an event after its cursor, below the CLI's 30-second call deadline; `mechane event list --follow` repeats it, never retries a failed page, and resumes with `--after` the last sequence it wrote.
-pi's 5 minutes bound only the wait for a dispatch's answer to start; celld's 330-second bound on an outbound request, which the stack sets, ends a stream locally, and nothing bounds one on Cloudflare, so an alarm's hand-off cuts a longer one; pi's durable retry is the one retry owner: the metered provider sends with no retry of its own, and each attempt is a dispatch of its own, reserved and charged.
-A dispatch the upstream answers without usage, such as with an error status, settles at its whole reservation, so an outage can spend several bounds in one turn before pi stops retrying, and a turn the allowance then refuses ends `allowance_exhausted`.
-pi parks a task that resets or crashes cut off five times in a row; every open marks each task pi's stored tasks show parked as aborted, so the alarm ends it before pi works and the items behind it get their turns: a parked model request ends its turn `faulted`, and a parked tool call tells the model it was aborted.
-A dispatch that a lost instance cut off is sent again by pi as a new dispatch and charged again, since both reached the upstream; a reservation whose settlement was lost holds its day's allowance until the mech's object next opens and settles it at its reservation.
-Only a mech's alarm lets pi work, because pi's work outlives the call that starts it, and celld refuses a transaction from an event that has ended.
-A send records its item and then arms the alarm for now; the alarm delivers the items pi lacks and lets pi work until nothing can run or `MECHANE_ALARM_WORK_SECONDS`, 600, pass; it then holds new dispatches, waits up to 3 minutes for the open ones to settle and closes pi, which counts no restart and rejoins each command, and opens pi again, which arms the next alarm for now, since Cloudflare ends an alarm at 15 minutes.
-Once nothing can run, the alarm arms itself for pi's earliest sleep or clears itself, and only then reads the items again, so an item a later send records has that send's alarm.
-pi arms no timer for a sleep and announces nothing when one comes due, so while other work runs, the alarm's wait resumes pi at its earliest sleep's time itself: a model retry's backoff beside a drone's long command waits its backoff, not the command, as `agents` 0.30.1 fixed in its own `PiHarness`.
-The alarm arms itself 60 seconds ahead before any work, and an open arms a fallback alarm before anything can fail, so an eviction, a reset or a failed open resumes the mech.
-The alarm also delivers, every 250 ms while pi works and from its own timer, the items sends recorded meanwhile, so an item for the next pause reaches the running turn and no delivery runs in a send's event.
-An execution runs once: the sandbox's object stores each intent before its effect, a machine's row before its start and an execution's dispatch before its request, answers a known id from its receipt, and never sends an uncertain execution again.
-A machine has 90 seconds from its start to answer its health, which a call asks every 500 ms within its wait; past that it is stopped, and the executions claimed by then become unavailable, while a later one starts a new machine.
-An execution runs for its timeout, 120 seconds unless the model names one up to 600, and a call waits at most 20 seconds for it before it answers that it still runs; the mech's hands ask again with no deadline of their own.
-An execution's one deadline is its dispatch plus its timeout plus 30 seconds: past it, a guest that answers `running` or does not answer stops its machine, and the execution is uncertain.
-Every call moves the sandbox's alarm 15 minutes past it, so the alarm stops a machine after 15 minutes without a command on both providers, and each start and call sets the container's inactivity timeout to 16 minutes, since Cloudflare otherwise stops a container shortly after its object goes inactive; the machine's end is recorded before its stop, and the next command starts a new machine. The alarm arms its retry a minute ahead before each stop and clears it once the stop returns, so a stop that keeps failing is tried each minute after the platform's six retries of the alarm, which would otherwise abandon it and leave the machine running.
-Workspace owns capacity admission; Sandbox owns acquisition, machine start, confirmed stop, and release. Commands, source operations and maintenance use that same lifecycle. A machine retained after a failed file save remains counted. A released reservation number stays recorded, so delayed acquisition and release cannot resurrect old capacity or free a newer machine's slot. Trusted owner binding validates the canonical object identity and adopts existing machines before new work. Only historical unadopted leases expire. Inspection, credential cleanup, and saved command receipts remain readable when new allocation is disabled.
-A machine the platform stopped ends at the next call, which makes its dispatched executions uncertain.
-The guest runs each execution in its own process group, kills the group at exit or timeout and every group on SIGTERM, and never restarts under the same receipt identity.
-Container workspaces save `/home/node` to R2 before committing a completed command's receipt. A replacement restores the committed generation before accepting work; unfinished writes have no durability guarantee. A failed checkpoint preserves the live machine and its previous committed head.
-Source and maintenance file checkpoints have explicit operation identities and receipts, rather than synthetic shell executions. Command and file operations share archive transfer and recovery; each commits its own result atomically with the file generation. A canceled command cannot publish its checkpoint after cancellation retires that transfer.
-Container quiescence also stops detached command processes before checkpointing. Background processes have no persistence guarantee. Historical native-provider records stay fenced until an explicit import preserves their files; the current runtime has no Tensorlake execution adapter.
-Cloudflare installs its outbound interceptors before each container start and starts with direct internet access disabled. A failed registration starts no machine. An already-running machine retains its startup network setting, so a network-policy rollout drains and recreates it through the existing checkpoint lifecycle, never by destroying it during object construction.
-A cancel or an interrupt item's receipt only records the cancel and arms the alarm for now; the alarm, at its start or its next 250 ms poll, aborts the generation that holds the canceled turn's run and waits for it until none holds it, then writes the turn's note, and applies every owed note before any delivery.
-The projection alone ends a canceled turn, once pi reports its run's end, and pi ends a run only after each tool call of its round returned, so a memory change awaited inside a call lands before the transaction that discards it; nothing checks the abort signal.
-An aborted or faulted run keeps the items queued behind it, and the turn's note, a model-visible write, restarts that queue; a turn's unanswered end marks the alarm's next 250 ms poll, so the note is written even while drones work, and a poll that applied a note or a delivery makes the drive work again, since pi may restart just as the work it waited on ended.
-The mech's hands stop waiting for a sandbox's answer when the tool call is aborted, and the execution runs on in its machine to its own end or timeout.
-The protocol refuses bash text that no process can start with, a NUL character or more than 65,536 bytes of UTF-8, and a guest whose spawn the system refuses, or whose fibers meet any defect, writes why and ends, so its machine is lost at once instead of holding an execution that never settles.
-`mechane update` reads `cli/latest.json` within the CLI's 30-second deadline and gives a binary's download 10 minutes; the release program gives Bun 3 minutes for each target and Wrangler 5 minutes for each file.
-The release program uploads each release's binaries, then its manifest, then `cli/latest.json`, and the stack publishes in the same order, so a published manifest means its binaries are, and a publish that stops midway leaves the latest release as it was; `install.sh` and `mechane update` rename a checked binary into place, so a failed one leaves the installed binary as it was.
-`mechane eval run` runs its trials one after another, each role on a fresh mech whose cap is the suite's `trial_cap_micros`, so the ledger bounds each turn's spend, and its plan refuses before any mech exists when the turns it has yet to send could, each at that cap, spend more than the day's allowance has left.
-It saves each role's intent, the mech and the inbox item's id, before the send, and a rerun with the same out folder sends a role whose intent it holds without its record again under the intent's id, which the deployment receives once, so the turn runs at most once and the rerun saves it; the plan counts such a turn at its cap, since it may not have reached the deployment.
-A role waits for its turn's end through the mech's events with no deadline of its own, since the turn's dispatches have theirs; the first Ctrl-C interrupts the run once the record it is writing is whole, and the run ends 130, while a second one ends the process at once.
-oxlint `no-void` with `allowAsStatement` lets `void` stand only as a statement, where it marks a promise left floating on purpose.
-Only `@mechane/utilities` builds, races or times a promise the Worker's members wait on (DO-05): ast-grep `promise-building` rejects `Promise.withResolvers`, `Promise.race`, `Promise.any`, `setTimeout`, `setInterval`, and a `.then` that lacks either handler or holds a promise rather than a call, in `packages/worker`, so a signal's waiters or a drain's are a `wakeList`, the alarm's hand-off and a tool call's abort an `untilAborted`, and a cleanup at a promise's end an `afterSettling` or `afterFailing`.
-oxlint `promise/avoid-new` lets only a utility build a promise, such as `waitFor`, and `promise/always-return` with `ignoreLastCallback` has each `.then` handler but the last call's return a value.
-oxlint `typescript/require-await` is off by decision: DO-03 bans `Promise.resolve`, so an `async` arrow that awaits nothing is how a callback a dependency types as answering a promise answers a value, such as a tool's `execute` or an auth's `resolve`; `typescript/promise-function-async` requires every promise-answering method to use `async`.
-oxlint `promise/valid-params` and `unicorn/prefer-top-level-await` are off by decision, since both read Effect's `catch` as a promise's, the data-first `Effect.catch(self, handler)` and an `Effect.fn`'s trailing `Effect.catch` at module level: the compiler checks each promise method's arguments, and ast-grep `promise-chain` keeps every promise awaited rather than chained.
-oxlint `typescript/return-await` with `always` has an async function await each promise it returns, so a rejection surfaces in the function that returned it.
-Waits and retries are bounded one way: oxlint `no-restricted-properties` rejects `Effect.timeout`, `timeoutFail` and `repeat`, so a lapse that fails is `Effect.timeoutOrElse`, an ordinary lapse `Effect.timeoutOption`, and a known transient failure `Effect.retry` inside one deadline with one retry owner.
-ast-grep `process-signal` keeps every `process` listener in `interruptOnSignal` (EF-11), so no other code races it for a signal; its two suppressions are the eval's own Ctrl-C handler, which `mechane eval run` needs because the CLI runs no `interruptOnSignal`, and which takes only the first signal, so a second ends the process at once.
-ast-grep `fetch-signal` ratchets a `fetch` inside `Effect.tryPromise` that does not pass the wrap's signal, which an interrupt aborts.
-A scope owns every resource, which `Effect.acquireRelease` acquires in an `Effect.fn` that `Effect.scoped` closes: oxlint `no-restricted-properties` ratchets `Effect.acquireUseRelease`, `addFinalizer` and `ensuring`, and `Scope.make`, `provide` and `close`. The override of `packages/node/stack/src/celld/start-celld.ts` allows `Scope.provide`, with which `Stack.restart` starts celld again in the stack's scope.
-Every `Effect.forEach` and `Effect.all` states its concurrency: ast-grep `for-each-concurrency` and `for-each-options-concurrency` reject each `Effect.forEach` that does not, `all-concurrency` and `all-options-concurrency` each `Effect.all` that does not, and each rule's fix writes the default, `concurrency: 1`, which changes no behavior, as the last option, without a doubled comma.
+Workflow SDK owns durable execution, step retries, sleeps, and waits in the Node runtime. Each accepted input has one
+stable run identity. The domain store owns admission and per-mech order; native hooks wake queued runs. Keep these
+transactions short. Do not hold a database transaction or an HTTP request open while waiting for a model or approval.
+
+A workflow step records external side-effect identity before dispatch. Retrying a completed step returns the recorded
+result. If an arbitrary command's outcome is unknown, read its original receipt or report uncertainty; never issue a
+fresh execution ID merely to recover a missing response. Provider timeouts bound transport, not the truth of an
+external effect. Cancellation has a durable state and cannot erase accepted inputs queued behind the canceled run.
+
+The sandbox owns machines, executions, file checkpoints, and stop/recovery. It binds each sandbox to its admitted
+workspace and mech. The guest runs commands in owned process groups and terminates those groups at exit or timeout.
+Completed command receipts commit only after their file checkpoint. A failed save preserves the previous committed
+head and keeps the live machine available for recovery. Detached processes have no persistence guarantee.
+
+Container startup disables direct internet access and registers the egress gateway before work. Changed network
+policy applies to a replacement machine through the checkpoint lifecycle. Execution and checkpoint IDs survive
+transport retries and service replacement. Reusing an ID with different input is refused.
+
+The Node server closes its HTTP listener, Workflow worker, and owned database pools during shutdown. Bounded shutdown
+may leave durable work pending; a replacement process resumes that work from the SDK's state. Native asynchronous
+callbacks, Promise composition, and resource cleanup use the SDK's native APIs. Wall-clock reads belong in steps;
+workflow code uses only the SDK-supported deterministic clock. Business retries belong to one named owner and retain
+their original operation IDs. Existing CLI and build programs keep their Effect-scoped lifecycle.
+
+The server's `lifecycle/shutdown.ts` is the sole server process-exit owner. Successful shutdown exits with status zero
+after the HTTP listener, Workflow worker, hooks and database pools have closed; SDK global handles cannot keep a
+drained server alive. Failed shutdown or the bounded grace-period deadline exits with a failure status. Pending work
+remains durable; shutdown does not mark it completed or make uncertain effects safe to repeat. No domain or SDK tool
+gains process-exit authority from this exception. Repeated shutdown signals retain the same cleanup owner and cannot
+restore the process's default immediate-exit behavior while that cleanup is pending.
+
+The shared `stack/src/run-stack-program.ts` owns smoke, dev and retained local-stack process lifetimes. SIGINT and
+SIGTERM wait for startup ownership and idempotent stack cleanup before exiting with failure. Repeated signals cannot
+bypass cleanup or begin scenarios after interruption. The complete check graph settles static failures before starting
+its smoke services.
+
+The local sandbox emulator runs in a child process so its global signal handlers cannot terminate the stack owner.
+Its `stack/src/sandbox/main.ts` entrypoint closes the emulator through its public disposal API before exiting. The
+parent owns child startup, bounded shutdown and the surrounding guest resources; losing the parent also closes the
+emulator child. This local fixture boundary adds no process-exit authority to production sandbox or domain code.
+
+Release publication writes immutable artifacts before advertising their manifest. A failed download or verification
+leaves the installed CLI intact. Evals retain their submitted input identities before sending, so restarting an eval
+cannot duplicate accepted work.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - oxlint `typescript/no-floating-promises` (041): enforced, `"error"`
 - oxlint `no-void` (041): enforced in phase D, `["error",{"allowAsStatement":true}]`
-- oxlint's restricted members (EF-06): a ratchet until phase F3: `Effect.promise`
+- oxlint's restricted members (EF-06): enforced in phase F3: `Effect.promise`
 - oxlint's restricted members (EF-08): enforced in phase F3: `Effect.acquireUseRelease`, `Effect.addFinalizer`, `Effect.ensuring`, `Scope.make`
 - oxlint's restricted members (EF-08): enforced in phase F3: `Scope.provide`
 - oxlint's restricted members (EF-08): enforced in phase F3: `Scope.close`

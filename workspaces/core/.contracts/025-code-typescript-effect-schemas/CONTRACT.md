@@ -50,30 +50,28 @@ For each existing reader of stored or shipped data that a change makes reject un
 
 ## Local adaptations
 
-TypeBox, pinned in `@mechane/harness-tools`, is declared only for the parameters of pi's tools, since pi's `defineTool` takes no other schema, and its confine in `dependencies.json` keeps it inside `@mechane/harness` and `@mechane/harness-tools`; pi checks a tool's arguments against it, and the bash tool then decodes them with the protocol's `ExecutionRequest`, each memory tool with the protocol's `MemoryPath`, `MemoryText` and `MemoryDigest`, and each threads tool with the protocol's `ThreadTitle`, `ThreadNote`, `ThreadId`, `ThreadState` and, for a drone's brief, `InboxText`, before it reads them; the memory and threads tools' TypeBox parameters carry no bounds, and a description that names a limit interpolates the protocol's constant.
-Decoded names follow the naming contracts, and wire keys derive from them.
-Each schema a schemas file exports has its type beside it, as `export type Turn = typeof Turn.Type`, so every other form of the entity names that type (TD-12): ast-grep `schema-alias` rejects one without, and `mise run fix` declares it, and a pi tool's TypeBox parameters, which carry no `Type`, need none. The rule reads the schemas files only, since the placement normalizer moves every schema that another file uses into one.
-`wireKey` in `@mechane/protocol` writes a field in snake_case without its boolean prefix, as `self_grading` for `isSelfGrading`.
-`wireStruct`, which `@mechane/protocol` exports, derives each key of a struct with it, as the CLI's eval records do. `renamedWireStruct` takes a key it cannot derive from `renames`, as `has_more` for `hasMore`, which `wireKey` would write as `more`, since an optional `renames` would hold an absent value outside an `Option`.
-Their `WireKey` type spells the same derivation, so a struct's encoded type names its keys; a struct that predates them lists its keys in `Schema.encodeKeys`, which ast-grep `encode-keys-outside-records` ratchets outside `packages/shared/records/src`.
-The router decodes each request part, and the CLI each command's input, with excess properties refused; `NoFields` in `@mechane/protocol` is the part without fields, because an empty `Schema.Struct` passes every key through.
-An eval run decodes its suite file with excess properties refused, and a grader's reply with `GradeReply`, whose failure is the trial's `no_grade`.
-Code encodes its own output with `Schema.encodeSync` (EF-16): oxlint `no-restricted-properties` ratchets `Schema.encodeEffect` and `encodeUnknownEffect`, and ast-grep `decode-or-die` rejects a decode piped into `Effect.orDie` or passed to it, which would make a failure the boundary expects a defect. ast-grep `encode-sync` rewrites a yielded `encodeEffect(S)(v).pipe(Effect.orDie)` to `encodeSync(S)(v)` when a sweep or, once enforced, `mise run fix` runs it.
-`Schema.is` narrows only to an `Unknown*` member (EF-16), a clause no rule checks, so review holds it: 12 sites narrow to another schema, such as `RateLimited` in the router's failure answer, and phase F3 decodes them instead.
-A store decodes its rows through the store kernel's `decodeRows`, `decodeOne`, `decodeFirst` and `decodeNonEmptyRows`: ast-grep `store-row-decode` rejects a `Schema.decode` call in a store outside `packages/worker/store/src`, and oxlint `no-restricted-properties` ratchets `Schema.decodeUnknownOption`.
-Every untyped boundary answers `unknown` (TD-11): the registry writes `lint/types/<lane>/strict-globals.d.ts` for each lane, which the lane's program names and each member's program inherits, so `JSON.parse` and the `json()` of each body of `jsonBodies` return `unknown`. In the worker lane those are `Response`, `Request` and `R2ObjectBody`, since Cloudflare's types declare `Body` as a class. ast-grep `json-type-argument` rejects a `json` call with a type argument, which would still assert the body's type, and oxlint skips the generated declarations.
-Every text of a wire, RPC or stored schema is bounded (TD-26): ast-grep `bare-string-schema` ratchets a bare `Schema.String` in `protocol`, `sandbox-wire`, `rpc` and each `*-store`, except ER-02's `reason`, a record's key, a redacted value, a patterned or checked string, and an id, which `plain-id-schema` counts; bounding the 71 it holds changes what a decode refuses, so each waits for its field's bound.
+Effect Schema owns the domain operation catalog, CLI inputs, application configuration, and product record decoding.
+`wireStruct` and `renamedWireStruct` preserve the catalog's wire-key mapping; the server and shared client encode and
+decode through the declared operation rather than serializing decoded values directly.
 
-The v11 strict excess-property decoder rule is outside the current adoption baseline at commit 94f2d0f.
-Existing stored and shipped readers keep their tolerant decoding, which contract 047 requires for future-compatible fields.
-A rollout that narrows a reader needs format-specific evidence and a migration decision before it changes runtime behavior.
-The new schema-name and derived-type syntax checks are staged with that rollout; the shipped assets stay unloaded.
-Existing schema-alias and boundary checks remain enforced.
+AI SDK tools and json-render catalogs use their native Zod schemas in `packages/node/runtime` and
+`packages/shared/protocol/src/presentation`. These are declared native consumers. Define each shape once and derive
+its TypeScript type from that schema. Pass native SDK messages, tool parts, and stream chunks through the upstream
+SDK types and validators; do not maintain a second serializer or mirror schema for them. An unrelated domain
+endpoint does not gain a second validator because it shares a file with an SDK call.
+
+Reject unknown fields on newly owned command and configuration shapes. Foreign provider payloads may contain fields
+not read by the application. Existing tolerant domain response schemas retain their declared behavior; narrower
+stored readers follow contract 047. The native catalog's bounds apply before rendering or persisting a complete spec.
+
+A store decodes each returned row in its owning store module. Untrusted JSON and HTTP bodies remain `unknown` until
+validated. Product output built from an Effect schema's type uses its declared encoder. A decode failure is a failed
+boundary, not a default object or an unchecked type assertion.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `jsonBodies` `shared` [`Body`], `worker` [`Response`, `Request<CfHostMetadata = unknown, Cf = CfProperties<CfHostMetadata>>`, `R2ObjectBody`], `node` [], `browser` [`Body`].
-- oxlint's restricted members (TD-22): a ratchet until phase F2: `Schema.decodeUnknownOption`
+- oxlint's restricted members (TD-22): enforced in phase F2: `Schema.decodeUnknownOption`
 - oxlint's restricted members (EF-16): enforced in phase D: `Schema.encodeEffect`, `Schema.encodeUnknownEffect`
 - ast-grep `decode-or-die` (EF-16): enforced in phase D
 - ast-grep `schema-alias` (TD-12): enforced in phase D

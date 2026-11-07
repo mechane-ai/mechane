@@ -13,9 +13,7 @@ import { RequestService, RequestServiceRecord } from './request-service.ts';
 const VARIABLE_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
 
 /** Repository identity and the server-held GitHub App credential used to mint installation tokens. */
-export const GitHubRepositoryAccess = wireStruct({ fields: GITHUB_REPOSITORY_FIELDS });
-
-export type GitHubRepositoryAccess = typeof GitHubRepositoryAccess.Type;
+const GitHubRepositoryAccess = wireStruct({ fields: GITHUB_REPOSITORY_FIELDS });
 
 const RESERVED_VARIABLES: ReadonlySet<string> = new Set([
   'HOME',
@@ -82,20 +80,20 @@ export type ExecutionAccessChange = typeof ExecutionAccessChange.Type;
 const GitHubRepositoryRecord = wireStruct({ fields: GITHUB_REPOSITORY_RECORD_FIELDS });
 
 /** Stored authority remains readable after future request limits change. */
-export const ExecutionAccessRecord = wireStruct({
+const ExecutionAccessRecord = wireStruct({
   fields: {
     /** None means no GitHub authority was granted. */
     github: Schema.OptionFromNullOr(GitHubRepositoryRecord),
     variables: Schema.Record(RecordText, RecordText),
     secrets: Schema.Record(RecordText, RecordText),
-    /** None means no request service was configured, including grants saved before this field existed. */
+    /** None means no request service was configured, its credential never enters a shell command. */
     requestService: Schema.OptionFromOptionalNullOr(RequestServiceRecord),
   },
 });
 
 /** Reads expose public values and secret references only. */
 export const ExecutionAccessState = Schema.Struct({
-  /** None means no execution access is granted; forks and drones inherit none. */
+  /** None means no execution access is granted; copies inherit none. */
   access: Schema.OptionFromNullOr(ExecutionAccessRecord),
 });
 

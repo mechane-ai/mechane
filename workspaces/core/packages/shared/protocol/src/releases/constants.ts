@@ -8,6 +8,9 @@ export const CliTarget = {
 
 export type CliTarget = (typeof CliTarget)[keyof typeof CliTarget];
 
+/** The public repository that owns immutable release assets and publication receipts. */
+export const RELEASE_REPOSITORY = 'mechane-ai/mechane';
+
 /**
  * The revision of the source a release was built from, as `git describe` names it, such as `v0.1.0` or `623e228f0a1b`:
  * letters, digits, dots, underscores and hyphens, which install.sh reads as text.

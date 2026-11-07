@@ -36,13 +36,20 @@ Use the owning workspace's existing checks.
 
 ## Local adaptations
 
-`dependencies.json` declares each package with what it owns, its layer, lane and consumers, as `101-package-layers` says, and each package's `package.json` declares the members it depends on.
-A package's public entry points are the source targets its exports map declares, normally `./src/index.ts`.
-The compiler-required `@mechane-ai/elements/tokens.stylex` export points directly to its defining module under contract 114.
-`@mechane/cli` publishes only its `bin` and `@mechane/app` only the Wrangler `main`.
-The local stack in `packages/node/stack/src` serves both `mise -C workspaces/core run dev` and the smoke, so local and smoke runs take one path.
-The stack serves the bundle that `mise -C workspaces/core run build:worker` writes with `wrangler deploy --dry-run`, the bytes a production deploy uploads.
-The local GitHub that signs a browser in lives with the stack in `packages/node/stack/src/github`, never in the Worker, which reaches it only through the GitHub origins its variables name.
+`dependencies.json` declares package ownership, layer, runtime lane, and consumers. Each package manifest declares
+its dependencies and public exports. A public entry point normally targets `src/index.ts`; native compiler and
+executable entries may target their defining module when their consumer requires it.
+
+`@mechane/runtime` owns domain state and native SDK execution. `@mechane/server` composes the HTTP server, public
+World lifecycle, and Console assets. The sandbox service owns only the authenticated compute boundary and public
+reverse proxy. These boundaries are not alternate agent engines.
+
+The local stack in `packages/node/stack/src` serves development and smoke runs. It launches the compiled Node server
+against real Postgres and uses the same runtime entry as deployment. External GitHub, Slack, Nexus, and model fixtures
+live in the stack's `fixtures` directory, behind configured HTTP endpoints. Product code imports no fixture.
+The local compute fixture runs the real sandbox service and guest process through a host launcher; it proves the
+protocol and receipt lifecycle, not container or operating-system isolation. Hosted qualification verifies that
+separate boundary. Production artifacts exclude all fixture and smoke code.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

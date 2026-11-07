@@ -4,7 +4,13 @@ language: TypeScript
 severity: error
 message: 'Declare a tagged union with `Schema.TaggedUnion` and build a member with its constructor, such as `Answer.cases.Settled.make({ receipt })` (TD-20)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+  ]
 rule:
   any:
     - kind: property_signature

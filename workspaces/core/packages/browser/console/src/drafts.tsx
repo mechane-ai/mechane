@@ -1,11 +1,11 @@
 import { isRevisionConflict, problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
-import { Delivery } from '@mechane/protocol';
-import type { InboxItem, Mech, Turn } from '@mechane/protocol';
+import type { Mech } from '@mechane/protocol';
 import { CreationRequestId, Micros } from '@mechane/records';
 import { Option, Schema } from 'effect';
 import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
+import type { MessageReceipt, MessageSubmission as SubmittedMessage } from './conversations/entry.ts';
 
 type MessageSubmission = {
   readonly id: string;
@@ -14,19 +14,7 @@ type MessageSubmission = {
   readonly error: string | undefined;
 };
 
-type MessageDraft = {
-  readonly id: string;
-  readonly text: string;
-  readonly submission: MessageSubmission | undefined;
-  readonly received: Pick<InboxItem, 'id'> | undefined;
-  readonly outcome: MessageRunReceipt | undefined;
-};
-
-export type MessageRunReceipt = {
-  readonly turnId: Turn['id'];
-  readonly status: Turn['status'];
-  readonly wasCanceled: boolean;
-};
+type MessageDraft = { readonly id: string; readonly text: string; readonly submission: MessageSubmission | undefined };
 
 type DefinitionDraft = {
   readonly id: string;
@@ -52,7 +40,7 @@ type CreationDraft = {
 };
 
 type DraftState = {
-  readonly mechId: string | undefined;
+  readonly scope: string;
   readonly message: MessageDraft;
   readonly definition: DefinitionDraft | undefined;
   readonly creation: CreationDraft | undefined;
@@ -63,8 +51,11 @@ type DraftOwner = {
   readonly definition: DefinitionDraft | undefined;
   readonly creation: CreationDraft | undefined;
   readonly changeMessage: (text: string) => void;
-  readonly sendMessage: (data: ConsoleData, mech: Mech, shouldRetry?: boolean) => void;
-  readonly observeMessageTurn: (inboxItemId: InboxItem['id'], turn: Turn | undefined) => void;
+  readonly sendMessage: (
+    mech: Mech,
+    send: (message: SubmittedMessage) => Promise<MessageReceipt>,
+    shouldRetry?: boolean,
+  ) => void;
   readonly openDefinition: (mech: Mech) => void;
   readonly closeDefinition: () => void;
   readonly changeDefinition: (
@@ -80,10 +71,10 @@ type DraftOwner = {
 
 const DraftContext = createContext<DraftOwner | undefined>(undefined);
 
-function emptyDrafts(mechId: string | undefined): DraftState {
+function emptyDrafts(scope: string): DraftState {
   return {
-    mechId,
-    message: { id: crypto.randomUUID(), text: '', submission: undefined, received: undefined, outcome: undefined },
+    scope,
+    message: { id: crypto.randomUUID(), text: '', submission: undefined },
     definition: undefined,
     creation: undefined,
   };
@@ -96,25 +87,31 @@ export function WorkspaceDraftProvider({
   readonly mechId: string | undefined;
   readonly children: ReactNode;
 }): ReactNode {
-  const [saved, setSaved] = useState(() => emptyDrafts(mechId));
-  const state = saved.mechId === mechId ? saved : emptyDrafts(mechId);
+  const scope = mechId ?? 'workspace';
+  const [saved, setSaved] = useState<ReadonlyMap<string, DraftState>>(() => new Map());
+  const state = saved.get(scope) ?? emptyDrafts(scope);
 
-  if (state !== saved) {
-    setSaved(state);
+  if (!saved.has(scope)) {
+    setSaved(new Map(saved).set(scope, state));
   }
 
   function update(change: (current: DraftState) => DraftState): void {
-    setSaved((current) => (current.mechId === mechId ? change(current) : current));
+    setSaved((current) => {
+      const previous = current.get(scope);
+
+      return previous === undefined ? current : new Map(current).set(scope, change(previous));
+    });
   }
 
   function changeMessage(text: string): void {
-    update((current) => ({
-      ...current,
-      message: { ...current.message, id: crypto.randomUUID(), text, received: undefined, outcome: undefined },
-    }));
+    update((current) => ({ ...current, message: { ...current.message, id: crypto.randomUUID(), text } }));
   }
 
-  function sendMessage(data: ConsoleData, mech: Mech, shouldRetry = false): void {
+  function sendMessage(
+    mech: Mech,
+    send: (message: SubmittedMessage) => Promise<MessageReceipt>,
+    shouldRetry = false,
+  ): void {
     const draft = state.message;
 
     if (draft.submission?.isPending === true || mech.status === 'archived') {
@@ -131,78 +128,39 @@ export function WorkspaceDraftProvider({
 
     update((current) => ({ ...current, message: { ...current.message, submission } }));
 
-    void data.commands
-      .sendInboxItem({
-        mechId: mech.id,
-        inboxItemId: submission.id,
-        text: submission.text,
-        delivery: Delivery.WhenIdle,
-      })
-      .then(
-        (received) => {
-          update((current) => {
-            if (current.message.submission?.id !== submission.id) {
-              return current;
-            }
+    void send(submission).then(
+      () => {
+        update((current) => {
+          if (current.message.submission?.id !== submission.id) {
+            return current;
+          }
 
-            const isSubmittedDraft = current.message.id === submission.id;
+          const isSubmittedDraft = current.message.id === submission.id;
 
-            return {
-              ...current,
-              message: {
-                id: isSubmittedDraft ? crypto.randomUUID() : current.message.id,
-                text: isSubmittedDraft ? '' : current.message.text,
-                submission: undefined,
-                received: { id: received.id },
-                outcome: undefined,
-              },
-            };
-          });
-        },
-        (cause: unknown) => {
-          update((current) =>
-            current.message.submission?.id === submission.id
-              ? {
-                  ...current,
-                  message: {
-                    ...current.message,
-                    submission: { ...submission, isPending: false, error: problemMessage(cause) },
-                  },
-                }
-              : current,
-          );
-        },
-      );
-  }
-
-  function observeMessageTurn(inboxItemId: InboxItem['id'], turn: Turn | undefined): void {
-    update((current) => {
-      if (current.message.received?.id !== inboxItemId) {
-        return current;
-      }
-
-      const prior = current.message.outcome;
-
-      if (turn === undefined) {
-        return prior === undefined ? current : { ...current, message: { ...current.message, outcome: undefined } };
-      }
-
-      const wasCanceled = turn.status === 'unanswered' && turn.reason === 'canceled';
-
-      const hasSameOutcome =
-        prior?.turnId === turn.id && prior.status === turn.status && prior.wasCanceled === wasCanceled;
-
-      const wouldRegress = prior?.turnId === turn.id && prior.status !== 'running' && turn.status === 'running';
-
-      if (hasSameOutcome || wouldRegress) {
-        return current;
-      }
-
-      return {
-        ...current,
-        message: { ...current.message, outcome: { turnId: turn.id, status: turn.status, wasCanceled } },
-      };
-    });
+          return {
+            ...current,
+            message: {
+              id: isSubmittedDraft ? crypto.randomUUID() : current.message.id,
+              text: isSubmittedDraft ? '' : current.message.text,
+              submission: undefined,
+            },
+          };
+        });
+      },
+      (cause: unknown) => {
+        update((current) =>
+          current.message.submission?.id === submission.id
+            ? {
+                ...current,
+                message: {
+                  ...current.message,
+                  submission: { ...submission, isPending: false, error: problemMessage(cause) },
+                },
+              }
+            : current,
+        );
+      },
+    );
   }
 
   function openDefinition(mech: Mech): void {
@@ -395,7 +353,6 @@ export function WorkspaceDraftProvider({
         creation: state.creation,
         changeMessage,
         sendMessage,
-        observeMessageTurn,
         openDefinition,
         closeDefinition,
         changeDefinition,

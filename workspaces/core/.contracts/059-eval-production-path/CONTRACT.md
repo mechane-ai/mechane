@@ -40,12 +40,20 @@ Confirm that an evaluation request produced no external effect, and that a requi
 
 ## Local adaptations
 
-The runner reaches the deployment only through `/api/v1`, with `@mechane/client` and the schemas of `@mechane/protocol`, against the same Worker build a deployment serves, and imports no Worker module.
-A suite file is the one case format, and each suite is a file its author keeps; no suite is committed yet.
-Each repeat is a trial whose id derives from the plan's digest, its case and its repeat, run on fresh mechs, so it starts with an empty memory, no thread and no drone; a case has one round.
-The plan records the release and the worker revision, and the suite records the subject's instructions and both models; the grader's instructions are the release's.
-A mech's sandbox holds no credential, so no trial can publish anything; its network is open.
-Open: `mechane eval run` ships in the public CLI, a client of the assessed deployment rather than part of it, where Conductor keeps its runner in a package of its own; eval mechs are not marked as evaluation, so the deployment keeps them with the workspace's other mechs; a result records neither that memory was empty nor the model an omitted one resolved to.
+The runner reaches the deployment through `/api/v1` using `@mechane/client` and `@mechane/protocol`. It exercises
+the same Node runtime and Workflow execution as other clients and imports no private runtime implementation.
+A suite file is the case format. Each repeat derives a trial ID from the plan, case, and repeat and uses a fresh mech
+with empty memory, no conversation history, and no inherited execution grant. A case currently has one round.
+The plan records the release and runtime revision. The suite records the subject instructions and both models;
+the grader instructions come from the release.
+
+Trials must use a workspace and sandbox policy that prevents external publication. A fresh mech has no credential
+grant, but that alone is not evidence of network or effect isolation; verify the actual workspace policy and read
+required effects from local fakes. The public API path is necessary, but does not waive the Rules above.
+
+The retained runner does not yet mark evaluation mechs separately from ordinary workspace mechs or record every
+resolved model and empty-memory fact required by this contract. Keep those coverage gaps explicit in eval review;
+do not describe a public-path smoke run as complete evaluation isolation.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

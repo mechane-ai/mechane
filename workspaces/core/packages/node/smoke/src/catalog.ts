@@ -1,189 +1,125 @@
-import type { ScenarioFailure, ScenarioInput } from '@mechane/testing';
-import type { Effect } from 'effect';
-import { deadKeysAreRefusedWithTheirOwnCode } from './auth/dead-keys-are-refused-with-their-own-code.ts';
-import { firstLoginSignsUpAndLaterLoginsReuseIt } from './auth/first-login-signs-up-and-later-logins-reuse-it.ts';
-import { noKeyApprovesTheCreationOfAKey } from './auth/no-key-approves-the-creation-of-a-key.ts';
-import { onlyTheTypedCodeIsApprovedAndWrongCodesAreThrottled } from './auth/only-the-typed-code-is-approved-and-wrong-codes-are-throttled.ts';
-import { tokensStayInTheirCredentialFiles } from './auth/tokens-stay-in-their-credential-files.ts';
-import { cloudflareRestoresWorkspace } from './deployment/cloudflare-restores-workspace.ts';
-import { freshStackServesStagedWorker } from './deployment/fresh-stack-serves-staged-worker.ts';
-import { droneReadsMemoryAsSavedAtItsStart } from './drones/drone-reads-memory-as-saved-at-its-start.ts';
-import { droneReportsOnceThroughTheInbox } from './drones/drone-reports-once-through-the-inbox.ts';
-import { threadWakeupSurvivesRestart } from './drones/thread-wakeup-survives-restart.ts';
-import { evalRunGradesEachCaseThroughTheDeployment } from './evals/eval-run-grades-each-case-through-the-deployment.ts';
-import { forkedMechKeepsItsParentsPastAndNoLaterTurn } from './forks/forked-mech-keeps-its-parents-past-and-no-later-turn.ts';
-import { executionAccessIsScopedAndTransient } from './hands/execution-access-is-scoped-and-transient.ts';
-import { interruptedCommandRunsOnce } from './hands/interrupted-command-runs-once.ts';
-import { mechClonesARepositoryIntoItsOwnSandbox } from './hands/mech-clones-a-repository-into-its-own-sandbox.ts';
-import { burstFromOneAddressIsRefusedAndOthersAreServed } from './limits/burst-from-one-address-is-refused-and-others-are-served.ts';
-import { inboxItemIsAnsweredAndChargedOnce } from './mechs/inbox-item-is-answered-and-charged-once.ts';
-import { uncoverableDispatchIsRefusedUnsent } from './mechs/uncoverable-dispatch-is-refused-unsent.ts';
-import { canceledTurnSavesNoMemory } from './memory/canceled-turn-saves-no-memory.ts';
-import { savedMemoryOutlivesARestartAndAReset } from './memory/saved-memory-outlives-a-restart-and-a-reset.ts';
-import { installedCliUpdatesToThePublishedRelease } from './releases/installed-cli-updates-to-the-published-release.ts';
-import { retainedLocalAdmission } from './releases/retained-local-admission.ts';
-import { workspacePolicyCutsOffQueuedWorkImmediately } from './workspaces/workspace-policy-cuts-off-queued-work-immediately.ts';
+import type { Scenario } from '@mechane/testing';
+import { authenticationLimitsSurviveRestart } from './auth/authentication-limits-survive-restart.ts';
+import { deviceApprovalRequiresTypedCodeAndCsrf } from './auth/device-approval-requires-typed-code-and-csrf.ts';
+import { expiredKeyCannotAuthorizeRequests } from './auth/expired-key-cannot-authorize-requests.ts';
+import { membershipChangesApplyImmediately } from './auth/membership-changes-apply-immediately.ts';
+import { onlyBrowserCanApproveKeys } from './auth/only-browser-can-approve-keys.ts';
+import { repeatedSignInReusesIdentity } from './auth/repeated-sign-in-reuses-identity.ts';
+import { revokedKeyCannotAuthorizeRequests } from './auth/revoked-key-cannot-authorize-requests.ts';
+import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
+import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
+import { gradesOnlyValidIsolatedEvaluations } from './evals/grades-only-valid-isolated-evaluations.ts';
+import { forkKeepsAnIndependentMemorySnapshot } from './memory/fork-keeps-an-independent-memory-snapshot.ts';
+import { memorySurvivesRestart } from './memory/memory-survives-restart.ts';
+import { approvalWaitSurvivesRestart } from './recovery/approval-wait-survives-restart.ts';
+import { nativeStreamFailureIsReplayable } from './recovery/native-stream-failure-is-replayable.ts';
+import { nativeStreamReplaysWithinItsWorkspace } from './recovery/native-stream-replays-within-its-workspace.ts';
+import { cancellationStopsToolsAndAdvancesQueue } from './runs/cancellation-stops-tools-and-advances-queue.ts';
+import { duplicateInputRunsAndChargesOnce } from './runs/duplicate-input-runs-and-charges-once.ts';
+import { pausedAdmissionResumes } from './runs/paused-admission-resumes.ts';
+import { unfundedInputNeverReachesModel } from './runs/unfunded-input-never-reaches-model.ts';
+import { credentialsStayOutOfDurableExecution } from './security/credentials-stay-out-of-durable-execution.ts';
 
-/** One scenario of the smoke and the consequential regression it guards. */
-type Scenario = {
-  readonly guarantee: string;
-  readonly regression: string;
-  readonly run: (input: ScenarioInput) => Effect.Effect<void, ScenarioFailure>;
-};
-
-/**
- * The scenario catalog: every scenario the smoke runs, each guarding one consequential regression. Scott approves each
- * change to this list. The mech scenarios run early: a follower's last wait for an event ends only at its deadline, 20
- * seconds on, and the stack stops only once every wait has ended. Restart scenarios end prior waits and restore their
- * temporary installation settings. Workspace policy checks use runtime APIs while agents keep running. The token scan
- * runs last, so it reads the stored state and the sandboxes every other scenario left.
- */
 export const CATALOG: ReadonlyArray<Scenario> = [
   {
-    guarantee:
-      'execution access survives restart, is revoked for subsequent commands, and never exposes injected credentials in receipts',
+    guarantee: 'authentication limits survive restart and remain scoped to their caller',
+    regression: 'an attacker evades persisted device-code limits or prevents another principal from signing in',
+    run: authenticationLimitsSurviveRestart,
+  },
+  {
+    guarantee: 'repeated GitHub sign-in reuses one principal and personal workspace',
+    regression: 'one provider identity creates duplicate ownership records',
+    run: repeatedSignInReusesIdentity,
+  },
+  {
+    guarantee: 'only a browser session can approve a new API key',
+    regression: 'an existing API key escalates itself by minting another credential',
+    run: onlyBrowserCanApproveKeys,
+  },
+  {
+    guarantee: 'device approval requires the typed code and its browser CSRF token',
+    regression: 'a crafted link or cross-origin form grants an unattended device key',
+    run: deviceApprovalRequiresTypedCodeAndCsrf,
+  },
+  {
+    guarantee: 'revoked keys cannot authorize later requests',
+    regression: 'logout or key revocation leaves a credential usable',
+    run: revokedKeyCannotAuthorizeRequests,
+  },
+  {
+    guarantee: 'expired keys cannot authorize requests',
+    regression: 'an elapsed credential lifetime does not revoke API access',
+    run: expiredKeyCannotAuthorizeRequests,
+  },
+  {
+    guarantee: 'workspace membership changes govern the next request',
+    regression: 'a removed member keeps access or a member changes owner-only configuration',
+    run: membershipChangesApplyImmediately,
+  },
+  {
+    guarantee: 'duplicate inputs run and charge exactly once',
+    regression: 'a retried input repeats model work or bills the same usage twice',
+    run: duplicateInputRunsAndChargesOnce,
+  },
+  {
+    guarantee: 'an unfunded input never reaches the model',
+    regression: 'a model request begins before its spending reservation is admitted',
+    run: unfundedInputNeverReachesModel,
+  },
+  {
+    guarantee: 'cancellation stops later tools and advances queued work',
+    regression: 'cancelled work mutates memory or strands the next accepted input',
+    run: cancellationStopsToolsAndAdvancesQueue,
+  },
+  {
+    guarantee: 'a paused mech resumes its accepted input without another message',
+    regression: 'resuming a mech strands queued work that already has a durable workflow',
+    run: pausedAdmissionResumes,
+  },
+  {
+    guarantee: 'acknowledged memory survives a process restart',
+    regression: 'durable memory exists only in process state or the conversation transcript',
+    run: memorySurvivesRestart,
+  },
+  {
+    guarantee: 'a fork keeps an independent memory snapshot',
+    regression: 'later parent writes alter the fork or the fork loses its initial memory',
+    run: forkKeepsAnIndependentMemorySnapshot,
+  },
+  {
+    guarantee: 'a Slack approval wait resumes once after a process restart',
+    regression: 'an approval loses the task, repeats an effect, or replies in the wrong Slack thread',
+    run: approvalWaitSurvivesRestart,
+  },
+  {
+    guarantee: 'native UI streams replay within their authenticated workspace',
+    regression: 'reconnection repeats model work, corrupts the message, or exposes another workspace',
+    run: nativeStreamReplaysWithinItsWorkspace,
+  },
+  {
+    guarantee: 'a failed native stream reports its error and replays without another model call',
+    regression: 'a failed run appears to finish successfully or reconnecting repeats its model request',
+    run: nativeStreamFailureIsReplayable,
+  },
+  {
+    guarantee: 'evaluations grade valid results without exposing expectations or repeating paid work',
     regression:
-      'a command inherits unauthorized credentials, retains revoked access, or copies a credential into the model transcript or durable execution state',
-    run: executionAccessIsScopedAndTransient,
+      'invalid grader output becomes a score, subjects see expectations, or a resumed evaluation repeats calls',
+    run: gradesOnlyValidIsolatedEvaluations,
   },
   {
-    guarantee: 'a waiting work thread wakes once after a runtime restart without another user message',
-    regression: 'a CI wait disappears when the runtime stops, or repeats the same continuation after recovery',
-    run: threadWakeupSurvivesRestart,
+    guarantee: 'an interrupted command retains one receipt and its mech workspace',
+    regression: 'a runtime restart repeats a shell effect or loses the persistent workspace',
+    run: interruptedCommandKeepsItsReceipt,
   },
   {
-    guarantee: 'retained local state refuses unsafe releases and verifies legacy adoption before runtime startup',
-    regression:
-      'stored-data compatibility: an older or incompatible launcher opens retained databases, or an unverified legacy baseline is accepted after interrupted startup',
-    run: retainedLocalAdmission,
+    guarantee: 'execution grants are current and their credentials remain transient',
+    regression: 'revoked execution access remains usable or resolved credentials become durable data',
+    run: executionGrantIsCurrentAndTransient,
   },
   {
-    guarantee:
-      'the built Worker restores sandbox files after export, import, machine replacement, and a Cloudflare workerd restart',
-    regression:
-      'runtime compatibility: sandbox commands or portable file restoration that pass locally but fail under Cloudflare workerd',
-    run: cloudflareRestoresWorkspace,
-  },
-  {
-    guarantee: 'a fresh stack serves the staged Worker, whose readiness reports its revision and each migrated class',
-    regression: 'publication safety: a Worker build or Durable Object migration that cannot serve a fresh deployment',
-    run: freshStackServesStagedWorker,
-  },
-  {
-    guarantee: 'an inbox item is answered through the model and charged once',
-    regression:
-      'model metering: a reply that never comes, a dispatch charged at other than its reported usage, or a resent inbox item that runs and is charged again',
-    run: inboxItemIsAnsweredAndChargedOnce,
-  },
-  {
-    guarantee:
-      'a dispatch the allowance cannot cover is refused before the upstream receives it, and its turn ends allowance_exhausted',
-    regression: 'spend control: a dispatch sent beyond the daily allowance, or a refusal that reads as a failed model',
-    run: uncoverableDispatchIsRefusedUnsent,
-  },
-  {
-    guarantee:
-      'an eval run grades each case through the deployment, an answer that is not a grade is recorded as no_grade, never as a score, and its subject never sees an expectation',
-    regression:
-      "eval integrity: a grader's text answer counted as a score, or a trial graded without the deployment's turns",
-    run: evalRunGradesEachCaseThroughTheDeployment,
-  },
-  {
-    guarantee:
-      'a mech clones a public repository with bash, its next turn still finds the clone, and its sandbox holds only its own files and variables',
-    regression:
-      "sandbox isolation: a command that never runs or loses its output, a sandbox that forgets its files between turns, or one that another mech shares or that sees the stack's variables",
-    run: mechClonesARepositoryIntoItsOwnSandbox,
-  },
-  {
-    guarantee:
-      'a canceled turn saves none of its memory changes, whether a member or an interrupt item cancels it, and the items sent during it still get their turns',
-    regression:
-      'turn atomicity: a canceled turn whose memory changes land or show, a cancel that never ends its turn or strands the item queued behind it, or an interrupt item that waits for the turn it should cancel',
-    run: canceledTurnSavesNoMemory,
-  },
-  {
-    guarantee:
-      'a memory a mech saves is recalled after a restart of the deployment and a reset of its context, from its memory and not its transcript',
-    regression:
-      "lost memory: a memory that a restart loses, that lives only in the conversation's context, or that a reset leaves out of the mech's prompt",
-    run: savedMemoryOutlivesARestartAndAReset,
-  },
-  {
-    guarantee:
-      "a forked mech keeps its parent's memory and conversation up to the fork, and later turns of either never reach the other",
-    regression:
-      "fork isolation: a fork that loses its parent's memory or conversation, shares later memory, events or requests with its parent, or reuses its parent's provider identity so their model caches mix",
-    run: forkedMechKeepsItsParentsPastAndNoLaterTurn,
-  },
-  {
-    guarantee: "a drone reads its mech's memory as saved when it started, and can neither change it nor start a drone",
-    regression:
-      "drone confinement: a drone that reads a running turn's changes or a save made after its start, that writes its mech's memory, or that starts drones of its own",
-    run: droneReadsMemoryAsSavedAtItsStart,
-  },
-  {
-    guarantee:
-      'a drone runs in its own sandbox and reports back through the inbox exactly once, whether it finishes, a member cancels it, or a restart interrupts it',
-    regression:
-      "drone reporting: a drone that shares its mech's sandbox, runs its command again or reports twice or never after a restart, charges its dispatches to no drone, or runs on past a member's cancel",
-    run: droneReportsOnceThroughTheInbox,
-  },
-  {
-    guarantee:
-      'a command that a crash interrupts runs once, also across alarms that hand its turn on, and its output still reaches the mech; a reply streaming at a hand-off is sent and charged once',
-    regression:
-      'run-once execution: a command that a restart of the deployment runs a second time, or whose output it loses, or an alarm hand-off that runs a command again or cuts and re-sends a dispatch',
-    run: interruptedCommandRunsOnce,
-  },
-  {
-    guarantee:
-      'workspace policy takes effect without a deployment: commands, source work and maintenance share machine capacity through recovery and stop; disabled sandboxes start no machines, suspended work spends nothing, and budget reductions govern the next dispatch',
-    regression:
-      'operator control: a retained machine escapes capacity accounting, an unconfirmed stop releases capacity, workspace policy waits for an agent restart, a suspended workspace still admits calls or dispatches, or a workspace owner changes installation policy',
-    run: workspacePolicyCutsOffQueuedWorkImmediately,
-  },
-  {
-    guarantee:
-      'a fresh GitHub identity signs up through device login with exactly one personal workspace, which a second login reuses',
-    regression:
-      'open sign-up: a login that creates no workspace, a second one, or a second principal for one GitHub identity',
-    run: firstLoginSignsUpAndLaterLoginsReuseIt,
-  },
-  {
-    guarantee: 'a logged-out or expired key is refused with its own code',
-    regression: 'key lifecycle: a logout that leaves its key live, or an expired key that authenticates',
-    run: deadKeysAreRefusedWithTheirOwnCode,
-  },
-  {
-    guarantee: 'a key cannot approve the creation of a key',
-    regression: 'key lifecycle: a key that approves a device approval, so one key mints another without a browser',
-    run: noKeyApprovesTheCreationOfAKey,
-  },
-  {
-    guarantee: 'an approval goes through only for the code its signed-in approver types, and wrong codes are throttled',
-    regression:
-      'device-code phishing: a link that fills in the code, a review without its CSRF token, a code whose answer tells pending from expired, or unthrottled guessing',
-    run: onlyTheTypedCodeIsApprovedAndWrongCodesAreThrottled,
-  },
-  {
-    guarantee:
-      'a burst from one address at the public endpoints is refused with a decodable 429, also after a restart, and other addresses are still served',
-    regression:
-      'public abuse: an unauthenticated burst that reaches the directory unbounded, a limit shared by every address or forgotten by a restart or an eviction, or a refusal without its wait',
-    run: burstFromOneAddressIsRefusedAndOthersAreServed,
-  },
-  {
-    guarantee: 'an installed CLI updates itself to the release its deployment publishes',
-    regression:
-      'CLI distribution: an install.sh or mechane update that installs a binary other than the published release, or a release that never reaches an installed CLI',
-    run: installedCliUpdatesToThePublishedRelease,
-  },
-  {
-    guarantee:
-      "no raw token appears in stored Durable Object state, a sandbox, the Worker log or command output, only in the credential files, and the Worker's log holds only id-only lines, never a mech's text or command",
-    regression:
-      "secret handling: a key, poll, session, sign-in or GitHub token, the model upstream's key or the host launcher's, that the deployment stores, logs, prints or passes into a sandbox, or a mech's text or command that it logs",
-    run: tokensStayInTheirCredentialFiles,
+    guarantee: 'credentials stay out of durable execution records and logs',
+    regression: 'workflow serialization or diagnostics retain a resolved provider or user credential',
+    run: credentialsStayOutOfDurableExecution,
   },
 ];

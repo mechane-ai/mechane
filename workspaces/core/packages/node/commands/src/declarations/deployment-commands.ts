@@ -5,7 +5,7 @@ import type { CommandDeclaration } from '../types.ts';
 /** The command that checks a deployment, which needs no key. */
 export const DEPLOYMENT_COMMANDS = {
   readiness: {
-    summary: 'report the release, the Worker revision and each Durable Object schema revision',
+    summary: 'report the release, runtime revision and storage revision',
     shape: CommandShape.Document,
     operations: ['readiness'],
     flags: {},

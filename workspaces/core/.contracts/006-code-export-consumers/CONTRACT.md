@@ -50,8 +50,8 @@ publishing their private helpers. Every other member retains the ordinary consum
 `mise -C workspaces/core run knip` runs `knip` and then `knip --production` with `includeEntryExports`, except for the
 published UI boundary above. Production files carry `!` in `knip.jsonc`, and every member's files carry it, the smoke's
 and its support's among them, so the production run checks them too.
-knip's Wrangler plugin reads `main` from `packages/worker/app/wrangler.jsonc`, and its mise plugin reads the binaries that the tasks in `mise.toml` run.
-The ignore entries, each with its reason in `knip.jsonc`, are `celld`, which mise installs from its release; `cloudflare`, the Workers runtime's own module; `@swc/core`, which dependency-cruiser loads; and the file `.dependency-cruiser.cjs`, which the checks program loads through dependency-cruiser's API from the root, which holds no source.
+knip's Wrangler plugin reads `main` from the sandbox service's Wrangler configuration, and its mise plugin reads the binaries that the tasks in `mise.toml` run.
+The ignore entries, each with its reason in `knip.jsonc`, are `cloudflare`, the Workers runtime's own module; `@swc/core`, which dependency-cruiser loads; and the file `.dependency-cruiser.cjs`, which the checks program loads through dependency-cruiser's API from the root, which holds no source.
 `treatConfigHintsAsErrors` makes a stale ignore entry fail, so the registry generates one workspace for each member that `dependencies.json` declares, its entries following from its kind and its source roots, in place of folder globs that may match nothing.
 The public-API marker names its consumer; the published client archive consumes marked API declarations.
 

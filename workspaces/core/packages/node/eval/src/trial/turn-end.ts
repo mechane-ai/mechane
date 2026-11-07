@@ -20,13 +20,8 @@ export function turnEnd({ event }: TurnEndInput): Option.Option<TurnEnd> {
     case EventType.TurnUnanswered:
       return Option.some({ turnId: event.turnId, outcome: { status: TurnStatus.Unanswered, reason: event.reason } });
     case EventType.InboxItemReceived:
-    case EventType.InboxItemWritten:
     case EventType.TurnStarted:
-    case EventType.TurnJoined:
     case EventType.TurnCanceled:
-    case EventType.DroneStarted:
-    case EventType.DroneReported:
-    case EventType.DroneUnreported:
     case EventType.MechForked:
       return Option.none();
   }

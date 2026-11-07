@@ -4,7 +4,12 @@ language: TypeScript
 severity: error
 message: "Decode an id with its entity's branded schema from the protocol's records, such as `turnId: TurnId` (TD-14)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    '**/node_modules/**',
+  ]
 rule:
   kind: pair
   all:

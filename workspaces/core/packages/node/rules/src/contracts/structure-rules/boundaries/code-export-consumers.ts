@@ -18,6 +18,7 @@ const VALUES = {
       'packages/browser/*/src/**/*.stories.tsx': ['exports'],
       'packages/browser/elements/packages/**/*.stories.tsx': ['exports'],
       'packages/browser/elements/vite.config.ts': ['exports'],
+      'packages/node/runtime/src/execution/run-workflow.ts': ['exports'],
     },
   },
   knipNotes: [
@@ -64,6 +65,7 @@ const VALUES = {
       lines: [
         'Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.',
         'Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.',
+        'The Workflow compiler discovers runWorkflow by its directive and verifies exactly one compiled entry in the release build.',
       ],
     },
     {

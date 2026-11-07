@@ -144,10 +144,6 @@ function eventPreview(event: Event): ReactNode {
     return <MarkdownPreview>{previewLine(event.reply)}</MarkdownPreview>;
   }
 
-  if ('report' in event) {
-    return <MarkdownPreview>{previewLine(event.report)}</MarkdownPreview>;
-  }
-
   return undefined;
 }
 
@@ -194,10 +190,6 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
     return <Markdown>{event.reply}</Markdown>;
   }
 
-  if ('report' in event) {
-    return <Markdown>{event.report}</Markdown>;
-  }
-
   if ('reason' in event) {
     return <Muted>{event.reason}</Muted>;
   }
@@ -213,20 +205,14 @@ function eventLabel(type: string): string {
   switch (type) {
     case 'inbox_item.received':
       return 'Message received';
-    case 'inbox_item.written':
-      return 'Message saved';
     case 'turn.started':
       return 'Run started';
-    case 'turn.joined':
-      return 'Message joined';
     case 'turn.canceled':
       return 'Cancellation requested';
     case 'turn.answered':
       return 'Reply';
     case 'turn.unanswered':
       return 'Run ended';
-    case 'drone.reported':
-      return 'Delegated work reported';
     case 'mech.forked':
       return 'Conversation continued';
     default:

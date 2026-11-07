@@ -5,6 +5,10 @@ type ListedTurn = TurnPage['turns'][number];
 /** A readable outcome for the recorded turn state. */
 export function outcomeLabel(status: ListedTurn['status']): string {
   switch (status) {
+    case 'queued':
+      return 'Queued';
+    case 'waiting':
+      return 'Waiting';
     case 'answered':
       return 'Answered';
     case 'running':

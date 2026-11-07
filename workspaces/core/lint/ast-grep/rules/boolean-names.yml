@@ -53,6 +53,9 @@ utils:
       any:
         - matches: boolean-prefix
         - all:
+            - kind: property_identifier
+            - matches: external-boolean-property
+        - all:
             - regex: ^['"]?no_bundle['"]?$
             - inside:
                 kind: property_signature

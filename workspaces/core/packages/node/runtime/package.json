@@ -1,0 +1,33 @@
+{
+  "name": "@mechane/runtime",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./channels": "./src/channels/index.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/mcp": "2.0.92",
+    "@ai-sdk/provider": "4.0.36",
+    "@ai-sdk/workflow": "2.0.96",
+    "@chat-adapter/slack": "4.44.0",
+    "@chat-adapter/state-pg": "4.44.0",
+    "@json-render/chat": "0.22.0",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "@openrouter/ai-sdk-provider": "3.1.0",
+    "@workflow/errors": "5.1.0",
+    "@workflow/serde": "5.0.0",
+    "ai": "7.0.164",
+    "chat": "4.44.0",
+    "effect": "4.0.7",
+    "jose": "6.2.13",
+    "pg": "8.23.1",
+    "workflow": "5.4.0",
+    "zod": "4.5.4"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

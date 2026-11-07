@@ -1,7 +1,7 @@
 # @mechane/program
 
-What every executable shares: its output channels and exit, child processes, signals and files, the locks and the CLI's
-records that a program driving it reads. It imports no parser, so the guest bundles it into one file.
+Shared utilities for Effect-based executables: output channels, child processes, signals, files, release descriptors,
+and source locks. It imports no parser, so the guest bundles it into one file.
 
 Layer 2 · node lane · effect dialect · any node consumer
 
@@ -11,7 +11,6 @@ Layer 2 · node lane · effect dialect · any node consumer
   line, and the Worker's revision.
 - `src/output/`: the output module: a result line, a diagnostic line and the exit status.
 - `src/files/`: a file created once, replaced through a fresh file, or read when it exists, and a JSON file's text.
-- `src/cli/`: the CLI's variables, result records and approval notice, as a program driving it reads them.
 - `src/locks/` and `src/sources/`: the wire and migration locks' entries, and the words a source names.
 
 ## Rules

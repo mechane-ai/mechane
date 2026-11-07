@@ -12,7 +12,6 @@ Layer 6 · node lane · effect dialect · no consumers
   process group of its own, and the receipt with its output's tail.
 - `src/workspace/`, `src/archives/` and `src/archive-files/`: asynchronous archive/restore jobs and bounded part IO.
 - `src/quiescence/`: stops command-owned processes before a container workspace snapshot.
-- `src/sources/`: trusted checkout, bounded change capture, and the request journal that holds each source lease.
 - `image/`: the image's Dockerfile, which copies the bundle that `mise run build:guest` writes beside it.
 
 ## Rules
@@ -32,17 +31,16 @@ commands until release; a failed save can release the live workspace for a later
 
 - Never restart a guest that has accepted an execution: its identity and receipt ledger remain single-use.
 - Never read the environment outside `load-guest-settings.ts`. Execution children receive only `PATH`, their home, fixed
-  execution variables and the public gateway certificate paths.
+  execution variables, the current owner-authorized environment, and the public gateway certificate paths.
 
 Container scope explicitly selects an isolated process namespace. Quiescence preserves the guest and its ancestor init
 processes and stops other live processes of the guest user, including detached sessions. Failure to establish quiescence
-fails the archive. Host fixtures explicitly select Process scope; it cannot authorize private repository credentials.
-Archive scratch files stay outside the home being saved. Raw and compressed byte limits are enforced while streaming,
-and restoration validates part sizes and the whole archive checksum before replacing home contents.
+fails the archive. Host fixtures explicitly select Process scope and do not claim container isolation. Archive scratch
+files stay outside the home being saved. Raw and compressed byte limits are enforced while streaming, and restoration
+validates part sizes and the whole archive checksum before replacing home contents.
 
-Private source credentials require a fresh container generation. The controller commits the old home, destroys its guest
-and restores the snapshot before preparing a credential lease; quiescing a previously used guest alone cannot establish
-this boundary. No agent command is admitted until revocation or confirmed token expiry.
+Cloudflare injects its interception CA at runtime. Bash children read the fixed certificate path when they start, so a
+cold checkout trusts the gateway without inheriting ambient credentials or disabling TLS checks.
 
-Cloudflare injects its interception CA at runtime. Both bash children and trusted Git read the fixed certificate path
-when they start, so a cold checkout trusts the gateway without inheriting ambient credentials or disabling TLS checks.
+Injected secret values are redacted before command output enters a receipt. A truncated tail also hides a possible
+secret suffix. This prevents accidental disclosure; arbitrary authorized commands can still read their own environment.

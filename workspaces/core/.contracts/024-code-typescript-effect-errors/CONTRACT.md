@@ -60,59 +60,37 @@ For each entry point a change adds, where is its one defect handler, and does th
 
 ## Local adaptations
 
-Entry points that run an Effect: the Worker's `fetch` in `packages/worker/app/src/worker.ts` and the `main` of each executable, every `main.ts`, enforced by ast-grep `effect-run-at-entry`.
-ast-grep `tagged-error-cause` rejects a tagged error field named `cause`, which collides with `Error.cause`; such a field is named `reason`.
-ast-grep `no-ok-false` rejects an `{ ok: false }` object.
-A Durable Object runs no Effect: it decodes another object's answer, the host launcher's and its settings with `Schema.decodeUnknownSync` or a `Result` it throws from, which fails as a defect, as a broken invariant does.
-pi-ai's provider boundary takes only a rejected promise, so a dispatch the allowance refused rejects with the tagged `AllowanceExhausted`, after its turn records the refusal.
-A defect sits only where ER-06 allows one: ast-grep `defect-sites` ratchets `Schema.decodeUnknownSync`, `Option.getOrThrow`, `Effect.orDie`, `Effect.die` and `Effect.dieMessage` outside an object's RPC method, the store kernel's decode verbs, a `getOrThrow` after `Option.fromNullishOr`, and an `orDie` inside `acquireRelease`'s release; its baseline holds every other defect, each with its invariant stated in a comment above it, in place of ER-06's named suppression, since AS-02 caps a rule's suppressions at three; the sites without one are RPC answers DO-04's catalogs decode and dependencies' answers TD-22 makes typed failures.
-`defect-sites` does not read a plain-dialect `Result.getOrThrow`, since a widened rule would raise its baseline over the merge base's, so review holds each one.
-The sandbox's claim throws `ExecutionReused` that way and its host launcher's calls `LauncherRefused`, which names the machine's URL, while pi-ai's setup rejects with `AllowanceExhausted`.
-Deviation (ER-06): a defect at one of ER-06's library sites, `decodeUnknownSync` at an RPC input or in a store's row decode and `Option.getOrThrow` on a value the types exclude, carries the error its library throws. Every other defect, `Effect.die`, `Effect.orDie` and a plain-dialect `Result.getOrThrow` included, carries an owned tagged error or the tagged failure it promotes. This replaces the defect's tagged error "with fields that locate it" for those sites.
-Each `Effect.orDie` dies at a release or an encode. A scope's release has no failure channel, so one that removes a path or closes a handle the program owns dies when `rm` with `force` or the close refuses, and the smoke's restore of the stack's variables dies when its restart fails. A release whose effect is bound before its scope opens dies in `acquireRelease` itself, such as `() => Effect.orDie(removal)`, which `defect-sites` allows. One that needs the acquired value, such as celld's log handle, dies in its own function, whose error names the path, and the baseline holds it.
-Encoding output that the same code built to its schema's type, and decoding a row that only its store wrote, fail as defects with `Effect.orDie`, because a failure there is a broken invariant.
-A known execution id that arrives with another request is a defect, since only pi's replay repeats an id, with the arguments it recorded. `claimExecution` answers the tagged `ExecutionReused`, which names the `executionId`, from its transaction. `runExecution` dies with it through `Result.getOrThrow`, so the sandbox's RPC call rejects as 041's refusal of a reused identity. The failure joins no RPC union and no `/api/v1` answer.
-oxlint `no-restricted-properties` rejects `Effect.ignore`, `option`, `result`, `either`, `orElse`, `orElseSucceed`, `orElseFail` and `catchCause`, which discard a failure, so a caller handles each expected failure by its tag.
-Handling by tag takes the object form of `Effect.catchTags` even for one tag, such as `Effect.catchTags({ RefundRefused: … })`, where the rules name `Effect.catchTag` (ER-07): ast-grep `catch-tags` rejects `Effect.catchTag` with one tag, and `mise run fix` writes its object form, and oxlint `no-restricted-properties` rejects `Effect.catchTag`, `catchIf`, `catchFilter`, `catchSome` and `match`.
-A catch-all handler appears only at an entry boundary (ER-08): ast-grep `catch-all-outside-boundary` rejects an `Effect.catch` anywhere but as a trailing argument of the `Effect.fn` of `serve`, `servePage` or `runCommand`, `Effect.catch((failure) => …)`, or `(run, input) => Effect.catch(run, (failure) => …)` where the answer reads the call's input, and each answer branches on every tag through its message table.
-A program's one failure, such as `DistributionFailed`, `ReleaseFailed` or `StackFailed`, names its failed step and its `subjects`. Subjects use `@mechane/program`'s `StepSubject` union instead of free-form operation text. The program's message table formats them with `stepLine`.
-ast-grep `error-free-text` ratchets a tagged error's fields to ids, closed-set members, measured values and at most one `reason`, a dependency's own text: it rejects a field named `message`, `issue`, `detail`, `code` or `operation`, and a URL or a timeout held as `Schema.String`.
-An effectful function is an `Effect.fn`: ast-grep `effect-function-form` ratchets a function or method whose return type is `Effect.Effect`, and oxlint `no-restricted-properties` ratchets `Effect.gen` and `fnUntraced`. ast-grep `effect-fn-return-type` rejects an `Effect.fn` generator without an `Effect.fn.Return` type, and the owned `span-name` check one whose span name is missing or differs from the binding or property that holds it.
-A generator binds each value with `yield*`: oxlint `no-restricted-properties` ratchets `Effect.map`, `flatMap`, `andThen`, `tap`, `as`, `asVoid`, `asSome`, `zip`, `zipWith`, `suspend`, `flatten` and `filterOrFail`, and ast-grep `effect-import-form` rejects importing `effect` under an alias, as a namespace or from a subpath other than `effect/encoding`, any of which would dodge a ban of a property.
-A wrap of a promise or of a throwing call holds one call: ast-grep `try-promise-shape` ratchets an `Effect.tryPromise` or `Effect.try` whose `try` is not an arrow whose body is one call or whose `catch` builds no tagged error, and a call of an `attempt` helper, which `program` no longer has since each caller wraps its own promise, and oxlint `no-restricted-properties` ratchets `Effect.promise`.
-A failure is told apart by its tag (EF-05): ast-grep `no-instanceof` rejects `instanceof`, which a decoded value or another realm's object fails.
-The registry owns the adopted error rules. It leaves the shipped assets unchanged; hash-pinned derivatives of the three TypeScript syntax rules exclude the browser lane, whose Promise boundary and React conventions are defined in contract 113.
-Mechane's own rules hold what the shipped ones do not: ast-grep `no-throw-or-try` rejects `throw` and `try`, including
-one with only a `finally` clause, outside the browser adapter, query, canonical-write, and acknowledged-command boundaries
-declared by contract 113 and `console-cache/src/store/storage.ts` declared by contract 119.
-Within the browser lane, only the API adapter may run an Effect. The query boundary may catch a rejected Promise to revoke cached data
-and rethrow that same failure; it must not convert a failed read into an empty success.
-The synchronous `restoreRecord` decoder in `console-data/src/records.ts` permits one `defect-sites` suppression.
-TanStack's synchronous collection callbacks use it to reject an invalid cached row or read descriptor before
-insertion, and view projections use it to restore protocol values from validated encoded rows. Keep the protocol
-schema in every call. This native callback allowance does not permit `Effect.orDie`, unchecked `Option` access, or a
-second error transport.
-`untyped-failure` (SC-09) rejects `Option.getOrThrowWith`, `Result.getOrThrowWith`, `Promise.reject` and a text step field.
-`promise-chain` (DO-03) rejects a promise's `catch` with a named handler, `finally`, `Promise.resolve`, `new Promise` and a chained `then`.
-The bound statements that `code-typescript-call-arguments` requires go inside an `Effect.fn` generator, the traced form of `Effect.gen` that EF-01 requires.
+The CLI, shared domain client, and Effect-dialect programs keep the tagged error and entry-point rules above.
+Native SDK code in `packages/node/runtime`, `server`, `stack`, `testing`, `smoke`, and `distribution` uses
+Promise-returning APIs, rejected errors,
+and `try`/`catch`/`finally` where the SDK or resource lifetime requires them. Workflow steps classify permanent failures
+and retryable failures through the SDK's public error APIs. A catch that returns an empty result, discards a failure,
+or repeats an uncertain external effect remains a violation.
 
-Deviation (ER-01, ER-02, ER-09): a wrap's `catch` builds a tagged error whose `reason` holds the caught value's text, `String(cause)`.
-It never keeps the caught value, which ast-grep `tagged-error-cause` rejects as a field.
-An error's fields travel on `/api/v1` (ER-09), in the CLI's JSON envelope and in log lines, and a caught value is unbounded and may hold a request's headers.
-This replaces the `catch` option's mapping "that keeps the caught value as its `cause`" and the check's "that keeps the cause".
+The server's protocol adapter may run an Effect to decode or encode the existing domain protocol. Native Workflow,
+Chat, and AI SDK calls do not acquire Effect wrappers solely to satisfy a syntax convention. HTTP boundaries map
+known failures to the protocol's error family and hide raw provider bodies, database errors, and credentials.
+Every domain HTTP error, including startup, shutdown and unexpected failures, originates from a declared
+`ServerFailure` and the shared error-body encoder. Handwritten fallback objects must not bypass required error fields
+and leave clients unable to decode the failure. Exercise those responses through the shared client during review.
 
-Each entry point has one defect handler.
-A `main.ts` maps its `Exit` in `reportExit`, which writes the defect's trace through the program's output module and answers the program's failure status.
-The Worker's `fetch` leaves a defect to the Workers runtime, which answers 500 and records the exception in the Worker's log.
+Within the browser lane, only the API adapter runs an Effect. Query and command boundaries may catch a rejected
+Promise to invalidate authorized copies or preserve an unacknowledged command, then rethrow that failure. TanStack's
+synchronous restoration boundary may reject a corrupt cached row using its declared protocol schema. Failed reads
+never become empty successes.
 
-A Durable Object's alarm and RPC methods also leave a defect to the runtime, which retries an alarm and rejects an RPC call.
-The Worker's `callObject` maps that rejection to `ObjectUnavailable`.
-Sign-in pages remain server-rendered; the console uses React route error boundaries and the shared client failure transport.
+The native browser conversation transport and its lifetime owner use AI SDK Promise callbacks and rejected errors.
+They may catch failures to retain the current conversation and expose retry state. Message admission, streaming, and
+reconnection use the upstream transport; an unsuccessful request never becomes an empty successful conversation.
 
-The three derived TypeScript rules retain their original backend coverage, with promise-chains held by its generated ratchet baseline.
-Deviation (EF-06, DO-03): direct native-promise callbacks at the Effect boundary keep their existing signatures and return forms.
-This replaces v11's blanket async and return-await requirements where the existing async-shell rules exempt those callbacks.
-The oxlint asset stays unloaded because it would override those rules; owned no-throw-literal, preserve-caught-error and throw-new-error settings retain their prior values.
+The sandbox's reused execution ID with different input is an explicit refusal. A lost command response remains
+uncertain until its original receipt is recovered; it is not permission to issue a new command ID.
+The sandbox capacity owner and maintenance admission boundary expose native Durable Object calls. They reject with
+their declared tagged errors; an Effect wrapper is not added solely to change rejection syntax.
+The isolated Slack API fixture reproduces Slack's documented `ok: false` error envelope. That external wire shape
+is not a domain failure result and is limited to the fixture's endpoint implementation.
+Each executable and HTTP boundary owns its final error report. Logs retain safe correlation identifiers and a useful
+failure category, without serializing arbitrary caught objects.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

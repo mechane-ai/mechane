@@ -57,7 +57,7 @@ const VALUES = {
   lanePrograms: {
     [Lane.Shared]: { lib: ['es2024', 'dom'] },
     [Lane.Worker]: { types: ['@cloudflare/workers-types', 'node'] },
-    [Lane.Node]: { types: ['node'] },
+    [Lane.Node]: { types: ['node'], allowJs: true, checkJs: true },
     [Lane.Browser]: {
       lib: ['es2024', 'dom', 'dom.iterable'],
       types: [],
@@ -111,7 +111,7 @@ export const codeTypescriptCompilerStrictness = {
     {
       ...OXLINT_DEFAULTS,
       name: 'typescript/explicit-function-return-type',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       behavior: FixBehavior.TypeOnly,
       value: [
         Severity.Error,
@@ -131,7 +131,7 @@ export const codeTypescriptCompilerStrictness = {
     {
       ...OXLINT_DEFAULTS,
       name: 'typescript/explicit-module-boundary-types',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, { allowedNames: VALUES.inferredRecordFactories }],
       violation: ['export function readCount() { return 1; }'],

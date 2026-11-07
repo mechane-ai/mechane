@@ -1,4 +1,5 @@
 import type { Mech } from '@mechane/protocol';
+import { WorkspaceId } from '@mechane/records';
 import { isRevisionConflict } from './api.ts';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { readRequests } from './requests.ts';
@@ -17,6 +18,7 @@ type CommandDependencies = {
   readonly signalForRead: (request: ReadRequest) => AbortSignal;
   readonly onFailure: (request: ReadRequest, error: unknown, signal: AbortSignal) => Promise<void>;
   readonly reportLocalFailure: (error: unknown) => void;
+  readonly refreshActivity: (mechId: string) => Promise<void>;
   readonly refreshRequest: (request: ReadRequest) => Promise<void>;
   readonly refreshKind: (kind: ReadKind, mechId?: string) => Promise<void>;
 };
@@ -30,6 +32,7 @@ export function createCommands({
   signalForRead,
   onFailure,
   reportLocalFailure,
+  refreshActivity,
   refreshRequest,
   refreshKind,
 }: CommandDependencies) {
@@ -58,15 +61,6 @@ export function createCommands({
   async function reconcileMech(mech: Mech, writeSignal: AbortSignal): Promise<void> {
     await retainMech(mech, writeSignal);
     await refreshMech(mech.id);
-  }
-
-  async function refreshActivity(mechId: string): Promise<void> {
-    await Promise.allSettled([
-      refreshRequest(readRequests.events(mechId, null)),
-      refreshRequest(readRequests.turns(mechId, null)),
-      refreshRequest(readRequests.mech(mechId)),
-      refreshKind('turnEvents', mechId),
-    ]);
   }
 
   return {
@@ -102,7 +96,11 @@ export function createCommands({
       const commandSignal = signalForRead(request);
 
       try {
-        const saved = await api('sendInboxItem', { ...input, workspaceId }, commandSignal);
+        const saved = await api(
+          'sendInboxItem',
+          { ...input, workspaceId: WorkspaceId.make(workspaceId) },
+          commandSignal,
+        );
 
         void refreshActivity(input.mechId);
 
@@ -118,7 +116,7 @@ export function createCommands({
       const commandSignal = signalForRead(request);
 
       try {
-        const saved = await api('cancelTurn', { ...input, workspaceId }, commandSignal);
+        const saved = await api('cancelTurn', { ...input, workspaceId: WorkspaceId.make(workspaceId) }, commandSignal);
 
         void refreshActivity(input.mechId);
         void Promise.allSettled([refreshRequest(request)]);

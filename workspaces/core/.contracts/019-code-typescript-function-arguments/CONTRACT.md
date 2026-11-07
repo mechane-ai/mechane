@@ -63,6 +63,9 @@ Deviation (SC-03): pass typed callback constants by name, as local 111 requires,
 The new argument-type suffix and body-default rules are outside the current adoption baseline at commit 94f2d0f.
 The shipped assets stay unloaded because their callback rule conflicts with SC-03; object-arguments still enforces owned signatures.
 
+The native SDK role in contract 111 permits the signatures its SDKs and local composition use, including ordinary
+arguments and contextually typed callbacks. Do not add an object-argument adapter solely to satisfy this rule.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `object-arguments` (TD-01): enforced

@@ -1,6 +1,5 @@
-import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/protocol';
 import type { RecordId } from '@mechane/records';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { SANDBOX_ARCHIVE_PART_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import type { FileHandle } from 'node:fs/promises';
 import { WorkspaceFailed } from '../errors.ts';

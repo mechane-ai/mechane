@@ -1,6 +1,6 @@
 import { DurationFromSeconds, HttpMethod, isBetweenDuration, renamedWireStruct } from '@mechane/records';
 import { Duration, Effect, Schema } from 'effect';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -36,5 +36,5 @@ export const listEvents = {
   query: EventQuery,
   body: NoFields,
   output: EventPage,
-  errors: [MechNotFound, ObjectUnavailable],
+  errors: [MechNotFound, ServiceUnavailable],
 } as const satisfies Operation;

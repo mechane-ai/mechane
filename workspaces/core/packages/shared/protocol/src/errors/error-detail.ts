@@ -5,7 +5,7 @@ import { FAILURE_FAMILY } from './failure-family.ts';
 import type { ErrorDetail } from './schemas.ts';
 import { ServerFailure } from './server-failure.errors.ts';
 
-/** A failure the Worker answers with, and the deployment's message for it. */
+/** A failure the server answers with, and the deployment's message for it. */
 type ErrorDetailInput = { readonly failure: ServerFailure; readonly message: string };
 
 /**

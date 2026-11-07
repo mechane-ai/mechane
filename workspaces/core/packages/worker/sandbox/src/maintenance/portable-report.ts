@@ -1,6 +1,7 @@
-import { RELEASE, SandboxPhase } from '@mechane/protocol';
-import type { SandboxReport } from '@mechane/protocol';
+import { RELEASE } from '@mechane/protocol';
 import { RemoteSandboxId } from '@mechane/records';
+import { SandboxPhase } from '@mechane/sandbox-wire';
+import type { SandboxReport } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import type { PortableMaintenanceInput } from './types.ts';
 
@@ -9,7 +10,6 @@ export function portableReport({ store, providerName }: PortableMaintenanceInput
   const job = store.portableMaintenance();
   const live = store.liveMachine();
   const sandboxId = Option.map(live, ({ id }) => RemoteSandboxId.make(id));
-  const archive = Option.flatMap(job, (value) => value.archive);
   const phase = Option.match(job, { onNone: () => SandboxPhase.Idle, onSome: (value) => value.phase });
   const status = portableStatus({ store });
 
@@ -22,9 +22,6 @@ export function portableReport({ store, providerName }: PortableMaintenanceInput
     operationId: Option.map(job, (value) => value.id),
     action: Option.map(job, (value) => value.action),
     phase,
-    archive,
-    part: Option.match(job, { onNone: () => 0, onSome: (value) => value.part }),
-    base64: Option.none(),
   };
 }
 

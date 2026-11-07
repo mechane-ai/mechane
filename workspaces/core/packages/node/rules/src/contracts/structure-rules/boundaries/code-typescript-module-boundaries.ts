@@ -13,7 +13,9 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
 const VALUES = {
   cruiserOptions: {
     doNotFollow: { path: 'node_modules' },
-    exclude: { path: '^packages/[^/]+/[^/]+/dist/' },
+    exclude: {
+      path: '^(?:packages/[^/]+/[^/]+/dist/|packages/node/server/[.](?:output|swc)/|packages/node/runtime/[.]well-known/workflow/)',
+    },
     parser: 'swc',
     combinedDependencies: true,
     preserveSymlinks: false,

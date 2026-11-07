@@ -1,6 +1,5 @@
-import { SandboxArchive } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import { archiveWorkspace } from '../archives/archive-workspace.ts';
 import { restoreWorkspace } from '../archives/restore-workspace.ts';

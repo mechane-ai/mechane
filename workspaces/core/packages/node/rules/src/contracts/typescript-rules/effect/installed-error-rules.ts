@@ -46,7 +46,7 @@ export const INSTALLED_ERROR_RULES = [
   {
     ...AST_GREP_ASSET,
     name: 'untagged-errors-typescript',
-    exemptRoles: [FileRole.Browser],
+    exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
     derivedFrom: Option.some({
       asset: 'assets/ast-grep/rules/untagged-errors-typescript.yml',
       hash: 'blake3:69108b9344d9e5fad0783c0a9e32d842121b458e13a661a2800ad5396ee9f068',
@@ -57,7 +57,7 @@ export const INSTALLED_ERROR_RULES = [
   {
     ...AST_GREP_ASSET,
     name: 'catch-handlers-typescript',
-    exemptRoles: [FileRole.Browser],
+    exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
     derivedFrom: Option.some({
       asset: 'assets/ast-grep/rules/catch-handlers-typescript.yml',
       hash: 'blake3:70f68641b20c4206e559382910fbed80b94979c816b2b31b7e4f2441e61eca24',
@@ -74,7 +74,7 @@ export const INSTALLED_ERROR_RULES = [
       asset: 'assets/ast-grep/rules/promise-chains-typescript.yml',
       hash: 'blake3:4ba4789a552288ff904193f522fd3b40a91fb15b40a4eee6052a6347a9d9a6fb',
     }),
-    exemptRoles: [FileRole.Browser],
+    exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
     status: RuleStatus.Ratchet,
     violation: ['promise.then(read);', 'promise.finally(close);'],
     allowed: ['const result = await promise;'],

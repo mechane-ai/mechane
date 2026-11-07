@@ -1,6 +1,6 @@
-import { HttpMethod, RandomId, RecordId, wireStruct } from '@mechane/records';
+import { HttpMethod, InboxItemRequestId, MechId, SessionId, wireStruct, WorkspaceId } from '@mechane/records';
 import { Effect, Schema } from 'effect';
-import { InboxItemConflict, MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { InboxItemConflict, MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { MechArchived } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -9,14 +9,19 @@ import { Delivery } from './constants.ts';
 import { InboxItem, InboxText } from './schemas.ts';
 
 /** The path of one inbox item of a mech; the caller makes the item's id, so a retried send names the same item. */
-const InboxItemPath = wireStruct({ fields: { workspaceId: RecordId, mechId: RecordId, inboxItemId: RandomId } });
+const InboxItemPath = wireStruct({
+  fields: { workspaceId: WorkspaceId, mechId: MechId, inboxItemId: InboxItemRequestId },
+});
 
 type InboxItemPath = typeof InboxItemPath.Type;
 
-/** A send: what the item says, and how it reaches the mech, once it is idle unless the send says otherwise. */
-const SendInboxItemBody = Schema.Struct({
-  text: InboxText,
-  delivery: Schema.Enum(Delivery).pipe(Schema.withDecodingDefaultKey(Effect.succeed(Delivery.WhenIdle))),
+/** A send targets one conversation; omitting its identity selects the mech's default conversation. */
+const SendInboxItemBody = wireStruct({
+  fields: {
+    text: InboxText,
+    sessionId: Schema.optionalKey(SessionId),
+    delivery: Schema.Enum(Delivery).pipe(Schema.withDecodingDefaultKey(Effect.succeed(Delivery.WhenIdle))),
+  },
 });
 
 type SendInboxItemBody = typeof SendInboxItemBody.Type;
@@ -33,5 +38,5 @@ export const sendInboxItem = {
   query: NoFields,
   body: SendInboxItemBody,
   output: InboxItem,
-  errors: [MechNotFound, MechArchived, InboxItemConflict, ObjectUnavailable],
+  errors: [MechNotFound, MechArchived, InboxItemConflict, ServiceUnavailable],
 } as const satisfies Operation;

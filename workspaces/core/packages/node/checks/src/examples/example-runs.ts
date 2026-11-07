@@ -1,4 +1,11 @@
-import { checkSource, documentFindings, sourceSites, workflowFindings, WORKFLOWS } from '@mechane/owned-rules';
+import {
+  checkSource,
+  documentedExports,
+  documentFindings,
+  sourceSites,
+  workflowFindings,
+  WORKFLOWS,
+} from '@mechane/owned-rules';
 import { runFindings } from './run-findings.ts';
 import type { ExampleIndex, ExampleRun, RunFinding } from './types.ts';
 
@@ -27,7 +34,9 @@ export const EXAMPLE_RUNS: Readonly<Record<string, ExampleRun>> = {
 
 /** The owned sites of each parsed file: doc comments, span names, logical operators and banned words. */
 function sourceSitesRun({ sources, phrases }: ExampleIndex): ReadonlyArray<RunFinding> {
-  return sources.flatMap((source) => sourceSites({ source, phrases }));
+  const documentation = documentedExports({ sources });
+
+  return sources.flatMap((source) => sourceSites({ source, phrases, documentation }));
 }
 
 /** The source check's findings: its comment widths, schema aliases and repeated patterns. */

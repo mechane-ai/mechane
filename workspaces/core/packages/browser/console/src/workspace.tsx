@@ -17,6 +17,7 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
+import { ConversationProvider } from './conversations/provider.tsx';
 import { WorkspaceDraftProvider } from './drafts.tsx';
 import { initialReads } from './initial-reads.ts';
 import { MechAppearanceProvider } from './mech-appearance.tsx';
@@ -393,7 +394,7 @@ function WorkspaceContent({
   }
 
   return (
-    <>
+    <ConversationProvider data={data}>
       {shouldOfferRecovery && (
         <Notice>
           Local storage needs to be reopened. Your draft is kept.{' '}
@@ -412,6 +413,6 @@ function WorkspaceContent({
       ) : (
         <MechScreen key={location.mech} data={data} mechId={location.mech} location={location} navigate={navigate} />
       )}
-    </>
+    </ConversationProvider>
   );
 }

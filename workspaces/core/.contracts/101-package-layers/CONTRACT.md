@@ -14,15 +14,19 @@ Import only through a source target declared in that member's exports map, norma
 one layer import each other and no package cycle can form.
 Each package declares the members it imports in its own `package.json`, by `workspace:*`, and nowhere else.
 The shared lane imports no Node module, and only the worker lane imports the modules the Workers runtime provides.
-pi-durable, pi-ai and chord enter only through `@mechane/harness` and `@mechane/harness-tools`, whose `confines` name them, and so does TypeBox, the schema language of pi's tools; no other member imports them, and pi's vocabulary ends at the harness's types, which the mech's object calls.
-The MCP client SDK and jose enter only through `@mechane/integrations`, which keeps remote transport and GitHub signing credentials behind its trusted client boundary.
+`@mechane/runtime` owns the domain store, native Workflow execution, AI SDK tools and model adapter, and Chat delivery.
+`@mechane/server` owns HTTP composition, authentication, SDK World lifecycle, and serving the Console. The server
+imports the runtime; the runtime never imports the server. The registry confines SDK dependencies to these owners
+and their explicit browser or shared-schema consumers. There is no retained Pi execution package.
+`@mechane/sandbox-service` owns authenticated compute ingress and public proxying. Sandbox, store, and guest packages
+own command execution and file checkpoints, without importing the Node agent runtime.
 Production code never imports `packages/node/smoke/src` or `packages/node/testing/src`.
 Each member is a row of the strict standard's package map, at `packages/<lane>/<name>`; the root, `@mechane/core`, holds only tool pins and product tasks, no source.
 A folder becomes a package only for a real state, runtime dependency, public interface, independent consumer, or executable boundary. Source size does not require a package split. Declare each accepted member and its actual ownership in `dependencies.json`.
 
-Declare each HTTP operation once in `@mechane/protocol`; the Worker's router and the client derive from the catalog, and each CLI command names the operations it calls.
-The browser pages `/device` and `/auth/github/callback` are not operations: `@mechane/pages` serves them as HTML, and `@mechane/protocol` names their paths, the approval page's query and form, and GitHub's OAuth wire, which the stack's local GitHub and the smoke's browser use too.
-The install script `/install.sh` and release files below `/cli/` are read-only HTTP surfaces owned by `@mechane/edge`. Settings compose their source from the installation’s immutable public release origin, or the local `RELEASES` bucket. `@mechane/protocol` owns paths, target names, manifests and release stamps. Release files are not JSON operations, but their failures use the same public error response boundary.
+Declare each HTTP operation once in `@mechane/protocol`; the server's router and the client derive from the catalog, and each CLI command names the operations it calls.
+The browser pages `/device` and `/auth/github/callback` are not operations: `@mechane/server` serves them as HTML, and `@mechane/protocol` names their paths, the approval page's query and form, and GitHub's OAuth wire, which the stack's local GitHub and the smoke's browser use too.
+The install script `/install.sh` and release files below `/cli/` are read-only HTTP surfaces owned by `@mechane/server`. Settings compose their source from the installation’s immutable public release origin, or the local `RELEASES` bucket. `@mechane/protocol` owns paths, target names, manifests and release stamps. Release files are not JSON operations, but their failures use the same public error response boundary.
 Add a package only with its first real code, and add its edge to its `package.json` in the same change as the first import that needs it.
 
 Violation: `@mechane/client` imports `node:fs` to read a credential file, which the Worker cannot load.
@@ -47,7 +51,7 @@ Declared export resolution preserves the layer, lane, consumer, and confined-dep
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`; `memberSourceFolders` `@mechane-ai/elements` [`packages`, `.storybook`, `vite.config.ts`], `@mechane/console` [`src`, `scripts`, `.storybook`, `vite.config.ts`, `worker-licenses.ts`]; `libraryExports` `.` ./src/index.ts.
+Values: `laneImports` `shared` [`shared`], `worker` [`shared`, `worker`], `node` [`shared`, `node`], `browser` [`shared`, `browser`]; `sourceFolders` `src`, `scripts`, `.storybook`, `vite.config.ts`; `memberSourceFolders` `@mechane-ai/elements` [`packages`, `.storybook`, `vite.config.ts`], `@mechane/console` [`src`, `scripts`, `.storybook`, `vite.config.ts`, `worker-licenses.ts`], `@mechane/server` [`src`, `build`]; `libraryExports` `.` ./src/index.ts.
 The generated configurations carry `definitionExports`.
 - dependency-cruiser family `layer` (ST-02): enforced in phase E: Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`
 - dependency-cruiser family `lane` (ST-02): enforced in phase E: Import Node's modules only outside the shared lane and the Workers runtime's only in the worker lane, such as `node:path` in `@mechane/cli` and `cloudflare:workers` in `@mechane/mech`

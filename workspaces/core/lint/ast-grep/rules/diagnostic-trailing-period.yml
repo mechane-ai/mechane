@@ -14,4 +14,15 @@ rule:
         kind: pair
         has:
           field: key
-          regex: ^(line|diagnostic|detail|issue|reason|message)$
+          any:
+            - regex: ^(line|diagnostic|detail|issue|reason)$
+            - all:
+                - regex: ^message$
+                - inside:
+                    stopBy: end
+                    any:
+                      - kind: new_expression
+                      - kind: call_expression
+                        has:
+                          field: function
+                          regex: '^(logger|log|console)\.(debug|info|warn|error|log)$'

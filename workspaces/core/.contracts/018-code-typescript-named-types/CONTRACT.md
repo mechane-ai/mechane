@@ -55,6 +55,9 @@ Each module's import has one form too: `import/no-duplicates` merges two imports
 The registry already enforces the shipped consistent-type-definitions setting as error with type, so the duplicate oxlint file stays unloaded.
 The one-object-literal intersection allowance now matches v11 and needs no deviation.
 
+Native SDK callbacks and factories may use contextual and inferred types under contract 111. Native schema types
+remain derived from their one definition; exported domain models must not duplicate a schema by hand.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - oxlint `typescript/consistent-type-definitions` (TD-05): enforced in phase D, `["error","type"]`

@@ -4,9 +4,8 @@ import { GitCommit, SHA256_PATTERN } from '@mechane/records';
 import { Effect, Option, Record, Schema } from 'effect';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { lt, valid } from 'semver';
-import { MIGRATION_LOCK, WIRE_LOCK, WireKind } from './constants.ts';
-import { lostEntries } from './locks/lost-entries.ts';
+import { valid } from 'semver';
+import { MIGRATION_LOCK, WIRE_LOCK } from './constants.ts';
 import { Lock } from './schemas.ts';
 
 /** The exact bytes of a runtime artifact, independent of its distribution or hosting platform. */
@@ -47,7 +46,7 @@ const semanticVersion = Schema.makeFilter(
   { expected: 'a semantic version' },
 );
 
-/** Both local packages and cloud manifests carry these same release and compatibility facts. */
+/** The sandbox artifact carries its immutable release identity and deployed format baseline. */
 export const ReleaseDescriptor = Schema.Struct({
   version: Release.check(semanticVersion),
   public_commit: GitCommit,
@@ -70,7 +69,7 @@ type ReadReleaseDescriptorInput = {
   readonly worker: ArtifactDigest;
 };
 
-/** Reads the same shipped format locks for source startup and both distribution formats. */
+/** The release artifact records the format locks from the source it was built from. */
 export const readReleaseDescriptor = Effect.fn('readReleaseDescriptor')(function* ({
   root,
   version,
@@ -101,45 +100,3 @@ const readFormatLock = Effect.fn('readFormatLock')(function* ({
     Effect.mapError(() => new ReleaseDescriptorUnreadable({ path, reason: 'the format lock is invalid' })),
   );
 });
-
-type ReleaseCompatibilityInput = { readonly previous: ReleaseDescriptor; readonly candidate: ReleaseDescriptor };
-
-/** Admission is forward-only and preserves complete categories, including categories with no entries yet. */
-export function releaseCompatibilityIssue({ previous, candidate }: ReleaseCompatibilityInput): Option.Option<string> {
-  if (lt(candidate.version, previous.version)) {
-    return Option.some('release downgrades are not supported; publish compatible recovery code as a newer release');
-  }
-
-  const comparable = { wire: comparableWire({ wire: previous.formats.wire }), migrations: previous.formats.migrations };
-
-  for (const kind of ['wire', 'migrations'] as const) {
-    const locked = comparable[kind];
-    const current = candidate.formats[kind];
-    const categories = Record.keys(locked);
-    const missingCategory = categories.find((name) => !Record.has(current, name));
-    const missing = Option.fromNullishOr(missingCategory);
-    const removed = lostEntries({ locked, current });
-
-    if (Option.isSome(missing) || removed.length > 0) {
-      return Option.some(`the candidate removes or changes recorded ${kind} categories or entries`);
-    }
-  }
-
-  return Option.none();
-}
-
-const API_FORMAT_KINDS: ReadonlySet<string> = new Set([WireKind.Operations, WireKind.Fields, WireKind.Members]);
-const CONSOLE_API_PREFIX = /^(GET|POST|PUT|DELETE) \/v1(?=\/| |$)/;
-
-type ComparableWireInput = { readonly wire: Lock };
-
-/** The console's one API relocation changes addresses, never stored formats or migration hashes. */
-function comparableWire({ wire }: ComparableWireInput): Lock {
-  return Record.map(wire, (entries, category) => {
-    if (!API_FORMAT_KINDS.has(category)) {
-      return entries;
-    }
-
-    return entries.map((entry) => entry.replace(CONSOLE_API_PREFIX, '$1 /api/v1'));
-  });
-}

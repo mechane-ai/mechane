@@ -75,7 +75,7 @@ from 101 are Mechane's own.
 - [Record identifiers](044-data-record-identifiers/CONTRACT.md): random UUIDs; derived ids only where a retry needs them.
 - [Store ownership](045-data-store-ownership/CONTRACT.md): one store module per owner of persisted data.
 - [SQL store boundaries](046-data-sql-store-boundaries/CONTRACT.md): SQL only in the store, each statement once and whole.
-- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): append-only migrations and `/api/v1`.
+- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): stored format changes and the explicit native-runtime cutover baseline.
 - [Schema rollouts](061-data-sql-schema-rollouts/CONTRACT.md): steps the previous release and existing rows survive.
 - [Data and APIs](048-data-and-apis/CONTRACT.md): explicit outcomes behind small APIs.
 - [Request paths](062-api-typescript-request-paths/CONTRACT.md): one named builder per path, which encodes each part.
@@ -128,6 +128,10 @@ from 101 are Mechane's own.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.
 
 - [Execution access](120-execution-access/CONTRACT.md): current owner grants and transient shell credentials.
-- [Thread continuations](121-thread-continuations/CONTRACT.md): durable idle wakeups and original reply routing.
+- [Thread continuations](121-thread-continuations/CONTRACT.md): native external-decision waits and original reply routing.
 - [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.
 - [Model caching](123-model-caching/CONTRACT.md): provider cache hints, isolated sessions, and conservative spend reservations.
+
+- [Native Workflow runtime](124-native-workflow-runtime/CONTRACT.md): one durable execution path, private credentials, and native UI streams.
+- [Channel delivery](125-channel-delivery/CONTRACT.md): verified admission, native formatting, and stable delivery receipts.
+- [Structured presentation](126-structured-presentation/CONTRACT.md): one bounded catalog with native Chat and Elements renderers.

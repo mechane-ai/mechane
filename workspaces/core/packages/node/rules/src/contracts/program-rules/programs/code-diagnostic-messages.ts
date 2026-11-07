@@ -10,8 +10,15 @@ export const codeDiagnosticMessages = {
       ...ADOPTED,
       name: 'diagnostic-trailing-period',
       standard: 'ER-11',
-      violation: ["const failure = { reason: 'the file is missing.' };"],
-      allowed: ["const failure = { reason: 'the file is missing' };"],
+      violation: [
+        "const failure = { reason: 'the file is missing.' };",
+        "new RequestError({ message: 'the file is missing.' });",
+        "logger.error({ message: 'the file is missing.' });",
+      ],
+      allowed: [
+        "const failure = { reason: 'the file is missing' };",
+        "const reply = { message: 'The links are updated.' };",
+      ],
     },
   ],
 } as const satisfies ContractEnforcement;

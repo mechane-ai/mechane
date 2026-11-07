@@ -15,11 +15,12 @@ import {
   upsertRows,
 } from './collections.ts';
 import { createCommands } from './commands.ts';
+import { createConversationApi } from './conversation.ts';
 import { applyRead, fetchRead, saveMech } from './load-read.ts';
 import { waitForRead } from './read-ready.ts';
 import { recordKey } from './records.ts';
 import { decodeReadRequest, ReadId, readRequests } from './requests.ts';
-import type { ReadReceipt, ReadRequest } from './requests.ts';
+import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
 import type { Session } from './session.ts';
 
 const REFRESH_MS = Duration.toMillis('15 seconds');
@@ -29,6 +30,16 @@ const ALLOWANCE_REFRESH_MS = Duration.toMillis('30 seconds');
 const READ_ADMISSION_TIMEOUT_MS = Duration.toMillis('40 seconds');
 const CLEAR_SCOPE_TIMEOUT_MS = Duration.toMillis('3 seconds');
 const INVALIDATION_CHANNEL = 'mechane-console-admission';
+
+const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = [
+  'events',
+  'turns',
+  'mech',
+  'turnEvents',
+  'trace',
+  'threads',
+  'memories',
+];
 
 const INVALIDATION_KIND = { Session: 'session', Mech: 'mech', Turn: 'turn', Read: 'read' } as const;
 
@@ -726,6 +737,21 @@ async function createData(options: CreateConsoleData) {
     }
   }
 
+  async function refreshKind(kind: ReadKind, mechId?: string): Promise<void> {
+    if (!signal.aborted) {
+      const queryKey: QueryKey = mechId === undefined ? [scope, 'read', kind] : [scope, 'read', kind, mechId];
+
+      await queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
+    }
+  }
+
+  async function refreshActivity(mechId: string): Promise<void> {
+    await Promise.allSettled([
+      ...ACTIVITY_READ_KINDS.map((kind) => refreshKind(kind, mechId)),
+      refreshKind('allowance'),
+    ]);
+  }
+
   function observeRead(request: ReadRequest): ReadObservation {
     const subscribers = new Set<() => void>();
 
@@ -992,7 +1018,9 @@ async function createData(options: CreateConsoleData) {
     db: runtime.db,
     collections: runtime.collections,
     workspace,
+    conversations: createConversationApi({ origin, workspaceId: workspace.id, signal, api, onAccessLost: endSession }),
     reads: readRequests,
+    refreshActivity,
     commands: createCommands({
       api,
       workspaceId: workspace.id,
@@ -1006,14 +1034,9 @@ async function createData(options: CreateConsoleData) {
       onFailure: async (request, error, failureSignal) =>
         await handleFailure({ request, error, signal: failureSignal }),
       reportLocalFailure,
+      refreshActivity,
       refreshRequest: refreshActive,
-      refreshKind: async (kind, mechId) => {
-        if (!signal.aborted) {
-          const queryKey: QueryKey = mechId === undefined ? [scope, 'read', kind] : [scope, 'read', kind, mechId];
-
-          await queryClient.invalidateQueries({ queryKey, refetchType: 'active' });
-        }
-      },
+      refreshKind,
     }),
     readStatus(request: ReadRequest) {
       return queryClient.getQueryState<number>(readQueryKey(scope, request));

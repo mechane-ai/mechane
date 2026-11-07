@@ -47,6 +47,3 @@ export type WorkspaceFiles = { readonly bucket: R2Bucket; readonly owner: string
 export type ProviderStepInput = { readonly store: SandboxStore; readonly provider: MachineProvider };
 
 export type WorkspaceProviderStepInput = ProviderStepInput & { readonly workspace: WorkspaceFiles };
-
-/** A restored guest generation that has not run any untrusted command. */
-export type FreshSourceMachine = { readonly machineId: GuestStart['machineId']; readonly guest: GuestConnection };

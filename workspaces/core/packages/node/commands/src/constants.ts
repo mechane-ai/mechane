@@ -9,10 +9,7 @@ export const CommandShape = { Document: 'document', Stream: 'stream' } as const;
 
 export type CommandShape = (typeof CommandShape)[keyof typeof CommandShape];
 
-/**
- * The deployment a command calls when neither `--origin` nor its variable names one: production's, the origin
- * `packages/worker/app/wrangler.jsonc` gives the Worker. A local stack and the smoke always name their own.
- */
+/** Local and self-hosted installations select their origin explicitly. */
 export const DEFAULT_ORIGIN = 'https://mechane.ai';
 
 /**

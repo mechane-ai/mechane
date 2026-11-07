@@ -101,7 +101,7 @@ export const codeTypescriptNamedTypes = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'named-object-types',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       behavior: FixBehavior.TypeOnly,
       standard: 'TD-03',
       violation: [

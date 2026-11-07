@@ -1,0 +1,13 @@
+id: path-concatenation
+language: TypeScript
+utils:
+  path-piece:
+    kind: string
+    regex: "^['\"](/|https?://|[^'\" ]*/['\"]$|\\?[a-z_]+=|&[a-z_]+=)"
+rule:
+  all:
+    - kind: binary_expression
+    - has: { field: operator, regex: '^\+$' }
+    - any:
+        - has: { field: left, matches: path-piece }
+        - has: { field: right, matches: path-piece }

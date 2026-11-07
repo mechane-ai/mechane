@@ -1,5 +1,5 @@
 import { HttpMethod } from '@mechane/records';
-import { MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { TurnNotFound } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -15,5 +15,5 @@ export const showTurn = {
   query: NoFields,
   body: NoFields,
   output: Trace,
-  errors: [MechNotFound, TurnNotFound, ObjectUnavailable],
+  errors: [MechNotFound, TurnNotFound, ServiceUnavailable],
 } as const satisfies Operation;

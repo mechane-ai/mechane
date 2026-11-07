@@ -145,7 +145,7 @@ export function TurnTrace({
   events,
 }: TraceProps): ReactNode {
   const evidence = traceEvidence(trace);
-  const { turn, start, finished } = evidence;
+  const { turn, elapsed } = evidence;
 
   return (
     <Stack isCompact>
@@ -165,8 +165,8 @@ export function TurnTrace({
           >
             {outcomeLabel(trace.turn.status)}
           </Status>
-          {turn !== undefined && <ConsoleTimestamp value={turn.startedAt} />}
-          {finished !== undefined && <Muted>{durationLabel(finished - start)}</Muted>}
+          {turn !== undefined && <ConsoleTimestamp value={turn.createdAt} />}
+          {elapsed !== undefined && <Muted>{durationLabel(elapsed)}</Muted>}
           {evidence.usageLabel !== undefined && <Muted>{evidence.usageLabel}</Muted>}
         </Row>
         {evidence.settled > 0 && <Muted>{moneyLabel(evidence.cost)} settled</Muted>}
@@ -279,6 +279,15 @@ function TraceOverview({
                   : [
                       { label: 'Definition', value: `Revision ${turn.definitionRevision}` },
                       { label: 'Inputs', value: String(turn.inboxItemIds.length) },
+                      { label: 'Submitted', value: <ConsoleTimestamp value={turn.createdAt} /> },
+                      {
+                        label: 'Started',
+                        value: Option.isSome(turn.startedAt) ? (
+                          <ConsoleTimestamp value={turn.startedAt.value} />
+                        ) : (
+                          'Not started'
+                        ),
+                      },
                     ]),
               ]}
             />
@@ -336,6 +345,8 @@ function RecordedOutcome({
           {latest === undefined ? 'Waiting for the first recorded request.' : `Most recent request: ${latest.summary}.`}
         </Prose>
       )}
+      {turn?.status === 'queued' && <Prose>This run is waiting to start.</Prose>}
+      {turn?.status === 'waiting' && <Prose>This run is waiting for an external decision or result.</Prose>}
       {turn === undefined && <Muted>This run uses a newer record format.</Muted>}
     </Stack>
   );

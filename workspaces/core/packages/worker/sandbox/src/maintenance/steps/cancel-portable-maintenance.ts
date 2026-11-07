@@ -1,17 +1,10 @@
-import { SandboxAction, SandboxPhase } from '@mechane/protocol';
+import { SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
-import { advanceIdleWorkspace } from '../../workspace/advance-idle-workspace.ts';
 import type { PortableStepInput } from '../types.ts';
 
 /** Discards only an uncommitted candidate and preserves the previous workspace head. */
-export async function cancelPortableMaintenance({ store, provider, workspace, job }: PortableStepInput): Promise<void> {
+export async function cancelPortableMaintenance({ store, provider, job }: PortableStepInput): Promise<void> {
   if (job.phase === SandboxPhase.Done) {
-    return;
-  }
-
-  const canStop = await advanceIdleWorkspace({ store, provider, workspace });
-
-  if (!canStop) {
     return;
   }
 
@@ -24,6 +17,5 @@ export async function cancelPortableMaintenance({ store, provider, workspace, jo
     await provider.stop({ machineId });
   }
 
-  store.retireWorkspace({ generation: job.generation });
   store.savePortableMaintenance({ ...job, action: SandboxAction.Cancel, phase: SandboxPhase.Done });
 }

@@ -1,13 +1,13 @@
-import { CONTAINER_INACTIVITY } from '@mechane/rpc';
 import { GuestScope, GuestStart } from '@mechane/sandbox-wire';
 import { Duration, Schema } from 'effect';
+import { CONTAINER_INACTIVITY } from '../constants.ts';
 import type { MachineProvider } from '../types.ts';
 import { containerGuest } from './container-guest.ts';
 import { startContainer } from './start-container.ts';
 import type { ContainerProviderInput } from './types.ts';
 
 /** Reinstalls the per-instance inactivity lease before a running container's Durable Object accepts requests. */
-export function containerProvider({ container, state, egress, gateway }: ContainerProviderInput): MachineProvider {
+export function containerProvider({ container, state, gateway }: ContainerProviderInput): MachineProvider {
   const timeout = Duration.toMillis(CONTAINER_INACTIVITY);
 
   if (container.running) {
@@ -22,7 +22,7 @@ export function containerProvider({ container, state, egress, gateway }: Contain
 
       // A start throws while a container runs, so the running one is destroyed first.
       await container.destroy();
-      await startContainer({ container, egress, gateway, environment });
+      await startContainer({ container, gateway, environment });
       await container.setInactivityTimeout(timeout);
     },
     connect: () => containerGuest({ container }),

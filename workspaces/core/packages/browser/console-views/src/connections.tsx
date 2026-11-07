@@ -2,6 +2,7 @@ import { Collapsible, Muted, Row, Stack, Status, TextLink } from '@mechane-ai/el
 import { DataTable, DataTablePlaceholder } from '@mechane-ai/elements/collections';
 import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { SkeletonText } from '@mechane-ai/elements/feedback';
+import { slackChannelUrl } from '@mechane/protocol';
 import type { SlackBinding, SlackDelivery } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { timeLabel } from './format.ts';
@@ -26,7 +27,7 @@ export function SlackConnections({ bindings }: { readonly bindings: ReadonlyArra
       {bindings.map((binding) => (
         <Row key={binding.id} shouldSpaceBetween>
           <TextLink
-            href={`https://app.slack.com/client/${encodeURIComponent(binding.teamId)}/${encodeURIComponent(binding.channelId)}`}
+            href={slackChannelUrl({ teamId: binding.teamId, channelId: binding.channelId })}
             target="_blank"
             rel="noreferrer"
           >

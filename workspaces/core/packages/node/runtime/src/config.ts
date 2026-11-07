@@ -1,0 +1,150 @@
+import { SHA256_PATTERN } from '@mechane/records';
+import { Record, Redacted, Schema } from 'effect';
+import type { CredentialKeyring } from './domain.ts';
+
+const PositiveInteger = Schema.Int.check(Schema.isGreaterThan(0));
+const NonnegativeInteger = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
+
+const ModelOfferSchema = Schema.Struct({
+  id: Schema.NonEmptyString,
+  contextWindowTokens: PositiveInteger,
+  maxOutputTokens: PositiveInteger,
+  inputMicrosPerMillionTokens: NonnegativeInteger,
+  outputMicrosPerMillionTokens: NonnegativeInteger,
+  cacheReadMicrosPerMillionTokens: NonnegativeInteger,
+  cacheWriteMicrosPerMillionTokens: NonnegativeInteger,
+  supportsImages: Schema.optionalKey(Schema.Boolean),
+});
+
+const KeyringSchema = Schema.Struct({
+  current: Schema.NonEmptyString,
+  keys: Schema.Record(Schema.NonEmptyString, Schema.String),
+});
+
+const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
+const DEFAULT_MAX_CONNECTIONS = 4;
+const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
+const DEFAULT_MAX_MACHINES = 10;
+const HTTP_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'http:']);
+const LOOPBACK_HOSTNAMES: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+export type ModelOffer = typeof ModelOfferSchema.Type;
+
+export type RuntimeConfiguration = {
+  readonly databaseUrl: Redacted.Redacted;
+  readonly credentialKeyring: Redacted.Redacted<CredentialKeyring>;
+  readonly maxConnections: number;
+  readonly maxDailyAllowanceMicros: number;
+  readonly maxMachines: number;
+  readonly defaultModel: string;
+  readonly githubApiOrigin: string;
+  readonly model: {
+    readonly upstreamUrl: string;
+    readonly apiKey: Redacted.Redacted;
+    readonly offers: ReadonlyArray<ModelOffer>;
+  };
+  readonly sandbox: { readonly origin: string; readonly bearer: Redacted.Redacted };
+  readonly nexusEvents: { readonly secret: Redacted.Redacted } | null;
+};
+
+function requiredEnvironment(name: string): string {
+  const value = process.env[name];
+
+  if (value === undefined || value.length === 0) {
+    throw new Error(`Missing runtime setting ${name}`);
+  }
+
+  return value;
+}
+
+function httpOrigin(name: string): string {
+  const value = requiredEnvironment(name);
+  const url = new URL(value);
+
+  if (url.username !== '' || url.password !== '' || !HTTP_PROTOCOLS.has(url.protocol)) {
+    throw new Error(`Invalid runtime setting ${name}`);
+  }
+
+  if (url.protocol === 'http:' && !LOOPBACK_HOSTNAMES.has(url.hostname)) {
+    throw new Error(`Invalid runtime setting ${name}`);
+  }
+
+  return value.replace(/\/$/u, '');
+}
+
+function optionalInteger(name: string, defaultValue: number): number {
+  const value = process.env[name];
+
+  if (value === undefined) {
+    return defaultValue;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new Error(`Invalid runtime setting ${name}`);
+  }
+
+  return parsed;
+}
+
+export function loadRuntimeConfiguration(): RuntimeConfiguration {
+  const offers = Schema.decodeUnknownSync(OffersSchema)(JSON.parse(requiredEnvironment('MECHANE_MODEL_OFFERS')));
+  const modelIds = new Set(offers.map((offer) => offer.id));
+
+  const defaultModel = process.env['MECHANE_DEFAULT_MODEL'] ?? 'openai/gpt-6.1-sol';
+
+  if (modelIds.size !== offers.length || !modelIds.has(defaultModel)) {
+    throw new Error('Model offers must have distinct IDs and include the default model');
+  }
+
+  const keyring = parseKeyring();
+
+  if (!Object.hasOwn(keyring.keys, keyring.current)) {
+    throw new Error('Credential keyring lacks its current key');
+  }
+
+  for (const key of Record.values(keyring.keys)) {
+    if (!SHA256_PATTERN.test(key.toLowerCase())) {
+      throw new Error('Credential keyring contains an invalid key');
+    }
+  }
+
+  return {
+    databaseUrl: Redacted.make(requiredEnvironment('MECHANE_DATABASE_URL')),
+    credentialKeyring: Redacted.make(keyring),
+    maxConnections: optionalInteger('MECHANE_DATABASE_MAX_CONNECTIONS', DEFAULT_MAX_CONNECTIONS),
+    maxDailyAllowanceMicros: optionalInteger('MECHANE_MAX_DAILY_ALLOWANCE_MICROS', DEFAULT_DAILY_CAP_MICROS),
+    maxMachines: optionalInteger('MECHANE_MAX_MACHINES', DEFAULT_MAX_MACHINES),
+    defaultModel,
+    githubApiOrigin: process.env['MECHANE_GITHUB_API_ORIGIN'] ?? 'https://api.github.com',
+    model: {
+      upstreamUrl: httpOrigin('MECHANE_MODEL_UPSTREAM_URL'),
+      apiKey: Redacted.make(requiredEnvironment('MECHANE_MODEL_UPSTREAM_KEY')),
+      offers,
+    },
+    sandbox: {
+      origin: httpOrigin('MECHANE_SANDBOX_ORIGIN'),
+      bearer: Redacted.make(requiredEnvironment('MECHANE_SANDBOX_KEY')),
+    },
+    nexusEvents: nexusEventSettings(),
+  };
+}
+
+function parseKeyring(): CredentialKeyring {
+  try {
+    return Schema.decodeUnknownSync(KeyringSchema)(JSON.parse(requiredEnvironment('MECHANE_CREDENTIAL_KEYRING')));
+  } catch {
+    throw new Error('Credential keyring configuration is invalid');
+  }
+}
+
+function nexusEventSettings(): RuntimeConfiguration['nexusEvents'] {
+  const secret = process.env['MECHANE_NEXUS_EVENT_SECRET'];
+
+  if (secret === undefined || secret.length === 0) {
+    return null;
+  }
+
+  return { secret: Redacted.make(secret) };
+}

@@ -1,11 +1,14 @@
 import type { ContractEnforcement, ContractName } from '@mechane/rule-shapes';
 import { developerEnvironments, executionAccess, modelCaching, threadContinuations } from './agent-runtime.ts';
+import { channelDelivery } from './channel-delivery.ts';
 import { codeStyle } from './code-style.ts';
 import { consoleBoundaries } from './console-boundaries.ts';
 import { consoleCacheLifecycle } from './console-cache-lifecycle.ts';
 import { installationOwnership } from './installation-ownership.ts';
+import { nativeWorkflowRuntime } from './native-workflow-runtime.ts';
 import { packageLayers } from './package-layers.ts';
 import { ruleRegistry } from './rule-registry.ts';
+import { structuredPresentation } from './structured-presentation.ts';
 import { uiAnalyticalGraphics } from './ui-analytical-graphics.ts';
 import { uiContentRendering } from './ui-content-rendering.ts';
 import { uiConversationState } from './ui-conversation-state.ts';
@@ -29,4 +32,7 @@ export const MECHANE_CONTRACTS = {
   'thread-continuations': threadContinuations,
   'developer-environments': developerEnvironments,
   'model-caching': modelCaching,
+  'native-workflow-runtime': nativeWorkflowRuntime,
+  'channel-delivery': channelDelivery,
+  'structured-presentation': structuredPresentation,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

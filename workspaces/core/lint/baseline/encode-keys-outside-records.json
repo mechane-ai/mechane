@@ -1,11 +1,3 @@
 {
-  "packages/node/boundaries/src/schemas.ts": 1,
-  "packages/shared/deployment/src/schemas.ts": 2,
-  "packages/worker/bindings/src/schemas.ts": 1,
-  "packages/worker/rpc/src/directory.schemas.ts": 3,
-  "packages/worker/rpc/src/drones.schemas.ts": 4,
-  "packages/worker/rpc/src/mech.schemas.ts": 4,
-  "packages/worker/rpc/src/schemas.ts": 1,
-  "packages/worker/rpc/src/turn.schemas.ts": 3,
-  "packages/worker/rpc/src/workspace.schemas.ts": 5
+  "packages/node/boundaries/src/schemas.ts": 1
 }

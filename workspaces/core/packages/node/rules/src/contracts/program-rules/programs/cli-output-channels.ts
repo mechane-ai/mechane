@@ -22,7 +22,14 @@ export const cliOutputChannels = {
       exemptRoles: [FileRole.Output],
       standard: 'CP-05',
     },
-    { ...OXLINT_DEFAULTS, ...ADOPTED, name: 'unicorn/no-process-exit', value: Severity.Error, standard: 'CP-05' },
+    {
+      ...OXLINT_DEFAULTS,
+      ...ADOPTED,
+      name: 'unicorn/no-process-exit',
+      value: Severity.Error,
+      exemptRoles: [FileRole.ProcessShutdown],
+      standard: 'CP-05',
+    },
     {
       ...RESTRICTED_DEFAULTS,
       message:
@@ -38,7 +45,7 @@ export const cliOutputChannels = {
       message: "End the process by setting its exit status in the output module's finish, such as `finish({ status })`",
       properties: { process: ['exit'] },
       imports: [],
-      exemptRoles: [],
+      exemptRoles: [FileRole.ProcessShutdown],
       standard: 'CP-05',
       ...ADOPTED,
     },

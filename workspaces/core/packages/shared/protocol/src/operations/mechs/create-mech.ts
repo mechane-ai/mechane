@@ -1,7 +1,7 @@
 import { ModelId } from '@mechane/deployment';
 import { CreationRequestId, HttpMethod, Micros, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
-import { ObjectUnavailable } from '../../errors/errors.ts';
+import { ServiceUnavailable } from '../../errors/errors.ts';
 import { MechCreationConflict, ModelInvalid } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -31,5 +31,5 @@ export const createMech = {
   query: NoFields,
   body: CreateMechBody,
   output: Mech,
-  errors: [MechCreationConflict, ModelInvalid, ObjectUnavailable],
+  errors: [MechCreationConflict, ModelInvalid, ServiceUnavailable],
 } as const satisfies Operation;

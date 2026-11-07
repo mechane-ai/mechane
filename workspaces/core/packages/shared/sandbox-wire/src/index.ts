@@ -10,10 +10,7 @@ export {
   GUEST_PORT,
   ReceiptStatus,
   OUTPUT_TAIL_BYTES,
-  DEFAULT_EXECUTION_TIMEOUT,
   EXECUTION_TIMEOUT_MAX,
-  EXECUTION_ID_PREFIX,
-  EXECUTION_WAIT_MAX,
 } from './constants.ts';
 export {
   HostMachine,
@@ -34,18 +31,41 @@ export { guestHealthPath } from './guest-health-path.ts';
 export { guestWorkspacePath } from './guest-workspace-path.ts';
 export { launcherMachinePath } from './launcher-machine-path.ts';
 export type { RunExecutionInput } from './types.ts';
-export {
-  SourceStep,
-  SourceFencePhase,
-  SOURCE_EXPIRY_MARGIN,
-  SOURCE_CHECKOUT_TIMEOUT,
-  SOURCE_PREPARATION_TIMEOUT,
-} from './source.constants.ts';
-export { SourceCheckout, SourceClone, SourceCapture, SourceFenceReport, SourceGuestAnswer } from './source.schemas.ts';
-export { guestSourcePath } from './guest-source-path.ts';
 export { SandboxOwner } from './sandbox-owner.ts';
+export {
+  SANDBOX_CAPACITY_PATH,
+  SandboxCapacityAction,
+  SandboxCapacityStatus,
+  SandboxCapacityIdentity,
+  SandboxCapacityRequest,
+  SandboxCapacityRefusalReason,
+  SandboxCapacityResult,
+} from './capacity.ts';
 export {
   ExecutionEnvironment,
   ExecutionEnvironmentRequired,
   OptionalExecutionEnvironment,
 } from './execution-environment.ts';
+export {
+  SANDBOX_SERVICE_PREFIX,
+  SandboxServiceIdentity,
+  SandboxExecutionIdentity,
+  SandboxExecutionSubmission,
+  SandboxExecutionResume,
+  SandboxExecutionObservation,
+  SandboxExecutionResult,
+  SandboxExecutionRefusal,
+  sandboxExecutionPath,
+  sandboxExecutionCancelPath,
+  sandboxExecutionResumePath,
+  sandboxWorkspacePath,
+} from './service.ts';
+
+export {
+  SandboxAction,
+  SandboxPhase,
+  SandboxArchive,
+  SandboxRequest,
+  SandboxReport,
+  SANDBOX_ARCHIVE_PART_BYTES,
+} from './internal-maintenance.ts';

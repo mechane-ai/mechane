@@ -1,6 +1,6 @@
 import { EventType, UnknownEvent } from '@mechane/protocol';
 import type { ListedEvent } from '@mechane/protocol';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
 import { UNKNOWN_KIND_NOTE } from '../constants.ts';
 import { indentedText } from './indented-text.ts';
 
@@ -18,26 +18,19 @@ export function eventLines({ event }: EventLinesInput): ReadonlyArray<string> {
   const heading = `#${event.sequence} ${DateTime.formatIso(event.occurredAt)} ${event.type}`;
 
   switch (event.type) {
-    case EventType.InboxItemReceived:
-      return [`${heading} ${event.inboxItemId} from ${event.senderId}, ${event.delivery}`, ...indentedText(event)];
-    case EventType.InboxItemWritten:
-      return [`${heading} ${event.inboxItemId}`];
+    case EventType.InboxItemReceived: {
+      const sender = Option.getOrElse(event.senderId, () => 'unknown sender');
+
+      return [`${heading} ${event.inboxItemId} from ${sender}, ${event.delivery}`, ...indentedText(event)];
+    }
     case EventType.TurnStarted:
       return [`${heading} ${event.turnId} for ${event.inboxItemIds.join(', ')}`];
-    case EventType.TurnJoined:
-      return [`${heading} ${event.turnId} took ${event.inboxItemId}`];
     case EventType.TurnCanceled:
       return [`${heading} ${event.turnId} by ${event.cancelerId}`];
     case EventType.TurnAnswered:
       return [`${heading} ${event.turnId}`, ...indentedText({ text: event.reply })];
     case EventType.TurnUnanswered:
       return [`${heading} ${event.turnId} (${event.reason})`];
-    case EventType.DroneStarted:
-      return [`${heading} ${event.droneId} on thread ${event.threadId}`];
-    case EventType.DroneReported:
-      return [`${heading} ${event.droneId} as ${event.inboxItemId}`, ...indentedText({ text: event.report })];
-    case EventType.DroneUnreported:
-      return [`${heading} ${event.droneId} (${event.reason}) as ${event.inboxItemId}`];
     case EventType.MechForked:
       return [`${heading} from ${event.forkedFrom.mechId} after #${event.forkedFrom.sequence}`];
   }

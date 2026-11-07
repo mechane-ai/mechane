@@ -54,7 +54,7 @@ export function initialReads(
     case 'events':
     case 'requests':
     case 'tools': {
-      const primary = [heading, readRequests.events(mechId, pages?.conversation?.at(-1) ?? null)];
+      const primary = [heading];
 
       return selection === 'primary' ? primary : [...primary, readRequests.turns(mechId, null)];
     }

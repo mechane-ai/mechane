@@ -86,6 +86,7 @@ export const codeClosedValueSets = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'hand-written-tag',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-20',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
@@ -96,7 +97,7 @@ export const codeClosedValueSets = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'literal-comparison',
-      exemptRoles: [FileRole.Browser],
+      exemptRoles: [FileRole.Browser, FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-19',
       violation: ["if (status === 'proposed') { stop(); }", "switch (status) { case 'proposed': stop(); }"],
       allowed: [
@@ -108,6 +109,7 @@ export const codeClosedValueSets = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'raw-literal-schema',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativePresentation],
       standard: 'TD-19',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,

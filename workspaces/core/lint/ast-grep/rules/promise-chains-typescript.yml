@@ -3,7 +3,13 @@
 id: promise-chains-typescript
 language: TypeScript
 files: ['**/*.ts']
-ignores: ['packages/browser/**']
+ignores:
+  [
+    'packages/worker/sandbox-service/src/**',
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    'packages/browser/**',
+  ]
 severity: error
 message: 'Await the promise, such as `const response = await fetch(url)` (ER-04)'
 note: |

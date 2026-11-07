@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { DistributionStep, MODULE_NOTICE_NAMES, MODULE_SOURCE_NAMES } from '../constants.ts';
+import { ARTIFACT_NOTICE_NAMES, DistributionStep, MODULE_SOURCE_NAMES } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import type { InstallationManifest } from '../schemas.ts';
 
@@ -10,7 +10,7 @@ export const verifyModuleInventory = Effect.fn('verifyModuleInventory')(function
   manifest,
   entries,
 }: VerifyInventoryInput): Effect.fn.Return<void, DistributionFailed> {
-  const required = [...MODULE_SOURCE_NAMES, ...MODULE_NOTICE_NAMES];
+  const required = [...MODULE_SOURCE_NAMES, ...ARTIFACT_NOTICE_NAMES];
   const declared = manifest.module_files.map((file) => file.name);
   const isComplete = required.every((name) => declared.includes(name));
 
@@ -21,7 +21,7 @@ export const verifyModuleInventory = Effect.fn('verifyModuleInventory')(function
     });
   }
 
-  const expected = [...declared, manifest.worker.path, manifest.console.path, 'installation.json'];
+  const expected = [...declared, manifest.worker.path, 'installation.json'];
   const hasEveryEntry = expected.every((name) => entries.includes(name));
 
   if (!hasEveryEntry || entries.length !== expected.length) {

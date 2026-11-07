@@ -1,13 +1,14 @@
 import { memberOrUnknown, Micros, PrincipalId, RecordId, RecordName, wireStruct, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { MembershipRole, UTC_DAY_PATTERN } from './constants.ts';
+import { MembershipRole, UTC_DAY_PATTERN, WorkspaceKind } from './constants.ts';
 
 /** A workspace the caller belongs to, with the caller's role and the model spend it may make each day. */
 export const Workspace = wireStruct({
   fields: {
     id: RecordId,
     name: RecordName,
+    kind: Schema.Enum(WorkspaceKind),
     role: memberOrUnknown({ set: MembershipRole }),
     dailyAllowanceMicros: Micros,
     createdAt: WireTime,

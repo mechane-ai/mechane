@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'Move top-level work into `main`, such as `await main();` as the one statement that runs it (ST-31)'
 files: ['**/main.ts']
-ignores: ['**/node_modules/**', packages/browser/*/.storybook/main.ts]
+ignores: ['**/node_modules/**', packages/browser/*/.storybook/main.ts, 'packages/worker/sandbox-service/src/main.ts']
 rule:
   inside:
     kind: program

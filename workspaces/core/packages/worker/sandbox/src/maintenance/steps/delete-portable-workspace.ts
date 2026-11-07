@@ -1,4 +1,4 @@
-import { SandboxPhase } from '@mechane/protocol';
+import { SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { retireWorkspace } from '../../workspace/retire-workspace.ts';
 import type { PortableStepInput } from '../types.ts';

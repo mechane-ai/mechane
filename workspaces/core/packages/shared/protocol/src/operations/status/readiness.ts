@@ -1,11 +1,11 @@
 import { HttpMethod } from '@mechane/records';
-import { ObjectUnavailable } from '../../errors/errors.ts';
+import { ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { Readiness } from './schemas.ts';
 
-/** Reports the deployment's release and revisions; it answers only after every Durable Object answers. */
+/** Reports the deployment's release and database revision after the server and its workflow worker are ready. */
 export const readiness = {
   method: HttpMethod.Get,
   path: '/api/v1/readiness',
@@ -14,5 +14,5 @@ export const readiness = {
   query: NoFields,
   body: NoFields,
   output: Readiness,
-  errors: [ObjectUnavailable],
+  errors: [ServiceUnavailable],
 } as const satisfies Operation;

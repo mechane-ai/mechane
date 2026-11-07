@@ -2,18 +2,17 @@
 
 Build the CLI binaries and download manifest for every supported target.
 
-Layer 4 · node lane · effect dialect · consumers: stack, testing, smoke, distribution
+Layer 4 · node lane · effect dialect · consumer: distribution
 
 ## Layout
 
-- `src/`: the program's settings and exit, source revision, and release file inventory.
-- `src/build/`: one release built into a folder at its bucket keys, one binary compiled per target, and this machine's
-  target.
+- `src/`: the program's settings, exit, and source revision.
+- `src/build/`: one release built into a folder at its download paths, one binary compiled per target.
 
 ## Rules
 
-The [product contracts](../../../.contracts/index.md) apply. The smoke uses `buildRelease`, `hostTarget` and
-`releaseFiles` to exercise the CLI download and update protocol against a local stack.
+The [product contracts](../../../.contracts/index.md) apply. The distribution builder uses `buildRelease` to package
+every supported CLI target with the same public source revision as the runtime.
 
 ## Use
 

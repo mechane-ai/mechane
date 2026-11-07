@@ -1,9 +1,6 @@
 import { Schema } from 'effect';
 
-/**
- * The `containers` entries with only the keys celld accepts, which deploy.rs lists. The stack decodes them with every
- * other key refused, so a key only Cloudflare reads fails the smoke, whose host stack drops the entries.
- */
+/** The supported compute image and capacity fields in the build configuration. */
 const ContainerEntries = Schema.Array(
   Schema.Struct({
     class_name: Schema.String,
@@ -17,7 +14,7 @@ const ContainerEntries = Schema.Array(
 
 /**
  * A Durable Object migration of the Wrangler configuration with every key it holds, so two releases compare it whole;
- * the stack reads the classes it adds.
+ * the release records the classes it adds.
  */
 const WranglerMigration = Schema.StructWithRest(
   Schema.Struct({ tag: Schema.String, new_sqlite_classes: Schema.Array(Schema.String) }),

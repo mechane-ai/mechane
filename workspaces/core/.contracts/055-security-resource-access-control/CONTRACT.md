@@ -1,7 +1,7 @@
 ---
 name: security-resource-access-control
 message: Authorize every request on the server from current grants; logins, plain links, and caller-supplied facts grant nothing.
-paths: ["packages/worker/*/src/**"]
+paths: ["packages/node/runtime/**", "packages/node/server/**", "packages/worker/sandbox*/**"]
 ---
 
 ## Rules
@@ -48,24 +48,30 @@ Review administrative, delegated, and service paths for access they inherit with
 
 ## Local adaptations
 
-Each principal operation resolves its caller from its key on every request, through the key's cache shard, and reads or changes only that principal's records: its keys, and the workspaces it is a member of.
-A first approval by a provider-qualified identity creates a principal and one personal workspace whose owner membership is its initial grant. Local bootstrap uses its own identity provider and receives no special API bypass.
-Revoking another principal's key or a missing one answers `KeyNotFound` with the same status and body, and the statement that revokes checks the owner itself.
-Each member operation decodes the workspace's id from its path before its input, resolves the key through its cache shard, and checks `workspaceMembership` against the directory's current grants. A removed membership takes effect even when the key is cached; an unavailable directory fails closed. A non-member gets `WorkspaceNotFound`, as for a workspace that does not exist.
-The Worker reaches a mech only through the admitted workspace's id, by `mechObjectName`, so a mech is never found through another workspace; any member lists a mech's saved memories, threads and drones, reads a drone, cancels its turns and its drones, and an interrupt item cancels as its sender.
-Only a mech's own object calls its sandbox, by the same name, and each of its drones' sandboxes, by that name with the drone's id below it, so two mechs of one workspace, or a mech and its drone, never share a sandbox, and no operation reaches a sandbox directly; ast-grep `sandbox-stub-outside-mech` rejects a call of `sandboxStub` outside `packages/worker/mech/src`.
-A drone's conversation selects neither the threads extension nor the memory tools that change memory or the context, so a drone reads its mech's memory as saved when it started and cannot change it, start a drone or reset itself; the mech resolves a conversation's role from the session id it bound, never from the model's text.
-A guest answers only requests that name its own machine's id, 122 random bits that only the sandbox's object holds, so a caller that reaches a port celld publishes cannot drive it; a host machine's guest listens on loopback, and the host launcher answers only the stack's own Worker.
-Workspace membership and its role are live directory authority. Key caches hold credential validity and principal identity, never a membership grant. Operations that manage workspace integrations separately require the current owner role.
-Any member forks a mech of the admitted workspace, and the fork is a mech of that workspace whose creator is the member; the parent reaches the new mech's object only by `mechObjectName` under its own workspace's id, and only a mech's own object sends it a copy, whose begin deletes the object's database; ast-grep `copy-outside-forks` rejects a call of `receiveCopy` outside `packages/worker/mech/src/forks`.
-Every request but `/health` counts against its address's `address` policy when Cloudflare names the address in `cf-connecting-ip`, an IPv6 address by its /64; `startDeviceApproval` also counts against `device_start`, an admitted caller against `principal`, shared by all of its principal's keys, and the device form against `code_attempt` for its provider-qualified identity. A limited request answers `RateLimited` with `retry-after` and logs `request.limited`; celld names no address, so locally only the principal and code policies apply.
-A member operation reads the workspace’s live policy after membership. Suspension refuses new model reservations and machine leases without redeployment. Installation administrators alone change workspace policy, including resuming suspended workspaces. Workspace policy cannot exceed installation machine or spend ceilings. Reservation and lease checks read the current policy atomically with the write they guard. An already-running guest command may finish; suspension never erases workspace files.
-Cloudflare containers start with direct internet disabled and route HTTP and HTTPS through `EgressGateway`. It admits only the shared package-source host list and validated additional installation hosts, refuses invalid or disagreeing URL and Host authorities, literal addresses and the deployment host, and forwards over TLS without following redirects. An interceptor setup failure starts no machine; other outbound ports remain closed.
-The optional Tensorlake provider uses the same package-source host list and denies private IPv4 ranges. Its project credential never enters the guest. The local celld fence refuses the node and every private, shared and link-local range; it does not impose the hosted package-host list. Cloud deployment validation refuses the local fence setting, which also requires a loopback origin in Worker settings.
+Server authentication resolves a current principal, then the operation checks current workspace membership and role.
+All resource lookups are scoped by the admitted workspace. A missing resource and a foreign resource have the same
+not-found response. Owner-only configuration and integration operations recheck ownership at their write boundary.
+
+An admitted GitHub identity may receive the installation's explicit initial workspace membership. Login alone grants
+no other workspace access. API keys and browser sessions do not cache membership authority. A removed membership or
+revoked key fails on the next operation, including stream resumption and card actions.
+
+Each mech has its own durable sandbox identity. Only the authenticated runtime may command the sandbox service; the
+service binds the supplied workspace and mech to that identity before execution. Guests validate their own machine
+identity and receive no general application API authority implicitly.
+
+Workspace policy gates new model reservations and compute admission atomically with their records. Suspended work
+cannot acquire new paid work or credentials. Existing command effects remain observable; suspension never erases files.
+
+Nexus is the sole authority for external capability grants and approval decisions. Requester attribution comes from
+verified intake and cannot be replaced by a model or rendered action. Current external grants are checked before use.
+
+The Cloudflare compute provider disables direct internet and routes HTTP through its declared egress gateway.
+Invalid or disagreeing URL and Host authorities, literal private targets, and unsupported ports are refused. Local
+compute fixtures remain explicitly isolated and cannot become a production fallback.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- ast-grep `copy-outside-forks` (055): enforced
-- ast-grep `sandbox-stub-outside-mech` (055): enforced
+No rule of the registry decides this contract; review does.
 
 <!-- End of the generated block. -->

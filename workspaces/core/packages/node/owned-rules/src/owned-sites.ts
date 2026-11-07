@@ -3,6 +3,7 @@ import { standardMessage } from '@mechane/checks-kernel';
 import type { ParsedSource } from '@mechane/modules';
 import { Effect } from 'effect';
 import { HISTORY_WORDS } from './constants.ts';
+import { documentedExports } from './doc-comments/documented-exports.ts';
 import { sourceSites } from './source-sites.ts';
 import { bannedPhrases } from './vocabulary/banned-phrases.ts';
 import { documentSites } from './vocabulary/document-sites.ts';
@@ -20,7 +21,8 @@ export const ownedSites = Effect.fn('ownedSites')(function* ({
 }: OwnedSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
   const phrases = yield* bannedPhrases();
   const documents = yield* documentSites({ phrases, historyWords: HISTORY_WORDS });
-  const sites = sources.flatMap((source) => sourceSites({ source, phrases }));
+  const documentation = documentedExports({ sources });
+  const sites = sources.flatMap((source) => sourceSites({ source, phrases, documentation }));
 
   /** A site, its message ended with its rule's standard. */
   const standardSite: (site: Site) => Site = (site) => ({ ...site, message: standardMessage(site) });

@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, FixBehavior, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole, FixBehavior, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** What enforces `data-record-identifiers`: every id made and typed through its entity's brand, and named once. */
@@ -8,6 +8,7 @@ export const dataRecordIdentifiers = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'bare-random-uuid',
+      exemptRoles: [FileRole.NativeRuntime],
       standard: 'TD-14',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
@@ -20,11 +21,12 @@ export const dataRecordIdentifiers = {
       name: 'object-name-outside-object-calls',
       standard: '044',
       violation: ['const id = namespace.idFromName(name);'],
-      allowed: ['const name = mechObjectName({ mechId });'],
+      allowed: ['const id = schema.decode(input);'],
     },
     {
       ...AST_GREP_DEFAULTS,
       name: 'plain-id-schema',
+      exemptRoles: [FileRole.NativeRuntime],
       standard: 'TD-14',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
@@ -34,6 +36,7 @@ export const dataRecordIdentifiers = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'plain-id-type',
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativeConversation],
       behavior: FixBehavior.TypeOnly,
       standard: 'TD-14',
       status: RuleStatus.Ratchet,

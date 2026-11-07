@@ -4,6 +4,9 @@
   "ignore": [
     "**/node_modules/**",
     "**/dist/**",
+    "packages/node/server/.output/**",
+    "**/.swc/**",
+    "packages/node/runtime/.well-known/workflow/**",
     "**/reference.json",
     "lint/baseline/**",
     "lint/ast-grep/rules/boolean-names-tsx.yml",

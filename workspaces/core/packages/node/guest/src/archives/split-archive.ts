@@ -1,4 +1,4 @@
-import type { SandboxArchive } from '@mechane/protocol';
+import type { SandboxArchive } from '@mechane/sandbox-wire';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';

@@ -34,20 +34,33 @@ Does each changed doc comment on a field that may hold no value say what absence
 ## Local adaptations
 
 The `summary` of each command declaration and global flag in `packages/node/commands/src` is interface text that `--help` and the command reference publish.
-The doc-comment checks of `mise -C workspaces/core run checks` read every TypeScript file: `export-doc` fails on each exported declaration without a doc comment, except a type named like a value of its file, a function's `Input` type and an `index.ts` re-export.
-`absence-doc` fails on each field that may be absent and has no doc comment: an optional, nullable or `Option` property of any type, and a field of an exported schema whose own schema leaves it optional, nullable or an `Option`; whether the doc says what absence means is left to review, since no word list tells a doc that does from one that does not.
-The code-style cleanup cleared both, so they are enforced, while the `short-doc` ratchet holds each doc of more than `docSentences` sentences, each sentence of more than `docSentenceWords` words, and each doc of an export that holds only its name's words.
+The documentation boundary is the supported client and domain protocol, including its structured-presentation entrypoint.
+The registry's `publicEntrypoints` names those roots. `export-doc` follows their named re-exports to the declarations
+callers use and requires a doc comment there. A matching value's doc covers its type; a function's doc covers its
+`Input` type. A declaration in an entrypoint follows the same rule as a declaration in another file.
+
+An export used to connect internal modules is not by itself a supported public interface. Private runtime, server,
+store, test, and build packages do not need a comment on every cross-file export. Document non-obvious ownership,
+side effects, recovery, cancellation, and caller guarantees where the code cannot show them.
+
+`absence-doc` requires documentation for optional, nullable, and `Option` fields authored in those public record
+types and schemas. It does not inspect implementation-local types or require copies of upstream SDK documentation.
+Review whether the comment explains the absence; a word list cannot establish that meaning.
+
+Both checks are enforced without baselines. `short-doc` still checks every authored doc comment, including internal
+and SDK adapter code, for sentence and word limits and for comments that only repeat an export's name.
 The `componentFiles` scope uses typed props, descriptive names, and colocated usage guidance for ordinary presentation
 exports. It covers browser JSX and the generic UI packages' component support, prop types, styles, and tokens in both
 TypeScript and TSX. It requires no per-export or per-optional-prop boilerplate. Explain non-obvious composition,
 behavior, and absence semantics where a type or example cannot show them; existing comments still follow `short-doc`.
-Console-data and Node TypeScript keep the export and absence documentation requirements.
+Keep `publicEntrypoints` aligned with the supported interface before adding or removing one. Package ownership,
+entrypoint imports, dependency rules, and source comment width remain independent checks.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `docSentences` 3; `docSentenceWords` 30; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/elements/packages/**/*.{ts,tsx}`.
+Values: `docSentences` 3; `docSentenceWords` 30; `publicEntrypoints` `packages/shared/client/src/index.ts`, `packages/shared/protocol/src/index.ts`, `packages/shared/protocol/src/presentation/index.ts`; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/elements/packages/**/*.{ts,tsx}`.
 - owned check `export-doc` (CD-03): enforced in phase F6
 - owned check `absence-doc` (CD-04): enforced in phase F6
-- owned check `short-doc` (CD-06): a ratchet until phase F6
+- owned check `short-doc` (CD-06): enforced in phase F6
 
 <!-- End of the generated block. -->

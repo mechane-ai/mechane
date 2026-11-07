@@ -1,8 +1,8 @@
-import { RELEASE } from '@mechane/protocol';
+import { RELEASE, RELEASE_REPOSITORY } from '@mechane/protocol';
 import { Effect } from 'effect';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { DistributionStep, PUBLIC_REPOSITORY } from '../constants.ts';
+import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { fileDigest } from '../files/file-digest.ts';
 import { writeDocument } from '../files/write-document.ts';
@@ -31,7 +31,7 @@ export const writeReceipt = Effect.fn('writeReceipt')(function* ({
   const receipt: ArtifactReceipt = {
     format_version: 1,
     version: RELEASE,
-    repository: PUBLIC_REPOSITORY,
+    repository: RELEASE_REPOSITORY,
     public_commit: commit,
     assets: [...assets, { name: 'SHA256SUMS', ...checksum }],
   };

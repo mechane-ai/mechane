@@ -29,29 +29,22 @@ Search the change for splitting, substrings, pattern matches, and prefix compari
 
 ## Local adaptations
 
-Principals, workspaces, keys, device approvals, mechs, turns, dispatches and machines take ids from `crypto.randomUUID()` where they are created; the Worker generates a key's id with its token, before the directory stores it, and a mech's id before it creates the mech.
-An inbox item takes the version 4 UUID its sender made, which `mechane inbox send` prints before it posts, so a resend under the same id is received once and pi admits it once.
-Tokens and user codes are secrets and codes, not ids, and a record is found by a token only through the token's SHA-256 hash.
-`DIRECTORY_NAME` names the deployment's one directory object and `READINESS_NAME` the object of each class that readiness probes; both are fixed names, not derived record ids.
-A workspace's object is named by the workspace's id, and only `mechObjectName({ workspaceId, mechId })` names a mech's object, and its sandbox's object too; the mech's object reads both ids from its own row, never from its name, and the sandbox's object stores no owner id.
-A memory change is keyed by its pi tool task's id, so pi's rerun of a memory call answers from the change it recorded, and a turn note's request id is `turn-note:<turn id>`, so a rerun of the alarm finds the note pi admitted; a turn note is never an inbox item, whose request id is a random UUID.
-An execution's id is `task-<n>`, its pi tool task's, which only `executionId({ taskId })` in `packages/worker/harness-tools/src` builds, so pi's replay of the task asks for the execution it already started; `ExecutionId` admits only that form.
-An id kind's branded schema in `@mechane/protocol` types its ids apart from every other kind's: `TurnId`, `DispatchId`, `ThreadId` and `DroneId` brand `RecordId`, and `ExecutionId` brands its `task-<n>` form.
-Each brand lands whole: every protocol schema of its kind decodes under it, and so do the Worker's records and the CLI's inputs of that kind, so a reader's id carries it; a log line names each record by `LogId`, a plain UUID. A kind without a brand takes one in the protocol's records with its first consumer.
-An id carries its kind's brand: ast-grep `plain-id-type` ratchets an id property typed as a plain `string`, `plain-id-schema` an id field decoded as `Schema.String`, `RecordId` or `RandomId`, and `bare-random-uuid` a random UUID made outside an id's `make`, such as `TurnId.make(crypto.randomUUID())`.
+Product records use random UUIDs or a caller's previously persisted request ID. Native Workflow, AI SDK tool calls,
+Chat platform messages, and provider requests retain their upstream identifiers as opaque values. Their documented
+format is validated at entry where needed; product code does not recover authority or ownership by parsing them.
 
-Generic presentation models in `packages/browser/elements` accept stable, caller-supplied string identities for rows, columns,
-series, tree nodes, commands and messages. Compare these values whole; the library does not create persisted records
-or recover domain fields from their ids. The `plain-id-type` exception is limited to this UI package. Application data,
-API records and backend records keep their protocol brands, including when an application passes an id to a UI input.
-Use the existing domain id directly rather than generating a second presentation id for the same record.
-A machine's id is drawn and stored before its start, and every guest route carries it, so a request reaches only the machine its row names.
-Threads and drones take ids from `crypto.randomUUID()` in the transaction that records them, and each row keeps its open_thread or start_drone task's id, so pi's rerun of the call answers the recorded thread or drone; a drone also draws its report item's id there, which its one end takes.
-A drone's conversation is found by the session document `mechane.drone` under the drone's id, its brief's request id is the drone's id, which pi admits once, and a drone binds its conversation's provider session id once, which tells its tool calls and dispatches from its mech's.
-Only `sandboxStub` names a drone's sandbox, `<mech object name>/drones/<drone id>`, so each drone has its own.
-ast-grep `object-name-outside-object-calls` rejects naming a Durable Object outside `packages/worker/bindings/src`, which derives every object's name.
-An eval plan's digest is the SHA-256 of its basis's canonical encoding, and only `trialId({ digest, caseId, repeat })` in `packages/node/eval/src` builds a trial's id, the first 128 bits of the SHA-256 of those parts, so a rerun finds each trial's records; the plan stores each trial's case id and repeat in their own fields, and a role's inbox item takes a random UUID that its intent stores.
-A fork's new mech takes the random UUID the Worker makes, as `createMech`'s does, and the parent records it in `forks` before it copies anything, and the copy's sequence once the new mech holds it, so a retry of a fork cut off finishes the same mech under that id instead of making another, and never copies over a new mech that holds its copy.
+A repeated input resolves through its persisted source identity. A tool effect derives one receipt ID from the stable
+run and native tool-call identity, or persists a random receipt ID before dispatch. The record stores the run, tool
+call, and input digest separately. A retry finds that receipt; a different input under the same identity is refused.
+
+Runtime domain IDs are serializable strings; the domain protocol keeps its branded schemas at the wire boundary.
+The native browser conversation transport retains the same serializable IDs used by the upstream Chat instance.
+Use the same ID when projecting a domain record to a UI row. Mechane Elements accepts caller-supplied opaque string
+identities without creating records or deriving domain fields from them.
+
+Tokens and user codes are credentials, not record IDs. Look them up by their SHA-256 hashes. Sandbox and machine
+records persist their owning workspace and mech separately from any derived object name. Evals retain their plan
+basis, trial identity, and submitted request identities so interrupted evaluation does not repeat accepted work.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

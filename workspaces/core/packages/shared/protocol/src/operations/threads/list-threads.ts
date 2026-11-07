@@ -1,5 +1,5 @@
 import { HttpMethod, listQuery, ThreadId } from '@mechane/records';
-import { MechNotFound, ObjectUnavailable, RequestInvalid } from '../../errors/errors.ts';
+import { MechNotFound, RequestInvalid, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -18,5 +18,5 @@ export const listThreads = {
   query: listQuery({ cursor: ThreadId }),
   body: NoFields,
   output: ThreadPage,
-  errors: [MechNotFound, RequestInvalid, ObjectUnavailable],
+  errors: [MechNotFound, RequestInvalid, ServiceUnavailable],
 } as const satisfies Operation;

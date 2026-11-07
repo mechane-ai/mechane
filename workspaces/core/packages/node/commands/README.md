@@ -24,4 +24,3 @@ writes `reference.json`.
 ## Never
 
 - Never import a run or the CLI.
-- Never rename a shipped command, flag or exit status (CP-08).

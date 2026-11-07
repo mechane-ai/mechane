@@ -18,10 +18,12 @@
   "ignoreWorkspaces": ["packages/browser/catalog!"],
   // Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.
   // Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.
+  // The Workflow compiler discovers runWorkflow by its directive and verifies exactly one compiled entry in the release build.
   "ignoreIssues": {
     "packages/browser/*/src/**/*.stories.tsx": ["exports"],
     "packages/browser/elements/packages/**/*.stories.tsx": ["exports"],
     "packages/browser/elements/vite.config.ts": ["exports"],
+    "packages/node/runtime/src/execution/run-workflow.ts": ["exports"],
   },
   // Each member's workspace follows from its kind and source roots, so a new member is checked like the others.
   // The published @mechane-ai/elements manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.
@@ -73,40 +75,26 @@
     "packages/node/rule-generator": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/rule-shapes": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/rules": { "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/node/runtime": { "entry": ["src/execution/run-workflow.ts!"], "project": ["src/**/*.ts!"] },
+    // A program exports nothing: its `src/main.ts`, and the `bin` its manifest names, are its entries.
+    "packages/node/server": {
+      "entry": ["src/**/main.ts!", "build/build.mjs"],
+      "project": ["src/**/*.ts!", "build/**/*.mjs"],
+    },
     "packages/node/smoke": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/stack": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/testing": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/wrangler": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/client": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/shared/credentials": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/deployment": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/protocol": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/records": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/sandbox-wire": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/utilities": { "project": ["src/**/*.{ts,tsx}!"] },
-    // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
-    "packages/worker/app": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/authentication": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/bindings": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/directory": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/directory-store": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/edge": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/harness": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/harness-tools": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/integrations": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/key-cache": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/limiter": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/limiter-store": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/logs": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/mech": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/mech-ports": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/mech-store": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/pages": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/rpc": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/sandbox": { "project": ["src/**/*.{ts,tsx}!"] },
+    // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
+    "packages/worker/sandbox-service": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/sandbox-store": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/store": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/workspace": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/workspace-store": { "project": ["src/**/*.{ts,tsx}!"] },
   },
 }

@@ -10,6 +10,7 @@ valid:
   - 'function useNavigation(shouldFocusOnNavigation = true) {}'
   - 'function Control({ disabled = false }: ControlProps) {}'
   - 'type BuiltBundle = { readonly no_bundle: true };'
+  - 'const suite = { self_grading: true };'
 invalid:
   - 'const paid = true;'
   - 'type Mech = { readonly ready: boolean };'
@@ -20,3 +21,4 @@ invalid:
   - 'type PlaceholderProps = { readonly icon: true };'
   - 'function useNavigation(focusOnNavigation = true) {}'
   - "type OwnedFlags = { readonly 'no_bundle': true };"
+  - 'const self_grading = true;'

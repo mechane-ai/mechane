@@ -2,7 +2,7 @@ import { Effect } from 'effect';
 import { readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DistributionStep, MODULE_NOTICE_NAMES, MODULE_SOURCE_NAMES, SOURCE_FOLDER } from '../constants.ts';
+import { ARTIFACT_NOTICE_NAMES, DistributionStep, MODULE_SOURCE_NAMES, SOURCE_FOLDER } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import type { ModuleSourceFile } from './types.ts';
 
@@ -36,7 +36,7 @@ export const moduleSourceFiles = Effect.fn('moduleSourceFiles')(function* ({
   }
 
   const noticeFile: (name: string) => ModuleSourceFile = (name) => ({ name, path: join(SOURCE_FOLDER, name) });
-  const notices = MODULE_NOTICE_NAMES.map(noticeFile);
+  const notices = ARTIFACT_NOTICE_NAMES.map(noticeFile);
 
   return [...moduleFiles, ...notices];
 });

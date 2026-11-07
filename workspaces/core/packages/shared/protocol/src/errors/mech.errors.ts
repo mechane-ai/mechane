@@ -1,5 +1,5 @@
 import { ModelId } from '@mechane/deployment';
-import { CreationRequestRecordId, DroneId, MechId, TurnId, WatchId, WorkspaceId } from '@mechane/records';
+import { CreationRequestRecordId, MechId, TurnId, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 
 /** Another definition revision was saved before the caller's requested update. */
@@ -27,14 +27,6 @@ export class SandboxCapacityReached extends Schema.TaggedError<SandboxCapacityRe
   workspaceId: WorkspaceId,
 }) {}
 
-/** The addressed mech has no watch under the requested ID. */
-export class WatchNotFound extends Schema.TaggedError<WatchNotFound>()('WatchNotFound', { watchId: WatchId }) {}
-
-/** The requested schedule would exceed the maximum saved watches for this mech. */
-export class WatchLimitReached extends Schema.TaggedError<WatchLimitReached>()('WatchLimitReached', {
-  mechId: MechId,
-}) {}
-
 /** The deployment offers no model with this id; `offered` lists the ones it does. */
 export class ModelInvalid extends Schema.TaggedError<ModelInvalid>()('ModelInvalid', {
   model: ModelId,
@@ -46,9 +38,3 @@ export class TurnNotFound extends Schema.TaggedError<TurnNotFound>()('TurnNotFou
 
 /** The turn ended before any cancel, with a reply or a reason for none, so nothing is left to cancel. */
 export class TurnEnded extends Schema.TaggedError<TurnEnded>()('TurnEnded', { turnId: TurnId }) {}
-
-/** The mech has no drone with this id. */
-export class DroneNotFound extends Schema.TaggedError<DroneNotFound>()('DroneNotFound', { droneId: DroneId }) {}
-
-/** The drone ended before any cancel, with a report or a reason for none, so nothing is left to cancel. */
-export class DroneEnded extends Schema.TaggedError<DroneEnded>()('DroneEnded', { droneId: DroneId }) {}

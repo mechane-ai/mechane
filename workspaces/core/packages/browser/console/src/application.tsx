@@ -92,8 +92,9 @@ function WorkspaceSelection({
   });
 
   const remembered = session.workspaces.find((candidate) => candidate.id === preferred);
-  const shared = session.workspaces.slice(1);
-  const defaultWorkspace = shared.length === 1 ? shared[0] : shared.length === 0 ? session.workspaces[0] : undefined;
+  const shared = session.workspaces.filter((candidate) => candidate.kind === 'shared');
+  const personal = session.workspaces.filter((candidate) => candidate.kind === 'personal');
+  const defaultWorkspace = shared.length === 1 ? shared[0] : shared.length === 0 ? personal[0] : undefined;
   const selectedId = location.workspace ?? remembered?.id ?? defaultWorkspace?.id;
   const workspace = session.workspaces.find((candidate) => candidate.id === selectedId);
 
@@ -115,9 +116,9 @@ function WorkspaceSelection({
         <Stack>
           <Heading>Choose a workspace</Heading>
           <Muted>Your choice will be remembered on this browser.</Muted>
-          {[...shared, session.workspaces[0]].map((candidate) => (
+          {[...shared, ...personal].map((candidate) => (
             <Button key={candidate.id} onClick={() => navigate({ workspace: candidate.id })}>
-              {candidate.id === session.workspaces[0].id ? `Personal · ${candidate.name}` : candidate.name}
+              {candidate.kind === 'personal' ? `Personal · ${candidate.name}` : candidate.name}
             </Button>
           ))}
         </Stack>

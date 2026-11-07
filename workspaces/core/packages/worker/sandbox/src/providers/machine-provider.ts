@@ -21,7 +21,6 @@ export function machineProvider({ settings, state }: MachineProviderInput): Mach
       return containerProvider({
         state,
         container: Option.getOrThrow(Option.fromNullishOr(state.container)),
-        egress: settings.egress,
         gateway: () => state.exports.EgressGateway({ props: {} }),
       });
     case SandboxProvider.Host:

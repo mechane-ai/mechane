@@ -7,7 +7,7 @@ export type OptOuts = {
 
 /**
  * oxlint's settings, as `.oxlintrc.json` holds them: the plugins, the categories that run whole, the type-aware options
- * and the ignored files. Each rule's value follows, with one override for each file role a rule treats apart.
+ * and the ignored files. Ordinary exemptions are per role; restricted lists combine overlapping roles.
  */
 export type OxlintSettings = {
   readonly plugins: ReadonlyArray<string>;
@@ -18,8 +18,12 @@ export type OxlintSettings = {
   readonly overrides: ReadonlyArray<RoleOverride>;
 };
 
-/** An override of oxlint's settings: the files of one role, and the rules they run apart. */
-export type RoleOverride = { readonly files: ReadonlyArray<string>; readonly rules: Readonly<Record<string, unknown>> };
+/** An override's included and excluded scopes, and the complete rule values it replaces. */
+export type RoleOverride = {
+  readonly files: ReadonlyArray<string>;
+  readonly excludeFiles: ReadonlyArray<string>;
+  readonly rules: Readonly<Record<string, unknown>>;
+};
 
 /** An entry of `no-restricted-properties`: a banned property of an object, and the message. */
 export type RestrictedProperty = { readonly object: string; readonly property: string; readonly message: string };

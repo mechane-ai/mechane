@@ -83,7 +83,7 @@ Run the generated dependency boundaries and browser typecheck. Confirm that only
 browser persistence and that no product module imports the raw wa-sqlite driver. Inspect the required persistence type,
 recovery path, and native API calls for memory branches, dependency patches, private entry points, or duplicate owners.
 
-In a real browser against the packaged Worker, initialize all canonical tables concurrently, then reopen populated and
+In a real browser against the packaged service, initialize all canonical tables concurrently, then reopen populated and
 successful-empty pages while holding their network reads. Confirm exact receipt coverage reveals cached content.
 Repeat with rejected admission, a principal or workspace switch, and an incompatible cache format. No protected content
 may cross owners. Verify current-page reads and retained drafts after Back/Forward cache restoration.
@@ -111,8 +111,8 @@ retirement, and cleanup. They neither run Effects nor hide failed server command
 native database's unchanged SQL and parameters solely for lifecycle checks. That guard retires only its own lifecycle
 failures; native SQL errors remain intact for the adapter to handle. There is no cache type-assertion exception.
 
-The release supplies the required browser headers and the same verified Worker and WASM inventory to celld and
-Cloudflare. An unavailable browser capability is an error; it does not activate another storage implementation.
+The release supplies the required browser headers and the same verified browser Worker and WASM inventory locally and in
+production. An unavailable browser capability is an error; it does not activate another storage implementation.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

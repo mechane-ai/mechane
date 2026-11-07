@@ -1,5 +1,5 @@
 import { HttpMethod } from '@mechane/records';
-import { ObjectUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired } from '../../errors/errors.ts';
+import { ServiceUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -14,5 +14,5 @@ export const listWorkspaceMembers = {
   query: NoFields,
   body: NoFields,
   output: WorkspaceMemberList,
-  errors: [ObjectUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired],
+  errors: [ServiceUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired],
 } as const satisfies Operation;

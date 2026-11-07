@@ -55,6 +55,9 @@ utils:
       any:
         - matches: boolean-prefix-tsx
         - all:
+            - kind: property_identifier
+            - matches: external-boolean-property-tsx
+        - all:
             - regex: ^['"]?no_bundle['"]?$
             - inside:
                 kind: property_signature

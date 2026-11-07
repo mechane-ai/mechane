@@ -1,10 +1,8 @@
 import { ErrorFamily } from './constants.ts';
 import type { ServerFailure } from './server-failure.errors.ts';
 
-/** The family of each failure the Worker answers with; the failure's tag is its code. */
+/** The family of each failure the server answers with; the failure's tag is its code. */
 export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>> = {
-  BoundedTurnConflict: ErrorFamily.Conflict,
-  BoundedTurnNotFound: ErrorFamily.NotFound,
   ReleaseSourceUnavailable: ErrorFamily.Unavailable,
   CredentialAlreadyExists: ErrorFamily.Conflict,
   IdentityNotAdmitted: ErrorFamily.Forbidden,
@@ -21,10 +19,9 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   ToolGrantInvalid: ErrorFamily.InvalidRequest,
   RouteNotFound: ErrorFamily.NotFound,
   RequestInvalid: ErrorFamily.InvalidRequest,
-  WorkerMisconfigured: ErrorFamily.Unavailable,
-  ObjectUnavailable: ErrorFamily.Unavailable,
+  ServerMisconfigured: ErrorFamily.Unavailable,
+  ServiceUnavailable: ErrorFamily.Unavailable,
   ReleaseFileNotFound: ErrorFamily.NotFound,
-  ReleasesBucketUnavailable: ErrorFamily.Unavailable,
   KeyMissing: ErrorFamily.Unauthenticated,
   KeyUnrecognized: ErrorFamily.Unauthenticated,
   KeyRevoked: ErrorFamily.Unauthenticated,
@@ -37,8 +34,6 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   SandboxDisabled: ErrorFamily.Forbidden,
   SandboxCapacityReached: ErrorFamily.Conflict,
   MechNotFound: ErrorFamily.NotFound,
-  WatchNotFound: ErrorFamily.NotFound,
-  WatchLimitReached: ErrorFamily.Conflict,
   MechBusy: ErrorFamily.Conflict,
   MechRevisionConflict: ErrorFamily.Conflict,
   MechCreationConflict: ErrorFamily.Conflict,
@@ -47,6 +42,4 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   InboxItemConflict: ErrorFamily.Conflict,
   TurnNotFound: ErrorFamily.NotFound,
   TurnEnded: ErrorFamily.Conflict,
-  DroneNotFound: ErrorFamily.NotFound,
-  DroneEnded: ErrorFamily.Conflict,
 };

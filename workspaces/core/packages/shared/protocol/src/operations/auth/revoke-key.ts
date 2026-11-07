@@ -1,5 +1,5 @@
 import { HttpMethod, RecordId, wireStruct } from '@mechane/records';
-import { KeyNotFound, ObjectUnavailable } from '../../errors/errors.ts';
+import { KeyNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -18,5 +18,5 @@ export const revokeKey = {
   query: NoFields,
   body: NoFields,
   output: KeyMetadata,
-  errors: [KeyNotFound, ObjectUnavailable],
+  errors: [KeyNotFound, ServiceUnavailable],
 } as const satisfies Operation;

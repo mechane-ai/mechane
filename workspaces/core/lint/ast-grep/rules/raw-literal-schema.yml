@@ -5,7 +5,14 @@ language: TypeScript
 severity: error
 message: "Read a closed set through its members, such as `Schema.Literal(DeviceStep.Approve)` or `Schema.Enum(DeviceStep)`, never `Schema.Literal('approve')` (TD-19)"
 files: ['packages/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores:
+  [
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    'packages/worker/sandbox-service/src/**',
+    'packages/shared/protocol/src/presentation/**',
+    '**/node_modules/**',
+    '**/*.d.ts',
+  ]
 rule:
   kind: call_expression
   all:

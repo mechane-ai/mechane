@@ -8,16 +8,14 @@ export const CORE_FOLDER = fileURLToPath(CORE_URL);
 /** The public repository root that supplies release provenance and notices. */
 export const SOURCE_FOLDER = fileURLToPath(SOURCE_URL);
 
-/** The public source repository named by product release provenance. */
-export const PUBLIC_REPOSITORY = 'mechane-ai/mechane';
 /** The installation manifest and artifact receipt format supported by this builder. */
 export const FORMAT_VERSION = 1;
 /** The module-relative path that OpenTofu uploads as the Worker module. */
 export const WORKER_FILENAME = 'worker.js';
 /** Files every published module must include from the public infrastructure source. */
 export const MODULE_SOURCE_NAMES = ['main.tf', 'outputs.tf', 'variables.tf', 'versions.tf', 'README.md'] as const;
-/** License texts that must accompany the executable module. */
-export const MODULE_NOTICE_NAMES = ['LICENSE', 'NOTICE'] as const;
+/** License texts accompany both executable archives. */
+export const ARTIFACT_NOTICE_NAMES = ['LICENSE', 'NOTICE'] as const;
 /** OCI's descriptor byte count, kept under its mandated wire name. */
 export const OCI_SIZE_KEY = 'size';
 /** The declarative state of each current SQLite Durable Object export. */
@@ -41,6 +39,3 @@ export const DistributionStep = {
 } as const;
 
 export type DistributionStep = (typeof DistributionStep)[keyof typeof DistributionStep];
-
-/** The console inventory shipped beside the immutable Worker module. */
-export const CONSOLE_FILENAME = 'console.json';

@@ -1,0 +1,10 @@
+id: function-boundary
+language: TypeScript
+rule:
+  any:
+    - kind: function_declaration
+    - kind: function_expression
+    - kind: arrow_function
+    - kind: generator_function
+    - kind: generator_function_declaration
+    - kind: method_definition

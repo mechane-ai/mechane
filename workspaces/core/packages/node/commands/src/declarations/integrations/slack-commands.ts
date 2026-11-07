@@ -1,4 +1,4 @@
-import { NoFields } from '@mechane/protocol';
+import { NoFields, SlackChannelKind } from '@mechane/protocol';
 import {
   MechId,
   renamedWireStruct,
@@ -8,7 +8,7 @@ import {
   SlackTeamId,
   SlackUserId,
 } from '@mechane/records';
-import { Schema, SchemaTransformation } from 'effect';
+import { Effect, Schema, SchemaTransformation } from 'effect';
 import { CommandShape, FlagKind } from '../../constants.ts';
 import type { CommandDeclaration } from '../../types.ts';
 import { MECH_ARGUMENT } from '../constants.ts';
@@ -38,6 +38,10 @@ const SlackAllowedUsers = Schema.NonEmptyArray(SlackUserId);
 const SlackAllowedUsersJson = Schema.fromJsonString(SlackAllowedUsers);
 const OptionalSlackAllowedUsersJson = Schema.optionalKey(SlackAllowedUsersJson);
 
+const SlackChannelKindField = Schema.Enum(SlackChannelKind).pipe(
+  Schema.withDecodingDefaultKey(Effect.succeed(SlackChannelKind.Channel)),
+);
+
 /** Owner binding commands and member-readable delivery receipts. */
 export const SLACK_COMMANDS = {
   'slack bind': {
@@ -52,6 +56,7 @@ export const SLACK_COMMANDS = {
       'connection-id': { kind: FlagKind.Text, summary: 'the configured existing Slack installation' },
       'team-id': { kind: FlagKind.Text, summary: 'the Slack workspace ID' },
       'channel-id': { kind: FlagKind.Text, summary: 'the existing Slack channel ID' },
+      'channel-kind': { kind: FlagKind.Text, summary: 'channel, im, or mpim; channel when absent' },
       'listening': { kind: FlagKind.Text, summary: 'true to receive human messages, false to stop receiving' },
       'replies': { kind: FlagKind.Text, summary: 'true to deliver replies and notifications, false to mute them' },
       'allowed-user-ids': {
@@ -66,6 +71,7 @@ export const SLACK_COMMANDS = {
         connectionId: SlackConnectionId,
         teamId: SlackTeamId,
         channelId: SlackChannelId,
+        channelKind: SlackChannelKindField,
         mechId: MechId,
         isListening: SlackSwitch,
         isReplyEnabled: SlackSwitch,
@@ -76,6 +82,7 @@ export const SLACK_COMMANDS = {
         connectionId: 'connection-id',
         teamId: 'team-id',
         channelId: 'channel-id',
+        channelKind: 'channel-kind',
         mechId: 'mech-id',
         isListening: 'listening',
         isReplyEnabled: 'replies',

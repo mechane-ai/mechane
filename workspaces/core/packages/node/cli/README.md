@@ -30,8 +30,3 @@ returns `{ lines, result }`, and the output module encodes the result with the c
 
 - Never read the command line or the environment outside `settings/load-invocation.ts`.
 - Never encode a result in a run, or write a result or an error record outside `output/`.
-
-## Split seam
-
-`src/runs/observe/` and `src/runs/drones/` are the next member: they read a mech's events, trace, memories, threads and
-drones, and share only `withWorkspace`, which would join `@mechane/cli-login`, and the kernel.

@@ -1,7 +1,7 @@
 ---
 name: ui-conversation-state
 message: Preserve the reader's position and the author's draft while presenting supplied messages and activity.
-paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console/src/screens/conversation-activity.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
+paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/conversations/**","packages/browser/console/src/drafts.tsx","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console/src/screens/conversation-activity.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
 ---
 
 ## Rules
@@ -49,6 +49,18 @@ acknowledgement settles the identified submission even while its form is hidden.
 a rejected or uncertain send preserves the text and request identity. Switching the owning mech or workspace keeps
 state from appearing in another record.
 
+Each mech has one editable Console conversation. Scope its draft to the admitted workspace and mech, so opening the
+default conversation URL or its explicit session URL reaches the same draft. Slack and API conversations are read-only
+in the Console; viewing them preserves that draft and offers an explicit return to the Console conversation. Retain
+native Chat instances across run inspection and recent mech navigation without treating a URL alias as a new session.
+Workspace disposal closes those instances and their pending requests.
+
+The first native reply content or tool activity and stream completion invalidate canonical run, work, and activity reads
+through the existing cache owner. A synthetic stream-start event alone does not establish that execution began.
+Completion also refreshes the admitted conversation. Do not wait for periodic polling or add another polling loop.
+A history read started before a new send cannot clear that newer admission; a completed read must not retain an old
+active run merely because the SDK invokes its finish callback before changing its streaming status.
+
 When a conversation remounts, supply its saved history position to Elements before the first paint. A supplied offset
 starts in reading mode; the default live-edge initialization and later content growth must not override it. Apply that
 initial position once, rather than treating subsequent renders as scroll commands. TanStack Router owns history
@@ -71,6 +83,11 @@ the activity read fails.
 
 Inspect a run while reading older content and while a send is pending, then return before and after completion.
 Confirm the same message and draft state return without a duplicate send or a jump to the latest message.
+Complete and reconnect an active native stream, then confirm the composer and run details settle together without
+manual refresh or waiting for the periodic poll. Preserve a new draft entered while the prior reply was streaming.
+Start from a mech URL without a session, type a draft, inspect a run with an explicit session, and return. Confirm the
+draft survives. Open a Slack conversation, confirm its composer is read-only, then return to the Console conversation
+and confirm the same draft and submission identity remain.
 Switch to another mech, then use browser Back with both warm and delayed data. Repeat from an earlier history page
 and after reloading. Confirm the saved reading position appears on the first ready frame, then append content and
 use return-to-latest to distinguish restored reading mode from following mode.

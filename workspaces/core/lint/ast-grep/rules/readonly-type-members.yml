@@ -7,4 +7,19 @@ files: ['**/*.ts']
 ignores: ['**/node_modules/**']
 rule:
   kind: property_signature
-  not: { regex: '^readonly\b' }
+  not:
+    any:
+      - regex: '^readonly\b'
+      - inside:
+          stopBy: end
+          kind: type_annotation
+          inside:
+            kind: variable_declarator
+            has: { field: value, kind: object }
+            inside:
+              kind: lexical_declaration
+              regex: '^const\b'
+              inside:
+                stopBy: end
+                kind: statement_block
+                inside: { matches: function-boundary }

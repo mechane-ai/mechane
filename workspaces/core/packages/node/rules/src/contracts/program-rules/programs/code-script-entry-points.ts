@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, FileRole } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** What enforces `code-script-entry-points`: an executable exports nothing and keeps its work in `main`. */
@@ -9,6 +9,7 @@ export const codeScriptEntryPoints = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'script-exports',
+      exemptRoles: [FileRole.WorkerModule],
       standard: 'ST-31',
       violation: ['export function main() { return 0; }', "export { main } from './run.ts';"],
       allowed: ['async function main() { await run(); }'],
@@ -17,6 +18,7 @@ export const codeScriptEntryPoints = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'script-top-level',
+      exemptRoles: [FileRole.WorkerModule],
       standard: 'ST-31',
       violation: ["console.log('start');", 'if (isReady) { start(); }'],
       allowed: ['await main();', 'main();'],
@@ -25,6 +27,7 @@ export const codeScriptEntryPoints = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'script-top-level-constants',
+      exemptRoles: [FileRole.WorkerModule],
       standard: 'ST-31',
       violation: [
         'const settings = loadSettings();',

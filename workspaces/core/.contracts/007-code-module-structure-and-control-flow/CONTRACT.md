@@ -84,6 +84,7 @@ The existing glossary, banned words and helper rules continue to govern names.
 
 Values: `deniedIdentifiers` `common`, `data`, `endpoint`, `handler`, `helpers`, `info`, `item`, `manager`, `misc`, `script`; `functionParameters` 3.
 - oxlint `id-denylist` (NM-06): enforced, `["error","common","data","endpoint","handler","helpers","info","item","manager","misc","script"]`
+- ast-grep `native-owned-name` (NM-06): enforced
 - oxlint `typescript/strict-boolean-expressions` (TD-08): enforced in phase A, `["error",{"allowString":false,"allowNumber":false,"allowNullableObject":false,"allowNullableBoolean":false,"allowNullableString":false,"allowNullableNumber":false,"allowNullableEnum":false,"allowAny":false}]`
 - oxlint `typescript/no-unnecessary-condition` (TD-08): enforced in phase D, `["error",{"allowConstantLoopConditions":"only-allowed-literals"}]`
 - oxlint `max-params` (ST-25): enforced in phase A, `["error",{"max":3}]`

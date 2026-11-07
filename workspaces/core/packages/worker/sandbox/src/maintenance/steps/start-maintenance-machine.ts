@@ -1,6 +1,7 @@
-import { SandboxPhase } from '@mechane/protocol';
 import { RecordId } from '@mechane/records';
+import { SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
+import { observeMachine } from '../../machines/observe-machine.ts';
 import type { PortableStepInput } from '../types.ts';
 
 /** Persists the replacement identity before starting its credential-free guest. */
@@ -18,6 +19,16 @@ export async function startMaintenanceMachine({ store, provider, job }: Portable
     };
 
     store.atomic({ run: record });
+
+    return;
+  }
+
+  await observeMachine({ store, provider });
+
+  const live = store.liveMachine();
+
+  if (Option.isNone(live) || live.value.id !== job.target.value) {
+    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed });
 
     return;
   }

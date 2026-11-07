@@ -38,21 +38,33 @@ Does an operation that needs one transaction run its store calls inside the stor
 
 ## Local adaptations
 
-`packages/browser/console-cache/src/store/storage.ts` may forward the native browser database's SQL and bound values
-unchanged to enforce generation validity and an operation deadline. TanStack owns those statements and transaction
-ordering. This boundary neither accepts application SQL, assembles statements, exposes the raw database, nor adds a
-queue or Worker protocol. Its own SQLite configuration statements remain whole literals.
+Product Postgres SQL and pg client calls belong to `packages/node/runtime/src/store`. Sandbox SQL belongs to
+`packages/worker/sandbox-store` and its shared migration kernel. The owning factory keeps the client private and
+exposes typed domain operations. A transaction-bound store composes reads and changes without publishing a raw client.
 
-SQL text and client calls appear only in a store member, `@mechane/store`, an object's `*-store`, an object's internal `src/store` module, or in the stack's `packages/node/stack/src/releases/store`, which writes each release file into celld's local object store as celld's own put does; each migration is a function in its owner's declared `migrations.ts` that runs its own literal statements, and the store creates its `schema_migrations` ledger and runs the migrations it lacks in one transaction.
-A fresh object applies every step its store declares, so its schema revision is that store's step count.
-A turn's memory changes save with dense versions in task order in one statement, whose numbering a subquery computes before any row changes.
-Each store exports `atomic`, in which a decision, such as approving a device approval or reserving a dispatch, reads and writes as one transaction: the directory's and a workspace's run in `transactionSync`, and a mech's in a transaction of the one database client it shares with pi, queued behind pi's commits, so no host statement joins a pi transaction.
-ast-grep `sql-text-outside-store`, `sql-client-outside-store`, `sql-statement-not-literal` and `store-handle-exposed` enforce these rules; the first three scan every member, the node lane's programs too, where the SQL client is a `DatabaseSync` named `database`.
-A fork's copy reads every table the database lists, so its page read, its row write and its foreign key read each name a table or column the database itself listed, quoted, with every value bound; each is the one statement a suppression of `sql-statement-not-literal` names, with its reason.
-TD-04's ast-grep `records-type-inferred` ratchets each store's `*Records` alias written as an object type, which repeats its factory's object. TD-09's two native return-type rules allow only the registry's exact list of inferred records factories to omit a return annotation; their typed methods define the API once. An inferred alias stays beside its factory or in a consuming parent type file that creates no role-order or dependency cycle. Existing explicit record interfaces remain at their shrinking baseline.
+Workflow World and Chat state adapters receive their own configured database connections through public constructors.
+Their upstream schemas and statements are not copied into product code. Composition roots may create and stop these
+adapters without becoming an alternative SQL API.
+
+`packages/browser/console-cache/src/store/storage.ts` may forward native persistence SQL and bound values unchanged
+to enforce cache-generation validity and an operation deadline. TanStack owns those statements and transaction order.
+This boundary accepts no application SQL and adds no second queue or Worker protocol.
+
+Each migration keeps the statements it applies. The migration owners `runtime/src/store/database.ts` and
+`runtime/src/store/grants.ts` may execute named whole migration statements and released adapter schema statements.
+This exception does not admit caller-supplied SQL or fragments. Grant setup binds the role as a value and quotes it as
+an identifier inside its fixed database function. Other runtime store queries remain whole literals with bound values.
+The isolated local-stack bootstrap may create its restricted Postgres role through its fixed `psql` setup script.
+It exposes no query API to product callers and accepts no user-supplied SQL.
+
+Domain transitions that must be atomic, such as reserving usage, claiming a queued run, acknowledging an input, or
+committing a delivery receipt, execute in one transaction. Checks confine pg imports and the private store context to
+the runtime store and inspect PostgreSQL query calls as well as Sandbox SQLite statements.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+- dependency-cruiser `postgres-store-owner` (DO-06): enforced: Keep PostgreSQL clients in the store owner, such as `runtime/src/store/database.ts`
+- dependency-cruiser `postgres-context-private` (DO-06): enforced: Keep transaction clients private to the store, such as `runInTransaction` for its callers
 - ast-grep `sql-client-outside-store` (DO-06): enforced
 - ast-grep `sql-statement-not-literal` (DO-06): enforced
 - ast-grep `sql-text-outside-store` (DO-06): enforced

@@ -1,0 +1,11 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: native-owned-name
+valid:
+  - "const chunk = { type: 'data-spec', data: specification };"
+  - 'const logger = { info(message: string) { write(message); } };'
+  - 'const { data: content } = response;'
+invalid:
+  - 'const data = read();'
+  - 'function handler() {}'
+  - 'function read({ data }: Input) { return data; }'
+  - 'const choose = (item: Item) => item.id;'

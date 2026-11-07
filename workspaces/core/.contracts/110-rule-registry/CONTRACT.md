@@ -39,6 +39,11 @@ The generator reads that matcher, changes only its parser metadata and language-
 marks the companion as generated. Both variants keep their registry examples. Duplicate detection scans the authored
 matcher and excludes only the declared generated paths; `rules:check` holds those outputs to their source.
 
+Oxlint replaces a restricted-property or restricted-import list when an override matches. Generate each list once
+per combined role scope, retaining every nonexempt restriction. Broader scopes exclude narrower ones, so override
+order cannot undo an exemption. Keep restricted scopes nested or disjoint. `rules:check` compares the emitted
+restrictions with the roles of every source path and rejects disagreement or overlapping effective scopes.
+
 `rule-shapes` holds the types shared by the registry and its consumers.
 `rules/src/contracts` holds the contract groups inside one registry owner.
 `rules` gathers them into `CONTRACTS` and renders every generated file, which `rule-generator` writes.
@@ -80,7 +85,7 @@ Each contract that ships an asset says in its adaptations whether the lint loads
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `unexercised` `packages/worker/edge/src/routing/peer.ts`, `packages/worker/sandbox/src/providers/container-provider.ts`, `packages/node/release/src/main.ts`, `packages/node/release/src/load-release-settings.ts`, `packages/node/release/src/print-source-release.ts`, `packages/node/release/src/clean-revision.ts`, `packages/node/release/src/build/build-source-release.ts`, `packages/node/stack/src/dev/**`; `baselineHold` per-file.
+Values: `unexercised` `packages/worker/sandbox/src/providers/container-provider.ts`, `packages/node/release/src/main.ts`, `packages/node/release/src/load-release-settings.ts`, `packages/node/release/src/print-source-release.ts`, `packages/node/release/src/clean-revision.ts`, `packages/node/release/src/build/build-source-release.ts`; `baselineHold` per-file.
 - owned check `rules` (AS-01): enforced in phase C2
 
 <!-- End of the generated block. -->

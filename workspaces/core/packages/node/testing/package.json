@@ -8,13 +8,10 @@
   "dependencies": {
     "@mechane/cli-kernel": "workspace:*",
     "@mechane/client": "workspace:*",
-    "@mechane/deployment": "workspace:*",
-    "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@mechane/release": "workspace:*",
     "@mechane/stack": "workspace:*",
-    "cookie": "1.1.1",
+    "ai": "7.0.164",
     "effect": "4.0.7"
   }
 }

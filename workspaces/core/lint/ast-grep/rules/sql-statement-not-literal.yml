@@ -1,9 +1,16 @@
 id: sql-statement-not-literal
 language: TypeScript
 severity: error
-message: "Pass the SQL client one whole literal statement, such as `sql.exec('SELECT 1')` (DO-06)"
+message: "Pass the SQL client one whole literal statement, such as `client.query('SELECT 1')` (DO-06)"
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', packages/browser/console-cache/src/store/storage.ts]
+ignores:
+  [
+    '**/node_modules/**',
+    packages/browser/console-cache/src/store/storage.ts,
+    packages/node/runtime/src/store/database.ts,
+    packages/node/runtime/src/store/grants.ts,
+    packages/node/stack/src/postgres.ts,
+  ]
 rule:
   kind: call_expression
   all:
@@ -12,6 +19,7 @@ rule:
         any:
           - pattern: $CLIENT.exec
           - pattern: $CLIENT.prepare
+          - pattern: $CLIENT.query
     - has:
         field: arguments
         has:
@@ -26,4 +34,4 @@ rule:
                         kind: template_substitution
 constraints:
   CLIENT:
-    regex: (^|\.)(sql|database)$
+    regex: (^|\.)(sql|database|client|pool)$

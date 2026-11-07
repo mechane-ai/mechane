@@ -42,7 +42,9 @@ Does a change turn an entry-point rule off, lower its severity, or narrow the fi
 ast-grep `entry-point-statements` keeps each `index.ts` to named and type re-exports, so no file re-exports a namespace, and `entry-point-re-exports` rejects a re-export anywhere else; oxlint `import/no-namespace` rejects a namespace import, such as `import * as path from 'node:path'`.
 The layout check of `mise -C workspaces/core run checks` rejects a file named after a sibling folder.
 oxlint `import/no-commonjs` and `import/unambiguous` keep every module an ES module but `.dependency-cruiser.cjs`, which dependency-cruiser loads as CommonJS.
-`packages/worker/app/src/worker.ts` is the file the Workers runtime loads, so it exports the default handler and the Durable Object classes.
+The sandbox service's declared Worker entry exports its handler and compute classes. The Node server entry owns
+process startup and shutdown. Workflow compiler entry files use the SDK's required named exports and directives;
+this compiler requirement does not authorize application initialization in ordinary library modules.
 Deviation (ST-09): an entry point is only a file a package manifest's exports map lists, such as a library's `src/index.ts`
 or Elements by Mechane's `packages/layout/src/index.ts`. Each entry re-exports names from their declaring files. Other folders have no
 forwarding index. The folders that only live release verification runs keep their `index.ts` until that smoke covers them.

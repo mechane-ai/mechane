@@ -37,16 +37,21 @@ Confirm that each loaded plugin or executable model file is verified by digest o
 
 ## Local adaptations
 
-SQL runs only in each Durable Object's store and in the stack's store of celld's object store, as `046-data-sql-store-boundaries` requires; every statement but a fork's copy is a literal, which ast-grep `sql-statement-not-literal` enforces, and binds every value. The copy's three statements name tables and columns that the database's own `sqlite_master` or the parent's listed, each quoted as an identifier, and bind every value; no caller's text reaches an identifier.
-The memory section quotes each memory's first line in the mech's system prompt only after `escapeHtml`, so a memory cannot pose as the section's end, and it frames every memory as information, never an instruction; a memory's path admits no character that markup escapes.
-The threads section quotes each open thread's title and note only after `escapeHtml` and frames them as information too; a drone's report reaches its mech as an inbox item, whose text is anyone's, as any item's is.
-The pages in `packages/worker/pages/src` render literal markup, and every value from a request, the directory or GitHub, such as a key's name or a GitHub login, passes `escapeHtml` from `@mechane/utilities`; the pages' policy loads no script.
-Every child process starts with an argument list, never a shell: celld and host machines in `packages/node/stack/src`, and `git`, Bun, Wrangler and the built CLI through `startProcess`; `mechane update` runs the binary it downloaded with `execFile`, once its SHA-256 matches; only the smoke pipes the served `install.sh` to `sh`, with its URL as an argument.
-The served `install.sh` holds the deployment's origin as one single-quoted word, which `shellWord` from `@mechane/utilities` writes; it reads the manifest with `tr`, `sed` and `cut`, evaluates none of it, and runs a binary only once its SHA-256 matches.
-Every parser yields plain data, and a schema decodes its value: JSON through `Response.json` or `Schema.fromJsonString`, JSONC through `jsonc-parser`, and, for the checks program's own configuration files, TOML through `smol-toml` and YAML through `yaml`'s core schema, which constructs no type.
-Nothing evaluates code, imports a module by a computed name, or loads a code-bearing artifact.
-The bash tool runs the shell text a model wrote, as `bash -c -- <text>` with an argument list, inside the mech's own sandbox, which holds no credential: a container that reaches the Internet and nothing of the node's, or, only in the smoke and in dev with the scripted upstream, a host machine that isolates nothing.
-The image's base is pinned by digest, and the guest is the repository's own bundle.
+Postgres and sandbox SQL stays in the declared stores with bound values and literal statements. No HTTP field,
+model-generated value, or remembered text becomes an SQL identifier.
+
+Memory and tracked work are untrusted context. Escape any enclosing markup and label their content as records rather
+than privileged instructions. Server-rendered authentication pages escape values from requests, stored names, and
+GitHub. React and native Chat renderers receive supplied text; raw HTML or executable component names are not accepted.
+
+Host-side child processes use executable and argument arrays. Release downloads are verified before execution.
+The bash tool intentionally evaluates model-written shell code only inside its authorized sandbox. Command text is
+one argument to that sandbox's shell, never interpolated into a host command. Its credential authority is the explicit
+current execution grant, not an ambient environment.
+
+Parse data formats without executable constructors. Native json-render specs select a bounded registry; actions
+resolve server-known resource identities. A model cannot import code, select a secret, or create an arbitrary callback
+URL by producing a component or action name. Pin sandbox images by digest and build the guest from owned source.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

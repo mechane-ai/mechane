@@ -48,11 +48,15 @@ Run the repository's lint and this contract's `assets/` configuration over its t
 
 ## Local adaptations
 
-The one retained suite is the smoke, `workspaces/core/packages/node/smoke/src/main.ts`, which drives the built CLI against fresh local stacks: Cloudflare workerd for runtime compatibility and `celld dev` for the remaining scenarios; run it from the factory root with `mise -C workspaces/core run smoke`.
+The retained suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime, native
+Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
+execution boundary. Run it from the factory root with `mise -C workspaces/core run smoke`.
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
-The repository keeps no unit tests, no tests of check scripts, no test runner and no eval in `mise run check`.
-It keeps no mocked product tests. Browser TSX, Storybook configuration, verification fixtures, and test-only dependencies
+The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
+external-service fixtures replace model, GitHub, Slack, and Nexus network dependencies; the product implementation,
+compiled Workflow code, database, and authorization boundaries remain real. Browser TSX, Storybook configuration,
+verification fixtures, and test-only dependencies
 follow the same retention policy. Synthetic catalog stories are maintained developer documentation, not example tests.
 Keep the fixtures needed to explain supported component states. Delete extra probes, scripts, and fixtures used only
 for investigation. Do not add default play functions or automatic test tags to the catalog.
@@ -72,7 +76,8 @@ The registry's rule examples, which the checks run as each rule's test (TS-05), 
 They check a rule, not product behavior, and are not `test-example-suite` examples.
 A temporary test, probe or fixture stays out of every commit, a slice's intermediate commits and a commit pushed only to run CI included.
 
-The shipped oxlint file targets Jest and Vitest, while this repository's one smoke runs through Effect and its own assertion functions.
+The shipped oxlint file targets Jest and Vitest, while this repository's smoke uses native asynchronous scenarios and
+its own assertion functions.
 It is installed for source tracking but not loaded; the smoke's existing scoped deadlines supply its hang bounds.
 Storybook currently adds no assertion runner, so its stories do not activate this asset.
 

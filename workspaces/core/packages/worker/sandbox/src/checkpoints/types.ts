@@ -1,5 +1,5 @@
-import type { SandboxArchive } from '@mechane/protocol';
 import type { WorkspaceCheckpoint } from '@mechane/sandbox-store';
+import type { SandboxArchive } from '@mechane/sandbox-wire';
 import type { WorkspaceProviderStepInput } from '../types.ts';
 
 /** The current transfer and its durable settled receipt. */

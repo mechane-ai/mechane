@@ -15,7 +15,7 @@ import { variableNames } from './variable-names.ts';
 /** The command reference, from which the lock reads the CLI's command words, flags and variables. */
 const REFERENCE_FILE = 'packages/node/cli/reference.json';
 
-/** A code of the Worker's errors, or an error family, with the value it maps to. */
+/** A declared service error code, or an error family, with the value it maps to. */
 type MappedName = readonly [name: string, value: string | number];
 
 /**
@@ -49,7 +49,7 @@ export const wireNames = Effect.fn('wireNames')(function* (): Effect.fn.Return<L
 });
 
 /**
- * Each code the Worker answers with and each of its fields under its wire key, such as `KeyExpired.expires_at`. Then
+ * Each code the service answers with and each of its fields under its wire key, such as `KeyExpired.expires_at`. Then
  * each code's family, such as `KeyExpired=unauthenticated`, by which a client acts on the code.
  */
 function errorNames(): ReadonlyArray<string> {

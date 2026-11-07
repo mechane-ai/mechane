@@ -1,12 +1,10 @@
 import { CliTarget, RELEASE, ReleaseAsset, releaseBinaryName } from '@mechane/protocol';
-import { LocalTarget } from '@mechane/stack';
 import { Effect, Record } from 'effect';
 import { join } from 'node:path';
 import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
 import { fileDigest } from '../files/file-digest.ts';
-import { localArtifactName } from '../files/local-artifact-name.ts';
 import type { Artifact, ArtifactReceipt } from '../schemas.ts';
 import type { DistributionSettings } from '../types.ts';
 
@@ -22,11 +20,10 @@ export const verifyReceipt = Effect.fn('verifyReceipt')(function* ({
   const binaries = targets.map((target) => releaseBinaryName({ target }));
   const moduleName = assetName({ kind: 'cloudflare' });
   const guestName = assetName({ kind: 'guest' });
-  const localTargets = Record.values(LocalTarget);
-  const local = localTargets.map((target) => localArtifactName({ target }));
+  const nodeName = assetName({ kind: 'node' });
   const providerSetup = assetName({ kind: 'setup-provider' });
-  const metadata = ['installation.json', ReleaseAsset.Manifest, 'SHA256SUMS'];
-  const expected = [...binaries, ...local, moduleName, guestName, providerSetup, ...metadata];
+  const metadata = ['installation.json', 'release.json', ReleaseAsset.Manifest, 'SHA256SUMS'];
+  const expected = [...binaries, nodeName, moduleName, guestName, providerSetup, ...metadata];
   const names = receipt.assets.map((asset) => asset.name);
   const uniqueNames = new Set(names);
   const isComplete = expected.every((name) => uniqueNames.has(name));

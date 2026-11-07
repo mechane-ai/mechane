@@ -1,13 +1,13 @@
 variable "account_id" {
-  description = "Cloudflare account that owns the installation."
+  description = "Cloudflare account that owns the compute service and gateway."
   type        = string
   nullable    = false
 }
 
 variable "name" {
-  description = "Permanent Worker name. Changing this identity creates a different installation."
+  description = "Permanent compute Worker identity."
   type        = string
-  default     = "mechane"
+  default     = "mechane-sandbox"
   nullable    = false
 
   validation {
@@ -17,7 +17,7 @@ variable "name" {
 }
 
 variable "domain" {
-  description = "Primary HTTPS hostname and optional aliases in the same Cloudflare zone."
+  description = "Public HTTPS hostname and aliases forwarded to the Node service."
   type = object({
     hostname = string
     zone_id  = string
@@ -34,76 +34,29 @@ variable "domain" {
   }
 }
 
-variable "authentication" {
-  description = "GitHub OAuth client and stable provider subjects admitted to administer or use this installation. A null allowlist permits any GitHub identity."
-  type = object({
-    github_client_id           = string
-    login_key_lifetime_seconds = optional(number)
-    named_key_lifetime_seconds = optional(number)
-    administrators = set(object({
-      provider = string
-      subject  = string
-    }))
-    allowed_identities = optional(set(object({
-      provider = string
-      subject  = string
-    })))
-  })
-  nullable = false
+variable "runtime" {
+  description = "Private Node service origin. Its authentication secret is referenced separately."
+  type        = object({ origin = string })
+  nullable    = false
 
   validation {
-    condition = alltrue([
-      for seconds in [var.authentication.login_key_lifetime_seconds, var.authentication.named_key_lifetime_seconds] :
-      seconds == null ? true : seconds >= 1 && seconds <= 31536000 && floor(seconds) == seconds
-    ])
-    error_message = "API key lifetimes must be whole seconds between one and 365 days."
-  }
-
-  validation {
-    condition = length(var.authentication.administrators) > 0 && alltrue([
-      for identity in setunion(var.authentication.administrators, coalesce(var.authentication.allowed_identities, [])) :
-      identity.provider == "github" && can(regex("^[0-9]+$", identity.subject))
-    ])
-    error_message = "Name at least one administrator. GitHub subjects are numeric user IDs, not login names."
+    condition     = can(regex("^https://[a-z0-9-]+\\.modal\\.run/?$", var.runtime.origin))
+    error_message = "Supply the exact HTTPS Modal service origin without a path or query."
   }
 }
 
 variable "secrets" {
-  description = "Existing Cloudflare Secrets Store references. Values are read by the Worker and never supplied to OpenTofu."
+  description = "Cloudflare Secrets Store references for the private runtime transport and sandbox API."
   type = object({
-    store_id             = string
-    github_client_secret = string
-    model_api_key        = string
-    credential_keyring   = string
+    store_id          = string
+    runtime_transport = string
+    sandbox_service   = string
   })
   nullable = false
-}
-
-variable "model" {
-  description = "OpenAI-compatible upstream and the model offers priced in micro-dollars per million tokens."
-  type = object({
-    upstream = string
-    offers = list(object({
-      id                                    = string
-      supports_images                       = optional(bool, false)
-      context_window_tokens                 = number
-      max_output_tokens                     = number
-      input_micros_per_million_tokens       = number
-      output_micros_per_million_tokens      = number
-      cache_read_micros_per_million_tokens  = number
-      cache_write_micros_per_million_tokens = number
-    }))
-  })
-  nullable = false
-
-  validation {
-    condition     = can(regex("^https://[^/]+", var.model.upstream)) && length(var.model.offers) > 0
-    error_message = "Supply an HTTPS model endpoint and at least one model offer."
-  }
 }
 
 variable "storage" {
-  description = "Persistent workspace bucket identity. Set its name when importing an existing installation."
+  description = "The bucket containing sandbox filesystem checkpoints."
   type = object({
     workspace_bucket_name = optional(string)
     jurisdiction          = optional(string, "default")
@@ -114,27 +67,21 @@ variable "storage" {
 }
 
 variable "sandboxes" {
-  description = "Installation capacity. Per-workspace admission and limits are managed through Mechane's administration API."
+  description = "Compute capacity and explicit additional egress hosts. The Node service owns admission."
   type = object({
-    application_name          = optional(string)
-    instance_type             = optional(string, "standard-1")
-    max_instances             = optional(number, 4)
-    workspace_machine_limit   = optional(number)
-    enabled                   = optional(bool)
-    workspace_default_enabled = optional(bool)
-    rollout_grace_seconds     = optional(number, 60)
-    rollout_deadline_seconds  = optional(number, 1200)
-    additional_hosts          = optional(set(string), [])
+    application_name         = optional(string)
+    instance_type            = optional(string, "standard-1")
+    max_instances            = optional(number, 4)
+    rollout_grace_seconds    = optional(number, 60)
+    rollout_deadline_seconds = optional(number, 1200)
+    additional_hosts         = optional(set(string), [])
   })
   default  = {}
   nullable = false
 
   validation {
-    condition = (
-      var.sandboxes.max_instances >= 1 && floor(var.sandboxes.max_instances) == var.sandboxes.max_instances &&
-      (var.sandboxes.workspace_machine_limit == null ? true : var.sandboxes.workspace_machine_limit >= 1 && floor(var.sandboxes.workspace_machine_limit) == var.sandboxes.workspace_machine_limit)
-    )
-    error_message = "Machine counts must be positive integers; a workspace cannot exceed installation capacity."
+    condition     = var.sandboxes.max_instances >= 1 && floor(var.sandboxes.max_instances) == var.sandboxes.max_instances
+    error_message = "Compute capacity must be a positive integer."
   }
 
   validation {
@@ -144,36 +91,4 @@ variable "sandboxes" {
     ])
     error_message = "Use at most 64 exact public hostnames without schemes, ports, wildcards or literal addresses."
   }
-}
-
-variable "budgets" {
-  description = "Optional budget overrides in micro-dollars; omitted values use the release defaults. Existing workspace budgets remain runtime data."
-  type = object({
-    new_workspace_daily_micros = optional(number)
-    new_agent_daily_micros     = optional(number)
-    workspace_daily_max_micros = optional(number)
-  })
-  default  = {}
-  nullable = false
-
-  validation {
-    condition = alltrue([
-      for amount in values(var.budgets) : amount == null ? true : amount >= 0 && floor(amount) == amount
-    ])
-    error_message = "Budgets must be whole nonnegative micro-dollars; the initial workspace budget cannot exceed its ceiling."
-  }
-}
-
-variable "adoption_baseline" {
-  description = "One-time reviewed format baseline for a live Worker deployed before immutable installation manifests."
-  type = object({
-    release_version   = string
-    worker_version_id = string
-    bundle_sha256     = string
-    formats = object({
-      wire       = map(list(string))
-      migrations = map(list(string))
-    })
-  })
-  default = null
 }

@@ -50,7 +50,7 @@ export const GLOBAL_FLAGS = {
   },
   workspace: {
     kind: FlagKind.Text,
-    summary: 'the workspace UUID for commands that act in a workspace; your personal workspace when absent',
+    summary: 'the workspace UUID for commands that act in a workspace; your default workspace when absent',
     variable: Option.some(WORKSPACE_VARIABLE),
     command: Option.none(),
   },

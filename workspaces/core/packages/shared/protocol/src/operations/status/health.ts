@@ -4,7 +4,7 @@ import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { Health } from './schemas.ts';
 
-/** Answers while the Worker serves requests; it calls no Durable Object. */
+/** Answers while the server serves requests without contacting its dependencies. */
 export const health = {
   method: HttpMethod.Get,
   path: '/health',

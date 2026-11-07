@@ -1,4 +1,4 @@
-import { ObjectUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired } from '../../errors/errors.ts';
+import { ServiceUnavailable, WorkspaceNotFound, WorkspaceOwnerRequired } from '../../errors/errors.ts';
 import {
   PersonalWorkspaceProtected,
   PrincipalNotFound,
@@ -8,7 +8,7 @@ import {
 
 /** Membership changes preserve personal ownership and at least one shared owner. */
 export const MEMBER_MUTATION_FAILURES = [
-  ObjectUnavailable,
+  ServiceUnavailable,
   WorkspaceNotFound,
   WorkspaceOwnerRequired,
   PersonalWorkspaceProtected,

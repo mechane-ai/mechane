@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
     "@mechane/store": "workspace:*",

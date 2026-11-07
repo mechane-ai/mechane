@@ -2,6 +2,5 @@
   "packages/node/release/src/build/build-source-release.ts": 1,
   "packages/node/release/src/clean-revision.ts": 1,
   "packages/node/release/src/load-release-settings.ts": 1,
-  "packages/node/release/src/main.ts": 1,
-  "packages/worker/edge/src/routing/peer.ts": 1
+  "packages/node/release/src/main.ts": 1
 }

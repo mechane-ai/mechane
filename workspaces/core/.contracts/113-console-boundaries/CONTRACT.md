@@ -1,12 +1,12 @@
 ---
 name: console-boundaries
 message: Keep the console an ordinary client of the installation API, with scoped session-owned data and one release.
-paths: ["packages/browser/**", "packages/worker/authentication/**", "packages/worker/pages/**", "packages/worker/app/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
+paths: ["packages/browser/**", "packages/node/server/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
 ## Rules
 
-The console ships at `/console` in the same immutable release as the Worker. `/api/v1` owns runtime operations;
+The console ships at `/console` in the same immutable release as the Node service. `/api/v1` owns runtime operations;
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
 `console` owns routes, application composition, drafts, and the Storybook runner. `console-data` owns admission,
@@ -39,7 +39,7 @@ Hold a native Web Lock for each exact request from its HTTP fetch through receip
 cache generation and request identity. This orders unversioned snapshots of the same request across tabs; unrelated
 requests remain parallel. Canonical updates use contract 119's shared write admission before evaluating domain guards.
 
-Session or workspace changes cancel pending reads and dispose the prior runtime. Persistent copies become available
+Authentication-session or workspace changes cancel pending reads and dispose the prior runtime. Persistent copies become available
 only through contract 119's fresh admission gate for each runtime. `console-data` owns that gate for workspace returns
 and cache recovery as well as initial entry; a retained application session cannot authorize a replacement runtime.
 Within one runtime, returning to a page reuses its canonical records and native collection instances. Releasing a page
@@ -51,6 +51,27 @@ Commands settle from the server acknowledgement. A later refresh, collection upd
 degradation without reversing that outcome or repeating the command. Retain request IDs across uncertain retries and
 use revision checks for definition changes. Keep drafts, submitted text, pending request identity, and acknowledged
 outcomes outside the replaceable data runtime. Cache recovery must not clear or resubmit them.
+
+Expose the standard AI SDK UI message stream. Convert native model-call chunks through the upstream transform and
+apply replay cursors to resulting UI chunks. Authorize every initial and resumed stream against current membership.
+Server-owned history supplies model context; a client cannot submit privileged prior messages or tool results.
+The native chat transport owns conversation HTTP and stream resumption. TanStack Query remains the owner of demanded
+domain-projection reads; it does not become a parallel transport for the active transcript.
+
+The browser's native AI SDK chat owns its loaded transcript and active streamed state. Server history is authoritative.
+TanStack owns the other canonical domain projections, not a mirrored transcript. Completion refreshes those projections
+without appending the same message to a competing message store. Scope disposal fences
+pending stream completions; a cache or renderer failure never reissues an acknowledged command.
+
+Conversation selection uses a real session identity in the URL. Without an explicit selection, open the latest
+existing session and show its source. A Slack session is read-only in Console with a link back to Slack; switching to
+the Console conversation selects its actual console-source session. The server accepts Console submissions only for
+that source. Never silently inject a Console message into a Slack conversation or invent a UI-only session.
+
+Within the same admitted principal and workspace, retain a bounded set of native chat instances across mech and run
+navigation. Eviction and scope loss abort their transports. Completion refresh merges messages by canonical identity
+without dropping an assistant message not yet present in the history read. Authentication loss disposes both chat and
+domain-data lifetimes, so late stream callbacks cannot restore protected content.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -84,6 +105,11 @@ belong only to the admitted cache in contract 119. Resolve shortcut records
 through the normal authorized reads; prune confirmed unavailable records without treating a transient failure or
 absence from one list page as removal.
 
+Identify personal and shared workspaces from the server's explicit `kind`, never their list position. An explicit
+workspace URL wins over a remembered valid choice. Without either, open a single shared workspace before the personal
+workspace; offer a chooser when several shared workspaces exist. Keep the Personal label correct when the server
+changes workspace ordering.
+
 Compose every screen with the shared frame and toolbar. The frame owns presentation state for the sidebar and mobile
 drawer; screens own their resource operations and toolbar actions. Keep lists flush with the content edges and use
 the shared detail container for resource details and forms. Keep shell measurements with the Elements layout family
@@ -91,8 +117,8 @@ and shared colors and typography with foundations. The shell owns outer separato
 Navigation controls expose their names in collapsed and mobile states. Storybook examples use the same frame and
 presentation components as the application. Generic component requirements belong to contracts 065–075 and 114–115.
 
-Both celld and Cloudflare serve the same verified asset inventory. The installation manifest binds the console and
-Worker digests; failed or incomplete asset uploads must not activate a new Worker. Public source includes every browser
+Local and hosted services serve the same verified asset inventory. The installation manifest binds the console and
+server digests; failed or incomplete asset publication must not activate a new service. Public source includes every browser
 package, its development tools, and dependency notices.
 The build collects notices from its main application and nested Worker bundles into the shipped license asset.
 Retained native WASM legal notices join that asset, and missing required text fails the build. The Node-only build
@@ -153,8 +179,8 @@ does not become a zero-duration step.
 ## Evidence
 
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
-real browser against the packaged celld Worker to verify sign-in/out, workspace isolation, a completed turn, trace
-navigation, revision conflicts, and rejected cross-origin writes. Verify the Cloudflare release and an empty subsequent
+real browser against the packaged service to verify sign-in/out, workspace isolation, a completed turn, trace
+navigation, revision conflicts, and rejected cross-origin writes. Verify the hosted Node and compute release identities and an empty subsequent
 OpenTofu plan before declaring an installation upgraded.
 
 Open a run from a scrolled conversation and a later list page, then use browser Back and the run's return control.

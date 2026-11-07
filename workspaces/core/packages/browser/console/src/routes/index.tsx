@@ -12,6 +12,7 @@ export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): ConsoleLocation => ({
     ...(typeof search['workspace'] === 'string' ? { workspace: search['workspace'] } : {}),
     ...(typeof search['mech'] === 'string' ? { mech: search['mech'] } : {}),
+    ...(typeof search['session'] === 'string' ? { session: search['session'] } : {}),
     ...(typeof search['turn'] === 'string' ? { turn: search['turn'] } : {}),
     ...(isConsoleView(search['view']) ? { view: search['view'] } : {}),
     ...(isConsoleView(search['inspect']) ? { inspect: search['inspect'] } : {}),

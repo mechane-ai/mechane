@@ -1,75 +1,46 @@
 # Distribution licenses
 
-These files preserve the license material shipped with Mechane's built artifacts. The JavaScript files contain only
-legal comments; their license text is copied verbatim from the sources below. The Mechane notice precedes the full
-Apache-2.0 text in `apache-2.0.js`. Third-party copyright holders and license terms remain unchanged.
+These files preserve notices shipped with Mechane artifacts. `apache-2.0.js` contains the Mechane notice and Apache-2.0
+text. `effect.js` and `semver.js` copy their installed packages' MIT notices. The CLI embeds this directory. The guest
+and sandbox Worker include the Mechane and Effect notices.
 
-The CLI embeds this directory as readable assets in its executable. The guest bundle includes the Mechane and Effect
-notices, and the Worker imports every JavaScript notice here. The guest image also retains the Node image's
-`/usr/local/LICENSE`, Debian package copyright files under `/usr/share/doc`, and `/usr/share/common-licenses`. GitHub
-CLI 2.92.0 and mise 2026.11.2 retain their upstream MIT notices under `/usr/local/share/licenses/mechane-tools`. The
-image's `gh-LICENSE` and `mise-LICENSE` copy each tool's `LICENSE` at its corresponding release tag.
+## Node and browser artifacts
 
-## Browser assets
+The Node [build collector](../packages/node/server/build/licenses.mjs) writes `THIRD_PARTY_LICENSES.txt` from the
+bundled programs' dependency graph and Workflow's public transform observer. It retains packaged license, notice, and
+copying files. Complete MIT notices in packaged READMEs are also accepted. Missing notices require an exact-version
+entry in [native/supplements.json](native/supplements.json); unknown omissions fail the build.
 
-Vite generates `THIRD_PARTY_LICENSES.txt` from the packages actually bundled into the Console. The Console's
-`worker-licenses.ts` adds the worker bundles' dependencies through `rollup-plugin-license`. The file is part of
-`console.json`, so local and Cloudflare releases retain the same notices. The Console links to it at
-`/console/THIRD_PARTY_LICENSES.txt`. Check this generated inventory when changing browser dependencies.
+Supplements retain pinned upstream license text where available. Packages that publish only an MIT declaration retain
+that metadata and the unmodified SPDX reference text, without inventing copyright attribution. The QuickJS supplement
+also preserves its pinned QuickJS-NG license. This inventory is not a complete audit of precompiled native dependencies.
 
-Turso's npm packages omit their license text. `turso-0.8.3.txt` preserves the upstream `LICENSE.md`, `NOTICE.md`, and
-`licenses/` collection at
-[the 0.8.3 release commit](https://github.com/tursodatabase/turso/tree/607bff9fd0e547a25a97b3bf06e83bcc5d99d53c). The
-worker collector requires this exact package version before adding that supplement. It fails the build when a worker
-dependency has neither packaged license text nor a reviewed supplement. The upstream collection includes other language
-bindings and tools; it is not an audit of the precompiled WASM's native dependency graph.
+Vite generates the Console's `THIRD_PARTY_LICENSES.txt`. Its worker collector adds dependencies from worker bundles and
+the embedded wa-sqlite 1.5.0 notice. The Node archive includes both inventories, linked bundle comments, `LICENSE`, and
+`NOTICE`; its file inventory verifies their bytes. Review generated notices when changing dependencies or build inputs.
 
-## Application dependencies
+## Guest image
 
-The guest bundle metadata contains Effect as its external JavaScript package. Local release admission also uses semver.
-The Worker source map also contains the packages below, including `content-type` and `@cfworker/json-schema` bundled
-inside the MCP client. Exact copies shared by multiple packages or versions use one file. Update these notices when the
-bundled dependency graph changes; the workspace's complete development dependency list is a different inventory.
-
-| Notice                      | Package version                                                          | Original license source                                                                                                          |
-| --------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| `apache-2.0.js`             | Mechane                                                                  | [Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0.txt)                                                                    |
-| `semver.js`                 | `semver` 7.8.5                                                           | Installed package `LICENSE`                                                                                                      |
-| `effect.js`                 | `effect` 4.0.7                                                           | Installed package `LICENSE`                                                                                                      |
-| `jose.js`                   | `jose` 6.2.13                                                            | Installed package `LICENSE.md`                                                                                                   |
-| `cookie.js`                 | `cookie` 1.1.1                                                           | Installed package `LICENSE`                                                                                                      |
-| `openai.js`                 | `openai` 7.19.0                                                          | Installed package `LICENSE`                                                                                                      |
-| `partial-json.js`           | `partial-json` 0.1.7                                                     | Installed package `LICENSE`                                                                                                      |
-| `model-context-protocol.js` | `@modelcontextprotocol/client` and `@modelcontextprotocol/core` 2.4.0    | Identical installed `LICENSE` files, including the Apache/MIT transition notice                                                  |
-| `zod.js`                    | `zod` 4.6.7                                                              | Installed package `LICENSE`                                                                                                      |
-| `pkce-challenge.js`         | `pkce-challenge` 5.0.1                                                   | Installed package `LICENSE`                                                                                                      |
-| `eventsource-parser.js`     | `eventsource-parser` 3.1.1                                               | Installed package `LICENSE`                                                                                                      |
-| `typebox.js`                | `typebox` 1.3.27 and 1.4.3                                               | Identical installed `license` files                                                                                              |
-| `pi.js`                     | `@earendil-works/pi-ai`, `pi-telemetry`, `pi-durable`, and `chord` 1.4.0 | [Pi v1.4.0, commit 4a080252](https://github.com/earendil-works/pi/blob/4a080252f06caf63a525d7873c5d94d3c23887e0/LICENSE)         |
-| `content-type.js`           | `content-type` 1.0.5                                                     | [Upstream v1.0.5](https://github.com/jshttp/content-type/blob/v1.0.5/LICENSE)                                                    |
-| `cfworker-json-schema.js`   | `@cfworker/json-schema` 4.1.1                                            | [Package release commit 5409fdc2](https://github.com/cfworker/cfworker/blob/5409fdc2bd144f68e8b28c61c71fcb16600000a6/LICENSE.md) |
+The guest image retains the Node image's `/usr/local/LICENSE`, Debian copyright files under `/usr/share/doc`, and
+`/usr/share/common-licenses`. GitHub CLI 2.92.0 and mise 2026.11.2 retain their upstream MIT notices in
+`/usr/local/share/licenses/mechane-tools`. The image's `gh-LICENSE` and `mise-LICENSE` copy each tool's release license.
 
 ## Bun runtime
 
-`bun-licenses.txt` is the complete upstream
-[Bun 1.4.4 license document](https://github.com/oven-sh/bun/blob/bun-v1.4.4/LICENSE.md). It states Bun's MIT license,
-identifies its linked libraries and embedded polyfills, links their license sources, and describes rebuilding its
-statically linked JavaScriptCore. It is an upstream inventory with links, rather than a collection of every native
-dependency's full copyright and license text. Keeping it here does not establish a complete legal audit of Bun's native
-runtime.
+`bun-licenses.txt` is the upstream
+[Bun 1.4.4 license document](https://github.com/oven-sh/bun/blob/bun-v1.4.4/LICENSE.md). It identifies linked libraries
+and embedded polyfills, links their license sources, and describes rebuilding its statically linked JavaScriptCore. It
+is an upstream inventory with links, not every native dependency's full copyright and license text.
 
 `lgpl-2.0.txt` copies the
 [JavaScriptCore license](https://github.com/oven-sh/WebKit/blob/d6375c72affe0f70222cdcb45012b10f0bf3a9d5/Source/JavaScriptCore/COPYING.LIB)
-from Bun 1.4.4's pinned WebKit commit. `lgpl-2.1.txt` copies the
-[TinyCC license](https://github.com/oven-sh/tinycc/blob/05f0fafaa3be31e31d7b4b5c17dc60f62c991171/COPYING) from its
-pinned TinyCC commit. Their pins and build instructions are in Bun's
-[WebKit](https://github.com/oven-sh/bun/blob/bun-v1.4.4/scripts/build/deps/webkit.ts) and
-[TinyCC](https://github.com/oven-sh/bun/blob/bun-v1.4.4/scripts/build/deps/tinycc.ts) build definitions.
+from Bun's pinned WebKit commit. `lgpl-2.1.txt` copies the
+[TinyCC license](https://github.com/oven-sh/tinycc/blob/05f0fafaa3be31e31d7b4b5c17dc60f62c991171/COPYING). Their build
+instructions are in Bun's [WebKit](https://github.com/oven-sh/bun/blob/bun-v1.4.4/scripts/build/deps/webkit.ts) and
+[TinyCC](https://github.com/oven-sh/bun/blob/bun-v1.4.4/scripts/build/deps/tinycc.ts) definitions.
 
-To rebuild against modified runtime libraries, check out Bun at `bun-v1.4.4` and follow its license document and build
-instructions, using the pinned library source above. Then build Mechane's published source with that resulting Bun
-executable: from `packages/node/cli`, run
-`PATH_TO_MODIFIED_BUN build src/main.ts --compile --asset=../../../licenses --outfile dist/mechane`. This source command
-rebuilds the CLI; official release stamping and cross-target compilation are handled by the repository's release task.
-Keep the matching Mechane source tag, lockfile, runtime source, and build instructions available alongside a binary
-distribution.
+To rebuild with modified runtime libraries, check out Bun at `bun-v1.4.4` and follow its build instructions. Then, from
+`packages/node/cli`, run
+`PATH_TO_MODIFIED_BUN build src/main.ts --compile --asset=../../../licenses --outfile dist/mechane`. Official release
+stamping and cross-target compilation belong to the release task. Keep the matching Mechane source tag, lockfile,
+runtime source, and rebuild instructions alongside binary distributions.

@@ -20,7 +20,7 @@ const SWEPT_IN_DIALECT = {
   phase: RolloutPhase.EffectDialect,
 } as const;
 
-/** The fix of every scope rule, which the celld restart's own scope keeps one exemption from (EF-08). */
+/** Effect programs own resources through an explicit lifetime scope. */
 const SCOPE_MESSAGE =
   'Own a resource through a scope, such as `Effect.acquireRelease(open, close)` in a scoped `Effect.fn`';
 
@@ -43,6 +43,7 @@ export const codeExecutionLifecycle = {
       properties: { Effect: ['promise'] },
       exemptRoles: [],
       standard: 'EF-06',
+      status: RuleStatus.Enforced,
     },
     {
       ...SWEPT_IN_DIALECT,
@@ -56,7 +57,7 @@ export const codeExecutionLifecycle = {
       ...SWEPT_IN_DIALECT,
       message: SCOPE_MESSAGE,
       properties: { Scope: ['provide'] },
-      exemptRoles: [FileRole.CelldRestart],
+      exemptRoles: [],
       standard: 'EF-08',
       status: RuleStatus.Enforced,
     },
@@ -96,6 +97,7 @@ export const codeExecutionLifecycle = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'process-signal',
+      exemptRoles: [FileRole.NativeLifecycle],
       maxSuppressions: 2,
       standard: 'EF-11',
       status: RuleStatus.Enforced,

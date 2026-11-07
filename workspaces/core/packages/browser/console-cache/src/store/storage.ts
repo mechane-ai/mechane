@@ -11,6 +11,7 @@ import type { Types } from 'effect';
 import { Base64Url, Hex } from 'effect/encoding';
 
 const CACHE_NAMESPACE = 'mechane-console-opfs';
+const CACHE_SCHEMA_REVISION = 2;
 // The native VFS permits 64-character paths, including room for journal suffixes.
 const CACHE_DIRECTORY = 'mc2';
 const GENERATION_BYTES = 16;
@@ -23,7 +24,13 @@ const CACHE_MAX_PAGES = 16_384;
 const MISSING_FILE = 'NotFoundError';
 
 const GenerationName = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9_-]{22}$/u));
-const CacheGeneration = Schema.Struct({ generation: GenerationName, createdAt: Schema.DateTimeUtcFromMillis });
+
+const CacheGeneration = Schema.Struct({
+  schemaRevision: Schema.Literal(CACHE_SCHEMA_REVISION),
+  generation: GenerationName,
+  createdAt: Schema.DateTimeUtcFromMillis,
+});
+
 const CacheGenerationId = Schema.String.pipe(Schema.brand('ConsoleCacheGenerationId'));
 type CacheGenerationId = typeof CacheGenerationId.Type;
 type CacheGeneration = typeof CacheGeneration.Type;
@@ -186,9 +193,13 @@ async function selectGeneration({
 
     const isCurrent = previous !== undefined && ageMs >= 0 && ageMs < maxAgeMs;
 
-    const generation = isCurrent
+    const generation: CacheGeneration = isCurrent
       ? previous
-      : { generation: Base64Url.encode(crypto.getRandomValues(new Uint8Array(GENERATION_BYTES))), createdAt: now };
+      : {
+          schemaRevision: CACHE_SCHEMA_REVISION,
+          generation: Base64Url.encode(crypto.getRandomValues(new Uint8Array(GENERATION_BYTES))),
+          createdAt: now,
+        };
 
     const wire = JSON.stringify(Schema.encodeSync(CacheGeneration)(generation));
 

@@ -8,9 +8,9 @@ Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked
 mise run check
 ```
 
-Use `mise run start` to run a persistent installation from this checkout. It requires Docker and the model settings
-described in the [local guide](../workspaces/core/packages/node/stack/README.md). That guide also covers packaged local
-releases, which need no contributor toolchain. Keep credentials outside version control.
+Use `mise run start` to run the compiled Node service with persistent Postgres state. The
+[local guide](../workspaces/core/packages/node/stack/README.md) describes database, sandbox, and model configuration.
+Release archives require no contributor toolchain. Keep credentials outside version control.
 
 Use `mise run dev` for a disposable development fixture. It supplies local GitHub sign-in and a scripted model.
 Development fixtures and checks require no provider credentials.

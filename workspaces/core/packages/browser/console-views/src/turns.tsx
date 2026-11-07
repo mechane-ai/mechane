@@ -4,7 +4,7 @@ import type { DataTableColumnLayout } from '@mechane-ai/elements/collections';
 import { EmptyState } from '@mechane-ai/elements/feedback';
 import { Turn } from '@mechane/protocol';
 import type { TurnPage } from '@mechane/protocol';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
@@ -14,12 +14,28 @@ import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 const turnColumns = {
   input: { id: 'input', label: 'Run', role: 'primary' },
   outcome: { id: 'outcome', label: 'Outcome', role: 'status', width: 148 },
-  started: { id: 'started', label: 'Started', role: 'timestamp', isSecondary: true, width: 172 },
+  created: { id: 'created', label: 'Submitted', role: 'timestamp', isSecondary: true, width: 172 },
   elapsed: { id: 'elapsed', label: 'Elapsed', role: 'number', isSecondary: true, width: 100 },
 } as const satisfies Record<string, DataTableColumnLayout>;
 
 export function TurnListPlaceholder(): ReactNode {
   return <DataTablePlaceholder columns={Object.values(turnColumns)} />;
+}
+
+function elapsedLabel(turn: Turn): string {
+  if (Option.isNone(turn.startedAt)) {
+    return 'Not started';
+  }
+
+  switch (turn.status) {
+    case 'answered':
+    case 'unanswered':
+      return durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt.value));
+    case 'queued':
+    case 'running':
+    case 'waiting':
+      return 'In progress';
+  }
 }
 
 export function TurnList({
@@ -79,17 +95,14 @@ export function TurnList({
           ),
         },
         {
-          ...turnColumns.started,
+          ...turnColumns.created,
           shouldTruncate: false,
-          cell: (turn) => (Schema.is(Turn)(turn) ? <ConsoleTimestamp value={turn.startedAt} /> : 'Unavailable'),
+          cell: (turn) => (Schema.is(Turn)(turn) ? <ConsoleTimestamp value={turn.createdAt} /> : 'Unavailable'),
         },
         {
           ...turnColumns.elapsed,
           shouldTruncate: false,
-          cell: (turn) =>
-            Schema.is(Turn)(turn) && turn.status !== 'running'
-              ? durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt))
-              : '—',
+          cell: (turn) => (Schema.is(Turn)(turn) ? elapsedLabel(turn) : 'Unavailable'),
         },
       ]}
       empty={

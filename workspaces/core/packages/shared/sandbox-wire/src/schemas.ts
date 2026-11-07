@@ -9,7 +9,6 @@ import {
 } from '@mechane/records';
 import { Duration, Schema, SchemaTransformation } from 'effect';
 import {
-  EXECUTION_ID_PREFIX,
   EXECUTION_MAX_BYTES,
   EXECUTION_TIMEOUT_MAX,
   EXECUTION_WAIT_MAX,
@@ -20,30 +19,27 @@ import {
 } from './constants.ts';
 import { ExecutionEnvironment, ExecutionEnvironmentRequired } from './execution-environment.ts';
 
-/**
- * The id of an execution: the pi tool task it runs for, so a rerun of the task asks for the execution it already
- * started. Receipts are stored under it, so it is a stored format.
- */
-export const ExecutionId = Schema.String.check(
-  Schema.isPattern(
-    new RegExp(
-      `^(?:${EXECUTION_ID_PREFIX}[0-9]{1,16}|(?:source-(?:prepare|finalize|capture)|maintenance)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`,
-    ),
-  ),
-).pipe(Schema.brand('ExecutionId'));
+/** Stable command identity survives workflow retries and never becomes a filesystem path. */
+export const ExecutionId = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/)).pipe(
+  Schema.brand('ExecutionId'),
+);
 
 export type ExecutionId = typeof ExecutionId.Type;
 
 /** A span the guest's wire writes as whole milliseconds. */
 const WholeMillis = Schema.Int.pipe(Schema.decodeTo(Schema.Duration, SchemaTransformation.durationFromMillis));
 
+export const ExecutionTimeout = WholeMillis.check(
+  isBetweenDuration({ minimum: Duration.millis(1), maximum: EXECUTION_TIMEOUT_MAX }),
+);
+
+export const ExecutionWaitSpan = WholeMillis.check(
+  isBetweenDuration({ minimum: Duration.zero, maximum: EXECUTION_WAIT_MAX }),
+);
+
 /** How long a request waits for its execution to settle, as a query writes it. */
 export const ExecutionWait = renamedWireStruct({
-  fields: {
-    wait: Schema.NumberFromString.pipe(Schema.decodeTo(WholeMillis)).check(
-      isBetweenDuration({ minimum: Duration.zero, maximum: EXECUTION_WAIT_MAX }),
-    ),
-  },
+  fields: { wait: Schema.NumberFromString.pipe(Schema.decodeTo(ExecutionWaitSpan)) },
   renames: { wait: 'wait_ms' },
 });
 
@@ -53,15 +49,15 @@ export type ExecutionWait = typeof ExecutionWait.Type;
  * Bash text that a process can start with. A process's argument ends at a NUL character, and the kernel refuses one
  * longer than its limit, so the guest would fail to start bash for either.
  */
-const BashText = boundedText({ maxBytes: EXECUTION_MAX_BYTES });
+export const ExecutionCommand = boundedText({ maxBytes: EXECUTION_MAX_BYTES });
 
 /** Bash text to run once from the machine's home; it and every process it starts end at its timeout. */
 export const ExecutionRequest = renamedWireStruct({
   fields: {
-    command: BashText,
+    command: ExecutionCommand,
     /** None runs without an owner-supplied environment. */
     environment: Schema.OptionFromOptionalKey(ExecutionEnvironment),
-    timeout: WholeMillis.check(isBetweenDuration({ minimum: Duration.millis(1), maximum: EXECUTION_TIMEOUT_MAX })),
+    timeout: ExecutionTimeout,
   },
   renames: { timeout: 'timeout_ms' },
 });

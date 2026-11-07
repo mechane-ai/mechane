@@ -1,95 +1,46 @@
 # @mechane/stack
 
-Mechane's local runtime uses celld, Docker, and the same Worker and Pi code as a hosted deployment. The packaged
-`mechane-local` launcher retains agents, authentication, R2 objects, and sandbox files across restarts. Source
-contributors can also run disposable fixtures with fake GitHub and a scripted model.
+The local stack runs Mechane's built Node server with Postgres and the same Workflow engine as production. It copies the
+server artifact outside the checkout before starting, so local dependency links cannot conceal an incomplete release.
 
-Layer 5 · node lane · effect dialect · consumers: distribution, testing, smoke
+Layer 5 · node lane · plain dialect · consumers: testing, smoke
 
-## Install locally
+## Develop
 
-Download the `mechane-local-vVERSION-TARGET.tar.gz` archive and `SHA256SUMS` from the same
-[public release](https://github.com/mechane-ai/mechane/releases). Targets are `darwin-arm64`, `linux-arm64`, and
-`linux-x64`. Compare the archive's SHA-256 with its entry in `SHA256SUMS`, then extract it into an empty directory. The
-archive includes the launcher, celld, the CLI, Worker, guest image, and license notices. Docker is the runtime
-prerequisite; Node, mise, a source checkout, and compilers are unnecessary.
+Install the repository's pinned tools and start Docker. After building the server, guest, and sandbox service, run
+`mise run dev` for a disposable fixture. The launcher prints the console URL and `MECHANE_ORIGIN` for the CLI. The local
+GitHub sign-in offers owner, member, and rejected outsider accounts. Scripted HTTP model replies require no provider
+account and never call a paid model.
 
-Start Docker, copy `model.example.json` to a private configuration file, and replace its API key:
+Fixture mode runs the real sandbox Worker in Miniflare and the real guest as a host process. That guest does not isolate
+commands from the developer's machine. The smoke supplies synthetic commands. Configured mode requires an authenticated
+sandbox service and does not use the process fixture.
 
-```sh
-cp model.example.json model.json
-chmod 600 model.json
-./mechane-local start --config model.json
-```
+`mise run start` retains state in `~/.local/state/mechane`, or `MECHANE_LOCAL_STATE_DIR`. Supply the server's
+[runtime configuration](../runtime/src/config.ts) and [authentication settings](../server/src/settings/server.ts)
+through the environment. The local launcher owns the Postgres connection, encryption keyring, and bootstrap workspace
+identity. `MECHANE_LOCAL_ORIGIN` selects a loopback origin; its default is `http://127.0.0.1:8787`.
 
-The JSON file has three fields: `model_upstream`, `model_api_key`, and `model_offers`. The upstream must support
-streaming OpenAI-compatible Chat Completions and tool calls. Its URL includes the API prefix, such as `/v1`, and
-excludes `/chat/completions`. Only an explicitly selected file is read; its fields override the corresponding model
-environment variables. Unknown fields and invalid offers are refused without printing their values.
+The launcher must run under pinned Node 24. An embedding runner can supply `nodeExecutable`; the launcher checks its
+version before starting the server or guests. Neither source mode nor release mode silently selects another Node from
+`PATH`.
 
-The example uses OpenRouter's `anthropic/claude-haiku-5.5` with a 65,536-token context and 4,096-token output limit.
-These smaller limits stay below the provider's higher-priced long-context range. Update the model ID, limits, and rates
-when using another model. Rates are integer micro-dollars per million tokens; `$1` per million is `1000000`. Use `0` for
-unused cache categories. The provider bills independently of Mechane's budget accounting.
+## Lifecycle
 
-The launcher verifies packaged checksums and loads the prebuilt Linux amd64 guest into Docker. ARM machines need a
-Docker engine that runs amd64 containers. Celld also prepares its small network-fence image through Docker; its first
-start can need network access. Product code is already built.
+`runStackProgram` owns startup, signals, and cleanup for both smoke and development. Its callback receives the local
+stack and an interruption signal. The stack exposes its origin, provider fixtures, server log, and explicit `restart`
+and `stop` operations. Restart replaces only the Node process. Postgres, provider gates, and sandbox executions remain
+available, allowing checkers to verify recovery after a real process kill. `dumpStorage` reads the actual local database
+for credential leak checks; its result must stay out of logs.
 
-## Sign in and restart
+Miniflare runs in an owned child process so its signal handlers cannot bypass the launcher's cleanup. The host fixture
+still shares the developer's operating system; container-level cleanup after abrupt guest death requires hosted
+qualification.
 
-The default origin is `http://127.0.0.1:8787`. State lives in `$XDG_STATE_HOME/mechane`, or `~/.local/state/mechane`.
-`MECHANE_LOCAL_STATE_DIR` selects another absolute directory. `MECHANE_LOCAL_ORIGIN` selects another loopback origin;
-each initialized directory keeps its origin so saved credentials remain bound to the same service.
+Each stack records its owner and processes in a private state directory. Docker containers carry that ownership and a
+review time. Stop removes disposable data and its own container; persistent mode retains database files and the keyring.
+A failed startup stops its services but keeps private files for diagnosis. Remove that reported directory after
+inspecting the failure. An existing ownership record prevents a second launcher from taking the state directory.
 
-Open the printed `/auth/local` URL and paste the contents of the printed bootstrap-secret file. Open `/console` to
-manage mechs in the browser, or run the bundled CLI against that origin:
-
-```sh
-export MECHANE_ORIGIN=http://127.0.0.1:8787
-./mechane auth login
-```
-
-Stop with Ctrl-C and restart with the same command and configuration. The private state directory retains credentials
-and data after successful, failed, and interrupted runs. It permits only one running launcher or reset. To erase an
-initialized installation explicitly, run `./mechane-local reset --confirm` while it is stopped.
-
-The private state directory stores the encryption keyring, bootstrap secret, deployed credentials in `.dev.vars`, and
-celld's databases. Preserve this directory when replacing the extracted release. Workspace credentials and integrations
-use the runtime CLI; see [remote tools](../../../docs/remote-tools.md) and [Slack](../../../docs/slack.md).
-
-A killed launcher can leave celld running. Its ownership record prevents restart or reset while those processes remain
-alive. An interrupted startup with an unconfirmed owner requires checking its processes before removing that record; the
-error identifies the file. The local web installer and CLI updates use the public release artifacts.
-
-## Upgrade retained state
-
-Stop the launcher, verify and extract the next release, then start it with the same state directory, origin, and model
-configuration. The launcher records the candidate's release descriptor before opening the databases. It rejects older
-versions and candidates that remove recorded wire or migration entries, including after an interrupted startup. Recovery
-uses a compatible newer release. These checks do not prove every behavioral change safe.
-
-State created by older launchers has no format baseline. If its staged Worker differs from the candidate, obtain
-`installation.json` from the release that last ran that directory and set `MECHANE_LOCAL_ADOPTION_MANIFEST` to its
-absolute path for the first upgrade. The launcher verifies that descriptor against the existing Worker bytes before
-adopting it. An identical candidate Worker can establish its own baseline. Missing or mismatched metadata is refused;
-the state is never silently reset. After adoption, older launchers reject the new state marker.
-
-## Develop from source
-
-Run repository setup and start Docker, then use `mise run start -- --config /absolute/path/model.json`. The same
-configuration is also supported through `MECHANE_MODEL_UPSTREAM`, `MECHANE_MODEL_API_KEY`, and the JSON-array variable
-`MECHANE_MODEL_OFFERS`. Source mode builds the Worker, guest, and locally served CLI. `mise run dev` starts a disposable
-fixture with fake GitHub and a scripted model. `mise run local:reset -- --confirm` resets stopped source state.
-
-## Public surface and layout
-
-`loadStackSettings` reads configuration, and `startStack` starts a disposable stack in the caller's scope.
-`LocalPackage` and `LocalTarget` define packaged runtime inputs consumed by distribution. `StackFailed` identifies
-failed lifecycle steps. The line prefixes support the smoke's scripted model.
-
-`src/local/` handles installed releases; `src/dev/` handles source commands. Both feed `src/project/`, `src/celld/`, and
-`src/state/`. Local service fixtures live in `src/github/`, `src/host-launcher/`, and `src/model/`.
-
-Never serve the smoke's Worker a personal upstream, and never read environment variables outside
-`load-stack-settings.ts`.
+The public fixture and lifecycle types live in [types.ts](src/types.ts). Fixtures implement external HTTP protocols; all
+Mechane operations still pass through its built server and actual stores.

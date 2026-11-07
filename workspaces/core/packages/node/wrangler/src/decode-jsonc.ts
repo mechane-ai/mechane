@@ -58,10 +58,9 @@ const parsedJsonc = Effect.fn('parsedJsonc')(function* ({
   const first = Option.fromNullishOr(errors[0]);
 
   if (Option.isSome(first)) {
-    return yield* new JsoncSyntaxRefused({
-      reason: printParseErrorCode(first.value.error),
-      offset: first.value.offset,
-    });
+    const reason = printParseErrorCode(first.value.error);
+
+    return yield* new JsoncSyntaxRefused({ reason, offset: first.value.offset });
   }
 
   return value;

@@ -3,9 +3,10 @@ import { lineAt } from '@mechane/modules';
 import type { ParsedSource } from '@mechane/modules';
 import { Option } from 'effect';
 import { Visitor } from 'oxc-parser';
-import type { TSPropertySignature, VisitorObject } from 'oxc-parser';
+import type { StaticExport, TSPropertySignature, VisitorObject } from 'oxc-parser';
 import { DocRule } from './constants.ts';
 import { declaringExports } from './declaring-exports.ts';
+import { exportNames } from './export-names.ts';
 import type { AttachedDocs } from './types.ts';
 
 /** A schema member that leaves a field's key optional or its value nullable in the Encoded form, or an `Option`. */
@@ -15,7 +16,11 @@ const ABSENCE_SCHEMA =
 /** A type that may hold nothing: an `Option`, or a union with `null` or `undefined`. */
 const ABSENCE_TYPE = /\bOption\.Option<|\bnull\b|\bundefined\b/;
 
-type AbsenceDocSitesInput = { readonly source: ParsedSource; readonly attached: AttachedDocs };
+type AbsenceDocSitesInput = {
+  readonly source: ParsedSource;
+  readonly attached: AttachedDocs;
+  readonly documented: ReadonlySet<string>;
+};
 
 /** A field that may be absent: where it starts, and its key as the source writes it. */
 type AbsentField = { readonly start: number; readonly key: string };
@@ -23,16 +28,27 @@ type AbsentField = { readonly start: number; readonly key: string };
 type SchemaTextInput = { readonly text: string };
 
 /**
- * Each field that may be absent and has no doc comment above it. Such a property's type is optional, nullable or an
- * `Option`, in any type. Such an object field of a declaring export's schema leaves it out, empty or an `Option`.
+ * Absence semantics belong to authored public records and schemas. Internal state and imported SDK types retain their
+ * owner's contract without a comment on every optional implementation field.
  */
-export function absenceDocSites({ source, attached }: AbsenceDocSitesInput): ReadonlyArray<Site> {
+export function absenceDocSites({ source, attached, documented }: AbsenceDocSitesInput): ReadonlyArray<Site> {
   const { path, text, parsed } = source;
-  const statements = declaringExports({ source });
+
+  const isPublic: (statement: StaticExport) => boolean = (statement) =>
+    exportNames({ statement }).some((name) => documented.has(name));
+
+  const statements = declaringExports({ source }).filter(isPublic);
+  const types = statements.filter(({ entries }) => entries.some(({ isType }) => isType));
   const fields: Array<AbsentField> = [];
 
   /** Keeps a property signature whose type is optional, nullable or an `Option`. */
   const keepSignature: (node: TSPropertySignature) => void = (node) => {
+    const isPublicType = types.some(({ start, end }) => node.start >= start && node.start < end);
+
+    if (!isPublicType) {
+      return;
+    }
+
     const annotation = Option.map(Option.fromNullishOr(node.typeAnnotation), ({ start, end }) =>
       text.slice(start, end),
     );

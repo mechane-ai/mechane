@@ -3,6 +3,9 @@ id: sql-statement-not-literal
 valid:
   - "sql.exec('SELECT 1');"
   - 'database.prepare(`SELECT 1`);'
+  - "context.client.query('SELECT id FROM invoices WHERE id=$1', [id]);"
 invalid:
   - 'sql.exec(statement);'
   - "sql.exec('SELECT ' + column);"
+  - 'context.client.query(statement);'
+  - "client.query('SELECT ' + column);"

@@ -10,7 +10,6 @@ import { GuestUnreachable } from './errors.ts';
 import type { ExecutionUnstarted } from './errors.ts';
 import { executionLedger } from './executions/execution-ledger.ts';
 import { loadGuestSettings } from './load-guest-settings.ts';
-import { sourceJournal } from './sources/journal/source-journal.ts';
 import type { Exchange, GuestFailure } from './types.ts';
 import { openWorkspaceFolder } from './workspace/open-workspace-folder.ts';
 import { workspaceJournal } from './workspace/workspace-journal.ts';
@@ -34,7 +33,6 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
   const ledger = executionLedger({ settings, fibers });
   const folder = yield* openWorkspaceFolder();
   const workspace = workspaceJournal({ folder, settings, ledger, fibers });
-  const source = sourceJournal({ settings, ledger });
   const exchanges = yield* Queue.unbounded<Exchange>();
 
   const queueExchange: (request: IncomingMessage, response: ServerResponse) => void = (request, response) =>
@@ -50,7 +48,7 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
 
   writeResult({ line });
 
-  const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace, source });
+  const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace });
   const serving = Effect.forever(next);
 
   yield* FiberSet.run(fibers, serving);

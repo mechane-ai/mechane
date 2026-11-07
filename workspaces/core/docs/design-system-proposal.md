@@ -382,7 +382,7 @@ stories, and generated checks change together. This is the proposed change struc
 | Shell and screen migration      | Shared AppShell, Sidebar, PageToolbar, DetailPage, typography, and table parts; old implementations removed.              | Consistent borders and measurements across existing routes, collapsed navigation, phone layouts, and long labels.           |
 | Resource and trace presentation | One read-state projection at the existing resource boundary; preserved drafts; generic Waterfall and request adapter.     | Slow/failed/refresh reads, resource switches, pending/conflicting saves, and incomplete trace evidence rendered truthfully. |
 | Catalog and public API          | Colocated component stories, public usage guidance, correct development file roles, and no unused exports.                | Catalog builds without services; meaningful states and composed controls work with the application compiler.                |
-| Integrated release              | One public source export and compiled Console for local and cloud installation.                                           | Existing checks, a browser pass against the packaged celld Worker, release inventory checks, and bundle review.             |
+| Integrated release              | One public source export and compiled Console for local and cloud installation.                                           | Existing checks, a browser pass against the packaged Node service, release inventory checks, and bundle review.             |
 
 Review the same representative screens against the saved visual baseline at matched viewport sizes. Compare border
 continuity, typography, control alignment, spacing, and row density. Check narrow reflow and zoom separately from
@@ -409,8 +409,8 @@ Each package move updates `dependencies.json`, manifests, generated checks, comp
 notices together. Confirm the public export includes those sources and notices. No private repository path or personal
 configuration may be required to build them.
 
-The same compiled assets continue to run through celld and Cloudflare. OpenTofu keeps installing the versioned Mechane
-release. This work adds no frontend service, database, or installation setting.
+The same compiled assets continue to run through local and hosted Node services. OpenTofu keeps installing the versioned
+Mechane release. This work adds no frontend service, database, or installation setting.
 
 Acceptance uses the current screens and real workflows: create/edit forms, workspace switching, navigation, request
 selection, and copying evidence. Check desktop and phone layouts, keyboard-only operation, zoom, reduced motion, pending

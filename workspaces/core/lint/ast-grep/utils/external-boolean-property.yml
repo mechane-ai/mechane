@@ -1,0 +1,5 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: external-boolean-property
+language: TypeScript
+rule:
+  regex: '^(self_grading)$'

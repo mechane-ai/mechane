@@ -1,4 +1,3 @@
-# Classes exist only where the Workers runtime instantiates them or Effect requires a tagged error class.
 id: owned-class
 language: TypeScript
 severity: error
@@ -16,7 +15,12 @@ rule:
             has:
               kind: class_heritage
               has:
-                kind: extends_clause
-                has:
-                  field: value
-                  regex: ^(DurableObject|WorkerEntrypoint|Schema\.TaggedError<)
+                any:
+                  - kind: extends_clause
+                    has:
+                      field: value
+                      regex: ^(DurableObject|WorkerEntrypoint|Error$|Data\.TaggedError|Schema\.TaggedError<)
+                  - kind: implements_clause
+                    has:
+                      kind: type_identifier
+                      regex: ^LanguageModelV4$

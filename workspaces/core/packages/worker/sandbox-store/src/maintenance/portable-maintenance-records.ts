@@ -11,7 +11,7 @@ type PortableMaintenanceTable = {
   readonly savePortableMaintenance: (input: PortableMaintenance) => void;
 };
 
-/** Keeps the portable operation journal separate from native provider maintenance during migration. */
+/** Persists the workspace maintenance operation before any provider effect. */
 export function portableMaintenanceRecords({ sql }: RecordsInput): PortableMaintenanceTable {
   const portableMaintenance: () => Option.Option<PortableMaintenance> = () => {
     const cursor = sql.exec('SELECT value FROM portable_maintenance WHERE slot = 1');

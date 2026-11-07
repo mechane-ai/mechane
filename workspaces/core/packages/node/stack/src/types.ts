@@ -1,120 +1,149 @@
-import type { CredentialKeyring, LocalSandboxProvider, WORKER_VARIABLES } from '@mechane/deployment';
-import type { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
-import type { ReleaseFailed } from '@mechane/release';
-import type { BaseConfiguration } from '@mechane/wrangler';
-import type { Effect, Option } from 'effect';
 import type { ChildProcess } from 'node:child_process';
-import type { LocalCommand, SCRIPTED_OFFERS } from './constants.ts';
-import type { StackFailed } from './errors.ts';
 
-/** The immutable runtime inputs supplied by a source build or an installed release. */
-export type RuntimeProject = {
-  readonly bundle: string;
-  readonly consoleBundle: string;
-  readonly consoleDigest: ArtifactDigest;
-  readonly release: ReleaseDescriptor;
-  readonly configuration: BaseConfiguration;
-  readonly revision: string;
-  readonly celldCommand: string;
-  readonly releasesBucket: string;
+export type Environment = Readonly<Record<string, string>>;
+
+export type ModelToolCall = {
+  readonly id: string;
+  readonly name: string;
+  readonly input: Readonly<Record<string, unknown>>;
 };
 
-/** A child process the stack started and stops. */
-export type ChildInput = { readonly child: ChildProcess };
-
-/**
- * A request the scripted upstream answered with a reply: the offer it named, the usage it reported, its body, and the
- * provider session it named. Its end user is the id of the workspace it was sent for.
- */
-export type AnsweredRequest = {
-  readonly model: string;
-  readonly promptTokens: number;
-  readonly completionTokens: number;
-  readonly body: string;
-  readonly sessionId: string;
-  readonly user: string;
+export type ModelReply = {
+  readonly text?: string;
+  readonly tools?: ReadonlyArray<ModelToolCall>;
+  readonly isHeld?: boolean;
+  readonly status?: number;
+  readonly promptTokens?: number;
+  readonly completionTokens?: number;
 };
 
-/** The scripted echo offers, including Claude's cache protocol, and one no day's allowance covers. */
-type ScriptedOffers = typeof SCRIPTED_OFFERS;
+export type ModelPlan = { readonly marker: string; readonly replies: ReadonlyArray<ModelReply> };
 
-/**
- * The scripted model upstream a stack serves: its URL, the key it accepts and its offers, which the stack stages, and
- * the requests it has answered so far, oldest first.
- */
-export type ScriptedUpstream = {
-  readonly upstream: URL;
-  readonly apiKey: string;
-  readonly offers: ScriptedOffers;
-  readonly requests: () => ReadonlyArray<AnsweredRequest>;
+export type ModelCall = {
+  readonly marker: string;
+  readonly index: number;
+  readonly body: Readonly<Record<string, unknown>>;
+  readonly authorization: string | undefined;
 };
 
-/** What the stack reads from the environment of the program that starts it. */
-export type StackSettings = {
-  /** The parent variables every child process of the stack inherits. */
-  readonly inherited: Readonly<Record<string, string>>;
-  /** The folder that holds each stack's state folder. */
-  readonly stateRoot: string;
-  /** Operator configuration for persistent local mode; disposable fixtures ignore it. */
-  readonly workerVariables: StackVariables;
-  /** Persistent mode requires containers; a disposable fixture may select host processes. */
-  readonly sandboxProvider: LocalSandboxProvider;
-  readonly localStateFolder: string;
-  /** Absent unless adopting retained state from a release that did not record its format baseline. */
-  readonly localAdoptionManifest: Option.Option<string>;
-  readonly localOrigin: URL;
-  readonly localCommand: LocalCommand;
-  readonly executableFolder: string;
-};
+export type ModelCallSelector = { readonly marker: string; readonly index: number; readonly timeoutMs?: number };
 
-/** Worker variables the stack writes into `.dev.vars`, over the Wrangler configuration's, keyed by settings field. */
-export type StackVariables = Readonly<Partial<Record<keyof typeof WORKER_VARIABLES, string>>>;
-
-/** The Worker runtime shared by persistent local mode and disposable fixtures. */
-export type RuntimeStack = {
+export type ModelFixture = {
   readonly origin: URL;
-  readonly stateFolder: string;
-  /** The staged project celld serves. */
-  readonly projectFolder: string;
-  readonly logFile: string;
-  /** The folder in which celld keeps each of the stack's Durable Objects in its own database. */
-  readonly storageFolder: string;
-  /** The folder that holds each host machine's home and log. */
-  readonly sandboxesFolder: string;
-  readonly settings: StackSettings;
-  /** The revision the stack staged as the Worker's, which readiness must report. */
-  readonly workerRevision: string;
-  /** Every Durable Object class the Wrangler configuration migrates, which readiness must report. */
-  readonly durableObjectClasses: ReadonlyArray<string>;
-  /**
-   * Kills celld, as a crash of the host would, and starts it again on the same state with `variables` over the staged
-   * ones, as a deploy with another configuration would. The host launcher and its machines run on.
-   */
-  readonly restart: (input: RestartInput) => Effect.Effect<void, StackFailed>;
-  /** Publishes built releases into the stack's own bucket, as the release program uploads them to production's. */
-  readonly publish: (input: PublishInput) => Effect.Effect<void, StackFailed | ReleaseFailed>;
+  readonly apiKey: string;
+  readonly configure: (plan: ModelPlan) => void;
+  readonly readCalls: (input?: { readonly marker?: string }) => ReadonlyArray<ModelCall>;
+  readonly waitForCall: (input: ModelCallSelector) => Promise<ModelCall>;
+  readonly release: (input: ModelCallSelector) => void;
 };
 
-/** A disposable Worker runtime with its scripted model, GitHub service, and optional host launcher. */
-export type Stack = RuntimeStack & {
-  readonly githubOrigin: URL;
-  readonly modelUpstream: ScriptedUpstream;
-  readonly credentialKeyring: CredentialKeyring;
-  /** Absent when the fixture uses container sandboxes instead of the host launcher. */
-  readonly launcherKey: Option.Option<string>;
+export type GitHubUser = { readonly id: number; readonly login: string };
+
+export type GitHubInstallationToken = {
+  readonly value: string;
+  readonly repositoryIds: ReadonlyArray<number>;
+  readonly permissions: Readonly<Record<string, string>>;
+  readonly issuedAt: number;
+  readonly revokedAt: number | null;
 };
 
-/** A persistent Worker runtime whose bootstrap credential remains in the private installation directory. */
-export type LocalStack = RuntimeStack & { readonly bootstrapSecretFile: string };
+export type GitHubFixture = {
+  readonly origin: URL;
+  readonly clientId: string;
+  readonly clientSecret: string;
+  readonly users: { readonly owner: GitHubUser; readonly member: GitHubUser; readonly outsider: GitHubUser };
+  readonly app: {
+    readonly id: number;
+    readonly installationId: number;
+    readonly repositoryId: number;
+    readonly privateKey: string;
+    readonly readTokens: () => ReadonlyArray<GitHubInstallationToken>;
+  };
+};
 
-/** The filesystem locations a runtime uses below its state directory. */
-export type StateLayout = Pick<
-  RuntimeStack,
-  'stateFolder' | 'logFile' | 'storageFolder' | 'sandboxesFolder' | 'projectFolder'
->;
+export type SlackCall = { readonly method: string; readonly body: Readonly<Record<string, unknown>> };
 
-/** The variables a restart stages over those the stack started with. */
-export type RestartInput = { readonly variables: StackVariables };
+export type SlackMessage = {
+  readonly ts: string;
+  readonly channel: string;
+  readonly thread_ts: string;
+  readonly text: string;
+  readonly markdown_text?: string | undefined;
+  readonly user: string;
+  readonly bot_id: string;
+  readonly blocks?: unknown;
+  readonly metadata?: unknown;
+  readonly client_msg_id?: string | undefined;
+};
 
-/** A folder of built releases to publish, each file at its bucket key below it. */
-export type PublishInput = { readonly folder: string };
+export type SlackFixture = {
+  readonly origin: URL;
+  readonly botToken: string;
+  readonly signingSecret: string;
+  readonly teamId: string;
+  readonly botUserId: string;
+  readonly readCalls: () => ReadonlyArray<SlackCall>;
+  readonly readMessages: () => ReadonlyArray<SlackMessage>;
+  readonly loseNextPostReceipt: () => void;
+};
+
+export type NexusRequestStatus = 'pending' | 'ready' | 'denied' | 'expired' | 'cancelled';
+
+export type NexusRequest = {
+  readonly id: string;
+  readonly kind: 'access' | 'vend';
+  readonly status: NexusRequestStatus;
+  readonly approval: { readonly id: string; readonly url: string; readonly status: string } | null;
+  readonly error: string | null;
+  readonly body: Readonly<Record<string, unknown>>;
+};
+
+export type NexusFixture = {
+  readonly origin: URL;
+  readonly apiKey: string;
+  readonly serviceId: string;
+  readonly signingSecret: string;
+  readonly readRequests: () => ReadonlyArray<NexusRequest>;
+  readonly resolve: (input: { readonly id: string; readonly status: NexusRequestStatus }) => NexusRequest;
+  readonly waitForRequest: (input?: { readonly timeoutMs?: number }) => Promise<NexusRequest>;
+};
+
+export type LocalFixtures = {
+  readonly github: GitHubFixture;
+  readonly model: ModelFixture;
+  readonly slack: SlackFixture;
+  readonly nexus: NexusFixture;
+  readonly close: () => Promise<void>;
+};
+
+export type StackOptions = {
+  readonly mode: 'ephemeral' | 'persistent';
+  readonly stateDirectory?: string;
+  readonly serverEntry?: string;
+  readonly nodeExecutable?: string;
+  readonly sandbox?: 'host-fixture' | 'configured';
+  readonly origin?: URL;
+  readonly environment?: Environment;
+  readonly useFixtures?: boolean;
+};
+
+export type RestartOptions = { readonly signal?: 'SIGTERM' | 'SIGKILL'; readonly environment?: Environment };
+
+export type LocalStack = {
+  readonly origin: URL;
+  readonly databaseUrl: string;
+  readonly stateDirectory: string;
+  readonly fixtures: LocalFixtures | undefined;
+  readonly serverLog: string;
+  readonly postgresContainer: string;
+  readonly nodeVersion: string;
+  readonly dumpStorage: () => Promise<string>;
+  readonly restart: (input?: RestartOptions) => Promise<void>;
+  readonly stop: () => Promise<void>;
+};
+
+export type ManagedProcess = {
+  readonly child: ChildProcess;
+  readonly exited: Promise<number | null>;
+  readonly stop: (signal?: 'SIGTERM' | 'SIGKILL') => Promise<void>;
+};

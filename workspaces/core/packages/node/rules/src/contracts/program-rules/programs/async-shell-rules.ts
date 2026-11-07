@@ -36,7 +36,7 @@ export const ASYNC_SHELL_RULES = [
     ...OXLINT_DEFAULTS,
     name: 'promise/avoid-new',
     value: Severity.Error,
-    exemptRoles: [FileRole.Utilities],
+    exemptRoles: [FileRole.Utilities, FileRole.NativeRuntime],
     standard: 'DO-03',
     status: RuleStatus.Enforced,
     phase: RolloutPhase.Fixers,
@@ -52,6 +52,7 @@ export const ASYNC_SHELL_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'promise-chain',
+    exemptRoles: [FileRole.NativeRuntime],
     standard: 'DO-03',
     status: RuleStatus.Enforced,
     phase: RolloutPhase.ObjectDialect,

@@ -32,11 +32,13 @@ For each suppression of these rules, does its reason name the runtime or library
 
 ## Local adaptations
 
-The allowed base classes are `DurableObject`, `WorkerEntrypoint` and `Schema.TaggedError`, enforced by ast-grep `owned-class`.
-The v11.1 schema-class allowance stays outside this baseline; Mechane declares record schemas as values.
-ast-grep `class-field-form` and `class-accessibility-keyword`, and oxlint `class-methods-use-this`, enforce the field and method rules.
-`tsconfig.base.json` enables `erasableSyntaxOnly`, which makes a parameter property a compile error, and `noImplicitOverride` for every package.
-No service key class exists: oxlint `no-restricted-imports` rejects Effect's `Context`, `Layer`, `LayerMap` and `ManagedRuntime`, and `no-restricted-properties` rejects `Effect.provide`, `provideContext`, `provideService`, `provideServiceEffect`, `service` and `serviceOption`, so every dependency travels in the input object.
+The sandbox service permits the platform's `DurableObject` and `WorkerEntrypoint` base classes. Tagged Effect errors
+remain permitted. The runtime's model adapter may implement `LanguageModelV4` with the Workflow SDK serialization
+hooks. That class serializes only model, credential-reference, workspace, and billing identifiers. It resolves live
+clients inside its model-call methods. This allowance does not admit class-based domain services or dependency containers.
+
+Record schemas remain values. Keep strict compiler checks, including `erasableSyntaxOnly` and `noImplicitOverride`.
+Effect service containers remain outside this product's dialect; dependencies travel through explicit inputs.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

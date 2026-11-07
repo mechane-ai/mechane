@@ -1,6 +1,6 @@
 import { Dispatch, Turn } from '@mechane/protocol';
 import type { Trace } from '@mechane/protocol';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
 import { createRequestWaterfallItem } from './request-waterfall.tsx';
 
 /** Recorded endpoints, cost and usage shared by the overview and request inspector. */
@@ -30,10 +30,15 @@ export function traceEvidence(trace: Trace) {
     return [];
   });
 
-  const start =
-    turn === undefined ? (times.length === 0 ? 0 : Math.min(...times)) : DateTime.toEpochMillis(turn.startedAt);
+  const startedAt = turn === undefined ? undefined : Option.getOrUndefined(turn.startedAt);
+  const started = startedAt === undefined ? undefined : DateTime.toEpochMillis(startedAt);
 
-  const finished = turn !== undefined && turn.status !== 'running' ? DateTime.toEpochMillis(turn.endedAt) : undefined;
+  const start =
+    started ??
+    (turn === undefined ? (times.length === 0 ? 0 : Math.min(...times)) : DateTime.toEpochMillis(turn.createdAt));
+
+  const finished = turn !== undefined && 'endedAt' in turn ? DateTime.toEpochMillis(turn.endedAt) : undefined;
+  const elapsed = started === undefined || finished === undefined ? undefined : finished - started;
   const end = Math.max(start, finished ?? start, ...times);
 
   const notices = [...new Set(trace.evidenceNotices)];
@@ -54,6 +59,7 @@ export function traceEvidence(trace: Trace) {
     start,
     end,
     finished,
+    elapsed,
     cost,
     tokens,
     reported: reported.length,

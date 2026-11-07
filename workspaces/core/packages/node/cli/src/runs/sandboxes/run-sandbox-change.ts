@@ -21,8 +21,7 @@ export const runSandboxChange = Effect.fn('runSandboxChange')(function* <N exten
   const fallback = SandboxOperationId.make(randomUUID());
   const specified = Option.fromNullishOr(input.operationId);
   const operationId = Option.getOrElse(specified, () => fallback);
-  const droneId = Option.fromNullishOr(input.droneId);
-  const request = { action, operationId: Option.some(operationId), droneId, part: 0 };
+  const request = { action, operationId: Option.some(operationId) };
 
   const result = yield* withWorkspace({
     call,

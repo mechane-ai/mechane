@@ -1,5 +1,5 @@
-import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/protocol';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
+import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/sandbox-wire';
 
 type SnapshotPartInput = { readonly snapshot: WorkspaceSnapshot; readonly part: number };
 

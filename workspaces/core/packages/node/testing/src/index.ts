@@ -1,66 +1,30 @@
-export { freshAccount } from './accounts/fresh-account.ts';
-export { verifyRevokedCredentialAccess } from './credentials/verify-revoked-credential-access.ts';
-export { preparePrivateAdmission } from './admission/prepare-private-admission.ts';
-export { refusePrivateAdmission } from './admission/refuse-private-admission.ts';
-export { savedLoginToken } from './accounts/saved-login-token.ts';
-export { approvedCli } from './approvals/approved-cli.ts';
-export { approvedLocalCli } from './approvals/approved-local-cli.ts';
-export { createdKey } from './approvals/created-key.ts';
-export { signedInAccount } from './approvals/signed-in-account.ts';
-export { FORGED_CSRF_TOKEN } from './browser/constants.ts';
-export { sentPage } from './browser/sent-page.ts';
-export { signedInBrowser } from './browser/signed-in-browser.ts';
-export { submitBootstrap } from './browser/local-auth/submit-bootstrap.ts';
-export type { Page } from './browser/types.ts';
-export { check } from './check.ts';
-export { cliRefusal } from './cli/cli-refusal.ts';
-export { cliResult } from './cli/cli-result.ts';
-export { finishedCli } from './cli/finished-cli.ts';
-export { refusedCli } from './cli/refused-cli.ts';
+export { formFields } from './auth/browser.ts';
+export { createAccount } from './auth/create-account.ts';
+export { approveAndClaimKey, pollApproval, startApproval } from './auth/device-approval.ts';
+export type { Account, BrowserPage } from './auth/types.ts';
+export {
+  nativeChatText,
+  readNativeChat,
+  readNativeChunks,
+  readNativeConversation,
+  replayNativeChat,
+  startNativeChat,
+} from './chat/native-chat.ts';
 export { runCli } from './cli/run-cli.ts';
+export { runCliFailure } from './cli/run-cli-failure.ts';
 export { startCli } from './cli/start-cli.ts';
-export { BrowserStep, CLI_BINARY, FileStep, RefusalCode } from './constants.ts';
-export { FileStepFailed } from './errors.ts';
-export type { ScenariosFailed } from './errors.ts';
-export { freshFolder } from './fresh-folder.ts';
-export { roundtripWorkspace } from './sandboxes/roundtrip-workspace.ts';
-export { commandGate } from './mechs/command-gate.ts';
-export { LOG_START, ScriptedTool, TEXT_BYTES } from './mechs/constants.ts';
-export { followEvents } from './mechs/events/follow-events.ts';
-export type { DroneEndEvent, EventFollower, TurnEndEvent } from './mechs/events/types.ts';
-export { heldMech } from './mechs/held-mech.ts';
-export { signedInMech } from './mechs/signed-in-mech.ts';
-export { talkingMech } from './mechs/talking-mech.ts';
-export { toolCallLine } from './mechs/tool-call-line.ts';
-export { verifyRequestContinuations } from './requests/verify-request-continuations.ts';
-export { turnOutcome } from './mechs/turn-outcome.ts';
-export type { CommandGate, MechTurn, TalkingMech } from './mechs/types.ts';
-export { settleScenarios } from './outcomes/settle-scenarios.ts';
-export { smokeStatus } from './outcomes/smoke-status.ts';
-export { SignedIn } from './schemas.ts';
-export { filesBelow } from './sentinels/files-below.ts';
-export { readPrivateFile } from './sentinels/read-private-file.ts';
-export { tokenLeaks } from './sentinels/token-leaks.ts';
-export type {
-  Account,
-  CliRefusal,
-  CliRun,
-  CreatedKey,
-  PrivateToken,
-  ScenarioFailure,
-  ScenarioInput,
-  SearchedText,
-} from './types.ts';
-export { awaitLogged } from './worker-log/await-logged.ts';
-export { workerLines } from './worker-log/worker-lines.ts';
-export { verifyWorkspaceMemberAccess } from './workspaces/verify-workspace-member-access.ts';
-export { bootstrapSharedWorkspace } from './workspaces/bootstrap-shared-workspace.ts';
-export { pauseQueuedWorkspace } from './workspaces/pause-queued-workspace.ts';
-export { queueWorkspaceTurns } from './workspaces/queue-workspace-turns.ts';
-export { verifyWorkspacePolicyBudget } from './workspaces/verify-workspace-policy-budget.ts';
-export { verifyWorkspacePolicySandboxes } from './workspaces/verify-workspace-policy-sandboxes.ts';
-export { registerWorkspaceMember } from './workspaces/register-workspace-member.ts';
-export { refuseWorkspacePrivileges } from './workspaces/refuse-workspace-privileges.ts';
-export { transferWorkspaceOwnership } from './workspaces/transfer-workspace-ownership.ts';
-
-export { commandReply } from './mechs/command-reply.ts';
+export { readBashResult } from './compute/read-bash-result.ts';
+export { readSandboxMachines } from './compute/read-sandbox-machines.ts';
+export { runBash } from './compute/run-bash.ts';
+export { setMachineLimit } from './compute/set-machine-limit.ts';
+export { deleteSandbox } from './compute/delete-sandbox.ts';
+export { waitForBashCompletion } from './compute/wait-for-bash-completion.ts';
+export { waitForSandboxFile } from './compute/wait-for-sandbox-file.ts';
+export { requireFixtures } from './fixtures.ts';
+export { createMech, mechPath, readTrace, readTurns, sendInbox, sendInboxAndWait, waitForTurn } from './mechs.ts';
+export { configureNexusRequests } from './nexus/configure-requests.ts';
+export { createNexusOutcome, deliverNexusOutcome } from './nexus/request-outcome.ts';
+export { connectSlack } from './slack/connect-slack.ts';
+export { postSlackMessage } from './slack/post-slack-message.ts';
+export type { Scenario, ScenarioInput } from './types.ts';
+export { waitFor } from './wait-for.ts';

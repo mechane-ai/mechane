@@ -1,18 +1,15 @@
 # @mechane/store
 
-The SQL kernel every object's database shares: the migration ledger, its transactions, row decoding and the pages of a
-list that grows.
+The sandbox's SQLite kernel: migrations, synchronous transactions, and row decoding.
 
-Layer 2 · worker · plain · consumers: every object store and object, `@mechane/harness` and `@mechane/harness-tools`
+Layer 2 · worker · plain · consumer: `@mechane/sandbox-store`
 
 ## Use
 
 - `openDatabase` opens an object's database with every migration its ledger lacks applied in one transaction. Its
   `atomic` runs one decision and the writes it makes as one transaction.
-- `decodeRows`, `decodeOne`, `decodeFirst` and `decodeNonEmptyRows` are the only ways a store decodes a statement's
-  rows.
-- `readPage` reads one page of a list that grows, after the record a reader has last, and says whether more follow.
-- `rowCount` reads a `COUNT(*) AS count` statement, and `schemaRevision` the count of applied migrations.
+- `decodeRows`, `decodeOne`, and `decodeFirst` decode statement results in the owning sandbox store.
+- The database handle reports the applied migration count through `schemaRevision`.
 
 ## Never
 

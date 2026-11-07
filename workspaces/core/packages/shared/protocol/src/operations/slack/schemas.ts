@@ -12,6 +12,11 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 
+/** A binding declares its audience kind before it can admit signed Slack events. */
+export const SlackChannelKind = { Channel: 'channel', DirectMessage: 'im', GroupDirectMessage: 'mpim' } as const;
+
+export type SlackChannelKind = (typeof SlackChannelKind)[keyof typeof SlackChannelKind];
+
 /** One fixed Slack audience and agent, with independent listening and reply controls. */
 export const SlackBinding = wireStruct({
   fields: {
@@ -19,6 +24,7 @@ export const SlackBinding = wireStruct({
     connectionId: SlackConnectionId,
     teamId: SlackTeamId,
     channelId: SlackChannelId,
+    channelKind: Schema.Enum(SlackChannelKind),
     mechId: MechId,
     isListening: Schema.Boolean,
     isReplyEnabled: Schema.Boolean,
@@ -43,7 +49,7 @@ export const SlackBindingResult = Schema.TaggedUnion({
 export type SlackBindingResult = typeof SlackBindingResult.Type;
 
 /** Receipt fields shared by the public read model and durable outbox rows. */
-export const SLACK_DELIVERY_FIELDS = {
+const SLACK_DELIVERY_FIELDS = {
   id: SlackDeliveryId,
   bindingId: SlackBindingId,
   /** Absent until a binding notification freezes its audience. */

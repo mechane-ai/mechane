@@ -1,32 +1,21 @@
 # @mechane/testing
 
-The smoke's helpers: fresh accounts, device approvals through a person's browser, runs of the built CLI, mechs that talk
-to the scripted upstream, secret scans and the smoke's outcome.
+Smoke helpers drive the compiled CLI, browser authentication, and public runtime endpoints. They use the shared protocol
+decoders and the AI SDK's native UI stream parser instead of reimplementing either wire format.
 
-Layer 5 · node lane · effect dialect · consumers: smoke
+Layer 5 · node lane · plain dialect · consumers: smoke
 
 ## Public surface
 
-`src/index.ts` names every helper a scenario calls, the failures a scenario stops with (`ScenarioFailure`), and the
-closed sets a scenario's own failure names: `FileStep` and `BrowserStep`.
+`src/index.ts` exports the scenario types and helper families:
 
-## Layout
+- `auth` and `cli` create real device-authorized accounts, exercise browser forms, and run the compiled CLI.
+- `chat` sends native UI messages and reads their streams and canonical conversation records.
+- `mechs.ts` creates mechs, sends inputs, and reads terminal runs through public APIs.
+- `compute` reads public tool results and observes synthetic sandbox effect gates.
+- `nexus` and `slack` configure integrations through public APIs and sign external-provider events.
+- `wait-for.ts` polls an observable state with a deadline. Provider and filesystem gates establish execution order.
 
-One folder per helper family, one helper per file:
-
-- `src/accounts/`: a fresh account, and the token of its saved login.
-- `src/approvals/`: a CLI run through a device approval, a signed-in account and a created key.
-- `src/browser/`: a person's browser signed in at the local GitHub, and a client without a session.
-- `src/cli/`: runs of the built CLI, to their exit or while they stream.
-- `src/mechs/`: talking mechs, their turns and commands, and a gate a command waits at.
-- `src/mechs/events/`: a follower of a mech's events and its waits.
-- `src/sentinels/`: private files, and the texts a secret must not appear in.
-- `src/worker-log/`: the Worker's lines of the stack's log.
-- `src/outcomes/`: the smoke's one message table, and the status it ends with.
-- `src/check.ts`: a named check, which writes `ok` or `not ok`.
-- `src/fresh-folder.ts`: a fresh folder in the stack's state folder, which a failed run keeps.
-
-## Never
-
-- Never mock Mechane's code: every helper drives the built CLI, the stack's Worker or its local services.
-- Never write a secret into a failure: a scan names the text that holds one, never the secret.
+The stack belongs to the caller. Helpers neither restart it implicitly nor start competing stacks. They do not import
+runtime stores, invoke private implementation functions, or replace Mechane dependencies. Temporary files remain in the
+stack's private state directory, and credential checks identify a leaking surface without printing its secret.

@@ -1,0 +1,22 @@
+# SC-10: native request paths retain named builders; cohesive data keys and SDK slugs may be local values.
+id: native-inline-request-path
+language: TypeScript
+severity: error
+message: 'Build the path in one named builder that takes its parts as fields, such as `guestExecutionPath({ machineId, executionId })` (SC-10)'
+files:
+  ['packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**', 'packages/worker/sandbox-service/src/**']
+ignores: ['**/node_modules/**', '**/*.d.ts']
+utils:
+  path-like:
+    all:
+      - kind: template_string
+      - has: { kind: template_substitution }
+      - regex: '^`(/|https?://|\$\{[^}]*(Path|path|Url|url|Origin|origin|Folder|folder|Directory|directory|Endpoint|endpoint|Base|base)[^}]*\}/)|\?[a-z_]+=|&[a-z_]+='
+      - not: { regex: '\s' }
+rule:
+  any:
+    - all:
+        - matches: path-like
+        - not: { matches: path-builder-return }
+    # `+` never forms such a string, not even in a builder
+    - matches: path-concatenation

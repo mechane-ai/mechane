@@ -2,25 +2,17 @@ import { decodeFile, readText } from '@mechane/checks-kernel';
 import type { InputUnreadable } from '@mechane/checks-kernel';
 import { sha256Hex } from '@mechane/program';
 import type { Lock } from '@mechane/program';
-import { DurableObjectClass } from '@mechane/protocol';
 import { Effect, Record, Schema } from 'effect';
 import { storeHashes } from './store-hashes.ts';
 
-/**
- * The migrations file of each Durable Object class's store, which lists its schema steps as `MIGRATIONS`. The migration
- * lock keys a store's steps by its class, so a move of the file keeps its entries.
- */
+/** Product migrations are separate from the Workflow SDK's own database schema. */
 const STORE_MIGRATIONS = {
-  [DurableObjectClass.Directory]: 'packages/worker/directory-store/src/migrations.ts',
-  [DurableObjectClass.Workspace]: 'packages/worker/workspace-store/src/migrations.ts',
-  [DurableObjectClass.Mech]: 'packages/worker/mech-store/src/migrations.ts',
-  [DurableObjectClass.Sandbox]: 'packages/worker/sandbox-store/src/migrations.ts',
-  [DurableObjectClass.Limiter]: 'packages/worker/limiter-store/src/migrations.ts',
-  [DurableObjectClass.KeyCache]: 'packages/worker/key-cache/src/store/migrations.ts',
-} as const satisfies Readonly<Record<DurableObjectClass, string>>;
+  Runtime: { path: 'packages/node/runtime/src/store/schema.ts', declaration: 'DOMAIN_MIGRATIONS' },
+  SandboxObject: { path: 'packages/worker/sandbox-store/src/migrations.ts', declaration: 'MIGRATIONS' },
+} as const;
 
 /** The Wrangler configuration whose `migrations` add and rename the Durable Object classes. */
-const WRANGLER_CONFIGURATION = 'packages/worker/app/wrangler.jsonc';
+const WRANGLER_CONFIGURATION = 'packages/worker/sandbox-service/wrangler.jsonc';
 
 /** The migration lock's key for the Wrangler migrations, each under its position, its tag and its entry's hash. */
 const WRANGLER_KEY = 'wrangler';
@@ -38,7 +30,7 @@ const WranglerMigrations = Schema.Struct({ migrations: Schema.Array(WranglerMigr
 /** A store's class, and the entry of each of its schema steps. */
 type StoreEntry = readonly [string, ReadonlyArray<string>];
 
-type StoreEntryInput = { readonly objectClass: DurableObjectClass; readonly path: string };
+type StoreEntryInput = { readonly store: string; readonly path: string; readonly declaration: string };
 
 /**
  * Each schema step that will run in production, as the source declares it now. A store's `MIGRATIONS` entry stands
@@ -48,7 +40,7 @@ type StoreEntryInput = { readonly objectClass: DurableObjectClass; readonly path
 export const migrationHashes = Effect.fn('migrationHashes')(function* (): Effect.fn.Return<Lock, InputUnreadable> {
   const stores = yield* Effect.forEach(
     Record.toEntries(STORE_MIGRATIONS),
-    ([objectClass, path]) => storeEntry({ objectClass, path }),
+    ([store, { path, declaration }]) => storeEntry({ store, path, declaration }),
     { concurrency: 1 },
   );
 
@@ -61,12 +53,13 @@ export const migrationHashes = Effect.fn('migrationHashes')(function* (): Effect
   return { ...Record.fromEntries(stores), [WRANGLER_KEY]: migrations.map(tagEntry) };
 });
 
-/** A store's class and the hashes of its steps. */
+/** Each store's declared migration steps keep their own lock namespace. */
 const storeEntry = Effect.fn('storeEntry')(function* ({
-  objectClass,
+  store,
   path,
+  declaration,
 }: StoreEntryInput): Effect.fn.Return<StoreEntry, InputUnreadable> {
   const text = yield* readText({ path });
 
-  return [objectClass, storeHashes({ path, text })];
+  return [store, storeHashes({ path, text, declaration })];
 });

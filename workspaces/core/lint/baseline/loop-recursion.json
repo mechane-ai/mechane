@@ -6,6 +6,5 @@
   "packages/node/modules/src/statements/export-origin.ts": 1,
   "packages/node/modules/src/units/attached-start.ts": 1,
   "packages/node/rename/src/binding/type-declaration.ts": 1,
-  "packages/node/rules/src/configurations/configuration-text.ts": 1,
-  "packages/node/testing/src/mechs/events/await-event.ts": 1
+  "packages/node/rules/src/configurations/configuration-text.ts": 1
 }

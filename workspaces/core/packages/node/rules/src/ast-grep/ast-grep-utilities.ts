@@ -11,7 +11,7 @@ type AstGrepUtilitiesInput = { readonly wordLists: WordLists };
  * with `matches`. Each list is a regular expression in every case style a name can use.
  */
 export function astGrepUtilities({ wordLists }: AstGrepUtilitiesInput): ReadonlyArray<GeneratedFile> {
-  const { predicatePrefixes, optionPrefixes, nativeAttributes, keyboardModifiers } =
+  const { predicatePrefixes, optionPrefixes, nativeAttributes, keyboardModifiers, externalProperties } =
     CONTRACTS['code-boolean-names'].values;
 
   const prefixes = wordVariants({ words: [...predicatePrefixes, ...optionPrefixes] });
@@ -22,10 +22,14 @@ export function astGrepUtilities({ wordLists }: AstGrepUtilitiesInput): Readonly
     'boolean-prefix': [`^#?(${prefixes.plain})([A-Z_]|$)`, `^(${prefixes.upper})_`],
     'native-boolean-name': [`^['"]?(${nativeAttributes.join('|')})['"]?$`],
     'keyboard-modifier-name': [`^(${keyboardModifiers.join('|')})$`],
+    'external-boolean-property': [`^(${externalProperties.join('|')})$`],
   };
 
   const alternatives = {
     ...booleans,
+    'native-denied-name': [
+      `^(${CONTRACTS['code-module-structure-and-control-flow'].values.deniedIdentifiers.join('|')})$`,
+    ],
     'measure-word': [
       `^#?(${measures.plain})$`,
       `[a-z0-9](${measures.capital})$`,

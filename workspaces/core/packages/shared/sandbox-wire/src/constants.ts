@@ -13,7 +13,6 @@ export const GuestSegment = {
   Health: 'health',
   Executions: 'executions',
   Workspace: 'workspace',
-  Source: 'source',
 } as const;
 
 /** The independent operations of the portable archive and restoration protocol. */
@@ -43,17 +42,11 @@ export const GUEST_VARIABLES = {
  */
 export const EXECUTION_VARIABLES = { LANG: 'C.UTF-8', GIT_TERMINAL_PROMPT: '0', GIT_CONFIG_NOSYSTEM: '1' } as const;
 
-/** What an execution's id starts with, before the number of the pi tool task it derives from. */
-export const EXECUTION_ID_PREFIX = 'task-';
-
 /**
  * The most bash text one execution runs, in UTF-8 bytes: half the 128 KiB the kernel takes in one argument. Bash
  * receives the text as one argument, so a text this schema admits always starts.
  */
 export const EXECUTION_MAX_BYTES = 64 * BYTES_PER_KIBIBYTE;
-
-/** How long an execution may run when its caller names no timeout. */
-export const DEFAULT_EXECUTION_TIMEOUT = Duration.minutes(2);
 
 /** The longest an execution may ask to run. */
 export const EXECUTION_TIMEOUT_MAX = Duration.minutes(10);
@@ -61,7 +54,7 @@ export const EXECUTION_TIMEOUT_MAX = Duration.minutes(10);
 /** The longest one request waits for its execution to settle before it answers that it still runs. */
 export const EXECUTION_WAIT_MAX = Duration.seconds(20);
 
-/** The tail of an execution's combined output a receipt keeps: pi's own bound on a tool's output, 50 KiB. */
+/** Bounds retained command output independently of provider transport or workflow history. */
 export const OUTPUT_TAIL_BYTES = 50 * BYTES_PER_KIBIBYTE;
 
 /** Where an execution is, as its receipt reports it. */

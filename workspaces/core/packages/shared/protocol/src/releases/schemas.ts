@@ -3,18 +3,13 @@ import { Record, Schema } from 'effect';
 import { Revision } from '../schemas.ts';
 import { CliTarget, RELEASE_PATTERN, ReleaseKey } from './constants.ts';
 
-/** A release of Mechane, which the Worker reports and each CLI binary is stamped with. */
+/** A release of Mechane, which the server reports and each CLI binary is stamped with. */
 export const Release = Schema.String.check(Schema.isPattern(RELEASE_PATTERN));
 
 export type Release = typeof Release.Type;
 
 /** A target as a key and a stamp write it; a template literal takes literals, not an enum. */
 const Target = Schema.Literals(Record.values(CliTarget));
-
-/** The key of the latest release's manifest, which each release replaces. */
-export const LatestKey = Schema.Literal(ReleaseKey.Latest);
-
-export type LatestKey = typeof LatestKey.Type;
 
 /** The key of a release's binary for one target, which never changes once published. */
 export const BinaryKey = Schema.TemplateLiteral([ReleaseKey.Folder, Release, ReleaseKey.Binary, Target]);

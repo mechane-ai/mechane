@@ -1,5 +1,5 @@
 import { HttpMethod, RecordName, wireStruct, WorkspaceId } from '@mechane/records';
-import { ObjectUnavailable } from '../../errors/errors.ts';
+import { ServiceUnavailable } from '../../errors/errors.ts';
 import { InstallationAdministratorRequired, WorkspaceCreationConflict } from '../../errors/workspace.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -18,5 +18,5 @@ export const createWorkspace = {
   query: NoFields,
   body: WorkspaceCreation,
   output: Workspace,
-  errors: [ObjectUnavailable, InstallationAdministratorRequired, WorkspaceCreationConflict],
+  errors: [ServiceUnavailable, InstallationAdministratorRequired, WorkspaceCreationConflict],
 } as const satisfies Operation;

@@ -1,6 +1,6 @@
 /**
- * The doc comment rules, by the names their sites count under. Every export has a doc, and every field that may be
- * absent says what absence means. Every doc stays short and says more than its name.
+ * Public interfaces document caller guarantees and absence semantics. Every doc stays short and says more than its
+ * declaration's name.
  */
 export const DocRule = { Export: 'export-doc', Absence: 'absence-doc', Short: 'short-doc' } as const;
 

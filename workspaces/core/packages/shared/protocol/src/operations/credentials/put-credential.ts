@@ -2,8 +2,8 @@ import { HttpMethod, wireStruct } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 import { CredentialAlreadyExists } from '../../errors/credential.errors.ts';
 import {
-  ObjectUnavailable,
-  WorkerMisconfigured,
+  ServerMisconfigured,
+  ServiceUnavailable,
   WorkspaceNotFound,
   WorkspaceOwnerRequired,
 } from '../../errors/errors.ts';
@@ -31,5 +31,5 @@ export const putCredential = {
   query: NoFields,
   body: CredentialWrite,
   output: CredentialMetadata,
-  errors: [ObjectUnavailable, WorkerMisconfigured, WorkspaceNotFound, WorkspaceOwnerRequired, CredentialAlreadyExists],
+  errors: [ServiceUnavailable, ServerMisconfigured, WorkspaceNotFound, WorkspaceOwnerRequired, CredentialAlreadyExists],
 } as const satisfies Operation;

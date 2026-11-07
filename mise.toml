@@ -3,6 +3,7 @@ min_version = "2026.10.17"
 
 [settings]
 locked = true
+activate_aggressive = true
 
 [tools]
 node = "24.22.1"
@@ -12,7 +13,6 @@ go = "1.27.3"
 opentofu = "1.13.0"
 "github:macromackie/tenet" = "0.13.0"
 "github:macromackie/ev-grep" = "0.7.0"
-"github:denoland/celld" = "0.6.3"
 "aqua:koalaman/shellcheck" = "0.11.0"
 
 [tasks.setup]

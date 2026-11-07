@@ -1,41 +1,13 @@
-import {
-  LOOPBACK_HOSTS,
-  LoopbackOrigin,
-  OriginProtocol,
-  SandboxEgress,
-  SandboxProvider,
-  SecureOrigin,
-  WORKER_VARIABLES,
-} from '@mechane/deployment';
+import { LoopbackOrigin, SANDBOX_VARIABLES, SandboxProvider, SecureOrigin } from '@mechane/deployment';
 import { renamedWireStruct } from '@mechane/records';
-import { Effect, Schema } from 'effect';
+import { Schema } from 'effect';
 
-/**
- * The variables a sandbox's object reads: its provider, and for containers how their machines reach the internet. The
- * host provider, which only a local stack stages, reads the launcher on this machine and its key, which stays
- * redacted.
- */
+/** Containers use the authenticated egress gateway; local guests use a loopback launcher. */
 export const SandboxVariables = Schema.Union([
   renamedWireStruct({
-    fields: {
-      provider: Schema.Literal(SandboxProvider.Container),
-      /** Absent selects the Cloudflare gateway; local staging explicitly chooses the celld fence. */
-      egress: Schema.Enum(SandboxEgress).pipe(Schema.withDecodingDefaultKey(Effect.succeed(SandboxEgress.Gateway))),
-      origin: SecureOrigin,
-    },
-    renames: {
-      provider: WORKER_VARIABLES.sandboxProvider,
-      egress: WORKER_VARIABLES.sandboxEgress,
-      origin: WORKER_VARIABLES.origin,
-    },
-  }).check(
-    Schema.makeFilter(
-      ({ egress, origin }) =>
-        egress !== SandboxEgress.Fence ||
-        (origin.protocol === OriginProtocol.Loopback && LOOPBACK_HOSTS.has(origin.hostname)),
-      { expected: 'the local celld fence only on a loopback installation' },
-    ),
-  ),
+    fields: { provider: Schema.Literal(SandboxProvider.Container), origin: SecureOrigin },
+    renames: { provider: SANDBOX_VARIABLES.sandboxProvider, origin: SANDBOX_VARIABLES.origin },
+  }),
   renamedWireStruct({
     fields: {
       provider: Schema.Literal(SandboxProvider.Host),
@@ -43,9 +15,9 @@ export const SandboxVariables = Schema.Union([
       launcherKey: Schema.RedactedFromValue(Schema.NonEmptyString),
     },
     renames: {
-      provider: WORKER_VARIABLES.sandboxProvider,
-      launcherOrigin: WORKER_VARIABLES.hostLauncherOrigin,
-      launcherKey: WORKER_VARIABLES.hostLauncherKey,
+      provider: SANDBOX_VARIABLES.sandboxProvider,
+      launcherOrigin: SANDBOX_VARIABLES.hostLauncherOrigin,
+      launcherKey: SANDBOX_VARIABLES.hostLauncherKey,
     },
   }),
 ]);

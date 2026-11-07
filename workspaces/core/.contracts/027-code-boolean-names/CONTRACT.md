@@ -75,7 +75,7 @@ Predicate-return naming remains a review check: these rules do not infer functio
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`, `show`, `hide`; `nativeAttributes` `autoFocus`, `checked`, `defaultChecked`, `defaultOpen`, `disabled`, `hidden`, `inert`, `indeterminate`, `modal`, `multiple`, `open`, `readOnly`, `required`; `keyboardModifiers` `mod`, `ctrl`, `alt`, `shift`, `meta`.
+Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`, `show`, `hide`; `nativeAttributes` `autoFocus`, `checked`, `defaultChecked`, `defaultOpen`, `disabled`, `hidden`, `inert`, `indeterminate`, `modal`, `multiple`, `open`, `readOnly`, `required`; `keyboardModifiers` `mod`, `ctrl`, `alt`, `shift`, `meta`; `externalProperties` `self_grading`.
 - ast-grep `boolean-names` (NM-07): enforced
 - ast-grep `boolean-names-tsx` (NM-07): enforced
 

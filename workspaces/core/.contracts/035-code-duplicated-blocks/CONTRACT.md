@@ -40,6 +40,6 @@ The budget is 0, so `rules:check` fails on every start marker, a stale one inclu
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `cloneTokens` 50; `cloneLines` 6; `jscpdSuppressions` 0; `jscpd` `path` [`packages`, `lint`], `format` [`typescript`, `javascript`, `yaml`, `json`], `ignore` [`**/node_modules/**`, `**/dist/**`, `**/reference.json`, `lint/baseline/**`, `lint/ast-grep/rules/boolean-names-tsx.yml`, `lint/ast-grep/rules/ui-control-geometry-typescript.yml`, `lint/ast-grep/rules/ui-visual-token-values.yml`], `minTokens` 50, `minLines` 6, `maxLines` 1000000, `maxSize` 100mb, `threshold` 0, `exitCode` 1, `reporters` [`console`], `gitignore` true.
+Values: `cloneTokens` 50; `cloneLines` 6; `jscpdSuppressions` 0; `jscpd` `path` [`packages`, `lint`], `format` [`typescript`, `javascript`, `yaml`, `json`], `ignore` [`**/node_modules/**`, `**/dist/**`, `packages/node/server/.output/**`, `**/.swc/**`, `packages/node/runtime/.well-known/workflow/**`, `**/reference.json`, `lint/baseline/**`, `lint/ast-grep/rules/boolean-names-tsx.yml`, `lint/ast-grep/rules/ui-control-geometry-typescript.yml`, `lint/ast-grep/rules/ui-visual-token-values.yml`], `minTokens` 50, `minLines` 6, `maxLines` 1000000, `maxSize` 100mb, `threshold` 0, `exitCode` 1, `reporters` [`console`], `gitignore` true.
 
 <!-- End of the generated block. -->

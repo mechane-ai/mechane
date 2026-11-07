@@ -20,7 +20,7 @@ export const CredentialPath = wireStruct({
 export type CredentialPath = typeof CredentialPath.Type;
 
 /** Stored metadata accepts historical reference names independently of current write limits. */
-export const CREDENTIAL_METADATA_FIELDS = {
+const CREDENTIAL_METADATA_FIELDS = {
   secretReference: RecordText,
   keyVersion: Schema.NonEmptyString,
   createdAt: WireTime,

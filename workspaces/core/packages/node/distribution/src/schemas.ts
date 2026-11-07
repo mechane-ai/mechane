@@ -1,17 +1,9 @@
 import { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
-import { Release } from '@mechane/protocol';
+import { Release, RELEASE_REPOSITORY } from '@mechane/protocol';
 import { GitCommit, SHA256_PATTERN } from '@mechane/records';
 import { WranglerMigrations } from '@mechane/wrangler';
 import { Schema } from 'effect';
-import {
-  ASSET_PATTERN,
-  CONSOLE_FILENAME,
-  DIGEST_PATTERN,
-  DURABLE_EXPORT,
-  FORMAT_VERSION,
-  PUBLIC_REPOSITORY,
-  WORKER_FILENAME,
-} from './constants.ts';
+import { ASSET_PATTERN, DIGEST_PATTERN, DURABLE_EXPORT, FORMAT_VERSION, WORKER_FILENAME } from './constants.ts';
 
 const Sha256 = Schema.String.check(Schema.isPattern(SHA256_PATTERN));
 const ByteCount = Schema.Int.check(Schema.isGreaterThan(0));
@@ -36,9 +28,8 @@ export const InstallationManifest = Schema.Struct({
   format_version: Schema.Literal(FORMAT_VERSION),
   is_preview: Schema.Boolean,
   ...ReleaseDescriptor.fields,
-  repository: Schema.Literal(PUBLIC_REPOSITORY),
+  repository: Schema.Literal(RELEASE_REPOSITORY),
   module_files: Schema.Array(Artifact),
-  console: Schema.Struct({ path: Schema.Literal(CONSOLE_FILENAME), ...ArtifactDigest.fields }),
   worker: Schema.Struct({
     path: Schema.Literal(WORKER_FILENAME),
     ...ArtifactDigest.fields,
@@ -64,7 +55,7 @@ export type InstallationManifest = typeof InstallationManifest.Type;
 export const ArtifactReceipt = Schema.Struct({
   format_version: Schema.Literal(FORMAT_VERSION),
   version: Release,
-  repository: Schema.Literal(PUBLIC_REPOSITORY),
+  repository: Schema.Literal(RELEASE_REPOSITORY),
   public_commit: GitCommit,
   assets: Schema.Array(Artifact),
 });

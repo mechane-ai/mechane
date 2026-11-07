@@ -1,0 +1,27 @@
+id: native-owned-name
+language: TypeScript
+severity: error
+message: 'Name the owned binding for its role, such as `message` instead of `data`, while keeping SDK property names (NM-06)'
+files:
+  ['packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**', 'packages/worker/sandbox-service/src/**']
+ignores: ['**/node_modules/**']
+rule:
+  matches: native-denied-name
+  any:
+    - kind: identifier
+      inside:
+        kind: variable_declarator
+        field: name
+    - kind: identifier
+      inside:
+        kind: function_declaration
+        field: name
+    - kind: identifier
+      inside:
+        kind: required_parameter
+        field: pattern
+    - kind: identifier
+      inside:
+        kind: optional_parameter
+        field: pattern
+    - kind: shorthand_property_identifier_pattern

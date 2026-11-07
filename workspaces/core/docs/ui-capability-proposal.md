@@ -115,8 +115,8 @@ Pierre integration has specific boundaries:
 - A small internal adapter maps Mechane CSS variables into Pierre's theme and Shadow DOM styling interface.
 - Source appears as escaped text before highlighting loads. Unsupported languages and failed highlighting preserve that
   readable text. No external grammar service or CDN is required.
-- Renderer modules include their WebAssembly assets in the consuming build. SSR emits plain source. Cloudflare and celld
-  serve the same packaged assets; applications do not configure a worker pool.
+- Renderer modules include their WebAssembly assets in the consuming build. SSR emits plain source. Hosted and local
+  services serve the same packaged assets; applications do not configure a worker pool.
 - Streaming updates use incremental tokenization where supported. Changes to supplied source, file identity or an
   explicit revision reset renderer state. Large outputs use bounded or virtualized presentation.
 - Trees has a persistent model: later path, status and selection changes must reach that model through its update
@@ -174,8 +174,8 @@ when earlier history arrives or a response grows. Message IDs remain stable. Upd
 steal focus. Prompt submission respects composition input, supports multiline entry, and keeps the draft when submission
 fails. Stop and retry are supplied commands with explicit pending state.
 
-The UI package does not import AI SDK, TanStack AI, Pi Durable, Mechane client records, or a transport. A consumer can
-map any of those onto the public presentation inputs. There is no second generic agent protocol in the UI package.
+The UI package does not own the AI SDK runtime, Mechane client records, or a transport. Application integrations map
+native SDK messages onto its public presentation inputs. There is no second generic agent protocol in the UI package.
 Examples may show integrations as application-owned code.
 
 Legacy AI Elements also included audio, voice, workflow canvas, package/environment cards, artifact panels and web
@@ -305,7 +305,7 @@ pointer/keyboard/touch. A small set of packaged screens can exercise these toget
 every component/variant combination or assertions on generated CSS classes.
 
 The published archive needs independent React-consumer checks for ESM, declarations, CSS, theme inheritance, SSR, lazy
-worker/Wasm assets and dependency isolation. The Mechane integration additionally uses the packaged celld and Cloudflare
+worker/Wasm assets and dependency isolation. The Mechane integration additionally uses the packaged local and hosted
 application. Aggregate charts require correctly defined API data; a chart over a recent event page must not present
 itself as an installation-wide total.
 

@@ -10,7 +10,7 @@ Layer 5 · node lane · effect dialect · consumers: checks
 - `src/`: every owned site of a source, the pins, the orphans and the span names.
 - `src/documents/`: the documents' word budgets, their prose limits and the workflows' pinned actions.
 - `src/source/`: each source's comment width, logical operators and the shared patterns.
-- `src/doc-comments/`: each export's doc comment, and the comments too short to teach.
+- `src/doc-comments/`: supported public interfaces and the quality of every authored doc comment.
 - `src/vocabulary/`: the glossary's banned phrases and the history words, in names, comments and documents.
 
 ## Rules

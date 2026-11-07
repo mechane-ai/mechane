@@ -10,10 +10,10 @@ const STORE_SEGMENT = /\/(?:[\w-]+-)?store\//;
 const STORED_NAME_RULE = 'lint/ast-grep/rules/stored-name-outside-store.yml';
 
 /** A table a store creates, in a migration or in the ledger every store shares. */
-const CREATED_TABLE = /CREATE TABLE (?:IF NOT EXISTS )?(\w+)/g;
+const CREATED_TABLE = /CREATE TABLE (?:IF NOT EXISTS )?(?:mechane\.)?(\w+)/g;
 
 /** The table names of the stored-name rule's SQL pattern, the alternation inside its second group. */
-const RULE_TABLES = /\\s\+\(([\w|]+)\)\\b/;
+const RULE_TABLES = /\(([\w|]+)\)\\b/;
 
 /** The group of `RULE_TABLES` that holds the alternation of table names. */
 const TABLES_GROUP = 1;

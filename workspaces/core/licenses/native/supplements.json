@@ -1,0 +1,7 @@
+{
+  "@ai-sdk/provider-utils@5.0.75": "ai-sdk-provider-utils-5.0.75.txt",
+  "drizzle-orm@0.45.2": "drizzle-orm-0.45.2.txt",
+  "mixpart@0.0.6": "mixpart-0.0.6.txt",
+  "@vercel/queue@0.10.0": "vercel-queue-0.10.0.txt",
+  "quickjs-wasi@3.4.0": "quickjs-wasi-3.4.0.txt"
+}

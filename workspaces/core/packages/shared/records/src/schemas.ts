@@ -1,25 +1,5 @@
 import { Duration, Schema, SchemaTransformation } from 'effect';
 import { PRINTABLE_PATTERN, RANDOM_UUID_VERSION, RECORD_TEXT_MAX_CHARS } from './constants.ts';
-import { IdentityProvider } from './identity-provider.constants.ts';
-
-/** The provider's stable subject identifies a browser user; the display name grants no authority. */
-export const BrowserIdentity = Schema.Struct({
-  provider: Schema.Enum(IdentityProvider),
-  subject: Schema.String,
-  name: Schema.String,
-});
-
-export type BrowserIdentity = typeof BrowserIdentity.Type;
-
-/** The configured GitHub OAuth application's public client identifier. */
-export const GitHubClientId = Schema.NonEmptyString.pipe(Schema.brand('GitHubClientId'));
-
-export type GitHubClientId = typeof GitHubClientId.Type;
-
-/** A display name never establishes the principal's identity or authority. */
-export const DirectoryPrincipal = Schema.Struct({ id: Schema.String, name: Schema.String });
-
-export type DirectoryPrincipal = typeof DirectoryPrincipal.Type;
 
 /** The id of a record the deployment keeps, a random UUID. */
 export const RecordId = Schema.String.check(Schema.isUUID());
@@ -36,20 +16,10 @@ export const TurnId = RecordId.pipe(Schema.brand('TurnId'));
 
 export type TurnId = typeof TurnId.Type;
 
-/** The id of a dispatch, one model request of a turn. */
-export const DispatchId = RecordId.pipe(Schema.brand('DispatchId'));
-
-export type DispatchId = typeof DispatchId.Type;
-
 /** The id of a thread a mech opened. */
 export const ThreadId = RecordId.pipe(Schema.brand('ThreadId'));
 
 export type ThreadId = typeof ThreadId.Type;
-
-/** The id of a drone a mech started on one of its threads. */
-export const DroneId = RecordId.pipe(Schema.brand('DroneId'));
-
-export type DroneId = typeof DroneId.Type;
 
 /** A count that is never negative, which each unit brand types by what it counts. */
 const Count = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));

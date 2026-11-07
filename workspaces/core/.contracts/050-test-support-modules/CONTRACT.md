@@ -29,20 +29,18 @@ For each helper a change adds to the test support folder, does it sit in its own
 
 ## Local adaptations
 
-The test support folder is `packages/node/testing/src`, one helper to a file named for its behavior, as this contract now requires.
-Its folders group helpers by what they drive.
-`cli` runs, refuses, starts and follows the built CLI, such as in `run-cli.ts` and `refused-cli.ts`, and `accounts` makes a scenario's account and reads its saved login.
-`approvals` runs a command through its browser approval and signs a fresh account in.
-`browser` signs a browser in at the local GitHub, sends and checks pages as a browser would, and approves by the notice's code.
+`packages/node/testing/src` owns the smoke's reusable client, authentication, native-chat, Slack, Nexus, and compute
+support operations. The smoke imports them through `@mechane/testing`; internal support files import their owning
+modules directly. Helpers call public product endpoints and declared fixture-control interfaces, not private runtime
+implementation.
 
-`worker-log` reads and awaits the Worker's log lines, and `sentinels` reads files and finds leaked tokens.
-`outcomes` writes each failure and maps the scenarios' outcomes to the smoke's status.
-`mechs`, with its `events` folder, creates, holds and drives mechs, their turns and drones, and follows their events.
-`check.ts` is the smoke's output module, and `fresh-folder.ts` makes a fresh folder in the stack's state folder.
-The smoke imports every helper through `@mechane/testing`'s `src/index.ts`, its one entry point, and the package's own files import each other by path (ST-09).
+`packages/node/stack/src` owns process, Postgres, external HTTP fixtures, and local compute fixture lifecycle shared
+by development and smoke. Its host launcher exercises the real guest protocol without claiming an operating-system
+sandbox. Default smoke uses no paid model or cloud account. Fixtures stay outside production artifacts.
 
-A fixture only one scenario uses stays in that scenario's folder: the hands scenario's bare repository in `packages/node/smoke/src/hands`.
-The smoke shares `packages/node/stack/src` with `mise -C workspaces/core run dev` instead of copying it, and jscpd scans both with the rest of `packages`.
+A helper used by one scenario may stay beside that scenario. The cohesion adoption permits related support operations
+in one module when they share one resource or behavior; a separate file for each one-line helper is not required.
+Shared work still has one owner, and jscpd scans the stack, testing, and smoke packages for copied implementations.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

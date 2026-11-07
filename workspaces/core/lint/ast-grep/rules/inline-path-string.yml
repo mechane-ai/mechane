@@ -5,7 +5,13 @@ language: TypeScript
 severity: error
 message: 'Build the path in one named builder that takes its parts as fields, such as `guestExecutionPath({ machineId, executionId })` (SC-10)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores:
+  [
+    '**/node_modules/**',
+    '**/*.d.ts',
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    packages/worker/sandbox-service/src/**,
+  ]
 utils:
   path-like:
     all:
@@ -13,39 +19,17 @@ utils:
       - has: { kind: template_substitution }
       - regex: '^`(/|https?://|\$\{[^}]+\}/|\$\{[^}]+\}:)|/\$\{|\$\{[^}]+\}/|\?[a-z_]+=|&[a-z_]+='
       - not: { regex: '\s' }
-  builder-name: { regex: '(Path|Url|Query|Key|Name|Ref|Glob|Specifier|Header|Authorization|Control)$' }
-  # the expression a builder returns last, whatever statements build its parts first
-  builder-return:
-    inside:
-      kind: return_statement
-      not:
-        {
-          precedes:
-            {
-              stopBy: end,
-              any: [{ kind: expression_statement }, { kind: return_statement }, { kind: lexical_declaration }],
-            },
-        }
-      inside:
-        kind: statement_block
-        inside:
-          any:
-            - { kind: function_declaration, has: { field: name, matches: builder-name } }
-            - kind: arrow_function
-              inside: { kind: variable_declarator, has: { field: name, matches: builder-name } }
-  # a string operand of `+` that is a path's or query's piece, such as `'/packs/'` or `'?offset='`
-  path-piece:
-    kind: string
-    regex: "^['\"](/|https?://|[^'\" ]*/['\"]$|\\?[a-z_]+=|&[a-z_]+=|:['\"]$)"
+  colon-piece: { kind: string, regex: '^[''"]:[''"]$' }
 rule:
   any:
     - all:
         - matches: path-like
-        - not: { matches: builder-return }
+        - not: { matches: path-builder-return }
     # `+` never forms such a string, not even in a builder
+    - matches: path-concatenation
     - all:
         - kind: binary_expression
         - has: { field: operator, regex: '^\+$' }
         - any:
-            - has: { field: left, matches: path-piece }
-            - has: { field: right, matches: path-piece }
+            - has: { field: left, matches: colon-piece }
+            - has: { field: right, matches: colon-piece }

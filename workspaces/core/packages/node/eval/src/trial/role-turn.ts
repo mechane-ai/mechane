@@ -1,4 +1,5 @@
 import { Delivery } from '@mechane/protocol';
+import { InboxItemId, MechId } from '@mechane/records';
 import { Effect, Option } from 'effect';
 import type { Intent } from '../schemas.ts';
 import type { TurnRecord } from '../store/schemas.ts';
@@ -52,8 +53,9 @@ const roleIntent = Effect.fn('roleIntent')(function* ({
   }
 
   const { token, workspaceId } = access;
-  const { id: mechId } = yield* call({ name: 'createMech', input: { ...mech, workspaceId }, credential: token });
-  const record = { mechId, inboxItemId: crypto.randomUUID() };
+  const created = yield* call({ name: 'createMech', input: { ...mech, workspaceId }, credential: token });
+  const mechId = MechId.make(created.id);
+  const record = { mechId, inboxItemId: InboxItemId.make(crypto.randomUUID()) };
 
   yield* intent.create({ record });
 

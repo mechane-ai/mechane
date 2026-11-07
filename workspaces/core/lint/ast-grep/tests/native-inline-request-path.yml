@@ -1,0 +1,9 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: native-inline-request-path
+valid:
+  - 'function guestHealthPath({ machineId }: GuestHealthPathInput): string { return `/machines/${machineId}/health`; }'
+  - 'const repository = `${owner}/${name}`;'
+  - 'const digestInput = `${origin}:device:${token}`;'
+invalid:
+  - 'const path = `/machines/${machineId}/health`;'
+  - 'const url = `${origin}/rpc`;'

@@ -79,6 +79,9 @@ Deviation (§5.2): the lint loads neither file this contract ships under `assets
 The oxlint file needs `eslint-plugin-sonarjs` through `jsPlugins`, which the standard declines, and the ast-grep rules reject SC-01's IIFE.
 This replaces "Where the repository's lint can load a file in this contract's `assets/` folder, load it from the repository's own lint configuration, which may override the file's maximum".
 
+The native SDK role in contract 111 permits optional chaining and nullish defaults for values whose declared type
+includes absence. This replaces the Effect Option-only form in that role; it does not turn failures into defaults.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 Values: `logicalOperators` 2.

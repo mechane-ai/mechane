@@ -54,7 +54,9 @@ For each line a change composes for the output module to write, is every value i
 ## Local adaptations
 
 Program prefixes, each written by its program's output module: `mechane: `, `mechane guest: `, `dev: `, `release: `, `deploy: `, `smoke: ` and `checks: `.
-ast-grep `diagnostic-trailing-period` rejects a period at the end of a `line`, `diagnostic`, `detail`, `issue`, `reason` or `message` value.
+ast-grep `diagnostic-trailing-period` rejects a period in diagnostic-specific fields and in messages at Error or logging
+boundaries. A native SDK `message` field may instead hold model, tool, or user-facing prose; that field name alone does
+not make its contents a diagnostic. The caller's behavior determines whether this contract applies.
 
 The v11 lowercase and interpolated-value quoting additions are outside the current adoption baseline at commit 94f2d0f.
 Their assets stay unloaded until the diagnostic rollout maps the repository's tagged-error fields and failure-line output.

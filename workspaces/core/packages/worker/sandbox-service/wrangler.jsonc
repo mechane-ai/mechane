@@ -1,0 +1,23 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mechane-sandbox",
+  "main": "src/main.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "durable_objects": { "bindings": [{ "name": "SANDBOXES", "class_name": "SandboxObject" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SandboxObject"] }],
+  "r2_buckets": [{ "binding": "WORKSPACE_FILES", "bucket_name": "mechane-local-sandbox-files" }],
+  "containers": [
+    {
+      "class_name": "SandboxObject",
+      "image": "../../node/guest/image/Dockerfile",
+      "instance_type": "standard-1",
+      "max_instances": 4,
+    },
+  ],
+  "vars": {
+    "MECHANE_ORIGIN": "https://mechane.ai",
+    "MECHANE_SANDBOX_PROVIDER": "container",
+    "MECHANE_SANDBOX_HOSTS": "[]",
+  },
+}

@@ -1,5 +1,6 @@
 export { createConsoleData } from './console-data.ts';
 export type { ConsoleData } from './console-data.ts';
+export type { ConversationHistory } from './conversation.ts';
 export { readRequests } from './requests.ts';
 export type { ReadReceipt, ReadRequest } from './requests.ts';
 export type { CanonicalCollectionOptions } from './collections.ts';

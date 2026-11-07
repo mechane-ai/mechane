@@ -5,7 +5,14 @@ severity: error
 message: 'Compose the Effect with `yield*` and run it only at an entry point, such as `const row = yield* readRow(input)` (EF-12)'
 files: ['**/*.ts']
 ignores:
-  ['**/node_modules/**', '**/main.ts', packages/worker/app/src/worker.ts, 'packages/browser/console-data/src/api.ts']
+  [
+    'packages/worker/sandbox-service/src/**',
+    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
+    '**/node_modules/**',
+    '**/main.ts',
+    packages/worker/sandbox-service/src/main.ts,
+    'packages/browser/console-data/src/api.ts',
+  ]
 rule:
   pattern: Effect.$RUN
 constraints:

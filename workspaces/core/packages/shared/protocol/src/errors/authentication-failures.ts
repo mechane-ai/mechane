@@ -10,6 +10,3 @@ export const AUTHENTICATION_FAILURES = [
   IdentityNotAdmitted,
   RequestInvalid,
 ] as const;
-
-/** A failure of admission's key: the request carries none, or one the directory does not accept. */
-export type AuthenticationFailure = (typeof AUTHENTICATION_FAILURES)[number]['Type'];

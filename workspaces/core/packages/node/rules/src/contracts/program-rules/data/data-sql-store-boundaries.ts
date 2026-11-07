@@ -1,4 +1,4 @@
-import { ADOPTED, AST_GREP_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, CRUISER_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /**
@@ -9,27 +9,60 @@ export const dataSqlStoreBoundaries = {
   values: {},
   rules: [
     {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: 'postgres-store-owner',
+      comment: 'Keep PostgreSQL clients in the store owner, such as `runtime/src/store/database.ts`',
+      from: { path: '^packages/', pathNot: '^packages/node/runtime/src/store/' },
+      to: { path: 'node_modules/pg/' },
+      standard: 'DO-06',
+    },
+    {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
+      name: 'postgres-context-private',
+      comment: 'Keep transaction clients private to the store, such as `runInTransaction` for its callers',
+      from: { path: '^packages/', pathNot: '^packages/node/runtime/src/store/' },
+      to: { path: '^packages/node/runtime/src/store/context[.]ts$' },
+      standard: 'DO-06',
+    },
+    {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'sql-client-outside-store',
       standard: 'DO-06',
-      violation: ['ctx.storage.sql.exec(statement);', 'database.prepare(statement);'],
+      violation: [
+        'ctx.storage.sql.exec(statement);',
+        'database.prepare(statement);',
+        'context.client.query(statement);',
+        'pool.query(statement);',
+      ],
       allowed: ['turnStore.insertTurn({ turn });'],
     },
     {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'sql-statement-not-literal',
-      exemptRoles: [FileRole.BrowserCacheLifecycle],
+      exemptRoles: [FileRole.BrowserCacheLifecycle, FileRole.SqlMigration],
       maxSuppressions: 3,
       standard: 'DO-06',
-      violation: ['sql.exec(statement);', "sql.exec('SELECT ' + column);"],
-      allowed: ["sql.exec('SELECT 1');", 'database.prepare(`SELECT 1`);'],
+      violation: [
+        'sql.exec(statement);',
+        "sql.exec('SELECT ' + column);",
+        'context.client.query(statement);',
+        "client.query('SELECT ' + column);",
+      ],
+      allowed: [
+        "sql.exec('SELECT 1');",
+        'database.prepare(`SELECT 1`);',
+        "context.client.query('SELECT id FROM invoices WHERE id=$1', [id]);",
+      ],
     },
     {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'sql-text-outside-store',
+      exemptRoles: [FileRole.SqlMigration],
       standard: 'DO-06',
       violation: ["const statement = 'SELECT 1';"],
       allowed: ['const rows = turnStore.listTurns({ mechId });'],

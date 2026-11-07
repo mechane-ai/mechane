@@ -21,6 +21,12 @@ minimumReleaseAgeExclude:
   - '@tanstack/db-sqlite-persistence-core@1.0.0-rc.1.4'
   - '@tanstack/db@1.0.0-rc.1.4'
   - '@tanstack/react-db@1.0.0-rc.1.4'
+  - '@ai-sdk/gateway@4.0.137'
+  - '@ai-sdk/mcp@2.0.92'
+  - '@ai-sdk/workflow@2.0.96'
+  - ai@7.0.164
+  - hono@4.13.17
+  - '@ai-sdk/react@4.0.168'
 
 # These install scripts place each tool's platform binary; swc's binary arrives as an optional package instead, and
 # pi-ai's Google and protobuf dependencies need no script for the one OpenAI-compatible API the Worker loads.
@@ -30,6 +36,7 @@ allowBuilds:
   '@google/genai': false
   '@journeyapps/wa-sqlite': false
   '@swc/core': false
+  cbor-extract: true
   esbuild: true
   protobufjs: false
   workerd: true

@@ -1,4 +1,4 @@
-import { RecordId, renamedWireStruct, TurnId } from '@mechane/records';
+import { MechId, renamedWireStruct, TurnId } from '@mechane/records';
 import { CommandShape } from '../constants.ts';
 import type { CommandDeclaration } from '../types.ts';
 import { MECH_ARGUMENT } from './constants.ts';
@@ -9,7 +9,7 @@ const TURN_ARGUMENT = { name: 'turn-id', summary: 'the id of the turn, as mechan
 
 /** The input of a command on one turn of a mech. */
 const TurnCommandInput = renamedWireStruct({
-  fields: { mechId: RecordId, turnId: TurnId },
+  fields: { mechId: MechId, turnId: TurnId },
   renames: { mechId: 'mech-id', turnId: 'turn-id' },
 });
 
@@ -24,8 +24,7 @@ export const TURN_COMMANDS = {
     input: TurnCommandInput,
   },
   'turn cancel': {
-    summary:
-      'cancel a running turn and its unfinished command; the turn ends unanswered and saves none of its memory changes',
+    summary: 'cancel a running turn and its unfinished command',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'cancelTurn'],
     flags: {},

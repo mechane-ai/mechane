@@ -6,12 +6,14 @@ message: 'Export the declaration where it is declared, such as `export function 
 files: ['**/*.ts']
 ignores:
   [
+    'packages/node/runtime/src/channels/index.ts',
+    'packages/shared/protocol/src/presentation/index.ts',
     '**/node_modules/**',
     'packages/**/src/index.ts',
     'packages/browser/elements/packages/**/index.ts',
     packages/browser/elements/packages/content/src/link.ts,
     packages/browser/elements/packages/foundations/src/tokens.ts,
-    packages/worker/app/src/worker.ts,
+    packages/worker/sandbox-service/src/main.ts,
   ]
 rule:
   kind: export_statement

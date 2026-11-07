@@ -10,7 +10,7 @@
     "confines": []
   },
   "@mechane/protocol": {
-    "owns": "The operation catalog, every resource's schemas and errors, the error families, the paths and the device page's forms, GitHub's OAuth wire and login names, the workspace lists of the deployment's variables, the release keys, manifest and stamp, and the lines of the Worker's log",
+    "owns": "The operation catalog, public request and response schemas, domain errors, authenticated HTTP paths, release descriptors, and the bounded presentation catalog",
     "layer": 2,
     "lane": "shared",
     "dialect": "data",
@@ -43,15 +43,6 @@
     "criterion": "program",
     "consumers": []
   },
-  "@mechane/app": {
-    "owns": "The Worker entry point, Durable Object exports, build configuration, and local runtime bindings",
-    "layer": 7,
-    "lane": "worker",
-    "dialect": "effect",
-    "kind": "app",
-    "criterion": "program",
-    "consumers": []
-  },
   "@mechane/rules": {
     "owns": "The rule registry: every contract's entry by its name, the file roles, oxlint's settings, and the text of every file the registry generates",
     "layer": 4,
@@ -69,27 +60,13 @@
     ]
   },
   "@mechane/store": {
-    "owns": "The SQL kernel every object's database shares: the migration ledger, its transactions, row decoding and the pages of a list that grows",
+    "owns": "The sandbox SQLite migration and transaction kernel, with typed row decoding",
     "layer": 3,
     "lane": "worker",
     "dialect": "plain",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": [
-      "@mechane/directory-store",
-      "@mechane/workspace-store",
-      "@mechane/mech-store",
-      "@mechane/sandbox-store",
-      "@mechane/key-cache",
-      "@mechane/limiter-store",
-      "@mechane/directory",
-      "@mechane/workspace",
-      "@mechane/mech",
-      "@mechane/sandbox",
-      "@mechane/limiter",
-      "@mechane/harness",
-      "@mechane/harness-tools"
-    ]
+    "consumers": ["@mechane/sandbox-store", "@mechane/sandbox"]
   },
   "@mechane/records": {
     "owns": "The shapes every stored and wire record is built from: record ids and names, the entity id and unit brands, wire structs, bounded text and list queries, the byte units, and the HTTP methods, status codes, header names and media types",
@@ -101,7 +78,7 @@
   },
   "@mechane/deployment": {
     "owns": "The deployment's variable names, secure origins, model offers and rate limits, and their schemas",
-    "layer": 1,
+    "layer": 0,
     "lane": "shared",
     "dialect": "data",
     "kind": "library",
@@ -117,121 +94,11 @@
   },
   "@mechane/sandbox-wire": {
     "owns": "Every shape that crosses into or out of a sandbox: the guest wire, the host launcher's wire and an execution's progress",
-    "layer": 2,
+    "layer": 1,
     "lane": "shared",
     "dialect": "data",
     "kind": "library",
     "criterion": "reuse"
-  },
-  "@mechane/credentials": {
-    "owns": "How keys, device codes, user codes and session tokens are minted, and the hash the directory stores",
-    "layer": 3,
-    "lane": "shared",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/authentication"]
-  },
-  "@mechane/logs": {
-    "owns": "The Worker's one log channel",
-    "layer": 3,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": [
-      "@mechane/harness",
-      "@mechane/harness-tools",
-      "@mechane/bindings",
-      "@mechane/edge",
-      "@mechane/pages",
-      "@mechane/directory",
-      "@mechane/workspace",
-      "@mechane/mech",
-      "@mechane/mech-ports",
-      "@mechane/sandbox",
-      "@mechane/key-cache",
-      "@mechane/limiter"
-    ]
-  },
-  "@mechane/rpc": {
-    "owns": "Each Durable Object's RPC answers, its callee edge and plain caller, and the bindings' types and object settings",
-    "layer": 3,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": [
-      "@mechane/bindings",
-      "@mechane/directory",
-      "@mechane/workspace",
-      "@mechane/mech",
-      "@mechane/mech-ports",
-      "@mechane/sandbox",
-      "@mechane/key-cache",
-      "@mechane/limiter",
-      "@mechane/edge",
-      "@mechane/pages",
-      "@mechane/app",
-      "@mechane/integrations",
-      "@mechane/authentication"
-    ]
-  },
-  "@mechane/bindings": {
-    "owns": "The Worker's Effect side of its bindings: settings and calls to each object",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/edge", "@mechane/pages", "@mechane/app", "@mechane/authentication"]
-  },
-  "@mechane/harness": {
-    "owns": "The pi adapter: a mech's harness, conversations, prompt sections and metered models, behind Mechane-named ports",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "closure",
-    "consumers": ["@mechane/mech", "@mechane/mech-ports"],
-    "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
-  },
-  "@mechane/harness-tools": {
-    "owns": "The mech's pi tools and the ports they call, which the mech passes to its harness",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "closure",
-    "consumers": ["@mechane/mech", "@mechane/mech-ports"],
-    "confines": ["@earendil-works/chord", "@earendil-works/pi-ai", "@earendil-works/pi-durable", "typebox"]
-  },
-  "@mechane/directory-store": {
-    "owns": "The directory object's database: its tables, rows and record functions",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "store",
-    "criterion": "state",
-    "consumers": ["@mechane/directory"]
-  },
-  "@mechane/workspace-store": {
-    "owns": "The workspace object's database: its tables, rows and record functions",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "store",
-    "criterion": "state",
-    "consumers": ["@mechane/workspace"]
-  },
-  "@mechane/mech-store": {
-    "owns": "The mech object's database: its tables, rows and record functions",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "store",
-    "criterion": "state",
-    "consumers": ["@mechane/mech", "@mechane/mech-ports"]
   },
   "@mechane/sandbox-store": {
     "owns": "The sandbox object's database: its tables, rows and record functions",
@@ -242,42 +109,6 @@
     "criterion": "state",
     "consumers": ["@mechane/sandbox"]
   },
-  "@mechane/limiter-store": {
-    "owns": "The limiter object's database: its tables, rows and record functions",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "store",
-    "criterion": "state",
-    "consumers": ["@mechane/limiter"]
-  },
-  "@mechane/directory": {
-    "owns": "The directory Durable Object and its decisions",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "object",
-    "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/workspace": {
-    "owns": "The workspace Durable Object and its decisions",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "object",
-    "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/mech": {
-    "owns": "The mech Durable Object and its decisions",
-    "layer": 6,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "object",
-    "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
   "@mechane/sandbox": {
     "owns": "The sandbox Durable Object and its decisions",
     "layer": 5,
@@ -285,44 +116,7 @@
     "dialect": "plain",
     "kind": "object",
     "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/key-cache": {
-    "owns": "The key-cache Durable Object and its decisions",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "object",
-    "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/limiter": {
-    "owns": "The limiter Durable Object and its decisions",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "object",
-    "criterion": "state",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/edge": {
-    "owns": "The HTTP edge: matching, admission, decoding, one handler per operation, the install script and release files",
-    "layer": 6,
-    "lane": "worker",
-    "dialect": "effect",
-    "kind": "surface",
-    "criterion": "closure",
-    "consumers": ["@mechane/app"]
-  },
-  "@mechane/pages": {
-    "owns": "The browser pages: device approval, GitHub sign-in and its OAuth client, browser sessions and HTML",
-    "layer": 6,
-    "lane": "worker",
-    "dialect": "effect",
-    "kind": "surface",
-    "criterion": "closure",
-    "consumers": ["@mechane/app"],
-    "confines": []
+    "consumers": ["@mechane/sandbox-service"]
   },
   "@mechane/program": {
     "owns": "What every executable shares: output channels, exit, child processes, signals and files",
@@ -357,31 +151,31 @@
     "dialect": "effect",
     "kind": "library-program",
     "criterion": "reuse",
-    "consumers": ["@mechane/stack", "@mechane/testing", "@mechane/smoke", "@mechane/distribution"]
+    "consumers": ["@mechane/distribution"]
   },
   "@mechane/wrangler": {
-    "owns": "Worker configuration for builds and local runtimes, and stable binding and migration metadata for releases",
+    "owns": "The sandbox service build descriptor and immutable Worker bundle metadata",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
     "kind": "library-program",
     "criterion": "reuse",
-    "consumers": ["@mechane/stack", "@mechane/distribution"]
+    "consumers": ["@mechane/distribution"]
   },
   "@mechane/stack": {
-    "owns": "The shared celld runtime, persistent local launcher, packaged release inputs, and disposable development services",
+    "owns": "The compiled Node runtime and real Postgres local lifecycle, with external-service HTTP fixtures for development and smoke checks",
     "layer": 5,
     "lane": "node",
-    "dialect": "effect",
+    "dialect": "plain",
     "kind": "library-program",
     "criterion": "closure",
-    "consumers": ["@mechane/testing", "@mechane/smoke", "@mechane/distribution"]
+    "consumers": ["@mechane/testing", "@mechane/smoke"]
   },
   "@mechane/testing": {
-    "owns": "The smoke's support: CLI driver, browser, approvals, accounts, mechs and the event follower",
+    "owns": "HTTP, native UI-stream, CLI, and fixture drivers for the consequential smoke flows",
     "layer": 6,
     "lane": "node",
-    "dialect": "effect",
+    "dialect": "plain",
     "kind": "support",
     "criterion": "closure",
     "consumers": ["@mechane/smoke"],
@@ -391,7 +185,7 @@
     "owns": "The scenario catalog and one function per guarantee",
     "layer": 7,
     "lane": "node",
-    "dialect": "effect",
+    "dialect": "plain",
     "kind": "scenarios",
     "criterion": "program",
     "consumers": []
@@ -404,15 +198,6 @@
     "kind": "program",
     "criterion": "program",
     "consumers": []
-  },
-  "@mechane/mech-ports": {
-    "owns": "The mech Durable Object's ports to its harness but its hands: its dispatch meter, and its memory and threads",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "state",
-    "consumers": ["@mechane/mech"]
   },
   "@mechane/cli-kernel": {
     "owns": "What every part of the mechane command shares: its constants, failures, output schemas and types, and a run's input and result",
@@ -551,34 +336,14 @@
     "criterion": "program",
     "consumers": []
   },
-  "@mechane/integrations": {
-    "owns": "Server-side integration credential resolution and bounded MCP, Slack and GitHub clients",
-    "layer": 4,
-    "lane": "worker",
-    "dialect": "plain",
-    "kind": "library",
-    "criterion": "reuse",
-    "consumers": ["@mechane/edge", "@mechane/mech-ports", "@mechane/mech"],
-    "confines": ["@modelcontextprotocol/client", "jose"]
-  },
   "@mechane/distribution": {
-    "owns": "Versioned local and Cloudflare installation archives, public release manifests, artifact checksums, and local module validation previews",
+    "owns": "Immutable compiled Node and sandbox installation archives, release manifests, checksums, and artifact verification",
     "layer": 7,
     "lane": "node",
     "dialect": "effect",
     "kind": "program",
     "criterion": "program",
     "consumers": []
-  },
-  "@mechane/authentication": {
-    "owns": "Browser cookies and sessions, API credential authentication, and browser request origin checks",
-    "layer": 5,
-    "lane": "worker",
-    "dialect": "effect",
-    "kind": "library",
-    "criterion": "closure",
-    "consumers": ["@mechane/pages", "@mechane/edge", "@mechane/app"],
-    "confines": ["cookie"]
   },
   "@mechane-ai/elements": {
     "owns": "Elements by Mechane: product-neutral controls, layout, collections, content, AI presentation and analytical charts through one versioned public package",
@@ -645,7 +410,7 @@
     "kind": "app",
     "criterion": "program",
     "consumers": [],
-    "confines": ["@tanstack/react-db"]
+    "confines": ["@tanstack/react-db", "@ai-sdk/workflow"]
   },
   "@mechane/catalog": {
     "owns": "Shared development-only Storybook configuration, theme controls, and StyleX compiler settings",
@@ -655,5 +420,44 @@
     "kind": "library",
     "criterion": "reuse",
     "consumers": ["@mechane-ai/elements", "@mechane/console"]
+  },
+  "@mechane/runtime": {
+    "owns": "The durable agent runtime: product records, WorkflowAgent execution, model accounting, tools, channel delivery, and Nexus decision waits",
+    "layer": 6,
+    "lane": "node",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "state",
+    "consumers": ["@mechane/server"],
+    "confines": [
+      "@ai-sdk/mcp",
+      "@ai-sdk/provider",
+      "@ai-sdk/workflow",
+      "@chat-adapter/slack",
+      "@chat-adapter/state-pg",
+      "@openrouter/ai-sdk-provider",
+      "@workflow/serde",
+      "pg",
+      "jose"
+    ]
+  },
+  "@mechane/server": {
+    "owns": "The Node service entry: HTTP admission and authentication, native UI streams, Workflow lifecycle, and console assets",
+    "layer": 7,
+    "lane": "node",
+    "dialect": "plain",
+    "kind": "program",
+    "criterion": "program",
+    "consumers": [],
+    "confines": ["@workflow/world-postgres", "@workflow/builders", "@ai-sdk/workflow"]
+  },
+  "@mechane/sandbox-service": {
+    "owns": "The authenticated sandbox HTTP service and streaming public gateway to the Node server",
+    "layer": 7,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "app",
+    "criterion": "program",
+    "consumers": []
   }
 }

@@ -1,9 +1,9 @@
-import type { SandboxCancelInput } from '@mechane/rpc';
 import { ExecutionStatus } from '@mechane/sandbox-store';
+import type { ExecutionId } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import type { ProviderStepInput } from '../types.ts';
 
-type CancelSandboxExecutionInput = ProviderStepInput & SandboxCancelInput;
+type CancelSandboxExecutionInput = ProviderStepInput & { readonly executionId: ExecutionId };
 
 /** Cancellation bypasses the request queue so the command's own wait cannot delay termination. */
 export async function cancelExecution({ store, provider, executionId }: CancelSandboxExecutionInput): Promise<void> {

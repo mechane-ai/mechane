@@ -1,213 +1,175 @@
-import { WorkspacePolicy } from '@mechane/protocol';
-import { LeaseDecision, MachineRefusal, sandboxIdentity, workspaceStub } from '@mechane/rpc';
-import type { ObjectBindings } from '@mechane/rpc';
 import { ReservationPhase } from '@mechane/sandbox-store';
 import type { MachineReservation, SandboxStore } from '@mechane/sandbox-store';
+import { SandboxCapacityIdentity, SandboxCapacityRefusalReason, SandboxCapacityStatus } from '@mechane/sandbox-wire';
 import type { SandboxOwner } from '@mechane/sandbox-wire';
-import { serialCalls } from '@mechane/utilities';
-import { Match, Option, Result, Schema } from 'effect';
+import { capturePromise, serialCalls } from '@mechane/utilities';
+import { DateTime, Option, Result, Schema } from 'effect';
 import type { MachineIdInput, MachineProvider } from '../types.ts';
-
-/** Converted to plain refusal data only at the sandbox RPC boundary. */
-export class MachineAccessDenied extends Schema.TaggedError<MachineAccessDenied>()('MachineAccessDenied', {
-  refusal: MachineRefusal,
-}) {}
+import type { CapacityClient } from './capacity-client.ts';
 
 class InvalidSandboxOwner extends Schema.TaggedError<InvalidSandboxOwner>()('InvalidSandboxOwner', {}) {}
 
+export class CapacityRefused extends Schema.TaggedError<CapacityRefused>()('CapacityRefused', {
+  reason: SandboxCapacityRefusalReason,
+}) {}
+
+class CapacityReleaseFailed extends Schema.TaggedError<CapacityReleaseFailed>()('CapacityReleaseFailed', {}) {}
+
 type MachineCapacityInput = {
   readonly store: SandboxStore;
-  readonly bindings: ObjectBindings;
-  readonly identity: string;
   readonly provider: MachineProvider;
+  readonly client: CapacityClient;
+  readonly scheduleStopRetry: () => Promise<void>;
 };
 
 type BindOwnerInput = { readonly owner: SandboxOwner };
 type HeldInput = { readonly held: MachineReservation };
-type ReserveInput = HeldInput & { readonly isAdopting: boolean };
-type GrantedInput = { readonly decision: LeaseDecision };
 
 type MachineCapacity = {
   readonly provider: MachineProvider;
-  readonly bindOwner: (input: BindOwnerInput) => Promise<boolean>;
-  readonly requireEnabled: () => Promise<void>;
-  /** Absent before allocation and after both stop and release acknowledge completion. */
+  readonly bindOwner: (input: BindOwnerInput) => Promise<void>;
+  readonly requireOwner: () => void;
   readonly reservation: () => Option.Option<MachineReservation>;
 };
 
-/** The sandbox coordinates capacity across all machine users. Workspace remains the admission authority. */
-export function machineCapacity({ store, bindings, identity, provider }: MachineCapacityInput): MachineCapacity {
+export function machineCapacity({ store, provider, client, scheduleStopRetry }: MachineCapacityInput): MachineCapacity {
   const calls = serialCalls();
 
-  function owner(): SandboxOwner {
-    const record = store.capacity();
+  function requireOwner(): void {
+    const capacity = store.capacity();
 
-    if (Option.isNone(record)) {
-      const cause = new InvalidSandboxOwner({});
-      const failure = Result.fail(cause);
-
-      return Result.getOrThrow(failure);
+    if (Option.isNone(capacity)) {
+      throw new InvalidSandboxOwner({});
     }
-
-    return record.value.owner;
   }
 
   function reservation(): Option.Option<MachineReservation> {
-    const record = store.capacity();
+    const capacity = store.capacity();
 
-    return Option.flatMap(record, (value) => value.reservation);
+    return Option.flatMap(capacity, (value) => value.reservation);
   }
 
   function save({ held }: HeldInput): void {
-    const value = Option.some(held);
+    const savedReservation = Option.some(held);
 
-    store.saveReservation({ reservation: value });
+    store.saveReservation({ reservation: savedReservation });
   }
 
-  async function reserve({ held, isAdopting }: ReserveInput): Promise<LeaseDecision> {
-    const identityOwner = owner();
-    const sandboxId = Option.getOrElse(identityOwner.droneId, () => identityOwner.mechId);
-    const workspace = workspaceStub({ bindings, workspaceId: identityOwner.workspaceId });
-    const answer = await workspace.reserveMachine({ sandboxId, reservationId: held.reservationId, isAdopting });
-    const decoded = Schema.decodeUnknownResult(LeaseDecision)(answer);
+  function identity({ held }: HeldInput): SandboxCapacityIdentity {
+    const capacity = store.capacity();
+
+    if (Option.isNone(capacity)) {
+      throw new InvalidSandboxOwner({});
+    }
+
+    const decoded = Schema.decodeUnknownResult(SandboxCapacityIdentity)({
+      ...capacity.value.owner,
+      reservationId: held.reservationId,
+      machineId: held.machineId,
+    });
 
     return Result.getOrThrow(decoded);
   }
 
-  async function bindOwner({ owner: identityOwner }: BindOwnerInput): Promise<boolean> {
-    return await calls.run({
-      run: async () => {
-        const expected = sandboxIdentity({ bindings, owner: identityOwner }).toString();
-
-        if (expected !== identity) {
-          const cause = new InvalidSandboxOwner({});
-          const failure = Result.fail(cause);
-
-          return Result.getOrThrow(failure);
-        }
-
-        const existing = store.capacity();
-
-        if (Option.isNone(existing)) {
-          const latest = store.latestMachine();
-
-          const adoption = Option.map(latest, (machine): MachineReservation => ({
-            machineId: machine.id,
-            reservationId: 1,
-            phase: ReservationPhase.Adopting,
-          }));
-
-          store.bindCapacity({ owner: identityOwner, reservation: adoption });
-        }
-
-        const current = reservation();
-
-        if (Option.isSome(current) && current.value.phase === ReservationPhase.Adopting) {
-          const decision = await reserve({ held: current.value, isAdopting: true });
-
-          assertGranted({ decision });
-          save({ held: { ...current.value, phase: ReservationPhase.Held } });
-        }
-
-        return Option.isNone(existing);
-      },
-    });
-  }
-
-  async function requireEnabled(): Promise<void> {
+  async function bindOwner({ owner }: BindOwnerInput): Promise<void> {
     await calls.run({
       run: async () => {
-        const identityOwner = owner();
-        const workspace = workspaceStub({ bindings, workspaceId: identityOwner.workspaceId });
-        const encoded = await workspace.policy({ initialAllowanceMicros: 0 });
-        const decoded = Schema.decodeUnknownResult(WorkspacePolicy)(encoded);
-        const policy = Result.getOrThrow(decoded);
+        const existing = store.capacity();
 
-        if (policy.isSuspended || !policy.hasSandboxes) {
-          const decision = LeaseDecision.cases.Disabled.make({});
+        if (Option.isSome(existing)) {
+          const previous = existing.value.owner;
+          const matches = previous.workspaceId === owner.workspaceId && previous.mechId === owner.mechId;
 
-          assertGranted({ decision });
-        }
-
-        const held = reservation();
-
-        if (Option.isNone(held)) {
-          return;
-        }
-
-        if (held.value.phase === ReservationPhase.Stopping) {
-          await stopReservation({ held: held.value });
+          if (!matches) {
+            throw new InvalidSandboxOwner({});
+          }
 
           return;
         }
 
-        const decision = await reserve({ held: held.value, isAdopting: false });
+        const initialReservation = Option.none();
 
-        assertGranted({ decision });
+        store.bindCapacity({ owner, reservation: initialReservation });
       },
     });
   }
 
   async function stopReservation({ held }: HeldInput): Promise<void> {
-    // Keep the intent through both acknowledgements. A restart retries the stop and its fenced release.
+    // A failed stop retains its intent, so another request cannot allocate a replacement prematurely.
     save({ held: { ...held, phase: ReservationPhase.Stopping } });
     await provider.stop({ machineId: held.machineId });
 
-    const identityOwner = owner();
-    const sandboxId = Option.getOrElse(identityOwner.droneId, () => identityOwner.mechId);
-    const workspace = workspaceStub({ bindings, workspaceId: identityOwner.workspaceId });
+    const allocation = identity({ held });
+    const released = await client.release(allocation);
 
-    await workspace.releaseMachine({ sandboxId, reservationId: held.reservationId });
+    if (released.status !== SandboxCapacityStatus.Released) {
+      throw new CapacityReleaseFailed({});
+    }
 
-    const empty = Option.none();
+    const clearedReservation = Option.none();
 
-    store.saveReservation({ reservation: empty });
+    store.saveReservation({ reservation: clearedReservation });
+  }
+
+  async function startReservation({ held }: HeldInput): Promise<void> {
+    const allocation = identity({ held });
+    const admitted = await client.acquire(allocation);
+
+    if (admitted.status === SandboxCapacityStatus.Refused) {
+      const now = DateTime.nowUnsafe();
+
+      store.failMachine({ machineId: held.machineId, startupDeadline: now, now });
+
+      const cleanup = stopReservation({ held });
+      const stopped = await capturePromise({ promise: cleanup });
+
+      if (Result.isFailure(stopped)) {
+        // Durable Stopping intent owns cleanup after a refused start; the command itself never ran.
+        await scheduleStopRetry();
+      }
+
+      throw new CapacityRefused({ reason: admitted.reason });
+    }
+
+    if (admitted.status !== SandboxCapacityStatus.Acquired) {
+      throw new InvalidSandboxOwner({});
+    }
+
+    await provider.start({ machineId: held.machineId });
+    save({ held: { ...held, phase: ReservationPhase.Held } });
   }
 
   async function start({ machineId }: MachineIdInput): Promise<void> {
     await calls.run({
       run: async () => {
-        let current = reservation();
+        requireOwner();
 
-        if (Option.isSome(current) && current.value.phase === ReservationPhase.Stopping) {
-          await stopReservation({ held: current.value });
+        const previous = reservation();
 
-          current = Option.none();
+        if (Option.isSome(previous)) {
+          const held = previous.value;
+
+          if (held.machineId === machineId && held.phase === ReservationPhase.Held) {
+            return;
+          }
+
+          if (held.machineId === machineId && held.phase === ReservationPhase.Starting) {
+            await startReservation({ held });
+
+            return;
+          }
+
+          await stopReservation({ held });
         }
 
-        const held: MachineReservation = Option.getOrElse(current, () => ({
+        const held: MachineReservation = {
           reservationId: store.nextReservation(),
           machineId,
           phase: ReservationPhase.Starting,
-        }));
+        };
 
-        if (Option.isNone(current)) {
-          // Unknown RPC outcomes keep this intent; the alarm can stop and release it safely.
-          save({ held });
-        }
-
-        const decision = await reserve({ held, isAdopting: false });
-
-        if (!LeaseDecision.guards.Leased(decision)) {
-          if (Option.isNone(current)) {
-            await stopReservation({ held });
-          }
-
-          assertGranted({ decision });
-        }
-
-        if (held.machineId === machineId && held.phase === ReservationPhase.Held) {
-          return;
-        }
-
-        if (held.machineId !== machineId) {
-          // Replacements reuse capacity, but the old machine must stop before a second one starts.
-          await provider.stop({ machineId: held.machineId });
-        }
-
-        save({ held: { ...held, machineId, phase: ReservationPhase.Starting } });
-        await provider.start({ machineId });
-        save({ held: { ...held, machineId, phase: ReservationPhase.Held } });
+        save({ held });
+        await startReservation({ held });
       },
     });
   }
@@ -222,7 +184,7 @@ export function machineCapacity({ store, bindings, identity, provider }: Machine
             await stopReservation({ held: held.value });
           }
 
-          // An old stop must not destroy a newer machine in the same Cloudflare container slot.
+          // A delayed stop cannot destroy the replacement occupying this container slot.
           return;
         }
 
@@ -231,23 +193,5 @@ export function machineCapacity({ store, bindings, identity, provider }: Machine
     });
   }
 
-  const accounted: MachineProvider = { start, connect: provider.connect, stop };
-
-  return { provider: accounted, bindOwner, requireEnabled, reservation };
-}
-
-function assertGranted({ decision }: GrantedInput): void {
-  if (LeaseDecision.guards.Leased(decision)) {
-    return;
-  }
-
-  const refusal = Match.valueTags(decision, {
-    Disabled: () => MachineRefusal.cases.Disabled.make({}),
-    Full: () => MachineRefusal.cases.CapacityReached.make({}),
-  });
-
-  const cause = new MachineAccessDenied({ refusal });
-  const failure = Result.fail(cause);
-
-  Result.getOrThrow(failure);
+  return { provider: { start, connect: provider.connect, stop }, bindOwner, requireOwner, reservation };
 }

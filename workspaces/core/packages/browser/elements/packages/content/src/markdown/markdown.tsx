@@ -87,9 +87,13 @@ const styles = stylex.create({
   },
   checkbox: { accentColor: colors.ink, marginInlineEnd: spacing.xs },
   strong: { fontWeight: typography.strongWeight },
+  muted: { color: colors.muted },
   emphasis: { fontStyle: 'italic' },
   deleted: { textDecorationLine: 'line-through' },
 });
+
+const toneStyles = { default: null, muted: styles.muted };
+const weightStyles = { regular: null, strong: styles.strong };
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -98,6 +102,8 @@ export type MarkdownProps = {
   readonly isStreaming?: boolean;
   readonly label?: string;
   readonly headingLevel?: HeadingLevel;
+  readonly tone?: 'default' | 'muted';
+  readonly weight?: 'regular' | 'strong';
 };
 
 type MarkdownHeadingProps = ComponentProps<'h1'> & {
@@ -225,7 +231,14 @@ const allowedElements = [
   'section',
 ];
 
-export function Markdown({ children, isStreaming = false, label, headingLevel = 1 }: MarkdownProps): ReactNode {
+export function Markdown({
+  children,
+  isStreaming = false,
+  label,
+  headingLevel = 1,
+  tone = 'default',
+  weight = 'regular',
+}: MarkdownProps): ReactNode {
   const headingComponents: Components = {
     h1: (props) => <MarkdownHeading {...props} level={1} headingLevel={headingLevel} />,
     h2: (props) => <MarkdownHeading {...props} level={2} headingLevel={headingLevel} />,
@@ -239,7 +252,7 @@ export function Markdown({ children, isStreaming = false, label, headingLevel = 
     <Streamdown
       key={headingLevel}
       {...markdownOptions}
-      {...stylex.props(styles.root)}
+      {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
       aria-label={label}
       components={{ ...components, ...headingComponents }}
       mode={isStreaming ? 'streaming' : 'static'}

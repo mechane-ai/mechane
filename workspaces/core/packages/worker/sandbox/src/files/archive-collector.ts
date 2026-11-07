@@ -1,4 +1,4 @@
-import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/protocol';
+import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/sandbox-wire';
 import { Result, Schema } from 'effect';
 
 type AppendChunkInput = { readonly chunk: unknown };

@@ -1,13 +1,15 @@
 import type { Memory } from '@mechane/protocol';
-import { DateTime } from 'effect';
+import { DateTime, Option } from 'effect';
 import { indentedText } from './indented-text.ts';
 
 type MemoryLinesInput = { readonly memory: Memory };
 
-/** One saved memory as a person reads it: its path, version, and the turn that saved it and when, then its text. */
+/** Imported memories omit run provenance when none was recorded. */
 export function memoryLines({ memory }: MemoryLinesInput): ReadonlyArray<string> {
+  const provenance = Option.match(memory.turnId, { onNone: () => '', onSome: (turnId) => ` by turn ${turnId}` });
+
   return [
-    `${memory.path} v${memory.version} saved at ${DateTime.formatIso(memory.savedAt)} by turn ${memory.turnId}`,
+    `${memory.path} v${memory.version} saved at ${DateTime.formatIso(memory.savedAt)}${provenance}`,
     ...indentedText({ text: memory.text }),
   ];
 }

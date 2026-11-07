@@ -42,6 +42,8 @@ export const codeTypescriptClassDeclarations = {
       violation: ['class Stack { ready = false; }', 'class Stack { readonly ready = false; }'],
       allowed: [
         'class Stack { readonly #ready = false; }',
+        "class RequestFailed extends Error { readonly code = 'refused'; }",
+        "class CredentialedModel implements LanguageModelV4 { readonly provider = 'openrouter'; }",
         "class Gone extends Base { override readonly message = 'gone'; }",
       ],
     },
@@ -53,6 +55,9 @@ export const codeTypescriptClassDeclarations = {
       violation: ['class Stack {}', 'abstract class Store {}'],
       allowed: [
         'class MechObject extends DurableObject {}',
+        'class RequestFailed extends Error {}',
+        "class AssetFailed extends Data.TaggedError('AssetFailed') {}",
+        'class CredentialedModel implements LanguageModelV4 {}',
         "class Missing extends Schema.TaggedError<Missing>()('Missing', {}) {}",
       ],
     },

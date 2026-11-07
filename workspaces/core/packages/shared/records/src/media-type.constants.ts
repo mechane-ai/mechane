@@ -11,6 +11,7 @@ export const MediaType = {
   Icon: 'image/x-icon',
   Woff2: 'font/woff2',
   Json: 'application/json',
+  FormUrlEncoded: 'application/x-www-form-urlencoded',
   OctetStream: 'application/octet-stream',
   GitHubJson: 'application/vnd.github+json',
   EventStream: 'text/event-stream',

@@ -31,13 +31,19 @@ For each pair of scenarios a change runs concurrently, does either one write sta
 
 ## Local adaptations
 
-The scenario catalog `packages/node/smoke/src/catalog.ts` lists each scenario function with its guarantee and regression, and `main` runs each one after starting the stack, passing the entry's guarantee as the name of the scenario's check.
-Scenarios run one after another, because each one reads the stack's one directory, and each signs in as an account of its own; a mech scenario counts only the scripted upstream's requests during its own turns, since the stack's model upstream is shared.
-`packages/node/smoke/src/catalog.ts` owns scenario order. Restarts end pending event followers and restore temporary installation settings. `workspacePolicyCutsOffQueuedWorkImmediately` changes workspace policy through the public CLI while agents remain running. It checks suspension, budget reductions and sandbox admission without applying deployment variables. Separate identity-admission checks still restart the stack to exercise installation changes. The token scan runs last so it inspects the state earlier scenarios produced.
-ast-grep `check-name-sequence-marker` rejects a sequence marker in a check's `name` or a catalog entry's `guarantee`.
+`packages/node/smoke/src/catalog.ts` lists each scenario function with its guarantee and regression. The one native
+Promise-based smoke entry starts the shared stack, runs the catalog, stops the stack in `finally`, and lets its entry
+boundary report failure. Requests and assertions belong to scenario functions and their focused support operations.
 
-The shipped oxlint file targets Jest and Vitest suite calls; this repository uses neither, so the file stays unloaded.
-Its one Effect smoke already owns each named scenario in the catalog, and no runner suite-call requirement applies.
+Scenarios use the compiled Node server, real Postgres, and external HTTP fixtures. They run sequentially while they
+share service state, provider counters, or restart the same process. Each case isolates the principals and records it
+owns. Restart checks preserve the tested durable state and remove only their temporary settings and processes.
+Credential scans inspect the state and logs produced by preceding work. A passing local compute fixture does not
+claim hosted container isolation or live-provider delivery.
+
+ast-grep `check-name-sequence-marker` rejects sequence markers in check names and catalog guarantees. The shipped
+Jest/Vitest suite-call rules stay unloaded because the smoke uses neither runner; the named scenario catalog is its
+single organizing surface. Keep each catalog entry focused on one critical externally observable guarantee.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

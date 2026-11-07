@@ -8,6 +8,7 @@ import {
   SlackDelivery,
   Thread,
   Trace,
+  Turn,
 } from '@mechane/protocol';
 import { MechId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
@@ -37,6 +38,8 @@ export type MechDefinition = typeof MechDefinition.Type;
 /** The showTurn evidence stored separately from its shared canonical turn. */
 export const TraceEvidence = wireStruct({
   fields: {
+    /** Null identifies an unknown run variant without an orderable native version. */
+    version: Schema.NullOr(Schema.Int.check(Schema.isGreaterThan(0))),
     dispatches: Trace.to.fields.dispatches,
     replyExcerpt: Trace.to.fields.replyExcerpt,
     toolCalls: Trace.to.fields.toolCalls,
@@ -122,11 +125,17 @@ export function decodeMemory(row: MemoryRow): Memory {
   return restoreRecord(Memory, row.value);
 }
 
-/** Assembles trace evidence with the shared turn while preserving optional evidence fields. */
-export function decodeTrace(turn: TurnRow, evidence: TraceEvidenceRow): Trace {
-  const fields = restoreRecord(TraceEvidence, evidence.value);
+/** Unknown turn variants remain readable without inventing a version. */
+export function turnVersion(turn: Trace['turn']): number | null {
+  return Schema.is(Turn)(turn) ? turn.version : null;
+}
 
-  return { ...fields, turn: decodeTurn(turn) };
+/** A trace is complete only when its evidence belongs to the canonical run snapshot. */
+export function decodeTrace(turn: TurnRow, evidence: TraceEvidenceRow): Trace | undefined {
+  const { version, ...fields } = restoreRecord(TraceEvidence, evidence.value);
+  const decoded = decodeTurn(turn);
+
+  return turnVersion(decoded) === version ? { ...fields, turn: decoded } : undefined;
 }
 
 /** Restores the binding protocol value from its encoded canonical row. */

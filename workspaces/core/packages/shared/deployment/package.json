@@ -6,7 +6,6 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
-    "@mechane/records": "workspace:*",
     "effect": "4.0.7"
   }
 }

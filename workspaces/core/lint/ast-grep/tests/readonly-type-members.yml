@@ -2,5 +2,6 @@
 id: readonly-type-members
 valid:
   - 'type Turn = { readonly turnId: TurnId };'
+  - 'function open() { const lifetime: { process?: Process } = {}; lifetime.process = start(); return () => lifetime.process?.stop(); }'
 invalid:
   - 'type Turn = { turnId: TurnId };'

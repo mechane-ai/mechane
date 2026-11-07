@@ -1,41 +1,52 @@
 # Run your own Mechane
 
-A cloud installation consists of a Worker, Durable Objects, a private R2 workspace bucket, and Cloudflare Containers.
-OpenTofu manages those resources from a versioned release archive. Follow [Cloudflare setup](cloudflare-setup.md) for
-account preparation, OAuth, secrets, the provider download, and a first apply. Operators deploy without a source
-checkout, Node installation, or Docker daemon. Local installations use the same runtime on celld; see the
-[local guide](../packages/node/stack/README.md).
+An installation runs the built Node service with Postgres and an authenticated sandbox service. The Node process owns
+HTTP, GitHub sign-in, domain APIs, Chat SDK, and the native Workflow worker. Cloudflare hosts compute and persistent
+workspace checkpoints. Its public ingress can forward the installation's domain to the Node host.
 
-## Installation and runtime data
+The same Node build and Workflow Postgres World run locally. Follow the [local guide](../packages/node/stack/README.md)
+for a development or retained local installation.
 
-| OpenTofu owns                                           | Mechane's API, CLI, and SDK own                                  |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| Release version, account, Worker identity, domains      | Workspaces, membership, agents, missions                         |
-| Workspace storage and container capacity                | Files, conversations, memories, machine leases                   |
-| Identity admission and installation administrators      | Integration credentials, connections, grants                     |
-| Model service, offers, initial budgets, global ceilings | Slack installations, channel bindings, watches, workspace policy |
+## Ownership
 
-Applying infrastructure never seeds, resets, or reconciles agents. The application reads its own data after an upgrade.
-A factory can keep an example agent setup script, but running that script is an explicit runtime operation, separate
-from `tofu apply`.
+| Infrastructure configuration                      | Runtime records                                  |
+| ------------------------------------------------- | ------------------------------------------------ |
+| Service versions, host, domains, compute capacity | Principals, workspaces, memberships, mechs       |
+| Database roles and secret references              | Sessions, messages, runs, work, memory           |
+| Model offers and installation ceilings            | Usage, execution grants, integration credentials |
+| Sandbox image, file bucket, network policy        | Slack installations, bindings, delivery receipts |
 
-## Infrastructure
+Infrastructure applies do not seed or overwrite runtime records. Configure the installation first, then use owner APIs
+for workspace setup. Keep one infrastructure state and writer for each installation.
 
-Keep the [Cloudflare declaration](../infrastructure/examples/cloudflare/main.tf) in your infrastructure repository and
-retain its Worker name across upgrades. The release archive contains the Worker, installation manifest, compatibility
-metadata, and notices. The provider copies the verified sandbox image into your account registry without a local build.
+## Artifacts
 
-The module receives only secret references. Supply the deployment token through `CLOUDFLARE_API_TOKEN`; secret values
-stay outside HCL and state. Treat state as private infrastructure inventory. The [operations guide](operations.md)
-covers remote state, locking, secret rotation, recovery, and operator access.
+Consume immutable release artifacts with their recorded source revision and SHA-256 checksums. The runtime archive
+contains compiled JavaScript and Console assets; operators do not rebuild application source. Deploy the matching
+sandbox service and guest image. Keep the release manifest with the installation declaration.
 
-The module disables workers.dev and preview URLs. It keeps structured Worker logs but disables automatic invocation logs
-and traces, which can record OAuth query strings. Workspace storage and Worker identity have deletion protection.
-Deleting an installation's actual data is a separate deliberate operator action.
+A managed Node host must support a persistent process, health checks, graceful termination, and outbound Postgres
+connections. Keep at least one process available for the Workflow worker. Rolling replacement can briefly run two
+instances; durable claims and receipts coordinate them. No private Workflow callback route should be publicly exposed.
 
-## Use the service
+Configure a stable HTTPS public origin and the fixed GitHub callback `/auth/github/callback`. The reverse proxy forwards
+streams without buffering and does not become a second authentication service. It removes untrusted forwarding headers
+before supplying its own trusted values.
 
-Download the CLI from the installation's `/install.sh` or the public release assets, then select your origin:
+## Secrets
+
+Supply the runtime, migration, OAuth, model, vault, sandbox, and Nexus callback secrets through the installation's
+secret store. Keep values out of manifests, image layers, HCL, logs, and browser assets. Separate the migration
+connection from the runtime connection. Run owned and upstream schema bootstrap with the migration credential before
+activation.
+
+Workspace credentials enter through authenticated write-only APIs. Their encrypted records bind each secret to its
+workspace and reference. Metadata reads expose no value. Keep previous keyring versions until every retained ciphertext
+and backup that needs them has been replaced.
+
+## Use
+
+Select the origin and sign in with an admitted identity:
 
 ```sh
 export MECHANE_ORIGIN=https://agents.example.com
@@ -44,48 +55,16 @@ mechane mech create --name scout
 mechane inbox send MECH_ID 'hello, scout'
 ```
 
-Each admitted identity receives a personal workspace. Installation administrators can create shared workspaces and
-manage membership through the [access commands](operations.md#access). Installation admission and workspace membership
-are separate grants. Workspace policy remains bounded by the installation's machine and spending ceilings.
+An installation administrator can create a shared workspace. Workspace owners configure membership, credentials,
+[execution access](agent-environments.md), and [Slack bindings](slack.md). Installation admission and workspace
+membership are separate grants. The CLI help and [operation catalog](../packages/shared/protocol/src/catalog.ts) are the
+maintained command and wire references.
 
-Workspace owners manage integration credentials through write-only credential operations, then use their references when
-configuring connections or Slack installations. Supply credential values from a file or standard input, never a command
-argument. Listing credentials returns metadata only. The Worker encrypts values with workspace-bound associated data;
-agents and sandbox machines never receive the stored credentials.
+## Upgrades
 
-Owner-managed Slack bindings, grants, and watches remain runtime records across infrastructure updates. For sandbox
-admission and startup checks, see [sandbox operations](operations.md#sandboxes).
+Review the [operations guide](operations.md) before applying a release. Preserve Postgres state, vault key versions,
+sandbox identities, and file checkpoints. Native Workflow histories must remain replayable across overlapping code
+versions. A new SDK version requires a compiled restart-and-resume qualification before publication.
 
-## Upgrade
-
-Follow the [upgrade procedure](operations.md#changes) to update immutable release and provider versions, review the
-plan, and apply with one deployment writer. Preserve the Worker identity and workspace bucket. The container provider
-waits for rollout completion and resumes an existing rollout after an interrupted apply.
-
-CLI downloads use immutable versioned paths, so an update can finish from a cached manifest after a deployment.
-`/cli/latest.json` selects the running Worker's release.
-
-The provider verifies the active release's immutable manifest before uploading its successor. It rejects removed wire or
-migration entries and version downgrades. Publish compatible recovery code as a newer release when needed. Database
-changes run in the owning Durable Objects; application data is never part of the OpenTofu state.
-
-## Adopt an existing installation
-
-Import resources into state before applying. Preserve the Worker, container application, namespace, bucket, and domain
-identities. The [module guide](../infrastructure/modules/cloudflare/README.md) lists import addresses. Inspect the
-resulting plan and refuse replacements of persistent resources.
-
-For installations that previously supplied workspace credentials, Slack metadata, or workspace lists as Worker settings,
-use `mechane --workspace WORKSPACE_UUID workspace import --file PRIVATE_JSON`. The file contains required `credentials`
-and `slack_installations` collections and an optional `policy`. Use empty collections when there is nothing to import.
-Omit absent optional Slack references rather than supplying null. Pause incoming work during this transition, write
-credentials and metadata through the new APIs, verify their metadata and policy, then resume. Import uses create-only
-writes so a retry cannot silently overwrite later runtime changes. Remove the obsolete deployment maps once the import
-succeeds. Subsequent infrastructure applies have no authority over those records.
-
-An existing deployment can preserve default-deny sandbox admission with `sandboxes.workspace_default_enabled = false`,
-then import `policy.sandboxes = true` only for its previously admitted workspaces. This default affects workspaces
-without a stored policy; `sandboxes.enabled` remains the installation-wide switch.
-
-The former source-checkout deploy program is retired. Once OpenTofu owns an installation, do not use Wrangler or another
-pipeline to deploy the same Worker or container application.
+The native-runtime cutover establishes a fresh agent-store baseline. It is not a permanent reset-on-deploy policy. Later
+data changes follow the schema and execution contracts, including pending approval waits and uncertain commands.

@@ -1,9 +1,12 @@
 import { Schema } from 'effect';
-import { RecordId } from './schemas.ts';
+import { RandomId, RecordId } from './schemas.ts';
 
 /** The ID of a mech within its workspace. */
 export const MechId = RecordId.pipe(Schema.brand('MechId'));
 export type MechId = typeof MechId.Type;
+
+export const MachineId = RecordId.pipe(Schema.brand('MachineId'));
+export type MachineId = typeof MachineId.Type;
 
 /** The ID of the workspace that owns its resources and grants. */
 export const WorkspaceId = RecordId.pipe(Schema.brand('WorkspaceId'));
@@ -17,13 +20,8 @@ export type PrincipalId = typeof PrincipalId.Type;
 export const InboxItemId = RecordId.pipe(Schema.brand('InboxItemId'));
 export type InboxItemId = typeof InboxItemId.Type;
 
-/** The stable ID of an access, token, or action request in an owner-configured external service. */
-export const ExternalRequestId = RecordId.pipe(Schema.brand('ExternalRequestId'));
-export type ExternalRequestId = typeof ExternalRequestId.Type;
-
-/** The ID of an approval owned by the configured external request service. */
-export const ExternalApprovalId = RecordId.pipe(Schema.brand('ExternalApprovalId'));
-export type ExternalApprovalId = typeof ExternalApprovalId.Type;
+export const InboxItemRequestId = RandomId.pipe(Schema.decodeTo(InboxItemId));
+export type InboxItemRequestId = typeof InboxItemRequestId.Type;
 
 /** The ID of a configured Slack audience owned by one mech. */
 export const SlackBindingId = RecordId.pipe(Schema.brand('SlackBindingId'));
@@ -32,3 +30,6 @@ export type SlackBindingId = typeof SlackBindingId.Type;
 /** The stable ID of one durable Slack delivery intent. */
 export const SlackDeliveryId = RecordId.pipe(Schema.brand('SlackDeliveryId'));
 export type SlackDeliveryId = typeof SlackDeliveryId.Type;
+
+export const SessionId = RecordId.pipe(Schema.brand('SessionId'));
+export type SessionId = typeof SessionId.Type;

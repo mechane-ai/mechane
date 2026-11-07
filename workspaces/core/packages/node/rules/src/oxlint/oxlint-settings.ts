@@ -5,6 +5,7 @@ import { CONTRACTS } from '../contracts.ts';
 import { FILE_ROLES } from '../file-roles.ts';
 import { RestrictedKey } from './constants.ts';
 import { restrictedLists } from './restricted-lists.ts';
+import { restrictedOverrides } from './restricted-overrides.ts';
 import { roleOverride } from './role-override.ts';
 import type { OptOuts, OxlintSettings } from './types.ts';
 
@@ -19,8 +20,7 @@ type OxlintRulesInput = {
 
 /**
  * oxlint's settings that run `rules`: the plugins and six categories, then each oxlint rule with its value in the
- * contracts' order. The restricted rules' banned members and the opt-outs, off, follow, with one override for each file
- * role that a rule treats apart.
+ * contracts' order. Restricted lists combine the exemptions of every matching role in disjoint scopes.
  */
 export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintSettings {
   const { oxlint } = CONTRACTS['code-lint-suppressions'].values;
@@ -33,12 +33,14 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
 
   const browser = {
     files: FILE_ROLES[FileRole.Browser],
+    excludeFiles: [],
     plugins: [...oxlint.plugins, ...interaction.values.plugins],
     rules: { ...Record.fromEntries(interactionRules), 'id-length': [Severity.Error, browserIdentifierLength] },
   };
 
   const charts = {
     files: naming.chartFiles,
+    excludeFiles: [],
     rules: {
       'id-length': [
         Severity.Error,
@@ -52,7 +54,7 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
       return [];
     }
 
-    return [{ files: rule.files.value, rules: { [rule.name]: rule.value } }];
+    return [{ files: rule.files.value, excludeFiles: [], rules: { [rule.name]: rule.value } }];
   });
 
   const global = configured.filter((rule) => Option.isNone(rule.files));
@@ -67,7 +69,8 @@ export function oxlintSettings({ rules, optOuts }: OxlintSettingsInput): OxlintS
       browser,
       charts,
       ...scoped,
-      ...Record.values(FileRole).flatMap((role) => roleOverride({ role, configured, restricted })),
+      ...Record.values(FileRole).flatMap((role) => roleOverride({ role, configured })),
+      ...restrictedOverrides({ restricted }),
     ],
   };
 }

@@ -1,4 +1,5 @@
 import type { ClientFailure } from '@mechane/client';
+import type { WorkspaceId } from '@mechane/records';
 import type { Effect, Option, Redacted } from 'effect';
 import type {
   AllowanceExhausted,
@@ -21,7 +22,7 @@ export type EvalFailure =
   | EvalInterrupted;
 
 /** The key a mech command sends, and the caller's one workspace, where every mech command acts. */
-export type WorkspaceAccess = { readonly token: Redacted.Redacted; readonly workspaceId: string };
+export type WorkspaceAccess = { readonly token: Redacted.Redacted; readonly workspaceId: WorkspaceId };
 
 /** A record to save. */
 type RecordInput<A> = { readonly record: A };

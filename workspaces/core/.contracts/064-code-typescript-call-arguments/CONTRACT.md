@@ -64,6 +64,9 @@ Local callbacks, including functions in argument objects, may remain inline with
 The registry loads the shipped no-await-expression-member setting, and review checks the corresponding yield* member reads.
 The nested-call copy was reviewed against v11.1. Its existing tagged-error schema exception covers the new upstream errors-role allowance. Mechane keeps declaration-level exemptions and its SC-02 exceptions; the copied rule's behavior is unchanged.
 
+Native SDK and presentation roles permit readable nested schema/value construction and contextual callbacks under
+contract 111. A temporary binding should clarify ownership or an operation, not merely flatten a native constructor.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - asset `assets/oxlint/oxlintrc.json` `unicorn/no-await-expression-member` (064): enforced in phase D, `"error"`

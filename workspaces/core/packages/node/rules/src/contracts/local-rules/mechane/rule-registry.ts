@@ -8,14 +8,12 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
  */
 const VALUES = {
   unexercised: [
-    'packages/worker/edge/src/routing/peer.ts',
     'packages/worker/sandbox/src/providers/container-provider.ts',
     'packages/node/release/src/main.ts',
     'packages/node/release/src/load-release-settings.ts',
     'packages/node/release/src/print-source-release.ts',
     'packages/node/release/src/clean-revision.ts',
     'packages/node/release/src/build/build-source-release.ts',
-    'packages/node/stack/src/dev/**',
   ],
   /**
    * How the checks hold each ratchet's baseline to the merge base's: each file to its own count. A change that splits

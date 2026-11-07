@@ -11,7 +11,7 @@ import {
 } from './constants.ts';
 
 /** A requested tool name must fit the bound before exact matching against the owner grant. */
-export const RemoteToolName = Schema.NonEmptyString.check(Schema.isMaxLength(TOOL_NAME_MAX_CHARS));
+const RemoteToolName = Schema.NonEmptyString.check(Schema.isMaxLength(TOOL_NAME_MAX_CHARS));
 
 /** A request selects distinct names within the per-connection tool cap. */
 export const RemoteToolNames = Schema.Array(RemoteToolName).check(

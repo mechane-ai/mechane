@@ -1,13 +1,13 @@
 import { HttpMethod } from '@mechane/records';
-import { MechBusy, MechNotFound, ObjectUnavailable } from '../../errors/errors.ts';
-import { DroneNotFound, SandboxCapacityReached, SandboxDisabled } from '../../errors/mech.errors.ts';
+import { SandboxReport, SandboxRequest } from '@mechane/sandbox-wire';
+import { MechBusy, MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
+import { SandboxCapacityReached, SandboxDisabled } from '../../errors/mech.errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { MechPath } from '../schemas.ts';
-import { SandboxReport, SandboxRequest } from './schemas.ts';
 
-/** Manages the mech's workspace, or one of its drones, through an idempotent maintenance request. */
+/** Manages the mech's persistent sandbox through an idempotent maintenance request. */
 export const manageSandbox = {
   method: HttpMethod.Post,
   path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/sandbox',
@@ -16,5 +16,5 @@ export const manageSandbox = {
   query: NoFields,
   body: SandboxRequest,
   output: SandboxReport,
-  errors: [MechNotFound, DroneNotFound, MechBusy, ObjectUnavailable, SandboxDisabled, SandboxCapacityReached],
+  errors: [MechNotFound, MechBusy, ServiceUnavailable, SandboxDisabled, SandboxCapacityReached],
 } as const satisfies Operation;
