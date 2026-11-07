@@ -10,6 +10,7 @@ import { verifyRuntimeImport } from '../runtime-import/verify-runtime-import.ts'
 import type { ScenarioFailure, WorkspaceAuthorityInput } from '../types.ts';
 import { slackChallenge } from './slack-challenge.ts';
 import { slackInstallationFixture } from './slack-installation-fixture.ts';
+import { verifySlackCaptionAdmission } from './verify-slack-caption-admission.ts';
 
 type VerifySlackInstallationAccessInput = WorkspaceAuthorityInput & { readonly guarantee: string };
 
@@ -22,6 +23,7 @@ export const verifySlackInstallationAccess = Effect.fn('verifySlackInstallationA
   const fixture = yield* slackInstallationFixture(authority);
 
   yield* verifyRuntimeImport({ ...authority, guarantee, created: fixture.created });
+  yield* verifySlackCaptionAdmission({ ...authority, guarantee, connectionId: fixture.connectionId });
 
   const signingSecret = stack.modelUpstream.apiKey;
   const signed = { stack, workspaceId: workspace.workspaceId, connectionId: fixture.connectionId, signingSecret };

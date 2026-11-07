@@ -21,3 +21,6 @@ export const SlackEnvelopeType = { EventCallback: 'event_callback', UrlVerificat
 
 /** The human event types that can enter an agent inbox. */
 export const SlackMessageType = { Message: 'message', Mention: 'app_mention' } as const;
+
+/** Uploads carry a human caption under this subtype rather than an ordinary message. */
+export const SlackMessageSubtype = { FileShare: 'file_share' } as const;

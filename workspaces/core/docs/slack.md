@@ -4,6 +4,9 @@ A workspace owner can bind an existing Slack channel to one agent. Human message
 answers return to the original thread. There is no history import. Use a dedicated agent for each channel because its
 conversation and memory persist across messages.
 
+Text accompanying a file upload enters the inbox too. File contents, including screenshots, are not read automatically;
+include the information the agent needs in the message text. An upload without text does not start a turn.
+
 ## Installation
 
 Reuse your app, bot identity and channel membership. Its token needs `chat:write`; event subscriptions and history

@@ -7,7 +7,7 @@ export { postSlackDelivery } from './slack/post-slack-delivery.ts';
 export type { SlackReconciliation } from './slack/types.ts';
 export { reconcileSlackDelivery } from './slack/reconcile-slack-delivery.ts';
 export { SlackEventCallback, SlackPostResult, SlackEnvelope, SlackMessage } from './slack/schemas.ts';
-export { SLACK_REPLY_MAX_CHARS, SlackEnvelopeType } from './slack/constants.ts';
+export { SLACK_REPLY_MAX_CHARS, SlackEnvelopeType, SlackMessageSubtype } from './slack/constants.ts';
 
 export { runRemoteMcp } from './mcp/run-remote-mcp.ts';
 export { createGitHubToken } from './github/tokens/create-github-token.ts';

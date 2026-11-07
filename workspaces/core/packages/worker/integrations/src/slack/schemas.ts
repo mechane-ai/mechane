@@ -36,8 +36,8 @@ export const SlackMessage = Schema.Struct({
   ts: Schema.NonEmptyString,
   /** Absent when the incoming message starts a new thread. */
   thread_ts: Schema.OptionFromOptionalKey(Schema.NonEmptyString),
-  /** Absent when Slack does not mark the message as bot-authored. */
-  bot_id: Schema.OptionFromOptionalKey(Schema.String),
+  /** Slack can omit or explicitly null the bot identity of a human upload. */
+  bot_id: Schema.OptionFromOptionalNullOr(Schema.String),
   /** Absent for an ordinary newly posted message. */
   subtype: Schema.OptionFromOptionalKey(Schema.String),
 });

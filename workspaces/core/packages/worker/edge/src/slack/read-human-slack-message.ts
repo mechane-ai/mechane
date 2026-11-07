@@ -1,6 +1,6 @@
 import { callWorkspacePolicy } from '@mechane/bindings';
 import type { WorkerSettings } from '@mechane/bindings';
-import { SlackMessage } from '@mechane/integrations';
+import { SlackMessage, SlackMessageSubtype } from '@mechane/integrations';
 import type { SlackEventCallback } from '@mechane/integrations';
 import { InboxText } from '@mechane/protocol';
 import type { ObjectUnavailable, SlackInstallation } from '@mechane/protocol';
@@ -41,7 +41,11 @@ export const readHumanSlackMessage = Effect.fn('readHumanSlackMessage')(function
 });
 
 function humanSlackMessage({ message, botUserId }: HumanSlackMessageInput): Option.Option<SlackMessage> {
-  if (Option.isSome(message.bot_id) || Option.isSome(message.subtype) || message.user === botUserId) {
+  if (Option.isSome(message.bot_id) || message.user === botUserId) {
+    return Option.none();
+  }
+
+  if (Option.isSome(message.subtype) && message.subtype.value !== SlackMessageSubtype.FileShare) {
     return Option.none();
   }
 
