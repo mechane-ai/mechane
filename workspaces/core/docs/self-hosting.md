@@ -72,9 +72,9 @@ data changes follow the schema and execution contracts, including pending approv
 ### Upgrading from schema 1
 
 Native releases 0.25.0 and 0.25.1 require domain schema 1 and cannot restart after the schema 2 migration in 0.25.2.
-Stop new admissions and qualify pending Workflow history replay, or let those histories finish. Stop every old
-application instance before migrating and starting 0.25.2. Preserve the database, vault keys, sandbox identities, and
-checkpoints throughout. Verify readiness, existing records, and resumed work before reopening admission.
+Follow the [stopped-service upgrade procedure](operations.md#upgrade-domain-schema-1-to-2). It checkpoints and retires
+guests before changing their image, then stops old Node instances before migrating. Keep the old Node available until
+guest retirement and capacity release finish.
 
 Recover forward if that upgrade fails; deploying the old binary against the migrated database is not a supported
 rollback. Subsequent releases validate their known migration prefix and must preserve the previous release's reads and

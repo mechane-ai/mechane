@@ -1,7 +1,7 @@
 ---
 name: installation-ownership
 message: Deploy immutable artifacts with one owner for each service, secret, and persistent resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/server/**", "packages/worker/sandbox-service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md"]
+paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/server/**", "packages/worker/sandbox-service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md", "docs/operations.md"]
 ---
 
 ## Rules
@@ -35,6 +35,12 @@ Protect persistent resources from accidental replacement. The owner-authorized n
 fresh agent state once; later releases follow contracts 047 and 061. That cutover does not authorize deletion of
 unrelated services, credentials, or sandbox files.
 
+Before an image rollout can replace guests, qualify their fresh file checkpoints and retirement, actual provider
+stops, and capacity release. Provider rollout completion and grace periods are not checkpoint receipts. Keep the
+serving Node available through guest retirement callbacks. For the strict schema 1 upgrade, checkpoint while policy
+still permits capacity, fence and recheck idle work, retire guests, then stop all old Node instances before migration.
+Resolve admission races on the old release. Restore exact saved policies before allocating qualification guests.
+
 Resolve secrets through the deployment's secret store and runtime settings boundary. Release manifests, provider
 metadata, logs, and public assets contain no secret values. Use separate runtime and migration database credentials.
 Keep operational deployment evidence outside product source.
@@ -56,6 +62,8 @@ and decorated origins fail before transport credentials are read, while the expl
 For an authorized hosted qualification, verify health and readiness, a repeat deployment, a process restart with a
 pending approval, and the original Slack reply destination. Check that a repeated infrastructure plan changes nothing
 and that persistent resources have no replacement action. Record live evidence in the delivery issue or pull request.
+For guest image changes, retain the fresh checkpoint or maintenance receipt, stopped-provider readback, and released
+capacity before apply. Afterward verify restored files and browser evidence under the restored workspace policies.
 
 ## Local adaptations
 
