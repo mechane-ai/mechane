@@ -43,7 +43,9 @@ export type ConversationValue = {
 type Mutable<Value> = { -readonly [Key in keyof Value]: Value[Key] };
 
 type CreateConversationEntry = {
-  readonly data: ConsoleData;
+  readonly getData: () => ConsoleData;
+  readonly conversations: ConsoleData['conversations'];
+  readonly workspaceId: string;
   readonly mechId: string;
   /** Absent selects the server's most recent conversation. */
   readonly sessionId: string | undefined;
@@ -78,9 +80,16 @@ function prependMessages(
 }
 
 /** Retains native streaming and acknowledgement state while the reader navigates between views. */
-export function createConversationEntry({ data, mechId, sessionId, onResolved }: CreateConversationEntry) {
+export function createConversationEntry({
+  getData,
+  conversations,
+  workspaceId,
+  mechId,
+  sessionId,
+  onResolved,
+}: CreateConversationEntry) {
   const lifetime = new AbortController();
-  const signal = AbortSignal.any([data.conversations.signal, lifetime.signal]);
+  const signal = AbortSignal.any([conversations.signal, lifetime.signal]);
   const listeners = new Set<() => void>();
   const admissions = new Map<string, ReturnType<typeof Promise.withResolvers<MessageReceipt>>>();
   const retainers = new Set<symbol>();
@@ -113,22 +122,22 @@ export function createConversationEntry({ data, mechId, sessionId, onResolved }:
 
   function createChat(history: ConversationHistory): Chat<UIMessage> {
     const transport = new WorkflowChatTransport<UIMessage>({
-      api: data.conversations.endpoint,
-      fetch: data.conversations.fetch,
+      api: conversations.endpoint,
+      fetch: conversations.fetch,
       prepareSendMessagesRequest: ({ messages }) => ({
         credentials: 'same-origin',
         headers: { [HttpHeader.ContentType]: MediaType.Json },
-        body: { workspaceId: data.workspace.id, mechId, sessionId: history.sessionId, message: messages.at(-1) },
+        body: { workspaceId, mechId, sessionId: history.sessionId, message: messages.at(-1) },
       }),
       prepareReconnectToStreamRequest: ({ api }) => {
         const workflowId = owner.value?.activeWorkflowId;
-        const sessionStream = workflowStreamUrl(data.conversations.endpoint, history.sessionId);
+        const sessionStream = workflowStreamUrl(conversations.endpoint, history.sessionId);
 
         return {
           credentials: 'same-origin',
           api:
             api === sessionStream && workflowId !== null && workflowId !== undefined
-              ? workflowStreamUrl(data.conversations.endpoint, workflowId)
+              ? workflowStreamUrl(conversations.endpoint, workflowId)
               : api,
         };
       },
@@ -154,8 +163,8 @@ export function createConversationEntry({ data, mechId, sessionId, onResolved }:
       messages: history.messages,
       transport: chatTransport(transport),
       onFinish: ({ isDisconnect }) => {
-        if (!isDisconnect) {
-          void Promise.allSettled([data.refreshActivity(mechId), refreshAfterCurrent()]);
+        if (!isDisconnect && !signal.aborted) {
+          void Promise.allSettled([getData().refreshActivity(mechId), refreshAfterCurrent()]);
         }
       },
     });
@@ -173,7 +182,7 @@ export function createConversationEntry({ data, mechId, sessionId, onResolved }:
     try {
       const selectedSession = previous?.sessionId ?? sessionId;
 
-      const history = await data.conversations.history(
+      const history = await conversations.history(
         { mechId, ...(selectedSession === undefined ? {} : { sessionId: selectedSession }) },
         signal,
       );
@@ -271,10 +280,7 @@ export function createConversationEntry({ data, mechId, sessionId, onResolved }:
     update({ ...value, isLoadingEarlier: true });
 
     try {
-      const history = await data.conversations.history(
-        { mechId, sessionId: value.sessionId, before: value.before },
-        signal,
-      );
+      const history = await conversations.history({ mechId, sessionId: value.sessionId, before: value.before }, signal);
 
       signal.throwIfAborted();
 
@@ -333,13 +339,15 @@ export function createConversationEntry({ data, mechId, sessionId, onResolved }:
   }
 
   async function cancel(): Promise<void> {
+    signal.throwIfAborted();
+
     const value = owner.value;
 
     if (value?.activeRunId === null || value?.activeRunId === undefined) {
       return;
     }
 
-    await data.commands.cancelTurn({ mechId: MechId.make(mechId), turnId: TurnId.make(value.activeRunId) });
+    await getData().commands.cancelTurn({ mechId: MechId.make(mechId), turnId: TurnId.make(value.activeRunId) });
     await value.chat.stop();
     await refresh();
   }

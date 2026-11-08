@@ -1,5 +1,6 @@
 import { ModelId } from '@mechane/deployment';
 import {
+  Bytes,
   InboxItemId,
   MechId,
   memberOrUnknown,
@@ -8,6 +9,7 @@ import {
   PrincipalId,
   RecordName,
   RecordText,
+  renamedWireStruct,
   Sequence,
   SessionId,
   Tokens,
@@ -18,7 +20,16 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
-import { DispatchStatus, SettlementBasis, ToolCallStatus, TurnStatus, UnansweredReason } from './constants.ts';
+import {
+  BashExecutionStatus,
+  DispatchStatus,
+  SettlementBasis,
+  TOOL_TRACE_OUTPUT_MAX_BYTES,
+  ToolCallStatus,
+  ToolInspectionKind,
+  TurnStatus,
+  UnansweredReason,
+} from './constants.ts';
 
 /** The path of one turn of a mech. */
 export const TurnPath = wireStruct({ fields: { workspaceId: WorkspaceId, mechId: MechId, turnId: TurnId } });
@@ -147,7 +158,39 @@ const TurnReplyExcerpt = wireStruct({ fields: { sequence: Sequence, text: Record
 
 type TurnReplyExcerpt = typeof TurnReplyExcerpt.Type;
 
-/** Console evidence deliberately excludes raw tool arguments and outputs, which can contain credentials. */
+/** Text retained after execution-time redaction, with bytes omitted by retention and trace preview limits. */
+const ToolTraceText = wireStruct({
+  fields: {
+    text: RecordText.check(
+      Schema.makeFilter((text) => new TextEncoder().encode(text).byteLength <= TOOL_TRACE_OUTPUT_MAX_BYTES, {
+        expected: `a trace preview of at most ${TOOL_TRACE_OUTPUT_MAX_BYTES} UTF-8 bytes`,
+      }),
+    ),
+    omittedBytes: Bytes,
+  },
+});
+
+/** Only allowlisted receipt fields are inspectable; absent output differs from a recorded empty output. */
+const BashToolResult = renamedWireStruct({
+  fields: {
+    status: Schema.Enum(BashExecutionStatus),
+    exitCode: Schema.OptionFromNullOr(Schema.Int),
+    duration: Schema.OptionFromNullOr(Schema.DurationFromMillis),
+    output: Schema.OptionFromNullOr(ToolTraceText),
+  },
+  renames: { duration: 'duration_ms' },
+});
+
+/** A missing command has no safe execution-time snapshot, including historical runs. */
+const BashToolInspection = wireStruct({
+  fields: {
+    kind: Schema.Literal(ToolInspectionKind.Bash),
+    command: Schema.OptionFromNullOr(ToolTraceText),
+    result: Schema.OptionFromNullOr(BashToolResult),
+  },
+});
+
+/** Safe command evidence is separate from the SDK's tool completion state. Raw arguments are never projected. */
 export const TurnToolCall = wireStruct({
   fields: {
     id: ModelToolCallId,
@@ -157,6 +200,8 @@ export const TurnToolCall = wireStruct({
     startedAt: Schema.OptionFromNullOr(WireTime),
     /** Absent until a tool result is committed. */
     endedAt: Schema.OptionFromNullOr(WireTime),
+    /** Unknown tool kinds expose only execution metadata. */
+    inspection: Schema.optionalKey(BashToolInspection),
   },
 });
 

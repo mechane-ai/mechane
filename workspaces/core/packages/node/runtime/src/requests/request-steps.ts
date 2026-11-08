@@ -32,7 +32,7 @@ export async function prepareRequest({
 
   const { loadRequestService, verifyServiceIdentity } = await import('./service.ts');
   const { withRuntimeStore } = await import('../store/runtime-store.ts');
-  const { executionId } = await import('../tools/execution-id.ts');
+  const { executionId } = await import('../execution-id.ts');
   const service = await loadRequestService({ context, kind });
 
   await verifyServiceIdentity(service);

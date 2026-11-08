@@ -8,6 +8,7 @@ import { decodeRun } from '../../execution/rows.ts';
 import type { MechScope } from '../mechs/mechs.ts';
 import { pageFromRows } from '../page.ts';
 import type { Page } from '../page.ts';
+import { readToolTrace } from './tool-trace.ts';
 
 export type RunPageInput = MechScope & { readonly after: string | null; readonly maxRows: number };
 
@@ -136,11 +137,13 @@ async function getRunTrace(context: StoreContext, input: RunReadInput) {
 
   const events = await context.client.query<ActivityEvent>(
     `SELECT id,sequence,workspace_id AS "workspaceId",mech_id AS "mechId",run_id AS "runId",type,data AS payload,created_at AS "createdAt"
-     FROM mechane.activity WHERE run_id=$1 AND type IN ('turn.answered','tool.started','tool.completed','tool.failed') ORDER BY sequence`,
+     FROM mechane.activity WHERE run_id=$1 AND type IN ('turn.answered','tool.started','tool.completed','tool.failed','tool.input') ORDER BY sequence`,
     [input.runId],
   );
 
-  return { run, dispatches: dispatches.rows, events: events.rows };
+  const tools = await readToolTrace({ context, runId: run.id, events: events.rows });
+
+  return { run, dispatches: dispatches.rows, events: events.rows, ...tools };
 }
 
 async function getRunCancellation(context: StoreContext, input: RunReadInput) {

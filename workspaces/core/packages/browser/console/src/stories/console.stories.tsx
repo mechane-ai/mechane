@@ -459,6 +459,13 @@ export const CompletedTurn: Story = { render: () => <TraceStory trace={completed
 
 export const RequestTimeline: Story = { render: () => <TraceStory trace={completedTrace} initialTab="Requests" /> };
 
+export const ToolInspection: Story = { render: () => <TraceStory trace={inspectedTrace} initialTab="Tools" /> };
+
+export const NarrowToolInspection: Story = {
+  globals: { viewport: { value: 'narrow', isRotated: false } },
+  render: () => <TraceStory trace={inspectedTrace} initialTab="Tools" />,
+};
+
 export const RecordedConversation: Story = { render: () => <TraceStory trace={completedTrace} initialTab="Events" /> };
 
 export const UnavailableReply: Story = {
@@ -558,6 +565,86 @@ export const RunLoading: Story = {
 };
 
 const encodedTrace = Schema.encodeSync(Trace)(completedTrace);
+
+const inspectedTrace = Schema.decodeUnknownSync(Trace)({
+  ...encodedTrace,
+  tool_calls: [
+    {
+      id: 'catalog-query',
+      name: 'bash',
+      status: 'completed',
+      started_at: '2026-11-02T12:00:00.500Z',
+      ended_at: '2026-11-02T12:00:00.620Z',
+      inspection: {
+        kind: 'bash',
+        command: { text: "jq '.links' catalog.json", omitted_bytes: 0 },
+        result: {
+          status: 'completed',
+          exit_code: 127,
+          duration_ms: 120,
+          output: { text: 'bash: jq: command not found\n', omitted_bytes: 0 },
+        },
+      },
+    },
+    {
+      id: 'catalog-read',
+      name: 'bash',
+      status: 'completed',
+      started_at: '2026-11-02T12:00:02.100Z',
+      ended_at: '2026-11-02T12:00:02.800Z',
+      inspection: {
+        kind: 'bash',
+        command: {
+          text: "curl --header 'Authorization: Bearer [REDACTED]' https://example.com/catalog\nnode scripts/check-catalog.mjs",
+          omitted_bytes: 0,
+        },
+        result: {
+          status: 'completed',
+          exit_code: 0,
+          duration_ms: 700,
+          output: { text: 'Checked 120 catalog entries.\nOne matching entry.\n', omitted_bytes: 4096 },
+        },
+      },
+    },
+    {
+      id: 'catalog-exists',
+      name: 'bash',
+      status: 'completed',
+      started_at: '2026-11-02T12:00:02.900Z',
+      ended_at: '2026-11-02T12:00:02.950Z',
+      inspection: {
+        kind: 'bash',
+        command: { text: 'test -f catalog.json', omitted_bytes: 0 },
+        result: { status: 'completed', exit_code: 0, duration_ms: 50, output: { text: '', omitted_bytes: 0 } },
+      },
+    },
+    {
+      id: 'earlier-catalog-read',
+      name: 'bash',
+      status: 'completed',
+      started_at: '2026-11-02T12:00:03.000Z',
+      ended_at: '2026-11-02T12:00:03.100Z',
+      inspection: {
+        kind: 'bash',
+        command: null,
+        result: {
+          status: 'completed',
+          exit_code: 0,
+          duration_ms: 100,
+          output: { text: 'One matching entry.\n', omitted_bytes: 0 },
+        },
+      },
+    },
+    {
+      id: 'catalog-note',
+      name: 'record_note',
+      status: 'completed',
+      started_at: '2026-11-02T12:00:03.200Z',
+      ended_at: '2026-11-02T12:00:03.300Z',
+    },
+  ],
+});
+
 const sampleRequest = encodedTrace.dispatches[0];
 
 export const RefusedTurn: Story = {

@@ -1,15 +1,26 @@
-import { CredentialMetadata, ExecutionAccessState } from '@mechane/protocol';
+import {
+  CredentialMetadata,
+  ExecutionAccessState,
+  TOOL_TRACE_COMMAND_MAX_BYTES,
+  TOOL_TRACE_OUTPUT_MAX_BYTES,
+  ToolCallStatus,
+  TurnStatus,
+} from '@mechane/protocol';
+import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import {
   createAccount,
   createMech,
+  readBashResult,
   readTrace,
   requireFixtures,
   runCli,
   sendInbox,
+  turnPath,
   waitForBashCompletion,
+  waitForTurn,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { Schema } from 'effect';
+import { Duration, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
@@ -18,6 +29,11 @@ import { join } from 'node:path';
 const COMMAND_SECONDS = 6;
 const MILLISECONDS_PER_SECOND = 1000;
 const CREDENTIAL_BYTES = 32;
+const COMMAND_FAILURE_EXIT_CODE = 127;
+const COMMAND_PADDING_CHARACTERS = 1500;
+const OUTPUT_PADDING_COLUMNS = 9000;
+const TRACE_READ_TIMEOUT_MS = 10_000;
+const TRACE_INACCESSIBLE_STATUSES: ReadonlySet<number> = new Set([HttpStatusCode.Forbidden, HttpStatusCode.NotFound]);
 
 export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -92,11 +108,14 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     'test -n "$GH_TOKEN" || exit 1',
     "if env | grep -q 'fixture-nexus-'; then exit 1; fi",
     `sleep ${COMMAND_SECONDS}`,
+    `printf '%${OUTPUT_PADDING_COLUMNS}s' ''`,
     String.raw`printf "setting=%s\n" "$SMOKE_SETTING"`,
     String.raw`printf "secret=%s\n" "$SMOKE_SECRET"`,
     String.raw`printf "injected=yes\n"`,
     String.raw`printf "host-key=absent\n"`,
     String.raw`printf "github=%s\n" "$GH_TOKEN"`,
+    `# ${'界'.repeat(COMMAND_PADDING_CHARACTERS)}`,
+    `exit ${COMMAND_FAILURE_EXIT_CODE}`,
   ].join('\n');
 
   fixtures.model.configure({
@@ -108,14 +127,39 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   });
 
   const sent = await sendInbox({ ...owner, text: marker });
-  const { result, turn } = await waitForBashCompletion({ ...owner, inboxItemId: sent.id, marker, toolCallId });
+  const result = await readBashResult({ model: fixtures.model, marker, toolCallId });
+  const turn = await waitForTurn({ ...owner, inboxItemId: sent.id });
 
   const output = Schema.decodeUnknownSync(Schema.String)(result.output);
 
+  assert.equal(turn.status, TurnStatus.Answered);
+  assert.equal(result.status, 'completed');
   assert.equal(output.includes('setting=current\n'), true);
   assert.equal(output.includes('injected=yes\n'), true);
   assert.equal(output.includes('host-key=absent\n'), true);
   assert.equal(output.includes(secret), false, 'The shell result exposed its injected credential');
+  assert.equal(result.exitCode, COMMAND_FAILURE_EXIT_CODE);
+
+  const trace = await readTrace({ ...owner, turnId: turn.id });
+  const tool = trace.toolCalls?.find((call) => call.id === toolCallId);
+
+  assert.equal(tool?.status, ToolCallStatus.Completed, 'A shell failure must remain distinct from SDK completion');
+  assert.ok(tool.inspection !== undefined);
+
+  const inspectedCommand = Option.getOrThrow(tool.inspection.command);
+  const inspectedResult = Option.getOrThrow(tool.inspection.result);
+  const inspectedOutput = Option.getOrThrow(inspectedResult.output);
+
+  assert.ok(inspectedCommand.text.includes('test -n "$SMOKE_SECRET"'));
+  assert.ok(Buffer.byteLength(inspectedCommand.text) <= TOOL_TRACE_COMMAND_MAX_BYTES);
+  assert.ok(inspectedCommand.omittedBytes > 0, 'A shortened command did not declare omitted bytes');
+  assert.equal(inspectedResult.status, 'completed');
+  assert.equal(Option.getOrThrow(inspectedResult.exitCode), COMMAND_FAILURE_EXIT_CODE);
+  assert.ok(Duration.isPositive(Option.getOrThrow(inspectedResult.duration)));
+  assert.ok(inspectedOutput.text.includes('setting=current\n'));
+  assert.ok(inspectedOutput.text.includes('secret=[redacted]\n'));
+  assert.ok(Buffer.byteLength(inspectedOutput.text) <= TOOL_TRACE_OUTPUT_MAX_BYTES);
+  assert.ok(inspectedOutput.omittedBytes > 0, 'A shortened output did not declare omitted bytes');
 
   const tokens = fixtures.github.app.readTokens();
 
@@ -178,7 +222,16 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
 
   assert.equal(revokedResult.output, 'revoked\n');
 
-  const trace = await readTrace({ ...owner, turnId: turn.id });
+  const other = await createAccount({ stack, login: fixtures.github.users.owner.login });
+  const path = turnPath({ ...owner, turnId: turn.id });
+
+  const denied = await fetch(new URL(path, stack.origin), {
+    headers: { [HttpHeader.Authorization]: `Bearer ${other.token}` },
+    signal: AbortSignal.timeout(TRACE_READ_TIMEOUT_MS),
+  });
+
+  assert.ok(TRACE_INACCESSIBLE_STATUSES.has(denied.status));
+
   const [database, log] = await Promise.all([stack.dumpStorage(), readFile(stack.serverLog, 'utf8')]);
 
   const surfaces = [

@@ -91,6 +91,9 @@ Within the same admitted principal and workspace, retain a bounded set of native
 navigation. Eviction and scope loss abort their transports. Completion refresh merges messages by canonical identity
 without dropping an assistant message not yet present in the history read. Authentication loss disposes both chat and
 domain-data lifetimes, so late stream callbacks cannot restore protected content.
+Keep this conversation lifetime above replaceable cache connections. Local persistence recovery preserves the native
+transcript and active stream; its commands and projection refreshes use the current data owner. Rejected fresh
+admission or a scope change still revokes the conversation immediately.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -98,6 +101,10 @@ current principal and workspace membership on the server. Signing out revokes th
 
 Model replies and tool output are untrusted text. Render them as text or through a deliberate safe renderer. Never
 embed secret values, raw credential-bearing tool arguments, or private runtime configuration in traces or browser assets.
+Render the protocol's safe tool inspection fields without reconstructing arguments from model messages. Distinguish
+SDK tool completion from the command's recorded process outcome: a completed tool with exit code 127 is a failed
+command. Keep command and output in one expandable trace item with copy controls and recorded duration. Missing
+evidence, empty output, and truncated output remain distinct. Unknown tools retain their available execution metadata.
 
 Trace intervals name their measured boundaries. Reservation-to-settlement time is not provider inference time;
 missing usage is unknown, never zero. Show recorded turn events through a bounded API page, not a filtered page of
@@ -197,6 +204,10 @@ does not become a zero-duration step.
 
 ## Evidence
 
+Inspect a successful command, a nonzero exit, a pending command, truncated output, and a historical call without a safe
+command snapshot. Verify the process outcome, command and output remain readable at narrow widths, copy the displayed
+evidence accurately, and keep unavailable evidence explicit. Check that the trace-wide omission notice remains visible.
+
 Return temporary unavailable responses before a successful domain read and native history read. Verify one pending
 lifecycle, retained warm content, the bounded attempt count, and no write or stream resubmission. Exercise Retry-After
 seconds and dates, an invalid or excessive deadline, permanent unavailability, auth rejection, an invalid successful
@@ -240,6 +251,8 @@ refresh or pagination action. Fail refresh and persistence after an acknowledged
 Confirm that the outcome, a later draft, and an uncertain submission's request identity retain their application owner.
 Repeat recovery after a persisted Back/Forward cache restoration from a different route. Confirm current-page reads,
 drafts, focus, scroll position, and browser-local preferences survive while admission is checked again.
+During local cache recovery, continue an active native stream without reissuing its input. Reject fresh admission and
+switch scopes separately; both must abort the old conversation and prevent later callbacks from restoring its content.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

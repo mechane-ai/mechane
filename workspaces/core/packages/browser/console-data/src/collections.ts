@@ -1,9 +1,14 @@
+import {
+  CONSOLE_STORAGE_OPERATION_TIMEOUT_MS,
+  ConsoleStorageFailed,
+  ConsoleStorageStage,
+} from '@mechane/console-cache';
 import type { openConsoleStorage } from '@mechane/console-cache';
 import { collectionOptions } from '@tanstack/db';
 import type { Collection, CollectionConfig, DbClient, InferSchemaOutput } from '@tanstack/db';
 import { persistedCollectionOptions } from '@tanstack/db-sqlite-persistence-core';
 import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@tanstack/db-sqlite-persistence-core';
-import { Duration, MutableRef, Schema } from 'effect';
+import { MutableRef, Schema } from 'effect';
 import {
   AllowanceRow,
   EnvironmentProcessDetailsRow,
@@ -24,14 +29,14 @@ import {
 import { ReadReceipt } from './requests.ts';
 
 type KeyedRow = { readonly key: string };
-const WRITE_ADMISSION_TIMEOUT_MS = Duration.toMillis('10 seconds');
-const WRITE_TIMEOUT_MS = Duration.toMillis('10 seconds');
+// Admission can wait for preparation, acceptance, and an uncertain owner's bounded close.
+const WRITE_ADMISSION_PHASES = 3;
+const WRITE_ADMISSION_TIMEOUT_MS = CONSOLE_STORAGE_OPERATION_TIMEOUT_MS * WRITE_ADMISSION_PHASES;
 
 type CanonicalPersistenceOperations = PersistedCollectionUtils &
   Required<Pick<PersistedCollectionUtils, 'forceReloadSubset'>>;
 
 class PersistenceUnavailable extends Schema.TaggedError<PersistenceUnavailable>()('PersistenceUnavailable', {}) {}
-class CanonicalWriteTimedOut extends Schema.TaggedError<CanonicalWriteTimedOut>()('CanonicalWriteTimedOut', {}) {}
 
 type RowSchema<Row extends object> = ReturnType<typeof Schema.toStandardSchemaV1<Schema.Codec<Row>>>;
 /** A native DbClient descriptor preserving a canonical row's typed encoded fields. */
@@ -196,17 +201,38 @@ export function createCanonicalWriter({ db, generationId, retire }: CreateCanoni
 
       const lifetime = new AbortController();
       const preparation = AbortSignal.any([signal, lifetime.signal]);
-      const hasPrepared = MutableRef.make(false);
-      const expired = Promise.withResolvers<never>();
+      const hasAttemptedMutation = MutableRef.make(false);
 
-      const deadline = setTimeout(() => {
-        const failure = new CanonicalWriteTimedOut({});
+      async function withinPhase(
+        stage: typeof ConsoleStorageStage.CanonicalPrepare | typeof ConsoleStorageStage.CanonicalCommit,
+        operation: Promise<void>,
+      ): Promise<void> {
+        const expired = Promise.withResolvers<never>();
 
-        lifetime.abort(failure);
-        expired.reject(failure);
-      }, WRITE_TIMEOUT_MS);
+        const deadline = setTimeout(() => {
+          const failure = new ConsoleStorageFailed({ stage, reason: 'Native collection work timed out' });
 
-      async function commit(): Promise<void> {
+          lifetime.abort(failure);
+          expired.reject(failure);
+        }, CONSOLE_STORAGE_OPERATION_TIMEOUT_MS);
+
+        try {
+          await Promise.race([operation, expired.promise]);
+        } catch (error) {
+          const failedStage =
+            stage === ConsoleStorageStage.CanonicalCommit && !hasAttemptedMutation.current
+              ? ConsoleStorageStage.CanonicalPrepare
+              : stage;
+
+          throw Schema.is(ConsoleStorageFailed)(error)
+            ? error
+            : new ConsoleStorageFailed({ stage: failedStage, reason: String(error) });
+        } finally {
+          clearTimeout(deadline);
+        }
+      }
+
+      async function prepare(): Promise<void> {
         await Promise.all(collections.map((collection) => collection.preload()));
         preparation.throwIfAborted();
         await Promise.all(
@@ -215,13 +241,17 @@ export function createCanonicalWriter({ db, generationId, retire }: CreateCanoni
           }),
         );
         preparation.throwIfAborted();
+      }
 
-        hasPrepared.current = true;
+      async function commit(): Promise<void> {
+        preparation.throwIfAborted();
 
         const transaction = db.createTransaction({
           mutationFn: async ({ transaction: pending }) => {
             await Promise.all(
               collections.map(async (collection) => {
+                hasAttemptedMutation.current = true;
+
                 await collection.utils.acceptMutations(pending);
               }),
             );
@@ -233,15 +263,16 @@ export function createCanonicalWriter({ db, generationId, retire }: CreateCanoni
       }
 
       try {
-        await Promise.race([commit(), expired.promise]);
+        await withinPhase(ConsoleStorageStage.CanonicalPrepare, prepare());
+        await withinPhase(ConsoleStorageStage.CanonicalCommit, commit());
       } catch (error) {
-        if (hasPrepared.current || !signal.aborted) {
+        lifetime.abort(error);
+
+        if (hasAttemptedMutation.current) {
           await retire(error);
         }
 
         throw error;
-      } finally {
-        clearTimeout(deadline);
       }
     });
 

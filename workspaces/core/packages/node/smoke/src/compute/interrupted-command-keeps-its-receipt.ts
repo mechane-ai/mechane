@@ -5,6 +5,7 @@ import {
   deleteSandbox,
   readBashResult,
   readSandboxMachines,
+  readTrace,
   requireFixtures,
   runBash,
   runCli,
@@ -16,6 +17,7 @@ import {
   waitForTurn,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
+import { Option } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { readFile, writeFile } from 'node:fs/promises';
@@ -134,7 +136,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       await writeFile(join(dirname(effect), 'release'), 'continue\n');
     }
 
-    const { result } = await waitForBashCompletion({ ...winner, timeoutMs: WORKFLOW_RECOVERY_WAIT_MS });
+    const { result, turn } = await waitForBashCompletion({ ...winner, timeoutMs: WORKFLOW_RECOVERY_WAIT_MS });
 
     assert.equal(result.output, `${marker}\n`);
     assert.equal(await readFile(effect, 'utf8'), `${marker}\n`, 'The resumed command repeated its side effect');
@@ -143,6 +145,22 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       COMPLETED_COMMAND_MODEL_CALLS,
       'Recovery repeated the completed model request',
     );
+
+    const trace = await readTrace({ ...winner, turnId: turn.id });
+    const tool = trace.toolCalls?.find((call) => call.id === winner.toolCallId);
+
+    assert.ok(tool?.inspection !== undefined);
+    assert.equal(Option.getOrThrow(tool.inspection.command).text, command);
+
+    const inspectedResult = Option.getOrThrow(tool.inspection.result);
+
+    assert.equal(Option.getOrThrow(inspectedResult.output).text, `${marker}\n`);
+    assert.equal(Option.getOrThrow(inspectedResult.exitCode), 0);
+    await stack.restart();
+
+    const replayed = await readTrace({ ...winner, turnId: turn.id });
+
+    assert.deepEqual(replayed.toolCalls, trace.toolCalls, 'Restart changed the same execution evidence');
 
     const persisted = await runBash({ ...winner, command: `cat '${directory}/effects'` });
 

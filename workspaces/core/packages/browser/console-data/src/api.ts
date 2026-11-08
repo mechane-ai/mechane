@@ -121,6 +121,9 @@ export function createApi(origin: URL, lifetime: AbortSignal, onSessionEnded: (f
   };
 }
 
+/** Only a local persistence failure can trigger automatic workspace reopening. */
+export const isStorageFailure = Schema.is(ConsoleStorageFailed);
+
 /** A safe user-facing explanation that does not expose transport details. */
 export function problemMessage(error: unknown): string {
   if (error instanceof OriginUnreachable) {

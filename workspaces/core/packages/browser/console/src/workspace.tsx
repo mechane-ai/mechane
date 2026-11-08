@@ -1,7 +1,7 @@
 import { Button } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
-import { createConsoleData, problemMessage } from '@mechane/console-data';
-import type { ConsoleData, Session } from '@mechane/console-data';
+import { createConsoleData, isStorageFailure, problemMessage } from '@mechane/console-data';
+import type { ConsoleData, ConsoleDataOwner, Session } from '@mechane/console-data';
 import {
   ConsoleShell,
   EvidencePagePlaceholder,
@@ -38,6 +38,7 @@ import { useScreenLifetime } from './use-screen-lifetime.ts';
 import { WorkspaceAccount, WorkspaceNavigation } from './workspace-navigation.tsx';
 
 type WorkspaceScreenProps = ConsoleNavigation & {
+  readonly owner: ConsoleDataOwner;
   readonly session: Session;
   readonly workspace: Workspace;
   readonly onSessionEnded: () => void;
@@ -104,7 +105,14 @@ export function WorkspaceScreen(props: WorkspaceScreenProps): ReactNode {
   );
 }
 
-function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnded }: WorkspaceScreenProps): ReactNode {
+function WorkspaceRuntime({
+  owner,
+  session,
+  workspace,
+  location,
+  navigate,
+  onSessionEnded,
+}: WorkspaceScreenProps): ReactNode {
   const pages = useRouterState({ select: (state) => state.location.state.consolePages });
 
   const [runtime, setRuntime] = useState<WorkspaceRuntimeState>({ kind: 'pending', data: undefined });
@@ -112,6 +120,17 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
   const current = useRef<ConsoleData | undefined>(undefined);
   const lifetime = useRef<AbortController | undefined>(undefined);
   const position = useRef<WorkspacePosition | undefined>(undefined);
+  const hasRecoveredAutomatically = useRef(false);
+
+  const claimAutomaticRecovery = useCallback(() => {
+    if (hasRecoveredAutomatically.current) {
+      return false;
+    }
+
+    hasRecoveredAutomatically.current = true;
+
+    return true;
+  }, []);
 
   function retry(): void {
     setRuntime((previous) => ({ kind: 'pending', data: previous.data }));
@@ -124,6 +143,7 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
     lifetime.current = controller;
 
     void createConsoleData({
+      owner,
       origin: new URL(globalThis.location.origin),
       principalId: session.principal.id,
       workspace,
@@ -144,7 +164,11 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
       },
       (problem: unknown) => {
         if (!controller.signal.aborted) {
-          setRuntime((previous) => ({ kind: 'failed', data: previous.data, problem }));
+          if (isStorageFailure(problem) && claimAutomaticRecovery()) {
+            retry();
+          } else {
+            setRuntime((previous) => ({ kind: 'failed', data: previous.data, problem }));
+          }
         }
       },
     );
@@ -280,6 +304,7 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
     current.current = data;
 
     setRuntime({ kind: 'ready', data });
+    void previous.dispose();
   }
 
   const selected = { ...location, workspace: workspace.id };
@@ -323,6 +348,16 @@ function WorkspaceRuntime({ session, workspace, location, navigate, onSessionEnd
             location={selected}
             navigate={navigate}
             onReplace={replace}
+            claimAutomaticRecovery={claimAutomaticRecovery}
+            onRecoveryStarted={() => {
+              position.current = {
+                href: globalThis.location.href,
+                pages: JSON.stringify(pages),
+                focus: document.activeElement instanceof HTMLElement ? document.activeElement : undefined,
+                focusSelector: focusSelector(document.activeElement),
+                readers: readReaderPositions(),
+              };
+            }}
           />
         </Activity>
       )}
@@ -346,11 +381,15 @@ function WorkspaceContent({
   location,
   navigate,
   onReplace,
+  claimAutomaticRecovery,
+  onRecoveryStarted,
 }: ConsoleNavigation & {
   readonly data: ConsoleData;
   readonly session: Session;
   readonly workspace: Workspace;
   readonly onReplace: (previous: ConsoleData, data: ConsoleData) => void;
+  readonly claimAutomaticRecovery: () => boolean;
+  readonly onRecoveryStarted: () => void;
 }): ReactNode {
   const subscribeHealth = useCallback((notify: () => void) => data.subscribeHealth(notify), [data]);
   const readHealth = useCallback(() => data.readHealth(), [data]);
@@ -371,17 +410,46 @@ function WorkspaceContent({
   }
 
   const isActive = useScreenLifetime();
+  const recoveryTarget = useRef({ location, pages });
+
+  useLayoutEffect(() => {
+    recoveryTarget.current = { location, pages };
+  }, [location, pages]);
 
   function recover(): void {
     if (recovery.isPending) {
       return;
     }
 
+    onRecoveryStarted();
     setRecovery({ data, isPending: true });
 
     const requests = initialReads(location, pages);
 
-    void data.recover(requests).then(
+    async function openReplacement(): Promise<ConsoleData> {
+      const replacement = await data.recover(requests);
+
+      try {
+        while (isActive()) {
+          const target = recoveryTarget.current;
+          const primary = initialReads(target.location, target.pages, 'primary');
+
+          await Promise.all(primary.map((request) => replacement.ready(request)));
+
+          if (target === recoveryTarget.current) {
+            return replacement;
+          }
+        }
+
+        return replacement;
+      } catch (error) {
+        await replacement.dispose();
+
+        throw error;
+      }
+    }
+
+    void openReplacement().then(
       async (replacement) => {
         if (isActive()) {
           onReplace(data, replacement);
@@ -402,11 +470,34 @@ function WorkspaceContent({
     );
   }
 
+  const recoverAutomatically = useEffectEvent(() => {
+    const currentHealth = data.readHealth();
+    const canRecover = currentHealth.issue?.kind === 'failed' && !currentHealth.isRevoked;
+
+    if (!isActive() || !canRecover || recovery.isPending) {
+      return;
+    }
+
+    if (claimAutomaticRecovery()) {
+      recover();
+    }
+  });
+
+  useEffect(() => {
+    const unsubscribe = data.subscribeHealth(() => recoverAutomatically());
+
+    queueMicrotask(() => recoverAutomatically());
+
+    return unsubscribe;
+  }, [data]);
+
   return (
     <ConversationProvider data={data}>
       {shouldOfferRecovery && (
         <Notice>
-          Local storage needs to be reopened. Your draft is kept.{' '}
+          {recovery.isPending
+            ? 'Reopening local storage. Your draft is kept.'
+            : 'Local storage needs to be reopened. Your draft is kept.'}{' '}
           <Button onClick={recover} isPending={recovery.isPending} pendingLabel="Reopening…">
             Reopen storage
           </Button>

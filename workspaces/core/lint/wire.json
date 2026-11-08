@@ -858,7 +858,19 @@
     "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop output.state[_tag=Lost]",
     "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop output.output",
     "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop output.output.text",
-    "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop output.output.omitted_bytes"
+    "POST /api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop output.output.omitted_bytes",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.kind",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.command",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.command.text",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.command.omitted_bytes",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.exit_code",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.duration_ms",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.output",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.output.text",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.output.omitted_bytes"
   ],
   "members": [
     "POST /api/v1/device_approvals body.purpose=login",
@@ -1026,7 +1038,18 @@
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id output.descriptor.media_type=video/mp4",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id output.descriptor.duration=Infinity",
     "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id output.descriptor.duration=-Infinity",
-    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id output.descriptor.duration=NaN"
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id output.descriptor.duration=NaN",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.kind=bash",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=running",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=completed",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=timed_out",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=uncertain",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=unavailable",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=persistence_failed",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.status=refused",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.duration_ms=Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.duration_ms=-Infinity",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id output.tool_calls[].inspection.result.duration_ms=NaN"
   ],
   "errors": [
     "ReleaseSourceUnavailable",

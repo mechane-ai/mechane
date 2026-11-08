@@ -59,20 +59,6 @@ type InputSessionSelection = MechIdentity & {
   readonly source: ConsoleOrigin['kind'];
 };
 
-type ToolEvent = {
-  readonly type: string;
-  readonly createdAt: string;
-  readonly payload: Readonly<Record<string, unknown>>;
-};
-
-type ToolEvidence = {
-  readonly id: string;
-  readonly name: string;
-  readonly status: string;
-  readonly started_at: string | null;
-  readonly ended_at: string | null;
-};
-
 function requireModel(configuration: RuntimeConfiguration, model: string): void {
   if (!configuration.model.offers.some((offer) => offer.id === model)) {
     throw new ModelInvalid({ model, offered: configuration.model.offers.map((offer) => offer.id) });
@@ -87,56 +73,6 @@ function originFor(caller: AuthCaller): ConsoleOrigin {
   }
 
   return { kind: 'console', principalId: authenticated.principalId };
-}
-
-function toolEvidence(events: ReadonlyArray<ToolEvent>) {
-  const tools = new Map<string, ToolEvidence>();
-
-  for (const event of events) {
-    const { toolCallId, name } = event.payload;
-
-    if (typeof toolCallId === 'string' && typeof name === 'string') {
-      const current = tools.get(toolCallId);
-      const startedAt = current?.started_at ?? null;
-
-      switch (event.type) {
-        case 'tool.started':
-          tools.set(toolCallId, {
-            id: toolCallId,
-            name,
-            status: 'running',
-            started_at: event.createdAt,
-            ended_at: null,
-          });
-
-          break;
-        case 'tool.completed':
-          tools.set(toolCallId, {
-            id: toolCallId,
-            name,
-            status: 'completed',
-            started_at: startedAt,
-            ended_at: event.createdAt,
-          });
-
-          break;
-        case 'tool.failed':
-          tools.set(toolCallId, {
-            id: toolCallId,
-            name,
-            status: 'failed',
-            started_at: startedAt,
-            ended_at: event.createdAt,
-          });
-
-          break;
-        default:
-          break;
-      }
-    }
-  }
-
-  return [...tools.values()];
 }
 
 export function createMechOperations({ store, configuration, startAdmission, cancelWorkflow }: MechOperationsInput) {
@@ -421,7 +357,8 @@ export function createMechOperations({ store, configuration, startAdmission, can
         const response = {
           turn: runRecord(trace.run),
           dispatches: trace.dispatches.map(dispatchRecord),
-          tool_calls: toolEvidence(trace.events),
+          tool_calls: trace.toolCalls,
+          evidence_notices: trace.evidenceNotices,
         };
 
         if (excerpt === undefined) {

@@ -15,8 +15,10 @@ const CACHE_SCHEMA_REVISION = 2;
 // The native VFS permits 64-character paths, including room for journal suffixes.
 const CACHE_DIRECTORY = 'mc2';
 const GENERATION_BYTES = 16;
-const OPEN_TIMEOUT = Duration.seconds(5);
-const OPERATION_TIMEOUT = Duration.seconds(10);
+const OPEN_TIMEOUT = Duration.seconds(30);
+// Native leader discovery and RPC retries can take just over 40 seconds.
+export const CONSOLE_STORAGE_OPERATION_TIMEOUT_MS = Duration.toMillis('45 seconds');
+const OPERATION_TIMEOUT = Duration.millis(CONSOLE_STORAGE_OPERATION_TIMEOUT_MS);
 const CLEANUP_TIMEOUT = Duration.seconds(3);
 const CACHE_MAX_AGE = Duration.hours(24);
 const CACHE_PAGE_SIZE_BYTES = 4 * BYTES_PER_KIBIBYTE;
@@ -35,8 +37,23 @@ const CacheGenerationId = Schema.String.pipe(Schema.brand('ConsoleCacheGeneratio
 type CacheGenerationId = typeof CacheGenerationId.Type;
 type CacheGeneration = typeof CacheGeneration.Type;
 
+export const ConsoleStorageStage = {
+  Admission: 'admission',
+  Selection: 'selection',
+  Open: 'open',
+  Prepare: 'prepare',
+  Execute: 'execute',
+  Close: 'close',
+  Generation: 'generation',
+  Retire: 'retire',
+  Collect: 'collect',
+  CanonicalPrepare: 'canonical-prepare',
+  CanonicalCommit: 'canonical-commit',
+} as const;
+
 /** Reports required persistence failures with a safe message and a separate diagnostic reason. */
 export class ConsoleStorageFailed extends Schema.TaggedError<ConsoleStorageFailed>()('ConsoleStorageFailed', {
+  stage: Schema.Enum(ConsoleStorageStage),
   reason: Schema.String,
 }) {
   override readonly message = 'Persistent storage is unavailable. Allow site storage, then try again';
@@ -63,7 +80,11 @@ type ConsoleStorageScope = {
   readonly workspaceId: WorkspaceId;
 };
 
-type OpenConsoleStorage = ConsoleStorageScope & { readonly signal: AbortSignal; readonly onInvalidated: () => void };
+type OpenConsoleStorage = ConsoleStorageScope & {
+  readonly lifecycle: ConsoleStorageLifecycle;
+  readonly signal: AbortSignal;
+  readonly onInvalidated: (failure: ConsoleStorageFailed) => void;
+};
 
 type CacheScope = { readonly name: string; readonly key: string };
 type GenerationLease = { readonly release: () => Promise<void> };
@@ -78,23 +99,84 @@ type SelectedGeneration = {
 type Deadline<Value> = {
   readonly operation: Promise<Value>;
   readonly timeout: Duration.Duration;
+  readonly stage: ConsoleStorageFailed['stage'];
   readonly message: string;
+  readonly signal?: AbortSignal;
 };
 
-async function waitWithin<Value>({ operation, timeout, message }: Deadline<Value>): Promise<Value> {
+async function waitWithin<Value>({ operation, timeout, stage, message, signal }: Deadline<Value>): Promise<Value> {
+  signal?.throwIfAborted();
+
+  const canceled = Promise.withResolvers<never>();
+
+  function cancel(): void {
+    canceled.reject(signal?.reason);
+  }
+
+  signal?.addEventListener('abort', cancel, { once: true });
+
   const expired = Promise.withResolvers<never>();
 
   const timer = setTimeout(
-    () => expired.reject(new ConsoleStorageFailed({ reason: message })),
+    () => expired.reject(new ConsoleStorageFailed({ stage, reason: message })),
     Duration.toMillis(timeout),
   );
 
   try {
-    return await Promise.race([operation, expired.promise]);
+    return await Promise.race([operation, expired.promise, canceled.promise]);
   } finally {
     clearTimeout(timer);
+    signal?.removeEventListener('abort', cancel);
   }
 }
+
+/** Keeps native cleanup ownership for the browser application, including failed and replaced scopes. */
+export function createConsoleStorageLifecycle() {
+  const pendingCleanup = new Map<string, Set<Promise<void>>>();
+
+  function scopeKey(scope: ConsoleStorageScope): string {
+    return JSON.stringify([scope.origin, scope.principalId, scope.workspaceId]);
+  }
+
+  async function trackCleanup(scope: ConsoleStorageScope, operation: Promise<void>): Promise<void> {
+    const key = scopeKey(scope);
+    const pending = pendingCleanup.get(key) ?? new Set<Promise<void>>();
+
+    pending.add(operation);
+    pendingCleanup.set(key, pending);
+
+    function finished(): void {
+      pending.delete(operation);
+
+      if (pending.size === 0) {
+        pendingCleanup.delete(key);
+      }
+    }
+
+    void operation.then(finished, finished);
+
+    return await operation;
+  }
+
+  async function awaitPreviousCleanup(scope: ConsoleStorageScope, signal: AbortSignal): Promise<void> {
+    const pending = pendingCleanup.get(scopeKey(scope));
+
+    if (pending !== undefined) {
+      await waitWithin({
+        // Native close terminates its Worker in finally, including a rejected close.
+        operation: Promise.allSettled(pending),
+        timeout: OPERATION_TIMEOUT,
+        stage: ConsoleStorageStage.Close,
+        message: 'The previous local storage connection is still closing. Try again after it closes',
+        signal,
+      });
+    }
+  }
+
+  return { trackCleanup, awaitPreviousCleanup };
+}
+
+type ConsoleStorageLifecycle = ReturnType<typeof createConsoleStorageLifecycle>;
 
 async function createScope({ origin, principalId, workspaceId }: ConsoleStorageScope): Promise<CacheScope> {
   const encoded = new TextEncoder().encode(JSON.stringify([CACHE_NAMESPACE, origin, principalId, workspaceId]));
@@ -259,11 +341,12 @@ async function collectRetiredGenerations(scope: CacheScope): Promise<void> {
     await waitWithin({
       operation: removeRetiredGenerations(scope),
       timeout: CLEANUP_TIMEOUT,
+      stage: ConsoleStorageStage.Collect,
       message: 'Retired local data could not be removed',
     });
   } catch (error) {
     // The durable pointer already excludes these files; cleanup does not control admission.
-    globalThis.reportError(new ConsoleStorageFailed({ reason: String(error) }));
+    globalThis.reportError(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Collect, reason: String(error) }));
   }
 }
 
@@ -294,20 +377,37 @@ async function limitDatabase(database: BrowserWASQLiteDatabase): Promise<void> {
   const hasExpectedLimit = Result.isSuccess(limit) && limit.success[0]?.max_page_count === CACHE_MAX_PAGES;
 
   if (!hasExpectedSize || !hasExpectedLimit) {
-    throw new ConsoleStorageFailed({ reason: 'The SQLite page limit could not be applied' });
+    throw new ConsoleStorageFailed({
+      stage: ConsoleStorageStage.Prepare,
+      reason: 'The SQLite page limit could not be applied',
+    });
   }
 }
 
 type StorageOwner = SelectedGeneration & {
+  readonly identity: ConsoleStorageScope;
+  readonly lifecycle: ConsoleStorageLifecycle;
   readonly database: BrowserWASQLiteDatabase;
-  readonly onInvalidated: () => void;
+  readonly onInvalidated: (failure: ConsoleStorageFailed) => void;
 };
 
-function createStorage({ scope, generation, wire, lease, database, onInvalidated }: StorageOwner): ConsoleStorage {
+function createStorage({
+  scope,
+  generation,
+  wire,
+  lease,
+  database,
+  onInvalidated,
+  identity,
+  lifecycle,
+}: StorageOwner): ConsoleStorage {
   const nativeClose = database.close;
 
   if (nativeClose === undefined) {
-    throw new ConsoleStorageFailed({ reason: 'The native database has no close operation' });
+    throw new ConsoleStorageFailed({
+      stage: ConsoleStorageStage.Open,
+      reason: 'The native database has no close operation',
+    });
   }
 
   const closeDatabase = nativeClose;
@@ -325,15 +425,15 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     readonly retiring: Promise<void> | undefined;
   }> = { health: {}, isClosed: false, hasPageHidden: false, closing: undefined, retiring: undefined };
 
-  function invalidate(message: string): void {
+  function invalidate(failure: ConsoleStorageFailed): void {
     if (state.health.issue !== undefined) {
       return;
     }
 
     state.isClosed = true;
-    state.health = { issue: { kind: 'failed', message } };
+    state.health = { issue: { kind: 'failed', message: failure.message } };
 
-    onInvalidated();
+    onInvalidated(failure);
 
     for (const listener of listeners) {
       listener();
@@ -346,8 +446,15 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     const isExpired = nowMs >= DateTime.toEpochMillis(generation.createdAt) + Duration.toMillis(CACHE_MAX_AGE);
     const hasSelectedGeneration = Result.isSuccess(current) && current.success === wire;
 
-    if (state.isClosed || isExpired || !hasSelectedGeneration) {
-      throw new ConsoleStorageFailed({ reason: 'The cache generation is retired' });
+    if (state.isClosed) {
+      throw new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: 'The local connection is closed' });
+    }
+
+    if (isExpired || !hasSelectedGeneration) {
+      throw new ConsoleStorageFailed({
+        stage: ConsoleStorageStage.Generation,
+        reason: 'The cache generation is retired',
+      });
     }
   }
 
@@ -355,7 +462,7 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     state.retiring ??= retireGeneration({ scope, wire }).catch((error: unknown) => {
       state.retiring = undefined;
 
-      throw new ConsoleStorageFailed({ reason: String(error) });
+      throw new ConsoleStorageFailed({ stage: ConsoleStorageStage.Retire, reason: String(error) });
     });
 
     await state.retiring;
@@ -364,6 +471,8 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
   async function finishClose(): Promise<void> {
     try {
       await closeDatabase();
+    } catch (error) {
+      invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) }));
     } finally {
       // Native close terminates its Worker even when closing the connection rejects.
       await lease.release();
@@ -372,7 +481,7 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     }
   }
 
-  async function close(): Promise<void> {
+  async function beginClose(): Promise<void> {
     state.isClosed = true;
 
     clearTimeout(expiration);
@@ -380,12 +489,19 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     document.removeEventListener('visibilitychange', onVisibilityChange);
     coordinator.dispose();
 
-    state.closing ??= finishClose();
+    state.closing ??= lifecycle.trackCleanup(identity, finishClose());
+
+    return await state.closing;
+  }
+
+  async function close(): Promise<void> {
+    const closing = beginClose();
 
     try {
       await waitWithin({
-        operation: state.closing,
-        timeout: CLEANUP_TIMEOUT,
+        operation: closing,
+        timeout: OPERATION_TIMEOUT,
+        stage: ConsoleStorageStage.Close,
         message: 'Local storage did not close. Reopen this workspace',
       });
     } catch (error) {
@@ -393,21 +509,22 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
         return;
       }
 
-      invalidate('Local storage stopped responding. Reopen this workspace');
-      await retire();
+      const failure = new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) });
 
-      throw error;
+      invalidate(failure);
+
+      throw failure;
     }
   }
 
   async function discard(): Promise<void> {
-    invalidate('Local data was reset. Reopen this workspace');
+    invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Generation, reason: 'Local data was reset' }));
 
     try {
       await retire();
     } finally {
       // Retirement failure must not leave a failed connection accepting work.
-      await close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
+      void close().catch(() => undefined);
     }
 
     await collectRetiredGenerations(scope);
@@ -421,8 +538,13 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
     const current = Result.try(() => localStorage.getItem(scope.key));
 
     if (Result.isFailure(current) || current.success !== wire) {
-      invalidate('Local data was reset in another tab. Reopen this workspace');
-      void close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
+      invalidate(
+        new ConsoleStorageFailed({
+          stage: ConsoleStorageStage.Generation,
+          reason: 'Local data was reset in another tab',
+        }),
+      );
+      void close().catch(() => undefined);
     }
   }
 
@@ -443,7 +565,9 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
       const current = Result.try(checkGeneration);
 
       if (Result.isFailure(current)) {
-        void discard().catch(() => invalidate('Local data could not be reset. Try again'));
+        void discard().catch((error: unknown) =>
+          invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Retire, reason: String(error) })),
+        );
       }
     }
   }
@@ -457,6 +581,7 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
       const rows = await waitWithin({
         operation: database.execute<Row>(sql, params),
         timeout: OPERATION_TIMEOUT,
+        stage: ConsoleStorageStage.Execute,
         message: 'Local storage stopped responding. Reopen this workspace',
       });
 
@@ -473,13 +598,8 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
         throw error;
       }
 
-      invalidate('Local storage could not be updated. Reopen this workspace');
-
-      try {
-        await retire();
-      } finally {
-        void close().catch(() => invalidate('Local storage could not be closed. Reopen this workspace'));
-      }
+      invalidate(error);
+      void close().catch(() => undefined);
 
       throw error;
     }
@@ -493,7 +613,9 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
   );
 
   const expiration = setTimeout(() => {
-    void discard().catch(() => invalidate('Local data could not be reset. Try again'));
+    void discard().catch((error: unknown) =>
+      invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Retire, reason: String(error) })),
+    );
   }, remainingMs);
 
   globalThis.addEventListener('storage', onStorage);
@@ -506,7 +628,7 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
   return {
     generationId,
     persistence,
-    dispose: close,
+    dispose: beginClose,
     discard,
     readHealth: () => state.health,
     subscribeHealth(listener) {
@@ -519,16 +641,20 @@ function createStorage({ scope, generation, wire, lease, database, onInvalidated
 
 /** Opens one required persistent owner after the caller has admitted its principal and workspace. */
 export async function openConsoleStorage(input: OpenConsoleStorage): Promise<ConsoleStorage> {
-  const signal = AbortSignal.any([input.signal, AbortSignal.timeout(Duration.toMillis(OPEN_TIMEOUT))]);
-  const startedAtMs = DateTime.toEpochMillis(DateTime.nowUnsafe());
-
   async function select(): Promise<SelectedGeneration> {
     try {
       const scope = await createScope(input);
 
-      return await selectGeneration({ scope, signal });
+      await input.lifecycle.awaitPreviousCleanup(input, input.signal);
+
+      return await selectGeneration({
+        scope,
+        signal: AbortSignal.any([input.signal, AbortSignal.timeout(Duration.toMillis(OPEN_TIMEOUT))]),
+      });
     } catch (error) {
-      throw new ConsoleStorageFailed({ reason: String(error) });
+      throw Schema.is(ConsoleStorageFailed)(error)
+        ? error
+        : new ConsoleStorageFailed({ stage: ConsoleStorageStage.Selection, reason: String(error) });
     }
   }
 
@@ -536,11 +662,10 @@ export async function openConsoleStorage(input: OpenConsoleStorage): Promise<Con
   const { scope } = selected;
 
   const state: Types.Mutable<{
-    /** Absent until the native opener returns a connection. */
+    readonly stage: typeof ConsoleStorageStage.Open | typeof ConsoleStorageStage.Prepare;
     readonly database: BrowserWASQLiteDatabase | undefined;
-    /** Absent until the connection has its scoped lifecycle owner. */
     readonly storage: ConsoleStorage | undefined;
-  }> = { database: undefined, storage: undefined };
+  }> = { stage: ConsoleStorageStage.Open, database: undefined, storage: undefined };
 
   async function closeFailedOpen(): Promise<void> {
     try {
@@ -556,59 +681,66 @@ export async function openConsoleStorage(input: OpenConsoleStorage): Promise<Con
     state.database = await openBrowserWASQLiteOPFSDatabase({
       databaseName,
       timeoutMs: Duration.toMillis(OPEN_TIMEOUT),
-      signal,
+      signal: input.signal,
     });
 
-    state.storage = createStorage({ ...selected, database: state.database, onInvalidated: input.onInvalidated });
+    state.storage = createStorage({
+      ...selected,
+      identity: input,
+      lifecycle: input.lifecycle,
+      database: state.database,
+      onInvalidated: input.onInvalidated,
+    });
+
+    state.stage = ConsoleStorageStage.Prepare;
 
     await waitWithin({
       operation: limitDatabase(state.database),
-      timeout: Duration.millis(
-        Math.max(0, Duration.toMillis(OPEN_TIMEOUT) - (DateTime.toEpochMillis(DateTime.nowUnsafe()) - startedAtMs)),
-      ),
+      timeout: OPERATION_TIMEOUT,
+      stage: ConsoleStorageStage.Prepare,
       message: 'Local storage could not be prepared. Try again',
+      signal: input.signal,
     });
 
-    signal.throwIfAborted();
+    input.signal.throwIfAborted();
 
     if (localStorage.getItem(scope.key) !== selected.wire) {
-      throw new ConsoleStorageFailed({ reason: 'The cache generation changed during startup' });
+      throw new ConsoleStorageFailed({
+        stage: ConsoleStorageStage.Generation,
+        reason: 'The cache generation changed during startup',
+      });
     }
 
     void collectRetiredGenerations(scope);
 
     return state.storage;
   } catch (error) {
-    const wasCanceled = input.signal.aborted && state.storage?.readHealth().issue === undefined;
+    const failure = Schema.is(ConsoleStorageFailed)(error)
+      ? error
+      : new ConsoleStorageFailed({ stage: state.stage, reason: String(error) });
 
-    if (wasCanceled) {
+    try {
       if (state.storage === undefined) {
         await waitWithin({
-          operation: closeFailedOpen(),
-          timeout: CLEANUP_TIMEOUT,
-          message: 'Local storage did not close',
+          operation: input.lifecycle.trackCleanup(input, closeFailedOpen()),
+          timeout: OPERATION_TIMEOUT,
+          stage: ConsoleStorageStage.Close,
+          message: 'Local storage did not close. Try again',
         });
       } else {
-        await state.storage.dispose();
-      }
-
-      throw error;
-    }
-
-    if (state.storage === undefined) {
-      try {
-        await retireGeneration({ scope, wire: selected.wire });
-      } finally {
         await waitWithin({
-          operation: closeFailedOpen(),
-          timeout: CLEANUP_TIMEOUT,
+          operation: state.storage.dispose(),
+          timeout: OPERATION_TIMEOUT,
+          stage: ConsoleStorageStage.Close,
           message: 'Local storage did not close. Try again',
         });
       }
-    } else {
-      await state.storage.discard();
+    } catch (cleanupError) {
+      globalThis.reportError(
+        new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(cleanupError) }),
+      );
     }
 
-    throw new ConsoleStorageFailed({ reason: String(error) });
+    throw failure;
   }
 }

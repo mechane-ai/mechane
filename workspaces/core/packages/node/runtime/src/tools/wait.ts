@@ -1,6 +1,6 @@
 import { sleep } from 'workflow';
+import { executionId } from '../execution-id.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
-import { executionId } from './execution-id.ts';
 import type { RuntimeToolContext, ToolInvocation } from './types.ts';
 
 type WaitInput = ToolInvocation & { readonly seconds: number; readonly reason: string };

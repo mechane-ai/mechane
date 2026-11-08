@@ -32,6 +32,15 @@ cannot survive a host restart. A new process requires a new grant check and cann
 Redact injected values before retaining output, including truncated output. A guest can deliberately copy credentials
 it is authorized to receive; output redaction limits accidental disclosure rather than restricting arbitrary code.
 
+Record inspectable bash input once in deterministic run activity after resolving that command's actual secrets and
+before dispatch. Redact those values before bounding the snapshot. Keep environment values out of the snapshot.
+Only a freshly created execution receipt may gain a snapshot. A resumed receipt whose first capture is missing keeps
+its command unavailable, including a crash between receipt creation and capture.
+Project only that safe input and allowlisted receipt result fields through the authorized run read. Bound each text
+preview and the serialized tool-call collection, with explicit omission notices. Historical calls without a safe input
+snapshot remain unavailable; raw model arguments and current credentials cannot reconstruct their redaction context.
+Keep inspection data out of the immutable execution request and its replay comparison.
+
 Authenticate Node-to-sandbox calls separately from command credentials. Bind stable sandbox and execution IDs to the
 admitted workspace and mech. Reusing an execution ID with another input is refused. Read the original receipt after
 an uncertain response instead of dispatching another side effect.
@@ -54,6 +63,9 @@ revocation, and notification delivery. Mechane rechecks the effective permission
 
 Exercise the packaged API and command path with a current grant, revoked grant, foreign workspace, reused execution
 ID, and lost response. Check emitted output and stored records for fixture credential values.
+Through the same flow, inspect a nonzero command result, missing historical input, and bounded output. Verify SDK
+completion does not erase the exit code, replay preserves the original safe snapshot, and traces expose no fixture
+credential. Removing a safe snapshot must not enable a fallback to raw model messages.
 
 Include a foreground command that outlives the initial response wait. Its eventual terminal receipt must still revoke the
 minted token; returning a running receipt must not abandon cleanup or revoke a still-running command's access.

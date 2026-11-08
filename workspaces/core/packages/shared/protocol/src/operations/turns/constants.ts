@@ -1,3 +1,5 @@
+import { BYTES_PER_KIBIBYTE } from '@mechane/records';
+
 /** A run can wait for its session, execute, wait for authority, or retain its terminal result. */
 export const TurnStatus = {
   Queued: 'queued',
@@ -41,3 +43,26 @@ export const ToolCallStatus = {
 } as const;
 
 export type ToolCallStatus = (typeof ToolCallStatus)[keyof typeof ToolCallStatus];
+
+/** A shell receipt describes the process outcome independently of SDK tool completion. */
+export const BashExecutionStatus = {
+  Running: 'running',
+  Completed: 'completed',
+  TimedOut: 'timed_out',
+  Uncertain: 'uncertain',
+  Unavailable: 'unavailable',
+  PersistenceFailed: 'persistence_failed',
+  Refused: 'refused',
+} as const;
+
+export type BashExecutionStatus = (typeof BashExecutionStatus)[keyof typeof BashExecutionStatus];
+
+/** Inspection kinds select the safe, tool-specific evidence carried by a trace. */
+export const ToolInspectionKind = { Bash: 'bash' } as const;
+
+/** Command previews retain up to this many UTF-8 bytes after execution-time redaction. */
+export const TOOL_TRACE_COMMAND_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
+/** Output previews retain the tail so the latest command diagnostics stay visible. */
+export const TOOL_TRACE_OUTPUT_MAX_BYTES = 8 * BYTES_PER_KIBIBYTE;
+/** The serialized tool-call array includes JSON escaping and separators in this limit. */
+export const TOOL_TRACE_MAX_BYTES = 128 * BYTES_PER_KIBIBYTE;

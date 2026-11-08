@@ -1,3 +1,4 @@
+import { BashExecutionStatus } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
 import { EXECUTION_TIMEOUT_MAX } from '@mechane/sandbox-wire';
 import type { SandboxCapacityRefusalReason, SandboxExecutionResult } from '@mechane/sandbox-wire';
@@ -6,20 +7,21 @@ import { sleep } from 'workflow';
 import { z } from 'zod';
 import { loadRuntimeConfiguration } from '../config.ts';
 import type { Mech } from '../domain.ts';
+import { executionId as toolExecutionId } from '../execution-id.ts';
 import type { WorkspacePolicy } from '../store/api/configuration/types.ts';
 import type { RuntimeStore } from '../store/database.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { BASH_OBSERVE_WAIT_MS, BASH_POLL_INTERVAL_MS, TOOL_MODEL_RESULT_MAX_BYTES } from './constants.ts';
 import { prepareEnvironment } from './environment.ts';
 import { ToolUnavailableError } from './errors.ts';
-import { executionId as toolExecutionId } from './execution-id.ts';
 import { revokeGitHubToken } from './github-token.ts';
 import { readExecutionReceipt } from './read-execution-receipt.ts';
+import { recordBashInput } from './record-bash-input.ts';
 import { requestSandboxExecution } from './sandbox-client.ts';
 import type { BashArguments, BashInvocation, PreparedEnvironment, RuntimeToolContext } from './types.ts';
 
 const BashResultSchema = z.object({
-  status: z.enum(['running', 'completed', 'timed_out', 'uncertain', 'unavailable', 'persistence_failed', 'refused']),
+  status: z.enum(BashExecutionStatus),
   executionId: z.string(),
   output: z.string().optional(),
   omittedBytes: z.number().int().nonnegative().optional(),
@@ -36,6 +38,7 @@ type ObserveBashInput = RuntimeToolContext & { readonly executionId: string };
 type AuthorizeBashInput = ObserveBashInput & {
   readonly store: RuntimeStore;
   readonly submission: BashArguments | null;
+  readonly wasExecutionCreated: boolean;
 };
 
 type AuthorizedBashBody = {
@@ -110,6 +113,7 @@ async function submitBash(input: BashInvocation): Promise<BashResult> {
         ...identity,
         store,
         submission: { command: input.command, timeoutMs: input.timeoutMs },
+        wasExecutionCreated: begun.wasCreated && observed._tag === 'ExecutionNotFound',
       });
     });
   } catch (error) {
@@ -153,7 +157,7 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
       const progress = await requestSandboxExecution({ ...input, method: HttpMethod.Get });
 
       if (progress._tag === 'ExecutionEnvironmentRequired' && receipt.runId === input.runId) {
-        return await authorizeBash({ ...input, store, submission: null });
+        return await authorizeBash({ ...input, store, submission: null, wasExecutionCreated: false });
       }
 
       const result = bashResult({ executionId: input.executionId, progress });
@@ -209,6 +213,12 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
     }
 
     return { status: 'refused', executionId: input.executionId, message: 'The run is no longer active.' };
+  }
+
+  if (input.submission !== null && input.wasExecutionCreated) {
+    await recordBashInput({ ...input, command: input.submission.command, secrets: prepared.environment.secrets }).catch(
+      revokeUnsubmittedToken,
+    );
   }
 
   const body: AuthorizedBashBody = {

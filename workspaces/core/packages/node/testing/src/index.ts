@@ -21,7 +21,16 @@ export { deleteSandbox } from './compute/delete-sandbox.ts';
 export { waitForBashCompletion } from './compute/wait-for-bash-completion.ts';
 export { waitForSandboxFile } from './compute/wait-for-sandbox-file.ts';
 export { requireFixtures } from './fixtures.ts';
-export { createMech, mechPath, readTrace, readTurns, sendInbox, sendInboxAndWait, waitForTurn } from './mechs.ts';
+export {
+  createMech,
+  mechPath,
+  readTrace,
+  readTurns,
+  sendInbox,
+  sendInboxAndWait,
+  turnPath,
+  waitForTurn,
+} from './mechs.ts';
 export { configureNexusRequests } from './nexus/configure-requests.ts';
 export { createNexusOutcome, deliverNexusOutcome } from './nexus/request-outcome.ts';
 export { connectSlack } from './slack/connect-slack.ts';

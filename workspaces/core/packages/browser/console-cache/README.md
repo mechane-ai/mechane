@@ -21,12 +21,17 @@ removed only while holding an exclusive generation lease. Shared native temporar
 A generation expires after 24 hours. SQLite limits its main database to 64 MiB; transient journals and native temporary
 files are outside that cap. The native driver serializes whole transactions. The lifecycle wrapper bounds application
 waits without retrying SQL whose outcome is unknown. Native open supports cancellation; established connections expose
-no force-termination API. A timed-out close quarantines the generation and retains its lease until close settles or the
-native pagehide handler terminates its Worker.
+no force-termination API. A timed-out close fences only its connection and retains its lease until close settles or the
+native pagehide handler terminates its Worker. Tab-local cleanup promises prevent a replacement connection from opening
+that scope while its previous Worker still owns it; unrelated scopes and healthy peer tabs remain usable. The browser
+application creates this cleanup lifecycle once and passes it through every workspace attempt, including failed
+initialization and remounts. It holds only unfinished cleanup promises, never records or commands.
 
-`discard` rejects if durable retirement fails. Recovery must await it before opening another admitted runtime.
-`discardConsoleStorage` retires a scope that admission rejected before a storage handle exists. Ordinary successful
-`dispose` preserves the selected generation.
+`discard` retires the generation and begins native close; it rejects if durable retirement fails. Opening, reading, and
+pre-mutation preparation failures close only their own connection. An uncertain attempted mutation, revoked admission,
+explicit reset, or expiry retires the shared generation. `discardConsoleStorage` retires a scope that admission rejected
+before a storage handle exists. `dispose` preserves an eligible generation and settles only after actual native close.
+Recovery awaits that cleanup and fresh admission before reopening.
 
 Build through [Console](../console/README.md). The native package supplies the Worker and WASM assets to the same
 production bundle served locally and on Cloudflare.

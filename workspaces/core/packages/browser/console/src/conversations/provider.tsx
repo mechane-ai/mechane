@@ -1,12 +1,25 @@
 import type { ConsoleData } from '@mechane/console-data';
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 import type { ReactNode } from 'react';
 import { createConversationEntry } from './entry.ts';
 import type { ConversationEntry } from './entry.ts';
 
 const RETAINED_CONVERSATIONS = 5;
 
-function createConversations(data: ConsoleData) {
+function createConversations(
+  conversations: ConsoleData['conversations'],
+  workspaceId: string,
+  getData: () => ConsoleData,
+) {
   const entries = new Map<string, ConversationEntry>();
   const recency = new Set<ConversationEntry>();
 
@@ -46,7 +59,9 @@ function createConversations(data: ConsoleData) {
       }
 
       const entry = createConversationEntry({
-        data,
+        getData,
+        conversations,
+        workspaceId,
         mechId,
         sessionId,
         onResolved: (resolved) => {
@@ -79,10 +94,22 @@ export function ConversationProvider({
   readonly data: ConsoleData;
   readonly children: ReactNode;
 }): ReactNode {
-  const conversations = useMemo(() => createConversations(data), [data]);
+  const current = useRef(data);
+  const getData = useCallback(() => current.current, []);
+  const conversationApi = data.conversations;
+  const workspaceId = data.workspace.id;
+
+  const conversations = useMemo(
+    () => createConversations(conversationApi, workspaceId, getData),
+    [getData, conversationApi, workspaceId],
+  );
+
+  useLayoutEffect(() => {
+    current.current = data;
+  }, [data]);
 
   useEffect(() => {
-    const signal = data.conversations.signal;
+    const signal = conversationApi.signal;
 
     signal.addEventListener('abort', conversations.dispose, { once: true });
 
@@ -90,7 +117,7 @@ export function ConversationProvider({
       signal.removeEventListener('abort', conversations.dispose);
       conversations.dispose();
     };
-  }, [conversations, data]);
+  }, [conversations, conversationApi]);
 
   return <ConversationContext value={conversations}>{children}</ConversationContext>;
 }

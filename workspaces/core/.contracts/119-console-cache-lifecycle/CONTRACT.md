@@ -40,6 +40,9 @@ the current rows, construct the mutation, and await native acceptance. Use this 
 acknowledged command reconciliation, receipts, and purges. Keep HTTP waits outside the generation's write lock.
 Failed native acceptance or an uncertain write fences and retires its generation before releasing the lock; never
 replay that write.
+Failure while opening, reading, or preparing a mutation before its first write closes only the affected connection.
+It must not retire the shared generation or invalidate healthy peers. Track whether a mutation was actually attempted;
+successful preparation alone does not make a write uncertain.
 These locks order application decisions. Native TanStack remains the sole record replication owner, with no added queue
 or cross-tab RPC protocol.
 
@@ -71,7 +74,14 @@ Canonical tables may restore retained local rows eagerly within this policy; ser
 Bound application waits for opening, persistent updates, and cleanup. The native opener owns startup cancellation;
 its established database exposes graceful close but no forced-termination API. Keep a retiring generation's lease until
 native close settles or page suspension terminates its Worker. A timeout fences the runtime and leaves its generation
-unavailable for reuse. Do not retry an uncertain write or create an automatic loop of replacement Workers.
+unavailable to that runtime. Retire the shared generation only when the timeout leaves an attempted write uncertain.
+Opening and write budgets must accommodate the native coordinator's supported startup and leader handoff.
+After completed cleanup, allow one automatic local reopen through fresh server admission. A failed automatic attempt
+exposes a manual retry; it cannot start a loop of replacement Workers. Reopening a connection reuses an eligible
+generation. Explicit reset, revoked admission, expiry, incompatible format, and uncertain writes retire shared state.
+Keep the failure stage visible so an open, read, preparation, write, or cleanup failure can be distinguished.
+While replacement is pending or failed, session and resource revocations still fence every retained view, including
+lists whose native cache has already closed. Cleanup cannot remove the application's ability to revoke those views.
 For ordinary disposal, clean up native collections and their coordinator before closing the database. A terminal native
 fault or timeout first fences the application owner, then promptly closes native resources; recovery cleans up the
 remaining collections. Successful ordinary disposal may retain the generation. Reject completions from disposed owners.
@@ -91,6 +101,11 @@ may cross owners. Verify current-page reads and retained drafts after Back/Forwa
 Use two tabs for one generation. Check shared records and receipts, independent network error and retry state, polling,
 command invalidation, and continued use after either tab closes. Release an older response after another tab accepts a
 newer revision or terminal run state. Confirm canonical values do not regress and missing rows cannot become false empties.
+Fail or delay the second tab's opening, read, and pre-mutation preparation separately. The first tab remains usable in
+its original generation, and local recovery retains drafts and submission identities. Close the native leader and
+verify its peer can continue. Fail the automatic reopen and confirm recovery stops at an actionable manual retry.
+Revoke the session and remove listed resources after cleanup while replacement is pending or failed. Confirm all
+retained and prospective owners observe the revocation and removed content disappears.
 Repeat with a stale prepared mutation, overlapping unversioned snapshots, a purge, and a persistence failure while
 another writer waits. Confirm guards run after the latest persisted rows load and an uncertain writer retires its
 generation before admitting the next writer. Reopen the database to verify the accepted results persisted.
@@ -112,8 +127,9 @@ summaries use passive reads, and detailed logs load only for an explicitly selec
 
 Native async error handling is confined to `console-cache/src/store/storage.ts`. Its catches own storage health,
 retirement, and cleanup. They neither run Effects nor hide failed server commands. Contract 046 permits forwarding the
-native database's unchanged SQL and parameters solely for lifecycle checks. That guard retires only its own lifecycle
-failures; native SQL errors remain intact for the adapter to handle. There is no cache type-assertion exception.
+native database's unchanged SQL and parameters solely for lifecycle checks. That guard fences only its own connection;
+the canonical writer retires shared state when a mutation may have been attempted. Native SQL errors remain intact for
+the adapter to handle. There is no cache type-assertion exception.
 
 The release supplies the required browser headers and the same verified browser Worker and WASM inventory locally and in
 production. An unavailable browser capability is an error; it does not activate another storage implementation.

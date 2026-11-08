@@ -128,7 +128,18 @@ export {
   UnknownDispatch,
   UnknownTurn,
 } from './operations/turns/schemas.ts';
-export { DispatchStatus, SettlementBasis, TurnStatus, UnansweredReason } from './operations/turns/constants.ts';
+export {
+  BashExecutionStatus,
+  DispatchStatus,
+  SettlementBasis,
+  ToolCallStatus,
+  ToolInspectionKind,
+  TOOL_TRACE_COMMAND_MAX_BYTES,
+  TOOL_TRACE_OUTPUT_MAX_BYTES,
+  TOOL_TRACE_MAX_BYTES,
+  TurnStatus,
+  UnansweredReason,
+} from './operations/turns/constants.ts';
 export {
   Allowance,
   Workspace,

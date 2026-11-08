@@ -128,6 +128,7 @@ function turnsPath(input: MechInput): string {
   return `${mechPath(input)}/turns`;
 }
 
-function turnPath(input: TraceInput): string {
+/** Authorization probes use the same trace route as successful reads. */
+export function turnPath(input: TraceInput): string {
   return `${mechPath(input)}/turns/${encodeURIComponent(input.turnId)}`;
 }

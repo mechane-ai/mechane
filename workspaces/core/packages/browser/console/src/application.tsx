@@ -1,7 +1,7 @@
 import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
-import { isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
-import type { Session } from '@mechane/console-data';
+import { createConsoleDataOwner, isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
+import type { ConsoleDataOwner, Session } from '@mechane/console-data';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleEntrance, ConsolePending, Welcome } from './entrance.tsx';
@@ -15,6 +15,7 @@ type SessionState =
   | { readonly kind: 'ready'; readonly session: Session };
 
 export function ConsoleApplication({ location, navigate }: ConsoleNavigation): ReactNode {
+  const [owner] = useState(createConsoleDataOwner);
   const [state, setState] = useState<SessionState>({ kind: 'loading' });
   const [attempt, setAttempt] = useState(0);
 
@@ -68,6 +69,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   return (
     <WorkspaceSelection
       key={state.session.principal.id}
+      owner={owner}
       session={state.session}
       location={location}
       navigate={navigate}
@@ -77,11 +79,16 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
 }
 
 function WorkspaceSelection({
+  owner,
   session,
   location,
   navigate,
   reconnect,
-}: ConsoleNavigation & { readonly session: Session; readonly reconnect: () => void }): ReactNode {
+}: ConsoleNavigation & {
+  readonly owner: ConsoleDataOwner;
+  readonly session: Session;
+  readonly reconnect: () => void;
+}): ReactNode {
   const preferenceKey = `mechane:workspace:${session.principal.id}`;
 
   const [preferred] = useState(() => {
@@ -143,6 +150,7 @@ function WorkspaceSelection({
 
   return (
     <WorkspaceScreen
+      owner={owner}
       key={`${session.principal.id}:${workspace.id}`}
       session={session}
       workspace={workspace}

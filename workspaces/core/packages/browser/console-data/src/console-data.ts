@@ -1,4 +1,11 @@
-import { ConsoleStorageFailed, discardConsoleStorage, openConsoleStorage } from '@mechane/console-cache';
+import {
+  CONSOLE_STORAGE_OPERATION_TIMEOUT_MS,
+  ConsoleStorageFailed,
+  ConsoleStorageStage,
+  createConsoleStorageLifecycle,
+  discardConsoleStorage,
+  openConsoleStorage,
+} from '@mechane/console-cache';
 import type { ConsoleStorageHealth } from '@mechane/console-cache';
 import type { Workspace } from '@mechane/protocol';
 import { EvidenceArtifactId, MechId, PrincipalId, TurnId, WorkspaceId } from '@mechane/records';
@@ -27,7 +34,9 @@ const REFRESH_MS = Duration.toMillis('15 seconds');
 const CACHE_MS = Duration.toMillis('1 minute');
 const ACTIVITY_REFRESH_MS = Duration.toMillis('5 seconds');
 const ALLOWANCE_REFRESH_MS = Duration.toMillis('30 seconds');
-const READ_ADMISSION_TIMEOUT_MS = Duration.toMillis('40 seconds');
+// One preceding read can include its HTTP budget and two prepare/accept cache phases.
+const READ_ADMISSION_PHASES = 5;
+const READ_ADMISSION_TIMEOUT_MS = CONSOLE_STORAGE_OPERATION_TIMEOUT_MS * READ_ADMISSION_PHASES;
 const CLEAR_SCOPE_TIMEOUT_MS = Duration.toMillis('3 seconds');
 const INVALIDATION_CHANNEL = 'mechane-console-admission';
 
@@ -79,7 +88,6 @@ const ScopeInvalidation = Schema.Struct({
 class UnsupportedReadDemand extends Schema.TaggedError<UnsupportedReadDemand>()('UnsupportedReadDemand', {}) {}
 class ScopeAdmissionEnded extends Schema.TaggedError<ScopeAdmissionEnded>()('ScopeAdmissionEnded', {}) {}
 class ReadAdmissionEnded extends Schema.TaggedError<ReadAdmissionEnded>()('ReadAdmissionEnded', {}) {}
-class CleanupTimedOut extends Schema.TaggedError<CleanupTimedOut>()('CleanupTimedOut', {}) {}
 
 type ReadObservation = { readonly subscribe: (listener: () => void) => () => void; readonly unsubscribe: () => void };
 
@@ -98,9 +106,11 @@ type ConsoleDataHealth = ConsoleStorageHealth & {
   readonly isRevoked: boolean;
   /** Absent until this runtime observes a failure in local data handling. */
   readonly error?: unknown;
+  readonly cleanupError?: unknown;
 };
 
 type CreateConsoleData = {
+  readonly owner: ConsoleDataOwner;
   readonly origin: URL;
   readonly principalId: Session['principal']['id'];
   readonly workspace: Workspace;
@@ -108,6 +118,20 @@ type CreateConsoleData = {
   readonly initialRequests: ReadonlyArray<ReadRequest>;
   readonly onSessionEnded: () => void;
 };
+
+/** Owns unfinished native cleanup across workspace replacement and sign-in changes. */
+export function createConsoleDataOwner() {
+  const lifecycle = createConsoleStorageLifecycle();
+
+  return {
+    async openStorage(input: Omit<Parameters<typeof openConsoleStorage>[0], 'lifecycle'>) {
+      return await openConsoleStorage({ ...input, lifecycle });
+    },
+    trackCleanup: lifecycle.trackCleanup,
+  };
+}
+
+export type ConsoleDataOwner = ReturnType<typeof createConsoleDataOwner>;
 
 function readQueryKey(scope: string, request: ReadRequest): QueryKey {
   const owner = 'mechId' in request ? request.mechId : 'workspace';
@@ -141,26 +165,100 @@ function readInterval(request: ReadRequest): number | false {
   }
 }
 
+type WorkspaceOwner = {
+  readonly channel: BroadcastChannel;
+  readonly api: ReturnType<typeof createConversationApi>;
+  readonly revoke: () => void;
+  readonly bindAccessLoss: (listener: () => void) => void;
+  readonly subscribeInvalidation: (listener: (event: MessageEvent<unknown>) => void) => () => void;
+  readonly recover: (close: () => Promise<void>, requests: ReadonlyArray<ReadRequest>) => Promise<ConsoleData>;
+};
+
+function createWorkspaceOwner(options: CreateConsoleData): WorkspaceOwner {
+  const lifetime = new AbortController();
+  const signal = AbortSignal.any([options.signal, lifetime.signal]);
+
+  signal.throwIfAborted();
+
+  const accessLost = MutableRef.make(options.onSessionEnded);
+  const invalidations = new Set<(event: MessageEvent<unknown>) => void>();
+  const broadcast = Result.try(() => new BroadcastChannel(INVALIDATION_CHANNEL));
+
+  if (Result.isFailure(broadcast)) {
+    throw new ConsoleStorageFailed({
+      stage: ConsoleStorageStage.Admission,
+      reason: `Admission notifications are unavailable: ${String(broadcast.failure)}`,
+    });
+  }
+
+  const channel = broadcast.success;
+
+  channel.addEventListener('message', (event: MessageEvent<unknown>) => {
+    // Admission revocation can remove all listeners during delivery.
+    const recipients = [...invalidations];
+
+    for (const listener of recipients) {
+      listener(event);
+    }
+  });
+  signal.addEventListener(
+    'abort',
+    () => {
+      channel.close();
+      invalidations.clear();
+    },
+    { once: true },
+  );
+
+  const owner: WorkspaceOwner = {
+    channel,
+    api: createConversationApi({
+      origin: options.origin,
+      workspaceId: options.workspace.id,
+      signal,
+      onAccessLost: () => accessLost.current(),
+    }),
+    revoke: () => lifetime.abort(),
+    bindAccessLoss: (listener: () => void) => {
+      accessLost.current = listener;
+    },
+    subscribeInvalidation: (listener: (event: MessageEvent<unknown>) => void) => {
+      invalidations.add(listener);
+
+      return () => invalidations.delete(listener);
+    },
+    async recover(close: () => Promise<void>, requests: ReadonlyArray<ReadRequest>): Promise<ConsoleData> {
+      await close();
+
+      return await openData({ ...options, initialRequests: requests }, owner);
+    },
+  };
+
+  return owner;
+}
+
 /** Confirms current server admission before exposing local records for one cancelable scope. */
 export async function createConsoleData(options: CreateConsoleData): Promise<ConsoleData> {
-  const { disposeForRecovery, ...runtime } = await createData(options);
+  const owner = createWorkspaceOwner(options);
+
+  try {
+    return await openData(options, owner);
+  } catch (error) {
+    owner.revoke();
+
+    throw error;
+  }
+}
+
+async function openData(options: CreateConsoleData, conversations: WorkspaceOwner): Promise<ConsoleData> {
+  const { disposeForRecovery, ...runtime } = await createData(options, conversations);
 
   return {
     ...runtime,
     async recover(requests: ReadonlyArray<ReadRequest>): Promise<ConsoleData> {
-      return await recoverData(options, disposeForRecovery, requests);
+      return await conversations.recover(disposeForRecovery, requests);
     },
   };
-}
-
-async function recoverData(
-  options: CreateConsoleData,
-  disposeForRecovery: () => Promise<void>,
-  requests: ReadonlyArray<ReadRequest>,
-): Promise<ConsoleData> {
-  await disposeForRecovery();
-
-  return await createConsoleData({ ...options, initialRequests: requests });
 }
 
 function createOwnerSignals() {
@@ -194,11 +292,18 @@ function createOwnerSignals() {
   };
 }
 
-async function createData(options: CreateConsoleData) {
+async function createData(options: CreateConsoleData, conversations: WorkspaceOwner) {
   const { origin, principalId, workspace, onSessionEnded } = options;
   const scope = JSON.stringify([origin.origin, principalId, workspace.id]);
+
+  const storageScope = {
+    origin: origin.origin,
+    principalId: PrincipalId.make(principalId),
+    workspaceId: WorkspaceId.make(workspace.id),
+  };
+
   const lifetime = new AbortController();
-  const signal = AbortSignal.any([lifetime.signal, options.signal]);
+  const signal = AbortSignal.any([lifetime.signal, conversations.api.signal]);
 
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: REFRESH_MS, gcTime: CACHE_MS } },
@@ -215,19 +320,14 @@ async function createData(options: CreateConsoleData) {
   const readLifetimes = createOwnerSignals();
   const pendingWrites = new Set<Promise<unknown>>();
   const pendingRevocations = MutableRef.make(new Map<string, Promise<void>>());
-  const broadcast = Result.try(() => new BroadcastChannel(INVALIDATION_CHANNEL));
-
-  if (Result.isFailure(broadcast)) {
-    throw new ConsoleStorageFailed({ reason: `Admission notifications are unavailable: ${String(broadcast.failure)}` });
-  }
-
-  const channel = broadcast.success;
+  const channel = conversations.channel;
   const cleanup = MutableRef.make<Promise<void> | undefined>(undefined);
 
   const state = MutableRef.make<{
     readonly health: ConsoleDataHealth;
     readonly localIssue: ConsoleStorageHealth['issue'];
     readonly localFailure: unknown;
+    readonly cleanupFailure: unknown;
     readonly isClearing: boolean;
     readonly revocation: unknown;
     readonly cacheInvalidation: unknown;
@@ -235,6 +335,7 @@ async function createData(options: CreateConsoleData) {
     health: { isDisposed: false, isRevoked: false },
     localIssue: undefined,
     localFailure: undefined,
+    cleanupFailure: undefined,
     isClearing: false,
     revocation: undefined,
     cacheInvalidation: undefined,
@@ -253,6 +354,7 @@ async function createData(options: CreateConsoleData) {
       isDisposed: state.current.health.isDisposed,
       isRevoked: state.current.health.isRevoked,
       error: state.current.localFailure,
+      cleanupError: state.current.cleanupFailure,
     };
 
     const issue = state.current.localIssue ?? storage.issue;
@@ -269,26 +371,49 @@ async function createData(options: CreateConsoleData) {
       return;
     }
 
+    const failure = Schema.is(ConsoleStorageFailed)(error)
+      ? error
+      : new ConsoleStorageFailed({ stage: ConsoleStorageStage.Execute, reason: String(error) });
+
+    globalThis.reportError(new Error(`Console cache failed during ${failure.stage}`));
+
     state.current = {
       ...state.current,
-      localFailure: error,
+      localFailure: failure,
       localIssue: {
         kind: 'failed',
         message: 'The local cache could not be updated. Reopen this workspace to continue',
       },
     };
 
+    lifetime.abort(failure);
+    notifyReads();
     publishHealth(state.current.health);
+    void closeFailedCache();
   }
 
-  function invalidateCache(): void {
-    if (state.current.health.isDisposed || state.current.cacheInvalidation !== undefined) {
+  async function closeFailedCache(): Promise<void> {
+    try {
+      const { cache } = await initialized;
+
+      await cache.dispose();
+    } catch (error) {
+      recordCleanupFailure(error);
+    }
+  }
+
+  function invalidateCache(failure: ConsoleStorageFailed): void {
+    if (state.current.health.isDisposed) {
+      recordCleanupFailure(failure);
+
       return;
     }
 
-    const failure = new ConsoleStorageFailed({ reason: 'The cache generation was retired' });
+    if (state.current.cacheInvalidation !== undefined) {
+      return;
+    }
 
-    state.current = { ...state.current, cacheInvalidation: failure, isClearing: true };
+    state.current = { ...state.current, cacheInvalidation: failure };
 
     lifetime.abort(failure);
     reportLocalFailure(failure);
@@ -296,7 +421,7 @@ async function createData(options: CreateConsoleData) {
   }
 
   function broadcastInvalidation(target: InvalidationTarget): void {
-    if (!state.current.health.isDisposed) {
+    if (!conversations.api.signal.aborted) {
       // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel has no target origin
       channel.postMessage({ origin: origin.origin, principalId, target });
     }
@@ -310,9 +435,30 @@ async function createData(options: CreateConsoleData) {
     state.current = { ...state.current, revocation: failure, health: { ...state.current.health, isRevoked: true } };
 
     lifetime.abort();
+    conversations.revoke();
     notifyReads();
+    void retireScopeCache();
     onSessionEnded();
   }
+
+  async function retireScopeCache(): Promise<void> {
+    const discarded = await discardConsoleStorage({
+      origin: origin.origin,
+      principalId: PrincipalId.make(principalId),
+      workspaceId: WorkspaceId.make(workspace.id),
+    });
+
+    if (!discarded) {
+      recordCleanupFailure(
+        new ConsoleStorageFailed({
+          stage: ConsoleStorageStage.Retire,
+          reason: 'Revoked workspace data could not be retired',
+        }),
+      );
+    }
+  }
+
+  conversations.bindAccessLoss(endSession);
 
   function signalForRead(request: ReadRequest): AbortSignal {
     const signals = [signal, readLifetimes.signal(request.id)];
@@ -432,7 +578,7 @@ async function createData(options: CreateConsoleData) {
     failureScope = readFailureScope(error),
     shouldBroadcast = true,
   }: ReadFailure): Promise<void> {
-    if (!failureSignal.aborted) {
+    if (!failureSignal.aborted || !shouldBroadcast) {
       switch (failureScope) {
         case 'scope':
           endSession(error);
@@ -536,13 +682,23 @@ async function createData(options: CreateConsoleData) {
 
     const db = new DbClient();
 
-    const storage = await openConsoleStorage({
-      origin: origin.origin,
-      principalId: PrincipalId.make(principalId),
-      workspaceId: WorkspaceId.make(workspace.id),
-      signal,
-      onInvalidated: invalidateCache,
-    });
+    const storage = await options.owner.openStorage({ ...storageScope, signal, onInvalidated: invalidateCache });
+
+    async function closeInitialization(): Promise<void> {
+      try {
+        await db.cleanup();
+      } catch (cleanupError) {
+        recordCleanupFailure(cleanupError);
+      } finally {
+        try {
+          if (state.current.health.isRevoked || state.current.isClearing) {
+            await storage.discard();
+          }
+        } finally {
+          await storage.dispose();
+        }
+      }
+    }
 
     try {
       signal.throwIfAborted();
@@ -557,8 +713,12 @@ async function createData(options: CreateConsoleData) {
         db,
         generationId: storage.generationId,
         retire: async (error) => {
+          state.current = { ...state.current, isClearing: true };
+
           reportLocalFailure(error);
-          invalidateCache();
+          invalidateCache(
+            new ConsoleStorageFailed({ stage: ConsoleStorageStage.CanonicalCommit, reason: String(error) }),
+          );
           await storage.discard();
         },
       });
@@ -584,18 +744,12 @@ async function createData(options: CreateConsoleData) {
         unsubscribeTables,
       };
     } catch (error) {
-      const cleanupResults = await Promise.allSettled([db.cleanup()]);
+      const closing = options.owner.trackCleanup(storageScope, closeInitialization());
 
-      for (const result of cleanupResults) {
-        if (result.status === 'rejected') {
-          reportLocalFailure(result.reason);
-        }
-      }
-
-      if (state.current.health.isRevoked || state.current.isClearing || state.current.health.issue?.kind === 'failed') {
-        await storage.discard();
-      } else {
-        await storage.dispose();
+      try {
+        await awaitCleanup(closing, storage.dispose);
+      } catch (cleanupError) {
+        recordCleanupFailure(cleanupError);
       }
 
       throw error;
@@ -611,10 +765,10 @@ async function createData(options: CreateConsoleData) {
       }
 
       lifetime.abort();
-      channel.close();
       queryClient.unmount();
       await queryClient.cancelQueries();
       queryClient.clear();
+      unsubscribeInvalidation();
 
       if (state.current.health.isRevoked) {
         const discarded = await discardConsoleStorage({
@@ -634,7 +788,7 @@ async function createData(options: CreateConsoleData) {
 
   const initialized = startRuntime();
 
-  channel.addEventListener('message', receiveInvalidation);
+  const unsubscribeInvalidation = conversations.subscribeInvalidation(receiveInvalidation);
 
   for (const request of options.initialRequests) {
     void Promise.allSettled([queryClient.query({ queryKey: readQueryKey(scope, request), queryFn: loadReceipt })]);
@@ -821,7 +975,7 @@ async function createData(options: CreateConsoleData) {
     state.current = { ...state.current, isClearing: true };
 
     reportLocalFailure(error);
-    invalidateCache();
+    invalidateCache(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Retire, reason: String(error) }));
 
     const { cache } = await initialized;
 
@@ -901,7 +1055,6 @@ async function createData(options: CreateConsoleData) {
     state.current = { ...state.current, health: { ...state.current.health, isDisposed: true } };
 
     lifetime.abort();
-    channel.close();
     queryClient.unmount();
     runtime.unsubscribeStorage();
 
@@ -921,52 +1074,93 @@ async function createData(options: CreateConsoleData) {
       await runtime.db.cleanup();
     }
 
-    const expired = Promise.withResolvers<never>();
-    const deadline = setTimeout(() => expired.reject(new CleanupTimedOut({})), CLEAR_SCOPE_TIMEOUT_MS);
-
     try {
-      await Promise.race([closeCollections(), expired.promise]);
+      await closeCollections();
     } catch (error) {
       recordCleanupFailure(error);
     } finally {
-      clearTimeout(deadline);
       queryClient.clear();
 
-      if (state.current.health.isRevoked || state.current.isClearing || state.current.health.issue?.kind === 'failed') {
-        await runtime.cache.discard();
-      } else {
+      try {
+        if (state.current.health.isRevoked || state.current.isClearing) {
+          await runtime.cache.discard();
+        }
+      } finally {
         await runtime.cache.dispose();
       }
     }
   }
 
   function recordCleanupFailure(error: unknown): void {
+    if (state.current.cleanupFailure !== undefined) {
+      return;
+    }
+
+    const failure = Schema.is(ConsoleStorageFailed)(error)
+      ? error
+      : new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) });
+
+    globalThis.reportError(new Error(`Console cache failed during ${failure.stage}`));
+
     state.current = {
       ...state.current,
-      localFailure: error,
-      localIssue: { kind: 'failed', message: 'The local cache could not be closed cleanly' },
+      cleanupFailure: failure,
+      localFailure: state.current.localFailure ?? failure,
+      localIssue: state.current.localIssue ?? {
+        kind: 'failed',
+        message: 'The local cache could not be closed cleanly',
+      },
     };
 
     publishHealth(state.current.health);
   }
 
-  async function dispose(): Promise<void> {
-    if (cleanup.current === undefined) {
-      cleanup.current = closeRuntime();
+  async function awaitCleanup(operation: Promise<void>, close: () => Promise<void>): Promise<void> {
+    const expired = Promise.withResolvers<never>();
+
+    async function closeAfterDeadline(): Promise<void> {
+      try {
+        await close();
+      } catch (error) {
+        recordCleanupFailure(error);
+      }
     }
 
+    const deadline = setTimeout(() => {
+      const failure = new ConsoleStorageFailed({
+        stage: ConsoleStorageStage.Close,
+        reason: 'The previous workspace is still closing. Try again after it closes',
+      });
+
+      void closeAfterDeadline();
+      expired.reject(failure);
+    }, CONSOLE_STORAGE_OPERATION_TIMEOUT_MS);
+
     try {
-      await cleanup.current;
+      return await Promise.race([operation, expired.promise]);
+    } finally {
+      clearTimeout(deadline);
+    }
+  }
+
+  async function waitForCleanup(): Promise<void> {
+    cleanup.current ??= options.owner.trackCleanup(storageScope, closeRuntime());
+
+    await awaitCleanup(cleanup.current, runtime.cache.dispose);
+  }
+
+  async function dispose(): Promise<void> {
+    unsubscribeInvalidation();
+
+    try {
+      await waitForCleanup();
     } catch (error) {
       recordCleanupFailure(error);
     }
   }
 
   async function disposeForRecovery(): Promise<void> {
-    state.current = { ...state.current, isClearing: true };
-
-    await dispose();
-    await runtime.cache.discard();
+    await waitForCleanup();
   }
 
   async function clearScope(): Promise<void> {
@@ -978,7 +1172,9 @@ async function createData(options: CreateConsoleData) {
     };
 
     broadcastInvalidation({ kind: INVALIDATION_KIND.Session });
+    conversations.revoke();
     notifyReads();
+    void retireScopeCache();
 
     const forced = Promise.withResolvers<void>();
 
@@ -1093,10 +1289,6 @@ async function createData(options: CreateConsoleData) {
       return state.current.revocation;
     }
 
-    if (state.current.cacheInvalidation !== undefined) {
-      return state.current.cacheInvalidation;
-    }
-
     if ('mechId' in request) {
       const mechFailure = revokedMechs.get(request.mechId);
 
@@ -1105,11 +1297,37 @@ async function createData(options: CreateConsoleData) {
       }
 
       if ('turnId' in request) {
-        return revokedTurns.get(recordKey(request.mechId, request.turnId)) ?? revokedReads.current.get(request.id);
+        const failure =
+          revokedTurns.get(recordKey(request.mechId, request.turnId)) ?? revokedReads.current.get(request.id);
+
+        if (failure !== undefined) {
+          return failure;
+        }
       }
     }
 
     const receipt = runtime.receipts.get(request.id);
+
+    if (receipt === undefined) {
+      // A cleaned owner cannot prove that a removed member was absent from its retained list.
+      if (request.kind === 'mechs') {
+        return revokedMechs.values().next().value ?? revokedReads.current.get(request.id);
+      }
+
+      if (request.kind === 'turns') {
+        return revokedTurns.values().next().value ?? revokedReads.current.get(request.id);
+      }
+
+      if (request.kind === 'evidence') {
+        for (const [id, error] of revokedReads.current) {
+          const revoked = decodeReadRequest(id);
+
+          if (revoked.kind === 'evidenceArtifact' && revoked.mechId === request.mechId) {
+            return error;
+          }
+        }
+      }
+    }
 
     if (receipt !== undefined && request.kind === 'mechs') {
       const key = receipt.keys.find((value) => revokedMechs.has(value));
@@ -1135,7 +1353,7 @@ async function createData(options: CreateConsoleData) {
     db: runtime.db,
     collections: runtime.collections,
     workspace,
-    conversations: createConversationApi({ origin, workspaceId: workspace.id, signal, onAccessLost: endSession }),
+    conversations: conversations.api,
     reads: readRequests,
     refreshActivity,
     commands: createCommands({

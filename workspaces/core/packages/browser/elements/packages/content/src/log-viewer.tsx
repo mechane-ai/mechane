@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import stripAnsi from 'strip-ansi';
 import { Button, CopyValue } from '../../core/src/index.ts';
@@ -40,6 +40,7 @@ export function LogViewer({
   isRunning = false,
 }: LogViewerProps): ReactNode {
   const scroll = useRef<HTMLPreElement>(null);
+  const isFollowFocused = useRef(false);
   const [isFollowing, setFollowing] = useState(true);
   const text = stripAnsi(output);
   const lines = text.slice(-MAX_PREVIEW_CHARACTERS).split('\n');
@@ -52,6 +53,14 @@ export function LogViewer({
     }
   }, [output, isFollowing]);
 
+  useLayoutEffect(() => {
+    if (!isRunning && isFollowFocused.current) {
+      isFollowFocused.current = false;
+
+      scroll.current?.focus({ preventScroll: true });
+    }
+  }, [isRunning]);
+
   return (
     <section aria-label={label} {...stylex.props(viewerStyles.root)}>
       <div {...stylex.props(viewerStyles.header)}>
@@ -60,9 +69,20 @@ export function LogViewer({
           {isRunning && ' · running'}
         </span>
         <div {...stylex.props(viewerStyles.actions)}>
-          <Button variant="ghost" onClick={() => setFollowing(!isFollowing)}>
-            {isFollowing ? 'Pause following' : 'Follow output'}
-          </Button>
+          {isRunning && (
+            <Button
+              variant="ghost"
+              onClick={() => setFollowing(!isFollowing)}
+              onFocus={() => {
+                isFollowFocused.current = true;
+              }}
+              onBlur={() => {
+                isFollowFocused.current = false;
+              }}
+            >
+              {isFollowing ? 'Pause following' : 'Follow output'}
+            </Button>
+          )}
           <CopyValue value={output} label={label}>
             Copy
           </CopyValue>
