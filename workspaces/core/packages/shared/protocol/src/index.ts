@@ -61,11 +61,12 @@ export {
  */
 export { ServerMisconfigured, ReleaseFileNotFound, WorkspaceSuspended } from './errors/errors.ts';
 /**
- * Standalone @mechane/client callers can distinguish exhausted sandbox capacity from transport failure.
+ * Standalone @mechane/client callers can distinguish archived mechs and exhausted sandbox capacity from transport
+ * failure.
  *
  * @public
  */
-export { SandboxCapacityReached } from './errors/mech.errors.ts';
+export { MechArchived, SandboxCapacityReached } from './errors/mech.errors.ts';
 /**
  * Standalone @mechane/client callers can inspect a failed artifact read without receiving its upstream body.
  *
