@@ -1,10 +1,12 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
-import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
+import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
-import { DateTime, Option, Schema } from 'effect';
+import { Array, DateTime, Option, Schema } from 'effect';
+import { WORKSPACE_TRANSFER_BATCH_DURATION, WORKSPACE_TRANSFER_BATCH_PARTS } from '../../constants.ts';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { workspaceRequest } from '../workspace-request.ts';
 import { copySnapshotPart } from './copy-snapshot-part.ts';
+import { isCurrentRestoration } from './current-restoration.ts';
 
 type RestoreSnapshotInput = WorkspaceProviderStepInput &
   MachineIdInput & { readonly guest: GuestConnection; readonly snapshot: WorkspaceSnapshot };
@@ -29,23 +31,45 @@ export async function restoreSnapshot({
     return false;
   }
 
-  const { part } = restored.value;
+  const startedAt = DateTime.nowUnsafe();
+  const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
+  const partLimit = Math.min(restored.value.part + WORKSPACE_TRANSFER_BATCH_PARTS, archive.parts);
+  const parts = Array.range(restored.value.part, partLimit);
 
-  if (part < archive.parts) {
-    await copySnapshotPart({ store, provider, workspace, guest, snapshot, restoration: restored.value });
+  for (const part of parts) {
+    const current = store.workspace().restoration;
 
-    return false;
+    if (Option.isNone(current) || current.value.machineId !== machineId || current.value.generation !== generation) {
+      return false;
+    }
+
+    if (current.value.part !== part) {
+      return false;
+    }
+
+    if (part === archive.parts) {
+      return await activateSnapshot({ store, guest, restoration: current.value, archive });
+    }
+
+    const now = DateTime.nowUnsafe();
+
+    if (part === partLimit || DateTime.isGreaterThanOrEqualTo(now, deadline)) {
+      return false;
+    }
+
+    await copySnapshotPart({ store, provider, workspace, guest, snapshot, restoration: current.value });
   }
 
-  return await activateSnapshot({ guest, machineId, generation, archive });
+  return false;
 }
 
-type ActivateSnapshotInput = Pick<RestoreSnapshotInput, 'guest' | 'machineId'> & {
-  readonly generation: string;
+type ActivateSnapshotInput = Pick<RestoreSnapshotInput, 'store' | 'guest'> & {
+  readonly restoration: WorkspaceRestoration;
   readonly archive: SandboxArchive;
 };
 
-async function activateSnapshot({ guest, machineId, generation, archive }: ActivateSnapshotInput): Promise<boolean> {
+async function activateSnapshot({ store, guest, restoration, archive }: ActivateSnapshotInput): Promise<boolean> {
+  const { machineId, generation } = restoration;
   const schema = Schema.toType(SandboxArchive);
   const codec = Schema.fromJsonString(schema);
   const body = Schema.encodeSync(codec)(archive);
@@ -60,5 +84,5 @@ async function activateSnapshot({ guest, machineId, generation, archive }: Activ
     init: { method: HttpMethod.Put, headers: { [HttpHeader.ContentType]: MediaType.Json }, body },
   });
 
-  return response.status === HttpStatusCode.Ok;
+  return response.status === HttpStatusCode.Ok && isCurrentRestoration({ store, restoration });
 }

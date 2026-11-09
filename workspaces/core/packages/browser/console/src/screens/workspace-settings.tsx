@@ -9,6 +9,7 @@ import { HttpMethod } from '@mechane/records';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
+import { DataStatus } from './data-status.tsx';
 
 export function WorkspaceSettings({
   data,
@@ -73,6 +74,7 @@ export function WorkspaceSettings({
               <Muted>Mechane</Muted>
             </Stack>
           </SettingsSection>
+          <DataStatus data={data} />
         </Stack>
       </DetailPage>
     </>

@@ -7,6 +7,7 @@ import type { GuestConnection } from '../types.ts';
 import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
+import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
 type UploadCheckpointPartInput = ArchivedCheckpointInput & { readonly guest: GuestConnection };
@@ -25,7 +26,15 @@ export async function uploadCheckpointPart({
   const key = workspacePartKey({ owner: workspace.owner, generation, part: selectedPart });
   const sha256 = await crypto.subtle.digest('SHA-256', bytes);
 
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
+
   await workspace.bucket.put(key, bytes, { sha256, customMetadata: { archiveSha256: archive.sha256 } });
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
 
   store.saveCheckpoint({ ...checkpoint, part: part + 1 });
 }

@@ -13,6 +13,7 @@
     "@mechane/sandbox-wire": "workspace:*",
     "@mechane/stack": "workspace:*",
     "ai": "7.0.164",
-    "effect": "4.0.7"
+    "effect": "4.0.7",
+    "playwright": "1.64.1"
   }
 }

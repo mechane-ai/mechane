@@ -48,9 +48,13 @@ Run the repository's lint and this contract's `assets/` configuration over its t
 
 ## Local adaptations
 
-The retained runtime suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime,
-native Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
-execution boundary. Run it from the factory root with `mise -C workspaces/core run smoke`.
+The retained suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime, native
+Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
+execution boundary. Console cases use pinned Playwright Chromium against that same compiled service and real native
+Worker-backed OPFS. The smoke's `browser:install` prerequisite installs its matching browser and native dependencies.
+Run it from the factory root with `mise -C workspaces/core run smoke`.
+Warm-reload fixtures establish completion of their initial native read before holding its next HTTP request.
+Initial optimistic row visibility alone does not establish that the receipt is durable.
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
 

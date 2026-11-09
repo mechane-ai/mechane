@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/node/guest/image/{Dockerfile,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/worker/sandbox/src/{executions,providers,egress}/**", "packages/worker/sandbox/src/sandbox-object.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/node/guest/image/{Dockerfile,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress}/**", "packages/worker/sandbox/src/workspace/snapshots/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -15,6 +15,16 @@ ordinary agent-managed files, not another runtime task or memory service. Keep i
 the runtime store; their persistence does not establish file durability. Keep reproducible caches and build output outside
 that home through explicit environment setup. Preserve existing files. Do not infer disposability from `.gitignore` or
 silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
+
+Advance checkpoint uploads and restoration copies in bounded sequential batches. Keep the persisted part format,
+per-part validation, and durable cursor. Reload the current transfer after each awaited part; stop when its identity
+changes, progress stalls, or an operation fails. Bound both parts per call and the time allowed to start another part.
+An in-flight transfer retains its existing timeout. Buffer one part at a time and preserve interruption reconciliation.
+Commit the complete generation and command receipt atomically, or activate a fully verified restoration, after the last
+part without requiring another polling round. A batch boundary never establishes completion by itself.
+
+Keep guest command duration distinct from time spent saving or restoring files. Performance evidence names archive
+bytes, part count, and the measured boundary. Faster transfer scheduling cannot weaken the committed-file guarantee.
 
 Supply additional HTTPS hosts through validated installation settings. Preserve authority validation, the private-network
 boundary, and TLS verification. The gateway injects no credential and follows no redirect. Each redirect destination
@@ -34,6 +44,9 @@ Build the image and inspect pinned tool versions. Run the existing command-recov
 For a new workload, record source revision, commands, checkpoint size, restart results, and required-check outcomes in
 the deployment work record. Inspect network configuration for company-specific values and review observation requests
 for command bodies. Live release proof names the checked PR head, merge, workflow run, and observed deployed revision.
+Exercise a multipart save and restoration across batch boundaries. Interrupt transfer after a stored part, cancel while
+a part is in flight, and fail the final part. Verify retained cursors, restored files, and the absence of a premature
+terminal receipt or activated partial home. Check batch limits without treating a timing sample as a latency promise.
 
 ## Local adaptations
 

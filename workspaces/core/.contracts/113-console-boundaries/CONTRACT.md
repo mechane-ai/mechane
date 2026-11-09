@@ -65,8 +65,16 @@ stream as a public conversation or reconstruct public messages from activation c
 
 Treat each new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
 `console-data/src/records.ts`, native table to `collections.ts`, and bounded request to `requests.ts` and `load-read.ts`.
-Compose its view through shared live-read hooks, preserving exact receipt membership, read states, errors, and disposal.
-React state holds cursor inputs and interactions, never fetched resource pages. Historical source messages remain inspectable in Activity and run traces without a separate session UI.
+Compose its view through the shared live-read hooks in `console/src/reads.ts`, preserving exact receipt membership,
+readiness, refresh errors, and owner disposal. React state holds cursor inputs and interaction state, never fetched
+record pages. Historical source messages remain inspectable in Activity and run traces without a separate session UI.
+Declare each read's table dependencies and cardinality once in `read-ready.ts`. Derive native hydration, subscriptions,
+and row coverage from that declaration. Keep domain compatibility checks explicit, including matching mech revisions.
+Use `ResourceState` and `ResourceView` for ordinary read presentation. A background refresh cannot replace usable content
+with initial placeholders; access loss and failed required storage keep their existing revocation and recovery owners.
+
+Data diagnostics derive aggregate counts from the native request owner. Show them on explicit inspection in Settings.
+Exclude record values, request keys, credentials, and raw failure payloads from diagnostic presentation.
 
 The complete domain-record transport exceptions are fresh principal/workspace admission, the runtime admission gate,
 and public conversation history. The data owner uses native Query observers for demanded public history and refresh.
@@ -249,7 +257,7 @@ and prevent late callbacks from restoring its content.
 
 - dependency-cruiser `console-build-owner` (113): enforced: Import Console build helpers only from its build configuration, such as `worker-licenses.ts` in `vite.config.ts`
 - dependency-cruiser `console-api-owner` (113): enforced: Import the Console data owner for browser requests, such as `@mechane/console-data`
-- dependency-cruiser `console-query-owner` (113): enforced: Keep Query observers in the data runtime; screens use admitted reads, such as `useMech`
+- dependency-cruiser `console-query-owner` (113): enforced: Keep Query observers and read-only diagnostics in the data owner; screens use admitted reads, such as `useMech`
 - oxlint `unicorn/require-post-message-target-origin` (113): enforced, `"error"`
 - oxlint `oxc/no-optional-chaining` (113): enforced, `"error"`
 

@@ -206,9 +206,13 @@ depends = ["build:sandbox"]
 run = "./infrastructure/check.sh"
 
 
+[tasks."browser:install"]
+description = "Install Chromium and its native dependencies for the retained Console browser flows"
+run = "pnpm --filter @mechane/testing exec playwright install --with-deps chromium"
+
 [tasks.smoke]
 description = "Drive the built CLI and Node service against Postgres and local external-service fixtures"
-depends = ["build:cli", "build:server", "build:sandbox", "build:guest"]
+depends = ["build:cli", "build:server", "build:sandbox", "build:guest", "browser:install"]
 # A full check settles static failures before starting disposable services; standalone smoke runs only its builds.
 wait_for = [
   "format:check",

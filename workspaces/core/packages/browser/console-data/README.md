@@ -14,6 +14,11 @@ completion timestamps. Validated server records and exact read receipts live onl
 collections, whose native coordinator shares committed data across tabs. Receipt publication waits for its canonical
 rows to settle. Receipts preserve ordered page membership and pagination metadata, including successful empty results.
 `ready(request)` checks the receipt and every referenced row, so cached content does not wait for a network refresh.
+`read-ready.ts` declares table dependencies and cardinality once per read kind. Hydration and coverage use the same
+declaration; detail-specific compatibility remains explicit. Add a new read there alongside its request and ingestion.
+
+`diagnostics` reports aggregate native network counts without exposing request keys or record contents. Console Settings
+combines those counts with existing storage health. It does not create requests or become another status authority.
 
 `subscribeReadStatus(readId, listener)` owns an observer while that read is visible. Multiple readers share it, and the
 last unsubscribe releases it. Native query invalidation refreshes active reads after commands. Protocol codecs restore

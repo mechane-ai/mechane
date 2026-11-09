@@ -23,6 +23,9 @@ Commands run serially against the mech’s shared files. Before returning a sett
 as independent R2 parts and commits the generation with the receipt. Replacement machines verify and restore the last
 committed generation before running commands. A failed restore never becomes an empty workspace.
 
+Upload and restoration advance existing archive parts in bounded sequential batches. Each part retains its durable
+cursor and validation. Batch limits bound scheduling; only the complete checkpoint establishes saved files.
+
 `PersistenceFailed` retains command output and the live files for recovery. It keeps the previous committed head intact.
 A later command can inspect or clean those files and retry the save. Losing that machine restores the previous head.
 

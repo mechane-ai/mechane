@@ -59,6 +59,12 @@ caches and build output in scratch locations; archive limits remain explicit. A 
 committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and private
 capture scratch.
 
+Checkpoint upload and restoration copy existing archive parts in bounded sequential batches. Each part retains its
+checksum and durable progress; a completed command still waits for the entire generation to commit. The scheduling
+budget limits starting another part, not an already-running transfer. Guest command duration excludes that save, so a
+fast shell command can still take longer to return its durable result. When investigating latency, record archive bytes,
+part count, and upload or restore timing separately from command execution.
+
 | Resource                           | Lifetime                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Committed home files               | Restore from the last committed generation after machine replacement.                                  |

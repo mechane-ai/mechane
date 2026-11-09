@@ -1,4 +1,5 @@
 import { Event, EventType, TurnStatus } from '@mechane/protocol';
+import { BYTES_PER_MEBIBYTE } from '@mechane/records';
 import type { ModelFixture } from '@mechane/stack';
 import {
   checkpointSandbox,
@@ -23,7 +24,7 @@ import {
 import type { MechContext, ScenarioInput } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createCipheriv, createHash, randomUUID } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -34,6 +35,9 @@ const StartedProcess = Schema.Struct({
 });
 
 const FAILED_ACTIVATION_STATUSES: ReadonlySet<TurnStatus> = new Set([TurnStatus.Failed, TurnStatus.Stopped]);
+const MULTIPART_FILE_BYTES = 9 * BYTES_PER_MEBIBYTE;
+const CIPHER_KEY_BYTES = 32;
+const CIPHER_IV_BYTES = 16;
 
 export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -155,6 +159,12 @@ type LostWriterInput = MechContext & { readonly model: ModelFixture; readonly di
 async function assertLostWriterIsFenced(input: LostWriterInput): Promise<void> {
   const { stack, model, directory } = input;
   const operationId = randomUUID();
+  const finished = await waitForSandboxFile({ stack, path: join(directory, 'finished'), contents: 'finished' });
+  const cipher = createCipheriv('aes-256-ctr', Buffer.alloc(CIPHER_KEY_BYTES), Buffer.alloc(CIPHER_IV_BYTES));
+  const multipart = cipher.update(Buffer.alloc(MULTIPART_FILE_BYTES));
+  const digest = createHash('sha256').update(multipart).digest('hex');
+
+  await writeFile(join(dirname(finished), 'multipart'), multipart);
 
   const saved = await waitFor({
     name: 'the prior home generation to commit',
@@ -216,9 +226,13 @@ async function assertLostWriterIsFenced(input: LostWriterInput): Promise<void> {
 
   const restored = await runBash({
     ...input,
-    command: `test ! -f '${directory}/unsaved' && cat '${directory}/finished'`,
+    command: [
+      `test ! -f '${directory}/unsaved'`,
+      `test "$(cat '${directory}/finished')" = finished`,
+      `node -e 'const fs = require("node:fs"); const crypto = require("node:crypto"); process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
+    ].join(' && '),
   });
 
   assert.equal(restored.turn.status, TurnStatus.Completed);
-  assert.equal(restored.result.output, 'finished', 'Recovery lost committed files or claimed an unsaved write');
+  assert.equal(restored.result.output, digest, 'Recovery lost multipart committed files or claimed an unsaved write');
 }

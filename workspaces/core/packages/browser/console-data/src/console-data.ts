@@ -24,6 +24,7 @@ import {
 import { createCommands } from './commands.ts';
 import { createConversationApi } from './conversation.ts';
 import { applyRead, fetchRead, saveMech } from './load-read.ts';
+import { createReadDiagnostics } from './read-diagnostics.ts';
 import { waitForRead } from './read-ready.ts';
 import { recordKey } from './records.ts';
 import { decodeReadRequest, isArtifactRead, ReadId, readRequests } from './requests.ts';
@@ -1334,6 +1335,7 @@ async function createData(options: CreateConsoleData, conversations: WorkspaceOw
     db: runtime.db,
     collections: runtime.collections,
     workspace,
+    diagnostics: createReadDiagnostics(queryClient),
     conversations: conversations.api,
     reads: readRequests,
     refreshActivity,

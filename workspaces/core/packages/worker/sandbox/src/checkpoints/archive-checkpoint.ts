@@ -14,6 +14,7 @@ import { WorkspaceTransferFailed } from '../errors.ts';
 import type { GuestConnection } from '../types.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
 import { checkpointSupported } from './checkpoint-supported.ts';
+import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 
 type ArchiveCheckpointInput = CheckpointStepInput & { readonly guest: GuestConnection };
@@ -28,6 +29,10 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
   const codec = Schema.fromJsonString(WorkspaceArchiveRequest);
   const body = Schema.encodeSync(codec)({ mode });
   const isCheckpointSupported = await checkpointSupported({ guest, machineId, generation });
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
 
   const step: WorkspaceStep = (() => {
     if (isCheckpointSupported) {
@@ -53,6 +58,10 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
 
   const text = await response.text();
   const archive = decodeCheckpointArchive({ generation, body: text });
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
 
   const storedArchive = Option.some(archive);
 

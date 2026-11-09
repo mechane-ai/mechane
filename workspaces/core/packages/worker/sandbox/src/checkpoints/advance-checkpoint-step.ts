@@ -4,6 +4,8 @@ import { DateTime, Option, Result } from 'effect';
 import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import { archiveCheckpoint } from './archive-checkpoint.ts';
+import { commitCheckpoint } from './commit-checkpoint.ts';
+import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { reconcileStoredCheckpoint } from './reconcile-stored-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 import { uploadCheckpointPart } from './upload-checkpoint-part.ts';
@@ -19,10 +21,20 @@ export async function advanceCheckpointStep({
   const { archive, machineId, generation } = checkpoint;
 
   if (await reconcileStoredCheckpoint(input)) {
+    commitCompletedCheckpoint(input);
+
+    return;
+  }
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
     return;
   }
 
   const guest = await provider.connect({ machineId });
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
 
   if (Option.isNone(guest)) {
     const now = DateTime.nowUnsafe();
@@ -53,6 +65,23 @@ export async function advanceCheckpointStep({
   }
 
   await uploadCheckpointPart({ ...input, archive: archive.value, guest: guest.value });
+  commitCompletedCheckpoint(input);
+}
+
+function commitCompletedCheckpoint({ store, checkpoint, ...input }: CheckpointStepInput): void {
+  const current = store.workspace().checkpoint;
+
+  if (Option.isNone(current) || current.value.generation !== checkpoint.generation) {
+    return;
+  }
+
+  const archive = current.value.archive;
+
+  if (Option.isNone(archive) || current.value.part !== archive.value.parts) {
+    return;
+  }
+
+  commitCheckpoint({ store, ...input, checkpoint: current.value, archive: archive.value });
 }
 
 function assertCheckpointDeadline({ checkpoint }: CheckpointStepInput): void {

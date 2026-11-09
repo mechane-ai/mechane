@@ -4,6 +4,7 @@ import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import type { GuestConnection, WorkspaceProviderStepInput } from '../../types.ts';
 import { workspaceRequest } from '../workspace-request.ts';
+import { isCurrentRestoration } from './current-restoration.ts';
 import { readSnapshotPart } from './read-snapshot-part.ts';
 
 type CopySnapshotPartInput = WorkspaceProviderStepInput & {
@@ -25,6 +26,10 @@ export async function copySnapshotPart({
   const body = await readSnapshotPart({ workspace, snapshot, part });
   const selectedPart = Option.some(part);
 
+  if (!isCurrentRestoration({ store, restoration })) {
+    return;
+  }
+
   await workspaceRequest({
     guest,
     machineId,
@@ -33,6 +38,10 @@ export async function copySnapshotPart({
     part: selectedPart,
     init: { method: HttpMethod.Put, body },
   });
+
+  if (!isCurrentRestoration({ store, restoration })) {
+    return;
+  }
 
   store.saveRestoration({ ...restoration, part: part + 1 });
 }

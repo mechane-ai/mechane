@@ -19,74 +19,57 @@ type ReadSource = {
   readonly on: (type: 'health:change', listener: () => void) => () => void;
 };
 
+type ReadDefinition = { readonly tables: ReadonlyArray<keyof CanonicalTables>; readonly cardinality: 'one' | 'many' };
+
+const readDefinitions = {
+  mechs: { tables: ['mechs'], cardinality: 'many' },
+  mech: { tables: ['mechs', 'mechDefinitions'], cardinality: 'one' },
+  turns: { tables: ['turns'], cardinality: 'many' },
+  trace: { tables: ['turns', 'traceEvidence'], cardinality: 'one' },
+  events: { tables: ['events'], cardinality: 'many' },
+  turnEvents: { tables: ['events'], cardinality: 'many' },
+  evidence: { tables: ['evidenceArtifacts'], cardinality: 'many' },
+  evidenceArtifact: { tables: ['evidenceArtifacts'], cardinality: 'one' },
+  environmentProcesses: { tables: ['environmentProcesses'], cardinality: 'many' },
+  environmentProcess: { tables: ['environmentProcessDetails'], cardinality: 'one' },
+  allowance: { tables: ['allowance'], cardinality: 'one' },
+} as const satisfies Readonly<Record<ReadKind, ReadDefinition>>;
+
 function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
-  switch (receipt.kind) {
-    case 'mechs':
-      return receipt.keys.every((key) => tables.mechs.has(key));
-    case 'mech':
-      return (
-        receipt.keys.length === 1 &&
-        receipt.keys.every((key) => {
-          const summary = tables.mechs.get(key);
-          const definition = tables.mechDefinitions.get(key);
+  const definition = readDefinitions[receipt.kind];
 
-          return (
-            summary !== undefined && definition !== undefined && summary.value.revision === definition.value.revision
-          );
-        })
-      );
-    case 'turns':
-      return receipt.keys.every((key) => tables.turns.has(key));
-    case 'trace':
-      return (
-        receipt.keys.length === 1 && receipt.keys.every((key) => tables.turns.has(key) && tables.traceEvidence.has(key))
-      );
-    case 'events':
-    case 'turnEvents':
-      return receipt.keys.every((key) => tables.events.has(key));
-    case 'evidence':
-      return receipt.keys.every((key) => tables.evidenceArtifacts.has(key));
-    case 'evidenceArtifact':
-      return receipt.keys.length === 1 && receipt.keys.every((key) => tables.evidenceArtifacts.has(key));
-    case 'environmentProcesses':
-      return receipt.keys.every((key) => tables.environmentProcesses.has(key));
-    case 'environmentProcess':
-      return receipt.keys.length === 1 && receipt.keys.every((key) => tables.environmentProcessDetails.has(key));
-    case 'allowance':
-      return receipt.keys.length === 1 && receipt.keys.every((key) => tables.allowance.has(key));
+  if (definition.cardinality === 'one' && receipt.keys.length !== 1) {
+    return false;
   }
-}
 
-function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
-  switch (kind) {
-    case 'mechs':
-      return [tables.mechs];
-    case 'mech':
-      return [tables.mechs, tables.mechDefinitions];
-    case 'turns':
-      return [tables.turns];
-    case 'trace':
-      return [tables.turns, tables.traceEvidence];
-    case 'events':
-    case 'turnEvents':
-      return [tables.events];
-    case 'evidence':
-    case 'evidenceArtifact':
-      return [tables.evidenceArtifacts];
-    case 'environmentProcesses':
-      return [tables.environmentProcesses];
-    case 'environmentProcess':
-      return [tables.environmentProcessDetails];
-    case 'allowance':
-      return [tables.allowance];
+  if (!definition.tables.every((name) => receipt.keys.every((key) => tables[name].has(key)))) {
+    return false;
   }
+
+  if (receipt.kind === 'mech') {
+    return receipt.keys.every((key) => {
+      const summary = tables.mechs.get(key);
+      const mechDefinition = tables.mechDefinitions.get(key);
+
+      return (
+        summary !== undefined &&
+        mechDefinition !== undefined &&
+        summary.value.revision === mechDefinition.value.revision
+      );
+    });
+  }
+
+  return true;
 }
 
 /** Cached coverage can satisfy readiness while its tab-owned network read refreshes. */
 export async function waitForRead({ receipts, tables, request, signal, refreshRead }: WaitForRead): Promise<void> {
   signal.throwIfAborted();
 
-  const sources: ReadonlyArray<ReadSource> = [receipts, ...tablesForRead(tables, request.kind)];
+  const sources: ReadonlyArray<ReadSource> = [
+    receipts,
+    ...readDefinitions[request.kind].tables.map((name) => tables[name]),
+  ];
 
   function isComplete(): boolean {
     const receipt = receipts.get(request.id);

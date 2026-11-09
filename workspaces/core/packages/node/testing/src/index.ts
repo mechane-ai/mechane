@@ -1,5 +1,7 @@
 export { formFields } from './auth/browser.ts';
 export { createAccount } from './auth/create-account.ts';
+export { withConsoleBrowser } from './with-console-browser.ts';
+export { consolePath } from './console-path.ts';
 export { approveAndClaimKey, pollApproval, startApproval } from './auth/device-approval.ts';
 export type { Account, BrowserPage } from './auth/types.ts';
 export { readNativeChunks, readNativeTrace } from './traces/native-trace.ts';

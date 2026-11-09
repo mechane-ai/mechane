@@ -9,6 +9,8 @@ import { revokedKeyCannotAuthorizeRequests } from './auth/revoked-key-cannot-aut
 import { backgroundCompletionWakesOnce } from './compute/background-completion-wakes-once.ts';
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
+import { consoleKeepsDraftsAndRunContext } from './console/console-keeps-drafts-and-run-context.ts';
+import { consoleRetainsRecordsThroughRefreshFailure } from './console/console-retains-records-through-refresh-failure.ts';
 import { boundedActivationPreservesWork } from './context/bounded-activation-preserves-work.ts';
 import { contextSurvivesRestart } from './context/context-survives-restart.ts';
 import { forkKeepsAnIndependentContext } from './context/fork-keeps-an-independent-context.ts';
@@ -158,5 +160,15 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     guarantee: 'credentials stay out of durable execution records and logs',
     regression: 'workflow serialization or diagnostics retain a resolved provider or user credential',
     run: credentialsStayOutOfDurableExecution,
+  },
+  {
+    guarantee: 'Console keeps drafts isolated across mechs and preserves a draft through run navigation',
+    regression: 'opening a run or switching mechs loses a draft or sends another mech its text',
+    run: consoleKeepsDraftsAndRunContext,
+  },
+  {
+    guarantee: 'Console restores durable records while HTTP refresh waits or fails',
+    regression: 'a warm reload loses usable authorized records or hides refresh failure',
+    run: consoleRetainsRecordsThroughRefreshFailure,
   },
 ];

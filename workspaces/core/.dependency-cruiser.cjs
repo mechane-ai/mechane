@@ -1241,11 +1241,12 @@ module.exports = {
     },
     {
       name: 'console-query-owner',
-      comment: 'Keep Query observers in the data runtime; screens use admitted reads, such as `useMech`',
+      comment:
+        'Keep Query observers and read-only diagnostics in the data owner; screens use admitted reads, such as `useMech`',
       severity: 'error',
       from: {
         path: '^packages/browser/',
-        pathNot: '^packages/browser/console-data/src/(?:console-data|conversation)[.]ts$',
+        pathNot: '^packages/browser/console-data/src/(?:console-data|conversation|read-diagnostics)[.]ts$',
       },
       to: { path: 'node_modules/@tanstack/(?:query-core|react-query)/' },
     },

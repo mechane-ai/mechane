@@ -3,6 +3,7 @@ import { Option, Result } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
+import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
 /** A successful upload may have lost its response before the cursor advanced. */
@@ -17,6 +18,10 @@ export async function reconcileCheckpointPart({
   const key = workspacePartKey({ owner: workspace.owner, generation, part: selectedPart });
   const found = await workspace.bucket.head(key);
   const object = Option.fromNullishOr(found);
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return false;
+  }
 
   if (Option.isNone(object)) {
     return false;
