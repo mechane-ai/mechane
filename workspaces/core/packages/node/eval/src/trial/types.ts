@@ -1,12 +1,11 @@
 import type { OperationCall } from '@mechane/client';
 import type { catalog, OperationInput } from '@mechane/protocol';
-import type { TurnId } from '@mechane/records';
 import type { Case, Intent, Suite } from '../schemas.ts';
-import type { Trial, TurnOutcome } from '../store/schemas.ts';
+import type { Trial } from '../store/schemas.ts';
 import type { OnceFile, TrialFiles, WorkspaceAccess, WriteProgress } from '../types.ts';
 
 /** The operations a trial's turns call. */
-type TrialOperation = 'createMech' | 'sendInboxItem' | 'listEvents' | 'showTurn';
+type TrialOperation = 'createMech' | 'sendNotification' | 'listTurns' | 'showTurn' | 'listConsoleMessages';
 
 /** One trial of a plan to run: its case, the suite's settings, its files, and where it writes its progress. */
 export type RunTrialInput = {
@@ -30,6 +29,3 @@ export type RoleTurnInput = {
   readonly text: string;
   readonly intent: OnceFile<Intent>;
 };
-
-/** The end of a mech's turn: which turn, and how it ended. */
-export type TurnEnd = { readonly turnId: TurnId; readonly outcome: TurnOutcome };

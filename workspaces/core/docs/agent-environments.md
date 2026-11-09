@@ -1,8 +1,8 @@
 # Agent environments
 
-A mech is a durable identity with memory, native conversation history, and a persistent developer environment. Slack and
-the Console admit work to that identity. The runtime serializes a mech's executions because its tools share memory and
-files. Different mechs can work independently.
+A mech is a persistent identity with working context and a developer environment. Generic notifications bring it new
+input. One active model owner protects that context and shared files; different mechs work independently. An activation
+is a bounded native Workflow lifetime, not a separate task for each notification.
 
 The agent chooses commands and follows the repository's instructions. Mechane provides tools and current authority; it
 does not prescribe coding, review, merge, or deployment stages.
@@ -17,22 +17,18 @@ mechane execution-access show MECH_ID
 ```
 
 Use `execution-access set` with the current
-[grant schema](../packages/shared/protocol/src/operations/execution-access/schemas.ts). It separates GitHub identity,
-public environment values, command secrets, and a host-only request service. Metadata reads contain references, never
-secret values. Revoking a grant affects subsequent commands without broadening another credential to compensate.
+[grant schema](../packages/shared/protocol/src/operations/execution-access/schemas.ts). Grants contain public
+environment variables and encrypted credential references. Metadata exposes references only. Revocation affects
+subsequent dispatch without selecting a broader credential to compensate.
 
-For GitHub, configure the App, installation, repository, and signing-key reference. The runtime mints a
-repository-scoped installation token and checks its returned permissions. `gh` receives `GH_TOKEN` and `GH_REPO`; git
-receives only the transient credential path for that repository. The App private key stays in the host. GitHub branch
-protection still determines whether a merge is permitted.
+Configure application CLIs through their ordinary environment settings. In Softmax, the installation supplies Nexus CLI
+and its service identity. Nexus owns application access, approval requests, and provider credential issuance. Mechane
+does not contain a GitHub App issuer or a Nexus request-service adapter. Application scopes and provider token expiry
+remain with that authority owner; GitHub repository protection still decides whether a merge is allowed.
 
-Configure application CLIs using their ordinary environment settings. Nexus uses `NEXUS_API_KEY` and `NEXUS_URL` in the
-sandbox. Its request-service credential is a different host-only reference, with a stable Nexus service ID and
-configured request collection. The model cannot choose the service URL, credential, callback destination, or requester.
-
-Credentials are resolved inside trusted steps immediately before use. Workflow state stores references only. Injected
-values are redacted from retained output. Arbitrary granted code can deliberately copy its credentials, so choose the
-intended authority rather than treating redaction as a sandbox permission boundary.
+Resolve references inside trusted steps immediately before dispatch. Workflow state stores identifiers only. Credentials
+are injected into the authorized command environment and redacted from retained output. Arbitrary granted code can copy
+its credentials deliberately, so grant the intended authority rather than treating redaction as containment.
 
 ## Tools and files
 
@@ -51,13 +47,17 @@ Use `sandboxes.web_access: "public"` for general browsing, or the default `packa
 `additional_hosts`. Both modes retain the outbound gateway. Public browsing does not authorize private destinations or
 the installation's control plane. Development servers use loopback inside their own sandbox.
 
-Memory tools read and update durable documents with version checks. Work tools record useful progress and verified
-outcomes separately from conversation sessions. Remote tools come from the current owner-configured MCP connection and
-grant. No tool can infer new authority from a remembered instruction.
+Use ordinary files in the durable home for notes, plans, and progress. The installation can recommend a layout without
+adding a runtime task or memory service. Internal model-context checkpoints are distinct from those files. Remote tools
+come from current owner-configured MCP connections and grants. Remembered instructions cannot expand authority.
 
-The sandbox checkpoints its home files after a completed command. Keep reproducible dependency caches and build output
-in scratch locations; file checkpoints have explicit archive limits. A failed checkpoint preserves the previous saved
-generation and remains visible. Portable file archives exclude browser profiles, cookies, and private capture scratch.
+A settled foreground command is completed only after its home archive and receipt commit. A running, uncertain, or
+persistence-failed result does not establish saved files. Background writes require a later successful checkpoint. The
+activation also requires the environment barrier before a durable idle handoff. Failed or canceled activations retain a
+checkpoint-required fence; the next activation must save the environment before model or tool work. Keep reproducible
+caches and build output in scratch locations; archive limits remain explicit. A failed save preserves the previous
+committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and private
+capture scratch.
 
 | Resource                           | Lifetime                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -75,25 +75,42 @@ Use the managed-process tools for a server or watcher that must survive a tool r
 process handle. List existing work before starting another server. Read a handle for its state and bounded output, or
 stop its owned group. Reads and stops never start replacement work or mint another execution credential.
 
-Managed processes receive their granted credentials at startup. GitHub installation tokens
-[expire after one hour](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/authenticating-as-a-github-app-installation).
-An admitted background process does not renew that token, and stopping it later does not immediately revoke it. Run
-later GitHub operations in a fresh command so they receive current authority. Foreground commands retain their terminal
-token cleanup; definitely rejected or already-finished initial process starts also release their minted token.
+Terminal environment results enter a durable sandbox outbox in the same operation that records the outcome. The sandbox
+retries delivery after interruption, keeping the original execution identity. The runtime authenticates the callback,
+checks its workspace and mech against the persisted execution, and compares the authoritative terminal receipt before
+admitting a generic notification. Reading that receipt neither allocates compute nor extends the machine's idle
+deadline. If the original tool already retained the matching terminal outcome, the callback is acknowledged without a
+redundant inbox notice. A completed process-start receipt can still describe a running process; its later exit or loss
+produces a notification. A callback racing a pending active start waits through transport retry. Detached, uncertain, or
+abandoned pending execution still produces its completion notification.
+
+A terminal result, a saved home, and notification acceptance are separate facts. An exited process may have unsaved
+background writes. A command whose persistence failed retains that outcome. The notification includes correlation and
+status; the agent chooses whether to read output or send a message through its tools.
+
+Managed processes receive the current granted environment at startup. Reads and stops do not renew credentials or prove
+provider revocation. Later privileged work uses a fresh application operation and current authority. A running process
+is not a promise that its startup credentials are still valid.
 
 Running means the process started. Inspect its output and application response before treating it as ready. Exited
 includes an exit code; Stopped records an explicit stop; Lost means the original machine cannot supply the process. Lost
 work never restarts automatically. An incomplete log tail reports omitted bytes.
 
-Managed processes survive ordinary tool waits and native Workflow suspension while their machine remains alive. Explicit
-tool activity renews the existing idle deadline; background execution and Console polling do not. On resume, inspect the
-handle before deciding whether to start a replacement. Canceling a run stops the processes it started. Canceling a
-dispatched foreground shell retires the machine, so other handles on that machine become Lost.
+Managed processes survive ordinary tool waits and activation completion while their machine remains alive. Explicit tool
+activity renews the existing idle deadline; background execution and Console polling do not. On resume, inspect the
+handle before deciding whether to start a replacement. Explicitly canceling an activation stops the processes it
+started. Canceling a dispatched foreground shell retires the machine, so other handles on that machine become Lost.
 
 Ordinary checkpoints pause writers while copying the home, then resume them during upload. New mutations stay fenced
 until generation release. Graceful drain takes a fresh snapshot and keeps writers paused until shutdown is confirmed. A
 failed save retains recoverable live files and the previous head. Older guests keep their released checkpoint behavior
 until their machine retires. Snapshots preserve files, not application transaction consistency.
+
+After machine loss, an earlier saved head does not prove that newer background writes survived. A barrier with no live
+machine accepts that head only with matching committed drain evidence from the latest machine that became ready.
+Never-ready startup attempts neither create file-loss evidence nor hide earlier loss. Missing proof leaves an explicit
+failure and keeps model/tool work fenced. Restoring older saved files is a recovery choice, not a successful checkpoint
+of the lost machine. An environment with no previously ready machine can use its immutable imported files.
 
 The Console's Environment view passively observes existing handles. Expanding a process reads bounded logs; stopping it
 targets that exact machine and process. An individual stop owns a process group. A child that creates another session
@@ -140,18 +157,19 @@ Describe the interaction and observed outcome beside each link. Keep three claim
 required application checks passed, and the deployed revision was verified. A screenshot of a component fixture can
 support a visual review without claiming production authentication, real data, or a complete end-to-end flow.
 
-## Waiting
+## Notifications and communication
 
-Nexus decides whether a capability is standing, automatically granted with notification, or subject to approval. The
-runtime records the external request identity and registers its durable wait before a decision can arrive. Authenticated
-decision events resume that work without another human message or a polling model call.
+The [notification guide](notifications.md) describes generic admission and service producers. The agent can handle other
+input while an application request awaits approval. Its decision arrives as another notification, which carries
+correlation but no implied tool result. The agent reads current permission and relevance before a fresh operation.
 
-A ready event means access may be usable. Read the current Nexus request or collect the authorized token before acting.
-Denial, cancellation, expiry, and changed service authority have explicit outcomes. A late event cannot reopen canceled
-work. Original requester attribution and Slack destination remain fixed throughout the wait.
+Use explicit tools for every outward message or reaction. Slack tools belong to the configured application CLI or MCP
+service. `console_message` publishes to the current mech's public Console conversation. Native final text and quiet
+completion do not send a response. Instructions can recommend acknowledgment without adding runtime delivery behavior.
 
-Use native Workflow waits for durable pauses. The SDK owns suspension and resumption; tracked work records describe
-progress rather than recreating the former alarm scheduler. Keep active model and shell requests bounded.
+A new notification can arrive after a model decides on a command. Before a new effect, the runtime checks the presented
+notification watermark and current owner. A `not_started` result asks the model to reconsider with current context
+without launching the command. Previously admitted effects retain their original receipts and must be observed honestly.
 
 ## Qualification
 

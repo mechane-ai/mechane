@@ -35,8 +35,6 @@ const VALUES = {
     'capIsNew',
     'new_sqlite_classes',
     'newText',
-    'onNewMessage',
-    'onNewMention',
     'props',
     'spec',
   ],

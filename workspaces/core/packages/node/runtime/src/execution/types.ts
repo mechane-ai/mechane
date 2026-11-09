@@ -1,5 +1,4 @@
-import type { PresentationOutput } from '@mechane/protocol/presentation';
-import type { ModelMessage, UIMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 import type { Run } from '../domain.ts';
 
 export type RunIdentity = {
@@ -12,27 +11,18 @@ export type RunIdentity = {
 export type RunContext = {
   readonly run: Run;
   readonly identity: RunIdentity;
-  readonly inputMessage: UIMessage;
   readonly messages: ReadonlyArray<ModelMessage>;
-  readonly inputMessages: ReadonlyArray<ModelMessage>;
+  readonly presentedSequence: number;
+  readonly checkpointSequence: number;
+  readonly isEnvironmentCheckpointRequired: boolean;
   readonly instructions: string;
   readonly model: string;
   readonly maxOutputTokens: number;
 };
 
 export type RunOutcome = { readonly runId: string } & (
-  | {
-      readonly status: 'completed';
-      readonly reply: string;
-      readonly error: null;
-      readonly presentation: PresentationOutput | null;
-    }
-  | {
-      readonly status: 'failed' | 'cancelled';
-      readonly reply: null;
-      readonly error: string;
-      readonly presentation: null;
-    }
+  | { readonly status: 'completed'; readonly error: null }
+  | { readonly status: 'failed' | 'cancelled'; readonly error: string }
 );
 
 export type AdmissionInput = { readonly runId: string; readonly workflowDefinitionId: string };

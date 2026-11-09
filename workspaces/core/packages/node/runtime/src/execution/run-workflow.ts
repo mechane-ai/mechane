@@ -1,30 +1,35 @@
 import { WorkflowAgent } from '@ai-sdk/workflow';
 import type { ModelCallStreamPart } from '@ai-sdk/workflow';
-import { createPresentationOutput, PresentationSpecification } from '@mechane/protocol/presentation';
-import { stepCountIs, tool } from 'ai';
+import { stepCountIs } from 'ai';
+import type { ModelMessage } from 'ai';
+import { Record } from 'effect';
 import { createHook, getWritable } from 'workflow';
-import { deliverRunOutcomeToSlack, deliverRunToSlack } from '../channels/deliver-run-to-slack.ts';
 import { prepareAgentContext } from '../models/context-policy.ts';
 import { RuntimeModel } from '../models/runtime-model.ts';
-import { createRequestTools } from '../requests/request-tools.ts';
+import { checkpointActivation } from '../tools/activation-checkpoint.ts';
+import { importExistingNotes } from '../tools/imported-notes.ts';
 import { prepareRuntimeTools } from '../tools/runtime-tools.ts';
 import { admissionToken } from './admission-token.ts';
+import { readNotifications } from './notifications.ts';
 import { loadRunContext } from './run-context.ts';
-import { runOutput } from './run-output.ts';
-import { recordToolActivity, saveRunProgress } from './run-progress.ts';
-import { claimRun, closeRunStream, failRun, finishRun, readTerminalRun } from './run-state.ts';
+import { recordToolActivity, saveRunProgress, saveRunTrace } from './run-progress.ts';
+import {
+  claimRun,
+  closeRunStream,
+  failRun,
+  finishRun,
+  markEnvironmentCheckpointCommitted,
+  readTerminalRun,
+} from './run-state.ts';
 import type { RunOutcome } from './types.ts';
 
-const MAXIMUM_AGENT_STEPS = 256;
+const MAXIMUM_AGENT_STEPS = 64;
+const CONTINUATION_FINISH_REASONS: ReadonlySet<string> = new Set(['tool-calls', 'length']);
 
 export async function runWorkflow(runId: string): Promise<RunOutcome> {
   'use workflow';
 
-  const outcome = await executeAdmission(runId);
-
-  await deliverRunOutcomeToSlack(outcome);
-
-  return outcome;
+  return await executeAdmission(runId);
 }
 
 async function executeAdmission(runId: string): Promise<RunOutcome> {
@@ -34,8 +39,6 @@ async function executeAdmission(runId: string): Promise<RunOutcome> {
     await hook.getConflict();
 
     const state = { status: await claimRun(runId) };
-
-    await deliverRunToSlack({ runId, kind: 'acknowledgement' });
 
     while (state.status === 'queued') {
       await hook;
@@ -60,31 +63,65 @@ async function executeAdmission(runId: string): Promise<RunOutcome> {
 async function executeRun(runId: string): Promise<RunOutcome> {
   try {
     const context = await loadRunContext(runId);
-    const prepared = await prepareRuntimeTools(context.identity);
 
-    const tools = {
-      ...prepared.tools,
-      ...createRequestTools(context.identity),
-      render_ui: tool({
-        description:
-          'Present a static card, table, or chart when a visual improves the answer. Supply the complete spec as tool arguments; keep the final reply in concise Markdown.',
-        inputSchema: PresentationSpecification,
-        execute: async (specification) => createPresentationOutput({ spec: specification }),
-      }),
+    if (context.isEnvironmentCheckpointRequired) {
+      try {
+        await checkpointActivation({ runId, checkpointSequence: context.checkpointSequence });
+        await markEnvironmentCheckpointCommitted(runId);
+      } catch {
+        return await failRun(runId, 'environment_checkpoint');
+      }
+    }
+
+    try {
+      await importExistingNotes({ runId });
+    } catch {
+      return await failRun(runId, 'note_import');
+    }
+
+    const traceMessages: Array<ModelMessage> = [];
+
+    const progress = {
+      messages: context.messages,
+      traceMessages,
+      presentedSequence: context.presentedSequence,
+      checkpointSequence: context.checkpointSequence,
     };
 
+    const initial = await readNotifications({ runId, afterSequence: progress.presentedSequence });
+
+    progress.messages = [...progress.messages, ...initial.messages];
+
+    progress.traceMessages.push(...initial.messages);
+
+    progress.presentedSequence = initial.presentedSequence;
+
+    if (progress.messages.length === 0) {
+      const wake: ModelMessage = {
+        role: 'user',
+        content:
+          'Private runtime wake. Review your durable notes and any unfinished work. No outward response is required.',
+      };
+
+      progress.messages = [...progress.messages, wake];
+
+      progress.traceMessages.push(wake);
+    }
+
+    await saveRunTrace({ runId, messages: progress.traceMessages });
+
+    const prepared = await prepareRuntimeTools(context.identity);
+    const tools = prepared.tools;
     const instructions = [context.instructions, ...prepared.notices].join('\n\n');
     const reference = { ...context.identity, modelId: context.model };
+    const policy = await prepareAgentContext({ reference, instructions, messages: progress.messages });
 
-    const policy = await prepareAgentContext({
-      reference,
-      instructions,
-      messages: [...context.messages],
-      historyMessageCount: context.messages.length - context.inputMessages.length,
-    });
+    progress.messages = policy.messages;
+    progress.checkpointSequence += 1;
+
+    await saveRunProgress({ runId, ...progress });
 
     const model = new RuntimeModel(reference);
-    const progress = { messages: [...context.inputMessages] };
 
     const agent = new WorkflowAgent({
       model,
@@ -92,9 +129,39 @@ async function executeRun(runId: string): Promise<RunOutcome> {
       tools,
       maxRetries: 0,
       maxOutputTokens: context.maxOutputTokens,
-      stopWhen: stepCountIs(MAXIMUM_AGENT_STEPS),
+      stopWhen: [
+        stepCountIs(MAXIMUM_AGENT_STEPS),
+        ({ steps }) => policy.exceedsWindow([...progress.messages, ...(steps.at(-1)?.response.messages ?? [])]),
+      ],
+      toolCallConcurrency: 1,
       allowSystemInMessages: true,
-      prepareStep: policy.prepareStep,
+      prepareStep: async (step) => {
+        const batch = await readNotifications({ runId, afterSequence: progress.presentedSequence });
+
+        progress.messages = [...progress.messages, ...batch.messages];
+
+        progress.traceMessages.push(...batch.messages);
+
+        progress.presentedSequence = batch.presentedSequence;
+
+        await saveRunTrace({ runId, messages: progress.traceMessages });
+
+        progress.messages = await policy.compact(progress.messages);
+        progress.checkpointSequence += 1;
+
+        await saveRunProgress({ runId, ...progress });
+
+        const notifications = batch.messages.map((message) => ({
+          role: message.role,
+          content: [{ type: 'text' as const, text: message.content }],
+        }));
+
+        const messages = [...step.messages, ...notifications];
+        const compacted = await policy.prepareStep({ messages });
+        const toolsContext = Record.map(tools, () => ({ presentedSequence: progress.presentedSequence }));
+
+        return { messages: compacted.messages, toolsContext };
+      },
       onToolExecutionStart: async ({ toolCall }) =>
         await recordToolActivity({
           runId,
@@ -108,7 +175,7 @@ async function executeRun(runId: string): Promise<RunOutcome> {
             runId,
             toolCallId: event.toolCall.toolCallId,
             name: event.toolCall.toolName,
-            status: 'completed',
+            status: toolCompletionStatus({ output: event.output }),
             durationMs: event.durationMs,
           });
 
@@ -124,31 +191,41 @@ async function executeRun(runId: string): Promise<RunOutcome> {
         });
       },
       onStepEnd: async (event) => {
-        progress.messages.push(...event.response.messages);
-        await saveRunProgress({ runId, messages: progress.messages });
+        progress.messages = [...progress.messages, ...event.response.messages];
+
+        progress.traceMessages.push(...event.response.messages);
+
+        await saveRunTrace({ runId, messages: progress.traceMessages });
+
+        progress.messages = await policy.compact(progress.messages);
+        progress.checkpointSequence += 1;
+
+        await saveRunProgress({ runId, ...progress });
       },
     });
 
     const result = await agent.stream({
-      messages: policy.messages,
+      messages: [...policy.messages],
       writable: getWritable<ModelCallStreamPart>(),
       preventClose: true,
       sendFinish: false,
     });
 
-    const additions = result.steps.flatMap((step) => step.response.messages);
-    const output = runOutput(additions);
+    const shouldContinue = CONTINUATION_FINISH_REASONS.has(result.finishReason);
 
-    if ('error' in result || result.finishReason === 'tool-calls' || output.reply.length === 0) {
+    if ('error' in result || (result.finishReason !== 'stop' && !shouldContinue)) {
       return await failRun(runId);
     }
 
-    const outcome = await finishRun({
-      runId,
-      inputMessage: context.inputMessage,
-      messages: [...context.inputMessages, ...additions],
-      reply: output.reply,
-    });
+    try {
+      await checkpointActivation({ runId, checkpointSequence: progress.checkpointSequence });
+    } catch {
+      return await failRun(runId, 'environment_checkpoint');
+    }
+
+    progress.checkpointSequence += 1;
+
+    const outcome = await finishRun({ runId, ...progress, shouldContinue });
 
     await closeRunStream(outcome);
 
@@ -156,4 +233,16 @@ async function executeRun(runId: string): Promise<RunOutcome> {
   } catch {
     return await failRun(runId);
   }
+}
+
+function toolCompletionStatus({ output }: { readonly output: unknown }): 'completed' | 'not_started' {
+  if (typeof output !== 'object' || output === null) {
+    return 'completed';
+  }
+
+  if ('status' in output && output.status === 'not_started') {
+    return 'not_started';
+  }
+
+  return 'completed';
 }

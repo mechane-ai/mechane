@@ -41,7 +41,7 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   MechCreationConflict: ErrorFamily.Conflict,
   MechArchived: ErrorFamily.Conflict,
   ModelInvalid: ErrorFamily.InvalidRequest,
-  InboxItemConflict: ErrorFamily.Conflict,
+  NotificationConflict: ErrorFamily.Conflict,
   TurnNotFound: ErrorFamily.NotFound,
   TurnEnded: ErrorFamily.Conflict,
 };

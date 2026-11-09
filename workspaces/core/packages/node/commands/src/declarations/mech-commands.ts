@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
-import { EventCursor, InboxText, Instructions, MechName, NoFields } from '@mechane/protocol';
-import { CreationRequestId, InboxItemRequestId, MechId, Micros, renamedWireStruct, SessionId } from '@mechane/records';
+import { EventCursor, Instructions, MechName, NoFields, NotificationId, NotificationText } from '@mechane/protocol';
+import { CreationRequestId, MechId, Micros, renamedWireStruct } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 import { CommandShape, FlagKind } from '../constants.ts';
 import type { CommandDeclaration } from '../types.ts';
@@ -11,7 +11,7 @@ const OptionalCreationRequestId = Schema.optionalKey(CreationRequestId);
 /** The commands that create the mechs of your workspace, talk to them, and follow their work. */
 export const MECH_COMMANDS = {
   'mech create': {
-    summary: 'create a mech in your workspace, which answers each inbox item through its model',
+    summary: 'create a persistent mech in your workspace, which receives notifications and acts through tools',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'createMech'],
     flags: {
@@ -20,10 +20,10 @@ export const MECH_COMMANDS = {
         summary: 'reuse the printed creation request id to retry without creating another mech',
       },
       'name': { kind: FlagKind.Text, summary: 'the name that tells the mech apart, such as scout' },
-      'instructions': { kind: FlagKind.Text, summary: 'the instructions the mech follows in every turn' },
+      'instructions': { kind: FlagKind.Text, summary: 'the instructions the mech follows whenever it works' },
       'model': {
         kind: FlagKind.Text,
-        summary: 'the model the mech answers through, one the deployment offers; its first offer when absent',
+        summary: 'the model the mech uses, one the deployment offers; its first offer when absent',
       },
       'daily-cap-micros': {
         kind: FlagKind.Text,
@@ -56,7 +56,7 @@ export const MECH_COMMANDS = {
   },
   'mech fork': {
     summary:
-      "fork an idle mech into a new mech of your workspace, which keeps the mech's conversation, memory and records so far but not its sandbox's files",
+      'fork an idle mech into a new identity with its context and history; sandbox files remain with the source mech',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'forkMech'],
     flags: {
@@ -69,36 +69,30 @@ export const MECH_COMMANDS = {
       renames: { mechId: 'mech-id', requestId: 'request-id' },
     }),
   },
-  'inbox send': {
+  'notification send': {
     summary:
-      'send text to the inbox of a mech under an id it prints first, which a resend with --inbox-item-id delivers only once',
+      'notify a mech under an id printed before sending; retry the same text with --notification-id to deliver once',
     shape: CommandShape.Document,
-    operations: ['listWorkspaces', 'sendInboxItem'],
+    operations: ['listWorkspaces', 'sendNotification'],
     flags: {
-      'inbox-item-id': {
+      'notification-id': {
         kind: FlagKind.Text,
-        summary: 'the inbox item id of a send to repeat, as an earlier send printed it; a fresh one when absent',
-      },
-      'session-id': {
-        kind: FlagKind.Text,
-        summary: 'the conversation session to receive the message; the mech default when absent',
+        summary: 'reuse a printed notification id to retry an uncertain send; a fresh one when absent',
       },
     },
     arguments: [MECH_ARGUMENT, { name: 'text', summary: 'what to tell the mech' }],
     input: renamedWireStruct({
       fields: {
         mechId: MechId,
-        text: InboxText,
+        text: NotificationText,
         /** Absent for a first send, which takes a fresh id. */
-        inboxItemId: Schema.optionalKey(InboxItemRequestId),
-        sessionId: Schema.optionalKey(SessionId),
+        notificationId: Schema.optionalKey(NotificationId),
       },
-      renames: { mechId: 'mech-id', inboxItemId: 'inbox-item-id', sessionId: 'session-id' },
+      renames: { mechId: 'mech-id', notificationId: 'notification-id' },
     }),
   },
   'event list': {
-    summary:
-      'write the events of a mech, one record each: to the end of its log, or with --follow as they happen; a turn ends only with turn.answered or turn.unanswered',
+    summary: 'write the events of a mech, one record each: to the end of its log, or with --follow as they happen',
     shape: CommandShape.Stream,
     operations: ['listWorkspaces', 'listEvents'],
     flags: {

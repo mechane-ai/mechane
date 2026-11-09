@@ -1,5 +1,7 @@
 import type { ModelMessage, UIMessage } from 'ai';
 
+export const MAXIMUM_WORKING_CONTEXT_BYTES = 196_608;
+
 export type Identity = { readonly provider: 'github'; readonly subject: string; readonly login: string };
 
 export type MechDefinition = {
@@ -40,17 +42,8 @@ export type SlackOrigin = {
 };
 
 export type ConsoleOrigin = { readonly kind: 'console' | 'api'; readonly principalId: string };
-export type InputOrigin = SlackOrigin | ConsoleOrigin;
-
-export type Session = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly mechId: string;
-  readonly title: string;
-  readonly source: 'console' | 'slack' | 'api';
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
+export type NotificationOrigin = { readonly kind: 'notification'; readonly notificationId: string | null };
+export type InputOrigin = SlackOrigin | ConsoleOrigin | NotificationOrigin;
 
 export type InputAttachment = {
   readonly id: string;
@@ -69,6 +62,8 @@ export type Run = {
   readonly mechId: string;
   readonly sessionId: string;
   readonly inputId: string;
+  /** Association includes scheduled notices; the context cursor and trace record actual presentation. */
+  readonly notificationIds: ReadonlyArray<string>;
   readonly workflowId: string | null;
   readonly definitionRevision: number;
   readonly status: RunStatus;
@@ -86,7 +81,43 @@ export type Run = {
   readonly cancelRequestedAt: string | null;
 };
 
-export type InputAdmission = { readonly run: Run; readonly wasCreated: boolean };
+export type NotificationSource = { readonly name: string; readonly eventId: string; readonly url?: string };
+
+export type NotificationProducer =
+  | { readonly kind: 'member'; readonly principalId: string }
+  | { readonly kind: 'producer'; readonly id: string };
+
+export type Notification = {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly mechId: string;
+  readonly receivedSequence: number;
+  readonly receivedAt: string;
+  readonly text: string;
+  readonly source: NotificationSource;
+  readonly producer: NotificationProducer;
+  readonly data: Readonly<Record<string, unknown>> | null;
+};
+
+export type NotificationReceipt = {
+  readonly id: string;
+  readonly mechId: string;
+  readonly receivedAt: string;
+  readonly receivedSequence: number;
+  readonly wasCreated: boolean;
+};
+
+export type ConsoleMessage = {
+  readonly id: string;
+  readonly workspaceId: string;
+  readonly mechId: string;
+  readonly runId: string | null;
+  readonly sequence: number;
+  readonly role: 'user' | 'assistant';
+  readonly text: string;
+  readonly presentation: Readonly<Record<string, unknown>> | null;
+  readonly createdAt: string;
+};
 
 export type StoredMessages = {
   readonly modelMessages: ReadonlyArray<ModelMessage>;
@@ -104,44 +135,9 @@ export type ActivityEvent = {
   readonly createdAt: string;
 };
 
-export type Memory = {
-  readonly workspaceId: string;
-  readonly mechId: string;
-  readonly path: string;
-  readonly text: string;
-  readonly digest: string;
-  readonly version: number;
-  readonly runId: string | null;
-  readonly updatedAt: string;
-};
-
-export type WorkItem = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly mechId: string;
-  readonly title: string;
-  readonly state: 'open' | 'resolved' | 'abandoned';
-  readonly note: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
-
-export type GitHubAccess = {
-  readonly appId: number;
-  readonly installationId: number;
-  readonly repositoryId: number;
-  readonly owner: string;
-  readonly repository: string;
-  readonly secretReference: string;
-};
-
-export type RequestService = { readonly url: string; readonly serviceId: string; readonly secretReference: string };
-
 export type ExecutionAccess = {
-  readonly github: GitHubAccess | null;
   readonly variables: Readonly<Record<string, string>>;
   readonly secrets: Readonly<Record<string, string>>;
-  readonly requestService: RequestService | null;
 };
 
 export type CredentialEnvelope = { readonly keyVersion: string; readonly nonce: string; readonly ciphertext: string };
@@ -184,78 +180,6 @@ export type Allowance = {
   readonly capMicros: number;
   readonly spentMicros: number;
   readonly reservedMicros: number;
-};
-
-export type SlackInstallation = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly teamId: string;
-  readonly botUserId: string;
-  readonly botTokenReference: string;
-  readonly signingSecretReference: string;
-  readonly historyTokenReference: string | null;
-  readonly apiOrigin: string;
-  readonly updatedAt: string;
-};
-
-export type SlackBinding = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly installationId: string;
-  readonly teamId: string;
-  readonly channelId: string;
-  readonly channelKind: 'channel' | 'im' | 'mpim';
-  readonly mechId: string;
-  readonly isListening: boolean;
-  readonly isReplyEnabled: boolean;
-  readonly allowedUserIds: ReadonlyArray<string> | null;
-};
-
-export type SlackDelivery = {
-  readonly id: string;
-  readonly workspaceId: string;
-  readonly mechId: string;
-  readonly runId: string | null;
-  readonly bindingId: string;
-  readonly channelId: string;
-  readonly threadId: string;
-  readonly kind: 'acknowledgement' | 'reply' | 'notification';
-  readonly status: 'pending' | 'sending' | 'delivered' | 'failed' | 'uncertain' | 'blocked';
-  readonly messageId: string | null;
-  readonly content: Readonly<Record<string, unknown>>;
-  readonly contentDigest: string;
-  readonly lastError: string | null;
-  readonly createdAt: string;
-  readonly updatedAt: string;
-};
-
-export type RequestKind = 'access' | 'vend';
-export type RequestResolution = 'ready' | 'denied' | 'expired' | 'cancelled';
-
-export type RequestEvent = {
-  readonly id: string;
-  readonly type: 'nexus.request.resolved';
-  readonly occurredAt: string;
-  readonly serviceId: string;
-  readonly request: {
-    readonly id: string;
-    readonly kind: RequestKind;
-    readonly status: RequestResolution;
-    readonly approvalId: string | null;
-  };
-};
-
-export type RequestWait = {
-  readonly serviceId: string;
-  readonly requestId: string;
-  readonly kind: RequestKind;
-  readonly runId: string;
-  readonly hookToken: string;
-  readonly serviceIdentity: string;
-  readonly resolution: RequestResolution | null;
-  readonly eventId: string | null;
-  readonly deliveredAt: string | null;
-  readonly closedAt: string | null;
 };
 
 export type ExecutionReceipt = {

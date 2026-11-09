@@ -6,7 +6,7 @@ import { readRequests } from './requests.ts';
 import type { ReadKind, ReadRequest } from './requests.ts';
 
 type CommandInput<
-  Name extends 'createMech' | 'updateMech' | 'sendInboxItem' | 'cancelTurn' | 'stopEnvironmentProcess',
+  Name extends 'createMech' | 'updateMech' | 'sendNotification' | 'cancelTurn' | 'stopEnvironmentProcess',
 > = Omit<Input<Name>, 'workspaceId'>;
 
 type CommandDependencies = {
@@ -118,13 +118,13 @@ export function createCommands({
         throw error;
       }
     },
-    async sendInboxItem(input: CommandInput<'sendInboxItem'>): Promise<Output<'sendInboxItem'>> {
+    async sendNotification(input: CommandInput<'sendNotification'>): Promise<Output<'sendNotification'>> {
       const request = readRequests.mech(input.mechId);
       const commandSignal = signalForRead(request);
 
       try {
         const saved = await api(
-          'sendInboxItem',
+          'sendNotification',
           { ...input, workspaceId: WorkspaceId.make(workspaceId) },
           commandSignal,
         );

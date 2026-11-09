@@ -41,7 +41,7 @@ export {
   UnknownFailure,
   KeyMissing,
   DeviceApprovalNotFound,
-  InboxItemConflict,
+  NotificationConflict,
   KeyExpired,
   KeyUnrecognized,
   KeyNotFound,
@@ -73,7 +73,7 @@ export { SandboxCapacityReached } from './errors/mech.errors.ts';
  */
 export { ReleaseSourceUnavailable } from './errors/release-source.errors.ts';
 export { ModelInvalid, TurnEnded, TurnNotFound } from './errors/mech.errors.ts';
-export { MechArchived, MechCreationConflict, MechRevisionConflict, SandboxDisabled } from './errors/mech.errors.ts';
+export { MechCreationConflict, MechRevisionConflict, SandboxDisabled } from './errors/mech.errors.ts';
 
 export type { FailureCodec } from './errors/types.ts';
 
@@ -82,8 +82,19 @@ export { releaseBinaryName } from './releases/release-binary-name.ts';
 export { releaseAssetUrl } from './releases/release-asset-url.ts';
 export { Event, EventCursor, EventPage, ListedEvent, UnknownEvent } from './operations/events/schemas.ts';
 export { EventType, WAIT_MAX } from './operations/events/constants.ts';
-export { Delivery, INBOX_TEXT_MAX_CHARS } from './operations/inbox/constants.ts';
-export { InboxItem, InboxText } from './operations/inbox/schemas.ts';
+export {
+  NotificationId,
+  NotificationText,
+  NotificationBody,
+  NotificationReceipt,
+  NOTIFICATION_TEXT_MAX_CHARS,
+} from './operations/notifications/schemas.ts';
+export {
+  ConsoleMessageId,
+  ConsoleMessageRole,
+  ConsoleMessage,
+  ConsoleMessagePage,
+} from './operations/conversation/schemas.ts';
 export {
   Instructions,
   Mech,
@@ -105,10 +116,6 @@ export { GitHubTokenAnswer, GitHubUser } from './github/schemas.ts';
 export { ApproveForm, DeviceForm } from './pages/schemas.ts';
 export { ConsoleView, DeviceStep, TYPED_CODE_FIELD } from './pages/constants.ts';
 
-export { MechPath } from './operations/schemas.ts';
-export { Memory, MemoryList } from './operations/memories/schemas.ts';
-
-export { Thread, ThreadList, ThreadPage } from './operations/threads/schemas.ts';
 export { Release, ReleaseManifest, ReleaseStamp } from './releases/schemas.ts';
 export { CliTarget, INSTALL_FOLDER_VARIABLE, INSTALL_SCRIPT_PATH, ReleaseKey } from './releases/constants.ts';
 export { installScriptUrl } from './releases/install-script-url.ts';
@@ -161,22 +168,6 @@ export {
 export { MembershipRole } from './operations/workspaces/constants.ts';
 
 export { SandboxAction, SandboxPhase, SandboxRequest, SandboxReport } from '@mechane/sandbox-wire';
-export {
-  SlackBinding,
-  SlackChannelKind,
-  SlackBindings,
-  SlackBindingResult,
-  SlackDelivery,
-  SlackDeliveries,
-} from './operations/slack/schemas.ts';
-export { slackEventsPath } from './operations/slack/slack-events-path.ts';
-export { slackChannelUrl } from './operations/slack/slack-channel-url.ts';
-export {
-  SlackInstallation,
-  SlackInstallations,
-  SlackInstallationResult,
-  SlackInstallationDeletion,
-} from './operations/slack/installations.schemas.ts';
 
 export {
   WorkspaceOwnerRequired,
@@ -202,8 +193,6 @@ export { WorkspacePolicy } from './operations/workspaces/policy.schemas.ts';
 
 export { TurnPage } from './operations/turns/list-turns.ts';
 export { ExecutionAccess, ExecutionAccessState } from './operations/execution-access/schemas.ts';
-
-export { ConversationSession, SessionPage } from './operations/sessions/schemas.ts';
 
 export { EvidenceNotFound, EvidenceUnavailable } from './errors/evidence.errors.ts';
 export {

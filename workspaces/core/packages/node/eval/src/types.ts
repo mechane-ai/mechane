@@ -5,6 +5,7 @@ import type {
   AllowanceExhausted,
   EvalFileFailed,
   EvalInterrupted,
+  EvalResponseInvalid,
   OutFolderBusy,
   PlanChanged,
   SuiteInvalid,
@@ -19,7 +20,8 @@ export type EvalFailure =
   | PlanChanged
   | AllowanceExhausted
   | EvalFileFailed
-  | EvalInterrupted;
+  | EvalInterrupted
+  | EvalResponseInvalid;
 
 /** The key a mech command sends, and the caller's one workspace, where every mech command acts. */
 export type WorkspaceAccess = { readonly token: Redacted.Redacted; readonly workspaceId: WorkspaceId };

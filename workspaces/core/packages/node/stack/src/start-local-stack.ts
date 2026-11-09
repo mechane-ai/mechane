@@ -191,6 +191,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       databaseUrl: postgres.url,
       stateDirectory: state.directory,
       fixtures: resources.fixtures,
+      sandbox: resources.sandbox,
       serverLog,
       postgresContainer: postgres.container,
       nodeVersion,

@@ -1,16 +1,11 @@
 import {
   Allowance,
-  ConversationSession,
   EvidenceArtifact,
   ListedEvent,
   Mech,
   MechSummary,
-  Memory,
   ProcessObservation,
   ProcessSummary,
-  SlackBinding,
-  SlackDelivery,
-  Thread,
   Trace,
   Turn,
 } from '@mechane/protocol';
@@ -65,15 +60,6 @@ export type TurnRow = typeof TurnRow.Type;
 /** An event keyed by mech and sequence, shared across recent and turn reads. */
 export const EventRow = mechRecordSchema(ListedEvent);
 export type EventRow = typeof EventRow.Type;
-/** A thread keyed by its owning mech because forked history retains thread IDs. */
-export const ThreadRow = mechRecordSchema(Thread);
-export type ThreadRow = typeof ThreadRow.Type;
-/** Session metadata shared by conversation pickers, separate from the native Chat transcript. */
-export const SessionRow = mechRecordSchema(ConversationSession);
-export type SessionRow = typeof SessionRow.Type;
-/** A memory path and version within one mech's complete bounded memory set. */
-export const MemoryRow = mechRecordSchema(Memory);
-export type MemoryRow = typeof MemoryRow.Type;
 /** Encoded trace evidence sharing a key with its separately stored turn. */
 export const TraceEvidenceRow = mechRecordSchema(TraceEvidence);
 export type TraceEvidenceRow = typeof TraceEvidenceRow.Type;
@@ -86,12 +72,6 @@ export type EnvironmentProcessRow = typeof EnvironmentProcessRow.Type;
 /** Bounded logs fetched only for an explicitly opened process handle. */
 export const EnvironmentProcessDetailsRow = mechRecordSchema(ProcessObservation);
 export type EnvironmentProcessDetailsRow = typeof EnvironmentProcessDetailsRow.Type;
-/** A binding from the complete workspace Slack snapshot, attributed to its mech. */
-export const SlackBindingRow = mechRecordSchema(SlackBinding);
-export type SlackBindingRow = typeof SlackBindingRow.Type;
-/** A delivery in the bounded latest window; absence does not prove deletion. */
-export const SlackDeliveryRow = mechRecordSchema(SlackDelivery);
-export type SlackDeliveryRow = typeof SlackDeliveryRow.Type;
 /** The workspace allowance with protocol money values preserved in wire form. */
 export const AllowanceRow = recordSchema(Allowance);
 export type AllowanceRow = typeof AllowanceRow.Type;
@@ -106,11 +86,6 @@ export function restoreRecord<Value, Encoded>(schema: Schema.Codec<Value, Encode
 /** Keeps copied history IDs and event sequences distinct between forked mechs. */
 export function recordKey(mechId: string, identifier: string | number): string {
   return JSON.stringify([mechId, identifier]);
-}
-
-/** Restores a canonical conversation session for picker consumers. */
-export function decodeSession(row: SessionRow): ConversationSession {
-  return restoreRecord(ConversationSession, row.value);
 }
 
 /** Restores summary dates and optional fork metadata for view consumers. */
@@ -134,16 +109,6 @@ export function decodeTurn(row: TurnRow): Trace['turn'] {
 /** Restores the event protocol value without discarding unknown event fields. */
 export function decodeEvent(row: EventRow): ListedEvent {
   return restoreRecord(ListedEvent, row.value);
-}
-
-/** Restores a thread's dates and optional note for existing view consumers. */
-export function decodeThread(row: ThreadRow): Thread {
-  return restoreRecord(Thread, row.value);
-}
-
-/** Restores the memory protocol value from its encoded canonical row. */
-export function decodeMemory(row: MemoryRow): Memory {
-  return restoreRecord(Memory, row.value);
 }
 
 /** Unknown turn variants remain readable without inventing a version. */
@@ -172,16 +137,6 @@ export function decodeEnvironmentProcess(row: EnvironmentProcessRow): ProcessSum
 /** Restores bounded output fetched for one exact process handle. */
 export function decodeEnvironmentProcessDetails(row: EnvironmentProcessDetailsRow): ProcessObservation {
   return restoreRecord(ProcessObservation, row.value);
-}
-
-/** Restores the binding protocol value from its encoded canonical row. */
-export function decodeSlackBinding(row: SlackBindingRow): SlackBinding {
-  return restoreRecord(SlackBinding, row.value);
-}
-
-/** Restores delivery timestamps using their protocol millisecond encoding. */
-export function decodeSlackDelivery(row: SlackDeliveryRow): SlackDelivery {
-  return restoreRecord(SlackDelivery, row.value);
 }
 
 /** Restores the workspace allowance with the protocol's money and optional fields. */

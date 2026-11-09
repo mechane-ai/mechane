@@ -17,7 +17,7 @@ export function processTools(context: RuntimeToolContext): ToolSet {
   return {
     start_process: tool({
       description:
-        'Start a long-lived shell process, such as a local development server. It survives later tool steps and ordinary file checkpoints. A running result is not proof of application readiness. Use the returned process and machine IDs for reads and stops.',
+        'Start a long-lived shell process, such as a build or local development server. It survives later activations and ordinary file checkpoints. Its completion arrives as a notification. A running result is not proof of application readiness. Use the returned process and machine IDs for reads and stops.',
       inputSchema: z.strictObject({ command: z.string().min(1) }),
       execute: (input, options) => startProcess({ ...context, ...input, toolCallId: options.toolCallId }),
     }),

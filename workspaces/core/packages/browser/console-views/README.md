@@ -2,14 +2,13 @@
 
 Mechane resource views and user interactions without network or session ownership.
 
-MechConversation renders supplied native AI SDK messages, safe Markdown, tool results, and validated structured
-presentation. The application owns the Chat instance, session selection, streaming, bounded history, and the retained
-composer. Run and evidence navigation must preserve that session owner; domain read caches do not own a second
-transcript.
+MechConversation renders supplied public messages, safe Markdown, and validated structured presentation. Assistant
+messages come from explicit publication; private model output belongs to activation inspection. The application owns
+bounded history, its retained composer, and refresh. Activation and evidence navigation preserve that conversation owner
+and reader position.
 
-WorkList and WorkDetails are separate surfaces. The application retains the list while a work record is open, preserves
-the last supplied selected record across bounded refreshes, and restores the selected row on return. MemoryList requires
-the originating-run link from its consumer; it does not construct application routes.
+The exact Zod peer matches the protocol's json-render catalog. Its React renderer and the shared catalog must use the
+same native schema types.
 
 EvidenceList and EvidenceDetails render supplied capture records, provenance, and authenticated media URLs. The
 application owns navigation, sign-in, reads, and authorization. Capture readiness describes saved media, not an

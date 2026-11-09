@@ -5,6 +5,7 @@ const EVIDENCE_LABEL_MAX_LENGTH = 256;
 const TOOL_EVIDENCE = z.object({
   executionId: z.string().max(EVIDENCE_LABEL_MAX_LENGTH).optional(),
   status: z.string().max(EVIDENCE_LABEL_MAX_LENGTH).optional(),
+  reason: z.enum(['notifications_pending', 'execution_stopped']).optional(),
   exitCode: z.number().int().nullable().optional(),
   durationMs: z.number().nonnegative().optional(),
   path: z.string().max(EVIDENCE_LABEL_MAX_LENGTH).optional(),

@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { ExecutionReceipt } from '../domain.ts';
 import type { StoreContext } from './context.ts';
 import { AdmissionRefused, RecordNotFound, StoreConflict } from './errors.ts';
-import { withRunMutation } from './run-mutations.ts';
+import { lockActivation, requireActiveActivation } from './notifications/locking.ts';
 import { advanceRunVersion } from './run-version.ts';
 
 const ReceiptRow = Schema.Struct({
@@ -79,29 +79,12 @@ export function createExecutionReceiptStore(context: StoreContext) {
       const { id, runId, kind } = input;
       const request = input.request ?? null;
 
-      return await withRunMutation({
-        context,
-        scope: input,
-        mutation: async ({ client }) => {
-          const created = await client.query(
-            `INSERT INTO mechane.execution_receipts(id,run_id,kind,status,request)
-           SELECT $1,id,$3,'pending',$4 FROM mechane.runs WHERE id=$2 AND status='running' AND cancel_requested_at IS NULL
-           ON CONFLICT(id) DO NOTHING RETURNING *`,
-            [id, runId, kind, request],
-          );
+      return await context.atomic(async (transaction) => {
+        const run = await lockActivation(transaction, runId);
+        const { client } = transaction;
+        const existing = await client.query('SELECT * FROM mechane.execution_receipts WHERE id=$1', [id]);
 
-          if (created.rows.length > 0) {
-            await advanceRunVersion({ client, runId });
-
-            return { receipt: readReceipt(created.rows[0]), wasCreated: true };
-          }
-
-          const existing = await client.query('SELECT * FROM mechane.execution_receipts WHERE id=$1', [id]);
-
-          if (existing.rows.length === 0) {
-            throw new AdmissionRefused('Run cannot start an execution');
-          }
-
+        if (existing.rows.length > 0) {
           const receipt = readReceipt(existing.rows[0]);
 
           if (receipt.runId !== runId || receipt.kind !== kind) {
@@ -113,7 +96,24 @@ export function createExecutionReceiptStore(context: StoreContext) {
           }
 
           return { receipt, wasCreated: false };
-        },
+        }
+
+        await requireActiveActivation(transaction, run);
+
+        const created = await client.query(
+          `INSERT INTO mechane.execution_receipts(id,run_id,kind,status,request)
+           SELECT $1,id,$3,'pending',$4 FROM mechane.runs WHERE id=$2 AND status='running' AND cancel_requested_at IS NULL
+           ON CONFLICT(id) DO NOTHING RETURNING *`,
+          [id, runId, kind, request],
+        );
+
+        if (created.rows.length === 0) {
+          throw new AdmissionRefused('Execution identity is already claimed');
+        }
+
+        await advanceRunVersion({ client, runId });
+
+        return { receipt: readReceipt(created.rows[0]), wasCreated: true };
       });
     },
     listRunExecutions: async ({

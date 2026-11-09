@@ -25,7 +25,9 @@ type HostLauncherOptions = {
 
 type Machine = { readonly child: ChildProcess; readonly exited: Promise<void>; readonly status: HostMachine };
 
-export async function startHostLauncher(input: HostLauncherOptions): Promise<HttpService> {
+type HostLauncher = HttpService & { readonly loseMachine: (id: string) => Promise<void> };
+
+export async function startHostLauncher(input: HostLauncherOptions): Promise<HostLauncher> {
   const machines = new Map<string, Promise<Machine>>();
 
   async function handle(request: Request): Promise<Response> {
@@ -93,6 +95,16 @@ export async function startHostLauncher(input: HostLauncherOptions): Promise<Htt
 
   return {
     origin: service.origin,
+    loseMachine: async (id) => {
+      const machine = await machines.get(id);
+
+      if (machine === undefined) {
+        throw new Error('The fixture does not own this machine');
+      }
+
+      signalProcessGroup({ child: machine.child, signal: 'SIGKILL' });
+      await machine.exited;
+    },
     close: async () => {
       const serviceOutcomes = await Promise.allSettled([service.close()]);
 

@@ -36,14 +36,16 @@ messages, tool calls, stream parts, or workflow identifiers to simulate the reti
 | installation | One deployed Mechane service and its global configuration | — |
 | workspace | The membership and allowance boundary containing mechs | — |
 | principal | A stable authenticated identity that can hold memberships | — |
-| mech | A durable agent identity with definition, memory, and execution environment | — |
-| session | A conversation's native message history and original channel context | turn, work item (for this concept) |
-| inbox item | An accepted input under a stable request and source identity | — |
-| run | One accepted input's durable execution and terminal outcome | session (for this concept) |
-| turn | The existing domain API's name for a run record | — |
-| work item | A tracked piece of work with title, state, and note | session (for this concept) |
-| thread | The domain API's tracked work record, or a native Slack thread when qualified | — |
-| memory | A path-addressed document retained by a mech | — |
+| mech | A durable identity with instructions, working context, and execution environment | — |
+| notification | An immutable accepted input with producer identity and ordered inbox sequence | inbox item (for new admission) |
+| activation | A bounded native Workflow lifetime driving one mech, potentially consuming many notifications | — |
+| run | The stored execution record used for an activation or a preserved historical input execution | — |
+| turn | The existing inspection API's name for a run record | — |
+| session | An internal context identity or preserved historical conversation record | — |
+| conversation | The mech's public Console messages, distinct from private model context | — |
+| work item | A preserved historical progress record; current work notes are ordinary files | — |
+| thread | An external conversation such as a Slack thread, qualified by its platform | — |
+| memory | Ordinary notes in a mech's durable home; historical SQL documents remain preserved | — |
 | revision | An immutable version of a mech definition | — |
 | model offer | A configured model with context, output, and pricing limits | — |
 | dispatch | One metered model-call attempt | — |

@@ -10,7 +10,7 @@ type WaitForBashCompletionInput = {
   readonly stack: LocalStack;
   readonly account: Account;
   readonly mechId: string;
-  readonly inboxItemId: string;
+  readonly notificationId: string;
   readonly marker: string;
   readonly toolCallId: string;
   readonly timeoutMs?: number;
@@ -21,7 +21,7 @@ export async function waitForBashCompletion(input: WaitForBashCompletionInput) {
   const result = await readBashResult({ ...input, model });
   const turn = await waitForTurn(input);
 
-  assert.equal(turn.status, TurnStatus.Answered);
+  assert.equal(turn.status, TurnStatus.Completed);
   assert.equal(result.status, 'completed');
   assert.equal(result.exitCode, 0);
 

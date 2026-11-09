@@ -1,5 +1,5 @@
-import { TurnStatus } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
+import { RoleStatus } from '../constants.ts';
 import type { EvalFileFailed } from '../errors.ts';
 import type { TrialFiles } from '../types.ts';
 
@@ -21,7 +21,7 @@ export const unsavedTurns = Effect.fn('unsavedTurns')(function* ({
     return TURNS_PER_TRIAL;
   }
 
-  if (subject.value.outcome.status === TurnStatus.Answered && Option.isNone(yield* files.grade.read())) {
+  if (subject.value.outcome.status === RoleStatus.Published && Option.isNone(yield* files.grade.read())) {
     return 1;
   }
 

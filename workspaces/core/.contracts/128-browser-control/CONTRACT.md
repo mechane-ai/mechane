@@ -7,7 +7,7 @@ paths: ["packages/node/browser/**", "packages/node/guest/src/browser/**", "packa
 ## Rules
 
 Run Chromium in the calling mech's sandbox, beside its checkout and development servers. Keep browser actions
-in that conversation's selected model. The adapter executes the requested action and returns observations; it does not
+in that mech's selected model. The adapter executes the requested action and returns observations; it does not
 delegate decisions to a second model or bypass sandbox admission or network policy.
 Select image capabilities from the run's pinned definition revision, including after the mech's current model changes.
 

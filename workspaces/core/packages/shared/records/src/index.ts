@@ -6,7 +6,6 @@ export {
   Tokens,
   Micros,
   TurnId,
-  ThreadId,
   isWellFormedText,
   Bytes,
   PrintableName,
@@ -25,9 +24,7 @@ export {
   BYTES_PER_MEBIBYTE,
 } from './constants.ts';
 export { HttpMethod } from './http-method.constants.ts';
-export { SlackDestination } from './slack.schemas.ts';
-export { SlackDeliveryStatus } from './slack.constants.ts';
-export { SlackConnectionId, SlackTeamId, SlackChannelId, SlackUserId } from './slack-identifiers.schemas.ts';
+export { SlackTeamId, SlackChannelId, SlackUserId } from './slack-identifiers.schemas.ts';
 export { HttpStatusCode } from './http-status.constants.ts';
 export { HttpHeader } from './http-header.constants.ts';
 export { MediaType } from './media-type.constants.ts';
@@ -38,17 +35,7 @@ export { listQuery } from './list-query.ts';
 export { renamedWireStruct } from './renamed-wire-struct.ts';
 export { unknownMember } from './unknown-member.ts';
 export { boundedText } from './bounded-text.ts';
-export {
-  MechId,
-  MachineId,
-  WorkspaceId,
-  PrincipalId,
-  InboxItemId,
-  InboxItemRequestId,
-  SessionId,
-  SlackBindingId,
-  SlackDeliveryId,
-} from './entity.schemas.ts';
+export { MechId, MachineId, WorkspaceId, PrincipalId, SessionId } from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';
 export { ModelToolCallId } from './model-tool-call-id.schemas.ts';

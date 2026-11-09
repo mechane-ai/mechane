@@ -24,8 +24,8 @@ export async function readTextBody(request: Request, maximumBytes = REQUEST_BODY
   return Buffer.concat(chunks, size.bytes).toString('utf8');
 }
 
-export async function readJsonBody(request: Request): Promise<unknown> {
-  const body = await readTextBody(request);
+export async function readJsonBody(request: Request, maximumBytes?: number): Promise<unknown> {
+  const body = await readTextBody(request, maximumBytes);
 
   try {
     return JSON.parse(body);

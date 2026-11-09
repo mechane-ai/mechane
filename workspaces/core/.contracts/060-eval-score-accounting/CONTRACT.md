@@ -42,11 +42,21 @@ Does any average include an unknown, a failure, or an empty denominator?
 
 ## Local adaptations
 
-A trial's verdict is its grade's worst criterion, `pass`, `fail` or `uncertain`, or `no_grade` for a grader reply that decodes as no grade, `unavailable` for a role's turn sent and never saved, and `run_failed` for a role's turn that ended unanswered, a canceled one included; only a grade contributes a criterion's verdict, and a criterion is never averaged.
-The report counts every verdict beside the trials the plan selected, derives only from the out folder's records, and its verdicts are a model grader's, which its text line names as the graders' verdicts.
-The report's `subject_charged_micros` and `grader_charged_micros` keep the subjects' spend apart from the graders', for each trial and in total, and count saved turns only: a trial with a turn sent and never saved is `unavailable`, which marks its spend as partial.
-A dispatch in a status this release does not know is charged its reservation, the most it can cost.
-Open: a grader's unanswered turn is `run_failed`, as a subject's is, and only the trial's files say which role failed; an unsaved turn's spend is no unknown of its own in the report.
+Subject outcomes distinguish `published`, `no_reply`, `failed`, and `stopped`. A grader has `graded`, `no_grade`, `no_reply`,
+`failed`, or `stopped`. Quiet completion has no public answer; it cannot be scored from private model text. A failed role
+maps to `run_failed`, a stopped role to `stopped`, a quiet role to `no_reply`, and an invalid published grade to `no_grade`.
+Only valid grades contribute criterion verdicts. Their worst criterion yields `pass`, `fail`, or `uncertain`; criteria
+are not averaged. An unsaved role remains `unavailable`.
+
+The report counts each verdict against all selected trials and derives solely from saved role records. It identifies
+judgments as grader verdicts. `subject_charged_micros` and `grader_charged_micros` aggregate all collected activation
+dispatches separately by role. Unknown dispatch statuses use the reserved upper bound. Missing role records make reported
+spend partial. Current reserved dispatches contribute zero; this remains an explicit accounting gap, not evidence of zero
+spend or permission to describe incomplete cost as complete.
+
+The files identify which role failed, but a report-level `run_failed` does not distinguish subject from grader failure.
+An unsaved role's spend also lacks its own unknown value. Preserve these existing coverage gaps in review rather than
+claiming all Rules above are established by the report schema.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

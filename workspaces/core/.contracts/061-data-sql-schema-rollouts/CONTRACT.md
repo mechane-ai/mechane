@@ -54,8 +54,9 @@ checksum prefix; a later suffix is allowed only under these additive rollout rul
 ledger instead of modifying it.
 
 Run schema changes with a dedicated migration connection. The runtime connection receives only the permissions its
-product tables and upstream World require. Workflow and Chat own their schema migrations; do not edit their tables
-to repair application state. Record the exact upstream versions in the release.
+product tables and upstream World require. Workflow owns its schema migrations; do not edit its tables to repair
+application state. Preserve retained platform history when removing its runtime adapter. Record exact upstream versions
+in the release.
 
 The isolated sandbox service retains its own SQLite schema ledger and persistent file checkpoints. A service restart
 must not replay a completed command or publish a checkpoint after cancellation. Destructive sandbox changes require

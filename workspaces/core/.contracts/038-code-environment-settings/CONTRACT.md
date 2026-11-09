@@ -34,11 +34,12 @@ For each child process a change starts, does it inherit any parent variable that
 
 Register each program's settings boundary in `packages/node/rules/src/file-roles.ts`. The runtime's `src/config.ts`
 loads database, model, credential-keyring, and sandbox settings. Server settings own the public origin, GitHub OAuth,
-identity admission, and Nexus callback authentication. The sandbox service decodes its Cloudflare bindings once.
+identity admission, and generic notification-producer authentication. The sandbox service decodes its Cloudflare bindings once.
 Raw environment access stays in those boundaries; tools and handlers receive validated configuration.
 
-The deployment supplies installation defaults and secret references. Mechs, workspace integrations, Slack bindings,
-and execution grants are runtime records. Settings never overwrite those records during a deployment.
+The deployment supplies installation defaults, secret references, and notification-producer recipient allowlists.
+Mechs, workspace credentials, notifications, and execution grants are runtime records. External integrations own their
+platform subscriptions. Settings never overwrite runtime records during deployment.
 
 Resolve credentials only at the trusted operation that needs them. Store references in durable arguments and records;
 never pass resolved credentials into Workflow's serialized arguments, results, model configuration, or logs.

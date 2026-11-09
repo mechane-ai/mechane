@@ -27,7 +27,7 @@ export function helpLines(): ReadonlyArray<string> {
   return [
     `${program} ${release}`,
     `usage: ${program} <command> [arguments] [flags]`,
-    `text that starts with - goes after --, with every flag before it: ${program} inbox send <mech-id> -- '- item'; a flag value that starts with - is written --instructions='- be terse'`,
+    `text that starts with - goes after --, with every flag before it: ${program} notification send <mech-id> -- '- item'; a flag value that starts with - is written --instructions='- be terse'`,
     '',
     'commands:',
     ...commands.flatMap((command) => commandLines({ command })),

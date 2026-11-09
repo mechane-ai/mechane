@@ -1,151 +1,110 @@
 # Mechane Console
 
-Open `/console` on any Mechane installation. Sign in through its configured GitHub sign-in. The console uses the same
-workspaces and permissions as the CLI, without creating or storing a browser API key. It is a workspace management
-interface; it does not grant installation-wide administrative access.
+Open `/console` on the installation and sign in with its configured GitHub identity. The Console uses the same workspace
+membership as the CLI. It neither creates a browser API key nor grants installation administration.
 
-The signed-out page is a standalone entrance. After sign-in, an explicit workspace link wins, then the last valid
-workspace remembered for that account in this browser. With no preference, a single shared workspace opens before the
-personal workspace. Multiple shared workspaces open a chooser. The personal workspace is labeled **Personal**; workspace
-names and permissions remain unchanged.
+The signed-out page is a standalone entrance. An explicit workspace URL wins after sign-in, followed by a valid
+remembered choice. Without either, a single shared workspace opens before Personal; several shared workspaces open a
+chooser.
 
-The sidebar separates **Overview**, **Pinned**, and **Recent**. Recent shows the last five unpinned mechs you opened;
-pin a mech to keep it above that list. These shortcuts and appearance choices belong to your account and workspace in
-this browser. Open your account at the bottom of the sidebar for settings, account actions, and the documentation and
-software notices under **About**.
+The sidebar separates Overview, Pinned, and Recent. Recent shows the last five unpinned mechs you opened. Preferences
+and shortcuts belong to your account and workspace in this browser. Account settings contain documentation and software
+notices under About.
 
-Open a mech to read **Conversation**, with an inline composer, native streamed messages, Markdown replies, and validated
-structured output. The session selector opens actual Console, Slack, or API conversations. Its selection is part of the
-URL; without an explicit selection, the latest existing session opens with its source labeled. Slack conversations are
-read-only in Console and link back to Slack. The Console conversation action opens the mech's actual Console session,
-which is the only source accepted by the Console send endpoint. The mech retains its identity, memory, and files across
-sessions. **Work** shows the agent's durable threads and notes; these are work records, not separate chat sessions.
-Selecting one opens its detail in place of the list. **Back to work** restores the originating row and scroll position.
-**Runs** shows executions with their input excerpts. **Memory** contains explicitly saved notes and links each note to
-its source run. **History** keeps durable product events, with run links where the event records one. Work records
-remain distinct from sessions.
+## A mech's views
 
-The mech header combines its identity and primary views in one bar. **More mech options** holds Memory, History,
-Settings, and lifecycle actions; a view selector replaces the primary links at narrow widths. Conversation actions
-appear on hover or keyboard focus and remain visible on touch devices. Copy and run controls have named icons.
+**Conversation** is the public exchange between Console operators and the mech. An operator submission becomes a durable
+notification. An agent reply appears only when the mech explicitly calls `console_message`, optionally with a structured
+presentation. Private model text and tool steps do not stream into this conversation. An activation can finish quietly.
 
-Mech and run rows are links with full-row hover and keyboard focus. Open one in another tab or use Back to return to the
-row, page, and scroll position you were reading. **Open run** opens a full page, temporarily hiding workspace
-navigation. The conversation and draft stay mounted. Selecting requests or events within that run keeps the original
-return destination. The return control and browser Back restore the originating view; a run opened directly returns to
-its mech. Opening run details does not change the saved sidebar preference.
+**Activity** separates notifications and events from bounded activations. A notification receipt proves accepted input;
+it does not promise a new activation or a reply. One activation can consume multiple notifications. Historical source
+messages and execution events remain inspectable without a separate session selector or source-specific live agent.
 
-A run opens on **Overview**. An answered run shows the start of its recorded reply. **Read full reply** opens the exact
-event, even in a long history. An unanswered turn shows its recorded reason. **Requests** plots the allowance decision
-and settlement for each model request. A bar has both endpoints, a hollow point is awaiting settlement, and a diamond is
-a refusal before a call. Select a row to inspect its model, cost and reported usage. Details sit beside the request list
-when space permits; at narrow widths, selection brings them into view and a return control restores the selected row.
-**Copy link** shares that selection with someone who can access the workspace. **Events** pages through the original
-messages and replies in commit order. **Tools** shows recorded tool names, outcomes and timing; a duration needs both
-recorded endpoints. Raw tool arguments and results do not enter this browser projection. Evidence reads are bounded, and
-missing or truncated evidence is labeled beside the run summary across all its views.
+**Environment** observes the mech's existing machine, processes, and evidence. Reads do not wake a machine or extend its
+lease. A process Stop targets its exact handle. Notes, plans, and memory are ordinary durable home files, not separate
+work or memory CRUD views. Settings holds the definition, appearance, grants, and lifecycle controls.
 
-Compact timestamps expose the full UTC date and time on hover or keyboard focus. A transient refresh failure keeps the
-last result visible and offers a retry. New activity waits behind **Show new activity** while you read. A message clears
-only after receipt; failed sends retain the draft and request identity for retry, including while you inspect a run.
-Current activity stays beside the composer while you read earlier conversation pages. A receipt means the message was
-accepted; it may still be waiting for the active run to finish or for a paused mech to resume. Enabled means the mech
-can run, while Running comes from an execution record. Unavailable activity is labeled with a retry action.
+Mech and activation rows use full-row links and keyboard focus. Open a trace in another tab, or use Back to return to
+the row and reading position. Trace inspection fills the page and temporarily hides workspace navigation without
+changing your saved sidebar preference. It preserves the conversation, draft, and original return destination.
 
-The mech's **Settings** holds its appearance, definition, lifecycle actions, existing Slack connections and delivery
-receipts. An answered run and a delivered Slack reply are separate outcomes. The console does not change Slack bindings
-or permissions. When you edit a definition someone else has changed, compare the saved revision with your draft before
-saving. Continuing keeps your edits and adopts the latest values for untouched fields.
+## Evidence
 
-## Package boundaries
+An activation trace shows recorded outcomes, model requests, safe tool projections, and events. Quiet completion has no
+implied public reply. Preserved historical replies remain linked to their exact event. Tool completion and command exit
+are distinct: a returned command with a nonzero exit is still a failed command.
 
-| Package                       | Owns                                                             | Uses                                      |
-| ----------------------------- | ---------------------------------------------------------------- | ----------------------------------------- |
-| `@mechane/console`            | Start routes, screens, commands, session lifetime                | data, views, UI, layout                   |
-| `@mechane/console-data`       | Admission, requests, canonical records, page receipts            | shared client, protocol, cache, TanStack  |
-| `@mechane/console-cache`      | Scoped persistence lifecycle                                     | native TanStack browser persistence, OPFS |
-| `@mechane/console-views`      | Mech, activity, and trace presentation                           | protocol, records, UI, layout, charts     |
-| `@mechane-ai/elements`        | Base UI controls, forms, feedback, and generic data presentation | tokens and browser libraries              |
-| `@mechane-ai/elements/layout` | AppShell, sidebar, PageToolbar, FocusPage, Workbench, DetailPage | UI and tokens                             |
-| `@mechane-ai/elements/charts` | Generic selectable Waterfall                                     | UI, tokens, and visx                      |
-| `@mechane-ai/elements/tokens` | Semantic visual tokens                                           | StyleX                                    |
+The request waterfall shows reservation-to-settlement intervals, not exact provider inference time. Missing usage
+remains unknown. A tool duration needs both recorded endpoints. Raw credential-bearing arguments do not enter the
+browser. Missing, unavailable, and truncated evidence remain labeled across trace views.
 
-Only `console-data` crosses from the shared Effect client into browser Promises. Each tab's native Query observers own
-network requests and their status. Shared canonical DB collections hold records and exact page receipts; one fetched
-page never implies an exhaustive dataset. The server owns authorization and authoritative records. The required browser
-cache holds admitted, replaceable copies. No browser code imports Worker storage or installation secrets.
+Select a request or event without losing the original return destination. Copying a link preserves the selected record
+for viewers with current workspace membership. A direct trace link returns to its mech. Evidence media uses a full-page
+viewer with the same return behavior and fresh server authorization.
 
-### Adding a screen or feature
+## Loading and drafts
 
-| Data                                             | Owner and path                                                        |
-| ------------------------------------------------ | --------------------------------------------------------------------- |
-| Saved entities, reports, session picker metadata | Protocol-backed rows and persisted native DB tables in `console-data` |
-| HTTP demand, retries, polling, errors            | The data runtime's Query observers and exact page receipts            |
-| Displayed record projections                     | Native live queries through `console/src/reads.ts`                    |
-| Transcript history and active stream             | Native AI SDK Chat; authorized server history is authoritative        |
-| Admission                                        | Fresh server reads before opening protected storage                   |
-| Drafts, selection, cursor inputs, preferences    | Console interaction and navigation owners                             |
+Initial layouts reserve the eventual content geometry. The shared loading boundary delays decoration and keeps the
+composer in place. Usable content remains mounted during refresh. Refresh failure keeps the last authorized result and
+offers retry; access loss clears protected content.
 
-For an ordinary resource, add its encoded row, canonical table, bounded read request, ingestion, and readiness checks in
-the existing `console-data` modules. Add a shared live-read projection and compose it with `ResourceView` in the screen.
-Use the receipt's ordered keys, including successful empty results. Adding a filter or cursor changes request identity,
-not the entity's table. Keep record values out of page-owned React state and Query response caches.
+Only an acknowledged submission clears its submitted draft. Rejected or uncertain sends retain text and request
+identity. A late history response cannot clear a later draft or erase a newer receipt. Reading older messages does not
+hide current activity or cause new text to pull the reader away from their anchor. Return-to-latest is explicit.
 
-Commands settle from API acknowledgments, then reconcile canonical records and invalidate affected reads. A failed
-refresh exposes recovery beside retained content; it must not turn an accepted command into a failed save. Workspace,
-principal, and storage recovery use the admitted runtime's existing lifetime.
+Drafts and public conversation history survive run inspection and recent mech navigation within the admitted scope.
+Switching account or workspace disposes protected content and fences pending completions. Local cache recovery replaces
+cached resources without resending a command or discarding an acknowledged result.
 
-Session catalogue pages use the same persistent path as mech and run lists. AI SDK Chat owns the transcript and stream
-without a competing DB message mirror. Its retained chat instances and drafts are bounded by the workspace lifetime. The
-exact fresh-protocol exceptions and extension requirements live in
-[contract 113](../.contracts/113-console-boundaries/CONTRACT.md), with required storage in
-[contract 119](../.contracts/119-console-cache-lifecycle/CONTRACT.md). No unavailable-storage memory fallback exists.
+## Package ownership
 
-Run the browser typecheck and import boundaries, then verify the built application: successful empty results, warm
-reload, failed refresh, paging, switching owners, and returning from run inspection. Static checks establish ownership;
-the browser establishes the complete loading, access, and recovery experience.
+| Owner                  | Responsibility                                                                         |
+| ---------------------- | -------------------------------------------------------------------------------------- |
+| `console`              | Routes, composition, drafts, public conversation lifetime, and navigation              |
+| `console-data`         | Admission, Query read lifecycles, canonical records, exact page receipts, and commands |
+| `console-cache`        | Native browser persistence, scoped generations, recovery, and cleanup                  |
+| `console-views`        | Mech, conversation, activity, environment, and trace presentation                      |
+| `@mechane-ai/elements` | Shared controls, visual roles, layouts, charts, and content rendering                  |
 
-UI modules group controls, forms, typography, and data presentation by responsibility. The shared frame owns sidebar
-geometry and the mobile navigation drawer. Screens supply resource actions to the shared toolbar. Tables fill the main
-surface; their cells own the row insets. Conversation prose has a reading width, while `DetailPage` centers forms and
-resource details. Frame dimensions belong to layout; semantic colors and type roles belong to the tokens module. Base UI
-owns button, select, tab, and dialog interactions. StyleX uses explicit border and outline longhands; the contract's
-syntax check prevents unsupported shorthands from silently losing styles. The trace maps recorded requests into the
-generic visx Waterfall. Turn events come from the existing durable event log, with indexed turn and inbox lookup; there
-is no separate tracing store.
+Only `console-data` crosses from the shared Effect client into browser Promises. Native Query observers own demanded
+reads and refresh. Canonical TanStack DB collections retain admitted resource records and exact page membership. One
+fetched page never implies the complete dataset. Native browser persistence owns cross-tab record replication.
+
+Public conversation history is the narrow exception to canonical persistence. Its Query observer lives in
+`console-data/src/conversation.ts`; the admitted conversation owner merges authorized pages in memory by stable message
+identity. There is no competing native Chat transcript and no public projection of the active model stream. Other
+resource records use the normal canonical path. [Contract 113](../.contracts/113-console-boundaries/CONTRACT.md) defines
+these boundaries and [contract 119](../.contracts/119-console-cache-lifecycle/CONTRACT.md) defines cache recovery.
+
+### Add a view
+
+Add a resource's encoded row, canonical table, bounded request, ingestion, and readiness checks in the existing data
+modules. Compose it with shared live reads and `ResourceView`. Keep filters and cursor inputs in interaction state; keep
+fetched record pages out of screen state and Query results. Commands settle from API acknowledgment and refresh
+canonical data through the same owner.
+
+The shared frame owns outer geometry and separators. Tables fill the content surface and cells own their insets.
+Conversation prose has a reading width. Detail forms use the shared detail container. Base UI owns interaction, StyleX
+owns appearance, and the generic waterfall owns measured trace geometry.
+
+Run browser types and import boundaries, then inspect the built application with delayed reads, failed refresh, empty
+history, switching mechs, pending sends, and full-page trace return. Static checks establish ownership; the browser
+establishes the assembled experience.
 
 ## Local development
 
-From a configured checkout, `mise run dev` builds the complete release and starts a disposable Node/Postgres fixture
-with local GitHub and a scripted model. Open the printed origin plus `/console`. `mise run start` uses retained local
-state and real model credentials instead; see the [local guide](../packages/node/stack/README.md). Rebuild and restart
-the fixture after changing the application or server.
+`mise run dev` builds the complete release and starts disposable Node/Postgres with local identity and scripted models.
+Open the printed origin plus `/console`. `mise run start` uses retained local state and real model credentials. The
+[local guide](../packages/node/stack/README.md) owns setup and service lifetime.
 
-For component development with hot reload, run `pnpm --filter @mechane/console storybook` from `workspaces/core`.
-`pnpm --filter @mechane/console build-storybook` checks the isolated component build. The runner discovers component
-stories beside their owning packages and screen stories inside the actual console frame. The
-[component guide](components.md) explains selection, composition, and catalog review. Screen stories cover populated,
-empty, loading, refresh-failure, and revision-conflict states. `mise run check` runs the repository checks and existing
-runtime scenarios. Browser acceptance uses the built Node service, including authentication and actual API responses.
+From `workspaces/core`, `pnpm --filter @mechane/console storybook` provides component development and
+`pnpm --filter @mechane/console build-storybook` checks its isolated build. Stories compose the same components and
+frame as the application. The [component guide](components.md) owns catalog usage. Runtime acceptance uses the packaged
+server, real authentication boundaries, and deterministic providers.
 
-## Streams and presentation
+## Release
 
-The active conversation uses the native AI SDK UI protocol. Its Chat instance owns the loaded transcript and live
-stream, initialized from authorized server history. TanStack owns other domain projections and does not mirror that
-transcript. Run inspection and a return to the same mech preserve the active Chat instance. Switching scope closes the
-active stream, preserves the appropriate draft, and refuses late updates from the previous owner.
-
-Structured replies use one validated json-render catalog. The Console maps its components to Mechane Elements while
-Slack receives native Chat cards. Readable fallback text remains available when a client cannot render a component or a
-streamed presentation fails validation. A card action uses current server authorization; its appearance grants no
-permission.
-
-## Installation and upgrades
-
-The Console ships with the Node service's immutable runtime artifact. It has no separate frontend deployment or
-client-side secret configuration. The service supplies the same checksum-bound asset inventory locally and in the hosted
-installation, including required native browser Worker/WASM assets and dependency notices.
-
-Domain JSON operations use `/api/v1`; active conversations use the native AI SDK stream routes. `/console` serves only
-Console files. A missing API route never returns the application shell. HTML is uncached and hashed assets are
-immutable. Upgrade the service and Console together after checking stream resumption and authenticated cache admission.
+The Console ships in the Node service's immutable artifact, including verified Worker/WASM assets and dependency
+notices. It has no separate deployment or browser secret configuration. `/api/v1` owns domain operations and `/console`
+owns assets; a missing API never returns the application shell. HTML is uncached and hashed assets are immutable.

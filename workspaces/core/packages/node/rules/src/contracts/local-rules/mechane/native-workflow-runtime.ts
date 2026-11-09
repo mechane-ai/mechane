@@ -1,7 +1,7 @@
 import { ADOPTED, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
-/** Browsers consume UI streams; durable scheduling stays in the Node service. */
+/** Browsers inspect activity; durable execution stays in the Node service. */
 export const nativeWorkflowRuntime = {
   values: {},
   rules: [

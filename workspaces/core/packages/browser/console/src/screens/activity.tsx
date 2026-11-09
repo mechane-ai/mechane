@@ -87,7 +87,7 @@ export function ActivityScreen({
                 row={`event-${sequence}`}
                 to={{ workspace: data.workspace.id, mech: mechId, view: 'activity', turn }}
               >
-                Open run
+                Inspect run
               </ConsoleLink>
             )}
             controls={(visible) => {

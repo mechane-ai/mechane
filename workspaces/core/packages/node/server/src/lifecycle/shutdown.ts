@@ -12,6 +12,7 @@ type ShutdownResources = {
   readonly store: Awaited<ReturnType<typeof openStore>>;
   readonly readiness: Readiness;
   readonly unregisterHooks: () => void;
+  readonly stopReconciliation: () => Promise<void>;
 };
 
 export async function closeHttpServer({ server }: Pick<ShutdownResources, 'server'>): Promise<void> {
@@ -37,7 +38,14 @@ export async function closeHttpServer({ server }: Pick<ShutdownResources, 'serve
   }
 }
 
-export function registerShutdown({ server, world, store, readiness, unregisterHooks }: ShutdownResources): void {
+export function registerShutdown({
+  server,
+  world,
+  store,
+  readiness,
+  unregisterHooks,
+  stopReconciliation,
+}: ShutdownResources): void {
   const state = { isClosing: false };
 
   async function shutdown(): Promise<void> {
@@ -63,6 +71,7 @@ export function registerShutdown({ server, world, store, readiness, unregisterHo
       }
 
       try {
+        await stopReconciliation();
         await world.close?.();
       } catch (error) {
         failures.push(error);

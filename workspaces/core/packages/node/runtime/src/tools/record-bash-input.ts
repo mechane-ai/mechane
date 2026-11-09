@@ -9,7 +9,7 @@ type RecordBashInput = RuntimeToolContext & {
   readonly store: RuntimeStore;
   readonly command: string;
   readonly executionId: string;
-  readonly secrets: PreparedEnvironment['environment']['secrets'];
+  readonly secrets: PreparedEnvironment['secrets'];
 };
 
 /** Capture once while the command's actual granted secrets are available, before its external effect. */

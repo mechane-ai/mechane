@@ -40,20 +40,22 @@ Confirm that an evaluation request produced no external effect, and that a requi
 
 ## Local adaptations
 
-The runner reaches the deployment through `/api/v1` using `@mechane/client` and `@mechane/protocol`. It exercises
-the same Node runtime and Workflow execution as other clients and imports no private runtime implementation.
-A suite file is the case format. Each repeat derives a trial ID from the plan, case, and repeat and uses a fresh mech
-with empty memory, no conversation history, and no inherited execution grant. A case currently has one round.
-The plan records the release and runtime revision. The suite records the subject instructions and both models;
-the grader instructions come from the release.
+The runner reaches `/api/v1` through `@mechane/client` and `@mechane/protocol`, using `sendNotification`, `listTurns`,
+`showTurn`, and `listConsoleMessages`. It exercises the normal notification-driven Workflow path and explicit Console
+communication tool. It imports no private runtime implementation and adds no evaluation-only runtime callback.
 
-Trials must use a workspace and sandbox policy that prevents external publication. A fresh mech has no credential
-grant, but that alone is not evidence of network or effect isolation; verify the actual workspace policy and read
-required effects from local fakes. The public API path is necessary, but does not waive the Rules above.
+Each repeat derives its trial identity from the plan, case, and repeat. Each role uses a fresh mech with empty working
+context, no retained home notes, and no inherited execution grant. Cases currently have one round. The plan records the
+release and runtime revision; suite subject instructions and both models remain frozen, with grader instructions in the
+release. Collected activation and explicit message identities tie the saved outcome to that role's notification.
 
-The retained runner does not yet mark evaluation mechs separately from ordinary workspace mechs or record every
-resolved model and empty-memory fact required by this contract. Keep those coverage gaps explicit in eval review;
-do not describe a public-path smoke run as complete evaluation isolation.
+Trials need workspace and sandbox policy that prevents external publication. A missing credential grant does not prove
+network or effect isolation. Verify policy and observe required effects in local fakes. Public API use does not waive the
+Rules above.
+
+The retained runner does not yet mark evaluation mechs separately from ordinary workspace mechs or record every resolved
+model and empty-state fact required by this contract. Keep these coverage gaps explicit; a public-path smoke is not
+complete evaluation isolation.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

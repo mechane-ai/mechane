@@ -1,4 +1,4 @@
-import { RecordId } from '@mechane/records';
+import { MachineId, RecordId } from '@mechane/records';
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import type { LiveMachineRow } from '@mechane/sandbox-store';
 import { DateTime, Duration, Option } from 'effect';
@@ -10,6 +10,7 @@ import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
 import { advanceWorkspace } from '../workspace/advance-workspace.ts';
 import { releaseWorkspace } from '../workspace/release-workspace.ts';
+import { checkpointInactiveEnvironment } from './checkpoint-inactive-environment.ts';
 
 type RunFileCheckpointInput = WorkspaceProviderStepInput & { readonly purpose: FileCheckpointPurpose };
 const CHECKPOINT_WAIT = Duration.seconds(1);
@@ -26,6 +27,16 @@ export async function runFileCheckpoint({
 
   if (!FileCheckpointResult.guards.Pending(operation.result)) {
     return operation.result;
+  }
+
+  const recovery = store.workspace().recovery;
+
+  if (FileCheckpointPurpose.guards.Activation(purpose) && Option.isSome(recovery)) {
+    const result = FileCheckpointResult.cases.Failed.make({ reason: recovery.value.reason });
+
+    store.finishFileCheckpoint({ purpose, result });
+
+    return result;
   }
 
   const input = { store, provider, workspace };
@@ -69,6 +80,16 @@ export async function runFileCheckpoint({
   }
 
   if (Option.isNone(machine)) {
+    const live = store.liveMachine();
+
+    if (FileCheckpointPurpose.guards.Activation(purpose) && Option.isNone(live)) {
+      const result = checkpointInactiveEnvironment({ store });
+
+      store.finishFileCheckpoint({ purpose, result });
+
+      return result;
+    }
+
     return current.result;
   }
 
@@ -91,14 +112,24 @@ async function checkpointMachine({
   purpose,
   deadline,
 }: CheckpointMachineInput): Promise<Option.Option<LiveMachineRow>> {
-  if (FileCheckpointPurpose.guards.Drain(purpose)) {
+  if (FileCheckpointPurpose.guards.Drain(purpose) || FileCheckpointPurpose.guards.Activation(purpose)) {
     const machine = store.liveMachine();
 
-    if (Option.isNone(machine) || machine.value.id !== purpose.machineId) {
+    const isWrongDrain =
+      FileCheckpointPurpose.guards.Drain(purpose) && Option.isSome(machine) && machine.value.id !== purpose.machineId;
+
+    if (Option.isNone(machine) || isWrongDrain) {
       return machine;
     }
 
     const machineId = machine.value.id;
+    const identity = MachineId.make(machineId);
+    const drain = store.machineDrain({ machineId: identity });
+
+    if (FileCheckpointPurpose.guards.Activation(purpose) && Option.isSome(drain)) {
+      return Option.none();
+    }
+
     const guest = await connectLiveMachine({ store, provider, machineId });
 
     if (Option.isNone(guest)) {

@@ -15,6 +15,7 @@ export function machineRecords({ sql }: RecordsInput): MachineRecords {
   return {
     liveMachine: () => liveMachine({ sql }),
     latestMachine: () => latestMachine({ sql }),
+    latestReadyMachine: () => latestReadyMachine({ sql }),
     openMachine: (input) => openMachine({ sql, ...input }),
     readyMachine: (input) => readyMachine({ sql, ...input }),
     loseMachine: (input) => loseMachine({ sql, ...input }),
@@ -36,6 +37,13 @@ function liveMachine({ sql }: RecordsInput): Option.Option<LiveMachineRow> {
 /** Machines are opened one after another, so the highest row id is the last one opened. */
 function latestMachine({ sql }: RecordsInput): Option.Option<MachineIdRow> {
   const cursor = sql.exec('SELECT id FROM machines ORDER BY rowid DESC LIMIT 1');
+
+  return decodeFirst({ cursor, schema: MachineIdRow });
+}
+
+/** Failed allocation attempts never admit writers and cannot supersede an earlier machine's file-loss evidence. */
+function latestReadyMachine({ sql }: RecordsInput): Option.Option<MachineIdRow> {
+  const cursor = sql.exec('SELECT id FROM machines WHERE ready_at_ms IS NOT NULL ORDER BY rowid DESC LIMIT 1');
 
   return decodeFirst({ cursor, schema: MachineIdRow });
 }

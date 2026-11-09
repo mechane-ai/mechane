@@ -13,7 +13,6 @@ export function traceLines({ trace }: TraceLinesInput): ReadonlyArray<string> {
   return [turnLine({ turn: trace.turn }), ...trace.dispatches.map((dispatch) => dispatchLine({ dispatch }))];
 }
 
-/** A turn's line: its id, status and times, why it ended unanswered, and the inbox items it took. */
 function turnLine({ turn }: TurnLineInput): string {
   if (Schema.is(UnknownTurn)(turn)) {
     return `turn ${turn.id} ${turn.status}, ${UNKNOWN_KIND_NOTE}`;
@@ -25,16 +24,16 @@ function turnLine({ turn }: TurnLineInput): string {
   });
 
   const heading = `turn ${turn.id} ${turn.status}, ${time}`;
-  const items = `for ${turn.inboxItemIds.join(', ')}`;
+  const notifications = `for ${turn.notificationIds.join(', ')}`;
 
   switch (turn.status) {
     case TurnStatus.Queued:
     case TurnStatus.Running:
-    case TurnStatus.Waiting:
-      return `${heading} ${items}`;
-    case TurnStatus.Answered:
-      return `${heading}, ended ${DateTime.formatIso(turn.endedAt)} ${items}`;
-    case TurnStatus.Unanswered:
-      return `${heading}, ended ${DateTime.formatIso(turn.endedAt)} (${turn.reason}) ${items}`;
+      return `${heading} ${notifications}`;
+    case TurnStatus.Completed:
+    case TurnStatus.Stopped:
+      return `${heading}, ended ${DateTime.formatIso(turn.endedAt)} ${notifications}`;
+    case TurnStatus.Failed:
+      return `${heading}, ended ${DateTime.formatIso(turn.endedAt)} (${turn.reason}) ${notifications}`;
   }
 }

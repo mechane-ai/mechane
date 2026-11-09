@@ -1,4 +1,5 @@
 import { Button } from '@mechane-ai/elements';
+import { CollectionToolbar } from '@mechane-ai/elements/collections';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
 import {
   PageToolbar,
@@ -8,6 +9,7 @@ import {
   WorkbenchFooter,
   WorkbenchScroll,
 } from '@mechane-ai/elements/layout';
+import { PageNavigation } from '@mechane-ai/elements/navigation';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { EvidencePagePlaceholder, MechHeader, MechPagePlaceholder, MechSettings } from '@mechane/console-views';
@@ -30,7 +32,6 @@ import type { ConsoleNavigation, ReaderPosition } from '../types.ts';
 import { useMechNavigationResource } from '../use-mech-navigation-resource.ts';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { ActivityScreen } from './activity.tsx';
-import { ConnectionsScreen } from './connections.tsx';
 import { ConversationScreen } from './conversation.tsx';
 import { EditMechForm } from './edit-mech.tsx';
 import { EnvironmentScreen } from './environment.tsx';
@@ -38,19 +39,16 @@ import { EvidenceScreen } from './evidence.tsx';
 import { MessageForm } from './message.tsx';
 import { selectedTraceTab, TraceScreen } from './trace.tsx';
 import { TurnsScreen } from './turns.tsx';
-import { MemoryScreen, WorkScreen } from './work.tsx';
 
 type MechNavigation = ConsoleNavigation & { readonly data: ConsoleData; readonly mechId: string };
 
-const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity', 'work']);
+const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity']);
 
 const viewLabels: Readonly<Partial<Record<ConsoleView, string>>> = {
   conversation: 'Conversation',
-  work: 'Work',
   runs: 'Runs',
-  memory: 'Memory',
   environment: 'Environment',
-  activity: 'History',
+  activity: 'Activity',
   definition: 'Mech settings',
 };
 
@@ -161,11 +159,7 @@ function MechDetails({
   const view = reads.viewRead.view;
   const viewLabel = viewLabels[view] ?? 'Conversation';
 
-  const base = {
-    workspace: data.workspace.id,
-    mech: mech.id,
-    ...(location.session === undefined ? {} : { session: location.session }),
-  };
+  const base = { workspace: data.workspace.id, mech: mech.id };
 
   const drafts = useWorkspaceDrafts();
   const [pendingStatus, setPendingStatus] = useState<MechStatus>();
@@ -192,7 +186,6 @@ function MechDetails({
   const isEditing = drafts.definition !== undefined && view === 'definition' && !isFocused;
   const previousRun = useRef(hasFocusedRun);
   const isConversationVisible = view === 'conversation';
-  const isConversationActive = isConversationVisible && !isFocused && !isEditing;
   const isPrimaryReady = reads.primary === undefined || reads.primary.kind === 'ready';
   const archiveError = statusError?.status === MechStatus.Archived ? statusError.message : undefined;
   const lifecycleError = statusError?.status === MechStatus.Archived ? undefined : statusError?.message;
@@ -267,14 +260,9 @@ function MechDetails({
             data={data}
             mech={mech}
             pageRead={reads.viewRead.pageRead}
-            sessionId={location.session}
             onMessage={() => selectView('conversation')}
           />
         );
-      case 'work':
-        return <WorkScreen data={data} pageRead={reads.viewRead.pageRead} />;
-      case 'memory':
-        return <MemoryScreen data={data} mech={mech} request={reads.viewRead.request} />;
       case 'environment':
         return <EnvironmentScreen data={data} request={reads.viewRead.request} isActive={!isFocused && !isEditing} />;
       case 'activity':
@@ -285,7 +273,6 @@ function MechDetails({
             mech={mech}
             isBusy={isBusy}
             error={archiveError}
-            connections={<ConnectionsScreen data={data} mechId={mech.id} />}
             appearance={appearance}
             onAppearance={setAppearance}
             appearanceError={appearanceError}
@@ -318,39 +305,31 @@ function MechDetails({
         <Workbench>
           {notice}
           {lifecycleError !== undefined && <Notice hasError>{lifecycleError}</Notice>}
-          {mech.status === 'paused' && (
-            <Notice>Paused. New messages wait until you resume. A running execution may still finish.</Notice>
-          )}
+          {mech.status === 'paused' && <Notice>Paused. Notifications are retained until you resume.</Notice>}
           {conversationVisited && (
             <ViewStack.Panel isActive={isConversationVisible}>
-              <ConversationScreen
-                data={data}
-                mech={mech}
-                entry={reads.conversation}
-                isActive={isConversationActive}
-                onSession={(session) =>
-                  navigate({
-                    workspace: data.workspace.id,
-                    mech: mech.id,
-                    ...(session === undefined ? {} : { session }),
-                    view: 'conversation',
-                  })
-                }
-              />
+              <ConversationScreen data={data} mech={mech} entry={reads.conversation} />
               <WorkbenchFooter>
-                <MessageForm
-                  data={data}
-                  mech={mech}
-                  entry={reads.conversation}
-                  onSession={(session) =>
-                    navigate({ workspace: data.workspace.id, mech: mech.id, session, view: 'conversation' })
-                  }
-                />
+                <MessageForm data={data} mech={mech} entry={reads.conversation} />
               </WorkbenchFooter>
             </ViewStack.Panel>
           )}
           {!isConversationVisible && (
             <WorkbenchScroll label={viewLabel} scrollRestorationId={reader.id} isFlush={collectionViews.has(view)}>
+              {collectionViews.has(view) && (
+                <CollectionToolbar label="Activity views">
+                  <PageNavigation
+                    label="Activity views"
+                    isEmbedded
+                    items={[
+                      { id: 'activity', label: 'Events', href: records.href({ ...base, view: 'activity' }) },
+                      { id: 'runs', label: 'Runs', href: records.href({ ...base, view: 'runs' }) },
+                    ]}
+                    selectedId={view}
+                    onNavigate={selectView}
+                  />
+                </CollectionToolbar>
+              )}
               {sectionContent()}
             </WorkbenchScroll>
           )}

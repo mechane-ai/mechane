@@ -1,39 +1,23 @@
-import { OriginUnreachable, readRetryAfter } from '@mechane/client';
-import { HttpStatusCode } from '@mechane/records';
-import { validateUIMessages } from 'ai';
-import type { UIMessage } from 'ai';
-import { Schema } from 'effect';
-import { z } from 'zod';
-import { ReadResponseFailed, recoverRead } from './read-recovery.ts';
+import type { ConsoleMessagePage } from '@mechane/protocol';
+import { MechId, WorkspaceId } from '@mechane/records';
+import type { Sequence } from '@mechane/records';
+import { QueryClient, QueryObserver } from '@tanstack/query-core';
+import { Duration, Option } from 'effect';
+import { createApi } from './api.ts';
 
-const HISTORY_MAX_MESSAGES = 100;
-const accessLostStatuses: ReadonlySet<number> = new Set([HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden]);
-const isNetworkFailure = Schema.is(Schema.instanceOf(TypeError));
-
-const HistoryEnvelope = z.object({
-  sessionId: z.uuid(),
-  source: z.enum(['console', 'slack', 'api']),
-  title: z.string(),
-  consoleSessionId: z.uuid(),
-  sourceUrl: z.url().nullable(),
-  messages: z.array(z.unknown()).max(HISTORY_MAX_MESSAGES),
-  activeWorkflowId: z.string().nullable(),
-  activeRunId: z.uuid().nullable(),
-  hasMore: z.boolean(),
-  before: z.string().nullable(),
-});
-
-/** Native UI messages are validated after the authorized conversation envelope is decoded. */
-export type ConversationHistory = Omit<z.infer<typeof HistoryEnvelope>, 'messages'> & {
-  readonly messages: Awaited<ReturnType<typeof validateUIMessages<UIMessage>>>;
-};
+export type ConversationHistory = ConsoleMessagePage;
 
 type ConversationTarget = {
   readonly mechId: string;
-  /** Absent opens the latest existing conversation. */
-  readonly sessionId?: string;
-  /** Absent opens the latest history page. */
-  readonly before?: string;
+  readonly beforeSequence?: Sequence;
+  readonly afterSequence?: Sequence;
+};
+
+type ConversationObservation = {
+  readonly afterSequence: () => Sequence | undefined;
+  readonly onPending: () => void;
+  readonly onHistory: (history: ConversationHistory) => void;
+  readonly onFailure: (problem: unknown) => void;
 };
 
 type CreateConversationApi = {
@@ -43,86 +27,81 @@ type CreateConversationApi = {
   readonly onAccessLost: () => void;
 };
 
-/** Native Chat uses same-origin credentials and the admitted workspace's abort lifetime. */
+/** Public conversation reads survive cache recovery but end when workspace admission ends. */
 export function createConversationApi({ origin, workspaceId, signal, onAccessLost }: CreateConversationApi) {
-  const endpoint = new URL('/api/chat', origin).href;
+  const api = createApi(origin, signal, onAccessLost);
+  const queries = new QueryClient();
 
-  const scopedFetch: typeof fetch = async (input, init) => {
-    const request = new Request(input, init);
-    const url = new URL(request.url);
+  queries.mount();
+  signal.addEventListener(
+    'abort',
+    () => {
+      queries.clear();
+      queries.unmount();
+    },
+    { once: true },
+  );
 
-    if (url.origin !== origin.origin || (url.pathname !== '/api/chat' && !url.pathname.startsWith('/api/chat/'))) {
-      throw new Error('The conversation request has an invalid destination.');
-    }
-
-    const response = await fetch(request, {
-      credentials: 'same-origin',
-      signal: AbortSignal.any([signal, request.signal]),
-    });
-
-    if (accessLostStatuses.has(response.status)) {
-      onAccessLost();
-    }
-
-    return response;
-  };
+  async function history(target: ConversationTarget, lifetime: AbortSignal): Promise<ConversationHistory> {
+    return await api(
+      'listConsoleMessages',
+      {
+        workspaceId: WorkspaceId.make(workspaceId),
+        mechId: MechId.make(target.mechId),
+        beforeSequence: Option.fromUndefinedOr(target.beforeSequence),
+        afterSequence: Option.fromUndefinedOr(target.afterSequence),
+      },
+      AbortSignal.any([signal, lifetime]),
+    );
+  }
 
   return {
-    endpoint,
     signal,
-    fetch: scopedFetch,
-    async history(target: ConversationTarget, lifetime: AbortSignal): Promise<ConversationHistory> {
-      const url = new URL(endpoint);
+    history,
+    observe(mechId: string, observation: ConversationObservation, lifetime: AbortSignal) {
+      const observer = new QueryObserver(queries, {
+        queryKey: ['console-conversation', workspaceId, mechId],
+        queryFn: async ({ signal: readSignal }) => {
+          const combined = AbortSignal.any([signal, lifetime, readSignal]);
 
-      url.searchParams.set('workspaceId', workspaceId);
-      url.searchParams.set('mechId', target.mechId);
+          observation.onPending();
 
-      if (target.sessionId !== undefined) {
-        url.searchParams.set('sessionId', target.sessionId);
-      }
+          try {
+            const afterSequence = observation.afterSequence();
 
-      if (target.before !== undefined) {
-        url.searchParams.set('before', target.before);
-      }
+            const target = afterSequence === undefined ? { mechId } : { mechId, afterSequence };
+            const result = await history(target, combined);
 
-      return await recoverRead({
-        signal: AbortSignal.any([signal, lifetime]),
-        read: async (readSignal) => {
-          const response = await scopedFetch(url, { signal: readSignal }).catch((failure: unknown) => {
-            readSignal.throwIfAborted();
+            combined.throwIfAborted();
+            observation.onHistory(result);
 
-            if (isNetworkFailure(failure)) {
-              throw new OriginUnreachable({ url, reason: 'The conversation request could not reach the server' });
+            return true;
+          } catch (problem) {
+            if (!combined.aborted) {
+              observation.onFailure(problem);
             }
 
-            throw failure;
-          });
-
-          if (!response.ok) {
-            const failure = new ReadResponseFailed({
-              status: response.status,
-              retryAfter: readRetryAfter({ headers: response.headers }),
-            });
-
-            try {
-              await response.body?.cancel();
-            } catch {
-              throw failure;
-            }
-
-            throw failure;
+            throw problem;
           }
-
-          const envelope = HistoryEnvelope.parse(await response.json());
-
-          const messages =
-            envelope.messages.length === 0 ? [] : await validateUIMessages({ messages: envelope.messages });
-
-          readSignal.throwIfAborted();
-
-          return { ...envelope, messages };
         },
+        retry: false,
+        refetchInterval: Duration.toMillis('2 seconds'),
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+        gcTime: 0,
       });
+
+      const unsubscribe = observer.subscribe(() => undefined);
+
+      return {
+        async refresh(): Promise<void> {
+          await observer.refetch();
+        },
+        dispose() {
+          unsubscribe();
+          observer.destroy();
+        },
+      };
     },
   };
 }

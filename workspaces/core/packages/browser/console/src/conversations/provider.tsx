@@ -15,11 +15,7 @@ import type { ConversationEntry } from './entry.ts';
 
 const RETAINED_CONVERSATIONS = 5;
 
-function createConversations(
-  conversations: ConsoleData['conversations'],
-  workspaceId: string,
-  getData: () => ConsoleData,
-) {
+function createConversations(conversations: ConsoleData['conversations'], getData: () => ConsoleData) {
   const entries = new Map<string, ConversationEntry>();
   const recency = new Set<ConversationEntry>();
 
@@ -31,7 +27,7 @@ function createConversations(
     }
 
     recency.delete(entry);
-    void entry.dispose();
+    entry.dispose();
   }
 
   function prune(): void {
@@ -47,8 +43,8 @@ function createConversations(
   }
 
   return {
-    entry(mechId: string, sessionId: string | undefined): ConversationEntry {
-      const key = JSON.stringify([mechId, sessionId ?? null]);
+    entry(mechId: string): ConversationEntry {
+      const key = mechId;
       const existing = entries.get(key);
 
       if (existing !== undefined) {
@@ -58,18 +54,7 @@ function createConversations(
         return existing;
       }
 
-      const entry = createConversationEntry({
-        getData,
-        conversations,
-        workspaceId,
-        mechId,
-        sessionId,
-        onResolved: (resolved) => {
-          const resolvedKey = JSON.stringify([mechId, resolved]);
-
-          entries.set(resolvedKey, entry);
-        },
-      });
+      const entry = createConversationEntry({ getData, conversations, mechId });
 
       entries.set(key, entry);
       recency.add(entry);
@@ -97,12 +82,8 @@ export function ConversationProvider({
   const current = useRef(data);
   const getData = useCallback(() => current.current, []);
   const conversationApi = data.conversations;
-  const workspaceId = data.workspace.id;
 
-  const conversations = useMemo(
-    () => createConversations(conversationApi, workspaceId, getData),
-    [getData, conversationApi, workspaceId],
-  );
+  const conversations = useMemo(() => createConversations(conversationApi, getData), [getData, conversationApi]);
 
   useLayoutEffect(() => {
     current.current = data;
@@ -122,14 +103,14 @@ export function ConversationProvider({
   return <ConversationContext value={conversations}>{children}</ConversationContext>;
 }
 
-export function useConversationEntry(mechId: string, sessionId?: string, isEnabled = true): ConversationEntry {
+export function useConversationEntry(mechId: string, isEnabled = true): ConversationEntry {
   const conversations = useContext(ConversationContext);
 
   if (conversations === undefined) {
     throw new Error('Conversations need an admitted workspace.');
   }
 
-  const entry = useMemo(() => conversations.entry(mechId, sessionId), [conversations, mechId, sessionId]);
+  const entry = useMemo(() => conversations.entry(mechId), [conversations, mechId]);
 
   useEffect(() => (isEnabled ? entry.retain() : undefined), [entry, isEnabled]);
 

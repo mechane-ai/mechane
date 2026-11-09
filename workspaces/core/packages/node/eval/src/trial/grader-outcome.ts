@@ -1,6 +1,5 @@
-import { TurnStatus } from '@mechane/protocol';
 import { Result, Schema } from 'effect';
-import { GraderStatus } from '../constants.ts';
+import { GraderStatus, RoleStatus } from '../constants.ts';
 import { Grade } from '../schemas.ts';
 import type { Case } from '../schemas.ts';
 import type { GraderOutcome, TurnOutcome } from '../store/schemas.ts';
@@ -16,11 +15,11 @@ type GradeReply = typeof GradeReply.Type;
 type CaseGradeInput = { readonly reply: string; readonly grade: Grade; readonly expectations: Case['expectations'] };
 
 /**
- * How a grader's turn graded its case: an unanswered turn stays unanswered. A reply is a grade only when it decodes as
- * one whose criteria are the case's expectations, each once; any other reply is no grade, never a score.
+ * A publication is a grade only when every expected criterion appears exactly once. Quiet, failed, and stopped roles
+ * keep their outcome instead of acquiring a score.
  */
 export function graderOutcome({ outcome, expectations }: GraderOutcomeInput): GraderOutcome {
-  if (outcome.status === TurnStatus.Unanswered) {
+  if (outcome.status !== RoleStatus.Published) {
     return outcome;
   }
 

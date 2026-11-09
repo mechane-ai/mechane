@@ -1,12 +1,12 @@
 import { BYTES_PER_KIBIBYTE } from '@mechane/records';
 
-/** A run can wait for its session, execute, wait for authority, or retain its terminal result. */
+/** An activation may finish without publishing a message. */
 export const TurnStatus = {
   Queued: 'queued',
   Running: 'running',
-  Waiting: 'waiting',
-  Answered: 'answered',
-  Unanswered: 'unanswered',
+  Completed: 'completed',
+  Failed: 'failed',
+  Stopped: 'stopped',
 } as const;
 
 export type TurnStatus = (typeof TurnStatus)[keyof typeof TurnStatus];

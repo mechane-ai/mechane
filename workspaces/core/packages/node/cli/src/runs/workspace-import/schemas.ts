@@ -1,4 +1,4 @@
-import { CredentialValue, IntegrationSecretReference, SlackInstallation, WorkspacePolicy } from '@mechane/protocol';
+import { CredentialValue, IntegrationSecretReference, WorkspacePolicy } from '@mechane/protocol';
 import { wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 
@@ -6,7 +6,6 @@ import { Schema } from 'effect';
 export const WorkspaceImport = wireStruct({
   fields: {
     credentials: Schema.Record(IntegrationSecretReference, CredentialValue),
-    slackInstallations: Schema.Array(SlackInstallation),
     /** Absence leaves workspace policy unchanged and requires no installation administrator access. */
     policy: Schema.OptionFromOptionalKey(WorkspacePolicy),
   },

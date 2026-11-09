@@ -14,7 +14,7 @@ import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
 const turnColumns = {
   input: { id: 'input', label: 'Run', role: 'primary' },
   outcome: { id: 'outcome', label: 'Outcome', role: 'status', width: 148 },
-  created: { id: 'created', label: 'Submitted', role: 'timestamp', isSecondary: true, width: 172 },
+  created: { id: 'created', label: 'Created', role: 'timestamp', isSecondary: true, width: 172 },
   elapsed: { id: 'elapsed', label: 'Elapsed', role: 'number', isSecondary: true, width: 100 },
 } as const satisfies Record<string, DataTableColumnLayout>;
 
@@ -28,12 +28,12 @@ function elapsedLabel(turn: Turn): string {
   }
 
   switch (turn.status) {
-    case 'answered':
-    case 'unanswered':
+    case 'completed':
+    case 'failed':
+    case 'stopped':
       return durationLabel(DateTime.toEpochMillis(turn.endedAt) - DateTime.toEpochMillis(turn.startedAt.value));
     case 'queued':
     case 'running':
-    case 'waiting':
       return 'In progress';
   }
 }
@@ -73,12 +73,12 @@ export function TurnList({
               secondary={
                 runInput(turn) === undefined
                   ? runIdentifier(turn)
-                  : Schema.is(Turn)(turn) && turn.status === 'unanswered'
+                  : Schema.is(Turn)(turn) && turn.status === 'failed'
                     ? outcomeReason(turn.reason)
                     : undefined
               }
             >
-              {runInput(turn) ?? 'Input unavailable'}
+              {runInput(turn) ?? runIdentifier(turn)}
             </DataTableText>
           ),
           shouldTruncate: true,
@@ -87,9 +87,7 @@ export function TurnList({
           ...turnColumns.outcome,
           shouldTruncate: false,
           cell: (turn) => (
-            <Status
-              tone={turn.status === 'answered' ? 'positive' : turn.status === 'unanswered' ? 'negative' : 'neutral'}
-            >
+            <Status tone={turn.status === 'completed' ? 'positive' : turn.status === 'failed' ? 'negative' : 'neutral'}>
               {outcomeLabel(turn.status)}
             </Status>
           ),

@@ -1,17 +1,7 @@
-import {
-  AgentAvatar,
-  Button,
-  Heading,
-  IconButton,
-  Muted,
-  Row,
-  Stack,
-  Subheading,
-  TextButton,
-  TextLink,
-} from '@mechane-ai/elements';
+import { AgentAvatar, Button, Heading, IconButton, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
 import type { AgentAppearance } from '@mechane-ai/elements';
 import { MessageAction, PromptInput } from '@mechane-ai/elements/ai';
+import { CollectionToolbar } from '@mechane-ai/elements/collections';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { Field, Input } from '@mechane-ai/elements/forms';
 import {
@@ -25,32 +15,30 @@ import {
   WorkbenchFooter,
   WorkbenchScroll,
 } from '@mechane-ai/elements/layout';
+import { PageNavigation } from '@mechane-ai/elements/navigation';
 import type { TraceTab } from '@mechane/console-views';
 import {
   Activity,
   ConsoleShell,
+  EnvironmentProcesses,
   MechConversation,
   MechHeader,
   MechList,
   MechPagePlaceholder,
   MechSettings,
   MechsPagePlaceholder,
-  MemoryList,
   DefinitionConflict as SavedDefinition,
   TurnList,
   TurnTrace,
-  WorkDetails,
-  WorkList,
 } from '@mechane/console-views';
 import {
   Allowance,
+  ConsoleMessagePage,
   EventPage,
   Mech,
   MechPage,
   MechSummary,
-  MemoryList as MemoryPage,
   REPLY_EXCERPT_MAX_CHARS,
-  ThreadPage,
   Trace,
   TurnPage,
   WorkspaceList,
@@ -58,29 +46,19 @@ import {
 import type { ConsoleView } from '@mechane/protocol';
 import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { UIMessage } from 'ai';
 import { Option, Schema } from 'effect';
 import { ArrowLeft, Bot, ListTree, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ResourceView } from '../resource.tsx';
 
-const activeRunStatuses: ReadonlySet<string> = new Set(['queued', 'running', 'waiting']);
+const activeRunStatuses: ReadonlySet<string> = new Set(['queued', 'running']);
 
 const meta = {
   title: 'Screens/Console',
   tags: ['!supported'],
   component: ConsoleShell,
-  subcomponents: {
-    Activity,
-    MechConversation,
-    MechHeader,
-    MechList,
-    MemoryList,
-    WorkList,
-    DefinitionConflict: SavedDefinition,
-    TurnTrace,
-  },
+  subcomponents: { Activity, MechConversation, MechHeader, MechList, DefinitionConflict: SavedDefinition, TurnTrace },
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -179,7 +157,7 @@ const scoutDefinition = Schema.decodeUnknownSync(Mech)({
 
 const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
 const turnId = '52d0e964-811d-44f4-a96e-d38ca5df748b';
-const inboxItemId = '08c361a4-a15b-487b-b917-1c588b48be12';
+const notificationId = '08c361a4-a15b-487b-b917-1c588b48be12';
 
 const recordedReply = [
   'The release candidate is ready for review. All three packages passed their checks. The deployment can proceed once the release tag is published.',
@@ -207,29 +185,29 @@ const recordedReply = [
 
 const turnInputEvents = [
   {
-    type: 'inbox_item.received',
+    type: 'notification.received',
     sequence: 101,
     occurred_at: '2026-11-02T11:59:59Z',
-    inbox_item_id: inboxItemId,
-    sender_id: scout.creatorId,
+    notification_id: notificationId,
+    received_sequence: 1,
     text: 'Review the release candidate and summarize the checks with a command to repeat them.',
-    delivery: 'when_idle',
+    source: { name: 'console', eventId: notificationId },
   },
   {
-    type: 'turn.started',
+    type: 'activation.started',
     sequence: 102,
     occurred_at: '2026-11-02T12:00:00Z',
     turn_id: turnId,
-    inbox_item_ids: [inboxItemId],
+    notification_ids: [notificationId],
   },
 ];
 
 const recordedReplyEvent = {
-  type: 'turn.answered',
+  type: 'activation.completed',
   sequence: 107,
   occurred_at: '2026-11-02T12:00:04Z',
   turn_id: turnId,
-  reply: recordedReply,
+  notification_ids: [notificationId],
 };
 
 const completedEvents = Schema.decodeUnknownSync(EventPage)({
@@ -244,11 +222,12 @@ const refusedEvents = Schema.decodeUnknownSync(EventPage)({
   events: [
     ...turnInputEvents,
     {
-      type: 'turn.unanswered',
+      type: 'activation.failed',
       sequence: 103,
       occurred_at: '2026-11-02T12:00:00Z',
       turn_id: turnId,
       reason: 'allowance_exhausted',
+      notification_ids: [notificationId],
     },
   ],
 });
@@ -262,9 +241,8 @@ const completedTrace = Schema.decodeUnknownSync(Trace)({
   turn: {
     id: turnId,
     version: 3,
-    status: 'answered',
-    inbox_item_ids: [inboxItemId],
-    session_id: 'b5f8ff80-2043-47e2-81c4-866b1e768ad1',
+    status: 'completed',
+    notification_ids: [notificationId],
     created_at: '2026-11-02T11:59:59Z',
     started_at: '2026-11-02T12:00:00Z',
     ended_at: '2026-11-02T12:00:04Z',
@@ -444,7 +422,7 @@ function TraceStory({
             requestHref={(id) =>
               `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
-            replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full reply →</TextButton>}
+            replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full message →</TextButton>}
             events={<Activity label="Run events" hasInset={false} page={events} />}
           />
         </WorkbenchScroll>
@@ -652,7 +630,7 @@ export const RefusedTurn: Story = {
     <TraceStory
       events={refusedEvents}
       trace={Schema.decodeUnknownSync(Trace)({
-        turn: { ...encodedTrace.turn, status: 'unanswered', reason: 'allowance_exhausted' },
+        turn: { ...encodedTrace.turn, status: 'failed', reason: 'allowance_exhausted' },
         dispatches: [{ ...sampleRequest, status: 'refused' }],
       })}
     />
@@ -683,11 +661,11 @@ export const QueuedTurn: Story = {
   ),
 };
 
-export const WaitingTurn: Story = {
+export const QuietCompletion: Story = {
   render: () => (
     <TraceStory
       trace={Schema.decodeUnknownSync(Trace)({
-        turn: { ...encodedTrace.turn, version: 3, status: 'waiting' },
+        turn: { ...encodedTrace.turn, version: 3, status: 'completed' },
         dispatches: encodedTrace.dispatches,
         tool_calls: [],
       })}
@@ -751,34 +729,7 @@ const longRunPage = Schema.decodeUnknownSync(TurnPage)({
   })),
 });
 
-const workPage = Schema.decodeUnknownSync(ThreadPage)({
-  has_more: false,
-  threads: [
-    {
-      id: '82d0e964-811d-44f4-a96e-d38ca5df748b',
-      title: 'Prepare the console release and verify the installation',
-      state: 'open',
-      note: 'The release checks passed. The deployment is waiting for review.',
-      opened_at: '2026-11-02T10:00:00Z',
-      updated_at: '2026-11-02T12:00:00Z',
-    },
-  ],
-});
-
-const memoryPage = Schema.decodeUnknownSync(MemoryPage)({
-  memories: [
-    {
-      path: 'workspace/release-process',
-      text: 'Run the complete checks before publishing. Verify readiness after updating the installation.',
-      digest: 'a'.repeat(64),
-      version: 2,
-      turn_id: turnId,
-      saved_at: '2026-11-02T12:00:00Z',
-    },
-  ],
-});
-
-const collectionViews: ReadonlySet<ConsoleView> = new Set(['work', 'runs', 'activity']);
+const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity']);
 
 function WorkspaceStory({
   initialView = 'conversation',
@@ -791,9 +742,7 @@ function WorkspaceStory({
   const [hasFocusedRun, setFocusedRun] = useState(false);
   const [isPinned, setPinned] = useState(true);
   const [draft, setDraft] = useState('Verify the release and preserve the running installation.');
-  const [selectedWork, setSelectedWork] = useState<string>();
   const [appearance, setAppearance] = useState<AgentAppearance>();
-  const currentWork = workPage.threads.find((thread) => thread.id === selectedWork);
 
   const mech = {
     ...scoutDefinition,
@@ -822,24 +771,32 @@ function WorkspaceStory({
           <>
             <MechConversation
               messages={
-                [
-                  {
-                    id: 'example-user',
-                    role: 'user',
-                    parts: [
-                      {
-                        type: 'text',
-                        text: 'Review the release candidate and summarize the checks with a command to repeat them.',
-                      },
-                    ],
-                  },
-                  {
-                    id: completedTrace.turn.id,
-                    role: 'assistant',
-                    metadata: { runId: completedTrace.turn.id },
-                    parts: [{ type: 'text', text: recordedReply }],
-                  },
-                ] satisfies Array<UIMessage>
+                Schema.decodeUnknownSync(ConsoleMessagePage)({
+                  messages: [
+                    {
+                      id: notificationId,
+                      mech_id: mech.id,
+                      run_id: null,
+                      role: 'user',
+                      text: 'Review the release candidate and summarize the checks with a command to repeat them.',
+                      presentation: null,
+                      created_at: '2026-11-02T11:59:59Z',
+                      sequence: 1,
+                    },
+                    {
+                      id: '2b8ac90c-8954-4796-afb7-1c0e358c3d0a',
+                      mech_id: mech.id,
+                      run_id: completedTrace.turn.id,
+                      role: 'assistant',
+                      text: recordedReply,
+                      presentation: null,
+                      created_at: '2026-11-02T12:00:04Z',
+                      sequence: 2,
+                    },
+                  ],
+                  has_more: false,
+                  before_sequence: 1,
+                }).messages
               }
               scrollRestorationId="example-conversation"
               name={mech.name}
@@ -869,15 +826,27 @@ function WorkspaceStory({
                 ? 'History'
                 : view === 'runs'
                   ? 'Runs'
-                  : view === 'work'
-                    ? 'Work'
-                    : view === 'definition'
-                      ? 'Mech settings'
-                      : 'Memory'
+                  : view === 'definition'
+                    ? 'Mech settings'
+                    : 'Environment'
             }
             scrollRestorationId={`story-${view}`}
             isFlush={collectionViews.has(view)}
           >
+            {collectionViews.has(view) && (
+              <CollectionToolbar label="Activity views">
+                <PageNavigation
+                  label="Activity views"
+                  isEmbedded
+                  items={[
+                    { id: 'activity', label: 'Events', href: '#activity' },
+                    { id: 'runs', label: 'Runs', href: '#runs' },
+                  ]}
+                  selectedId={view}
+                  onNavigate={setView}
+                />
+              </CollectionToolbar>
+            )}
             {view === 'runs' && (
               <TurnList
                 page={longRunPage}
@@ -889,23 +858,13 @@ function WorkspaceStory({
             {view === 'activity' && (
               <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
             )}
-            {view === 'work' &&
-              (currentWork === undefined ? (
-                <WorkList
-                  page={workPage}
-                  selected={selectedWork}
-                  onSelect={setSelectedWork}
-                  hasPrevious={false}
-                  onPrevious={() => undefined}
-                  onNext={() => undefined}
-                />
-              ) : (
-                <WorkDetails thread={currentWork} onBack={() => setSelectedWork(undefined)} />
-              ))}
-            {view === 'memory' && (
-              <MemoryList
-                page={memoryPage}
-                runLink={() => <TextButton onClick={() => setFocusedRun(true)}>Open source run</TextButton>}
+            {view === 'environment' && (
+              <EnvironmentProcesses
+                processes={[]}
+                stopping={new Set()}
+                failure={undefined}
+                onStop={() => undefined}
+                renderDetails={() => null}
               />
             )}
             {view === 'definition' && (
@@ -918,13 +877,6 @@ function WorkspaceStory({
                 error={undefined}
                 onEdit={() => undefined}
                 onArchive={() => undefined}
-                connections={
-                  <Stack isCompact>
-                    <Subheading>Slack</Subheading>
-                    <TextLink href="https://example.com/slack">#repository-scout</TextLink>
-                    <Muted>Listening · Replies on</Muted>
-                  </Stack>
-                }
               />
             )}
           </WorkbenchScroll>
@@ -937,6 +889,4 @@ function WorkspaceStory({
 export const ConversationWorkspace: Story = { render: () => <WorkspaceStory /> };
 export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialView="runs" hasLongName /> };
 export const HistoryWorkspace: Story = { render: () => <WorkspaceStory initialView="activity" /> };
-export const TrackedWork: Story = { render: () => <WorkspaceStory initialView="work" /> };
-export const SavedMemory: Story = { render: () => <WorkspaceStory initialView="memory" /> };
 export const MechSettingsWorkspace: Story = { render: () => <WorkspaceStory initialView="definition" /> };

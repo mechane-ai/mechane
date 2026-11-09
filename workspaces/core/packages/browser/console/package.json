@@ -8,18 +8,14 @@
     "storybook": "storybook dev -p 6006 --no-open"
   },
   "dependencies": {
-    "@ai-sdk/react": "4.0.168",
-    "@ai-sdk/workflow": "2.0.96",
     "@mechane-ai/elements": "workspace:*",
     "@mechane/console-data": "workspace:*",
     "@mechane/console-views": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@stylexjs/stylex": "0.19.1",
     "@tanstack/react-db": "1.0.0-rc.1.4",
     "@tanstack/react-router": "1.170.46",
     "@tanstack/react-start": "1.169.4",
-    "ai": "7.0.164",
     "effect": "4.0.7",
     "lucide-react": "1.66.0",
     "react": "19.3.1",

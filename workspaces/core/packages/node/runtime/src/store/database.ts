@@ -1,4 +1,3 @@
-import { postgresSchemaStatements } from '@chat-adapter/state-pg';
 import { Schema } from 'effect';
 import { createHash } from 'node:crypto';
 import { Pool, types } from 'pg';
@@ -8,18 +7,14 @@ import { createConfigurationRecords } from './api/configuration/configuration.ts
 import { createMechStore } from './api/mechs/mechs.ts';
 import { createReadStore } from './api/reads/reads.ts';
 import { createBudgetStore } from './budgets.ts';
-import { createChannelStore } from './channels/channel-store.ts';
 import { poolContext } from './context.ts';
 import type { StoreContext } from './context.ts';
 import { createCredentialStore } from './credentials.ts';
 import { createExecutionReceiptStore } from './execution-receipts.ts';
 import { createExecutionStore } from './execution/execution-store.ts';
-import { createMemoryStore } from './memories.ts';
-import { createRequestStore } from './request-events.ts';
+import { createNotificationStore } from './notifications/notification-store.ts';
 import { createSandboxCapacityStore } from './sandbox-capacity.ts';
 import { DOMAIN_MIGRATIONS } from './schema.ts';
-import { createSessionContextStore } from './session-context.ts';
-import { createWorkStore } from './work-items.ts';
 
 const POSTGRES_PROTOCOLS: ReadonlySet<string> = new Set(['postgres:', 'postgresql:']);
 const DEFAULT_MAX_CONNECTIONS = 4;
@@ -108,14 +103,10 @@ function createRuntimeRecords(context: StoreContext, keyring: CredentialKeyring)
     ...createMechStore(context),
     ...createReadStore(context),
     ...createBudgetStore(context),
-    ...createChannelStore(context),
     ...createCredentialStore(context, keyring),
     ...createExecutionStore(context),
-    ...createMemoryStore(context),
-    ...createWorkStore(context),
+    ...createNotificationStore(context),
     ...createExecutionReceiptStore(context),
-    ...createRequestStore(context),
-    ...createSessionContextStore(context),
     ...createSandboxCapacityStore(context),
     checkHealth: async (): Promise<void> => {
       await context.client.query('SELECT id FROM mechane.mechs LIMIT 1');
@@ -211,13 +202,6 @@ export async function migrateStore({ databaseUrl }: DatabaseInput): Promise<void
           migration.version,
           checksum,
         ]);
-      }
-
-      await client.query('CREATE SCHEMA IF NOT EXISTS chat');
-      await client.query('SET LOCAL search_path TO chat');
-
-      for (const statement of postgresSchemaStatements) {
-        await client.query(statement);
       }
     });
   } finally {

@@ -58,8 +58,7 @@ export function runRecord(run: Run) {
   const runFields = {
     id: run.id,
     version: run.version,
-    session_id: run.sessionId,
-    inbox_item_ids: [run.inputId],
+    notification_ids: run.notificationIds,
     created_at: run.createdAt,
     started_at: run.startedAt,
     definition_revision: run.definitionRevision,
@@ -69,14 +68,15 @@ export function runRecord(run: Run) {
   switch (run.status) {
     case 'queued':
     case 'running':
-    case 'waiting':
       return { ...runFields, status: run.status };
+    case 'waiting':
+      return { ...runFields, status: 'running' };
     case 'completed':
-      return { ...runFields, status: 'answered', ended_at: run.endedAt };
+      return { ...runFields, status: 'completed', ended_at: run.endedAt };
     case 'failed':
-      return { ...runFields, status: 'unanswered', ended_at: run.endedAt, reason: run.failureReason ?? 'faulted' };
+      return { ...runFields, status: 'failed', ended_at: run.endedAt, reason: run.failureReason ?? 'faulted' };
     case 'cancelled':
-      return { ...runFields, status: 'unanswered', ended_at: run.endedAt, reason: 'canceled' };
+      return { ...runFields, status: 'stopped', ended_at: run.endedAt };
   }
 }
 
@@ -135,6 +135,27 @@ export function activityRecord(event: ActivityEvent) {
   const payload = event.payload;
 
   switch (event.type) {
+    case 'notification.received':
+      return {
+        ...eventFields,
+        notification_id: payload['notificationId'],
+        received_sequence: payload['receivedSequence'],
+        text: payload['text'],
+        source: payload['source'],
+      };
+    case 'activation.started':
+    case 'activation.completed':
+    case 'activation.stopped':
+      return { ...eventFields, turn_id: event.runId, notification_ids: payload['notificationIds'] };
+    case 'activation.failed':
+      return {
+        ...eventFields,
+        turn_id: event.runId,
+        notification_ids: payload['notificationIds'],
+        reason: payload['reason'],
+      };
+    case 'console.message':
+      return { ...eventFields, message_id: payload['messageId'], turn_id: event.runId };
     case 'inbox_item.received': {
       const record = {
         ...eventFields,

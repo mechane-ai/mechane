@@ -9,7 +9,7 @@ import {
   requireFixtures,
   runBash,
   runCli,
-  sendInbox,
+  sendNotification,
   setMachineLimit,
   waitFor,
   waitForBashCompletion,
@@ -58,7 +58,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     const disabled = await runBash({ stack, account, mechId: primary.id, command: 'printf disabled' });
 
     assert.equal(disabled.result.status, 'refused');
-    assert.equal(disabled.turn.status, TurnStatus.Answered);
+    assert.equal(disabled.turn.status, TurnStatus.Completed);
     assert.deepEqual(await readSandboxMachines(stack), initialMachines, 'Zero capacity started a physical machine');
 
     await setMachineLimit({ stack, account, machines: 1 });
@@ -93,9 +93,9 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const admitted = await Promise.all(
       candidates.map(async (candidate) => {
-        const sent = await sendInbox({ ...candidate, text: candidate.marker });
+        const sent = await sendNotification({ ...candidate, text: candidate.marker });
 
-        return { ...candidate, inboxItemId: sent.id };
+        return { ...candidate, notificationId: sent.id };
       }),
     );
 
@@ -124,7 +124,10 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     const refusal = await readBashResult({ model, ...refused });
 
     assert.equal(refusal.status, 'refused', 'Concurrent mechs exceeded the workspace machine limit');
-    await waitForTurn(refused);
+
+    const refusedTurn = await waitForTurn(refused);
+
+    assert.equal(refusedTurn.status, TurnStatus.Completed, 'A capacity refusal blocked later work');
 
     const allocatedMachines = await readSandboxMachines(stack);
 

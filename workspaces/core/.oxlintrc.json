@@ -142,6 +142,7 @@
         "allowHigherOrderFunctions": false,
         "allowedNames": [
           "browserRecords",
+          "completionRecords",
           "evidenceRecords",
           "interactiveRuns",
           "processRecords",
@@ -149,19 +150,11 @@
           "connectionRecords",
           "credentialRecords",
           "executionAccessRecords",
-          "threadContinuationRecords",
-          "requestSubmissionRecords",
-          "requestWaitRecords",
           "dispatchEvidenceRecords",
           "fileCheckpointRecords",
           "capacityRecords",
           "findingRecords",
           "policyRecords",
-          "slackDeliveryProgressRecords",
-          "slackDeliveryRecords",
-          "slackOriginRecords",
-          "slackRecords",
-          "slackInstallationRecords",
           "sourceGrantRecords",
           "sourceRecords",
           "watchRecords",
@@ -175,6 +168,7 @@
       {
         "allowedNames": [
           "browserRecords",
+          "completionRecords",
           "evidenceRecords",
           "interactiveRuns",
           "processRecords",
@@ -182,19 +176,11 @@
           "connectionRecords",
           "credentialRecords",
           "executionAccessRecords",
-          "threadContinuationRecords",
-          "requestSubmissionRecords",
-          "requestWaitRecords",
           "dispatchEvidenceRecords",
           "fileCheckpointRecords",
           "capacityRecords",
           "findingRecords",
           "policyRecords",
-          "slackDeliveryProgressRecords",
-          "slackDeliveryRecords",
-          "slackOriginRecords",
-          "slackRecords",
-          "slackInstallationRecords",
           "sourceGrantRecords",
           "sourceRecords",
           "watchRecords",
@@ -885,7 +871,9 @@
       "files": [
         "packages/node/cli/scripts/reference/main.ts",
         "packages/node/program/src/output/**",
-        "packages/node/runtime/src/channels/slack-logger.ts",
+        "packages/node/runtime/src/operations/notifications.ts",
+        "packages/node/runtime/src/execution/reconcile-runs.ts",
+        "packages/node/server/src/lifecycle/reconciliation.ts",
         "packages/node/server/src/main.ts",
         "packages/node/server/src/lifecycle/shutdown.ts",
         "packages/node/server/src/http/failure.ts",
@@ -895,7 +883,8 @@
         "packages/node/smoke/src/run-scenarios.ts",
         "packages/worker/sandbox/src/egress/pass-egress.ts",
         "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
-        "packages/worker/sandbox-service/src/main.ts"
+        "packages/worker/sandbox-service/src/main.ts",
+        "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"
       ],
       "excludeFiles": [],
       "rules": { "no-console": "off" }
@@ -1318,7 +1307,9 @@
         "packages/node/smoke/src/settings.ts",
         "packages/node/testing/src/cli/start-cli.ts",
         "packages/node/distribution/src/load-distribution-settings.ts",
-        "packages/node/runtime/src/channels/slack-logger.ts",
+        "packages/node/runtime/src/operations/notifications.ts",
+        "packages/node/runtime/src/execution/reconcile-runs.ts",
+        "packages/node/server/src/lifecycle/reconciliation.ts",
         "packages/node/server/src/main.ts",
         "packages/node/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",
@@ -3572,7 +3563,8 @@
         "packages/node/cli/scripts/reference/main.ts",
         "packages/node/program/src/output/**",
         "packages/worker/sandbox/src/egress/pass-egress.ts",
-        "packages/worker/sandbox/src/evidence/evidence-cleanup.ts"
+        "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
+        "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"
       ],
       "excludeFiles": [],
       "rules": {
@@ -3983,7 +3975,9 @@
     },
     {
       "files": [
-        "packages/node/runtime/src/channels/slack-logger.ts",
+        "packages/node/runtime/src/operations/notifications.ts",
+        "packages/node/runtime/src/execution/reconcile-runs.ts",
+        "packages/node/server/src/lifecycle/reconciliation.ts",
         "packages/node/server/src/main.ts",
         "packages/node/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",

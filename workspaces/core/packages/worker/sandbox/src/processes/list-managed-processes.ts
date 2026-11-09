@@ -15,6 +15,8 @@ export async function listManagedProcesses({ store, provider }: ProviderStepInpu
   const pending = current.map((summary) => reconcileProcess({ ...input, summary }));
   const reconciled = await Promise.all(pending);
 
+  await reconcileMissingProcesses({ ...input, current });
+
   const running = reconciled.flatMap(Option.toArray).filter((summary) => {
     const recorded = store.process({ processId: summary.handle.processId });
 
@@ -36,6 +38,27 @@ export async function listManagedProcesses({ store, provider }: ProviderStepInpu
   });
 
   return [...running, ...finished];
+}
+
+type MissingProcessesInput = ProviderStepInput & { readonly current: ProcessSummaries };
+
+async function reconcileMissingProcesses({ store, provider, current }: MissingProcessesInput): Promise<void> {
+  const reportedIds = current.map(({ handle }) => handle.processId);
+  const reported = new Set(reportedIds);
+
+  for (const record of store.processes()) {
+    const observation = record.observation;
+    const wasRunning = Option.isSome(observation) && ProcessState.guards.Running(observation.value.state);
+
+    if (wasRunning && Option.isSome(record.machineId) && !reported.has(record.processId)) {
+      await observeManagedProcess({
+        store,
+        provider,
+        handle: { processId: record.processId, machineId: record.machineId.value },
+        shouldStop: false,
+      });
+    }
+  }
 }
 
 async function currentProcesses({ store, provider }: ProviderStepInput): Promise<ProcessSummaries> {

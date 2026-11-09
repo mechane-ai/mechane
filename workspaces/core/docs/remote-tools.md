@@ -2,7 +2,8 @@
 
 A workspace owner registers an MCP connection and grants each mech an explicit set of tools. The runtime discovers those
 tools through the native AI SDK MCP client, then presents their native schemas to WorkflowAgent. Current grants are
-checked again before every invocation.
+checked again before every invocation. The notification watermark and active-owner fence are checked before a fresh
+effect, so stale decisions can return `not_started` without calling the remote service.
 
 ## Configure
 

@@ -1,6 +1,7 @@
 import '../../../../licenses/apache-2.0.js';
 import '../../../../licenses/effect.js';
 import { HttpStatusCode } from '@mechane/records';
+import { writeSandboxFailure } from '@mechane/sandbox';
 import { SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
 import { proxyRuntime } from './proxy-runtime.ts';
 import { serveSandbox } from './serve-sandbox.ts';
@@ -18,8 +19,8 @@ const service: Readonly<ExportedHandler<ServiceEnvironment>> = {
       }
 
       return await proxyRuntime({ request, environment });
-    } catch {
-      console.error('Sandbox service request failed');
+    } catch (cause) {
+      writeSandboxFailure({ cause });
 
       return Response.json({ error: 'ServiceUnavailable' }, { status: HttpStatusCode.Unavailable });
     }

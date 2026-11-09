@@ -2,6 +2,8 @@ import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import type { SandboxObject } from '@mechane/sandbox';
 import {
   SandboxAction,
+  SandboxCheckpointIdentity,
+  SandboxCompletionIdentity,
   SandboxExecutionIdentity,
   SandboxExecutionObservation,
   SandboxExecutionResume,
@@ -69,6 +71,36 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
 
   if (resource === 'evidence') {
     return await serveEvidence({ request, stub, url, artifactId: executionId, action });
+  }
+
+  const isCompletion = resource === 'completions' && executionId !== undefined;
+
+  if (isCompletion && action === undefined && request.method === HttpMethod.Get) {
+    const completion = Schema.decodeUnknownSync(SandboxCompletionIdentity)({
+      ...identity,
+      executionId: decodeURIComponent(executionId),
+    });
+
+    const receipt = await stub.completionReceipt({ executionId: completion.executionId });
+
+    if (receipt === null) {
+      return Response.json({ error: 'NotFound' }, { status: HttpStatusCode.NotFound });
+    }
+
+    return Response.json(receipt);
+  }
+
+  const isCheckpoint = resource === 'workspace' && executionId === 'checkpoints';
+
+  if (isCheckpoint && action !== undefined && request.method === HttpMethod.Post) {
+    const checkpoint = Schema.decodeUnknownSync(SandboxCheckpointIdentity)({
+      ...identity,
+      operationId: decodeURIComponent(action),
+    });
+
+    const answer = await stub.checkpoint({ operationId: checkpoint.operationId });
+
+    return Response.json(answer);
   }
 
   if (resource === 'executions' && executionId !== undefined) {

@@ -4,6 +4,7 @@ import type { AlarmTimeInput, DatabaseFunctions } from '@mechane/store';
 import type { DateTime, Duration, Option } from 'effect';
 import type { browserRecords } from './browser/browser-records.ts';
 import type { capacityRecords } from './capacity/capacity-records.ts';
+import type { completionRecords } from './completions/completion-records.ts';
 import type { evidenceRecords } from './evidence/evidence-records.ts';
 import type { interactiveRuns } from './interactive-runs.ts';
 import type { machineDrains } from './machines/machine-drains.ts';
@@ -35,6 +36,8 @@ export type MachineRecords = {
   readonly liveMachine: () => Option.Option<LiveMachineRow>;
   /** The machine opened last, in any status; none before the first. */
   readonly latestMachine: () => Option.Option<MachineIdRow>;
+  /** The last machine that could admit writers, none when every allocation ended before readiness. */
+  readonly latestReadyMachine: () => Option.Option<MachineIdRow>;
   /** Records a machine as starting, the intent of its start. */
   readonly openMachine: (input: MachineTimeInput) => void;
   /** Records that a starting machine's guest answered its health. */
@@ -71,9 +74,10 @@ export type FailMachineInput = {
 
 export type MachineTimeInput = { readonly machineId: MachineId; readonly now: DateTime.Utc };
 
-/** The sandbox object's one alarm, which stops its idle machine. */
+/** The sandbox object's one alarm wakes for its earliest pending observation, delivery, or idle deadline. */
 export type SandboxAlarm = {
   readonly arm: (input: AlarmTimeInput) => Promise<void>;
+  readonly scheduledAt: () => Promise<Option.Option<DateTime.Utc>>;
   /** Clears the alarm while it is still set for `at`, so one that a call armed meanwhile stays. */
   readonly disarmAt: (input: AlarmTimeInput) => Promise<void>;
 };
@@ -82,6 +86,7 @@ export type SandboxAlarm = {
 export type SandboxStore = DatabaseFunctions &
   ReturnType<typeof browserRecords> &
   ReturnType<typeof capacityRecords> &
+  ReturnType<typeof completionRecords> &
   ReturnType<typeof evidenceRecords> &
   ReturnType<typeof interactiveRuns> &
   ReturnType<typeof machineDrains> &

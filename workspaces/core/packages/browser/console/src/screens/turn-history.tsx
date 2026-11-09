@@ -50,7 +50,7 @@ export function TurnHistory({
             <Stack>
               {notice}
               {isLinkedPage && page.events[0]?.sequence !== target && (
-                <Notice>The linked event is unavailable in this turn.</Notice>
+                <Notice>The linked event is unavailable in this run.</Notice>
               )}
               <Activity page={page} label="Run events" hasInset={false} expandedSequence={target} />
               {showPagination && (

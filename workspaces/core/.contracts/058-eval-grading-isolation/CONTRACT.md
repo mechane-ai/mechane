@@ -34,11 +34,19 @@ Confirm that the grader shares no producing component with the assessed system, 
 
 ## Local adaptations
 
-The subject's mech receives the case's input alone, as its one inbox item, with the suite's subject instructions, and its sandbox holds none of the run's files: the suite, the plan and every record stay in the out folder on the caller's machine, which no mech reaches.
-A case's expectations reach only its grader's inbox item, which the eval scenario checks by finding no expectation's id or description in any subject's request to the upstream; the subject's mech is named for its role and the trial's id, a digest, never for the case.
-The grader is a fresh mech with the release's fixed instructions, and its one inbox item holds the case's input, each expectation under its id and the subject's reply, cut with a marker past 32,768 characters; it receives no condition, no subject identity or settings, no prior grade and none of the subject's events or tool calls.
-The suite names both models, and they differ, unless it sets `self_grading` to `true`, since a model a suite omits is the deployment's first offer, which no read reports; any other suite is `SuiteInvalid` before any call. The smoke's suite is self-grading, since the scripted upstream is one model.
-No grader has been calibrated against fixed outputs, and no operation regrades a saved run.
+A subject receives only the case input through its notification and the suite's subject instructions. A common publication
+instruction asks every role to use `console_message`; it supplies no expected answer or alternate runtime path. The caller's
+out folder holds suites, plans, grading material, and records outside the mech's environment. Mech names use role and trial
+identity, not case names. The scripted eval scenario checks that expectations never appear in subject model requests.
+
+The grader is a fresh mech with fixed release instructions. Its notification contains the frozen input, expectation IDs
+and descriptions, and the subject's latest explicit public Console reply, bounded to 32,768 characters with an omission
+marker. It receives no private model text, subject events, tool calls, identity, settings, condition labels, or prior grades.
+A quiet subject outcome remains `no_reply` instead of exposing its private completion text to the grader.
+
+The suite declares different subject and grader models unless `self_grading` is true. An omitted model resolves from the
+deployment and is not yet reported by the runner; such a suite must explicitly declare self-grading. The scripted smoke
+uses one model and declares that condition. No grader calibration or saved-output regrade operation is implemented.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

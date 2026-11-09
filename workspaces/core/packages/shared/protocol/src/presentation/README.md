@@ -1,16 +1,17 @@
 # Presentations
 
-Presentations use json-render's native flat spec and Chat SDK component names. The shared catalog supplies component
-props to the console registry and native chat renderer. A presentation may show text, fields, a table, a chart, and
-HTTPS links. Permission decisions remain Nexus operations; model output cannot create approval controls.
+Presentations use json-render's native flat spec and Chat SDK component names. The [shared catalog](catalog.ts) defines
+static text, fields, tables, charts, and HTTPS links for Console rendering. Model output cannot grant permissions or
+create approval controls.
 
-Parse unknown input with `PresentationSpecification`, or call `createPresentationOutput` to validate it and derive a
-readable fallback. Native catalog validation checks syntax but does not enforce the complete component and graph
-constraints. The branded parsed type keeps those constraints at renderer boundaries. Do not repair or silently prune
-invalid specs.
+Agents publish through [`console_message({text, presentation})`](../../../../node/runtime/src/tools/console-message.ts),
+with optional structured presentation alongside required text. The tool stores a validated `{spec, fallback}` with the
+public Console message. Native execution output remains in run inspection. Completing a run does not publish a reply.
 
-The `render_ui` tool accepts a complete spec. Its native input schema describes the supported static subset; normal
-agent replies remain Markdown. Catalog JSONL generation prompts do not belong in this tool-based conversation. Stream
-completed tool results using json-render's `data-spec` part with `{ type: 'flat', spec }`, alongside readable text.
-Retain the same spec for browser rendering and Slack's `toCard` conversion. State expressions, repeated elements,
-arbitrary actions, and remote images are outside the supported subset.
+Parse unknown input with `PresentationSpecification`, or call [createPresentationOutput](create-presentation-output.ts)
+to validate it and derive a readable fallback. Native catalog validation checks syntax but does not enforce the complete
+component and graph constraints. The branded parsed type keeps those constraints at renderer boundaries. Do not repair
+or silently prune invalid specs.
+
+External integrations own addressed messages and channel-specific rendering through their installed tools. State
+expressions, repeated elements, arbitrary actions, and remote images are outside the supported presentation subset.

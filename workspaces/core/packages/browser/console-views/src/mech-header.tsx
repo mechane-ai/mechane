@@ -9,34 +9,26 @@ import { Menu } from '@mechane-ai/elements/overlays';
 import { colors, spacing, typography } from '@mechane-ai/elements/tokens.stylex';
 import type { ConsoleView, Mech } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
-import {
-  Check,
-  ChevronDown,
-  History,
-  MemoryStick,
-  MoreHorizontal,
-  Pause,
-  Pin,
-  PinOff,
-  Play,
-  Settings,
-  Terminal,
-} from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal, Pause, Pin, PinOff, Play, Settings } from 'lucide-react';
 import type { MouseEvent, ReactNode } from 'react';
 import { MechPinButton } from './mech-pin.tsx';
 
 const sections: ReadonlyArray<{ readonly value: ConsoleView; readonly label: string }> = [
   { value: 'conversation', label: 'Conversation' },
-  { value: 'work', label: 'Work' },
-  { value: 'runs', label: 'Runs' },
-  { value: 'memory', label: 'Memory' },
+  { value: 'activity', label: 'Activity' },
   { value: 'environment', label: 'Environment' },
-  { value: 'activity', label: 'History' },
   { value: 'definition', label: 'Settings' },
 ];
 
-const primaryViews: ReadonlySet<ConsoleView> = new Set(['conversation', 'work', 'runs']);
-const secondaryViews: ReadonlySet<ConsoleView> = new Set(['memory', 'environment', 'activity', 'definition']);
+const primaryViews: ReadonlySet<ConsoleView> = new Set(['conversation', 'activity', 'environment']);
+
+function primaryView(view: ConsoleView): ConsoleView {
+  if (view === 'runs') {
+    return 'activity';
+  }
+
+  return view;
+}
 
 const styles = stylex.create({
   identity: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
@@ -126,8 +118,9 @@ export function MechHeader({
   const pinLabel = isPinned ? 'Unpin mech' : 'Pin mech';
   const statusLabel = mech.status === 'active' ? 'Pause mech' : 'Resume mech';
   const pendingLabel = mech.status === 'active' ? 'Pausing mech…' : 'Resuming mech…';
-  const currentSection = sections.find((section) => section.value === view);
-  const secondaryName = secondaryViews.has(view) ? currentSection?.label : undefined;
+  const selectedView = primaryView(view);
+
+  const secondaryName = view === 'definition' ? 'Settings' : undefined;
 
   const stateLabel = isBusy
     ? 'Updating…'
@@ -174,13 +167,13 @@ export function MechHeader({
               items={sections
                 .filter((section) => primaryViews.has(section.value))
                 .map((section) => ({ id: section.value, label: section.label, href: viewHref(section.value) }))}
-              selectedId={view}
+              selectedId={selectedView}
               onNavigate={onView}
             />
           </div>
           <div {...stylex.props(styles.narrow)}>
             <Select.Root<ConsoleView>
-              value={view}
+              value={selectedView}
               items={sections}
               onValueChange={(value) => {
                 if (value !== null) {
@@ -228,34 +221,6 @@ export function MechHeader({
             <Menu.Positioner align="end">
               <Menu.Popup>
                 <Menu.Group>
-                  <Menu.GroupLabel>Views</Menu.GroupLabel>
-                  <Menu.LinkItem
-                    closeOnClick
-                    href={viewHref('environment')}
-                    aria-current={view === 'environment' ? 'page' : undefined}
-                    onClick={(event) => selectView(event, 'environment')}
-                  >
-                    <Terminal size={16} aria-hidden />
-                    Environment
-                  </Menu.LinkItem>
-                  <Menu.LinkItem
-                    closeOnClick
-                    href={viewHref('memory')}
-                    aria-current={view === 'memory' ? 'page' : undefined}
-                    onClick={(event) => selectView(event, 'memory')}
-                  >
-                    <MemoryStick size={16} aria-hidden />
-                    Memory
-                  </Menu.LinkItem>
-                  <Menu.LinkItem
-                    closeOnClick
-                    href={viewHref('activity')}
-                    aria-current={view === 'activity' ? 'page' : undefined}
-                    onClick={(event) => selectView(event, 'activity')}
-                  >
-                    <History size={16} aria-hidden />
-                    History
-                  </Menu.LinkItem>
                   <Menu.LinkItem
                     closeOnClick
                     href={viewHref('definition')}

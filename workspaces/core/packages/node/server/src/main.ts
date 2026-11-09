@@ -19,18 +19,19 @@ import { createApplication } from './application.ts';
 import { authenticateRequest } from './auth/authenticate.ts';
 import { createAuthHandler } from './auth/handler.ts';
 import { limitPublicRequest } from './auth/limit-public-request.ts';
-import { slackWebhook } from './channels/slack-webhook.ts';
 import { createConsoleHandler } from './console/handler.ts';
 import { createProtocolHandler } from './http/protocol.ts';
 import { listen } from './lifecycle/http-server.ts';
 import { createReadiness } from './lifecycle/readiness.ts';
+import { startReconciliation } from './lifecycle/reconciliation.ts';
 import { readArtifactRelease } from './lifecycle/release.ts';
 import { closeHttpServer, registerShutdown } from './lifecycle/shutdown.ts';
 import { createWorkflowHost, startWorkflowHost } from './lifecycle/workflow-world.ts';
-import { createChatHandler } from './operations/chat.ts';
+import { createNotificationProducerHandler } from './notifications/producer.ts';
+import { createRunStreamHandler } from './operations/run-stream.ts';
 import { createReleaseHandler } from './releases/handler.ts';
-import { nexusRequestEvents } from './requests/nexus-events.ts';
 import { createSandboxCapacityHandler } from './sandboxes/capacity.ts';
+import { createSandboxCompletionHandler } from './sandboxes/completion.ts';
 import { loadServerSettings } from './settings/server.ts';
 
 type AdmissionStarterInput = { readonly workflowDefinitionId: string };
@@ -96,7 +97,15 @@ async function runServer(): Promise<void> {
       });
 
       const auth = createAuthHandler({ store, configuration: settings.authentication });
-      const chat = createChatHandler({ store, authenticate, startAdmission: start, readRunUIStream });
+      const runStream = createRunStreamHandler({ store, authenticate, readRunUIStream });
+
+      const notifications = createNotificationProducerHandler({
+        store,
+        startAdmission: start,
+        producers: configuration.notificationProducers,
+      });
+
+      const completion = createSandboxCompletionHandler({ store, configuration, startAdmission: start });
 
       const capacity = createSandboxCapacityHandler({
         bearer: configuration.sandbox.bearer,
@@ -114,8 +123,7 @@ async function runServer(): Promise<void> {
 
       const application = createApplication({
         isTrustedProxy: settings.isTrustedProxy,
-        handlers: [capacity, nexusRequestEvents, auth, chat, protocol, releaseHandler, consoleHandler],
-        slack: async (input) => await slackWebhook({ ...input, startAdmission: start }),
+        handlers: [capacity, completion, notifications, auth, runStream, protocol, releaseHandler, consoleHandler],
         checkHealth: async () => await store.checkHealth(),
         isReady: readiness.isReady,
       });
@@ -125,8 +133,11 @@ async function runServer(): Promise<void> {
       try {
         await startWorkflowHost({ world });
         await reconcileRuns({ workflowDefinitionId });
+
+        const stopReconciliation = startReconciliation(async () => await reconcileRuns({ workflowDefinitionId }));
+
         readiness.markReady();
-        registerShutdown({ server, world, store, readiness, unregisterHooks });
+        registerShutdown({ server, world, store, readiness, unregisterHooks, stopReconciliation });
       } catch (error) {
         readiness.beginDrain();
         await closeHttpServer({ server });

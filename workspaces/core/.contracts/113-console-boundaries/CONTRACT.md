@@ -1,6 +1,6 @@
 ---
 name: console-boundaries
-message: Keep the console an ordinary client of the installation API, with scoped session-owned data and one release.
+message: Keep the console an ordinary API client with admitted data, explicit public conversation, and one release.
 paths: ["packages/browser/**", "packages/node/server/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
@@ -26,19 +26,18 @@ Use each tab's native TanStack Query observers for demanded API reads, polling, 
 Keep their successful result a completion scalar. Canonical records and exact page receipts belong only to TanStack DB;
 the native browser coordinator replicates those collections, not a tab's network-request state.
 Keep temporary transport recovery in `console-data/src/read-recovery.ts`, beneath those read lifecycles. Only
-catalog-declared GET operations and native conversation history may recover explicit 502, 503, or 504 responses or
+catalog-declared GET operations, including public conversation history, may recover explicit 502, 503, or 504 responses or
 failed network exchanges. Allow at most two additional attempts, with 1-second and 3-second minimum waits, within the
 original 40-second read deadline. Honor a valid Retry-After deadline; fail when it is invalid or cannot fit the remaining
 budget. The shared client preserves bounded retry metadata without implementing retries. Keep Query's automatic retries
 disabled so transport budgets cannot multiply. Abort interrupts both waits and attempts. Never retry authentication,
-validation, successful-response decoding, writes, or active stream resumption through this policy. Preserve the pending
+validation, successful-response decoding, or writes through this policy. Preserve the pending
 read or admitted warm content during recovery, and expose a real error with manual recovery when the budget ends.
 Use entity and page reads whose server API supplies the required bounds. Preserve
-the server's cursor, ordering, and coverage meaning. `showTurn` returns its selected turn's dispatch collection without
-a server page bound. Merge its turn into the canonical turn collection and retain the remaining trace evidence in one
-document. `listSlackBindings` returns the workspace's binding collection without pagination. Keep these API coverage
-limits explicit. Slack deliveries expose only the latest bounded window, without a continuation cursor. These API
-exceptions do not authorize an eager download of another resource's history or a custom query or synchronization engine.
+the server's cursor, ordering, and coverage meaning. `showTurn` returns its selected activation's dispatch collection without
+a server page bound. Merge its activation into the canonical collection and retain the remaining trace evidence in one
+document. Keep this coverage limit explicit. It does not authorize an eager download of another resource's history or
+a custom query or synchronization engine.
 Server reads are on demand. Canonical record and receipt tables restore their retained local rows eagerly
 within contract 119's per-scope age and size limits; this local hydration is not a claim that every SQLite read uses a
 bounded subset or that the cache holds complete server history.
@@ -60,40 +59,30 @@ degradation without reversing that outcome or repeating the command. Retain requ
 use revision checks for definition changes. Keep drafts, submitted text, pending request identity, and acknowledged
 outcomes outside the replaceable data runtime. Cache recovery must not clear or resubmit them.
 
-Expose the standard AI SDK UI message stream. Convert native model-call chunks through the upstream transform and
-apply replay cursors to resulting UI chunks. Authorize every initial and resumed stream against current membership.
-Server-owned history supplies model context; a client cannot submit privileged prior messages or tool results.
-Treat every new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
+Keep public Console messages separate from private native model context. The typed `listConsoleMessages` operation
+returns only operator submissions and explicit communication-tool publications. Do not expose the active native model
+stream as a public conversation or reconstruct public messages from activation completion.
+
+Treat each new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
 `console-data/src/records.ts`, native table to `collections.ts`, and bounded request to `requests.ts` and `load-read.ts`.
-Compose its view through the shared live-read hooks in `console/src/reads.ts`, preserving exact receipt membership,
-readiness, refresh errors, and owner disposal. React state holds cursor inputs and interaction state, never fetched
-record pages. Conversation session metadata follows this path too; it is distinct from transcript messages.
+Compose its view through shared live-read hooks, preserving exact receipt membership, read states, errors, and disposal.
+React state holds cursor inputs and interactions, never fetched resource pages. Historical source messages remain inspectable in Activity and run traces without a separate session UI.
 
-The complete domain-record transport exceptions are fresh principal/workspace admission in `console-data/src/session.ts`
-and the runtime admission gate, plus the native chat protocol below. Adding another exception requires a contract change,
-a corresponding boundary update where enforceable, and a real browser check of its authority and lifetime.
-Authenticated evidence bytes use native browser image/video loads. Their metadata follows the canonical record path.
+The complete domain-record transport exceptions are fresh principal/workspace admission, the runtime admission gate,
+and public conversation history. The data owner uses native Query observers for demanded public history and refresh.
+One conversation owner merges these authorized pages by canonical identity in memory; neither the persistent cache nor
+a second Chat instance mirrors that transcript. Adding an exception requires a contract change, an enforceable boundary
+where possible, and browser evidence for its authority and lifetime. Authenticated media uses native image/video loads;
+its metadata follows the canonical record path.
 
-The native chat transport owns conversation HTTP and stream resumption. TanStack Query remains the owner of demanded
-domain-projection reads; it does not become a parallel transport for the active transcript.
+Each mech has one editable public Console conversation. Integration notifications and private model output are Activity
+evidence. Historical session URLs do not create or select live execution contexts. Scope the conversation, draft, and submission
+identity to the admitted principal, workspace, and mech.
 
-The browser's native AI SDK chat owns its loaded transcript and active streamed state. Server history is authoritative.
-TanStack owns session catalogue metadata and the other canonical domain projections, not a mirrored transcript. Completion refreshes those projections
-without appending the same message to a competing message store. Scope disposal fences
-pending stream completions; a cache or renderer failure never reissues an acknowledged command.
-
-Conversation selection uses a real session identity in the URL. Without an explicit selection, open the latest
-existing session and show its source. A Slack session is read-only in Console with a link back to Slack; switching to
-the Console conversation selects its actual console-source session. The server accepts Console submissions only for
-that source. Never silently inject a Console message into a Slack conversation or invent a UI-only session.
-
-Within the same admitted principal and workspace, retain a bounded set of native chat instances across mech and run
-navigation. Eviction and scope loss abort their transports. Completion refresh merges messages by canonical identity
-without dropping an assistant message not yet present in the history read. Authentication loss disposes both chat and
-domain-data lifetimes, so late stream callbacks cannot restore protected content.
-Keep this conversation lifetime above replaceable cache connections. Local persistence recovery preserves the native
-transcript and active stream; its commands and projection refreshes use the current data owner. Rejected fresh
-admission or a scope change still revokes the conversation immediately.
+Within one admitted scope, retain a bounded set of conversation owners across mech and run navigation. Eviction cancels
+reads. Scope loss fences callbacks and disposes protected content. Keep that lifecycle above replaceable cache
+connections so local persistence recovery cannot lose a draft or repeat an acknowledged submission. Rejected fresh
+admission still revokes the conversation immediately. A late history read cannot remove a newer acknowledged message.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -110,9 +99,10 @@ Trace intervals name their measured boundaries. Reservation-to-settlement time i
 missing usage is unknown, never zero. Show recorded turn events through a bounded API page, not a filtered page of
 unrelated recent activity. The event query includes the original receipts of the turn's inputs.
 
-A turn overview reads its bounded reply excerpt and exact event sequence from that turn's durable log. The full reply
-remains reachable when it falls beyond the first event page. A message receipt identifies a turn only after a matching
-start or join event. A cancellation receipt precedes the recorded terminal outcome.
+An activation overview shows recorded execution outcomes and explicit communication evidence. Quiet completion has
+no implied reply. Historical reply excerpts remain reachable by their exact event sequence. A notification receipt
+confirms acceptance; associate processing only through recorded mailbox and activation evidence, never one-run-per-input
+assumptions. A cancellation receipt precedes the recorded terminal outcome.
 
 Record links reopen the selected workspace, mech, turn, request or event. Returning through browser history restores
 the originating page, its focused record, and the position in its actual scrolling region. Run inspection occupies a
@@ -193,10 +183,10 @@ origin when entering a run; changing its request, event, or subview preserves th
 entry. Modified clicks and links targeting another tab retain native link behavior without changing the current
 reader's history state.
 
-Selecting a work record replaces the list with its detail and provides a return to the originating row. Selecting a
-model request makes its evidence reachable without scrolling past the entire request collection. Keep the selected
-record's identity separate from its position in a bounded page. Supplied memory and event provenance links to the
-identified run; do not substitute the latest run.
+Selecting a model request makes its evidence reachable without scrolling past the entire request collection. Keep the
+selected record's identity separate from its position in a bounded page. Historical event provenance links to the
+identified run; do not substitute the latest run. Public navigation presents Conversation, Activity, and Environment.
+Memory and progress are ordinary durable files, not separate runtime CRUD screens.
 
 Show trace-wide evidence limits beside the trace summary across all subviews. A complete-looking overview must not
 hide unavailable or truncated evidence in a different tab. Use recorded endpoints for tool duration; an absent endpoint
@@ -208,18 +198,18 @@ Inspect a successful command, a nonzero exit, a pending command, truncated outpu
 command snapshot. Verify the process outcome, command and output remain readable at narrow widths, copy the displayed
 evidence accurately, and keep unavailable evidence explicit. Check that the trace-wide omission notice remains visible.
 
-Return temporary unavailable responses before a successful domain read and native history read. Verify one pending
-lifecycle, retained warm content, the bounded attempt count, and no write or stream resubmission. Exercise Retry-After
+Return temporary unavailable responses before a successful domain read and public conversation history read. Verify one pending
+lifecycle, retained warm content, the bounded attempt count, and no write resubmission. Exercise Retry-After
 seconds and dates, an invalid or excessive deadline, permanent unavailability, auth rejection, an invalid successful
 response, and owner cancellation during backoff. Exhaustion exposes an actionable error; cancellation sends no later
 attempt and admits no late content. Keep these fault probes within the existing browser qualification owner.
 
 Environment controls observe exact managed-process handles without waking a machine or extending its lease. Load logs
 for the selected handle, preserve terminal output, and retain keyboard focus when Stop removes its own control.
-Evidence opens in a full-page viewer. Preserve the native session, draft, reader scroll, and originating link when
-returning; a direct evidence link selects its recorded session and returns to its run without a history loop.
-Pending and ready media share one frame. Canonical evidence metadata belongs to the domain data owner; native Chat
-continues to own the session transcript and stream. Neither media bytes nor another transcript copy enter TanStack.
+Evidence opens in a full-page viewer. Preserve the public conversation, draft, reader scroll, and originating link when
+returning; a direct evidence link selects its recorded mech and returns to its run without a history loop.
+Pending and ready media share one frame. Canonical evidence metadata belongs to the domain data owner. Public conversation
+history remains with its admitted in-memory owner. Neither media bytes nor another transcript copy enter TanStack.
 
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
 real browser against the packaged service to verify sign-in/out, workspace isolation, a completed turn, trace
@@ -237,8 +227,8 @@ Switch principal or workspace and confirm shortcuts and appearance choices stay 
 shortcut outside the first mech page, a rejected access read, and a transient read failure.
 
 From one run, select requests and original reply events through both links and controls, then return once to the
-originating view. Repeat with a modified click and a new-tab link. Open a later work row, return to its list, and open a
-memory or history source run. With a long request collection, select its last row at desktop and narrow widths. Confirm
+originating view. Repeat with a modified click and a new-tab link. Open an earlier activity event and its recorded run.
+With a long request collection, select its last row at desktop and narrow widths. Confirm
 the selected evidence is reachable, focus can return to its control, and supplied trace limits remain visible on every tab.
 
 Delay startup, the selected view's primary read, and an auxiliary read independently. Confirm the neutral shell stays
@@ -251,14 +241,15 @@ refresh or pagination action. Fail refresh and persistence after an acknowledged
 Confirm that the outcome, a later draft, and an uncertain submission's request identity retain their application owner.
 Repeat recovery after a persisted Back/Forward cache restoration from a different route. Confirm current-page reads,
 drafts, focus, scroll position, and browser-local preferences survive while admission is checked again.
-During local cache recovery, continue an active native stream without reissuing its input. Reject fresh admission and
-switch scopes separately; both must abort the old conversation and prevent later callbacks from restoring its content.
+During local cache recovery, retain public conversation history and refresh through the admitted replacement owner
+without reissuing input. Reject fresh admission and switch scopes separately; both must clear the old conversation
+and prevent late callbacks from restoring its content.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - dependency-cruiser `console-build-owner` (113): enforced: Import Console build helpers only from its build configuration, such as `worker-licenses.ts` in `vite.config.ts`
 - dependency-cruiser `console-api-owner` (113): enforced: Import the Console data owner for browser requests, such as `@mechane/console-data`
-- dependency-cruiser `console-query-owner` (113): enforced: Keep Query observers in the data runtime; screens use canonical reads, such as `useSessions`
+- dependency-cruiser `console-query-owner` (113): enforced: Keep Query observers in the data runtime; screens use admitted reads, such as `useMech`
 - oxlint `unicorn/require-post-message-target-origin` (113): enforced, `"error"`
 - oxlint `oxc/no-optional-chaining` (113): enforced, `"error"`
 

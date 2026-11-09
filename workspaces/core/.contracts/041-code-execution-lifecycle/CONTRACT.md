@@ -37,14 +37,15 @@ Run the existing lifecycle tests; a passing type check does not establish recove
 
 ## Local adaptations
 
-Workflow SDK owns durable execution, step retries, sleeps, and waits in the Node runtime. Each accepted input has one
-stable run identity. The domain store owns admission and per-mech order; native hooks wake queued runs. Keep these
-transactions short. Do not hold a database transaction or an HTTP request open while waiting for a model or approval.
+Workflow SDK owns durable steps, retries, and bounded activations in the Node runtime. One fenced model owner consumes
+each mech's ordered notifications. The domain store records accepted input, context progress, and durable wake intent;
+short transactions protect admission and idle handoff. Reconciliation repairs interrupted starts. Do not hold database
+transactions or HTTP requests open while waiting for a model or human decision. Contract 124 owns the activation rules.
 
 A workflow step records external side-effect identity before dispatch. Retrying a completed step returns the recorded
 result. If an arbitrary command's outcome is unknown, read its original receipt or report uncertainty; never issue a
 fresh execution ID merely to recover a missing response. Provider timeouts bound transport, not the truth of an
-external effect. Cancellation has a durable state and cannot erase accepted inputs queued behind the canceled run.
+external effect. Cancellation has durable state and cannot erase unrelated accepted notifications.
 
 The sandbox owns machines, executions, file checkpoints, and stop/recovery. It binds each sandbox to its admitted
 workspace and mech. The guest runs commands in owned process groups and terminates those groups at exit or timeout.

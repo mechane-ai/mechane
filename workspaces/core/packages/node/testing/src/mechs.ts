@@ -1,8 +1,18 @@
-import { InboxItem, Mech, Trace, Turn, TurnPage, TurnStatus } from '@mechane/protocol';
+import {
+  ConsoleMessagePage,
+  EventPage,
+  Mech,
+  NotificationReceipt,
+  Trace,
+  Turn,
+  TurnPage,
+  TurnStatus,
+} from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
 import type { LocalStack } from '@mechane/stack';
 import { Schema } from 'effect';
 import { randomUUID } from 'node:crypto';
+import { createAccount } from './auth/create-account.ts';
 import type { Account } from './auth/types.ts';
 import { runCli } from './cli/run-cli.ts';
 import { waitFor } from './wait-for.ts';
@@ -11,9 +21,9 @@ type MechOwner = { readonly stack: LocalStack; readonly account: Account };
 
 type MechInput = MechOwner & { readonly mechId: string };
 type CreateMechInput = MechOwner & { readonly name: string; readonly dailyCapMicros?: number };
-type SendInboxInput = MechInput & { readonly text: string; readonly inboxItemId?: string; readonly sessionId?: string };
+type SendNotificationInput = MechInput & { readonly text: string; readonly notificationId?: string };
 type TraceInput = MechInput & { readonly turnId: string };
-type WaitForTurnInput = MechInput & { readonly inboxItemId: string };
+type WaitForTurnInput = MechInput & { readonly notificationId: string };
 
 type ReadInput<Output extends Schema.Codec<unknown, unknown>> = MechOwner & {
   readonly path: string;
@@ -32,27 +42,44 @@ export async function createMech({ stack, account, name, dailyCapMicros }: Creat
   return await runCli({ stack, account, args, schema: Mech });
 }
 
-export async function sendInbox({
+export async function createMechContext({
+  stack,
+  name,
+}: {
+  readonly stack: LocalStack;
+  readonly name: string;
+}): Promise<MechInput> {
+  const account = await createAccount({ stack });
+  const mech = await createMech({ stack, account, name });
+
+  return { stack, account, mechId: mech.id };
+}
+
+export async function sendNotification({
   stack,
   account,
   mechId,
   text,
-  inboxItemId = randomUUID(),
-  sessionId,
-}: SendInboxInput): Promise<InboxItem> {
-  const args = ['inbox', 'send', mechId, text, '--workspace', account.workspaceId, '--inbox-item-id', inboxItemId];
+  notificationId = randomUUID(),
+}: SendNotificationInput): Promise<NotificationReceipt> {
+  const args = [
+    'notification',
+    'send',
+    mechId,
+    text,
+    '--workspace',
+    account.workspaceId,
+    '--notification-id',
+    notificationId,
+  ];
 
-  if (sessionId !== undefined) {
-    args.push('--session-id', sessionId);
-  }
-
-  return await runCli({ stack, account, args, schema: InboxItem });
+  return await runCli({ stack, account, args, schema: NotificationReceipt });
 }
 
-export async function sendInboxAndWait(input: SendInboxInput): Promise<Turn> {
-  const sent = await sendInbox(input);
+export async function sendNotificationAndWait(input: SendNotificationInput): Promise<Turn> {
+  const sent = await sendNotification(input);
 
-  return await waitForTurn({ ...input, inboxItemId: sent.id });
+  return await waitForTurn({ ...input, notificationId: sent.id });
 }
 
 export async function readTurns(input: MechInput): Promise<ReadonlyArray<Turn>> {
@@ -71,6 +98,14 @@ export async function readTurns(input: MechInput): Promise<ReadonlyArray<Turn>> 
   return turns;
 }
 
+export async function readConsoleMessages(input: MechInput): Promise<ConsoleMessagePage> {
+  return await readJson({ ...input, path: conversationPath(input), schema: ConsoleMessagePage });
+}
+
+export async function readEvents(input: MechInput): Promise<EventPage> {
+  return await readJson({ ...input, path: eventsPath(input), schema: EventPage });
+}
+
 export async function readTrace(input: TraceInput): Promise<Trace> {
   const path = turnPath(input);
 
@@ -78,19 +113,33 @@ export async function readTrace(input: TraceInput): Promise<Trace> {
 }
 
 export async function waitForTurn(input: WaitForTurnInput): Promise<Turn> {
+  return await waitForRunState({ ...input, name: 'the notification activation to finish', accept: isFinished });
+}
+
+export async function waitForActiveTurn(input: WaitForTurnInput): Promise<Turn> {
+  return await waitForRunState({
+    ...input,
+    name: 'the notification activation to become active',
+    accept: (turn) => turn.status === TurnStatus.Running,
+  });
+}
+
+type WaitForRunStateInput = WaitForTurnInput & { readonly name: string; readonly accept: (turn: Turn) => boolean };
+
+async function waitForRunState(input: WaitForRunStateInput): Promise<Turn> {
   const turns = await waitFor({
-    name: 'the admitted input to finish',
+    name: input.name,
     read: () => readTurns(input),
     accept: (items) =>
-      items.some((turn) => turn.inboxItemIds.some((id) => id === input.inboxItemId) && isFinished(turn)),
+      items.some((turn) => turn.notificationIds.some((id) => id === input.notificationId) && input.accept(turn)),
   });
 
   const turn = turns.find(
-    (candidate) => candidate.inboxItemIds.some((id) => id === input.inboxItemId) && isFinished(candidate),
+    (candidate) => candidate.notificationIds.some((id) => id === input.notificationId) && input.accept(candidate),
   );
 
   if (turn === undefined) {
-    throw new Error('The completed input has no run');
+    throw new Error('The completed notification has no activation');
   }
 
   return turn;
@@ -118,7 +167,11 @@ async function readJson<Output extends Schema.Codec<unknown, unknown>>({
   return Schema.decodeUnknownSync(schema)(await response.json());
 }
 
-const TERMINAL_TURN_STATUSES: ReadonlySet<string> = new Set([TurnStatus.Answered, TurnStatus.Unanswered]);
+const TERMINAL_TURN_STATUSES: ReadonlySet<string> = new Set([
+  TurnStatus.Completed,
+  TurnStatus.Failed,
+  TurnStatus.Stopped,
+]);
 
 function isFinished(turn: Turn): boolean {
   return TERMINAL_TURN_STATUSES.has(turn.status);
@@ -126,6 +179,14 @@ function isFinished(turn: Turn): boolean {
 
 function turnsPath(input: MechInput): string {
   return `${mechPath(input)}/turns`;
+}
+
+function conversationPath(input: MechInput): string {
+  return `${mechPath(input)}/conversation`;
+}
+
+function eventsPath(input: MechInput): string {
+  return `${mechPath(input)}/events`;
 }
 
 /** Authorization probes use the same trace route as successful reads. */

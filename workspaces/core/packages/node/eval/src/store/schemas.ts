@@ -1,7 +1,7 @@
-import { TracedDispatch, TurnStatus, UnansweredReason } from '@mechane/protocol';
-import { memberOrUnknown, RandomId, RecordId, SHA256_PATTERN, TurnId, wireStruct } from '@mechane/records';
+import { ConsoleMessageId, NotificationId, TracedDispatch, UnansweredReason } from '@mechane/protocol';
+import { MechId, memberOrUnknown, SHA256_PATTERN, TurnId, wireStruct } from '@mechane/records';
 import { Record, Schema } from 'effect';
-import { GraderStatus, REPORT_VERSION, TRIAL_ID_PATTERN, TrialVerdict } from '../constants.ts';
+import { GraderStatus, REPORT_VERSION, RoleStatus, TRIAL_ID_PATTERN, TrialVerdict } from '../constants.ts';
 import { EvalId, Grade, PlanBasis } from '../schemas.ts';
 
 /** The fields of a trial: its id, which its plan's digest, its case's id and its repeat derive, and those parts. */
@@ -24,23 +24,28 @@ export const Plan = Schema.Struct({ basis: PlanBasis, digest: Digest, trials: Sc
 
 export type Plan = typeof Plan.Type;
 
-/** The fields of a role's saved turn: its mech, its inbox item, its turn, and each dispatch the turn made. */
+/** One notification may span several bounded activations; all their charges belong to the role. */
 const TURN_RECORD_FIELDS = {
-  mechId: RecordId,
-  inboxItemId: RandomId,
-  turnId: TurnId,
+  mechId: MechId,
+  notificationId: NotificationId,
+  runIds: Schema.NonEmptyArray(TurnId),
+  messageId: Schema.OptionFromNullOr(ConsoleMessageId),
   dispatches: Schema.Array(TracedDispatch),
 } as const;
 
-const Unanswered = Schema.Struct({
-  status: Schema.Literal(TurnStatus.Unanswered),
+const Failed = Schema.Struct({
+  status: Schema.Literal(RoleStatus.Failed),
   reason: memberOrUnknown({ set: UnansweredReason }),
 });
 
-/** How a role's turn ended: with its reply, or without one, for a reason. */
+const NoReply = Schema.Struct({ status: Schema.Literal(RoleStatus.NoReply) });
+const Stopped = Schema.Struct({ status: Schema.Literal(RoleStatus.Stopped) });
+
 export const TurnOutcome = Schema.Union([
-  Schema.Struct({ status: Schema.Literal(TurnStatus.Answered), reply: Schema.String }),
-  Unanswered,
+  Schema.Struct({ status: Schema.Literal(RoleStatus.Published), reply: Schema.String }),
+  NoReply,
+  Failed,
+  Stopped,
 ]);
 
 export type TurnOutcome = typeof TurnOutcome.Type;
@@ -57,7 +62,9 @@ export type TurnRecord = typeof TurnRecord.Type;
 export const GraderOutcome = Schema.Union([
   Schema.Struct({ status: Schema.Literal(GraderStatus.Graded), reply: Schema.String, grade: Grade }),
   Schema.Struct({ status: Schema.Literal(GraderStatus.NoGrade), reply: Schema.String, issue: Schema.String }),
-  Unanswered,
+  NoReply,
+  Failed,
+  Stopped,
 ]);
 
 export type GraderOutcome = typeof GraderOutcome.Type;

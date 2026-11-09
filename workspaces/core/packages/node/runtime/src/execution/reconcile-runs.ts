@@ -1,9 +1,8 @@
 import { getRun } from 'workflow/api';
-import { deliverRunOutcomeToSlack } from '../channels/deliver-run-to-slack.ts';
 import type { Run } from '../domain.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { cancelWorkflow, failRunAndWake, startAdmission, wakeMech } from './admission.ts';
-import { readTerminalOutcome } from './terminal-outcome.ts';
+import { stopActivation } from './stop-activation.ts';
 
 type ReconcileRunsInput = { readonly workflowDefinitionId: string };
 type RunCursor = { readonly createdAt: string; readonly id: string };
@@ -11,6 +10,8 @@ const RECONCILIATION_MAX_RUNS = 100;
 const FINISHED_WORKFLOW_STATES: ReadonlySet<string> = new Set(['failed', 'completed']);
 
 export async function reconcileRuns({ workflowDefinitionId }: ReconcileRunsInput): Promise<void> {
+  await reconcilePendingMechs(workflowDefinitionId);
+
   let page = await readUnfinishedPage();
 
   while (page.length > 0) {
@@ -26,6 +27,29 @@ export async function reconcileRuns({ workflowDefinitionId }: ReconcileRunsInput
   }
 }
 
+async function reconcilePendingMechs(workflowDefinitionId: string): Promise<void> {
+  const pending = await withRuntimeStore(
+    async (store) => await store.listPendingMechs({ maxRows: RECONCILIATION_MAX_RUNS }),
+  );
+
+  for (const mech of pending) {
+    try {
+      const run = await withRuntimeStore(async (store) => await store.reservePendingActivation(mech));
+
+      if (run !== null) {
+        await startAdmission({ runId: run.id, workflowDefinitionId });
+      }
+    } catch (error) {
+      console.error('mechane.reconciliation.failed', {
+        phase: 'wake',
+        workspaceId: mech.workspaceId,
+        mechId: mech.mechId,
+        errorType: reconciliationErrorType({ error }),
+      });
+    }
+  }
+}
+
 async function readUnfinishedPage(after?: RunCursor): Promise<ReadonlyArray<Run>> {
   return await withRuntimeStore(async (store) => {
     if (after === undefined) {
@@ -38,8 +62,26 @@ async function readUnfinishedPage(after?: RunCursor): Promise<ReadonlyArray<Run>
 
 async function reconcilePage(page: ReadonlyArray<Run>, workflowDefinitionId: string): Promise<void> {
   for (const run of page) {
-    await reconcileRun(run, workflowDefinitionId);
+    try {
+      await reconcileRun(run, workflowDefinitionId);
+    } catch (error) {
+      console.error('mechane.reconciliation.failed', {
+        phase: 'activation',
+        workspaceId: run.workspaceId,
+        mechId: run.mechId,
+        runId: run.id,
+        errorType: reconciliationErrorType({ error }),
+      });
+    }
   }
+}
+
+function reconciliationErrorType({ error }: { readonly error: unknown }): string {
+  if (error instanceof Error) {
+    return error.name;
+  }
+
+  return typeof error;
 }
 
 async function reconcileRun(run: Run, workflowDefinitionId: string): Promise<void> {
@@ -58,19 +100,17 @@ async function reconcileRun(run: Run, workflowDefinitionId: string): Promise<voi
   const workflow = getRun(run.workflowId);
 
   if (!(await workflow.exists)) {
-    const { committed, outcome } = await withRuntimeStore(async (store) => {
-      const terminal = await store.finishRun({
-        runId: run.id,
-        status: 'failed',
-        reply: null,
-        error: 'The durable workflow state is unavailable. Inspect external effects before retrying.',
-      });
-
-      return { committed: terminal, outcome: await readTerminalOutcome({ store, run: terminal }) };
-    });
+    const { run: committed } = await withRuntimeStore(
+      async (store) =>
+        await stopActivation({
+          store,
+          runId: run.id,
+          status: 'failed',
+          error: 'The durable workflow state is unavailable. Inspect external effects before retrying.',
+        }),
+    );
 
     await wakeMech({ workspaceId: committed.workspaceId, mechId: committed.mechId });
-    await deliverRunOutcomeToSlack(outcome);
 
     return;
   }

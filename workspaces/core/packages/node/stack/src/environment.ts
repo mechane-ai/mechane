@@ -54,7 +54,7 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
     return deploymentEnvironment;
   }
 
-  const { github, model, nexus } = input.fixtures;
+  const { github, model } = input.fixtures;
 
   return {
     ...deploymentEnvironment,
@@ -70,7 +70,7 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
     MECHANE_MODEL_UPSTREAM_KEY: model.apiKey,
     MECHANE_MODEL_OFFERS: JSON.stringify(FIXTURE_MODEL_OFFERS),
     MECHANE_DEFAULT_MODEL: FIXTURE_MODEL,
-    MECHANE_NEXUS_EVENT_SECRET: nexus.signingSecret,
+    MECHANE_NOTIFICATION_PRODUCERS: input.inherited['MECHANE_NOTIFICATION_PRODUCERS'] ?? '[]',
     MECHANE_AUTH_RATE_LIMITS: input.inherited['MECHANE_AUTH_RATE_LIMITS'] ?? JSON.stringify(FIXTURE_AUTH_RATE_LIMITS),
     MECHANE_NAMED_KEY_LIFETIME_SECONDS: input.inherited['MECHANE_NAMED_KEY_LIFETIME_SECONDS'] ?? '31536000',
   };

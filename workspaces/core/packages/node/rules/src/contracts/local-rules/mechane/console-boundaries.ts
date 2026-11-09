@@ -32,8 +32,11 @@ export const consoleBoundaries = {
       ...CRUISER_DEFAULTS,
       ...ADOPTED,
       name: 'console-query-owner',
-      comment: 'Keep Query observers in the data runtime; screens use canonical reads, such as `useSessions`',
-      from: { path: '^packages/browser/', pathNot: '^packages/browser/console-data/src/console-data[.]ts$' },
+      comment: 'Keep Query observers in the data runtime; screens use admitted reads, such as `useMech`',
+      from: {
+        path: '^packages/browser/',
+        pathNot: '^packages/browser/console-data/src/(?:console-data|conversation)[.]ts$',
+      },
       to: { path: 'node_modules/@tanstack/(?:query-core|react-query)/' },
       standard: '113',
     },

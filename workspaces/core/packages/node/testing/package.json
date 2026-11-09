@@ -10,6 +10,7 @@
     "@mechane/client": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
     "@mechane/stack": "workspace:*",
     "ai": "7.0.164",
     "effect": "4.0.7"

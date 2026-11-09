@@ -1,4 +1,5 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+import { Option } from 'effect';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import type { ModelCall, ModelCallSelector, ModelFixture, ModelPlan, ModelReply } from '../types.ts';
@@ -45,7 +46,11 @@ export async function startModelFixture(): Promise<StartedModel> {
         return structuredClone(call);
       }
 
-      await once(events, 'call', { signal });
+      try {
+        await once(events, 'call', { signal });
+      } catch (cause) {
+        throw new Error(`The model fixture did not reach plan ${input.marker} response ${input.index}`, { cause });
+      }
     }
 
     throw new Error('Timed out waiting for the model fixture call');
@@ -68,25 +73,27 @@ export async function startModelFixture(): Promise<StartedModel> {
     }
 
     const body = record(await request.json());
-    const finalUser = lastUserText(body['messages']);
-    const matching = [...plans.values()].filter(({ plan }) => finalUser.includes(plan.marker));
+    const prompts = userTexts(body['messages']);
+    const finalUser = prompts.at(-1) ?? '';
 
-    if (matching.length > 1) {
-      return Response.json(
-        { error: 'The model request matched multiple fixture plans' },
-        { status: HttpStatusCode.BadRequest },
-      );
+    const selected =
+      latestMatchingPlan(plans.values(), prompts.join('\n')) ??
+      latestMatchingPlan(plans.values(), JSON.stringify(body['messages']));
+
+    const isSummary = body['stream'] !== true && selected?.plan.summary !== undefined;
+    const marker = selected?.plan.marker ?? finalUser;
+    let index = selected?.next ?? calls.filter((call) => call.marker === marker).length;
+    let reply: ModelReply = selected?.plan.replies[index] ?? { text: finalUser };
+
+    if (isSummary) {
+      index = -1;
+      reply = { text: selected.plan.summary };
     }
 
-    const selected = matching[0];
-    const marker = selected?.plan.marker ?? finalUser;
-    const index = selected?.next ?? calls.filter((call) => call.marker === marker).length;
-    const reply = selected?.plan.replies[index] ?? { text: finalUser };
-
-    if (selected !== undefined) {
+    if (selected !== undefined && !isSummary) {
       if (index >= selected.plan.replies.length) {
         return Response.json(
-          { error: 'The model exhausted its configured replies' },
+          { error: `The model exhausted plan ${marker} at response ${index}` },
           { status: HttpStatusCode.BadRequest },
         );
       }
@@ -149,14 +156,33 @@ export async function startModelFixture(): Promise<StartedModel> {
   };
 }
 
-function lastUserText(value: unknown): string {
+function latestMatchingPlan(plans: Iterable<PlanState>, prompt: string): PlanState | undefined {
+  let selected = Option.none<PlanState>();
+  let lastOffset = -1;
+
+  for (const candidate of plans) {
+    const offset = prompt.lastIndexOf(candidate.plan.marker);
+
+    if (offset > lastOffset) {
+      selected = Option.some(candidate);
+      lastOffset = offset;
+    }
+  }
+
+  return Option.getOrUndefined(selected);
+}
+
+function userTexts(value: unknown): ReadonlyArray<string> {
   if (!Array.isArray(value)) {
     throw new TypeError('The model request has no messages');
   }
 
   const messages = value.map((message) => record(message)).filter((message) => message['role'] === 'user');
-  const content = messages.at(-1)?.['content'];
 
+  return messages.map((message) => messageText(message['content']));
+}
+
+function messageText(content: unknown): string {
   if (typeof content === 'string') {
     return content;
   }

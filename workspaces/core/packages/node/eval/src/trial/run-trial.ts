@@ -1,5 +1,5 @@
-import { TurnStatus } from '@mechane/protocol';
 import { Effect, Option } from 'effect';
+import { RoleStatus } from '../constants.ts';
 import type { Intent } from '../schemas.ts';
 import type { EvalRunFailure, OnceFile, WriteProgress } from '../types.ts';
 import { Role } from './constants.ts';
@@ -20,7 +20,7 @@ type OnceTurnInput<A> = {
 /**
  * Runs one trial: its subject's turn on a fresh mech, which receives the case's input alone, then, after an answer, a
  * fresh grader's turn against the case's expectations. A role the trial's files hold already is not run again, and one
- * whose intent they hold without its record is sent again under the intent's inbox item.
+ * whose intent they hold without its record is sent again under the saved notification identity.
  */
 export const runTrial = Effect.fn('runTrial')(function* ({
   call,
@@ -45,7 +45,7 @@ export const runTrial = Effect.fn('runTrial')(function* ({
     turn,
   });
 
-  if (outcome.status === TurnStatus.Unanswered) {
+  if (outcome.status !== RoleStatus.Published) {
     return;
   }
 
@@ -56,7 +56,7 @@ export const runTrial = Effect.fn('runTrial')(function* ({
 
 /**
  * A role's record: the one the trial saved, or the record of the turn it runs now, saved once. A saved intent without
- * its record sends the turn again under that intent's inbox item.
+ * its record sends the notification again with the same identity.
  */
 const onceTurn = Effect.fn('onceTurn')(function* <A>({
   writeProgress,
@@ -76,7 +76,7 @@ const onceTurn = Effect.fn('onceTurn')(function* <A>({
 
   const line: string = (() => {
     if (isResent) {
-      return `${label}: sending its ${role}'s turn again under the inbox item it saved`;
+      return `${label}: resuming its ${role} from the saved notification`;
     }
 
     return `${label}: running its ${role}'s turn`;

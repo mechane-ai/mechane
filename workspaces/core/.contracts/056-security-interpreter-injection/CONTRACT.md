@@ -40,9 +40,9 @@ Confirm that each loaded plugin or executable model file is verified by digest o
 Postgres and sandbox SQL stays in the declared stores with bound values and literal statements. No HTTP field,
 model-generated value, or remembered text becomes an SQL identifier.
 
-Memory and tracked work are untrusted context. Escape any enclosing markup and label their content as records rather
-than privileged instructions. Server-rendered authentication pages escape values from requests, stored names, and
-GitHub. React and native Chat renderers receive supplied text; raw HTML or executable component names are not accepted.
+Notifications, file notes, and summaries are untrusted context. Escape enclosing markup and label supplied content as
+records rather than privileged instructions. Server-rendered authentication pages escape request values, stored names,
+and GitHub data. React renderers receive supplied text; raw HTML and executable component names are not accepted.
 
 Host-side child processes use executable and argument arrays. Release downloads are verified before execution.
 The bash tool intentionally evaluates model-written shell code only inside its authorized sandbox. Command text is

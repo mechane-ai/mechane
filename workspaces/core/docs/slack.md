@@ -1,76 +1,39 @@
-# Connect Slack
+# Slack through an integration
 
-A workspace owner binds an existing Slack app and channel to a mech. Verified human messages become durable inputs.
-Replies retain the originating thread while the mech uses its own memory and developer environment. Binding a channel
-does not replace the app's existing DM behavior or route unrelated channels to the mech.
+Slack access belongs to the installation's integration service. In Softmax, Nexus verifies Slack events, selects the
+configured mech recipient, and sends a generic [notification](notifications.md). The mech then uses Nexus CLI or MCP
+tools to read the thread, react, post, or request application access.
 
-## Installation
+Mechane has no Slack app, channel-binding API, signing secret, bot token, formatter, or automatic response handler. A
+notification does not require a reply. The agent's instructions can ask it to acknowledge promptly, but every visible
+reaction and message comes from an explicit tool call.
 
-The bot needs the Slack permissions for the selected channel type and reply operations. Configure the relevant message
-or mention subscriptions and invite the existing bot to the channel. Attachment reading requires file access. Add only
-scopes the installation needs; Slack's [Events API guide](https://docs.slack.dev/apis/events-api/) owns the current
-scope and subscription reference.
+## Configure the integration
 
-Select the Mechane workspace, save each credential in a private file, and upload it through an owner's login:
+The integration owns the Slack app's scopes, event subscriptions, audience policy, and bot membership. It verifies raw
+Slack signatures and stable actor identity before selecting a recipient. Its notification producer credential is bound
+to explicit Mechane workspace and mech IDs. The installation owner supplies that credential and the agent's application
+CLI configuration without putting platform secrets into notification content.
 
-```sh
-mechane credential put slack-signing --file /private/path/slack-signing
-mechane credential put slack-bot --file /private/path/slack-bot
-mechane slack connect team-chat \
-  --team-id SLACK_TEAM_ID --bot-user-id SLACK_BOT_USER_ID \
-  --signing-secret-reference slack-signing --bot-token-secret-reference slack-bot
-mechane slack connections
-```
+Keep a dedicated coding channel separate from an existing Factory DM. Configuring one recipient does not grant
+permission to replace another bot's DM behavior. Follow the integration's maintained configuration and Slack's
+[Events API reference](https://docs.slack.dev/apis/events-api/) for its actual subscription requirements.
 
-Installation records contain references; the workspace vault encrypts the values. The signing secret authenticates the
-raw event body. Bot and optional history credentials stay in the trusted adapter, outside model context and guests. Use
-the configured Slack API origin; production credentials must never reach a caller-selected host.
+## Follow the message
 
-## Bind a channel
+The integration keeps the platform event identity and thread correlation in the admitted notification. The agent reads
+current thread context through its tools and chooses an explicitly addressed reply. Intervening notifications do not
+change that destination. Normal final model text remains private execution context.
 
-Keep a stable binding UUID when updating the audience or policy:
+The posting tool owns Slack formatting, current destination authority, a stable operation identity, and reconciliation
+after a lost response. Its receipt distinguishes delivered, refused, and uncertain outcomes. A failed post never means
+the underlying code change should run again. Platform formatting qualification belongs to that integration.
 
-```sh
-mechane slack bind MECH_UUID \
-  --binding-id BINDING_UUID --connection-id team-chat \
-  --team-id SLACK_TEAM_ID --channel-id SLACK_CHANNEL_ID \
-  --listening true --replies true --allowed-user-ids '["SLACK_USER_ID"]'
-mechane slack bindings
-mechane slack deliveries MECH_UUID
-```
+## Access decisions
 
-Use the returned Events API URL in Slack. The server verifies the timestamp and signature before it trusts actor,
-workspace, or channel identifiers. An allowed-user list compares stable verified user IDs. Display names, quoted
-messages, and attachments cannot supply authority.
+Nexus owns approval policy, notifications, grant expiry, and the browser approval page. Its request operation returns a
+reference while the mech remains free to handle other input. An authenticated decision notification wakes the same mech
+after approval without another human message.
 
-The endpoint acknowledges only after durable admission and workflow start or a useful refusal. Repeated events use the
-same source identity. Bot messages, edits, and unbound audiences do not start work. The domain queue serializes a mech's
-executions; Chat's handler lifetime is not the execution queue.
-
-Text captions remain useful when an attachment cannot be read. Downloads have size, type, host, and time bounds. Private
-file tokens never become model input. Unsupported file-only input receives an explanation instead of an empty agent
-request.
-
-## Replies
-
-Chat SDK renders text with Slack's formatting and link rules. Structured output uses the shared json-render catalog,
-with native cards for Slack and Mechane Elements in the Console. Each structured message retains readable fallback text.
-An invalid or unsupported card cannot turn a completed answer into a blank message.
-
-Intake notices and terminal replies have separate durable identities. The runtime rechecks installation and binding
-policy before delivery. A temporary posting failure never reruns the agent task. An uncertain post is reconciled using
-its bot and delivery identity before another send; unreadable history is not proof that the post failed.
-
-Inspect delivery receipts with the CLI or Console when Slack does not show the expected result. Preserve the original
-input and delivery IDs while investigating. Changing a binding or token does not grant permission to redirect an old
-reply to a new audience.
-
-## Approvals
-
-Nexus owns access policy, approval cards, and its browser approval page. Mechane submits a request with trusted
-attribution from the originating input, then waits through a native Workflow hook. An authenticated Nexus event wakes
-the original work automatically. The runtime rechecks the request before using access and replies in the original
-thread. The same workflow can survive a service restart while waiting.
-
-Approving access permits an operation to continue; it does not mean the requested change was completed. The agent must
-still verify the external result before reporting success.
+The agent rechecks the request and current authority before acting. Approval does not prove the requested change
+happened. The agent must inspect the external result before reporting success through its explicit Slack tool.

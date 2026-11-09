@@ -1,9 +1,9 @@
 # @mechane/console-data
 
 The browser data owner for an admitted origin, principal, and workspace. It exposes native TanStack DB collections,
-fixed read descriptors, and named API commands. Session catalogue metadata is canonical data. Native AI SDK Chat owns
-transcript history and streaming through the admitted conversation API; those messages do not enter canonical domain
-collections. The Console owns React queries, route state, and drafts.
+fixed read descriptors, and named API commands. Public Console messages load through the typed conversation API and
+remain outside canonical domain collections. Query owns their demanded reads; the Console retains the accumulated
+transcript, route state, and drafts. Private model output is available only through activation inspection.
 
 Call `createConsoleData` with the expected principal, workspace, current route's `initialRequests`, and an
 `AbortSignal`. Every runtime confirms the principal and workspace membership through the server before opening
@@ -57,4 +57,5 @@ refresh its summary and detail reads; a stale handle cannot stop a replacement m
 
 Use the [screen guide](../../../docs/console.md#adding-a-screen-or-feature) for the data ownership decision and
 implementation path. Every new ordinary resource, report, and picker uses the same records, receipt, and live-read
-owners. Fresh admission and native chat are explicit protocol exceptions, not alternate general-purpose data APIs.
+owners. Fresh admission and public conversation history are explicit protocol exceptions, not alternate general-purpose
+data APIs.

@@ -1,3 +1,4 @@
+import { MechId } from '@mechane/records';
 import { Schema } from 'effect';
 import { EvalFileStep } from './constants.ts';
 
@@ -18,6 +19,12 @@ export class EvalFileFailed extends Schema.TaggedError<EvalFileFailed>()('EvalFi
 /** Ctrl-C interrupted an eval run once its finalizers ran; every record it saved stays, so a rerun resumes. */
 export class EvalInterrupted extends Schema.TaggedError<EvalInterrupted>()('EvalInterrupted', {
   outFolder: Schema.String,
+}) {}
+
+/** The runtime response cannot establish a role's completion; saved intent remains available for a retry. */
+export class EvalResponseInvalid extends Schema.TaggedError<EvalResponseInvalid>()('EvalResponseInvalid', {
+  mechId: MechId,
+  reason: Schema.String,
 }) {}
 
 /**

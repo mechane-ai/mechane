@@ -2,8 +2,8 @@ import { createModelCallToUIChunkTransform } from '@ai-sdk/workflow';
 import type { ModelCallStreamPart } from '@ai-sdk/workflow';
 import { PresentationOutput } from '@mechane/protocol/presentation';
 import { HttpHeader } from '@mechane/records';
-import { createUIMessageStreamResponse, readUIMessageStream } from 'ai';
-import type { UIMessage, UIMessageChunk } from 'ai';
+import { createUIMessageStreamResponse } from 'ai';
+import type { UIMessageChunk } from 'ai';
 import { getRun } from 'workflow/api';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { toolEvidence } from './tool-evidence.ts';
@@ -157,22 +157,6 @@ function projectUIStream({
   return source.pipeThrough(createModelCallToUIChunkTransform()).pipeThrough(publicProjection({ runId }));
 }
 
-function takeChunks(count: number): TransformStream<ModelCallStreamPart, ModelCallStreamPart> {
-  const state = { remaining: count };
-
-  return new TransformStream({
-    transform(chunk, controller) {
-      controller.enqueue(chunk);
-
-      state.remaining -= 1;
-
-      if (state.remaining === 0) {
-        controller.terminate();
-      }
-    },
-  });
-}
-
 export async function readRunUIStream({ workspaceId, runId, cursor }: ReadRunUIStreamInput): Promise<Response> {
   const run = await withRuntimeStore(async (store) => await store.getRun({ workspaceId, runId }));
 
@@ -184,39 +168,4 @@ export async function readRunUIStream({ workspaceId, runId, cursor }: ReadRunUIS
     stream: runUIStream({ runId, workflowId: run.workflowId, cursor: cursor ?? 0 }),
     headers: { [WORKFLOW_RUN_HEADER]: run.workflowId, [HttpHeader.CacheControl]: 'no-store' },
   });
-}
-
-export async function readCompletedUIMessage(input: UIStreamInput): Promise<UIMessage | null> {
-  const source = getRun(input.workflowId).getReadable<ModelCallStreamPart>({ startIndex: 0 });
-  const tailIndex = await source.getTailIndex();
-
-  if (tailIndex < 0) {
-    await source.cancel();
-
-    return null;
-  }
-
-  const snapshot = source.pipeThrough(takeChunks(tailIndex + 1));
-  const stream = projectUIStream({ runId: input.runId, source: snapshot });
-  const reader = readUIMessageStream({ stream }).getReader();
-
-  try {
-    const first = await reader.read();
-
-    if (first.done) {
-      return null;
-    }
-
-    let completedMessage = first.value;
-    let next = await reader.read();
-
-    while (!next.done) {
-      completedMessage = next.value;
-      next = await reader.read();
-    }
-
-    return completedMessage;
-  } finally {
-    reader.releaseLock();
-  }
 }

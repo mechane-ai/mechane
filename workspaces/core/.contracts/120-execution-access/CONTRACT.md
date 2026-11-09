@@ -1,84 +1,61 @@
 ---
 name: execution-access
-message: Give commands only their current owner grant and keep credential material out of durable execution records.
-paths: ["packages/node/runtime/src/{compute,tools,requests,store,models}/**", "packages/node/server/src/sandboxes/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**"]
+message: Give tools only current environment authority and keep credentials out of durable execution records.
+paths: ["packages/node/runtime/src/{compute,tools,store,models}/**", "packages/node/server/src/sandboxes/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**"]
 ---
 
 ## Rules
 
-Keep one current execution grant per workspace mech in the runtime store. Owner-only operations record the acting
-principal and grant or revoke result. A session, model message, or fork does not grant new authority.
+Keep one current execution grant per workspace mech. Owner-only operations record the acting principal and grant or
+revoke result. A notification, model message, remembered instruction, or fork grants no authority.
 
-Resolve credential references immediately before the trusted operation. Mint GitHub installation tokens for the
-configured repository and permissions, then validate the returned authority. A refusal never selects a broader
-identity or an operator's credential. Read the current grant again for subsequent commands.
+Keep grants generic: public environment variables and encrypted credential references. Resolve references immediately
+before dispatch and inject values only into the authorized command environment. Recheck the grant for each new effect.
+Provider-specific issuance, scope validation, expiry, and revocation belong to the configured application or credential
+service. A refused credential never selects a broader identity or an operator's credential.
 
-Store public configuration and references in grants. Inject shell credentials only into the command environment.
-Keep the App signing key and Nexus request-service key host-only. Credentials never enter Workflow arguments,
-results, model serialization, tool-call traces, command receipts, managed Git configuration, or file checkpoints.
+Keep credential values out of Workflow arguments, checkpoints, model serialization, tool traces, command receipts,
+managed Git configuration, and file checkpoints. Resolve live clients inside trusted steps. Read, list, and stop
+operations observe their original execution without issuing fresh startup credentials. Revocation affects subsequent
+dispatch; it cannot undo an external effect already authorized or recall a credential from a running process.
 
-For foreground commands, revoke a minted GitHub token after a known terminal result, independently of receipt persistence succeeding. Revoke
-it after a pre-dispatch failure when the command was definitely not submitted. An interrupted observation cannot
-revoke a token from a command that may still be running; its provider expiry remains the bound. Revocation prevents
-future issuance and does not undo an external effect already authorized. Repository protection remains GitHub's
-responsibility.
+Redact injected values before bounding and retaining output. A guest can deliberately copy credentials it is authorized
+to receive; redaction limits accidental disclosure rather than restricting arbitrary granted code.
 
-Managed background processes receive startup credentials under the same current grant. Revoke a minted token when
-the initial start is definitely unsubmitted or already terminal. After an admitted running or uncertain start, its
-provider expiry bounds access; later process reads, stops, or machine loss do not promise immediate token revocation.
-Do not persist the token in execution state, renew it from passive observation, or add an in-memory cleanup claim that
-cannot survive a host restart. A new process requires a new grant check and cannot reuse another process's authority.
-
-Redact injected values before retaining output, including truncated output. A guest can deliberately copy credentials
-it is authorized to receive; output redaction limits accidental disclosure rather than restricting arbitrary code.
-
-Record inspectable bash input once in deterministic run activity after resolving that command's actual secrets and
-before dispatch. Redact those values before bounding the snapshot. Keep environment values out of the snapshot.
-Only a freshly created execution receipt may gain a snapshot. A resumed receipt whose first capture is missing keeps
-its command unavailable, including a crash between receipt creation and capture.
-Project only that safe input and allowlisted receipt result fields through the authorized run read. Bound each text
-preview and the serialized tool-call collection, with explicit omission notices. Historical calls without a safe input
-snapshot remain unavailable; raw model arguments and current credentials cannot reconstruct their redaction context.
+Capture inspectable bash input once after resolving that command's actual secrets and before dispatch. Redact values
+before bounding the snapshot and omit environment values. Only a freshly created execution receipt can gain a snapshot.
+A resumed receipt with no snapshot keeps its input unavailable, including a crash between receipt creation and capture.
+Project only safe input and allowlisted result fields through authorized traces. Bound previews and the serialized
+collection, with explicit omission notices. Never reconstruct historical redaction from raw messages or current secrets.
 Keep inspection data out of the immutable execution request and its replay comparison.
 
-Authenticate Node-to-sandbox calls separately from command credentials. Bind stable sandbox and execution IDs to the
-admitted workspace and mech. Reusing an execution ID with another input is refused. Read the original receipt after
-an uncertain response instead of dispatching another side effect.
+Authenticate Node-to-sandbox calls separately from command credentials. Bind stable sandbox and execution identities to
+the admitted workspace and mech. Refuse changed input under an existing execution ID. Observe the original receipt after
+an uncertain response instead of dispatching another effect. Check the active owner's fence and notification watermark
+before a fresh effect, as required by contract 124; a refused dispatch must not allocate compute or mint credentials.
 
-Apply the workspace's current `machines` limit before physical machine acquisition. The sandbox's capacity owner
-coordinates both command and maintenance starts. The Node store checks policy and reserves capacity under one
-workspace lock, so concurrent mechs cannot exceed the limit. Reusing an allocated machine does not consume another
-slot. A zero limit refuses new commands as well as new allocations, including commands for an already warm machine.
+Apply the workspace's current `machines` limit before physical acquisition. The capacity owner coordinates command and
+maintenance starts. Check policy and reserve under one workspace lock so concurrent mechs cannot exceed it. Reusing an
+allocated machine consumes no additional slot. A zero limit refuses commands even on an already warm machine.
 
-Keep an allocation while its machine stop or required checkpoint is unresolved. A completed run, timeout, failed
-start, or absent response does not release capacity. Release only after confirmed physical stop, matching the mech's
-reservation and machine identities. Retain the released reservation's sequence so delayed callbacks cannot revive
-it or release a replacement. Authenticate these callbacks with the existing service credential, never a guest key.
-
-Models supply a Nexus request kind and requested capability, not a callback URL, credential, or trusted person.
-Build requester attribution from the persisted, verified originating input. Nexus owns policy, approvers, grants,
-revocation, and notification delivery. Mechane rechecks the effective permission before continuing.
+Keep allocation while machine stop or required checkpoint is unresolved. Completion, timeout, failed start, and missing
+responses do not release capacity. Release only after confirmed physical stop matches the mech's reservation and machine.
+Retain the released reservation's sequence so delayed callbacks cannot revive it or release its replacement. Authenticate
+callbacks with the service credential, never a guest key.
 
 ## Checks
 
-Exercise the packaged API and command path with a current grant, revoked grant, foreign workspace, reused execution
-ID, and lost response. Check emitted output and stored records for fixture credential values.
-Through the same flow, inspect a nonzero command result, missing historical input, and bounded output. Verify SDK
-completion does not erase the exit code, replay preserves the original safe snapshot, and traces expose no fixture
-credential. Removing a safe snapshot must not enable a fallback to raw model messages.
+Exercise the packaged API and command path with current and revoked grants, a foreign workspace, a reused execution ID,
+and a lost response. Inspect emitted output and persisted records for fixture secrets. A new-notification refusal must
+leave no execution, credential-issuance, or machine-acquisition effect.
 
-Include a foreground command that outlives the initial response wait. Its eventual terminal receipt must still revoke the
-minted token; returning a running receipt must not abandon cleanup or revoke a still-running command's access.
-Inject a pre-dispatch failure and a terminal receipt-write failure; both must still attempt the required revocation.
-For managed processes, separately verify initial terminal and definitely unsubmitted cleanup, the provider-expiry
-policy after an admitted start, and absence of fresh credentials on read, list, and stop.
+Inspect a nonzero result, missing historical input, and bounded output through the same trace. Verify native tool
+completion preserves the exit code, replay preserves its original snapshot, and missing input cannot fall back to raw
+model messages. Observe a running process without fresh credential resolution or a replacement command.
 
 Extend the representative compute flow with a zero limit, concurrent mechs at a one-machine limit, reuse, and a host
-restart. Refused acquisition must not start a machine. Failed checkpoint or stop must retain its slot; confirmed
-release must make it available once. Exercise duplicate and delayed callbacks against a replacement reservation.
-
-Verify GitHub token scope and ordinary git/gh commands during authorized hosted qualification. Check that the guest
-cannot read the host-only Nexus key, and that changed request-service configuration refuses an older correlation.
+restart. Failed checkpoint or stop retains its slot; confirmed release makes it available once. Exercise duplicate and
+delayed callbacks against a replacement reservation. Qualify application CLI authority at its owning service boundary.
 
 ## Local adaptations
 

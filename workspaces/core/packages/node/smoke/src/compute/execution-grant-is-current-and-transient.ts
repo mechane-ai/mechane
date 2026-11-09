@@ -14,7 +14,7 @@ import {
   readTrace,
   requireFixtures,
   runCli,
-  sendInbox,
+  sendNotification,
   turnPath,
   waitForBashCompletion,
   waitForTurn,
@@ -26,8 +26,6 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-const COMMAND_SECONDS = 6;
-const MILLISECONDS_PER_SECOND = 1000;
 const CREDENTIAL_BYTES = 32;
 const COMMAND_FAILURE_EXIT_CODE = 127;
 const COMMAND_PADDING_CHARACTERS = 1500;
@@ -43,15 +41,9 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   const secret = `execution-canary-${randomBytes(CREDENTIAL_BYTES).toString('hex')}`;
   const reference = `execution-${randomUUID()}`;
   const file = join(account.configurationRoot, reference);
-  const hostReference = `host-request-${randomUUID()}`;
-  const hostFile = join(account.configurationRoot, hostReference);
-  const appReference = `github-app-${randomUUID()}`;
-  const appFile = join(account.configurationRoot, appReference);
   const owner = { stack, account, mechId: mech.id };
 
   await writeFile(file, secret, { mode: 0o600 });
-  await writeFile(hostFile, fixtures.nexus.apiKey, { mode: 0o600 });
-  await writeFile(appFile, fixtures.github.app.privateKey, { mode: 0o600 });
 
   try {
     await runCli({
@@ -60,39 +52,11 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
       args: ['credential', 'put', reference, '--file', file, '--workspace', account.workspaceId],
       schema: CredentialMetadata,
     });
-    await runCli({
-      stack,
-      account,
-      args: ['credential', 'put', hostReference, '--file', hostFile, '--workspace', account.workspaceId],
-      schema: CredentialMetadata,
-    });
-    await runCli({
-      stack,
-      account,
-      args: ['credential', 'put', appReference, '--file', appFile, '--workspace', account.workspaceId],
-      schema: CredentialMetadata,
-    });
   } finally {
-    await Promise.all([unlink(file), unlink(hostFile), unlink(appFile)]);
+    await unlink(file);
   }
 
-  const access = {
-    github: {
-      app_id: fixtures.github.app.id,
-      installation_id: fixtures.github.app.installationId,
-      repository_id: fixtures.github.app.repositoryId,
-      owner: 'mechane-smoke',
-      repository: 'fixture',
-      secret_reference: appReference,
-    },
-    variables: { SMOKE_SETTING: 'current' },
-    secrets: { SMOKE_SECRET: reference },
-    request_service: {
-      service_id: fixtures.nexus.serviceId,
-      url: fixtures.nexus.origin.href,
-      secret_reference: hostReference,
-    },
-  };
+  const access = { variables: { SMOKE_SETTING: 'current' }, secrets: { SMOKE_SECRET: reference } };
 
   await runCli({
     stack,
@@ -105,15 +69,10 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
 
   const command = [
     'test -n "$SMOKE_SECRET" || exit 1',
-    'test -n "$GH_TOKEN" || exit 1',
-    "if env | grep -q 'fixture-nexus-'; then exit 1; fi",
-    `sleep ${COMMAND_SECONDS}`,
     `printf '%${OUTPUT_PADDING_COLUMNS}s' ''`,
     String.raw`printf "setting=%s\n" "$SMOKE_SETTING"`,
     String.raw`printf "secret=%s\n" "$SMOKE_SECRET"`,
     String.raw`printf "injected=yes\n"`,
-    String.raw`printf "host-key=absent\n"`,
-    String.raw`printf "github=%s\n" "$GH_TOKEN"`,
     `# ${'界'.repeat(COMMAND_PADDING_CHARACTERS)}`,
     `exit ${COMMAND_FAILURE_EXIT_CODE}`,
   ].join('\n');
@@ -126,17 +85,16 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     ],
   });
 
-  const sent = await sendInbox({ ...owner, text: marker });
+  const sent = await sendNotification({ ...owner, text: marker });
   const result = await readBashResult({ model: fixtures.model, marker, toolCallId });
-  const turn = await waitForTurn({ ...owner, inboxItemId: sent.id });
+  const turn = await waitForTurn({ ...owner, notificationId: sent.id });
 
   const output = Schema.decodeUnknownSync(Schema.String)(result.output);
 
-  assert.equal(turn.status, TurnStatus.Answered);
+  assert.equal(turn.status, TurnStatus.Completed);
   assert.equal(result.status, 'completed');
   assert.equal(output.includes('setting=current\n'), true);
   assert.equal(output.includes('injected=yes\n'), true);
-  assert.equal(output.includes('host-key=absent\n'), true);
   assert.equal(output.includes(secret), false, 'The shell result exposed its injected credential');
   assert.equal(result.exitCode, COMMAND_FAILURE_EXIT_CODE);
 
@@ -161,35 +119,6 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   assert.ok(Buffer.byteLength(inspectedOutput.text) <= TOOL_TRACE_OUTPUT_MAX_BYTES);
   assert.ok(inspectedOutput.omittedBytes > 0, 'A shortened output did not declare omitted bytes');
 
-  const tokens = fixtures.github.app.readTokens();
-
-  assert.equal(tokens.length, 1, 'The command minted more than one repository token');
-
-  const token = tokens[0];
-
-  assert.ok(token !== undefined);
-  assert.deepEqual(token.repositoryIds, [fixtures.github.app.repositoryId]);
-  assert.deepEqual(token.permissions, {
-    contents: 'write',
-    pull_requests: 'write',
-    issues: 'write',
-    actions: 'read',
-    checks: 'read',
-    metadata: 'read',
-  });
-  assert.ok(token.revokedAt !== null, 'The terminal command left its GitHub token active');
-  assert.ok(
-    token.revokedAt - token.issuedAt >= COMMAND_SECONDS * MILLISECONDS_PER_SECOND,
-    'The command token was revoked while its command was still running',
-  );
-
-  await runCli({
-    stack,
-    account,
-    args: ['execution-access', 'set', mech.id, '--access', 'null', '--workspace', account.workspaceId],
-    schema: ExecutionAccessState,
-  });
-
   const revokedMarker = `revoked-execution-access-${randomUUID()}`;
   const revokedToolId = randomUUID();
 
@@ -197,13 +126,12 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     marker: revokedMarker,
     replies: [
       {
+        isHeld: true,
         tools: [
           {
             id: revokedToolId,
             name: 'bash',
-            input: {
-              command: String.raw`test -z "$SMOKE_SECRET" && test -z "$SMOKE_SETTING" && test -z "$GH_TOKEN" && printf "revoked\n"`,
-            },
+            input: { command: String.raw`test -z "$SMOKE_SECRET" && test -z "$SMOKE_SETTING" && printf "revoked\n"` },
           },
         ],
       },
@@ -211,11 +139,24 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     ],
   });
 
-  const revoked = await sendInbox({ ...owner, text: revokedMarker });
+  const revoked = await sendNotification({ ...owner, text: revokedMarker });
+
+  await fixtures.model.waitForCall({ marker: revokedMarker, index: 0 });
+
+  try {
+    await runCli({
+      stack,
+      account,
+      args: ['execution-access', 'set', mech.id, '--access', 'null', '--workspace', account.workspaceId],
+      schema: ExecutionAccessState,
+    });
+  } finally {
+    fixtures.model.release({ marker: revokedMarker, index: 0 });
+  }
 
   const { result: revokedResult } = await waitForBashCompletion({
     ...owner,
-    inboxItemId: revoked.id,
+    notificationId: revoked.id,
     marker: revokedMarker,
     toolCallId: revokedToolId,
   });
@@ -241,7 +182,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     JSON.stringify(fixtures.model.readCalls({ marker }).map((call) => call.body)),
   ];
 
-  const credentials = [secret, fixtures.nexus.apiKey, token.value, fixtures.github.app.privateKey];
+  const credentials = [secret];
 
   const representations = credentials.flatMap((credential) => [
     credential,

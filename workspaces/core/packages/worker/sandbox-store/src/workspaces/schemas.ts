@@ -1,5 +1,11 @@
-import { MachineId, RecordId, RecordText, SandboxOperationId } from '@mechane/records';
-import { ExecutionId, ExecutionProgress, SandboxArchive, SettledReceipt } from '@mechane/sandbox-wire';
+import { MachineId, RecordId, SandboxOperationId } from '@mechane/records';
+import {
+  ExecutionId,
+  ExecutionProgress,
+  SandboxArchive,
+  SandboxCheckpointResult,
+  SettledReceipt,
+} from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
 
@@ -38,6 +44,7 @@ export type CommandCheckpoint = typeof CommandCheckpoint.Type;
 export const FileCheckpointPurpose = Schema.TaggedUnion({
   Maintenance: { operationId: SandboxOperationId },
   Drain: { operationId: SandboxOperationId, machineId: MachineId },
+  Activation: { operationId: SandboxOperationId },
 });
 
 export type FileCheckpointPurpose = typeof FileCheckpointPurpose.Type;
@@ -53,11 +60,7 @@ export const WorkspaceCheckpoint = Schema.Union([CommandCheckpoint, FileCheckpoi
 export type WorkspaceCheckpoint = typeof WorkspaceCheckpoint.Type;
 
 /** Operation receipts survive retries independently of later changes to the committed head. */
-export const FileCheckpointResult = Schema.TaggedUnion({
-  Pending: {},
-  Committed: { generation: RecordId },
-  Failed: { reason: RecordText },
-});
+export const FileCheckpointResult = SandboxCheckpointResult;
 
 export type FileCheckpointResult = typeof FileCheckpointResult.Type;
 

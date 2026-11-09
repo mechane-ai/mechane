@@ -1,21 +1,16 @@
 import type { Mech } from '@mechane/protocol';
 import {
   Allowance,
-  ConversationSession,
   EvidenceArtifact,
   ListedEvent,
   MechSummary,
-  Memory,
   ProcessObservation,
   ProcessSummary,
-  SlackBinding,
-  SlackDelivery,
-  Thread,
   Trace,
   Turn,
   TurnStatus,
 } from '@mechane/protocol';
-import { MechId, RecordId, WorkspaceId } from '@mechane/records';
+import { WorkspaceId } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { deleteRows, upsertRows } from './collections.ts';
@@ -24,14 +19,15 @@ import { MechDefinition, recordKey, TraceEvidence, turnVersion } from './records
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
 
-const terminalTurnStatuses: ReadonlySet<string> = new Set([TurnStatus.Answered, TurnStatus.Unanswered]);
+const terminalTurnStatuses: ReadonlySet<string> = new Set([
+  TurnStatus.Completed,
+  TurnStatus.Failed,
+  TurnStatus.Stopped,
+]);
 
 type ReadOutputs = {
   readonly mechs: Output<'listMechs'>;
   readonly mech: Output<'showMech'>;
-  readonly threads: Output<'listThreads'>;
-  readonly sessions: Output<'listSessions'>;
-  readonly memories: Output<'listMemories'>;
   readonly turns: Output<'listTurns'>;
   readonly trace: Output<'showTurn'>;
   readonly evidence: Output<'listEvidence'>;
@@ -40,8 +36,6 @@ type ReadOutputs = {
   readonly environmentProcess: Output<'showEnvironmentProcess'>;
   readonly turnEvents: Output<'listTurnEvents'>;
   readonly events: Output<'listRecentEvents'>;
-  readonly slackBindings: Output<'listSlackBindings'>;
-  readonly slackDeliveries: Output<'listSlackDeliveries'>;
   readonly allowance: Output<'showAllowance'>;
 };
 
@@ -74,36 +68,6 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
         kind: request.kind,
         request,
         output: await api('showMech', { workspaceId, mechId: request.mechId }, signal),
-      };
-    case 'threads':
-      return {
-        kind: request.kind,
-        request,
-        output: await api(
-          'listThreads',
-          { workspaceId, mechId: request.mechId, after: Option.fromNullishOr(request.after) },
-          signal,
-        ),
-      };
-    case 'sessions':
-      return {
-        kind: request.kind,
-        request,
-        output: await api(
-          'listSessions',
-          {
-            workspaceId,
-            mechId: request.mechId,
-            after: request.after === null ? Option.none() : Option.some(RecordId.make(request.after)),
-          },
-          signal,
-        ),
-      };
-    case 'memories':
-      return {
-        kind: request.kind,
-        request,
-        output: await api('listMemories', { workspaceId, mechId: request.mechId }, signal),
       };
     case 'turns':
       return {
@@ -187,22 +151,6 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
           signal,
         ),
       };
-    case 'slackBindings':
-      return {
-        kind: request.kind,
-        request,
-        output: await api('listSlackBindings', { workspaceId: WorkspaceId.make(workspaceId) }, signal),
-      };
-    case 'slackDeliveries':
-      return {
-        kind: request.kind,
-        request,
-        output: await api(
-          'listSlackDeliveries',
-          { workspaceId: WorkspaceId.make(workspaceId), mechId: MechId.make(request.mechId) },
-          signal,
-        ),
-      };
     case 'allowance':
       return { kind: request.kind, request, output: await api('showAllowance', { workspaceId }, signal) };
   }
@@ -272,9 +220,9 @@ function writeTurns(tables: CanonicalTables, rows: ReadonlyArray<TurnRow>): void
 
     if (!isNonterminalAfterTerminal && !isOlderVersion) {
       if (Result.isSuccess(incoming) && Result.isSuccess(known)) {
-        const inboxItemIds = new Set([...known.success.inbox_item_ids, ...incoming.success.inbox_item_ids]);
+        const notificationIds = new Set([...known.success.notification_ids, ...incoming.success.notification_ids]);
 
-        upsertRows(tables.turns, [{ ...row, value: { ...incoming.success, inbox_item_ids: [...inboxItemIds] } }]);
+        upsertRows(tables.turns, [{ ...row, value: { ...incoming.success, notification_ids: [...notificationIds] } }]);
       } else {
         upsertRows(tables.turns, [row]);
       }
@@ -323,89 +271,6 @@ export async function applyRead({
       await saveMech({ writeRows, tables, mech: answer.output, signal });
 
       return { ...receipt, keys: [answer.output.id], hasMore: null };
-    case 'threads': {
-      const mechId = answer.request.mechId;
-
-      const rows = answer.output.threads.map((thread) => ({
-        mechId,
-        key: recordKey(mechId, thread.id),
-        value: Schema.encodeSync(Thread)(thread),
-      }));
-
-      await writeRows({
-        signal,
-        collections: [tables.threads],
-        write: () => {
-          for (const row of rows) {
-            const previous = tables.threads.get(row.key);
-
-            if (previous === undefined || previous.value.updated_at <= row.value.updated_at) {
-              upsertRows(tables.threads, [row]);
-            }
-          }
-        },
-      });
-
-      return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
-    }
-    case 'sessions': {
-      const mechId = answer.request.mechId;
-
-      const rows = answer.output.sessions.map((session) => ({
-        mechId,
-        key: recordKey(mechId, session.id),
-        value: Schema.encodeSync(ConversationSession)(session),
-      }));
-
-      await writeRows({
-        signal,
-        collections: [tables.sessions],
-        write: () => {
-          for (const row of rows) {
-            const previous = tables.sessions.get(row.key);
-
-            if (previous === undefined || previous.value.updated_at <= row.value.updated_at) {
-              upsertRows(tables.sessions, [row]);
-            }
-          }
-        },
-      });
-
-      return { ...receipt, keys: rows.map((row) => row.key), hasMore: answer.output.hasMore };
-    }
-    case 'memories': {
-      const mechId = answer.request.mechId;
-
-      const rows = answer.output.memories.map((memory) => ({
-        mechId,
-        key: recordKey(mechId, memory.path),
-        value: Schema.encodeSync(Memory)(memory),
-      }));
-
-      const keys = new Set<string>(rows.map((row) => row.key));
-
-      await writeRows({
-        signal,
-        collections: [tables.memories],
-        write: () => {
-          for (const previous of tables.memories.values()) {
-            if (previous.mechId === mechId && !keys.has(previous.key)) {
-              deleteRows(tables.memories, [previous.key]);
-            }
-          }
-
-          for (const row of rows) {
-            const previous = tables.memories.get(row.key);
-
-            if (previous === undefined || previous.value.version <= row.value.version) {
-              upsertRows(tables.memories, [row]);
-            }
-          }
-        },
-      });
-
-      return { ...receipt, keys: rows.map((row) => row.key), hasMore: null };
-    }
     case 'turns': {
       const mechId = answer.request.mechId;
 
@@ -547,51 +412,6 @@ export async function applyRead({
       });
 
       return { ...receipt, keys: [key], hasMore: null };
-    }
-    case 'slackBindings': {
-      const rows = answer.output.bindings.map((binding) => ({
-        mechId: binding.mechId,
-        key: binding.id,
-        value: Schema.encodeSync(SlackBinding)(binding),
-      }));
-
-      const keys = new Set<string>(rows.map((row) => row.key));
-
-      await writeRows({
-        signal,
-        collections: [tables.slackBindings],
-        write: () => {
-          for (const previous of tables.slackBindings.values()) {
-            if (!keys.has(previous.key)) {
-              deleteRows(tables.slackBindings, [previous.key]);
-            }
-          }
-
-          upsertRows(
-            tables.slackBindings,
-            rows.filter((row) => isMechAllowed(row.mechId)),
-          );
-        },
-      });
-
-      return { ...receipt, keys: rows.filter((row) => isMechAllowed(row.mechId)).map((row) => row.key), hasMore: null };
-    }
-    case 'slackDeliveries': {
-      const mechId = answer.request.mechId;
-
-      const rows = answer.output.deliveries.map((delivery) => ({
-        mechId,
-        key: recordKey(mechId, delivery.id),
-        value: Schema.encodeSync(SlackDelivery)(delivery),
-      }));
-
-      await writeRows({
-        signal,
-        collections: [tables.slackDeliveries],
-        write: () => upsertRows(tables.slackDeliveries, rows),
-      });
-
-      return { ...receipt, keys: rows.map((row) => row.key), hasMore: null };
     }
     case 'allowance': {
       const row = { key: 'allowance', value: Schema.encodeSync(Allowance)(answer.output) };

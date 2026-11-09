@@ -3,20 +3,21 @@ import { Schema } from 'effect';
 import { CommandShape, FlagKind } from '../constants.ts';
 import type { CommandDeclaration } from '../types.ts';
 
-/** The command that measures a mech through the deployment: a suite's cases, each reply graded by a grader mech. */
+/** Evaluations grade explicit Console messages from fresh mechs through the deployment. */
 export const EVAL_COMMANDS = {
   'eval run': {
     summary:
-      "run a suite's cases, each on a fresh mech, grade each reply with a fresh grader mech, and report each trial; a rerun with the same --out-folder resumes",
+      'run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume',
     shape: CommandShape.Document,
     operations: [
       'listWorkspaces',
       'readiness',
       'showAllowance',
       'createMech',
-      'sendInboxItem',
-      'listEvents',
+      'sendNotification',
+      'listTurns',
       'showTurn',
+      'listConsoleMessages',
     ],
     flags: {
       'suite': { kind: FlagKind.Text, summary: 'the suite file: JSON with its cases and their expectations' },

@@ -15,9 +15,7 @@ export const TYPED_CODE_MAX_CHARS = 32;
 /** Console selections that can be shared across browser sessions. */
 export const ConsoleView = {
   Conversation: 'conversation',
-  Work: 'work',
   Runs: 'runs',
-  Memory: 'memory',
   Environment: 'environment',
   Tools: 'tools',
   Activity: 'activity',

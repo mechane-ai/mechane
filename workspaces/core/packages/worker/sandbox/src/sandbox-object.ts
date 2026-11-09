@@ -5,9 +5,15 @@ import {
   EvidenceQuery,
   RequestInvalid,
 } from '@mechane/protocol';
-import { EvidenceArtifactId, MachineId } from '@mechane/records';
+import { EvidenceArtifactId, MachineId, SandboxOperationId } from '@mechane/records';
 import type { BrowserCall, SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
-import { openSandboxStore, ReservationPhase, sandboxAlarm } from '@mechane/sandbox-store';
+import {
+  BackgroundWork,
+  FileCheckpointPurpose,
+  openSandboxStore,
+  ReservationPhase,
+  sandboxAlarm,
+} from '@mechane/sandbox-store';
 import {
   BrowserArtifactPartRequest,
   BrowserProgress,
@@ -22,6 +28,8 @@ import {
   SandboxAction,
   SandboxBrowserArtifactAnswer,
   SandboxBrowserSubmission,
+  SandboxCheckpointResult,
+  SandboxCompletionReceipt,
   SandboxExecutionRefusal,
   SandboxExecutionResult,
   SandboxOwner,
@@ -32,7 +40,7 @@ import {
   SandboxRunId,
 } from '@mechane/sandbox-wire';
 import type { ExecutionId, RunExecutionInput } from '@mechane/sandbox-wire';
-import { afterSettling, capturePromise, serialCalls } from '@mechane/utilities';
+import { afterSettling, capturePromise } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { browserProgress } from './browser/browser-progress.ts';
@@ -41,8 +49,11 @@ import { readBrowserArtifact } from './browser/read-browser-artifact.ts';
 import { runBrowser } from './browser/run-browser.ts';
 import { capacityClient } from './capacity/capacity-client.ts';
 import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
-import { MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
-import type { SandboxEnvironment } from './environment.ts';
+import { runFileCheckpoint } from './checkpoints/run-file-checkpoint.ts';
+import { deliverCompletions } from './completions/deliver-completions.ts';
+import { observeBackgroundWork } from './completions/observe-background-work.ts';
+import { BACKGROUND_OBSERVE_INTERVAL, MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
+import type { SandboxEnvironment, SandboxRuntimeSettings } from './environment.ts';
 import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
 import { cleanupReadyEvidence } from './evidence/evidence-cleanup.ts';
 import { readEvidenceContent } from './evidence/evidence-content.ts';
@@ -55,15 +66,18 @@ import { runExecution } from './executions/run-execution.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { maintenanceValue } from './maintenance/maintenance-value.ts';
 import { managePortable } from './maintenance/manage-portable.ts';
+import { writeBackgroundObservationFailure } from './output/write-sandbox-diagnostic.ts';
 import { listManagedProcesses } from './processes/list-managed-processes.ts';
 import { observeManagedProcess, startManagedProcess } from './processes/managed-processes.ts';
 import { machineProvider } from './providers/machine-provider.ts';
 import { sandboxSettings } from './providers/sandbox-settings.ts';
+import { sandboxCalls } from './sandbox-calls.ts';
 import type { MachineIdInput, MachineProvider, WorkspaceFiles } from './types.ts';
 import { advanceIdleWorkspace } from './workspace/advance-idle-workspace.ts';
 
 type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
 type ManageInput = { readonly request: typeof SandboxRequest.Encoded };
+type CheckpointInput = { readonly operationId: SandboxOperationId };
 type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
 type ResumeInput = ObserveInput & { readonly environment: RunExecutionInput['environment'] };
 type CancelInput = { readonly executionId: ExecutionId };
@@ -113,7 +127,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   readonly #capacity: ReturnType<typeof machineCapacity>;
   readonly #providerName: string;
   readonly #workspace: WorkspaceFiles;
-  readonly #calls = serialCalls();
+  readonly #runtimeSettings: SandboxRuntimeSettings;
+  readonly #calls = sandboxCalls();
   readonly #stops = new Set<Promise<void>>();
 
   constructor(state: DurableObjectState, environment: SandboxEnvironment) {
@@ -122,11 +137,27 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     this.#store = openSandboxStore({ storage: state.storage });
     this.#alarm = sandboxAlarm({ storage: state.storage });
 
+    void state.blockConcurrencyWhile(async () => {
+      const machine = this.#store.liveMachine();
+      const idleAt = this.#store.sandboxIdleAt();
+      const hadMachine = Option.isSome(machine);
+      const hadDeadline = Option.isSome(idleAt);
+
+      if (hadMachine && !hadDeadline) {
+        const previousDeadline = await this.#alarm.scheduledAt();
+
+        if (Option.isSome(previousDeadline)) {
+          this.#store.setSandboxIdleAt({ at: previousDeadline.value });
+        }
+      }
+    });
+
     const settings = sandboxSettings({ store: this.#store, environment });
     const provider = machineProvider({ settings: settings.variables, state });
 
     this.#workspace = { bucket: settings.workspaceBucket, owner: state.id.toString() };
     this.#providerName = settings.variables.provider;
+    this.#runtimeSettings = settings.runtime;
     const client = capacityClient({ settings: settings.runtime });
 
     this.#capacity = machineCapacity({
@@ -147,6 +178,39 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
   async schemaRevision(): Promise<number> {
     return this.#store.schemaRevision();
+  }
+
+  async completionReceipt({ executionId }: CancelInput): Promise<typeof SandboxCompletionReceipt.Encoded | null> {
+    this.#capacity.requireOwner();
+
+    const stored = this.#store.completionReceipt({ executionId });
+    const encode = Schema.encodeSync(SandboxCompletionReceipt);
+
+    return Option.match(stored, { onNone: () => null, onSome: encode });
+  }
+
+  async checkpoint({ operationId }: CheckpointInput): Promise<typeof SandboxCheckpointResult.Encoded> {
+    const decoded = Schema.decodeUnknownSync(SandboxOperationId)(operationId);
+
+    const result = await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+        this.#capacity.requireOwner();
+
+        const purpose = FileCheckpointPurpose.cases.Activation.make({ operationId: decoded });
+
+        return await runFileCheckpoint({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          purpose,
+        });
+      },
+    });
+
+    await this.#armBackground();
+
+    return Schema.encodeSync(SandboxCheckpointResult)(result);
   }
 
   async manage({ request: input }: ManageInput): Promise<typeof SandboxReport.Encoded> {
@@ -264,6 +328,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const attempted = await capturePromise({ promise: pending });
 
+    await this.#armBackground();
+
     if (Result.isFailure(attempted) && Schema.is(CapacityRefused)(attempted.failure)) {
       return SandboxExecutionRefusal.cases.CapacityRefused.make({ reason: attempted.failure.reason });
     }
@@ -302,6 +368,9 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     });
 
     const result = await capturePromise({ promise: attempt });
+
+    await this.#armBackground();
+
     const answer = processStartResult({ result });
 
     return Schema.encodeSync(SandboxProcessAnswer)(answer);
@@ -340,6 +409,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       },
     });
 
+    await this.#armBackground();
+
     return Schema.encodeSync(ProcessObservation)(observation);
   }
 
@@ -350,6 +421,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       run: () =>
         observeManagedProcess({ store: this.#store, provider: this.#provider, handle: decoded, shouldStop: true }),
     });
+
+    await this.#armBackground();
 
     return Schema.encodeSync(ProcessObservation)(observation);
   }
@@ -364,6 +437,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         return await listManagedProcesses({ store: this.#store, provider: this.#provider });
       },
     });
+
+    await this.#armBackground();
 
     return Schema.encodeSync(ProcessSummaries)(summaries);
   }
@@ -593,6 +668,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
           this.#store.requestMachineDrain({ machineId });
         }
 
+        this.#store.setSandboxIdleAt({ at: now });
         await this.#alarm.arm({ at: now });
       },
     });
@@ -622,11 +698,31 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   }
 
   override async alarm(): Promise<void> {
-    await this.#calls.run({ run: () => this.#onAlarm() });
+    const promise = this.#advanceAlarm();
+    const result = await capturePromise({ promise });
+
+    await this.#armBackground();
+    Result.getOrThrow(result);
+  }
+
+  async #advanceAlarm(): Promise<void> {
+    const promise = this.#calls.run({ run: () => this.#onAlarm() });
+    const advanced = await capturePromise({ promise });
+    const owner = this.#owner();
+
+    await deliverCompletions({ store: this.#store, settings: this.#runtimeSettings, owner });
+    Result.getOrThrow(advanced);
   }
 
   async #onAlarm(): Promise<void> {
     await Promise.all(this.#stops);
+
+    const promise = observeBackgroundWork({ store: this.#store, provider: this.#provider, workspace: this.#workspace });
+    const observation = await capturePromise({ promise });
+
+    if (Result.isFailure(observation)) {
+      writeBackgroundObservationFailure();
+    }
 
     const reservation = this.#capacity.reservation();
 
@@ -657,6 +753,15 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       return;
     }
 
+    const idleAt = this.#store.sandboxIdleAt();
+    const now = DateTime.nowUnsafe();
+
+    if (Option.isSome(idleAt) && DateTime.isLessThan(now, idleAt.value)) {
+      await this.#alarm.arm({ at: idleAt.value });
+
+      return;
+    }
+
     const held = this.#capacity.reservation();
 
     if (Option.isSome(held)) {
@@ -669,6 +774,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     if (Option.isSome(latest)) {
       await this.#stopIdleMachine({ machineId: latest.value.id });
+    } else {
+      this.#store.clearSandboxIdleAt();
     }
   }
 
@@ -701,12 +808,37 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     this.#store.loseMachine({ machineId, now });
     await this.#alarm.arm({ at });
     await this.#provider.stop({ machineId });
+    this.#store.clearSandboxIdleAt();
     await this.#alarm.disarmAt({ at });
   }
 
   async #armIdle(): Promise<void> {
     const now = DateTime.nowUnsafe();
     const at = DateTime.addDuration(now, SANDBOX_IDLE);
+
+    this.#store.setSandboxIdleAt({ at });
+    await this.#alarm.arm({ at });
+    await this.#armBackground();
+  }
+
+  async #armBackground(): Promise<void> {
+    const now = DateTime.nowUnsafe();
+    const nextCompletion = this.#store.nextCompletionAt();
+
+    if (Option.isSome(nextCompletion)) {
+      const at = DateTime.max(now, nextCompletion.value);
+
+      await this.#alarm.arm({ at });
+    }
+
+    const checkpoint = this.#store.workspace().checkpoint;
+    const work = this.#store.backgroundWork();
+
+    if (BackgroundWork.guards.Idle(work) && Option.isNone(checkpoint)) {
+      return;
+    }
+
+    const at = DateTime.addDuration(now, BACKGROUND_OBSERVE_INTERVAL);
 
     await this.#alarm.arm({ at });
   }

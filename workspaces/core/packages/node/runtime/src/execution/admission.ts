@@ -1,11 +1,10 @@
 import { EntityConflictError, HookConflictError } from '@workflow/errors';
 import { getRun, resumeHook, start } from 'workflow/api';
-import { deliverRunOutcomeToSlack } from '../channels/deliver-run-to-slack.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { cancelRunExecutions } from '../tools/cancel-executions.ts';
 import { admissionToken } from './admission-token.ts';
 import { closeOutcomeStream, closeWorkflowStream } from './close-workflow-stream.ts';
-import { readTerminalOutcome } from './terminal-outcome.ts';
+import { stopActivation } from './stop-activation.ts';
 import type { AdmissionInput, AdmissionResult, MechSelection, RunSelection } from './types.ts';
 
 const ADMISSION_RETENTION = '30d';
@@ -52,7 +51,7 @@ export async function startAdmission({ runId, workflowDefinitionId }: AdmissionI
 }
 
 export async function wakeMech({ workspaceId, mechId }: MechSelection): Promise<void> {
-  const next = await withRuntimeStore(async (store) => await store.nextQueuedRun({ workspaceId, mechId }));
+  const next = await withRuntimeStore(async (store) => await store.reservePendingActivation({ workspaceId, mechId }));
 
   if (next === null || next.workflowId === null) {
     return;
@@ -78,11 +77,13 @@ export async function cancelWorkflow({ workspaceId, runId, cancelerId }: CancelW
 
   await cancelRunExecutions({ workspaceId, runId });
 
-  const { committed, outcome } = await withRuntimeStore(async (store) => {
-    const terminal = await store.finishRun({ runId, status: 'cancelled', reply: null, error: null });
+  let committed = run;
 
-    return { committed: terminal, outcome: await readTerminalOutcome({ store, run: terminal }) };
-  });
+  if (run.status !== 'cancelled') {
+    const result = await withRuntimeStore(async (store) => await stopActivation({ store, runId, status: 'cancelled' }));
+
+    committed = result.run;
+  }
 
   if (committed.status !== 'cancelled') {
     return;
@@ -94,30 +95,35 @@ export async function cancelWorkflow({ workspaceId, runId, cancelerId }: CancelW
   }
 
   await wakeMech({ workspaceId, mechId: committed.mechId });
-  await deliverRunOutcomeToSlack(outcome);
 }
 
 export async function failRunAndWake({ workflowId }: { readonly workflowId: string }): Promise<void> {
   const run = await withRuntimeStore(async (store) => await store.getRunByWorkflowId({ workflowId }));
 
-  if (run === null) {
+  if (run === null || TERMINAL_WORKFLOW_STATES.has(run.status)) {
     return;
   }
 
-  const { committed, outcome } = await withRuntimeStore(async (store) => {
-    const terminal = await store.finishRun({
-      runId: run.id,
-      status: 'failed',
-      reply: null,
-      error: 'The runtime stopped before this run could finish.',
-    });
+  const {
+    run: committed,
+    outcome,
+    wasFinished,
+  } = await withRuntimeStore(
+    async (store) =>
+      await stopActivation({
+        store,
+        runId: run.id,
+        status: 'failed',
+        error: 'The runtime stopped before this run could finish.',
+      }),
+  );
 
-    return { committed: terminal, outcome: await readTerminalOutcome({ store, run: terminal }) };
-  });
+  if (!wasFinished) {
+    return;
+  }
 
   await closeOutcomeStream({ workflowId, outcome });
   await wakeMech({ workspaceId: committed.workspaceId, mechId: committed.mechId });
-  await deliverRunOutcomeToSlack(outcome);
 }
 
 const TERMINAL_WORKFLOW_STATES: ReadonlySet<string> = new Set(['completed', 'failed', 'cancelled']);

@@ -8,4 +8,3 @@ export const BASH_OBSERVE_WAIT_MS = 5000;
 export const BASH_POLL_INTERVAL_MS = 1000;
 export const MCP_MAX_TOOLS = 200;
 export const MCP_MAX_LIST_PAGES = 8;
-export const MEMORY_MAX_TEXT_LENGTH = 65_536;

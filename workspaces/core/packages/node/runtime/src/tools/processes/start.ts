@@ -10,8 +10,7 @@ import { AdmissionRefused, StoreConflict } from '../../store/errors.ts';
 import { withRuntimeStore } from '../../store/runtime-store.ts';
 import { prepareEnvironment } from '../environment.ts';
 import { ToolUnavailableError } from '../errors.ts';
-import { revokeGitHubToken } from '../github-token.ts';
-import type { PreparedEnvironment, ToolInvocation } from '../types.ts';
+import type { ToolInvocation } from '../types.ts';
 import { submitProcess } from './client.ts';
 import { processAnswer, ProcessStartReceipt } from './results.ts';
 import type { ProcessToolResult } from './results.ts';
@@ -19,7 +18,6 @@ import type { ProcessToolResult } from './results.ts';
 type StartProcessInput = ToolInvocation & { readonly command: string };
 type ProcessAttempt = StartProcessInput & { readonly processId: string; readonly store: RuntimeStore };
 type ProcessAdmission = Pick<ProcessAttempt, 'workspaceId' | 'mechId' | 'runId' | 'store'>;
-type PreparedProcess = ProcessAttempt & { readonly prepared: PreparedEnvironment };
 type RecordProcess = ProcessAttempt & { readonly result: ProcessToolResult };
 
 const PROCESS_ADMISSION_POLL_MS = 1000;
@@ -144,70 +142,24 @@ async function authorizeStart(input: ProcessAttempt): Promise<SandboxProcessAnsw
   }
 
   const configuration = loadRuntimeConfiguration();
-  const prepared = await prepareEnvironment(input);
-
-  const isAdmitted = await canStartProcess(input).catch(async (error: unknown) => {
-    await releasePreparedProcess({ ...input, prepared });
-
-    throw error;
-  });
+  const environment = await prepareEnvironment(input);
+  const isAdmitted = await canStartProcess(input);
 
   if (!isAdmitted) {
-    await releasePreparedProcess({ ...input, prepared });
-
     throw new AdmissionRefused('The run no longer permits process dispatch');
   }
 
-  const submission = await preparedSubmission({ ...input, prepared });
-  const answer = await submitProcess({ ...input, configuration, submission });
+  const submission = Schema.decodeUnknownSync(SandboxProcessSubmission)({
+    runId: input.runId,
+    toolCallId: input.toolCallId,
+    request: { process_id: input.processId, command: input.command, environment },
+  });
 
-  if (canReleaseCredential(answer)) {
-    await releasePreparedProcess({ ...input, prepared });
-  }
-
-  // Unconfirmed starts and running processes retain startup credentials until their provider expiry.
-  return answer;
-}
-
-async function preparedSubmission(input: PreparedProcess): Promise<typeof SandboxProcessSubmission.Encoded> {
-  try {
-    const submission = Schema.decodeUnknownSync(SandboxProcessSubmission)({
-      runId: input.runId,
-      toolCallId: input.toolCallId,
-      request: { process_id: input.processId, command: input.command, environment: input.prepared.environment },
-    });
-
-    return Schema.encodeSync(SandboxProcessSubmission)(submission);
-  } catch (error) {
-    await releasePreparedProcess(input);
-
-    throw error;
-  }
-}
-
-function canReleaseCredential(answer: SandboxProcessAnswer): boolean {
-  if (!('handle' in answer)) {
-    return true;
-  }
-
-  switch (answer.state._tag) {
-    case 'Running':
-    case 'Lost':
-      return false;
-    case 'Exited':
-    case 'Stopped':
-      return true;
-  }
-}
-
-async function releasePreparedProcess({ prepared }: PreparedProcess): Promise<void> {
-  if (prepared.githubToken === null) {
-    return;
-  }
-
-  const configuration = loadRuntimeConfiguration();
-
-  await revokeGitHubToken({ origin: configuration.githubApiOrigin, token: prepared.githubToken });
+  return await submitProcess({
+    ...input,
+    configuration,
+    submission: Schema.encodeSync(SandboxProcessSubmission)(submission),
+  });
 }
 
 async function canStartProcess({ store, workspaceId, mechId, runId }: ProcessAdmission): Promise<boolean> {

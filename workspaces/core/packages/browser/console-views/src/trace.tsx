@@ -34,6 +34,7 @@ type TraceProps = {
 };
 
 const OVERVIEW_REQUESTS = 3;
+const activeStatuses: ReadonlySet<string> = new Set(['queued', 'running']);
 
 const styles = stylex.create({
   reading: { maxWidth: '76ch', minWidth: 0 },
@@ -158,11 +159,7 @@ export function TurnTrace({
         <Row>
           <Status
             tone={
-              trace.turn.status === 'answered'
-                ? 'positive'
-                : trace.turn.status === 'unanswered'
-                  ? 'negative'
-                  : 'neutral'
+              trace.turn.status === 'completed' ? 'positive' : trace.turn.status === 'failed' ? 'negative' : 'neutral'
             }
           >
             {outcomeLabel(trace.turn.status)}
@@ -236,12 +233,12 @@ function TraceOverview({
         {captures}
         {turn?.inputExcerpt !== undefined && turn.inputExcerpt.length > 0 && (
           <Collapsible.Root>
-            <Collapsible.Trigger>Input preview</Collapsible.Trigger>
+            <Collapsible.Trigger>Notification preview</Collapsible.Trigger>
             <Collapsible.Panel>
               <Stack isCompact>
                 <Prose>{turn.inputExcerpt}</Prose>
                 <Row>
-                  <TextButton onClick={onEvents}>View original messages</TextButton>
+                  <TextButton onClick={onEvents}>View source events</TextButton>
                 </Row>
               </Stack>
             </Collapsible.Panel>
@@ -283,8 +280,8 @@ function TraceOverview({
                   ? []
                   : [
                       { label: 'Definition', value: `Revision ${turn.definitionRevision}` },
-                      { label: 'Inputs', value: String(turn.inboxItemIds.length) },
-                      { label: 'Submitted', value: <ConsoleTimestamp value={turn.createdAt} /> },
+                      { label: 'Notifications', value: String(turn.notificationIds.length) },
+                      { label: 'Created', value: <ConsoleTimestamp value={turn.createdAt} /> },
                       {
                         label: 'Started',
                         value: Option.isSome(turn.startedAt) ? (
@@ -313,29 +310,29 @@ function RecordedOutcome({
 }): ReactNode {
   const { turn, items } = evidence;
   const reply = Option.getOrUndefined(trace.replyExcerpt);
-  const replyLabel = reply?.isTruncated === true ? 'Reply preview' : 'Reply';
+  const replyLabel = reply?.isTruncated === true ? 'Message preview' : 'Recorded message';
   const refused = items.find((item) => item.status === 'refused');
   const latest = items.at(-1);
 
   return (
     <Stack isCompact>
       <Subheading>
-        {trace.turn.status === 'answered'
+        {trace.turn.status === 'completed' && reply !== undefined
           ? replyLabel
-          : trace.turn.status === 'unanswered'
-            ? 'Outcome'
-            : 'Latest activity'}
+          : activeStatuses.has(trace.turn.status)
+            ? 'Latest activity'
+            : 'Outcome'}
       </Subheading>
-      {turn?.status === 'answered' &&
+      {turn?.status === 'completed' &&
         (reply === undefined ? (
-          <Muted>The recorded reply is unavailable in this format. Open Events to inspect the history.</Muted>
+          <Muted>Run completed.</Muted>
         ) : (
           <>
             <Markdown headingLevel={3}>{reply.text}</Markdown>
             {reply.isTruncated && <Row>{replyLink(reply.sequence)}</Row>}
           </>
         ))}
-      {turn?.status === 'unanswered' && (
+      {turn?.status === 'failed' && (
         <>
           <Prose>{outcomeReason(turn.reason)}</Prose>
           {refused !== undefined && (
@@ -350,8 +347,8 @@ function RecordedOutcome({
           {latest === undefined ? 'Waiting for the first recorded request.' : `Most recent request: ${latest.summary}.`}
         </Prose>
       )}
-      {turn?.status === 'queued' && <Prose>This run is waiting to start.</Prose>}
-      {turn?.status === 'waiting' && <Prose>This run is waiting for an external decision or result.</Prose>}
+      {turn?.status === 'queued' && <Prose>This run is ready to start.</Prose>}
+      {turn?.status === 'stopped' && <Prose>This run was stopped.</Prose>}
       {turn === undefined && <Muted>This run uses a newer record format.</Muted>}
     </Stack>
   );

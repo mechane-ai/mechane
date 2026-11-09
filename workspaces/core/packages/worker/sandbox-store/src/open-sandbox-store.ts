@@ -1,6 +1,7 @@
 import { openDatabase } from '@mechane/store';
 import { browserRecords } from './browser/browser-records.ts';
 import { capacityRecords } from './capacity/capacity-records.ts';
+import { completionRecords } from './completions/completion-records.ts';
 import { evidenceRecords } from './evidence/evidence-records.ts';
 import { executionRecords } from './executions/execution-records.ts';
 import { interactiveRuns } from './interactive-runs.ts';
@@ -23,6 +24,7 @@ export function openSandboxStore({ storage }: SandboxStoreInput): SandboxStore {
     ...openDatabase({ storage, migrations: MIGRATIONS }),
     ...browserRecords({ sql }),
     ...capacityRecords({ sql }),
+    ...completionRecords({ sql }),
     ...evidenceRecords({ sql }),
     ...interactiveRuns({ sql }),
     ...machineDrains({ sql }),

@@ -50,19 +50,5 @@ function executionCredentialReferences(access: ExecutionAccess): ReadonlyArray<s
     throw new RequestInvalid({ reason: 'an execution variable cannot also name a secret' });
   }
 
-  if (access.github !== null) {
-    references.push(access.github.secretReference);
-  }
-
-  if (access.requestService !== null) {
-    if (references.includes(access.requestService.secretReference)) {
-      throw new RequestInvalid({
-        reason: 'the request service credential must remain separate from command credentials',
-      });
-    }
-
-    references.push(access.requestService.secretReference);
-  }
-
   return references;
 }

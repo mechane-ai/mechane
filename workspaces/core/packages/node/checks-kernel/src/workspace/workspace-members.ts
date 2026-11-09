@@ -32,6 +32,7 @@ const Manifest = Schema.Struct({
   name: Schema.String,
   dependencies: Schema.optional(Schema.Record(Schema.String, Schema.String)),
   devDependencies: Schema.optional(Schema.Record(Schema.String, Schema.String)),
+  peerDependencies: Schema.optional(Schema.Record(Schema.String, Schema.String)),
 });
 
 /** The part of a member's compiler configuration that names its lane's program and the folders it includes. */
@@ -75,7 +76,13 @@ const readMember = Effect.fn('readMember')(function* ({
   });
 
   const { files } = yield* decodeFile({ path: join(folder, program), schema: LaneFiles });
-  const ranges = Record.toEntries({ ...manifest.dependencies, ...manifest.devDependencies });
+
+  const ranges = Record.toEntries({
+    ...manifest.dependencies,
+    ...manifest.devDependencies,
+    ...manifest.peerDependencies,
+  });
+
   const absolute = join(WORKSPACE_FOLDER, folder);
 
   const entries = yield* Effect.tryPromise({

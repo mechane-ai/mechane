@@ -17,13 +17,11 @@ export const FILE_ROLES = {
   [FileRole.NativeConversation]: [
     'packages/browser/console-data/src/conversation.ts',
     'packages/browser/console/src/conversations/entry.ts',
-    'packages/browser/console/src/conversations/transport.ts',
   ],
   [FileRole.NativeSandboxBoundary]: [
     'packages/worker/sandbox/src/capacity/machine-capacity.ts',
     'packages/worker/sandbox/src/maintenance/prepare-maintenance.ts',
   ],
-  [FileRole.SlackFixture]: ['packages/node/stack/src/fixtures/slack.ts'],
   [FileRole.NativeLifecycle]: [
     'packages/node/server/src/lifecycle/**',
     'packages/node/server/src/main.ts',
@@ -81,7 +79,9 @@ export const FILE_ROLES = {
   [FileRole.Output]: [
     'packages/node/cli/scripts/reference/main.ts',
     'packages/node/program/src/output/**',
-    'packages/node/runtime/src/channels/slack-logger.ts',
+    'packages/node/runtime/src/operations/notifications.ts',
+    'packages/node/runtime/src/execution/reconcile-runs.ts',
+    'packages/node/server/src/lifecycle/reconciliation.ts',
     'packages/node/server/src/main.ts',
     'packages/node/server/src/lifecycle/shutdown.ts',
     'packages/node/server/src/http/failure.ts',
@@ -92,11 +92,11 @@ export const FILE_ROLES = {
     'packages/worker/sandbox/src/egress/pass-egress.ts',
     'packages/worker/sandbox/src/evidence/evidence-cleanup.ts',
     'packages/worker/sandbox-service/src/main.ts',
+    'packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts',
   ],
   [FileRole.WorkerModule]: ['packages/worker/sandbox-service/src/main.ts'],
   [FileRole.EntryPoint]: [
     'packages/**/src/index.ts',
-    'packages/node/runtime/src/channels/index.ts',
     'packages/shared/protocol/src/presentation/index.ts',
     'packages/browser/elements/packages/**/index.ts',
     'packages/browser/elements/packages/content/src/link.ts',

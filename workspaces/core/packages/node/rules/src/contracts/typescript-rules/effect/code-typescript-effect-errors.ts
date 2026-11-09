@@ -38,7 +38,6 @@ export const codeTypescriptEffectErrors = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'no-ok-false',
-      exemptRoles: [FileRole.SlackFixture],
       standard: 'ER-04',
       violation: ['const answer = { ok: false };'],
       allowed: ['const answer = { ok: true };'],

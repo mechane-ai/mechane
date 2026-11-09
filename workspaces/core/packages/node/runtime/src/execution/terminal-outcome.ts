@@ -1,35 +1,17 @@
 import type { Run } from '../domain.ts';
-import type { RuntimeStore } from '../store/database.ts';
-import { runOutput } from './run-output.ts';
 import type { RunOutcome } from './types.ts';
-
-type TerminalOutcomeInput = { readonly store: RuntimeStore; readonly run: Run };
 
 const CANCELLATION_MESSAGE =
   'This run was stopped. Cancellation does not undo completed commands or guarantee that every external command stopped. Inspect external effects before retrying.';
 
-export async function readTerminalOutcome({ store, run }: TerminalOutcomeInput): Promise<RunOutcome> {
+export function terminalOutcome(run: Run): RunOutcome {
   switch (run.status) {
-    case 'completed': {
-      if (run.reply === null) {
-        throw new Error('Completed run has no recorded reply');
-      }
-
-      const messages = await store.getRunMessages({ runId: run.id });
-      const output = runOutput(messages.modelMessages);
-
-      return { runId: run.id, status: 'completed', reply: run.reply, error: null, presentation: output.presentation };
-    }
+    case 'completed':
+      return { runId: run.id, status: 'completed', error: null };
     case 'failed':
-      return {
-        runId: run.id,
-        status: 'failed',
-        reply: null,
-        error: run.error ?? runFailureMessage(run.failureReason),
-        presentation: null,
-      };
+      return { runId: run.id, status: 'failed', error: run.error ?? runFailureMessage(run.failureReason) };
     case 'cancelled':
-      return { runId: run.id, status: 'cancelled', reply: null, error: CANCELLATION_MESSAGE, presentation: null };
+      return { runId: run.id, status: 'cancelled', error: CANCELLATION_MESSAGE };
     case 'queued':
     case 'running':
     case 'waiting':

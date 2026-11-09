@@ -54,4 +54,18 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       'CREATE TABLE evidence_chunks (artifact_id TEXT NOT NULL REFERENCES evidence_artifacts (id), offset_bytes INTEGER NOT NULL, size_bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, PRIMARY KEY (artifact_id, offset_bytes)) STRICT',
     );
   },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE sandbox_completions (execution_id TEXT NOT NULL, kind TEXT NOT NULL, receipt TEXT NOT NULL, is_delivered INTEGER NOT NULL DEFAULT 0, failures INTEGER NOT NULL DEFAULT 0, next_attempt_at_ms INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (execution_id, kind)) STRICT',
+    );
+    sql.exec('CREATE INDEX sandbox_completions_pending ON sandbox_completions (is_delivered)');
+    sql.exec('CREATE TABLE sandbox_activity (slot INTEGER PRIMARY KEY CHECK (slot = 1), idle_at_ms INTEGER) STRICT');
+    sql.exec('INSERT INTO sandbox_activity (slot) VALUES (1)');
+    sql.exec(
+      "CREATE TRIGGER execution_completion AFTER UPDATE OF status ON executions WHEN OLD.status IN ('pending', 'dispatched') AND NEW.status NOT IN ('pending', 'dispatched') BEGIN INSERT INTO sandbox_completions (execution_id, kind, receipt) VALUES (NEW.id, 'sandbox', json_object('executionId', NEW.id, 'kind', 'sandbox', 'machineId', NEW.machine_id, 'status', NEW.status, 'exitCode', NEW.exit_code)) ON CONFLICT DO NOTHING; END",
+    );
+    sql.exec(
+      "CREATE TRIGGER process_completion AFTER UPDATE OF record ON managed_processes WHEN (json_extract(OLD.record, '$.observation.state._tag') IS NULL OR json_extract(OLD.record, '$.observation.state._tag') = 'Running') AND json_extract(NEW.record, '$.observation.state._tag') IN ('Exited', 'Stopped', 'Lost') BEGIN INSERT INTO sandbox_completions (execution_id, kind, receipt) VALUES (NEW.id, 'process', json_object('executionId', NEW.id, 'kind', 'process', 'machineId', NEW.machine_id, 'status', lower(json_extract(NEW.record, '$.observation.state._tag')), 'exitCode', json_extract(NEW.record, '$.observation.state.exitCode'))) ON CONFLICT DO NOTHING; END",
+    );
+  },
 ];

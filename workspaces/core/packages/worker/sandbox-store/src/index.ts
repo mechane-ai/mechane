@@ -3,6 +3,7 @@ export type { ExecutionClaim, SandboxStore, SandboxAlarm } from './types.ts';
 export { ExecutionStatus, MachineStatus } from './constants.ts';
 export { openSandboxStore } from './open-sandbox-store.ts';
 export { sandboxAlarm } from './sandbox-alarm.ts';
+export { BackgroundWork } from './completions/completion-records.ts';
 
 export type { PortableMaintenance } from './maintenance/schemas.ts';
 export type { WorkspaceSnapshot, WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';

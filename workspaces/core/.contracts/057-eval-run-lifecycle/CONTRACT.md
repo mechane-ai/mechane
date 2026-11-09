@@ -38,19 +38,29 @@ Compare a resumed run's deadlines, budgets, and trace sequence with the original
 
 ## Local adaptations
 
-The assessed system is the deployment behind `/api/v1`, and `mechane eval run` is the runner: it starts only when a person runs it, and the smoke runs it only against the scripted upstream.
-The frozen inputs are `plan.json`: the suite, with its cases, expectations, models, repeats and `trial_cap_micros`, the deployment's release and worker revision, the workspace, and their digest, saved once its refusals passed and before the first send; the grader's instructions are the release's own, which the release covers.
-A rerun with the same `--out-folder` resumes, follows the plan it builds and never an edited `plan.json`, and refuses another digest as `PlanChanged`; a suite that does not decode is `SuiteInvalid` before any call.
-The budget is each mech's cap, `trial_cap_micros`, which the plan freezes, and a plan whose turns yet to send could spend more than the day's allowance has left is `AllowanceExhausted` before any mech exists; no run deadline is persisted, since a role waits for its turn's end with no deadline of its own and each dispatch has its own, as `code-execution-lifecycle` records.
-`lock.json` names the process whose run writes the out folder, so one run at a time writes it: a lock whose process runs refuses another run as `OutFolderBusy`, the run's scope removes its lock, Ctrl-C included, and a lock whose process no longer runs, as after a crash or a second Ctrl-C, is taken over; two runs that take over one lock at once could both hold it, and each record's file is still created once.
-A role's intent, its fresh mech and the inbox item's random id, is the receipt, saved before its send; a rerun sends a role whose intent it holds without its record again under the intent's id, which the deployment receives once, so it resumes the same turn instead of submitting another, and a trial is `unavailable` only while a run that sent a turn ended before saving it.
-Each record is created once by a link that fails when the file exists, a subject's record is saved before its grader's intent, and a failed grader turn keeps the subject's record; a rerun never asks for or grades a saved role again.
-A role's turn is read from its own mech's events and trace, which hold only that one inbox item's turn, and its record names the mech, the item and the turn.
-The trace is read once the turn's end is in the log; a dispatch still `reserved` then, whose settlement a lost instance cut off, counts as charged nothing yet.
-Trials run one after another, so one assessment, one grading and no queue run at a time; the runner records no trace events of its own, since each mech's log is the deployment's.
-Each role runs on a fresh mech with its own sandbox, and no operation archives a mech, so each trial leaves two mechs in `mech list`.
-Open: a role's mech is created before its intent is saved, so a run cut off between the two leaves one mech that spends nothing, until `createMech` takes a caller-made id.
-Open: Ctrl-C detaches the client and does not cancel the mech's running turn through `cancelTurn`, so the turn runs to its end and spends its cap; cancel and detach are not yet distinct.
+`mechane eval run` reaches the deployed `/api/v1` system only on explicit invocation. The smoke uses the scripted upstream.
+The frozen `plan.json` holds suite inputs, expectations, models, repeats, caps, workspace, release revision, and digest.
+Grader instructions belong to that release. Invalid suites fail before sending, and a changed frozen plan is `PlanChanged`.
+Plan version 2 and report version 3 describe notification-driven evaluation. Older out folders are refused without being
+rewritten or deleted; the version change does not authorize another paid evaluation automatically.
+
+Persist each role's fresh mech and random `notificationId` before admission. Retry uncertain admission under that identity,
+never with a replacement notification. Observe all bounded activations on that fresh mech, save their `runIds`, and collect
+all corresponding trace dispatches. A role is complete only after its activation chain settles. Save its explicit public
+Console message identity and text, or the recorded quiet, failed, or stopped outcome. Native final model text is not output.
+
+Each output file is created once, atomically. Save the subject before creating its grader intent. Resuming never requests
+or grades a saved role again. The local out-folder lock rejects a running owner and removes itself on ordinary exit.
+Trials and roles run sequentially, with no waiting queue. Each role uses a fresh mech with no inherited context or grant.
+
+The existing lifecycle has explicit gaps: takeover of a dead-process lock is not atomic between competing clients;
+mech creation precedes its saved intent; and no public archive operation removes completed role mechs. A crash can leave
+an unused mech, but cannot justify deleting another role or changing a saved result. Ctrl-C still detaches rather than
+canceling the remote activation. These limitations do not satisfy the stronger cancellation and cleanup Rules above.
+
+The plan freezes each role's cap and checks available allowance before creation. No role-wide deadline is persisted;
+individual dispatches have bounded deadlines. Reserved dispatches still contribute zero recorded charge in this runner,
+so an interrupted unsettled attempt is an accounting gap rather than proof of no spend. Preserve these gaps in eval review.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

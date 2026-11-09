@@ -5,8 +5,6 @@ import { decodeModelMessage, decodeRun, decodeUiMessages } from './rows.ts';
 
 type RunLookup = { readonly runId: string; readonly workspaceId?: string };
 type WorkflowLookup = { readonly workflowId: string };
-type MechLookup = { readonly workspaceId: string; readonly mechId: string };
-type SessionLookup = { readonly sessionId: string };
 type UnfinishedCursor = { readonly createdAt: string; readonly id: string };
 type UnfinishedQuery = { readonly maxRuns?: number; readonly after?: UnfinishedCursor };
 const DEFAULT_MAX_UNFINISHED_RUNS = 100;
@@ -35,37 +33,12 @@ export function createExecutionReads(context: StoreContext) {
 
   return {
     getRun,
-    getRunInput: async (input: RunLookup) => {
-      const run = await getRun(input);
-
-      if (run === null) {
-        return null;
-      }
-
-      return { inputMessage: run.inputMessage, attachments: run.attachments };
-    },
     getRunByWorkflowId: async ({ workflowId }: WorkflowLookup): Promise<Run | null> => {
       const found = await context.client.query(
         `
         SELECT r.*,i.input_text,i.input_message,i.attachments,i.origin
         FROM mechane.runs r JOIN mechane.inputs i ON i.id=r.input_id WHERE r.workflow_id=$1`,
         [workflowId],
-      );
-
-      if (found.rows.length === 0) {
-        return null;
-      }
-
-      return await decodeRun(found.rows[0]);
-    },
-    nextQueuedRun: async ({ workspaceId, mechId }: MechLookup): Promise<Run | null> => {
-      const found = await context.client.query(
-        `
-        SELECT r.*,i.input_text,i.input_message,i.attachments,i.origin
-        FROM mechane.runs r JOIN mechane.inputs i ON i.id=r.input_id
-        WHERE r.workspace_id=$1 AND r.mech_id=$2 AND r.status='queued'
-        ORDER BY r.created_at,r.id LIMIT 1`,
-        [workspaceId, mechId],
       );
 
       if (found.rows.length === 0) {
@@ -95,18 +68,6 @@ export function createExecutionReads(context: StoreContext) {
       const found = await context.client.query(
         `SELECT model_message,ui_message FROM mechane.messages WHERE run_id=$1 ORDER BY position`,
         [runId],
-      );
-
-      return await decodeStoredMessages(found.rows);
-    },
-    getSessionMessages: async ({ sessionId }: SessionLookup): Promise<StoredMessages> => {
-      const found = await context.client.query(
-        `
-        SELECT m.model_message,m.ui_message FROM mechane.messages m
-        JOIN mechane.runs r ON r.id=m.run_id
-        WHERE m.session_id=$1 AND r.status IN ('completed','failed','cancelled')
-        ORDER BY r.created_at,r.id,m.position`,
-        [sessionId],
       );
 
       return await decodeStoredMessages(found.rows);

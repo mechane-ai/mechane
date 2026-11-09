@@ -1,11 +1,9 @@
 import { BashExecutionStatus } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
-import { EXECUTION_TIMEOUT_MAX } from '@mechane/sandbox-wire';
 import type { SandboxCapacityRefusalReason, SandboxExecutionResult } from '@mechane/sandbox-wire';
 import { Duration } from 'effect';
 import { sleep } from 'workflow';
 import { z } from 'zod';
-import { loadRuntimeConfiguration } from '../config.ts';
 import type { Mech } from '../domain.ts';
 import { executionId as toolExecutionId } from '../execution-id.ts';
 import type { WorkspacePolicy } from '../store/api/configuration/types.ts';
@@ -14,7 +12,6 @@ import { withRuntimeStore } from '../store/runtime-store.ts';
 import { BASH_OBSERVE_WAIT_MS, BASH_POLL_INTERVAL_MS, TOOL_MODEL_RESULT_MAX_BYTES } from './constants.ts';
 import { prepareEnvironment } from './environment.ts';
 import { ToolUnavailableError } from './errors.ts';
-import { revokeGitHubToken } from './github-token.ts';
 import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { recordBashInput } from './record-bash-input.ts';
 import { requestSandboxExecution } from './sandbox-client.ts';
@@ -42,7 +39,7 @@ type AuthorizeBashInput = ObserveBashInput & {
 };
 
 type AuthorizedBashBody = {
-  readonly environment: PreparedEnvironment['environment'];
+  readonly environment: PreparedEnvironment;
   readonly waitMs: number;
   readonly command?: string;
   readonly timeoutMs?: number;
@@ -50,7 +47,6 @@ type AuthorizedBashBody = {
 
 const FINAL_RECEIPT_STATES: ReadonlySet<string> = new Set(['completed', 'failed']);
 const NEEDS_ENVIRONMENT: ReadonlySet<string> = new Set(['ExecutionNotFound', 'ExecutionEnvironmentRequired']);
-const TOKEN_MUST_EXPIRE: ReadonlySet<string> = new Set(['running', 'uncertain']);
 const COMPLETED_COMMAND_STATES: ReadonlySet<string> = new Set(['completed', 'timed_out', 'persistence_failed']);
 
 export async function executeBash(input: BashInvocation): Promise<BashResult> {
@@ -188,44 +184,18 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
     };
   }
 
-  const configuration = loadRuntimeConfiguration();
-  const prepared = await prepareEnvironment({ ...input, store });
-
-  async function revokeUnsubmittedToken(error: unknown): Promise<never> {
-    if (prepared.githubToken !== null) {
-      try {
-        await revokeGitHubToken({ origin: configuration.githubApiOrigin, token: prepared.githubToken });
-      } catch (revocationError) {
-        throw new AggregateError([error, revocationError], 'Cannot release the unsubmitted execution credential', {
-          cause: revocationError,
-        });
-      }
-    }
-
-    throw error;
-  }
-
-  const run = await store.getRun({ runId: input.runId, workspaceId: input.workspaceId }).catch(revokeUnsubmittedToken);
+  const environment = await prepareEnvironment({ ...input, store });
+  const run = await store.getRun({ runId: input.runId, workspaceId: input.workspaceId });
 
   if (run === null || run.cancelRequestedAt !== null || run.status !== 'running') {
-    if (prepared.githubToken !== null) {
-      await revokeGitHubToken({ origin: configuration.githubApiOrigin, token: prepared.githubToken });
-    }
-
     return { status: 'refused', executionId: input.executionId, message: 'The run is no longer active.' };
   }
 
   if (input.submission !== null && input.wasExecutionCreated) {
-    await recordBashInput({ ...input, command: input.submission.command, secrets: prepared.environment.secrets }).catch(
-      revokeUnsubmittedToken,
-    );
+    await recordBashInput({ ...input, command: input.submission.command, secrets: environment.secrets });
   }
 
-  const body: AuthorizedBashBody = {
-    environment: prepared.environment,
-    waitMs: BASH_OBSERVE_WAIT_MS,
-    ...input.submission,
-  };
+  const body: AuthorizedBashBody = { environment, waitMs: BASH_OBSERVE_WAIT_MS, ...input.submission };
 
   const progress = await requestSandboxExecution({
     ...input,
@@ -234,28 +204,12 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
     body: JSON.stringify(body),
   });
 
-  const confirmed = await observeAuthorizedExecution({ input, progress, prepared });
-  const result = bashResult({ executionId: input.executionId, progress: confirmed });
-
-  if (prepared.githubToken !== null && !TOKEN_MUST_EXPIRE.has(result.status)) {
-    try {
-      await revokeGitHubToken({ origin: configuration.githubApiOrigin, token: prepared.githubToken });
-    } catch {
-      result.message =
-        'The execution finished, but its temporary GitHub token could not be revoked. The token expires automatically.';
-    }
-  }
+  const result = bashResult({ executionId: input.executionId, progress });
 
   await recordBashResult({ store, result });
 
   return result;
 }
-
-type ObserveAuthorizedInput = {
-  readonly input: AuthorizeBashInput;
-  readonly progress: SandboxExecutionResult;
-  readonly prepared: PreparedEnvironment;
-};
 
 type ShellAdmissionInput = { readonly mech: Mech; readonly policy: WorkspacePolicy | null };
 
@@ -267,26 +221,6 @@ function canRunShell({ mech, policy }: ShellAdmissionInput): boolean {
   const hasSandboxAccess = !policy.isSuspended && policy.hasSandboxes && policy.machines > 0;
 
   return mech.status === 'active' && hasSandboxAccess;
-}
-
-async function observeAuthorizedExecution({
-  input,
-  progress,
-  prepared,
-}: ObserveAuthorizedInput): Promise<SandboxExecutionResult> {
-  if (prepared.githubToken === null || progress._tag !== 'Running') {
-    return progress;
-  }
-
-  const timeoutMs = input.submission?.timeoutMs ?? Duration.toMillis(EXECUTION_TIMEOUT_MAX);
-  const deadlineMs = performance.now() + timeoutMs;
-  const observed: { progress: SandboxExecutionResult } = { progress };
-
-  while (observed.progress._tag === 'Running' && performance.now() < deadlineMs) {
-    observed.progress = await requestSandboxExecution({ ...input, method: HttpMethod.Get });
-  }
-
-  return observed.progress;
 }
 
 type BashProgressInput = { readonly executionId: string; readonly progress: SandboxExecutionResult };

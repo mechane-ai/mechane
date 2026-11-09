@@ -12,14 +12,6 @@ export type HttpHandler = (request: Request) => Promise<Response>;
 
 export const record = Schema.decodeUnknownSync(Schema.Record(Schema.String, Schema.Unknown));
 
-export function optionalText(value: unknown): string | undefined {
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  return undefined;
-}
-
 export function text(value: unknown): string {
   if (typeof value !== 'string') {
     throw new TypeError('Expected text');

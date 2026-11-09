@@ -7,13 +7,8 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { IntegrationSecretReference } from '../connections/schemas.ts';
-import { GITHUB_REPOSITORY_FIELDS, GITHUB_REPOSITORY_RECORD_FIELDS } from '../github-repository-fields.ts';
-import { RequestService, RequestServiceRecord } from './request-service.ts';
 
 const VARIABLE_MAX_BYTES = 4 * BYTES_PER_KIBIBYTE;
-
-/** Repository identity and the server-held GitHub App credential used to mint installation tokens. */
-const GitHubRepositoryAccess = wireStruct({ fields: GITHUB_REPOSITORY_FIELDS });
 
 const RESERVED_VARIABLES: ReadonlySet<string> = new Set([
   'HOME',
@@ -24,9 +19,6 @@ const RESERVED_VARIABLES: ReadonlySet<string> = new Set([
   'NODE_OPTIONS',
   'LD_PRELOAD',
   'LD_LIBRARY_PATH',
-  'GH_TOKEN',
-  'GITHUB_TOKEN',
-  'GH_HOST',
   'GIT_ASKPASS',
   'SSH_ASKPASS',
 ]);
@@ -58,12 +50,8 @@ const EnvironmentName = Schema.String.check(
 /** Values are public configuration; secret references resolve only inside the trusted runtime. */
 export const ExecutionAccess = wireStruct({
   fields: {
-    /** None supplies no GitHub token; the wire carries null. */
-    github: Schema.OptionFromNullOr(GitHubRepositoryAccess),
     variables: Schema.Record(EnvironmentName, boundedText({ maxBytes: VARIABLE_MAX_BYTES })),
     secrets: Schema.Record(EnvironmentName, IntegrationSecretReference),
-    /** None leaves external access requests unavailable; its credential is never injected into a command. */
-    requestService: Schema.OptionFromOptionalNullOr(RequestService),
   },
 });
 
@@ -77,18 +65,9 @@ export const ExecutionAccessChange = Schema.Struct({
 
 export type ExecutionAccessChange = typeof ExecutionAccessChange.Type;
 
-const GitHubRepositoryRecord = wireStruct({ fields: GITHUB_REPOSITORY_RECORD_FIELDS });
-
 /** Stored authority remains readable after future request limits change. */
 const ExecutionAccessRecord = wireStruct({
-  fields: {
-    /** None means no GitHub authority was granted. */
-    github: Schema.OptionFromNullOr(GitHubRepositoryRecord),
-    variables: Schema.Record(RecordText, RecordText),
-    secrets: Schema.Record(RecordText, RecordText),
-    /** None means no request service was configured, its credential never enters a shell command. */
-    requestService: Schema.OptionFromOptionalNullOr(RequestServiceRecord),
-  },
+  fields: { variables: Schema.Record(RecordText, RecordText), secrets: Schema.Record(RecordText, RecordText) },
 });
 
 /** Reads expose public values and secret references only. */

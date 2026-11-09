@@ -1,6 +1,6 @@
 export { loadRuntimeConfiguration } from './config.ts';
-export type { RuntimeConfiguration } from './config.ts';
-export type { Identity, InputOrigin } from './domain.ts';
+export type { RuntimeConfiguration, NotificationProducer } from './config.ts';
+export type { Identity } from './domain.ts';
 export { migrateStore, openStore } from './store/database.ts';
 export { grantStoreRuntime } from './store/grants.ts';
 export type { RuntimeStore } from './store/database.ts';
@@ -21,12 +21,11 @@ export {
 } from './operations/auth/admission.ts';
 export { hashAuthToken, createAuthToken } from './operations/auth/secrets.ts';
 export { createOperationExecutor } from './operations/execute.ts';
-export type { StartAdmission } from './operations/mechs/mechs.ts';
+export type { StartAdmission } from './operations/types.ts';
 export type { AuthCaller } from './operations/types.ts';
-export { requireAuthenticated } from './operations/validated-operation.ts';
-export { StoreConflict } from './store/errors.ts';
 export { startAdmission, cancelWorkflow, failRunAndWake } from './execution/admission.ts';
 export { reconcileRuns } from './execution/reconcile-runs.ts';
 export { readRunUIStream } from './execution/ui-stream.ts';
-export { acceptNexusRequestEvent, RequestEventRejectedError } from './requests/accept-nexus-request-event.ts';
+export { admitNotification } from './operations/notifications.ts';
+export { acceptSandboxCompletion } from './operations/environment-completion.ts';
 export { manageSandboxWorkspace } from './tools/sandbox-maintenance.ts';

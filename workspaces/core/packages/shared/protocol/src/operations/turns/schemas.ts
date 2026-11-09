@@ -1,7 +1,6 @@
 import { ModelId } from '@mechane/deployment';
 import {
   Bytes,
-  InboxItemId,
   MechId,
   memberOrUnknown,
   Micros,
@@ -11,7 +10,6 @@ import {
   RecordText,
   renamedWireStruct,
   Sequence,
-  SessionId,
   Tokens,
   TurnId,
   unknownMember,
@@ -20,6 +18,7 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
+import { NotificationId } from '../notifications/schemas.ts';
 import {
   BashExecutionStatus,
   DispatchStatus,
@@ -36,28 +35,27 @@ export const TurnPath = wireStruct({ fields: { workspaceId: WorkspaceId, mechId:
 
 export type TurnPath = typeof TurnPath.Type;
 
-/** The fields of a turn in each of its states: the inbox items it took up, and when it started. */
+/** Notifications record what the activation actually received. */
 const TURN_FIELDS = {
   id: TurnId,
   version: Schema.Int.check(Schema.isGreaterThan(0)),
-  inboxItemIds: Schema.Array(InboxItemId),
-  sessionId: SessionId,
+  notificationIds: Schema.Array(NotificationId),
   createdAt: WireTime,
   startedAt: Schema.OptionFromNullOr(WireTime),
   definitionRevision: Schema.Int,
   inputExcerpt: Schema.optionalKey(RecordText),
 } as const;
 
-/** One turn of a mech's work, from its inbox items to its reply or its reason for none. */
+/** A bounded activation is execution history, independent of public communication. */
 export const Turn = Schema.Union([
   wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Queued) } }),
-  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Waiting) } }),
   wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Running) } }),
-  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Answered), endedAt: WireTime } }),
+  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Completed), endedAt: WireTime } }),
+  wireStruct({ fields: { ...TURN_FIELDS, status: Schema.Literal(TurnStatus.Stopped), endedAt: WireTime } }),
   wireStruct({
     fields: {
       ...TURN_FIELDS,
-      status: Schema.Literal(TurnStatus.Unanswered),
+      status: Schema.Literal(TurnStatus.Failed),
       endedAt: WireTime,
       reason: memberOrUnknown({ set: UnansweredReason }),
     },

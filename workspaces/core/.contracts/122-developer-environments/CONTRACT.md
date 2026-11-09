@@ -10,7 +10,9 @@ Keep the generic developer image in `node/guest/image`. Pin downloaded tools and
 before installing them. Use repository-owned setup for revision-specific dependencies. Company endpoints and agent
 instructions belong to installation configuration, never the generic image or runtime.
 
-Keep useful source, Git metadata, and reports in the committed home. Keep reproducible caches and build output outside
+Keep useful source, Git metadata, notes, and progress records in the committed home. Memory and work organization are
+ordinary agent-managed files, not another runtime task or memory service. Keep internal model-context checkpoints in
+the runtime store; their persistence does not establish file durability. Keep reproducible caches and build output outside
 that home through explicit environment setup. Preserve existing files. Do not infer disposability from `.gitignore` or
 silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
 

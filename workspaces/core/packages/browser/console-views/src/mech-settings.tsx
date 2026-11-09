@@ -19,7 +19,6 @@ import type { Mech } from '@mechane/protocol';
 import { Option } from 'effect';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { SlackConnectionsPlaceholder, SlackDeliverySection } from './connections.tsx';
 import { moneyLabel } from './format.ts';
 
 function ArchiveSection({ children }: { readonly children: ReactNode }): ReactNode {
@@ -49,11 +48,6 @@ export function MechSettingsPlaceholder(): ReactNode {
             <Collapsible.Trigger disabled>Instructions</Collapsible.Trigger>
           </Collapsible.Root>
         </Stack>
-        <Stack>
-          <Subheading>Slack</Subheading>
-          <SlackConnectionsPlaceholder />
-          <SlackDeliverySection>{null}</SlackDeliverySection>
-        </Stack>
         <Collapsible.Root>
           <Collapsible.Trigger disabled>
             <Row>
@@ -77,7 +71,6 @@ export function MechSettings({
   mech,
   isBusy,
   error,
-  connections,
   appearance,
   onAppearance,
   appearanceError,
@@ -87,7 +80,6 @@ export function MechSettings({
   readonly mech: Mech;
   readonly isBusy: boolean;
   readonly error: string | undefined;
-  readonly connections: ReactNode;
   readonly appearance: AgentAppearance | undefined;
   readonly onAppearance: (value: AgentAppearance | undefined) => void;
   readonly appearanceError: string | undefined;
@@ -117,7 +109,6 @@ export function MechSettings({
           </Collapsible.Panel>
         </Collapsible.Root>
       </Stack>
-      {connections}
       <Collapsible.Root>
         <Collapsible.Trigger>
           <Row>

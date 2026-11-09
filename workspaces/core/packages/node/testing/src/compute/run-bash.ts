@@ -2,7 +2,7 @@ import type { LocalStack } from '@mechane/stack';
 import { randomUUID } from 'node:crypto';
 import type { Account } from '../auth/types.ts';
 import { requireFixtures } from '../fixtures.ts';
-import { sendInbox, waitForTurn } from '../mechs.ts';
+import { sendNotification, waitForTurn } from '../mechs.ts';
 import { readBashResult } from './read-bash-result.ts';
 
 type BashInput = {
@@ -25,9 +25,9 @@ export async function runBash({ stack, account, mechId, command }: BashInput) {
     ],
   });
 
-  const sent = await sendInbox({ stack, account, mechId, text: marker });
+  const sent = await sendNotification({ stack, account, mechId, text: marker });
   const result = await readBashResult({ model, marker, toolCallId });
-  const turn = await waitForTurn({ stack, account, mechId, inboxItemId: sent.id });
+  const turn = await waitForTurn({ stack, account, mechId, notificationId: sent.id });
 
   return { result, turn };
 }

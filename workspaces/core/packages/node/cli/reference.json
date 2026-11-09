@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.25.4",
+  "release": "0.26.0",
   "flags": [
     {
       "name": "origin",
@@ -34,184 +34,6 @@
     }
   ],
   "commands": [
-    {
-      "name": "slack bind",
-      "summary": "bind one existing Slack channel to one mech, or change its listening and reply switches",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "configureSlackBinding"
-      ],
-      "flags": [
-        {
-          "name": "binding-id",
-          "kind": "text",
-          "summary": "the persistent UUID for this binding, reused on changes and retries",
-          "required": true
-        },
-        {
-          "name": "connection-id",
-          "kind": "text",
-          "summary": "the configured existing Slack installation",
-          "required": true
-        },
-        {
-          "name": "team-id",
-          "kind": "text",
-          "summary": "the Slack workspace ID",
-          "required": true
-        },
-        {
-          "name": "channel-id",
-          "kind": "text",
-          "summary": "the existing Slack channel ID",
-          "required": true
-        },
-        {
-          "name": "channel-kind",
-          "kind": "text",
-          "summary": "channel, im, or mpim; channel when absent",
-          "required": false
-        },
-        {
-          "name": "listening",
-          "kind": "text",
-          "summary": "true to receive human messages, false to stop receiving",
-          "required": true
-        },
-        {
-          "name": "replies",
-          "kind": "text",
-          "summary": "true to deliver replies and notifications, false to mute them",
-          "required": true
-        },
-        {
-          "name": "allowed-user-ids",
-          "kind": "text",
-          "summary": "a JSON array of trusted Slack user IDs; omit to trust the channel",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "slack bindings",
-      "summary": "list Slack channel bindings and their listening and reply switches",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listSlackBindings"
-      ],
-      "flags": [],
-      "arguments": []
-    },
-    {
-      "name": "slack deliveries",
-      "summary": "inspect the latest Slack delivery receipts, including uncertain outcomes that need review",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listSlackDeliveries"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "slack connect",
-      "summary": "configure a Slack installation using workspace credential references",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "configureSlackInstallation"
-      ],
-      "flags": [
-        {
-          "name": "team-id",
-          "kind": "text",
-          "summary": "the Slack workspace ID",
-          "required": true
-        },
-        {
-          "name": "bot-user-id",
-          "kind": "text",
-          "summary": "the installed Slack bot user ID",
-          "required": true
-        },
-        {
-          "name": "signing-secret-reference",
-          "kind": "text",
-          "summary": "the workspace credential that verifies Slack events",
-          "required": true
-        },
-        {
-          "name": "bot-token-secret-reference",
-          "kind": "text",
-          "summary": "the workspace credential used to post replies",
-          "required": true
-        },
-        {
-          "name": "history-token-secret-reference",
-          "kind": "text",
-          "summary": "the workspace history credential; omit to use the bot token",
-          "required": false
-        },
-        {
-          "name": "api-origin",
-          "kind": "text",
-          "summary": "the Slack API origin; defaults to https://slack.com",
-          "required": false
-        },
-        {
-          "name": "create-only",
-          "kind": "switch",
-          "summary": "refuse changes to an existing installation during an import",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "connection-id",
-          "summary": "the persistent Slack installation ID"
-        }
-      ]
-    },
-    {
-      "name": "slack connections",
-      "summary": "list the workspace Slack installations without resolving credential values",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listSlackInstallations"
-      ],
-      "flags": [],
-      "arguments": []
-    },
-    {
-      "name": "slack disconnect",
-      "summary": "remove a Slack installation and stop its event and reply delivery",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "deleteSlackInstallation"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "connection-id",
-          "summary": "the persistent Slack installation ID"
-        }
-      ]
-    },
     {
       "name": "connection create",
       "summary": "register a reusable remote MCP connection with explicitly approved read-only tools",
@@ -419,7 +241,7 @@
         {
           "name": "access",
           "kind": "text",
-          "summary": "JSON grant with github, variables and secrets; null revokes access",
+          "summary": "JSON grant with environment variables and credential references; null revokes access",
           "required": true
         }
       ],
@@ -735,7 +557,7 @@
     },
     {
       "name": "mech create",
-      "summary": "create a mech in your workspace, which answers each inbox item through its model",
+      "summary": "create a persistent mech in your workspace, which receives notifications and acts through tools",
       "shape": "document",
       "operations": [
         "listWorkspaces",
@@ -757,13 +579,13 @@
         {
           "name": "instructions",
           "kind": "text",
-          "summary": "the instructions the mech follows in every turn",
+          "summary": "the instructions the mech follows whenever it works",
           "required": false
         },
         {
           "name": "model",
           "kind": "text",
-          "summary": "the model the mech answers through, one the deployment offers; its first offer when absent",
+          "summary": "the model the mech uses, one the deployment offers; its first offer when absent",
           "required": false
         },
         {
@@ -788,7 +610,7 @@
     },
     {
       "name": "mech fork",
-      "summary": "fork an idle mech into a new mech of your workspace, which keeps the mech's conversation, memory and records so far but not its sandbox's files",
+      "summary": "fork an idle mech into a new identity with its context and history; sandbox files remain with the source mech",
       "shape": "document",
       "operations": [
         "listWorkspaces",
@@ -816,24 +638,18 @@
       ]
     },
     {
-      "name": "inbox send",
-      "summary": "send text to the inbox of a mech under an id it prints first, which a resend with --inbox-item-id delivers only once",
+      "name": "notification send",
+      "summary": "notify a mech under an id printed before sending; retry the same text with --notification-id to deliver once",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "sendInboxItem"
+        "sendNotification"
       ],
       "flags": [
         {
-          "name": "inbox-item-id",
+          "name": "notification-id",
           "kind": "text",
-          "summary": "the inbox item id of a send to repeat, as an earlier send printed it; a fresh one when absent",
-          "required": false
-        },
-        {
-          "name": "session-id",
-          "kind": "text",
-          "summary": "the conversation session to receive the message; the mech default when absent",
+          "summary": "reuse a printed notification id to retry an uncertain send; a fresh one when absent",
           "required": false
         }
       ],
@@ -850,7 +666,7 @@
     },
     {
       "name": "event list",
-      "summary": "write the events of a mech, one record each: to the end of its log, or with --follow as they happen; a turn ends only with turn.answered or turn.unanswered",
+      "summary": "write the events of a mech, one record each: to the end of its log, or with --follow as they happen",
       "shape": "stream",
       "operations": [
         "listWorkspaces",
@@ -1189,12 +1005,11 @@
     },
     {
       "name": "workspace import",
-      "summary": "import missing workspace credentials, Slack installations and policy without replacing runtime data",
+      "summary": "import missing workspace credentials and policy without replacing runtime data",
       "shape": "document",
       "operations": [
         "listWorkspaces",
         "putCredential",
-        "configureSlackInstallation",
         "setWorkspacePolicy",
         "showWorkspacePolicy"
       ],
@@ -1249,49 +1064,18 @@
       ]
     },
     {
-      "name": "memory list",
-      "summary": "list the memories a mech saved, by path, each with its version, the turn that saved it, and its text",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listMemories"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "thread list",
-      "summary": "list the work items a mech opened, oldest first, each with its state and its note",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listThreads"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
       "name": "eval run",
-      "summary": "run a suite's cases, each on a fresh mech, grade each reply with a fresh grader mech, and report each trial; a rerun with the same --out-folder resumes",
+      "summary": "run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume",
       "shape": "document",
       "operations": [
         "listWorkspaces",
         "readiness",
         "showAllowance",
         "createMech",
-        "sendInboxItem",
-        "listEvents",
-        "showTurn"
+        "sendNotification",
+        "listTurns",
+        "showTurn",
+        "listConsoleMessages"
       ],
       "flags": [
         {
@@ -1370,7 +1154,6 @@
     }
   ],
   "error_codes": [
-    "WorkspaceImportConflict",
     "WorkspaceSelectionRefused",
     "SandboxMaintenanceFailed",
     "UsageInvalid",
@@ -1390,6 +1173,7 @@
     "PlanChanged",
     "AllowanceExhausted",
     "EvalFileFailed",
-    "EvalInterrupted"
+    "EvalInterrupted",
+    "EvalResponseInvalid"
   ]
 }

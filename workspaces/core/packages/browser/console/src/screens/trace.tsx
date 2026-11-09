@@ -19,7 +19,7 @@ import { RunEvidence } from './run-evidence.tsx';
 import { TurnHistory } from './turn-history.tsx';
 
 const inspectorViews: ReadonlySet<ConsoleView> = new Set(['requests', 'events', 'tools']);
-const cancelableStatuses: ReadonlySet<string> = new Set(['queued', 'running', 'waiting']);
+const cancelableStatuses: ReadonlySet<string> = new Set(['queued', 'running']);
 
 type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
@@ -45,15 +45,7 @@ export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly 
     return (
       <Notice hasError>
         This run ID is invalid.{' '}
-        <Button
-          onClick={() =>
-            props.navigate({
-              workspace: props.data.workspace.id,
-              mech: props.mech.id,
-              ...(props.location.session === undefined ? {} : { session: props.location.session }),
-            })
-          }
-        >
+        <Button onClick={() => props.navigate({ workspace: props.data.workspace.id, mech: props.mech.id })}>
           Return to mech
         </Button>
       </Notice>
@@ -80,12 +72,7 @@ function ValidTraceScreen({
 
   const mainView = inspectorViews.has(location.view ?? 'conversation') ? 'conversation' : location.view;
 
-  const base = {
-    workspace: data.workspace.id,
-    mech: mech.id,
-    ...(location.session === undefined ? {} : { session: location.session }),
-    ...(mainView === undefined ? {} : { view: mainView }),
-  };
+  const base = { workspace: data.workspace.id, mech: mech.id, ...(mainView === undefined ? {} : { view: mainView }) };
 
   const selected = { ...base, turn: turnId };
   const tab = selectedTraceTab(location);
@@ -125,15 +112,15 @@ function ValidTraceScreen({
                 <Button
                   disabled={cancelState !== 'idle'}
                   isPending={cancelState === 'sending'}
-                  pendingLabel="Requesting…"
+                  pendingLabel="Stopping…"
                   onClick={cancel}
                 >
-                  {cancelState === 'received' ? 'Cancellation requested' : 'Cancel run'}
+                  {cancelState === 'received' ? 'Stop requested' : 'Stop run'}
                 </Button>
               </Row>
             )}
             {cancelState === 'received' && cancelableStatuses.has(trace.turn.status) && (
-              <Notice>Waiting for the execution to stop.</Notice>
+              <Notice>Waiting for the run to stop.</Notice>
             )}
             <TurnTrace
               trace={trace}
@@ -161,7 +148,7 @@ function ValidTraceScreen({
                 ).href
               }
               replyLink={(sequence) => (
-                <ConsoleLink to={{ ...selected, inspect: 'events', event: sequence }}>Read full reply</ConsoleLink>
+                <ConsoleLink to={{ ...selected, inspect: 'events', event: sequence }}>Read full message</ConsoleLink>
               )}
               captures={<RunEvidence data={data} mechId={mech.id} turnId={turnId} />}
               events={

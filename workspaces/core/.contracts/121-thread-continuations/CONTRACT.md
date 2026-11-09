@@ -1,39 +1,38 @@
 ---
 name: thread-continuations
-message: Resume the original durable work from authenticated external decisions without duplicating it or changing its reply destination.
-paths: ["packages/node/runtime/src/{execution,requests,store}/**", "packages/node/server/src/**", "packages/shared/protocol/src/operations/threads/**"]
+message: Treat external decisions and completion events as correlated notifications without blocking the mech or inventing effects.
+paths: ["packages/node/runtime/src/{execution,tools,store}/**", "packages/node/server/src/**", "packages/shared/protocol/src/operations/notifications/**"]
 ---
 
 ## Rules
 
-Keep tracked work items distinct from conversation sessions and execution runs. A work item records the agent's
-progress; a native Workflow owns the execution that can wait. Do not recreate the former alarm-driven inbox or poll
-an approval from a model call or a shell process.
+Deliver external decisions and background results through the same durable notification boundary as other producers.
+Keep request kinds, approval policy, provider grants, and platform routing in their owning integration. Mechane stores
+verified producer identity and opaque correlation data; it does not interpret an approval as a tool result.
 
-Persist each external request's stable identity, request kind, service identity, and original source before submission.
-Register the native Workflow hook before the external service can resolve it. Durable decision intake also retains
-early events until their correlation exists, so timing cannot lose a decision.
+Let an application request return its stable reference while the mech continues other work. Waiting for a person's
+answer must not hold the single model owner, poll from a model call, or occupy a shell process. A new decision wakes the
+mech through ordinary notification scheduling, including after host replacement and after an earlier activation ended.
 
-Accept only authenticated Nexus events for the configured service. Verify the raw signed payload, timestamp, event
-identity, and request correlation. Store acceptance before returning success. Duplicate delivery and process
-replacement must neither repeat the external submission nor resume closed work.
+Keep each notification's source and correlation immutable. Duplicate delivery retains its original receipt, while changed
+content under the same identity is refused. A reply destination is explicit tool input; it is never a mutable ambient
+route inherited from the latest notification. Integration-owned correlation lets the agent find the original request
+without assuming that every later notification belongs to it.
 
-A ready event means permission may be available; it does not prove the operation ran or that a grant remains active.
-Read Nexus's authoritative request or collection before use. Denial, expiry, cancellation, changed service authority,
-and permission revocation have explicit outcomes. A late decision cannot reopen canceled or resolved work.
-
-Keep the original requester and reply route immutable. Resumed work uses that route even after other messages arrive.
-Current Slack installation and binding policy still govern delivery. A workflow waiting for approval consumes no
-model request or shell command. It resumes automatically when the authenticated decision arrives.
+Treat a ready event as a reason to inspect the authoritative request and current permission. It proves neither that the
+operation ran nor that access remains active. A denied, expired, revoked, canceled, or superseded request must not silently
+execute its old arguments. The agent chooses a fresh permitted action using current context. Decision intake itself posts
+no message, reaction, completion, or failure to an external conversation.
 
 ## Checks
 
-Run a real compiled workflow against Postgres, interrupt its process while it waits, then send the authenticated
-decision after restart. Verify the same work completes once and replies in its original destination without another
-human message. Repeat an event and deliver one before correlation registration.
+Using a real compiled workflow and Postgres, admit an external result while the mech is idle, active on other work, and
+restarting. Verify each event remains available once without another human message or an approval-specific model poll.
+Repeat a producer event and change its content under the same identity; only the unchanged duplicate may reuse receipt.
 
-Exercise denial, expiry, cancellation, a changed service identity, and revocation after a ready event. Inspect the
-replay for duplicate model calls or external effects and verify that waiting itself makes no model calls.
+Deliver a decision after cancellation, revocation, and supersession. Confirm intake performs no old tool call or channel
+post. In the owning integration's acceptance flow, read current authority before the explicit follow-up effect and use
+its recorded destination despite intervening notifications from another source.
 
 ## Local adaptations
 

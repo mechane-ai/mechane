@@ -11,8 +11,8 @@ import { createConfigurationOperations } from './configuration/configuration.ts'
 import { createEnvironmentOperations } from './environment.ts';
 import { createEvidenceOperations } from './evidence.ts';
 import { createMechOperations } from './mechs/mechs.ts';
-import type { CancelWorkflow, StartAdmission } from './mechs/mechs.ts';
-import type { NamedOperationContext, OperationHandlers } from './types.ts';
+import { createNotificationOperations } from './notifications.ts';
+import type { CancelWorkflow, NamedOperationContext, OperationHandlers, StartAdmission } from './types.ts';
 import { requireAuthenticated, validatedOperation } from './validated-operation.ts';
 
 type SandboxManagement = {
@@ -36,6 +36,7 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
   const { store, configuration, authentication } = options;
 
   const handlers: OperationHandlers = {
+    ...createNotificationOperations({ store, startAdmission: options.startAdmission }),
     ...createAuthOperations({ store, configuration: authentication }),
     ...createEvidenceOperations({ store, configuration }),
     ...createEnvironmentOperations({ store, configuration }),

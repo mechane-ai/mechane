@@ -410,7 +410,7 @@
     "kind": "app",
     "criterion": "program",
     "consumers": [],
-    "confines": ["@tanstack/react-db", "@ai-sdk/workflow"]
+    "confines": ["@tanstack/react-db"]
   },
   "@mechane/catalog": {
     "owns": "Shared development-only Storybook configuration, theme controls, and StyleX compiler settings",
@@ -422,7 +422,7 @@
     "consumers": ["@mechane-ai/elements", "@mechane/console"]
   },
   "@mechane/runtime": {
-    "owns": "The durable agent runtime: product records, WorkflowAgent execution, model accounting, tools, channel delivery, and Nexus decision waits",
+    "owns": "Persistent mech identity, durable notification admission and context, bounded native activations, model accounting, and generic environment tools",
     "layer": 6,
     "lane": "node",
     "dialect": "plain",
@@ -433,12 +433,9 @@
       "@ai-sdk/mcp",
       "@ai-sdk/provider",
       "@ai-sdk/workflow",
-      "@chat-adapter/slack",
-      "@chat-adapter/state-pg",
       "@openrouter/ai-sdk-provider",
       "@workflow/serde",
-      "pg",
-      "jose"
+      "pg"
     ]
   },
   "@mechane/server": {

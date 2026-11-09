@@ -29,6 +29,7 @@ export async function summarizeHistory(
     model: new RuntimeModel(input.reference),
     instructions: summaryInstructions(input.previousSummary),
     messages: pruneMessages({ messages: [...input.messages], reasoning: 'all', toolCalls: 'none' }),
+    allowSystemInMessages: true,
     maxRetries: 0,
     maxOutputTokens: input.maxOutputTokens,
   });

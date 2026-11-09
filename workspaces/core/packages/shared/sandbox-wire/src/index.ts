@@ -10,7 +10,6 @@ export {
   GUEST_PORT,
   ReceiptStatus,
   OUTPUT_TAIL_BYTES,
-  EXECUTION_TIMEOUT_MAX,
 } from './constants.ts';
 export {
   HostMachine,
@@ -149,3 +148,14 @@ export { sandboxProcessReadPath } from './sandbox-process-read-path.ts';
 export { sandboxProcessStopPath } from './sandbox-process-stop-path.ts';
 export { sandboxInteractiveCancelPath } from './sandbox-interactive-cancel-path.ts';
 export { sandboxBrowserPath } from './sandbox-browser-path.ts';
+export { SandboxCheckpointIdentity, SandboxCheckpointResult, sandboxCheckpointPath } from './checkpoint.ts';
+export {
+  SANDBOX_COMPLETION_PATH,
+  SandboxCompletionKind,
+  SandboxCompletionStatus,
+  SandboxCompletionReceipt,
+  SandboxCompletion,
+  SandboxCompletionAccepted,
+  SandboxCompletionIdentity,
+  sandboxCompletionPath,
+} from './completion.ts';

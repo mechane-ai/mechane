@@ -13,6 +13,12 @@ import type { Mech, MechDefinition, MechRevision } from '../../../domain.ts';
 import type { StoreContext } from '../../context.ts';
 import { pageFromRows } from '../page.ts';
 import type { Page } from '../page.ts';
+import {
+  forkNotificationPayload,
+  forkNotifications,
+  forkNotificationState,
+  mappedForkId,
+} from './fork-notifications.ts';
 
 export type MechScope = { readonly workspaceId: string; readonly mechId: string };
 export type MechPageInput = { readonly workspaceId: string; readonly after: string | null; readonly maxRows: number };
@@ -253,7 +259,12 @@ async function cloneMech(context: StoreContext, input: CloneMechInput): Promise<
   return await createMech(context, creation, fingerprint);
 }
 
-type ForkRun = { readonly id: string; readonly inputId: string; readonly sessionId: string };
+type ForkRun = {
+  readonly id: string;
+  readonly inputId: string;
+  readonly sessionId: string;
+  readonly notificationIds: ReadonlyArray<string>;
+};
 
 type ForkSession = {
   readonly id: string;
@@ -301,7 +312,8 @@ async function forkMech(context: StoreContext, input: CloneMechInput): Promise<M
     const source = await getMech(transaction, input);
 
     const pending = await transaction.client.query(
-      `SELECT id FROM mechane.runs WHERE mech_id=$1 AND status IN ('queued','running','waiting') LIMIT 1`,
+      `SELECT id FROM mechane.runs WHERE mech_id=$1 AND status IN ('queued','running','waiting')
+       UNION ALL SELECT mech_id FROM mechane.mech_mailboxes WHERE mech_id=$1 AND is_wake_pending LIMIT 1`,
       [input.mechId],
     );
 
@@ -333,6 +345,15 @@ async function forkMech(context: StoreContext, input: CloneMechInput): Promise<M
     ]);
     await saveRevision(transaction, fork.id);
 
+    const notificationReferences = await forkNotifications({
+      context: transaction,
+      workspaceId: input.workspaceId,
+      sourceMechId: input.mechId,
+      targetMechId: fork.id,
+    });
+
+    const notificationMap = JSON.stringify(Record.fromEntries(notificationReferences.ids));
+
     const sessions = await transaction.client.query<ForkSession>(
       'SELECT id,channel_key AS "channelKey",title,source,updated_at AS "updatedAt",created_at AS "createdAt" FROM mechane.sessions WHERE mech_id=$1',
       [input.mechId],
@@ -362,7 +383,8 @@ async function forkMech(context: StoreContext, input: CloneMechInput): Promise<M
     }
 
     const runs = await transaction.client.query<ForkRun>(
-      'SELECT id,input_id AS "inputId",session_id AS "sessionId" FROM mechane.runs WHERE mech_id=$1 ORDER BY created_at,id',
+      `SELECT id,input_id AS "inputId",session_id AS "sessionId",notification_ids AS "notificationIds"
+       FROM mechane.runs WHERE mech_id=$1 ORDER BY created_at,id`,
       [input.mechId],
     );
 
@@ -379,13 +401,19 @@ async function forkMech(context: StoreContext, input: CloneMechInput): Promise<M
       inputIds.set(run.inputId, inputId);
       await transaction.client.query(
         `INSERT INTO mechane.inputs(id,workspace_id,mech_id,session_id,idempotency_key,input_text,input_message,attachments,origin,created_at)
-         SELECT $1,$2,$3,$4,'fork:' || id,input_text,input_message,attachments,origin,created_at FROM mechane.inputs WHERE id=$5`,
-        [inputId, input.workspaceId, fork.id, sessionId, run.inputId],
+         SELECT $1,$2,$3,$4,'fork:' || id,input_text,input_message,attachments,
+           CASE WHEN origin->>'kind'='notification' AND origin->>'notificationId' IS NOT NULL
+             THEN jsonb_set(origin,'{notificationId}',$6::jsonb->(origin->>'notificationId')) ELSE origin END,
+           created_at FROM mechane.inputs WHERE id=$5`,
+        [inputId, input.workspaceId, fork.id, sessionId, run.inputId, notificationMap],
       );
+
+      const notificationIds = run.notificationIds.map((id) => mappedForkId({ id, ids: notificationReferences.ids }));
+
       await transaction.client.query(
-        `INSERT INTO mechane.runs(id,workspace_id,mech_id,session_id,input_id,definition_revision,status,reply,error,failure_reason,cancel_requested_at,created_at,started_at,ended_at)
-         SELECT $1,$2,$3,$4,$5,definition_revision,status,reply,error,failure_reason,cancel_requested_at,created_at,started_at,ended_at FROM mechane.runs WHERE id=$6`,
-        [runId, input.workspaceId, fork.id, sessionId, inputId, run.id],
+        `INSERT INTO mechane.runs(id,workspace_id,mech_id,session_id,input_id,definition_revision,status,reply,error,failure_reason,cancel_requested_at,created_at,started_at,ended_at,notification_ids)
+         SELECT $1,$2,$3,$4,$5,definition_revision,status,reply,error,failure_reason,cancel_requested_at,created_at,started_at,ended_at,$7 FROM mechane.runs WHERE id=$6`,
+        [runId, input.workspaceId, fork.id, sessionId, inputId, run.id, notificationIds],
       );
       await transaction.client.query(
         `INSERT INTO mechane.messages(id,session_id,run_id,position,model_message,ui_message,created_at)
@@ -396,13 +424,28 @@ async function forkMech(context: StoreContext, input: CloneMechInput): Promise<M
       );
     }
 
+    const messageIds = await forkNotificationState({
+      context: transaction,
+      workspaceId: input.workspaceId,
+      sourceMechId: input.mechId,
+      targetMechId: fork.id,
+      notifications: notificationReferences,
+      sessionIds,
+      runIds,
+    });
+
     const events = await transaction.client.query<ForkEvent>(
       'SELECT run_id AS "runId",type,data AS payload,created_at AS "createdAt" FROM mechane.activity WHERE mech_id=$1 ORDER BY sequence',
       [input.mechId],
     );
 
     for (const event of events.rows) {
-      const payload = { ...event.payload };
+      const payload = forkNotificationPayload({
+        type: event.type,
+        payload: event.payload,
+        notifications: notificationReferences,
+        messageIds,
+      });
 
       if (typeof payload['turnId'] === 'string') {
         payload['turnId'] = runIds.get(payload['turnId']) ?? payload['turnId'];

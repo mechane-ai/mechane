@@ -1,18 +1,15 @@
 import type { HttpBindings } from '@hono/node-server';
-import { catalog, RELEASE, RequestInvalid, SERVICE, ServiceUnavailable } from '@mechane/protocol';
-import { HttpHeader, HttpStatusCode, RecordId, SlackConnectionId } from '@mechane/records';
-import { Schema } from 'effect';
+import { catalog, RELEASE, SERVICE, ServiceUnavailable } from '@mechane/protocol';
+import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { Hono } from 'hono';
 import { clientAddress } from './http/client-address.ts';
 import { respondFailure } from './http/failure.ts';
 
 export type RequestHandler = (request: Request, peerAddress?: string | null) => Promise<Response | null>;
-type SlackRequest = { readonly request: Request; readonly workspaceId: string; readonly connectionId: string };
 type ServerEnvironment = { readonly Bindings: HttpBindings };
 
 type ApplicationInput = {
   readonly handlers: ReadonlyArray<RequestHandler>;
-  readonly slack: (input: SlackRequest) => Promise<Response>;
   readonly checkHealth: () => Promise<void>;
   readonly isReady: () => boolean;
   readonly isTrustedProxy?: boolean;
@@ -24,7 +21,6 @@ function unavailable(request: Request): Response {
 
 export function createApplication({
   handlers,
-  slack,
   checkHealth,
   isReady,
   isTrustedProxy = false,
@@ -52,19 +48,6 @@ export function createApplication({
     }
 
     return await next();
-  });
-
-  application.post('/integrations/slack/:workspaceId/:connectionId/events', async (context) => {
-    const workspaceId = context.req.param('workspaceId');
-    const connectionId = context.req.param('connectionId');
-
-    if (!Schema.is(RecordId)(workspaceId) || !Schema.is(SlackConnectionId)(connectionId)) {
-      const failure = new RequestInvalid({ reason: 'The Slack connection identifier is invalid' });
-
-      return respondFailure({ failure, request: context.req.raw });
-    }
-
-    return await slack({ request: context.req.raw, workspaceId, connectionId });
   });
 
   application.get(

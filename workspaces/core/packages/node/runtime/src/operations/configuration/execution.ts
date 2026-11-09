@@ -48,16 +48,5 @@ function executionConfiguration(input: ProtocolExecutionAccess | null): Executio
     return null;
   }
 
-  const requestService = Option.map(input.requestService, (service) => ({
-    url: service.url.href,
-    serviceId: service.serviceId,
-    secretReference: service.secretReference,
-  }));
-
-  return {
-    github: Option.getOrNull(input.github),
-    variables: input.variables,
-    secrets: input.secrets,
-    requestService: Option.getOrNull(requestService),
-  };
+  return { variables: input.variables, secrets: input.secrets };
 }

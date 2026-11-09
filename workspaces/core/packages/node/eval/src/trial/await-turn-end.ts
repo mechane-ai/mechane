@@ -1,64 +1,46 @@
-import type { ClientFailure, OperationCall } from '@mechane/client';
-import { MechPath, WAIT_MAX } from '@mechane/protocol';
-import { Array, Effect, Option, Schema, Stream } from 'effect';
-import type { WorkspaceAccess } from '../types.ts';
-import { turnEnd } from './turn-end.ts';
-import type { TurnEnd } from './types.ts';
+import type { OperationCall } from '@mechane/client';
+import { TurnStatus } from '@mechane/protocol';
+import type { NotificationId, Turn } from '@mechane/protocol';
+import type { MechId } from '@mechane/records';
+import { Array, Effect, Option } from 'effect';
+import type { EvalRunFailure, WorkspaceAccess } from '../types.ts';
+import { readRoleRuns } from './read-role-runs.ts';
 
 type AwaitTurnEndInput = {
-  readonly call: OperationCall<'listEvents'>;
+  readonly call: OperationCall<'listTurns'>;
   readonly access: WorkspaceAccess;
-  readonly mechId: string;
+  readonly mechId: MechId;
+  readonly notificationId: NotificationId;
 };
 
-/** A page of a mech's events to read for turn ends, after the sequence `after`. */
-type TurnEndPageInput = AwaitTurnEndInput & { readonly after: number };
+const POLL_INTERVAL = '250 millis';
+const ACTIVE_STATUSES: ReadonlySet<TurnStatus> = new Set([TurnStatus.Queued, TurnStatus.Running]);
 
-/** The turn ends of a page of events, and the sequence the next page starts after. */
-type TurnEndPage = readonly [ReadonlyArray<TurnEnd>, Option.Option<number>];
+/** Each role has a fresh mech and one notification; a successor is reserved before its predecessor becomes idle. */
+export const awaitTurnEnd = Effect.fn('awaitTurnEnd')(function* (
+  input: AwaitTurnEndInput,
+): Effect.fn.Return<Array.NonEmptyReadonlyArray<Turn>, EvalRunFailure> {
+  let completed = yield* readCompletedRoleRuns(input);
 
-/** The sequence before a log's first event, where a fresh mech's events start. */
-const LOG_START = 0;
-
-/** The stream of a mech's turn ends stopped, which it never does on its own, since each page reads on. */
-class TurnEndsStopped extends Schema.TaggedError<TurnEndsStopped>()('TurnEndsStopped', { mech: MechPath }) {}
-
-/**
- * Follows a fresh mech's events from the start of its log to the end of its first turn, the turn of the one inbox item
- * it received. Each page waits as long as a list may, and the wait has no deadline of its own, since the turn's
- * dispatches have theirs.
- */
-export const awaitTurnEnd = Effect.fn('awaitTurnEnd')(function* ({
-  call,
-  access,
-  mechId,
-}: AwaitTurnEndInput): Effect.fn.Return<TurnEnd, ClientFailure> {
-  const page: (after: number) => Effect.Effect<TurnEndPage, ClientFailure> = (after) =>
-    turnEndPage({ call, access, mechId, after });
-
-  const first = yield* Stream.runHead(Stream.paginate(LOG_START, page));
-
-  if (Option.isNone(first)) {
-    // The event pages never end, since each page's cursor follows the log, so the stream's head is always there.
-    const stopped = new TurnEndsStopped({ mech: { workspaceId: access.workspaceId, mechId } });
-
-    return yield* Effect.die(stopped);
+  while (Option.isNone(completed)) {
+    completed = yield* readCompletedRoleRuns(input);
   }
 
-  return first.value;
+  return completed.value;
 });
 
-/** The turn ends among the events after `after`, and the last event's sequence, after which the next page starts. */
-const turnEndPage = Effect.fn('turnEndPage')(function* ({
-  call,
-  access,
-  mechId,
-  after,
-}: TurnEndPageInput): Effect.fn.Return<TurnEndPage, ClientFailure> {
-  const { token, workspaceId } = access;
-  const input = { workspaceId, mechId, after, wait: WAIT_MAX };
-  const { events } = yield* call({ name: 'listEvents', input, credential: token });
-  const next = Option.match(Array.last(events), { onNone: () => after, onSome: (last) => last.sequence });
+const readCompletedRoleRuns = Effect.fn('readCompletedRoleRuns')(function* (
+  input: AwaitTurnEndInput,
+): Effect.fn.Return<Option.Option<Array.NonEmptyReadonlyArray<Turn>>, EvalRunFailure> {
+  const runs = yield* readRoleRuns(input);
+  const hasInput = runs.some((run) => run.notificationIds.includes(input.notificationId));
+  const hasActiveRun = runs.some((run) => ACTIVE_STATUSES.has(run.status));
 
-  return [Array.getSomes(Array.map(events, (event) => turnEnd({ event }))), Option.some(next)];
+  if (Array.isReadonlyArrayNonEmpty(runs) && hasInput && !hasActiveRun) {
+    return Option.some(runs);
+  }
+
+  yield* Effect.sleep(POLL_INTERVAL);
+
+  return Option.none();
 });

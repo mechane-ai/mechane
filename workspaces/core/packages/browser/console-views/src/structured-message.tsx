@@ -1,16 +1,10 @@
-import { buildSpecFromParts, getTextFromParts, JSONUIProvider, Renderer } from '@json-render/react';
+import { JSONUIProvider, Renderer } from '@json-render/react';
 import { Markdown } from '@mechane-ai/elements/content/markdown';
 import { PresentationSpecification } from '@mechane/protocol/presentation';
-import type { UIMessage } from 'ai';
 import type { ReactNode } from 'react';
 import { presentationRegistry } from './structured/registry.tsx';
 
 type StructuredMessageProps = { readonly value: unknown; readonly fallback?: string; readonly isStreaming?: boolean };
-
-/** Keeps native presentation framing out of the message's readable prose. */
-export function readMessagePresentation(parts: UIMessage['parts']) {
-  return { text: getTextFromParts(parts), specification: buildSpecFromParts(parts) };
-}
 
 export function StructuredMessage({ value, fallback, isStreaming = false }: StructuredMessageProps): ReactNode {
   const result = PresentationSpecification.safeParse(value);

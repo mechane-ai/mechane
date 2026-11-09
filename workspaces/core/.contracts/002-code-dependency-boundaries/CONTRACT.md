@@ -29,6 +29,8 @@ Should the change have moved the shared code into the lower package instead of a
 ## Local adaptations
 
 The declaration is in two places that hold no value twice: `dependencies.json` states each member once, with what it owns, its layer, lane, dialect, kind and criterion, and the members it allows to import it, and each member's `package.json` states its edges, each other member it depends on by `workspace:*`.
+The manifest reader includes runtime, development, and peer dependency entries when checking those edges. Declaring an
+internal package as a peer does not exempt it from the declared consumer, layer, or lane boundary.
 The workspace's members are its root and each folder that a glob of `pnpm-workspace.yaml` matches and that holds a `package.json`; the owned checks find them there, so a new member is checked from its first commit.
 The boundaries check of `mise -C workspaces/core run checks` fails on a member `dependencies.json` lacks or names without a package, a `consumers` entry that names no member, and an import between members that its importer's `package.json` does not declare or that reaches the other member by relative path; knip fails on a declared edge that no import uses.
 The layers keep the edges acyclic: each member's `layer:` rule lets it import only members of a strictly lower layer, so no cycle among edges can form, directly or through other packages.

@@ -14,10 +14,7 @@ export const codeDomainVocabulary = {
       behavior: FixBehavior.BindingNames,
       standard: 'NM-02',
       violation: [{ 'scripts/turns.ts': 'export const legacyTurns = 3;\n' }],
-      allowed: [
-        { 'scripts/turns.ts': 'export const activeTurns = 3;\n' },
-        { 'scripts/chat.ts': 'chat.onNewMessage(receiveMessage);\nchat.onNewMention(receiveMention);\n' },
-      ],
+      allowed: [{ 'scripts/turns.ts': 'export const activeTurns = 3;\n' }],
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.Names,
     },

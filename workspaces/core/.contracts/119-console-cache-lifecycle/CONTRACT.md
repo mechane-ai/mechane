@@ -31,7 +31,8 @@ Publish a receipt only after the native persistence API confirms its referenced 
 when its exact receipt and compatible referenced rows are present; an absent receipt never means an empty page.
 Keep refresh timing in the tab's Query state. A persisted receipt describes ordered membership and pagination, so an
 unchanged successful read must not manufacture a durable mutation just to record when the request completed.
-Keep credentials, drafts, unsent commands, and submission state outside this cache. A format change replaces derived
+Keep credentials, drafts, unsent commands, submission state, and public conversation transcripts outside this cache.
+Contract 113 assigns public history to one admitted in-memory conversation owner and data-owned Query reads. A format change replaces derived
 copies without deleting authoritative server data or application drafts.
 
 Admit canonical writes through one short native Web Lock per generation in `console-data/src/collections.ts`.

@@ -1,4 +1,4 @@
-import type { ConsoleView, Thread, Turn } from '@mechane/protocol';
+import type { ConsoleView, Turn } from '@mechane/protocol';
 
 /** Only shareable record selections go in the URL. */
 export type ConsoleLocation = {
@@ -6,8 +6,6 @@ export type ConsoleLocation = {
   readonly workspace?: string;
   /** Absent opens the workspace mech list. */
   readonly mech?: string;
-  /** Absent opens the mech's default console conversation. */
-  readonly session?: string;
   /** Absent opens the mech, before selecting one of its turns. */
   readonly turn?: string;
   /** Absent leaves the run or mech visible without opening a capture. */
@@ -37,6 +35,5 @@ export type PageCursors = {
   readonly turns: ReadonlyArray<Turn['id']>;
   readonly activity: ReadonlyArray<number>;
   readonly events: ReadonlyArray<number>;
-  readonly work: ReadonlyArray<Thread['id']>;
   readonly evidence: ReadonlyArray<string>;
 };

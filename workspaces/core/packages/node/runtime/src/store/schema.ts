@@ -225,4 +225,93 @@ ALTER TABLE mechane.execution_receipts ADD CONSTRAINT execution_receipts_interac
   CHECK(kind NOT IN ('process','browser') OR request IS NOT NULL);
 `,
   },
+  {
+    version: 3,
+    sql: `
+ALTER TABLE mechane.runs ADD COLUMN notification_ids uuid[] NOT NULL DEFAULT '{}';
+CREATE INDEX runs_notifications ON mechane.runs USING gin(notification_ids);
+CREATE TABLE mechane.notifications (
+  id uuid PRIMARY KEY, workspace_id uuid NOT NULL, mech_id uuid NOT NULL,
+  received_sequence bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+  text text NOT NULL, source jsonb NOT NULL, producer jsonb NOT NULL, producer_key text NOT NULL,
+  source_name text NOT NULL, source_event_id text NOT NULL, data jsonb,
+  received_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY(workspace_id,mech_id) REFERENCES mechane.mechs(workspace_id,id),
+  UNIQUE(mech_id,producer_key,source_name,source_event_id)
+);
+CREATE INDEX notifications_mech_sequence ON mechane.notifications(mech_id,received_sequence);
+CREATE TABLE mechane.mech_mailboxes (
+  mech_id uuid PRIMARY KEY, workspace_id uuid NOT NULL, session_id uuid REFERENCES mechane.sessions(id),
+  received_sequence bigint NOT NULL DEFAULT 0 CHECK(received_sequence >= 0),
+  presented_sequence bigint NOT NULL DEFAULT 0 CHECK(presented_sequence BETWEEN 0 AND received_sequence),
+  active_run_id uuid REFERENCES mechane.runs(id), is_wake_pending boolean NOT NULL DEFAULT false,
+  is_environment_checkpoint_required boolean NOT NULL DEFAULT false,
+  model_messages jsonb NOT NULL DEFAULT '[]' CHECK(jsonb_typeof(model_messages)='array'),
+  notes_imported_at timestamptz,
+  is_context_initialized boolean NOT NULL DEFAULT false, updated_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY(workspace_id,mech_id) REFERENCES mechane.mechs(workspace_id,id)
+);
+CREATE TABLE mechane.activation_checkpoints (
+  run_id uuid PRIMARY KEY REFERENCES mechane.runs(id),
+  start_sequence bigint NOT NULL CHECK(start_sequence >= 0),
+  scheduled_sequence bigint NOT NULL CHECK(scheduled_sequence >= start_sequence),
+  checkpoint_sequence integer NOT NULL DEFAULT 0 CHECK(checkpoint_sequence >= 0),
+  checkpoint_fingerprint text,
+  successor_run_id uuid REFERENCES mechane.runs(id)
+);
+CREATE TABLE mechane.tool_dispatches (
+  run_id uuid NOT NULL REFERENCES mechane.runs(id), tool_call_id text NOT NULL, tool_name text NOT NULL,
+  presented_sequence bigint NOT NULL CHECK(presented_sequence >= 0),
+  status text NOT NULL CHECK(status IN ('admitted','not_started')),
+  reason text CHECK(reason IN ('notifications_pending','execution_stopped')),
+  created_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(run_id,tool_call_id),
+  CHECK((status='not_started')=(reason IS NOT NULL))
+);
+CREATE TABLE mechane.console_messages (
+  id uuid PRIMARY KEY, workspace_id uuid NOT NULL, mech_id uuid NOT NULL,
+  sequence bigint GENERATED ALWAYS AS IDENTITY UNIQUE,
+  run_id uuid REFERENCES mechane.runs(id), notification_id uuid REFERENCES mechane.notifications(id),
+  tool_call_id text, role text NOT NULL CHECK(role IN ('user','assistant')), text text NOT NULL, presentation jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY(workspace_id,mech_id) REFERENCES mechane.mechs(workspace_id,id),
+  UNIQUE(run_id,tool_call_id), UNIQUE(notification_id),
+  CHECK((role='assistant' AND run_id IS NOT NULL AND tool_call_id IS NOT NULL AND notification_id IS NULL)
+    OR (role='user' AND run_id IS NULL AND tool_call_id IS NULL AND notification_id IS NOT NULL))
+);
+CREATE INDEX console_messages_mech_sequence ON mechane.console_messages(mech_id,sequence);
+INSERT INTO mechane.notifications(id,workspace_id,mech_id,text,source,producer,producer_key,source_name,source_event_id,received_at)
+SELECT input.id,input.workspace_id,input.mech_id,input.input_text,
+  jsonb_build_object('name','console','eventId',input.id::text),
+  jsonb_build_object('kind','member','principalId',input.origin->>'principalId'),
+  'member:' || (input.origin->>'principalId'),'console',input.id::text,input.created_at
+FROM mechane.inputs input WHERE input.origin->>'kind'='console' ORDER BY input.created_at,input.id;
+INSERT INTO mechane.mech_mailboxes(workspace_id,mech_id,received_sequence,presented_sequence)
+SELECT workspace_id,mech_id,max(received_sequence),max(received_sequence)
+FROM mechane.notifications GROUP BY workspace_id,mech_id;
+UPDATE mechane.runs run SET notification_ids=ARRAY[notification.id]
+FROM mechane.notifications notification WHERE notification.id=run.input_id;
+INSERT INTO mechane.console_messages(id,workspace_id,mech_id,notification_id,run_id,tool_call_id,role,text,presentation,created_at)
+SELECT entry.id,entry.workspace_id,entry.mech_id,entry.notification_id,entry.run_id,entry.tool_call_id,
+  entry.role,entry.text,entry.presentation,entry.created_at FROM (
+  SELECT notification.id,notification.workspace_id,notification.mech_id,notification.id AS notification_id,
+    NULL::uuid AS run_id,NULL::text AS tool_call_id,'user'::text AS role,notification.text,NULL::jsonb AS presentation,
+    notification.received_at AS created_at,-1 AS position,0::bigint AS part_position
+  FROM mechane.notifications notification
+  UNION ALL
+  SELECT md5(message.id::text || ':' || parts.ordinal::text)::uuid,run.workspace_id,run.mech_id,NULL::uuid,run.id,
+    'imported-message:' || message.id::text || ':' || parts.ordinal::text,'assistant',
+    CASE WHEN parts.part->>'type'='text' THEN parts.part->>'text' ELSE parts.part->'output'->>'fallback' END,
+    CASE WHEN parts.part->>'type'='tool-render_ui' THEN parts.part->'output' ELSE NULL END,
+    message.created_at,message.position,parts.ordinal
+  FROM mechane.messages message JOIN mechane.runs run ON run.id=message.run_id
+    JOIN mechane.inputs input ON input.id=run.input_id
+    CROSS JOIN LATERAL jsonb_array_elements(message.ui_message->'parts') WITH ORDINALITY AS parts(part,ordinal)
+  WHERE input.origin->>'kind'='console' AND message.ui_message->>'role'='assistant'
+    AND ((parts.part->>'type'='text' AND jsonb_typeof(parts.part->'text')='string')
+      OR (parts.part->>'type'='tool-render_ui' AND jsonb_typeof(parts.part->'output'->'spec')='object'
+        AND jsonb_typeof(parts.part->'output'->'fallback')='string'))
+) entry WHERE entry.role='user' OR entry.text<>'' OR entry.presentation IS NOT NULL
+ORDER BY entry.created_at,entry.position,entry.part_position,entry.id;
+`,
+  },
 ] as const;

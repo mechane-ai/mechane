@@ -49,6 +49,14 @@ and superseded public operations without a compatibility reader. The owner expli
 state for this cutover. Legacy format-lock entries do not require retaining the old execution engine. This is a
 one-time deployment baseline, not permission for later releases to discard data or narrow active workflow payloads.
 
+The owner-approved notification cutover in issue 108 retires the superseded public protocol and CLI surfaces for
+runtime 0.26.0 and client 0.3.0, with owned consumers updated together. This is a release-specific client retirement,
+not another fresh-state cutover. The active wire snapshot may be regenerated from the replacement public catalog for
+this release; subsequent wire changes remain subject to the checks and retirement rules above. Keep the existing
+migration checksum entries, including domain migrations 1 and 2, unchanged. Public route retirement gives no authority
+to discard stored history, work records, memory, files, receipts, credentials, or replayable Workflow state. Preserve
+those through the owning data migration and history readers; do not retain obsolete public endpoints as a second API.
+
 After that baseline, apply the stored-data and active-history rules above to Mechane Postgres records and Workflow
 histories. Coordinate code and schema changes for overlapping service versions. Keep immutable release assets and
 recorded execution receipts meaningful across retries. The sandbox guest wire remains a separately deployed boundary;

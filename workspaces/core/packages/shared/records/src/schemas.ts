@@ -16,11 +16,6 @@ export const TurnId = RecordId.pipe(Schema.brand('TurnId'));
 
 export type TurnId = typeof TurnId.Type;
 
-/** The id of a thread a mech opened. */
-export const ThreadId = RecordId.pipe(Schema.brand('ThreadId'));
-
-export type ThreadId = typeof ThreadId.Type;
-
 /** A count that is never negative, which each unit brand types by what it counts. */
 const Count = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 

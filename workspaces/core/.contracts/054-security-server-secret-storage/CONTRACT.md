@@ -33,7 +33,7 @@ Rotate the key version and confirm existing ciphertexts still decrypt until re-e
 ## Local adaptations
 
 Deployment secrets include database connections, GitHub OAuth, model access, the vault keyring, sandbox service
-access, and Nexus callback authentication. The installation's secret store supplies them privately. Logs and public
+access, and generic notification-producer authentication. The installation's secret store supplies them privately. Logs and public
 manifests hold references and safe correlation IDs only. Local development credentials stay in owner-only files.
 
 Workspace vault records use AES-256-GCM with a fresh 96-bit nonce and key version. Associated data binds the purpose,
@@ -44,17 +44,15 @@ Workflow arguments, results, and model serialization contain references rather t
 resolve credentials immediately before use. The model adapter reconstructs its provider with live credentials inside
 the request boundary. The complete serialized workflow state is part of credential-leak verification.
 
-Command execution receives only its explicit current grant. The GitHub App private key, Nexus request-service key,
-and callback-signing secret stay host-only. Runtime-managed secrets never enter workspace checkpoints. Granted code
-can deliberately copy the credentials it receives, so authorization remains distinct from accidental-output redaction.
-
-Slack signing, bot, and history tokens resolve from workspace vault references. Authenticate only the configured Slack
-API and exact allowed private-file host, without redirects or embedded URL credentials. Provider failures, tool
-results, and attachment errors contain no raw credential-bearing bodies.
+Command execution receives only its explicit current generic grant. Host infrastructure and notification-producer
+secrets never become command credentials. Provider issuance and platform secrets belong to the configured application
+service. Runtime-managed values never enter model context or checkpoints. Granted code can deliberately copy received
+credentials, so authorization remains distinct from accidental-output redaction. Provider failures and tool results
+contain no raw credential-bearing bodies.
 
 The sandbox gateway injects no upstream account credential. Runtime and migration database connections remain separate;
-the runtime receives only its domain and upstream adapter privileges. Workflow and Chat schema bootstrapping belongs
-to the explicit migration process. No application code edits their private tables.
+the runtime receives only its domain and Workflow privileges. Upstream schema bootstrap belongs to the explicit
+migration process. Application code does not edit upstream private tables or delete retained platform history.
 
 The runtime may read its own migration ledger's version and checksum for startup compatibility and readiness. This
 replaces the upstream check's blanket prohibition on reading migration state. Grant SELECT for that metadata only;

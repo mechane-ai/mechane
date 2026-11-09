@@ -1,3 +1,4 @@
+import { retainFailureLogs } from './retain-failure-logs.ts';
 import { startLocalStack } from './start-local-stack.ts';
 import type { LocalStack, StackOptions } from './types.ts';
 
@@ -51,6 +52,18 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
       }
 
       await run({ stack, signal: interrupted.signal });
+    } catch (error) {
+      try {
+        const evidence = await retainFailureLogs(stack);
+
+        process.stderr.write(`Local stack failure logs: ${evidence}\nRemove that private folder after review.\n`);
+      } catch (retentionError) {
+        throw new AggregateError([error, retentionError], 'The local stack failed and its logs could not be retained', {
+          cause: retentionError,
+        });
+      }
+
+      throw new Error('The local stack scenario failed', { cause: error });
     } finally {
       await stack.stop();
     }

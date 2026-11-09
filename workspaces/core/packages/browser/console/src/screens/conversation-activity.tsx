@@ -1,65 +1,110 @@
-import { Button, Row, Text } from '@mechane-ai/elements';
+import { Button, Row, Stack, Text } from '@mechane-ai/elements';
 import { SkeletonText } from '@mechane-ai/elements/feedback';
+import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
+import { Turn } from '@mechane/protocol';
 import type { Mech } from '@mechane/protocol';
-import { TurnId } from '@mechane/records';
+import { MechId } from '@mechane/records';
+import { Schema } from 'effect';
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleLink } from '../navigation.tsx';
-import { useTrace } from '../reads.ts';
+import { useTurns } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
+import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
-export function ConversationActivity({
-  data,
-  mech,
-  runId,
-  sessionId,
-}: {
-  readonly data: ConsoleData;
-  readonly mech: Mech;
-  readonly runId: string | null;
-  readonly sessionId: string;
-}): ReactNode {
-  const request = runId === null ? undefined : data.reads.trace(mech.id, TurnId.make(runId));
-  const state = useTrace(data, request);
+const activeStatuses: ReadonlySet<Turn['status']> = new Set(['queued', 'running']);
 
-  if (runId === null) {
-    return mech.status === 'paused' ? (
-      <Text variant="caption" tone="muted">
-        Paused
-      </Text>
-    ) : null;
+type StopState = {
+  readonly turnId: Turn['id'];
+  readonly status: 'sending' | 'received' | 'failed';
+  readonly error?: string;
+};
+
+export function ConversationActivity({ data, mech }: { readonly data: ConsoleData; readonly mech: Mech }): ReactNode {
+  const state = useTurns(data, data.reads.turns(mech.id, null));
+  const [stopState, setStopState] = useState<StopState>();
+  const isScreenActive = useScreenLifetime();
+
+  function stop(turnId: Turn['id']): void {
+    if (stopState?.turnId === turnId && stopState.status !== 'failed') {
+      return;
+    }
+
+    setStopState({ turnId, status: 'sending' });
+    void data.commands.cancelTurn({ mechId: MechId.make(mech.id), turnId }).then(
+      () => {
+        if (isScreenActive()) {
+          setStopState((current) => (current?.turnId === turnId ? { turnId, status: 'received' } : current));
+        }
+      },
+      (problem: unknown) => {
+        if (isScreenActive()) {
+          setStopState((current) =>
+            current?.turnId === turnId ? { turnId, status: 'failed', error: problemMessage(problem) } : current,
+          );
+        }
+      },
+    );
   }
 
   return (
-    <Row>
-      <ResourceView
-        state={state}
-        label="Loading run status"
-        placeholder={<SkeletonText width="8ch" />}
-        failure={
-          <Text variant="caption" tone="muted" role="status">
-            Run status unavailable
-            {state.kind === 'failed' && (
-              <Button variant="ghost" onClick={state.retry}>
-                Retry
-              </Button>
+    <ResourceView
+      state={state}
+      label="Loading activity"
+      placeholder={<SkeletonText width="8ch" />}
+      failure={
+        <Text variant="caption" tone="muted" role="status">
+          Activity unavailable
+          {state.kind === 'failed' && (
+            <Button variant="ghost" onClick={state.retry}>
+              Retry
+            </Button>
+          )}
+        </Text>
+      }
+    >
+      {(page, notice) => {
+        const active = page.turns.filter(Schema.is(Turn)).find((turn) => activeStatuses.has(turn.status));
+
+        const currentStop = active?.id === stopState?.turnId ? stopState : undefined;
+
+        return (
+          <Stack isCompact>
+            {notice}
+            {active === undefined ? (
+              mech.status === 'paused' ? (
+                <Text variant="caption" tone="muted">
+                  Paused
+                </Text>
+              ) : null
+            ) : (
+              <Row>
+                <Text variant="caption" tone="muted" role="status">
+                  {currentStop?.status === 'received' ? 'Stopping' : active.status === 'queued' ? 'Ready' : 'Working'}
+                </Text>
+                <ConsoleLink to={{ workspace: data.workspace.id, mech: mech.id, turn: active.id }} row={active.id}>
+                  Inspect
+                </ConsoleLink>
+                <Button
+                  variant="ghost"
+                  disabled={currentStop?.status === 'received'}
+                  isPending={currentStop?.status === 'sending'}
+                  pendingLabel="Stopping…"
+                  onClick={() => stop(active.id)}
+                >
+                  Stop
+                </Button>
+                {currentStop?.status === 'failed' && (
+                  <Text variant="caption" role="status">
+                    {currentStop.error}
+                  </Text>
+                )}
+              </Row>
             )}
-          </Text>
-        }
-      >
-        {(trace) => (
-          <Text variant="caption" tone="muted" role="status">
-            {trace.turn.status === 'queued' && 'Queued'}
-            {trace.turn.status === 'running' && 'Working'}
-            {trace.turn.status === 'waiting' && 'Waiting for approval'}
-            {trace.turn.status === 'answered' && 'Finished'}
-            {trace.turn.status === 'unanswered' && 'Run ended without a reply'}
-          </Text>
-        )}
-      </ResourceView>
-      <ConsoleLink to={{ workspace: data.workspace.id, mech: mech.id, session: sessionId, turn: runId }} row={runId}>
-        Open run
-      </ConsoleLink>
-    </Row>
+          </Stack>
+        );
+      }}
+    </ResourceView>
   );
 }

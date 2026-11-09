@@ -189,7 +189,6 @@ export const FileRole = {
   NativePresentation: 'native-presentation',
   NativeConversation: 'native-conversation',
   NativeSandboxBoundary: 'native-sandbox-boundary',
-  SlackFixture: 'slack-fixture',
   NativeLifecycle: 'native-lifecycle',
   SqlMigration: 'sql-migration',
   ProcessShutdown: 'process-shutdown',

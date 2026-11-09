@@ -8,7 +8,7 @@ domain belong to that owner. Product records are administered through Mechane's 
 Select immutable runtime and sandbox artifacts from the same release. Verify the manifest's revision and checksums
 before constructing the host image. Do not rebuild application JavaScript from an operator checkout.
 
-Run domain and upstream adapter schema bootstrap with the migration credential. Keep that credential out of the serving
+Run domain and upstream Workflow schema bootstrap with the migration credential. Keep that credential out of the serving
 process. Rolling updates require schema changes that both the current and replacement service can use. The
 [schema 1 upgrade](#upgrade-domain-schema-1-to-2) requires a stopped service instead. Native Workflow state, SDK
 serialization, and open hooks remain part of the compatibility boundary after the initial hard cutover.
@@ -21,20 +21,51 @@ Review the infrastructure plan for unintended database, sandbox namespace, bucke
 plan-and-apply sequence, and discard a saved plan after an intervening apply or configuration change. A successful
 follow-up plan reports no changes. Keep protected state backups outside Git.
 
-An infrastructure apply proves resource convergence, not agent behavior. Check health and readiness, sign-in, workspace
-reads, an admitted input, its stream, and a sandbox command. For an SDK or execution change, verify restart while
-waiting for approval and automatic continuation to the original Slack thread. Record paid/live checks in the delivery
-issue with the source revision, deployed artifact, and remaining limits.
+An infrastructure apply proves resource convergence, not agent behavior. Check readiness, sign-in, workspace reads,
+notification acceptance, explicit Console publication, and a sandbox command. For an execution change, verify active
+injection, quiet completion, restart, and the idle/wake boundary. Qualify external approval notifications and the
+agent's explicit follow-up in the owning integration. Record paid/live checks with the deployed revision and evidence
+limits.
 
 ## Recovery
 
 After an interrupted deployment, read the active host revision, database schema, and compute rollout before retrying.
 Reuse the same resource identities and state. Never recreate a database, namespace, or bucket merely to clear an error.
-A process restart should resume Workflow-owned work, not submit a replacement input.
+A restart resumes Workflow-owned work and reconciles pending wake intent; do not submit replacement notifications.
 
 After an uncertain command, inspect its original execution receipt. A lost HTTP response is not evidence that a push,
-merge, deployment, or other external write failed. Inspect the external system before deciding whether to repeat it.
-Reply delivery has a separate receipt; a failed Slack post does not rerun the agent's completed work.
+merge, deployment, or other external write failed. Inspect the external system before deciding whether to repeat it. The
+explicit communication tool owns a separate delivery receipt. A failed platform post does not rerun completed work.
+
+Environment completion delivery has its own durable sandbox outbox. It retries the original terminal receipt after a
+lost callback response. The receiver verifies the persisted execution and passively reads the authoritative receipt
+before admission. Inspect callback failure separately from model activation or file-save failure. A matching terminal
+outcome already returned by the original tool suppresses a redundant notice. A completed process-start receipt that
+reported Running does not suppress its later exit or loss. Pending active start receipts make the callback retry;
+detached or uncertain work still delivers a notification. Do not rerun work to manufacture another notification.
+
+A failed or canceled activation can leave a durable environment-checkpoint requirement. The next activation must
+complete that barrier before model or tool work. Preserve the previous committed generation and recoverable live files
+while investigating a failed save. Terminal activation status is not evidence that its files were saved.
+
+An old filesystem head cannot clear that requirement after unexpected machine loss. With no live machine, the latest
+machine that became ready must have a committed drain matching that generation. A startup attempt that never became
+ready creates no file-loss evidence and cannot hide unresolved loss from an earlier ready machine. Otherwise preserve
+the failed barrier and its evidence. Recovery from an older snapshot cannot establish that later writes survived; it
+needs an explicit operator decision.
+
+For unexpected machine loss without an unresolved workspace checkpoint, a workspace owner can use the existing
+maintenance operation while model/tools remain fenced:
+
+```sh
+mechane sandbox upgrade MECH_ID --operation-id RECOVERY_UUID
+```
+
+Reuse that UUID after interruption and require the operation to reach `done`. The upgrade restores the committed head
+and takes a fresh checkpoint; it does not restore newer unsaved writes. Then notify the mech of the recovery and lost
+state so it can reconcile its files and external effects. If maintenance refuses an unresolved checkpoint or recovery
+record, investigate that failure instead. This upgrade path does not recover every persistence failure and does not
+authorize deleting the failed record or its files.
 
 Stop competing infrastructure writers before recovering a retained state lock. Confirm the exact state key and lock
 identity. Lock age or a matching username does not prove a writer is dead. Do not disable locking or overwrite unseen
@@ -74,15 +105,16 @@ Workspace owners configure integration credentials and per-mech execution access
 replacing it. A removed credential must not leave a silently usable configuration. Grant revocation affects later
 issuance; it cannot undo an already-authorized external effect.
 
-Nexus owns capability policy and approval decisions. Configure its runtime event destination and shared signing secret
-through trusted deployment configuration. Models do not choose callback URLs. A ready decision still requires checking
-the current request/grant before use. The runtime's accepted decision receipt prevents duplicate continuation.
+Application services own capability policy and approval decisions. Configure generic producer credentials and recipient
+allowlists through trusted deployment configuration, following the [notification guide](notifications.md). Models cannot
+choose producer credentials or recipients. A ready decision still requires the agent to read current request authority
+before acting. Stable notification and tool identities protect admission and effects independently.
 
 ## Sandboxes
 
 A container is disposable; its committed files are durable. The sandbox service checkpoints the owned home directory
 before recording a completed command. A replacement restores the committed generation before accepting new work.
-Unfinished writes and background processes have no persistence guarantee.
+Unfinished and background writes need a later successful checkpoint; process memory never persists through replacement.
 
 Preserve the previous committed checkpoint after a failed save. Use the sandbox service's explicit maintenance and
 receipt interfaces for inspection, cancellation, or replacement. Keep exports private, and never delete a namespace or

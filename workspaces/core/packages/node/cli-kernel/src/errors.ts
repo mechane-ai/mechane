@@ -2,15 +2,9 @@ import { OperationFailed } from '@mechane/client';
 import { OutputMode } from '@mechane/commands';
 import { FileStep } from '@mechane/program';
 import { CliTarget, Release } from '@mechane/protocol';
-import { Bytes, SlackConnectionId, WorkspaceId } from '@mechane/records';
+import { Bytes, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 import { CredentialsStep } from './constants.ts';
-
-/** Import never replaces a record that differs from the supplied configuration. */
-export class WorkspaceImportConflict extends Schema.TaggedError<WorkspaceImportConflict>()('WorkspaceImportConflict', {
-  workspaceId: WorkspaceId,
-  connectionId: SlackConnectionId,
-}) {}
 
 /** Explicit selection never falls back to a workspace the caller did not request. */
 export class WorkspaceSelectionRefused extends Schema.TaggedError<WorkspaceSelectionRefused>()(

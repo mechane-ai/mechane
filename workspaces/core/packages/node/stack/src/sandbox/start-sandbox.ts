@@ -19,7 +19,12 @@ type SandboxOptions = {
   readonly guestEntry?: string;
 };
 
-export type LocalSandbox = { readonly origin: URL; readonly bearer: string; readonly close: () => Promise<void> };
+export type LocalSandbox = {
+  readonly origin: URL;
+  readonly bearer: string;
+  readonly loseMachine: (id: string) => Promise<void>;
+  readonly close: () => Promise<void>;
+};
 
 export async function startSandbox(input: SandboxOptions): Promise<LocalSandbox> {
   const workerEntry = input.workerEntry ?? SANDBOX_ENTRY;
@@ -54,6 +59,7 @@ export async function startSandbox(input: SandboxOptions): Promise<LocalSandbox>
     return {
       origin: runtime.origin,
       bearer,
+      loseMachine: launcher.loseMachine,
       close: async () => {
         const results = await Promise.allSettled([runtime.close(), launcher.close()]);
         const failures = results.filter((result) => result.status === 'rejected');

@@ -3,12 +3,11 @@ import { HttpStatusCode } from '@mechane/records';
 import {
   createAccount,
   createMech,
+  readConsoleMessages,
   readNativeChunks,
-  readTurns,
-  replayNativeChat,
+  readNativeTrace,
   requireFixtures,
-  startNativeChat,
-  waitFor,
+  sendNotificationAndWait,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
@@ -21,38 +20,41 @@ export async function nativeStreamFailureIsReplayable({ stack }: ScenarioInput):
   const account = await createAccount({ stack });
   const marker = `failed-stream-${randomUUID()}`;
   const mech = await createMech({ stack, account, name: marker });
+  const owner = { stack, account, mechId: mech.id };
 
   fixtures.model.configure({ marker, replies: [{ status: HttpStatusCode.BadRequest }] });
 
-  const started = await startNativeChat({ stack, account, mechId: mech.id, text: marker });
-  const chunks = await readNativeChunks(started.response);
+  const failed = await sendNotificationAndWait({ ...owner, text: marker });
 
-  assert.ok(chunks.some((chunk) => chunk.type === 'error'));
-
-  const turns = await waitFor({
-    name: 'the failed model request to end its run',
-    read: () => readTurns({ stack, account, mechId: mech.id }),
-    accept: (observed) => observed.some((turn) => turn.status === TurnStatus.Unanswered),
-  });
-
-  const failed = turns[0];
-
-  if (failed?.status !== TurnStatus.Unanswered) {
-    throw new Error('The failed model request has no terminal run');
+  if (failed.status !== TurnStatus.Failed) {
+    throw new Error('The failed model request has no terminal activation');
   }
 
   assert.equal(failed.reason, UnansweredReason.Faulted);
 
-  const replayInput = { origin: stack.origin, token: account.token, workflowRunId: started.workflowRunId };
-  const replayResponse = await replayNativeChat(replayInput);
-  const replay = await readNativeChunks(replayResponse);
+  const address = {
+    origin: stack.origin,
+    workspaceId: account.workspaceId,
+    mechId: mech.id,
+    turnId: failed.id,
+    token: account.token,
+  };
+
+  const chunks = await readNativeChunks(await readNativeTrace(address));
+
+  assert.ok(chunks.some((chunk) => chunk.type === 'error'));
+
+  const replay = await readNativeChunks(await readNativeTrace(address));
 
   assert.deepEqual(replay, chunks);
 
   const startIndex = Math.floor(chunks.length * REPLAY_START_FRACTION);
-  const resumedResponse = await replayNativeChat({ ...replayInput, startIndex });
-  const resumed = await readNativeChunks(resumedResponse);
+  const resumed = await readNativeChunks(await readNativeTrace({ ...address, startIndex }));
 
   assert.deepEqual(resumed, chunks.slice(startIndex));
   assert.equal(fixtures.model.readCalls({ marker }).length, 1);
+
+  const conversation = await readConsoleMessages(owner);
+
+  assert.equal(conversation.messages.filter((message) => message.role === 'assistant').length, 0);
 }

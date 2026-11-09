@@ -14,8 +14,9 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
-import { Delivery } from '../inbox/constants.ts';
+import { ConsoleMessageId } from '../conversation/schemas.ts';
 import { ForkPoint } from '../mechs/schemas.ts';
+import { NotificationId, RecordedNotificationSource } from '../notifications/schemas.ts';
 import { UnansweredReason } from '../turns/constants.ts';
 import { EventType } from './constants.ts';
 
@@ -27,12 +28,47 @@ export const Event = Schema.Union([
   wireStruct({
     fields: {
       ...EVENT_FIELDS,
+      type: Schema.Literal(EventType.NotificationReceived),
+      notificationId: NotificationId,
+      receivedSequence: Sequence,
+      text: RecordText,
+      source: RecordedNotificationSource,
+    },
+  }),
+  wireStruct({
+    fields: {
+      ...EVENT_FIELDS,
+      type: Schema.Literals([EventType.ActivationStarted, EventType.ActivationCompleted, EventType.ActivationStopped]),
+      turnId: TurnId,
+      notificationIds: Schema.Array(NotificationId),
+    },
+  }),
+  wireStruct({
+    fields: {
+      ...EVENT_FIELDS,
+      type: Schema.Literal(EventType.ActivationFailed),
+      turnId: TurnId,
+      notificationIds: Schema.Array(NotificationId),
+      reason: RecordText,
+    },
+  }),
+  wireStruct({
+    fields: {
+      ...EVENT_FIELDS,
+      type: Schema.Literal(EventType.ConsoleMessage),
+      messageId: ConsoleMessageId,
+      turnId: TurnId,
+    },
+  }),
+  wireStruct({
+    fields: {
+      ...EVENT_FIELDS,
       type: Schema.Literal(EventType.InboxItemReceived),
       inboxItemId: RecordId,
       /** None means the sender has a channel identity rather than a Mechane principal; inspect the recorded source. */
       senderId: Schema.OptionFromNullOr(RecordId),
       text: RecordText,
-      delivery: memberOrUnknown({ set: Delivery }),
+      delivery: RecordText,
       /** Absent when this message has no recorded Slack origin. */
       source: Schema.optionalKey(
         wireStruct({

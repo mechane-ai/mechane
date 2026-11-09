@@ -55,10 +55,6 @@ export function initialReads(
   switch (view) {
     case 'runs':
       return [heading, readRequests.turns(mechId, pages?.turns?.at(-1) ?? null)];
-    case 'work':
-      return [heading, readRequests.threads(mechId, pages?.work?.at(-1) ?? null)];
-    case 'memory':
-      return [heading, readRequests.memories(mechId)];
     case 'environment':
       return [heading, readRequests.environmentProcesses(mechId)];
     case 'activity':

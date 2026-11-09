@@ -9,7 +9,7 @@ from 101 are Mechane's own.
 
 ## Boundaries
 
-- [Console boundaries](113-console-boundaries/CONTRACT.md): browser package ownership, session data, and release assets.
+- [Console boundaries](113-console-boundaries/CONTRACT.md): browser ownership, public conversations, admitted data, and release assets.
 - [Console cache lifecycle](119-console-cache-lifecycle/CONTRACT.md): admitted shared copies, native replication, and scoped lifecycle and write locks.
 
 - [Ownership and boundaries](001-code-ownership-and-boundaries/CONTRACT.md): one owner per decision and fact.
@@ -127,14 +127,14 @@ from 101 are Mechane's own.
 - [Code style](111-code-style/CONTRACT.md): cohesive modules, readable callbacks, and consistent paths, units and HTTP vocabulary.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.
 
-- [Execution access](120-execution-access/CONTRACT.md): current owner grants and transient shell credentials.
-- [Thread continuations](121-thread-continuations/CONTRACT.md): native external-decision waits and original reply routing.
+- [Execution access](120-execution-access/CONTRACT.md): current generic grants, credential references, and honest execution receipts.
+- [External result notifications](121-thread-continuations/CONTRACT.md): correlated external-result notifications without blocked mechs or implicit replies.
 - [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.
-- [Model caching](123-model-caching/CONTRACT.md): provider cache hints, isolated sessions, and conservative spend reservations.
+- [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-mech context, and conservative spend reservations.
 
-- [Native Workflow runtime](124-native-workflow-runtime/CONTRACT.md): one durable execution path, private credentials, and native UI streams.
-- [Channel delivery](125-channel-delivery/CONTRACT.md): verified admission, native formatting, and stable delivery receipts.
-- [Structured presentation](126-structured-presentation/CONTRACT.md): one bounded catalog with native Chat and Elements renderers.
+- [Native Workflow runtime](124-native-workflow-runtime/CONTRACT.md): one model owner, bounded native activations, and durable notification handoff.
+- [Notification and communication boundaries](125-channel-delivery/CONTRACT.md): generic authenticated producers and explicit addressed communication tools.
+- [Structured presentation](126-structured-presentation/CONTRACT.md): explicit public messages with one bounded catalog and an Elements renderer.
 
 - [Managed processes](127-managed-processes/CONTRACT.md): machine-bound processes, checkpoint suspension, and explicit lifetime.
 - [Browser control](128-browser-control/CONTRACT.md): native Chromium actions, isolated profiles, bounded observations, and replay safety.

@@ -18,6 +18,16 @@ export function eventLines({ event }: EventLinesInput): ReadonlyArray<string> {
   const heading = `#${event.sequence} ${DateTime.formatIso(event.occurredAt)} ${event.type}`;
 
   switch (event.type) {
+    case EventType.NotificationReceived:
+      return [`${heading} ${event.notificationId} from ${event.source.name}`, ...indentedText({ text: event.text })];
+    case EventType.ActivationStarted:
+    case EventType.ActivationCompleted:
+    case EventType.ActivationStopped:
+      return [`${heading} ${event.turnId} for ${event.notificationIds.join(', ')}`];
+    case EventType.ActivationFailed:
+      return [`${heading} ${event.turnId} (${event.reason})`];
+    case EventType.ConsoleMessage:
+      return [`${heading} ${event.messageId} from ${event.turnId}`];
     case EventType.InboxItemReceived: {
       const sender = Option.getOrElse(event.senderId, () => 'unknown sender');
 

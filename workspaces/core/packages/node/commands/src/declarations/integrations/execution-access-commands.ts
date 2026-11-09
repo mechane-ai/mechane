@@ -22,7 +22,10 @@ export const EXECUTION_ACCESS_COMMANDS = {
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'configureExecutionAccess'],
     flags: {
-      access: { kind: FlagKind.Text, summary: 'JSON grant with github, variables and secrets; null revokes access' },
+      access: {
+        kind: FlagKind.Text,
+        summary: 'JSON grant with environment variables and credential references; null revokes access',
+      },
     },
     arguments: [MECH_ARGUMENT],
     input: renamedWireStruct({ fields: { mechId: MechId, access: AccessJson }, renames: { mechId: 'mech-id' } }),

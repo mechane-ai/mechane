@@ -40,16 +40,7 @@ const READ_ADMISSION_TIMEOUT_MS = CONSOLE_STORAGE_OPERATION_TIMEOUT_MS * READ_AD
 const CLEAR_SCOPE_TIMEOUT_MS = Duration.toMillis('3 seconds');
 const INVALIDATION_CHANNEL = 'mechane-console-admission';
 
-const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = [
-  'events',
-  'turns',
-  'mech',
-  'turnEvents',
-  'trace',
-  'threads',
-  'sessions',
-  'memories',
-];
+const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = ['events', 'turns', 'mech', 'turnEvents', 'trace'];
 
 const INVALIDATION_KIND = {
   Session: 'session',
@@ -150,17 +141,12 @@ function readInterval(request: ReadRequest): number | false {
     case 'allowance':
       return ALLOWANCE_REFRESH_MS;
     case 'mech':
-    case 'sessions':
-    case 'threads':
-    case 'memories':
     case 'turns':
     case 'trace':
     case 'evidence':
     case 'evidenceArtifact':
     case 'environmentProcesses':
     case 'environmentProcess':
-    case 'slackBindings':
-    case 'slackDeliveries':
       return REFRESH_MS;
   }
 }
@@ -888,15 +874,10 @@ async function createData(options: CreateConsoleData, conversations: WorkspaceOw
       const scoped = [
         tables.turns,
         tables.events,
-        tables.threads,
-        tables.sessions,
-        tables.memories,
         tables.traceEvidence,
         tables.evidenceArtifacts,
         tables.environmentProcesses,
         tables.environmentProcessDetails,
-        tables.slackBindings,
-        tables.slackDeliveries,
       ];
 
       await writeRows({

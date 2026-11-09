@@ -1,26 +1,19 @@
 import type { ModelMessage, UIMessage } from 'ai';
 import { Schema } from 'effect';
 import { randomUUID } from 'node:crypto';
+import { MAXIMUM_WORKING_CONTEXT_BYTES } from '../../domain.ts';
 import type { Run, RunStatus } from '../../domain.ts';
 import type { StoreContext } from '../context.ts';
 import { RecordNotFound, StoreConflict } from '../errors.ts';
+import { boundWorkingContext } from '../notifications/working-context.ts';
 import { createActivityStore } from './activity.ts';
 import { createExecutionReads } from './reads.ts';
-import { decodeModelMessage, decodeUiMessages } from './rows.ts';
+import { decodeModelMessage, decodeUiMessages, normalizeModelMessages } from './rows.ts';
 
 type RunIdentity = { readonly runId: string; readonly workspaceId?: string };
 type ClaimRunInput = RunIdentity;
 type AttachWorkflowInput = { readonly runId: string; readonly workflowId: string };
 type CancelRunInput = RunIdentity & { readonly cancelerId?: string };
-
-type FinishRunInput = {
-  readonly runId: string;
-  readonly status: 'completed' | 'failed' | 'cancelled';
-  readonly reply: string | null;
-  readonly error: string | null;
-  readonly modelMessages?: ReadonlyArray<ModelMessage>;
-  readonly uiMessages?: ReadonlyArray<UIMessage>;
-};
 
 type SaveRunMessagesInput = {
   readonly runId: string;
@@ -67,32 +60,8 @@ async function lockRun(context: StoreContext, { runId, workspaceId }: RunIdentit
   return run;
 }
 
-function replaceModelData(this: Readonly<Record<string, unknown>>, key: string, value: unknown): unknown {
-  const original = this[key];
-
-  if (original instanceof Uint8Array) {
-    return Buffer.from(original).toString('base64');
-  }
-
-  if (original instanceof ArrayBuffer) {
-    return Buffer.from(original).toString('base64');
-  }
-
-  if (original instanceof URL) {
-    return original.href;
-  }
-
-  return value;
-}
-
-function jsonModelValue(value: ModelMessage): unknown {
-  const encoded = JSON.stringify(value, replaceModelData);
-
-  return JSON.parse(encoded);
-}
-
 async function messageRows(input: SuppliedMessages): Promise<ReadonlyArray<MessageRow>> {
-  const modelMessages = (input.modelMessages ?? []).map((message) => decodeModelMessage(jsonModelValue(message)));
+  const modelMessages = normalizeModelMessages(input.modelMessages ?? []);
   const uiMessages = await decodeUiMessages(input.uiMessages ?? []);
   const count = Math.max(modelMessages.length, uiMessages.length);
 
@@ -124,30 +93,52 @@ async function persistMessages(context: StoreContext, run: Run, messages: Readon
   }
 }
 
-async function appendFinishedEvent(context: StoreContext, run: Run, input: FinishRunInput): Promise<void> {
-  if (input.status === 'completed') {
-    await createActivityStore(context).appendActivity({
-      id: randomUUID(),
-      workspaceId: run.workspaceId,
-      mechId: run.mechId,
-      runId: run.id,
-      type: 'turn.answered',
-      payload: { turnId: run.id, reply: input.reply ?? '' },
-    });
+async function appendStoppedEvent(context: StoreContext, run: Run): Promise<void> {
+  let type = 'turn.unanswered';
 
-    return;
+  if (run.origin.kind === 'notification') {
+    type = 'activation.stopped';
   }
-
-  const reason = unansweredReason(run, input);
 
   await createActivityStore(context).appendActivity({
     id: randomUUID(),
     workspaceId: run.workspaceId,
     mechId: run.mechId,
     runId: run.id,
-    type: 'turn.unanswered',
-    payload: { turnId: run.id, reason },
+    type,
+    payload: { turnId: run.id, notificationIds: run.notificationIds, reason: 'canceled' },
   });
+}
+
+async function releaseStoppedActivation(context: StoreContext, run: Run): Promise<void> {
+  const found = await context.client.query(
+    `SELECT mailbox.model_messages,activation.scheduled_sequence FROM mechane.mech_mailboxes mailbox
+     JOIN mechane.activation_checkpoints activation ON activation.run_id=mailbox.active_run_id
+     WHERE mailbox.active_run_id=$1`,
+    [run.id],
+  );
+
+  if (found.rows.length === 0) {
+    return;
+  }
+
+  const row = Schema.decodeUnknownSync(
+    Schema.Struct({ model_messages: Schema.Array(Schema.Unknown), scheduled_sequence: Schema.Number }),
+  )(found.rows[0]);
+
+  const messages = boundWorkingContext({
+    messages: row.model_messages.map(decodeModelMessage),
+    maximumBytes: MAXIMUM_WORKING_CONTEXT_BYTES,
+    notice: `The user stopped activation ${run.id} and its scheduled work through notification sequence ${row.scheduled_sequence}. Earlier unread notifications are retained context, not renewed requests. A later notification may provide new instructions; do not resume the stopped work merely because it is still in the inbox.`,
+  });
+
+  await context.client.query(
+    `UPDATE mechane.mech_mailboxes mailbox SET active_run_id=NULL,model_messages=$3,
+     is_wake_pending=mailbox.received_sequence>GREATEST(mailbox.presented_sequence,activation.scheduled_sequence),
+     is_environment_checkpoint_required=mailbox.is_environment_checkpoint_required OR $2,updated_at=now()
+     FROM mechane.activation_checkpoints activation WHERE activation.run_id=$1 AND mailbox.active_run_id=$1`,
+    [run.id, run.status !== 'queued', JSON.stringify(messages)],
+  );
 }
 
 async function cancelLockedRun(context: StoreContext, run: Run): Promise<Run> {
@@ -155,7 +146,8 @@ async function cancelLockedRun(context: StoreContext, run: Run): Promise<Run> {
     `UPDATE mechane.runs SET status='cancelled',reply=NULL,error=NULL,failure_reason=NULL,ended_at=now(),version=version+1 WHERE id=$1`,
     [run.id],
   );
-  await appendFinishedEvent(context, run, { runId: run.id, status: 'cancelled', reply: null, error: null });
+  await appendStoppedEvent(context, run);
+  await releaseStoppedActivation(context, run);
 
   const cancelled = await createExecutionReads(context).getRun({ runId: run.id });
 
@@ -252,35 +244,26 @@ export function createRunLifecycle(context: StoreContext) {
           UPDATE mechane.runs SET status='running',started_at=COALESCE(started_at,now()),version=version+1 WHERE id=$1`,
           [run.id],
         );
+
+        let eventType = 'turn.started';
+        let eventPayload: Readonly<Record<string, unknown>> = { turnId: run.id, inboxItemIds: [run.inputId] };
+
+        if (run.origin.kind === 'notification') {
+          eventType = 'activation.started';
+          eventPayload = { turnId: run.id, notificationIds: run.notificationIds };
+        }
+
         await createActivityStore(transaction).appendActivity({
           id: randomUUID(),
           workspaceId: run.workspaceId,
           mechId: run.mechId,
           runId: run.id,
-          type: 'turn.started',
-          payload: { turnId: run.id, inboxItemIds: [run.inputId] },
+          type: eventType,
+          payload: eventPayload,
         });
 
         return 'running';
       }),
-    markRunWaiting: async ({ runId }: RunIdentity): Promise<void> => {
-      await context.atomic(async (transaction) => {
-        await lockRun(transaction, { runId });
-        await transaction.client.query(
-          `UPDATE mechane.runs SET status='waiting',version=version+1 WHERE id=$1 AND status='running' AND cancel_requested_at IS NULL`,
-          [runId],
-        );
-      });
-    },
-    markRunRunning: async ({ runId }: RunIdentity): Promise<void> => {
-      await context.atomic(async (transaction) => {
-        await lockRun(transaction, { runId });
-        await transaction.client.query(
-          `UPDATE mechane.runs SET status='running',version=version+1 WHERE id=$1 AND status='waiting' AND cancel_requested_at IS NULL`,
-          [runId],
-        );
-      });
-    },
     saveRunMessages: async (input: SaveRunMessagesInput): Promise<void> => {
       const messages = await messageRows(input);
 
@@ -296,40 +279,6 @@ export function createRunLifecycle(context: StoreContext) {
         }
 
         await persistMessages(transaction, run, messages);
-      });
-    },
-    finishRun: async (input: FinishRunInput): Promise<Run> => {
-      const messages = await messageRows(input);
-
-      return await context.atomic(async (transaction) => {
-        const run = await lockRun(transaction, { runId: input.runId });
-
-        if (TERMINAL_STATUSES.has(run.status)) {
-          return run;
-        }
-
-        if (run.cancelRequestedAt !== null && input.status !== 'cancelled') {
-          return await cancelLockedRun(transaction, run);
-        }
-
-        await persistMessages(transaction, run, messages);
-        await transaction.client.query(
-          `
-          UPDATE mechane.runs SET status=$2,reply=$3,error=$4,
-            failure_reason=CASE WHEN $2='failed' THEN COALESCE(failure_reason,'faulted') ELSE NULL END,
-            ended_at=now(),version=version+1 WHERE id=$1`,
-          [run.id, input.status, input.reply, input.error],
-        );
-        await transaction.client.query('UPDATE mechane.sessions SET updated_at=now() WHERE id=$1', [run.sessionId]);
-        await appendFinishedEvent(transaction, run, input);
-
-        const finished = await createExecutionReads(transaction).getRun({ runId: run.id });
-
-        if (finished === null) {
-          throw new StoreConflict('Finished run was not found');
-        }
-
-        return finished;
       });
     },
     cancelRun: async (input: CancelRunInput): Promise<Run> =>
@@ -361,7 +310,8 @@ export function createRunLifecycle(context: StoreContext) {
         }
 
         if (run.status === 'queued') {
-          await appendFinishedEvent(transaction, run, { runId: run.id, status: 'cancelled', reply: null, error: null });
+          await appendStoppedEvent(transaction, run);
+          await releaseStoppedActivation(transaction, run);
         }
 
         const cancelled = await createExecutionReads(transaction).getRun({ runId: run.id });
@@ -373,12 +323,4 @@ export function createRunLifecycle(context: StoreContext) {
         return cancelled;
       }),
   };
-}
-
-function unansweredReason(run: Run, input: FinishRunInput): string {
-  if (input.status === 'cancelled') {
-    return 'canceled';
-  }
-
-  return run.failureReason ?? 'faulted';
 }

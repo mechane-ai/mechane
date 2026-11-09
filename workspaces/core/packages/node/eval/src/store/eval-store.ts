@@ -19,10 +19,7 @@ const OutFile = { Lock: 'lock.json', Plan: 'plan.json', Report: 'report.json' } 
 /** The folder of the out folder that holds one folder for each trial, named by the trial's id. */
 const TRIALS_FOLDER = 'trials';
 
-/**
- * A trial's files: each role's intent, saved before its inbox item is sent, and its turn's record, saved once the turn
- * ends.
- */
+/** The intent is saved before admission, and the result is saved before grading or reporting. */
 const TrialFile = {
   SubjectIntent: 'subject-intent.json',
   Subject: 'subject.json',

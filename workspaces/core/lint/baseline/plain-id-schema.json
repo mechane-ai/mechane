@@ -1,12 +1,11 @@
 {
   "packages/node/commands/src/declarations/access/key-commands.ts": 1,
   "packages/node/eval/src/schemas.ts": 1,
-  "packages/node/eval/src/store/schemas.ts": 3,
+  "packages/node/eval/src/store/schemas.ts": 1,
   "packages/shared/protocol/src/errors/errors.ts": 6,
   "packages/shared/protocol/src/operations/auth/revoke-key.ts": 1,
   "packages/shared/protocol/src/operations/auth/schemas.ts": 2,
   "packages/shared/protocol/src/operations/events/schemas.ts": 4,
-  "packages/shared/protocol/src/operations/inbox/schemas.ts": 2,
   "packages/shared/protocol/src/operations/mechs/schemas.ts": 3,
   "packages/shared/protocol/src/operations/schemas.ts": 2,
   "packages/shared/protocol/src/operations/workspaces/schemas.ts": 2

@@ -707,7 +707,7 @@ module.exports = {
       to: {
         path: '^(?:packages/browser/catalog/src|packages/browser/console/src|packages/browser/console/[.]storybook|packages/browser/console/vite[.]config[.]ts|packages/browser/console/worker-licenses[.]ts|packages/browser/console-cache/src|packages/browser/console-data/src|packages/browser/console-views/src|packages/browser/elements/packages|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts|packages/node/boundaries/src|packages/node/browser/src|packages/node/checks/src|packages/node/checks-kernel/src|packages/node/cli/src|packages/node/cli/scripts|packages/node/cli-kernel/src|packages/node/cli-login/src|packages/node/cli-update/src|packages/node/commands/src|packages/node/distribution/src|packages/node/eval/src|packages/node/guest/src|packages/node/locks/src|packages/node/modules/src|packages/node/normalizers/src|packages/node/owned-rules/src|packages/node/program/src|packages/node/release/src|packages/node/rename/src|packages/node/rule-generator/src|packages/node/rule-shapes/src|packages/node/rules/src|packages/node/runtime/src|packages/node/smoke/src|packages/node/stack/src|packages/node/testing/src|packages/node/wrangler/src|packages/shared/client/src|packages/shared/deployment/src|packages/shared/protocol/src|packages/shared/records/src|packages/shared/sandbox-wire/src|packages/shared/utilities/src|packages/worker/sandbox/src|packages/worker/sandbox-service/src|packages/worker/sandbox-store/src|packages/worker/store/src)/',
         pathNot:
-          '^(?:packages/node/program/src/index[.]ts|packages/node/runtime/src/index[.]ts|packages/node/runtime/src/channels/index[.]ts|packages/shared/client/src/index[.]ts|packages/shared/deployment/src/index[.]ts|packages/shared/protocol/src/index[.]ts|packages/shared/protocol/src/presentation/index[.]ts|packages/shared/records/src/index[.]ts|packages/shared/sandbox-wire/src/index[.]ts|packages/shared/utilities/src/index[.]ts)$',
+          '^(?:packages/node/program/src/index[.]ts|packages/node/runtime/src/index[.]ts|packages/shared/client/src/index[.]ts|packages/shared/deployment/src/index[.]ts|packages/shared/protocol/src/index[.]ts|packages/shared/protocol/src/presentation/index[.]ts|packages/shared/records/src/index[.]ts|packages/shared/sandbox-wire/src/index[.]ts|packages/shared/utilities/src/index[.]ts)$',
       },
     },
     {
@@ -914,10 +914,7 @@ module.exports = {
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
       severity: 'error',
-      from: {
-        pathNot:
-          '^(?:packages/browser/console/src|packages/browser/console/[.]storybook|packages/browser/console/vite[.]config[.]ts|packages/browser/console/worker-licenses[.]ts|packages/node/runtime/src|packages/node/server/src|packages/node/server/build)/',
-      },
+      from: { pathNot: '^(?:packages/node/runtime/src|packages/node/server/src|packages/node/server/build)/' },
       to: { path: '/node_modules/@ai-sdk/workflow/' },
     },
     {
@@ -930,22 +927,6 @@ module.exports = {
           '^(?:packages/browser/elements/packages|packages/browser/elements/[.]storybook|packages/browser/elements/vite[.]config[.]ts)/',
       },
       to: { path: '/node_modules/@base-ui/react/' },
-    },
-    {
-      name: 'confine:@chat-adapter/slack',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: { pathNot: '^(?:packages/node/runtime/src)/' },
-      to: { path: '/node_modules/@chat-adapter/slack/' },
-    },
-    {
-      name: 'confine:@chat-adapter/state-pg',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: { pathNot: '^(?:packages/node/runtime/src)/' },
-      to: { path: '/node_modules/@chat-adapter/state-pg/' },
     },
     {
       name: 'confine:@daypicker/react',
@@ -1179,14 +1160,6 @@ module.exports = {
       to: { path: '/node_modules/dependency-cruiser/' },
     },
     {
-      name: 'confine:jose',
-      comment:
-        'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
-      severity: 'error',
-      from: { pathNot: '^(?:packages/node/runtime/src)/' },
-      to: { path: '/node_modules/jose/' },
-    },
-    {
       name: 'confine:oxc-parser',
       comment:
         'Import a confined package only in a member whose `confines` names it, such as `cookie` in `@mechane/pages`',
@@ -1268,9 +1241,12 @@ module.exports = {
     },
     {
       name: 'console-query-owner',
-      comment: 'Keep Query observers in the data runtime; screens use canonical reads, such as `useSessions`',
+      comment: 'Keep Query observers in the data runtime; screens use admitted reads, such as `useMech`',
       severity: 'error',
-      from: { path: '^packages/browser/', pathNot: '^packages/browser/console-data/src/console-data[.]ts$' },
+      from: {
+        path: '^packages/browser/',
+        pathNot: '^packages/browser/console-data/src/(?:console-data|conversation)[.]ts$',
+      },
       to: { path: 'node_modules/@tanstack/(?:query-core|react-query)/' },
     },
     {
@@ -1297,11 +1273,11 @@ module.exports = {
       to: { path: 'node_modules/(?:workflow|@workflow/[^/]+)/' },
     },
     {
-      name: 'slack-platform-owner',
-      comment: 'Use the channel owner for Slack operations, such as `runtime/src/channels`',
+      name: 'notification-integration-boundary',
+      comment: 'Move platform adapters into the external notification producer, such as `createSlackAdapter` in Nexus',
       severity: 'error',
-      from: { path: '^packages/', pathNot: '^packages/node/(?:runtime|server)/src/channels/' },
-      to: { path: 'node_modules/@chat-adapter/slack/' },
+      from: { path: '^packages/' },
+      to: { path: 'node_modules/(?:chat|@chat-adapter/[^/]+)/' },
     },
     {
       name: 'structured-renderer-owner',

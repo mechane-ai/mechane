@@ -43,57 +43,44 @@ rules govern retained assertions.
 
 ## Local adaptations
 
-The Console retains the conversation and submission lifecycle while a reader inspects a run or another view of the
-same mech. Hiding and revealing the conversation must not change whether the reader follows the live edge. A send
-acknowledgement settles the identified submission even while its form is hidden. It clears only that submitted draft;
-a rejected or uncertain send preserves the text and request identity. Switching the owning mech or workspace keeps
-state from appearing in another record.
+Each mech has one public Console conversation. Only operator submissions and explicit `console_message` publications
+appear in it. Private model text, native tool activity, incoming integration notifications, and activation termination
+belong to Activity and authorized trace inspection. Do not manufacture an assistant reply from a completed activation.
+Historical source messages remain readable in Activity and run traces, without a separate session UI.
 
-Each mech has one editable Console conversation. Scope its draft to the admitted workspace and mech, so opening the
-default conversation URL or its explicit session URL reaches the same draft. Slack and API conversations are read-only
-in the Console; viewing them preserves that draft and offers an explicit return to the Console conversation. Retain
-native Chat instances across run inspection and recent mech navigation without treating a URL alias as a new session.
-Workspace disposal closes those instances and their pending requests.
+Scope the draft and submission identity to the admitted workspace and mech. Conversation URL aliases reach that same
+draft. Retain a bounded set of conversation owners across mech and run navigation. Eviction cancels their reads; workspace
+or principal disposal clears protected content and rejects late completions. Cache recovery preserves the conversation
+owner, draft, and acknowledged submissions while future reads use the current admitted data runtime.
 
-The first native reply content or tool activity and stream completion invalidate canonical run, work, and activity reads
-through the existing cache owner. A synthetic stream-start event alone does not establish that execution began.
-Completion also refreshes the admitted conversation. Do not wait for periodic polling or add another polling loop.
-A history read started before a new send cannot clear that newer admission; a completed read must not retain an old
-active run merely because the SDK invokes its finish callback before changing its streaming status.
+The conversation owner merges authorized public history by stable message identity. Its requested page and refresh
+lifecycle use the data owner's Query observers. It retains the public transcript in memory, outside the persistent
+canonical record cache. A history response started before a send cannot erase its newer receipt or clear a later draft.
+Refresh after acknowledged commands through the existing read owner; do not add a second polling loop to a view.
 
-When a conversation remounts, supply its saved history position to Elements before the first paint. A supplied offset
-starts in reading mode; the default live-edge initialization and later content growth must not override it. Apply that
-initial position once, rather than treating subsequent renders as scroll commands. TanStack Router owns history
-positions; Elements accepts a position without depending on routing. Scope the scroll-region identity to the admitted
-viewer, workspace, mech, and history page so a different conversation cannot inherit the offset.
+A submission receipt confirms durable notification acceptance, not reading, a new activation, a promised reply, or task
+completion. Show only progress supported by recorded mailbox and activation evidence. Multiple notifications may share
+an activation; opening another source does not switch the mech's identity or create an independent model owner.
+Keep current activity beside the composer, independent of the transcript's history page. An unavailable activity read
+must not imply idleness or reverse an acknowledged submission.
 
-Keep current activity beside the composer, outside the paginated transcript. Its resource lifetime follows the mech,
-not the history page. The compact presentation preserves the read states required by contract 071; an unavailable or
-pending activity read must not imply that the mech is idle.
+Preserve reader position and draft state while inspecting Activity, Environment, or a full-page run trace. Supply saved
+history position before the first ready paint. A supplied offset starts in reading mode and applies once, so content
+arrival does not override it. TanStack Router owns history positions; Elements accepts an offset without routing logic.
+Scope scrolling identity to the admitted principal, workspace, mech, and history page.
 
-Reserve the conversation viewport and composer in the initial pending layout. Loading and ready use the same flex and
-scroll owners; placeholder arrival must not move the composer. Once authorized controls exist, a transcript or activity
-refresh cannot unmount the form, restart its submission lifecycle, or replace usable conversation content. Activity
-loading follows the shared resource boundary without delaying a send acknowledgement or failure.
+Reserve the viewport and composer in the initial pending layout. Loading and ready use the same flex and scroll owners.
+A transcript or activity refresh cannot unmount authorized controls, reset submission, or replace usable content.
+Activity loading follows contract 071 without delaying an acknowledged send or failure.
 
-A message receipt acknowledges acceptance, not execution. Distinguish a message waiting to run from a recorded running
-turn, and associate it only through its recorded input identity. Once that association is known, the run falling outside
-a bounded page must not make the message appear queued again. Preserve independently known receipt information when
-the activity read fails.
+Inspect a run while reading older content and while a send is pending. Return before and after settlement and confirm
+one submission, the same anchor, and the preserved draft. Switch mechs and return with warm and delayed history. Repeat
+from an earlier page and after reload. Confirm restored reading mode differs from following mode when content appends.
 
-Inspect a run while reading older content and while a send is pending, then return before and after completion.
-Confirm the same message and draft state return without a duplicate send or a jump to the latest message.
-Complete and reconnect an active native stream, then confirm the composer and run details settle together without
-manual refresh or waiting for the periodic poll. Preserve a new draft entered while the prior reply was streaming.
-Start from a mech URL without a session, type a draft, inspect a run with an explicit session, and return. Confirm the
-draft survives. Open a Slack conversation, confirm its composer is read-only, then return to the Console conversation
-and confirm the same draft and submission identity remain.
-Switch to another mech, then use browser Back with both warm and delayed data. Repeat from an earlier history page
-and after reloading. Confirm the saved reading position appears on the first ready frame, then append content and
-use return-to-latest to distinguish restored reading mode from following mode.
-Observe a receipt before its run starts, while another run is active, and while the mech is paused. Change the history
-page and fail the activity read before and after a successful result. Confirm current activity remains reachable beside
-the composer and that missing page data does not reverse a known message outcome.
+Finish quiet and tool-only activations and verify neither appears as a public assistant message. Publish a Console
+message explicitly, refresh history, and verify one copy. Fail activity and history reads before and after admission;
+confirm independently known receipts and current composer state remain intact. Reject admission after a scope change
+and verify no prior transcript or late callback becomes visible.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

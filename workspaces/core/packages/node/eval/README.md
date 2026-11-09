@@ -1,7 +1,7 @@
 # @mechane/eval
 
-The eval runner: a suite's plan, each trial's subject and grader turns through `/api/v1`, the out folder's records, and
-the report.
+The eval runner sends each trial's subject and grader a notification through `/api/v1` and grades their explicit Console
+publications. Internal model text is never treated as a reply.
 
 Layer 3 · node lane · effect dialect · consumers: cli-kernel, cli
 
@@ -21,7 +21,10 @@ The [product contracts](../../../.contracts/index.md) apply, with
 ## Use
 
 The CLI's `eval run` calls `runEval` with its calls, its workspace and the out folder. A rerun with the same out folder
-resumes: every record a run saved stays.
+resumes: every record a run saved stays. Each role's notification identity is saved before admission. The runner waits
+for that fresh mech's activations to stop, records their charges, and uses its latest published Console message. A quiet
+completion is `no_reply`, a stopped activation is `stopped`, and a failed activation is `run_failed`; none becomes a
+grade. Plan and report versions reject incompatible saved formats without changing those files.
 
 ## Never
 

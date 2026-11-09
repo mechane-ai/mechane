@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
-import { InboxText, Instructions } from '@mechane/protocol';
-import { InboxItemRequestId, isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
+import { Instructions, NotificationId, NotificationText } from '@mechane/protocol';
+import { isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
 import { Effect, Predicate, Schema } from 'effect';
 import {
   CASES_PER_SUITE,
@@ -10,6 +10,7 @@ import {
   EXPECTATIONS_PER_CASE,
   INPUT_MAX_CHARS,
   PLAN_VERSION,
+  PUBLICATION_INSTRUCTIONS,
   REPEATS_PER_CASE,
   SUITE_VERSION,
 } from './constants.ts';
@@ -19,8 +20,8 @@ export const OutFolderLock = wireStruct({ fields: { processId: Schema.Int.check(
 
 export type OutFolderLock = typeof OutFolderLock.Type;
 
-/** A role's turn about to be sent: the fresh mech and the inbox item's id, recorded before the send. */
-export const Intent = wireStruct({ fields: { mechId: MechId, inboxItemId: InboxItemRequestId } });
+/** The notification identity is saved before sending, so resuming does not repeat paid work. */
+export const Intent = wireStruct({ fields: { mechId: MechId, notificationId: NotificationId } });
 
 export type Intent = typeof Intent.Type;
 
@@ -44,10 +45,10 @@ const Expectation = Schema.Struct({
   description: Schema.String.check(isWellFormedText, Schema.isBetweenLength(1, DESCRIPTION_MAX_CHARS)),
 });
 
-/** One task for the subject: the input it receives as its inbox item, and the expectations its reply is graded by. */
+/** Expectations belong to the grader and are never included in the subject's notification. */
 const Case = Schema.Struct({
   id: EvalId,
-  input: InboxText.check(Schema.isMaxLength(INPUT_MAX_CHARS)),
+  input: NotificationText.check(Schema.isMaxLength(INPUT_MAX_CHARS)),
   expectations: Schema.Array(Expectation).check(Schema.isBetweenLength(1, EXPECTATIONS_PER_CASE), hasDistinctIds),
 });
 
@@ -64,7 +65,13 @@ export const Suite = wireStruct({
     id: EvalId,
     subject: Schema.Struct({
       /** Absent for a subject without instructions of its own. */
-      instructions: Schema.optionalKey(Instructions),
+      instructions: Schema.optionalKey(
+        Instructions.check(
+          Schema.makeFilter((value) => Schema.is(Instructions)(`${value}\n\n${PUBLICATION_INSTRUCTIONS}`), {
+            expected: 'instructions with room for the evaluation publication instruction',
+          }),
+        ),
+      ),
       /** Absent for the deployment's first offer. */
       model: Schema.optionalKey(ModelId),
     }),

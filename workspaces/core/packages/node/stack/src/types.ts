@@ -17,7 +17,11 @@ export type ModelReply = {
   readonly completionTokens?: number;
 };
 
-export type ModelPlan = { readonly marker: string; readonly replies: ReadonlyArray<ModelReply> };
+export type ModelPlan = {
+  readonly marker: string;
+  readonly replies: ReadonlyArray<ModelReply>;
+  readonly summary?: string;
+};
 
 export type ModelCall = {
   readonly marker: string;
@@ -39,80 +43,19 @@ export type ModelFixture = {
 
 export type GitHubUser = { readonly id: number; readonly login: string };
 
-export type GitHubInstallationToken = {
-  readonly value: string;
-  readonly repositoryIds: ReadonlyArray<number>;
-  readonly permissions: Readonly<Record<string, string>>;
-  readonly issuedAt: number;
-  readonly revokedAt: number | null;
-};
-
 export type GitHubFixture = {
   readonly origin: URL;
   readonly clientId: string;
   readonly clientSecret: string;
   readonly users: { readonly owner: GitHubUser; readonly member: GitHubUser; readonly outsider: GitHubUser };
-  readonly app: {
-    readonly id: number;
-    readonly installationId: number;
-    readonly repositoryId: number;
-    readonly privateKey: string;
-    readonly readTokens: () => ReadonlyArray<GitHubInstallationToken>;
-  };
 };
 
-export type SlackCall = { readonly method: string; readonly body: Readonly<Record<string, unknown>> };
-
-export type SlackMessage = {
-  readonly ts: string;
-  readonly channel: string;
-  readonly thread_ts: string;
-  readonly text: string;
-  readonly markdown_text?: string | undefined;
-  readonly user: string;
-  readonly bot_id: string;
-  readonly blocks?: unknown;
-  readonly metadata?: unknown;
-  readonly client_msg_id?: string | undefined;
-};
-
-export type SlackFixture = {
-  readonly origin: URL;
-  readonly botToken: string;
-  readonly signingSecret: string;
-  readonly teamId: string;
-  readonly botUserId: string;
-  readonly readCalls: () => ReadonlyArray<SlackCall>;
-  readonly readMessages: () => ReadonlyArray<SlackMessage>;
-  readonly loseNextPostReceipt: () => void;
-};
-
-export type NexusRequestStatus = 'pending' | 'ready' | 'denied' | 'expired' | 'cancelled';
-
-export type NexusRequest = {
-  readonly id: string;
-  readonly kind: 'access' | 'vend';
-  readonly status: NexusRequestStatus;
-  readonly approval: { readonly id: string; readonly url: string; readonly status: string } | null;
-  readonly error: string | null;
-  readonly body: Readonly<Record<string, unknown>>;
-};
-
-export type NexusFixture = {
-  readonly origin: URL;
-  readonly apiKey: string;
-  readonly serviceId: string;
-  readonly signingSecret: string;
-  readonly readRequests: () => ReadonlyArray<NexusRequest>;
-  readonly resolve: (input: { readonly id: string; readonly status: NexusRequestStatus }) => NexusRequest;
-  readonly waitForRequest: (input?: { readonly timeoutMs?: number }) => Promise<NexusRequest>;
-};
+export type NotificationProducerFixture = { readonly id: string; readonly signingSecret: string };
 
 export type LocalFixtures = {
   readonly github: GitHubFixture;
   readonly model: ModelFixture;
-  readonly slack: SlackFixture;
-  readonly nexus: NexusFixture;
+  readonly notifications: NotificationProducerFixture;
   readonly close: () => Promise<void>;
 };
 
@@ -134,6 +77,9 @@ export type LocalStack = {
   readonly databaseUrl: string;
   readonly stateDirectory: string;
   readonly fixtures: LocalFixtures | undefined;
+  readonly sandbox:
+    | { readonly origin: URL; readonly bearer: string; readonly loseMachine: (id: string) => Promise<void> }
+    | undefined;
   readonly serverLog: string;
   readonly postgresContainer: string;
   readonly nodeVersion: string;

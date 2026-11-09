@@ -54,7 +54,7 @@ not-found response. Owner-only configuration and integration operations recheck 
 
 An admitted GitHub identity may receive the installation's explicit initial workspace membership. Login alone grants
 no other workspace access. API keys and browser sessions do not cache membership authority. A removed membership or
-revoked key fails on the next operation, including stream resumption and card actions.
+revoked key fails on the next operation, including repeated reads and tool dispatch.
 
 Each mech has its own durable sandbox identity. Only the authenticated runtime may command the sandbox service; the
 service binds the supplied workspace and mech to that identity before execution. Guests validate their own machine
@@ -63,8 +63,10 @@ identity and receive no general application API authority implicitly.
 Workspace policy gates new model reservations and compute admission atomically with their records. Suspended work
 cannot acquire new paid work or credentials. Existing command effects remain observable; suspension never erases files.
 
-Nexus is the sole authority for external capability grants and approval decisions. Requester attribution comes from
-verified intake and cannot be replaced by a model or rendered action. Current external grants are checked before use.
+The owning application service decides external capabilities and approvals. Its requester attribution comes from verified
+intake and cannot be replaced by model text or a rendered action. Mechane authenticates notification producers separately
+from their body metadata and restricts them to configured recipients. A decision notification grants no runtime authority.
+Current generic execution grants and external application permissions remain independent checks.
 
 The Cloudflare compute provider disables direct internet and routes HTTP through its declared egress gateway.
 Invalid or disagreeing URL and Host authorities, literal private targets, and unsupported ports are refused. Local

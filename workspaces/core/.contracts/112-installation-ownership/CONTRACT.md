@@ -15,8 +15,9 @@ Include the original license, attribution, and generated Node and browser depend
 Derive dependency notices from build inputs; missing package notices require reviewed, exact-version supplements.
 
 Keep infrastructure configuration responsible for service identity, domain routing, capacity, database roles, global
-settings, and secret references. Runtime APIs own principals, workspaces, mechs, credentials, grants, Slack bindings,
-messages, and files. An infrastructure apply cannot seed or overwrite those records.
+settings, secret references, and notification-producer recipient allowlists. Runtime APIs own principals, workspaces,
+mechs, credentials, grants, notifications, messages, and files. Integration services own platform subscriptions and
+delivery. An infrastructure apply cannot seed or overwrite runtime records.
 
 Give each resource one writer. The installation owner configures the managed Node host and its database. Cloudflare
 owns the narrow sandbox service, file bucket, and public ingress. The ingress forwards HTTP and streams unchanged to
@@ -47,7 +48,7 @@ Keep operational deployment evidence outside product source.
 
 Reconcile uncertain infrastructure operations using remote reads before repeating them. Bound rollout waits and
 report an incomplete rollout as a failure. An empty follow-up plan verifies declarative convergence; it does not prove
-that Slack intake, approval resumption, or model execution works.
+that notification intake, model execution, or explicit communication works.
 
 ## Checks
 
@@ -60,7 +61,8 @@ Exercise supported hosted origins through installation validation and runtime tr
 and decorated origins fail before transport credentials are read, while the explicit local loopback still works.
 
 For an authorized hosted qualification, verify health and readiness, a repeat deployment, a process restart with a
-pending approval, and the original Slack reply destination. Check that a repeated infrastructure plan changes nothing
+pending inbox notification, and explicit tool communication. Qualify approval decisions and their explicit replies
+through the owning application integration. Check that a repeated infrastructure plan changes nothing
 and that persistent resources have no replacement action. Record live evidence in the delivery issue or pull request.
 For guest image changes, retain the fresh checkpoint or maintenance receipt, stopped-provider readback, and released
 capacity before apply. Afterward verify restored files and browser evidence under the restored workspace policies.

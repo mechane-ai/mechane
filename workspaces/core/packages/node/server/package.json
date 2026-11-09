@@ -13,7 +13,6 @@
     "@mechane/sandbox-wire": "workspace:*",
     "@workflow/world": "5.1.0",
     "@workflow/world-postgres": "5.1.1",
-    "ai": "7.0.164",
     "effect": "4.0.7",
     "hono": "4.13.17",
     "workflow": "5.4.0"

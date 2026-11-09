@@ -66,12 +66,9 @@ export class MechNotFound extends Schema.TaggedError<MechNotFound>()('MechNotFou
 /** The mech has accepted or active work, so an idle-only operation cannot proceed. */
 export class MechBusy extends Schema.TaggedError<MechBusy>()('MechBusy', { mechId: RecordId }) {}
 
-/**
- * The mech already holds an inbox item with this id and another text or delivery, so the send is not a retry of that
- * one.
- */
-export class InboxItemConflict extends Schema.TaggedError<InboxItemConflict>()('InboxItemConflict', {
-  inboxItemId: RecordId,
+/** A stable notification identity cannot be reused for different content. */
+export class NotificationConflict extends Schema.TaggedError<NotificationConflict>()('NotificationConflict', {
+  notificationId: RecordId,
 }) {}
 
 /**

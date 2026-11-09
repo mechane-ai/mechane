@@ -17,12 +17,12 @@ const INSTALL_GRANT_FUNCTION = `
 CREATE OR REPLACE FUNCTION pg_temp.grant_mechane_runtime(role_name text) RETURNS void LANGUAGE plpgsql AS $function$
 BEGIN
   EXECUTE format('GRANT CONNECT ON DATABASE %I TO %I',current_database(),role_name);
-  EXECUTE format('GRANT USAGE ON SCHEMA mechane,chat,workflow,graphile_worker TO %I',role_name);
-  EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA mechane,chat,workflow,graphile_worker TO %I',role_name);
+  EXECUTE format('GRANT USAGE ON SCHEMA mechane,workflow,graphile_worker TO %I',role_name);
+  EXECUTE format('GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA mechane,workflow,graphile_worker TO %I',role_name);
   EXECUTE format('REVOKE ALL ON mechane.schema_migrations FROM %I',role_name);
   EXECUTE format('GRANT SELECT ON mechane.schema_migrations TO %I',role_name);
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE ON graphile_worker.migrations FROM %I',role_name);
-  EXECUTE format('GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA mechane,chat,workflow,graphile_worker TO %I',role_name);
+  EXECUTE format('GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA mechane,workflow,graphile_worker TO %I',role_name);
   REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA workflow,graphile_worker FROM PUBLIC;
   EXECUTE format('GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA workflow,graphile_worker TO %I',role_name);
   DROP POLICY IF EXISTS mechane_runtime_access ON graphile_worker._private_job_queues;
@@ -33,8 +33,8 @@ BEGIN
   EXECUTE format('CREATE POLICY mechane_runtime_access ON graphile_worker._private_jobs TO %I USING(true) WITH CHECK(true)',role_name);
   EXECUTE format('CREATE POLICY mechane_runtime_access ON graphile_worker._private_known_crontabs TO %I USING(true) WITH CHECK(true)',role_name);
   EXECUTE format('CREATE POLICY mechane_runtime_access ON graphile_worker._private_tasks TO %I USING(true) WITH CHECK(true)',role_name);
-  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane,chat,workflow,graphile_worker GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO %I',role_name);
-  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane,chat,workflow,graphile_worker GRANT USAGE,SELECT ON SEQUENCES TO %I',role_name);
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane,workflow,graphile_worker GRANT SELECT,INSERT,UPDATE,DELETE ON TABLES TO %I',role_name);
+  EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane,workflow,graphile_worker GRANT USAGE,SELECT ON SEQUENCES TO %I',role_name);
   ALTER DEFAULT PRIVILEGES IN SCHEMA workflow,graphile_worker REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA workflow,graphile_worker GRANT EXECUTE ON FUNCTIONS TO %I',role_name);
 END;
@@ -76,7 +76,7 @@ export async function grantStoreRuntime({ databaseUrl, role }: GrantInput): Prom
       const rights = await client.query(
         `
         SELECT has_schema_privilege($1,'public','CREATE') OR has_schema_privilege($1,'mechane','CREATE')
-          OR has_schema_privilege($1,'workflow','CREATE') OR has_schema_privilege($1,'chat','CREATE')
+          OR has_schema_privilege($1,'workflow','CREATE')
           OR has_schema_privilege($1,'graphile_worker','CREATE') AS can_create`,
         [role],
       );

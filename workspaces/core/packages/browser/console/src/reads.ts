@@ -7,11 +7,6 @@ import {
   decodeEvidenceArtifact,
   decodeMech,
   decodeMechSummary,
-  decodeMemory,
-  decodeSession,
-  decodeSlackBinding,
-  decodeSlackDelivery,
-  decodeThread,
   decodeTrace,
   decodeTurn,
   recordKey,
@@ -25,16 +20,11 @@ import type {
   EventRow,
   EvidenceArtifactRow,
   MechSummaryRow,
-  MemoryRow,
   ReadReceipt,
   ReadRequest,
-  SessionRow,
-  SlackBindingRow,
-  SlackDeliveryRow,
-  ThreadRow,
   TurnRow,
 } from '@mechane/console-data';
-import type { Allowance, EventPage, MechPage, MemoryList, SessionPage, ThreadPage, TurnPage } from '@mechane/protocol';
+import type { Allowance, EventPage, MechPage, TurnPage } from '@mechane/protocol';
 import { eq, findProblems, inArray, useLiveQuery } from '@tanstack/react-db';
 import type { HealthNode } from '@tanstack/react-db';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -43,7 +33,7 @@ import type { ResourceState } from './resource.tsx';
 type KeyedRecord = { readonly key: string };
 
 /** Subscribes to acquired records for a bounded key set; undefined disables demand. */
-export function useCanonicalRows<Row extends KeyedRecord>(
+function useCanonicalRows<Row extends KeyedRecord>(
   data: ConsoleData,
   collection: CanonicalCollectionOptions<Row>,
   keys: ReadonlyArray<string> | undefined,
@@ -249,30 +239,14 @@ function eventPage(rows: ReadonlyArray<EventRow>, receipt: ReadReceipt): EventPa
   return { events: rows.map(decodeEvent), hasMore: receipt.hasMore === true };
 }
 
-function threadPage(rows: ReadonlyArray<ThreadRow>, receipt: ReadReceipt): ThreadPage {
-  return { threads: rows.map(decodeThread), hasMore: receipt.hasMore === true };
-}
-
 function turnPage(rows: ReadonlyArray<TurnRow>, receipt: ReadReceipt): TurnPage {
   return { turns: rows.map(decodeTurn), hasMore: receipt.hasMore === true };
-}
-
-function memoryPage(rows: ReadonlyArray<MemoryRow>): MemoryList {
-  return { memories: rows.map(decodeMemory) };
 }
 
 function allowanceValue(rows: ReadonlyArray<AllowanceRow>): Allowance | undefined {
   const row = rows[0];
 
   return row === undefined ? undefined : decodeAllowance(row);
-}
-
-function slackBindings(rows: ReadonlyArray<SlackBindingRow>) {
-  return { bindings: rows.map(decodeSlackBinding) };
-}
-
-function slackDeliveries(rows: ReadonlyArray<SlackDeliveryRow>) {
-  return { deliveries: rows.map(decodeSlackDelivery) };
 }
 
 function evidencePage(rows: ReadonlyArray<EvidenceArtifactRow>, receipt: ReadReceipt) {
@@ -345,15 +319,6 @@ export function useMechs(data: ConsoleData, request: ReadRequest<'mechs'> | unde
   return useCollectionRead({ data, request, collection: data.collections.mechs, project: mechPage });
 }
 
-function sessionPage(rows: ReadonlyArray<SessionRow>, receipt: ReadReceipt): SessionPage {
-  return { sessions: rows.map(decodeSession), hasMore: receipt.hasMore === true };
-}
-
-/** Keeps conversation picker metadata in the same persistent record and receipt path as other lists. */
-export function useSessions(data: ConsoleData, request: ReadRequest<'sessions'>) {
-  return useCollectionRead({ data, request, collection: data.collections.sessions, project: sessionPage });
-}
-
 /** Resolves activity and run history pages against the same canonical events. */
 export function useEvents(data: ConsoleData, request: ReadRequest<'events' | 'turnEvents'> | undefined) {
   return useCollectionRead({ data, request, collection: data.collections.events, project: eventPage });
@@ -390,34 +355,14 @@ export function useEventWindow(
   return useReadState({ data, request, observation, value, records: [query] });
 }
 
-/** Publishes a work page only when every thread referenced by its receipt is available. */
-export function useThreads(data: ConsoleData, request: ReadRequest<'threads'> | undefined) {
-  return useCollectionRead({ data, request, collection: data.collections.threads, project: threadPage });
-}
-
 /** Shares canonical turns with trace views while retaining the run page's server order. */
 export function useTurns(data: ConsoleData, request: ReadRequest<'turns'> | undefined) {
   return useCollectionRead({ data, request, collection: data.collections.turns, project: turnPage });
 }
 
-/** Resolves the complete bounded memory read, including an authoritative empty result. */
-export function useMemories(data: ConsoleData, request: ReadRequest<'memories'> | undefined) {
-  return useCollectionRead({ data, request, collection: data.collections.memories, project: memoryPage });
-}
-
 /** Keeps allowance readiness independent of the mech list's primary content. */
 export function useAllowance(data: ConsoleData, request: ReadRequest<'allowance'>) {
   return useCollectionRead({ data, request, collection: data.collections.allowance, project: allowanceValue });
-}
-
-/** Resolves workspace bindings before the caller filters them to one mech. */
-export function useSlackBindings(data: ConsoleData, request: ReadRequest<'slackBindings'>) {
-  return useCollectionRead({ data, request, collection: data.collections.slackBindings, project: slackBindings });
-}
-
-/** Preserves the bounded delivery response's order without implying older history is complete. */
-export function useSlackDeliveries(data: ConsoleData, request: ReadRequest<'slackDeliveries'>) {
-  return useCollectionRead({ data, request, collection: data.collections.slackDeliveries, project: slackDeliveries });
 }
 
 /** Requires matching summary and definition revisions before replacing a complete authorized mech view. */

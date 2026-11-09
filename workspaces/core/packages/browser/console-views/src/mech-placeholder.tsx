@@ -1,6 +1,8 @@
 import { PromptInputPlaceholder } from '@mechane-ai/elements/ai';
+import { CollectionToolbar } from '@mechane-ai/elements/collections';
 import { ButtonPlaceholder, SkeletonText } from '@mechane-ai/elements/feedback';
 import { PageToolbar, Workbench, WorkbenchFooter, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageNavigationPlaceholder } from '@mechane-ai/elements/navigation';
 import type { ConsoleView } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { ConversationPlaceholder } from './conversation.tsx';
@@ -11,9 +13,8 @@ import { MechSettingsPlaceholder } from './mech-settings.tsx';
 import { TurnTracePlaceholder } from './trace.tsx';
 import type { TraceTab } from './trace.tsx';
 import { TurnListPlaceholder } from './turns.tsx';
-import { MemoryListPlaceholder, WorkListPlaceholder } from './work.tsx';
 
-const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'work', 'activity']);
+const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity']);
 
 export function MechPagePlaceholder({
   view,
@@ -54,6 +55,17 @@ export function MechPagePlaceholder({
           </>
         ) : (
           <WorkbenchScroll label="Mech content" isFlush={collectionViews.has(view)}>
+            {collectionViews.has(view) && (
+              <CollectionToolbar label="Activity views">
+                <PageNavigationPlaceholder
+                  isEmbedded
+                  items={[
+                    { id: 'activity', label: 'Events' },
+                    { id: 'runs', label: 'Runs' },
+                  ]}
+                />
+              </CollectionToolbar>
+            )}
             <MechContentPlaceholder view={view} />
           </WorkbenchScroll>
         )}
@@ -66,10 +78,6 @@ function MechContentPlaceholder({ view }: { readonly view: ConsoleView }): React
   switch (view) {
     case 'runs':
       return <TurnListPlaceholder />;
-    case 'work':
-      return <WorkListPlaceholder />;
-    case 'memory':
-      return <MemoryListPlaceholder />;
     case 'environment':
       return <EnvironmentPlaceholder />;
     case 'activity':

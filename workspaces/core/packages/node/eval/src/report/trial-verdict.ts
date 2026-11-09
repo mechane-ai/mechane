@@ -1,6 +1,5 @@
-import { TurnStatus } from '@mechane/protocol';
 import { Option } from 'effect';
-import { CriterionVerdict, GraderStatus, TrialVerdict } from '../constants.ts';
+import { CriterionVerdict, GraderStatus, RoleStatus, TrialVerdict } from '../constants.ts';
 import type { Grade } from '../schemas.ts';
 import type { GradeRecord, TurnRecord } from '../store/schemas.ts';
 
@@ -16,10 +15,7 @@ type TrialVerdictInput = { readonly records: TrialRecords };
 
 type CriteriaInput = { readonly criteria: Grade['criteria'] };
 
-/**
- * A trial's verdict from its saved records alone: unavailable for a role's turn never saved, and run_failed for a turn
- * that ended unanswered. A grader's reply that was no grade is no_grade, and any other is its grade's verdict.
- */
+/** Saved execution outcomes take precedence over grading, so partial or unpublished text cannot become a score. */
 export function trialVerdict({ records }: TrialVerdictInput): TrialVerdict {
   const { subject, grade } = records;
 
@@ -27,8 +23,16 @@ export function trialVerdict({ records }: TrialVerdictInput): TrialVerdict {
     return TrialVerdict.Unavailable;
   }
 
-  if (subject.value.outcome.status === TurnStatus.Unanswered) {
+  if (subject.value.outcome.status === RoleStatus.Failed) {
     return TrialVerdict.RunFailed;
+  }
+
+  if (subject.value.outcome.status === RoleStatus.Stopped) {
+    return TrialVerdict.Stopped;
+  }
+
+  if (subject.value.outcome.status === RoleStatus.NoReply) {
+    return TrialVerdict.NoReply;
   }
 
   if (Option.isNone(grade)) {
@@ -38,8 +42,12 @@ export function trialVerdict({ records }: TrialVerdictInput): TrialVerdict {
   const { outcome } = grade.value;
 
   switch (outcome.status) {
-    case GraderStatus.Unanswered:
+    case GraderStatus.Failed:
       return TrialVerdict.RunFailed;
+    case GraderStatus.Stopped:
+      return TrialVerdict.Stopped;
+    case GraderStatus.NoReply:
+      return TrialVerdict.NoReply;
     case GraderStatus.NoGrade:
       return TrialVerdict.NoGrade;
     case GraderStatus.Graded:

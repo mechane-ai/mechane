@@ -1,17 +1,26 @@
-import type { ModelMessage, UIMessage } from 'ai';
+import type { ModelMessage } from 'ai';
 import { getWorkflowMetadata } from 'workflow';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { wakeMech } from './admission.ts';
 import { closeOutcomeStream } from './close-workflow-stream.ts';
-import { readTerminalOutcome, runFailureMessage } from './terminal-outcome.ts';
+import { stopActivation } from './stop-activation.ts';
+import { terminalOutcome } from './terminal-outcome.ts';
 import type { RunOutcome } from './types.ts';
-import { readCompletedUIMessage } from './ui-stream.ts';
+
+const RUN_FAILURE_MESSAGES = {
+  environment_checkpoint:
+    'The environment checkpoint did not commit. Inspect the saved files and command receipts before continuing.',
+  note_import:
+    'The existing notes could not be copied into this environment. Their original records remain available; inspect environment access and import receipts before continuing.',
+} as const;
 
 type FinishRunInput = {
   readonly runId: string;
-  readonly inputMessage: UIMessage;
   readonly messages: ReadonlyArray<ModelMessage>;
-  readonly reply: string;
+  readonly presentedSequence: number;
+  readonly checkpointSequence: number;
+  readonly traceMessages: ReadonlyArray<ModelMessage>;
+  readonly shouldContinue: boolean;
 };
 
 export async function claimRun(runId: string): Promise<'running' | 'queued' | 'terminal'> {
@@ -26,28 +35,34 @@ export async function claimRun(runId: string): Promise<'running' | 'queued' | 't
   });
 }
 
-export async function finishRun({ runId, inputMessage, messages, reply }: FinishRunInput): Promise<RunOutcome> {
+export async function markEnvironmentCheckpointCommitted(runId: string): Promise<void> {
   'use step';
 
-  const { workflowRunId } = getWorkflowMetadata();
-  const assistant = await readCompletedUIMessage({ runId, workflowId: workflowRunId });
-  const uiMessages = [inputMessage];
+  await withRuntimeStore(async (store) => await store.markEnvironmentCheckpointCommitted({ runId }));
+}
 
-  if (assistant !== null) {
-    uiMessages.push(assistant);
-  }
+export async function finishRun({
+  runId,
+  messages,
+  presentedSequence,
+  checkpointSequence,
+  traceMessages,
+  shouldContinue,
+}: FinishRunInput): Promise<RunOutcome> {
+  'use step';
 
   const { run, outcome } = await withRuntimeStore(async (store) => {
-    const committed = await store.finishRun({
+    const result = await store.finishActivation({
       runId,
-      status: 'completed',
-      reply,
-      error: null,
+      presentedSequence,
+      checkpointSequence,
+      traceMessages,
+      shouldContinue,
       modelMessages: messages,
-      uiMessages,
+      isEnvironmentCheckpointCommitted: true,
     });
 
-    return { run: committed, outcome: await readTerminalOutcome({ store, run: committed }) };
+    return { run: result.run, outcome: terminalOutcome(result.run) };
   });
 
   await wakeMech({ workspaceId: run.workspaceId, mechId: run.mechId });
@@ -55,27 +70,22 @@ export async function finishRun({ runId, inputMessage, messages, reply }: Finish
   return outcome;
 }
 
-export async function failRun(runId: string): Promise<RunOutcome> {
+export async function failRun(runId: string, reason?: keyof typeof RUN_FAILURE_MESSAGES): Promise<RunOutcome> {
   'use step';
 
   const { workflowRunId } = getWorkflowMetadata();
 
-  const { run, outcome } = await withRuntimeStore(async (store) => {
-    const current = await store.getRun({ runId });
-
-    if (current === null) {
-      throw new Error('Run is unavailable');
+  const { run, outcome, wasFinished } = await withRuntimeStore(async (store) => {
+    if (reason !== undefined) {
+      return await stopActivation({ store, runId, status: 'failed', error: RUN_FAILURE_MESSAGES[reason] });
     }
 
-    const committed = await store.finishRun({
-      runId,
-      status: 'failed',
-      reply: null,
-      error: runFailureMessage(current.failureReason),
-    });
-
-    return { run: committed, outcome: await readTerminalOutcome({ store, run: committed }) };
+    return await stopActivation({ store, runId, status: 'failed' });
   });
+
+  if (!wasFinished) {
+    return outcome;
+  }
 
   await closeOutcomeStream({ workflowId: workflowRunId, outcome });
   await wakeMech({ workspaceId: run.workspaceId, mechId: run.mechId });
@@ -93,7 +103,7 @@ export async function readTerminalRun(runId: string): Promise<RunOutcome> {
       throw new Error('Run is unavailable');
     }
 
-    return await readTerminalOutcome({ store, run });
+    return terminalOutcome(run);
   });
 }
 

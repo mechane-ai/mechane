@@ -18,7 +18,14 @@ import type { EvalRunFailure, EvalStore, WorkspaceAccess, WriteProgress } from '
 type EvalRun = { readonly outcome: EvalOutcome; readonly lines: ReadonlyArray<string>; readonly report: Report };
 
 /** The operations a run calls: the deployment's readiness and allowance, and its trials' mechs and turns. */
-type EvalOperation = 'readiness' | 'showAllowance' | 'createMech' | 'sendInboxItem' | 'listEvents' | 'showTurn';
+type EvalOperation =
+  | 'readiness'
+  | 'showAllowance'
+  | 'createMech'
+  | 'sendNotification'
+  | 'listTurns'
+  | 'showTurn'
+  | 'listConsoleMessages';
 
 /**
  * A suite to run in the caller's workspace, where the run creates its mechs, the out folder of its records, and where

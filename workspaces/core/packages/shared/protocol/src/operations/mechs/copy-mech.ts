@@ -26,7 +26,7 @@ export const cloneMech = {
   errors: [MechNotFound, MechCreationConflict, ServiceUnavailable],
 } as const satisfies Operation;
 
-/** Copies an idle mech's conversation and memory into an independent identity without operational authority. */
+/** Copies an idle mech's context and history. Sandbox files and operational authority stay with the source. */
 export const forkMech = {
   ...COPY_MECH_FIELDS,
   path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/fork',

@@ -19,7 +19,6 @@ import { runExecutionAccessShow } from './execution-access/run-execution-access-
 import { runKeyCreate } from './keys/run-key-create.ts';
 import { runKeyList } from './keys/run-key-list.ts';
 import { runKeyRevoke } from './keys/run-key-revoke.ts';
-import { runInboxSend } from './mechs/run-inbox-send.ts';
 import { runMechChange } from './mechs/run-mech-change.ts';
 import { runMechClone } from './mechs/run-mech-clone.ts';
 import { runMechCreate } from './mechs/run-mech-create.ts';
@@ -27,16 +26,14 @@ import { runMechFork } from './mechs/run-mech-fork.ts';
 import { runMechList } from './mechs/run-mech-list.ts';
 import { runMechRevisions } from './mechs/run-mech-revisions.ts';
 import { runMechShow } from './mechs/run-mech-show.ts';
+import { runNotificationSend } from './mechs/run-notification-send.ts';
 import { runTurnCancel } from './mechs/run-turn-cancel.ts';
 import { runEventList } from './observe/run-event-list.ts';
-import { runMemoryList } from './observe/run-memory-list.ts';
 import { runTurnShow } from './observe/run-turn-show.ts';
 import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
-import { SLACK_RUNS } from './slack/slack-runs.ts';
-import { runThreadList } from './threads/run-thread-list.ts';
 import { WORKSPACE_RUNS } from './workspaces/workspace-runs.ts';
 
 /** The run of each command; a command without one fails to compile. */
@@ -49,7 +46,6 @@ export const RUNS: Readonly<Runs> = {
   'credential put': documentRun({ run: runCredentialPut }),
   'credential list': documentRun({ run: runCredentialList }),
   'credential delete': documentRun({ run: runCredentialDelete }),
-  ...SLACK_RUNS,
   'connection create': documentRun({ run: runConnectionCreate }),
   'connection update': documentRun({ run: runConnectionUpdate }),
   'connection list': documentRun({ run: runConnectionList }),
@@ -87,12 +83,10 @@ export const RUNS: Readonly<Runs> = {
     run: (input) => runMechChange({ ...input, input: { ...input.input, status: MechStatus.Archived } }),
   }),
   'mech revisions': documentRun({ run: runMechRevisions }),
-  'inbox send': documentRun({ run: runInboxSend }),
+  'notification send': documentRun({ run: runNotificationSend }),
   'event list': runEventList,
   'turn show': documentRun({ run: runTurnShow }),
   'turn cancel': documentRun({ run: runTurnCancel }),
-  'memory list': documentRun({ run: runMemoryList }),
-  'thread list': documentRun({ run: runThreadList }),
   'eval run': runEvalRun,
   'update': documentRun({ run: runUpdate }),
 };

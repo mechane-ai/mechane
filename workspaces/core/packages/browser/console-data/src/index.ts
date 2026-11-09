@@ -12,11 +12,6 @@ export {
   decodeEnvironmentProcessDetails,
   decodeMech,
   decodeMechSummary,
-  decodeMemory,
-  decodeSession,
-  decodeSlackBinding,
-  decodeSlackDelivery,
-  decodeThread,
   decodeTrace,
   decodeTurn,
   recordKey,
@@ -28,11 +23,6 @@ export type {
   EnvironmentProcessRow,
   EnvironmentProcessDetailsRow,
   MechSummaryRow,
-  MemoryRow,
-  SessionRow,
-  SlackBindingRow,
-  SlackDeliveryRow,
-  ThreadRow,
   TurnRow,
 } from './records.ts';
 export { loadSession } from './session.ts';

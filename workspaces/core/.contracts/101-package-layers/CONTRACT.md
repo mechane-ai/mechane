@@ -13,8 +13,11 @@ A member imports another only when that member sits in a strictly lower layer of
 Import only through a source target declared in that member's exports map, normally `src/index.ts`. No two members of
 one layer import each other and no package cycle can form.
 Each package declares the members it imports in its own `package.json`, by `workspace:*`, and nowhere else.
+Dependency ownership checks inspect `dependencies`, `devDependencies`, and `peerDependencies`; a peer declaration
+cannot bypass the same package boundary.
 The shared lane imports no Node module, and only the worker lane imports the modules the Workers runtime provides.
-`@mechane/runtime` owns the domain store, native Workflow execution, AI SDK tools and model adapter, and Chat delivery.
+`@mechane/runtime` owns the domain store, durable notification inbox, native Workflow execution, AI SDK tools and model
+adapter, and explicit Console publication. External chat adapters belong to their integration owner under contract 125.
 `@mechane/server` owns HTTP composition, authentication, SDK World lifecycle, and serving the Console. The server
 imports the runtime; the runtime never imports the server. The registry confines SDK dependencies to these owners
 and their explicit browser or shared-schema consumers. There is no retained Pi execution package.

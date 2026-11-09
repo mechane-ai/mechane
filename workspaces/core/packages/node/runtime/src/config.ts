@@ -1,4 +1,4 @@
-import { SHA256_PATTERN } from '@mechane/records';
+import { RecordId, SHA256_PATTERN } from '@mechane/records';
 import { Record, Redacted, Schema } from 'effect';
 import type { CredentialKeyring } from './domain.ts';
 
@@ -22,6 +22,15 @@ const KeyringSchema = Schema.Struct({
 });
 
 const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
+const PRODUCER_SECRET_MIN_CHARS = 32;
+
+const NotificationProducerSchema = Schema.Struct({
+  id: Schema.NonEmptyString,
+  secret: Schema.String.check(Schema.isMinLength(PRODUCER_SECRET_MIN_CHARS)),
+  recipients: Schema.NonEmptyArray(Schema.Struct({ workspaceId: RecordId, mechId: RecordId })),
+});
+
+const NotificationProducersSchema = Schema.Array(NotificationProducerSchema);
 const DEFAULT_MAX_CONNECTIONS = 4;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
@@ -29,6 +38,12 @@ const HTTP_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'http:']);
 const LOOPBACK_HOSTNAMES: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 export type ModelOffer = typeof ModelOfferSchema.Type;
+
+export type NotificationProducer = {
+  readonly id: string;
+  readonly secret: Redacted.Redacted;
+  readonly recipients: ReadonlyArray<{ readonly workspaceId: string; readonly mechId: string }>;
+};
 
 export type RuntimeConfiguration = {
   readonly databaseUrl: Redacted.Redacted;
@@ -45,7 +60,7 @@ export type RuntimeConfiguration = {
     readonly offers: ReadonlyArray<ModelOffer>;
   };
   readonly sandbox: { readonly origin: string; readonly bearer: Redacted.Redacted };
-  readonly nexusEvents: { readonly secret: Redacted.Redacted } | null;
+  readonly notificationProducers: ReadonlyArray<NotificationProducer>;
 };
 
 function requiredEnvironment(name: string): string {
@@ -129,7 +144,7 @@ export function loadRuntimeConfiguration(): RuntimeConfiguration {
       origin: httpOrigin('MECHANE_SANDBOX_ORIGIN'),
       bearer: Redacted.make(requiredEnvironment('MECHANE_SANDBOX_KEY')),
     },
-    nexusEvents: nexusEventSettings(),
+    notificationProducers: notificationProducerSettings(),
   };
 }
 
@@ -141,14 +156,26 @@ function parseKeyring(): CredentialKeyring {
   }
 }
 
-function nexusEventSettings(): RuntimeConfiguration['nexusEvents'] {
-  const secret = process.env['MECHANE_NEXUS_EVENT_SECRET'];
+function notificationProducerSettings(): ReadonlyArray<NotificationProducer> {
+  const raw = process.env['MECHANE_NOTIFICATION_PRODUCERS'];
 
-  if (secret === undefined || secret.length === 0) {
-    return null;
+  if (raw === undefined) {
+    return [];
   }
 
-  return { secret: Redacted.make(secret) };
+  try {
+    const producers = Schema.decodeUnknownSync(NotificationProducersSchema, { onExcessProperty: 'error' })(
+      JSON.parse(raw),
+    );
+
+    if (new Set(producers.map((producer) => producer.id)).size !== producers.length) {
+      throw new Error('Duplicate notification producer');
+    }
+
+    return producers.map((producer) => ({ ...producer, secret: Redacted.make(producer.secret) }));
+  } catch {
+    throw new Error('Notification producer configuration is invalid');
+  }
 }
 
 function publicOriginSetting(): string {

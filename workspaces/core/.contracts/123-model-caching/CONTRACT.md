@@ -10,9 +10,10 @@ Configure model protocol and cache behavior through the supported AI SDK provide
 serialization and usage parsing upstream. Custom model wrappers own credential resolution, attribution, and metering;
 they do not maintain a second model protocol.
 
-Keep provider session identity stable for one conversation and distinct across independent sessions. Preserve the
-conversation instructions and native message ordering when requesting cache reuse. A retry remains attributed to its
-original workspace, session, and run.
+Keep provider session identity stable for one mech working context and distinct across independent mechs. Preserve
+instructions and native message ordering when requesting cache reuse across activations. A notification source does
+not create another cache identity or model owner. A retry retains its original workspace, context, and activation.
+Prompt compaction may summarize context but must not discard the canonical retained history or bypass attempt metering.
 
 Reserve before every provider request without assuming a cache hit. Cover cache-write prices, uncached input, and the
 maximum allowed output. Record attempts separately so retries and compaction cannot escape the ledger. Settle actual

@@ -20,26 +20,9 @@ const MetadataSchema = Schema.Struct({
 
 const EnvelopeSchema = Schema.Struct({ key_version: Schema.String, nonce: Schema.String, ciphertext: Schema.String });
 
-const GitHubSchema = Schema.Struct({
-  appId: Schema.Number,
-  installationId: Schema.Number,
-  repositoryId: Schema.Number,
-  owner: Schema.String,
-  repository: Schema.String,
-  secretReference: Schema.String,
-});
-
-const RequestServiceSchema = Schema.Struct({
-  url: Schema.String,
-  serviceId: Schema.String,
-  secretReference: Schema.String,
-});
-
 const AccessSchema = Schema.Struct({
-  github: Schema.NullOr(GitHubSchema),
   variables: Schema.Record(Schema.String, Schema.String),
   secrets: Schema.Record(Schema.String, Schema.String),
-  requestService: Schema.NullOr(RequestServiceSchema),
 });
 
 type CredentialIdentity = { readonly workspaceId: string; readonly reference: string };

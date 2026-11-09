@@ -3,6 +3,7 @@ import type { Operation } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, RecordId } from '@mechane/records';
 import type { AuthCaller } from '@mechane/runtime';
 import { Record, Schema } from 'effect';
+import { NOTIFICATION_BODY_MAX_BYTES } from '../notifications/constants.ts';
 import { readJsonBody } from './body.ts';
 import { respondFailure } from './failure.ts';
 import { findRoute } from './route.ts';
@@ -16,7 +17,7 @@ type DecodeInput = {
 };
 
 async function decodeInput({ request, url, route, operation }: DecodeInput): Promise<object> {
-  const rawBody = await readOperationBody(request);
+  const rawBody = await readOperationBody(request, operation);
 
   try {
     const params = Schema.decodeUnknownSync(operation.params, { onExcessProperty: 'error' })(route.params);
@@ -33,9 +34,13 @@ async function decodeInput({ request, url, route, operation }: DecodeInput): Pro
   }
 }
 
-async function readOperationBody(request: Request): Promise<unknown> {
+async function readOperationBody(request: Request, operation: Operation): Promise<unknown> {
   if (request.method === HttpMethod.Get) {
     return {};
+  }
+
+  if (operation === catalog.sendNotification) {
+    return await readJsonBody(request, NOTIFICATION_BODY_MAX_BYTES);
   }
 
   return await readJsonBody(request);

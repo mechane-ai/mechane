@@ -22,13 +22,13 @@ export const runWorkspaceImport = Effect.fn('runWorkspaceImport')(function* ({
   }) => {
     const workspaceId = WorkspaceId.make(encodedWorkspaceId);
 
-    return applyWorkspaceImport({ call, token, workspaceId, document, file: input.file });
+    return applyWorkspaceImport({ call, token, workspaceId, document });
   };
 
   const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
   const lines = [
-    `imported ${result.importedCredentials.length} credentials; configured ${result.slackInstallations.length} Slack installations`,
+    `imported ${result.importedCredentials.length} credentials`,
     `retained ${result.retainedCredentials.length} existing credentials without comparing their values`,
   ];
 

@@ -1,8 +1,7 @@
-import { decodeOne } from '@mechane/store';
+import { decodeFirst } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { DateTime, Match, Schema } from 'effect';
-import { FileCheckpointResult } from './schemas.ts';
-import type { FileCheckpointPurpose } from './schemas.ts';
+import { DateTime, Match, Option, Result, Schema } from 'effect';
+import { FileCheckpointPurpose, FileCheckpointResult } from './schemas.ts';
 
 type CheckpointOperationInput = { readonly purpose: FileCheckpointPurpose };
 type ClaimCheckpointInput = CheckpointOperationInput & { readonly now: DateTime.Utc };
@@ -11,8 +10,29 @@ type FinishCheckpointInput = CheckpointOperationInput & { readonly result: FileC
 const ResultJson = Schema.fromJsonString(FileCheckpointResult);
 const ResultRow = Schema.Struct({ startedAt: Schema.DateTimeUtcFromMillis, result: ResultJson });
 
+class FileCheckpointMissing extends Schema.TaggedError<FileCheckpointMissing>()('FileCheckpointMissing', {
+  purpose: FileCheckpointPurpose,
+}) {}
+
 /** File operations retain their own receipts; command execution history contains only actual commands. */
 export function fileCheckpointRecords({ sql }: RecordsInput) {
+  function readFileCheckpoint({ purpose }: CheckpointOperationInput): Option.Option<typeof ResultRow.Type> {
+    const key = operationKey({ purpose });
+
+    const cursor = sql.exec(
+      'SELECT started_at_ms AS startedAt, result FROM file_checkpoint_results WHERE operation_id = ?',
+      key,
+    );
+
+    return decodeFirst({ cursor, schema: ResultRow });
+  }
+
+  function fileCheckpointResult({ purpose }: CheckpointOperationInput): Option.Option<FileCheckpointResult> {
+    const checkpoint = readFileCheckpoint({ purpose });
+
+    return Option.map(checkpoint, ({ result }) => result);
+  }
+
   function claimFileCheckpoint({ purpose, now }: ClaimCheckpointInput): typeof ResultRow.Type {
     const key = operationKey({ purpose });
     const pending = FileCheckpointResult.cases.Pending.make({});
@@ -26,12 +46,16 @@ export function fileCheckpointRecords({ sql }: RecordsInput) {
       value,
     );
 
-    const cursor = sql.exec(
-      'SELECT started_at_ms AS startedAt, result FROM file_checkpoint_results WHERE operation_id = ?',
-      key,
-    );
+    const checkpoint = readFileCheckpoint({ purpose });
 
-    return decodeOne({ cursor, schema: ResultRow });
+    if (Option.isNone(checkpoint)) {
+      const cause = new FileCheckpointMissing({ purpose });
+      const failure = Result.fail(cause);
+
+      return Result.getOrThrow(failure);
+    }
+
+    return checkpoint.value;
   }
 
   function finishFileCheckpoint({ purpose, result }: FinishCheckpointInput): void {
@@ -47,12 +71,13 @@ export function fileCheckpointRecords({ sql }: RecordsInput) {
     );
   }
 
-  return { claimFileCheckpoint, finishFileCheckpoint };
+  return { fileCheckpointResult, claimFileCheckpoint, finishFileCheckpoint };
 }
 
 function operationKey({ purpose }: CheckpointOperationInput): string {
   return Match.valueTags(purpose, {
     Maintenance: ({ operationId }) => `maintenance-${operationId}`,
     Drain: ({ operationId }) => `drain-${operationId}`,
+    Activation: ({ operationId }) => `activation-${operationId}`,
   });
 }

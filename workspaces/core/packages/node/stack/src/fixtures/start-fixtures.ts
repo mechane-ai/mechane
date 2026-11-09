@@ -1,8 +1,9 @@
+import { randomBytes, randomUUID } from 'node:crypto';
 import type { LocalFixtures } from '../types.ts';
 import { startGitHubFixture } from './github.ts';
 import { startModelFixture } from './model.ts';
-import { startNexusFixture } from './nexus.ts';
-import { startSlackFixture } from './slack.ts';
+
+const SIGNING_KEY_BYTES = 32;
 
 export async function startFixtures(origin: URL): Promise<LocalFixtures> {
   const cleanup: Array<() => Promise<void>> = [];
@@ -16,19 +17,10 @@ export async function startFixtures(origin: URL): Promise<LocalFixtures> {
 
     cleanup.push(model.close);
 
-    const slack = await startSlackFixture();
-
-    cleanup.push(slack.close);
-
-    const nexus = await startNexusFixture();
-
-    cleanup.push(nexus.close);
-
     return {
       github: github.fixture,
       model: model.fixture,
-      slack: slack.fixture,
-      nexus: nexus.fixture,
+      notifications: { id: randomUUID(), signingSecret: randomBytes(SIGNING_KEY_BYTES).toString('hex') },
       close: async () => {
         await closeFixtures(cleanup);
       },

@@ -13,13 +13,11 @@ import { ResourceView } from '../resource.tsx';
 export function TurnsScreen({
   data,
   mech,
-  sessionId,
   onMessage,
   pageRead,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
-  readonly sessionId?: string | undefined;
   readonly onMessage: () => void;
   readonly pageRead: PageRead<'turns', ReadRequest<'turns'>>;
 }): ReactNode {
@@ -27,12 +25,7 @@ export function TurnsScreen({
   const { request, cursors, setCursors, pending, failure } = pageRead;
   const state = useTurns(data, request);
 
-  const base = {
-    workspace: data.workspace.id,
-    mech: mech.id,
-    view: 'runs' as const,
-    ...(sessionId === undefined ? {} : { session: sessionId }),
-  };
+  const base = { workspace: data.workspace.id, mech: mech.id, view: 'runs' as const };
 
   return (
     <ResourceView state={state} placeholder={<TurnListPlaceholder />}>
@@ -53,16 +46,16 @@ export function TurnsScreen({
               emptyAction={
                 mech.status === 'active' ? (
                   <Button variant="solid" onClick={onMessage}>
-                    Send first message
+                    Send a message
                   </Button>
                 ) : undefined
               }
               emptyDescription={
                 mech.status === 'paused'
-                  ? 'Messages wait in the inbox until you activate this mech.'
+                  ? 'Notifications are retained until you resume this mech.'
                   : mech.status === 'archived'
-                    ? 'This mech was archived before it ran a turn.'
-                    : 'Give this mech something to work on. Its answer and requests will appear here.'
+                    ? 'This mech was archived before it started working.'
+                    : 'Execution traces appear here when the mech wakes to process notifications.'
               }
             />
             {showPagination && (

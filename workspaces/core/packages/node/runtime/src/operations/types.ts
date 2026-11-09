@@ -1,5 +1,13 @@
 import type { catalog, Operation, OperationInput, OperationName } from '@mechane/protocol';
 
+export type StartAdmission = (input: { readonly runId: string }) => Promise<{ readonly workflowId: string }>;
+
+export type CancelWorkflow = (input: {
+  readonly workspaceId: string;
+  readonly runId: string;
+  readonly cancelerId: string;
+}) => Promise<void>;
+
 export type AuthCaller =
   | { readonly authKind: 'public'; readonly principalId: null; readonly keyId: null }
   | { readonly authKind: 'session'; readonly principalId: string; readonly keyId: null }

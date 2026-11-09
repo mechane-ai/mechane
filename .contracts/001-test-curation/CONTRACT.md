@@ -54,8 +54,9 @@ execution boundary. Run it from the factory root with `mise -C workspaces/core r
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
 The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
-external-service fixtures replace model, GitHub, Slack, and Nexus network dependencies; the product implementation,
-compiled Workflow code, database, and authorization boundaries remain real. Browser TSX, Storybook configuration,
+external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
+exercise the public producer boundary directly; the product implementation, compiled Workflow code, database, and
+authorization boundaries remain real. Browser TSX, Storybook configuration,
 verification fixtures, and test-only dependencies
 follow the same retention policy. Synthetic catalog stories are maintained developer documentation, not example tests.
 Keep the fixtures needed to explain supported component states. Delete extra probes, scripts, and fixtures used only

@@ -1,5 +1,4 @@
 import { FileStep } from '@mechane/program';
-import { TurnStatus } from '@mechane/protocol';
 
 /** How an eval run ended: every trial was graded, whatever the grades, or some trial could not run or be graded. */
 export const EvalOutcome = { Completed: 'completed', Incomplete: 'incomplete' } as const;
@@ -22,22 +21,25 @@ export const EXPECTATIONS_PER_CASE = 12;
 export const REPEATS_PER_CASE = 10;
 
 /**
- * The longest input of a case. With its expectations' descriptions, it leaves room in one grader's inbox item, at most
- * 32,768 characters, for most of a long reply.
+ * The longest input of a case. With its expectations' descriptions, it leaves room in one grader's notification, at
+ * most 32,768 characters, for most of a long reply.
  */
 export const INPUT_MAX_CHARS = 8192;
 
 /** The longest description of an expectation. */
 export const DESCRIPTION_MAX_CHARS = 1024;
 
+export const PUBLICATION_INSTRUCTIONS =
+  'Publish your completed answer exactly once using console_message with your answer in text. After publishing, finish quietly. Internal final text is not sent to the requester.';
+
 /**
  * The version of the plan file's format and of its trials' records, which the digest covers; a narrowing of either
  * increments it, so a rerun refuses an older out folder.
  */
-export const PLAN_VERSION = 1;
+export const PLAN_VERSION = 2;
 
 /** The version of the report's format, in its file and on standard output; a narrowing change increments it. */
-export const REPORT_VERSION = 2;
+export const REPORT_VERSION = 3;
 
 /** The hexadecimal digits of a trial's id: 128 bits of its SHA-256, as many as a UUID's, so a mech's name holds it. */
 export const TRIAL_ID_HEX_CHARS = 32;
@@ -50,18 +52,32 @@ export const CriterionVerdict = { Pass: 'pass', Fail: 'fail', Uncertain: 'uncert
 
 export type CriterionVerdict = (typeof CriterionVerdict)[keyof typeof CriterionVerdict];
 
-/** How a grader's turn ended: with a reply that decodes as the case's grade, with one that does not, or unanswered. */
-export const GraderStatus = { Graded: 'graded', NoGrade: 'no_grade', Unanswered: TurnStatus.Unanswered } as const;
+export const RoleStatus = {
+  Published: 'published',
+  NoReply: 'no_reply',
+  Failed: 'failed',
+  Stopped: 'stopped',
+} as const;
+
+export const GraderStatus = {
+  Graded: 'graded',
+  NoGrade: 'no_grade',
+  NoReply: RoleStatus.NoReply,
+  Failed: RoleStatus.Failed,
+  Stopped: RoleStatus.Stopped,
+} as const;
 
 /**
- * A trial's verdict: its grade's, the worst of its criteria, or no grade from the grader's reply. It is also a role's
- * record the out folder lacks, as for a run that ended before saving its turn, or a role's unanswered turn.
+ * Only a completed grade contributes a criterion verdict. Missing publications and failed or stopped work remain
+ * separate outcomes.
  */
 export const TrialVerdict = {
   ...CriterionVerdict,
   NoGrade: GraderStatus.NoGrade,
+  NoReply: RoleStatus.NoReply,
   Unavailable: 'unavailable',
   RunFailed: 'run_failed',
+  Stopped: RoleStatus.Stopped,
 } as const;
 
 export type TrialVerdict = (typeof TrialVerdict)[keyof typeof TrialVerdict];

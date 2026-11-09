@@ -1,4 +1,4 @@
-import type { ExecutionAccess, SlackBinding, SlackInstallation } from '../../../domain.ts';
+import type { ExecutionAccess } from '../../../domain.ts';
 
 export type WorkspaceActor = {
   readonly workspaceId: string;
@@ -48,18 +48,6 @@ export type ToolGrantRecord = {
   readonly connectionId: string;
   readonly tools: ReadonlyArray<string>;
 };
-
-export type InstallationConfiguration = Omit<SlackInstallation, 'updatedAt'>;
-export type BindingConfiguration = Omit<SlackBinding, 'workspaceId'>;
-
-export type BindingResult =
-  | { readonly _tag: 'Configured'; readonly binding: BindingConfiguration }
-  | { readonly _tag: 'Conflicting' }
-  | { readonly _tag: 'ConnectionMissing' };
-
-export type InstallationResult =
-  | { readonly _tag: 'Configured'; readonly installation: InstallationConfiguration }
-  | { readonly _tag: 'Conflicting' };
 
 export type ExecutionAccessInput = WorkspaceActor & {
   readonly mechId: string;

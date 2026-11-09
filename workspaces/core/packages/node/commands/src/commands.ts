@@ -7,13 +7,10 @@ import { EVAL_COMMANDS } from './declarations/eval-commands.ts';
 import { CONNECTION_COMMANDS } from './declarations/integrations/connection-commands.ts';
 import { CREDENTIAL_COMMANDS } from './declarations/integrations/credential-commands.ts';
 import { EXECUTION_ACCESS_COMMANDS } from './declarations/integrations/execution-access-commands.ts';
-import { SLACK_COMMANDS } from './declarations/integrations/slack-commands.ts';
-import { SLACK_INSTALLATION_COMMANDS } from './declarations/integrations/slack-installation-commands.ts';
 import { MECH_ADMINISTRATION_COMMANDS } from './declarations/mech-administration/mech-administration-commands.ts';
 import { MECH_LIFECYCLE_COMMANDS } from './declarations/mech-administration/mech-lifecycle-commands.ts';
 import { MECH_COMMANDS } from './declarations/mech-commands.ts';
 import { RELEASE_COMMANDS } from './declarations/release-commands.ts';
-import { THREAD_COMMANDS } from './declarations/thread-commands.ts';
 import { TURN_COMMANDS } from './declarations/turn-commands.ts';
 import { WORKSPACE_IMPORT_COMMAND } from './declarations/workspace-import-command.ts';
 import { WORKSPACE_LIFECYCLE_COMMANDS } from './declarations/workspace-lifecycle-commands.ts';
@@ -21,8 +18,6 @@ import type { CommandDeclaration } from './types.ts';
 
 /** Every command, keyed by the words a person types, in the order `--help` lists them. */
 export const COMMANDS = {
-  ...SLACK_COMMANDS,
-  ...SLACK_INSTALLATION_COMMANDS,
   ...CONNECTION_COMMANDS,
   ...EXECUTION_ACCESS_COMMANDS,
   ...CREDENTIAL_COMMANDS,
@@ -37,7 +32,6 @@ export const COMMANDS = {
   ...WORKSPACE_LIFECYCLE_COMMANDS,
   ...WORKSPACE_IMPORT_COMMAND,
   ...TURN_COMMANDS,
-  ...THREAD_COMMANDS,
   ...EVAL_COMMANDS,
   ...RELEASE_COMMANDS,
 } as const satisfies Readonly<Record<string, CommandDeclaration>>;

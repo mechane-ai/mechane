@@ -1,14 +1,11 @@
 import { ProcessHandle } from '@mechane/protocol';
-import { EvidenceArtifactId, MechId, ThreadId, TurnId } from '@mechane/records';
+import { EvidenceArtifactId, MechId, TurnId } from '@mechane/records';
 import { Result, Schema } from 'effect';
 import { restoreRecord } from './records.ts';
 
 const READ_KIND = {
   Mechs: 'mechs',
   Mech: 'mech',
-  Threads: 'threads',
-  Sessions: 'sessions',
-  Memories: 'memories',
   Turns: 'turns',
   Trace: 'trace',
   Evidence: 'evidence',
@@ -17,8 +14,6 @@ const READ_KIND = {
   EnvironmentProcess: 'environmentProcess',
   TurnEvents: 'turnEvents',
   Events: 'events',
-  SlackBindings: 'slackBindings',
-  SlackDeliveries: 'slackDeliveries',
   Allowance: 'allowance',
 } as const;
 
@@ -29,9 +24,6 @@ type ReadId = typeof ReadId.Type;
 const ReadTarget = Schema.Union([
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mechs), after: Schema.NullOr(Schema.String) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mech), mechId: MechId }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Threads), mechId: MechId, after: Schema.NullOr(ThreadId) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Sessions), mechId: MechId, after: Schema.NullOr(Schema.String) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.Memories), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Turns), mechId: MechId, after: Schema.NullOr(TurnId) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Trace), mechId: MechId, turnId: TurnId }),
   Schema.Struct({
@@ -45,8 +37,6 @@ const ReadTarget = Schema.Union([
   Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcess), mechId: MechId, handle: ProcessHandle.to }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.TurnEvents), mechId: MechId, turnId: TurnId, after: Schema.Number }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Events), mechId: MechId, before: Schema.NullOr(Schema.Number) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.SlackBindings) }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.SlackDeliveries), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Allowance) }),
 ]);
 
@@ -90,11 +80,6 @@ function request<Target extends ReadTarget>(target: Target): Target & { readonly
 export const readRequests = {
   mechs: (after: string | null) => request({ kind: READ_KIND.Mechs, after }),
   mech: (mechId: string) => request({ kind: READ_KIND.Mech, mechId: MechId.make(mechId) }),
-  threads: (mechId: string, after: ThreadId | null) =>
-    request({ kind: READ_KIND.Threads, mechId: MechId.make(mechId), after }),
-  sessions: (mechId: string, after: string | null) =>
-    request({ kind: READ_KIND.Sessions, mechId: MechId.make(mechId), after }),
-  memories: (mechId: string) => request({ kind: READ_KIND.Memories, mechId: MechId.make(mechId) }),
   turns: (mechId: string, after: TurnId | null) =>
     request({ kind: READ_KIND.Turns, mechId: MechId.make(mechId), after }),
   trace: (mechId: string, turnId: TurnId) => request({ kind: READ_KIND.Trace, mechId: MechId.make(mechId), turnId }),
@@ -119,8 +104,6 @@ export const readRequests = {
     request({ kind: READ_KIND.TurnEvents, mechId: MechId.make(mechId), turnId, after }),
   events: (mechId: string, before: number | null) =>
     request({ kind: READ_KIND.Events, mechId: MechId.make(mechId), before }),
-  slackBindings: () => request({ kind: READ_KIND.SlackBindings }),
-  slackDeliveries: (mechId: string) => request({ kind: READ_KIND.SlackDeliveries, mechId: MechId.make(mechId) }),
   allowance: () => request({ kind: READ_KIND.Allowance }),
 } as const;
 

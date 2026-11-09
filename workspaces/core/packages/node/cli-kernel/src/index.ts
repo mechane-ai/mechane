@@ -1,6 +1,5 @@
 export {
   WorkspaceSelectionRefused,
-  WorkspaceImportConflict,
   SandboxMaintenanceFailed,
   SavedLoginMissing,
   SavedLoginRejected,

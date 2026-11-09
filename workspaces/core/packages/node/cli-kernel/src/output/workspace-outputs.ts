@@ -8,7 +8,7 @@ import {
   WorkspaceMemberRemoval,
   WorkspacePolicy,
 } from '@mechane/protocol';
-import { SlackConnectionId, wireStruct, WorkspaceId } from '@mechane/records';
+import { wireStruct, WorkspaceId } from '@mechane/records';
 import { Schema } from 'effect';
 
 const WorkspaceImportResult = wireStruct({
@@ -16,7 +16,6 @@ const WorkspaceImportResult = wireStruct({
     workspaceId: WorkspaceId,
     importedCredentials: Schema.Array(IntegrationSecretReference),
     retainedCredentials: Schema.Array(IntegrationSecretReference),
-    slackInstallations: Schema.Array(SlackConnectionId),
     hasPolicy: Schema.Boolean,
   },
 });

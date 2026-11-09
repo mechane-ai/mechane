@@ -1,3 +1,5 @@
+import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
+
 export type RuntimeToolContext = {
   readonly workspaceId: string;
   readonly mechId: string;
@@ -11,10 +13,4 @@ export type BashArguments = { readonly command: string; readonly timeoutMs: numb
 
 export type BashInvocation = ToolInvocation & BashArguments;
 
-export type PreparedEnvironment = {
-  readonly environment: {
-    readonly variables: Readonly<Record<string, string>>;
-    readonly secrets: Readonly<Record<string, string>>;
-  };
-  readonly githubToken: string | null;
-};
+export type PreparedEnvironment = typeof ExecutionEnvironment.Encoded;

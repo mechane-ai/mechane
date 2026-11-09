@@ -1,4 +1,4 @@
-import { CopyValue, Identifier, Muted, Prose, Row, Stack } from '@mechane-ai/elements';
+import { CopyValue, Identifier, Muted, Prose, Row, Stack, TextLink } from '@mechane-ai/elements';
 import { Timeline } from '@mechane-ai/elements/collections';
 import { Markdown, MarkdownPreview } from '@mechane-ai/elements/content/markdown';
 import { EmptyState, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
@@ -8,7 +8,7 @@ import { Event } from '@mechane/protocol';
 import type { EventPage, ListedEvent, Turn } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
 import { Schema } from 'effect';
-import { Circle, GitFork, MessageSquare, Play, Reply } from 'lucide-react';
+import { Bell, Check, Circle, GitFork, MessageSquare, Play, Reply, Square, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { preciseTimeLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
@@ -30,7 +30,7 @@ const styles = stylex.create({
 export function ActivityPlaceholder({ hasInset = true }: { readonly hasInset?: boolean }): ReactNode {
   return (
     <ActivityFrame hasInset={hasInset}>
-      <Timeline.Root label="History">
+      <Timeline.Root label="Activity">
         {[0, 1, 2].map((item) => (
           <Timeline.Item
             key={item}
@@ -48,7 +48,7 @@ export function ActivityPlaceholder({ hasInset = true }: { readonly hasInset?: b
 
 export function Activity({
   page,
-  label = 'Mech history',
+  label = 'Mech activity',
   hasInset = true,
   expandedSequence,
   runLink,
@@ -62,7 +62,9 @@ export function Activity({
   return (
     <ActivityFrame hasInset={hasInset}>
       {page.events.length === 0 ? (
-        <EmptyState title="No activity yet">Messages and execution events appear here as the mech works.</EmptyState>
+        <EmptyState title="No activity yet">
+          Notifications and execution events appear here as the mech works.
+        </EmptyState>
       ) : (
         <Timeline.Root label={label}>
           {page.events.map((event) => (
@@ -161,11 +163,22 @@ function EventIcon({ type }: { readonly type: string }): ReactNode {
   switch (type) {
     case 'inbox_item.received':
       return <MessageSquare size={14} />;
+    case 'notification.received':
+      return <Bell size={14} />;
+    case 'console.message':
+      return <MessageSquare size={14} />;
+    case 'activation.completed':
+      return <Check size={14} />;
+    case 'activation.failed':
+      return <TriangleAlert size={14} />;
+    case 'activation.stopped':
+      return <Square size={14} />;
     case 'turn.answered':
       return <Reply size={14} />;
     case 'mech.forked':
       return <GitFork size={14} />;
     case 'turn.started':
+    case 'activation.started':
       return <Play size={14} />;
     default:
       return <Circle size={12} />;
@@ -173,11 +186,24 @@ function EventIcon({ type }: { readonly type: string }): ReactNode {
 }
 
 function EventContent({ event }: { readonly event: Event }): ReactNode {
+  if (event.type === 'notification.received') {
+    return (
+      <Stack isCompact>
+        <Prose>{event.text}</Prose>
+        <Row>
+          <Muted>{event.source.name}</Muted>
+          {event.source.url !== undefined && <TextLink href={event.source.url}>Open source</TextLink>}
+          <CopyValue label="notification ID" value={event.notificationId} />
+        </Row>
+      </Stack>
+    );
+  }
+
   if ('forkedFrom' in event) {
     return (
       <Muted>
-        History was copied through event {event.forkedFrom.sequence} from mech {event.forkedFrom.mechId}. Each mech
-        continues independently from this point.
+        Context and history were copied through event {event.forkedFrom.sequence} from mech {event.forkedFrom.mechId}.
+        Each mech continues independently. Sandbox files stay with the source mech.
       </Muted>
     );
   }
@@ -203,6 +229,18 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
 
 function eventLabel(type: string): string {
   switch (type) {
+    case 'notification.received':
+      return 'Notification received';
+    case 'activation.started':
+      return 'Run started';
+    case 'activation.completed':
+      return 'Run completed';
+    case 'activation.failed':
+      return 'Run failed';
+    case 'activation.stopped':
+      return 'Run stopped';
+    case 'console.message':
+      return 'Message sent to Console';
     case 'inbox_item.received':
       return 'Message received';
     case 'turn.started':

@@ -1,26 +1,26 @@
-import { convertToModelMessages } from 'ai';
 import { FatalError } from 'workflow';
-import { hydrateSlackInput } from '../channels/hydrate-slack-input.ts';
 import { loadRuntimeConfiguration } from '../config.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import type { RunContext } from './types.ts';
 
 const BASE_INSTRUCTIONS = [
-  'You are a durable coding agent with a persistent identity and environment.',
+  'You are a persistent agent with a durable home directory, identity, and working context.',
+  'Notifications tell you about new events. Read them, decide what matters, and choose the appropriate actions.',
+  'New notifications may arrive while you are working. Reconsider pending actions when they change the situation.',
   'Carry out the requested work using your tools. Verify outcomes before reporting success.',
-  'Use bash with git, gh, nexus, and the available development tools. Choose the actions needed for the task.',
-  'Keep useful long-term facts in memory. Never put credentials in memory, source files, or replies.',
-  'If Nexus denies a capability, use request_access. The tool waits for the decision and resumes this same task.',
+  'Use the available commands and MCP tools to inspect your environment and do the work.',
+  'Keep useful long-term notes and plans as files in your durable home. Never put credentials in notes, source files, or messages.',
+  'Existing notes, when present, are preserved under ~/notes/imported/memory and ~/notes/imported/work. Inspect them when you need retained knowledge.',
+  'A pending external request is not a reason to block other work. Record what you need and act on the later notification.',
   'An approval permits the next action; it is not evidence that the requested change is complete.',
-  'Use render_ui when a structured card, table, or chart makes the result easier to understand.',
-  'Reply with concise Markdown and working links. The delivery adapter formats the reply for its destination.',
+  'Communicate only by explicitly calling the relevant tool. Use console_message to send a message to the Console.',
+  'Your ordinary assistant text is private working context. It is never automatically sent to another person.',
+  'When no further action is needed, you may finish quietly. You will wake when another notification arrives.',
 ].join('\n');
 
 export async function loadRunContext(runId: string): Promise<RunContext> {
   'use step';
 
-  const inputMessage = await hydrateSlackInput({ runId });
-  const inputMessages = await convertToModelMessages([inputMessage]);
   const configuration = loadRuntimeConfiguration();
 
   return await withRuntimeStore(async (store) => {
@@ -46,23 +46,16 @@ export async function loadRunContext(runId: string): Promise<RunContext> {
       throw new FatalError('The selected model is unavailable.');
     }
 
-    const history = await store.getSessionMessages({ sessionId: run.sessionId });
-    const memories = await store.listMemories({ workspaceId: run.workspaceId, mechId: run.mechId });
-    const memoryIndex = memories.map((memory) => `${memory.path} (version ${memory.version})`).join('\n');
-
-    const instructions = [
-      BASE_INSTRUCTIONS,
-      revision.instructions ?? '',
-      'Available memory documents:',
-      memoryIndex,
-    ].join('\n\n');
+    const context = await store.getMechContext({ runId });
+    const instructions = [BASE_INSTRUCTIONS, revision.instructions ?? ''].join('\n\n');
 
     return {
       run,
       identity: { workspaceId: run.workspaceId, mechId: run.mechId, sessionId: run.sessionId, runId },
-      inputMessage,
-      inputMessages,
-      messages: [...history.modelMessages, ...inputMessages],
+      messages: context.modelMessages,
+      presentedSequence: context.presentedSequence,
+      checkpointSequence: context.checkpointSequence,
+      isEnvironmentCheckpointRequired: context.isEnvironmentCheckpointRequired,
       instructions,
       model: revision.model,
       maxOutputTokens: offer.maxOutputTokens,

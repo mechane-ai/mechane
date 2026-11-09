@@ -35,12 +35,6 @@ function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
           );
         })
       );
-    case 'threads':
-      return receipt.keys.every((key) => tables.threads.has(key));
-    case 'sessions':
-      return receipt.keys.every((key) => tables.sessions.has(key));
-    case 'memories':
-      return receipt.keys.every((key) => tables.memories.has(key));
     case 'turns':
       return receipt.keys.every((key) => tables.turns.has(key));
     case 'trace':
@@ -58,10 +52,6 @@ function hasReadRows(tables: CanonicalTables, receipt: ReadReceipt): boolean {
       return receipt.keys.every((key) => tables.environmentProcesses.has(key));
     case 'environmentProcess':
       return receipt.keys.length === 1 && receipt.keys.every((key) => tables.environmentProcessDetails.has(key));
-    case 'slackBindings':
-      return receipt.keys.every((key) => tables.slackBindings.has(key));
-    case 'slackDeliveries':
-      return receipt.keys.every((key) => tables.slackDeliveries.has(key));
     case 'allowance':
       return receipt.keys.length === 1 && receipt.keys.every((key) => tables.allowance.has(key));
   }
@@ -73,12 +63,6 @@ function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
       return [tables.mechs];
     case 'mech':
       return [tables.mechs, tables.mechDefinitions];
-    case 'threads':
-      return [tables.threads];
-    case 'sessions':
-      return [tables.sessions];
-    case 'memories':
-      return [tables.memories];
     case 'turns':
       return [tables.turns];
     case 'trace':
@@ -93,10 +77,6 @@ function tablesForRead(tables: CanonicalTables, kind: ReadKind) {
       return [tables.environmentProcesses];
     case 'environmentProcess':
       return [tables.environmentProcessDetails];
-    case 'slackBindings':
-      return [tables.slackBindings];
-    case 'slackDeliveries':
-      return [tables.slackDeliveries];
     case 'allowance':
       return [tables.allowance];
   }

@@ -40,16 +40,10 @@ export function EvidenceScreen({ data, mechId, mechName, location, state, notice
     }
 
     const turn = state.kind === 'ready' ? Option.getOrUndefined(state.value.turnId) : undefined;
-    const session = state.kind === 'ready' ? state.value.sessionId : undefined;
 
     void router.navigate({
       to: '/',
-      search: {
-        workspace: data.workspace.id,
-        mech: mechId,
-        ...(session === undefined ? {} : { session }),
-        ...(turn === undefined ? {} : { turn }),
-      },
+      search: { workspace: data.workspace.id, mech: mechId, ...(turn === undefined ? {} : { turn }) },
       replace: true,
       resetScroll: false,
       state: () => ({}),

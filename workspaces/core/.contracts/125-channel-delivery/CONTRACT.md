@@ -1,48 +1,51 @@
 ---
 name: channel-delivery
-message: Admit verified channel messages durably and render replies with native Chat SDK semantics.
-paths: ["packages/node/runtime/src/channels/**", "packages/node/runtime/src/store/channels/**", "packages/node/server/src/channels/**", "packages/shared/protocol/src/operations/slack/**"]
+message: Authenticate generic notification producers and keep conversational output in explicit addressed agent tools.
+paths: ["packages/node/runtime/src/{execution,tools,store}/**", "packages/node/server/src/**", "packages/shared/protocol/src/operations/notifications/**", "packages/node/runtime/package.json", "packages/node/server/package.json"]
 ---
 
 ## Rules
 
-Chat SDK owns Slack message parsing, platform formatting, cards, and platform state. Use the published Slack adapter
-and Postgres state adapter. The application owns verified binding policy, durable input admission, and delivery
-receipts; an SDK in-memory callback or dedup marker is not an acceptance receipt.
+Keep platform verification, subscriptions, parsing, formatting, attachments, and delivery receipts in the integration
+owner. Mechane accepts generic notifications; it neither hosts Slack handlers nor imports Chat SDK platform adapters.
+A platform event is not a privileged model instruction. Installation policy decides which verified events to deliver.
 
-Verify the raw signed Slack body and timestamp before reading its actor or destination. Bind requester identity to
-stable workspace and user IDs. Current installation, channel, allowed-user, bot/edit, and reply policies gate work.
-A display name, message text, attachment, or model-generated field grants no authority.
+Authenticate a service producer from deployment configuration, separately from notification metadata. Bind each
+credential to explicit workspace and mech recipients. Verify the raw payload, freshness, request pathname, and signature
+before trusting its content. A body field cannot supply authenticated producer identity, recipient authority, or a reply
+credential. Member-authenticated admission uses the ordinary current workspace authority boundary.
 
-Acknowledge intake only after durable admission and native workflow start or an explicit refusal. Repeated source
-events retain their original input identity. Keep intake acknowledgement and terminal reply identities distinct, so
-one cannot suppress the other. Refused or canceled work gives a useful, secret-free result in its original thread.
+Use the producer's stable notification identity for idempotency. Persist validated content, source metadata, authenticated
+producer identity, and wake intent before returning acceptance. Identical retry returns the same receipt; changed input
+under an existing identity fails. Transport acknowledgement says only that the notification was accepted. It is not a
+promise that the mech has read it, started work, chosen to respond, or completed the request.
 
-Use Chat SDK formatting for text and native card rendering for validated structured output. Raw CommonMark must not
-be copied into Slack's incompatible message-text field. Preserve readable fallback text for notifications and clients
-that cannot render the card. Empty or invalid structured output has a visible fallback, not a blank success.
+Make every outward conversation write an explicit agent tool call with a destination. The Console communication tool
+names the current mech's public conversation by its invocation scope. Platform tools name their channel or thread through
+the configured CLI or MCP interface. No intake, end-of-turn, approval, cancellation, or failure callback sends a message
+or reaction. Prompt guidance may recommend acknowledgment; scheduling must not perform it.
 
-Persist stable outbound delivery identity and reconcile an uncertain platform response before sending again.
-Recheck current destination policy on retry. Rendering or delivery failure cannot rerun the completed agent task.
-Bind actions to server-known resource identities and existing authority; a rendered button does not authorize an action.
-
-Keep attachment metadata with the admitted input. Bound aggregate input bytes and individual downloads. Private Slack
-file tokens remain in the trusted downloader, which checks the configured host, type, size, and redirect policy.
-Unavailable files preserve the caption and yield an explicit explanation.
+Keep output authorization and uncertain-delivery reconciliation with the tool's owning service. Use stable operation
+identities for repeated calls. A delivery failure cannot rerun completed application work. Current destination policy
+still governs retry, and a rendered button or remembered destination cannot grant authority.
 
 ## Checks
 
-Use signed local Slack requests through the actual adapter and durable admission boundary. Repeat requests around a
-process restart and verify one accepted run. Exercise refused senders and unsupported attachment-only input.
+Send signed notifications through the packaged HTTP route. Exercise a valid producer, stale timestamp, altered body,
+altered pathname, unknown producer, foreign recipient, identical retry, and changed duplicate. Verify durable admission
+before success, no protected input on refusal, and recovery after a lost acknowledgment or host replacement.
 
-Send SDK-rendered bold text, links, and a structured card through a real platform qualification. Lose the first post
-response, then recover its receipt without another visible reply. Change a binding before retry and confirm its
-current policy wins. Keep native SDK parser/renderer behavior in the SDK; retain product tests for lost or repeated work.
+Observe all lifecycle outcomes without a communication tool call and require zero platform posts or reactions. Then
+invoke the explicit Console tool twice with one stable identity and confirm one public message. Qualify platform CLI
+formatting and receipt recovery in the owning integration, not by duplicating its SDK checks here.
+
+Run the generated dependency boundaries from the product workspace. Platform adapters cannot enter runtime, server, or
+browser source through a new helper. Review the send callsites for implicit destinations and lifecycle-triggered output.
 
 ## Local adaptations
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- dependency-cruiser `slack-platform-owner` (125): enforced: Use the channel owner for Slack operations, such as `runtime/src/channels`
+- dependency-cruiser `notification-integration-boundary` (125): enforced: Move platform adapters into the external notification producer, such as `createSlackAdapter` in Nexus
 
 <!-- End of the generated block. -->

@@ -14,10 +14,7 @@ export async function credentialsStayOutOfDurableExecution({ stack }: ScenarioIn
   const canaries: Array<Canary> = [
     { label: 'the model provider key', value: fixtures.model.apiKey },
     { label: 'the GitHub OAuth secret', value: fixtures.github.clientSecret },
-    { label: 'the Slack bot token', value: fixtures.slack.botToken },
-    { label: 'the Slack signing secret', value: fixtures.slack.signingSecret },
-    { label: 'the Nexus request key', value: fixtures.nexus.apiKey },
-    { label: 'the Nexus callback secret', value: fixtures.nexus.signingSecret },
+    { label: 'the notification producer secret', value: fixtures.notifications.signingSecret },
   ];
 
   const folders = await readdir(stack.stateDirectory, { withFileTypes: true });
