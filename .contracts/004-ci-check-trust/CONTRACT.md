@@ -41,10 +41,15 @@ Confirm that check jobs receive no production credentials and no cache authority
 ## Local adaptations
 
 The required workflow, `.github/workflows/check.yml`, runs `mise run check` on `ubuntu-24.04` for pull requests, pushes to `main` and manual runs.
-It grants `contents: read` only, pins each action to a full commit hash, restores no cache, and receives no deployment credential.
+It grants `contents: read` only, pins third-party actions to full commit hashes, restores no cache, and receives no deployment credential.
+Repository actions run from the checked-out source under `.github/actions`.
 It checks out the full history and sets `MECHANE_BASE_BRANCH` to the pull request's target, or `main`, so the owned checks hold each ratchet's baseline to the merge base's.
 Concurrency cancels only a superseded pull-request run, never a run on `main`.
-The owned checks fail on an action that is not pinned to a full commit hash and on a workflow without `permissions`.
+The owned checks reject unpinned third-party actions, local action paths outside `.github/actions`, and workflows without `permissions`.
+The owned mise bootstrap uses the read-only job token only with GitHub's API and follows an asset redirect without the
+token. It verifies immutable release metadata, asset and published checksums, and the binary digest declared in
+`.config/mise-release.sh` before executing the binary. The official pinned mise action consumes that verified local
+installation; tool versions and package installation still follow the repository lockfiles.
 When the check fails, a last step prints the retained local Node service and sandbox guest logs, so the run's log holds the stack's diagnostics.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.

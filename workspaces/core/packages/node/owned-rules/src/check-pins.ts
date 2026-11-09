@@ -5,7 +5,7 @@ import { Effect, Option, Schema } from 'effect';
 import { join } from 'node:path';
 
 /** The factory files that pin a tool which another file pins too, relative to the factory root. */
-const PIN_FILES = { mise: 'mise.toml', bootstrap: '.config/bootstrap.sh' } as const;
+const PIN_FILES = { mise: 'mise.toml', bootstrap: '.config/mise-release.sh' } as const;
 
 /** The sandbox image's build file, whose base repeats mise.toml's Node release, relative to the product. */
 const IMAGE_FILE = 'packages/node/guest/image/Dockerfile';
@@ -16,8 +16,8 @@ const MANIFEST_FILE = 'package.json';
 /** The Node release of the image's base, such as `24.22.1` in `FROM node:24.22.1-bookworm-slim@sha256:...`. */
 const IMAGE_NODE_PATTERN = /^FROM (?:mirror\.gcr\.io\/library\/)?node:([^-@\s]+)/m;
 
-/** The mise release `.config/bootstrap.sh` assigns at the start of a line, such as `mise_version=2026.10.17`. */
-const BOOTSTRAP_MISE_PATTERN = /^mise_version=(\S+)$/m;
+/** The shared bootstrap pin is a literal so local setup and CI resolve the same reviewed release. */
+const BOOTSTRAP_MISE_PATTERN = /^mise_release_version\(\) \{\s*echo (\S+)\s*\}/m;
 
 /** The pins of the factory's mise.toml that another file repeats. */
 const MisePins = wireStruct({
@@ -46,7 +46,7 @@ type PinPair = {
   readonly location: string;
 };
 
-/** Each tool's pin in mise.toml, and its copy in `.config/bootstrap.sh`, the workspace manifest or the image. */
+/** Each tool's pin in mise.toml, and its copy in the bootstrap pins, workspace manifest or image. */
 function pinPairs({ mise, bootstrap, packageManager, image }: PinPairsInput): ReadonlyArray<PinPair> {
   const bootstrapMise = Option.fromNullishOr(BOOTSTRAP_MISE_PATTERN.exec(bootstrap));
   const imageNode = Option.fromNullishOr(IMAGE_NODE_PATTERN.exec(image));
@@ -69,8 +69,8 @@ function pinPairs({ mise, bootstrap, packageManager, image }: PinPairsInput): Re
 }
 
 /**
- * Checks that each copy of a tool's pin, in `.config/bootstrap.sh`, the workspace manifest or the sandbox image, names
- * mise.toml's version.
+ * Checks that each copy of a tool's pin, in the bootstrap pins, workspace manifest or sandbox image, names mise.toml's
+ * version.
  */
 export const checkPins = Effect.fn('checkPins')(function* (): Effect.fn.Return<
   ReadonlyArray<Finding>,

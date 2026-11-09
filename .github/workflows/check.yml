@@ -25,6 +25,24 @@ jobs:
           persist-credentials: false
           # The full history holds the merge base the baselines are compared with.
           fetch-depth: 0
+      - name: Read the reviewed mise release
+        id: mise-release
+        run: |
+          source .config/mise-release.sh
+          echo "version=$(mise_release_version)" >> "$GITHUB_OUTPUT"
+          echo "sha256=$(mise_release_digest linux-x64)" >> "$GITHUB_OUTPUT"
+      - uses: ./.github/actions/bootstrap-mise
+        id: mise-bootstrap
+        with:
+          version: ${{ steps.mise-release.outputs.version }}
+          sha256: ${{ steps.mise-release.outputs.sha256 }}
+      - uses: jdx/mise-action@dba19683ed58901619b14f395a24841710cb4925 # v4.1.0
+        with:
+          version: ${{ steps.mise-bootstrap.outputs.version }}
+          mise_dir: ${{ steps.mise-bootstrap.outputs.directory }}
+          sha256: ${{ steps.mise-bootstrap.outputs.sha256 }}
+          install: false
+          cache: false
       - name: Put the bootstrap's tools on PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
       - name: Install the pinned mise, tools and locked packages

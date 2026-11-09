@@ -64,6 +64,9 @@ an explicit data decision; the agent-store reset does not authorize deletion of 
 
 Qualify constrained or rewritten rows against the production database engine. Repeating initial setup must leave the
 schema unchanged. A future narrowing needs both affected-row evidence and replay evidence for open workflows.
+Read migrated records through their authenticated product HTTP route and response codec before release. SQL row counts
+alone do not establish that stored identifiers, timestamps, text, and structured output remain readable. Include unchanged
+records and a repeated migration in that check.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

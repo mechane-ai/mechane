@@ -81,3 +81,13 @@ guest retirement and capacity release finish.
 Recover forward if that upgrade fails; deploying the old binary against the migrated database is not a supported
 rollback. Subsequent releases validate their known migration prefix and must preserve the previous release's reads and
 writes through additive migrations. The migrator refuses to modify a database newer than its own release.
+
+### Upgrading from schema 3
+
+Release 0.26.1 adds domain migration 4 to repair invalid UUID bits in historical Console messages imported by 0.26.0. It
+preserves their content, presentation, ordering, timestamps, and activity references. Valid message identifiers and
+native tool publications remain unchanged. Earlier migration checksums remain immutable.
+
+Run the released migrator with the migration connection, then verify authenticated Conversation reads for a mech with
+imported messages. Check that its text and cards remain readable; a successful migration or SQL row count alone is not
+enough. Repeating the migrator must leave the repaired records unchanged.

@@ -1,0 +1,23 @@
+name: Verify mise bootstrap
+description: Preseed an exact mise release through authenticated GitHub API downloads.
+inputs:
+  version:
+    description: Exact mise release version consumed by the official setup action.
+    required: true
+  sha256:
+    description: Existing binary digest pin, when the consumer already requires one.
+    required: false
+  github_token:
+    description: GitHub's job token, used only for api.github.com requests.
+    default: ${{ github.token }}
+    required: true
+outputs:
+  version:
+    description: Verified exact mise version.
+  directory:
+    description: Fresh job-local installation directory for mise_dir.
+  sha256:
+    description: Verified binary digest for the official action's sha256 input.
+runs:
+  using: node24
+  main: index.mts

@@ -72,6 +72,20 @@ export type StackOptions = {
 
 export type RestartOptions = { readonly signal?: 'SIGTERM' | 'SIGKILL'; readonly environment?: Environment };
 
+export type ConversationImportScope = { readonly workspaceId: string; readonly mechId: string };
+
+type ImportedPublication = {
+  readonly id: string;
+  readonly text: string;
+  readonly presentation: Readonly<Record<string, unknown>> | null;
+  readonly createdAt: string;
+  readonly shouldRepairId: boolean;
+};
+
+export type ConversationImport = { readonly runId: string; readonly publications: ReadonlyArray<ImportedPublication> };
+
+type PreparedConversationImport = ConversationImport & { readonly applyMigration: () => Promise<void> };
+
 export type LocalStack = {
   readonly origin: URL;
   readonly databaseUrl: string;
@@ -85,6 +99,7 @@ export type LocalStack = {
   readonly nodeVersion: string;
   readonly dumpStorage: () => Promise<string>;
   readonly restart: (input?: RestartOptions) => Promise<void>;
+  readonly prepareConversationImport: (input: ConversationImportScope) => Promise<PreparedConversationImport>;
   readonly stop: () => Promise<void>;
 };
 

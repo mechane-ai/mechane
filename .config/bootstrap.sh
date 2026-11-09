@@ -4,23 +4,14 @@ set -euo pipefail
 
 root=$(git -C "$(dirname "$0")" rev-parse --show-toplevel)
 bin="$HOME/.local/bin"
-mise_version=2026.10.17
+# shellcheck source=.config/mise-release.sh
+source "$root/.config/mise-release.sh"
+mise_version=$(mise_release_version)
 caller_path=$PATH
 export PATH="$bin:$PATH"
 # Install the repository's locked tools without inheriting unrelated personal or system tool declarations.
 export MISE_CONFIG_DIR=/dev/null
 export MISE_SYSTEM_CONFIG_DIR=/dev/null
-
-# The SHA-256 digest of each mise release asset, from the release's SHASUMS256.txt.
-mise_digest() {
-  case "$1" in
-    linux-x64) echo fe6dd17e68e09682b31d2e7bb7bb755d22636ac1af5d94621e300f2ca9e9fe8a ;;
-    linux-arm64) echo e90904144ba4377c5fbe385f429830282c68f3b4f9c690bf6c5a2ae9b74a809b ;;
-    macos-arm64) echo 9e27709db5eb1e900d83149418d3067309f2a5004d4994d94246ab658ba4a3ce ;;
-    macos-x64) echo dac5d6db5e315d8e4f096c6ead9279d342e09fdcb5c373d0df5c7dcce8195746 ;;
-    *) echo "bootstrap: no pinned mise for $1" >&2; exit 1 ;;
-  esac
-}
 
 platform() {
   local os arch
@@ -53,7 +44,7 @@ install_mise() {
   target=$(platform)
   file=$(mktemp)
   curl -fsSL -o "$file" "https://github.com/jdx/mise/releases/download/v$mise_version/mise-v$mise_version-$target"
-  verify "$(mise_digest "$target")" "$file"
+  verify "$(mise_release_digest "$target")" "$file"
   mkdir -p "$bin"
   install -m 0755 "$file" "$bin/mise"
   rm "$file"

@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { serverEnvironment } from './environment.ts';
 import { StackStartupFailedError } from './errors.ts';
 import { startFixtures } from './fixtures/start-fixtures.ts';
+import { seedConversationImport } from './fixtures/store/conversation-import.ts';
 import { startPostgres } from './postgres.ts';
 import type { LocalPostgres } from './postgres.ts';
 import { runCommand, startProcess } from './process.ts';
@@ -12,7 +13,15 @@ import { startSandbox } from './sandbox/start-sandbox.ts';
 import type { LocalSandbox } from './sandbox/start-sandbox.ts';
 import { DEFAULT_SERVER_ENTRY, inheritedEnvironment, nodeExecutablePath } from './settings.ts';
 import { openStackState } from './state.ts';
-import type { Environment, LocalFixtures, LocalStack, ManagedProcess, RestartOptions, StackOptions } from './types.ts';
+import type {
+  ConversationImportScope,
+  Environment,
+  LocalFixtures,
+  LocalStack,
+  ManagedProcess,
+  RestartOptions,
+  StackOptions,
+} from './types.ts';
 
 const READY_TIMEOUT_MS = 45_000;
 const PROBE_TIMEOUT_MS = 500;
@@ -118,6 +127,52 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     await launch();
   }
 
+  async function runDatabaseProgram(file: string): Promise<void> {
+    if (resources.postgres === undefined) {
+      throw new Error('The local database has not started');
+    }
+
+    const migration = await startProcess({
+      command: nodeExecutable,
+      args: [join(dirname(entry), file)],
+      environment: { ...configuration.environment, WORKFLOW_POSTGRES_URL: resources.postgres.migrationUrl },
+      logFile: serverLog,
+    });
+
+    const migrationTimeout = setTimeout(() => migration.child.kill('SIGKILL'), MIGRATION_TIMEOUT_MS);
+    const migrated = await migration.exited.finally(() => clearTimeout(migrationTimeout));
+
+    if (migrated !== 0) {
+      throw new Error(`The local database setup failed at ${file}; inspect ${serverLog}`);
+    }
+  }
+
+  async function prepareConversationImport(input: ConversationImportScope) {
+    if (options.mode !== 'ephemeral' || resources.fixtures === undefined) {
+      throw new Error('Historical conversation preparation requires a disposable fixture stack');
+    }
+
+    if (resources.stopping !== undefined || resources.server === undefined || resources.postgres === undefined) {
+      throw new Error('Historical conversation preparation requires an active fixture stack');
+    }
+
+    await resources.server.stop();
+
+    const fixture = await seedConversationImport({ ...input, container: resources.postgres.container, environment });
+
+    async function applyMigration(): Promise<void> {
+      if (resources.stopping !== undefined || resources.server === undefined) {
+        throw new Error('The local stack is stopped');
+      }
+
+      await resources.server.stop();
+      await runDatabaseProgram('migrate.mjs');
+      await launch();
+    }
+
+    return { ...fixture, applyMigration };
+  }
+
   try {
     await rm(dirname(entry), { recursive: true, force: true });
     await cp(dirname(builtEntry), dirname(entry), { recursive: true, dereference: true });
@@ -164,22 +219,8 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       throw new Error('Configured mode requires a sandbox service origin and credential');
     }
 
-    const setupEnvironment = { ...configuration.environment, WORKFLOW_POSTGRES_URL: resources.postgres.migrationUrl };
-
     for (const file of ['migrate.mjs', 'workflow/bootstrap/dist/cli.mjs', 'grant.mjs']) {
-      const migration = await startProcess({
-        command: nodeExecutable,
-        args: [join(dirname(entry), file)],
-        environment: setupEnvironment,
-        logFile: serverLog,
-      });
-
-      const migrationTimeout = setTimeout(() => migration.child.kill('SIGKILL'), MIGRATION_TIMEOUT_MS);
-      const migrated = await migration.exited.finally(() => clearTimeout(migrationTimeout));
-
-      if (migrated !== 0) {
-        throw new Error(`The local database setup failed at ${file}; inspect ${serverLog}`);
-      }
+      await runDatabaseProgram(file);
     }
 
     await launch();
@@ -197,6 +238,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       nodeVersion,
       dumpStorage: postgres.dump,
       restart,
+      prepareConversationImport,
       stop,
     };
   } catch (error) {

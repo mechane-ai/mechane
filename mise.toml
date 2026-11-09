@@ -35,6 +35,7 @@ run = [
   "shellcheck .config/*.sh",
   "workspaces/core/node_modules/.bin/tsc -p .config/tsconfig.json",
   "workspaces/core/node_modules/.bin/oxlint .config/*.mts",
+  "workspaces/core/node_modules/.bin/oxlint .github/actions/bootstrap-mise/*.mts",
 ]
 
 [tasks.fix]

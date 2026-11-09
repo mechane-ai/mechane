@@ -11,5 +11,5 @@
     "types": ["node"],
     "typeRoots": ["../workspaces/core/node_modules/@types"]
   },
-  "include": ["*.mts"]
+  "include": ["*.mts", "../.github/actions/bootstrap-mise/*.mts"]
 }

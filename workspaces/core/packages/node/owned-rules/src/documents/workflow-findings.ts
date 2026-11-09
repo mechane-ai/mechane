@@ -4,6 +4,9 @@ import type { Finding, TextFile } from '@mechane/checks-kernel';
 /** An action reference pinned to an immutable commit, such as `actions/checkout@<40 hex digits>`. */
 const PINNED_ACTION = /^\s*-?\s*uses:\s*[\w.-]+\/[\w./-]+@[0-9a-f]{40}(\s|$)/;
 
+/** Repository actions run from the exact checked-out source revision. */
+const LOCAL_ACTION = /^\s*-?\s*uses:\s*\.\/\.github\/actions\/[\w-]+(\s|$)/;
+
 /** A step that uses an action. */
 const ACTION_STEP = /^\s*-?\s*uses:/;
 
@@ -16,7 +19,7 @@ export function workflowFindings({ path, text }: TextFile): ReadonlyArray<Findin
 
   /** The finding of a step whose action is not pinned to a full commit, by its place among the lines. */
   const unpinnedFindings: (line: string, index: number) => ReadonlyArray<Finding> = (line, index) => {
-    if (!ACTION_STEP.test(line) || PINNED_ACTION.test(line)) {
+    if (!ACTION_STEP.test(line) || PINNED_ACTION.test(line) || LOCAL_ACTION.test(line)) {
       return [];
     }
 

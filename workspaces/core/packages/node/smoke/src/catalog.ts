@@ -15,6 +15,7 @@ import { forkKeepsAnIndependentContext } from './context/fork-keeps-an-independe
 import { gradesOnlyValidIsolatedEvaluations } from './evals/grades-only-valid-isolated-evaluations.ts';
 import { producerIsBoundToRecipient } from './notifications/producer-is-bound-to-recipient.ts';
 import { externalNotificationSurvivesRestart } from './recovery/external-notification-survives-restart.ts';
+import { importedConversationRemainsReadable } from './recovery/imported-conversation-remains-readable.ts';
 import { nativeStreamFailureIsReplayable } from './recovery/native-stream-failure-is-replayable.ts';
 import { nativeStreamReplaysWithinItsWorkspace } from './recovery/native-stream-replays-within-its-workspace.ts';
 import { cancellationPreservesPendingNotifications } from './runs/cancellation-preserves-pending-notifications.ts';
@@ -115,6 +116,12 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     guarantee: 'notification producers are bound to their signed recipients and immutable notices',
     regression: 'a producer retargets a signed event, replaces accepted content, or falls back to broader authority',
     run: producerIsBoundToRecipient,
+  },
+  {
+    guarantee: 'imported Console history stays readable with valid identifiers and unchanged content',
+    regression:
+      'a migration preserves SQL rows but breaks the authenticated conversation response or its activity links',
+    run: importedConversationRemainsReadable,
   },
   {
     guarantee: 'private native traces replay within their authenticated workspace',

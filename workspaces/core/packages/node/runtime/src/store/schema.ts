@@ -314,4 +314,61 @@ SELECT entry.id,entry.workspace_id,entry.mech_id,entry.notification_id,entry.run
 ORDER BY entry.created_at,entry.position,entry.part_position,entry.id;
 `,
   },
+  {
+    version: 4,
+    sql: `
+-- The measured set contains three exact imported publications, so this rewrite fits one transaction.
+-- Each UUIDv8 repair leaves the invalid-ID candidate set; repeating the rewrite changes no further rows.
+DO $repair_console_ids$
+DECLARE
+  candidate record;
+  identity_bytes bytea;
+  repaired_id uuid;
+BEGIN
+  FOR candidate IN
+    SELECT publication.id,publication.workspace_id,publication.mech_id,publication.run_id
+    FROM mechane.console_messages publication
+      JOIN mechane.messages message ON message.run_id=publication.run_id
+      JOIN mechane.runs run ON run.id=message.run_id
+      JOIN mechane.inputs input ON input.id=run.input_id
+      CROSS JOIN LATERAL jsonb_array_elements(message.ui_message->'parts') WITH ORDINALITY AS parts(part,ordinal)
+    WHERE publication.role='assistant' AND publication.workspace_id=run.workspace_id AND publication.mech_id=run.mech_id
+      AND input.origin->>'kind'='console' AND message.ui_message->>'role'='assistant'
+      AND publication.tool_call_id='imported-message:' || message.id::text || ':' || parts.ordinal::text
+      AND publication.id=md5(message.id::text || ':' || parts.ordinal::text)::uuid
+      AND ((parts.part->>'type'='text' AND jsonb_typeof(parts.part->'text')='string')
+        OR (parts.part->>'type'='tool-render_ui' AND jsonb_typeof(parts.part->'output'->'spec')='object'
+          AND jsonb_typeof(parts.part->'output'->'fallback')='string'))
+      AND publication.id::text !~ '^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+      AND publication.id NOT IN ('00000000-0000-0000-0000-000000000000','ffffffff-ffff-ffff-ffff-ffffffffffff')
+    FOR UPDATE OF publication
+  LOOP
+    identity_bytes := decode(replace(candidate.id::text,'-',''),'hex');
+    identity_bytes := set_byte(identity_bytes,6,(get_byte(identity_bytes,6) & 15) | 128);
+    identity_bytes := set_byte(identity_bytes,8,(get_byte(identity_bytes,8) & 63) | 128);
+    repaired_id := encode(identity_bytes,'hex')::uuid;
+
+    IF EXISTS(SELECT 1 FROM mechane.console_messages WHERE id=repaired_id) THEN
+      RAISE EXCEPTION 'Console import ID % cannot become % because the target already exists',candidate.id,repaired_id;
+    END IF;
+
+    IF EXISTS(
+      SELECT 1 FROM mechane.activity activity
+      WHERE activity.type='console.message' AND activity.data->>'messageId'=candidate.id::text
+        AND (activity.workspace_id<>candidate.workspace_id OR activity.mech_id<>candidate.mech_id
+          OR activity.run_id IS DISTINCT FROM candidate.run_id)
+    ) THEN
+      RAISE EXCEPTION 'Console import ID % has an activity reference outside its owning activation',candidate.id;
+    END IF;
+
+    UPDATE mechane.console_messages SET id=repaired_id WHERE id=candidate.id;
+    UPDATE mechane.activity activity SET data=jsonb_set(activity.data,'{messageId}',to_jsonb(repaired_id::text))
+    WHERE activity.type='console.message' AND activity.data->>'messageId'=candidate.id::text
+      AND activity.workspace_id=candidate.workspace_id AND activity.mech_id=candidate.mech_id
+      AND activity.run_id=candidate.run_id;
+  END LOOP;
+END;
+$repair_console_ids$;
+`,
+  },
 ] as const;

@@ -56,6 +56,9 @@ This exception does not admit caller-supplied SQL or fragments. Grant setup bind
 an identifier inside its fixed database function. Other runtime store queries remain whole literals with bound values.
 The isolated local-stack bootstrap may create its restricted Postgres role through its fixed `psql` setup script.
 It exposes no query API to product callers and accepts no user-supplied SQL.
+The historical Console fixture in `packages/node/stack/src/fixtures/store/conversation-import.ts` owns its fixed local
+Postgres seed and upgrade preparation statements. It accepts typed fixture identities, exposes no query API, and runs
+only in the disposable fixture stack. Upgrade checks use the compiled production migrator and authenticated HTTP reads.
 
 Domain transitions that must be atomic, such as reserving usage, claiming a queued run, acknowledging an input, or
 committing a delivery receipt, execute in one transaction. Checks confine pg imports and the private store context to
