@@ -5,7 +5,7 @@ import { Effect, Option, Record, Schema } from 'effect';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { valid } from 'semver';
-import { MIGRATION_LOCK, WIRE_LOCK } from './constants.ts';
+import { MIGRATION_LOCK, SHIPPED_WIRE_LOCK } from './constants.ts';
 import { Lock } from './schemas.ts';
 
 /** The exact bytes of a runtime artifact, independent of its distribution or hosting platform. */
@@ -69,14 +69,14 @@ type ReadReleaseDescriptorInput = {
   readonly worker: ArtifactDigest;
 };
 
-/** The release artifact records the format locks from the source it was built from. */
+/** The release retains shipped format history even when an old API has been retired from the active catalog. */
 export const readReleaseDescriptor = Effect.fn('readReleaseDescriptor')(function* ({
   root,
   version,
   commit,
   worker,
 }: ReadReleaseDescriptorInput): Effect.fn.Return<ReleaseDescriptor, ReleaseDescriptorUnreadable> {
-  const wirePath = join(root, WIRE_LOCK);
+  const wirePath = join(root, SHIPPED_WIRE_LOCK);
   const migrationPath = join(root, MIGRATION_LOCK);
   const wire = yield* readFormatLock({ path: wirePath });
   const migrations = yield* readFormatLock({ path: migrationPath });

@@ -130,7 +130,7 @@
   "packages/node/guest/src/executions/spawn-bash.ts": 4,
   "packages/node/guest/src/executions/spawned-bash.ts": 4,
   "packages/node/guest/src/main.ts": 2,
-  "packages/node/locks/src/append-locks.ts": 2,
+  "packages/node/locks/src/append-locks.ts": 1,
   "packages/node/locks/src/appended-lock.ts": 5,
   "packages/node/locks/src/check-locks.ts": 4,
   "packages/node/locks/src/fields/field-names.ts": 5,

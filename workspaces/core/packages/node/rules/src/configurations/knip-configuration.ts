@@ -29,6 +29,7 @@ const GENERATOR_ENTRIES = '*/main.ts!';
 
 const SERVER_PACKAGE = '@mechane/server';
 const RUNTIME_PACKAGE = '@mechane/runtime';
+const DISTRIBUTION_PACKAGE = '@mechane/distribution';
 
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
@@ -107,6 +108,10 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
 
   if (member.name === RUNTIME_PACKAGE) {
     return { entry: ['src/execution/run-workflow.ts!'], project: ['src/**/*.ts!'] };
+  }
+
+  if (member.name === DISTRIBUTION_PACKAGE) {
+    return { entry: ['src/**/main.ts!', 'testing/shipped-formats.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
   }
 
   if (member.hasStories) {

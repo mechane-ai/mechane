@@ -14,6 +14,10 @@ Require the compiled Node metadata, archive inventory, and release receipt to ag
 Include the original license, attribution, and generated Node and browser dependency notices in the verified inventory.
 Derive dependency notices from build inputs; missing package notices require reviewed, exact-version supplements.
 
+Emit the cumulative shipped wire history and exact migration ledger in installation descriptors under contract 047.
+Preserve every entry from installed and previously published release descriptors even when an active API is retired.
+Keep the provider's format-preservation guard enabled; a retired endpoint does not justify removing historical metadata.
+
 Keep infrastructure configuration responsible for service identity, domain routing, capacity, database roles, global
 settings, secret references, and notification-producer recipient allowlists. Runtime APIs own principals, workspaces,
 mechs, credentials, grants, notifications, messages, and files. Integration services own platform subscriptions and
@@ -56,6 +60,8 @@ Inspect release manifests and archives for revision, checksums, required assets,
 repository's build and infrastructure checks with no cloud credentials.
 The distribution verifier checks every Node file and required notice entry; inspect generated dependency notices when
 the bundled graph changes.
+Check the built installation descriptor against installed and previously published descriptors. Require every recorded
+wire and migration entry to survive. A source-ledger comparison alone does not prove the builder emitted that history.
 
 Exercise supported hosted origins through installation validation and runtime transport. Verify that suffix lookalikes
 and decorated origins fail before transport credentials are read, while the explicit local loopback still works.

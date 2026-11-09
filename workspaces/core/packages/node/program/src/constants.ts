@@ -16,10 +16,13 @@ export const UpdateOutcome = { UpToDate: 'up_to_date', Available: 'available', U
 export type UpdateOutcome = (typeof UpdateOutcome)[keyof typeof UpdateOutcome];
 
 /**
- * The wire lock, relative to the product workspace: every name a shipped format carries, by kind. A name joins it once
- * and stays, so a rename or a removal of a shipped name fails the check.
+ * The active wire catalog, relative to the product workspace. A removal needs the owning client's explicit retirement;
+ * it never removes that name from the cumulative shipped history.
  */
 export const WIRE_LOCK = 'lint/wire.json';
+
+/** Cumulative shipped names, including retired APIs, retained in every installation descriptor. */
+export const SHIPPED_WIRE_LOCK = 'lint/shipped-wire.json';
 
 /** The kinds of name the wire lock holds, each under its own key. */
 export const WireKind = {

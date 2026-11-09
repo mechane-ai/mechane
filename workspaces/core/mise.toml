@@ -50,7 +50,7 @@ description = "Print the fingerprint: the hash of each role's minified bundle, o
 run = "node packages/node/checks/src/main.ts fingerprint"
 
 [tasks.locks]
-description = "Append to the wire lock and the migration lock each shipped name and schema step the source declares that they do not hold yet"
+description = "Append current API names to the active catalog and cumulative shipped history, and new schema steps to the migration lock"
 run = "node packages/node/checks/src/main.ts lock"
 
 [tasks."rules:measure"]

@@ -1,6 +1,6 @@
 import { decodeFile, FileUnwritable, WORKSPACE_FOLDER } from '@mechane/checks-kernel';
-import type { ChecksFailure, Finding, InputUnreadable } from '@mechane/checks-kernel';
-import { JSON_INDENT_CHARS, Lock, MIGRATION_LOCK, WIRE_LOCK } from '@mechane/program';
+import type { ChecksFailure, Finding } from '@mechane/checks-kernel';
+import { JSON_INDENT_CHARS, Lock, MIGRATION_LOCK, SHIPPED_WIRE_LOCK, WIRE_LOCK } from '@mechane/program';
 import { Effect } from 'effect';
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -9,18 +9,18 @@ import { migrationHashes } from './migration-hashes.ts';
 import { wireNames } from './wire-names.ts';
 
 /** A lock's file, and the entries the source declares now. */
-type AppendLockInput = { readonly path: string; readonly current: Effect.Effect<Lock, InputUnreadable> };
+type AppendLockInput = { readonly path: string; readonly current: Lock };
 
-/**
- * Appends to the wire lock and the migration lock what the source declares and they do not hold yet; it reports no
- * findings.
- */
+/** Appends current names to both wire ledgers and new schema steps to the migration lock. */
 export const appendLocks = Effect.fn('appendLocks')(function* (): Effect.fn.Return<
   ReadonlyArray<Finding>,
   ChecksFailure
 > {
-  yield* appendLock({ path: WIRE_LOCK, current: wireNames() });
-  yield* appendLock({ path: MIGRATION_LOCK, current: migrationHashes() });
+  const current = yield* wireNames();
+
+  yield* appendLock({ path: WIRE_LOCK, current });
+  yield* appendLock({ path: SHIPPED_WIRE_LOCK, current });
+  yield* appendLock({ path: MIGRATION_LOCK, current: yield* migrationHashes() });
 
   return [];
 });
@@ -34,7 +34,7 @@ const appendLock = Effect.fn('appendLock')(function* ({
   current,
 }: AppendLockInput): Effect.fn.Return<void, ChecksFailure> {
   const locked = yield* decodeFile({ path, schema: Lock });
-  const lock = appendedLock({ locked, current: yield* current });
+  const lock = appendedLock({ locked, current });
   const absolute = resolve(WORKSPACE_FOLDER, path);
   const text = `${JSON.stringify(lock, null, JSON_INDENT_CHARS)}\n`;
 

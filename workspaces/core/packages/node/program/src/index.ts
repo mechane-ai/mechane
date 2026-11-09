@@ -7,6 +7,7 @@ export {
   PROGRAM_ARGUMENTS_START,
   MIGRATION_LOCK,
   WIRE_LOCK,
+  SHIPPED_WIRE_LOCK,
   WireKind,
   PrivateMode,
   UpdateOutcome,

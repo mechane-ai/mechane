@@ -2,7 +2,7 @@
 name: test-curation
 message: Treat development tests as disposable, and commit only checks that guard consequential regressions and declared example tests.
 requires-tenet: 0.11.0
-paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
+paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/packages/node/distribution/testing/**", "workspaces/core/infrastructure/check.sh", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
 ---
 
 ## Rules
@@ -48,11 +48,17 @@ Run the repository's lint and this contract's `assets/` configuration over its t
 
 ## Local adaptations
 
-The retained suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime, native
-Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
+The retained runtime suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime,
+native Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
 execution boundary. Run it from the factory root with `mise -C workspaces/core run smoke`.
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
+
+The existing infrastructure check also runs `packages/node/distribution/testing/shipped-formats.ts` against its newly
+staged installation descriptor. This publication-safety check compares the actual build output with the canonical
+shipped-wire and migration ledgers. It guards a builder omitting historical entries that source-lock checks cannot see,
+without a second runner or a copied historical fixture.
+
 The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
 exercise the public producer boundary directly; the product implementation, compiled Workflow code, database, and

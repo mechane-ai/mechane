@@ -43,6 +43,7 @@ const VALUES = {
     'pnpm-lock.yaml',
     'packages/node/cli/reference.json',
     'lint/wire.json',
+    'lint/shipped-wire.json',
     'lint/migrations.json',
     'lint/baseline/**',
   ],

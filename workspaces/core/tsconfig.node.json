@@ -14,6 +14,7 @@
     "packages/node/cli-update/src",
     "packages/node/commands/src",
     "packages/node/distribution/src",
+    "packages/node/distribution/testing",
     "packages/node/eval/src",
     "packages/node/guest/src",
     "packages/node/locks/src",

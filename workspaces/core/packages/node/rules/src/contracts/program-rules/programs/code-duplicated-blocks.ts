@@ -21,6 +21,7 @@ const VALUES = {
       '**/.swc/**',
       'packages/node/runtime/.well-known/workflow/**',
       '**/reference.json',
+      'lint/shipped-wire.json',
       'lint/baseline/**',
       ...PARSER_COMPANIONS.map(({ path }) => path),
     ],

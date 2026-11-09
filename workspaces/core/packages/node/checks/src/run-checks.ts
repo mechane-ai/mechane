@@ -37,7 +37,7 @@ type RunChecksInput = { readonly baseBranch: string; readonly inherited: Readonl
 type OwnedFindingsInput = { readonly members: ReadonlyArray<Member>; readonly sources: ReadonlyArray<ParsedSource> };
 
 /** Every owned check; each enforces declared values that no installed tool checks. */
-const CHECKS: ReadonlyArray<Check> = [checkBoundaries, checkDocuments, checkPins, checkLocks];
+const CHECKS: ReadonlyArray<Check> = [checkBoundaries, checkDocuments, checkPins];
 
 /** The findings of the owned rules and of each normalizer not proposed, with each ratchet held to its baseline. */
 const ownedFindings = Effect.fn('ownedFindings')(function* ({
@@ -69,12 +69,13 @@ export const runChecks = Effect.fn('runChecks')(function* ({
   const files = yield* trackedFiles({ inherited });
   const sources = yield* parsedSources({ members });
   const groups = yield* Effect.forEach(CHECKS, (check) => check({ members, files, sources }), { concurrency: 1 });
+  const locks = yield* checkLocks({ members, files, sources, baseBranch, inherited });
   const ratchets = ratchetRules();
   const held = yield* ownedFindings({ members, sources });
   const raised = yield* raisedCounts({ ratchets, baseBranch, inherited });
   const strays = yield* strayBaselines({ ratchets });
   const examples = yield* exampleFindings({ members, inherited });
-  const checked = [...groups.flat(), ...orphanFindings({ members, files }), ...checkSource({ sources })];
+  const checked = [...groups.flat(), ...locks, ...orphanFindings({ members, files }), ...checkSource({ sources })];
 
   /** A check's finding, its message ended with its rule's standard. */
   const standardFinding: (finding: Finding) => Finding = (finding) => ({

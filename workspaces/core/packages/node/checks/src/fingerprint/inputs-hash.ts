@@ -1,6 +1,6 @@
 import { FACTORY_FOLDER, readText } from '@mechane/checks-kernel';
 import type { InputUnreadable } from '@mechane/checks-kernel';
-import { sha256Hex } from '@mechane/program';
+import { MIGRATION_LOCK, sha256Hex, SHIPPED_WIRE_LOCK, WIRE_LOCK } from '@mechane/program';
 import { FileRole } from '@mechane/rule-shapes';
 import { FILE_ROLES } from '@mechane/rules';
 import { Array, Effect } from 'effect';
@@ -23,6 +23,9 @@ const IMAGE_FOLDER = 'image';
 
 /** The maintained notices embedded in the distributed guest, Worker and CLI artifacts. */
 const LICENSES_PREFIX = 'licenses/';
+
+/** Format histories are build inputs even though they are read at artifact generation rather than bundled. */
+const FORMAT_INPUTS: ReadonlySet<string> = new Set([WIRE_LOCK, SHIPPED_WIRE_LOCK, MIGRATION_LOCK]);
 
 /** The factory toolchain and task configuration affect every compiled artifact and its qualification. */
 const FACTORY_INPUTS = ['mise.toml', 'mise.lock'] as const;
@@ -48,8 +51,9 @@ export const inputsHash = Effect.fn('inputsHash')(function* ({
 
     const isBuildScript = file.endsWith('.mjs');
     const isBundledAsset = file.split('/').includes(IMAGE_FOLDER) || file.startsWith(LICENSES_PREFIX);
+    const isDeclaredInput = INPUT_NAMES.has(basename(file)) || FORMAT_INPUTS.has(file);
 
-    return INPUT_NAMES.has(basename(file)) || isBuildScript || isBundledAsset;
+    return isDeclaredInput || isBuildScript || isBundledAsset;
   };
 
   const factoryInputs = FACTORY_INPUTS.map((path) => join(FACTORY_FOLDER, path));

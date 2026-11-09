@@ -32,6 +32,9 @@ For each block the change adds, does it repeat the steps of an existing block un
 
 The detector is jscpd, configured in `.jscpd.json` beside `mise.toml`: `cloneTokens` tokens and `cloneLines` lines, over TypeScript, JavaScript, YAML and JSON in `packages` and `lint`, with no file-length limit.
 It skips `node_modules`, `dist` and the generated `reference.json`.
+It also excludes exactly `lint/shipped-wire.json`, the generated append-only ledger maintained by `locks`. That history
+intentionally retains entries from the active catalog under contract 047. The active `lint/wire.json` and implementation
+code remain scanned.
 The registry also excludes its exact generated parser companions. Each companion names one authored matcher;
 that source remains scanned, and `rules:check` rejects a stale companion. No handwritten rule copy is excluded.
 `mise -C workspaces/core run duplicates` runs it, and the factory has no other code to scan.
@@ -40,6 +43,6 @@ The budget is 0, so `rules:check` fails on every start marker, a stale one inclu
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `cloneTokens` 50; `cloneLines` 6; `jscpdSuppressions` 0; `jscpd` `path` [`packages`, `lint`], `format` [`typescript`, `javascript`, `yaml`, `json`], `ignore` [`**/node_modules/**`, `**/dist/**`, `packages/node/server/.output/**`, `**/.swc/**`, `packages/node/runtime/.well-known/workflow/**`, `**/reference.json`, `lint/baseline/**`, `lint/ast-grep/rules/boolean-names-tsx.yml`, `lint/ast-grep/rules/ui-control-geometry-typescript.yml`, `lint/ast-grep/rules/ui-visual-token-values.yml`], `minTokens` 50, `minLines` 6, `maxLines` 1000000, `maxSize` 100mb, `threshold` 0, `exitCode` 1, `reporters` [`console`], `gitignore` true.
+Values: `cloneTokens` 50; `cloneLines` 6; `jscpdSuppressions` 0; `jscpd` `path` [`packages`, `lint`], `format` [`typescript`, `javascript`, `yaml`, `json`], `ignore` [`**/node_modules/**`, `**/dist/**`, `packages/node/server/.output/**`, `**/.swc/**`, `packages/node/runtime/.well-known/workflow/**`, `**/reference.json`, `lint/shipped-wire.json`, `lint/baseline/**`, `lint/ast-grep/rules/boolean-names-tsx.yml`, `lint/ast-grep/rules/ui-control-geometry-typescript.yml`, `lint/ast-grep/rules/ui-visual-token-values.yml`], `minTokens` 50, `minLines` 6, `maxLines` 1000000, `maxSize` 100mb, `threshold` 0, `exitCode` 1, `reporters` [`console`], `gitignore` true.
 
 <!-- End of the generated block. -->

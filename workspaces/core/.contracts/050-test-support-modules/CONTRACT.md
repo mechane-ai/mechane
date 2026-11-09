@@ -1,7 +1,7 @@
 ---
 name: test-support-modules
 message: Declare each test helper and fixture once, in its own file of the package's test support folder, and never copy it into another test file.
-paths: ["packages/node/smoke/src/**", "packages/node/testing/src/**"]
+paths: ["packages/node/smoke/src/**", "packages/node/testing/src/**", "packages/node/distribution/testing/**"]
 ---
 
 ## Rules
@@ -29,7 +29,7 @@ For each helper a change adds to the test support folder, does it sit in its own
 
 ## Local adaptations
 
-`packages/node/testing/src` owns the smoke's reusable client, authentication, native-chat, Slack, Nexus, and compute
+`packages/node/testing/src` owns the smoke's reusable client, authentication, notification, trace, and compute
 support operations. The smoke imports them through `@mechane/testing`; internal support files import their owning
 modules directly. Helpers call public product endpoints and declared fixture-control interfaces, not private runtime
 implementation.
@@ -37,6 +37,10 @@ implementation.
 `packages/node/stack/src` owns process, Postgres, external HTTP fixtures, and local compute fixture lifecycle shared
 by development and smoke. Its host launcher exercises the real guest protocol without claiming an operating-system
 sandbox. Default smoke uses no paid model or cloud account. Fixtures stay outside production artifacts.
+
+`packages/node/distribution/testing` owns the artifact check invoked by the existing infrastructure check. It reads the
+staged installation descriptor and canonical release ledgers. Keep this folder outside production imports and builds;
+shared format schemas come through `@mechane/program` rather than a duplicate historical fixture.
 
 A helper used by one scenario may stay beside that scenario. The cohesion adoption permits related support operations
 in one module when they share one resource or behavior; a separate file for each one-line helper is not required.

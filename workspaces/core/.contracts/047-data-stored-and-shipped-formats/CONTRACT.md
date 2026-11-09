@@ -1,7 +1,7 @@
 ---
 name: data-stored-and-shipped-formats
 message: Migrate every stored instance and keep what released clients read before narrowing a stored or shipped format.
-paths: ["**/*.ts", "packages/worker/sandbox-service/**"]
+paths: ["**/*.ts", "packages/worker/sandbox-service/**", "lint/wire.json", "lint/shipped-wire.json", "lint/migrations.json"]
 ---
 
 ## Rules
@@ -52,14 +52,26 @@ one-time deployment baseline, not permission for later releases to discard data 
 The owner-approved notification cutover in issue 108 retires the superseded public protocol and CLI surfaces for
 runtime 0.26.0 and client 0.3.0, with owned consumers updated together. This is a release-specific client retirement,
 not another fresh-state cutover. The active wire snapshot may be regenerated from the replacement public catalog for
-this release; subsequent wire changes remain subject to the checks and retirement rules above. Keep the existing
-migration checksum entries, including domain migrations 1 and 2, unchanged. Public route retirement gives no authority
-to discard stored history, work records, memory, files, receipts, credentials, or replayable Workflow state. Preserve
+this release; subsequent wire changes remain subject to the checks and retirement rules above. This permission does
+not remove entries from the cumulative shipped-format history. Keep the existing migration checksum entries, including
+domain migrations 1 and 2, unchanged. Public route retirement gives no authority to discard stored history, work records,
+memory, files, receipts, credentials, or replayable Workflow state. Preserve
 those through the owning data migration and history readers; do not retain obsolete public endpoints as a second API.
 
-After that baseline, apply the stored-data and active-history rules above to Mechane Postgres records and Workflow
-histories. Coordinate code and schema changes for overlapping service versions. Keep immutable release assets and
-recorded execution receipts meaningful across retries. The sandbox guest wire remains a separately deployed boundary;
+Keep the active API catalog in `lint/wire.json` and cumulative shipped wire history in `lint/shipped-wire.json`.
+Every active entry must appear in the shipped history. Preserve each shipped category and exact entry after its API
+retires; the history records published formats without defining current routes or retaining their implementations.
+Release descriptors emit this cumulative history and the unchanged migration checksum ledger. The active catalog
+cannot substitute for either historical ledger. The existing lock checks enforce active coverage and append-only
+shipped history; the installation provider rejects a descriptor that removes a previously shipped wire or migration entry.
+
+The runtime 0.26.2 metadata repair restores the union of the installed 0.25.4 and already-published 0.26.0 and 0.26.1
+descriptors. It preserves domain migrations 1 through 4 and schema version 4. Correct metadata in a new immutable release;
+do not edit published assets, restore retired endpoints, or bypass the provider's preservation check.
+
+After the initial native-runtime baseline, apply the stored-data and active-history rules above to Mechane Postgres
+records and Workflow histories. Coordinate code and schema changes for overlapping service versions. Keep immutable
+release assets and recorded execution receipts meaningful across retries. The sandbox guest wire remains a separately deployed boundary;
 change its caller and image together or use an explicitly versioned endpoint.
 
 The admitted Console cache contains derived server records and page metadata only. Its owner may advance the cache

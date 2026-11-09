@@ -26,6 +26,7 @@ mkdir -p "$provider_path"
 )
 
 node packages/node/distribution/src/main.ts preview-module "$infrastructure_check/module"
+node packages/node/distribution/testing/shipped-formats.ts "$infrastructure_check/module/installation.json"
 cat > "$infrastructure_check/tofurc" <<EOF
 provider_installation {
   filesystem_mirror {

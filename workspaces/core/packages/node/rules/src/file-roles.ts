@@ -72,6 +72,7 @@ export const FILE_ROLES = {
     'packages/node/guest/src/load-guest-settings.ts',
     'packages/node/release/src/load-release-settings.ts',
     'packages/node/distribution/src/load-distribution-settings.ts',
+    'packages/node/distribution/testing/shipped-formats.ts',
     'packages/node/checks/src/load-checks-settings.ts',
     'packages/node/rename/src/load-rename-settings.ts',
     'packages/node/rule-generator/src/load-generate-settings.ts',

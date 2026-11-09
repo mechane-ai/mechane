@@ -8,6 +8,7 @@
     "**/.swc/**",
     "packages/node/runtime/.well-known/workflow/**",
     "**/reference.json",
+    "lint/shipped-wire.json",
     "lint/baseline/**",
     "lint/ast-grep/rules/boolean-names-tsx.yml",
     "lint/ast-grep/rules/ui-control-geometry-typescript.yml",
