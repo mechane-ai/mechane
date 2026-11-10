@@ -1,6 +1,5 @@
 import { Event, EventType, TurnStatus } from '@mechane/protocol';
-import { BYTES_PER_MEBIBYTE } from '@mechane/records';
-import type { ModelFixture } from '@mechane/stack';
+import { HttpStatusCode } from '@mechane/records';
 import {
   checkpointSandbox,
   createAccount,
@@ -16,34 +15,26 @@ import {
   requireFixtures,
   runBash,
   sendNotification,
-  upgradeSandbox,
+  startCommandGate,
   waitFor,
-  waitForSandboxFile,
   waitForTurn,
 } from '@mechane/testing';
-import type { MechContext, ScenarioInput } from '@mechane/testing';
-import { Schema } from 'effect';
+import type { ScenarioInput } from '@mechane/testing';
+import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
-import { createCipheriv, createHash, randomUUID } from 'node:crypto';
-import { appendFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
-const StartedProcess = Schema.Struct({
-  status: Schema.Literal('running'),
-  processId: Schema.String,
-  machineId: Schema.String,
-});
+const AdmittedProcess = Schema.Struct({ status: Schema.Literals(['pending', 'running']), processId: Schema.String });
 
 const FAILED_ACTIVATION_STATUSES: ReadonlySet<TurnStatus> = new Set([TurnStatus.Failed, TurnStatus.Stopped]);
-const MULTIPART_FILE_BYTES = 9 * BYTES_PER_MEBIBYTE;
-const RECOVERY_FILE_BYTES = 513 * BYTES_PER_MEBIBYTE;
-const CIPHER_KEY_BYTES = 32;
-const CIPHER_IV_BYTES = 16;
+const COMPLETION_MODEL_CALLS = 2;
 
 export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
   const marker = `background-${randomUUID()}`;
   const published = `finished-${randomUUID()}`;
+  const idlePublished = `idle-publication-${randomUUID()}`;
+  const idleMessageId = randomUUID();
   const mech = await createMech({ stack, account, name: marker });
   const owner = { stack, account, mechId: mech.id };
   const { model } = requireFixtures(stack);
@@ -57,28 +48,31 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
   assert.equal(unallocated._tag, 'Unallocated');
   assert.deepEqual(await readSandboxMachines(stack), machines, 'A context checkpoint allocated an unused computer');
 
-  const command = [
-    `mkdir -p '${directory}'`,
-    `printf started > '${directory}/started'`,
-    `while [ ! -f '${directory}/release' ]; do sleep 0.05; done`,
-    `printf finished > '${directory}/finished'`,
-  ].join('\n');
-
-  model.configure({
-    marker,
-    replies: [
-      { tools: [{ id: toolCallId, name: 'start_process', input: { command } }] },
-      { text: 'The process can finish later' },
-    ],
-  });
+  const gate = await startCommandGate();
 
   try {
+    const command = [
+      'set -e',
+      `mkdir -p '${directory}'`,
+      `curl --fail --silent '${gate.url}'`,
+      `mechane self message '${idlePublished}' --message-id '${idleMessageId}' --output json >/dev/null`,
+      `printf finished > '${directory}/finished'`,
+    ].join('\n');
+
+    model.configure({
+      marker,
+      replies: [
+        { tools: [{ id: toolCallId, name: 'start_process', input: { command } }] },
+        { text: 'The process can finish later' },
+      ],
+    });
+
     const sent = await sendNotification({ ...owner, text: marker });
-    const started = Schema.decodeUnknownSync(StartedProcess)(await readModelToolResult({ model, marker, toolCallId }));
+    const started = Schema.decodeUnknownSync(AdmittedProcess)(await readModelToolResult({ model, marker, toolCallId }));
 
     await waitForTurn({ ...owner, notificationId: sent.id });
 
-    const gate = await waitForSandboxFile({ stack, path: join(directory, 'started'), contents: 'started' });
+    await gate.waitForRequest({ count: 1 });
 
     model.configure({
       marker: started.processId,
@@ -92,8 +86,7 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
 
     assert.equal(foreground.result.status, 'completed', foreground.result.message);
     assert.equal(foreground.result.output, 'concurrent');
-    await writeFile(join(dirname(gate), 'release'), 'continue');
-    await waitForSandboxFile({ stack, path: join(directory, 'finished'), contents: 'finished' });
+    gate.release();
 
     await waitFor({
       name: 'the idle mech to receive its background completion',
@@ -109,6 +102,8 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
 
     assert.ok(receipt !== null);
     assert.equal(receipt.status, 'exited');
+    assert.equal(Option.getOrThrow(receipt.exitCode), 0);
+    assert.equal(gate.readRequests().length, 1, 'The managed process repeated its command');
 
     const repeated = await Promise.all([
       repeatSandboxCompletion({ ...owner, receipt }),
@@ -116,6 +111,10 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
     ]);
 
     assert.ok(repeated.every((response) => response.ok));
+
+    const forged = await repeatSandboxCompletion({ ...owner, receipt: { ...receipt, exitCode: Option.some(1) } });
+
+    assert.equal(forged.status, HttpStatusCode.BadRequest, 'A callback replaced its durable environment outcome');
 
     const activity = await readEvents(owner);
 
@@ -128,9 +127,20 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
 
     assert.equal(completions.length, 1, 'A repeated callback admitted another completion notification');
 
+    const idlePublication = activity.events.find(
+      (event) =>
+        Schema.is(Event)(event) && event.type === EventType.ConsoleMessage && event.messageId === idleMessageId,
+    );
+
+    assert.ok(Schema.is(Event)(idlePublication) && idlePublication.type === EventType.ConsoleMessage);
+    assert.ok(Option.isNone(idlePublication.turnId), 'An idle self publication invented an activation link');
+
     const conversation = await readConsoleMessages(owner);
 
-    assert.equal(conversation.messages.filter((message) => message.text === published).length, 1);
+    assert.deepEqual(
+      conversation.messages.filter((message) => message.role === 'assistant').map((message) => message.text),
+      [idlePublished, published],
+    );
 
     await waitFor({
       name: 'the successful completion activation to commit its files',
@@ -143,108 +153,36 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
         return turns.every((turn) => turn.status === TurnStatus.Completed);
       },
     });
-    await assertLostWriterIsFenced({ ...owner, model, directory });
+
+    const durableEvents = await readEvents(owner);
+
+    assert.deepEqual(await readConsoleMessages(owner), conversation, 'Private completion published another message');
+    await stack.restart({ signal: 'SIGKILL' });
+
+    const replayed = await repeatSandboxCompletion({ ...owner, receipt });
+
+    assert.ok(replayed.ok, 'Restart refused an already accepted completion receipt');
+    assert.deepEqual(await readEvents(owner), durableEvents);
+    assert.deepEqual(
+      await readConsoleMessages(owner),
+      conversation,
+      'Restart repeated an idle publication or its completion',
+    );
+    assert.equal(
+      model.readCalls({ marker: started.processId }).length,
+      COMPLETION_MODEL_CALLS,
+      'A replayed completion repeated model work',
+    );
   } catch (error) {
     failures.push(error);
+    await stack.captureFailure('backgroundCompletionWakesOnce:before-sandbox-cleanup').catch(() => undefined);
   } finally {
+    gate.release();
+    await gate.close().catch((error: unknown) => failures.push(error));
     await deleteSandbox(owner).catch((error: unknown) => failures.push(error));
   }
 
   if (failures.length > 0) {
     throw new AggregateError(failures, 'The background lifecycle or its sandbox cleanup failed');
   }
-}
-
-type LostWriterInput = MechContext & { readonly model: ModelFixture; readonly directory: string };
-
-async function assertLostWriterIsFenced(input: LostWriterInput): Promise<void> {
-  const { stack, model, directory } = input;
-  const operationId = randomUUID();
-  const finished = await waitForSandboxFile({ stack, path: join(directory, 'finished'), contents: 'finished' });
-  const cipher = createCipheriv('aes-256-ctr', Buffer.alloc(CIPHER_KEY_BYTES), Buffer.alloc(CIPHER_IV_BYTES));
-  const multipart = cipher.update(Buffer.alloc(MULTIPART_FILE_BYTES));
-  const digest = createHash('sha256').update(multipart).digest('hex');
-  const recovery = Buffer.alloc(BYTES_PER_MEBIBYTE, 'retained\n');
-  const recoveryPath = join(dirname(finished), 'large');
-
-  await writeFile(join(dirname(finished), 'multipart'), multipart);
-  await writeFile(recoveryPath, recovery);
-
-  // Tar can encode sparse files compactly, so the raw byte limit needs actual written data.
-  for (let bytes = recovery.byteLength; bytes < RECOVERY_FILE_BYTES; bytes += recovery.byteLength) {
-    await appendFile(recoveryPath, recovery);
-  }
-
-  const saved = await waitFor({
-    name: 'the prior home generation to commit',
-    read: () => checkpointSandbox({ ...input, operationId }),
-    accept: (result) => result._tag !== 'Pending',
-  });
-
-  assert.equal(saved._tag, 'Committed');
-
-  const marker = `lost-writer-${randomUUID()}`;
-  const toolCallId = randomUUID();
-
-  const command = [
-    `printf ready > '${directory}/writer-ready'`,
-    `while [ ! -f '${directory}/writer-release' ]; do sleep 0.05; done`,
-    `printf unsaved > '${directory}/unsaved'`,
-    'while :; do sleep 1; done',
-  ].join('\n');
-
-  model.configure({
-    marker,
-    replies: [
-      { tools: [{ id: toolCallId, name: 'start_process', input: { command } }] },
-      { isHeld: true, text: 'The managed writer remains active' },
-    ],
-  });
-
-  const sent = await sendNotification({ ...input, text: marker });
-  const started = Schema.decodeUnknownSync(StartedProcess)(await readModelToolResult({ model, marker, toolCallId }));
-
-  try {
-    const ready = await waitForSandboxFile({ stack, path: join(directory, 'writer-ready'), contents: 'ready' });
-
-    await writeFile(join(dirname(ready), 'writer-release'), 'continue');
-    await waitForSandboxFile({ stack, path: join(directory, 'unsaved'), contents: 'unsaved' });
-    assert.ok(stack.sandbox !== undefined);
-    await stack.sandbox.loseMachine(started.machineId);
-  } finally {
-    model.release({ marker, index: 1 });
-  }
-
-  const failed = await waitForTurn({ ...input, notificationId: sent.id });
-  const afterLoss = await checkpointSandbox(input);
-
-  assert.equal(failed.status, TurnStatus.Failed, 'The activation accepted an older home generation after machine loss');
-  assert.equal(afterLoss._tag, 'Failed');
-
-  const blockedMarker = `blocked-after-loss-${randomUUID()}`;
-
-  model.configure({ marker: blockedMarker, replies: [{ text: 'This inference must not run' }] });
-
-  const blocked = await sendNotification({ ...input, text: blockedMarker });
-  const blockedTurn = await waitForTurn({ ...input, notificationId: blocked.id });
-
-  assert.equal(blockedTurn.status, TurnStatus.Failed);
-  assert.equal(model.readCalls({ marker: blockedMarker }).length, 0, 'Inference bypassed the failed file checkpoint');
-
-  await upgradeSandbox(input);
-
-  const restored = await runBash({
-    ...input,
-    command: [
-      `test ! -f '${directory}/unsaved'`,
-      `test "$(cat '${directory}/finished')" = finished`,
-      `test "$(wc -c < '${directory}/large')" -eq ${RECOVERY_FILE_BYTES}`,
-      `test "$(head -n 1 '${directory}/large')" = retained`,
-      `rm '${directory}/large'`,
-      `node -e 'const fs = require("node:fs"); const crypto = require("node:crypto"); process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
-    ].join(' && '),
-  });
-
-  assert.equal(restored.turn.status, TurnStatus.Completed);
-  assert.equal(restored.result.output, digest, 'Recovery lost multipart committed files or claimed an unsaved write');
 }

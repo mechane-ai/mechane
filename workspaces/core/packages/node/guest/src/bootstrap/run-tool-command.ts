@@ -5,7 +5,6 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess } from 'node:child_process';
 import { GuestMisconfigured } from '../errors.ts';
 import { killGroup } from '../executions/kill-group.ts';
-import { gatewayCertificates } from '../gateway-certificates.ts';
 
 const SUCCESS_STATUS = 0;
 
@@ -13,7 +12,7 @@ type RunToolCommandInput = {
   readonly name: string;
   readonly command: string;
   readonly arguments: ReadonlyArray<string>;
-  readonly environment: Readonly<Record<string, string>>;
+  readonly environment: () => Readonly<Record<string, string>>;
   readonly timeout: Duration.Duration;
   readonly maxOutputBytes: Bytes;
 };
@@ -37,16 +36,12 @@ export const runToolCommand = Effect.fn('runToolCommand')(function* ({
   maxOutputBytes,
 }: RunToolCommandInput): Effect.fn.Return<Buffer, GuestMisconfigured, Scope.Scope> {
   const failure = new GuestMisconfigured({ reason: `${name} failed during tool bootstrap` });
-  const certificates = gatewayCertificates();
   const argumentsList = [...arguments_];
+  const childEnvironment = environment();
 
   const opening = Effect.try({
     try: () =>
-      spawn(command, argumentsList, {
-        env: { ...environment, ...certificates },
-        detached: true,
-        stdio: ['ignore', 'pipe', 'ignore'],
-      }),
+      spawn(command, argumentsList, { env: childEnvironment, detached: true, stdio: ['ignore', 'pipe', 'ignore'] }),
     catch: () => new GuestMisconfigured({ reason: `start ${name} failed during tool bootstrap` }),
   });
 

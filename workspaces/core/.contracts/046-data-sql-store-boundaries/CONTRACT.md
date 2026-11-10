@@ -38,20 +38,20 @@ Does an operation that needs one transaction run its store calls inside the stor
 
 ## Local adaptations
 
-Product Postgres SQL and pg client calls belong to `packages/node/runtime/src/store`. Sandbox SQL belongs to
+Product Postgres SQL and pg client calls belong to `packages/worker/control-store`. Sandbox SQL belongs to
 `packages/worker/sandbox-store` and its shared migration kernel. The owning factory keeps the client private and
 exposes typed domain operations. A transaction-bound store composes reads and changes without publishing a raw client.
 
-Workflow World and Chat state adapters receive their own configured database connections through public constructors.
-Their upstream schemas and statements are not copied into product code. Composition roots may create and stop these
-adapters without becoming an alternative SQL API.
+Pi receives Durable Object storage through its public constructor. Its upstream schemas and statements are not copied
+into product code. Actor application documents use public Harness transactions. Chat platform adapters belong to the
+integration owner and cannot become an alternative agent or authority store.
 
 `packages/browser/console-cache/src/store/storage.ts` may forward native persistence SQL and bound values unchanged
 to enforce cache-generation validity and an operation deadline. TanStack owns those statements and transaction order.
 This boundary accepts no application SQL and adds no second queue or Worker protocol.
 
-Each migration keeps the statements it applies. The migration owners `runtime/src/store/database.ts` and
-`runtime/src/store/grants.ts` may execute named whole migration statements and released adapter schema statements.
+Each migration keeps the statements it applies. The migration owners `control-store/src/store/database.ts` and
+`control-store/src/store/grants.ts` may execute named whole migration statements and previously released adapter schemas.
 This exception does not admit caller-supplied SQL or fragments. Grant setup binds the role as a value and quotes it as
 an identifier inside its fixed database function. Other runtime store queries remain whole literals with bound values.
 The isolated local-stack bootstrap may create its restricted Postgres role through its fixed `psql` setup script.
@@ -60,9 +60,11 @@ The historical Console fixture in `packages/node/stack/src/fixtures/store/conver
 Postgres seed and upgrade preparation statements. It accepts typed fixture identities, exposes no query API, and runs
 only in the disposable fixture stack. Upgrade checks use the compiled production migrator and authenticated HTTP reads.
 
-Domain transitions that must be atomic, such as reserving usage, claiming a queued run, acknowledging an input, or
-committing a delivery receipt, execute in one transaction. Checks confine pg imports and the private store context to
-the runtime store and inspect PostgreSQL query calls as well as Sandbox SQLite statements.
+Control transitions that must be atomic, such as reserving usage or committing a control-outbox event, execute in one
+Postgres transaction. Notification admission and its native submission commit in one Harness transaction. Delivery
+between owners uses immutable identities and durable retry; it cannot claim a transaction across both databases.
+Checks confine pg imports and the private store context to the control store and inspect PostgreSQL query calls as
+well as Sandbox SQLite statements.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

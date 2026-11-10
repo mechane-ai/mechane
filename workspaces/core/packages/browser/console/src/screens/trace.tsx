@@ -2,9 +2,9 @@ import { Button, Row, Stack } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData, ReadRequest } from '@mechane/console-data';
-import { TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
+import { isImportedTurn, TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
-import type { ConsoleView, Mech, Turn } from '@mechane/protocol';
+import type { ConsoleView, Mech, Trace, Turn } from '@mechane/protocol';
 import { MechId, TurnId } from '@mechane/records';
 import { useRouter } from '@tanstack/react-router';
 import { Schema } from 'effect';
@@ -107,7 +107,7 @@ function ValidTraceScreen({
           <Stack>
             {traceNotice}
             {error !== undefined && <Notice hasError>{error}</Notice>}
-            {cancelableStatuses.has(trace.turn.status) && (
+            {canStopTurn(trace.turn) && (
               <Row>
                 <Button
                   disabled={cancelState !== 'idle'}
@@ -119,9 +119,7 @@ function ValidTraceScreen({
                 </Button>
               </Row>
             )}
-            {cancelState === 'received' && cancelableStatuses.has(trace.turn.status) && (
-              <Notice>Waiting for the run to stop.</Notice>
-            )}
+            {canStopTurn(trace.turn) && cancelState === 'received' && <Notice>Waiting for the run to stop.</Notice>}
             <TurnTrace
               trace={trace}
               tab={tab}
@@ -169,4 +167,8 @@ function ValidTraceScreen({
       </ResourceView>
     </Stack>
   );
+}
+
+function canStopTurn(turn: Trace['turn']): boolean {
+  return !isImportedTurn(turn) && cancelableStatuses.has(turn.status);
 }

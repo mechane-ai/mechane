@@ -29,7 +29,7 @@ Does each concept a change introduces have a glossary word, and does each compou
 ## Local adaptations
 
 Use product words for product concepts and keep upstream SDK names for their own APIs. Do not rename native SDK
-messages, tool calls, stream parts, or workflow identifiers to simulate the retired harness.
+messages, tool calls, stream parts, or task identifiers to simulate the retired harness.
 
 | Word | Meaning | Replaced words |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ messages, tool calls, stream parts, or workflow identifiers to simulate the reti
 | principal | A stable authenticated identity that can hold memberships | — |
 | mech | A durable identity with instructions, working context, and execution environment | — |
 | notification | An immutable accepted input with producer identity and ordered inbox sequence | inbox item (for new admission) |
-| activation | A bounded native Workflow lifetime driving one mech, potentially consuming many notifications | — |
+| activation | A native Pi execution driving one mech, potentially consuming many notifications | — |
 | run | The stored execution record used for an activation or a preserved historical input execution | — |
 | turn | The existing inspection API's name for a run record | — |
 | session | An internal context identity or preserved historical conversation record | — |
@@ -62,7 +62,7 @@ messages, tool calls, stream parts, or workflow identifiers to simulate the reti
 
 The registry's naming checks apply to owned concepts. Native SDK signatures and external fields keep their documented
 names. A standard term with a distinct technical meaning is not a glossary violation; qualify it where a reader could
-confuse the product run, Workflow run, work item, or Slack thread.
+confuse a product run, native task, preserved Workflow run, work item, or Slack thread.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

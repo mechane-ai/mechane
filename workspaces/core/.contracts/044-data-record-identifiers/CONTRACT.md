@@ -29,16 +29,20 @@ Search the change for splitting, substrings, pattern matches, and prefix compari
 
 ## Local adaptations
 
-Product records use random UUIDs or a caller's previously persisted request ID. Native Workflow, AI SDK tool calls,
+Product records use random UUIDs or a caller's previously persisted request ID. Native Pi tasks, AI SDK tool calls,
 Chat platform messages, and provider requests retain their upstream identifiers as opaque values. Their documented
 format is validated at entry where needed; product code does not recover authority or ownership by parsing them.
+
+Decode product UUIDs to lowercase before choosing a Durable Object, comparing identities, or admitting a receipt.
+Uppercase and lowercase UUID spellings name the same record. Preserve opaque upstream identifiers and raw archived
+payloads without case conversion.
 
 A repeated input resolves through its persisted source identity. A tool effect derives one receipt ID from the stable
 run and native tool-call identity, or persists a random receipt ID before dispatch. The record stores the run, tool
 call, and input digest separately. A retry finds that receipt; a different input under the same identity is refused.
 
 Runtime domain IDs are serializable strings; the domain protocol keeps its branded schemas at the wire boundary.
-The native browser conversation transport retains the same serializable IDs used by the upstream Chat instance.
+The browser's public conversation owner retains the serializable message IDs returned by the server.
 Use the same ID when projecting a domain record to a UI row. Mechane Elements accepts caller-supplied opaque string
 identities without creating records or deriving domain fields from them.
 

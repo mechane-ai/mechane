@@ -26,7 +26,10 @@ export async function runBrowser({ store, provider, workspace, requestId }: RunB
   const input = { store, provider, workspace };
 
   if (!(await advanceWorkspace(input))) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the sandbox is completing a file checkpoint' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the sandbox is completing a file checkpoint',
+    });
   }
 
   const assigned = await assignBrowserMachine({ ...input, call });
@@ -37,7 +40,10 @@ export async function runBrowser({ store, provider, workspace, requestId }: RunB
   }
 
   if (Option.isNone(assigned.machineId)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the browser machine is starting or restoring files' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the browser machine is starting or restoring files',
+    });
   }
 
   const machineId = assigned.machineId.value;
@@ -50,13 +56,17 @@ export async function runBrowser({ store, provider, workspace, requestId }: RunB
   const drain = store.machineDrain({ machineId });
 
   if (Option.isSome(drain)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the original browser machine is draining before shutdown' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original browser machine is draining before shutdown',
+    });
   }
 
   const isReleased = await releaseWorkspace({ ...input, machineId, guest: guest.value });
 
   if (!isReleased) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: 'the browser is waiting for its completed workspace checkpoint to release',
     });
   }

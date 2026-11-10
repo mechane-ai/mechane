@@ -70,16 +70,15 @@ The native browser database's `execute<Row>` wrapper in `console-cache/src/store
 return-only type parameter at one budgeted suppression. It forwards the dependency's typed result without a type
 assertion. This exception does not permit schema-free product parsers, `any`, or other assertions.
 
-The runtime operation dispatcher permits one budgeted `type-predicate` suppression at `isOperationInput` in
-`runtime/src/operations/validated-operation.ts`. It combines the declaration's generated parameter, query, and body
+The runtime operation dispatcher permits one budgeted `type-predicate` suppression at `isInput` in
+`packages/worker/runtime/src/operations/validated-operation.ts`. It combines the declaration's generated parameter, query, and body
 schema guards; TypeScript cannot infer their generic intersection. All three checks must pass before the handler sees
 the typed input. This exception permits no cast, `any`, or schema-free predicate, and does not expand to other sites.
 
-A second budgeted `type-predicate` suppression belongs to `HandlerSchema` in
-`server/src/lifecycle/workflow-world.ts`. StandaloneBuilder owns the function signature of the immutable compiled
-artifact's `POST` export; the declaration checks that this export is a function before native handler registration.
-The import path must resolve only inside the installed artifact, never from request data. This is not validation of
-an arbitrary function's behavior and does not allow a predicate on an untrusted plugin or product input.
+A second budgeted `type-predicate` suppression belongs to `nativeId` in
+`packages/worker/runtime/src/actor/records.ts`. Pi exposes nominal numeric IDs without a public decoder. This guard
+checks that a retained ID is a positive safe integer before assigning the upstream nominal type. It does not permit
+a cast, unchecked identifier, private SDK import, or schema-free product parser.
 
 The registry's existing type-predicate and assertion checks retain the baseline at commit 94f2d0f.
 The shipped assets stay unloaded: their satisfies inventory uses warning severity, while local 110 permits only error or off.

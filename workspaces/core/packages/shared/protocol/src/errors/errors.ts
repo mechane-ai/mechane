@@ -11,6 +11,11 @@ export class RouteNotFound extends Schema.TaggedError<RouteNotFound>()('RouteNot
 /** The request's path parameters, query or body do not decode with its operation's schemas. */
 export class RequestInvalid extends Schema.TaggedError<RequestInvalid>()('RequestInvalid', { reason: Schema.String }) {}
 
+/** The immutable operation identity already belongs to a different request payload. */
+export class RequestConflict extends Schema.TaggedError<RequestConflict>()('RequestConflict', {
+  reason: Schema.String,
+}) {}
+
 /** The server cannot start a required dependency with its configured settings. */
 export class ServerMisconfigured extends Schema.TaggedError<ServerMisconfigured>()('ServerMisconfigured', {
   reason: Schema.String,

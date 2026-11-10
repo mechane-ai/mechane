@@ -2,36 +2,47 @@
 
 Read the [repository contracts](.contracts/index.md) and [product contracts](workspaces/core/.contracts/index.md) before
 changing code. The product lives in `workspaces/core`. Its rule registry generates tool configuration and each
-contract's enforcement block.
+contract's enforcement block; change the registry instead of generated files.
 
-Run `.config/bootstrap.sh` on a fresh checkout. Use the pinned tools through mise:
+## Commands
+
+Run `.config/bootstrap.sh` on a fresh checkout. Use the pinned tools through mise from the repository root:
 
 - `mise run setup` installs locked dependencies.
 - `mise run check` runs the complete check graph used by CI.
 - `mise run fix` regenerates configuration and applies the repository's fixers.
-- `mise run start` runs a persistent local installation from source.
-- `mise run local:reset -- --confirm` erases an inactive local installation.
-- `mise run dev` starts a disposable fixture with a scripted model.
+- `mise run dev` starts the retained local fixture with source reload.
+- `mise run start` runs a retained local installation from source.
+- `mise run local:reset -- --confirm` deletes an inactive local installation after successful shutdown.
 - `mise run mechane -- --help` runs the CLI from source.
+- `mise -C workspaces/core run TASK` runs a focused product task.
 
-Declare protocol operations once. Keep the protocol and client independent of Node and Cloudflare imports. Declare
-package members in `dependencies.json` and edges in each `package.json`.
+Follow the [local guide](workspaces/core/packages/node/stack/README.md) for prerequisites, qualified celld identity, and
+resource lifetime. Local tests use the compiled Worker, real durable storage, Docker guests, and TLS Postgres.
 
-Use the schema owned by each boundary. Domain operations retain Effect Schema; AI SDK, Workflow, Chat SDK, and
-json-render use their native schemas and asynchronous APIs. Validate external input and propagate failures to the owning
-HTTP or durable execution boundary. Append migrations after release; keep the recorded format locks current.
+## Ownership
 
-WorkflowAgent owns durable model and tool execution. Postgres owns product records, and Nexus owns access decisions.
-Keep secrets out of workflow arguments, results, and UI streams. Chat SDK owns platform rendering; channel adapters do
-not authorize actions or implement another execution scheduler.
+Pi owns durable agent progression through its public APIs. Mechane owns notification admission, current authorization,
+explicit publications, and effect receipts. Postgres owns shared control data. Sandbox storage and guests own machine
+operations and committed files. Follow the
+[runtime contract](workspaces/core/.contracts/124-durable-agent-runtime/CONTRACT.md); keep one execution owner and
+preserve actual history, context, credentials, and files through migrations.
 
-The retained smoke suite drives built programs against local runtimes. Add scenarios only for consequential guarantees
-under test curation. Do not add unit tests or mocks of Mechane code. Checks require no cloud credentials and call no
-paid models.
+Declare domain operations once in the shared protocol. Keep the protocol and client runtime-neutral. Add package members
+to `dependencies.json` and dependency edges to their manifests with the first consumer.
 
-This repository receives source snapshots from a private development repository. Changes must remain independently
-buildable and preserve required legal attribution. Keep credentials and installation state outside source control.
+Use Effect Schema for domain boundaries and native schemas at SDK boundaries. Keep SQL in its owning store and errors
+explicit. A native Promise or callback does not require an Effect wrapper solely for style. Keep credentials out of
+serialized task state and inspection output. Public replies and reactions require explicit tools.
 
-The OpenTofu example contains no hosted installation identifiers. Infrastructure owns installation resources; agents and
-workspace integrations are runtime API data. Publishing a snapshot does not authorize deploying a service or uploading
-release artifacts.
+## Checks and delivery
+
+Retain checks for consequential failures under [test curation](.contracts/001-test-curation/CONTRACT.md). Preserve
+existing smoke coverage and follow its approval requirements before changing the scenario catalog. Checks call no paid
+models or cloud accounts.
+
+Keep secrets and installation state outside source. Publishing artifacts, running paid models, and deploying services
+require explicit operator authorization.
+[Installation ownership](workspaces/core/.contracts/112-installation-ownership/CONTRACT.md) separates infrastructure
+from runtime records. Record task-owned resources and release only those resources after final use. Preserve required
+legal attribution in independently buildable contributions.

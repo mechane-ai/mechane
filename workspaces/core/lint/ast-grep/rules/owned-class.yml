@@ -15,12 +15,7 @@ rule:
             has:
               kind: class_heritage
               has:
-                any:
-                  - kind: extends_clause
-                    has:
-                      field: value
-                      regex: ^(DurableObject|WorkerEntrypoint|Error$|Data\.TaggedError|Schema\.TaggedError<)
-                  - kind: implements_clause
-                    has:
-                      kind: type_identifier
-                      regex: ^LanguageModelV4$
+                kind: extends_clause
+                has:
+                  field: value
+                  regex: ^(DurableObject|WorkerEntrypoint|Error$|Data\.TaggedError|Schema\.TaggedError<)

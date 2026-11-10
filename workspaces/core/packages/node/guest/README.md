@@ -11,8 +11,9 @@ Layer 6 · node lane · effect dialect · no consumers
 - `src/executions/`: the executions resource: its route, the ledger of every execution by id, one run of bash in a
   process group of its own, and the receipt with its output's tail.
 - `src/workspace/`, `src/archives/` and `src/archive-files/`: asynchronous archive/restore jobs and bounded part IO.
-- `src/quiescence/`: stops command-owned processes before a container workspace snapshot.
-- `image/`: the image's Dockerfile, which copies the bundle that `mise run build:guest` writes beside it.
+- `src/quiescence/`: pauses writers before a container workspace snapshot and retains a final drain until shutdown.
+- `image/`: the Dockerfile, installed `mechane` shim, and guest and CLI bundles that `mise run build:guest` writes
+  beside it.
 
 ## Rules
 
@@ -21,11 +22,12 @@ once in `@mechane/sandbox-wire`, which the Worker's providers and the stack's ho
 
 ## Use
 
-`mise -C workspaces/core run build:guest` bundles `src/main.ts` into `image/guest.mjs`. The stack's host launcher runs
-that bundle as a host machine, and the sandbox image runs it in a container. Its surface is its wire: a `GET` of
-`/machines/<machine id>/health`, and a `PUT` of `/machines/<machine id>/executions/<execution id>` that answers the
-execution's receipt. Workspace routes archive, transfer, restore and release a generation. The ledger freezes new
-commands until release; a failed save can release the live workspace for a later cleanup command.
+`mise -C workspaces/core run build:guest` bundles `src/main.ts` into `image/guest.mjs` and the actual CLI into
+`image/mechane.mjs`. The image installs `mechane` on `PATH` as a Node command that works on either supported image
+architecture. This CLI build reports the protocol release and leaves binary self-update to the image owner. The guest
+serves a `GET` of `/machines/<machine id>/health`, and a `PUT` of `/machines/<machine id>/executions/<execution id>`
+that answers the execution's receipt. Workspace routes archive, transfer, restore and release a generation. The ledger
+freezes new commands until release; a failed save can release the live workspace for a later cleanup command.
 
 ## Never
 
@@ -39,8 +41,15 @@ fails the archive. Host fixtures explicitly select Process scope and do not clai
 files stay outside the home being saved. Raw and compressed byte limits are enforced while streaming, and restoration
 validates part sizes and the whole archive checksum before replacing home contents.
 
-Cloudflare injects its interception CA at runtime. Bash children read the fixed certificate path when they start, so a
-cold checkout trusts the gateway without inheriting ambient credentials or disabling TLS checks.
+Commands receive `MECHANE_CACHE_HOME` and tool-specific npm, pnpm, uv, pip, mise, and Go cache paths in machine scratch.
+Mise installs pinned tools there again after replacement. Home files remain durable, including unknown generated files;
+the archive applies no ignore rules. Size failures identify the tar or gzip representation, observed bytes, and bound.
+
+Installation composition may supply a bounded public CA bundle through guest startup. The guest validates it and
+combines it with Node's public roots and Cloudflare's interception CA when present. Each tool or bash child receives the
+resulting scratch certificate bundle for Node, curl, and git, including a gateway CA injected after startup. Trust is
+never selected by model tool input, baked into an installation-independent image, or replaced with disabled TLS
+verification.
 
 Injected secret values are redacted before command output enters a receipt. A truncated tail also hides a possible
 secret suffix. This prevents accidental disclosure; arbitrary authorized commands can still read their own environment.

@@ -10,6 +10,7 @@ import type { ConfigurationNote } from './types.ts';
 
 /** The kinds whose member holds programs, each of whose `main.ts` files below `src` is an entry. */
 const PROGRAM_KINDS: ReadonlySet<PackageKind> = new Set([
+  PackageKind.App,
   PackageKind.Program,
   PackageKind.LibraryProgram,
   PackageKind.Scenarios,
@@ -27,8 +28,6 @@ const PROGRAM_ENTRIES = '**/main.ts!';
 /** Each generator's `main.ts`, one folder below the generators' root, a production file. */
 const GENERATOR_ENTRIES = '*/main.ts!';
 
-const SERVER_PACKAGE = '@mechane/server';
-const RUNTIME_PACKAGE = '@mechane/runtime';
 const DISTRIBUTION_PACKAGE = '@mechane/distribution';
 
 /** Every TypeScript file below a source root, each a production file. */
@@ -48,11 +47,11 @@ type KnipConfigurationInput = { readonly members: ReadonlyArray<WorkspaceMember>
 type MemberWorkspaceInput = { readonly member: WorkspaceMember };
 
 /**
- * `knip.jsonc`: knip's settings and one workspace for each member but the root, which holds no source. Each takes its
- * entries from its kind and its project from its source roots, all of them production files.
+ * `knip.jsonc`: knip's settings, the root's named license assets, and one workspace for each member. Each member takes
+ * its entries from its kind and its project from its source roots, all of them production files.
  */
 export function knipConfiguration({ members }: KnipConfigurationInput): GeneratedFile {
-  const { knip, knipNotes, kindNotes } = CONTRACTS['code-export-consumers'].values;
+  const { assetEntries, knip, knipNotes, kindNotes } = CONTRACTS['code-export-consumers'].values;
   const packages = members.filter(({ folder }) => folder !== '');
 
   const workspaceEntry: (member: WorkspaceMember) => readonly [string, MemberWorkspace] = (member) => [
@@ -60,7 +59,7 @@ export function knipConfiguration({ members }: KnipConfigurationInput): Generate
     memberWorkspace({ member }),
   ];
 
-  const workspaces = Record.fromEntries(packages.map(workspaceEntry));
+  const workspaces = { '.': { entry: assetEntries }, ...Record.fromEntries(packages.map(workspaceEntry)) };
   const notesByKind: ReadonlyMap<string, ReadonlyArray<string>> = new Map(Record.toEntries(kindNotes));
 
   const kindNote: (member: WorkspaceMember) => ReadonlyArray<ConfigurationNote> = ({ folder, entry }) =>
@@ -102,16 +101,11 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
     };
   }
 
-  if (member.name === SERVER_PACKAGE) {
-    return { entry: ['src/**/main.ts!', 'build/build.mjs'], project: ['src/**/*.ts!', 'build/**/*.mjs'] };
-  }
-
-  if (member.name === RUNTIME_PACKAGE) {
-    return { entry: ['src/execution/run-workflow.ts!'], project: ['src/**/*.ts!'] };
-  }
-
   if (member.name === DISTRIBUTION_PACKAGE) {
-    return { entry: ['src/**/main.ts!', 'testing/shipped-formats.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
+    return {
+      entry: ['src/**/main.ts!', 'src/build/build-worker.ts!', 'testing/shipped-formats.ts'],
+      project: ['src/**/*.ts!', 'testing/**/*.ts'],
+    };
   }
 
   if (member.hasStories) {

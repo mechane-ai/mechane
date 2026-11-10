@@ -1,20 +1,26 @@
 # Installation
 
-Use [mechane.ai](https://mechane.ai) for the hosted service or run the
-[Node service](../workspaces/core/packages/node/stack/README.md) with Postgres. The same compiled runtime runs locally
-and on a managed Node host. Ordinary restarts retain state; explicit reset erases an inactive local installation.
+Deploy the qualified application Worker with its Console assets, Mech and Sandbox Durable Objects, container
+application, and checkpoint bucket. Postgres holds shared control data; Pi and the Mech actor own durable execution. The
+[self-hosting guide](../workspaces/core/docs/self-hosting.md) owns installation steps and database command inputs.
 
-Deploy an immutable Node archive, its console assets, and the separate sandbox service. Follow the
-[self-hosting guide](../workspaces/core/docs/self-hosting.md) for database migration, runtime configuration, and the
-[sandbox infrastructure](../workspaces/core/infrastructure/examples/cloudflare/main.tf). Configure your domain, model
-service, GitHub OAuth app, and secret references. Keep database credentials, OAuth secrets, and workspace secrets out of
-deployment manifests and state.
+Keep one OpenTofu declaration, state, and deployment writer per installation. Select an immutable release and its
+independently pinned qualification digest. Keep every referenced artifact, input, and evidence file beside the receipt.
+The [Cloudflare module](../workspaces/core/infrastructure/modules/cloudflare/README.md) verifies the candidate before
+uploading modules, Console assets, and the guest image.
 
-Use `tofu plan`, inspect the proposed changes, then `tofu apply` for sandbox resources. Upgrade the Node process and
-sandbox service with their matching release artifacts. Workspace members, agents, credentials, and Slack connections are
-managed separately through the running service's CLI or API. Workflow checkpoints belong to Postgres; command receipts
-and filesystem checkpoints belong to the sandbox service.
+Supply runtime database, OAuth, model, keyring, and service secrets through deployment references. Keep migration
+credentials in controlled operator commands, outside Worker bindings. Preserve resource identities, keys, and backups.
+Infrastructure applies do not create workspace members, mechs, or integration credentials.
 
-Follow [operations](../workspaces/core/docs/operations.md) for shared infrastructure state, credential rotation,
-recovery, and workspace access. Contributor setup and checks are described in [development setup](README.md). Retain
-`LICENSE`, `NOTICE`, and dependency notices when redistributing artifacts.
+Follow [operations](../workspaces/core/docs/operations.md) before changing releases or images. Fence execution, save
+files, and require completed stop receipts, actual provider retirement, and capacity release. Historical import requires
+positive retirement evidence and the reviewed source digest. Retrying the same import preserves immutable identities;
+import never clears a maintenance hold or activates an actor.
+
+After applying, require an empty follow-up plan and verify actual Console assets, notification execution, and a restored
+sandbox command. Infrastructure convergence alone does not establish agent behavior.
+
+Use the [local guide](../workspaces/core/packages/node/stack/README.md) for retained source development. Contributor
+setup and checks live in [development setup](README.md). Keep `LICENSE`, `NOTICE`, and dependency notices when
+redistributing artifacts.

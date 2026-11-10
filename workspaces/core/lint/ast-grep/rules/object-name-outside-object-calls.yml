@@ -4,7 +4,7 @@ language: TypeScript
 severity: error
 message: 'Name a sandbox only in its authenticated service boundary, such as `namespace.idFromName(name)` in `sandbox-service/src/settings.ts` (044)'
 files: [packages/**/*.ts]
-ignores: ['**/node_modules/**', packages/worker/sandbox-service/src/settings.ts]
+ignores: ['**/node_modules/**', packages/worker/sandbox/src/service/settings.ts]
 rule:
   kind: property_identifier
   regex: ^(idFromName|idFromString|newUniqueId)$

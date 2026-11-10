@@ -32,10 +32,9 @@ For each suppression of these rules, does its reason name the runtime or library
 
 ## Local adaptations
 
-The sandbox service permits the platform's `DurableObject` and `WorkerEntrypoint` base classes. Tagged Effect errors
-remain permitted. The runtime's model adapter may implement `LanguageModelV4` with the Workflow SDK serialization
-hooks. That class serializes only model, credential-reference, workspace, and billing identifiers. It resolves live
-clients inside its model-call methods. This allowance does not admit class-based domain services or dependency containers.
+The application permits the platform's `DurableObject` and `WorkerEntrypoint` base classes for its bound actors and
+egress entrypoint. Tagged Effect errors and the native boundary errors in contract 024 remain permitted. The Pi model
+provider uses its supported factory interfaces; no model serialization class or class-based domain service is needed.
 
 Record schemas remain values. Keep strict compiler checks, including `erasableSyntaxOnly` and `noImplicitOverride`.
 Effect service containers remain outside this product's dialect; dependencies travel through explicit inputs.

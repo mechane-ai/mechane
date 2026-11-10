@@ -14,14 +14,22 @@ export const bundleHash = Effect.fn('bundleHash')(function* ({
   bundle,
   inherited,
 }: BundleHashInput): Effect.fn.Return<RoleHash, InputUnreadable> {
-  const { role, entry, target, externals } = bundle;
+  const { role, entry, target, externals, conditions } = bundle;
 
   /** Bun's flag that leaves one module out of the bundle. */
   const externalFlag: (name: string) => string = (name) => `--external=${name}`;
+  const resolutionConditions = conditions.map((condition) => `--conditions=${condition}`);
 
   const { stdout } = yield* finishedProcess({
     command: 'bun',
-    args: ['build', join(WORKSPACE_FOLDER, entry), `--target=${target}`, '--minify', ...externals.map(externalFlag)],
+    args: [
+      'build',
+      join(WORKSPACE_FOLDER, entry),
+      `--target=${target}`,
+      '--minify',
+      ...externals.map(externalFlag),
+      ...resolutionConditions,
+    ],
     environment: inherited,
     timeout: CHILD_TIMEOUT,
   }).pipe(Effect.mapError(({ reason }) => new InputUnreadable({ path: entry, reason })));

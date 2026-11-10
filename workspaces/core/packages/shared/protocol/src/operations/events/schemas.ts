@@ -57,7 +57,8 @@ export const Event = Schema.Union([
       ...EVENT_FIELDS,
       type: Schema.Literal(EventType.ConsoleMessage),
       messageId: ConsoleMessageId,
-      turnId: TurnId,
+      /** None means an operator published the message outside an agent activation. */
+      turnId: Schema.OptionFromNullOr(TurnId),
     },
   }),
   wireStruct({

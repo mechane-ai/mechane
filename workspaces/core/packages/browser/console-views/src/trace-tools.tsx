@@ -6,6 +6,7 @@ import { DateTime, Duration, Option } from 'effect';
 import type { ReactNode } from 'react';
 import { durationLabel } from './format.ts';
 import { TraceToolDetails } from './trace-tool-details.tsx';
+import { isImportedTurn } from './turn-outcome.ts';
 
 const toolStatuses = { running: 'running', completed: 'complete', failed: 'failed', unknown: 'unknown' } as const;
 const COMMAND_PREVIEW_CHARACTERS = 160;
@@ -13,6 +14,8 @@ const COMMAND_PREVIEW_CHARACTERS = 160;
 type ToolOutcome = { readonly status: TraceStatus; readonly label: string };
 
 export function TraceTools({ trace }: { readonly trace: Trace }): ReactNode {
+  const isImported = isImportedTurn(trace.turn);
+
   if (trace.toolCalls === undefined) {
     return <EmptyState title="Tool evidence unavailable" />;
   }
@@ -34,9 +37,15 @@ export function TraceTools({ trace }: { readonly trace: Trace }): ReactNode {
             id={call.id}
             label={call.name}
             {...(preview === undefined ? {} : { description: preview })}
-            status={outcome.status}
-            statusLabel={timing === undefined ? outcome.label : `${outcome.label} · ${timing}`}
-            detail={<TraceToolDetails call={call} />}
+            status={isImported && outcome.status === 'running' ? 'unknown' : outcome.status}
+            statusLabel={
+              isImported && outcome.status === 'running'
+                ? 'Imported'
+                : timing === undefined
+                  ? outcome.label
+                  : `${outcome.label} · ${timing}`
+            }
+            detail={<TraceToolDetails call={call} isImported={isImported} />}
           />
         );
       })}

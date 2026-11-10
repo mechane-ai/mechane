@@ -13,7 +13,11 @@ import type { ExecutionUnstarted, GuestMisconfigured, GuestUnreachable, Workspac
 import type { GuestEnvironment } from './schemas.ts';
 
 /** What the guest reads from its environment, and its working folder, the home every execution starts in. */
-export type GuestSettings = GuestEnvironment & { readonly home: string; readonly toolTarget: string };
+export type GuestSettings = GuestEnvironment & {
+  readonly home: string;
+  readonly toolTarget: string;
+  readonly scratchDirectory: string;
+};
 
 /** An execution to answer: its id, what it runs, and how long the answer waits for it to settle. */
 export type AnswerInput = {

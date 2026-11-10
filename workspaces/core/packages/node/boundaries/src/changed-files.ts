@@ -1,20 +1,20 @@
 import {
   BASELINE_FOLDER,
   contractLock,
-  decodeFile,
   FACTORY_FOLDER,
   folderPrefixPath,
   gitLines,
   lockedAssets,
   mergeBase,
+  MODULE_GRAPH,
+  readModuleGraph,
   trackedFiles,
   WORKSPACE_FOLDER,
 } from '@mechane/checks-kernel';
 import type { InputUnreadable } from '@mechane/checks-kernel';
-import { Effect, Schema } from 'effect';
+import { Effect } from 'effect';
 import { existsSync } from 'node:fs';
 import { basename, relative } from 'node:path';
-import { MODULE_GRAPH } from './constants.ts';
 import { withImporters } from './with-importers.ts';
 
 /**
@@ -34,9 +34,6 @@ const CONFIGURATION_NAMES: ReadonlySet<string> = new Set([
 
 /** The workspace's folder of lint rules and declared values, each a configuration, and of the ratchets' baselines. */
 const LINT_FOLDER = 'lint/';
-
-/** The module graph the boundaries check writes: each cruised file and the files it imports. */
-const ModuleGraph = Schema.Record(Schema.String, Schema.Array(Schema.String));
 
 type ChangedFilesInput = { readonly baseBranch: string; readonly inherited: Readonly<Record<string, string>> };
 
@@ -75,7 +72,7 @@ export const changedFiles = Effect.fn('changedFiles')(function* ({
     return files;
   }
 
-  const graph = yield* decodeFile({ path: MODULE_GRAPH, schema: ModuleGraph });
+  const graph = yield* readModuleGraph();
   const inWorkspace = changed.filter((path) => path.startsWith(workspace)).map((path) => path.slice(workspace.length));
   const current = new Set(files);
 

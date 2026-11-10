@@ -11,16 +11,25 @@ type ArchiveDocumentInput<S extends Schema.Codec<unknown, unknown>> = {
   readonly entry: string;
   readonly schema: S;
   readonly settings: DistributionSettings;
+  readonly format?: 'zip' | undefined;
 };
 
-/** Decodes one named OCI document without extracting archive paths onto the filesystem. */
+/** Metadata is decoded without allowing an archive to write filesystem paths. */
 export const archiveDocument = Effect.fn('archiveDocument')(function* <S extends Schema.Codec<unknown, unknown>>({
   path,
   entry,
   schema,
   settings,
+  format,
 }: ArchiveDocumentInput<S>): Effect.fn.Return<S['Type'], DistributionFailed, S['DecodingServices']> {
-  const text = yield* runCommand({ command: 'tar', args: ['-xOf', path, entry], settings });
+  const reader = { command: 'tar', args: ['-xOf', path, entry] };
+
+  if (format === 'zip') {
+    reader.command = 'unzip';
+    reader.args = ['-p', path, entry];
+  }
+
+  const text = yield* runCommand({ ...reader, settings });
 
   return yield* decodeJsonc({
     text,

@@ -50,7 +50,8 @@ The owned mise bootstrap uses the read-only job token only with GitHub's API and
 token. It verifies immutable release metadata, asset and published checksums, and the binary digest declared in
 `.config/mise-release.sh` before executing the binary. The official pinned mise action consumes that verified local
 installation; tool versions and package installation still follow the repository lockfiles.
-When the check fails, a last step prints the retained local Node service and sandbox guest logs, so the run's log holds the stack's diagnostics.
+When the check fails, a last step prints the retained celld application and environment logs, database setup,
+build, and Console logs. The run's log keeps these diagnostics without dumping durable storage or credentials.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,

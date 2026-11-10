@@ -1,7 +1,7 @@
 ---
 name: security-cli-credential-lifecycle
 message: Store CLI credentials owner-only and atomically, bound to their origin, and never print them or accept them as arguments.
-paths: ["packages/node/cli/src/**", "packages/shared/client/src/**"]
+paths: ["packages/node/cli/src/**", "packages/node/cli-login/src/**", "packages/shared/client/src/**"]
 ---
 
 ## Rules

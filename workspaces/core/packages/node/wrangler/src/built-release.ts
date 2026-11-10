@@ -18,7 +18,7 @@ import { readJsonc } from './read-jsonc.ts';
 import { BaseConfiguration } from './schemas.ts';
 
 const CORE_URL: Readonly<URL> = new URL('../../../../', import.meta.url);
-const DESCRIPTOR_URL: Readonly<URL> = new URL('../../../worker/sandbox-service/dist/release.json', import.meta.url);
+const DESCRIPTOR_URL: Readonly<URL> = new URL('../../../worker/server/.output/release.json', import.meta.url);
 const CORE_FOLDER = fileURLToPath(CORE_URL);
 const DESCRIPTOR_FILE = fileURLToPath(DESCRIPTOR_URL);
 const COMMIT_TIMEOUT = Duration.seconds(10);

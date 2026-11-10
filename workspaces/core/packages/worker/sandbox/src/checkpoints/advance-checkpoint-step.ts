@@ -1,4 +1,4 @@
-import { FileCheckpointResult } from '@mechane/sandbox-store';
+import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { DateTime, Option, Result } from 'effect';
 import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
@@ -7,6 +7,8 @@ import { archiveCheckpoint } from './archive-checkpoint.ts';
 import { commitCheckpoint } from './commit-checkpoint.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { reconcileStoredCheckpoint } from './reconcile-stored-checkpoint.ts';
+import { assertRecoveryCheckpointFence } from './recovery-checkpoint-fence.ts';
+import { releaseRecoveryCheckpoint } from './release-recovery-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 import { uploadCheckpointPart } from './upload-checkpoint-part.ts';
 
@@ -20,8 +22,20 @@ export async function advanceCheckpointStep({
   const input = { store, provider, workspace, checkpoint };
   const { archive, machineId, generation } = checkpoint;
 
+  if (!('executionId' in checkpoint) && FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+    const result = store.fileCheckpointResult({ purpose: checkpoint.purpose });
+
+    if (Option.exists(result, FileCheckpointResult.guards.Failed)) {
+      await releaseRecoveryCheckpoint(input);
+
+      return;
+    }
+
+    assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
+  }
+
   if (await reconcileStoredCheckpoint(input)) {
-    commitCompletedCheckpoint(input);
+    await commitCompletedCheckpoint(input);
 
     return;
   }
@@ -65,10 +79,10 @@ export async function advanceCheckpointStep({
   }
 
   await uploadCheckpointPart({ ...input, archive: archive.value, guest: guest.value });
-  commitCompletedCheckpoint(input);
+  await commitCompletedCheckpoint(input);
 }
 
-function commitCompletedCheckpoint({ store, checkpoint, ...input }: CheckpointStepInput): void {
+async function commitCompletedCheckpoint({ store, checkpoint, ...input }: CheckpointStepInput): Promise<void> {
   const current = store.workspace().checkpoint;
 
   if (Option.isNone(current) || current.value.generation !== checkpoint.generation) {
@@ -81,7 +95,7 @@ function commitCompletedCheckpoint({ store, checkpoint, ...input }: CheckpointSt
     return;
   }
 
-  commitCheckpoint({ store, ...input, checkpoint: current.value, archive: archive.value });
+  await commitCheckpoint({ store, ...input, checkpoint: current.value, archive: archive.value });
 }
 
 function assertCheckpointDeadline({ checkpoint }: CheckpointStepInput): void {

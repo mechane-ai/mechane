@@ -12,6 +12,7 @@ import { applyNormalizers } from './fixers/apply-normalizers.ts';
 import { loadChecksSettings } from './load-checks-settings.ts';
 import { measureRules } from './measure/measure-rules.ts';
 import { runChecks } from './run-checks.ts';
+import { affectedChecks } from './selection/qualification.ts';
 import { tightenBaselines } from './tighten-baselines.ts';
 import type { ChecksSettings } from './types.ts';
 import { writeLines } from './write-lines.ts';
@@ -40,10 +41,23 @@ const COMMAND_RUNS: Readonly<Record<ChecksCommand, CommandRun>> = {
   [ChecksCommand.Lint]: ({ paths, inherited }) => runLint({ paths, inherited }),
   [ChecksCommand.Tighten]: ({ baseBranch, inherited }) => tightenBaselines({ baseBranch, inherited }),
   [ChecksCommand.Merge]: ({ paths }) => mergeBaselines({ paths }),
-  [ChecksCommand.Fingerprint]: ({ inherited }) => printed({ lines: fingerprintLines({ inherited }) }),
+  [ChecksCommand.Fingerprint]: ({ inherited }) => {
+    const lines = fingerprintLines({ inherited });
+
+    return printed({ lines });
+  },
   [ChecksCommand.Record]: ({ inherited }) => recordFingerprint({ inherited }),
   [ChecksCommand.Compare]: ({ inherited }) => compareFingerprint({ inherited }),
-  [ChecksCommand.Changed]: ({ baseBranch, inherited }) => printed({ lines: changedFiles({ baseBranch, inherited }) }),
+  [ChecksCommand.Changed]: ({ baseBranch, inherited }) => {
+    const lines = changedFiles({ baseBranch, inherited });
+
+    return printed({ lines });
+  },
+  [ChecksCommand.Affected]: ({ inherited }) => {
+    const lines = affectedChecks({ inherited });
+
+    return printed({ lines });
+  },
   [ChecksCommand.Measure]: ({ inherited }) => measureRules({ inherited }),
   [ChecksCommand.Lock]: () => appendLocks(),
   [ChecksCommand.Normalize]: ({ paths }) => applyNormalizers({ paths }),

@@ -68,4 +68,11 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       "CREATE TRIGGER process_completion AFTER UPDATE OF record ON managed_processes WHEN (json_extract(OLD.record, '$.observation.state._tag') IS NULL OR json_extract(OLD.record, '$.observation.state._tag') = 'Running') AND json_extract(NEW.record, '$.observation.state._tag') IN ('Exited', 'Stopped', 'Lost') BEGIN INSERT INTO sandbox_completions (execution_id, kind, receipt) VALUES (NEW.id, 'process', json_object('executionId', NEW.id, 'kind', 'process', 'machineId', NEW.machine_id, 'status', lower(json_extract(NEW.record, '$.observation.state._tag')), 'exitCode', json_extract(NEW.record, '$.observation.state.exitCode'))) ON CONFLICT DO NOTHING; END",
     );
   },
+  ({ sql }) => {
+    sql.exec('CREATE TABLE sandbox_stops (operation_id TEXT PRIMARY KEY, receipt TEXT NOT NULL) STRICT');
+    sql.exec('ALTER TABLE executions ADD COLUMN command_outcome TEXT');
+  },
+  ({ sql }) => {
+    sql.exec('ALTER TABLE file_checkpoint_results ADD COLUMN purpose TEXT');
+  },
 ];

@@ -56,7 +56,7 @@ export const MECH_COMMANDS = {
   },
   'mech fork': {
     summary:
-      'fork an idle mech into a new identity with its context and history; sandbox files remain with the source mech',
+      'fork an idle mech into a paused identity with its working context and linked source history; sandbox files remain with the source mech',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'forkMech'],
     flags: {

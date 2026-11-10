@@ -7,8 +7,8 @@ ignores:
   [
     '**/node_modules/**',
     packages/browser/console-cache/src/store/storage.ts,
-    packages/node/runtime/src/store/database.ts,
-    packages/node/runtime/src/store/grants.ts,
+    packages/worker/control-store/src/store/database.ts,
+    packages/worker/control-store/src/store/grants.ts,
     packages/node/stack/src/postgres.ts,
   ]
 rule:

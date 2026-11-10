@@ -16,10 +16,11 @@ import { contextSurvivesRestart } from './context/context-survives-restart.ts';
 import { forkKeepsAnIndependentContext } from './context/fork-keeps-an-independent-context.ts';
 import { gradesOnlyValidIsolatedEvaluations } from './evals/grades-only-valid-isolated-evaluations.ts';
 import { producerIsBoundToRecipient } from './notifications/producer-is-bound-to-recipient.ts';
+import { actorFailureRemainsInspectable } from './recovery/actor-failure-remains-inspectable.ts';
+import { actorViewsReplayWithinTheirWorkspace } from './recovery/actor-views-replay-within-their-workspace.ts';
 import { externalNotificationSurvivesRestart } from './recovery/external-notification-survives-restart.ts';
 import { importedConversationRemainsReadable } from './recovery/imported-conversation-remains-readable.ts';
-import { nativeStreamFailureIsReplayable } from './recovery/native-stream-failure-is-replayable.ts';
-import { nativeStreamReplaysWithinItsWorkspace } from './recovery/native-stream-replays-within-its-workspace.ts';
+import { selfWakeSurvivesRestart } from './recovery/self-wake-survives-restart.ts';
 import { cancellationPreservesPendingNotifications } from './runs/cancellation-preserves-pending-notifications.ts';
 import { duplicateNotificationRunsAndChargesOnce } from './runs/duplicate-notification-runs-and-charges-once.ts';
 import { pausedAdmissionResumes } from './runs/paused-admission-resumes.ts';
@@ -95,8 +96,8 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     run: forkKeepsAnIndependentContext,
   },
   {
-    guarantee: 'bounded activations preserve work and complete traces without repeated effects or charges',
-    regression: 'context rotation loses work, drops tool evidence, publishes private text, or overlaps owners',
+    guarantee: 'native compaction bounds working context while preserving history, effects, and charges',
+    regression: 'compaction loses history, sends lifetime context, repeats effects, or omits a provider reservation',
     run: boundedActivationPreservesWork,
   },
   {
@@ -105,8 +106,14 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     run: externalNotificationSurvivesRestart,
   },
   {
-    guarantee: 'a newer notification prevents a stale tool effect before admission',
-    regression: 'a delayed model response executes an obsolete action or starts a competing owner',
+    guarantee: 'a self wake survives restart with one immutable deadline and respects cancellation',
+    regression: 'a scheduled wake is lost, repeated, shifted by retry, or delivered after cancellation',
+    run: selfWakeSurvivesRestart,
+  },
+  {
+    guarantee: 'newer notifications and workspace policy prevent stale effects before external dispatch',
+    regression:
+      'a correction or workspace suspension during tool discovery permits an obsolete effect or competing owner',
     run: pendingNotificationPreventsStaleTool,
   },
   {
@@ -126,15 +133,15 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     run: importedConversationRemainsReadable,
   },
   {
-    guarantee: 'private native traces replay within their authenticated workspace',
+    guarantee: 'actor views reconnect within their authenticated workspace without repeating effects',
     regression: 'reconnection repeats model work, corrupts the message, or exposes another workspace',
-    run: nativeStreamReplaysWithinItsWorkspace,
+    run: actorViewsReplayWithinTheirWorkspace,
   },
   {
-    guarantee: 'a failed native stream reports its error and replays without another model call',
+    guarantee: 'a failed provider request stays inspectable after restart without another model call',
     regression:
       'provider errors lose actionable diagnostics, disclose private fields, appear successful, or repeat model work on replay',
-    run: nativeStreamFailureIsReplayable,
+    run: actorFailureRemainsInspectable,
   },
   {
     guarantee: 'evaluations grade valid results without exposing expectations or repeating paid work',
@@ -143,13 +150,13 @@ export const CATALOG: ReadonlyArray<Scenario> = [
     run: gradesOnlyValidIsolatedEvaluations,
   },
   {
-    guarantee: 'an interrupted command retains one receipt and its mech workspace',
-    regression: 'a runtime restart repeats a shell effect or loses the persistent workspace',
+    guarantee: 'an interrupted command retains one receipt and recovers its committed environment',
+    regression: 'a restart repeats a shell effect, loses committed files, or bypasses a failed checkpoint fence',
     run: interruptedCommandKeepsItsReceipt,
   },
   {
-    guarantee: 'background completion wakes once and lost files gate work until explicit recovery',
-    regression: 'callbacks repeat wakes, checkpoints stop managed writers, or an old snapshot clears a lost-file fence',
+    guarantee: 'background completion wakes once while unrelated foreground work remains available',
+    regression: 'callbacks repeat wakes or ordinary work stops the managed process before completion',
     run: backgroundCompletionWakesOnce,
   },
   {
@@ -159,7 +166,7 @@ export const CATALOG: ReadonlyArray<Scenario> = [
   },
   {
     guarantee: 'credentials stay out of durable execution records and logs',
-    regression: 'workflow serialization or diagnostics retain a resolved provider or user credential',
+    regression: 'actor persistence or diagnostics retain a resolved provider or user credential',
     run: credentialsStayOutOfDurableExecution,
   },
   {

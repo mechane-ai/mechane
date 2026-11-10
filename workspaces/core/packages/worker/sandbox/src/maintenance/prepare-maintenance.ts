@@ -1,6 +1,7 @@
 import { SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import { PortableMaintenanceRefused } from '../errors.ts';
+import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
 import type { ManagePortableInput } from './types.ts';
 
 type PrepareMaintenanceInput = Pick<ManagePortableInput, 'store' | 'request'>;
@@ -16,6 +17,14 @@ export function prepareMaintenance({ store, request }: PrepareMaintenanceInput):
 
   if (request.action === SandboxAction.Delete) {
     return SandboxPhase.Retire;
+  }
+
+  if (hasUncheckpointedMachineLoss({ store })) {
+    if (Option.isNone(state.head)) {
+      throw new PortableMaintenanceRefused({ reason: 'the lost environment has no committed generation to restore' });
+    }
+
+    return SandboxPhase.Create;
   }
 
   return SandboxPhase.Quiesce;

@@ -100,6 +100,8 @@ export type CommandResult<N extends CommandName> = {
 
 /** Where a command finds its key: the API key variable's when it holds one, else the login saved below the root. */
 export type CredentialSettings = {
+  /** None for a member invocation; self tokens never enter the saved login. */
+  readonly selfToken: Option.Option<Redacted.Redacted>;
   /** Absent when the API key variable is unset. */
   readonly apiKey: Option.Option<Redacted.Redacted>;
   /** The folder whose `mechane` folder holds the saved login. */

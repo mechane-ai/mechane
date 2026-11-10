@@ -36,6 +36,7 @@ export function hostProvider({
   launcherKey,
   additionalTools,
   isBrowserSandboxDisabled,
+  trustedCertificatesPem,
 }: HostProviderInput): MachineProvider {
   const start: MachineProvider['start'] = async ({ machineId }) => {
     await hostMachine({
@@ -43,6 +44,7 @@ export function hostProvider({
       launcherKey,
       additionalTools,
       isBrowserSandboxDisabled,
+      trustedCertificatesPem,
       machineId,
       method: HttpMethod.Put,
     });
@@ -54,6 +56,7 @@ export function hostProvider({
       launcherKey,
       additionalTools,
       isBrowserSandboxDisabled,
+      trustedCertificatesPem,
       machineId,
       method: HttpMethod.Get,
     });
@@ -97,6 +100,7 @@ export function hostProvider({
         launcherKey,
         additionalTools,
         isBrowserSandboxDisabled,
+        trustedCertificatesPem,
         machineId,
         method: HttpMethod.Get,
       });
@@ -124,6 +128,7 @@ async function hostMachine({
   launcherKey,
   additionalTools,
   isBrowserSandboxDisabled,
+  trustedCertificatesPem,
   machineId,
   method,
 }: HostReportInput): Promise<HostMachine> {
@@ -146,6 +151,7 @@ async function hostMachine({
         additionalTools,
         isBrowserSandboxDisabled,
         browserCertificateFile,
+        trustedCertificatesPem,
       },
     });
 

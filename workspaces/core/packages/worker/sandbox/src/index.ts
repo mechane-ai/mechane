@@ -1,6 +1,14 @@
+/**
+ * Cloudflare loads this class through the application Worker's SANDBOXES Durable Object binding.
+ *
+ * @public
+ */
 export { SandboxObject } from './sandbox-object.ts';
+/**
+ * The Cloudflare container provider calls this entrypoint through state.exports.EgressGateway.
+ *
+ * @public
+ */
 export { EgressGateway } from './egress/egress-gateway.ts';
-export type { SandboxEnvironment } from './environment.ts';
-export { runtimeOrigin, runtimeHeaders, sandboxServiceKey } from './capacity/runtime-transport.ts';
-export { sandboxRuntimeSettings } from './providers/sandbox-settings.ts';
-export { writeSandboxFailure } from './output/write-sandbox-diagnostic.ts';
+export { serveSandbox } from './service/serve-sandbox.ts';
+export type { SandboxServiceEnvironment } from './service/settings.ts';

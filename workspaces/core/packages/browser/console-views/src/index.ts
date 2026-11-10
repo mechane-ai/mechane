@@ -17,3 +17,5 @@ export {
   EnvironmentProcessOutputPlaceholder,
 } from './environment.tsx';
 export { EvidenceDetailsPlaceholder } from './evidence.tsx';
+
+export { isImportedTurn } from './turn-outcome.ts';

@@ -1,5 +1,6 @@
+import type { SandboxContainerNetwork } from '@mechane/deployment';
 import type { SandboxTools } from '@mechane/sandbox-wire';
-import type { Redacted } from 'effect';
+import type { Option, Redacted } from 'effect';
 import type { EgressGateway } from '../egress/egress-gateway.ts';
 import type { MachineIdInput } from '../types.ts';
 
@@ -8,8 +9,10 @@ export type ContainerProviderInput = {
   readonly container: Container;
   readonly state: DurableObjectState;
   readonly gateway: () => Fetcher;
+  readonly containerNetwork: SandboxContainerNetwork;
   readonly additionalTools: SandboxTools;
   readonly isBrowserSandboxDisabled: boolean;
+  readonly trustedCertificatesPem: Option.Option<string>;
 };
 
 type GatewayModule = { readonly EgressGateway: typeof EgressGateway };
@@ -29,6 +32,7 @@ export type HostProviderInput = {
   readonly launcherKey: Redacted.Redacted;
   readonly additionalTools: SandboxTools;
   readonly isBrowserSandboxDisabled: boolean;
+  readonly trustedCertificatesPem: Option.Option<string>;
 };
 
 /** A machine's request to the host launcher, which starts the machine once and reports it after, or stops it. */

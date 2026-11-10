@@ -4,10 +4,13 @@ import { Transform } from 'node:stream';
 import { WorkspaceFailed } from '../errors.ts';
 import type { WorkspaceFilesInput } from '../types.ts';
 
-type BoundedArchiveInput = Pick<WorkspaceFilesInput, 'generation'> & { readonly maximumBytes: Bytes };
+type BoundedArchiveInput = Pick<WorkspaceFilesInput, 'generation'> & {
+  readonly maximumBytes: Bytes;
+  readonly representation: 'uncompressed tar stream' | 'compressed gzip archive';
+};
 
 /** Fails a streaming archive as soon as its byte count exceeds the configured limit. */
-export function boundedArchive({ generation, maximumBytes }: BoundedArchiveInput): Transform {
+export function boundedArchive({ generation, maximumBytes, representation }: BoundedArchiveInput): Transform {
   const state = { bytes: 0 };
 
   return new Transform({
@@ -18,7 +21,7 @@ export function boundedArchive({ generation, maximumBytes }: BoundedArchiveInput
         const failure = new WorkspaceFailed({
           generation,
           step: WorkspaceStep.Archive,
-          reason: `workspace exceeds its ${maximumBytes} byte limit`,
+          reason: `workspace ${representation} reached ${state.bytes} bytes, exceeding its ${maximumBytes} byte limit; files were not committed and remain on the live machine`,
         });
 
         callback(failure);

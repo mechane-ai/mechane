@@ -8,8 +8,8 @@ import type { DistributionInput } from '../types.ts';
 import { verifyCliAssets } from './verify-cli-assets.ts';
 import { verifyGuestAsset } from './verify-guest-asset.ts';
 import { verifyModule } from './verify-module.ts';
-import { verifyNodeArchive } from './verify-node-archive.ts';
 import { verifyReceipt } from './verify-receipt.ts';
+import { verifyRuntimeRelease } from './verify-runtime-release.ts';
 
 /** Verifies a complete release receipt, module contents, guest identity, and CLI manifest before publication. */
 export const verifyDistribution = Effect.fn('verifyDistribution')(function* ({
@@ -33,7 +33,7 @@ export const verifyDistribution = Effect.fn('verifyDistribution')(function* ({
   yield* verifyGuestAsset({ settings, manifest, receipt });
   yield* verifyModule({ settings, manifest });
   yield* verifyCliAssets({ settings, receipt });
-  yield* verifyNodeArchive({ settings, receipt });
+  yield* verifyRuntimeRelease({ settings, receipt, manifest });
 
   return receipt;
 });

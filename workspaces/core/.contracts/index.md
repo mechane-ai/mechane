@@ -128,11 +128,11 @@ from 101 are Mechane's own.
 - [Installation ownership](112-installation-ownership/CONTRACT.md): immutable releases, one infrastructure owner, and runtime data preserved across applies.
 
 - [Execution access](120-execution-access/CONTRACT.md): current generic grants, credential references, and honest execution receipts.
-- [External result notifications](121-thread-continuations/CONTRACT.md): correlated external-result notifications without blocked mechs or implicit replies.
+- [Mech notifications](121-mech-notifications/CONTRACT.md): immutable admission, observed input, external outcomes, and durable self-wakes.
 - [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.
 - [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-mech context, and conservative spend reservations.
 
-- [Native Workflow runtime](124-native-workflow-runtime/CONTRACT.md): one model owner, bounded native activations, and durable notification handoff.
+- [Durable agent runtime](124-durable-agent-runtime/CONTRACT.md): one Pi execution owner, guarded tools, and metered provider attempts.
 - [Notification and communication boundaries](125-channel-delivery/CONTRACT.md): generic authenticated producers and explicit addressed communication tools.
 - [Structured presentation](126-structured-presentation/CONTRACT.md): explicit public messages with one bounded catalog and an Elements renderer.
 

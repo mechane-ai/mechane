@@ -1,11 +1,11 @@
 variable "account_id" {
-  description = "Cloudflare account that owns the compute service and gateway."
+  description = "Cloudflare account that owns the application and environment resources."
   type        = string
   nullable    = false
 }
 
 variable "name" {
-  description = "Permanent compute Worker identity."
+  description = "Permanent application Worker identity. Preserve the existing name during upgrades."
   type        = string
   default     = "mechane-sandbox"
   nullable    = false
@@ -17,7 +17,7 @@ variable "name" {
 }
 
 variable "domain" {
-  description = "Public HTTPS hostname and aliases forwarded to the Node service."
+  description = "Public HTTPS hostname and aliases served by the application Worker."
   type = object({
     hostname = string
     zone_id  = string
@@ -34,25 +34,49 @@ variable "domain" {
   }
 }
 
-variable "runtime" {
-  description = "Private Node service origin. Its authentication secret is referenced separately."
-  type        = object({ origin = string })
+variable "qualification" {
+  description = "Pinned qualification receipt and adjacent immutable candidate files, inputs, and check evidence."
+  type = object({
+    path   = string
+    sha256 = string
+  })
+  nullable = false
+
+  validation {
+    condition     = length(var.qualification.path) > 0 && can(regex("^[0-9a-f]{64}$", var.qualification.sha256))
+    error_message = "Supply the qualification receipt path and its complete lowercase SHA-256 digest."
+  }
+}
+
+variable "settings" {
+  description = "Non-secret application settings. The module owns origins and environment resource settings."
+  type        = map(string)
+  default     = {}
   nullable    = false
 
   validation {
-    condition     = can(regex("^https://[a-z0-9]([a-z0-9-]*[a-z0-9])?\\.(modal\\.run|[a-z0-9]([a-z0-9-]*[a-z0-9])?\\.modal\\.direct)/?$", var.runtime.origin))
-    error_message = "Supply a bare HTTPS Modal origin: service.modal.run or service.region.modal.direct."
+    condition = alltrue([
+      for name in keys(var.settings) : can(regex("^MECHANE_[A-Z0-9_]+$", name)) &&
+      !contains(["MECHANE_DATABASE_URL", "MECHANE_MIGRATION_DATABASE_URL", "MECHANE_CREDENTIAL_KEYRING", "MECHANE_MODEL_UPSTREAM_KEY", "MECHANE_GITHUB_CLIENT_SECRET", "MECHANE_SANDBOX_SERVICE_KEY", "MECHANE_NEXUS_SIGNING_SECRET"], name)
+    ])
+    error_message = "Supply named non-secret MECHANE settings; database, model, OAuth, signing, and encryption credentials require secret references."
   }
 }
 
 variable "secrets" {
-  description = "Cloudflare Secrets Store references for the private runtime transport and sandbox API."
+  description = "Cloudflare Secrets Store names keyed by application binding. Credential values never enter state."
   type = object({
-    store_id          = string
-    runtime_transport = string
-    sandbox_service   = string
+    store_id = string
+    bindings = map(string)
   })
   nullable = false
+
+  validation {
+    condition = length(var.secrets.store_id) > 0 && contains(keys(var.secrets.bindings), "MECHANE_SANDBOX_SERVICE_KEY") && alltrue([
+      for name, secret_name in var.secrets.bindings : can(regex("^MECHANE_[A-Z0-9_]+$", name)) && length(secret_name) > 0 && !contains(["MECHANE_MIGRATION_DATABASE_URL", "MECHANE_RUNTIME_TRANSPORT", "MECHANE_SANDBOX_KEY"], name)
+    ])
+    error_message = "Supply the shared sandbox service key and application secret references. Migration credentials and retired transport aliases cannot be Worker bindings."
+  }
 }
 
 variable "storage" {
@@ -67,7 +91,7 @@ variable "storage" {
 }
 
 variable "sandboxes" {
-  description = "Compute capacity, installed tools, and browser egress. The Node service owns admission."
+  description = "Compute capacity, installed tools, and browser egress. The application owns admission."
   type = object({
     application_name         = optional(string)
     instance_type            = optional(string, "standard-1")

@@ -3,6 +3,7 @@ import { Report } from '@mechane/eval';
 import {
   ConnectionDeletion,
   ConnectionList,
+  ConsoleMessage,
   CredentialDeletion,
   CredentialList,
   CredentialMetadata,
@@ -19,6 +20,8 @@ import {
   ToolGrantList,
   Trace,
   TurnCancel,
+  Wake,
+  WakeList,
 } from '@mechane/protocol';
 import type { Schema } from 'effect';
 import { UpdateResult } from '../schemas.ts';
@@ -61,6 +64,11 @@ export const COMMAND_OUTPUTS = {
   'mech archive': Mech,
   'mech revisions': MechRevisionPage,
   'notification send': NotificationReceipt,
+  'self wake schedule': Wake,
+  'self wake show': Wake,
+  'self wake list': WakeList,
+  'self wake cancel': Wake,
+  'self message': ConsoleMessage,
   'event list': ListedEvent,
   'turn show': Trace,
   'turn cancel': TurnCancel,

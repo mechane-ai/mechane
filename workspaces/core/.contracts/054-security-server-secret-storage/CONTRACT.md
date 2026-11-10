@@ -1,7 +1,7 @@
 ---
 name: security-server-secret-storage
 message: Encrypt held secrets bound to their record, keep keys outside the database, and never log secret values.
-paths: ["packages/node/runtime/**", "packages/node/server/**", "packages/node/stack/**", "packages/worker/sandbox*/**", "infrastructure/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**", "packages/node/stack/**", "packages/worker/sandbox*/**", "infrastructure/**"]
 ---
 
 ## Rules
@@ -40,9 +40,9 @@ Workspace vault records use AES-256-GCM with a fresh 96-bit nonce and key versio
 workspace, and credential reference. The keyring stays outside the database. Owner-only write operations and metadata
 reads expose no credential-value API.
 
-Workflow arguments, results, and model serialization contain references rather than resolved secrets. Trusted steps
+Pi task arguments, results, and model serialization contain references rather than resolved secrets. Trusted boundaries
 resolve credentials immediately before use. The model adapter reconstructs its provider with live credentials inside
-the request boundary. The complete serialized workflow state is part of credential-leak verification.
+the request boundary. Complete native durable state is part of credential-leak verification.
 
 Command execution receives only its explicit current generic grant. Host infrastructure and notification-producer
 secrets never become command credentials. Provider issuance and platform secrets belong to the configured application
@@ -51,8 +51,9 @@ credentials, so authorization remains distinct from accidental-output redaction.
 contain no raw credential-bearing bodies.
 
 The sandbox gateway injects no upstream account credential. Runtime and migration database connections remain separate;
-the runtime receives only its domain and Workflow privileges. Upstream schema bootstrap belongs to the explicit
-migration process. Application code does not edit upstream private tables or delete retained platform history.
+the runtime receives the control store's declared rights, without schema changes or writes to retired execution
+engines. Schema changes belong to the explicit migration process. Application code does not edit upstream private
+tables or delete retained platform history.
 
 The runtime may read its own migration ledger's version and checksum for startup compatibility and readiness. This
 replaces the upstream check's blanket prohibition on reading migration state. Grant SELECT for that metadata only;

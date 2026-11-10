@@ -1,5 +1,5 @@
 import { Bytes, MachineId, renamedWireStruct } from '@mechane/records';
-import { ExecutionId } from '@mechane/sandbox-wire';
+import { ExecutionId, SandboxCommandOutcome } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { ExecutionStatus, MachineStatus } from './constants.ts';
 
@@ -35,8 +35,9 @@ export const ExecutionRow = Schema.Union([
       ...OUTPUT_FIELDS,
       status: Schema.Literal(ExecutionStatus.PersistenceFailed),
       reason: Schema.String,
+      commandOutcome: Schema.OptionFromNullOr(Schema.fromJsonString(SandboxCommandOutcome)),
     },
-    renames: { ...OUTPUT_RENAMES, reason: 'persistence_failure' },
+    renames: { ...OUTPUT_RENAMES, reason: 'persistence_failure', commandOutcome: 'command_outcome' },
   }),
   renamedWireStruct({
     fields: { ...REQUEST_FIELDS, status: Schema.Literal(ExecutionStatus.Pending) },

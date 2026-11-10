@@ -12,6 +12,7 @@
     "@mechane/program": "workspace:*",
     "@mechane/rule-shapes": "workspace:*",
     "@mechane/rules": "workspace:*",
+    "@mechane/wrangler": "workspace:*",
     "effect": "4.0.7"
   }
 }

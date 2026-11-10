@@ -6,9 +6,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@mechane/deployment": "workspace:*",
+    "@mechane/program": "workspace:*",
+    "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/wrangler": "workspace:*",
     "effect": "4.0.7",
-    "miniflare": "5.20261023.2-beta"
+    "esbuild": "0.28.2",
+    "vite": "8.3.5"
   }
 }

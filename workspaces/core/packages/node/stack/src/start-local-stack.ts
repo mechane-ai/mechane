@@ -1,181 +1,307 @@
-import { access, cp, rm } from 'node:fs/promises';
-import { createServer } from 'node:net';
-import { dirname, join, resolve as resolvePath } from 'node:path';
-import { setTimeout as delay } from 'node:timers/promises';
-import { serverEnvironment } from './environment.ts';
+import { applicationWorkerDeployment, sandboxWorkerDeployment } from '@mechane/deployment';
+import { HttpStatusCode } from '@mechane/records';
+import { Record } from 'effect';
+import { access, cp, mkdir, readFile, rm } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { captureStackFailure } from './capture-failure.ts';
+import { drainSandboxes } from './celld/drain-sandboxes.ts';
+import { dumpDurableStorage } from './celld/dump-durable-storage.ts';
+import { startCelldSandbox } from './celld/start-celld-sandbox.ts';
+import { startCelldWorker } from './celld/start-celld-worker.ts';
+import type { LocalCelldWorker } from './celld/types.ts';
+import { startConsoleDevelopment } from './console/start-console-development.ts';
+import type { ConsoleDevelopment } from './console/start-console-development.ts';
+import { localSandboxVariables, serverEnvironment } from './environment.ts';
 import { StackStartupFailedError } from './errors.ts';
 import { startFixtures } from './fixtures/start-fixtures.ts';
+import { applyConversationImport } from './fixtures/store/apply-conversation-import.ts';
 import { seedConversationImport } from './fixtures/store/conversation-import.ts';
+import { startGuestGateway } from './guest-gateway.ts';
+import type { GuestGateway } from './guest-gateway.ts';
+import { freeLocalOrigin } from './local-origin.ts';
 import { startPostgres } from './postgres.ts';
 import type { LocalPostgres } from './postgres.ts';
 import { runCommand, startProcess } from './process.ts';
-import { startSandbox } from './sandbox/start-sandbox.ts';
-import type { LocalSandbox } from './sandbox/start-sandbox.ts';
-import { DEFAULT_SERVER_ENTRY, inheritedEnvironment, nodeExecutablePath } from './settings.ts';
+import { inheritedEnvironment, nodeExecutablePath } from './settings.ts';
 import { openStackState } from './state.ts';
 import type {
   ConversationImportScope,
   Environment,
   LocalFixtures,
+  LocalSandbox,
   LocalStack,
-  ManagedProcess,
   RestartOptions,
   StackOptions,
 } from './types.ts';
+import {
+  databaseProgramPath,
+  DEFAULT_GUEST_IMAGE,
+  defaultWorkerEntry,
+  workerBinaryOptions,
+  workerLocations,
+} from './worker-settings.ts';
 
-const READY_TIMEOUT_MS = 45_000;
-const PROBE_TIMEOUT_MS = 500;
-const PROBE_INTERVAL_MS = 100;
 const MIGRATION_TIMEOUT_MS = 60_000;
-const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['127.0.0.1', 'localhost', '[::1]']);
+const SHUTDOWN_TIMEOUT_MS = 60_000;
+const SANDBOX_START_TIMEOUT_MS = 600_000;
+const PRIVATE_DIRECTORY_MODE = 0o700;
+type ResourceName = 'application' | 'console' | 'sandbox' | 'gateway' | 'fixtures' | 'postgres';
 
 export async function startLocalStack(options: StackOptions): Promise<LocalStack> {
-  const builtEntry = resolvePath(options.serverEntry ?? DEFAULT_SERVER_ENTRY);
+  const isSource = options.isSource === true;
+  const isConsoleDevelopment = options.isConsoleDevelopment === true;
 
-  await access(builtEntry);
+  if (isConsoleDevelopment && !isSource) {
+    throw new Error('Console development requires a source Worker');
+  }
+
+  const defaultEntry = defaultWorkerEntry({ isSource });
+  const suppliedEntry = resolve(options.serverEntry ?? defaultEntry);
+
+  await access(suppliedEntry);
 
   const environment = options.environment ?? inheritedEnvironment();
   const nodeExecutable = options.nodeExecutable ?? nodeExecutablePath();
-  const versionOutput = await runCommand({ command: nodeExecutable, args: ['--version'], environment });
-  const nodeVersion = versionOutput.trim();
+  const nodeVersionOutput = await runCommand({ command: nodeExecutable, args: ['--version'], environment });
+  const nodeVersion = nodeVersionOutput.trim();
+  const binaryOptions = workerBinaryOptions({ binary: options.celldBinary });
 
   if (!nodeVersion.startsWith('v24.')) {
     throw new Error('The local stack requires the repository-pinned Node 24 executable');
   }
 
-  const origin = options.origin ?? (await freeOrigin());
-
-  assertLoopback(origin);
-
+  const origin = options.origin ?? (await freeLocalOrigin());
+  const applicationOrigin = await applicationListenerOrigin({ origin, isConsoleDevelopment });
   const state = await openStackState(options);
-  const entry = join(state.directory, 'server', 'server.mjs');
+  const artifactDirectory = join(state.directory, 'candidate');
 
   const resources: {
+    application?: LocalCelldWorker;
+    sandbox?: LocalSandbox;
     postgres?: LocalPostgres;
     fixtures?: LocalFixtures;
-    sandbox?: LocalSandbox;
-    server?: ManagedProcess;
-    stopping?: Promise<void>;
+    closing?: Promise<void>;
+    isServing?: boolean;
     shouldPreserveFiles?: boolean;
+    gateway?: GuestGateway;
+    console?: ConsoleDevelopment;
+    hasDrained?: boolean;
   } = {};
 
-  const serverLog = join(state.directory, 'server.log');
   const configuration: { environment: Environment } = { environment };
+  const released = new Set<ResourceName>();
+  const migrationLog = join(state.directory, 'database-setup.log');
+  const applicationDirectory = join(state.directory, 'application');
+  const serverLog = join(applicationDirectory, '.celld', 'celld.log');
+  const consoleLog = join(state.directory, 'console.log');
+  const locations = workerLocations({ isSource, suppliedEntry, artifactDirectory });
+  const entry = locations.entry;
+  const assetsDirectory = resolve(options.assetsDirectory ?? locations.assets);
 
-  async function stop(): Promise<void> {
-    if (resources.stopping !== undefined) {
-      return await resources.stopping;
-    }
-
-    resources.stopping = closeResources();
-
-    await resources.stopping;
-  }
-
-  async function closeResources(): Promise<void> {
-    const failures: Array<unknown> = [];
-
-    if (resources.server !== undefined) {
-      await resources.server.stop().catch((error: unknown) => failures.push(error));
-    }
-
-    if (resources.fixtures !== undefined) {
-      await resources.fixtures.close().catch((error: unknown) => failures.push(error));
-    }
-
-    if (resources.sandbox !== undefined) {
-      await resources.sandbox.close().catch((error: unknown) => failures.push(error));
-    }
-
-    if (resources.postgres !== undefined) {
-      await resources.postgres.stop().catch((error: unknown) => failures.push(error));
-    }
-
-    if (failures.length > 0) {
-      throw new AggregateError(failures, `Could not stop every resource recorded in ${state.directory}`);
-    }
-
-    await state.close({ shouldPreserveFiles: resources.shouldPreserveFiles === true });
+  async function record(details: Readonly<Record<string, unknown>>): Promise<void> {
+    await state.writeOwner({
+      origin: origin.origin,
+      applicationOrigin: applicationOrigin.origin,
+      postgresContainer: resources.postgres?.container,
+      applicationPid: resources.application?.pid,
+      sandboxPid: resources.sandbox?.pid,
+      sandboxOrigin: resources.sandbox?.origin.origin,
+      serverLog,
+      migrationLog,
+      consoleLog,
+      consolePid: resources.console?.pid,
+      guestGatewayOrigin: resources.gateway?.guestOrigin.origin,
+      stoppedResources: [...released],
+      ...details,
+    });
   }
 
   async function launch(): Promise<void> {
-    resources.server = await startProcess({
-      command: nodeExecutable,
-      args: [entry],
-      environment: configuration.environment,
-      logFile: serverLog,
+    const assets = applicationAssetsOptions({ isConsoleDevelopment });
+
+    const deployment = applicationWorkerDeployment({
+      name: 'mechane-local',
+      entry,
+      variables: workerVariables(configuration.environment),
+      ...assets,
     });
 
-    await state.writeOwner({
-      phase: 'serving',
-      container: resources.postgres?.container,
-      serverPid: resources.server.child.pid,
-      serverLog,
+    resources.application = await startCelldWorker({
+      entry,
+      configuration: deployment,
+      directory: applicationDirectory,
+      origin: applicationOrigin,
+      environment: { ...environment, ...resources.postgres?.clientEnvironment },
+      ...binaryOptions,
+      isArtifact: !isSource,
+      isWatched: isSource,
     });
-    await awaitReady(origin, resources.server, serverLog);
+
+    resources.isServing = true;
+
+    await record({ phase: 'serving' });
+  }
+
+  async function runDatabaseProgram(name: string): Promise<void> {
+    const file = databaseProgramPath({ isSource, directory: dirname(entry), name });
+
+    const program = await startProcess({
+      command: nodeExecutable,
+      args: [file],
+      environment: configuration.environment,
+      logFile: migrationLog,
+    });
+
+    const timeout = setTimeout(() => program.child.kill('SIGKILL'), MIGRATION_TIMEOUT_MS);
+    const code = await program.exited.finally(() => clearTimeout(timeout));
+
+    if (code !== 0) {
+      throw new Error(`The local database setup failed at ${name}; inspect ${migrationLog}`);
+    }
   }
 
   async function restart(input: RestartOptions = {}): Promise<void> {
-    if (resources.stopping !== undefined || resources.server === undefined) {
+    if (resources.closing !== undefined || resources.application === undefined) {
       throw new Error('The local stack is stopped');
     }
 
-    await resources.server.stop(input.signal);
+    if (input.environment === undefined) {
+      await resources.application.restart(input.signal);
+
+      return;
+    }
+
+    await resources.application.close({ signal: input.signal ?? 'SIGTERM' });
 
     configuration.environment = { ...configuration.environment, ...input.environment };
 
     await launch();
   }
 
-  async function runDatabaseProgram(file: string): Promise<void> {
-    if (resources.postgres === undefined) {
-      throw new Error('The local database has not started');
+  async function stop(): Promise<void> {
+    resources.closing ??= closeResources();
+
+    try {
+      await resources.closing;
+    } catch (cause) {
+      delete resources.closing;
+
+      throw cause;
+    }
+  }
+
+  async function closeResources(): Promise<void> {
+    const deadlineMs = Date.now() + SHUTDOWN_TIMEOUT_MS;
+    const shouldDrain = options.mode === 'persistent' && resources.isServing === true && resources.hasDrained !== true;
+
+    if (shouldDrain && resources.sandbox !== undefined) {
+      try {
+        await drainSandboxes({ origin: applicationOrigin, sandbox: resources.sandbox, deadlineMs, report: record });
+
+        resources.hasDrained = true;
+      } catch (cause) {
+        await record({
+          phase: 'shutdown-blocked',
+          recovery: 'Inspect the recorded sandbox stop and retry after repair',
+          deadlineMs,
+        });
+
+        throw new Error(`The local stack remains available to preserve environment files; inspect ${state.directory}`, {
+          cause,
+        });
+      }
     }
 
-    const migration = await startProcess({
-      command: nodeExecutable,
-      args: [join(dirname(entry), file)],
-      environment: { ...configuration.environment, WORKFLOW_POSTGRES_URL: resources.postgres.migrationUrl },
-      logFile: serverLog,
-    });
+    const failures: Array<unknown> = [];
 
-    const migrationTimeout = setTimeout(() => migration.child.kill('SIGKILL'), MIGRATION_TIMEOUT_MS);
-    const migrated = await migration.exited.finally(() => clearTimeout(migrationTimeout));
+    async function release(name: ResourceName, close: () => Promise<void | undefined>): Promise<void> {
+      if (released.has(name)) {
+        return;
+      }
 
-    if (migrated !== 0) {
-      throw new Error(`The local database setup failed at ${file}; inspect ${serverLog}`);
+      try {
+        await close();
+
+        released.add(name);
+      } catch (cause) {
+        failures.push(cause);
+      }
     }
+
+    await release('application', async () => await resources.application?.close({ deadlineMs }));
+    await release('console', async () => await resources.console?.close(deadlineMs));
+    await release('sandbox', async () => await resources.sandbox?.close(deadlineMs));
+    await release('gateway', async () => await resources.gateway?.close());
+    await release('fixtures', async () => await resources.fixtures?.close());
+    await release('postgres', async () => await resources.postgres?.stop(deadlineMs));
+
+    if (failures.length > 0) {
+      await record({ phase: 'shutdown-failed' });
+
+      throw new AggregateError(failures, `Could not stop every resource recorded in ${state.directory}`);
+    }
+
+    await state.close({ shouldPreserveFiles: resources.shouldPreserveFiles === true });
   }
 
   async function prepareConversationImport(input: ConversationImportScope) {
-    if (options.mode !== 'ephemeral' || resources.fixtures === undefined) {
-      throw new Error('Historical conversation preparation requires a disposable fixture stack');
+    const hasDisposableFixtures = options.mode === 'ephemeral' && resources.fixtures !== undefined;
+
+    if (!hasDisposableFixtures || resources.postgres === undefined || resources.application === undefined) {
+      throw new Error('Historical conversation preparation requires an active disposable fixture stack');
     }
 
-    if (resources.stopping !== undefined || resources.server === undefined || resources.postgres === undefined) {
-      throw new Error('Historical conversation preparation requires an active fixture stack');
+    const configuredBearer = configuration.environment['MECHANE_SANDBOX_SERVICE_KEY'];
+
+    if (configuredBearer === undefined) {
+      throw new Error('Historical conversation import requires the configured internal service credential');
     }
 
-    await resources.server.stop();
+    const bearer = configuredBearer;
 
-    const fixture = await seedConversationImport({ ...input, container: resources.postgres.container, environment });
+    const fixture = await seedConversationImport({
+      ...input,
+      container: resources.postgres.container,
+      environment,
+      migrationUrl: resources.postgres.migrationUrl,
+    });
 
     async function applyMigration(): Promise<void> {
-      if (resources.stopping !== undefined || resources.server === undefined) {
-        throw new Error('The local stack is stopped');
-      }
+      await applyConversationImport({
+        ...input,
+        fixture,
+        origin,
+        bearer,
+        directory: state.directory,
+        runProgram: async ({ name, arguments: programArguments, environment: programEnvironment }) => {
+          const file = databaseProgramPath({ isSource, directory: dirname(entry), name });
 
-      await resources.server.stop();
-      await runDatabaseProgram('migrate.mjs');
-      await launch();
+          return await runCommand({
+            command: nodeExecutable,
+            args: [file, ...programArguments],
+            environment: { ...configuration.environment, ...programEnvironment },
+            timeoutMs: MIGRATION_TIMEOUT_MS,
+          });
+        },
+      });
     }
 
-    return { ...fixture, applyMigration };
+    return { runId: fixture.runId, publications: fixture.publications, applyMigration };
   }
 
   try {
-    await rm(dirname(entry), { recursive: true, force: true });
-    await cp(dirname(builtEntry), dirname(entry), { recursive: true, dereference: true });
+    if (!isSource) {
+      await rm(artifactDirectory, { recursive: true, force: true });
+      await cp(dirname(suppliedEntry), artifactDirectory, { recursive: true, dereference: true });
+    }
+
+    await mkdir(applicationDirectory, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
+
+    if (!isConsoleDevelopment) {
+      await access(assetsDirectory);
+      await rm(join(applicationDirectory, 'console'), { recursive: true, force: true });
+      await cp(assetsDirectory, join(applicationDirectory, 'console'), { recursive: true });
+    }
 
     resources.postgres = await startPostgres({ state, environment });
 
@@ -183,8 +309,8 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       resources.fixtures = await startFixtures(origin);
     }
 
-    configuration.environment = serverEnvironment({
-      inherited: environment,
+    const configured = serverEnvironment({
+      inherited: { ...environment, ...resources.postgres.clientEnvironment },
       origin,
       databaseUrl: resources.postgres.url,
       migrationUrl: resources.postgres.migrationUrl,
@@ -192,42 +318,91 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       fixtures: resources.fixtures,
     });
 
-    const useHostSandbox =
-      options.sandbox === 'host-fixture' || (options.sandbox === undefined && resources.fixtures !== undefined);
+    configuration.environment = {
+      ...configured,
+      MECHANE_ORIGIN: origin.origin,
+      MECHANE_SANDBOX_SERVICE_KEY: environment['MECHANE_SANDBOX_SERVICE_KEY'] ?? state.secrets.sandboxKey,
+    };
 
-    if (useHostSandbox) {
-      if (resources.fixtures === undefined) {
-        throw new Error('The process sandbox is available only with local provider fixtures');
+    if (options.sandbox === 'configured') {
+      if (
+        environment['MECHANE_SANDBOX_ORIGIN'] === undefined ||
+        environment['MECHANE_SANDBOX_SERVICE_KEY'] === undefined
+      ) {
+        throw new Error('Configured mode requires a sandbox service origin and credential');
       }
+    } else {
+      const sandboxOrigin = await freeLocalOrigin();
+      resources.gateway = await startGuestGateway({ target: applicationOrigin, tls: resources.postgres.tls });
 
-      resources.sandbox = await startSandbox({
-        directory: join(state.directory, 'sandbox'),
-        environment,
-        nodeExecutable,
-        runtimeOrigin: origin,
+      await record({ phase: 'guest-transport' });
+
+      const certificatesPem = await readFile(resources.postgres.tls.certificateAuthority, 'utf8');
+
+      const sandboxVariables = localSandboxVariables({
+        inherited: environment,
+        origin: applicationOrigin,
+        bearer: state.secrets.sandboxKey,
+      });
+
+      const variables = { ...sandboxVariables, MECHANE_SANDBOX_TRUSTED_CERTIFICATES_PEM: certificatesPem };
+
+      const deployment = sandboxWorkerDeployment({
+        name: 'mechane-local-environments',
+        entry,
+        variables,
+        image: options.sandboxImage ?? DEFAULT_GUEST_IMAGE,
+        bucketName: 'mechane-local-workspace-files',
+      });
+
+      resources.sandbox = await startCelldSandbox({
+        bearer: state.secrets.sandboxKey,
+        worker: {
+          entry,
+          configuration: deployment,
+          directory: join(state.directory, 'sandbox'),
+          origin: sandboxOrigin,
+          environment,
+          ...binaryOptions,
+          isArtifact: !isSource,
+          readiness: {
+            path: '/internal/sandboxes/probe/probe/workspace',
+            status: HttpStatusCode.Unauthorized,
+            timeoutMs: SANDBOX_START_TIMEOUT_MS,
+          },
+        },
       });
 
       configuration.environment = {
         ...configuration.environment,
         MECHANE_SANDBOX_ORIGIN: resources.sandbox.origin.origin,
-        MECHANE_SANDBOX_KEY: resources.sandbox.bearer,
+        MECHANE_SANDBOX_SERVICE_KEY: resources.sandbox.bearer,
+        MECHANE_TOOL_ORIGIN: resources.gateway.guestOrigin.origin,
       };
-    } else if (
-      environment['MECHANE_SANDBOX_ORIGIN'] === undefined ||
-      environment['MECHANE_SANDBOX_KEY'] === undefined
-    ) {
-      throw new Error('Configured mode requires a sandbox service origin and credential');
     }
 
-    for (const file of ['migrate.mjs', 'workflow/bootstrap/dist/cli.mjs', 'grant.mjs']) {
-      await runDatabaseProgram(file);
-    }
-
+    await runDatabaseProgram('migrate');
+    await runDatabaseProgram('grant');
     await launch();
+
+    if (isConsoleDevelopment) {
+      await record({ phase: 'console-starting' });
+
+      resources.console = await startConsoleDevelopment({
+        origin,
+        applicationOrigin,
+        directory: join(state.directory, 'console'),
+        logFile: consoleLog,
+        environment,
+        nodeExecutable,
+      });
+
+      await record({ phase: 'serving' });
+    }
 
     const postgres = resources.postgres;
 
-    return {
+    const stack: LocalStack = {
       origin,
       databaseUrl: postgres.url,
       stateDirectory: state.directory,
@@ -236,86 +411,64 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       serverLog,
       postgresContainer: postgres.container,
       nodeVersion,
-      dumpStorage: postgres.dump,
+      dumpStorage: async (input = {}) => {
+        const [relational, durable] = await Promise.all([
+          postgres.dump(input),
+          dumpDurableStorage({ directories: [applicationDirectory, join(state.directory, 'sandbox')], ...input }),
+        ]);
+
+        return `${relational}\n${durable}`;
+      },
+      captureFailure: async (label) => await captureStackFailure({ stack, label, environment }),
       restart,
       prepareConversationImport,
       stop,
     };
-  } catch (error) {
+
+    return stack;
+  } catch (cause) {
     resources.shouldPreserveFiles = true;
 
     await stop();
 
-    throw new StackStartupFailedError(state.directory, error);
+    await record({ phase: 'startup-failed', resourcesStopped: true });
+
+    throw new StackStartupFailedError(state.directory, cause);
   }
 }
 
-async function awaitReady(origin: URL, server: ManagedProcess, logFile: string): Promise<void> {
-  const deadlineMs = Date.now() + READY_TIMEOUT_MS;
+function workerVariables(environment: Environment): Readonly<Record<string, string>> {
+  const variables: Record<string, string> = {};
 
-  const exited = server.exited.then(() => {
-    throw new Error(`The Node server exited before readiness; inspect ${logFile}`);
-  });
-
-  do {
-    const probe = fetch(new URL('/ready', origin), { signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) }).then(
-      (response) => response.ok,
-      () => false,
-    );
-
-    const ready = await Promise.race([probe, exited]);
-
-    if (ready) {
-      return;
+  for (const [name, value] of Record.toEntries(environment)) {
+    if (name.startsWith('MECHANE_') && !name.startsWith('MECHANE_LOCAL_') && !HOST_VARIABLES.has(name)) {
+      variables[name] = value;
     }
-
-    if (Date.now() >= deadlineMs) {
-      throw new Error(`The Node server did not become ready; inspect ${logFile}`);
-    }
-
-    await Promise.race([delay(PROBE_INTERVAL_MS), exited]);
-  } while (Date.now() < deadlineMs);
-
-  throw new Error(`The Node server did not become ready; inspect ${logFile}`);
-}
-
-async function freeOrigin(): Promise<URL> {
-  const server = createServer();
-
-  await new Promise<void>((resolve, reject) => {
-    server.once('error', reject);
-    server.listen(0, '127.0.0.1', resolve);
-  });
-
-  const address = server.address();
-
-  if (address === null || typeof address === 'string') {
-    throw new Error('Could not reserve a local service port');
   }
 
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => {
-      if (error !== undefined) {
-        reject(error);
-
-        return;
-      }
-
-      resolve();
-    });
-  });
-
-  return new URL(loopbackOriginUrl({ port: address.port }));
+  return variables;
 }
 
-function assertLoopback(origin: URL): void {
-  const hasResourcePath = origin.pathname !== '/' || origin.search !== '' || origin.hash !== '';
+const HOST_VARIABLES: ReadonlySet<string> = new Set([
+  'MECHANE_MIGRATION_DATABASE_URL',
+  'MECHANE_RUNTIME_DATABASE_ROLE',
+  'MECHANE_NODE_EXECUTABLE',
+]);
 
-  if (origin.protocol !== 'http:' || !LOOPBACK_HOSTS.has(origin.hostname) || hasResourcePath) {
-    throw new Error('The local stack origin must be a loopback HTTP origin');
+type ConsoleMode = { readonly isConsoleDevelopment: boolean };
+
+async function applicationListenerOrigin(input: ConsoleMode & { readonly origin: URL }): Promise<URL> {
+  if (input.isConsoleDevelopment) {
+    return await freeLocalOrigin();
   }
+
+  return input.origin;
 }
 
-function loopbackOriginUrl({ port }: { readonly port: number }): string {
-  return `http://127.0.0.1:${port}`;
+function applicationAssetsOptions(input: ConsoleMode): { readonly assetsDirectory?: string } {
+  if (input.isConsoleDevelopment) {
+    return {};
+  }
+
+  return { assetsDirectory: './console' };
 }

@@ -49,6 +49,13 @@ The browser role follows contract 113's native React and Promise conventions in 
 and absent values do not require `Option`; backend and Node boundaries retain this contract's requirements.
 oxlint `unicorn/no-useless-undefined`, with `checkArguments` and `checkArrowFunctionBody` off, rejects a `return undefined` and an `undefined` default, while an outbound call's `.then` keeps `() => undefined` as its first handler.
 
+The exact historical import transport in `packages/shared/protocol/src/import/schemas.ts` retains literal nulls from
+its source records. Its source digest and actor import fingerprint cover that canonical JSON. Keep this exemption
+limited to transport nullability; validate real identifiers, full text, and the existing batch bound. Public domain
+history absence still uses Option. The Worker deployment description follows native Wrangler optional fields. The private service inventory in
+`operations/environment/sandbox-owner.schemas.ts` keeps a literal-null terminal cursor for its native JSON receiver;
+it is not a member-domain record.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `no-optional-property` (TD-18): enforced in phase D

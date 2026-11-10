@@ -8,6 +8,7 @@ import type { completionRecords } from './completions/completion-records.ts';
 import type { evidenceRecords } from './evidence/evidence-records.ts';
 import type { interactiveRuns } from './interactive-runs.ts';
 import type { machineDrains } from './machines/machine-drains.ts';
+import type { stopRecords } from './machines/stop-records.ts';
 import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import type { processRecords } from './processes/process-records.ts';
 import type { ExecutionRow, LiveMachineRow, MachineIdRow } from './schemas.ts';
@@ -21,6 +22,8 @@ export type ExecutionRecords = {
   readonly activeExecution: () => Option.Option<ExecutionRow>;
   readonly unfinishedExecutions: () => ReadonlyArray<ExecutionRow>;
   readonly cancelPendingExecution: (input: ExecutionIdInput) => void;
+  /** Refuses a claimed command before dispatch while preserving its immutable receipt identity. */
+  readonly refusePendingExecution: (input: ExecutionIdInput) => void;
   /** Records an execution as pending, the intent of its run, before it is sent anywhere. */
   readonly claimExecution: (input: ClaimExecutionInput) => void;
   /** Records a pending execution as sent to the machine, the intent of the request that runs it. */
@@ -90,6 +93,7 @@ export type SandboxStore = DatabaseFunctions &
   ReturnType<typeof evidenceRecords> &
   ReturnType<typeof interactiveRuns> &
   ReturnType<typeof machineDrains> &
+  ReturnType<typeof stopRecords> &
   ReturnType<typeof processRecords> &
   MachineRecords &
   ExecutionRecords &

@@ -9,6 +9,7 @@ import {
 } from '@mechane/records';
 import { Duration, Schema, SchemaTransformation } from 'effect';
 import { BrowserCertificateVariable, BrowserSandboxDisabledVariable } from './browser-environment.ts';
+import { TrustedCertificatesVariable } from './certificate-environment.ts';
 import {
   EXECUTION_MAX_BYTES,
   EXECUTION_TIMEOUT_MAX,
@@ -90,6 +91,14 @@ export const SettledReceipt = Schema.Union([Exited, TimedOut]);
 
 export type SettledReceipt = typeof SettledReceipt.Type;
 
+/** The command's observed outcome is separate from whether its home could be committed. */
+export const SandboxCommandOutcome = Schema.Union([
+  Schema.Struct({ state: Schema.Literal(ReceiptStatus.Exited), exitCode: Schema.Int }),
+  Schema.Struct({ state: Schema.Literal(ReceiptStatus.TimedOut) }),
+]);
+
+export type SandboxCommandOutcome = typeof SandboxCommandOutcome.Type;
+
 /** What the guest answers for an execution: that it still runs, or how it settled. */
 export const ExecutionReceipt = Schema.Union([
   Schema.Struct({ state: Schema.Literal(ReceiptStatus.Running) }),
@@ -118,7 +127,13 @@ export const ExecutionProgress = Schema.TaggedUnion({
   TimedOut: { duration: Schema.DurationFromMillis, output: SettledOutput },
   Uncertain: {},
   Unavailable: {},
-  PersistenceFailed: { reason: Schema.String, duration: Schema.DurationFromMillis, output: SettledOutput },
+  PersistenceFailed: {
+    reason: Schema.String,
+    duration: Schema.DurationFromMillis,
+    output: SettledOutput,
+    /** Older saved failures did not retain the command outcome. */
+    commandOutcome: Schema.OptionFromOptionalKey(SandboxCommandOutcome),
+  },
 });
 
 export type ExecutionProgress = typeof ExecutionProgress.Type;
@@ -143,6 +158,7 @@ export const GuestStart = renamedWireStruct({
     additionalTools: SandboxToolsVariable,
     isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
     browserCertificateFile: BrowserCertificateVariable,
+    trustedCertificatesPem: TrustedCertificatesVariable,
   },
   renames: {
     machineId: GUEST_VARIABLES.machineId,
@@ -150,6 +166,7 @@ export const GuestStart = renamedWireStruct({
     additionalTools: GUEST_VARIABLES.additionalTools,
     isBrowserSandboxDisabled: GUEST_VARIABLES.isBrowserSandboxDisabled,
     browserCertificateFile: GUEST_VARIABLES.browserCertificateFile,
+    trustedCertificatesPem: GUEST_VARIABLES.trustedCertificatesPem,
   },
 });
 

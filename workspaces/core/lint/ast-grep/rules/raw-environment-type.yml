@@ -4,12 +4,14 @@ severity: error
 message: 'Pass decoded settings, such as `settings: StackSettings`, never the raw process environment (ST-31)'
 files: ['**/*.ts']
 ignores:
+  - 'packages/worker/server/src/import/settings.ts'
   - packages/node/testing/src/cli/start-cli.ts
-  - packages/node/server/src/settings/environment.ts
+  - packages/worker/server/src/settings/environment.ts
+  - packages/worker/server/src/settings/worker.ts
   - packages/node/stack/src/settings.ts
   - packages/node/smoke/src/settings.ts
-  - packages/node/runtime/src/config.ts
-  - packages/worker/sandbox-service/src/settings.ts
+  - packages/worker/runtime/src/config.ts
+  - packages/worker/sandbox/src/service/settings.ts
   - packages/worker/sandbox/src/providers/sandbox-settings.ts
   - '**/node_modules/**'
   - packages/node/cli/src/settings/load-invocation.ts

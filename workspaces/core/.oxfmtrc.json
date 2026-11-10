@@ -22,9 +22,8 @@
   },
   "overrides": [{ "files": ["**/*.md"], "options": { "proseWrap": "always" } }],
   "ignorePatterns": [
-    "packages/node/server/.output/**",
+    "packages/worker/server/.output/**",
     "**/.swc/**",
-    "packages/node/runtime/.well-known/workflow/**",
     ".contracts/**",
     "pnpm-lock.yaml",
     "packages/node/cli/reference.json",

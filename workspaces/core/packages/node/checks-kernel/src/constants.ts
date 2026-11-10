@@ -27,7 +27,7 @@ export const WORKSPACE_FOLDER = fileURLToPath(new URL('../../../../', import.met
 /** The factory root, which holds the documents, workflows and pins the checks read. */
 export const FACTORY_FOLDER = fileURLToPath(new URL('../../../../../../', import.meta.url));
 
-/** The ignored folder that keeps what one run leaves for the next: the module graph and the green fingerprint. */
+/** The ignored folder that keeps what one run leaves for the next: the module graph and full-check evidence. */
 export const CACHE_FOLDER = fileURLToPath(new URL('../../../../node_modules/.cache/mechane/', import.meta.url));
 
 /** The variable that names the branch whose merge base starts the changed set, and the branch it names unset. */

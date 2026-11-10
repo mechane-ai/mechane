@@ -1,6 +1,7 @@
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm } from 'node:fs/promises';
+import { join } from 'node:path';
 import { GuestMisconfigured } from '../errors.ts';
 import { workspaceScratchPath } from './workspace-scratch-path.ts';
 
@@ -26,5 +27,13 @@ export const openWorkspaceFolder = Effect.fn('openWorkspaceFolder')(function* ()
     return removal.pipe(Effect.orDie);
   };
 
-  return yield* Effect.acquireRelease(opening, release);
+  const folder = yield* Effect.acquireRelease(opening, release);
+  const cache = join(folder, 'cache');
+
+  yield* Effect.tryPromise({
+    try: () => mkdir(cache, { mode: 0o700 }),
+    catch: (cause) => new GuestMisconfigured({ reason: String(cause) }),
+  });
+
+  return folder;
 });

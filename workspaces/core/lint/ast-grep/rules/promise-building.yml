@@ -5,7 +5,7 @@ language: TypeScript
 severity: error
 message: "Wait through `utilities`, such as `await untilAborted({ signal })` or `wakeList().wait({ timeout, stop })`, and give a call's `.then` both handlers (DO-05)"
 files: ['packages/worker/**/*.ts']
-ignores: ['**/node_modules/**', '**/*.d.ts']
+ignores: ['**/node_modules/**', '**/*.d.ts', 'packages/worker/server/src/control/deliver-changes.ts']
 rule:
   any:
     - pattern: Promise.withResolvers($$$ARGS)

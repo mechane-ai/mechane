@@ -64,7 +64,8 @@ export const Mech = wireStruct({
     /** None for a mech created without instructions, which the wire sends as null. */
     instructions: Schema.OptionFromNullOr(RecordText),
     dailyCapMicros: Micros,
-    activeRevision: DefinitionRevision,
+    /** None while the actor has not installed its first definition. */
+    activeRevision: Schema.OptionFromNullOr(DefinitionRevision),
     updatedAt: WireTime,
     updaterId: PrincipalId,
   },

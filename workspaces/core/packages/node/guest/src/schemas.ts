@@ -5,6 +5,7 @@ import {
   GUEST_VARIABLES,
   GuestScope,
   SandboxToolsVariable,
+  TrustedCertificatesVariable,
 } from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import { CONTAINER_DEFAULTS } from './constants.ts';
@@ -27,6 +28,7 @@ export const GuestEnvironment = renamedWireStruct({
     additionalTools: SandboxToolsVariable,
     isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
     browserCertificateFile: BrowserCertificateVariable,
+    trustedCertificatesPem: TrustedCertificatesVariable,
   },
   renames: {
     machineId: GUEST_VARIABLES.machineId,
@@ -37,6 +39,7 @@ export const GuestEnvironment = renamedWireStruct({
     additionalTools: GUEST_VARIABLES.additionalTools,
     isBrowserSandboxDisabled: GUEST_VARIABLES.isBrowserSandboxDisabled,
     browserCertificateFile: GUEST_VARIABLES.browserCertificateFile,
+    trustedCertificatesPem: GUEST_VARIABLES.trustedCertificatesPem,
   },
 });
 

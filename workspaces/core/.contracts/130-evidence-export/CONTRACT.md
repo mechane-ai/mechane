@@ -1,7 +1,7 @@
 ---
 name: evidence-export
 message: Copy only this mech's verified durable evidence into its current home without recapture or provider authority.
-paths: ["packages/shared/sandbox-wire/src/evidence-export.ts", "packages/node/guest/src/evidence/**", "packages/node/runtime/src/tools/export-evidence.ts", "packages/worker/sandbox/src/evidence/export-evidence.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox-service/src/evidence-route.ts"]
+paths: ["packages/shared/sandbox-wire/src/evidence-export.ts", "packages/node/guest/src/evidence/**", "packages/worker/runtime/src/tools/export-evidence.ts", "packages/worker/sandbox/src/evidence/export-evidence.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox/src/service/evidence-route.ts"]
 ---
 
 ## Rules

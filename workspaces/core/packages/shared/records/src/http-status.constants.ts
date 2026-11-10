@@ -4,6 +4,7 @@
  */
 export const HttpStatusCode = {
   Ok: 200,
+  Accepted: 202,
   PartialContent: 206,
   NoContent: 204,
   MultipleChoices: 300,

@@ -17,7 +17,13 @@ export async function readyWorkspaceMachine({
   workspace,
   deadline,
 }: ReadyWorkspaceMachineInput): Promise<Option.Option<LiveMachineRow>> {
-  const machine = await openLiveMachine({ store, provider });
+  const opened = await openLiveMachine({ store, provider });
+
+  if (Option.isNone(opened)) {
+    return Option.none();
+  }
+
+  const machine = opened.value;
   const machineId = MachineId.make(machine.id);
   const drain = store.machineDrain({ machineId });
 

@@ -36,9 +36,8 @@ const VALUES = {
     overrides: [{ files: ['**/*.md'], options: { proseWrap: 'always' } }],
   },
   formatterIgnores: [
-    'packages/node/server/.output/**',
+    'packages/worker/server/.output/**',
     '**/.swc/**',
-    'packages/node/runtime/.well-known/workflow/**',
     '.contracts/**',
     'pnpm-lock.yaml',
     'packages/node/cli/reference.json',

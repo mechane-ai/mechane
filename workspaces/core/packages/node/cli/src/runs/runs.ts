@@ -34,6 +34,13 @@ import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
+import {
+  runSelfMessage,
+  runSelfWakeCancel,
+  runSelfWakeList,
+  runSelfWakeSchedule,
+  runSelfWakeShow,
+} from './self/self-runs.ts';
 import { WORKSPACE_RUNS } from './workspaces/workspace-runs.ts';
 
 /** The run of each command; a command without one fails to compile. */
@@ -84,6 +91,11 @@ export const RUNS: Readonly<Runs> = {
   }),
   'mech revisions': documentRun({ run: runMechRevisions }),
   'notification send': documentRun({ run: runNotificationSend }),
+  'self wake schedule': documentRun({ run: runSelfWakeSchedule }),
+  'self wake show': documentRun({ run: runSelfWakeShow }),
+  'self wake list': documentRun({ run: runSelfWakeList }),
+  'self wake cancel': documentRun({ run: runSelfWakeCancel }),
+  'self message': documentRun({ run: runSelfMessage }),
   'event list': runEventList,
   'turn show': documentRun({ run: runTurnShow }),
   'turn cancel': documentRun({ run: runTurnCancel }),

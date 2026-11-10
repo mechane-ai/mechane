@@ -39,6 +39,8 @@ export { contractLock } from './workspace/contract-lock.ts';
 export { lockedAssets } from './workspace/locked-assets.ts';
 export { mergeBase } from './workspace/merge-base.ts';
 export { workspaceMembers } from './workspace/workspace-members.ts';
+export { MODULE_GRAPH, readModuleGraph } from './workspace/module-graph.ts';
+export type { ModuleGraph } from './workspace/module-graph.ts';
 export { baseBaselines } from './baselines/base-baselines.ts';
 export { carriedCounts } from './baselines/carried-counts.ts';
 export { declarationPools } from './baselines/moves/declaration-pools.ts';

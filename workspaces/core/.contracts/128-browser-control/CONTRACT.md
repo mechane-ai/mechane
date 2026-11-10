@@ -1,7 +1,7 @@
 ---
 name: browser-control
 message: Let the conversation's model operate an isolated browser through current observations and bounded, replay-aware actions.
-paths: ["packages/node/browser/**", "packages/node/guest/src/browser/**", "packages/node/guest/src/serve-guest.ts", "packages/shared/sandbox-wire/src/**", "packages/node/runtime/src/tools/**", "packages/worker/sandbox/src/browser/**", "packages/worker/sandbox/src/machines/ready-interactive-machine.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox-service/src/**", "packages/worker/sandbox-store/src/browser/**", "packages/worker/sandbox-store/src/interactive-*.ts"]
+paths: ["packages/node/browser/**", "packages/node/guest/src/browser/**", "packages/node/guest/src/serve-guest.ts", "packages/shared/sandbox-wire/src/**", "packages/worker/runtime/src/tools/**", "packages/worker/sandbox/src/browser/**", "packages/worker/sandbox/src/machines/ready-interactive-machine.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/browser/**", "packages/worker/sandbox-store/src/interactive-*.ts"]
 ---
 
 ## Rules
@@ -25,6 +25,17 @@ Bind each receipt to its assigned machine and refuse a result from any other mac
 new compute; later actions cannot silently replace their original tab or machine. A persisted run cancellation prevents
 late browser dispatch without rewriting an already confirmed result.
 
+Keep a cold browser action owned by its original durable native tool task until its actual receipt settles. Rejoin the
+same immutable action under fresh run, generation, and workspace authority; do not require another model action or a
+prewarmed shell. Pending results explicitly say whether the matching action remains unassigned. Only that trusted
+unassigned state permits submission; assigned, publication-pending, and unknown receipts remain observation-only.
+Status never advances an unassigned action. A recording start can be ready while its recording evidence is still pending.
+
+An action deadline or admission refusal may abandon only its matching unassigned claim. Record that terminal failure
+atomically before acknowledging it, including a tombstone against a delayed initial submission. A racing assigned or
+settled action keeps its original receipt. Abandonment cannot cancel its native run or unrelated process work. Durable
+parent cancellation must retain its existing reconciliation intent across application replacement.
+
 Use targets from a current observation or coordinates in an observed viewport. Scope element references to their
 observation and refuse stale references. Bound tabs, targets, diagnostics, text, actions, and recording duration and
 bytes. Report omitted targets and logs instead of implying complete inspection.
@@ -46,7 +57,13 @@ Review `node/browser/src` against `shared/sandbox-wire/src/browser` and the gues
 observation, an observed-target click, typing, scrolling, keys, diagnostics, screenshots, and recording through the real
 Chromium transport. Confirm stale references fail and an uncertain action identity does not perform a second action.
 
-Inspect a tool result delivered through the native AI SDK tool boundary for a decodable image block and a complete JSON size within the bound.
+Start one browser action with no machine or shell warmup and require that same native tool identity to finish. Replace
+the application while its durable join is pending and verify no duplicate browser effect. Expire or revoke an unassigned
+action, require its file-work claim to be released, and deliver its original submission afterward; it must remain failed.
+Race abandonment with an assigned action while an unrelated process from the same run is active. The assigned receipt
+and process must survive, and repeated abandonment must not reinterpret a known effect as never dispatched.
+
+Inspect the actual provider request for the tool's decodable image block and complete serialized result within its bound.
 Decode the saved recording and inspect its frames; successful file creation alone does not establish playable media.
 Review profile paths, workspace archives, backup ownership, and fork copying for accidental authentication inheritance.
 Keep hosted network and Chromium-sandbox qualification distinct from host fixtures.

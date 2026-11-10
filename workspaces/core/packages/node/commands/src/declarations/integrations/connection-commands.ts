@@ -23,7 +23,7 @@ const CONNECTION_FLAGS = {
   'allowed-tools': { kind: FlagKind.Text, summary: 'a JSON array of the exact remote tools approved for grants' },
   'policy': {
     kind: FlagKind.Text,
-    summary: 'read_only_free confirms every allowed tool is read-only and incurs no external charge',
+    summary: 'read_only_free permits free reads; idempotent_free also permits explicitly idempotent free writes',
   },
 } as const;
 
@@ -32,17 +32,17 @@ const CONNECTION_FIELDS = {
   url: RemoteMcpUrl,
   secretReference: Schema.OptionFromOptionalKey(IntegrationSecretReference),
   allowedTools: Schema.fromJsonString(RemoteToolNames),
-  policy: Schema.Literal(RemoteToolPolicy.ReadOnlyFree),
+  policy: Schema.Enum(RemoteToolPolicy),
 } as const;
 
 const CONNECTION_RENAMES = { secretReference: 'secret-reference', allowedTools: 'allowed-tools' } as const;
 
 const ToolsJson = Schema.fromJsonString(RemoteToolNames);
 
-/** The owner CLI requires an explicit free, read-only policy for each reusable connection. */
+/** The owner CLI requires an explicit free-tool policy for each reusable connection. */
 export const CONNECTION_COMMANDS = {
   'connection create': {
-    summary: 'register a reusable remote MCP connection with explicitly approved read-only tools',
+    summary: 'register a reusable remote MCP connection with an explicit tool policy and allowlist',
     shape: CommandShape.Document,
     operations: ['listWorkspaces', 'createConnection'],
     flags: CONNECTION_FLAGS,

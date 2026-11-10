@@ -2,6 +2,7 @@ import { Button, Row, Stack, Text } from '@mechane-ai/elements';
 import { SkeletonText } from '@mechane-ai/elements/feedback';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
+import { isImportedTurn } from '@mechane/console-views';
 import { Turn } from '@mechane/protocol';
 import type { Mech } from '@mechane/protocol';
 import { MechId } from '@mechane/records';
@@ -65,7 +66,9 @@ export function ConversationActivity({ data, mech }: { readonly data: ConsoleDat
       }
     >
       {(page, notice) => {
-        const active = page.turns.filter(Schema.is(Turn)).find((turn) => activeStatuses.has(turn.status));
+        const active = page.turns
+          .filter(Schema.is(Turn))
+          .find((turn) => !isImportedTurn(turn) && activeStatuses.has(turn.status));
 
         const currentStop = active?.id === stopState?.turnId ? stopState : undefined;
 

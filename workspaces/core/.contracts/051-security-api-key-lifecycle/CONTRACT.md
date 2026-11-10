@@ -1,7 +1,7 @@
 ---
 name: security-api-key-lifecycle
 message: Store issued keys as hashes bound to owner, scope, and expiry, revoke them permanently, and fail with distinct unauthenticated errors.
-paths: ["packages/node/server/src/auth/**", "packages/node/runtime/src/{operations,store}/**", "packages/shared/protocol/src/operations/auth/**", "packages/shared/credentials/src/**"]
+paths: ["packages/worker/server/src/auth/**", "packages/worker/runtime/src/operations/**", "packages/worker/control-store/src/store/api/auth/**", "packages/shared/protocol/src/operations/auth/**"]
 ---
 
 ## Rules
@@ -42,7 +42,7 @@ Search logs, audit records, and metadata responses for key secrets.
 
 ## Local adaptations
 
-Mechane issues its `mk_` keys through browser-approved device requests. The runtime's auth store keeps token hashes,
+Mechane issues its `mk_` keys through browser-approved device requests. The Postgres auth store keeps token hashes,
 principal ownership, purpose, name, expiry, and revocation. A device request fixes its purpose and requested lifetime
 before approval. The browser reviews those values before approving; an API key cannot approve another key.
 
@@ -53,6 +53,16 @@ Resolve keys and current membership against Postgres on every request. There is 
 Revocation is permanent and effective on the next request. Token lifetime defaults and maximums are validated server
 settings; changing them does not change an issued key's expiry. An upstream authentication failure never tells the
 client to discard its otherwise valid Mechane key.
+
+Charge public sign-in/device traffic and failed credential resolution to the shared address allowance. Resolve a key
+or browser session and its owner's eligibility before classifying it as authenticated work. Successful authenticated
+API requests use the existing principal allowance, so ordinary work behind one address does not exhaust anonymous
+authentication admission. A header alone never bypasses validation. Keep the configured ceilings and unauthenticated
+challenge semantics unchanged; an exhausted address allowance may return its existing rate-limit response.
+
+Exhaust an anonymous address through public requests. A valid bearer and browser session on that address must still
+work within their principal allowance. Invalid and missing credentials and public device polling remain rate limited.
+With address allowance available, invalid bearer authentication retains its 401 `invalid_token` challenge.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

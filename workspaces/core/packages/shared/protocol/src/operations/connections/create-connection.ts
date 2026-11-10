@@ -11,7 +11,7 @@ import type { Operation } from '../../operation/types.ts';
 import { WorkspacePath } from '../workspaces/schemas.ts';
 import { ConnectionConfiguration, RemoteConnection } from './schemas.ts';
 
-/** Owners declare an remote URL and approved free reads before any mech can receive access. */
+/** Owners declare a remote URL, tool policy, and allowlist before any mech can receive access. */
 export const createConnection = {
   method: HttpMethod.Post,
   path: '/api/v1/workspaces/:workspace_id/connections',

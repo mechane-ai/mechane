@@ -2,7 +2,6 @@ import { MachineId, RecordId } from '@mechane/records';
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import type { LiveMachineRow } from '@mechane/sandbox-store';
 import { DateTime, Duration, Option } from 'effect';
-import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { advanceToIdleExecution } from '../executions/advance-to-idle-execution.ts';
 import { connectLiveMachine } from '../machines/connect-live-machine.ts';
 import { observeMachine } from '../machines/observe-machine.ts';
@@ -11,6 +10,8 @@ import type { WorkspaceProviderStepInput } from '../types.ts';
 import { advanceWorkspace } from '../workspace/advance-workspace.ts';
 import { releaseWorkspace } from '../workspace/release-workspace.ts';
 import { checkpointInactiveEnvironment } from './checkpoint-inactive-environment.ts';
+import { expireFileCheckpoint } from './expire-file-checkpoint.ts';
+import { runRecoveryCheckpoint } from './run-recovery-checkpoint.ts';
 
 type RunFileCheckpointInput = WorkspaceProviderStepInput & { readonly purpose: FileCheckpointPurpose };
 const CHECKPOINT_WAIT = Duration.seconds(1);
@@ -22,6 +23,10 @@ export async function runFileCheckpoint({
   workspace,
   purpose,
 }: RunFileCheckpointInput): Promise<FileCheckpointResult> {
+  if (FileCheckpointPurpose.guards.Recovery(purpose)) {
+    return await runRecoveryCheckpoint({ store, provider, workspace, purpose });
+  }
+
   const now = DateTime.nowUnsafe();
   const operation = store.claimFileCheckpoint({ purpose, now });
 
@@ -47,16 +52,10 @@ export async function runFileCheckpoint({
     return current.result;
   }
 
-  const expiresAt = DateTime.addDuration(operation.startedAt, WORKSPACE_OPERATION_TIMEOUT);
+  const expired = expireFileCheckpoint({ store, purpose, startedAt: operation.startedAt, now });
 
-  if (DateTime.isGreaterThanOrEqualTo(now, expiresAt)) {
-    const result = FileCheckpointResult.cases.Failed.make({
-      reason: 'file checkpoint exceeded its five minute deadline',
-    });
-
-    store.finishFileCheckpoint({ purpose, result });
-
-    return result;
+  if (Option.isSome(expired)) {
+    return expired.value;
   }
 
   await observeMachine(input);

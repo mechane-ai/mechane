@@ -184,8 +184,6 @@
 /packages/node/rule-shapes/src/contract-names.ts linguist-generated merge=ours
 /packages/node/rule-shapes/tsconfig.json linguist-generated merge=ours
 /packages/node/rules/tsconfig.json linguist-generated merge=ours
-/packages/node/runtime/tsconfig.json linguist-generated merge=ours
-/packages/node/server/tsconfig.json linguist-generated merge=ours
 /packages/node/smoke/tsconfig.json linguist-generated merge=ours
 /packages/node/stack/tsconfig.json linguist-generated merge=ours
 /packages/node/testing/tsconfig.json linguist-generated merge=ours
@@ -196,9 +194,11 @@
 /packages/shared/records/tsconfig.json linguist-generated merge=ours
 /packages/shared/sandbox-wire/tsconfig.json linguist-generated merge=ours
 /packages/shared/utilities/tsconfig.json linguist-generated merge=ours
-/packages/worker/sandbox-service/tsconfig.json linguist-generated merge=ours
+/packages/worker/control-store/tsconfig.json linguist-generated merge=ours
+/packages/worker/runtime/tsconfig.json linguist-generated merge=ours
 /packages/worker/sandbox-store/tsconfig.json linguist-generated merge=ours
 /packages/worker/sandbox/tsconfig.json linguist-generated merge=ours
+/packages/worker/server/tsconfig.json linguist-generated merge=ours
 /packages/worker/store/tsconfig.json linguist-generated merge=ours
 /sgconfig.yml linguist-generated merge=ours
 /tsconfig.base.json linguist-generated merge=ours

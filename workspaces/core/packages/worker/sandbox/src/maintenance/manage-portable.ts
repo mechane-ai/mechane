@@ -1,6 +1,8 @@
-import { SandboxAction } from '@mechane/sandbox-wire';
+import type { PortableMaintenance } from '@mechane/sandbox-store';
+import { SANDBOX_FAILURE_MAX_CHARS, SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import type { SandboxReport } from '@mechane/sandbox-wire';
-import { Option } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { Option, Result } from 'effect';
 import { advancePortableMaintenance } from './advance-portable-maintenance.ts';
 import { beginPortableMaintenance } from './begin-portable-maintenance.ts';
 import { maintenanceActive } from './maintenance-active.ts';
@@ -30,11 +32,27 @@ export async function managePortable({ store, request, ...resources }: ManagePor
 
   const job = matching.value;
 
-  if (request.action === SandboxAction.Cancel) {
-    await cancelPortableMaintenance({ ...input, job });
-  } else if (job.action === request.action) {
-    await advancePortableMaintenance({ ...input, job });
+  const promise = advanceMaintenanceRequest({ ...input, job });
+  const advanced = await capturePromise({ promise });
+
+  if (Result.isFailure(advanced)) {
+    const reason = String(advanced.failure).slice(0, SANDBOX_FAILURE_MAX_CHARS).toWellFormed();
+    const lastError = Option.some(reason);
+
+    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
   }
 
   return portableReport(input);
+}
+
+type MaintenanceRequestInput = ManagePortableInput & { readonly job: PortableMaintenance };
+
+async function advanceMaintenanceRequest({ request, job, ...input }: MaintenanceRequestInput): Promise<void> {
+  if (request.action === SandboxAction.Cancel) {
+    return await cancelPortableMaintenance({ ...input, job });
+  }
+
+  if (job.action === request.action) {
+    await advancePortableMaintenance({ ...input, job });
+  }
 }

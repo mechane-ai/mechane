@@ -32,6 +32,10 @@ export function failCheckpoint({ store, checkpoint, cause }: FailedCheckpointInp
 
       store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
 
+      if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+        return;
+      }
+
       if (FileCheckpointPurpose.guards.Drain(checkpoint.purpose)) {
         const identity = MachineId.make(machineId);
 

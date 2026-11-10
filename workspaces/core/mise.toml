@@ -4,7 +4,7 @@
 _.path = ["{{config_root}}/node_modules/.bin"]
 WRANGLER_SEND_METRICS = "false"
 # Wrangler writes a debug log per run; keep it in the app's ignored .wrangler folder instead of the home directory.
-WRANGLER_LOG_PATH = "{{config_root}}/packages/worker/sandbox-service/.wrangler/logs"
+WRANGLER_LOG_PATH = "{{config_root}}/packages/worker/server/.wrangler/logs"
 
 [tasks.setup]
 description = "Install the locked packages"
@@ -19,9 +19,9 @@ depends = [
   "knip",
   "duplicates",
   "checks",
+  "fingerprint",
   "rules:check",
   "build:server",
-  "build:sandbox",
   "build:guest",
   "reference:check",
   "infrastructure:check",
@@ -29,24 +29,21 @@ depends = [
 ]
 run = "node packages/node/checks/src/main.ts record"
 
-# The inner loop: each tool reads only the changed set or reuses its last run, and a fingerprint equal to the last
-# green full check's skips the builds and the smoke. It never replaces check, which CI runs cold.
+# The inner loop selects affected targets against exact evidence from the last complete check.
 [tasks."check:fast"]
-description = "Check a change quickly: changed format and lint, incremental types, dependencies, owned checks, infrastructure, and the command reference; run the smoke only when its fingerprint changed"
-depends = [
-  "lint:changed",
-  "typecheck:incremental",
-  "knip",
-  "duplicates",
-  "checks",
-  "rules:check",
-  "reference:check",
-  "infrastructure:check",
-]
-run = "node packages/node/checks/src/main.ts compare || mise run smoke"
+description = "Check changed source and select affected smoke or infrastructure targets from exact last-green evidence"
+depends = ["lint:changed", "typecheck:incremental", "knip", "duplicates", "checks", "rules:check", "reference:check"]
+run = '''
+set -eu
+tasks=$(node packages/node/checks/src/main.ts affected)
+if [ -n "$tasks" ]; then
+  mise run $tasks
+fi
+'''
 
 [tasks.fingerprint]
 description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "node packages/node/checks/src/main.ts fingerprint"
 
 [tasks.locks]
@@ -63,7 +60,7 @@ run = "node packages/node/rule-generator/src/main.ts write"
 
 [tasks."rules:check"]
 description = "Fail on each file the rule registry generates whose committed text differs from what rules:generate writes, on each finding of the registry's own checks, and on an ast-grep rule that misjudges one of its examples"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = ["node packages/node/rule-generator/src/main.ts check", "ast-grep test --skip-snapshot-tests"]
 
 [tasks."rules:explain"]
@@ -82,14 +79,14 @@ run = "node packages/node/checks/src/main.ts tighten"
 # the smoke waits for the runtime builds, which took 12 to 17 seconds instead of 3 while the static tasks held the CPUs.
 [tasks."format:check"]
 description = "Fail when a product file is not formatted"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "oxfmt --check ."
 
 # Each lane's program checks every member of the lane once, under the lane's runtime types, as dependencies.json
 # assigns them. Two checkers per program leave CPUs to the other builders of a shared host.
 [tasks.typecheck]
 description = "Type-check each lane's program: the shared lane, the worker lane and the node lane, each with every member dependencies.json puts in it"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = [
   "tsc -p tsconfig.shared.json --checkers 2",
   "tsc -p tsconfig.worker.json --checkers 2",
@@ -111,7 +108,7 @@ run = [
 # on a file above or below its count in lint/baseline.
 [tasks.lint]
 description = "Lint with oxlint and the ast-grep rules once each, failing on an enforced rule's finding and holding each ratchet to its baseline"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "node packages/node/checks/src/main.ts lint"
 
 # The changed set adds every importer of a changed file, whose type-aware findings the change can alter, and grows to
@@ -126,35 +123,27 @@ node packages/node/checks/src/main.ts lint $files
 
 [tasks.knip]
 description = "Report unused files, exports and dependencies, counting tests and then production consumers only"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = ["knip", "knip --production"]
 
 [tasks.duplicates]
 description = "Fail on any copied block at or above the declared size"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "jscpd"
 
 [tasks.checks]
 description = "Run the repository's own checks: layout, blank lines, patterns, orphans, documents, pins, the wire and migration locks, the boundaries with one dependency-cruiser cruise of every rule, the owned ratchets with their baselines, and every baseline against the merge base's"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "node packages/node/checks/src/main.ts check"
 
 [tasks."build:server"]
 depends = ["build:console"]
-description = "Compile the Node service and native Workflow handlers into the release artifact"
-run = "node packages/node/server/build/build.mjs"
-
-[tasks."build:sandbox"]
-description = "Build the isolated sandbox service without deploying or building its container image"
-dir = "{{config_root}}/packages/worker/sandbox-service"
-run = [
-  "node node_modules/wrangler/bin/wrangler.js deploy --dry-run --containers-rollout=none --outdir dist",
-  "node ../../node/wrangler/src/main.ts",
-]
+description = "Compile the Worker, console inventory, and controlled migration commands once"
+run = ["node packages/node/distribution/src/build/build-worker.ts", "node packages/node/wrangler/src/main.ts"]
 
 [tasks."build:console"]
 depends = ["build:elements"]
-description = "Build the console assets served by the Node release"
+description = "Build the console assets served by the Worker"
 dir = "{{config_root}}/packages/browser/console"
 run = "node node_modules/vite/bin/vite.js build"
 
@@ -164,12 +153,13 @@ dir = "{{config_root}}/packages/browser/elements"
 run = "node node_modules/vite/bin/vite.js build"
 
 [tasks."build:guest"]
-description = "Bundle the sandbox's guest into one Node module in its image's build folder, which the host launcher runs too"
+description = "Bundle the sandbox guest and installed CLI as portable Node modules in the image's build folder"
 dir = "{{config_root}}/packages/node/guest"
 run = '''
 set -e
 notices=$(cat ../../../licenses/apache-2.0.js ../../../licenses/effect.js)
 bun build src/main.ts --target=node --outfile image/guest.mjs --banner "$notices"
+bun build ../cli/src/main.ts --target=node --outfile image/mechane.mjs --banner "$notices"
 '''
 
 [tasks."build:cli"]
@@ -184,7 +174,7 @@ run = "node scripts/reference/main.ts > reference.json"
 
 [tasks."reference:check"]
 description = "Fail when the committed command reference differs from the command model"
-wait_for = ["build:server", "build:sandbox", "build:cli", "build:guest"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 dir = "{{config_root}}/packages/node/cli"
 run = "node scripts/reference/main.ts | diff -u reference.json -"
 
@@ -193,8 +183,16 @@ description = "Build the CLI's release of this source for every target into dist
 run = "node packages/node/release/src/main.ts build"
 
 [tasks."distribution:build"]
-description = "Build immutable Node and sandbox installation artifacts from a clean public release tag"
+description = "Build immutable Worker application candidates from a clean source revision"
 run = "node packages/node/distribution/src/main.ts build"
+
+[tasks."distribution:qualify"]
+description = "Bind successful check evidence to immutable candidate bytes"
+run = "node packages/node/distribution/src/main.ts qualify"
+
+[tasks."distribution:verify-qualified"]
+description = "Verify candidate bytes and their explicit qualification digest"
+run = "node packages/node/distribution/src/main.ts verify-qualified"
 
 [tasks."distribution:verify"]
 description = "Verify an installation archive and its release receipt"
@@ -202,7 +200,7 @@ run = "node packages/node/distribution/src/main.ts verify"
 
 [tasks."infrastructure:check"]
 description = "Check the native provider and validate the release module without using a cloud account"
-depends = ["build:sandbox"]
+depends = ["build:server"]
 run = "./infrastructure/check.sh"
 
 
@@ -211,8 +209,8 @@ description = "Install Chromium and its native dependencies for the retained Con
 run = "pnpm --filter @mechane/testing exec playwright install --with-deps chromium"
 
 [tasks.smoke]
-description = "Drive the built CLI and Node service against Postgres and local external-service fixtures"
-depends = ["build:cli", "build:server", "build:sandbox", "build:guest", "browser:install"]
+description = "Drive the built CLI and Worker against celld, Postgres, and deterministic external fixtures"
+depends = ["build:cli", "build:server", "build:guest", "browser:install"]
 # A full check settles static failures before starting disposable services; standalone smoke runs only its builds.
 wait_for = [
   "format:check",
@@ -221,6 +219,7 @@ wait_for = [
   "knip",
   "duplicates",
   "checks",
+  "fingerprint",
   "rules:check",
   "reference:check",
   "infrastructure:check",
@@ -228,13 +227,13 @@ wait_for = [
 run = "node packages/node/smoke/src/main.ts"
 
 [tasks.dev]
-description = "Serve the compiled Node runtime with a fresh Postgres fixture and print MECHANE_ORIGIN"
-depends = ["build:server", "build:sandbox", "build:guest"]
-run = "node packages/node/stack/src/main.ts fixture"
+description = "Run the retained local Worker, Postgres, container guest, and development fixtures"
+depends = ["build:guest"]
+run = "node packages/node/stack/src/main.ts start"
 
 [tasks.start]
-description = "Start the compiled Node runtime with persistent local Postgres state"
-depends = ["build:server", "build:sandbox", "build:guest"]
+description = "Start the retained local Worker installation"
+depends = ["build:guest"]
 run = "node packages/node/stack/src/main.ts start"
 
 [tasks."local:reset"]

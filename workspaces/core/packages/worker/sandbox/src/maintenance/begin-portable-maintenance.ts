@@ -8,6 +8,7 @@ export function beginPortableMaintenance({ store, providerName, request }: Manag
   const phase = prepareMaintenance({ store, request });
   const workspace = store.workspace();
   const target = Option.none();
+  const lastError = Option.none();
 
   store.savePortableMaintenance({
     id,
@@ -16,5 +17,6 @@ export function beginPortableMaintenance({ store, providerName, request }: Manag
     provider: providerName,
     source: workspace.head,
     target,
+    lastError,
   });
 }

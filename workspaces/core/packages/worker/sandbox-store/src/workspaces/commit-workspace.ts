@@ -3,9 +3,15 @@ import { Option, Schema } from 'effect';
 import { WorkspaceSnapshot } from './schemas.ts';
 
 /** Advances the durable head and queues the previous generation for deletion within the caller transaction. */
-export function commitWorkspace({ sql, generation, parent, archive }: SqlCall<WorkspaceSnapshot>): void {
+export function commitWorkspace({
+  sql,
+  generation,
+  parent,
+  archive,
+  manifestSha256,
+}: SqlCall<WorkspaceSnapshot>): void {
   const codec = Schema.fromJsonString(WorkspaceSnapshot);
-  const value = Schema.encodeSync(codec)({ generation, parent, archive });
+  const value = Schema.encodeSync(codec)({ generation, parent, archive, manifestSha256 });
   const retired = Option.getOrNull(parent);
 
   sql.exec(

@@ -54,11 +54,14 @@ Effect Schema owns the domain operation catalog, CLI inputs, application configu
 `wireStruct` and `renamedWireStruct` preserve the catalog's wire-key mapping; the server and shared client encode and
 decode through the declared operation rather than serializing decoded values directly.
 
-AI SDK tools and json-render catalogs use their native Zod schemas in `packages/node/runtime` and
+AI SDK tools and json-render catalogs use their native Zod schemas in `packages/worker/runtime` and
 `packages/shared/protocol/src/presentation`. These are declared native consumers. Define each shape once and derive
 its TypeScript type from that schema. Pass native SDK messages, tool parts, and stream chunks through the upstream
 SDK types and validators; do not maintain a second serializer or mirror schema for them. An unrelated domain
 endpoint does not gain a second validator because it shares a file with an SDK call.
+
+Pi task, document, and tool definitions use its public declarations and opaque identifier types. Effect schemas
+still own application records encoded into native documents. Keep Pi's own inbox and task formats upstream.
 
 Reject unknown fields on newly owned command and configuration shapes. Foreign provider payloads may contain fields
 not read by the application. Existing tolerant domain response schemas retain their declared behavior; narrower

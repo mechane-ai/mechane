@@ -3,8 +3,8 @@ id: class-field-form
 valid:
   - 'class Stack { readonly #ready = false; }'
   - "class RequestFailed extends Error { readonly code = 'refused'; }"
-  - "class CredentialedModel implements LanguageModelV4 { readonly provider = 'openrouter'; }"
   - "class Gone extends Base { override readonly message = 'gone'; }"
 invalid:
   - 'class Stack { ready = false; }'
   - 'class Stack { readonly ready = false; }'
+  - "class CredentialedModel implements LanguageModelV4 { readonly provider = 'openrouter'; }"

@@ -8,6 +8,6 @@ export const TOOL_NAME_MAX_CHARS = 128;
 export const SECRET_REFERENCE_MAX_CHARS = 128;
 /** The remote URL length cap bounds owner-supplied connection configuration. */
 export const REMOTE_URL_MAX_CHARS = 2048;
-/** Only owner-classified free reads are supported until paid or mutating calls have receipt semantics. */
-export const RemoteToolPolicy = { ReadOnlyFree: 'read_only_free' } as const;
+/** Mutating tools must explicitly declare idempotency before the runtime may replay their calls. */
+export const RemoteToolPolicy = { ReadOnlyFree: 'read_only_free', IdempotentFree: 'idempotent_free' } as const;
 export type RemoteToolPolicy = (typeof RemoteToolPolicy)[keyof typeof RemoteToolPolicy];

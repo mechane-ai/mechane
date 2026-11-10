@@ -35,7 +35,6 @@ export const HttpHeader = {
   SecFetchSite: 'sec-fetch-site',
   SetCookie: 'set-cookie',
   UserAgent: 'user-agent',
-  WorkflowRunId: 'x-workflow-run-id',
   UiMessageStream: 'x-vercel-ai-ui-message-stream',
   WwwAuthenticate: 'www-authenticate',
   XContentTypeOptions: 'x-content-type-options',

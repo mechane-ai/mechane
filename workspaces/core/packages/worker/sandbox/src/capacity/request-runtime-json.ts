@@ -1,7 +1,7 @@
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { Duration, Option, Result, Schema } from 'effect';
 import type { SandboxRuntimeSettings } from '../environment.ts';
-import { runtimeHeaders, runtimeOrigin, sandboxServiceKey } from './runtime-transport.ts';
+import { runtimeOrigin, sandboxServiceKey } from './runtime-transport.ts';
 
 type RuntimeRequestInput = {
   readonly settings: SandboxRuntimeSettings;
@@ -24,7 +24,7 @@ export async function requestRuntimeJson({ settings, path, body }: RuntimeReques
     return rejectRuntimeRequest();
   }
 
-  const headers = await runtimeHeaders({ settings });
+  const headers = new Headers();
   const key = await sandboxServiceKey({ settings });
   const timeoutMs = Duration.toMillis(RUNTIME_REQUEST_TIMEOUT);
   const signal = AbortSignal.timeout(timeoutMs);

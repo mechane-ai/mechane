@@ -1,17 +1,19 @@
 # Mechane infrastructure
 
-Operators deploy one Node service backed by Postgres and a separate Cloudflare compute service. Both consume immutable
-artifacts from the same release. The runtime package owns product data and migrations; infrastructure owns resources,
-credentials, and service endpoints.
+Operators deploy one Cloudflare application Worker with Mech and Sandbox Durable Objects, Console assets, a checkpoint
+bucket, and a container application. Postgres owns shared control data. Each installation consumes qualified immutable
+release bytes; infrastructure does not compile application code or seed runtime records.
 
-- `modules/cloudflare/` supplies the sandbox service and public ingress gateway.
-- `provider/` owns Worker release activation, verified image copying, and Cloudflare container rollout.
-- `examples/cloudflare/` shows the compute declaration and provider setup helper.
+- `modules/cloudflare/` declares application identity, bindings, domain routing, storage, and sandbox capacity.
+- `provider/` verifies qualification, uploads Worker modules and assets, activates the version, and manages guest images
+  and container rollout.
+- `examples/cloudflare/` shows an extracted release module and provider setup.
 - `check.sh` validates the module and provider without a cloud account.
 
-The Node archive includes the compiled server, Workflow bundle, migrations, grant command, and console assets. Its
-`release.json` names each entrypoint and the pinned Node version. Deployment verifies the archive checksum and runs the
-included commands without compiling TypeScript or installing packages.
+The release ZIP includes the compiled Worker, Console, database migration and grant commands, historical import command,
+notices, and installation metadata. Its candidate directory also contains a digest-bound artifact inventory,
+qualification receipt, input files, and check evidence. Deployment verifies these bytes and never rebuilds them.
 
-The distribution program builds artifacts from clean public source tags. Public users need no private repository or
-Factory tooling. The private Factory publishes provider source and signed binaries through its engineering App.
+The installation owner supplies Postgres, non-secret settings, and Secrets Store references. Database migration
+credentials belong only to the migration command. The application receives its restricted runtime database credential.
+Public users need no private repository or Factory tooling.

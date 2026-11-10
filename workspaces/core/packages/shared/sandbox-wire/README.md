@@ -16,9 +16,13 @@ Layer 1 · shared lane · data dialect · any consumer
 - Paths: `guestExecutionPath`, `guestHealthPath`, `guestWorkspacePath` and `launcherMachinePath`, over the segments of
   `GuestSegment`.
 - Guest wire: `ExecutionRequest`, `ExecutionReceipt`, `ExecutionWait`, `ExecutionId`, `GuestStart` and `GuestListening`.
+  Startup may carry a bounded public certificate-authority PEM bundle from trusted installation composition; executions
+  cannot supply that trust configuration.
 - Host launcher wire: `HostMachine`, `HostMachineStart` and `HostMachineStatus`.
-- Progress: `ExecutionProgress`, `SettledReceipt` and `RunExecutionInput`; PersistenceFailed exposes a failed save
-  without claiming durability or automatically rerunning the command.
+- Progress: `ExecutionProgress`, `SettledReceipt` and `RunExecutionInput`; PersistenceFailed exposes a failed save and
+  its known command outcome without claiming durability or automatically rerunning the command.
+- Environment: `SandboxReport` separates committed files, checkpoint progress, and retained recovery state.
+  `SandboxStopReceipt` names the retirement phase, last error, and closed recovery action; acceptance is not completion.
 - Bounds: `GUEST_PORT`, `GUEST_VARIABLES`, `EXECUTION_VARIABLES`, `OUTPUT_TAIL_BYTES` and the execution spans.
 
 ## Use

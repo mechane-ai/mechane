@@ -25,7 +25,7 @@ const VALUES = {
     'required',
   ],
   keyboardModifiers: ['mod', 'ctrl', 'alt', 'shift', 'meta'],
-  externalProperties: ['self_grading'],
+  externalProperties: ['run_worker_first', 'self_grading'],
 } as const;
 
 const EXAMPLES = {
@@ -40,6 +40,7 @@ const EXAMPLES = {
     'function useNavigation(focusOnNavigation = true) {}',
     "type OwnedFlags = { readonly 'no_bundle': true };",
     'const self_grading = true;',
+    'const run_worker_first = true;',
   ],
   allowed: [
     'const isPaid = true;',
@@ -52,6 +53,7 @@ const EXAMPLES = {
     'function Control({ disabled = false }: ControlProps) {}',
     'type BuiltBundle = { readonly no_bundle: true };',
     'const suite = { self_grading: true };',
+    'type WorkerAssets = { readonly run_worker_first: true };',
   ],
 } as const;
 

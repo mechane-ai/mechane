@@ -20,10 +20,9 @@ export const verifyReceipt = Effect.fn('verifyReceipt')(function* ({
   const binaries = targets.map((target) => releaseBinaryName({ target }));
   const moduleName = assetName({ kind: 'cloudflare' });
   const guestName = assetName({ kind: 'guest' });
-  const nodeName = assetName({ kind: 'node' });
   const providerSetup = assetName({ kind: 'setup-provider' });
   const metadata = ['installation.json', 'release.json', ReleaseAsset.Manifest, 'SHA256SUMS'];
-  const expected = [...binaries, nodeName, moduleName, guestName, providerSetup, ...metadata];
+  const expected = [...binaries, moduleName, guestName, providerSetup, ...metadata];
   const names = receipt.assets.map((asset) => asset.name);
   const uniqueNames = new Set(names);
   const isComplete = expected.every((name) => uniqueNames.has(name));

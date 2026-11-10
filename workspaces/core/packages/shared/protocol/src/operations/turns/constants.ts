@@ -9,6 +9,10 @@ export const TurnStatus = {
   Stopped: 'stopped',
 } as const;
 
+/** Native turns may execute; imported turns are inert historical records. */
+export const TurnRuntimeSource = { Native: 'native', Imported: 'imported' } as const;
+export type TurnRuntimeSource = (typeof TurnRuntimeSource)[keyof typeof TurnRuntimeSource];
+
 export type TurnStatus = (typeof TurnStatus)[keyof typeof TurnStatus];
 
 /**

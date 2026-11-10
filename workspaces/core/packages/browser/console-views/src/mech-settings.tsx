@@ -135,7 +135,7 @@ export function MechSettings({
           <Details
             items={[
               { label: 'Revision', value: mech.revision },
-              { label: 'Active revision', value: mech.activeRevision },
+              { label: 'Active revision', value: Option.getOrElse(mech.activeRevision, () => 'Preparing') },
               { label: 'Mech ID', value: <CopyValue label="mech ID" value={mech.id} /> },
             ]}
           />

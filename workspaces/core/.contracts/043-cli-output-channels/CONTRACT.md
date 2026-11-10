@@ -37,9 +37,9 @@ For each machine-readable document a change writes, does its schema version come
 
 ## Local adaptations
 
-CLI output belongs to `packages/node/program/src/output/`; reference generation and test reporting use their declared output owners in `packages/node/cli/scripts/reference/main.ts` and `packages/node/testing/src/check.ts`. Server and SDK diagnostics belong to the narrow boundaries below rather than a global logging package.
+CLI output belongs to `packages/node/program/src/output/`; reference generation and test reporting use their declared output owners in `packages/node/cli/scripts/reference/main.ts` and `packages/node/smoke/src/run-scenarios.ts`. Server and SDK diagnostics belong to the narrow boundaries below rather than a global logging package.
 Every CLI run writes its results through the writer the output module hands it. A command declares its shape: a document command writes its one result when its run ends, and `event list`, a stream command, writes one record per event as it arrives, as human lines or JSON Lines, its default off a terminal, and refuses `--output json`.
-Exit statuses: the CLI's `ExitStatus` in its command model, which the generated block states from the command reference, `DevStatus`, `ReleaseStatus`, `SmokeStatus`, `CheckStatus` and the guest's `GuestStatus` (`Stopped` 0, `Failed` 1). The distribution entry point reports success as 0 and failure as 1 through `reportExit`.
+The CLI's command model declares its `ExitStatus`, which the generated block states from the command reference. Other executable output owners map their outcomes to their declared process status. The distribution entry point reports success as 0 and failure as 1 through `reportExit`.
 `--output json` writes one envelope whose `schema_version` is `ENVELOPE_SCHEMA_VERSION`, with the result and each error of the run; `--output jsonl` writes the same records one per line.
 A usage error is a record too: the CLI decodes the output mode first and writes the error with a null `command`, in the default mode when the mode itself does not decode.
 oxlint `no-console`, `unicorn/no-process-exit`, and `no-restricted-properties` on `process.stdout`, `stderr`, `exitCode` and `exit`, with overrides for the output modules, and ast-grep `numeric-exit-status`, which rejects a number as a `status` field or as the return of a function that returns a status, enforce these rules.
@@ -47,10 +47,11 @@ oxlint `no-restricted-imports` rejects Effect's `Console`, and `no-restricted-pr
 A run answers how it ended, which `invoke` alone maps to a status: `eval run` writes its report as its one result and each trial's progress to standard error, and ends `Failed` when a trial failed to run or grade; Ctrl-C fails it with `EvalInterrupted`, `Interrupted`, so its envelope carries that error.
 A run returns its result and never encodes it, since the output module encodes each result once for `json` and `jsonl`; ast-grep `encode-in-runs` ratchets an encode in `packages/node/cli/src/runs` and in the eval runner, `packages/node/eval/src`.
 
-The Node server's `server/src/lifecycle/shutdown.ts` may force exit only when bounded shutdown fails or exceeds the
-host grace period, as contract 041 requires. This exact lifecycle boundary is not a library-wide exit exception.
+The local supervisor's `packages/node/stack/src/run-stack-program.ts` owns signal-driven cleanup and process failure
+status. The application Worker owns no process listener or process-exit path.
 
-Server startup and shutdown report only at their lifecycle owners. The sandbox's
+The runtime's `runtime/src/output/write-actor-diagnostic.ts` and sandbox's
+`sandbox/src/output/write-sandbox-diagnostic.ts` own their bounded native recovery diagnostics. The sandbox's
 `sandbox/src/egress/pass-egress.ts` may write its fixed egress-refusal event and reason.
 `sandbox/src/evidence/evidence-cleanup.ts` may report its fixed cleanup-failure tag and artifact identity while retaining
 the ready artifact and its retry receipt.

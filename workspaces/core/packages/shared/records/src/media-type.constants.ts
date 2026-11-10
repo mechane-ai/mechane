@@ -1,6 +1,7 @@
 /** The media types Mechane sends and reads, each with its charset parameter where it names one. */
 export const MediaType = {
   JavaScript: 'text/javascript; charset=utf-8',
+  JavaScriptModule: 'application/javascript+module',
   WebAssembly: 'application/wasm',
   Css: 'text/css; charset=utf-8',
   Svg: 'image/svg+xml',
@@ -11,6 +12,7 @@ export const MediaType = {
   Webp: 'image/webp',
   Icon: 'image/x-icon',
   Woff2: 'font/woff2',
+  Woff: 'font/woff',
   Json: 'application/json',
   FormUrlEncoded: 'application/x-www-form-urlencoded',
   OctetStream: 'application/octet-stream',

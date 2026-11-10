@@ -1,7 +1,17 @@
-import { LoopbackOrigin, SANDBOX_VARIABLES, SandboxProvider, SecureOrigin } from '@mechane/deployment';
+import {
+  LoopbackOrigin,
+  SANDBOX_VARIABLES,
+  SandboxContainerNetwork,
+  SandboxProvider,
+  SecureOrigin,
+} from '@mechane/deployment';
 import { renamedWireStruct } from '@mechane/records';
-import { BrowserSandboxDisabledVariable, SandboxToolsVariable } from '@mechane/sandbox-wire';
-import { Schema } from 'effect';
+import {
+  BrowserSandboxDisabledVariable,
+  SandboxToolsVariable,
+  TrustedCertificatesVariable,
+} from '@mechane/sandbox-wire';
+import { Effect, Schema } from 'effect';
 
 /** Containers use the authenticated egress gateway; local guests use a loopback launcher. */
 export const SandboxVariables = Schema.Union([
@@ -11,12 +21,18 @@ export const SandboxVariables = Schema.Union([
       origin: SecureOrigin,
       additionalTools: SandboxToolsVariable,
       isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
+      trustedCertificatesPem: TrustedCertificatesVariable,
+      containerNetwork: Schema.Enum(SandboxContainerNetwork).pipe(
+        Schema.withDecodingDefaultKey(Effect.succeed(SandboxContainerNetwork.Gateway)),
+      ),
     },
     renames: {
       provider: SANDBOX_VARIABLES.sandboxProvider,
       origin: SANDBOX_VARIABLES.origin,
       additionalTools: SANDBOX_VARIABLES.sandboxTools,
       isBrowserSandboxDisabled: SANDBOX_VARIABLES.isBrowserSandboxDisabled,
+      trustedCertificatesPem: SANDBOX_VARIABLES.trustedCertificatesPem,
+      containerNetwork: SANDBOX_VARIABLES.containerNetwork,
     },
   }),
   renamedWireStruct({
@@ -26,6 +42,7 @@ export const SandboxVariables = Schema.Union([
       launcherKey: Schema.RedactedFromValue(Schema.NonEmptyString),
       additionalTools: SandboxToolsVariable,
       isBrowserSandboxDisabled: BrowserSandboxDisabledVariable,
+      trustedCertificatesPem: TrustedCertificatesVariable,
     },
     renames: {
       provider: SANDBOX_VARIABLES.sandboxProvider,
@@ -33,6 +50,7 @@ export const SandboxVariables = Schema.Union([
       launcherKey: SANDBOX_VARIABLES.hostLauncherKey,
       additionalTools: SANDBOX_VARIABLES.sandboxTools,
       isBrowserSandboxDisabled: SANDBOX_VARIABLES.isBrowserSandboxDisabled,
+      trustedCertificatesPem: SANDBOX_VARIABLES.trustedCertificatesPem,
     },
   }),
 ]);

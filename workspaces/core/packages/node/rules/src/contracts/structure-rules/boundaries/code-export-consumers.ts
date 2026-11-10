@@ -6,6 +6,7 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
  * kind of member whose entries need one.
  */
 const VALUES = {
+  assetEntries: ['licenses/apache-2.0.js!', 'licenses/effect.js!'],
   knip: {
     includeEntryExports: true,
     tags: ['-public'],
@@ -18,7 +19,6 @@ const VALUES = {
       'packages/browser/*/src/**/*.stories.tsx': ['exports'],
       'packages/browser/elements/packages/**/*.stories.tsx': ['exports'],
       'packages/browser/elements/vite.config.ts': ['exports'],
-      'packages/node/runtime/src/execution/run-workflow.ts': ['exports'],
     },
   },
   knipNotes: [
@@ -51,7 +51,7 @@ const VALUES = {
       path: ['ignore'],
       lines: [
         "The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,",
-        'since the root that holds it holds no source.',
+        'since the root configuration is outside the package source projects.',
       ],
     },
     {
@@ -65,7 +65,6 @@ const VALUES = {
       lines: [
         'Storybook consumes CSF metadata and story exports through discovery; private production exports remain checked.',
         'Vite consumes the UI build configuration default export; its source-map plugin is disabled for canonical source analysis.',
-        'The Workflow compiler discovers runWorkflow by its directive and verifies exactly one compiled entry in the release build.',
       ],
     },
     {
@@ -74,6 +73,10 @@ const VALUES = {
         "Each member's workspace follows from its kind and source roots, so a new member is checked like the others.",
         'The published @mechane-ai/elements manifest defines its supported external API; its workspace checks private exports, unreachable files, and unused dependencies.',
       ],
+    },
+    {
+      path: ['workspaces', '.'],
+      lines: ['build:guest reads these comment-only license assets into the guest and installed CLI bundle banners.'],
     },
   ],
   kindNotes: {

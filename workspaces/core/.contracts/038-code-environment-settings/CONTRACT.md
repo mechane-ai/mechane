@@ -42,7 +42,7 @@ Mechs, workspace credentials, notifications, and execution grants are runtime re
 platform subscriptions. Settings never overwrite runtime records during deployment.
 
 Resolve credentials only at the trusted operation that needs them. Store references in durable arguments and records;
-never pass resolved credentials into Workflow's serialized arguments, results, model configuration, or logs.
+never pass resolved credentials into Pi's durable arguments, results, model context, or logs.
 
 The CLI's command model owns flags and environment fallbacks, including `MECHANE_ORIGIN`, `MECHANE_API_KEY`, and
 `XDG_CONFIG_HOME`. Release and check programs use their registered settings modules. Their children inherit an

@@ -1,6 +1,12 @@
-import type { Turn, TurnPage } from '@mechane/protocol';
+import { Turn, TurnRuntimeSource } from '@mechane/protocol';
+import type { TurnPage } from '@mechane/protocol';
+import { Schema } from 'effect';
 
 type ListedTurn = TurnPage['turns'][number];
+
+export function isImportedTurn(turn: ListedTurn): boolean {
+  return Schema.is(Turn)(turn) && turn.runtimeSource === TurnRuntimeSource.Imported;
+}
 
 /** A readable outcome for the recorded turn state. */
 export function outcomeLabel(status: ListedTurn['status']): string {

@@ -13,8 +13,8 @@ import { channelDelivery } from './channel-delivery.ts';
 import { codeStyle } from './code-style.ts';
 import { consoleBoundaries } from './console-boundaries.ts';
 import { consoleCacheLifecycle } from './console-cache-lifecycle.ts';
+import { durableAgentRuntime } from './durable-agent-runtime.ts';
 import { installationOwnership } from './installation-ownership.ts';
-import { nativeWorkflowRuntime } from './native-workflow-runtime.ts';
 import { packageLayers } from './package-layers.ts';
 import { ruleRegistry } from './rule-registry.ts';
 import { structuredPresentation } from './structured-presentation.ts';
@@ -38,10 +38,10 @@ export const MECHANE_CONTRACTS = {
   'ui-analytical-graphics': uiAnalyticalGraphics,
   'console-cache-lifecycle': consoleCacheLifecycle,
   'execution-access': executionAccess,
-  'thread-continuations': threadContinuations,
+  'mech-notifications': threadContinuations,
   'developer-environments': developerEnvironments,
   'model-caching': modelCaching,
-  'native-workflow-runtime': nativeWorkflowRuntime,
+  'durable-agent-runtime': durableAgentRuntime,
   'channel-delivery': channelDelivery,
   'structured-presentation': structuredPresentation,
   'managed-processes': managedProcesses,

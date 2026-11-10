@@ -3,9 +3,11 @@
   "compilerOptions": { "types": ["@cloudflare/workers-types", "node"] },
   "files": ["lint/types/worker/strict-globals.d.ts"],
   "include": [
+    "packages/worker/control-store/src",
+    "packages/worker/runtime/src",
     "packages/worker/sandbox/src",
-    "packages/worker/sandbox-service/src",
     "packages/worker/sandbox-store/src",
+    "packages/worker/server/src",
     "packages/worker/store/src"
   ]
 }

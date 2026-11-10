@@ -25,9 +25,5 @@ export function sandboxSettings({ store, environment }: SandboxSettingsInput): S
 export function sandboxRuntimeSettings({
   environment,
 }: Pick<SandboxSettingsInput, 'environment'>): SandboxRuntimeSettings {
-  return {
-    origin: environment.MECHANE_RUNTIME_ORIGIN,
-    serviceKey: environment.MECHANE_SANDBOX_SERVICE_KEY,
-    transport: environment.MECHANE_RUNTIME_TRANSPORT,
-  };
+  return { origin: environment.MECHANE_RUNTIME_ORIGIN, serviceKey: environment.MECHANE_SANDBOX_SERVICE_KEY };
 }

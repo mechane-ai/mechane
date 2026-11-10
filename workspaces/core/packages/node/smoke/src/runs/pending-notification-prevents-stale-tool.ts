@@ -1,17 +1,28 @@
-import { TurnStatus } from '@mechane/protocol';
+import { RemoteToolPolicy, ToolCallStatus, TurnStatus } from '@mechane/protocol';
 import {
   createMechContext,
+  discoverMcpTools,
+  findOfferedMcpTool,
+  grantMcpTools,
   readConsoleMessages,
   readModelToolResult,
   readSandboxMachines,
+  readTrace,
   readTurns,
   requireFixtures,
   sendNotification,
+  startHeldMcpInvocation,
+  startMcpFixture,
   waitForTurn,
+  withMcpConnection,
 } from '@mechane/testing';
-import type { ScenarioInput } from '@mechane/testing';
+import type { MechContext, ScenarioInput } from '@mechane/testing';
+import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { policyDuringDiscoveryPreventsDispatch } from './policy-during-discovery-prevents-dispatch.ts';
+
+const LateToolVeto = Schema.Struct({ status: Schema.Literals(['not_started', 'refused']) });
 
 export async function pendingNotificationPreventsStaleTool({ stack }: ScenarioInput): Promise<void> {
   const marker = `correction-${randomUUID()}`;
@@ -68,4 +79,59 @@ export async function pendingNotificationPreventsStaleTool({ stack }: ScenarioIn
     conversation.messages.filter((message) => message.role === 'assistant').map((message) => message.text),
     [correctedText],
   );
+
+  await correctionDuringDiscoveryPreventsDispatch(owner);
+}
+
+async function correctionDuringDiscoveryPreventsDispatch(owner: MechContext): Promise<void> {
+  const fixture = await startMcpFixture();
+  const { model } = requireFixtures(owner.stack);
+
+  await withMcpConnection({
+    ...owner,
+    fixture,
+    policy: RemoteToolPolicy.IdempotentFree,
+    use: async (connection) => {
+      await grantMcpTools({ ...owner, fixture, connectionId: connection.id });
+
+      const offered = await discoverMcpTools({ ...owner, model, marker: `late-discovery-tools-${randomUUID()}` });
+      const toolName = findOfferedMcpTool({ tools: offered, description: fixture.descriptions.write });
+
+      assert.ok(toolName !== undefined);
+
+      const marker = `late-discovery-${randomUUID()}`;
+      const { turn, toolCallId } = await startHeldMcpInvocation({ ...owner, marker, model, toolName });
+      const discovery = fixture.holdNextDiscovery();
+
+      try {
+        model.release({ marker, index: 0 });
+        await discovery.waitForRequest();
+
+        const admitted = await readTrace({ ...owner, turnId: turn.id });
+        const tool = admitted.toolCalls?.find((candidate) => candidate.id === toolCallId);
+
+        assert.equal(tool?.status, ToolCallStatus.Running, 'The HTTP gate did not pause after generic tool admission');
+
+        const correction = await sendNotification({ ...owner, text: `${marker}: do not perform the pending write` });
+
+        discovery.release();
+
+        const result = await readModelToolResult({ model, marker, toolCallId });
+
+        assert.deepEqual(fixture.readCalls(), [], 'A correction accepted during discovery allowed a remote write');
+        assert.ok(Schema.is(LateToolVeto)(result), 'The late dispatch fence did not return a typed refusal');
+
+        const completed = await waitForTurn({ ...owner, notificationId: correction.id });
+        const reconsideration = await model.waitForCall({ marker, index: 1 });
+
+        assert.equal(completed.status, TurnStatus.Completed);
+        assert.ok(JSON.stringify(reconsideration.body['messages']).includes(correction.id));
+      } finally {
+        model.release({ marker, index: 0 });
+        discovery.release();
+      }
+
+      await policyDuringDiscoveryPreventsDispatch({ ...owner, fixture, model, toolName });
+    },
+  });
 }

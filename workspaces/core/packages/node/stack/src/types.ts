@@ -1,6 +1,9 @@
+import type { Buffer } from 'node:buffer';
 import type { ChildProcess } from 'node:child_process';
 
 export type Environment = Readonly<Record<string, string>>;
+
+export type CelldBinary = { readonly executable: string; readonly version: string; readonly sha256: string };
 
 export type ModelToolCall = {
   readonly id: string;
@@ -34,6 +37,7 @@ export type ModelPlan = {
 export type ModelCall = {
   readonly marker: string;
   readonly index: number;
+  readonly purpose: 'generation' | 'compaction';
   readonly body: Readonly<Record<string, unknown>>;
   readonly authorization: string | undefined;
 };
@@ -71,8 +75,13 @@ export type StackOptions = {
   readonly mode: 'ephemeral' | 'persistent';
   readonly stateDirectory?: string;
   readonly serverEntry?: string;
+  readonly isSource?: boolean;
+  readonly isConsoleDevelopment?: boolean;
+  readonly assetsDirectory?: string;
+  readonly sandboxImage?: string;
+  readonly celldBinary?: CelldBinary;
   readonly nodeExecutable?: string;
-  readonly sandbox?: 'host-fixture' | 'configured';
+  readonly sandbox?: 'container' | 'configured';
   readonly origin?: URL;
   readonly environment?: Environment;
   readonly useFixtures?: boolean;
@@ -94,18 +103,38 @@ export type ConversationImport = { readonly runId: string; readonly publications
 
 type PreparedConversationImport = ConversationImport & { readonly applyMigration: () => Promise<void> };
 
+export type SandboxFixtureMachine = { readonly machineId: string; readonly containerId: string };
+export type SandboxFixtureFile = { readonly machineId: string; readonly path: string };
+export type SandboxFixtureWrite = SandboxFixtureFile & { readonly contents: string };
+export type DiagnosticOptions = { readonly signal?: AbortSignal };
+
+export type LocalSandbox = {
+  readonly origin: URL;
+  readonly bearer: string;
+  readonly pid?: number;
+  readonly logFile?: string;
+  readonly readMachines: () => Promise<ReadonlyArray<string>>;
+  readonly inspectMachine: (machineId: string) => Promise<SandboxFixtureMachine | undefined>;
+  readonly dumpStatus: (options?: DiagnosticOptions) => Promise<string>;
+  readonly persistedFiles: (options?: DiagnosticOptions) => AsyncIterable<Buffer>;
+  readonly readFile: (input: SandboxFixtureFile) => Promise<string | undefined>;
+  readonly writeFile: (input: SandboxFixtureWrite) => Promise<void>;
+  readonly restart: (input?: Pick<RestartOptions, 'signal'>) => Promise<void>;
+  readonly loseMachine: (id: string) => Promise<void>;
+  readonly close: (deadlineMs?: number) => Promise<void>;
+};
+
 export type LocalStack = {
   readonly origin: URL;
   readonly databaseUrl: string;
   readonly stateDirectory: string;
   readonly fixtures: LocalFixtures | undefined;
-  readonly sandbox:
-    | { readonly origin: URL; readonly bearer: string; readonly loseMachine: (id: string) => Promise<void> }
-    | undefined;
+  readonly sandbox: LocalSandbox | undefined;
   readonly serverLog: string;
   readonly postgresContainer: string;
   readonly nodeVersion: string;
-  readonly dumpStorage: () => Promise<string>;
+  readonly dumpStorage: (options?: DiagnosticOptions) => Promise<string>;
+  readonly captureFailure: (label: string) => Promise<string>;
   readonly restart: (input?: RestartOptions) => Promise<void>;
   readonly prepareConversationImport: (input: ConversationImportScope) => Promise<PreparedConversationImport>;
   readonly stop: () => Promise<void>;
@@ -114,5 +143,13 @@ export type LocalStack = {
 export type ManagedProcess = {
   readonly child: ChildProcess;
   readonly exited: Promise<number | null>;
-  readonly stop: (signal?: 'SIGTERM' | 'SIGKILL') => Promise<void>;
+  readonly readChildGroups: () => Promise<ReadonlyArray<ManagedProcessIdentity>>;
+  readonly stop: (signal?: 'SIGTERM' | 'SIGKILL', timeoutMs?: number) => Promise<void>;
+};
+
+export type ManagedProcessIdentity = {
+  readonly pid: number;
+  readonly parentPid: number;
+  readonly group: number;
+  readonly started: string;
 };

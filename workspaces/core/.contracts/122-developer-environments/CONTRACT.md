@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/shared/sandbox-wire/src/constants.ts", "packages/node/guest/image/{Dockerfile,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress}/**", "packages/worker/sandbox/src/workspace/snapshots/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -9,12 +9,17 @@ paths: ["packages/shared/sandbox-wire/src/constants.ts", "packages/node/guest/im
 Keep the generic developer image in `node/guest/image`. Pin downloaded tools and verify architecture-specific checksums
 before installing them. Use repository-owned setup for revision-specific dependencies. Company endpoints and agent
 instructions belong to installation configuration, never the generic image or runtime.
+Build the installed Mechane CLI from the same source as a portable Node artifact in that image.
 
 Keep useful source, Git metadata, notes, and progress records in the committed home. Memory and work organization are
 ordinary agent-managed files, not another runtime task or memory service. Keep internal model-context checkpoints in
 the runtime store; their persistence does not establish file durability. Keep reproducible caches and build output outside
 that home through explicit environment setup. Preserve existing files. Do not infer disposability from `.gitignore` or
 silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
+
+Declare machine-local package caches and reinstallable tool versions through the guest's ordinary tool environment.
+Keep source, lockfiles, configuration, Git metadata, and unknown files in the durable home. A fresh machine may rebuild
+only those declared scratch locations. Existing home files remain data until an explicit recovery operation moves them.
 
 Keep the expanded and compressed checkpoint bounds in the shared sandbox wire constants used by the guest and Worker.
 Qualify a capacity change against streaming memory, home plus archive staging disk, part counts, and existing operation
@@ -25,6 +30,10 @@ Advance checkpoint uploads and restoration copies in bounded sequential batches.
 per-part validation, and durable cursor. Reload the current transfer after each awaited part; stop when its identity
 changes, progress stalls, or an operation fails. Bound both parts per call and the time allowed to start another part.
 An in-flight transfer retains its existing timeout. Buffer one part at a time and preserve interruption reconciliation.
+Create archive parts and the complete generation manifest immutably. Publish the manifest only after all parts exist,
+then fence and atomically commit its digest, the head, and any command receipt. A delayed upload cannot revive a canceled
+generation. Verify a referenced manifest before restoring its files. Preserve older committed inline metadata as
+historical data; do not fabricate a manifest commitment for it.
 Commit the complete generation and command receipt atomically, or activate a fully verified restoration, after the last
 part without requiring another polling round. A batch boundary never establishes completion by itself.
 
@@ -35,9 +44,21 @@ Supply additional HTTPS hosts through validated installation settings. Preserve 
 boundary, and TLS verification. The gateway injects no credential and follows no redirect. Each redirect destination
 must pass its own admission.
 
+Supply additional certificate-authority trust as bounded public PEM through trusted guest startup composition. Validate
+it before readiness and combine it with public roots and a gateway CA injected after startup. Keep generated trust files
+in machine scratch. Preserve TLS verification; certificate trust cannot come from model tool arguments or a per-stack
+certificate baked into the generic image.
+
 Observe an existing execution without resubmitting its command or requiring a serialized credential. Preserve execution
 identity across transport retries. A missing receipt after a lost machine remains uncertain; never automatically rerun
 an arbitrary command to reconstruct its output.
+
+Rejoin a starting provider instance only with positive evidence of its original machine identity. A running flag alone
+does not prove that identity or guest readiness. A lost start acknowledgement cannot destroy the matching instance or
+restart its bootstrap. Refuse a conflicting start or stop without replacing the existing guest.
+Keep restoration progress bound to its physical guest. If that guest is lost after a partial copy, preserve the committed
+source and fence the never-dispatched command. Do not apply its advanced cursor to a newly created instance. Whole local
+environment-host loss may destroy its guest; application-host replacement must preserve the separate environment owner.
 
 Qualify a real checkout on the selected hosted environment before describing that environment as able to build and ship
 it. Required checks remain required. A missing Docker capability is an explicit qualification failure, not a passed
@@ -56,6 +77,18 @@ For a raised capacity, save and restore a home exceeding the former bound, and r
 bound. Establish the tar-stream size from actual written data; a sparse file's logical length alone is insufficient.
 Qualify a representative compressed archive near the accepted maximum separately from ordinary small smoke
 fixtures. Record actual workload size and machine disk headroom; a local transfer measurement is not hosted qualification.
+
+Run the production sandbox and guest owners through celld with a real Docker container for local qualification. Reload
+the application without replacing that guest, then destroy and restore the actual container. Record container identity,
+durable file results, multipart size, and explicit cache reconstruction. Process-scope fixtures do not qualify container
+isolation. Local direct networking is an explicit platform composition and cannot establish hosted egress enforcement.
+Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
+limit while preserving the previous head and recoverable live files.
+Exercise installed CLI startup and actual Node, curl, and git HTTPS verification. Require rejection without the supplied
+CA, acceptance with trusted startup configuration, and retained acceptance of both authorities after a late gateway CA.
+Lose the HTTP start acknowledgement while real bootstrap is held, then rejoin the same machine and require the exact
+container identity, one bootstrap, and one command effect. Reject conflicting start and stop identities. Lose a guest
+after two restored parts; require a full fresh restore or an explicit recovery fence with the committed source intact.
 
 ## Local adaptations
 

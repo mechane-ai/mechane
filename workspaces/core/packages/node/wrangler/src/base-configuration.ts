@@ -7,7 +7,7 @@ import { BaseConfiguration } from './schemas.ts';
 import type { ProgramFailureInput } from './types.ts';
 
 /** The build configuration also supplies local runtime settings and release metadata. */
-const WRANGLER_URL: Readonly<URL> = new URL('../../../worker/sandbox-service/wrangler.jsonc', import.meta.url);
+const WRANGLER_URL: Readonly<URL> = new URL('../../../worker/server/wrangler.jsonc', import.meta.url);
 const WRANGLER_CONFIGURATION = fileURLToPath(WRANGLER_URL);
 
 /** One `containers` entry of the configuration. */

@@ -10,6 +10,9 @@ const PIN_FILES = { mise: 'mise.toml', bootstrap: '.config/mise-release.sh' } as
 /** The sandbox image's build file, whose base repeats mise.toml's Node release, relative to the product. */
 const IMAGE_FILE = 'packages/node/guest/image/Dockerfile';
 
+const CELLD_SOURCE_FILE = 'packages/node/stack/src/celld/start-celld-worker.ts';
+const CELLD_VERSION_PATTERN = /^const CELLD_VERSION = 'celld ([^']+)';/m;
+
 /** The workspace manifest, whose package manager repeats mise.toml's pnpm release, relative to the product. */
 const MANIFEST_FILE = 'package.json';
 
@@ -21,7 +24,14 @@ const BOOTSTRAP_MISE_PATTERN = /^mise_release_version\(\) \{\s*echo (\S+)\s*\}/m
 
 /** The pins of the factory's mise.toml that another file repeats. */
 const MisePins = wireStruct({
-  fields: { minVersion: Schema.String, tools: Schema.Struct({ node: Schema.String, pnpm: Schema.String }) },
+  fields: {
+    minVersion: Schema.String,
+    tools: Schema.Struct({
+      'node': Schema.String,
+      'pnpm': Schema.String,
+      'github:mechane-ai/celld': Schema.Struct({ version: Schema.String }),
+    }),
+  },
 });
 
 /** The pnpm release the workspace manifest names, as `pnpm@<version>`. */
@@ -35,6 +45,7 @@ type PinPairsInput = {
   readonly bootstrap: string;
   readonly packageManager: string;
   readonly image: string;
+  readonly celldSource: string;
 };
 
 /** One tool's pin in the file that owns it and the copy another file must keep equal to it. */
@@ -46,10 +57,12 @@ type PinPair = {
   readonly location: string;
 };
 
-/** Each tool's pin in mise.toml, and its copy in the bootstrap pins, workspace manifest or image. */
-function pinPairs({ mise, bootstrap, packageManager, image }: PinPairsInput): ReadonlyArray<PinPair> {
+/** Each tool's pin in mise.toml, and its copy in the bootstrap, manifest, image, or local runtime. */
+function pinPairs({ mise, bootstrap, packageManager, image, celldSource }: PinPairsInput): ReadonlyArray<PinPair> {
   const bootstrapMise = Option.fromNullishOr(BOOTSTRAP_MISE_PATTERN.exec(bootstrap));
   const imageNode = Option.fromNullishOr(IMAGE_NODE_PATTERN.exec(image));
+  const sourceMatch = CELLD_VERSION_PATTERN.exec(celldSource);
+  const sourceCelld = Option.fromNullishOr(sourceMatch);
 
   return [
     {
@@ -65,13 +78,16 @@ function pinPairs({ mise, bootstrap, packageManager, image }: PinPairsInput): Re
       copy: Option.flatMapNullishOr(imageNode, (match) => match[1]),
       location: IMAGE_FILE,
     },
+    {
+      tool: 'celld',
+      pinned: mise.tools['github:mechane-ai/celld'].version,
+      copy: Option.flatMapNullishOr(sourceCelld, (match) => match[1]),
+      location: CELLD_SOURCE_FILE,
+    },
   ];
 }
 
-/**
- * Checks that each copy of a tool's pin, in the bootstrap pins, workspace manifest or sandbox image, names mise.toml's
- * version.
- */
+/** Checks copied bootstrap, package-manager, guest, and local-runtime versions against their canonical mise pins. */
 export const checkPins = Effect.fn('checkPins')(function* (): Effect.fn.Return<
   ReadonlyArray<Finding>,
   InputUnreadable
@@ -80,6 +96,7 @@ export const checkPins = Effect.fn('checkPins')(function* (): Effect.fn.Return<
   const bootstrap = yield* readText({ path: join(FACTORY_FOLDER, PIN_FILES.bootstrap) });
   const { packageManager } = yield* decodeFile({ path: MANIFEST_FILE, schema: PackageManager });
   const image = yield* readText({ path: IMAGE_FILE });
+  const celldSource = yield* readText({ path: CELLD_SOURCE_FILE });
 
   /** Whether the copy differs from the pin, or the file holds none. */
   const isUnequal: (pair: PinPair) => boolean = ({ copy, pinned }) => !Option.contains(copy, pinned);
@@ -91,5 +108,5 @@ export const checkPins = Effect.fn('checkPins')(function* (): Effect.fn.Return<
     message: `Pin ${tool} as ${PIN_FILES.mise} does, such as \`${pinned}\`, since this copy pins ${Option.getOrElse(copy, () => 'nothing')}`,
   });
 
-  return pinPairs({ mise, bootstrap, packageManager, image }).filter(isUnequal).map(pinFinding);
+  return pinPairs({ mise, bootstrap, packageManager, image, celldSource }).filter(isUnequal).map(pinFinding);
 });

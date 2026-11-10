@@ -74,7 +74,7 @@ The existing comment-form checks remain enforced without weakening their marker,
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `lineChars` 120; `formatterIgnores` `packages/node/server/.output/**`, `**/.swc/**`, `packages/node/runtime/.well-known/workflow/**`, `.contracts/**`, `pnpm-lock.yaml`, `packages/node/cli/reference.json`, `lint/wire.json`, `lint/shipped-wire.json`, `lint/migrations.json`, `lint/baseline/**`; `factoryFormatterIgnores` `.context/**`, `.contracts/**`, `.tenet.lock`.
+Values: `lineChars` 120; `formatterIgnores` `packages/worker/server/.output/**`, `**/.swc/**`, `.contracts/**`, `pnpm-lock.yaml`, `packages/node/cli/reference.json`, `lint/wire.json`, `lint/shipped-wire.json`, `lint/migrations.json`, `lint/baseline/**`; `factoryFormatterIgnores` `.context/**`, `.contracts/**`, `.tenet.lock`.
 The generated configurations carry `formatter`.
 - oxlint `no-warning-comments` (CD-02): enforced, `["error",{"terms":["todo","fixme","xxx","hack"],"location":"anywhere"}]`
 - oxlint `jsdoc/no-blank-blocks` (CD-02): enforced, `"error"`

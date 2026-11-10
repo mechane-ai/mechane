@@ -42,9 +42,9 @@ export TF_CLI_CONFIG_FILE="$infrastructure_check/tofurc"
 tofu -chdir="$infrastructure_check/module" init -backend=false -input=false
 tofu -chdir="$infrastructure_check/module" validate
 
-mkdir "$infrastructure_check/runtime-origin"
-cp infrastructure/modules/cloudflare/variables.tf "$infrastructure_check/runtime-origin/main.tf"
-cat > "$infrastructure_check/runtime-origin/origin.tftest.hcl" <<'EOF'
+mkdir "$infrastructure_check/configuration"
+cp infrastructure/modules/cloudflare/variables.tf "$infrastructure_check/configuration/main.tf"
+cat > "$infrastructure_check/configuration/configuration.tftest.hcl" <<'EOF'
 variables {
   account_id = "example-account"
   domain = {
@@ -52,26 +52,43 @@ variables {
     zone_id  = "example-zone"
   }
   secrets = {
-    store_id          = "example-store"
-    runtime_transport = "example-runtime"
-    sandbox_service   = "example-sandbox"
+    store_id = "example-store"
+    bindings = { MECHANE_SANDBOX_SERVICE_KEY = "example-sandbox" }
+  }
+  qualification = {
+    path   = "qualification.json"
+    sha256 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   }
 }
 
-run "regional_runtime_origin" {
+run "application_configuration" {
   command = plan
   variables {
-    runtime = { origin = "https://example--runtime.us-east.modal.direct" }
+    settings = { MECHANE_DEFAULT_MODEL = "example/model" }
   }
 }
 
-run "runtime_suffix_lookalike" {
+run "inline_credential" {
   command = plan
   variables {
-    runtime = { origin = "https://example--runtime.us-east.modal.direct.evil.example" }
+    settings = { MECHANE_DATABASE_URL = "fixture-value" }
   }
-  expect_failures = [var.runtime]
+  expect_failures = [var.settings]
+}
+
+run "migration_credential_binding" {
+  command = plan
+  variables {
+    secrets = {
+      store_id = "example-store"
+      bindings = {
+        MECHANE_SANDBOX_SERVICE_KEY   = "example-sandbox"
+        MECHANE_MIGRATION_DATABASE_URL = "example-migrator"
+      }
+    }
+  }
+  expect_failures = [var.secrets]
 }
 EOF
-tofu -chdir="$infrastructure_check/runtime-origin" init -backend=false -input=false
-tofu -chdir="$infrastructure_check/runtime-origin" test -no-color
+tofu -chdir="$infrastructure_check/configuration" init -backend=false -input=false
+tofu -chdir="$infrastructure_check/configuration" test -no-color

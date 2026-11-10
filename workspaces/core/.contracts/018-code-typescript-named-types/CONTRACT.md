@@ -49,7 +49,10 @@ For each path pattern a change adds to exempt files from these rules, does it ma
 
 ast-grep `named-object-types` rejects an object type literal anywhere except as a `type` alias's whole value, or as the one object literal that joins named types in an intersection that is an alias's value, such as `type ReadInput = PageInput & { readonly line: string }` (TD-03).
 Type syntax has one form each: oxlint `typescript/array-type` with `generic` for both forms writes `Array<T>` and `ReadonlyArray<T>`, `typescript/method-signature-style` with `property` writes a method signature as a property, `import/consistent-type-specifier-style` with `prefer-top-level` gives a type import its own statement, and `typescript/no-namespace` with `allowDeclarations` rejects a namespace but a global augmentation.
-`typescript/consistent-type-definitions` writes each object type with `type`, and each of the two global augmentations, of `ImportMeta` and `Cloudflare.GlobalProps`, carries its one suppression, since only an interface merges into a global; `consistent-indexed-object-style` writes `Record` for an index signature, and `consistent-type-imports` gives an import used only as a type `import type`.
+`typescript/consistent-type-definitions` writes each object type with `type`. The global augmentations of `ImportMeta`
+in the CLI and Worker entries and of `Cloudflare.GlobalProps` in the sandbox provider each carry one suppression,
+since only an interface merges into a global. `consistent-indexed-object-style` writes `Record` for an index
+signature, and `consistent-type-imports` gives an import used only as a type `import type`.
 Each module's import has one form too: `import/no-duplicates` merges two imports of one module of the same kind, and `sort-imports` with `ignoreDeclarationSort` and `ignoreCase` sorts the names inside the braces, while the formatter sorts the statements.
 
 The registry already enforces the shipped consistent-type-definitions setting as error with type, so the duplicate oxlint file stays unloaded.

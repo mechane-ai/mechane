@@ -12,6 +12,7 @@ import {
 import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { cancellationSurvivesEnvironmentOutage } from './cancellation-survives-environment-outage.ts';
 
 export async function cancellationPreservesPendingNotifications({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -63,4 +64,6 @@ export async function cancellationPreservesPendingNotifications({ stack }: Scena
     conversation.messages.filter((message) => message.role === 'assistant').map((message) => message.text),
     [nextMarker],
   );
+
+  await cancellationSurvivesEnvironmentOutage(owner);
 }

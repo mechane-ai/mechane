@@ -46,9 +46,9 @@ export {
   KeyUnrecognized,
   KeyNotFound,
   KeyRevoked,
-  MechBusy,
   MechNotFound,
   RateLimited,
+  RequestConflict,
   RequestInvalid,
   RouteNotFound,
   ServiceUnavailable,
@@ -59,7 +59,7 @@ export {
  *
  * @public
  */
-export { ServerMisconfigured, ReleaseFileNotFound, WorkspaceSuspended } from './errors/errors.ts';
+export { MechBusy, ServerMisconfigured, ReleaseFileNotFound, WorkspaceSuspended } from './errors/errors.ts';
 /**
  * Standalone @mechane/client callers can distinguish archived mechs and exhausted sandbox capacity from transport
  * failure.
@@ -145,6 +145,7 @@ export {
   TOOL_TRACE_COMMAND_MAX_BYTES,
   TOOL_TRACE_OUTPUT_MAX_BYTES,
   TOOL_TRACE_MAX_BYTES,
+  TurnRuntimeSource,
   TurnStatus,
   UnansweredReason,
 } from './operations/turns/constants.ts';
@@ -230,3 +231,32 @@ export {
 } from './operations/evidence/evidence-service-paths.ts';
 
 export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';
+
+export { SELF_TOKEN_VARIABLE, WakeId, WakeStatus, Wake, WakeList } from './operations/self/schemas.ts';
+
+export {
+  MECH_HISTORY_IMPORT_PATH,
+  MECH_HISTORY_IMPORT_BATCH_MAX_BYTES,
+  MECH_HISTORY_IMPORT_BODY_MAX_BYTES,
+  MechHistorySourceKind,
+  MechHistoryImportBatch,
+  MechHistoryImport,
+  MechHistoryImportReceipt,
+  SourceCompletion,
+} from './import/schemas.ts';
+
+export {
+  SANDBOX_OWNERS_PATH,
+  SandboxOwnerQuery,
+  SandboxOwnerPage,
+} from './operations/environment/sandbox-owner.schemas.ts';
+
+export { MechHistoryPage } from './operations/history/schemas.ts';
+
+export {
+  MECH_MAINTENANCE_PATH,
+  MechMaintenanceAction,
+  MechRuntimeStatus,
+  MechMaintenanceRequest,
+  MechMaintenanceReceipt,
+} from './operations/mechs/maintenance.schemas.ts';

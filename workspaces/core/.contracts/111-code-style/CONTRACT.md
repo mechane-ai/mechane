@@ -102,15 +102,15 @@ The remaining rules retain their generated enforcement except for the explicit n
 
 ### Native SDK dialect
 
-The registry's native role covers `packages/node/runtime`, `server`, `stack`, `testing`, `smoke`, and `distribution`,
-and the thin `packages/worker/sandbox-service` entry. These programs use ordinary asynchronous SDK interfaces rather
+The registry's native role covers Worker `runtime`, `server`, and `control-store`, Node `stack`, `testing`, `smoke`,
+and `distribution`, the Sandbox HTTP composition, and the canonical deployment description. These programs use ordinary asynchronous SDK interfaces rather
 than the retired Effect/DO application dialect. This replaces conflicting syntax requirements in SC-01, SC-03,
 SC-08, SC-09, SC-10, and SC-11 for that role only.
 
 Use native Promises, awaited composition, rejected typed errors, and owned `try`/`catch`/`finally` cleanup. Keep native
 optional and nullable values, discriminants, opaque identifiers, numeric units, and Date values when those are the
-SDK or database interface. Resolve wall-clock time inside steps; workflow code uses the SDK-supported deterministic
-clock. Optional chaining and nullish defaults are allowed for declared optional values, never to hide a failed read.
+SDK or database interface. Durable phases use the SDK-supported clock; transient provider dispatch reads current
+wall-clock authority. Optional chaining and nullish defaults are allowed for declared optional values, never to hide a failed read.
 
 SDK callbacks and native factories may use contextual parameter and return inference, ordinary arguments, and nested
 schema or value construction. Do not create an adapter or branded mirror solely to satisfy the former dialect.
@@ -133,6 +133,10 @@ identifiers in the browser.
 These form choices do not relax strict TypeScript, input immutability, meaningful names, private state ownership,
 boundary validation, safe errors, or SQL and authorization rules. Keep every asynchronous failure observed. Mutable
 global state, unchecked `any`, unsafe type assertions, swallowed failures, and duplicate schemas remain violations.
+
+The private tool-owner AsyncLocalStorage cell in `packages/worker/runtime/src/tools/context.ts` keeps its named native
+context wrapper. Callers cannot inline it without exposing the context cell. This small boundary owns dynamic context
+and is exempt from the forwarding-function rule; it adds no second owner or execution path.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

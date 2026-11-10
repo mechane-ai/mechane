@@ -1,13 +1,22 @@
 import { Duration, Schema, SchemaTransformation } from 'effect';
-import { PRINTABLE_PATTERN, RANDOM_UUID_VERSION, RECORD_TEXT_MAX_CHARS } from './constants.ts';
+import { PRINTABLE_PATTERN, RANDOM_UUID_VERSION, RECORD_TEXT_MAX_CHARS, UTC_DAY_PATTERN } from './constants.ts';
 
-/** The id of a record the deployment keeps, a random UUID. */
-export const RecordId = Schema.String.check(Schema.isUUID());
+/** UUID spelling cannot create a second owner or receipt for the same record. */
+export const RecordId = Schema.String.check(Schema.isUUID())
+  .pipe(Schema.decode(SchemaTransformation.toLowerCase()))
+  .check(Schema.isLowercased());
 
 export type RecordId = typeof RecordId.Type;
 
+/** Accounting dates retain their stored spelling without calendar conversion. */
+export const UtcDay = Schema.String.check(Schema.isPattern(UTC_DAY_PATTERN));
+
+export type UtcDay = typeof UtcDay.Type;
+
 /** The id a caller makes for a record it asks the deployment to keep, so a retry names the same one: a random UUID. */
-export const RandomId = Schema.String.check(Schema.isUUID(RANDOM_UUID_VERSION));
+export const RandomId = Schema.String.check(Schema.isUUID(RANDOM_UUID_VERSION))
+  .pipe(Schema.decode(SchemaTransformation.toLowerCase()))
+  .check(Schema.isLowercased());
 
 export type RandomId = typeof RandomId.Type;
 

@@ -16,6 +16,7 @@ import {
   wireStruct,
   WorkspaceId,
 } from '@mechane/records';
+import { ExecutionId } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { UnknownFields, WireTime } from '../../schemas.ts';
 import { NotificationId } from '../notifications/schemas.ts';
@@ -26,6 +27,7 @@ import {
   TOOL_TRACE_OUTPUT_MAX_BYTES,
   ToolCallStatus,
   ToolInspectionKind,
+  TurnRuntimeSource,
   TurnStatus,
   UnansweredReason,
 } from './constants.ts';
@@ -38,6 +40,7 @@ export type TurnPath = typeof TurnPath.Type;
 /** Notifications record what the activation actually received. */
 const TURN_FIELDS = {
   id: TurnId,
+  runtimeSource: Schema.optionalKey(Schema.Enum(TurnRuntimeSource)),
   version: Schema.Int.check(Schema.isGreaterThan(0)),
   notificationIds: Schema.Array(NotificationId),
   createdAt: WireTime,
@@ -87,7 +90,7 @@ const TokenUsage = Schema.Struct({
 
 type TokenUsage = typeof TokenUsage.Type;
 
-/** Provider execution identities stay opaque, including Workflow step and attempt identifiers. */
+/** Provider execution identities stay opaque, including archived step and attempt identifiers. */
 const ModelDispatchId = Schema.NonEmptyString;
 
 /** The fields of a dispatch in each of its states: its model, the reservation it asked for, and when it was decided. */
@@ -183,6 +186,7 @@ const BashToolResult = renamedWireStruct({
 const BashToolInspection = wireStruct({
   fields: {
     kind: Schema.Literal(ToolInspectionKind.Bash),
+    executionId: Schema.optionalKey(ExecutionId),
     command: Schema.OptionFromNullOr(ToolTraceText),
     result: Schema.OptionFromNullOr(BashToolResult),
   },

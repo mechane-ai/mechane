@@ -6,6 +6,7 @@ import { mkdtemp, readFile, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative } from 'node:path';
 import { runCli } from '../cli/run-cli.ts';
 import { startCli } from '../cli/start-cli.ts';
+import { deviceClaimFailure } from './device-claim-failure.ts';
 import { signInBrowser } from './sign-in-browser.ts';
 import type { Account, CreateAccountInput } from './types.ts';
 
@@ -42,7 +43,7 @@ export async function createAccount({ stack, login }: CreateAccountInput): Promi
     const result = await running.finished;
 
     if (result.status !== 0) {
-      throw new Error('The CLI could not claim the approved device key');
+      throw deviceClaimFailure(result);
     }
 
     const envelope = Schema.decodeUnknownSync(

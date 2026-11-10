@@ -1,28 +1,30 @@
-import { Allowance, DispatchStatus, TurnStatus } from '@mechane/protocol';
+import { Allowance, Dispatch, DispatchStatus, TurnStatus } from '@mechane/protocol';
 import {
   createAccount,
   createMech,
   readConsoleMessages,
+  readHistoryPage,
   readTrace,
   readTurns,
   requireFixtures,
   runCli,
-  sendNotification,
-  waitFor,
+  sendNotificationAndWait,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { DateTime, Option } from 'effect';
+import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-const TOOL_STEPS = 65;
-const PRIVATE_STEP_CHARACTERS = 500;
-const CHARGE_PER_MODEL_CALL_MICROS = 60;
+const TOOL_STEPS = 24;
+const PRIVATE_STEP_CHARACTERS = 8192;
+const MODEL_CONTEXT_MAX_BYTES = 131_072;
 
 export async function boundedActivationPreservesWork({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
   const marker = `bounded-work-${randomUUID()}`;
   const publication = `complete-${randomUUID()}`;
+  const firstMemory = `oldest-private-${randomUUID()}`;
+  const summary = `${marker}: retained-summary-${randomUUID()}`;
   const mech = await createMech({ stack, account, name: marker });
   const owner = { stack, account, mechId: mech.id };
   const { model } = requireFixtures(stack);
@@ -30,15 +32,15 @@ export async function boundedActivationPreservesWork({ stack }: ScenarioInput): 
   const publicationId = randomUUID();
 
   const replies = [
-    ...toolIds.map((id) => ({
-      text: `private-${marker}`.padEnd(PRIVATE_STEP_CHARACTERS, 'x'),
+    ...toolIds.map((id, index) => ({
+      text: `${firstMemory}-${index}`.padEnd(PRIVATE_STEP_CHARACTERS, 'x'),
       tools: [{ id, name: 'list_processes', input: {} }],
     })),
     { tools: [{ id: publicationId, name: 'console_message', input: { text: publication } }] },
     { text: 'Private completion' },
   ];
 
-  model.configure({ marker, replies, summary: `${marker}: continue from the recorded tool results.` });
+  model.configure({ marker, replies, summary });
 
   const before = await runCli({
     stack,
@@ -47,57 +49,77 @@ export async function boundedActivationPreservesWork({ stack }: ScenarioInput): 
     schema: Allowance,
   });
 
-  await sendNotification({ ...owner, text: marker });
-  await waitFor({
-    name: 'the bounded activations to finish their original work',
-    read: () => readConsoleMessages(owner),
-    accept: (page) => page.messages.some((message) => message.role === 'assistant' && message.text === publication),
-  });
+  const completed = await sendNotificationAndWait({ ...owner, text: marker });
 
-  const runs = await waitFor({
-    name: 'the final bounded activation to commit',
-    read: () => readTurns(owner),
-    accept: (items) => items.length > 1 && items.every((turn) => turn.status === TurnStatus.Completed),
-  });
+  assert.equal(completed.status, TurnStatus.Completed);
 
-  const chronological = runs.toSorted(
-    (left, right) => DateTime.toEpochMillis(left.createdAt) - DateTime.toEpochMillis(right.createdAt),
-  );
-
-  for (const [index, run] of chronological.entries()) {
-    const previous = chronological[index - 1];
-
-    if (previous !== undefined && previous.status === TurnStatus.Completed) {
-      assert.ok(
-        DateTime.toEpochMillis(previous.endedAt) <= DateTime.toEpochMillis(Option.getOrThrow(run.startedAt)),
-        'Two activations owned the same mech concurrently',
-      );
-    }
-  }
-
-  const traces = await Promise.all(runs.map((turn) => readTrace({ ...owner, turnId: turn.id })));
-  const observedTools = traces.flatMap((trace) => trace.toolCalls?.map((tool) => tool.id) ?? []);
-  const dispatches = traces.flatMap((trace) => trace.dispatches);
+  const turns = await readTurns(owner);
+  const trace = await readTrace({ ...owner, turnId: completed.id });
+  const observedTools = trace.toolCalls?.map((tool) => tool.id) ?? [];
   const calls = model.readCalls({ marker });
+  const generations = calls.filter((call) => call.purpose === 'generation');
+  const compactions = calls.filter((call) => call.purpose === 'compaction');
 
+  assert.equal(turns.length, 1, 'Native compaction started another execution owner');
   assert.deepEqual(new Set(observedTools), new Set([...toolIds, publicationId]));
-  assert.equal(observedTools.length, toolIds.length + 1, 'A context handoff repeated a tool effect');
-  assert.equal(calls.filter((call) => call.body['stream'] === true).length, replies.length);
-  assert.ok(
-    calls.some((call) => call.body['stream'] !== true),
-    'The bounded flow did not exercise context summarization',
-  );
-  assert.equal(dispatches.length, calls.length);
-  assert.ok(dispatches.every((dispatch) => dispatch.status === DispatchStatus.Settled));
+  assert.equal(observedTools.length, toolIds.length + 1, 'Compaction repeated a tool effect');
+  assert.equal(generations.length, replies.length);
+  assert.ok(compactions.length > 0, 'The flow did not execute native compaction');
 
-  const after = await runCli({
+  const firstPage = await readHistoryPage(owner);
+
+  assert.equal(firstPage.hasMore, true, 'Native history was not paged');
+
+  const after = Option.getOrThrow(firstPage.nextCursor);
+  const secondPage = await readHistoryPage({ ...owner, after });
+  const history = [...firstPage.entries, ...secondPage.entries];
+
+  assert.equal(secondPage.hasMore, false);
+  assert.equal(new Set(history.map((entry) => entry.id)).size, history.length, 'History paging repeated an entry');
+  assert.ok(history.some((entry) => entry.kind === 'pi.compaction' && entry.text.includes(summary)));
+  assert.ok(
+    history.some((entry) => entry.text.includes(`${firstMemory}-0`)),
+    'Compaction discarded older native history',
+  );
+
+  const continued = generations.at(-1);
+
+  assert.ok(continued !== undefined);
+
+  const workingContext = JSON.stringify(continued.body['messages']);
+
+  assert.ok(workingContext.includes(summary), 'The provider did not receive the committed native summary');
+  assert.equal(
+    workingContext.includes(`${firstMemory}-0`),
+    false,
+    'The provider received lifetime history after compaction',
+  );
+  assert.ok(
+    generations.every((call) => Buffer.byteLength(JSON.stringify(call.body['messages'])) <= MODEL_CONTEXT_MAX_BYTES),
+    'A provider request exceeded the fixture model context bound',
+  );
+  assert.equal(trace.dispatches.length, calls.length, 'A generation or compaction has no admitted spend reservation');
+  assert.equal(new Set(trace.dispatches.map((dispatch) => dispatch.id)).size, calls.length);
+
+  const settledMicros = trace.dispatches.map((dispatch) => {
+    if (!Schema.is(Dispatch)(dispatch) || dispatch.status !== DispatchStatus.Settled) {
+      throw new Error('A completed provider attempt has no settled usage');
+    }
+
+    return dispatch.settledMicros;
+  });
+
+  const afterAllowance = await runCli({
     stack,
     account,
     args: ['allowance', 'show', '--workspace', account.workspaceId],
     schema: Allowance,
   });
 
-  assert.equal(after.committedMicros - before.committedMicros, calls.length * CHARGE_PER_MODEL_CALL_MICROS);
+  assert.equal(
+    afterAllowance.committedMicros - before.committedMicros,
+    settledMicros.reduce((total, charge) => total + charge, 0),
+  );
 
   const conversation = await readConsoleMessages(owner);
 
@@ -105,4 +127,10 @@ export async function boundedActivationPreservesWork({ stack }: ScenarioInput): 
     conversation.messages.filter((message) => message.role === 'assistant').map((message) => message.text),
     [publication],
   );
+
+  await stack.restart({ signal: 'SIGKILL' });
+
+  assert.deepEqual(await readHistoryPage(owner), firstPage);
+  assert.deepEqual(await readHistoryPage({ ...owner, after }), secondPage);
+  assert.equal(model.readCalls({ marker }).length, calls.length, 'History inspection repeated paid work');
 }

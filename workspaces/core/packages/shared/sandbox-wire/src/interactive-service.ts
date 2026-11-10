@@ -51,12 +51,20 @@ export type SandboxBrowserSubmission = typeof SandboxBrowserSubmission.Type;
 /** A browser receipt either records actual effects or explicitly leaves their result uncertain. */
 export const BrowserProgress = Schema.TaggedUnion({
   Ready: { machineId: MachineId, response: BrowserResponse },
-  Pending: { reason: RecordText },
+  Pending: {
+    reason: RecordText,
+    /** Only a matching unassigned claim permits a fresh, authorized submission of the same action. */
+    isDispatchRequired: Schema.Boolean,
+  },
   Uncertain: { reason: RecordText },
   Failed: { reason: RecordText },
 });
 
 export type BrowserProgress = typeof BrowserProgress.Type;
+
+/** The action receipt remains authoritative; abandonment only confirms that it cannot dispatch. */
+export const SandboxBrowserAbandonResult = Schema.Struct({ isAbandoned: Schema.Boolean });
+export type SandboxBrowserAbandonResult = typeof SandboxBrowserAbandonResult.Type;
 
 /** Browser artifacts are read only from their original machine and capture identity. */
 export const SandboxBrowserArtifactAnswer = Schema.TaggedUnion({

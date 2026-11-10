@@ -13,7 +13,9 @@ utils:
       regex: ^async
     has:
       field: body
-      kind: call_expression
+      any:
+        - kind: call_expression
+        - kind: new_expression
   tagged-failure:
     kind: arrow_function
     has:

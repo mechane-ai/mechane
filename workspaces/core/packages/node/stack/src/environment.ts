@@ -1,7 +1,32 @@
+import { SANDBOX_VARIABLES } from '@mechane/deployment';
+import { Record } from 'effect';
 import type { StackState } from './state.ts';
 import type { Environment, LocalFixtures } from './types.ts';
 
 const FIXTURE_MODEL = 'openai/gpt-6.1-sol';
+
+const SANDBOX_PASSTHROUGH_VARIABLES: ReadonlySet<string> = new Set([
+  SANDBOX_VARIABLES.sandboxTools,
+  SANDBOX_VARIABLES.sandboxHosts,
+  SANDBOX_VARIABLES.sandboxWebAccess,
+  SANDBOX_VARIABLES.installationHosts,
+  SANDBOX_VARIABLES.isBrowserSandboxDisabled,
+]);
+
+type SandboxEnvironmentOptions = { readonly inherited: Environment; readonly origin: URL; readonly bearer: string };
+
+export function localSandboxVariables(input: SandboxEnvironmentOptions): Environment {
+  const configured = Record.filter(input.inherited, (_value, name) => SANDBOX_PASSTHROUGH_VARIABLES.has(name));
+
+  return {
+    ...configured,
+    MECHANE_ORIGIN: input.origin.origin,
+    MECHANE_SANDBOX_PROVIDER: 'container',
+    MECHANE_SANDBOX_CONTAINER_NETWORK: 'direct',
+    MECHANE_SANDBOX_SERVICE_KEY: input.bearer,
+    MECHANE_RUNTIME_ORIGIN: input.origin.origin,
+  };
+}
 
 export const FIXTURE_AUTH_RATE_LIMITS = {
   address: { requests: 1000, windowSeconds: 600 },
@@ -38,16 +63,15 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
     NODE_ENV: 'production',
     HOST: input.origin.hostname,
     PORT: input.origin.port,
-    MECHANE_PUBLIC_ORIGIN: input.origin.origin,
+    MECHANE_ORIGIN: input.origin.origin,
     MECHANE_DATABASE_URL: input.databaseUrl,
     MECHANE_MIGRATION_DATABASE_URL: input.migrationUrl,
     MECHANE_RUNTIME_DATABASE_ROLE: 'mechane_runtime',
-    WORKFLOW_POSTGRES_URL: input.databaseUrl,
     MECHANE_CREDENTIAL_KEYRING: input.state.secrets.credentialKeyring,
     MECHANE_BOOTSTRAP_WORKSPACE_ID: input.state.secrets.workspaceId,
     MECHANE_BOOTSTRAP_WORKSPACE_NAME: 'Softmax',
     MECHANE_SANDBOX_ORIGIN: input.inherited['MECHANE_SANDBOX_ORIGIN'] ?? 'http://127.0.0.1:1',
-    MECHANE_SANDBOX_KEY: input.inherited['MECHANE_SANDBOX_KEY'] ?? input.state.secrets.sandboxKey,
+    MECHANE_SANDBOX_SERVICE_KEY: input.inherited['MECHANE_SANDBOX_SERVICE_KEY'] ?? input.state.secrets.sandboxKey,
   };
 
   if (input.fixtures === undefined) {

@@ -28,6 +28,11 @@ export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
 
   const cancelPendingExecution: ExecutionRecords['cancelPendingExecution'] = ({ executionId }) => {
     sql.exec('INSERT INTO execution_cancellations (id) VALUES (?) ON CONFLICT (id) DO NOTHING', executionId);
+
+    refusePendingExecution({ executionId });
+  };
+
+  const refusePendingExecution: ExecutionRecords['refusePendingExecution'] = ({ executionId }) => {
     sql.exec(
       'UPDATE executions SET status = ? WHERE id = ? AND status = ?',
       ExecutionStatus.Unavailable,
@@ -41,6 +46,7 @@ export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
     activeExecution: () => activeExecution({ sql }),
     unfinishedExecutions,
     cancelPendingExecution,
+    refusePendingExecution,
     claimExecution: (input) => claimExecution({ sql, ...input }),
     dispatchExecution: (input) => dispatchExecution({ sql, ...input }),
     settleExecution: (input) => settleExecution({ sql, ...input }),

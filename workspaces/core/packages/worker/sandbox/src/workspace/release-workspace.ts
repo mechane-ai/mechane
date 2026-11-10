@@ -1,4 +1,5 @@
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
+import type { RecordId } from '@mechane/records';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
@@ -19,12 +20,27 @@ export async function releaseWorkspace({ store, guest, machineId }: ReleaseWorks
     return true;
   }
 
+  return await releaseWorkspaceGeneration({ guest, machineId, generation: head.value.generation });
+}
+
+type ReleaseGenerationInput = {
+  readonly guest: GuestConnection;
+  readonly machineId: MachineIdInput['machineId'];
+  readonly generation: RecordId;
+};
+
+/** An acknowledged release drops one known generation's scratch and fence, preserving the guest home. */
+export async function releaseWorkspaceGeneration({
+  guest,
+  machineId,
+  generation,
+}: ReleaseGenerationInput): Promise<boolean> {
   const part = Option.none();
 
   const response = await workspaceRequest({
     guest,
     machineId,
-    generation: head.value.generation,
+    generation,
     step: WorkspaceStep.Release,
     part,
     init: { method: HttpMethod.Delete },

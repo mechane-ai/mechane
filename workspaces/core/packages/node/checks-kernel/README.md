@@ -9,7 +9,8 @@ Layer 4 · node lane · effect dialect · consumers: normalizers, owned-rules, l
 
 - `src/`: the workspace's and the factory's folders, files read, decoded, listed and written, a moved path, a site's key
   and the findings, written as the program's result.
-- `src/workspace/`: git's lines, the tracked files, the merge base, a tool's output and the members.
+- `src/workspace/`: git's lines, tracked files, the merge base, tool output, members, and the shared module-graph
+  format.
 - `src/sources/`: each TypeScript file of the members' source roots, read and parsed once.
 - `src/lint/`: the sites oxlint and ast-grep report, keyed by rule.
 - `src/ratchets/`: the registry's ratchets and proposed rules, each ratchet's sites held to its baseline.

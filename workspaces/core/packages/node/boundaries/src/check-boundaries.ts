@@ -1,9 +1,9 @@
-import { decodeFile, writeTextFile } from '@mechane/checks-kernel';
+import { decodeFile, MODULE_GRAPH, writeTextFile } from '@mechane/checks-kernel';
 import type { CheckInput, ChecksFailure, Finding } from '@mechane/checks-kernel';
 import { MemberManifest, RuleTool } from '@mechane/rule-shapes';
 import { REGISTERED_RULES, registeredName } from '@mechane/rules';
 import { Effect, Option } from 'effect';
-import { CRUISER_CONFIGURATION, MEMBER_MANIFEST, MODULE_GRAPH } from './constants.ts';
+import { CRUISER_CONFIGURATION, MEMBER_MANIFEST } from './constants.ts';
 import { cruiseRoots } from './cruise-roots.ts';
 import { moduleGraph } from './module-graph.ts';
 import { packageFindings } from './package-findings.ts';

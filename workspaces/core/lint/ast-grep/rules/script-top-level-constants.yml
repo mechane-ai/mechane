@@ -5,7 +5,13 @@ language: TypeScript
 severity: error
 message: "Initialize a top-level constant from a literal, a function, `new URL(path, import.meta.url)` or `fileURLToPath` of such a URL constant, such as `const PROGRAM = 'checks'` (ST-31)"
 files: ['**/main.ts']
-ignores: ['**/node_modules/**', packages/browser/*/.storybook/main.ts, 'packages/worker/sandbox-service/src/main.ts']
+ignores:
+  [
+    'packages/worker/server/src/main.ts',
+    '**/node_modules/**',
+    packages/browser/*/.storybook/main.ts,
+    'packages/worker/sandbox-service/src/main.ts',
+  ]
 utils:
   declared-url:
     pattern: new URL($PATH, import.meta.url)

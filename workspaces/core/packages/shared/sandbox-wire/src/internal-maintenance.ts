@@ -1,5 +1,6 @@
 import { BYTES_PER_KIBIBYTE, RecordText, RemoteSandboxId, SandboxOperationId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
+import { SandboxEnvironmentState } from './environment-state.ts';
 
 /** Maintenance is explicit; inspecting a sandbox never wakes it. */
 export const SandboxAction = { Show: 'show', Upgrade: 'upgrade', Delete: 'delete', Cancel: 'cancel' } as const;
@@ -46,6 +47,8 @@ export const SandboxReport = wireStruct({
     /** Null before the first maintenance request. */
     action: Schema.OptionFromNullOr(Schema.Enum(SandboxAction)),
     phase: Schema.Enum(SandboxPhase),
+    lastError: Schema.OptionFromNullOr(RecordText),
+    environment: SandboxEnvironmentState,
   },
 });
 

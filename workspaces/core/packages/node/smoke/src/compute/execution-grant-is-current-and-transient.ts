@@ -23,8 +23,9 @@ import type { ScenarioInput } from '@mechane/testing';
 import { Duration, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
-import { readdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { remoteToolGrantsHonorPolicy } from './remote-tool-grants-honor-policy.ts';
 
 const CREDENTIAL_BYTES = 32;
 const COMMAND_FAILURE_EXIT_CODE = 127;
@@ -32,6 +33,11 @@ const COMMAND_PADDING_CHARACTERS = 1500;
 const OUTPUT_PADDING_COLUMNS = 9000;
 const TRACE_READ_TIMEOUT_MS = 10_000;
 const TRACE_INACCESSIBLE_STATUSES: ReadonlySet<number> = new Set([HttpStatusCode.Forbidden, HttpStatusCode.NotFound]);
+
+type SandboxCredentialInput = {
+  readonly sandbox: NonNullable<ScenarioInput['stack']['sandbox']>;
+  readonly representations: ReadonlyArray<string>;
+};
 
 export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -101,7 +107,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   const trace = await readTrace({ ...owner, turnId: turn.id });
   const tool = trace.toolCalls?.find((call) => call.id === toolCallId);
 
-  assert.equal(tool?.status, ToolCallStatus.Completed, 'A shell failure must remain distinct from SDK completion');
+  assert.equal(tool?.status, ToolCallStatus.Failed, 'The native tool did not preserve its failed shell exit');
   assert.ok(tool.inspection !== undefined);
 
   const inspectedCommand = Option.getOrThrow(tool.inspection.command);
@@ -198,22 +204,20 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     );
   }
 
-  await assertSandboxHasNoCredential(join(stack.stateDirectory, 'sandbox'), representations);
+  const sandbox = stack.sandbox;
+
+  assert.ok(sandbox !== undefined);
+
+  await assertSandboxHasNoCredential({ sandbox, representations });
+  await remoteToolGrantsHonorPolicy({ stack });
 }
 
-async function assertSandboxHasNoCredential(directory: string, representations: ReadonlyArray<string>): Promise<void> {
-  const entries = await readdir(directory, { withFileTypes: true, recursive: true });
-
-  for (const entry of entries) {
-    if (entry.isFile()) {
-      const file = join(entry.parentPath, entry.name);
-      const contents = await readFile(file);
-
-      assert.equal(
-        representations.some((value) => contents.includes(value)),
-        false,
-        'Sandbox persistence contains a resolved credential',
-      );
-    }
+async function assertSandboxHasNoCredential({ sandbox, representations }: SandboxCredentialInput): Promise<void> {
+  for await (const contents of sandbox.persistedFiles()) {
+    assert.equal(
+      representations.some((value) => contents.includes(value)),
+      false,
+      'Sandbox persistence contains a resolved credential',
+    );
   }
 }

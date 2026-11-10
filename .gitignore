@@ -9,7 +9,6 @@ crash.*.log
 dist/
 .output/
 .swc/
-workspaces/core/packages/node/runtime/.well-known/workflow/
 .wrangler/
 .celld/
 .dev.vars
@@ -23,3 +22,5 @@ mise.local.lock
 workspaces/core/packages/browser/console/src/routeTree.gen.ts
 
 storybook-static/
+
+workspaces/core/packages/worker/server/wrangler.jsonc

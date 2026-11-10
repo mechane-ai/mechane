@@ -3,7 +3,7 @@ id: store-boolean-answer
 language: TypeScript
 severity: error
 message: 'Answer a store outcome as a tagged value, such as `TurnEnd.cases.Ended.make({ turnId })` in place of `true` (TD-17)'
-files: ['packages/worker/**/*store/**/*.ts']
+files: ['packages/worker/{store,sandbox-store}/**/*.ts']
 ignores: ['**/node_modules/**', 'packages/worker/store/src/**']
 rule:
   kind: function_declaration

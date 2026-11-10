@@ -14,7 +14,9 @@ export async function restoreMaintenance({ store, provider, workspace, job }: Po
   const live = store.liveMachine();
 
   if (Option.isNone(live) || live.value.id !== machineId) {
-    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed });
+    const lastError = Option.some('Replacement machine was lost before workspace restoration completed');
+
+    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
 
     return;
   }

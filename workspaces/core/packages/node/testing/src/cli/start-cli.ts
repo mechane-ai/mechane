@@ -23,9 +23,9 @@ export function startCli({ stack, account, args, environment = {} }: CliInput): 
 
   const finished = new Promise<CliResult>((resolve, reject) => {
     child.once('error', () => reject(new Error('The built CLI could not start')));
-    child.once('close', (status) => {
+    child.once('close', (status, signal) => {
       clearTimeout(timeout);
-      resolve({ status, stdout: output.stdout, stderr: output.stderr });
+      resolve({ status, signal, stdout: output.stdout, stderr: output.stderr });
     });
   });
 

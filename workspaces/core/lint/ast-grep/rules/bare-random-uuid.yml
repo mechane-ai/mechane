@@ -6,8 +6,10 @@ message: 'Make a new id through its brand, such as `TurnId.make(crypto.randomUUI
 files: ['**/*.ts']
 ignores:
   [
-    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
-    'packages/worker/sandbox-service/src/**',
+    'packages/node/{stack,distribution,testing,smoke}/src/**',
+    'packages/shared/deployment/src/worker-deployment.ts',
+    'packages/worker/{runtime,server,control-store}/src/**',
+    'packages/worker/sandbox/src/service/**',
     '**/node_modules/**',
   ]
 rule:

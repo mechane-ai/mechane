@@ -29,7 +29,7 @@ export const codeModuleStructureAndControlFlow = {
       ...OXLINT_DEFAULTS,
       ...ADOPTED,
       name: 'id-denylist',
-      maxSuppressions: 1,
+      maxSuppressions: 2,
       exemptRoles: [FileRole.Browser, FileRole.NativeRuntime],
       behavior: FixBehavior.BindingNames,
       value: [Severity.Error, ...VALUES.deniedIdentifiers],

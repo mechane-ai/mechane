@@ -1,35 +1,43 @@
-# Cloudflare compute module
+# Cloudflare application module
 
-The published `mechane-cloudflare-vVERSION.zip` contains this module, the compute Worker, and `installation.json`. Use
-the archive as a module source. The source directory alone is not a release.
+The immutable `mechane-cloudflare-vVERSION.zip` contains this module, the compiled application, Console assets,
+controlled database commands, and `installation.json`. Extract the qualified archive before using its directory as a
+module source. Keep the complete candidate directory with its pinned `qualification.json`, artifact inventory, inputs,
+and check evidence available to the provider. The source directory alone is not an installation artifact.
 
-This module owns the public ingress gateway, sandbox Durable Objects, filesystem checkpoint bucket, and container
-application. The gateway forwards application requests to the private Node service. The Node service and Postgres own
-agents, sessions, credentials, approvals, and conversation streams.
+This module owns one public Worker, Mech and Sandbox Durable Objects, filesystem checkpoint bucket, and container
+application. The Worker serves the API and Console and calls the authenticated environment API at the same origin.
+Postgres retains identities, policy, credentials, grants, and accounting. Pi and the Mech Durable Object own execution.
 
-| Component                                                     | Owner                        |
-| ------------------------------------------------------------- | ---------------------------- |
-| Worker identity, observability, domains, checkpoint bucket    | Official Cloudflare provider |
-| Worker bundle, bindings, SandboxObject export, active version | Mechane provider             |
-| Verified guest image and container rollout                    | Mechane provider             |
-| Node deployment, database, runtime secrets                    | Installation owner           |
+| Component                                                                             | Owner                        |
+| ------------------------------------------------------------------------------------- | ---------------------------- |
+| Worker identity, observability, domains, control-delivery schedule, checkpoint bucket | Official Cloudflare provider |
+| Worker modules, ASSETS, bindings, Durable Object exports, active version              | Mechane provider             |
+| Verified guest image and container rollout                                            | Mechane provider             |
+| Postgres, installation settings, secret references, migration commands                | Installation owner           |
 
-Required inputs are `account_id`, `domain`, `runtime`, and `secrets`. The `name` defaults to `mechane-sandbox`. Optional
-`storage` and `sandboxes` inputs set resource names, compute capacity, and allowed egress hosts.
-[Variable declarations](variables.tf) contain the exact types. Inputs accept secret references, never credential values.
+Required inputs are `account_id`, `domain`, `qualification`, and `secrets`. The permanent `name` defaults to
+`mechane-sandbox`; preserve an existing installation's name, bucket, and sandbox application. Optional `settings`,
+`storage`, and `sandboxes` inputs configure application policy, resource names, capacity, and environment tools.
+[Variable declarations](variables.tf) contain the exact types.
 
-The runtime origin is a bare HTTPS Modal origin: `service.modal.run` or `service.region.modal.direct`. The transport
-secret authenticates proxy requests to that service. The separate sandbox key authenticates host requests to the compute
-API. Model, OAuth, and vault credentials belong to the Node deployment and are absent from this module.
+`qualification` supplies the local receipt path and independently pinned SHA-256. The provider checks its source,
+artifact inventory, installation digest, complete input categories, and successful check evidence before API requests.
+Worker modules and every Console asset are checked against the installation inventory. Preview metadata is rejected.
 
-A new installation needs its own Worker identity. Upgrades retain its namespace and checkpoint identities.
+`settings` contains non-secret `MECHANE_*` settings. `secrets.bindings` maps application binding names to Secrets Store
+secret names in `secrets.store_id`. It includes `MECHANE_SANDBOX_SERVICE_KEY`, shared by core and environment handlers.
+Supply runtime Postgres, model, OAuth, encryption, and producer credentials through those references. Migration
+credentials remain outside Worker bindings. The module owns the public, sandbox, and callback origins.
 
 From `workspaces/core`, `mise run infrastructure:check` compiles the provider and validates a non-deployable module
-preview using real provider schemas. It requires no cloud account. Published module archives reject preview metadata.
+preview using real provider schemas. It requires no cloud account.
 
-To upgrade, change the immutable module archive, review the plan, apply, and confirm the next plan has no changes. The
-provider checks live release provenance before uploading and waits for the container rollout. Verify an actual cold
-sandbox after applying; a completed rollout alone does not prove command execution.
+For upgrades, review and apply the qualified bytes, then confirm the next plan has no changes. The provider preserves
+all live Durable Object classes and cumulative wire and migration history. The existing SandboxObject namespace,
+container application, and bucket survive the application cutover; the descriptor adds MechObject. An unchanged guest
+image does not request an image rollout. Image changes require the owning checkpoint and retirement procedure.
 
-The Worker and bucket have deletion guards. Retiring a compute service is a separate operator action. Removing a release
-or image resource retains remote version and image bytes.
+Worker and bucket deletion guards remain. Removing release or image state retains remote version and image bytes. Verify
+the live Console and a cold sandbox after an authorized deployment; API convergence alone does not establish asset
+serving, notification execution, or command recovery.

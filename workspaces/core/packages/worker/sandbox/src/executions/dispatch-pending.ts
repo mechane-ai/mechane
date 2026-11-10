@@ -1,9 +1,11 @@
 import { ExecutionStatus } from '@mechane/sandbox-store';
 import type { ExecutionRow } from '@mechane/sandbox-store';
+import { ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
 import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
 import type { StatusOf, WorkspaceProviderStepInput } from '../types.ts';
+import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
 import { askGuest } from './ask-guest.ts';
 import { executionProgress } from './execution-progress.ts';
 
@@ -20,7 +22,7 @@ type DispatchPendingInput = WorkspaceProviderStepInput & {
 /**
  * Sends a pending execution to the live machine, starting one when none is live, once that machine's guest answers its
  * health; health proves the execution was never sent before. Until the call's deadline passes without health, the
- * execution stays pending, and the call answers that it still runs.
+ * execution stays pending, and a later join must supply a fresh execution environment.
  */
 export async function dispatchPending({
   store,
@@ -33,7 +35,17 @@ export async function dispatchPending({
   const machine = await readyWorkspaceMachine({ store, provider, workspace, deadline });
 
   if (Option.isNone(machine)) {
-    return executionProgress({ execution });
+    if (hasUncheckpointedMachineLoss({ store })) {
+      store.refusePendingExecution({ executionId: execution.id });
+    }
+
+    const current = store.execution({ executionId: execution.id });
+
+    if (Option.isSome(current) && current.value.status !== ExecutionStatus.Pending) {
+      return executionProgress({ execution: current.value });
+    }
+
+    return ExecutionEnvironmentRequired.make({});
   }
 
   store.dispatchExecution({ executionId: execution.id, machineId: machine.value.id, now: DateTime.nowUnsafe() });

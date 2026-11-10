@@ -25,7 +25,7 @@ const StoredWorkspaceState = Schema.Struct({
   restoration: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRestoration)),
   /** Absent when every obsolete generation has been deleted. */
   retired: Schema.OptionFromNullOr(RecordId),
-  /** Absent unless a failed checkpoint left live files awaiting recovery. */
+  /** Absent unless failed file work requires recovery; the committed head remains authoritative. */
   recovery: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRecovery)),
 });
 

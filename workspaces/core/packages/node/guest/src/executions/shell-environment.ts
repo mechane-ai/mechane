@@ -2,8 +2,9 @@ import { EXECUTION_VARIABLES } from '@mechane/sandbox-wire';
 import type { ExecutionRequest } from '@mechane/sandbox-wire';
 import { Option, Record, Redacted } from 'effect';
 import { delimiter, join } from 'node:path';
-import { gatewayCertificates } from '../gateway-certificates.ts';
+import { certificateEnvironment } from '../certificate-environment.ts';
 import type { GuestSettings } from '../types.ts';
+import { cacheEnvironment } from './cache-environment.ts';
 import { GITHUB_ENVIRONMENT } from './github-environment.ts';
 
 type ShellEnvironmentInput = {
@@ -13,7 +14,7 @@ type ShellEnvironmentInput = {
 
 /** Reveals granted secrets only at shell creation and adds installed tools to the command path. */
 export function shellEnvironment({ request, settings }: ShellEnvironmentInput): Readonly<Record<string, string>> {
-  const certificates = gatewayCertificates();
+  const certificates = certificateEnvironment(settings);
   const access = Option.getOrElse(request.environment, () => ({ variables: {}, secrets: {} }));
   const secrets = Record.map(access.secrets, (value) => Redacted.value(value));
   const token = Record.get(secrets, 'GH_TOKEN');
@@ -22,6 +23,7 @@ export function shellEnvironment({ request, settings }: ShellEnvironmentInput): 
   const commandPath = [localCommands, settings.path].join(delimiter);
 
   return {
+    ...cacheEnvironment(settings),
     ...access.variables,
     ...secrets,
     ...github,

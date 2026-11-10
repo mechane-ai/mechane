@@ -1,4 +1,4 @@
-import { renamedWireStruct } from '@mechane/records';
+import { renamedWireStruct, SandboxOperationId } from '@mechane/records';
 import { Duration, Schema } from 'effect';
 import { SandboxCapacityRefusalReason } from './capacity.ts';
 import { EXECUTION_WAIT_MAX } from './constants.ts';
@@ -10,6 +10,10 @@ export const SANDBOX_SERVICE_PREFIX = '/internal/sandboxes';
 
 export const SandboxServiceIdentity = SandboxOwner;
 export type SandboxServiceIdentity = typeof SandboxServiceIdentity.Type;
+
+export const SandboxStopIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, operationId: SandboxOperationId });
+
+export type SandboxStopIdentity = typeof SandboxStopIdentity.Type;
 
 export const SandboxExecutionIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, executionId: ExecutionId });
 export type SandboxExecutionIdentity = typeof SandboxExecutionIdentity.Type;
@@ -75,4 +79,18 @@ export function sandboxWorkspacePath({ workspaceId, mechId }: SandboxServiceIden
   const path = sandboxServicePath({ workspaceId, mechId });
 
   return `${path}/workspace`;
+}
+
+/** A stop request attaches to the environment's current retirement identity. */
+export function sandboxStopPath({ workspaceId, mechId }: SandboxServiceIdentity): string {
+  const path = sandboxServicePath({ workspaceId, mechId });
+
+  return `${path}/stop`;
+}
+
+/** Receipt inspection addresses the original stop without changing its machine lifetime. */
+export function sandboxStopReadPath({ operationId, ...identity }: SandboxStopIdentity): string {
+  const path = sandboxStopPath(identity);
+
+  return `${path}/${encodeURIComponent(operationId)}`;
 }

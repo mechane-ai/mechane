@@ -1,0 +1,9 @@
+export const TOOL_REQUEST_TIMEOUT_MS = 60_000;
+export const TOOL_RESPONSE_MAX_BYTES = 1_048_576;
+export const TOOL_MODEL_RESULT_MAX_BYTES = 65_536;
+export const TOOL_RESULT_CHUNK_CHARACTERS = 8192;
+export const BASH_DEFAULT_TIMEOUT_MS = 120_000;
+export const BASH_MAX_TIMEOUT_MS = 600_000;
+export const BASH_OBSERVE_WAIT_MS = 5000;
+export const MCP_MAX_TOOLS = 200;
+export const MCP_MAX_LIST_PAGES = 8;

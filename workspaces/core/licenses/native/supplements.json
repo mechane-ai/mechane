@@ -3,5 +3,10 @@
   "drizzle-orm@0.45.2": "drizzle-orm-0.45.2.txt",
   "mixpart@0.0.6": "mixpart-0.0.6.txt",
   "@vercel/queue@0.10.0": "vercel-queue-0.10.0.txt",
-  "quickjs-wasi@3.4.0": "quickjs-wasi-3.4.0.txt"
+  "quickjs-wasi@3.4.0": "quickjs-wasi-3.4.0.txt",
+  "@earendil-works/chord@1.5.1": "pi-1.5.1.txt",
+  "@earendil-works/pi-telemetry@1.5.1": "pi-1.5.1.txt",
+  "@earendil-works/pi-durable@1.5.1": "pi-1.5.1.txt",
+  "@earendil-works/pi-ai@1.5.1": "pi-1.5.1.txt",
+  "@earendil-works/pi-schema@1.5.1": "pi-1.5.1.txt"
 }

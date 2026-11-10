@@ -5,8 +5,9 @@ export const NO_OPT_OUTS: Readonly<OptOuts> = { pending: [], decided: {} };
 
 /**
  * What the checks program does: run the owned checks, lint, tighten the ratchets' baselines, or merge a baseline's
- * versions. It also prints, records or compares the fingerprint, and prints the changed set. Last, it measures the
- * rules, appends to the locks, runs the normalizers, or applies the enforced autofixes or one rule's.
+ * versions. It also prints, records or compares the fingerprint, prints the changed set, and selects affected checks.
+ * Last, it measures the rules, appends to the locks, runs the normalizers, or applies the enforced autofixes or one
+ * rule's.
  */
 export const ChecksCommand = {
   Check: 'check',
@@ -17,6 +18,7 @@ export const ChecksCommand = {
   Record: 'record',
   Compare: 'compare',
   Changed: 'changed',
+  Affected: 'affected',
   Measure: 'measure',
   Lock: 'lock',
   Normalize: 'normalize',

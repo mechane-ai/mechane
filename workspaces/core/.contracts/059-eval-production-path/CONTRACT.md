@@ -41,7 +41,7 @@ Confirm that an evaluation request produced no external effect, and that a requi
 ## Local adaptations
 
 The runner reaches `/api/v1` through `@mechane/client` and `@mechane/protocol`, using `sendNotification`, `listTurns`,
-`showTurn`, and `listConsoleMessages`. It exercises the normal notification-driven Workflow path and explicit Console
+`showTurn`, and `listConsoleMessages`. It exercises the normal notification-driven Pi path and explicit Console
 communication tool. It imports no private runtime implementation and adds no evaluation-only runtime callback.
 
 Each repeat derives its trial identity from the plan, case, and repeat. Each role uses a fresh mech with empty working

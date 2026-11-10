@@ -1,4 +1,6 @@
 import { TurnStatus, Workspace } from '@mechane/protocol';
+import { HttpStatusCode } from '@mechane/records';
+import { SandboxExecutionIdentity, sandboxExecutionPath, SandboxExecutionResult } from '@mechane/sandbox-wire';
 import {
   createAccount,
   createMech,
@@ -11,24 +13,27 @@ import {
   runCli,
   sendNotification,
   setMachineLimit,
+  startCommandGate,
   waitFor,
-  waitForBashCompletion,
-  waitForSandboxFile,
   waitForTurn,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { Option } from 'effect';
+import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { checkpointedFilesSurviveMachineLoss } from './checkpointed-files-survive-machine-loss.ts';
 
-const WORKFLOW_RECOVERY_WAIT_MS = 60_000;
-const COMMAND_TIMEOUT_MS = 120_000;
+const COMMAND_RECOVERY_WAIT_MS = 60_000;
+const COMMAND_TIMEOUT_SECONDS = 120;
 const COMPLETED_COMMAND_MODEL_CALLS = 2;
+const COMMAND_OWNER_RESTARTS = 6;
 
 export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput): Promise<void> {
   const fixtures = requireFixtures(stack);
+  const sandbox = stack.sandbox;
+
+  assert.ok(sandbox !== undefined);
+
   const administrator = await createAccount({ stack, login: fixtures.github.users.owner.login });
   const marker = `interrupted-command-${randomUUID()}`;
 
@@ -51,6 +56,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
   const directory = `.smoke-${randomUUID()}`;
   const initialMachines = await readSandboxMachines(stack);
   const cleanupFailures: Array<unknown> = [];
+  const gate = await startCommandGate();
 
   try {
     await setMachineLimit({ stack, account, machines: 0 });
@@ -66,7 +72,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     const command = [
       `mkdir -p '${directory}'`,
       `printf '%s\\n' '${marker}' >> '${directory}/effects'`,
-      `while [ ! -f '${directory}/release' ]; do sleep 0.05; done`,
+      `curl --fail --silent '${gate.url}'`,
       `cat '${directory}/effects'`,
     ].join('\n');
 
@@ -84,7 +90,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
         replies: [
           {
             isHeld: true,
-            tools: [{ id: candidate.toolCallId, name: 'bash', input: { command, timeoutMs: COMMAND_TIMEOUT_MS } }],
+            tools: [{ id: candidate.toolCallId, name: 'bash', input: { command, timeout: COMMAND_TIMEOUT_SECONDS } }],
           },
           { text: 'The command result was observed' },
         ],
@@ -107,7 +113,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       }
     }
 
-    const effect = await waitForSandboxFile({ stack, path: join(directory, 'effects'), contents: `${marker}\n` });
+    await gate.waitForRequest({ count: 1 });
 
     const refused = await waitFor({
       name: 'one concurrent command to be refused by workspace capacity',
@@ -133,18 +139,78 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     assert.equal(allocatedMachines.length, initialMachines.length + 1);
 
+    const machineId = allocatedMachines.find((identity) => !initialMachines.includes(identity));
+
+    assert.ok(machineId !== undefined);
+
+    const physicalMachine = await sandbox.inspectMachine(machineId);
+
+    assert.ok(physicalMachine !== undefined);
+
+    const correctionMarker = `correction-${randomUUID()}`;
+
+    model.configure({ marker: correctionMarker, replies: [{ text: 'The correction was observed' }] });
+
+    const correction = await sendNotification({ ...winner, notificationId: randomUUID(), text: correctionMarker });
+
     try {
-      await stack.restart({ signal: 'SIGKILL' });
+      for (let restart = 0; restart < COMMAND_OWNER_RESTARTS; restart += 1) {
+        await stack.restart({ signal: 'SIGKILL' });
+      }
+
+      assert.deepEqual(await sandbox.inspectMachine(machineId), physicalMachine);
     } finally {
-      await writeFile(join(dirname(effect), 'release'), 'continue\n');
+      gate.release();
     }
 
-    const { result, turn } = await waitForBashCompletion({ ...winner, timeoutMs: WORKFLOW_RECOVERY_WAIT_MS });
+    const result = await readBashResult({
+      model,
+      ...winner,
+      marker: correctionMarker,
+      index: 0,
+      timeoutMs: COMMAND_RECOVERY_WAIT_MS,
+    });
+
+    const turn = await waitForTurn(winner);
+
+    assert.equal(turn.status, TurnStatus.Completed);
+    assert.equal(result.status, 'completed');
+    assert.equal(result.exitCode, 0);
 
     assert.equal(result.output, `${marker}\n`);
-    assert.equal(await readFile(effect, 'utf8'), `${marker}\n`, 'The resumed command repeated its side effect');
+
+    const executionIdentity = Schema.decodeUnknownSync(SandboxExecutionIdentity)({
+      workspaceId: account.workspaceId,
+      mechId: winner.mechId,
+      executionId: result.executionId,
+    });
+
+    const executionPath = sandboxExecutionPath(executionIdentity);
+
+    const receiptResponse = await fetch(new URL(executionPath, sandbox.origin), {
+      headers: { authorization: `Bearer ${sandbox.bearer}` },
+      signal: AbortSignal.timeout(COMMAND_RECOVERY_WAIT_MS),
+    });
+
+    assert.equal(receiptResponse.status, HttpStatusCode.Ok);
+
+    const receipt = Schema.decodeUnknownSync(SandboxExecutionResult)(await receiptResponse.json());
+
+    assert.equal(receipt._tag, 'Exited');
+
+    assert.equal(receipt.exitCode, 0);
+    assert.equal(receipt.output.text, result.output);
+
+    const correctionTurn = await waitForTurn({ ...winner, notificationId: correction.id });
+
     assert.equal(
-      model.readCalls({ marker: winner.marker }).length,
+      correctionTurn.status,
+      TurnStatus.Completed,
+      'The correction was stranded behind the admitted command',
+    );
+    assert.equal(gate.readRequests().length, 1, 'The resumed command repeated its external effect');
+    assert.equal(
+      model.readCalls({ marker: winner.marker }).length + model.readCalls({ marker: correctionMarker }).length,
       COMPLETED_COMMAND_MODEL_CALLS,
       'Recovery repeated the completed model request',
     );
@@ -188,6 +254,8 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     assert.deepEqual(retainedMachines, allocatedMachines);
 
+    await checkpointedFilesSurviveMachineLoss({ ...winner, directory });
+
     await deleteSandbox(winner);
 
     const separated = await runBash({
@@ -198,7 +266,13 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     assert.equal(separated.result.status, 'completed');
     assert.equal(separated.result.exitCode, 0);
     assert.equal(separated.result.output, 'separate\n');
+  } catch (cause) {
+    await stack.captureFailure('interruptedCommandKeepsItsReceipt:before-sandbox-cleanup').catch(() => undefined);
+
+    throw cause;
   } finally {
+    gate.release();
+
     const cleanup = await Promise.allSettled(mechs.map((mech) => deleteSandbox({ stack, account, mechId: mech.id })));
 
     for (const result of cleanup) {
@@ -208,6 +282,8 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
         cleanupFailures.push(reason);
       }
     }
+
+    await gate.close();
   }
 
   if (cleanupFailures.length > 0) {

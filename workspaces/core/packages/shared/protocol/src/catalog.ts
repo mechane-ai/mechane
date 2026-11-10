@@ -8,9 +8,11 @@ import { listEvents } from './operations/events/list-events.ts';
 import { listRecentEvents } from './operations/events/list-recent-events.ts';
 import { EVIDENCE_OPERATIONS } from './operations/evidence/evidence-operations.ts';
 import { EXECUTION_ACCESS_OPERATIONS } from './operations/execution-access/execution-access-operations.ts';
+import { listMechHistory } from './operations/history/list-mech-history.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
 import { sendNotification } from './operations/notifications/send-notification.ts';
 import { manageSandbox } from './operations/sandboxes/manage-sandbox.ts';
+import { SELF_OPERATIONS } from './operations/self/self-operations.ts';
 import { STATUS_OPERATIONS } from './operations/status/status-operations.ts';
 import { TURN_OPERATIONS } from './operations/turns/turn-operations.ts';
 import { WORKSPACE_OPERATIONS } from './operations/workspaces/workspace-operations.ts';
@@ -31,8 +33,10 @@ export const catalog = {
   listConsoleMessages,
   sendNotification,
   ...MECH_OPERATIONS,
+  listMechHistory,
   manageSandbox,
   ...STATUS_OPERATIONS,
+  ...SELF_OPERATIONS,
   ...TURN_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
 } as const satisfies Catalog;

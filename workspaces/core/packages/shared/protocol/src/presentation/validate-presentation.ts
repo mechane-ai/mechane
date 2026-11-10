@@ -1,22 +1,9 @@
-import { CardSpecError, toCard } from '@json-render/chat';
-import type { CardLimits } from '@json-render/chat';
+import { CardSpecError } from '@json-render/chat';
 import { Record } from 'effect';
 import type { z } from 'zod';
-import { PRESENTATION_COMPONENTS } from './components.ts';
 import type { StaticPresentationSpecification } from './elements.ts';
 import { PRESENTATION_LIMITS } from './limits.ts';
-
-const CARD_LIMITS: Readonly<CardLimits> = {
-  tables: PRESENTATION_LIMITS.tables,
-  charts: PRESENTATION_LIMITS.charts,
-  fields: PRESENTATION_LIMITS.fields,
-  tableRows: PRESENTATION_LIMITS.tableRows + 1,
-  tableColumns: PRESENTATION_LIMITS.tableColumns,
-  chartLabel: PRESENTATION_LIMITS.chartLabelChars,
-  chartTitle: PRESENTATION_LIMITS.chartTitleChars,
-  chartSeries: PRESENTATION_LIMITS.chartSeries,
-  chartPoints: PRESENTATION_LIMITS.chartPoints,
-};
+import { renderPresentationCard } from './render-presentation-card.ts';
 
 type Visit = { readonly key: string; readonly depth: number };
 type ValidatePresentationInput = { readonly spec: StaticPresentationSpecification; readonly context: z.RefinementCtx };
@@ -177,11 +164,7 @@ export function validatePresentation({ spec, context }: ValidatePresentationInpu
   }
 
   try {
-    toCard(spec, {
-      components: PRESENTATION_COMPONENTS,
-      limits: CARD_LIMITS,
-      maxElements: PRESENTATION_LIMITS.elements,
-    });
+    renderPresentationCard({ spec });
   } catch (error) {
     if (!(error instanceof CardSpecError)) {
       throw error;

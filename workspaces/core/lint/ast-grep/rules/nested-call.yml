@@ -10,8 +10,10 @@ message: 'Bind the inner call to a name and pass the name, such as `const total 
 files: ['**/*.ts']
 ignores:
   [
-    'packages/node/{runtime,server,stack,distribution,testing,smoke}/src/**',
-    'packages/worker/sandbox-service/src/**',
+    'packages/node/{stack,distribution,testing,smoke}/src/**',
+    'packages/shared/deployment/src/worker-deployment.ts',
+    'packages/worker/{runtime,server,control-store}/src/**',
+    'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
     '**/node_modules/**',

@@ -1,187 +1,130 @@
 # Operate Mechane
 
-Keep one infrastructure declaration and state owner for each installation. The service, database, compute, secrets, and
-domain belong to that owner. Product records are administered through Mechane's authenticated APIs.
+Keep one infrastructure declaration, state owner, and deployment writer per installation. Preserve the Worker identity,
+Durable Object namespaces, checkpoint bucket, database, and encryption keys across application updates.
 
-## Changes
+## Artifacts
 
-Select immutable runtime and sandbox artifacts from the same release. Verify the manifest's revision and checksums
-before constructing the host image. Do not rebuild application JavaScript from an operator checkout.
+Install qualified bytes from one immutable release. Keep the candidate directory intact beside its independently
+selected qualification digest. The [distribution guide](../packages/node/distribution/README.md) defines its inventory
+and the [provider](../infrastructure/provider/README.md) verifies it before cloud requests.
 
-Run domain and upstream Workflow schema bootstrap with the migration credential. Keep that credential out of the serving
-process. Rolling updates require schema changes that both the current and replacement service can use. The
-[schema 1 upgrade](#upgrade-domain-schema-1-to-2) requires a stopped service instead. Native Workflow state, SDK
-serialization, and open hooks remain part of the compatibility boundary after the initial hard cutover.
+Release qualification follows this sequence:
 
-Deploy the Node process with its private configuration, health checks, and a bounded shutdown interval. Keep the
-Workflow worker running with HTTP service lifetime. A rolling replacement may overlap processes; database claims and
-stable side-effect identities must coordinate them. The public origin and GitHub callback remain stable.
+1. Build a candidate from reviewed, clean public source with `mise -C workspaces/core run distribution:build`.
+2. Verify the candidate with `mise -C workspaces/core run distribution:verify -- CANDIDATE`.
+3. Run complete repository checks, compiled-artifact scenarios, and shipped-format preservation checks against those
+   exact bytes. Use the [stack API](../packages/node/stack/src/types.ts) with `isSource: false` and the candidate's
+   `serverEntry`, `assetsDirectory`, and `sandboxImage`. Artifact mode copies the Worker without watching or recompiling
+   it.
+4. Retain exact toolchain, fixture, policy, and configuration inputs with their digests. Prepare the
+   [qualification request](../packages/node/distribution/src/qualification.ts) with successful `complete`,
+   `artifact-scenarios`, and `shipped-formats` evidence. Each report binds the same source, inventories, and input
+   digest.
+5. Run `mise -C workspaces/core run distribution:qualify -- CANDIDATE REQUEST.json`, then independently select the
+   resulting `qualification.json` SHA-256.
+6. Run `mise -C workspaces/core run distribution:verify-qualified -- CANDIDATE QUALIFICATION_SHA256`. Publish and
+   install that same candidate with every referenced file. Changed bytes or inputs require new qualification.
 
-Review the infrastructure plan for unintended database, sandbox namespace, bucket, or key replacement. Serialize the
-plan-and-apply sequence, and discard a saved plan after an intervening apply or configuration change. A successful
-follow-up plan reports no changes. Keep protected state backups outside Git.
+Qualification and verification do not rebuild or publish. Operators supply `qualification.path` and
+`qualification.sha256` to the installation module. Source tests and celld results do not establish hosted behavior.
+After an authorized deployment, verify actual Console assets, intake, execution, restart recovery, and explicit tool
+communication. Record the deployed identities and remaining limits with the receipts.
 
-An infrastructure apply proves resource convergence, not agent behavior. Check readiness, sign-in, workspace reads,
-notification acceptance, explicit Console publication, and a sandbox command. For an execution change, verify active
-injection, quiet completion, restart, and the idle/wake boundary. Qualify external approval notifications and the
-agent's explicit follow-up in the owning integration. Record paid/live checks with the deployed revision and evidence
-limits.
+## Cutover
+
+Retire the previous execution engine before activating a native actor. Preserve actual Postgres history, pending input,
+credentials, workspace files, checkpoint failures, and uncertain receipts.
+
+1. Save each workspace's exact policy and suspend execution. Quiesce native actors through the authenticated
+   [maintenance operation](../packages/shared/protocol/src/operations/mechs/maintenance.schemas.ts) when applicable.
+   Reconcile in-flight model and environment effects using their existing identities.
+2. Save current files and complete sandbox retirement through the [stop procedure](#stopping). Keep capacity callbacks
+   available until release completes. Preserve an authoritative database backup and required key versions.
+3. Positively retire every old application owner, automatic replica, and restart controller. Reconcile provider
+   inventory and runtime database sessions. Retain operator-reviewed retirement evidence; stored run status cannot prove
+   process retirement.
+4. Run the extracted release's `node migrate.mjs`, then `node grant.mjs` with the controlled migration connection.
+   Follow the [database inputs](self-hosting.md#install). Steps 1–5 keep their exact checksums; schema 6 adds control
+   accounting and delivery tables. Historical records and tables remain.
+5. Deploy the qualified Worker while policies remain suspended. Preserve the existing Sandbox namespace, container
+   application, and checkpoint bucket. Fence integration delivery at the Worker while preserving producers' durable
+   outboxes. Keep direct member and Console submissions quiet. Quiesce every fresh target actor through the
+   authenticated maintenance operation before its first import batch. Suspension alone permits notification intake.
+   Verify readiness, the intake fence, and retained authority before importing histories.
+6. Inventory and apply preserved history with the extracted command:
+
+   ```sh
+   node import.mjs --dry-run --all
+   node import.mjs --apply --all --expect-digest SOURCE_SHA256 --retirement-receipt RETIREMENT.json --retirement-sha256 RETIREMENT_SHA256
+   ```
+
+   Both modes read `MECHANE_MIGRATION_DATABASE_URL`. Apply also reads `MECHANE_ORIGIN` and
+   `MECHANE_SANDBOX_SERVICE_KEY`. Use `--workspace UUID`, optionally with `--mech UUID`, instead of `--all` for a
+   smaller selection. Review the same selection's source digest and the retirement receipt's exact bytes before
+   applying.
+
+7. Check authenticated Conversation and trace reads, retained publications, pending input, and checkpoint markers. Final
+   import leaves the actor inactive. Remove the intake fence after all selected scopes pass verification; require
+   durable producer deliveries to resume. Deliberately resume eligible actors and restore exact saved policies only
+   after checking the maintenance receipt and environment recovery state.
+
+When file recovery requires the new Worker, first prove the old application is quiet. Preserve the live guest and its
+held reservation, retire the old application, and migrate control storage. Stage only the qualified Worker with intake
+fenced; keep the old image unchanged. Complete file recovery, Stop, and capacity release before import and image
+rollout.
+
+The importer uses a consistent read-only source snapshot and rechecks suspension before each delivery batch. Oversized
+records fail preflight without truncation. After a lost acknowledgment, rerun the same reviewed command; immutable
+identities and cursors reject changed batches. The [import guide](../packages/worker/server/src/import/README.md)
+describes its output and guard.
+
+The migrator validates the contiguous ledger and known checksums. It refuses a database newer than its release. Verify
+older Console UUID repairs through authenticated reads and repeat migration without changing repaired or valid records.
+Recover forward after this engine cutover; an old execution binary is not a code-only rollback.
+
+## Stopping
+
+Fence new execution before replacing a guest image or stopping a retained installation. Enumerate held capacity owners
+through authenticated `GET /internal/sandbox-owners`. Request each environment's stop through
+`POST /internal/sandboxes/WORKSPACE_ID/MECH_ID/stop` at its sandbox origin using the service credential.
+
+Retain the returned `operation_id`. Passively inspect `GET /internal/sandboxes/WORKSPACE_ID/MECH_ID/stop/OPERATION_ID`
+after a lost response or while waiting. The [receipt](../packages/shared/sandbox-wire/src/environment-state.ts)
+distinguishes `requested`, `waiting_for_commands`, `checkpointing`, `stopping`, `completed`, and `failed`.
+
+An accepted stop does not establish saved files or provider retirement. Require a fresh committed generation, completed
+stop, matching capacity release, and reconciled provider inventory before changing the image. Verify restored files
+after rollout. Keep the namespace and checkpoint bucket intact.
+
+Follow the receipt's `recovery_action`: wait, repair the workspace, or explicitly retry stop. Passive reads do not retry
+shutdown or repair files. Preserve live files and the previous committed generation after checkpoint failure. The
+retained local supervisor leaves hosts available if draining fails or exceeds its deadline.
 
 ## Recovery
 
-After an interrupted deployment, read the active host revision, database schema, and compute rollout before retrying.
-Reuse the same resource identities and state. Never recreate a database, namespace, or bucket merely to clear an error.
-A restart resumes Workflow-owned work and reconciles pending wake intent; do not submit replacement notifications.
+Inspect the original turn and effect receipts after interruption. A restart resumes Pi-owned work; submitting another
+notification creates new input. A lost HTTP response does not prove an external write failed. Inspect its external
+outcome before authorizing another effect.
 
-After an uncertain command, inspect its original execution receipt. A lost HTTP response is not evidence that a push,
-merge, deployment, or other external write failed. Inspect the external system before deciding whether to repeat it. The
-explicit communication tool owns a separate delivery receipt. A failed platform post does not rerun completed work.
+Native traces describe actor-owned turns, provider attempts, and tools. Imported traces retain historical provenance and
+an explicit evidence notice; importing them never replays tools or publications. Pending historical notifications and
+uncertain executions remain evidence for later reconciliation.
 
-Environment completion delivery has its own durable sandbox outbox. It retries the original terminal receipt after a
-lost callback response. The receiver verifies the persisted execution and passively reads the authoritative receipt
-before admission. Inspect callback failure separately from model activation or file-save failure. A matching terminal
-outcome already returned by the original tool suppresses a redundant notice. A completed process-start receipt that
-reported Running does not suppress its later exit or loss. Pending active start receipts make the callback retry;
-detached or uncertain work still delivers a notification. Do not rerun work to manufacture another notification.
+Provider attempts reserve before dispatch and recheck current policy and caps at dispatch admission. Confirmed usage
+settles once; unknown dispatched attempts remain charged. Only an undispatched reservation can be released as unused. Do
+not repeat a paid request or completed tool to recover missing output.
 
-A failed or canceled activation can leave a durable environment-checkpoint requirement. The next activation must
-complete that barrier before model or tool work. Preserve the previous committed generation and recoverable live files
-while investigating a failed save. Terminal activation status is not evidence that its files were saved.
+Preserve an unresolved environment-checkpoint requirement until its recovery succeeds. A terminal turn, older snapshot,
+or healthy replacement cannot prove newer writes survived. Inspect retained recovery files before deciding whether any
+loss is acceptable.
 
-An old filesystem head cannot clear that requirement after unexpected machine loss. With no live machine, the latest
-machine that became ready must have a committed drain matching that generation. A startup attempt that never became
-ready creates no file-loss evidence and cannot hide unresolved loss from an earlier ready machine. Otherwise preserve
-the failed barrier and its evidence. Recovery from an older snapshot cannot establish that later writes survived; it
-needs an explicit operator decision.
+## Secrets and access
 
-For unexpected machine loss without an unresolved workspace checkpoint, a workspace owner can use the existing
-maintenance operation while model/tools remain fenced:
+Keep migration credentials out of Worker bindings. Rotate deployment secrets through their installation references and
+verify fresh use before revoking an overlapping old credential. Keep previous vault keys while retained ciphertexts or
+backups require them.
 
-```sh
-mechane sandbox upgrade MECH_ID --operation-id RECOVERY_UUID
-```
-
-Reuse that UUID after interruption and require the operation to reach `done`. The upgrade restores the committed head
-and takes a fresh checkpoint; it does not restore newer unsaved writes. Then notify the mech of the recovery and lost
-state so it can reconcile its files and external effects. If maintenance refuses an unresolved checkpoint or recovery
-record, investigate that failure instead. This upgrade path does not recover every persistence failure and does not
-authorize deleting the failed record or its files.
-
-Stop competing infrastructure writers before recovering a retained state lock. Confirm the exact state key and lock
-identity. Lock age or a matching username does not prove a writer is dead. Do not disable locking or overwrite unseen
-remote state. Infrastructure-state recovery does not restore application data.
-
-Keep database backups, workspace checkpoints, and vault key versions together in the recovery plan. Changing a release
-URL cannot reverse a migration or recover deleted records. Publish compatible recovery code under a new immutable
-release when the active schema or Workflow histories cannot use an older artifact.
-
-### Model failures
-
-Inspect the failed run's native trace and its existing request reservation. Model failures retain a bounded diagnostic
-object with a category and recognized error fields; arbitrary provider messages, response metadata, and request bodies
-are excluded. An unknown category means the retained evidence cannot establish the cause. A provider can send a
-structured error inside an HTTP 200 stream, so HTTP success alone does not establish a completed model request. When the
-provider supplied a valid generation ID on that request, the diagnostic retains it for provider-side lookup. An absent
-ID means the boundary did not receive one; an earlier call's ID is not evidence about the failed request.
-
-Missing usage remains conservatively charged. Do not replay an uncertain paid request or repeat completed tools to
-recover its output. After addressing the failure, one explicit continuation notification may start a new activation from
-retained context. It must pass the environment checkpoint barrier and inspect previous receipts and external state
-before deciding what work remains. A new activation does not deduplicate a new command with the same intended effect.
-
-## Secrets
-
-Deployment secret stores own OAuth, model, database, vault, sandbox, and callback credentials. Update only the intended
-installation's reference. A secret shared by several services changes all of them; use dedicated references.
-
-Rotate OAuth and model credentials by installing a replacement, verifying a fresh use, and then revoking the previous
-credential when overlap is supported. Runtime configuration resolves values at the trusted operation boundary. Never
-include secret values in a deployment manifest or command argument.
-
-To rotate vault encryption, add a new key version and select it as current while retaining prior versions. Workspace
-owners then resubmit retained credentials under their existing references using private files:
-
-```sh
-mechane --workspace WORKSPACE_UUID credential put REFERENCE --file /private/path/credential
-mechane --workspace WORKSPACE_UUID credential list
-```
-
-A write encrypts with a fresh nonce and the current key. Keep an old key until no retained credential or backup needs
-it. Losing that key makes its ciphertext unreadable. Credential metadata reports versions but never values.
-
-## Access
-
-Admit GitHub identities by stable numeric subject, not username. Installation administration and workspace ownership are
-separate grants. Use the current CLI help to create shared workspaces and change membership. Preserve at least one
-workspace owner. An inaccessible selected workspace must fail rather than silently select personal work.
-
-Workspace owners configure integration credentials and per-mech execution access. Review the current grant before
-replacing it. A removed credential must not leave a silently usable configuration. Grant revocation affects later
-issuance; it cannot undo an already-authorized external effect.
-
-Application services own capability policy and approval decisions. Configure generic producer credentials and recipient
-allowlists through trusted deployment configuration, following the [notification guide](notifications.md). Models cannot
-choose producer credentials or recipients. A ready decision still requires the agent to read current request authority
-before acting. Stable notification and tool identities protect admission and effects independently.
-
-## Sandboxes
-
-A container is disposable; its committed files are durable. The sandbox service checkpoints the owned home directory
-before recording a completed command. A replacement restores the committed generation before accepting new work.
-Unfinished and background writes need a later successful checkpoint; process memory never persists through replacement.
-
-Preserve the previous committed checkpoint after a failed save. Use the sandbox service's explicit maintenance and
-receipt interfaces for inspection, cancellation, or replacement. Keep exports private, and never delete a namespace or
-bucket as a substitute for canceling one operation. See the [sandbox guide](../packages/worker/sandbox/README.md) for
-archive bounds and recovery semantics.
-
-### Image changes
-
-Save and retire guests before applying a different guest image. Provider 0.10.0 uses a `full_auto` rolling replacement
-and does not request a fresh file checkpoint. Its grace period and a healthy replacement do not prove that current files
-were saved. Require a completed fresh checkpoint, guest retirement, confirmed provider stop, and released capacity
-before the image apply. Preserve the checkpoint bucket and Durable Object namespace.
-
-On Cloudflare, correlate each current machine's completed stop with its released reservation and sleeping workspace. The
-awaited [container destruction](https://developers.cloudflare.com/containers/api/durable-object-container/#destroy)
-establishes physical retirement. Reconcile the complete provider inventory with those records; require no remaining
-active, assigned, or starting placement. Provider inventory reports logical instances, so neither an `inactive` label
-nor a blanket requirement for literal `stopped` labels establishes this gate. Investigate unmatched instances or
-contradictory observations before continuing.
-
-### Upgrade domain schema 1 to 2
-
-Releases 0.25.0 and 0.25.1 require schema 1 and cannot restart after 0.25.2 migrates it. Use this stopped-service
-procedure; the old sandbox service's stop operation does not create a fresh checkpoint.
-
-1. Drain unfinished domain and Workflow work, including approval waits. Keep the old Node and sandbox service running.
-2. While workspace policy permits sandboxes and capacity is available, run a fresh same-image upgrade for each live
-   guest:
-
-   ```sh
-   mechane --origin ORIGIN --workspace WORKSPACE --output json sandbox upgrade MECH --operation-id FRESH_UUID
-   ```
-
-   Retry an interrupted operation with the same UUID. Require the matching `operation_id`, `action: "upgrade"`, and
-   `phase: "done"`. Retain that report, its replacement `sandbox_id`, and a representative home-file hash when
-   available. Old reports expose no checkpoint ID. Reusing an earlier completed UUID does not save current files.
-
-3. Recheck idle work and save each affected workspace's exact policy. Suspend execution through its policy, preserving
-   the other fields. Recheck for work admitted during that interval. If any appeared, restore the saved policies, finish
-   it on the old release, and repeat the fresh checkpoint and fence. Do not migrate past an unresolved race.
-4. Record each replacement machine's held capacity reservation. Retire guests through authenticated
-   `POST /internal/sandboxes/{workspaceId}/{mechId}/stop` at `MECHANE_SANDBOX_ORIGIN`, using the existing
-   sandbox-service credential. There is no public stop CLI. Poll the corresponding internal `GET .../workspace`: saved
-   homes must report `sandbox_id: null` and `status: "sleeping"`. Require that same reservation to be released and the
-   fresh maintenance operation to remain unchanged. Correlate the completed stop, released capacity, and complete
-   provider inventory using the retirement check above. An accepted stop response or a sleeping report alone is
-   insufficient. Keep old Node available through the capacity-release callbacks.
-5. Stop the whole old Node application, including instances maintained by minimum capacity. Audit all workspaces for
-   unfinished domain/Workflow work and active runtime database sessions. Resolve any race on the old release before
-   continuing. Take an authoritative database backup and retain vault keys, checkpoint files, and resource identities.
-6. Migrate to schema 2, deploy the matching new Node and sandbox artifacts, and apply the image with all old guests
-   already stopped. Keep policies suspended while checking readiness, preserved records, checkpoint metadata, and
-   provider rollout completion.
-7. Restore the exact saved policies before allocating guests for qualification. Verify a fresh guest's image, restored
-   files, browser action, and saved evidence before declaring the rollout complete. Then verify the original agent flow.
-   Recover forward after migration; the schema 1 binary cannot serve the migrated database.
+Admit GitHub identities by stable numeric subject. Preserve at least one workspace owner and keep installation
+administration separate from membership. Owners configure credentials and execution grants through authenticated APIs.
+Revocation affects later authorization; it cannot undo an admitted external effect.

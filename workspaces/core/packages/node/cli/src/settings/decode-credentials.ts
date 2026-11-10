@@ -36,13 +36,13 @@ export const decodeCredentials = Effect.fn('decodeCredentials')(function* ({
   const root = configurationRoot({ configHome, home });
 
   if (Option.isNone(apiKey)) {
-    return { apiKey: Option.none(), configurationRoot: root };
+    return { apiKey: Option.none(), selfToken: Option.none(), configurationRoot: root };
   }
 
   const keyInvalid: () => UsageInvalid = () => new UsageInvalid({ problem: new ApiKeyInvalid(), output });
   const token = yield* Schema.decodeUnknownEffect(KeyToken)(apiKey.value).pipe(Effect.mapError(keyInvalid));
 
-  return { apiKey: Option.some(token), configurationRoot: root };
+  return { apiKey: Option.some(token), selfToken: Option.none(), configurationRoot: root };
 });
 
 /** The XDG configuration folder, which must be absolute, or else the conventional folder in the home folder. */

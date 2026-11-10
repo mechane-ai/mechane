@@ -1,20 +1,29 @@
-import { MachineId, RecordId, SandboxOperationId } from '@mechane/records';
+import { MachineId, RecordId, SandboxOperationId, SHA256_PATTERN } from '@mechane/records';
 import {
   ExecutionId,
   ExecutionProgress,
   SandboxArchive,
   SandboxCheckpointResult,
+  SandboxRecoveryCheckpointRequest,
   SettledReceipt,
 } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
 
-/** The committed portable archive and its previous generation. */
-export const WorkspaceSnapshot = Schema.Struct({
+/** The immutable generation document published after every archive part exists. */
+export const WorkspaceManifest = Schema.Struct({
   generation: RecordId,
   /** Absent for the first committed generation. */
   parent: Schema.OptionFromNullOr(RecordId),
   archive: Schema.toType(SandboxArchive),
+});
+
+export type WorkspaceManifest = typeof WorkspaceManifest.Type;
+
+/** Published generations reference their manifest; older committed generations retain their inline metadata. */
+export const WorkspaceSnapshot = Schema.Struct({
+  ...WorkspaceManifest.fields,
+  manifestSha256: Schema.OptionFromOptionalKey(Schema.String.check(Schema.isPattern(SHA256_PATTERN))),
 });
 
 export type WorkspaceSnapshot = typeof WorkspaceSnapshot.Type;
@@ -45,6 +54,7 @@ export const FileCheckpointPurpose = Schema.TaggedUnion({
   Maintenance: { operationId: SandboxOperationId },
   Drain: { operationId: SandboxOperationId, machineId: MachineId },
   Activation: { operationId: SandboxOperationId },
+  Recovery: { operationId: SandboxOperationId, ...SandboxRecoveryCheckpointRequest.fields },
 });
 
 export type FileCheckpointPurpose = typeof FileCheckpointPurpose.Type;

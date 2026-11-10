@@ -14,6 +14,7 @@ Layer 6 · node lane · effect dialect · no consumers
 - `src/measure/`: every rule's findings, status and phase, and the pending list.
 - `src/fixers/`: each enforced normalizer and autofix, and one rule's sweep.
 - `src/fingerprint/`: the hash of each role's bundle and of the smoke's other inputs.
+- `src/selection/`: affected check selection and the last full check's guarantee evidence.
 
 ## Rules
 
@@ -27,13 +28,19 @@ mise -C workspaces/core run checks
 mise run fix
 ```
 
-Each mise task names one command, such as `check`, `lint`, `tighten`, `fingerprint` or `fix`.
+Each mise task names one command, such as `check`, `lint`, `tighten`, `fingerprint` or `fix`. The `affected` command
+prints the affected tasks with mise's `:::` separators; diagnostics go to standard error.
+
+The fast check reuses a full check's evidence only when its guarantees, dependency inputs, fixtures, configuration,
+toolchain, and existing artifact bytes match. Added and removed file paths participate in the identity. Missing
+artifacts request their checks. Selection reads the import graph and package dependency closure without bundling every
+executable. An affected runtime requests the complete approved smoke catalog.
+
+The complete check runs the existing minified `fingerprint` task after builds and before smoke, then recomputes and
+records the evidence after every task passes. Worker roles use the production compiler's platform modules and resolution
+conditions. The same `fingerprint` command remains the proof for mechanical source changes; it does not perform fast
+selection.
 
 ## Never
 
 - Never read the command line or the environment outside `load-checks-settings.ts`.
-
-## Split seam
-
-`src/fingerprint/` is the next member: only the `fingerprint`, `record` and `compare` commands call it, and it shares no
-more than the kernel with the rest.

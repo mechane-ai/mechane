@@ -3,6 +3,7 @@ import { Record, Schema } from 'effect';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { closeHttpServer } from '../http/close-http-server.ts';
 
 const REQUEST_MAX_BYTES = 2_097_152;
 const BODYLESS_METHODS: ReadonlySet<string> = new Set([HttpMethod.Get, HttpMethod.Head]);
@@ -42,23 +43,7 @@ export async function startHttpService(answer: HttpHandler): Promise<HttpService
 
   const origin = new URL(fixtureOriginUrl({ host: `127.0.0.1:${address.port}` }));
 
-  return {
-    origin,
-    close: async () => {
-      server.closeAllConnections();
-      await new Promise<void>((resolve, reject) => {
-        server.close((error) => {
-          if (error !== undefined) {
-            reject(error);
-
-            return;
-          }
-
-          resolve();
-        });
-      });
-    },
-  };
+  return { origin, close: async () => await closeHttpServer(server) };
 }
 
 async function handleRequest(incoming: IncomingMessage, outgoing: ServerResponse, answer: HttpHandler): Promise<void> {

@@ -1,7 +1,7 @@
 ---
 name: structured-presentation
 message: Publish bounded json-render presentations only through explicit communication tools without granting model-authored authority.
-paths: ["packages/shared/protocol/src/presentation/**", "packages/node/runtime/src/{execution,tools}/**", "packages/browser/console-views/**", "packages/browser/console/src/**"]
+paths: ["packages/shared/protocol/src/presentation/**", "packages/worker/runtime/src/{execution,tools}/**", "packages/browser/console-views/**", "packages/browser/console/src/**"]
 ---
 
 ## Rules

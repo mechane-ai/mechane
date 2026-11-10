@@ -193,7 +193,11 @@ export async function saveMech({ writeRows, tables, mech, signal }: SaveMech): P
       }
 
       const currentDefinition = tables.mechDefinitions.get(mech.id);
-      const activeRevision = Math.max(currentDefinition?.value.active_revision ?? 0, definition.value.active_revision);
+
+      const activeRevision = newerActiveRevision(
+        currentDefinition?.value.active_revision,
+        definition.value.active_revision,
+      );
 
       writeMechSummaries(tables, [summary], () => true);
       upsertRows(tables.mechDefinitions, [
@@ -201,6 +205,18 @@ export async function saveMech({ writeRows, tables, mech, signal }: SaveMech): P
       ]);
     },
   });
+}
+
+function newerActiveRevision(previous: number | null | undefined, current: number | null): number | null {
+  if (previous === undefined || previous === null) {
+    return current;
+  }
+
+  if (current === null) {
+    return previous;
+  }
+
+  return Math.max(previous, current);
 }
 
 function writeTurns(tables: CanonicalTables, rows: ReadonlyArray<TurnRow>): void {

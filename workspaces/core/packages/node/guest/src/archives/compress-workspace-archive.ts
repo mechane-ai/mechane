@@ -29,8 +29,14 @@ export const compressWorkspaceArchive = Effect.fn('compressWorkspaceArchive')(fu
   const path = workspaceFilePath({ folder, generation, file: ARCHIVE_FILE });
   const rawBytes = Bytes.make(WORKSPACE_MAX_BYTES);
   const compressedBytes = Bytes.make(WORKSPACE_ARCHIVE_MAX_BYTES);
-  const raw = boundedArchive({ generation, maximumBytes: rawBytes });
-  const compressed = boundedArchive({ generation, maximumBytes: compressedBytes });
+  const raw = boundedArchive({ generation, maximumBytes: rawBytes, representation: 'uncompressed tar stream' });
+
+  const compressed = boundedArchive({
+    generation,
+    maximumBytes: compressedBytes,
+    representation: 'compressed gzip archive',
+  });
+
   const gzip = createGzip();
   const file = createWriteStream(path);
 

@@ -4,6 +4,7 @@ import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Array, DateTime, Option, Schema } from 'effect';
 import { WORKSPACE_TRANSFER_BATCH_DURATION, WORKSPACE_TRANSFER_BATCH_PARTS } from '../../constants.ts';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
+import { verifyGenerationManifest } from '../generation-manifest.ts';
 import { workspaceRequest } from '../workspace-request.ts';
 import { copySnapshotPart } from './copy-snapshot-part.ts';
 import { isCurrentRestoration } from './current-restoration.ts';
@@ -24,6 +25,8 @@ export async function restoreSnapshot({
   const restored = store.workspace().restoration;
 
   if (Option.isNone(restored) || restored.value.machineId !== machineId || restored.value.generation !== generation) {
+    await verifyGenerationManifest({ workspace, snapshot });
+
     const startedAt = DateTime.nowUnsafe();
 
     store.saveRestoration({ machineId, generation, part: 0, startedAt });

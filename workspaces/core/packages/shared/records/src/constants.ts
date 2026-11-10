@@ -14,6 +14,9 @@ export const RANDOM_UUID_VERSION = 4;
 /** A SHA-256 digest as lowercase hex. */
 export const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
+/** UTC accounting days use four-digit years in `YYYY-MM-DD` form. */
+export const UTC_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /** The prefixes that name a boolean field, which its wire key drops: `isSelfGrading` travels as `self_grading`. */
 export const BOOLEAN_PREFIXES = ['is', 'has', 'can', 'should', 'was', 'needs'] as const;
 

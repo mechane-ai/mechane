@@ -25,6 +25,7 @@ export const FUNCTION_FORM_RULES = [
   {
     ...AST_GREP_DEFAULTS,
     name: 'loop-recursion',
+    maxSuppressions: 1,
     standard: 'EF-18',
     status: RuleStatus.Ratchet,
     phase: RolloutPhase.EffectDialect,

@@ -43,7 +43,7 @@ description = "Format the repository and apply the product's fixers"
 run = ["workspaces/core/node_modules/.bin/oxfmt . '!workspaces/**'", "mise -C workspaces/core run fix"]
 
 [tasks.dev]
-description = "Serve a disposable local fixture with a scripted model"
+description = "Run the retained local Worker fixture with source reload and scripted models"
 run = "mise -C workspaces/core run dev"
 
 [tasks.start]

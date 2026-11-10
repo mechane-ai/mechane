@@ -3,9 +3,11 @@ import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { userInfo } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { preparePostgresTls } from './postgres-tls.ts';
+import type { PostgresTls } from './postgres-tls.ts';
 import { runCommand } from './process.ts';
 import type { StackState } from './state.ts';
-import type { Environment } from './types.ts';
+import type { DiagnosticOptions, Environment } from './types.ts';
 
 const POSTGRES_IMAGE = 'postgres:18.6';
 const DATABASE_READY_MS = 30_000;
@@ -20,14 +22,22 @@ export type LocalPostgres = {
   readonly url: string;
   readonly migrationUrl: string;
   readonly container: string;
-  readonly dump: () => Promise<string>;
-  readonly stop: () => Promise<void>;
+  readonly clientEnvironment: Environment;
+  readonly tls: PostgresTls;
+  readonly dump: (options?: DiagnosticOptions) => Promise<string>;
+  readonly stop: (deadlineMs?: number) => Promise<void>;
 };
 
 export async function startPostgres({ state, environment }: PostgresOptions): Promise<LocalPostgres> {
   const container = `mechane-node-${randomUUID()}`;
   const dataDirectory = join(state.directory, 'postgres');
   const user = userInfo();
+  const tls = await preparePostgresTls({ directory: state.directory, environment });
+
+  const clientEnvironment = {
+    NODE_EXTRA_CA_CERTS: tls.certificateAuthority,
+    CELLD_EXTRA_CA_CERTS: tls.certificateAuthority,
+  };
 
   // Postgres 18 owns its nested PGDATA; its user must also traverse this mount inside the private stack directory.
   await mkdir(dataDirectory, { recursive: true, mode: POSTGRES_PARENT_MODE });
@@ -35,8 +45,8 @@ export async function startPostgres({ state, environment }: PostgresOptions): Pr
 
   const dockerEnvironment = { ...environment, POSTGRES_PASSWORD: state.secrets.postgresPassword };
 
-  async function docker(args: ReadonlyArray<string>): Promise<string> {
-    return await runCommand({ command: 'docker', args, environment: dockerEnvironment });
+  async function docker(args: ReadonlyArray<string>, options: DiagnosticOptions = {}): Promise<string> {
+    return await runCommand({ command: 'docker', args, environment: dockerEnvironment, ...options });
   }
 
   await state.writeOwner({ phase: 'database', container });
@@ -59,13 +69,28 @@ export async function startPostgres({ state, environment }: PostgresOptions): Pr
       '127.0.0.1::5432',
       '--mount',
       `type=bind,source=${dataDirectory},target=/var/lib/postgresql`,
+      '--mount',
+      `type=bind,source=${tls.certificate},target=/etc/mechane-postgres/server.crt,readonly`,
+      '--mount',
+      `type=bind,source=${tls.key},target=/etc/mechane-postgres/server.key,readonly`,
       '--env',
       'POSTGRES_PASSWORD',
       '--env',
       'POSTGRES_USER=mechane',
       '--env',
       'POSTGRES_DB=mechane',
+      '--env',
+      'POSTGRES_HOST_AUTH_METHOD=scram-sha-256',
       POSTGRES_IMAGE,
+      'postgres',
+      '-c',
+      'ssl=on',
+      '-c',
+      'ssl_cert_file=/etc/mechane-postgres/server.crt',
+      '-c',
+      'ssl_key_file=/etc/mechane-postgres/server.key',
+      '-c',
+      'password_encryption=scram-sha-256',
     ]);
 
     const published = await docker(['port', container, '5432/tcp']);
@@ -139,13 +164,26 @@ export async function startPostgres({ state, environment }: PostgresOptions): Pr
     });
 
     return {
-      url: `postgresql://mechane_runtime:${state.secrets.runtimePassword}@127.0.0.1:${port}/mechane`,
-      migrationUrl: `postgresql://mechane:${state.secrets.postgresPassword}@127.0.0.1:${port}/mechane`,
+      url: postgresConnectionUrl({ username: 'mechane_runtime', password: state.secrets.runtimePassword, port }),
+      migrationUrl: postgresConnectionUrl({ username: 'mechane', password: state.secrets.postgresPassword, port }),
       container,
-      dump: async () =>
-        await docker(['exec', container, 'pg_dump', '-U', 'mechane', '-d', 'mechane', '--data-only', '--no-owner']),
-      stop: async () => {
-        await stopPostgresContainer({ container, environment: dockerEnvironment });
+      clientEnvironment,
+      tls,
+      dump: async (options) =>
+        await docker(
+          ['exec', container, 'pg_dump', '-U', 'mechane', '-d', 'mechane', '--data-only', '--no-owner'],
+          options,
+        ),
+      stop: async (shutdownDeadlineMs) => {
+        const options = { container, environment: dockerEnvironment };
+
+        if (shutdownDeadlineMs === undefined) {
+          await stopPostgresContainer(options);
+
+          return;
+        }
+
+        await stopPostgresContainer({ ...options, deadlineMs: shutdownDeadlineMs });
       },
     };
   } catch (error) {
@@ -178,13 +216,37 @@ export async function startPostgres({ state, environment }: PostgresOptions): Pr
   }
 }
 
-type ContainerOptions = { readonly container: string; readonly environment: Environment };
+type ContainerOptions = { readonly container: string; readonly environment: Environment; readonly deadlineMs?: number };
+type ConnectionInput = { readonly username: string; readonly password: string; readonly port: number };
+
+function postgresConnectionUrl({ username, password, port }: ConnectionInput): string {
+  const url = new URL('postgresql://127.0.0.1/mechane');
+
+  url.username = username;
+  url.password = password;
+  url.port = String(port);
+
+  url.searchParams.set('sslmode', 'verify-full');
+
+  return url.href;
+}
+
+function commandDeadline(deadlineMs: number | undefined): { readonly timeoutMs?: number } {
+  if (deadlineMs === undefined) {
+    return {};
+  }
+
+  return { timeoutMs: Math.max(1, deadlineMs - Date.now()) };
+}
 
 async function containerExists(input: ContainerOptions): Promise<boolean> {
+  const deadline = commandDeadline(input.deadlineMs);
+
   const id = await runCommand({
     command: 'docker',
     args: ['ps', '--all', '--filter', `name=^/${input.container}$`, '--format', '{{.ID}}'],
     environment: input.environment,
+    ...deadline,
   });
 
   return id.trim().length > 0;
@@ -223,16 +285,22 @@ async function stopPostgresContainer(input: ContainerOptions): Promise<void> {
   }
 
   const failures: Array<unknown> = [];
+  const deadline = commandDeadline(input.deadlineMs);
 
   await runCommand({
     command: 'docker',
     args: ['stop', '--time', '5', input.container],
     environment: input.environment,
+    ...deadline,
   }).catch((error: unknown) => failures.push(error));
+
+  const removalDeadline = commandDeadline(input.deadlineMs);
+
   await runCommand({
     command: 'docker',
     args: ['rm', '--force', input.container],
     environment: input.environment,
+    ...removalDeadline,
   }).catch((error: unknown) => failures.push(error));
 
   if (failures.length > 0) {

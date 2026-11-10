@@ -1,12 +1,14 @@
 /** The origin variable shared by command-line clients and the sandbox service. */
 export const ORIGIN_VARIABLE = 'MECHANE_ORIGIN';
 
-/** Sandbox configuration is separate from the Node runtime's application settings. */
+/** Sandbox configuration describes the environment service independently of the application host. */
 export const SANDBOX_VARIABLES = {
   origin: ORIGIN_VARIABLE,
   runtimeOrigin: 'MECHANE_RUNTIME_ORIGIN',
   installationHosts: 'MECHANE_INSTALLATION_HOSTS',
   sandboxProvider: 'MECHANE_SANDBOX_PROVIDER',
+  containerNetwork: 'MECHANE_SANDBOX_CONTAINER_NETWORK',
+  trustedCertificatesPem: 'MECHANE_SANDBOX_TRUSTED_CERTIFICATES_PEM',
   sandboxHosts: 'MECHANE_SANDBOX_HOSTS',
   sandboxTools: 'MECHANE_SANDBOX_TOOLS',
   sandboxWebAccess: 'MECHANE_SANDBOX_WEB_ACCESS',
@@ -15,10 +17,14 @@ export const SANDBOX_VARIABLES = {
   hostLauncherKey: 'MECHANE_HOST_LAUNCHER_KEY',
 } as const;
 
-/** Production uses Cloudflare Containers; local verification launches the same guest on its host. */
 export const SandboxProvider = { Container: 'container', Host: 'host' } as const;
 
 export type SandboxProvider = (typeof SandboxProvider)[keyof typeof SandboxProvider];
+
+/** Direct networking is an explicit local platform capability, without hosted gateway interception. */
+export const SandboxContainerNetwork = { Gateway: 'gateway', Direct: 'direct' } as const;
+
+export type SandboxContainerNetwork = (typeof SandboxContainerNetwork)[keyof typeof SandboxContainerNetwork];
 
 /** Public browsing keeps the gateway's destination checks and network isolation. */
 export const SandboxWebAccess = { Packages: 'packages', Public: 'public' } as const;

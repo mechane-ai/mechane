@@ -26,6 +26,7 @@ export async function observeBrowser({ store, provider, requestId }: ObserveBrow
 
   if (Option.isNone(call.machineId)) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: 'the original browser action has not been assigned to a machine',
     });
   }
@@ -48,7 +49,10 @@ export async function observeBrowser({ store, provider, requestId }: ObserveBrow
   const response = await capturePromise({ promise: request });
 
   if (Result.isFailure(response)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the original browser receipt could not be reached yet' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original browser receipt could not be reached yet',
+    });
   }
 
   if (response.success.status === HttpStatusCode.NotFound) {
@@ -73,7 +77,10 @@ export async function observeBrowser({ store, provider, requestId }: ObserveBrow
       await body.value.cancel();
     }
 
-    return BrowserProgress.cases.Pending.make({ reason: 'the original browser receipt could not be read yet' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original browser receipt could not be read yet',
+    });
   }
 
   const bounded = boundGuestResponse({ response: response.success, maximumBytes: BROWSER_RECEIPT_MAX_BYTES });
@@ -81,14 +88,20 @@ export async function observeBrowser({ store, provider, requestId }: ObserveBrow
   const read = await capturePromise({ promise: reading });
 
   if (Result.isFailure(read)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the original browser receipt response was interrupted' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original browser receipt response was interrupted',
+    });
   }
 
   const codec = Schema.fromJsonString(BrowserReceipt);
   const decoded = Schema.decodeUnknownResult(codec)(read.success);
 
   if (Result.isFailure(decoded)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the original browser receipt response could not be decoded' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original browser receipt response could not be decoded',
+    });
   }
 
   const receipt = decoded.success;
@@ -114,7 +127,10 @@ export async function observeBrowser({ store, provider, requestId }: ObserveBrow
   }
 
   if (BrowserReceipt.guards.Pending(receipt)) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the original guest is still completing this browser action' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the original guest is still completing this browser action',
+    });
   }
 
   if (BrowserReceipt.guards.Uncertain(receipt)) {

@@ -1,10 +1,10 @@
 import type { SandboxCompletionReceipt } from '@mechane/sandbox-wire';
-import { Option, Predicate } from 'effect';
+import { safeFailureLocation } from '@mechane/utilities';
 
 type CompletionFailureInput = Pick<SandboxCompletionReceipt, 'executionId' | 'kind'>;
-type FailureLocation = { readonly name: string; readonly frames: ReadonlyArray<string> };
 type FailureInput = { readonly cause: unknown };
-const DIAGNOSTIC_MAX_FRAMES = 4;
+const FAILURE_NAMES: ReadonlySet<string> = new Set(['Error', 'TypeError', 'RangeError', 'SyntaxError']);
+const FAILURE_FILES: ReadonlySet<string> = new Set(['worker', 'worker.js', 'worker.mjs', 'index.js']);
 
 /** Completion diagnostics expose stable receipt identity without credentials, response bodies, or command output. */
 export function writeCompletionDeliveryFailure({ executionId, kind }: CompletionFailureInput): void {
@@ -18,26 +18,7 @@ export function writeBackgroundObservationFailure(): void {
 
 /** Safe stack locations survive RPC, without exposing exception messages, command output, or submitted credentials. */
 export function writeSandboxFailure({ cause }: FailureInput): void {
-  const location = failureLocation({ cause });
+  const location = safeFailureLocation({ cause, allowedNames: FAILURE_NAMES, allowedFiles: FAILURE_FILES });
 
   console.error('Sandbox operation failed', location);
-}
-
-function failureLocation({ cause }: FailureInput): FailureLocation {
-  if (!Predicate.isError(cause)) {
-    return { name: 'UnknownFailure', frames: [] };
-  }
-
-  const stack = Option.fromNullishOr(cause.stack);
-
-  const frames = Option.map(stack, (text) => {
-    const lines = text.split('\n');
-    const locations = lines.filter((line) => /^\s+at /.test(line));
-
-    return locations.slice(0, DIAGNOSTIC_MAX_FRAMES);
-  });
-
-  const locations = Option.getOrElse(frames, () => []);
-
-  return { name: cause.name, frames: locations };
 }

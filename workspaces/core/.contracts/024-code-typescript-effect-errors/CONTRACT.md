@@ -61,13 +61,12 @@ For each entry point a change adds, where is its one defect handler, and does th
 ## Local adaptations
 
 The CLI, shared domain client, and Effect-dialect programs keep the tagged error and entry-point rules above.
-Native SDK code in `packages/node/runtime`, `server`, `stack`, `testing`, `smoke`, and `distribution` uses
-Promise-returning APIs, rejected errors,
-and `try`/`catch`/`finally` where the SDK or resource lifetime requires them. Workflow steps classify permanent failures
-and retryable failures through the SDK's public error APIs. A catch that returns an empty result, discards a failure,
-or repeats an uncertain external effect remains a violation.
+The native SDK owners declared in `packages/node/rules/src/file-roles.ts` use Promise-returning APIs, rejected errors,
+and `try`/`catch`/`finally` where the SDK or resource lifetime requires them. Pi tasks classify failures through its
+supported public APIs. A catch that returns an empty result, discards a failure, or repeats an uncertain external
+effect remains a violation.
 
-The server's protocol adapter may run an Effect to decode or encode the existing domain protocol. Native Workflow,
+The server's protocol adapter may run an Effect to decode or encode the existing domain protocol. Native Pi,
 Chat, and AI SDK calls do not acquire Effect wrappers solely to satisfy a syntax convention. HTTP boundaries map
 known failures to the protocol's error family and hide raw provider bodies, database errors, and credentials.
 Every domain HTTP error, including startup, shutdown and unexpected failures, originates from a declared
@@ -79,9 +78,9 @@ Promise to invalidate authorized copies or preserve an unacknowledged command, t
 synchronous restoration boundary may reject a corrupt cached row using its declared protocol schema. Failed reads
 never become empty successes.
 
-The native browser conversation transport and its lifetime owner use AI SDK Promise callbacks and rejected errors.
-They may catch failures to retain the current conversation and expose retry state. Message admission, streaming, and
-reconnection use the upstream transport; an unsuccessful request never becomes an empty successful conversation.
+The browser's public conversation owner uses native Query and Promise callbacks and rejected errors. It may catch
+failures to retain authorized conversation history and expose retry state. An unsuccessful history request never
+becomes an empty successful conversation, and private native model output never becomes a public message implicitly.
 
 The sandbox's reused execution ID with different input is an explicit refusal. A lost command response remains
 uncertain until its original receipt is recovered; it is not permission to issue a new command ID.
@@ -91,6 +90,9 @@ The isolated Slack API fixture reproduces Slack's documented `ok: false` error e
 is not a domain failure result and is limited to the fixture's endpoint implementation.
 Each executable and HTTP boundary owns its final error report. Logs retain safe correlation identifiers and a useful
 failure category, without serializing arbitrary caught objects.
+
+`Effect.try` may wrap one constructor call with a typed failure, such as parsing an X509 certificate. A constructor is
+a throwing call; requiring a forwarding helper would hide the actual boundary without adding validation.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

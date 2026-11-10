@@ -1,0 +1,17 @@
+{
+  "name": "@mechane/control-store",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "effect": "4.0.7",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/pg": "8.23.1"
+  }
+}

@@ -5,7 +5,6 @@ import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { Readiness } from './schemas.ts';
 
-/** Reports the deployment's release and database revision after the server and its workflow worker are ready. */
 export const readiness = {
   method: HttpMethod.Get,
   path: '/api/v1/readiness',

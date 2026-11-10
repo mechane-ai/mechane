@@ -28,6 +28,7 @@ export function executionProgress({ execution }: ExecutionProgressInput): Execut
     case ExecutionStatus.PersistenceFailed:
       return ExecutionProgress.cases.PersistenceFailed.make({
         reason: execution.reason,
+        commandOutcome: execution.commandOutcome,
         duration: execution.duration,
         output: { text: execution.outputText, omittedBytes: execution.omittedBytes },
       });

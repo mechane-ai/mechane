@@ -58,7 +58,7 @@ entrypoint imports, dependency rules, and source comment width remain independen
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `docSentences` 3; `docSentenceWords` 30; `publicEntrypoints` `packages/shared/client/src/index.ts`, `packages/shared/protocol/src/index.ts`, `packages/shared/protocol/src/presentation/index.ts`; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/elements/packages/**/*.{ts,tsx}`.
+Values: `docSentences` 3; `docSentenceWords` 30; `publicEntrypoints` `packages/shared/client/src/index.ts`, `packages/shared/client/src/presentation/index.ts`, `packages/shared/protocol/src/index.ts`, `packages/shared/protocol/src/presentation/index.ts`; `componentFiles` `packages/browser/**/*.tsx`, `packages/browser/elements/packages/**/*.{ts,tsx}`.
 - owned check `export-doc` (CD-03): enforced in phase F6
 - owned check `absence-doc` (CD-04): enforced in phase F6
 - owned check `short-doc` (CD-06): enforced in phase F6

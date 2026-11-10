@@ -37,51 +37,50 @@ Run the existing lifecycle tests; a passing type check does not establish recove
 
 ## Local adaptations
 
-Workflow SDK owns durable steps, retries, and bounded activations in the Node runtime. One fenced model owner consumes
-each mech's ordered notifications. The domain store records accepted input, context progress, and durable wake intent;
-short transactions protect admission and idle handoff. Reconciliation repairs interrupted starts. Do not hold database
-transactions or HTTP requests open while waiting for a model or human decision. Contract 124 owns the activation rules.
+Pi owns durable tasks, inbox placement, compaction, and recovery in each MechObject. Mechane records immutable
+notifications and effect receipts through Pi transactions. One actor alarm reconciles native work, durable wakes,
+and receipt recovery. Do not hold Postgres transactions or HTTP requests open while waiting for a model or human
+decision. Contract 124 owns the activation rules.
 
-A workflow step records external side-effect identity before dispatch. Retrying a completed step returns the recorded
+A native tool records external side-effect identity before dispatch. Retrying a completed tool returns the recorded
 result. If an arbitrary command's outcome is unknown, read its original receipt or report uncertainty; never issue a
 fresh execution ID merely to recover a missing response. Provider timeouts bound transport, not the truth of an
 external effect. Cancellation has durable state and cannot erase unrelated accepted notifications.
 
 The sandbox owns machines, executions, file checkpoints, and stop/recovery. It binds each sandbox to its admitted
 workspace and mech. The guest runs commands in owned process groups and terminates those groups at exit or timeout.
-Completed command receipts commit only after their file checkpoint. A failed save preserves the previous committed
-head and keeps the live machine available for recovery. Detached processes have no persistence guarantee.
+Command completion and a committed file checkpoint remain separate recorded facts. A failed save preserves the
+previous committed head and keeps the live machine available for recovery. Unmanaged detached processes have no
+persistence guarantee; managed processes keep the explicit lifetime defined by contract 127.
 
-Container startup disables direct internet access and registers the egress gateway before work. Changed network
+Hosted gateway startup disables direct internet access and registers the egress gateway before work. Changed network
 policy applies to a replacement machine through the checkpoint lifecycle. Execution and checkpoint IDs survive
 transport retries and service replacement. Reusing an ID with different input is refused.
 
-The Node server closes its HTTP listener, Workflow worker, and owned database pools during shutdown. Bounded shutdown
-may leave durable work pending; a replacement process resumes that work from the SDK's state. Native asynchronous
-callbacks, Promise composition, and resource cleanup use the SDK's native APIs. Wall-clock reads belong in steps;
-workflow code uses only the SDK-supported deterministic clock. Business retries belong to one named owner and retain
-their original operation IDs. Existing CLI and build programs keep their Effect-scoped lifecycle.
-
-The server's `lifecycle/shutdown.ts` is the sole server process-exit owner. Successful shutdown exits with status zero
-after the HTTP listener, Workflow worker, hooks and database pools have closed; SDK global handles cannot keep a
-drained server alive. Failed shutdown or the bounded grace-period deadline exits with a failure status. Pending work
-remains durable; shutdown does not mark it completed or make uncertain effects safe to repeat. No domain or SDK tool
-gains process-exit authority from this exception. Repeated shutdown signals retain the same cleanup owner and cannot
-restore the process's default immediate-exit behavior while that cleanup is pending.
+The Worker has no application-owned process listener or World worker. Each request closes its control-store client;
+Pi and Durable Object alarms own persisted task recovery. Transient native callbacks use public SDK APIs and owned
+cleanup. Durable phases use the SDK-supported clock. Business retries belong to one named owner and retain their
+original operation IDs. Existing CLI and build programs keep their Effect-scoped lifecycle.
 
 The shared `stack/src/run-stack-program.ts` owns smoke, dev and retained local-stack process lifetimes. SIGINT and
 SIGTERM wait for startup ownership and idempotent stack cleanup before exiting with failure. Repeated signals cannot
 bypass cleanup or begin scenarios after interruption. The complete check graph settles static failures before starting
 its smoke services.
 
-The local sandbox emulator runs in a child process so its global signal handlers cannot terminate the stack owner.
-Its `stack/src/sandbox/main.ts` entrypoint closes the emulator through its public disposal API before exiting. The
-parent owns child startup, bounded shutdown and the surrounding guest resources; losing the parent also closes the
-emulator child. This local fixture boundary adds no process-exit authority to production sandbox or domain code.
+The local supervisor owns separate celld application and environment processes, the source compiler watch, Console
+Vite process, local database, fixtures, and guest HTTPS gateway. Restart the application host without replacing the
+environment host. Shutdown first drains admitted guests through the supported Stop receipt, then observes provider
+retirement and capacity release before closing serving dependencies. A failed retained drain preserves resources and
+records recovery evidence. An explicit ephemeral fixture may discard only its owned disposable resources.
 
 Release publication writes immutable artifacts before advertising their manifest. A failed download or verification
 leaves the installed CLI intact. Evals retain their submitted input identities before sending, so restarting an eval
 cannot duplicate accepted work.
+
+The bounded control-outbox RPC deadline in `packages/worker/server/src/control/deliver-changes.ts` owns its native
+Promise race and timer. Durable Object RPC has no abort signal; the deadline stops the caller waiting, not the remote
+effect. Clear the timer on every outcome, preserve the stable delivery identity, and reconcile a lost acknowledgment
+through idempotent redelivery. This exception does not admit another worker scheduler or an unowned polling loop.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

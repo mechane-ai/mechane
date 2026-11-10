@@ -1,7 +1,7 @@
 ---
 name: execution-access
 message: Give tools only current environment authority and keep credentials out of durable execution records.
-paths: ["packages/node/runtime/src/{compute,tools,store,models}/**", "packages/node/server/src/sandboxes/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/control-store/**", "packages/worker/server/src/sandboxes/**", "packages/shared/protocol/src/operations/connections/**", "packages/shared/protocol/src/operations/credentials/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/protocol/src/operations/sandboxes/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**"]
 ---
 
 ## Rules
@@ -14,7 +14,11 @@ before dispatch and inject values only into the authorized command environment. 
 Provider-specific issuance, scope validation, expiry, and revocation belong to the configured application or credential
 service. A refused credential never selects a broader identity or an operator's credential.
 
-Keep credential values out of Workflow arguments, checkpoints, model serialization, tool traces, command receipts,
+For MCP, the current connection and grant read after discovery admits that one call. Later grant revocation governs
+subsequent calls. Native execution and current workspace-policy checks remain additional dispatch vetoes; admission
+does not bypass them.
+
+Keep credential values out of durable task arguments, checkpoints, model serialization, tool traces, command receipts,
 managed Git configuration, and file checkpoints. Resolve live clients inside trusted steps. Read, list, and stop
 operations observe their original execution without issuing fresh startup credentials. Revocation affects subsequent
 dispatch; it cannot undo an external effect already authorized or recall a credential from a running process.
@@ -29,7 +33,7 @@ Project only safe input and allowlisted result fields through authorized traces.
 collection, with explicit omission notices. Never reconstruct historical redaction from raw messages or current secrets.
 Keep inspection data out of the immutable execution request and its replay comparison.
 
-Authenticate Node-to-sandbox calls separately from command credentials. Bind stable sandbox and execution identities to
+Authenticate application-to-sandbox calls separately from command credentials. Bind stable sandbox and execution identities to
 the admitted workspace and mech. Refuse changed input under an existing execution ID. Observe the original receipt after
 an uncertain response instead of dispatching another effect. Check the active owner's fence and notification watermark
 before a fresh effect, as required by contract 124; a refused dispatch must not allocate compute or mint credentials.

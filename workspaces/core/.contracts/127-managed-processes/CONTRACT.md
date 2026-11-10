@@ -1,7 +1,7 @@
 ---
 name: managed-processes
 message: Keep managed processes bound to their original machine and preserve files when checkpointing or stopping them.
-paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/node/runtime/src/tools/**", "packages/node/runtime/src/operations/environment.ts", "packages/node/runtime/src/operations/environment-completion.ts", "packages/node/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox-service/src/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/environment.tsx"]
+paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/operations/environment-completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/environment.tsx"]
 ---
 
 ## Rules
@@ -21,7 +21,7 @@ The additive migration's transition triggers create one entry per stable executi
 replacement identity. Retain a pending entry until the authenticated runtime acknowledges the verified result. Failed
 attempts use the store's bounded exponential backoff and survive host or worker replacement.
 
-Authenticate completion callbacks with the existing sandbox-service credential. The Node receiver scopes the execution
+Authenticate completion callbacks with the existing environment-service credential. The Worker receiver scopes the execution
 to its persisted workspace and mech, then compares the callback against the sandbox's authoritative terminal receipt.
 That read is passive: it cannot allocate a machine, dispatch work, resolve startup credentials, or renew the idle lease.
 Reject mismatched identities and outcomes. Only a verified result may become a generic environment notification.
@@ -40,6 +40,9 @@ Keep terminal execution, saved files, and notification admission distinct. A pro
 a persistence-failed command does not become successful through delivery. Completion notifications contain bounded
 correlation and outcome, not secret-bearing output. The agent chooses whether to inspect output or communicate externally;
 the callback itself sends no conversational message or reaction.
+
+Retain a known foreground exit code or timeout when saving its files fails. Historical failure records that omitted
+that outcome remain explicitly unknown. A save failure never becomes a successful durable command result.
 
 Own each process group in the guest scope. Stop that group when its leader exits, on explicit stop, or on guest shutdown.
 Preserve processes across ordinary tool waits and bounded activation completion while their machine remains alive.
@@ -62,20 +65,44 @@ writers, until their machine retires; never send a new request body to that rele
 Preserve live files and the previous committed head after a failed save. A failed provider stop retains the drain fence
 and capacity ownership. Snapshotting files does not preserve process memory or establish application transaction consistency.
 
+Stop returns a durable operation receipt before background retirement completes. Repeated requests attach to its current
+machine and operation; they cannot hide a retained failure behind another acknowledgement. Expose requested, waiting for
+commands, checkpointing, stopping, completed, and failed phases, with timestamps, generation, bounded last error, and a
+closed recovery action. Completed requires confirmed provider shutdown and matching final file evidence where writers
+were admitted. A failed save leaves repair explicit; a failed provider stop retries its original drain. Retain earlier
+receipts after recovery. Inspection never starts a machine, dispatches work, or renews its lease.
+
+When adopting Stop receipts over retained drain intents, keep their existing operation and machine identities. Leave
+an unrecorded request time unknown. The sandbox owner materializes these receipts during inspection or advancement;
+retire that backfill only after every retained drain has a receipt and no supported writer can create a bare drain.
+A historical committed drain still requires provider confirmation before its new receipt claims completed shutdown.
+
 When an activation requests a file barrier with no live machine, an existing head is insufficient by itself. For an
 environment whose machine became ready and could admit writers, require the latest such machine's recorded drain
 operation to have a committed file result matching that head's generation. Never-ready startup attempts cannot create
 loss evidence or erase unresolved loss from an earlier ready machine. Drain keeps its writers frozen until confirmed
 stop. An ordinary earlier snapshot, missing or failed drain, or mismatched generation cannot establish that newer writes
-survived machine loss. Persist a failed barrier and retain the runtime's checkpoint-required fence. An environment whose
+survived machine loss. Persist a failed barrier and fence ordinary mutating admission in the sandbox using its durable
+machine and file evidence. A completed quiet model turn does not prove that files were saved. An environment whose
 machines never became ready may use its immutable imported head or report Unallocated. A later successful checkpoint
 on an explicitly recovered live machine is fresh evidence; it does not retroactively recover or validate lost writes.
 
-Keep recovery reachable through the existing owner-authorized sandbox maintenance API while model and tool admission are
-fenced. For a lost machine with no unresolved workspace checkpoint or recovery record, an explicit upgrade may restore
-the committed head and establish a fresh checkpoint. Do not automatically invoke that recovery or clear the runtime
-fence from an operator's request alone. A pending checkpoint or retained recovery failure remains an explicit refusal;
-the lost-machine recovery path does not authorize discarding it.
+Keep recovery reachable through the existing owner-authorized sandbox maintenance API while ordinary dispatch is fenced.
+For a lost machine with no unresolved workspace checkpoint or recovery record, an explicit upgrade may restore the
+committed head on a new machine. Verify the complete restoration and readiness before admitting a new writer. Do not
+automatically invoke that recovery or clear the fence from an operator's request alone. A pending checkpoint or retained
+recovery failure remains an explicit refusal. The lost-machine recovery path does not authorize discarding it.
+
+Provide an explicit service-authenticated file checkpoint retry for a quiet original ready guest. Bind its durable
+operation identity to the caller-observed live machine, failed recovery generation, and committed head. Refuse active
+work, allocation, active restoration, maintenance, a current drain, or changed observations. Never allocate, restore, or
+dispatch a shell to perform this repair. A completed restoration marker on an already-ready machine is historical data.
+Use the existing archive, part transfer, immutable manifest, and atomic commit owners. Keep the old recovery row and
+head until the complete new generation commits; retain both when the retry fails. A failed retry's own scratch release
+remains durable until acknowledged. Preserve earlier failed receipts and reject changed inputs under the same operation.
+After commit, resume retained idle intent and any explicit failed Stop through the normal final frozen drain and provider
+confirmation. Do not clear the runtime's model or tool fence merely because an operator requested repair. A file-only
+operation creates neither an execution row nor a completion outbox entry.
 
 Count explicit process and browser tool activity toward the existing machine idle deadline. Background execution and
 internal observation alone do not retain paid compute indefinitely. Retire all handles when their machine ends.
@@ -104,13 +131,24 @@ notice. Keep initial admission, terminal observation, and callback authenticatio
 During checkpoint qualification, keep a managed writer running across ordinary commands. Verify the stable archive,
 resumption after copy, and retained files after restore. Inject a save failure and a provider-stop failure separately;
 confirm the former preserves recoverable live files and the latter never resumes writers after the final snapshot.
+Repeat Stop and inspect its original receipt after Worker replacement. Inject a failed checkpoint and a failed provider
+stop separately; require the actual phase and recovery action, the previous committed head, and retained drain evidence.
+Inject R2 head failure 10001 during a real file save and again during its explicit file-only retry. Require the original
+recovery row, committed head, actual live files, and failed receipts to survive. Hold manifest publication and verify
+that recovery clears only with the atomic new head. Rejoin the successful operation, reject changed fence inputs and
+active work, then require the retained Stop to complete without another external Stop or an execution/outbox row.
+Seed a pre-receipt drain and inspect it before requesting Stop again. Require the original identity, an unknown request
+time, and confirmed shutdown before completion. Historical backfills cannot replace a newer machine's latest receipt.
+Interrupt manifest publication after its last part and cancel the generation while publication is in flight. No stale
+head or successful receipt may appear. Reject a conflicting immutable manifest or missing referenced manifest on restore.
 Record host-group and isolated-container coverage separately. Do not claim cgroup isolation from process enumeration.
 Commit a head, mutate files afterward, and lose the machine before its drain. A later activation barrier must fail without
 calling the old head a fresh save. Repeat with a committed matching drain, an unfinished or failed drain, a generation
 mismatch, and an imported head with no previously ready machine. A never-ready startup refusal must not create a loss
 fence or hide loss from an earlier ready machine. Check that worker replacement preserves each outcome and its fence.
-Recover the lost-machine case through the public owner maintenance operation while model/tools remain fenced. Verify
-that restored files match the saved head, lost writes are not claimed, and a fresh save lets the next activation proceed.
+Attempt a fresh Bash after the failed barrier, require an unavailable receipt and no allocation, and preserve the old
+head. Recover through the public owner maintenance operation. Verify that restored files match the saved head, lost
+writes are not claimed, the earlier failed receipt stays failed, and only a new command after verified recovery can run.
 An unresolved workspace recovery record must still refuse maintenance rather than silently discard its failure.
 
 ## Local adaptations

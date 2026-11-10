@@ -7,6 +7,7 @@ const VALUES = {
   docSentenceWords: 30,
   publicEntrypoints: [
     'packages/shared/client/src/index.ts',
+    'packages/shared/client/src/presentation/index.ts',
     'packages/shared/protocol/src/index.ts',
     'packages/shared/protocol/src/presentation/index.ts',
   ],
@@ -30,7 +31,7 @@ export const codeCommentContent = {
         },
       ],
       allowed: [
-        { 'packages/node/runtime/src/execution/admit.ts': 'export function admit(): void {}\n' },
+        { 'packages/worker/runtime/src/execution/admit.ts': 'export function admit(): void {}\n' },
         { 'packages/browser/console-data/src/cache.ts': 'export const capacity = 3;\n' },
         {
           'packages/shared/client/src/index.ts': "export { call } from './call.ts';\n",
@@ -71,7 +72,7 @@ export const codeCommentContent = {
       ],
       allowed: [
         {
-          'packages/node/runtime/src/execution/state.ts':
+          'packages/worker/runtime/src/execution/state.ts':
             'export type RunState = { readonly completedAt: number | null; readonly pending?: string };\n',
         },
         { 'packages/shared/client/src/index.ts': "export type { ChatOptions } from 'ai';\n" },

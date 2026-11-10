@@ -10,7 +10,13 @@ export type CliInput = {
   readonly environment?: Readonly<Record<string, string>>;
 };
 
-export type CliResult = { readonly status: number | null; readonly stdout: string; readonly stderr: string };
+export type CliResult = {
+  readonly status: number | null;
+  readonly signal: NodeJS.Signals | null;
+  readonly stdout: string;
+  readonly stderr: string;
+};
+
 export type CliNotice = { readonly url: URL; readonly userCode: string };
 
 export type RunningCli = {

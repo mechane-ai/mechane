@@ -37,6 +37,7 @@ const VALUES = {
     'policyRecords',
     'sourceGrantRecords',
     'sourceRecords',
+    'stopRecords',
     'watchRecords',
     'workspaceRecoveryRecords',
     'workspaceRecords',

@@ -40,16 +40,17 @@ Use the owning workspace's existing checks.
 its dependencies and public exports. A public entry point normally targets `src/index.ts`; native compiler and
 executable entries may target their defining module when their consumer requires it.
 
-`@mechane/runtime` owns domain state and native SDK execution. `@mechane/server` composes the HTTP server, public
-World lifecycle, and Console assets. The sandbox service owns only the authenticated compute boundary and public
-reverse proxy. These boundaries are not alternate agent engines.
+`@mechane/runtime` owns each mech's native Pi execution in MechObject. `@mechane/control-store` owns Postgres
+authority, budgets, credentials, and capacity. `@mechane/server` composes one application Worker with HTTP, Console
+assets, native actor exports, and the authenticated sandbox boundary. The sandbox owns machines and files; it is not
+another agent engine.
 
-The local stack in `packages/node/stack/src` serves development and smoke runs. It launches the compiled Node server
-against real Postgres and uses the same runtime entry as deployment. External GitHub, Slack, Nexus, and model fixtures
-live in the stack's `fixtures` directory, behind configured HTTP endpoints. Product code imports no fixture.
-The local compute fixture runs the real sandbox service and guest process through a host launcher; it proves the
-protocol and receipt lifecycle, not container or operating-system isolation. Hosted qualification verifies that
-separate boundary. Production artifacts exclude all fixture and smoke code.
+The local stack in `packages/node/stack/src` serves development and smoke runs. Separate celld application and
+environment hosts load the same Worker against verified TLS Postgres and real Docker guests. Application reload
+preserves the environment host. External GitHub, Slack, Nexus, and model fixtures live in the stack's `fixtures`
+directory behind configured HTTP endpoints. Product code imports no fixture.
+Local checks exercise actual storage, containers, protocol, and receipts. Hosted qualification verifies Cloudflare's
+network and operating-system capabilities separately. Production artifacts exclude fixture and smoke code.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

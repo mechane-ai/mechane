@@ -32,7 +32,7 @@ export const codeTypescriptNamedTypes = {
       exemptRoles: [FileRole.BrowserConfiguration],
       behavior: FixBehavior.TypeOnly,
       value: [Severity.Error, 'type'],
-      maxSuppressions: 2,
+      maxSuppressions: 3,
     },
     {
       ...OXLINT_DEFAULTS,

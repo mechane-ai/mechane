@@ -191,6 +191,7 @@ export const FileRole = {
   NativeSandboxBoundary: 'native-sandbox-boundary',
   NativeLifecycle: 'native-lifecycle',
   SqlMigration: 'sql-migration',
+  LocalDatabaseLifecycle: 'local-database-lifecycle',
   ProcessShutdown: 'process-shutdown',
   BrowserConfiguration: 'browser-configuration',
   BrowserBuildConfiguration: 'browser-build-configuration',

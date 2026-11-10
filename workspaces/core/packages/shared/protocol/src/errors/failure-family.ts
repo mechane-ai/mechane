@@ -20,6 +20,7 @@ export const FAILURE_FAMILY: Readonly<Record<ServerFailure['_tag'], ErrorFamily>
   ConnectionLimitReached: ErrorFamily.Conflict,
   ToolGrantInvalid: ErrorFamily.InvalidRequest,
   RouteNotFound: ErrorFamily.NotFound,
+  RequestConflict: ErrorFamily.Conflict,
   RequestInvalid: ErrorFamily.InvalidRequest,
   ServerMisconfigured: ErrorFamily.Unavailable,
   ServiceUnavailable: ErrorFamily.Unavailable,

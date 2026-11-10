@@ -32,14 +32,15 @@ type ListenInput = { readonly server: Server; readonly host: string; readonly po
  * defect, ends the guest at once, which closes the server and stops every execution.
  */
 export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return<void, GuestFailure, Scope.Scope> {
-  const loadedSettings = yield* loadGuestSettings();
   const folder = yield* openWorkspaceFolder();
+  const loadedSettings = yield* loadGuestSettings({ scratchDirectory: folder });
 
   const managedTools = yield* prepareGuestTools({
     tools: loadedSettings.additionalTools,
     target: loadedSettings.toolTarget,
     folder,
     path: loadedSettings.path,
+    trustedCertificatesPem: loadedSettings.trustedCertificatesPem,
   });
 
   const settings = { ...loadedSettings, path: [managedTools, loadedSettings.path].join(delimiter) };

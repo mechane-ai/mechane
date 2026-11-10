@@ -1,7 +1,7 @@
-import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
+import type { WorkspaceManifest } from '@mechane/sandbox-store';
 import { SANDBOX_ARCHIVE_PART_BYTES } from '@mechane/sandbox-wire';
 
-type SnapshotPartInput = { readonly snapshot: WorkspaceSnapshot; readonly part: number };
+type SnapshotPartInput = { readonly snapshot: WorkspaceManifest; readonly part: number };
 
 /** The exact expected byte count of a committed archive part, including the shorter final part. */
 export function snapshotPartBytes({ snapshot, part }: SnapshotPartInput): number {

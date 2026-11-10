@@ -1,5 +1,5 @@
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
-import { SandboxPhase } from '@mechane/sandbox-wire';
+import { SANDBOX_FAILURE_MAX_CHARS, SandboxPhase } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
 import { runFileCheckpoint } from '../../checkpoints/run-file-checkpoint.ts';
 import type { PortableStepInput } from '../types.ts';
@@ -16,10 +16,24 @@ export async function checkpointMaintenance({ store, provider, workspace, job }:
   const source = store.workspace().head;
 
   if (!FileCheckpointResult.guards.Committed(progress) || Option.isNone(source)) {
-    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed });
+    const lastError = checkpointFailure({ progress });
+
+    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
 
     return;
   }
 
   store.savePortableMaintenance({ ...job, source, phase: SandboxPhase.Create });
+}
+
+type CheckpointFailureInput = { readonly progress: FileCheckpointResult };
+
+function checkpointFailure({ progress }: CheckpointFailureInput): Option.Option<string> {
+  if (FileCheckpointResult.guards.Failed(progress)) {
+    const reason = progress.reason.slice(0, SANDBOX_FAILURE_MAX_CHARS).toWellFormed();
+
+    return Option.some(reason);
+  }
+
+  return Option.some('Maintenance requires a committed workspace generation');
 }

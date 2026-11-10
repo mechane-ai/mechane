@@ -1,7 +1,7 @@
 ---
 name: security-resource-access-control
 message: Authorize every request on the server from current grants; logins, plain links, and caller-supplied facts grant nothing.
-paths: ["packages/node/runtime/**", "packages/node/server/**", "packages/worker/sandbox*/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**", "packages/worker/sandbox*/**"]
 ---
 
 ## Rules

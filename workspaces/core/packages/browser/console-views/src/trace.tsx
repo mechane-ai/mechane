@@ -15,7 +15,7 @@ import { runLabel } from './run-label.ts';
 import { traceEvidence } from './trace-evidence.ts';
 import { TraceRequests } from './trace-requests.tsx';
 import { TraceTools } from './trace-tools.tsx';
-import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
+import { isImportedTurn, outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 const traceTabs = ['Overview', 'Requests', 'Tools', 'Events'] as const;
 
@@ -149,6 +149,7 @@ export function TurnTrace({
 }: TraceProps): ReactNode {
   const evidence = traceEvidence(trace);
   const { turn, elapsed } = evidence;
+  const isImported = isImportedTurn(trace.turn);
 
   return (
     <Stack isCompact>
@@ -159,10 +160,16 @@ export function TurnTrace({
         <Row>
           <Status
             tone={
-              trace.turn.status === 'completed' ? 'positive' : trace.turn.status === 'failed' ? 'negative' : 'neutral'
+              isImported
+                ? 'neutral'
+                : trace.turn.status === 'completed'
+                  ? 'positive'
+                  : trace.turn.status === 'failed'
+                    ? 'negative'
+                    : 'neutral'
             }
           >
-            {outcomeLabel(trace.turn.status)}
+            {isImported ? 'Imported' : outcomeLabel(trace.turn.status)}
           </Status>
           {turn !== undefined && <ConsoleTimestamp value={turn.createdAt} />}
           {elapsed !== undefined && <Muted>{durationLabel(elapsed)}</Muted>}
@@ -309,6 +316,7 @@ function RecordedOutcome({
   readonly evidence: ReturnType<typeof traceEvidence>;
 }): ReactNode {
   const { turn, items } = evidence;
+  const isImported = isImportedTurn(trace.turn);
   const reply = Option.getOrUndefined(trace.replyExcerpt);
   const replyLabel = reply?.isTruncated === true ? 'Message preview' : 'Recorded message';
   const refused = items.find((item) => item.status === 'refused');
@@ -317,11 +325,13 @@ function RecordedOutcome({
   return (
     <Stack isCompact>
       <Subheading>
-        {trace.turn.status === 'completed' && reply !== undefined
-          ? replyLabel
-          : activeStatuses.has(trace.turn.status)
-            ? 'Latest activity'
-            : 'Outcome'}
+        {isImported
+          ? 'Imported outcome'
+          : trace.turn.status === 'completed' && reply !== undefined
+            ? replyLabel
+            : activeStatuses.has(trace.turn.status)
+              ? 'Latest activity'
+              : 'Outcome'}
       </Subheading>
       {turn?.status === 'completed' &&
         (reply === undefined ? (
@@ -342,12 +352,13 @@ function RecordedOutcome({
           )}
         </>
       )}
-      {turn?.status === 'running' && (
+      {isImported && <Prose>Recorded state at import: {outcomeLabel(trace.turn.status)}.</Prose>}
+      {!isImported && turn?.status === 'running' && (
         <Prose>
           {latest === undefined ? 'Waiting for the first recorded request.' : `Most recent request: ${latest.summary}.`}
         </Prose>
       )}
-      {turn?.status === 'queued' && <Prose>This run is ready to start.</Prose>}
+      {!isImported && turn?.status === 'queued' && <Prose>This run is ready to start.</Prose>}
       {turn?.status === 'stopped' && <Prose>This run was stopped.</Prose>}
       {turn === undefined && <Muted>This run uses a newer record format.</Muted>}
     </Stack>

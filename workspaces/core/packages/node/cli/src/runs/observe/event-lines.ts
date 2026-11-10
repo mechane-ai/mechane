@@ -26,8 +26,11 @@ export function eventLines({ event }: EventLinesInput): ReadonlyArray<string> {
       return [`${heading} ${event.turnId} for ${event.notificationIds.join(', ')}`];
     case EventType.ActivationFailed:
       return [`${heading} ${event.turnId} (${event.reason})`];
-    case EventType.ConsoleMessage:
-      return [`${heading} ${event.messageId} from ${event.turnId}`];
+    case EventType.ConsoleMessage: {
+      const source = Option.getOrElse(event.turnId, () => 'operator');
+
+      return [`${heading} ${event.messageId} from ${source}`];
+    }
     case EventType.InboxItemReceived: {
       const sender = Option.getOrElse(event.senderId, () => 'unknown sender');
 

@@ -1,7 +1,7 @@
 ---
 name: data-stored-and-shipped-formats
 message: Migrate every stored instance and keep what released clients read before narrowing a stored or shipped format.
-paths: ["**/*.ts", "packages/worker/sandbox-service/**", "lint/wire.json", "lint/shipped-wire.json", "lint/migrations.json"]
+paths: ["**/*.ts", "packages/worker/sandbox/src/service/**", "lint/wire.json", "lint/shipped-wire.json", "lint/migrations.json"]
 ---
 
 ## Rules

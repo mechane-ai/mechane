@@ -1,39 +1,52 @@
 # Mechane
 
-Mechane runs agents with durable memory, persistent sandboxes, a browser console, and a command-line interface.
+Mechane runs persistent agents with durable conversations, sandbox computers, a browser Console, and a command-line
+interface.
 
 ## Start
 
-Choose where the service runs. Open `/console` there, or use the CLI. Both use the same runtime API.
+Start Docker and select the release-qualified celld build described in [development setup](.config/README.md). From a
+source checkout:
+
+```sh
+.config/bootstrap.sh
+mise run dev
+```
+
+Open the printed Console URL. Source development retains local state and supplies deterministic identity and model
+fixtures. Use `mise run mechane -- --help` in another terminal for the source CLI.
 
 | Installation | Start here                                                   | Requirements                                               |
 | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
-| Hosted       | [mechane.ai](https://mechane.ai)                             | GitHub sign-in                                             |
-| Local        | [Local guide](workspaces/core/packages/node/stack/README.md) | Node 24, Postgres, and model credentials                   |
-| Self-hosted  | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | A Node host, Postgres, a sandbox service, and GitHub OAuth |
+| Local source | [Local guide](workspaces/core/packages/node/stack/README.md) | Pinned tools, qualified celld, Docker                      |
+| Self-hosted  | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | Cloudflare Workers, Containers, R2, Postgres, GitHub OAuth |
 
-For the hosted service, download its CLI installer and sign in:
+With the installed CLI, select your operator's origin and sign in:
 
 ```sh
-curl -fsSL https://mechane.ai/install.sh -o install-mechane.sh
-sh install-mechane.sh
-export MECHANE_ORIGIN=https://mechane.ai
+export MECHANE_ORIGIN=https://agents.example.com
 mechane auth login
 mechane mech create --name scout
+mechane notification send MECH_ID 'hello, scout'
 ```
 
-Use the returned agent ID with `mechane inbox send MECH_ID 'hello, scout'`. A different installation supplies its own
-origin; set `MECHANE_ORIGIN` before signing in. Workspace policy controls sandbox access and spending.
+Use the returned mech ID. Keep the printed notification ID when retrying an uncertain send. Workspace policy controls
+execution access and spending. Replies appear only through explicit communication tools; private model completion can be
+quiet.
 
-The Node service owns agents, authentication, conversations, and durable workflows in Postgres. The isolated sandbox
-service owns command execution and persistent files. Releases contain the compiled Node service and console, the sandbox
-Worker and image, and their checksums. Installation does not require compiling Mechane source.
+## Runtime
+
+One Cloudflare Worker serves the API and Console assets. Pi and each Mech Durable Object own durable execution. Postgres
+owns shared control authority, credentials, grants, accounting, and capacity. Sandbox Durable Objects, guests, and R2
+own commands and committed home files.
+
+Install immutable, qualified Worker, Console, guest, and database-tool artifacts. Operators do not rebuild application
+source. Infrastructure configuration and runtime workspace records have separate owners.
 
 ## Elements
 
 [Elements by Mechane](workspaces/core/packages/browser/elements/README.md) is the reusable React design system behind
-the Console. Its components, AI interfaces, and analytical charts share compact typography, square surfaces, and light
-and dark themes.
+the Console.
 
 ```sh
 pnpm add @mechane-ai/elements react react-dom
@@ -44,27 +57,17 @@ Load `@mechane-ai/elements/styles.css` once and import the families you use, suc
 [component guide](workspaces/core/docs/components.md) or the
 [npm package](https://www.npmjs.com/package/@mechane-ai/elements).
 
-## Layout
+## Documentation
 
-`workspaces/core` is the product workspace. Its [package map](workspaces/core/dependencies.json) declares every package
-and layer. The root contains the pinned toolchain, [repository contracts](.contracts/index.md), and independent setup.
+- [Console](workspaces/core/docs/console.md): conversations, activity, environments, and trace evidence.
+- [Notifications](workspaces/core/docs/notifications.md): durable input and explicit responses.
+- [Operations](workspaces/core/docs/operations.md): qualification, migration, import, stopping, and recovery.
+- [Development](.config/README.md): pinned tools and standalone checks.
 
-The [Console guide](workspaces/core/docs/console.md) explains the browser UI and package boundaries.
-
-The [operator guide](.config/runbook.md) links installation and administration procedures. Runtime agents and
-integrations remain separate from infrastructure configuration.
-
-## Development
-
-Follow [development setup](.config/README.md) to bootstrap the pinned toolchain and run checks. Use `mise run dev` for
-an isolated scripted fixture or `mise run start` for a persistent source installation. Checks require no cloud account
-or paid model.
-
-Mechane develops in a private source repository. An organization-owned GitHub App publishes reviewed source snapshots
-here. Every snapshot builds independently. Private history, credentials, planning notes, and hosted installation
-settings are excluded.
-
-Public issues and proposed patches can inform later snapshots. Keep required third-party attribution when contributing.
+`workspaces/core` contains the product. Its [package map](workspaces/core/dependencies.json) declares packages and
+layers. Read the [repository contracts](.contracts/index.md) before contributing. Checks use deterministic providers
+without cloud accounts or paid models. This public source builds independently and preserves required third-party
+attribution.
 
 ## License
 

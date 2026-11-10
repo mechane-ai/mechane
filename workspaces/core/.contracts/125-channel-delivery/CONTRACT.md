@@ -1,7 +1,7 @@
 ---
 name: channel-delivery
 message: Authenticate generic notification producers and keep conversational output in explicit addressed agent tools.
-paths: ["packages/node/runtime/src/{execution,tools,store}/**", "packages/node/server/src/**", "packages/shared/protocol/src/operations/notifications/**", "packages/node/runtime/package.json", "packages/node/server/package.json"]
+paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/shared/protocol/src/operations/notifications/**"]
 ---
 
 ## Rules

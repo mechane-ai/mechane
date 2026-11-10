@@ -46,7 +46,7 @@ const semanticVersion = Schema.makeFilter(
   { expected: 'a semantic version' },
 );
 
-/** The sandbox artifact carries its immutable release identity and deployed format baseline. */
+/** Artifact identity retains cumulative wire and migration history across runtime changes. */
 export const ReleaseDescriptor = Schema.Struct({
   version: Release.check(semanticVersion),
   public_commit: GitCommit,

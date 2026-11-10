@@ -1,5 +1,6 @@
 import type { NotificationBody } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
+import type { LocalFixtures } from '@mechane/stack';
 import { createHmac } from 'node:crypto';
 
 type ProducerDelivery = {
@@ -16,6 +17,20 @@ type ProducerDelivery = {
 
 const NOTIFICATION_TIMEOUT_MS = 15_000;
 const MILLISECONDS_PER_SECOND = 1000;
+const PRODUCER_SECRET_BINDING = 'MECHANE_FIXTURE_NOTIFICATION_SECRET';
+
+type ProducerEnvironmentInput = Pick<ProducerDelivery, 'workspaceId' | 'mechId'> & {
+  readonly producer: LocalFixtures['notifications'];
+};
+
+export function notificationProducerEnvironment({ workspaceId, mechId, producer }: ProducerEnvironmentInput) {
+  return {
+    [PRODUCER_SECRET_BINDING]: producer.signingSecret,
+    MECHANE_NOTIFICATION_PRODUCERS: JSON.stringify([
+      { id: producer.id, secretBinding: PRODUCER_SECRET_BINDING, recipients: [{ workspaceId, mechId }] },
+    ]),
+  };
+}
 
 export async function deliverNotification(input: ProducerDelivery): Promise<Response> {
   const pathname = notificationPath(input);

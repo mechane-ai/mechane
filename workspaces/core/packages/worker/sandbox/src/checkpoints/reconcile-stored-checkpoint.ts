@@ -18,7 +18,7 @@ export async function reconcileStoredCheckpoint({
   }
 
   if (checkpoint.part === archive.value.parts) {
-    commitCheckpoint({ ...input, archive: archive.value });
+    await commitCheckpoint({ ...input, archive: archive.value });
 
     return true;
   }

@@ -143,6 +143,48 @@ checksum = "sha256:a8cf261059939d96d0a0707f904deda9cb61b4904eb41c75ac8e7715c4ffa
 url = "https://github.com/macromackie/tenet/releases/download/v0.13.0/tenet-x86_64-apple-darwin.tar.xz"
 url_api = "https://api.github.com/repos/macromackie/tenet/releases/assets/694132748"
 
+[[tools."github:mechane-ai/celld"]]
+version = "0.6.3-mechane.2"
+backend = "github:mechane-ai/celld"
+specifiers = ["0.6.3-mechane.2"]
+
+[tools."github:mechane-ai/celld".options]
+asset_pattern = "celld-x86_64-unknown-linux-gnu.gz"
+
+[tools."github:mechane-ai/celld"."platforms.linux-x64"]
+checksum = "sha256:d286e20b873212ef6a8428051ffbe4d8537636a7ed061f99f31cff3bbe201f37"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.2/celld-x86_64-unknown-linux-gnu.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/731364683"
+provenance = "github-attestations"
+
+[[tools."github:mechane-ai/celld"]]
+version = "0.6.3-mechane.2"
+backend = "github:mechane-ai/celld"
+specifiers = ["0.6.3-mechane.2"]
+
+[tools."github:mechane-ai/celld".options]
+asset_pattern = "celld-aarch64-unknown-linux-gnu.gz"
+
+[tools."github:mechane-ai/celld"."platforms.linux-arm64"]
+checksum = "sha256:59b1669161a27d9708a6888ea74b72cbd51bb898fe554a28969fa796354e9124"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.2/celld-aarch64-unknown-linux-gnu.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/731364682"
+provenance = "github-attestations"
+
+[[tools."github:mechane-ai/celld"]]
+version = "0.6.3-mechane.2"
+backend = "github:mechane-ai/celld"
+specifiers = ["0.6.3-mechane.2"]
+
+[tools."github:mechane-ai/celld".options]
+asset_pattern = "celld-aarch64-apple-darwin.gz"
+
+[tools."github:mechane-ai/celld"."platforms.macos-arm64"]
+checksum = "sha256:9ab0581ed5e07e0b75393d8d85919b57fd10317a6fe3d24c96620c6ee74d7801"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.2/celld-aarch64-apple-darwin.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/731364676"
+provenance = "github-attestations"
+
 [[tools.go]]
 version = "1.27.3"
 backend = "core:go"

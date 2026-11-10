@@ -5,6 +5,3 @@ export const WorkspaceKind = { Personal: 'personal', Shared: 'shared' } as const
 export const MembershipRole = { Owner: 'owner', Member: 'member' } as const;
 
 export type MembershipRole = (typeof MembershipRole)[keyof typeof MembershipRole];
-
-/** A UTC day as the allowance's account names it, such as `2026-10-23`. */
-export const UTC_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

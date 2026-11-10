@@ -39,13 +39,15 @@ Does each store function that a change exposes to other modules name a record or
 
 ## Local adaptations
 
-`packages/node/runtime/src/store` owns Mechane's Postgres identity, membership, configuration, notifications, context
-checkpoints, activations, usage, credentials, and effect receipts. It also preserves historical records removed from
-active APIs. Ordinary notes and plans belong to the durable home. Public store methods name domain reads or transitions;
-they do not expose a pool, client, arbitrary SQL, or table-name parameter.
+`packages/worker/control-store` owns Postgres identity, membership, definitions, grants, credentials, workspace budgets,
+capacity, control delivery, and derived list summaries. It preserves historical source records for explicit import.
+Public store methods name domain reads or transitions; they expose no pool, client, arbitrary SQL, or table parameter.
 
-Workflow's Postgres World owns its execution checkpoints, hooks, queues, and stream storage. Product code uses public
-SDK APIs and never patches their internal tables. Removing a platform adapter does not delete its historical tables.
+Each MechObject owns one Pi Harness through `packages/worker/runtime/src/actor`. Pi owns tasks, conversation entries,
+compaction, and execution recovery. The actor's application documents own immutable notification admission, native
+observation evidence, wake identities, effect correlation, and import cursors. Use public SDK storage transactions;
+do not copy or patch its internal SQL. Postgres summaries cannot schedule, cancel, or recover actor execution.
+Ordinary notes and plans belong to the durable home. Retiring an engine does not delete its historical records.
 `packages/worker/sandbox-store` owns compute receipts and file-generation state; the sandbox's provider owns machine
 lifecycle. CLI login and eval stores retain their respective private files.
 

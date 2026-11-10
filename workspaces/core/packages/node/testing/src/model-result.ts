@@ -35,5 +35,14 @@ export async function readModelToolResult({
     throw new Error('The model request has no result for its tool call');
   }
 
-  return JSON.parse(message.content);
+  // Runtime receipts occupy one JSON line; Pi may append diagnostics after it.
+  const diagnosticStart = message.content.indexOf('\n');
+
+  if (diagnosticStart === -1) {
+    return JSON.parse(message.content);
+  }
+
+  const result = message.content.slice(0, diagnosticStart);
+
+  return JSON.parse(result);
 }

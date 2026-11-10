@@ -1,12 +1,12 @@
 ---
 name: console-boundaries
 message: Keep the console an ordinary API client with admitted data, explicit public conversation, and one release.
-paths: ["packages/browser/**", "packages/node/server/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
+paths: ["packages/browser/**", "packages/worker/server/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
 ## Rules
 
-The console ships at `/console` in the same immutable release as the Node service. `/api/v1` owns runtime operations;
+The console ships at `/console` in the same immutable release as the application Worker. `/api/v1` owns runtime operations;
 OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
 
 `console` owns routes, application composition, drafts, and the Storybook runner. `console-data` owns admission,
@@ -221,7 +221,7 @@ history remains with its admitted in-memory owner. Neither media bytes nor anoth
 
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
 real browser against the packaged service to verify sign-in/out, workspace isolation, a completed turn, trace
-navigation, revision conflicts, and rejected cross-origin writes. Verify the hosted Node and compute release identities and an empty subsequent
+navigation, revision conflicts, and rejected cross-origin writes. Verify the hosted Worker and guest release identities and an empty subsequent
 OpenTofu plan before declaring an installation upgraded.
 
 Review a new feature from API demand through its canonical table, exact receipt, live projection, and presentation.

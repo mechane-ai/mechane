@@ -1,0 +1,23 @@
+{
+  "name": "@mechane/runtime",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@ai-sdk/mcp": "2.0.92",
+    "@earendil-works/chord": "1.5.1",
+    "@earendil-works/pi-ai": "1.5.1",
+    "@earendil-works/pi-durable": "1.5.1",
+    "@mechane/control-store": "workspace:*",
+    "@mechane/deployment": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "ai": "7.0.164",
+    "effect": "4.0.7",
+    "zod": "4.5.4"
+  }
+}

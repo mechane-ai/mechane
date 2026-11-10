@@ -1,31 +1,19 @@
-import { decodeFile, readText } from '@mechane/checks-kernel';
+import { readText } from '@mechane/checks-kernel';
 import type { InputUnreadable } from '@mechane/checks-kernel';
+import { APPLICATION_WORKER_MIGRATIONS } from '@mechane/deployment';
 import { sha256Hex } from '@mechane/program';
 import type { Lock } from '@mechane/program';
-import { Effect, Record, Schema } from 'effect';
+import { Effect, Record } from 'effect';
 import { storeHashes } from './store-hashes.ts';
 
-/** Product migrations are separate from the Workflow SDK's own database schema. */
+/** Product schema steps retain their original lock namespace after moving the control owner. */
 const STORE_MIGRATIONS = {
-  Runtime: { path: 'packages/node/runtime/src/store/schema.ts', declaration: 'DOMAIN_MIGRATIONS' },
+  Runtime: { path: 'packages/worker/control-store/src/store/schema.ts', declaration: 'DOMAIN_MIGRATIONS' },
   SandboxObject: { path: 'packages/worker/sandbox-store/src/migrations.ts', declaration: 'MIGRATIONS' },
 } as const;
 
-/** The Wrangler configuration whose `migrations` add and rename the Durable Object classes. */
-const WRANGLER_CONFIGURATION = 'packages/worker/sandbox-service/wrangler.jsonc';
-
 /** The migration lock's key for the Wrangler migrations, each under its position, its tag and its entry's hash. */
 const WRANGLER_KEY = 'wrangler';
-
-/** One of the Wrangler configuration's migrations, under its tag. */
-const WranglerMigration = Schema.StructWithRest(Schema.Struct({ tag: Schema.String }), [
-  Schema.Record(Schema.String, Schema.Unknown),
-]);
-
-type WranglerMigration = typeof WranglerMigration.Type;
-
-/** The Wrangler configuration's migrations. */
-const WranglerMigrations = Schema.Struct({ migrations: Schema.Array(WranglerMigration) });
 
 /** A store's class, and the entry of each of its schema steps. */
 type StoreEntry = readonly [string, ReadonlyArray<string>];
@@ -44,11 +32,13 @@ export const migrationHashes = Effect.fn('migrationHashes')(function* (): Effect
     { concurrency: 1 },
   );
 
-  const { migrations } = yield* decodeFile({ path: WRANGLER_CONFIGURATION, schema: WranglerMigrations });
+  const migrations = APPLICATION_WORKER_MIGRATIONS;
 
   /** A Wrangler migration's entry: its position, its tag and the hash of the whole entry. */
-  const tagEntry: (migration: WranglerMigration, index: number) => string = (migration, index) =>
-    `${index} ${migration.tag} ${sha256Hex({ contents: JSON.stringify(migration) })}`;
+  const tagEntry: (migration: (typeof APPLICATION_WORKER_MIGRATIONS)[number], index: number) => string = (
+    migration,
+    index,
+  ) => `${index} ${migration.tag} ${sha256Hex({ contents: JSON.stringify(migration) })}`;
 
   return { ...Record.fromEntries(stores), [WRANGLER_KEY]: migrations.map(tagEntry) };
 });

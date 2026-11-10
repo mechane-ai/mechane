@@ -3,6 +3,7 @@ export {
   SandboxOperationId,
   RemoteSandboxId,
   RecordId,
+  UtcDay,
   Tokens,
   Micros,
   TurnId,
@@ -29,6 +30,9 @@ export { HttpStatusCode } from './http-status.constants.ts';
 export { HttpHeader } from './http-header.constants.ts';
 export { MediaType } from './media-type.constants.ts';
 export { wireKey } from './wire-key.ts';
+export { toolExecutionId } from './tool-execution-id.ts';
+export { boundTraceText } from './trace-text.ts';
+export type { TraceText } from './trace-text.ts';
 export { wireStruct } from './wire-struct.ts';
 export { memberOrUnknown } from './member-or-unknown.ts';
 export { listQuery } from './list-query.ts';

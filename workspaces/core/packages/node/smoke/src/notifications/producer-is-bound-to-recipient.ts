@@ -5,6 +5,7 @@ import {
   createMech,
   deliverNotification,
   notificationPath,
+  notificationProducerEnvironment,
   requireFixtures,
   waitForTurn,
 } from '@mechane/testing';
@@ -26,15 +27,7 @@ export async function producerIsBoundToRecipient({ stack }: ScenarioInput): Prom
 
   fixtures.model.configure({ marker, replies: [{ text: 'Private completion' }] });
   await stack.restart({
-    environment: {
-      MECHANE_NOTIFICATION_PRODUCERS: JSON.stringify([
-        {
-          id: producer.id,
-          secret: producer.signingSecret,
-          recipients: [{ workspaceId: account.workspaceId, mechId: allowed.id }],
-        },
-      ]),
-    },
+    environment: notificationProducerEnvironment({ workspaceId: account.workspaceId, mechId: allowed.id, producer }),
   });
 
   const delivery = {

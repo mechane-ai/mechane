@@ -7,7 +7,7 @@ import { colors, typography } from '@mechane-ai/elements/tokens.stylex';
 import { Event } from '@mechane/protocol';
 import type { EventPage, ListedEvent, Turn } from '@mechane/protocol';
 import * as stylex from '@stylexjs/stylex';
-import { Schema } from 'effect';
+import { Option, Schema } from 'effect';
 import { Bell, Check, Circle, GitFork, MessageSquare, Play, Reply, Square, TriangleAlert } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { preciseTimeLabel } from './format.ts';
@@ -132,7 +132,25 @@ function RunLink({
   readonly event: Event;
   readonly render: (turnId: Turn['id'], sequence: number) => ReactNode;
 }): ReactNode {
-  return 'turnId' in event ? render(event.turnId, event.sequence) : null;
+  const turnId = eventTurnId(event);
+
+  if (Option.isNone(turnId)) {
+    return null;
+  }
+
+  return render(turnId.value, event.sequence);
+}
+
+function eventTurnId(event: Event): Option.Option<Turn['id']> {
+  if (!('turnId' in event)) {
+    return Option.none();
+  }
+
+  if (event.type === 'console.message') {
+    return event.turnId;
+  }
+
+  return Option.some(event.turnId);
 }
 
 const PREVIEW_LENGTH = 200;
@@ -220,8 +238,10 @@ function EventContent({ event }: { readonly event: Event }): ReactNode {
     return <Muted>{event.reason}</Muted>;
   }
 
-  if ('turnId' in event) {
-    return <CopyValue label="run ID" value={event.turnId} />;
+  const turnId = eventTurnId(event);
+
+  if (Option.isSome(turnId)) {
+    return <CopyValue label="run ID" value={turnId.value} />;
   }
 
   return null;

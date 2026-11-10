@@ -13,10 +13,16 @@ const COMMAND_VIEW_HEIGHT = 240;
 const OUTPUT_VIEW_HEIGHT = 320;
 const OUTPUT_VIEW_LINES = 200;
 
-export function TraceToolDetails({ call }: { readonly call: TurnToolCall }): ReactNode {
+export function TraceToolDetails({
+  call,
+  isImported,
+}: {
+  readonly call: TurnToolCall;
+  readonly isImported: boolean;
+}): ReactNode {
   return (
     <Stack isCompact>
-      {call.inspection !== undefined && <BashDetails inspection={call.inspection} />}
+      {call.inspection !== undefined && <BashDetails inspection={call.inspection} isImported={isImported} />}
       <Details
         items={[
           { label: 'Tool call', value: call.status },
@@ -43,7 +49,13 @@ export function TraceToolDetails({ call }: { readonly call: TurnToolCall }): Rea
   );
 }
 
-function BashDetails({ inspection }: { readonly inspection: BashInspection }): ReactNode {
+function BashDetails({
+  inspection,
+  isImported,
+}: {
+  readonly inspection: BashInspection;
+  readonly isImported: boolean;
+}): ReactNode {
   const command = Option.getOrUndefined(inspection.command);
   const result = Option.getOrUndefined(inspection.result);
   const output = result === undefined ? undefined : Option.getOrUndefined(result.output);
@@ -83,7 +95,7 @@ function BashDetails({ inspection }: { readonly inspection: BashInspection }): R
               label="Combined output"
               maxLines={OUTPUT_VIEW_LINES}
               maxHeight={OUTPUT_VIEW_HEIGHT}
-              isRunning={result?.status === 'running'}
+              isRunning={!isImported && result?.status === 'running'}
             />
           ) : (
             <Text tone="muted">

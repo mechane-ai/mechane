@@ -2,7 +2,7 @@
 
 A mech is a persistent identity with working context and a developer environment. Generic notifications bring it new
 input. One active model owner protects that context and shared files; different mechs work independently. An activation
-is a bounded native Workflow lifetime, not a separate task for each notification.
+is a bounded Pi execution within that identity, not a separate task for each notification.
 
 The agent chooses commands and follows the repository's instructions. Mechane provides tools and current authority; it
 does not prescribe coding, review, merge, or deployment stages.
@@ -26,7 +26,7 @@ and its service identity. Nexus owns application access, approval requests, and 
 does not contain a GitHub App issuer or a Nexus request-service adapter. Application scopes and provider token expiry
 remain with that authority owner; GitHub repository protection still decides whether a merge is allowed.
 
-Resolve references inside trusted steps immediately before dispatch. Workflow state stores identifiers only. Credentials
+Resolve references immediately before admitted dispatch. Durable execution state stores identifiers only. Credentials
 are injected into the authorized command environment and redacted from retained output. Arbitrary granted code can copy
 its credentials deliberately, so grant the intended authority rather than treating redaction as containment.
 
@@ -34,7 +34,7 @@ its credentials deliberately, so grant the intended authority rather than treati
 
 The generic image includes the developer tools needed to clone, edit, test, and publish repositories, plus Chromium, a
 display server, and media encoding. Repository pins remain authoritative. The
-[native tool definitions](../packages/node/runtime/src/tools/runtime-tools.ts) own current names and input shapes.
+[native tool definitions](../packages/worker/runtime/src/tools/runtime-tools.ts) own current names and input shapes.
 
 Configure installation-owned CLIs through `sandboxes.additional_tools` in the
 [Cloudflare module](../infrastructure/modules/cloudflare/variables.tf). The
@@ -52,12 +52,24 @@ adding a runtime task or memory service. Internal model-context checkpoints are 
 come from current owner-configured MCP connections and grants. Remembered instructions cannot expand authority.
 
 A settled foreground command is completed only after its home archive and receipt commit. A running, uncertain, or
-persistence-failed result does not establish saved files. Background writes require a later successful checkpoint. The
-activation also requires the environment barrier before a durable idle handoff. Failed or canceled activations retain a
-checkpoint-required fence; the next activation must save the environment before model or tool work. Keep reproducible
-caches and build output in scratch locations; archive limits remain explicit. A failed save preserves the previous
-committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and private
-capture scratch.
+persistence-failed result does not establish saved files. Background writes require a later successful checkpoint.
+Native activation completion does not itself save the home or end managed processes. Explicit recovery and cutover
+barriers must finish before the mech resumes.
+
+Keep reproducible caches and build output in scratch locations; archive limits remain explicit. A failed save preserves
+the previous committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and
+private capture scratch.
+
+A persistence-failed receipt retains the known shell exit code or timeout separately from its failed save. Older
+receipts that omitted that outcome remain unknown; output text is not evidence of an exit code.
+
+The guest declares `MECHANE_CACHE_HOME` outside the home and supplies tool-specific npm, pnpm, uv, pip, mise, and Go
+cache paths there. Pinned mise installs are reconstructed after machine replacement; source, lockfiles, configuration,
+and Git metadata remain in the home. Repository build output needs its own declared scratch setting. Every other home
+file is archived, including `.gitignore` entries and existing caches. Move only identified reproducible files during
+explicit recovery; the runtime does not delete or exclude them. See the tools' directory settings for
+[mise](https://mise.jdx.dev/directories.html), [pnpm](https://pnpm.io/pnpm-cli), and
+[uv](https://docs.astral.sh/uv/concepts/cache/#cache-directory).
 
 The portable home is bounded to a 2 GiB uncompressed tar stream and a 512 MiB gzip archive. Tar metadata and padding
 count toward the first limit. Compression, splitting, transfer, and restoration buffer bounded parts, but saving and
@@ -75,6 +87,28 @@ checksum and durable progress; a completed command still waits for the entire ge
 budget limits starting another part, not an already-running transfer. Guest command duration excludes that save, so a
 fast shell command can still take longer to return its durable result. When investigating latency, record archive bytes,
 part count, and upload or restore timing separately from command execution.
+
+New generations publish an immutable manifest after their archive parts and before the head and receipt commit.
+Restoration verifies that manifest's digest. Existing committed generations retain their original inline metadata and
+archive verification. Cloudflare-native snapshots are not the portable-home authority and are not required locally.
+
+Stop acknowledges a durable operation ID with HTTP 202. Inspect that ID or the workspace report for requested, waiting
+for commands, checkpointing, stopping, completed, or failed state. Inspection includes the committed generation,
+transfer cursor, recovery files, bounded last error, and a recovery action. A failed save preserves live files; a failed
+provider stop retains the final drain and retries its original identity. Completed confirms shutdown. Repeating Stop
+does not erase the failure or imply that an earlier head contains later writes. The activation checkpoint route also
+supports a passive receipt GET. It cannot advance a pending save or allocate a guest; an unknown operation returns 404.
+
+For a failed save on the original quiet, ready guest, an operator can request a file-only checkpoint retry through the
+authenticated environment service. The request names the observed machine, recovery generation, and committed head.
+Changed observations or active work are refused. It preserves live files, the old head, and the original failure until a
+complete new generation commits. A successful repair resumes a retained Stop through its normal final drain; it does not
+clear a model or tool admission fence. This operation never runs a shell or adds a command completion notice.
+
+A lost start acknowledgement rejoins the positively identified guest. A conflicting identity is refused. Application
+restarts preserve the separate environment owner and its guest. If the environment host itself loses a guest during
+restoration, its old partial-copy cursor cannot activate a replacement; the committed source remains preserved behind an
+explicit recovery fence.
 
 | Resource                           | Lifetime                                                                                               |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -126,8 +160,11 @@ until their machine retires. Snapshots preserve files, not application transacti
 After machine loss, an earlier saved head does not prove that newer background writes survived. A barrier with no live
 machine accepts that head only with matching committed drain evidence from the latest machine that became ready.
 Never-ready startup attempts neither create file-loss evidence nor hide earlier loss. Missing proof leaves an explicit
-failure and keeps model/tool work fenced. Restoring older saved files is a recovery choice, not a successful checkpoint
-of the lost machine. An environment with no previously ready machine can use its immutable imported files.
+failure and fences ordinary replacement allocation.
+
+The agent can inspect receipts and report the loss. An explicit upgrade can restore the last committed generation when
+no checkpoint or recovery remains pending. Restoring older saved files does not establish that the lost machine's newer
+writes survived. An environment with no previously ready machine can use its immutable imported files.
 
 The Console's Environment view passively observes existing handles. Expanding a process reads bounded logs; stopping it
 targets that exact machine and process. An individual stop owns a process group. A child that creates another session
@@ -142,7 +179,7 @@ bounded console/network diagnostics. Their argument schemas are linked from the 
 Observe the page before selecting a target. References belong to that observation; refresh stale references rather than
 guessing. Pixel clicks use the observed viewport. Omitted targets, logs, or image previews are reported explicitly. An
 interrupted action with no confirmed result remains uncertain. Inspect the page and any external effect before choosing
-a new action; replaying a workflow does not prove a click failed.
+a new action; recovering an activation does not prove a click failed.
 
 The private browser profile does not inherit a user's personal session. A Nexus CLI API key also does not by itself sign
 the browser into Nexus. Use an application-supported agent login or an appropriate local fixture. Describe a Storybook
@@ -162,10 +199,10 @@ A successful durable capture returns a Mechane viewer link. The capture's local 
 machine does. Use the viewer link in the PR through ordinary authorized `gh` commands. Recording limits bound encoded
 duration and bytes; the descriptor reports measured media duration. Pending or failed evidence is not downloadable.
 
-Reviewers must sign in with current workspace membership. The Node server checks membership on every metadata and media
-read, including video ranges. A viewer link grants no access; sign-in returns to that evidence. Removing membership also
-removes access through a previously shared link. Provider uploads are separate application operations with their own
-authority; a copied attachment follows that provider's access policy independently of this original.
+Reviewers must sign in with current workspace membership. The application Worker checks membership on every metadata and
+media read, including video ranges. A viewer link grants no access; sign-in returns to that evidence. Removing
+membership also removes access through a previously shared link. Provider uploads are separate application operations
+with their own authority; a copied attachment follows that provider's access policy independently of this original.
 
 Use `export_evidence` with the ready artifact ID when a CLI needs actual media bytes. It copies the saved original into
 `.mechane-evidence` under the current home and returns its absolute path, SHA-256, media type, size, and machine ID. It

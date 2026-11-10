@@ -80,6 +80,7 @@ export const codeTypescriptEffectErrors = {
       ],
       allowed: [
         'Effect.tryPromise({ try: () => open(path), catch: (cause) => new Unreadable({ path, reason: String(cause) }) });',
+        "Effect.try({ try: () => new Certificate(pem), catch: () => new InvalidCertificate({ reason: 'invalid public certificate' }) });",
       ],
     },
   ],

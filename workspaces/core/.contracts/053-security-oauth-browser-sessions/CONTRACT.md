@@ -1,7 +1,7 @@
 ---
 name: security-oauth-browser-sessions
 message: Keep OAuth tokens server-side behind host-only HttpOnly cookies with exact-origin checks.
-paths: ["packages/node/server/src/auth/**", "packages/node/runtime/src/store/api/**"]
+paths: ["packages/worker/server/src/auth/**", "packages/worker/server/src/console/**", "packages/worker/control-store/src/store/api/auth/**"]
 ---
 
 ## Rules
@@ -41,7 +41,7 @@ Exercise reload, concurrent tabs, account switching, logout during refresh, and 
 
 ## Local adaptations
 
-`packages/node/server/src/auth` owns GitHub sign-in, fixed callback validation, session creation, and sign-out.
+`packages/worker/server/src/auth` owns GitHub sign-in, fixed callback validation, session creation, and sign-out.
 The code exchange reads the configured OAuth secret. The returned GitHub token reads the user's stable provider ID
 once and is discarded. A descriptive login name never grants installation or workspace authority.
 

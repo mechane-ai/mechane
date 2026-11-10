@@ -36,7 +36,7 @@ export type GuestConnection = {
 export type MachineProvider = {
   /** The declared tool manifest determines the bounded cold startup deadline. */
   readonly startupTimeout: () => Duration.Duration;
-  /** Starts the requested identity; sandbox capacity coordinates replacement before calling a raw provider. */
+  /** Starts or rejoins the identity without resetting its files; capacity owns replacement. */
   readonly start: (input: MachineIdInput) => Promise<void>;
   /** Reads the machine's guest without allocating; none before it runs and after it stops. */
   readonly connect: (input: MachineIdInput) => Promise<Option.Option<GuestConnection>>;

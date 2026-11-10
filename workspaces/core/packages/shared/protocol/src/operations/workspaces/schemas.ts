@@ -1,7 +1,16 @@
-import { memberOrUnknown, Micros, PrincipalId, RecordId, RecordName, wireStruct, WorkspaceId } from '@mechane/records';
+import {
+  memberOrUnknown,
+  Micros,
+  PrincipalId,
+  RecordId,
+  RecordName,
+  UtcDay,
+  wireStruct,
+  WorkspaceId,
+} from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { MembershipRole, UTC_DAY_PATTERN, WorkspaceKind } from './constants.ts';
+import { MembershipRole, WorkspaceKind } from './constants.ts';
 
 /** A workspace the caller belongs to, with the caller's role and the model spend it may make each day. */
 export const Workspace = wireStruct({
@@ -55,12 +64,6 @@ export type WorkspaceMemberRemoval = typeof WorkspaceMemberRemoval.Type;
  * The workspace's allowance on one UTC day, and what the day's settled dispatches cost and its open reservations hold
  * together. A dispatch is reserved only while its own reservation fits beside what the day has committed.
  */
-export const Allowance = wireStruct({
-  fields: {
-    day: Schema.String.check(Schema.isPattern(UTC_DAY_PATTERN)),
-    dailyAllowanceMicros: Micros,
-    committedMicros: Micros,
-  },
-});
+export const Allowance = wireStruct({ fields: { day: UtcDay, dailyAllowanceMicros: Micros, committedMicros: Micros } });
 
 export type Allowance = typeof Allowance.Type;

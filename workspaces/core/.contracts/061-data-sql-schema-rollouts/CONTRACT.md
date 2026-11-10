@@ -1,7 +1,7 @@
 ---
 name: data-sql-schema-rollouts
 message: Ship schema changes that the previous release and existing rows survive, in batches an interrupted deploy resumes.
-paths: ["packages/node/runtime/src/store/**", "packages/node/server/src/**", "packages/worker/sandbox-store/src/**"]
+paths: ["packages/worker/control-store/**", "packages/worker/server/src/**", "packages/worker/runtime/src/**", "packages/worker/sandbox-store/src/**"]
 ---
 
 ## Rules
@@ -40,13 +40,21 @@ Review each bulk statement for a batched convergent loop or a stated measured ro
 
 ## Local adaptations
 
-The native-runtime cutover initializes a fresh Postgres domain schema and Workflow World baseline, as explicitly
-authorized in contract 047. It does not run a migration over the retired Pi agent stores. Future domain migrations
-follow the rolling-deployment rules above and use the runtime store's migration ledger.
+The owner-authorized celld/Pi cutover retires all Node/Workflow execution before activating MechObject. It does not
+retain a compatibility engine. Preserve existing Postgres identity, authority, credentials, accounting, source history,
+and Sandbox files. Steps 1 through 5 keep their exact shipped checksums; schema 6 adds the actor control boundary.
+The restricted runtime role cannot write legacy execution tables or the migration ledger.
+
+Import retained histories through a consistent, read-only source snapshot and a bounded, idempotent importer. Verify
+the expected source digest and positive old-owner retirement receipt before applying. Commit each actor import cursor
+with its immutable payload. Imported events remain historical and cannot replay commands, approvals, or publication.
+Import never activates a mech or overrides a saved maintenance hold. A source that exceeds a supported batch refuses
+preflight explicitly; it must not truncate actual history. A code-only rollback to the retired execution engine is
+unsupported. Future control-store migrations follow the rolling-deployment rules above.
 
 Native releases 0.25.0 and 0.25.1 use domain schema 1 and reject every later ledger revision at startup. Upgrading them
 to schema 2, introduced in 0.25.2, requires a controlled stop of all old application instances before migration.
-Preserve native records and Workflow history. Qualify existing history replay or drain active histories before switching.
+Preserve native records and historical Workflow data. Retire active histories before switching execution owners.
 After migration, recover forward; a code-only rollback to either schema 1 release is unsupported. This single bootstrap
 boundary does not authorize data deletion or waive additive compatibility for subsequent releases.
 Serving readers validate the contiguous ledger and their known
@@ -54,16 +62,15 @@ checksum prefix; a later suffix is allowed only under these additive rollout rul
 ledger instead of modifying it.
 
 Run schema changes with a dedicated migration connection. The runtime connection receives only the permissions its
-product tables and upstream World require. Workflow owns its schema migrations; do not edit its tables to repair
-application state. Preserve retained platform history when removing its runtime adapter. Record exact upstream versions
-in the release.
+control tables require. Do not edit retired upstream engine tables to repair application state. Preserve retained
+platform history when removing its runtime adapter. Record exact upstream versions in the release.
 
 The isolated sandbox service retains its own SQLite schema ledger and persistent file checkpoints. A service restart
 must not replay a completed command or publish a checkpoint after cancellation. Destructive sandbox changes require
 an explicit data decision; the agent-store reset does not authorize deletion of unrelated persisted resources.
 
 Qualify constrained or rewritten rows against the production database engine. Repeating initial setup must leave the
-schema unchanged. A future narrowing needs both affected-row evidence and replay evidence for open workflows.
+schema unchanged. A future narrowing needs both affected-row evidence and recovery evidence for affected live owners.
 Read migrated records through their authenticated product HTTP route and response codec before release. SQL row counts
 alone do not establish that stored identifiers, timestamps, text, and structured output remain readable. Include unchanged
 records and a repeated migration in that check.

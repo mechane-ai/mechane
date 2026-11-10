@@ -28,7 +28,9 @@ export async function startMaintenanceMachine({ store, provider, job }: Portable
   const live = store.liveMachine();
 
   if (Option.isNone(live) || live.value.id !== job.target.value) {
-    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed });
+    const lastError = Option.some('Replacement machine was lost before startup completed');
+
+    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
 
     return;
   }

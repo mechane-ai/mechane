@@ -6,6 +6,7 @@ export type ArchiveEntryInput = {
   readonly path: string;
   readonly entry: string;
   readonly settings: DistributionSettings;
+  readonly format?: 'zip' | undefined;
 };
 
 /** An archive reader that remains owned by its surrounding Effect scope until extraction finishes. */

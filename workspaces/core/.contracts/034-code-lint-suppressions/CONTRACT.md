@@ -50,7 +50,7 @@ ast-grep `suppression-form` rejects a malformed directive, oxlint `unicorn/no-ab
 The owned checks of `mise -C workspaces/core run checks` honor no suppression, so a site they report must comply; a suppression of the next line between a declaration's doc and its code leaves the doc attached.
 Each rule's entry declares its suppression budget, `maxSuppressions`, 0 by default and at most `maxRuleSuppressions`; `rules:check` counts each rule that a suppression of a TypeScript file names, with or without its plugin, and fails on a rule suppressed more often than its budget allows. The registry records each budget beside its rule. Existing exceptions include the `wireKeys` assertion, external global augmentations, and bit masks; the owner contract explains each additional exception below. The removed fork-copy SQL path carries no suppression forward.
 `rules:check` also counts each `// <check>-allow <rule> -- <reason>` against the owned rule's budget, which is 0, and each `// jscpd:ignore-start -- <reason>` against 035's `jscpdSuppressions`.
-oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/name-rules/src/oxlint-opt-outs.json`.
+oxlint runs every rule of its `correctness`, `suspicious`, `pedantic`, `perf`, `style` and `restriction` categories. The opt-out list that ends `rules` in `.oxlintrc.json` turns off each rule that still has findings, which `mise -C workspaces/core run rules:measure` computes and fails on when the registry's list differs, and each rule off by decision, with its reason beside it; the registry holds both in `packages/node/rules/src/contracts/name-rules/oxlint-opt-outs.json`.
 The native browser database's `execute<Row>` wrapper in `console-cache/src/store/storage.ts` permits one
 `return-only-type-parameter` site suppression because the published interface declares its row type without a schema
 argument. It forwards the typed result without an assertion, as contract 017 requires.
@@ -68,14 +68,15 @@ the registry limits this rule to one suppression and checks TSX directives too. 
 deprecated keyboard fields elsewhere. [WebKit report 324380](https://bugs.webkit.org/show_bug.cgi?id=324380)
 records the affected event ordering.
 
-One `type-predicate` suppression belongs to the runtime's `isOperationInput` guard in
-`runtime/src/operations/validated-operation.ts`. Its reason must identify TypeScript's generic-intersection inference
+One `type-predicate` suppression belongs to the runtime's `isInput` guard in
+`packages/worker/runtime/src/operations/validated-operation.ts`. Its reason identifies TypeScript's generic-intersection inference
 limit and its body must check the operation's parameter, query, and body schemas, as contract 017 requires. The
 registry permits one site for this schema intersection; other type predicates remain checked.
 
-A second `type-predicate` suppression belongs to the compiled Workflow `POST` export's `HandlerSchema` in
-`server/src/lifecycle/workflow-world.ts`, under contract 017's immutable-artifact constraint. The rule's total budget is
-two; each site requires its own current finding and reason. No package-wide type-predicate exemption applies.
+A second `type-predicate` suppression belongs to `nativeId` in `packages/worker/runtime/src/actor/records.ts`.
+Pi exposes nominal numeric IDs without a public decoder; this guard checks positive safe integers before decoding
+retained IDs. The rule's total budget is two; each site requires its own current finding and reason. No package-wide
+type-predicate exemption applies.
 
 The copied `licenses/*.js` assets contain only verbatim legal comments, which bundlers retain in distributed artifacts; the registry excludes this exact data-asset pattern from oxlint because it contains no implementation code.
 A rule in rollout is a ratchet, and its generated baseline is no suppression: `lint/baseline/<rule>.json` maps each file to its count of the rule's findings, with sorted keys, a file it does not list has none, and no person edits it.

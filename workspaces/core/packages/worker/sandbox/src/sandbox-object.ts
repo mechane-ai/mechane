@@ -9,6 +9,7 @@ import { EvidenceArtifactId, MachineId, SandboxOperationId } from '@mechane/reco
 import type { BrowserCall, SandboxAlarm, SandboxStore } from '@mechane/sandbox-store';
 import {
   BackgroundWork,
+  FileCheckpointIdentityReused,
   FileCheckpointPurpose,
   openSandboxStore,
   ReservationPhase,
@@ -27,8 +28,10 @@ import {
   ProcessPending,
   ProcessSummaries,
   SandboxAction,
+  SandboxBrowserAbandonResult,
   SandboxBrowserArtifactAnswer,
   SandboxBrowserSubmission,
+  SandboxCheckpointObservation,
   SandboxCheckpointResult,
   SandboxCompletionReceipt,
   SandboxExecutionRefusal,
@@ -36,9 +39,17 @@ import {
   SandboxOwner,
   SandboxProcessAnswer,
   SandboxProcessSubmission,
+  SandboxRecoveryAction,
+  SandboxRecoveryCheckpointRefusal,
+  SandboxRecoveryCheckpointRefusalReason,
+  SandboxRecoveryCheckpointRequest,
+  SandboxRecoveryCheckpointResult,
   SandboxReport,
   SandboxRequest,
   SandboxRunId,
+  SandboxStopObservation,
+  SandboxStopPhase,
+  SandboxStopReceipt,
 } from '@mechane/sandbox-wire';
 import type { ExecutionId, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise } from '@mechane/utilities';
@@ -51,13 +62,14 @@ import { runBrowser } from './browser/run-browser.ts';
 import { capacityClient } from './capacity/capacity-client.ts';
 import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
 import { runFileCheckpoint } from './checkpoints/run-file-checkpoint.ts';
+import { resumeRecoveryCheckpoint } from './checkpoints/run-recovery-checkpoint.ts';
 import { deliverCompletions } from './completions/deliver-completions.ts';
 import { observeBackgroundWork } from './completions/observe-background-work.ts';
 import { BACKGROUND_OBSERVE_INTERVAL, MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
 import type { SandboxEnvironment, SandboxRuntimeSettings } from './environment.ts';
+import { RecoveryCheckpointRefused } from './errors.ts';
 import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
 import { cleanupReadyEvidence } from './evidence/evidence-cleanup.ts';
-import { readEvidenceContent } from './evidence/evidence-content.ts';
 import { exportEvidence } from './evidence/export-evidence.ts';
 import { listEvidenceArtifacts, readEvidenceArtifact } from './evidence/read-evidence.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
@@ -74,12 +86,16 @@ import { observeManagedProcess, startManagedProcess } from './processes/managed-
 import { machineProvider } from './providers/machine-provider.ts';
 import { sandboxSettings } from './providers/sandbox-settings.ts';
 import { sandboxCalls } from './sandbox-calls.ts';
+import { serveEvidenceContent } from './service/serve-evidence-content.ts';
 import type { MachineIdInput, MachineProvider, WorkspaceFiles } from './types.ts';
-import { advanceIdleWorkspace } from './workspace/advance-idle-workspace.ts';
+import { advanceSandboxStop, failSandboxStop } from './workspace/advance-sandbox-stop.ts';
+import { backfillSandboxStop } from './workspace/backfill-sandbox-stop.ts';
+import { requestSandboxStop } from './workspace/request-sandbox-stop.ts';
 
 type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
 type ManageInput = { readonly request: typeof SandboxRequest.Encoded };
 type CheckpointInput = { readonly operationId: SandboxOperationId };
+type RecoveryCheckpointInput = CheckpointInput & { readonly request: typeof SandboxRecoveryCheckpointRequest.Encoded };
 type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
 type ResumeInput = ObserveInput & { readonly environment: RunExecutionInput['environment'] };
 type CancelInput = { readonly executionId: ExecutionId };
@@ -100,13 +116,6 @@ type BrowserArtifactInput = {
 
 type EvidenceIdentityInput = { readonly artifactId: EvidenceArtifactId };
 
-const EvidenceContentRequest = Schema.Struct({
-  artifactId: EvidenceArtifactId,
-  /** Null requests the complete media object rather than a byte range. */
-  rangeHeader: Schema.OptionFromNullOr(Schema.String),
-});
-
-type EvidenceContentInput = typeof EvidenceContentRequest.Encoded;
 type ProcessStartResultInput = { readonly result: Result.Result<SandboxProcessAnswer, unknown> };
 
 function processStartResult({ result }: ProcessStartResultInput): SandboxProcessAnswer {
@@ -213,6 +222,54 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     await this.#armBackground();
 
     return Schema.encodeSync(SandboxCheckpointResult)(result);
+  }
+
+  async retryCheckpoint({
+    operationId,
+    request,
+  }: RecoveryCheckpointInput): Promise<typeof SandboxRecoveryCheckpointResult.Encoded> {
+    const decodedId = Schema.decodeUnknownSync(SandboxOperationId)(operationId);
+    const decoded = Schema.decodeUnknownSync(SandboxRecoveryCheckpointRequest)(request);
+    const purpose = FileCheckpointPurpose.cases.Recovery.make({ operationId: decodedId, ...decoded });
+
+    const promise = this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+        this.#capacity.requireOwner();
+
+        return await runFileCheckpoint({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          purpose,
+        });
+      },
+    });
+
+    const result = await capturePromise({ promise });
+
+    await this.#armBackground();
+
+    if (Result.isFailure(result)) {
+      const cause = result.failure;
+
+      if (Schema.is(FileCheckpointIdentityReused)(cause)) {
+        const reason = SandboxRecoveryCheckpointRefusalReason.OperationReused;
+        const refusal = SandboxRecoveryCheckpointRefusal.cases.RecoveryCheckpointRefused.make({ reason });
+
+        return Schema.encodeSync(SandboxRecoveryCheckpointResult)(refusal);
+      }
+
+      if (Schema.is(RecoveryCheckpointRefused)(cause)) {
+        const refusal = SandboxRecoveryCheckpointRefusal.cases.RecoveryCheckpointRefused.make({ reason: cause.reason });
+
+        return Schema.encodeSync(SandboxRecoveryCheckpointResult)(refusal);
+      }
+    }
+
+    const answer = Result.getOrThrow(result);
+
+    return Schema.encodeSync(SandboxRecoveryCheckpointResult)(answer);
   }
 
   async manage({ request: input }: ManageInput): Promise<typeof SandboxReport.Encoded> {
@@ -499,6 +556,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     if (Option.isNone(call)) {
       const progress = BrowserProgress.cases.Pending.make({
+        isDispatchRequired: false,
         reason: 'The browser action has no sandbox receipt yet; this read does not dispatch it',
       });
 
@@ -514,11 +572,25 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     return Schema.encodeSync(BrowserEvidenceProgress)(result);
   }
 
+  async abandonBrowser({
+    ...input
+  }: typeof SandboxBrowserSubmission.Encoded): Promise<typeof SandboxBrowserAbandonResult.Encoded> {
+    this.#capacity.requireOwner();
+
+    const submission = Schema.decodeUnknownSync(SandboxBrowserSubmission)(input);
+    const call = this.#store.atomic({ run: () => this.#store.abandonBrowserCall(submission) });
+    const isNotDispatched = Option.isNone(call.machineId) && Option.isNone(call.response);
+    const isRefused = Option.exists(call.failure, (failure) => !failure.isUncertain);
+    const isAbandoned = isNotDispatched && isRefused;
+
+    return Schema.encodeSync(SandboxBrowserAbandonResult)({ isAbandoned });
+  }
+
   async #browserEvidence({ call, shouldDispatch }: BrowserEvidenceInput): Promise<BrowserEvidenceProgress> {
     const owner = this.#owner();
     const identity = { ...owner, runId: call.runId, sessionId: call.sessionId, toolCallId: call.toolCallId };
 
-    return await runBrowserWithEvidence({
+    const answer = await runBrowserWithEvidence({
       store: this.#store,
       bucket: this.#workspace.bucket,
       identity,
@@ -542,7 +614,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         }
 
         if (maintenanceActive({ store: this.#store })) {
-          return BrowserProgress.cases.Pending.make({ reason: 'The original browser request is still pending' });
+          return BrowserProgress.cases.Pending.make({
+            isDispatchRequired: false,
+            reason: 'The original browser request is still pending',
+          });
         }
 
         const promise = runBrowser({
@@ -567,6 +642,17 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       readArtifact: ({ machineId, request }) =>
         readBrowserArtifact({ store: this.#store, provider: this.#provider, machineId, request }),
     });
+
+    if (!BrowserProgress.guards.Pending(answer.progress)) {
+      return answer;
+    }
+
+    const current = this.#store.requiredBrowserCall({ requestId: call.request.requestId });
+
+    const isDispatchRequired =
+      Option.isNone(current.machineId) && Option.isNone(current.response) && Option.isNone(current.failure);
+
+    return { ...answer, progress: { ...answer.progress, isDispatchRequired } };
   }
 
   async readBrowserArtifact({
@@ -646,11 +732,8 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     return Schema.encodeSync(EvidenceArtifact)(found.value);
   }
 
-  async readEvidenceContent({ artifactId, rangeHeader }: EvidenceContentInput): Promise<Response> {
-    const request = Schema.decodeUnknownSync(EvidenceContentRequest)({ artifactId, rangeHeader });
-    const owner = this.#owner();
-
-    return await readEvidenceContent({ store: this.#store, bucket: this.#workspace.bucket, ...owner, ...request });
+  override async fetch(request: Request): Promise<Response> {
+    return await serveEvidenceContent({ request, store: this.#store, bucket: this.#workspace.bucket });
   }
 
   #owner(): SandboxOwner {
@@ -677,30 +760,72 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     await this.#armIdle();
   }
 
-  async stop(): Promise<void> {
-    await this.#calls.run({
+  async stop(): Promise<typeof SandboxStopReceipt.Encoded> {
+    const answer = await this.#calls.run({
       run: async () => {
-        await Promise.all(this.#stops);
+        const pendingStops = Promise.all(this.#stops);
+        const canceled = await capturePromise({ promise: pendingStops });
 
-        const workspace = this.#store.workspace();
+        const receipt = requestSandboxStop({ store: this.#store });
+        const isCompleted = receipt.phase === SandboxStopPhase.Completed;
 
-        if (Option.isSome(workspace.recovery) || maintenanceActive({ store: this.#store })) {
-          return;
+        if (Result.isFailure(canceled) && !isCompleted) {
+          return failSandboxStop({
+            store: this.#store,
+            receipt,
+            cause: canceled.failure,
+            recoveryAction: SandboxRecoveryAction.RepairWorkspace,
+          });
         }
 
-        const latest = this.#store.latestMachine();
+        const needsRepair =
+          receipt.phase === SandboxStopPhase.Failed && receipt.recoveryAction !== SandboxRecoveryAction.RetryStop;
+
+        if (isCompleted || needsRepair) {
+          return receipt;
+        }
+
         const now = DateTime.nowUnsafe();
-
-        if (Option.isSome(latest)) {
-          const machineId = MachineId.make(latest.value.id);
-
-          this.#store.requestMachineDrain({ machineId });
-        }
 
         this.#store.setSandboxIdleAt({ at: now });
         await this.#alarm.arm({ at: now });
+
+        return receipt;
       },
     });
+
+    return Schema.encodeSync(SandboxStopReceipt)(answer);
+  }
+
+  readStop({ operationId }: CheckpointInput): typeof SandboxStopObservation.Encoded {
+    const identity = Schema.decodeUnknownSync(SandboxOperationId)(operationId);
+    const receipt = this.#store.sandboxStop({ operationId: identity });
+
+    if (Option.isSome(receipt)) {
+      return Schema.encodeSync(SandboxStopObservation)(receipt);
+    }
+
+    const drain = this.#store.machineDrainForOperation({ operationId: identity });
+    const restored = Option.map(drain, (value) => backfillSandboxStop({ store: this.#store, drain: value }));
+
+    return Schema.encodeSync(SandboxStopObservation)(restored);
+  }
+
+  readCheckpoint({ operationId }: CheckpointInput): typeof SandboxCheckpointObservation.Encoded {
+    const identity = Schema.decodeUnknownSync(SandboxOperationId)(operationId);
+    const purpose = FileCheckpointPurpose.cases.Activation.make({ operationId: identity });
+    const result = this.#store.fileCheckpointResult({ purpose });
+
+    return Schema.encodeSync(SandboxCheckpointObservation)(result);
+  }
+
+  readRecoveryCheckpoint({ operationId }: CheckpointInput): typeof SandboxCheckpointObservation.Encoded {
+    this.#capacity.requireOwner();
+
+    const identity = Schema.decodeUnknownSync(SandboxOperationId)(operationId);
+    const result = this.#store.recoveryCheckpointResult({ operationId: identity });
+
+    return Schema.encodeSync(SandboxCheckpointObservation)(result);
   }
 
   async cancelExecution({ executionId }: CancelInput): Promise<void> {
@@ -746,6 +871,18 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   async #onAlarm(): Promise<void> {
     await Promise.all(this.#stops);
 
+    const recovery = this.#store.pendingRecoveryCheckpoint();
+    const checkpoint = this.#store.workspace().checkpoint;
+
+    if (Option.isSome(recovery) && Option.isNone(checkpoint)) {
+      await resumeRecoveryCheckpoint({
+        store: this.#store,
+        provider: this.#provider,
+        workspace: this.#workspace,
+        purpose: recovery.value,
+      });
+    }
+
     const promise = observeBackgroundWork({ store: this.#store, provider: this.#provider, workspace: this.#workspace });
     const observation = await capturePromise({ promise });
 
@@ -784,6 +921,17 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const idleAt = this.#store.sandboxIdleAt();
     const now = DateTime.nowUnsafe();
+    const stop = this.#store.latestSandboxStop();
+
+    const requiresWorkspaceRepair = Option.exists(
+      stop,
+      (receipt) =>
+        receipt.phase === SandboxStopPhase.Failed && receipt.recoveryAction === SandboxRecoveryAction.RepairWorkspace,
+    );
+
+    if (Option.isNone(idleAt) && requiresWorkspaceRepair) {
+      return;
+    }
 
     if (Option.isSome(idleAt) && DateTime.isLessThan(now, idleAt.value)) {
       await this.#alarm.arm({ at: idleAt.value });
@@ -814,13 +962,21 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     await this.#alarm.arm({ at });
 
-    const canStop = await advanceIdleWorkspace({
+    const receipt = await advanceSandboxStop({
       store: this.#store,
       provider: this.#provider,
       workspace: this.#workspace,
+      machineId,
     });
 
-    if (!canStop) {
+    if (receipt.phase === SandboxStopPhase.Failed && receipt.recoveryAction !== SandboxRecoveryAction.RetryStop) {
+      this.#store.clearSandboxIdleAt();
+      await this.#alarm.disarmAt({ at });
+
+      return;
+    }
+
+    if (receipt.phase !== SandboxStopPhase.Completed) {
       const checkpoint = this.#store.workspace().checkpoint;
 
       if (Option.isSome(checkpoint)) {
@@ -834,9 +990,6 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       return;
     }
 
-    this.#store.loseMachine({ machineId, now });
-    await this.#alarm.arm({ at });
-    await this.#provider.stop({ machineId });
     this.#store.clearSandboxIdleAt();
     await this.#alarm.disarmAt({ at });
   }
@@ -853,6 +1006,13 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   async #armBackground(): Promise<void> {
     const now = DateTime.nowUnsafe();
     const nextCompletion = this.#store.nextCompletionAt();
+    const idleAt = this.#store.sandboxIdleAt();
+
+    if (Option.isSome(idleAt)) {
+      const at = DateTime.max(now, idleAt.value);
+
+      await this.#alarm.arm({ at });
+    }
 
     if (Option.isSome(nextCompletion)) {
       const at = DateTime.max(now, nextCompletion.value);
@@ -863,7 +1023,9 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const checkpoint = this.#store.workspace().checkpoint;
     const work = this.#store.backgroundWork();
 
-    if (BackgroundWork.guards.Idle(work) && Option.isNone(checkpoint)) {
+    const recovery = this.#store.pendingRecoveryCheckpoint();
+
+    if (BackgroundWork.guards.Idle(work) && Option.isNone(checkpoint) && Option.isNone(recovery)) {
       return;
     }
 

@@ -8,14 +8,18 @@ Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked
 mise run check
 ```
 
-Use `mise run start` to run the compiled Node service with persistent Postgres state. The
-[local guide](../workspaces/core/packages/node/stack/README.md) describes database, sandbox, and model configuration.
-Release archives require no contributor toolchain. Keep credentials outside version control.
+Start Docker and use the release-qualified celld identity before local runtime work. An explicit
+`MECHANE_LOCAL_CELLD_BINARY` override contains `executable`, `version`, and `sha256`; the launcher verifies them. Follow
+the [local guide](../workspaces/core/packages/node/stack/README.md) for the current pin and prerequisites.
 
-Use `mise run dev` for a disposable development fixture. It supplies local GitHub sign-in and a scripted model.
-Development fixtures and checks require no provider credentials.
+`mise run dev` and `mise run start` retain state in `~/.local/state/mechane`, or `MECHANE_LOCAL_STATE_DIR`. The
+supervisor runs a watched application Worker, separate environment host, real Docker guests, and verified TLS Postgres.
+Application reload preserves guests. Default HTTP fixtures supply local GitHub sign-in and deterministic model responses
+without provider credentials.
 
-Use `mise -C workspaces/core run TASK` for one product task and `mise run mechane -- --help` for the CLI from source.
+Set `MECHANE_LOCAL_USE_FIXTURES=false` for configured providers and supply the documented runtime and authentication
+settings. Keep credentials outside version control. The launcher owns local database credentials and its keyring.
 
-The [operator guide](runbook.md) links the installation procedures. The public repository contains no credentials,
-production account identifiers, or organization admission lists.
+Use `mise -C workspaces/core run TASK` for a product task and `mise run mechane -- --help` for the source CLI. The
+[operator guide](runbook.md) links release installation and recovery. Operators consume qualified compiled artifacts
+without a contributor toolchain.

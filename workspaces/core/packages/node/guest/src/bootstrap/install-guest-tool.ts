@@ -21,7 +21,7 @@ type InstallGuestToolInput = {
   readonly archive: SandboxToolArchive;
   readonly folder: string;
   readonly bin: string;
-  readonly environment: Readonly<Record<string, string>>;
+  readonly environment: () => Readonly<Record<string, string>>;
 };
 
 /** Verifies the pinned archive and executable version before installing one tool into private machine scratch. */

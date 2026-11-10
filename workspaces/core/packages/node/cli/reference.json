@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.27.1",
+  "release": "0.28.0",
   "flags": [
     {
       "name": "origin",
@@ -36,7 +36,7 @@
   "commands": [
     {
       "name": "connection create",
-      "summary": "register a reusable remote MCP connection with explicitly approved read-only tools",
+      "summary": "register a reusable remote MCP connection with an explicit tool policy and allowlist",
       "shape": "document",
       "operations": [
         "listWorkspaces",
@@ -70,7 +70,7 @@
         {
           "name": "policy",
           "kind": "text",
-          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "summary": "read_only_free permits free reads; idempotent_free also permits explicitly idempotent free writes",
           "required": true
         }
       ],
@@ -112,7 +112,7 @@
         {
           "name": "policy",
           "kind": "text",
-          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "summary": "read_only_free permits free reads; idempotent_free also permits explicitly idempotent free writes",
           "required": true
         }
       ],
@@ -610,7 +610,7 @@
     },
     {
       "name": "mech fork",
-      "summary": "fork an idle mech into a new identity with its context and history; sandbox files remain with the source mech",
+      "summary": "fork an idle mech into a paused identity with its working context and linked source history; sandbox files remain with the source mech",
       "shape": "document",
       "operations": [
         "listWorkspaces",
@@ -1064,6 +1064,109 @@
       ]
     },
     {
+      "name": "self wake schedule",
+      "summary": "persist a wake for this mech and return its receipt immediately",
+      "shape": "document",
+      "operations": [
+        "scheduleSelfWake"
+      ],
+      "flags": [
+        {
+          "name": "wake-id",
+          "kind": "text",
+          "summary": "reuse this identity to retry the same schedule",
+          "required": false
+        },
+        {
+          "name": "after-seconds",
+          "kind": "text",
+          "summary": "wake after this many seconds, resolved once on first acceptance",
+          "required": false
+        },
+        {
+          "name": "at",
+          "kind": "text",
+          "summary": "wake at this RFC 3339 time; use exactly one deadline flag",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "text",
+          "summary": "the notification delivered to this mech at the deadline"
+        }
+      ]
+    },
+    {
+      "name": "self wake show",
+      "summary": "show one wake receipt for this mech",
+      "shape": "document",
+      "operations": [
+        "showSelfWake"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "wake-id",
+          "summary": "the durable wake receipt to inspect or cancel"
+        }
+      ]
+    },
+    {
+      "name": "self wake list",
+      "summary": "list wake receipts for this mech",
+      "shape": "document",
+      "operations": [
+        "listSelfWakes"
+      ],
+      "flags": [
+        {
+          "name": "after",
+          "kind": "text",
+          "summary": "continue after this wake receipt from the previous page",
+          "required": false
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "name": "self wake cancel",
+      "summary": "cancel a wake or return its already delivered receipt",
+      "shape": "document",
+      "operations": [
+        "cancelSelfWake"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "wake-id",
+          "summary": "the durable wake receipt to inspect or cancel"
+        }
+      ]
+    },
+    {
+      "name": "self message",
+      "summary": "explicitly publish a Console message from this mech",
+      "shape": "document",
+      "operations": [
+        "publishSelfMessage"
+      ],
+      "flags": [
+        {
+          "name": "message-id",
+          "kind": "text",
+          "summary": "reuse this identity to retry the same publication",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "text",
+          "summary": "the public message text"
+        }
+      ]
+    },
+    {
       "name": "eval run",
       "summary": "run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume",
       "shape": "document",
@@ -1113,6 +1216,10 @@
     {
       "name": "MECHANE_API_KEY",
       "summary": "a key from mechane key create, used in place of the saved login, such as by an agent or CI"
+    },
+    {
+      "name": "MECHANE_SELF_TOKEN",
+      "summary": "a short-lived credential injected by the environment for commands scoped to the current mech"
     },
     {
       "name": "XDG_CONFIG_HOME",

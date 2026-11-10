@@ -1,6 +1,7 @@
 import { HttpMethod } from '@mechane/records';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option, Result } from 'effect';
+import { Hex } from 'effect/encoding';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
@@ -30,7 +31,47 @@ export async function uploadCheckpointPart({
     return;
   }
 
-  await workspace.bucket.put(key, bytes, { sha256, customMetadata: { archiveSha256: archive.sha256 } });
+  const uploaded = await workspace.bucket.put(key, bytes, {
+    sha256,
+    customMetadata: { archiveSha256: archive.sha256 },
+    onlyIf: { etagDoesNotMatch: '*' },
+  });
+
+  const stored = Option.fromNullishOr(uploaded);
+
+  if (Option.isNone(stored)) {
+    const found = await workspace.bucket.head(key);
+    const existing = Option.fromNullishOr(found);
+    const recorded = Option.flatMap(existing, (value) => Option.fromUndefinedOr(value.checksums.sha256));
+    const expectedBytes = new Uint8Array(sha256);
+    const expected = Hex.encode(expectedBytes);
+
+    const actual = Option.map(recorded, (value) => {
+      const digestBytes = new Uint8Array(value);
+
+      return Hex.encode(digestBytes);
+    });
+
+    const size = Option.map(existing, (value) => value.size);
+    const metadata = Option.flatMap(existing, (value) => Option.fromNullishOr(value.customMetadata));
+    const archiveDigest = Option.map(metadata, (value) => value['archiveSha256']);
+
+    if (
+      !Option.contains(size, bytes.byteLength) ||
+      !Option.contains(actual, expected) ||
+      !Option.contains(archiveDigest, archive.sha256)
+    ) {
+      const cause = new WorkspaceTransferFailed({
+        generation,
+        step: WorkspaceStep.Part,
+        reason: 'immutable archive part conflicts with its checkpoint',
+      });
+
+      const failure = Result.fail(cause);
+
+      Result.getOrThrow(failure);
+    }
+  }
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {
     return;

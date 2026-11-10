@@ -1,74 +1,34 @@
-import { Option, Result, Schema } from 'effect';
+import { SecureOrigin } from '@mechane/deployment';
+import { Result, Schema } from 'effect';
 import type { SandboxRuntimeSettings, SecretSource } from '../environment.ts';
 
 type RuntimeSettingsInput = { readonly settings: SandboxRuntimeSettings };
 type SecretInput = { readonly source: SecretSource };
 
-const RuntimeTransport = Schema.Struct({ key: Schema.NonEmptyString, secret: Schema.NonEmptyString });
-const OptionalRuntimeTransport = Schema.OptionFromNullOr(RuntimeTransport);
-const RuntimeTransportJson = Schema.fromJsonString(OptionalRuntimeTransport);
-const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['127.0.0.1', 'localhost', '[::1]']);
 const SERVICE_KEY_MIN_CHARACTERS = 32;
 const hasServiceKeyLength = Schema.isMinLength(SERVICE_KEY_MIN_CHARACTERS);
 const ServiceKey = Schema.String.check(hasServiceKeyLength);
-const MODAL_KEY_HEADER = 'Modal-Key';
-const MODAL_SECRET_HEADER = 'Modal-Secret';
-
-const HOSTED_RUNTIME_ORIGIN =
-  /^https:\/\/[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.(?:modal\.run|[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.modal\.direct)\/?$/;
-
-const RuntimeProtocol = { Http: 'http:', Https: 'https:' } as const;
 const ROOT_PATH = '/';
 
-class RuntimeTransportInvalid extends Schema.TaggedError<RuntimeTransportInvalid>()('RuntimeTransportInvalid', {}) {}
+class RuntimeOriginInvalid extends Schema.TaggedError<RuntimeOriginInvalid>()('RuntimeOriginInvalid', {}) {}
 
 /** Runtime transport is either the authenticated hosted origin or an explicitly configured loopback host. */
 export function runtimeOrigin({ settings }: RuntimeSettingsInput): URL {
-  const decoded = Schema.decodeUnknownResult(Schema.URLFromString)(settings.origin);
+  const decoded = Schema.decodeUnknownResult(SecureOrigin)(settings.origin);
   const origin = Result.getOrThrow(decoded);
-  const isLoopback = origin.protocol === RuntimeProtocol.Http && LOOPBACK_HOSTS.has(origin.hostname);
   const hasNoOuterWhitespace = settings.origin.trim() === settings.origin;
-
-  const isHosted =
-    origin.protocol === RuntimeProtocol.Https && hasNoOuterWhitespace && HOSTED_RUNTIME_ORIGIN.test(settings.origin);
 
   const isBareOrigin = origin.pathname === ROOT_PATH && origin.search === '' && origin.hash === '';
   const hasNoCredentials = origin.username === '' && origin.password === '';
-  const isSupportedOrigin = isLoopback || isHosted;
 
-  if (!isSupportedOrigin || !isBareOrigin || !hasNoCredentials) {
-    const cause = new RuntimeTransportInvalid({});
+  if (!hasNoOuterWhitespace || !isBareOrigin || !hasNoCredentials) {
+    const cause = new RuntimeOriginInvalid({});
     const failure = Result.fail(cause);
 
     return Result.getOrThrow(failure);
   }
 
   return origin;
-}
-
-/** Loopback needs no outer transport credential; every hosted call requires the configured Modal pair. */
-export async function runtimeHeaders({ settings }: RuntimeSettingsInput): Promise<Headers> {
-  const origin = runtimeOrigin({ settings });
-  const value = await readSecret({ source: settings.transport });
-  const decoded = Schema.decodeUnknownResult(RuntimeTransportJson)(value);
-  const transport = Result.getOrThrow(decoded);
-  const headers = new Headers();
-
-  if (Option.isNone(transport) && origin.protocol === RuntimeProtocol.Http) {
-    return headers;
-  }
-
-  if (Option.isNone(transport)) {
-    const cause = new RuntimeTransportInvalid({});
-    const failure = Result.fail(cause);
-
-    return Result.getOrThrow(failure);
-  }
-
-  headers.set(MODAL_KEY_HEADER, transport.value.key);
-  headers.set(MODAL_SECRET_HEADER, transport.value.secret);
-
-  return headers;
 }
 
 /** The private service credential authenticates both directions independently of command credentials. */

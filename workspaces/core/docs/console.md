@@ -35,6 +35,9 @@ An activation trace shows recorded outcomes, model requests, safe tool projectio
 implied public reply. Preserved historical replies remain linked to their exact event. Tool completion and command exit
 are distinct: a returned command with a nonzero exit is still a failed command.
 
+Native traces describe Pi and actor execution. Imported traces carry historical provenance and an evidence notice;
+reading or importing an old receipt does not execute its tool again.
+
 The request waterfall shows reservation-to-settlement intervals, not exact provider inference time. Missing usage
 remains unknown. A tool duration needs both recorded endpoints. Raw credential-bearing arguments do not enter the
 browser. Missing, unavailable, and truncated evidence remain labeled across trace views.
@@ -94,17 +97,22 @@ establishes the assembled experience.
 
 ## Local development
 
-`mise run dev` builds the complete release and starts disposable Node/Postgres with local identity and scripted models.
-Open the printed origin plus `/console`. `mise run start` uses retained local state and real model credentials. The
-[local guide](../packages/node/stack/README.md) owns setup and service lifetime.
+`mise run dev` starts a retained celld application Worker, separate environment host, real Docker guests, and verified
+TLS Postgres. Default HTTP fixtures provide local identity and scripted models. Console HMR and watched Worker source
+reload preserve the guest. Open the printed origin plus `/console`.
+
+`mise run start` also uses retained local state. Configured providers require `MECHANE_LOCAL_USE_FIXTURES=false` and
+their runtime settings. The [local guide](../packages/node/stack/README.md) owns qualified celld selection, setup, and
+service lifetime.
 
 From `workspaces/core`, `pnpm --filter @mechane/console storybook` provides component development and
 `pnpm --filter @mechane/console build-storybook` checks its isolated build. Stories compose the same components and
-frame as the application. The [component guide](components.md) owns catalog usage. Runtime acceptance uses the packaged
-server, real authentication boundaries, and deterministic providers.
+frame as the application. The [component guide](components.md) owns catalog usage. Runtime acceptance uses the compiled
+Worker, real authentication boundaries, and deterministic providers.
 
 ## Release
 
-The Console ships in the Node service's immutable artifact, including verified Worker/WASM assets and dependency
-notices. It has no separate deployment or browser secret configuration. `/api/v1` owns domain operations and `/console`
-owns assets; a missing API never returns the application shell. HTML is uncached and hashed assets are immutable.
+The Console ships in the application's immutable Worker release, with verified asset inventory and dependency notices.
+The Worker serves it through `ASSETS` at the installation's origin. It has no separate deployment or browser secret
+configuration. `/api/v1` owns domain operations and `/console` owns assets; a missing API never returns the application
+shell. HTML is uncached and hashed assets are immutable.

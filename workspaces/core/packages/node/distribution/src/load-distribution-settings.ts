@@ -23,12 +23,17 @@ const INHERITED_NAMES = [
 const OUTPUT_URL: Readonly<URL> = new URL('../../../../dist/distribution', import.meta.url);
 const OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 
+const ARGUMENT_MODES: ReadonlySet<DistributionMode> = new Set([
+  DistributionMode.Qualify,
+  DistributionMode.VerifyQualified,
+]);
+
 /** Reads the distribution command and its allowed child-process environment once. */
 export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(function* (): Effect.fn.Return<
   DistributionSettings,
   DistributionFailed
 > {
-  const [modeText, destination, ...extra] = process.argv.slice(PROGRAM_ARGUMENTS_START);
+  const [modeText, destination, argument, ...extra] = process.argv.slice(PROGRAM_ARGUMENTS_START);
   const modeSchema = Schema.Enum(DistributionMode);
 
   const mode = yield* Schema.decodeUnknownEffect(modeSchema)(modeText).pipe(
@@ -40,10 +45,15 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
   const selectedFolder = Option.fromNullishOr(destination);
   const isMissingFolder = Option.isNone(selectedFolder);
 
-  if (extra.length > 0 || (mode !== DistributionMode.Build && isMissingFolder)) {
+  const needsArgument = ARGUMENT_MODES.has(mode);
+  const isMissingRequiredFolder = mode !== DistributionMode.Build && isMissingFolder;
+  const hasWrongArguments = extra.length > 0 || needsArgument !== (argument !== undefined);
+
+  if (isMissingRequiredFolder || hasWrongArguments) {
     return yield* new DistributionFailed({
       step: DistributionStep.Settings,
-      reason: 'use build [OUTPUT], verify OUTPUT, or preview-module OUTPUT',
+      reason:
+        'use build [OUTPUT], verify OUTPUT, preview-module OUTPUT, qualify OUTPUT REQUEST.json, or verify-qualified OUTPUT SHA256',
     });
   }
 
@@ -59,5 +69,5 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
 
   const entries = INHERITED_NAMES.flatMap(variableEntries);
 
-  return { mode, folder: resolve(folder), inherited: Record.fromEntries(entries) };
+  return { mode, folder: resolve(folder), inherited: Record.fromEntries(entries), argument };
 });

@@ -17,9 +17,8 @@ const VALUES = {
     ignore: [
       '**/node_modules/**',
       '**/dist/**',
-      'packages/node/server/.output/**',
+      'packages/worker/server/.output/**',
       '**/.swc/**',
-      'packages/node/runtime/.well-known/workflow/**',
       '**/reference.json',
       'lint/shipped-wire.json',
       'lint/baseline/**',

@@ -1,5 +1,5 @@
 import { RecordId } from '@mechane/records';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { SandboxRecoveryCheckpointRefusalReason, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 
 /** A maintenance request cannot proceed without violating its recorded workspace intent. */
@@ -14,3 +14,8 @@ export class WorkspaceTransferFailed extends Schema.TaggedError<WorkspaceTransfe
   step: Schema.Enum(WorkspaceStep),
   reason: Schema.String,
 }) {}
+
+export class RecoveryCheckpointRefused extends Schema.TaggedError<RecoveryCheckpointRefused>()(
+  'RecoveryCheckpointRefused',
+  { reason: Schema.Enum(SandboxRecoveryCheckpointRefusalReason) },
+) {}

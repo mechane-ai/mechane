@@ -35,7 +35,8 @@ For each pair of scenarios a change runs concurrently, does either one write sta
 Promise-based smoke entry starts the shared stack, runs the catalog, stops the stack in `finally`, and lets its entry
 boundary report failure. Requests and assertions belong to scenario functions and their focused support operations.
 
-Scenarios use the compiled Node server, real Postgres, and external HTTP fixtures. They run sequentially while they
+Scenarios use the compiled Worker on celld, verified TLS Postgres, real Docker guests, and external HTTP fixtures.
+They run sequentially while they
 share service state, provider counters, or restart the same process. Each case isolates the principals and records it
 owns. Restart checks preserve the tested durable state and remove only their temporary settings and processes.
 Credential scans inspect the state and logs produced by preceding work. A passing local compute fixture does not

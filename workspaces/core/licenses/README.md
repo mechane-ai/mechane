@@ -2,22 +2,23 @@
 
 These files preserve notices shipped with Mechane artifacts. `apache-2.0.js` contains the Mechane notice and Apache-2.0
 text. `effect.js` and `semver.js` copy their installed packages' MIT notices. The CLI embeds this directory. The guest
-and sandbox Worker include the Mechane and Effect notices.
+and its installed CLI include the Mechane, Effect, and reachable semver notices.
 
-## Node and browser artifacts
+## Worker and browser artifacts
 
-The Node [build collector](../packages/node/server/build/licenses.mjs) writes `THIRD_PARTY_LICENSES.txt` from the
-bundled programs' dependency graph and Workflow's public transform observer. It retains packaged license, notice, and
-copying files. Complete MIT notices in packaged READMEs are also accepted. Missing notices require an exact-version
-entry in [native/supplements.json](native/supplements.json); unknown omissions fail the build.
+The [build collector](../packages/node/distribution/src/build/dependency-notices.ts) writes `THIRD_PARTY_LICENSES.txt`
+from the bundled programs' actual dependency graph. It retains packaged license, notice, and copying files. Complete MIT
+notices in packaged READMEs are also accepted. Missing notices require an exact-version entry in
+[native/supplements.json](native/supplements.json); unknown omissions fail the build.
 
 Supplements retain pinned upstream license text where available. Packages that publish only an MIT declaration retain
 that metadata and the unmodified SPDX reference text, without inventing copyright attribution. The QuickJS supplement
 also preserves its pinned QuickJS-NG license. This inventory is not a complete audit of precompiled native dependencies.
 
 Vite generates the Console's `THIRD_PARTY_LICENSES.txt`. Its worker collector adds dependencies from worker bundles and
-the embedded wa-sqlite 1.5.0 notice. The Node archive includes both inventories, linked bundle comments, `LICENSE`, and
-`NOTICE`; its file inventory verifies their bytes. Review generated notices when changing dependencies or build inputs.
+the embedded wa-sqlite 1.5.0 notice. The runtime module includes both inventories, linked bundle comments, `LICENSE`,
+and `NOTICE`; its file inventory verifies their bytes. Review generated notices when changing dependencies or build
+inputs.
 
 ## Guest image
 

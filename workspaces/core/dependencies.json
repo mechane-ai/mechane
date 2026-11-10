@@ -85,7 +85,7 @@
     "criterion": "reuse"
   },
   "@mechane/utilities": {
-    "owns": "Isomorphic, domain-free functions beside Effect, and the only code that builds promises",
+    "owns": "Isomorphic, domain-free functions and Promise helpers beside Effect",
     "layer": 0,
     "lane": "shared",
     "dialect": "plain",
@@ -116,7 +116,7 @@
     "dialect": "plain",
     "kind": "object",
     "criterion": "state",
-    "consumers": ["@mechane/sandbox-service"]
+    "consumers": ["@mechane/server"]
   },
   "@mechane/program": {
     "owns": "What every executable shares: output channels, exit, child processes, signals and files",
@@ -154,16 +154,16 @@
     "consumers": ["@mechane/distribution"]
   },
   "@mechane/wrangler": {
-    "owns": "The sandbox service build descriptor and immutable Worker bundle metadata",
+    "owns": "The application Worker build descriptor and immutable bundle metadata",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
     "kind": "library-program",
     "criterion": "reuse",
-    "consumers": ["@mechane/distribution"]
+    "consumers": ["@mechane/checks", "@mechane/distribution", "@mechane/stack"]
   },
   "@mechane/stack": {
-    "owns": "The compiled Node runtime and real Postgres local lifecycle, with external-service HTTP fixtures for development and smoke checks",
+    "owns": "The celld application and retained environment hosts, real Postgres and Docker lifecycle, and external-service HTTP fixtures",
     "layer": 5,
     "lane": "node",
     "dialect": "plain",
@@ -337,7 +337,7 @@
     "consumers": []
   },
   "@mechane/distribution": {
-    "owns": "Immutable compiled Node and sandbox installation archives, release manifests, checksums, and artifact verification",
+    "owns": "Immutable Worker, Console, CLI and guest installation artifacts, release manifests, checksums, and verification",
     "layer": 7,
     "lane": "node",
     "dialect": "effect",
@@ -422,40 +422,24 @@
     "consumers": ["@mechane-ai/elements", "@mechane/console"]
   },
   "@mechane/runtime": {
-    "owns": "Persistent mech identity, durable notification admission and context, bounded native activations, model accounting, and generic environment tools",
+    "owns": "One Pi durable mech actor, immutable notifications, guarded tools, working context, native views, and provider accounting",
     "layer": 6,
-    "lane": "node",
+    "lane": "worker",
     "dialect": "plain",
     "kind": "library",
     "criterion": "state",
     "consumers": ["@mechane/server"],
-    "confines": [
-      "@ai-sdk/mcp",
-      "@ai-sdk/provider",
-      "@ai-sdk/workflow",
-      "@openrouter/ai-sdk-provider",
-      "@workflow/serde",
-      "pg"
-    ]
+    "confines": ["@earendil-works/pi-ai", "@earendil-works/pi-durable", "@earendil-works/chord", "@ai-sdk/mcp"]
   },
   "@mechane/server": {
-    "owns": "The Node service entry: HTTP admission and authentication, native UI streams, Workflow lifecycle, and console assets",
-    "layer": 7,
-    "lane": "node",
-    "dialect": "plain",
-    "kind": "program",
-    "criterion": "program",
-    "consumers": [],
-    "confines": ["@workflow/world-postgres", "@workflow/builders", "@ai-sdk/workflow"]
-  },
-  "@mechane/sandbox-service": {
-    "owns": "The authenticated sandbox HTTP service and streaming public gateway to the Node server",
+    "owns": "Worker HTTP authentication, domain composition, assets, integration callbacks, and bounded control-outbox delivery",
     "layer": 7,
     "lane": "worker",
     "dialect": "plain",
     "kind": "app",
     "criterion": "program",
-    "consumers": []
+    "consumers": [],
+    "confines": []
   },
   "@mechane/browser": {
     "owns": "The isolated Chromium session, observed browser controls, screenshots, recordings and bounded diagnostics",
@@ -465,5 +449,15 @@
     "kind": "library",
     "criterion": "closure",
     "consumers": ["@mechane/guest"]
+  },
+  "@mechane/control-store": {
+    "owns": "Shared Postgres authority, credentials, budgets, capacity, control delivery, and read-only preserved-history export",
+    "layer": 5,
+    "lane": "worker",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "state",
+    "consumers": ["@mechane/runtime", "@mechane/server"],
+    "confines": ["pg"]
   }
 }

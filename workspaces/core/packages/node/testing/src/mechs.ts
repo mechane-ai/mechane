@@ -2,6 +2,7 @@ import {
   ConsoleMessagePage,
   EventPage,
   Mech,
+  MechHistoryPage,
   NotificationReceipt,
   Trace,
   Turn,
@@ -23,6 +24,9 @@ type MechInput = MechOwner & { readonly mechId: string };
 type CreateMechInput = MechOwner & { readonly name: string; readonly dailyCapMicros?: number };
 type SendNotificationInput = MechInput & { readonly text: string; readonly notificationId?: string };
 type TraceInput = MechInput & { readonly turnId: string };
+type EventsInput = MechInput & { readonly after?: number };
+type HistoryInput = MechInput & { readonly after?: string };
+type AfterQuery = { readonly after?: string | number };
 type WaitForTurnInput = MechInput & { readonly notificationId: string };
 
 type ReadInput<Output extends Schema.Codec<unknown, unknown>> = MechOwner & {
@@ -102,8 +106,12 @@ export async function readConsoleMessages(input: MechInput): Promise<ConsoleMess
   return await readJson({ ...input, path: conversationPath(input), schema: ConsoleMessagePage });
 }
 
-export async function readEvents(input: MechInput): Promise<EventPage> {
+export async function readEvents(input: EventsInput): Promise<EventPage> {
   return await readJson({ ...input, path: eventsPath(input), schema: EventPage });
+}
+
+export async function readHistoryPage(input: HistoryInput): Promise<MechHistoryPage> {
+  return await readJson({ ...input, path: historyPath(input), schema: MechHistoryPage });
 }
 
 export async function readTrace(input: TraceInput): Promise<Trace> {
@@ -161,7 +169,7 @@ async function readJson<Output extends Schema.Codec<unknown, unknown>>({
   });
 
   if (!response.ok) {
-    throw new Error(`The run read returned ${response.status}`);
+    throw new Error(`The runtime read ${path} returned ${response.status}`);
   }
 
   return Schema.decodeUnknownSync(schema)(await response.json());
@@ -185,11 +193,26 @@ function conversationPath(input: MechInput): string {
   return `${mechPath(input)}/conversation`;
 }
 
-function eventsPath(input: MechInput): string {
-  return `${mechPath(input)}/events`;
+export function eventsPath(input: EventsInput): string {
+  const query = afterQuery(input);
+
+  return `${mechPath(input)}/events${query}`;
 }
 
-/** Authorization probes use the same trace route as successful reads. */
+export function historyPath(input: HistoryInput): string {
+  const query = afterQuery(input);
+
+  return `${mechPath(input)}/history${query}`;
+}
+
+function afterQuery({ after }: AfterQuery): string {
+  if (after === undefined) {
+    return '';
+  }
+
+  return `?after=${encodeURIComponent(after)}`;
+}
+
 export function turnPath(input: TraceInput): string {
   return `${mechPath(input)}/turns/${encodeURIComponent(input.turnId)}`;
 }

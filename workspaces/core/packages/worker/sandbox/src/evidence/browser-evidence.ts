@@ -105,7 +105,7 @@ export async function runBrowserWithEvidence({
     const reason = saved.failure.reason;
 
     if (saved.failure.isRetryable) {
-      return { progress: BrowserProgress.cases.Pending.make({ reason }), evidence };
+      return { progress: BrowserProgress.cases.Pending.make({ isDispatchRequired: false, reason }), evidence };
     }
 
     const failedProgress = BrowserProgress.cases.Failed.make({ reason });

@@ -7,6 +7,10 @@ packages:
 
 # pnpm holds back releases younger than its minimum release age; these are the exact releases this workspace pins.
 minimumReleaseAgeExclude:
+  - '@earendil-works/pi-ai@1.5.1'
+  - '@earendil-works/pi-durable@1.5.1'
+  - '@earendil-works/pi-schema@1.5.1'
+  - '@earendil-works/chord@1.5.1'
   - effect@4.0.7
   - miniflare@5.20261023.2-beta
   - wrangler@4.155.0
@@ -27,6 +31,8 @@ minimumReleaseAgeExclude:
   - ai@7.0.164
   - hono@4.13.17
   - '@ai-sdk/react@4.0.168'
+  - '@earendil-works/pi-codemode@1.5.1'
+  - '@earendil-works/pi-telemetry@1.5.1'
 
 # These install scripts place each tool's platform binary; swc's binary arrives as an optional package instead, and
 # pi-ai's Google and protobuf dependencies need no script for the one OpenAI-compatible API the Worker loads.

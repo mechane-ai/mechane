@@ -19,10 +19,12 @@ export const runMechShow = Effect.fn('runMechShow')(function* ({
     use: ({ token, workspaceId }) => call({ name: 'showMech', input: { ...input, workspaceId }, credential: token }),
   });
 
+  const activeRevision = Option.getOrElse(mech.activeRevision, () => 'preparing');
+
   return {
     lines: [
       mechLine({ mech }),
-      `active revision ${mech.activeRevision}; daily cap ${mech.dailyCapMicros} micro-dollars`,
+      `active revision ${activeRevision}; daily cap ${mech.dailyCapMicros} micro-dollars`,
       Option.getOrElse(mech.instructions, () => 'No mission instructions.'),
     ],
     result: mech,

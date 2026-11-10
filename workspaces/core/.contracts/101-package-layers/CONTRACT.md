@@ -16,13 +16,15 @@ Each package declares the members it imports in its own `package.json`, by `work
 Dependency ownership checks inspect `dependencies`, `devDependencies`, and `peerDependencies`; a peer declaration
 cannot bypass the same package boundary.
 The shared lane imports no Node module, and only the worker lane imports the modules the Workers runtime provides.
-`@mechane/runtime` owns the domain store, durable notification inbox, native Workflow execution, AI SDK tools and model
-adapter, and explicit Console publication. External chat adapters belong to their integration owner under contract 125.
-`@mechane/server` owns HTTP composition, authentication, SDK World lifecycle, and serving the Console. The server
-imports the runtime; the runtime never imports the server. The registry confines SDK dependencies to these owners
-and their explicit browser or shared-schema consumers. There is no retained Pi execution package.
-`@mechane/sandbox-service` owns authenticated compute ingress and public proxying. Sandbox, store, and guest packages
-own command execution and file checkpoints, without importing the Node agent runtime.
+`@mechane/control-store` owns Postgres control authority, policy, grants, budget reservations, capacity, and the control
+outbox. `@mechane/runtime` owns MechObject and its single Pi Harness, notification admission, native tools, model
+accounting, and explicit Console publication. External chat adapters belong to their integration owner under contract 125.
+`@mechane/server` owns Worker HTTP composition, authentication, assets, and bounded delivery between durable owners.
+The server imports the runtime; the runtime never imports the server. Native SDK dependencies stay within their
+explicit owners and browser or shared-schema consumers. No Node application host or Workflow engine remains.
+`@mechane/sandbox` owns authenticated environment ingress, command execution, and machine lifecycle. Its private
+store and the guest own compute receipts and file checkpoints without importing the agent runtime. The production
+server and both local hosts use the same compiled Worker entry and the same Sandbox library.
 Production code never imports `packages/node/smoke/src` or `packages/node/testing/src`.
 Each member is a row of the strict standard's package map, at `packages/<lane>/<name>`; the root, `@mechane/core`, holds only tool pins and product tasks, no source.
 A folder becomes a package only for a real state, runtime dependency, public interface, independent consumer, or executable boundary. Source size does not require a package split. Declare each accepted member and its actual ownership in `dependencies.json`.

@@ -49,6 +49,7 @@ export const GUEST_VARIABLES = {
   additionalTools: 'MECHANE_GUEST_TOOLS',
   isBrowserSandboxDisabled: 'MECHANE_GUEST_BROWSER_SANDBOX_DISABLED',
   browserCertificateFile: 'MECHANE_GUEST_BROWSER_CERTIFICATE',
+  trustedCertificatesPem: 'MECHANE_GUEST_TRUSTED_CERTIFICATES_PEM',
 } as const;
 
 /**

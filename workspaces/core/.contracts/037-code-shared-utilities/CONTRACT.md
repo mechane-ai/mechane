@@ -35,9 +35,11 @@ Effect's `Record` convention remains in force in the shared, Worker, and Node la
 utility ownership nor the rule against duplicate domain-free helper modules.
 `@mechane/program`, in `packages/node/program/src`, owns shared process lifecycle and output behavior for node programs. `startProcess` scopes child processes, and `finishedProcess` requires a successful exit. `stepLine` describes a failed step and its subjects. `interruptOnSignal` interrupts dev, smoke and guest work on a stop signal. `reportExit` maps a program's outcome to its exit status and formats failures through its message table.
 Its `files` folder holds what the CLI's runs share: `replaceFile`, which the saved login, `mechane update` and an eval run's report replace a file with, `createFile`, which writes each of an eval run's records once, both through one fresh file beside the path, `readOptionalFile`, which reads the saved login and an eval run's records, none for a missing file, and `sha256Hex`.
-The eval's own `interruptOnSignal`, in `packages/node/eval/src`, interrupts an eval run on its first Ctrl-C.
-`@mechane/utilities`, in `packages/shared/utilities/src`, is the shared lane's, which `@mechane/credentials` and the Worker's members share; it holds `escapeHtml`, `sha256Hex`, `shellWord`, and every promise the Worker's members wait on: `waitFor`, `settlesWithin`, `wakeList`, `untilAborted`, `abortRejection`, `unlessStopped`, `afterSettling` and `afterFailing`.
-`tokenHash` stays in `@mechane/credentials`, which names the directory's stored form of a token, a domain rule, and calls `sha256Hex`.
+The eval's own `failOnInterrupt`, in `packages/node/eval/src`, interrupts an eval run on its first Ctrl-C.
+`@mechane/utilities`, in `packages/shared/utilities/src`, is the application's shared utilities owner. Its explicit
+entry point declares the public helpers. Keep domain-free helpers there rather than adding a second utilities owner.
+`hashAuthToken` stays in `@mechane/runtime`'s auth operations, which own authentication token representations.
+`@mechane/control-store` owns encrypted credential envelopes and their Postgres records.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

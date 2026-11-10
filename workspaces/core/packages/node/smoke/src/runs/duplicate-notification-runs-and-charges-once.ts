@@ -1,7 +1,16 @@
-import { Allowance, Dispatch, DispatchStatus, SettlementBasis, TurnStatus } from '@mechane/protocol';
+import {
+  Allowance,
+  Dispatch,
+  DispatchStatus,
+  NotificationReceipt,
+  SettlementBasis,
+  TurnStatus,
+} from '@mechane/protocol';
+import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import {
   createAccount,
   createMech,
+  notificationPath,
   readConsoleMessages,
   readTrace,
   readTurns,
@@ -16,6 +25,9 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 const EXPECTED_CHARGE_MICROS = 60;
+const REQUEST_DEADLINE_MS = 15_000;
+
+type AliasInput = Parameters<typeof sendNotification>[0] & { readonly notificationId: string };
 
 export async function duplicateNotificationRunsAndChargesOnce({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -34,15 +46,19 @@ export async function duplicateNotificationRunsAndChargesOnce({ stack }: Scenari
 
   const notificationId = randomUUID();
   const input = { stack, account, mechId: mech.id, text: marker, notificationId };
-  const [first, repeated] = await Promise.all([sendNotification(input), sendNotification(input)]);
+  const [first, repeated] = await Promise.all([sendNotification(input), sendUppercaseAlias(input)]);
 
   assert.equal(first.id, repeated.id);
+  assert.deepEqual({ ...first, wasCreated: false }, { ...repeated, wasCreated: false });
+  assert.equal([first, repeated].filter((receipt) => receipt.wasCreated).length, 1);
 
   const turn = await waitForTurn(input);
 
   assert.equal(turn.status, TurnStatus.Completed);
 
-  await sendNotification(input);
+  const replayed = await sendUppercaseAlias(input);
+
+  assert.deepEqual(replayed, { ...first, wasCreated: false });
 
   const trace = await readTrace({ ...input, turnId: turn.id });
   const turns = await readTurns(input);
@@ -71,4 +87,29 @@ export async function duplicateNotificationRunsAndChargesOnce({ stack }: Scenari
   });
 
   assert.equal(after.committedMicros - before.committedMicros, EXPECTED_CHARGE_MICROS);
+}
+
+async function sendUppercaseAlias({
+  stack,
+  account,
+  mechId,
+  text,
+  notificationId,
+}: AliasInput): Promise<NotificationReceipt> {
+  const path = notificationPath({
+    workspaceId: account.workspaceId.toUpperCase(),
+    mechId: mechId.toUpperCase(),
+    notificationId: notificationId.toUpperCase(),
+  });
+
+  const response = await fetch(new URL(path, stack.origin), {
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Authorization]: `Bearer ${account.token}`, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify({ text, source: { name: 'cli', eventId: notificationId } }),
+    signal: AbortSignal.timeout(REQUEST_DEADLINE_MS),
+  });
+
+  assert.ok(response.ok, `The uppercase notification alias returned ${response.status}`);
+
+  return Schema.decodeUnknownSync(NotificationReceipt)(await response.json());
 }

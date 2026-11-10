@@ -11,6 +11,9 @@ const DEFAULT_PROMPT_TOKENS = 20;
 const DEFAULT_COMPLETION_TOKENS = 10;
 const PROVIDER_KEY_BYTES = 24;
 const MILLISECONDS_PER_SECOND = 1000;
+const ESTIMATED_CHARACTERS_PER_TOKEN = 4;
+const SUMMARIZATION_SYSTEM_PREFIX = 'You are a context summarization assistant.';
+const SUMMARY_ROLES: ReadonlySet<string> = new Set(['system', 'developer']);
 
 type PlanState = { readonly plan: ModelPlan; readonly next: number };
 type Gate = ReturnType<typeof Promise.withResolvers<void>>;
@@ -80,36 +83,45 @@ export async function startModelFixture(): Promise<StartedModel> {
       latestMatchingPlan(plans.values(), prompts.join('\n')) ??
       latestMatchingPlan(plans.values(), JSON.stringify(body['messages']));
 
-    const isSummary = body['stream'] !== true && selected?.plan.summary !== undefined;
+    const purpose = modelRequestPurpose(body['messages']);
+    const isSummary = purpose === 'compaction';
     const marker = selected?.plan.marker ?? finalUser;
     let index = selected?.next ?? calls.filter((call) => call.marker === marker).length;
     let reply: ModelReply = selected?.plan.replies[index] ?? { text: finalUser };
 
     if (isSummary) {
       index = -1;
-      reply = { text: selected.plan.summary };
+
+      if (selected?.plan.summary === undefined) {
+        reply = { status: HttpStatusCode.BadRequest };
+      } else {
+        reply = { text: selected.plan.summary };
+      }
     }
 
-    if (selected !== undefined && !isSummary) {
-      if (index >= selected.plan.replies.length) {
-        return Response.json(
-          { error: `The model exhausted plan ${marker} at response ${index}` },
-          { status: HttpStatusCode.BadRequest },
-        );
-      }
+    const isExhausted = selected !== undefined && !isSummary && index >= selected.plan.replies.length;
 
+    if (selected !== undefined && !isSummary) {
       plans.set(selected.plan.marker, { ...selected, next: selected.next + 1 });
     }
 
     const call: ModelCall = {
       marker,
       index,
+      purpose,
       body,
       authorization: request.headers.get(HttpHeader.Authorization) ?? undefined,
     };
 
     calls.push(call);
     events.dispatchEvent(new Event('call'));
+
+    if (isExhausted) {
+      return Response.json(
+        { error: `The model exhausted plan ${marker} at response ${index}` },
+        { status: HttpStatusCode.BadRequest },
+      );
+    }
 
     if (reply.isHeld === true) {
       const key = gateKey(call);
@@ -131,7 +143,16 @@ export async function startModelFixture(): Promise<StartedModel> {
       );
     }
 
-    return modelResponse(text(body['model']), reply, body['stream'] === true);
+    const promptCharacters = JSON.stringify(body['messages']).length;
+
+    const estimatedPromptTokens = Math.max(
+      DEFAULT_PROMPT_TOKENS,
+      Math.ceil(promptCharacters / ESTIMATED_CHARACTERS_PER_TOKEN),
+    );
+
+    const measuredReply = { ...reply, promptTokens: reply.promptTokens ?? estimatedPromptTokens };
+
+    return modelResponse(text(body['model']), measuredReply, body['stream'] === true);
   }
 
   const service = await startHttpService(handle);
@@ -196,6 +217,29 @@ function messageText(content: unknown): string {
   }
 
   return '';
+}
+
+function modelRequestPurpose(value: unknown): ModelCall['purpose'] {
+  if (!Array.isArray(value)) {
+    throw new TypeError('The model request has no messages');
+  }
+
+  const hasSummaryPrompt = value.some((candidate) => {
+    const message = record(candidate);
+    const role = message['role'];
+
+    if (typeof role !== 'string' || !SUMMARY_ROLES.has(role)) {
+      return false;
+    }
+
+    return messageText(message['content']).startsWith(SUMMARIZATION_SYSTEM_PREFIX);
+  });
+
+  if (hasSummaryPrompt) {
+    return 'compaction';
+  }
+
+  return 'generation';
 }
 
 function modelResponse(model: string, reply: ModelReply, isStreaming: boolean): Response {

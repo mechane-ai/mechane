@@ -2,9 +2,10 @@ locals {
   installation = jsondecode(file("${path.module}/installation.json"))
   origin       = "https://${var.domain.hostname}"
 
-  variables = merge(local.installation.defaults, {
+  variables = merge(local.installation.defaults, var.settings, {
     MECHANE_ORIGIN                   = local.origin
-    MECHANE_RUNTIME_ORIGIN           = var.runtime.origin
+    MECHANE_RUNTIME_ORIGIN           = local.origin
+    MECHANE_SANDBOX_ORIGIN           = local.origin
     MECHANE_INSTALLATION_HOSTS       = jsonencode(setunion(var.domain.aliases, [var.domain.hostname]))
     MECHANE_WORKER_REVISION          = local.installation.public_commit
     MECHANE_SANDBOX_PROVIDER         = "container"
@@ -13,11 +14,6 @@ locals {
     MECHANE_SANDBOX_WEB_ACCESS       = var.sandboxes.web_access
     MECHANE_BROWSER_SANDBOX_DISABLED = tostring(var.sandboxes.browser_sandbox_disabled)
   })
-
-  secret_names = {
-    MECHANE_RUNTIME_TRANSPORT   = var.secrets.runtime_transport
-    MECHANE_SANDBOX_SERVICE_KEY = var.secrets.sandbox_service
-  }
 }
 
 resource "cloudflare_r2_bucket" "workspace_files" {
@@ -61,6 +57,8 @@ resource "mechane_cloudflare_worker_release" "release" {
   worker_name             = cloudflare_worker.service.name
   release_manifest_file   = "${path.module}/installation.json"
   release_manifest_sha256 = filesha256("${path.module}/installation.json")
+  qualification_file      = var.qualification.path
+  qualification_sha256    = var.qualification.sha256
   bindings = concat(
     [{
       name         = "WORKSPACE_FILES"
@@ -69,7 +67,7 @@ resource "mechane_cloudflare_worker_release" "release" {
       jurisdiction = var.storage.jurisdiction == "default" ? null : var.storage.jurisdiction
     }],
     [for name, value in local.variables : { name = name, type = "plain_text", text = value }],
-    [for name, secret_name in local.secret_names : {
+    [for name, secret_name in var.secrets.bindings : {
       name        = name
       type        = "secrets_store_secret"
       store_id    = var.secrets.store_id
@@ -83,8 +81,12 @@ resource "mechane_cloudflare_worker_release" "release" {
       error_message = "The Worker bundle does not match this release's installation manifest."
     }
     precondition {
-      condition     = local.installation.format_version == 1
+      condition     = local.installation.format_version == 2
       error_message = "This module cannot read the installation manifest version."
+    }
+    precondition {
+      condition     = length(setintersection(toset(keys(local.variables)), toset(keys(var.secrets.bindings)))) == 0
+      error_message = "A binding cannot be both a non-secret setting and a secret reference."
     }
     precondition {
       condition     = !local.installation.is_preview
@@ -96,9 +98,17 @@ resource "mechane_cloudflare_worker_release" "release" {
 resource "mechane_cloudflare_container_image" "guest" {
   account_id    = var.account_id
   repository    = "${var.name}-guest"
-  source_url    = local.installation.guest.url
+  source_file   = "${dirname(var.qualification.path)}/${basename(local.installation.guest.url)}"
   source_sha256 = local.installation.guest.sha256
   digest        = local.installation.guest.digest
+  depends_on    = [mechane_cloudflare_worker_release.release]
+}
+
+resource "cloudflare_workers_cron_trigger" "control_delivery" {
+  account_id  = var.account_id
+  script_name = cloudflare_worker.service.name
+  schedules   = [for cron in local.installation.worker.triggers.crons : { cron = cron }]
+  depends_on  = [mechane_cloudflare_worker_release.release]
 }
 
 resource "mechane_cloudflare_container_application" "sandboxes" {

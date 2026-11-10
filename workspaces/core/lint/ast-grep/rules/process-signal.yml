@@ -7,8 +7,8 @@ message: 'Run the program under `interruptOnSignal`, such as `yield* interruptOn
 files: ['packages/**/*.ts']
 ignores:
   [
-    'packages/node/server/src/lifecycle/**',
-    'packages/node/server/src/main.ts',
+    'packages/worker/server/src/lifecycle/**',
+    'packages/worker/server/src/main.ts',
     'packages/node/stack/src/run-stack-program.ts',
     'packages/node/stack/src/sandbox/main.ts',
     '**/node_modules/**',

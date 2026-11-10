@@ -9,7 +9,7 @@ import type { ReactNode } from 'react';
 import { durationLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
 import { runIdentifier, runInput, runLabel } from './run-label.ts';
-import { outcomeLabel, outcomeReason } from './turn-outcome.ts';
+import { isImportedTurn, outcomeLabel, outcomeReason } from './turn-outcome.ts';
 
 const turnColumns = {
   input: { id: 'input', label: 'Run', role: 'primary' },
@@ -23,6 +23,10 @@ export function TurnListPlaceholder(): ReactNode {
 }
 
 function elapsedLabel(turn: Turn): string {
+  if (isImportedTurn(turn) && !('endedAt' in turn)) {
+    return 'Not recorded';
+  }
+
   if (Option.isNone(turn.startedAt)) {
     return 'Not started';
   }
@@ -87,8 +91,18 @@ export function TurnList({
           ...turnColumns.outcome,
           shouldTruncate: false,
           cell: (turn) => (
-            <Status tone={turn.status === 'completed' ? 'positive' : turn.status === 'failed' ? 'negative' : 'neutral'}>
-              {outcomeLabel(turn.status)}
+            <Status
+              tone={
+                isImportedTurn(turn)
+                  ? 'neutral'
+                  : turn.status === 'completed'
+                    ? 'positive'
+                    : turn.status === 'failed'
+                      ? 'negative'
+                      : 'neutral'
+              }
+            >
+              {isImportedTurn(turn) ? 'Imported' : outcomeLabel(turn.status)}
             </Status>
           ),
         },

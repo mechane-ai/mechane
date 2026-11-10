@@ -42,7 +42,7 @@ const CONNECTION_FIELDS = {
   /** None means the remote URL accepts unauthenticated requests; the wire carries null. */
   secretReference: Schema.OptionFromNullOr(IntegrationSecretReference),
   allowedTools: RemoteToolNames,
-  policy: Schema.Literal(RemoteToolPolicy.ReadOnlyFree),
+  policy: Schema.Enum(RemoteToolPolicy),
 } as const;
 
 /** Owners replace the whole configuration; omission cannot preserve an old credential reference. */
@@ -59,7 +59,7 @@ export const RemoteConnection = wireStruct({
     /** None means the remote URL accepts unauthenticated requests; the wire carries null. */
     secretReference: Schema.OptionFromNullOr(RecordText),
     allowedTools: Schema.Array(RecordText),
-    policy: Schema.Literal(RemoteToolPolicy.ReadOnlyFree),
+    policy: Schema.Enum(RemoteToolPolicy),
     createdAt: WireTime,
     updatedAt: WireTime,
   },

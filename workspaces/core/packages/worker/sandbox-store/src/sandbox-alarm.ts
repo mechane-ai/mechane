@@ -6,12 +6,12 @@ export function sandboxAlarm({ storage }: SandboxStoreInput): SandboxAlarm {
   const arm: SandboxAlarm['arm'] = async ({ at }) => {
     const requested = DateTime.toEpochMillis(at);
 
-    await storage.transaction(async () => {
-      const current = await storage.getAlarm();
+    await storage.transaction(async (transaction) => {
+      const current = await transaction.getAlarm();
       const scheduled = Option.fromNullishOr(current);
 
       if (Option.isNone(scheduled) || requested < scheduled.value) {
-        await storage.setAlarm(requested);
+        await transaction.setAlarm(requested);
       }
     });
   };
@@ -19,11 +19,11 @@ export function sandboxAlarm({ storage }: SandboxStoreInput): SandboxAlarm {
   const disarmAt: SandboxAlarm['disarmAt'] = async ({ at }) => {
     const requested = DateTime.toEpochMillis(at);
 
-    await storage.transaction(async () => {
-      const current = await storage.getAlarm();
+    await storage.transaction(async (transaction) => {
+      const current = await transaction.getAlarm();
 
       if (current === requested) {
-        await storage.deleteAlarm();
+        await transaction.deleteAlarm();
       }
     });
   };

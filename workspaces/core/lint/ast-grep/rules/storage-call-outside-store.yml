@@ -3,7 +3,15 @@ language: TypeScript
 severity: error
 message: 'Read and write Durable Object storage only through its store module, such as `turnStore.readTurn({ turnId })` (DO-06)'
 files: [packages/**/*.ts]
-ignores: ['**/node_modules/**', '**/store/**', '**/*-store/**', packages/node/smoke/**, packages/node/testing/**]
+ignores:
+  [
+    '**/node_modules/**',
+    '**/store/**',
+    '**/store.ts',
+    '**/*-store/**',
+    packages/node/smoke/**,
+    packages/node/testing/**,
+  ]
 rule:
   kind: member_expression
   all:

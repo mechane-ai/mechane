@@ -48,9 +48,9 @@ Run the repository's lint and this contract's `assets/` configuration over its t
 
 ## Local adaptations
 
-The retained suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Node runtime, native
-Workflow handlers, and built CLI against fresh Postgres databases. Compute cases use the sandbox Worker and guest
-execution boundary. Console cases use pinned Playwright Chromium against that same compiled service and real native
+The retained suite is `workspaces/core/packages/node/smoke/src/main.ts`. It drives the compiled Worker and
+built CLI against native Pi, celld, and verified-TLS Postgres. Both application and environment hosts load the same
+Worker artifact; compute cases use real containers and the guest execution boundary. Console cases use pinned Playwright Chromium against that same compiled application and real native
 Worker-backed OPFS. The smoke's `browser:install` prerequisite installs its matching browser and native dependencies.
 Run it from the factory root with `mise -C workspaces/core run smoke`.
 Warm-reload fixtures establish completion of their initial native read before holding its next HTTP request.
@@ -65,7 +65,7 @@ without a second runner or a copied historical fixture.
 
 The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
-exercise the public producer boundary directly; the product implementation, compiled Workflow code, database, and
+exercise the public producer boundary directly; the product implementation, native Pi, actual database, and
 authorization boundaries remain real. Browser TSX, Storybook configuration,
 verification fixtures, and test-only dependencies
 follow the same retention policy. Synthetic catalog stories are maintained developer documentation, not example tests.

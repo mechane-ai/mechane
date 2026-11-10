@@ -66,6 +66,8 @@ Owned data records map their flags to the native attribute at the control. `Comm
 hotkey library's declared modifier names. These syntax exceptions do not prove forwarding or allow arbitrary bare flags.
 Wrangler's `no_bundle` key retains its external name. That exact property on the `BuiltBundle` type is the narrow exception;
 it does not exempt ordinary boolean fields or other quoted keys.
+Wrangler's `run_worker_first` and the eval format's `self_grading` retain their names only in external-format properties.
+They do not exempt local boolean bindings.
 External names map at their boundary: the `--help` and `--version` flags decode into `isHelpRequested` and `isVersionRequested`.
 
 The v11 predicate-return naming additions are outside the current adoption baseline at commit 94f2d0f.
@@ -75,7 +77,7 @@ Predicate-return naming remains a review check: these rules do not infer functio
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`, `show`, `hide`; `nativeAttributes` `autoFocus`, `checked`, `defaultChecked`, `defaultOpen`, `disabled`, `hidden`, `inert`, `indeterminate`, `modal`, `multiple`, `open`, `readOnly`, `required`; `keyboardModifiers` `mod`, `ctrl`, `alt`, `shift`, `meta`; `externalProperties` `self_grading`.
+Values: `predicatePrefixes` `is`, `has`, `can`, `should`, `was`, `needs`; `optionPrefixes` `include`, `allow`, `skip`, `keep`, `use`, `show`, `hide`; `nativeAttributes` `autoFocus`, `checked`, `defaultChecked`, `defaultOpen`, `disabled`, `hidden`, `inert`, `indeterminate`, `modal`, `multiple`, `open`, `readOnly`, `required`; `keyboardModifiers` `mod`, `ctrl`, `alt`, `shift`, `meta`; `externalProperties` `run_worker_first`, `self_grading`.
 - ast-grep `boolean-names` (NM-07): enforced
 - ast-grep `boolean-names-tsx` (NM-07): enforced
 

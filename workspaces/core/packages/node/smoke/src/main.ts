@@ -7,7 +7,7 @@ async function main(): Promise<void> {
   const settings = smokeSettings();
 
   await runStackProgram({
-    options: { mode: 'ephemeral', useFixtures: true, sandbox: 'host-fixture', nodeExecutable: settings.nodeExecutable },
+    options: { mode: 'ephemeral', useFixtures: true, sandbox: 'container', nodeExecutable: settings.nodeExecutable },
     run: async ({ stack }) => {
       await runScenarios({ stack, catalog: CATALOG, match: settings.match });
     },

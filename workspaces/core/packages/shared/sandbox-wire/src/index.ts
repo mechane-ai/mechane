@@ -24,6 +24,7 @@ export {
   ExecutionWait,
   ExecutionProgress,
   SettledReceipt,
+  SandboxCommandOutcome,
 } from './schemas.ts';
 export { guestExecutionPath } from './guest-execution-path.ts';
 export { guestHealthPath } from './guest-health-path.ts';
@@ -31,6 +32,13 @@ export { guestWorkspacePath } from './guest-workspace-path.ts';
 export { launcherMachinePath } from './launcher-machine-path.ts';
 export type { RunExecutionInput } from './types.ts';
 export { SandboxOwner } from './sandbox-owner.ts';
+export {
+  SandboxStopPhase,
+  SandboxRecoveryAction,
+  SandboxStopReceipt,
+  SandboxStopObservation,
+  SANDBOX_FAILURE_MAX_CHARS,
+} from './environment-state.ts';
 export {
   SANDBOX_CAPACITY_PATH,
   SandboxCapacityAction,
@@ -48,6 +56,7 @@ export {
 export {
   SANDBOX_SERVICE_PREFIX,
   SandboxServiceIdentity,
+  SandboxStopIdentity,
   SandboxExecutionIdentity,
   SandboxExecutionSubmission,
   SandboxExecutionResume,
@@ -58,6 +67,8 @@ export {
   sandboxExecutionCancelPath,
   sandboxExecutionResumePath,
   sandboxWorkspacePath,
+  sandboxStopPath,
+  sandboxStopReadPath,
 } from './service.ts';
 
 export {
@@ -129,6 +140,7 @@ export { GuestCapabilities } from './capabilities.schemas.ts';
 export { guestCapabilitiesPath } from './guest-capabilities-path.ts';
 export { SandboxRunId } from './interactive.ts';
 export { GATEWAY_CERTIFICATE } from './constants.ts';
+export { TrustedCertificatesVariable } from './certificate-environment.ts';
 export { ExecutionOutput } from './schemas.ts';
 
 export {
@@ -138,6 +150,7 @@ export {
   SandboxProcessIdentity,
   SandboxRunIdentity,
   SandboxBrowserSubmission,
+  SandboxBrowserAbandonResult,
   BrowserProgress,
   SandboxBrowserArtifactAnswer,
   SandboxBrowserIdentity,
@@ -147,8 +160,17 @@ export { sandboxProcessPath } from './sandbox-process-path.ts';
 export { sandboxProcessReadPath } from './sandbox-process-read-path.ts';
 export { sandboxProcessStopPath } from './sandbox-process-stop-path.ts';
 export { sandboxInteractiveCancelPath } from './sandbox-interactive-cancel-path.ts';
-export { sandboxBrowserPath } from './sandbox-browser-path.ts';
-export { SandboxCheckpointIdentity, SandboxCheckpointResult, sandboxCheckpointPath } from './checkpoint.ts';
+export { sandboxBrowserPath, sandboxBrowserAbandonPath } from './sandbox-browser-path.ts';
+export {
+  SandboxCheckpointIdentity,
+  SandboxCheckpointResult,
+  SandboxCheckpointObservation,
+  sandboxCheckpointPath,
+  SandboxRecoveryCheckpointRequest,
+  SandboxRecoveryCheckpointRefusalReason,
+  SandboxRecoveryCheckpointRefusal,
+  SandboxRecoveryCheckpointResult,
+} from './checkpoint.ts';
 export {
   EvidenceExportIdentity,
   EvidenceExportMetadata,

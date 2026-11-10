@@ -21,6 +21,7 @@ import {
   Activity,
   ConsoleShell,
   EnvironmentProcesses,
+  isImportedTurn,
   MechConversation,
   MechHeader,
   MechList,
@@ -41,6 +42,7 @@ import {
   REPLY_EXCERPT_MAX_CHARS,
   Trace,
   TurnPage,
+  TurnRuntimeSource,
   WorkspaceList,
 } from '@mechane/protocol';
 import type { ConsoleView } from '@mechane/protocol';
@@ -402,6 +404,7 @@ function TraceStory({
           </ToolbarAction>
         }
         actions={
+          !isImportedTurn(trace.turn) &&
           activeRunStatuses.has(trace.turn.status) && (
             <ToolbarAction onClick={() => undefined}>Cancel run</ToolbarAction>
           )
@@ -646,6 +649,49 @@ export const RunningTurn: Story = {
         dispatches: [{ ...sampleRequest, status: 'reserved' }],
       })}
     />
+  ),
+};
+
+const importedTrace = Schema.decodeUnknownSync(Trace)({
+  ...encodedTrace,
+  turn: { ...encodedTrace.turn, runtime_source: TurnRuntimeSource.Imported, status: 'running' },
+  dispatches: [],
+  evidence_notices: ['Imported historical execution; no historical tool was replayed.'],
+  tool_calls: [
+    {
+      id: 'imported-command',
+      name: 'bash',
+      status: 'running',
+      started_at: '2026-11-02T12:00:00.500Z',
+      ended_at: null,
+      inspection: {
+        kind: 'bash',
+        command: { text: 'node scripts/check-catalog.mjs', omitted_bytes: 0 },
+        result: {
+          status: 'running',
+          exit_code: null,
+          duration_ms: null,
+          output: { text: 'Last recorded output.\n', omitted_bytes: 0 },
+        },
+      },
+    },
+  ],
+});
+
+export const ImportedTurn: Story = { render: () => <TraceStory trace={importedTrace} /> };
+
+export const ImportedRuns: Story = {
+  render: () => (
+    <StoryShell>
+      <DetailPage>
+        <TurnList
+          page={{ turns: [importedTrace.turn], hasMore: false }}
+          turnHref={(id) => `?turn=${id}`}
+          onOpen={() => undefined}
+          emptyDescription="Imported execution history appears here."
+        />
+      </DetailPage>
+    </StoryShell>
   ),
 };
 

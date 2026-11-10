@@ -120,7 +120,7 @@ export function browserRecords({ sql }: RecordsInput) {
   function assignBrowserCall({ requestId, machineId }: AssignInput): BrowserCall {
     const record = requiredBrowserCall({ requestId });
 
-    if (Option.isSome(record.machineId)) {
+    if (Option.isSome(record.machineId) || Option.isSome(record.response) || Option.isSome(record.failure)) {
       return record;
     }
 
@@ -136,6 +136,23 @@ export function browserRecords({ sql }: RecordsInput) {
     }
 
     return assigned;
+  }
+
+  /** A failed unassigned claim is also a tombstone against an initial submission arriving later. */
+  function abandonBrowserCall({ request, runId, sessionId, toolCallId }: ClaimInput): BrowserCall {
+    const record = claimBrowserCall({ request, runId, sessionId, toolCallId });
+
+    if (Option.isSome(record.machineId) || Option.isSome(record.response) || Option.isSome(record.failure)) {
+      return record;
+    }
+
+    failBrowserCall({
+      requestId: record.request.requestId,
+      reason: 'the original browser action was abandoned before dispatch',
+      isUncertain: false,
+    });
+
+    return requiredBrowserCall({ requestId: record.request.requestId });
   }
 
   function browserMachine(): Option.Option<typeof MachineId.Type> {
@@ -231,6 +248,7 @@ export function browserRecords({ sql }: RecordsInput) {
     requiredBrowserCall,
     claimBrowserCall,
     assignBrowserCall,
+    abandonBrowserCall,
     browserMachine,
     browserTabMachine,
     saveBrowserResponse,

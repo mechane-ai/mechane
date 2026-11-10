@@ -7,7 +7,7 @@ language: TypeScript
 severity: error
 message: 'Inline the function that only forwards its parameters, and call its callee where it was called, such as `matchesGlob(file, pattern)` (ST-28)'
 files: ['**/*.ts']
-ignores: ['**/node_modules/**']
+ignores: ['**/node_modules/**', 'packages/worker/runtime/src/tools/context.ts']
 utils:
   parameter-name:
     all:

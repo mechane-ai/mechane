@@ -2,6 +2,7 @@ import {
   createAccount,
   createMech,
   deliverNotification,
+  notificationProducerEnvironment,
   readConsoleMessages,
   requireFixtures,
   sendNotificationAndWait,
@@ -45,15 +46,7 @@ export async function externalNotificationSurvivesRestart({ stack }: ScenarioInp
   await sendNotificationAndWait({ ...owner, text: otherMarker });
   await stack.restart({
     signal: 'SIGKILL',
-    environment: {
-      MECHANE_NOTIFICATION_PRODUCERS: JSON.stringify([
-        {
-          id: producer.id,
-          secret: producer.signingSecret,
-          recipients: [{ workspaceId: account.workspaceId, mechId: mech.id }],
-        },
-      ]),
-    },
+    environment: notificationProducerEnvironment({ workspaceId: account.workspaceId, mechId: mech.id, producer }),
   });
 
   const delivery = {

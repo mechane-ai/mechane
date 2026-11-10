@@ -1,0 +1,15 @@
+{
+  "name": "@mechane/server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mechane/control-store": "workspace:*",
+    "@mechane/protocol": "workspace:*",
+    "@mechane/records": "workspace:*",
+    "@mechane/runtime": "workspace:*",
+    "@mechane/sandbox": "workspace:*",
+    "@mechane/sandbox-wire": "workspace:*",
+    "@mechane/utilities": "workspace:*",
+    "effect": "4.0.7"
+  }
+}

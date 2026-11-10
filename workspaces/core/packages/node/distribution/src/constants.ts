@@ -8,13 +8,16 @@ export const CORE_FOLDER = fileURLToPath(CORE_URL);
 /** The public repository root that supplies release provenance and notices. */
 export const SOURCE_FOLDER = fileURLToPath(SOURCE_URL);
 
-/** The installation manifest and artifact receipt format supported by this builder. */
-export const FORMAT_VERSION = 1;
+/** Installation metadata advances independently from artifact and qualification receipts. */
+export const FORMAT_VERSION = 2;
+export const RECEIPT_FORMAT_VERSION = 1;
+export const QUALIFICATION_FORMAT_VERSION = 1;
 /** The module-relative path that OpenTofu uploads as the Worker module. */
 export const WORKER_FILENAME = 'worker.js';
+export const ASSETS_CONFIGURATION_KEY = 'config';
 /** Files every published module must include from the public infrastructure source. */
 export const MODULE_SOURCE_NAMES = ['main.tf', 'outputs.tf', 'variables.tf', 'versions.tf', 'README.md'] as const;
-/** License texts accompany both executable archives. */
+/** Original notices accompany the compiled installation module. */
 export const ARTIFACT_NOTICE_NAMES = ['LICENSE', 'NOTICE'] as const;
 /** OCI's descriptor byte count, kept under its mandated wire name. */
 export const OCI_SIZE_KEY = 'size';
@@ -24,8 +27,16 @@ export const DURABLE_EXPORT = { type: 'durable-object', storage: 'sqlite', state
 export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 /** Plain filenames accepted by both the artifact receipt and GitHub uploads. */
 export const ASSET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]+$/;
+
 /** The artifact operations available to a publisher or an offline check. */
-export const DistributionMode = { Build: 'build', Verify: 'verify', Preview: 'preview-module' } as const;
+export const DistributionMode = {
+  Build: 'build',
+  Verify: 'verify',
+  Preview: 'preview-module',
+  Qualify: 'qualify',
+  VerifyQualified: 'verify-qualified',
+} as const;
+
 export type DistributionMode = (typeof DistributionMode)[keyof typeof DistributionMode];
 
 /** The operation that each distribution failure reports. */

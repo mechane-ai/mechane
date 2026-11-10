@@ -10,10 +10,12 @@ type RunScenariosInput = {
 const SCENARIO_DEADLINE_MS = 180_000;
 
 export async function runScenarios({ stack, catalog, match }: RunScenariosInput): Promise<void> {
-  const selected = catalog.filter((scenario) => match === undefined || scenario.guarantee.includes(match));
+  const selected = catalog.filter(
+    (scenario) => match === undefined || scenario.run.name === match || scenario.guarantee.includes(match),
+  );
 
   if (selected.length === 0) {
-    throw new Error('No smoke scenario matches the requested name');
+    throw new Error(`No smoke scenario matches ${match}`);
   }
 
   for (const scenario of selected) {

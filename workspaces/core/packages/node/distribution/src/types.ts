@@ -1,4 +1,5 @@
 import type { DistributionMode } from './constants.ts';
+import type { ArtifactQualification } from './qualification.ts';
 import type { Artifact, ArtifactReceipt } from './schemas.ts';
 
 /** The chosen output folder and the environment allowed into build tools. */
@@ -6,6 +7,7 @@ export type DistributionSettings = {
   readonly mode: DistributionMode;
   readonly folder: string;
   readonly inherited: Readonly<Record<string, string>>;
+  readonly argument?: string | undefined;
 };
 
 /** Settings shared by the distribution command implementations. */
@@ -17,4 +19,4 @@ export type FileDigest = Omit<Artifact, 'name'>;
 /** An offline module staging result that cannot be published as a release. */
 export type PreviewResult = { readonly folder: string; readonly is_preview: true };
 /** The result printed by a release command or an offline module preview. */
-export type DistributionResult = ArtifactReceipt | PreviewResult;
+export type DistributionResult = ArtifactReceipt | PreviewResult | ArtifactQualification;

@@ -1,48 +1,80 @@
 # Run your own Mechane
 
-An installation runs the built Node service with Postgres and an authenticated sandbox service. The Node process owns
-HTTP, GitHub sign-in, domain APIs, notification admission, and the native Workflow worker. Cloudflare hosts compute and
-persistent workspace checkpoints. Its public ingress can forward the installation's domain to the Node host.
-
-The same Node build and Workflow Postgres World run locally. Follow the [local guide](../packages/node/stack/README.md)
-for a development or retained local installation.
+Deploy the qualified Cloudflare application Worker with its Console assets, Mech and Sandbox Durable Objects, checkpoint
+bucket, and container application. Pi owns durable agent execution inside each Mech actor. Standard Postgres owns shared
+control data; PlanetScale is an optional hosted choice.
 
 ## Ownership
 
-| Infrastructure configuration                      | Runtime records                                          |
-| ------------------------------------------------- | -------------------------------------------------------- |
-| Service versions, host, domains, compute capacity | Principals, workspaces, memberships, mechs               |
-| Database roles and secret references              | Notifications, context, activations, public messages     |
-| Model offers and installation ceilings            | Usage, execution grants, integration credentials         |
-| Sandbox image, file bucket, network policy        | Execution and communication receipts, environment grants |
+| Installation configuration                     | Runtime records                                                 |
+| ---------------------------------------------- | --------------------------------------------------------------- |
+| Worker version, domains, compute capacity      | Principals, workspaces, memberships, definitions                |
+| Database roles and secret references           | Credentials, grants, spend and capacity reservations            |
+| Guest image, checkpoint bucket, network policy | Durable conversations, notifications, publications and receipts |
 
-Infrastructure applies do not seed or overwrite runtime records. Configure the installation first, then use owner APIs
-for workspace setup. Keep one infrastructure state and writer for each installation.
+Keep one OpenTofu declaration, state, and deployment writer per installation. Infrastructure applies preserve runtime
+records. Configure workspaces and mechs through authenticated owner APIs after installing the application.
 
-## Artifacts
+## Install
 
-Consume immutable release artifacts with their recorded source revision and SHA-256 checksums. The runtime archive
-contains compiled JavaScript and Console assets; operators do not rebuild application source. Deploy the matching
-sandbox service and guest image. Keep the release manifest with the installation declaration.
+1. Select an immutable release and its independently pinned qualification SHA-256. Keep the complete candidate
+   directory, including `qualification.json`, inputs, evidence, guest archive, and installation metadata. Follow the
+   [artifact checks](operations.md#artifacts) before deployment.
+2. Extract `mechane-cloudflare-vVERSION.zip`. It contains the installation module, compiled Worker, Console assets,
+   notices, and database commands. Operators deploy these bytes without rebuilding application source.
+3. Supply a TLS-verifying Postgres connection and distinct migration and runtime roles. Create the unprivileged runtime
+   role before applying grants. Use the Node version recorded in `release.json` for the extracted database commands:
 
-A managed Node host must support a persistent process, health checks, graceful termination, and outbound Postgres
-connections. Keep at least one process available for the Workflow worker. Rolling replacement can briefly run two
-instances; durable claims and receipts coordinate them. No private Workflow callback route should be publicly exposed.
+   ```sh
+   node migrate.mjs
+   node grant.mjs
+   ```
 
-Configure a stable HTTPS public origin and the fixed GitHub callback `/auth/github/callback`. The reverse proxy forwards
-streams without buffering and does not become a second authentication service. It removes untrusted forwarding headers
-before supplying its own trusted values.
+   Both commands read `MECHANE_MIGRATION_DATABASE_URL`. The grant command also reads `MECHANE_RUNTIME_DATABASE_ROLE`.
+   [Database settings](../packages/worker/server/src/settings/database.ts) define their current inputs.
+
+4. Configure the extracted [Cloudflare module](../infrastructure/modules/cloudflare/README.md) with account, domain,
+   settings, secret references, and `qualification.path` plus `qualification.sha256`. Preserve existing resource names
+   during upgrades. The provider verifies qualification before uploading modules, Console assets, and the guest image.
+5. Review and apply the infrastructure plan under the installation's writer. Require a subsequent empty plan, then check
+   readiness, sign-in, actual Console assets, notification execution, and a cold sandbox command.
+
+The application serves the API and Console through the `ASSETS` binding. Keep the HTTPS origin and GitHub callback
+`/auth/github/callback` stable. The module also installs the bounded control-change delivery schedule.
+
+`MECHANE_AUTH_RATE_LIMITS` sets address, device-start, principal, and code-attempt allowances. Authenticated API
+requests use the principal allowance. Public authentication operations and failed authentication use the address
+allowance.
 
 ## Secrets
 
-Supply runtime, migration, OAuth, model, vault, sandbox, and notification-producer secrets through the installation's
-secret store. Keep values out of manifests, image layers, HCL, logs, and browser assets. Separate the migration
-connection from the runtime connection. Run owned and upstream schema bootstrap with the migration credential before
-activation.
+Bind `MECHANE_DATABASE_URL` to the restricted runtime credential. Keep `MECHANE_MIGRATION_DATABASE_URL` in controlled
+operator commands only. Serving code cannot write the migration ledger or retired execution tables.
 
-Workspace credentials enter through authenticated write-only APIs. Their encrypted records bind each secret to its
-workspace and reference. Metadata reads expose no value. Keep previous keyring versions until every retained ciphertext
-and backup that needs them has been replaced.
+Supply OAuth, model, credential-keyring, sandbox-service, and notification-producer secrets through deployment secret
+references. Keep values out of HCL, provider state, manifests, logs, and browser assets. The module's
+[variables](../infrastructure/modules/cloudflare/variables.tf) define settings and secret bindings.
+
+Workspace credentials enter through authenticated write-only APIs. Retain earlier keyring versions while existing
+ciphertexts or backups need them. Keep database backups, actor storage, workspace checkpoints, and required keys in the
+same recovery plan.
+
+## Local
+
+Use the repository's pinned tools, the release-qualified celld build, and Docker for source development:
+
+```sh
+mise run setup
+mise run dev
+```
+
+`dev` and `start` launch retained local state at `~/.local/state/mechane`, or `MECHANE_LOCAL_STATE_DIR`. The supervisor
+starts a watched celld application, separate environment host, real Docker guest, TLS Postgres, and deterministic HTTP
+fixtures. An application reload preserves the guest. The printed origin opens the Console.
+
+An explicit `MECHANE_LOCAL_CELLD_BINARY` JSON override supplies `executable`, `version`, and `sha256`; startup checks
+that identity. The [stack settings](../packages/node/stack/src/settings.ts) own local options. Local qualification does
+not establish Cloudflare container parity.
 
 ## Use
 
@@ -52,42 +84,13 @@ Select the origin and sign in with an admitted identity:
 export MECHANE_ORIGIN=https://agents.example.com
 mechane auth login
 mechane mech create --name scout
-mechane notification send --mech-id MECH_ID --text 'hello, scout' --notification-id REQUEST_UUID
+mechane notification send MECH_ID 'hello, scout' --notification-id REQUEST_UUID
 ```
 
-An installation administrator can create a shared workspace. Workspace owners configure membership, credentials,
-[execution access](agent-environments.md), and generic [notification producers](notifications.md). Slack belongs to the
-installation's [integration service](slack.md). Installation admission and workspace membership are separate grants. The
-CLI help and [operation catalog](../packages/shared/protocol/src/catalog.ts) are the maintained command and wire
-references.
+Workspace owners configure membership, credentials, [execution access](agent-environments.md), and
+[notification producers](notifications.md). Installation admission and workspace membership are separate grants. Use CLI
+help and the [operation catalog](../packages/shared/protocol/src/catalog.ts) for current commands.
 
-## Upgrades
-
-Review the [operations guide](operations.md) before applying a release. Preserve Postgres state, vault key versions,
-sandbox identities, and file checkpoints. Native Workflow histories must remain replayable across overlapping code
-versions. A new SDK version requires a compiled restart-and-resume qualification before publication.
-
-The initial November 6 native-runtime cutover established a fresh agent-store baseline. It is not a permanent
-reset-on-deploy policy. Later data changes follow the schema and execution contracts, including pending approval waits
-and uncertain commands.
-
-### Upgrading from schema 1
-
-Native releases 0.25.0 and 0.25.1 require domain schema 1 and cannot restart after the schema 2 migration in 0.25.2.
-Follow the [stopped-service upgrade procedure](operations.md#upgrade-domain-schema-1-to-2). It checkpoints and retires
-guests before changing their image, then stops old Node instances before migrating. Keep the old Node available until
-guest retirement and capacity release finish.
-
-Recover forward if that upgrade fails; deploying the old binary against the migrated database is not a supported
-rollback. Subsequent releases validate their known migration prefix and must preserve the previous release's reads and
-writes through additive migrations. The migrator refuses to modify a database newer than its own release.
-
-### Upgrading from schema 3
-
-Release 0.26.1 adds domain migration 4 to repair invalid UUID bits in historical Console messages imported by 0.26.0. It
-preserves their content, presentation, ordering, timestamps, and activity references. Valid message identifiers and
-native tool publications remain unchanged. Earlier migration checksums remain immutable.
-
-Run the released migrator with the migration connection, then verify authenticated Conversation reads for a mech with
-imported messages. Check that its text and cards remain readable; a successful migration or SQL row count alone is not
-enough. Repeating the migrator must leave the repaired records unchanged.
+Read the [operations guide](operations.md) before upgrades. Moving preserved histories to actors requires positive
+retirement of the previous execution owner and a reviewed, digest-bound import. Import preserves maintenance holds;
+activation is a separate decision.

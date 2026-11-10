@@ -2,6 +2,7 @@
 id: try-promise-shape
 valid:
   - 'Effect.tryPromise({ try: () => open(path), catch: (cause) => new Unreadable({ path, reason: String(cause) }) });'
+  - "Effect.try({ try: () => new Certificate(pem), catch: () => new InvalidCertificate({ reason: 'invalid public certificate' }) });"
 invalid:
   - 'Effect.tryPromise({ try: async () => { await open(); }, catch: (cause) => new Unreadable({ reason: String(cause) }) });'
   - 'Effect.tryPromise({ try: () => open(), catch: (cause) => String(cause) });'

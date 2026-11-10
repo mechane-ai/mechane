@@ -1,7 +1,7 @@
 ---
 name: browser-evidence
 message: Preserve browser captures as private, authenticated artifacts with truthful provenance and explicit persistence outcomes.
-paths: ["packages/shared/records/src/evidence*.ts", "packages/shared/protocol/src/operations/evidence/**", "packages/shared/protocol/src/pages/*evidence*.ts", "packages/worker/sandbox-store/src/evidence/**", "packages/worker/sandbox/src/evidence/**", "packages/worker/sandbox-service/src/**", "packages/node/runtime/src/tools/**", "packages/node/runtime/src/operations/evidence.ts", "packages/node/server/src/**", "packages/node/browser/src/browser-{artifacts,recording,provenance}.ts", "packages/node/browser/src/store/**", "packages/browser/console-data/src/**", "packages/browser/console-views/src/{evidence,trace}.tsx", "packages/browser/console/src/{console-route,navigation,router}.tsx", "packages/browser/console/src/screens/{evidence,run-evidence,trace}.tsx", "packages/browser/console/src/routes/*evidence*.tsx", "packages/browser/elements/packages/content/src/media-viewer.tsx"]
+paths: ["packages/shared/records/src/evidence*.ts", "packages/shared/protocol/src/operations/evidence/**", "packages/shared/protocol/src/pages/*evidence*.ts", "packages/worker/sandbox-store/src/evidence/**", "packages/worker/sandbox/src/evidence/**", "packages/worker/sandbox/src/service/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/evidence.ts", "packages/worker/server/src/**", "packages/node/browser/src/browser-{artifacts,recording,provenance}.ts", "packages/node/browser/src/store/**", "packages/browser/console-data/src/**", "packages/browser/console-views/src/{evidence,trace}.tsx", "packages/browser/console/src/{console-route,navigation,router}.tsx", "packages/browser/console/src/screens/{evidence,run-evidence,trace}.tsx", "packages/browser/console/src/routes/*evidence*.tsx", "packages/browser/elements/packages/content/src/media-viewer.tsx"]
 ---
 
 ## Rules
@@ -32,6 +32,11 @@ Serve only declared media types with private, no-store caching, `nosniff`, and s
 before streaming video. Validate range bounds and distinguish a partial response from a complete file. Never expose a
 public bucket URL as a substitute for an authenticated media route.
 
+Stream private media across the standard Durable Object `fetch` boundary after service authentication and scoped
+namespace binding. Keep metadata on JSON RPC. The object's fetch handler accepts only its canonical scoped media GET
+route and rechecks the bound evidence owner before accessing R2. Preserve range and response headers without buffering
+the whole artifact or returning a streaming `Response` through cross-object RPC.
+
 Record runtime-observed capture time, machine, tab, URL, media size, digest, and dimensions. Record an observed Git head
 and dirty state only from the actual inspected checkout; otherwise say that revision provenance is unavailable. A
 checkout observation does not prove which revision a remote page serves. Model labels cannot supply verification.
@@ -43,7 +48,7 @@ disclosure implicitly. An explicitly approved provider copy has an independent a
 
 ## Checks
 
-Review the domain evidence operations, authenticated Node HTTP routes, and sandbox evidence store together.
+Review the domain evidence operations, authenticated Worker HTTP routes, and sandbox evidence store together.
 Through the actual API, verify saved media remains readable after machine replacement, failed saves are unavailable,
 and repeated capture identities do not create new content. Remove workspace membership and verify both metadata and
 content reads fail, including byte-range requests. Check another mech's artifact has the same response as an absent one.

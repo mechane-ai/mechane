@@ -1,11 +1,12 @@
 import type { RecordId } from '@mechane/records';
 import type { RecordsInput } from '@mechane/store';
 import { Schema } from 'effect';
-import { WorkspaceRecovery } from './schemas.ts';
+import { WorkspaceRecovery, WorkspaceRestoration } from './schemas.ts';
 
 type RetireWorkspaceInput = { readonly generation: RecordId };
+type FailedRestorationInput = { readonly restoration: WorkspaceRestoration; readonly reason: string };
 
-/** Retains failed live workspaces and records generations that still need object cleanup. */
+/** Retains file recovery intent and generations that still need object cleanup. */
 export function workspaceRecoveryRecords({ sql }: RecordsInput) {
   const retireWorkspace: (input: RetireWorkspaceInput) => void = ({ generation }) => {
     sql.exec('UPDATE sandbox_workspace SET checkpoint = NULL, file_checkpoint = NULL WHERE slot = 1');
@@ -33,5 +34,25 @@ export function workspaceRecoveryRecords({ sql }: RecordsInput) {
     );
   };
 
-  return { retireWorkspace, clearRetiredWorkspace, recoverWorkspace };
+  /** A lost partial copy is recoverable from its committed source; that source must never be retired. */
+  const failRestoration: (input: FailedRestorationInput) => void = ({ restoration, reason }) => {
+    const recoveryCodec = Schema.fromJsonString(WorkspaceRecovery);
+
+    const value = Schema.encodeSync(recoveryCodec)({
+      generation: restoration.generation,
+      machineId: restoration.machineId,
+      reason,
+    });
+
+    const restorationCodec = Schema.fromJsonString(WorkspaceRestoration);
+    const expected = Schema.encodeSync(restorationCodec)(restoration);
+
+    sql.exec(
+      'UPDATE sandbox_workspace SET recovery = ?, restoration = NULL WHERE slot = 1 AND restoration = ?',
+      value,
+      expected,
+    );
+  };
+
+  return { retireWorkspace, clearRetiredWorkspace, recoverWorkspace, failRestoration };
 }

@@ -37,6 +37,7 @@ export async function browserGuest({ guest, machineId, request }: BrowserGuestIn
 
   if (Result.isFailure(sent)) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: 'the browser response was interrupted; retry this request ID to reconcile its receipt',
     });
   }
@@ -56,6 +57,7 @@ export async function browserGuest({ guest, machineId, request }: BrowserGuestIn
 
   if (sent.success.status === HttpStatusCode.NoContent) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: 'the guest is finishing a workspace operation before admitting this browser request',
     });
   }
@@ -67,12 +69,14 @@ export async function browserGuest({ guest, machineId, request }: BrowserGuestIn
 
   if (Result.isFailure(received)) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: 'the browser response could not be read within its byte limit',
     });
   }
 
   if (response.status !== HttpStatusCode.Ok) {
     return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
       reason: `the guest refused browser request ${request.requestId} with HTTP ${response.status}`,
     });
   }
@@ -81,7 +85,10 @@ export async function browserGuest({ guest, machineId, request }: BrowserGuestIn
   const decoded = Schema.decodeUnknownResult(responseCodec)(received.success);
 
   if (Result.isFailure(decoded) || decoded.success.requestId !== request.requestId) {
-    return BrowserProgress.cases.Pending.make({ reason: 'the guest returned an invalid browser receipt' });
+    return BrowserProgress.cases.Pending.make({
+      isDispatchRequired: false,
+      reason: 'the guest returned an invalid browser receipt',
+    });
   }
 
   return BrowserProgress.cases.Ready.make({ machineId, response: decoded.success });

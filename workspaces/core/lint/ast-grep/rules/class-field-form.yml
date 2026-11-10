@@ -26,12 +26,7 @@ rule:
               has:
                 kind: class_heritage
                 has:
-                  any:
-                    - kind: extends_clause
-                      has:
-                        field: value
-                        regex: ^Error$
-                    - kind: implements_clause
-                      has:
-                        kind: type_identifier
-                        regex: ^LanguageModelV4$
+                  kind: extends_clause
+                  has:
+                    field: value
+                    regex: ^Error$

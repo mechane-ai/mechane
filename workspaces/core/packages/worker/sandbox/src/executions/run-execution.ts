@@ -53,6 +53,10 @@ export async function runExecution({
   const execution = Option.getOrThrow(store.execution({ executionId }));
 
   if (!canDispatch) {
+    if (execution.status === ExecutionStatus.Pending) {
+      return ExecutionEnvironmentRequired.make({});
+    }
+
     return executionProgress({ execution });
   }
 
