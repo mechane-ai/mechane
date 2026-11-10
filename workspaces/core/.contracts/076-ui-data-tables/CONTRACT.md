@@ -42,6 +42,12 @@ Review changed custom table layouts: do unusual grouped or spanning cells use se
 `DataTable` is the shared renderer for comparable records, including small finite lists. The library's typed columns
 and callbacks hide TanStack implementation types.
 
+Make a row's primary native link or button cover its noninteractive cells. Navigation keeps native middle-click,
+modifier-click, context-menu, and keyboard behavior; do not forward row clicks through a synthetic control click.
+Keep embedded controls and selection independently operable above that hit area, including focusable timestamps.
+Show the row's keyboard focus without moving its geometry, and preserve the primary trigger as the return-focus target.
+Inspect a non-primary cell, an embedded control, and keyboard return in the existing Console navigation flow.
+
 Check reusable column metadata against `DataTableColumnLayout` at its definition with an annotation or `satisfies`.
 Check complete columns against `DataTableColumn<Row>` there. A later spread or `Object.values` call must not be the
 first type check: structural assignment can accept stale extra properties and silently lose their behavior.

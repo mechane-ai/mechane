@@ -10,6 +10,8 @@ import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
+const cellCenter = 0.5;
+
 export async function consoleKeepsDraftsAndRunContext({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
   const marker = `console-${randomUUID()}`;
@@ -42,6 +44,31 @@ export async function consoleKeepsDraftsAndRunContext({ stack }: ScenarioInput):
       await run.focus();
       await run.click();
       await page.getByRole('button', { name: 'Back to conversation', exact: true }).click();
+      assert.equal(await draft.inputValue(), 'Keep this draft');
+
+      await page.getByRole('link', { name: 'Activity', exact: true }).click();
+      await page.getByRole('link', { name: 'Runs', exact: true }).click();
+
+      const runRow = page
+        .getByRole('row')
+        .filter({ has: page.getByRole('link', { name: `Inspect ${marker}`, exact: true }) });
+
+      const elapsedCell = runRow.getByRole('cell').last();
+
+      await elapsedCell.scrollIntoViewIfNeeded();
+
+      const elapsedBounds = await elapsedCell.boundingBox();
+
+      assert.ok(elapsedBounds !== null);
+
+      const horizontalCenter = elapsedBounds.x + elapsedBounds.width * cellCenter;
+      const verticalCenter = elapsedBounds.y + elapsedBounds.height * cellCenter;
+
+      await page.mouse.click(horizontalCenter, verticalCenter);
+      await page.getByRole('button', { name: 'Back to runs', exact: true }).click();
+      await runRow.getByRole('link').and(page.locator(':focus')).waitFor();
+
+      await page.getByRole('link', { name: 'Conversation', exact: true }).click();
       assert.equal(await draft.inputValue(), 'Keep this draft');
 
       await page.getByRole('link', { name: 'Mechs', exact: true }).first().click();

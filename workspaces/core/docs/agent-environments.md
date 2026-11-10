@@ -59,6 +59,17 @@ caches and build output in scratch locations; archive limits remain explicit. A 
 committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and private
 capture scratch.
 
+The portable home is bounded to a 2 GiB uncompressed tar stream and a 512 MiB gzip archive. Tar metadata and padding
+count toward the first limit. Compression, splitting, transfer, and restoration buffer bounded parts, but saving and
+restoring stage both the archive and its parts on disk. Allow home size plus twice the compressed size, as well as
+tools, caches, build scratch, and filesystem overhead, when selecting the machine tier. Scratch outside the home still
+uses that machine's disk. These bounds do not promise that every repository or build fits the selected environment.
+
+The guest and Worker share these limits. Roll them out together after committing the existing guest's files; a new
+Worker cannot raise a limit compiled into an already-running guest. Older components may reject a new checkpoint at
+their lower admission limit, even though archive and part formats are unchanged. Preserve unsaved live files before
+replacing an older guest. Move only identified, reproducible data when recovery requires reducing its home first.
+
 Checkpoint upload and restoration copy existing archive parts in bounded sequential batches. Each part retains its
 checksum and durable progress; a completed command still waits for the entire generation to commit. The scheduling
 budget limits starting another part, not an already-running transfer. Guest command duration excludes that save, so a

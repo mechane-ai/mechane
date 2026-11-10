@@ -16,9 +16,6 @@ const features = tableFeatures({});
 const selectionColumnWidth = 76;
 const compactTableQuery = conditions.compactTable.slice('@media '.length);
 
-const rowControlSelector =
-  'a, button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="switch"], [role="checkbox"], [role="radio"], [role="combobox"], [role="slider"], [role="spinbutton"], [role="textbox"], [role="tab"], [role^="menuitem"], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
-
 const rowFocusOffsets: ReadonlyMap<string, number> = new Map([
   ['ArrowUp', -1],
   ['ArrowDown', 1],
@@ -119,6 +116,8 @@ const styles = stylex.create({
   },
   sortIcon: { flexShrink: 0 },
   row: {
+    'position': 'relative',
+    'isolation': 'isolate',
     'height': tableGeometry.rowHeight,
     'borderBottomWidth': 1,
     'borderBottomStyle': 'solid',
@@ -148,11 +147,15 @@ const styles = stylex.create({
     'textAlign': 'inherit',
     'textDecoration': 'none',
     'cursor': 'pointer',
+    'outlineStyle': 'none',
+    '::after': { content: '""', position: 'absolute', inset: 0 },
     ':focus-visible': {
-      outlineWidth: controls.focusWidth,
-      outlineStyle: 'solid',
-      outlineColor: colors.focus,
-      outlineOffset: 2,
+      '::after': {
+        outlineWidth: controls.focusWidth,
+        outlineStyle: 'solid',
+        outlineColor: colors.focus,
+        outlineOffset: -2,
+      },
     },
   },
   cell: {
@@ -167,7 +170,17 @@ const styles = stylex.create({
   width: (width: number) => ({ width, minWidth: width }),
   secondary: { display: { [conditions.compactTable]: 'none' } },
   truncated: { overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
-  cellContent: { display: 'block', minWidth: 0, width: '100%', maxWidth: '100%' },
+  cellContent: {
+    'display': 'block',
+    'minWidth': 0,
+    'width': '100%',
+    'maxWidth': '100%',
+    ':has(a, button, input, select, textarea, label, summary, [tabindex], [contenteditable])': {
+      position: 'relative',
+      zIndex: 1,
+    },
+  },
+  rowControl: { position: 'relative', zIndex: 1 },
   text: { display: 'block', minWidth: 0, width: '100%' },
   textColumn: { flex: 1, minWidth: 0 },
   textRow: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0, width: '100%' },
@@ -795,20 +808,6 @@ export function DataTable<Row extends object>({
                   aria-rowindex={window === undefined ? undefined : index + 2}
                   ref={window === undefined || rowSizing === 'fixed' ? undefined : virtualizer.measureElement}
                   onFocus={() => setFocusedId(row.id)}
-                  onClick={(event) => {
-                    if (rowAction === undefined || !isPlainActivation(event)) {
-                      return;
-                    }
-
-                    if (event.target instanceof Element && event.target.closest(rowControlSelector) !== null) {
-                      return;
-                    }
-
-                    const trigger = event.currentTarget.querySelector<HTMLElement>('[data-row-action]');
-
-                    trigger?.focus({ preventScroll: true });
-                    trigger?.click();
-                  }}
                   {...stylex.props(
                     styles.row,
                     rowAction !== undefined && styles.actionable,
@@ -816,7 +815,7 @@ export function DataTable<Row extends object>({
                   )}
                 >
                   {selectedIds !== undefined && (
-                    <td {...stylex.props(styles.cell, styles.selection)}>
+                    <td {...stylex.props(styles.cell, styles.selection, styles.rowControl)}>
                       <Checkbox.Root
                         aria-label={selectionLabel(row.original)}
                         checked={selectedIds.has(row.id)}

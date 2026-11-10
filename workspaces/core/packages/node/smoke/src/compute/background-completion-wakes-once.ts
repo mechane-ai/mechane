@@ -25,7 +25,7 @@ import type { MechContext, ScenarioInput } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { createCipheriv, createHash, randomUUID } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { appendFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 const StartedProcess = Schema.Struct({
@@ -36,6 +36,7 @@ const StartedProcess = Schema.Struct({
 
 const FAILED_ACTIVATION_STATUSES: ReadonlySet<TurnStatus> = new Set([TurnStatus.Failed, TurnStatus.Stopped]);
 const MULTIPART_FILE_BYTES = 9 * BYTES_PER_MEBIBYTE;
+const RECOVERY_FILE_BYTES = 513 * BYTES_PER_MEBIBYTE;
 const CIPHER_KEY_BYTES = 32;
 const CIPHER_IV_BYTES = 16;
 
@@ -163,8 +164,16 @@ async function assertLostWriterIsFenced(input: LostWriterInput): Promise<void> {
   const cipher = createCipheriv('aes-256-ctr', Buffer.alloc(CIPHER_KEY_BYTES), Buffer.alloc(CIPHER_IV_BYTES));
   const multipart = cipher.update(Buffer.alloc(MULTIPART_FILE_BYTES));
   const digest = createHash('sha256').update(multipart).digest('hex');
+  const recovery = Buffer.alloc(BYTES_PER_MEBIBYTE, 'retained\n');
+  const recoveryPath = join(dirname(finished), 'large');
 
   await writeFile(join(dirname(finished), 'multipart'), multipart);
+  await writeFile(recoveryPath, recovery);
+
+  // Tar can encode sparse files compactly, so the raw byte limit needs actual written data.
+  for (let bytes = recovery.byteLength; bytes < RECOVERY_FILE_BYTES; bytes += recovery.byteLength) {
+    await appendFile(recoveryPath, recovery);
+  }
 
   const saved = await waitFor({
     name: 'the prior home generation to commit',
@@ -229,6 +238,9 @@ async function assertLostWriterIsFenced(input: LostWriterInput): Promise<void> {
     command: [
       `test ! -f '${directory}/unsaved'`,
       `test "$(cat '${directory}/finished')" = finished`,
+      `test "$(wc -c < '${directory}/large')" -eq ${RECOVERY_FILE_BYTES}`,
+      `test "$(head -n 1 '${directory}/large')" = retained`,
+      `rm '${directory}/large'`,
       `node -e 'const fs = require("node:fs"); const crypto = require("node:crypto"); process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
     ].join(' && '),
   });

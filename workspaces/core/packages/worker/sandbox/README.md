@@ -35,9 +35,9 @@ uncommitted replacement.
 
 ## Limits
 
-The guest stops command-owned processes before archiving. Archives permit at most 512 MiB uncompressed and 256 MiB
-compressed, with a five-minute operation deadline. Each command copies the full home; large repositories need workload
-qualification. Generated caches belong outside the committed home.
+The guest pauses writers while archiving. Archives permit at most 2 GiB uncompressed and 512 MiB compressed, with a
+five-minute operation deadline. Each command copies the full home; large repositories need workload qualification.
+Generated caches belong outside the committed home.
 
 Cloudflare containers have direct internet disabled. HTTP and HTTPS pass through `EgressGateway`, which validates
 matching URL and Host authorities, admits configured public hosts, uses TLS, and follows no redirects. The local process

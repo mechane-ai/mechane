@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/node/guest/image/{Dockerfile,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress}/**", "packages/worker/sandbox/src/workspace/snapshots/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/constants.ts", "packages/node/guest/image/{Dockerfile,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress}/**", "packages/worker/sandbox/src/workspace/snapshots/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -15,6 +15,11 @@ ordinary agent-managed files, not another runtime task or memory service. Keep i
 the runtime store; their persistence does not establish file durability. Keep reproducible caches and build output outside
 that home through explicit environment setup. Preserve existing files. Do not infer disposability from `.gitignore` or
 silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
+
+Keep the expanded and compressed checkpoint bounds in the shared sandbox wire constants used by the guest and Worker.
+Qualify a capacity change against streaming memory, home plus archive staging disk, part counts, and existing operation
+deadlines on the selected machine tier. Scratch outside the home still consumes that machine's disk. Preserve unsaved
+files before replacing a guest with older compiled limits; deploying a new Worker does not change that guest's bounds.
 
 Advance checkpoint uploads and restoration copies in bounded sequential batches. Keep the persisted part format,
 per-part validation, and durable cursor. Reload the current transfer after each awaited part; stop when its identity
@@ -47,6 +52,10 @@ for command bodies. Live release proof names the checked PR head, merge, workflo
 Exercise a multipart save and restoration across batch boundaries. Interrupt transfer after a stored part, cancel while
 a part is in flight, and fail the final part. Verify retained cursors, restored files, and the absence of a premature
 terminal receipt or activated partial home. Check batch limits without treating a timing sample as a latency promise.
+For a raised capacity, save and restore a home exceeding the former bound, and retain explicit failures above each new
+bound. Establish the tar-stream size from actual written data; a sparse file's logical length alone is insufficient.
+Qualify a representative compressed archive near the accepted maximum separately from ordinary small smoke
+fixtures. Record actual workload size and machine disk headroom; a local transfer measurement is not hosted qualification.
 
 ## Local adaptations
 
