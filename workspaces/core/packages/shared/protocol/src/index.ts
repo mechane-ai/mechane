@@ -220,6 +220,7 @@ export {
   readEvidenceViewerPath,
 } from './operations/evidence/evidence-paths.ts';
 export { signInPath } from './pages/sign-in-path.ts';
+export { BrowserAuthenticationPath, BROWSER_AUTHENTICATION_REQUEST } from './pages/browser-authentication.ts';
 
 export { BYTES_PER_MEBIBYTE as EVIDENCE_CHUNK_MAX_BYTES } from '@mechane/records';
 export { BrowserEvidenceProgress } from './operations/evidence/browser-evidence-progress.ts';

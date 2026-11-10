@@ -23,7 +23,7 @@ type MechOwner = { readonly stack: LocalStack; readonly account: Account };
 type MechInput = MechOwner & { readonly mechId: string };
 type CreateMechInput = MechOwner & { readonly name: string; readonly dailyCapMicros?: number };
 type SendNotificationInput = MechInput & { readonly text: string; readonly notificationId?: string };
-type TraceInput = MechInput & { readonly turnId: string };
+type TraceInput = MechInput & { readonly turnId: string; readonly signal?: AbortSignal };
 type EventsInput = MechInput & { readonly after?: number };
 type HistoryInput = MechInput & { readonly after?: string };
 type AfterQuery = { readonly after?: string | number };
@@ -32,6 +32,7 @@ type WaitForTurnInput = MechInput & { readonly notificationId: string };
 type ReadInput<Output extends Schema.Codec<unknown, unknown>> = MechOwner & {
   readonly path: string;
   readonly schema: Output;
+  readonly signal?: AbortSignal;
 };
 
 const READ_DEADLINE_MS = 30_000;
@@ -162,10 +163,11 @@ async function readJson<Output extends Schema.Codec<unknown, unknown>>({
   account,
   path,
   schema,
+  signal,
 }: ReadInput<Output>): Promise<Output['Type']> {
   const response = await fetch(new URL(path, stack.origin), {
     headers: { [HttpHeader.Authorization]: `Bearer ${account.token}` },
-    signal: AbortSignal.timeout(READ_DEADLINE_MS),
+    signal: signal ?? AbortSignal.timeout(READ_DEADLINE_MS),
   });
 
   if (!response.ok) {

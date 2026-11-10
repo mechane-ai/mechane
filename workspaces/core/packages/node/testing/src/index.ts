@@ -28,6 +28,8 @@ export {
 export { startCancellationGate } from './fixtures/cancellation-gate.ts';
 export type { CancellationGate } from './fixtures/cancellation-gate.ts';
 export { startCommandGate } from './fixtures/command-gate.ts';
+export { CancellationPhase, writeCancellationDiagnostic } from './fixtures/write-cancellation-diagnostic.ts';
+export type { CancellationObservation } from './fixtures/write-cancellation-diagnostic.ts';
 export {
   createMech,
   createMechContext,

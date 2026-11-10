@@ -1,5 +1,6 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import { InboxDoc, LiveDoc } from '@earendil-works/pi-durable';
+import type { Tx } from '@earendil-works/pi-durable';
 import { RequestInvalid, TurnEnded } from '@mechane/protocol';
 import { TurnId } from '@mechane/records';
 import { toolStore } from '../execution/receipts.ts';
@@ -12,6 +13,8 @@ import { Cancellations, PendingCancellations, putCancellation, putTurn, Turns } 
 import { decodeStored, RunRecord } from './records.ts';
 import { State } from './state.ts';
 import type { ActorAccess } from './types.ts';
+
+type RunCancellationInput = { readonly turnId: string; readonly principalId: string };
 
 async function abortNativeTurn(access: ActorAccess, turnId: string): Promise<void> {
   const turn = await Turns.get(access.harness, turnId);
@@ -121,10 +124,36 @@ export async function reconcileCancellations(access: ActorAccess): Promise<void>
   }
 }
 
-export async function requestRunCancellation(
-  access: ActorAccess,
-  input: { readonly turnId: string; readonly cancelerId: string },
-) {
+async function recordRunCancellation(transaction: Tx, input: RunCancellationInput) {
+  const turn = await Turns.read(transaction, input.turnId);
+
+  if (turn === undefined) {
+    throw new Error('The cancellation target disappeared');
+  }
+
+  const current = decodeStored(RunRecord, turn.value);
+
+  if (current.runtimeSource === 'imported' || (current.endedAt !== null && current.cancelRequestedAt === null)) {
+    throw new TurnEnded({ turnId: TurnId.make(current.id) });
+  }
+
+  const original = await Cancellations.read(transaction, input.turnId);
+  const requestedAt = original?.requestedAt ?? current.cancelRequestedAt ?? new Date().toISOString();
+  const cancelerId = original?.cancelerId ?? input.principalId;
+
+  if (original === undefined) {
+    await putCancellation(transaction, { turnId: input.turnId, cancelerId, requestedAt, status: 'pending' });
+  }
+
+  if (current.cancelRequestedAt === null) {
+    await putTurn(transaction, { ...turn, value: JSON.stringify({ ...current, cancelRequestedAt: requestedAt }) });
+    await appendEvent(transaction, { type: 'run.cancel_requested', runId: current.id, payload: { cancelerId } });
+  }
+
+  return { ...current, cancelRequestedAt: requestedAt };
+}
+
+export async function requestRunCancellation(access: ActorAccess, input: RunCancellationInput) {
   const run = await readRun(access, input);
 
   if (run === null) {
@@ -137,29 +166,19 @@ export async function requestRunCancellation(
 
   await access.arm();
 
-  const result = await access.harness.commit(async (transaction) => {
-    const turn = await Turns.read(transaction, input.turnId);
+  const result = await access.withControl(
+    async (store) =>
+      await store.withMemberAdmission({
+        ...access.scope,
+        principalId: input.principalId,
+        run: async (authorize) =>
+          await access.harness.commit(async (transaction) => {
+            await authorize();
 
-    if (turn === undefined) {
-      throw new Error('The cancellation target disappeared');
-    }
-
-    const current = decodeStored(RunRecord, turn.value);
-    const original = await Cancellations.read(transaction, input.turnId);
-    const requestedAt = original?.requestedAt ?? current.cancelRequestedAt ?? new Date().toISOString();
-    const cancelerId = original?.cancelerId ?? input.cancelerId;
-
-    if (original === undefined) {
-      await putCancellation(transaction, { turnId: input.turnId, cancelerId, requestedAt, status: 'pending' });
-    }
-
-    if (current.cancelRequestedAt === null) {
-      await putTurn(transaction, { ...turn, value: JSON.stringify({ ...current, cancelRequestedAt: requestedAt }) });
-      await appendEvent(transaction, { type: 'run.cancel_requested', runId: current.id, payload: { cancelerId } });
-    }
-
-    return { ...current, cancelRequestedAt: requestedAt };
-  }, BACKGROUND_CONTEXT);
+            return await recordRunCancellation(transaction, input);
+          }, BACKGROUND_CONTEXT),
+      }),
+  );
 
   await abortNativeTurn(access, input.turnId);
   await access.arm();

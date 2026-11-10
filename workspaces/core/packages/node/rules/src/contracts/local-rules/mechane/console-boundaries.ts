@@ -46,7 +46,7 @@ export const consoleBoundaries = {
       ...ADOPTED,
       name: 'unicorn/require-post-message-target-origin',
       value: Severity.Error,
-      maxSuppressions: 1,
+      maxSuppressions: 2,
       standard: '113',
     },
     {

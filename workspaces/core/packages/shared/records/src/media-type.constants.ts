@@ -19,6 +19,7 @@ export const MediaType = {
   GitHubJson: 'application/vnd.github+json',
   EventStream: 'text/event-stream',
   Html: 'text/html; charset=utf-8',
+  HtmlDocument: 'text/html',
   PlainText: 'text/plain',
   Utf8PlainText: 'text/plain; charset=utf-8',
 } as const;

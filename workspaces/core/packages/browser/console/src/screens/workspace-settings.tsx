@@ -3,13 +3,17 @@ import { Details } from '@mechane-ai/elements/collections';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { SettingsSection } from '@mechane-ai/elements/forms';
 import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
+import { browserAuthenticationMessage, completeBrowserAuthentication } from '@mechane/console-data';
 import type { ConsoleData, Session } from '@mechane/console-data';
+import { BrowserAuthenticationPath } from '@mechane/protocol';
 import type { Workspace } from '@mechane/protocol';
 import { HttpMethod } from '@mechane/records';
 import { useState } from 'react';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useNavigationPreferences } from '../navigation-preferences.tsx';
 import { DataStatus } from './data-status.tsx';
+
+type FinishSignOutInput = { readonly lifetime: AbortController };
 
 export function WorkspaceSettings({
   data,
@@ -22,6 +26,26 @@ export function WorkspaceSettings({
 }): ReactNode {
   const { hasPersistenceError } = useNavigationPreferences();
   const [isSigningOut, setSigningOut] = useState(false);
+  const [signOutFailure, setSignOutFailure] = useState<string>();
+
+  function finishSignOut({ lifetime }: FinishSignOutInput): void {
+    const authentication = completeBrowserAuthentication({
+      url: new URL(BrowserAuthenticationPath.SignOut, globalThis.location.origin),
+      signal: lifetime.signal,
+    });
+
+    void authentication.then(
+      (destination) => {
+        lifetime.abort();
+        globalThis.location.assign(destination.href);
+      },
+      (failure: unknown) => {
+        lifetime.abort();
+        setSignOutFailure(browserAuthenticationMessage({ failure }));
+        setSigningOut(false);
+      },
+    );
+  }
 
   function signOut(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
@@ -30,12 +54,13 @@ export function WorkspaceSettings({
       return;
     }
 
-    const form = event.currentTarget;
+    const lifetime = new AbortController();
 
+    globalThis.addEventListener('pagehide', () => lifetime.abort(), { once: true, signal: lifetime.signal });
     setSigningOut(true);
     void data.clearScope().then(
-      () => form.submit(),
-      () => form.submit(),
+      () => finishSignOut({ lifetime }),
+      () => finishSignOut({ lifetime }),
     );
   }
 
@@ -55,7 +80,7 @@ export function WorkspaceSettings({
                 {
                   label: 'Session',
                   value: (
-                    <form method={HttpMethod.Post} action="/auth/sign-out" onSubmit={signOut}>
+                    <form method={HttpMethod.Post} action={BrowserAuthenticationPath.SignOut} onSubmit={signOut}>
                       <Button type="submit" isPending={isSigningOut} pendingLabel="Signing out…">
                         Sign out
                       </Button>
@@ -64,6 +89,7 @@ export function WorkspaceSettings({
                 },
               ]}
             />
+            {signOutFailure !== undefined && <Notice hasError>{signOutFailure}</Notice>}
           </SettingsSection>
           <SettingsSection title="About">
             <Stack isCompact>

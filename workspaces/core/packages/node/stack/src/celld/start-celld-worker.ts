@@ -4,12 +4,13 @@ import { createReadStream } from 'node:fs';
 import { chmod, copyFile, mkdir, open, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
+import { StackCleanupUnconfirmedError } from '../errors.ts';
 import { runCommand, startProcess } from '../process.ts';
 import type { ManagedProcess } from '../types.ts';
 import type { CelldCloseOptions, CelldReadiness, CelldWorkerOptions, LocalCelldWorker } from './types.ts';
 import { startWorkerBuild } from './worker-build.ts';
 
-const CELLD_VERSION = 'celld 0.6.3-mechane.2';
+const CELLD_VERSION = 'celld 0.6.3-mechane.3';
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PRIVATE_FILE_MODE = 0o600;
 const OWNER_INDENT_SPACES = 2;
@@ -43,6 +44,8 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     RUST_LOG: consoleLogFilter(input.environment['RUST_LOG']),
     CELLD_WAKER_TICK_MS: input.environment['CELLD_WAKER_TICK_MS'] ?? String(LOCAL_WAKER_TICK_MS),
   };
+
+  const shouldConfirmCleanup = input.environment['CELLD_CONTAINER_HOST_SERVICES'] !== undefined;
 
   if (input.celldBinary !== undefined) {
     const digest = await fileDigest(executable);
@@ -126,7 +129,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     );
   }
 
-  async function launch(): Promise<void> {
+  async function launch(deadlineMs?: number): Promise<void> {
     resources.isLaunching = true;
     resources.shouldReload = false;
 
@@ -155,6 +158,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         input,
         logFile,
         logOffset,
+        deadlineMs,
         shouldStop: () => resources.isClosing === true,
       });
       await record('serving');
@@ -208,10 +212,21 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
   }
 
   async function close(options: CelldCloseOptions = {}): Promise<void> {
-    resources.isClosing = true;
-    resources.closeOptions = { ...resources.closeOptions, ...options };
+    const isExplicitRetry = resources.isClosing === true && resources.closing === undefined;
 
-    resources.closing ??= closeResources();
+    resources.isClosing = true;
+
+    if (isExplicitRetry) {
+      resources.closeOptions = options;
+    } else {
+      resources.closeOptions = { ...resources.closeOptions, ...options };
+    }
+
+    if (isExplicitRetry && shouldConfirmCleanup && options.signal !== 'SIGKILL') {
+      resources.closeOptions = { ...resources.closeOptions, signal: 'SIGTERM' };
+    }
+
+    resources.closing ??= closeResources(isExplicitRetry);
 
     try {
       await resources.closing;
@@ -256,18 +271,46 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     );
   }
 
-  async function closeResources(): Promise<void> {
+  async function closeResources(isExplicitRetry: boolean): Promise<void> {
     const failures: Array<unknown> = [];
 
     await resources.build?.dispose().catch((error: unknown) => failures.push(error));
     await resources.restarting?.catch(() => undefined);
 
+    const previous = resources.process?.child;
+    const hasExited = previous === undefined || previous.exitCode !== null || previous.signalCode !== null;
+    const shouldRetryCleanup = isExplicitRetry && shouldConfirmCleanup;
+
+    if (shouldRetryCleanup && hasExited && previous?.exitCode !== 0) {
+      resources.isClosing = false;
+
+      try {
+        await launch(resources.closeOptions?.deadlineMs);
+      } catch (cause) {
+        failures.push(cause);
+      } finally {
+        resources.isClosing = true;
+      }
+    }
+
     await stopProcess(resources.closeOptions).catch((error: unknown) => failures.push(error));
+
+    if (shouldConfirmCleanup && resources.process !== undefined && resources.process.child.exitCode !== 0) {
+      failures.push(new Error(`Native environment cleanup did not exit successfully; inspect ${ownerFile}`));
+    }
 
     if (failures.length > 0) {
       await record('stop-failed');
+      await copyFile(
+        ownerFile,
+        join(privateDirectory, `stop-failed-${resources.process?.child.pid ?? 'unstarted'}-${Date.now()}.json`),
+      );
 
-      throw new AggregateError(failures, `The local Worker cleanup failed; inspect ${ownerFile}`);
+      throw new StackCleanupUnconfirmedError(
+        directory,
+        new AggregateError(failures, `The local Worker cleanup failed; inspect ${ownerFile}`),
+        close,
+      );
     }
 
     await record('stopped');
@@ -325,9 +368,11 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     try {
       await close();
     } catch (cleanupError) {
-      throw new AggregateError([error, cleanupError], `The local Worker failed; inspect ${logFile}`, {
-        cause: cleanupError,
-      });
+      throw new StackCleanupUnconfirmedError(
+        directory,
+        new AggregateError([error, cleanupError], `The local Worker failed; inspect ${logFile}`),
+        close,
+      );
     }
 
     throw new Error(`The local Worker failed; inspect ${logFile}`, { cause: error });
@@ -339,14 +384,23 @@ type ReadyInput = {
   readonly input: CelldWorkerOptions;
   readonly logFile: string;
   readonly logOffset: number;
+  readonly deadlineMs: number | undefined;
   readonly shouldStop: () => boolean;
 };
 
-async function awaitReady({ worker, input, logFile, logOffset, shouldStop }: ReadyInput): Promise<void> {
+async function awaitReady({
+  worker,
+  input,
+  logFile,
+  logOffset,
+  deadlineMs: outerDeadline,
+  shouldStop,
+}: ReadyInput): Promise<void> {
   const readiness = input.readiness ?? DEFAULT_READINESS;
   const headers = readiness.headers ?? {};
   const url = new URL(readiness.path, input.origin);
-  const deadlineMs = Date.now() + (readiness.timeoutMs ?? READY_TIMEOUT_MS);
+  const readinessDeadlineMs = Date.now() + (readiness.timeoutMs ?? READY_TIMEOUT_MS);
+  const deadlineMs = Math.min(readinessDeadlineMs, outerDeadline ?? readinessDeadlineMs);
   const observed: { status?: number; failure?: string } = {};
 
   const exited = worker.exited.then(() => {

@@ -8,7 +8,7 @@ import {
 } from '@mechane/console-cache';
 import type { ConsoleStorageHealth } from '@mechane/console-cache';
 import type { Workspace } from '@mechane/protocol';
-import { EvidenceArtifactId, MechId, PrincipalId, TurnId, WorkspaceId } from '@mechane/records';
+import { PrincipalId, WorkspaceId } from '@mechane/records';
 import { DbClient } from '@tanstack/db';
 import { QueryClient, QueryObserver } from '@tanstack/query-core';
 import type { QueryFunctionContext, QueryKey } from '@tanstack/query-core';
@@ -27,8 +27,15 @@ import { applyRead, fetchRead, saveMech } from './load-read.ts';
 import { createReadDiagnostics } from './read-diagnostics.ts';
 import { waitForRead } from './read-ready.ts';
 import { recordKey } from './records.ts';
-import { decodeReadRequest, isArtifactRead, ReadId, readRequests } from './requests.ts';
+import { decodeReadRequest, isArtifactRead, readRequests } from './requests.ts';
 import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
+import {
+  INVALIDATION_CHANNEL,
+  INVALIDATION_KIND,
+  publishScopeInvalidation,
+  ScopeInvalidation,
+} from './scope-invalidation.ts';
+import type { InvalidationTarget } from './scope-invalidation.ts';
 import type { Session } from './session.ts';
 
 const REFRESH_MS = Duration.toMillis('15 seconds');
@@ -39,43 +46,8 @@ const ALLOWANCE_REFRESH_MS = Duration.toMillis('30 seconds');
 const READ_ADMISSION_PHASES = 5;
 const READ_ADMISSION_TIMEOUT_MS = CONSOLE_STORAGE_OPERATION_TIMEOUT_MS * READ_ADMISSION_PHASES;
 const CLEAR_SCOPE_TIMEOUT_MS = Duration.toMillis('3 seconds');
-const INVALIDATION_CHANNEL = 'mechane-console-admission';
 
 const ACTIVITY_READ_KINDS: ReadonlyArray<ReadKind> = ['events', 'turns', 'mech', 'turnEvents', 'trace'];
-
-const INVALIDATION_KIND = {
-  Session: 'session',
-  Mech: 'mech',
-  Turn: 'turn',
-  Artifact: 'artifact',
-  Read: 'read',
-} as const;
-
-const InvalidationTarget = Schema.Union([
-  Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Session) }),
-  Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Mech), workspaceId: WorkspaceId, mechId: MechId }),
-  Schema.Struct({
-    kind: Schema.Literal(INVALIDATION_KIND.Turn),
-    workspaceId: WorkspaceId,
-    mechId: MechId,
-    turnId: TurnId,
-  }),
-  Schema.Struct({
-    kind: Schema.Literal(INVALIDATION_KIND.Artifact),
-    workspaceId: WorkspaceId,
-    mechId: MechId,
-    artifactId: EvidenceArtifactId,
-  }),
-  Schema.Struct({ kind: Schema.Literal(INVALIDATION_KIND.Read), workspaceId: WorkspaceId, readId: ReadId }),
-]);
-
-type InvalidationTarget = typeof InvalidationTarget.Type;
-
-const ScopeInvalidation = Schema.Struct({
-  origin: Schema.String,
-  principalId: PrincipalId,
-  target: InvalidationTarget,
-});
 
 class UnsupportedReadDemand extends Schema.TaggedError<UnsupportedReadDemand>()('UnsupportedReadDemand', {}) {}
 class ScopeAdmissionEnded extends Schema.TaggedError<ScopeAdmissionEnded>()('ScopeAdmissionEnded', {}) {}
@@ -409,8 +381,12 @@ async function createData(options: CreateConsoleData, conversations: WorkspaceOw
 
   function broadcastInvalidation(target: InvalidationTarget): void {
     if (!conversations.api.signal.aborted) {
-      // oxlint-disable-next-line unicorn/require-post-message-target-origin -- BroadcastChannel has no target origin
-      channel.postMessage({ origin: origin.origin, principalId, target });
+      const admittedPrincipalId = PrincipalId.make(principalId);
+
+      publishScopeInvalidation({
+        channel,
+        invalidation: { origin: origin.origin, principalId: admittedPrincipalId, target },
+      });
     }
   }
 
@@ -1184,11 +1160,11 @@ async function createData(options: CreateConsoleData, conversations: WorkspaceOw
   function receiveInvalidation(event: MessageEvent<unknown>): void {
     const decoded = Schema.decodeUnknownResult(ScopeInvalidation)(event.data);
 
-    if (
-      Result.isFailure(decoded) ||
-      decoded.success.origin !== origin.origin ||
-      decoded.success.principalId !== principalId
-    ) {
+    if (Result.isFailure(decoded) || decoded.success.origin !== origin.origin) {
+      return;
+    }
+
+    if ('principalId' in decoded.success && decoded.success.principalId !== principalId) {
       return;
     }
 

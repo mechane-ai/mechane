@@ -1,7 +1,7 @@
 ---
 name: security-oauth-browser-sessions
 message: Keep OAuth tokens server-side behind host-only HttpOnly cookies with exact-origin checks.
-paths: ["packages/worker/server/src/auth/**", "packages/worker/server/src/console/**", "packages/worker/control-store/src/store/api/auth/**"]
+paths: ["packages/worker/server/src/auth/**", "packages/worker/server/src/console/**", "packages/worker/server/src/main.ts", "packages/worker/control-store/src/store/api/auth/**", "packages/browser/console-data/src/browser-authentication.ts", "packages/browser/console-data/src/scope-invalidation.ts", "packages/browser/console-data/src/console-data.ts", "packages/browser/console/src/auth/**", "packages/browser/console/src/screens/workspace-settings.tsx", "packages/browser/console/vite.config.ts"]
 ---
 
 ## Rules
@@ -53,6 +53,21 @@ the short callback transaction uses SameSite=Lax. Loopback development has an ex
 GitHub returns only to `/auth/github/callback` under the configured public origin. Unsafe session-authenticated API
 calls and sign-out require the exact Origin. Bearer authentication never silently falls back to a cookie. Sign-out
 revokes the server session and expires the cookie.
+
+Sign-in and callback GETs serve inert pages. Their browser entry and Console sign-out share the native request owner
+in `console-data/src/browser-authentication.ts`. It holds one same-origin Web Lock through each POST's response
+headers and cookie processing. A logout announcement cancels queued sign-in and callback requests and waits for an active exchange.
+Logout GET requires an explicit form submission and performs no automatic write. Auth POSTs require the exact Origin
+and the coordinated browser header; a plain form or old callback GET cannot bypass this owner. Browsers without
+Web Locks fail visibly. The controller stores no credentials and aborts its request when its page unloads.
+
+After cookie processing, logout responses and successful callbacks notify the existing Console admission channel.
+Its current owners fence pending reads and retire the former scope. A failed provider callback preserves valid admission.
+
+Postgres retains each single-use sign-in transaction with its planned session hash through exchange. Session admission,
+replacement of a supplied prior transaction, and logout lock that transaction. Replacement and logout revoke its
+planned session as well as logout's current session, so an abandoned exchange cannot restore authority. No provider
+request runs inside a database transaction. Revocation failure remains visible and still expires browser cookies.
 
 Device approval requires an authenticated browser and an explicitly reviewed code. No query parameter approves a key.
 Authentication and device pages send no-store responses and forbid framing. Static assets receive no cookie-bearing

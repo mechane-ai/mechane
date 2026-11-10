@@ -26,5 +26,6 @@ export type {
   TurnRow,
 } from './records.ts';
 export { loadSession } from './session.ts';
+export { completeBrowserAuthentication, browserAuthenticationMessage } from './browser-authentication.ts';
 export type { Session } from './session.ts';
 export { canRetainResult, isRevisionConflict, isSignedOut, isStorageFailure, problemMessage } from './api.ts';

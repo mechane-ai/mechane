@@ -32,7 +32,7 @@
     // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
     "packages/browser/console": {
       "includeEntryExports": false,
-      "entry": ["src/routes/**/*.tsx!", ".storybook/*.{ts,tsx}", "src/stories/**/*.stories.tsx"],
+      "entry": ["src/routes/**/*.tsx!", "src/auth/main.ts!", ".storybook/*.{ts,tsx}", "src/stories/**/*.stories.tsx"],
       "project": ["src/**/*.{ts,tsx,mdx}!", "worker-licenses.ts"],
     },
     "packages/browser/console-cache": { "project": ["src/**/*.{ts,tsx}!"] },

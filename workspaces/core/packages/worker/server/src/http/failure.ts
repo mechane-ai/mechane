@@ -11,6 +11,7 @@ import {
 import { HttpHeader } from '@mechane/records';
 import { DateTime, Schema } from 'effect';
 import { CONFIGURATION_UNCONFIRMED_REASON } from '../control/deliver-changes.ts';
+import { authenticationChallenge } from './authentication-challenge.ts';
 
 type FailureResponseInput = { readonly failure: unknown; readonly request: Request };
 const UNAVAILABLE_MESSAGE = 'The service could not complete this request';
@@ -68,11 +69,7 @@ export function respondFailure({ failure, request }: FailureResponseInput): Resp
   const detail = errorDetail({ failure: reported, message: failureMessage(reported) });
 
   if (detail.family === ErrorFamily.Unauthenticated) {
-    headers.set(HttpHeader.WwwAuthenticate, 'Bearer');
-
-    if (request.headers.has(HttpHeader.Authorization)) {
-      headers.set(HttpHeader.WwwAuthenticate, 'Bearer error="invalid_token"');
-    }
+    headers.set(HttpHeader.WwwAuthenticate, authenticationChallenge({ request }));
   }
 
   if (reported._tag === 'RateLimited') {

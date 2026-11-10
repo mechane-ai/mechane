@@ -22,6 +22,7 @@ export type AuthBootstrap = {
 
 export type OpenIdentitySession = {
   readonly identity: Identity;
+  readonly signInTokenHash: string;
   readonly tokenHash: string;
   readonly expiresAt: string;
   readonly bootstrap: AuthBootstrap | null;

@@ -903,6 +903,8 @@
       "files": ["packages/browser/**"],
       "excludeFiles": [
         "packages/browser/console-data/src/api.ts",
+        "packages/browser/console-data/src/browser-authentication.ts",
+        "packages/browser/console-data/src/scope-invalidation.ts",
         "packages/browser/console-data/src/read-recovery.ts"
       ],
       "rules": {
@@ -2417,7 +2419,12 @@
       }
     },
     {
-      "files": ["packages/browser/console-data/src/api.ts", "packages/browser/console-data/src/read-recovery.ts"],
+      "files": [
+        "packages/browser/console-data/src/api.ts",
+        "packages/browser/console-data/src/browser-authentication.ts",
+        "packages/browser/console-data/src/scope-invalidation.ts",
+        "packages/browser/console-data/src/read-recovery.ts"
+      ],
       "excludeFiles": [],
       "rules": {
         "no-restricted-imports": [

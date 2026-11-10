@@ -36,6 +36,7 @@ export async function onlyBrowserCanApproveKeys({ stack }: ScenarioInput): Promi
     HttpStatusCode.Unauthorized,
     'An API key approved another key without the browser session',
   );
+  assert.equal(response.headers.get(HttpHeader.WwwAuthenticate), 'Bearer error="invalid_token"');
 
   const polled = await pollApproval({ stack, approval });
 

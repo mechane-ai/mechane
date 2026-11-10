@@ -1,7 +1,7 @@
 import { applicationWorkerDeployment, sandboxWorkerDeployment } from '@mechane/deployment';
 import { HttpStatusCode } from '@mechane/records';
 import { Record } from 'effect';
-import { access, cp, mkdir, readFile, rm } from 'node:fs/promises';
+import { access, copyFile, cp, mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { captureStackFailure } from './capture-failure.ts';
 import { drainSandboxes } from './celld/drain-sandboxes.ts';
@@ -12,7 +12,8 @@ import type { LocalCelldWorker } from './celld/types.ts';
 import { startConsoleDevelopment } from './console/start-console-development.ts';
 import type { ConsoleDevelopment } from './console/start-console-development.ts';
 import { localSandboxVariables, serverEnvironment } from './environment.ts';
-import { StackStartupFailedError } from './errors.ts';
+import { StackCleanupUnconfirmedError, StackStartupFailedError } from './errors.ts';
+import type { StackCleanupOptions } from './errors.ts';
 import { startFixtures } from './fixtures/start-fixtures.ts';
 import { applyConversationImport } from './fixtures/store/apply-conversation-import.ts';
 import { seedConversationImport } from './fixtures/store/conversation-import.ts';
@@ -77,7 +78,9 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
 
   const resources: {
     application?: LocalCelldWorker;
+    applicationCleanup?: (options?: StackCleanupOptions) => Promise<void>;
     sandbox?: LocalSandbox;
+    sandboxCleanup?: (options?: StackCleanupOptions) => Promise<void>;
     postgres?: LocalPostgres;
     fixtures?: LocalFixtures;
     closing?: Promise<void>;
@@ -126,16 +129,29 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       ...assets,
     });
 
-    resources.application = await startCelldWorker({
-      entry,
-      configuration: deployment,
-      directory: applicationDirectory,
-      origin: applicationOrigin,
-      environment: { ...environment, ...resources.postgres?.clientEnvironment },
-      ...binaryOptions,
-      isArtifact: !isSource,
-      isWatched: isSource,
-    });
+    const applicationEnvironment = Record.filter(
+      environment,
+      (_value, name) => name !== 'CELLD_CONTAINER_HOST_SERVICES',
+    );
+
+    try {
+      resources.application = await startCelldWorker({
+        entry,
+        configuration: deployment,
+        directory: applicationDirectory,
+        origin: applicationOrigin,
+        environment: { ...applicationEnvironment, ...resources.postgres?.clientEnvironment },
+        ...binaryOptions,
+        isArtifact: !isSource,
+        isWatched: isSource,
+      });
+    } catch (cause) {
+      if (cause instanceof StackCleanupUnconfirmedError) {
+        resources.applicationCleanup = cause.stop;
+      }
+
+      throw cause;
+    }
 
     resources.isServing = true;
 
@@ -228,9 +244,42 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       }
     }
 
-    await release('application', async () => await resources.application?.close({ deadlineMs }));
+    await release('application', async () => {
+      if (resources.application === undefined) {
+        await resources.applicationCleanup?.({ deadlineMs });
+      } else {
+        await resources.application.close({ deadlineMs });
+      }
+    });
     await release('console', async () => await resources.console?.close(deadlineMs));
-    await release('sandbox', async () => await resources.sandbox?.close(deadlineMs));
+    await release('sandbox', async () => {
+      if (resources.sandbox === undefined) {
+        await resources.sandboxCleanup?.({ deadlineMs });
+      } else {
+        await resources.sandbox.close(deadlineMs);
+      }
+    });
+
+    if (!released.has('sandbox') && resources.gateway !== undefined) {
+      resources.shouldPreserveFiles = true;
+
+      await record({
+        phase: 'shutdown-blocked',
+        gatewayRetained: true,
+        recovery: 'Reconcile the same environment state directory, then retry Stop before releasing the gateway port',
+      }).catch((cause: unknown) => failures.push(cause));
+      await copyFile(
+        join(state.directory, 'owner.json'),
+        join(state.directory, `shutdown-blocked-${Date.now()}.json`),
+      ).catch((cause: unknown) => failures.push(cause));
+
+      throw new StackCleanupUnconfirmedError(
+        state.directory,
+        new AggregateError(failures, 'Environment cleanup is unconfirmed'),
+        stop,
+      );
+    }
+
     await release('gateway', async () => await resources.gateway?.close());
     await release('fixtures', async () => await resources.fixtures?.close());
     await release('postgres', async () => await resources.postgres?.stop(deadlineMs));
@@ -239,6 +288,10 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       await record({ phase: 'shutdown-failed' });
 
       throw new AggregateError(failures, `Could not stop every resource recorded in ${state.directory}`);
+    }
+
+    if (resources.shouldPreserveFiles === true) {
+      await record({ phase: 'stopped', resourcesStopped: true, gatewayRetained: false });
     }
 
     await state.close({ shouldPreserveFiles: resources.shouldPreserveFiles === true });
@@ -355,23 +408,31 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         bucketName: 'mechane-local-workspace-files',
       });
 
-      resources.sandbox = await startCelldSandbox({
-        bearer: state.secrets.sandboxKey,
-        worker: {
-          entry,
-          configuration: deployment,
-          directory: join(state.directory, 'sandbox'),
-          origin: sandboxOrigin,
-          environment,
-          ...binaryOptions,
-          isArtifact: !isSource,
-          readiness: {
-            path: '/internal/sandboxes/probe/probe/workspace',
-            status: HttpStatusCode.Unauthorized,
-            timeoutMs: SANDBOX_START_TIMEOUT_MS,
+      try {
+        resources.sandbox = await startCelldSandbox({
+          bearer: state.secrets.sandboxKey,
+          worker: {
+            entry,
+            configuration: deployment,
+            directory: join(state.directory, 'sandbox'),
+            origin: sandboxOrigin,
+            environment: { ...environment, CELLD_CONTAINER_HOST_SERVICES: resources.gateway.origin.port },
+            ...binaryOptions,
+            isArtifact: !isSource,
+            readiness: {
+              path: '/internal/sandboxes/probe/probe/workspace',
+              status: HttpStatusCode.Unauthorized,
+              timeoutMs: SANDBOX_START_TIMEOUT_MS,
+            },
           },
-        },
-      });
+        });
+      } catch (cause) {
+        if (cause instanceof StackCleanupUnconfirmedError) {
+          resources.sandboxCleanup = cause.stop;
+        }
+
+        throw cause;
+      }
 
       configuration.environment = {
         ...configuration.environment,
@@ -420,6 +481,13 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         return `${relational}\n${durable}`;
       },
       captureFailure: async (label) => await captureStackFailure({ stack, label, environment }),
+      registerGuestFixture: (answer) => {
+        if (resources.gateway === undefined) {
+          throw new Error('Guest HTTP fixtures require the owned local container stack');
+        }
+
+        return resources.gateway.registerFixture(answer);
+      },
       restart,
       prepareConversationImport,
       stop,
@@ -429,7 +497,33 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
   } catch (cause) {
     resources.shouldPreserveFiles = true;
 
-    await stop();
+    if (cause instanceof StackCleanupUnconfirmedError) {
+      const startupFailures: Array<unknown> = [cause];
+
+      await record({ phase: 'startup-cleanup-blocked', gatewayRetained: resources.gateway !== undefined }).catch(
+        (recordError: unknown) => startupFailures.push(recordError),
+      );
+      await copyFile(
+        join(state.directory, 'owner.json'),
+        join(state.directory, `startup-cleanup-blocked-${Date.now()}.json`),
+      ).catch((recordError: unknown) => startupFailures.push(recordError));
+
+      throw new StackStartupFailedError(
+        state.directory,
+        new AggregateError(startupFailures, 'Startup cleanup remains unconfirmed'),
+        stop,
+      );
+    }
+
+    try {
+      await stop();
+    } catch (cleanupError) {
+      throw new StackStartupFailedError(
+        state.directory,
+        new AggregateError([cause, cleanupError], 'Startup and its cleanup failed'),
+        stop,
+      );
+    }
 
     await record({ phase: 'startup-failed', resourcesStopped: true });
 

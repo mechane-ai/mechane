@@ -1,11 +1,9 @@
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
-import { guestFixtureUrl, startHttpService } from '@mechane/stack';
-import { randomUUID } from 'node:crypto';
+import type { LocalStack } from '@mechane/stack';
 import { waitFor } from '../wait-for.ts';
 
 type CommandGateRequest = { readonly method: string; readonly pathname: string };
 type RequestCount = { readonly count: number };
-type CommandGateAddress = { readonly gateId: string };
 
 export type CommandGate = {
   readonly url: string;
@@ -15,15 +13,14 @@ export type CommandGate = {
   readonly close: () => Promise<void>;
 };
 
-export async function startCommandGate(): Promise<CommandGate> {
-  const pathname = commandGatePath({ gateId: randomUUID() });
+export async function startCommandGate({ stack }: { readonly stack: LocalStack }): Promise<CommandGate> {
   const requests: Array<CommandGateRequest> = [];
   const gate = Promise.withResolvers<void>();
 
   async function handle(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
-    if (request.method !== HttpMethod.Get || url.pathname !== pathname) {
+    if (request.method !== HttpMethod.Get) {
       return new Response(null, { status: HttpStatusCode.NotFound });
     }
 
@@ -33,8 +30,7 @@ export async function startCommandGate(): Promise<CommandGate> {
     return new Response(null, { status: HttpStatusCode.Ok });
   }
 
-  const service = await startHttpService(handle);
-  const address = guestFixtureUrl(new URL(pathname, service.origin));
+  const service = stack.registerGuestFixture(handle);
 
   async function waitForRequest({ count }: RequestCount): Promise<void> {
     await waitFor({
@@ -45,7 +41,7 @@ export async function startCommandGate(): Promise<CommandGate> {
   }
 
   return {
-    url: address.href,
+    url: service.url.href,
     waitForRequest,
     readRequests: () => structuredClone(requests),
     release: () => gate.resolve(),
@@ -54,8 +50,4 @@ export async function startCommandGate(): Promise<CommandGate> {
       await service.close();
     },
   };
-}
-
-function commandGatePath({ gateId }: CommandGateAddress): string {
-  return `/commands/${encodeURIComponent(gateId)}`;
 }

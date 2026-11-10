@@ -45,6 +45,8 @@ export const FILE_ROLES = {
   [FileRole.BrowserBuildConfiguration]: BROWSER_BUILD_CONFIGURATION,
   [FileRole.BrowserAdapter]: [
     'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/browser-authentication.ts',
+    'packages/browser/console-data/src/scope-invalidation.ts',
     'packages/browser/console-data/src/read-recovery.ts',
   ],
   [FileRole.BrowserQuery]: [

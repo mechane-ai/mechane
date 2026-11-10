@@ -1,5 +1,6 @@
 import { writeDiagnostic } from '@mechane/program';
 import { once } from 'node:events';
+import { StackCleanupUnconfirmedError, StackStartupFailedError } from './errors.ts';
 import { startLocalStack } from './start-local-stack.ts';
 import type { LocalStack, StackOptions } from './types.ts';
 
@@ -23,9 +24,7 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
     state.isInterrupted = true;
 
     try {
-      const stack = await started;
-
-      await stack.stop();
+      await stopOwnedStack();
 
       interrupted.abort();
 
@@ -43,18 +42,69 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
     void interrupt();
   }
 
+  async function stopOwnedStack(): Promise<void> {
+    try {
+      const stack = await started;
+
+      await stack.stop();
+    } catch (cause) {
+      if (cause instanceof StackStartupFailedError && cause.stop !== undefined) {
+        await cause.stop();
+
+        return;
+      }
+
+      throw cause;
+    }
+  }
+
+  async function waitForCleanup(cause: unknown): Promise<void> {
+    const detail = shutdownFailureMessage(cause);
+
+    writeDiagnostic({ program: 'stack', line: `Shutdown did not complete: ${detail}. Repair and interrupt again` });
+
+    if (!interrupted.signal.aborted) {
+      await once(interrupted.signal, 'abort');
+    }
+  }
+
+  async function awaitStartedStack(): Promise<LocalStack> {
+    try {
+      return await started;
+    } catch (cause) {
+      if (cause instanceof StackStartupFailedError && cause.stop !== undefined) {
+        if (options.mode === 'ephemeral') {
+          writeDiagnostic({
+            program: 'stack',
+            line: 'Attempting owned cleanup after failed startup; startup remains failed',
+          });
+
+          try {
+            await cause.stop();
+          } catch (cleanupError) {
+            if (cleanupError instanceof StackCleanupUnconfirmedError) {
+              await waitForCleanup(cleanupError);
+            }
+
+            throw new AggregateError([cause, cleanupError], 'The local startup and its owned cleanup attempt failed', {
+              cause: cleanupError,
+            });
+          }
+        } else {
+          await waitForCleanup(cause);
+        }
+      }
+
+      throw cause;
+    }
+  }
+
   async function stopAfterRun(stack: LocalStack): Promise<void> {
     try {
       await stack.stop();
     } catch (cause) {
-      if (options.mode === 'persistent') {
-        const detail = shutdownFailureMessage(cause);
-
-        writeDiagnostic({ program: 'stack', line: `Shutdown did not complete: ${detail}. Repair and interrupt again` });
-
-        if (!interrupted.signal.aborted) {
-          await once(interrupted.signal, 'abort');
-        }
+      if (options.mode === 'persistent' || cause instanceof StackCleanupUnconfirmedError) {
+        await waitForCleanup(cause);
       }
 
       throw cause;
@@ -65,7 +115,7 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
   process.on('SIGINT', onSignal);
 
   try {
-    const stack = await started;
+    const stack = await awaitStartedStack();
 
     try {
       if (interrupted.signal.aborted) {

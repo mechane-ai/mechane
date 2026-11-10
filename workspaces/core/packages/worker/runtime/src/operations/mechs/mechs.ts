@@ -272,7 +272,7 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
           throw new TurnEnded({ turnId: input.turnId });
         }
 
-        await actors(input).cancelRun({ turnId: input.turnId, cancelerId: authenticated.principalId });
+        await actors(input).cancelRun({ turnId: input.turnId, principalId: authenticated.principalId });
 
         const receipt = await actors(input).readCancellation({ turnId: input.turnId });
 

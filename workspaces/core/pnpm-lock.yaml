@@ -1007,6 +1007,9 @@ importers:
       '@mechane/client':
         specifier: workspace:*
         version: link:../../shared/client
+      '@mechane/program':
+        specifier: workspace:*
+        version: link:../program
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol

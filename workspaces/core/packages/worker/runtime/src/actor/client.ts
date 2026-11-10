@@ -121,7 +121,7 @@ export type MechActorClient = {
   readonly listRuns: (input: ActorPageInput) => Promise<ActorPage<Run>>;
   readonly readRun: (input: { readonly turnId: string }) => Promise<Run | null>;
   readonly readTrace: (input: { readonly turnId: string }) => Promise<ActorTrace>;
-  readonly cancelRun: (input: { readonly turnId: string; readonly cancelerId: string }) => Promise<Run>;
+  readonly cancelRun: (input: { readonly turnId: string; readonly principalId: string }) => Promise<Run>;
   readonly readCancellation: (input: {
     readonly turnId: string;
   }) => Promise<{ readonly cancelerId: string; readonly canceledAt: string } | null>;

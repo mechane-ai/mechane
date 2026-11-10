@@ -64,7 +64,7 @@ export async function checkpointedFilesSurviveMachineLoss({
   const savedReport = await readSandboxReport(input);
   const marker = `lost-writer-${randomUUID()}`;
   const toolCallId = randomUUID();
-  const gate = await startCommandGate();
+  const gate = await startCommandGate({ stack });
 
   try {
     const command = [

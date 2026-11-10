@@ -1,51 +1,31 @@
-import { IdentityNotAdmitted, KeyMissing, RateLimited, RequestInvalid } from '@mechane/protocol';
-import { HttpHeader, HttpStatusCode } from '@mechane/records';
-import { hashAuthToken, limitAuthentication } from '@mechane/runtime';
+import {
+  BrowserAuthenticationPath,
+  IdentityNotAdmitted,
+  KeyMissing,
+  RateLimited,
+  RequestInvalid,
+} from '@mechane/protocol';
+import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
+import { limitAuthentication } from '@mechane/runtime';
 import { escapeHtml } from '@mechane/utilities';
 import { Schema } from 'effect';
-import { cookieHeader, readCookie, requireBrowserOrigin, validateAuthOrigin } from './cookies.ts';
+import { authenticationChallenge } from '../http/authentication-challenge.ts';
+import { browserAuthenticationPage } from './browser-page.ts';
+import { requireBrowserAuthentication, validateAuthOrigin } from './cookies.ts';
 import { showDevice, submitDevice } from './device.ts';
 import { authPage, AuthPageError } from './page.ts';
 import { finishSignIn, startSignIn } from './sign-in.ts';
-import type { AuthHandlerOptions, AuthRequest } from './types.ts';
+import { expireSignOutCookies, signOut } from './sign-out.ts';
+import type { AuthHandlerOptions } from './types.ts';
 
 const AUTH_PATHS: ReadonlySet<string> = new Set([
-  '/auth/sign-in',
-  '/auth/github/callback',
-  '/auth/sign-out',
+  BrowserAuthenticationPath.SignIn,
+  BrowserAuthenticationPath.Callback,
+  BrowserAuthenticationPath.SignOut,
   '/device',
 ]);
 
-async function signOut({ request, store, configuration }: AuthRequest): Promise<Response> {
-  requireBrowserOrigin(request, configuration.origin);
-
-  const token = readCookie({ request, origin: configuration.origin, name: 'session' });
-
-  if (token !== null) {
-    await store.auth.closeSession({ tokenHash: hashAuthToken(token) });
-  }
-
-  const state = readCookie({ request, origin: configuration.origin, name: 'sign_in' });
-
-  if (state !== null) {
-    await store.auth.claimSignIn({ tokenHash: hashAuthToken(state) });
-  }
-
-  const headers = new Headers({ location: '/console', [HttpHeader.CacheControl]: 'no-store' });
-
-  headers.append(
-    HttpHeader.SetCookie,
-    cookieHeader({ origin: configuration.origin, name: 'session', value: '', maxAgeSeconds: 0 }),
-  );
-  headers.append(
-    HttpHeader.SetCookie,
-    cookieHeader({ origin: configuration.origin, name: 'sign_in', value: '', maxAgeSeconds: 0 }),
-  );
-
-  return new Response(null, { status: HttpStatusCode.SeeOther, headers });
-}
-
-function pageFailure(failure: unknown): Response {
+function renderPageFailure(failure: unknown): Response {
   if (failure instanceof AuthPageError) {
     return authPage({
       title: 'Unable to continue',
@@ -97,6 +77,18 @@ function pageFailure(failure: unknown): Response {
   });
 }
 
+type PageFailureInput = { readonly failure: unknown; readonly request: Request };
+
+function pageFailure({ failure, request }: PageFailureInput): Response {
+  const response = renderPageFailure(failure);
+
+  if (response.status === HttpStatusCode.Unauthorized) {
+    response.headers.set(HttpHeader.WwwAuthenticate, authenticationChallenge({ request }));
+  }
+
+  return response;
+}
+
 export function createAuthHandler({ store, configuration }: AuthHandlerOptions) {
   validateAuthOrigin(configuration.origin);
 
@@ -112,10 +104,19 @@ export function createAuthHandler({ store, configuration }: AuthHandlerOptions) 
 
       const input = { request, store, configuration, peerAddress };
 
+      if (request.method === HttpMethod.Post && pathname !== '/device') {
+        requireBrowserAuthentication({ request, origin: configuration.origin });
+      }
+
       switch (`${request.method} ${pathname}`) {
         case 'GET /auth/sign-in':
-          return await startSignIn(input);
         case 'GET /auth/github/callback':
+          return browserAuthenticationPage({ isSigningOut: false });
+        case 'GET /auth/sign-out':
+          return browserAuthenticationPage({ isSigningOut: true });
+        case 'POST /auth/sign-in':
+          return await startSignIn(input);
+        case 'POST /auth/github/callback':
           return await finishSignIn(input);
         case 'POST /auth/sign-out':
           return await signOut(input);
@@ -131,7 +132,9 @@ export function createAuthHandler({ store, configuration }: AuthHandlerOptions) 
           });
       }
     } catch (failure) {
-      return pageFailure(failure);
+      const response = pageFailure({ failure, request });
+
+      return expireSignOutCookies({ request, origin: configuration.origin, response });
     }
   };
 }

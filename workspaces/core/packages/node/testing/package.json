@@ -8,6 +8,7 @@
   "dependencies": {
     "@mechane/cli-kernel": "workspace:*",
     "@mechane/client": "workspace:*",
+    "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",

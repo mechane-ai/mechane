@@ -1,6 +1,7 @@
 import { TurnCancel, TurnStatus } from '@mechane/protocol';
 import { sandboxInteractiveCancelPath, SandboxRunIdentity } from '@mechane/sandbox-wire';
 import {
+  CancellationPhase,
   deleteSandbox,
   readConsoleMessages,
   readSandboxCompletion,
@@ -12,8 +13,9 @@ import {
   startHeldActivation,
   waitFor,
   waitForTurn,
+  writeCancellationDiagnostic,
 } from '@mechane/testing';
-import type { CancellationGate, MechContext } from '@mechane/testing';
+import type { CancellationGate, CancellationObservation, MechContext } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -29,9 +31,17 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
   const marker = `cancel-outage-${randomUUID()}`;
   const toolCallId = randomUUID();
   const { model } = requireFixtures(owner.stack);
-  const gate = await startCommandGate();
+  const gate = await startCommandGate({ stack: owner.stack });
   const failures: Array<unknown> = [];
   const resources: { cancellationGate?: CancellationGate } = {};
+
+  let observed: CancellationObservation = {
+    phase: CancellationPhase.Preparing,
+    notificationId: null,
+    turnId: null,
+    executionId: null,
+  };
+
   let isOutageConfigured = false;
 
   model.configure({
@@ -54,8 +64,17 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
   try {
     const { notification, turn } = await startHeldActivation({ ...owner, marker });
 
+    observed = {
+      ...observed,
+      notificationId: notification.id,
+      turnId: turn.id,
+      phase: CancellationPhase.AwaitingCommand,
+    };
+
     model.release({ marker, index: 0 });
     await gate.waitForRequest({ count: 1 });
+
+    observed = { ...observed, phase: CancellationPhase.ReadingReceipt };
 
     const address = { ...owner, turnId: turn.id };
 
@@ -69,6 +88,8 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
     const executionId = admitted.toolCalls?.find((call) => call.id === toolCallId)?.inspection?.executionId;
 
     assert.ok(executionId !== undefined);
+
+    observed = { ...observed, executionId };
 
     const conversation = await readConsoleMessages(owner);
 
@@ -84,6 +105,7 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
     });
 
     isOutageConfigured = true;
+    observed = { ...observed, phase: CancellationPhase.HoldingCancellation };
 
     await owner.stack.restart({ environment: { MECHANE_SANDBOX_ORIGIN: resources.cancellationGate.origin.origin } });
 
@@ -99,15 +121,24 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
       read: async () => heldCancellation.readRequestCount(),
       accept: (count) => count > 0,
     });
+
+    observed = { ...observed, phase: CancellationPhase.Stopping };
+
     await waitFor({
       name: 'the accepted cancellation to abort native work during the environment outage',
       read: () => readTrace(address),
       accept: (trace) => trace.turn.status === TurnStatus.Stopped,
     });
+
+    observed = { ...observed, phase: CancellationPhase.Replaying };
+
     await owner.stack.restart({ signal: 'SIGKILL' });
     assert.deepEqual(await runCli({ ...owner, args, schema: TurnCancel }), cancellation);
 
     resources.cancellationGate.release();
+
+    observed = { ...observed, phase: CancellationPhase.Reconciling };
+
     await owner.stack.restart({ environment: { MECHANE_SANDBOX_ORIGIN: environmentOrigin } });
 
     isOutageConfigured = false;
@@ -121,6 +152,8 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
     assert.ok(receipt !== null);
     assert.equal(receipt.executionId, executionId);
 
+    observed = { ...observed, phase: CancellationPhase.Verifying };
+
     const stopped = await waitForTurn({ ...owner, notificationId: notification.id });
 
     assert.equal(stopped.status, TurnStatus.Stopped);
@@ -130,6 +163,15 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
     assert.deepEqual(await readConsoleMessages(owner), conversation, 'Cancellation implicitly published a message');
   } catch (cause) {
     failures.push(cause);
+    await writeCancellationDiagnostic({
+      ...owner,
+      observed,
+      toolCallId,
+      modelRequestCount: model.readCalls({ marker }).length,
+      commandGateRequestCount: gate.readRequests().length,
+      cancellationRequestCount: resources.cancellationGate?.readRequestCount() ?? null,
+      cause,
+    }).catch(() => undefined);
     await owner.stack
       .captureFailure('cancellationSurvivesEnvironmentOutage:before-sandbox-cleanup')
       .catch(() => undefined);

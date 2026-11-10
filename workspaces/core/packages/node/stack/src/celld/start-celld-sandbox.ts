@@ -4,6 +4,7 @@ import { Schema } from 'effect';
 import { createHash } from 'node:crypto';
 import { realpath, writeFile as writeOwnerFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { StackCleanupUnconfirmedError } from '../errors.ts';
 import { runCommand } from '../process.ts';
 import type {
   DiagnosticOptions,
@@ -15,7 +16,7 @@ import type {
 } from '../types.ts';
 import { persistedFiles } from './dump-durable-storage.ts';
 import { startCelldWorker } from './start-celld-worker.ts';
-import type { CelldCloseOptions, CelldWorkerOptions } from './types.ts';
+import type { CelldCloseOptions, CelldWorkerOptions, LocalCelldWorker } from './types.ts';
 
 const PRIVATE_FILE_MODE = 0o600;
 const OWNER_INDENT_SPACES = 2;
@@ -42,6 +43,29 @@ type SandboxOptions = { readonly worker: CelldWorkerOptions; readonly bearer: st
 
 export async function startCelldSandbox(input: SandboxOptions): Promise<LocalSandbox> {
   const worker = await startCelldWorker({ ...input.worker, isWatched: false });
+
+  try {
+    return await createSandboxDriver(input, worker);
+  } catch (cause) {
+    if (cause instanceof StackCleanupUnconfirmedError) {
+      throw cause;
+    }
+
+    try {
+      await worker.close();
+    } catch (cleanupError) {
+      throw new StackCleanupUnconfirmedError(
+        worker.directory,
+        new AggregateError([cause, cleanupError], 'The sandbox setup and its native cleanup failed'),
+        worker.close,
+      );
+    }
+
+    throw cause;
+  }
+}
+
+async function createSandboxDriver(input: SandboxOptions, worker: LocalCelldWorker): Promise<LocalSandbox> {
   const directory = await realpath(worker.directory);
   const projectHash = createHash('sha256').update(directory).digest('hex');
   const nodeLabel = `dev-${projectHash.slice(0, NODE_ID_CHARACTERS)}`;
@@ -248,7 +272,15 @@ export async function startCelldSandbox(input: SandboxOptions): Promise<LocalSan
       close,
     };
   } catch (error) {
-    await close();
+    try {
+      await close();
+    } catch (cleanupError) {
+      throw new StackCleanupUnconfirmedError(
+        worker.directory,
+        new AggregateError([error, cleanupError], 'The sandbox setup and its owned cleanup failed'),
+        async (options) => await close(options?.deadlineMs),
+      );
+    }
 
     throw error;
   }

@@ -1,5 +1,6 @@
 import type { Buffer } from 'node:buffer';
 import type { ChildProcess } from 'node:child_process';
+import type { HttpHandler } from './fixtures/http.ts';
 
 export type Environment = Readonly<Record<string, string>>;
 
@@ -107,6 +108,7 @@ export type SandboxFixtureMachine = { readonly machineId: string; readonly conta
 export type SandboxFixtureFile = { readonly machineId: string; readonly path: string };
 export type SandboxFixtureWrite = SandboxFixtureFile & { readonly contents: string };
 export type DiagnosticOptions = { readonly signal?: AbortSignal };
+export type GuestHttpFixture = { readonly url: URL; readonly close: () => Promise<void> };
 
 export type LocalSandbox = {
   readonly origin: URL;
@@ -135,6 +137,7 @@ export type LocalStack = {
   readonly nodeVersion: string;
   readonly dumpStorage: (options?: DiagnosticOptions) => Promise<string>;
   readonly captureFailure: (label: string) => Promise<string>;
+  readonly registerGuestFixture: (answer: HttpHandler) => GuestHttpFixture;
   readonly restart: (input?: RestartOptions) => Promise<void>;
   readonly prepareConversationImport: (input: ConversationImportScope) => Promise<PreparedConversationImport>;
   readonly stop: () => Promise<void>;

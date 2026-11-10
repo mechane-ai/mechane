@@ -4,36 +4,70 @@ import type { StoreContext } from '../../context.ts';
 import type { AuthPrincipal, AuthSession, OpenIdentitySession } from './types.ts';
 
 type SessionRow = { readonly principal_id: string; readonly expires_at: string };
-type OpenSignIn = { readonly tokenHash: string; readonly returnTo: string; readonly expiresAt: string };
+
+type OpenSignIn = {
+  readonly tokenHash: string;
+  readonly previousSignInTokenHash: string | null;
+  readonly returnTo: string;
+  readonly expiresAt: string;
+};
+
+type ClaimSignIn = { readonly tokenHash: string; readonly sessionTokenHash: string };
 type HashedToken = { readonly tokenHash: string };
+type CloseSession = { readonly tokenHash: string | null; readonly signInTokenHash: string | null };
 type PrincipalId = { readonly principalId: string };
 type IdentityRow = { readonly provider: 'github'; readonly subject: string; readonly login: string };
 type ReturnRow = { readonly return_to: string };
+type SignInSessionRow = { readonly session_token_hash: string | null };
 type MembershipInput = { readonly principalId: string; readonly workspaceId: string };
 type MembershipRow = { readonly role: 'owner' | 'member' };
+type InvalidateSessionInput = CloseSession & { readonly context: StoreContext };
+
+async function invalidateSession({ context, tokenHash, signInTokenHash }: InvalidateSessionInput): Promise<void> {
+  const signIn = await context.client.query<SignInSessionRow>(
+    'DELETE FROM mechane.oauth_states WHERE token_hash=$1 RETURNING session_token_hash',
+    [signInTokenHash],
+  );
+
+  await context.client.query('DELETE FROM mechane.browser_sessions WHERE token_hash=$1 OR token_hash=$2', [
+    tokenHash,
+    signIn.rows[0]?.session_token_hash ?? null,
+  ]);
+}
 
 export function createIdentityStore(context: StoreContext) {
   return {
-    async openSignIn({ tokenHash, returnTo, expiresAt }: OpenSignIn): Promise<void> {
-      await context.client.query('DELETE FROM mechane.oauth_states WHERE expires_at<=now()');
-      await context.client.query('INSERT INTO mechane.oauth_states(token_hash,return_to,expires_at) VALUES($1,$2,$3)', [
-        tokenHash,
-        returnTo,
-        expiresAt,
-      ]);
+    async openSignIn({ tokenHash, previousSignInTokenHash, returnTo, expiresAt }: OpenSignIn): Promise<void> {
+      await context.atomic(async (transaction) => {
+        await invalidateSession({ context: transaction, tokenHash: null, signInTokenHash: previousSignInTokenHash });
+        await transaction.client.query('DELETE FROM mechane.oauth_states WHERE expires_at<=now()');
+        await transaction.client.query(
+          'INSERT INTO mechane.oauth_states(token_hash,return_to,expires_at) VALUES($1,$2,$3)',
+          [tokenHash, returnTo, expiresAt],
+        );
+      });
     },
 
-    async claimSignIn({ tokenHash }: HashedToken): Promise<string | null> {
+    async claimSignIn({ tokenHash, sessionTokenHash }: ClaimSignIn): Promise<string | null> {
       const result = await context.client.query<ReturnRow>(
-        'DELETE FROM mechane.oauth_states WHERE token_hash=$1 AND expires_at>now() RETURNING return_to',
-        [tokenHash],
+        'UPDATE mechane.oauth_states SET session_token_hash=$2 WHERE token_hash=$1 AND expires_at>now() AND session_token_hash IS NULL RETURNING return_to',
+        [tokenHash, sessionTokenHash],
       );
 
       return result.rows[0]?.return_to ?? null;
     },
 
-    async openIdentitySession(input: OpenIdentitySession): Promise<AuthPrincipal> {
+    async openIdentitySession(input: OpenIdentitySession): Promise<AuthPrincipal | null> {
       return await context.atomic(async ({ client }) => {
+        const signIn = await client.query<ReturnRow>(
+          'SELECT return_to FROM mechane.oauth_states WHERE token_hash=$1 AND session_token_hash=$2 AND expires_at>now() FOR UPDATE',
+          [input.signInTokenHash, input.tokenHash],
+        );
+
+        if (signIn.rows.length === 0) {
+          return null;
+        }
+
         await client.query('DELETE FROM mechane.browser_sessions WHERE expires_at<=now()');
 
         const identityKey = `${input.identity.provider}:${input.identity.subject}`;
@@ -108,8 +142,10 @@ export function createIdentityStore(context: StoreContext) {
       return { principalId: row.principal_id, expiresAt: row.expires_at };
     },
 
-    async closeSession({ tokenHash }: HashedToken): Promise<void> {
-      await context.client.query('DELETE FROM mechane.browser_sessions WHERE token_hash=$1', [tokenHash]);
+    async closeSession({ tokenHash, signInTokenHash }: CloseSession): Promise<void> {
+      await context.atomic(async (transaction) => {
+        await invalidateSession({ context: transaction, tokenHash, signInTokenHash });
+      });
     },
 
     async principalIdentities({ principalId }: PrincipalId): Promise<ReadonlyArray<Identity>> {

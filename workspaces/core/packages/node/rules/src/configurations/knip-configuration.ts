@@ -84,7 +84,7 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
 
     return {
       includeEntryExports: false,
-      entry: ['src/routes/**/*.tsx!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
+      entry: ['src/routes/**/*.tsx!', 'src/auth/main.ts!', '.storybook/*.{ts,tsx}', 'src/stories/**/*.stories.tsx'],
       project: ['src/**/*.{ts,tsx,mdx}!', ...buildFiles],
     };
   }

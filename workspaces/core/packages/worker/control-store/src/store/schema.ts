@@ -413,4 +413,10 @@ CREATE TABLE mechane.control_changes (
 CREATE INDEX control_changes_pending ON mechane.control_changes(next_attempt_at,source_sequence) WHERE delivered_at IS NULL;
 `,
   },
+  {
+    version: 7,
+    sql: `
+ALTER TABLE mechane.oauth_states ADD COLUMN session_token_hash text;
+`,
+  },
 ] as const;

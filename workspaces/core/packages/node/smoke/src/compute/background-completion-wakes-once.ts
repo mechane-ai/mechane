@@ -48,7 +48,7 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
   assert.equal(unallocated._tag, 'Unallocated');
   assert.deepEqual(await readSandboxMachines(stack), machines, 'A context checkpoint allocated an unused computer');
 
-  const gate = await startCommandGate();
+  const gate = await startCommandGate({ stack });
 
   try {
     const command = [

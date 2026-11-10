@@ -23,13 +23,7 @@ export function text(value: unknown): string {
 
 export async function startHttpService(answer: HttpHandler): Promise<HttpService> {
   const server = createServer((request, response) => {
-    void handleRequest(request, response, answer).catch(() => {
-      if (!response.headersSent) {
-        response.writeHead(HttpStatusCode.InternalServerError, { [HttpHeader.ContentType]: MediaType.Json });
-      }
-
-      response.end('{"error":"Fixture request failed"}');
-    });
+    void handleFixtureRequest(request, response, answer);
   });
 
   server.listen(0, '127.0.0.1');
@@ -44,6 +38,22 @@ export async function startHttpService(answer: HttpHandler): Promise<HttpService
   const origin = new URL(fixtureOriginUrl({ host: `127.0.0.1:${address.port}` }));
 
   return { origin, close: async () => await closeHttpServer(server) };
+}
+
+export async function handleFixtureRequest(
+  incoming: IncomingMessage,
+  outgoing: ServerResponse,
+  answer: HttpHandler,
+): Promise<void> {
+  try {
+    await handleRequest(incoming, outgoing, answer);
+  } catch {
+    if (!outgoing.headersSent) {
+      outgoing.writeHead(HttpStatusCode.InternalServerError, { [HttpHeader.ContentType]: MediaType.Json });
+    }
+
+    outgoing.end('{"error":"Fixture request failed"}');
+  }
 }
 
 async function handleRequest(incoming: IncomingMessage, outgoing: ServerResponse, answer: HttpHandler): Promise<void> {

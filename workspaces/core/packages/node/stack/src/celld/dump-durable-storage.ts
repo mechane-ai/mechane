@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { Dirent } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative, sep } from 'node:path';
 import { holdSqliteReaders } from '../fixtures/store/sqlite-readers.ts';
 
 type DumpStorageInput = { readonly directories: ReadonlyArray<string>; readonly signal?: AbortSignal };
@@ -18,6 +18,15 @@ type SelectedFilesInput = {
 
 type NativeDatabaseInput = { readonly directory: string; readonly file: Dirent };
 type StoredFile = { readonly source: string; readonly bytes: Buffer };
+type StoredFileInput = { readonly source: string; readonly signal: AbortSignal | undefined };
+
+type FamilyInput = {
+  readonly database: string;
+  readonly projectDirectory: string;
+  readonly signal: AbortSignal | undefined;
+  readonly names: ReadonlySet<string> | undefined;
+};
+
 const SQLITE_FILES: ReadonlySet<string> = new Set(['db.sqlite', 'db.sqlite-wal']);
 const FILE_CAPTURE_PREFIX = 'MECHANE_DURABLE_STORAGE_FILE_V1 ';
 
@@ -94,32 +103,57 @@ async function* readSelectedFiles({
   signal,
   names,
 }: SelectedFilesInput): AsyncGenerator<StoredFile> {
+  const current = await readdir(directory, { recursive: true, withFileTypes: true });
+  const regular = current.filter((file) => file.isFile());
+  const wanted = regular.filter((file) => names === undefined || names.has(file.name));
+  const ordinary = wanted.filter((file) => nativeDatabasePath({ directory: projectDirectory, file }) === null);
+
+  for (const file of ordinary) {
+    const source = join(file.parentPath, file.name);
+
+    yield await readStoredFile({ source, signal });
+  }
+
   const paths = files.map((file) => nativeDatabasePath({ directory: projectDirectory, file }));
-  const databases = new Set(paths.filter((path) => path !== null));
-  const readers = holdSqliteReaders({ paths: [...databases] });
+  const currentPaths = regular.map((file) => nativeDatabasePath({ directory: projectDirectory, file }));
+  const databases = new Set([...paths, ...currentPaths].filter((path) => path !== null));
+
+  for (const database of databases) {
+    yield* readFamily({ database, projectDirectory, signal, names });
+  }
+}
+
+async function* readFamily({ database, projectDirectory, signal, names }: FamilyInput): AsyncGenerator<StoredFile> {
+  signal?.throwIfAborted();
+
+  const readers = holdSqliteReaders({ paths: [database] });
 
   try {
-    const current = await readdir(directory, { recursive: true, withFileTypes: true });
+    const entries = await readdir(dirname(database), { withFileTypes: true });
+    const regular = entries.filter((file) => file.isFile());
+    const family = regular.filter((file) => nativeDatabasePath({ directory: projectDirectory, file }) === database);
+    const durable = family.filter((file) => !isNativeSharedMemory({ directory: projectDirectory, file }));
+    const sidecars = durable.filter((file) => file.name !== basename(database));
+    const selected = sidecars.filter((file) => names === undefined || names.has(file.name));
 
-    const selected = current.filter((file) => {
-      const isSharedMemory = isNativeSharedMemory({ directory: projectDirectory, file });
-
-      if (!file.isFile() || isSharedMemory) {
-        return false;
-      }
-
-      return names === undefined || names.has(file.name);
-    });
+    if (names === undefined || names.has(basename(database))) {
+      yield await readStoredFile({ source: database, signal });
+    }
 
     for (const file of selected) {
       const source = join(file.parentPath, file.name);
-      const bytes = await readFile(source, { signal });
 
-      yield { source, bytes };
+      yield await readStoredFile({ source, signal });
     }
   } finally {
     readers.close();
   }
+}
+
+async function readStoredFile({ source, signal }: StoredFileInput): Promise<StoredFile> {
+  const bytes = await readFile(source, { signal });
+
+  return { source, bytes };
 }
 
 function nativeDatabasePath({ directory, file }: NativeDatabaseInput): string | null {

@@ -1,5 +1,6 @@
-import { RequestInvalid } from '@mechane/protocol';
+import { BROWSER_AUTHENTICATION_REQUEST, RequestInvalid } from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
+import { hashAuthToken } from '@mechane/runtime';
 
 type CookieName = 'session' | 'sign_in';
 
@@ -84,4 +85,31 @@ export function requireBrowserOrigin(request: Request, origin: string): void {
   if (request.headers.get(HttpHeader.Origin) !== origin) {
     throw new RequestInvalid({ reason: 'Browser writes require the installation origin' });
   }
+}
+
+export function readCookieTokenHash(input: ReadCookieInput): string | null {
+  const token = readCookie(input);
+
+  if (token === null) {
+    return null;
+  }
+
+  return hashAuthToken(token);
+}
+
+type RequireBrowserAuthenticationInput = { readonly request: Request; readonly origin: string };
+
+export function requireBrowserAuthentication({ request, origin }: RequireBrowserAuthenticationInput): void {
+  if (!isBrowserAuthentication({ request, origin })) {
+    throw new RequestInvalid({
+      reason: 'Browser authentication requires the installation origin and coordinated header',
+    });
+  }
+}
+
+export function isBrowserAuthentication({ request, origin }: RequireBrowserAuthenticationInput): boolean {
+  return (
+    request.headers.get(HttpHeader.Origin) === origin &&
+    request.headers.get(HttpHeader.BrowserAuthentication) === BROWSER_AUTHENTICATION_REQUEST
+  );
 }

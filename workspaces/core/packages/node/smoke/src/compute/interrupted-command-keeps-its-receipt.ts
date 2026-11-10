@@ -56,7 +56,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
   const directory = `.smoke-${randomUUID()}`;
   const initialMachines = await readSandboxMachines(stack);
   const cleanupFailures: Array<unknown> = [];
-  const gate = await startCommandGate();
+  const gate = await startCommandGate({ stack });
 
   try {
     await setMachineLimit({ stack, account, machines: 0 });

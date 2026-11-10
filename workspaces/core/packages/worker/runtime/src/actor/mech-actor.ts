@@ -832,7 +832,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       case 'cancelRun':
         return await requestRunCancellation(access, {
           turnId: field(input, 'turnId'),
-          cancelerId: field(input, 'cancelerId'),
+          principalId: field(input, 'principalId'),
         });
       case 'readCancellation':
         return await readCancellation(access, { turnId: field(input, 'turnId') });

@@ -1,25 +1,64 @@
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { Record } from 'effect';
+import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { request } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createServer } from 'node:https';
-import { guestFixtureUrl } from './fixtures/guest-fixture-url.ts';
+import { handleFixtureRequest } from './fixtures/http.ts';
+import type { HttpHandler } from './fixtures/http.ts';
 import { closeHttpServer } from './http/close-http-server.ts';
 import type { PostgresTls } from './postgres-tls.ts';
+import type { GuestHttpFixture } from './types.ts';
 
 type GatewayInput = { readonly target: URL; readonly tls: PostgresTls };
 type ForwardInput = { readonly incoming: IncomingMessage; readonly outgoing: ServerResponse; readonly target: URL };
-export type GuestGateway = { readonly origin: URL; readonly guestOrigin: URL; readonly close: () => Promise<void> };
+
+export type GuestGateway = {
+  readonly origin: URL;
+  readonly guestOrigin: URL;
+  readonly registerFixture: (answer: HttpHandler) => GuestHttpFixture;
+  readonly close: () => Promise<void>;
+};
+
 const PRIVATE_HEADERS: ReadonlySet<string> = new Set([HttpHeader.Host, HttpHeader.ProxyAuthorization, 'connection']);
+const FIXTURE_PATH_PREFIX = '/__mechane_fixtures/';
 
 export async function startGuestGateway({ target, tls }: GatewayInput): Promise<GuestGateway> {
   const key = await readFile(tls.key);
   const cert = await readFile(tls.certificate);
-  const server = createServer({ key, cert }, (incoming, outgoing) => forward({ incoming, outgoing, target }));
+  const fixtures = new Map<string, HttpHandler>();
 
-  server.listen(0, '127.0.0.1');
+  const server = createServer({ key, cert }, (incoming, outgoing) => {
+    const path = requestPath(incoming, target);
+
+    if (path === undefined) {
+      outgoing.writeHead(HttpStatusCode.BadRequest);
+      outgoing.end();
+
+      return;
+    }
+
+    const fixture = fixtures.get(path);
+
+    if (fixture !== undefined) {
+      void handleFixtureRequest(incoming, outgoing, fixture);
+
+      return;
+    }
+
+    if (path.startsWith(FIXTURE_PATH_PREFIX)) {
+      outgoing.writeHead(HttpStatusCode.NotFound);
+      outgoing.end();
+
+      return;
+    }
+
+    forward({ incoming, outgoing, target });
+  });
+
+  server.listen(0, gatewayListenHost());
 
   await once(server, 'listening');
 
@@ -30,8 +69,46 @@ export async function startGuestGateway({ target, tls }: GatewayInput): Promise<
   }
 
   const origin = new URL(guestGatewayUrl({ port: address.port }));
+  const guestOrigin = new URL(origin.href);
 
-  return { origin, guestOrigin: guestFixtureUrl(origin), close: async () => await closeHttpServer(server) };
+  guestOrigin.hostname = 'host.docker.internal';
+
+  return {
+    origin,
+    guestOrigin,
+    registerFixture: (answer) => {
+      const path = `${FIXTURE_PATH_PREFIX}${randomUUID()}`;
+
+      fixtures.set(path, answer);
+
+      return {
+        url: new URL(path, guestOrigin),
+        close: async () => {
+          fixtures.delete(path);
+        },
+      };
+    },
+    close: async () => {
+      fixtures.clear();
+      await closeHttpServer(server);
+    },
+  };
+}
+
+function requestPath(incoming: IncomingMessage, target: URL): string | undefined {
+  try {
+    return new URL(incoming.url ?? '/', target).pathname;
+  } catch {
+    return undefined;
+  }
+}
+
+function gatewayListenHost(): string {
+  if (process.platform === 'linux') {
+    return '0.0.0.0';
+  }
+
+  return '127.0.0.1';
 }
 
 function forward({ incoming, outgoing, target }: ForwardInput): void {

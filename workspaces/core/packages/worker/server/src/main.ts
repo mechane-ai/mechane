@@ -6,6 +6,7 @@ import type { ActorNamespace, MechActorResolver, RuntimeConfiguration } from '@m
 import { serveSandbox } from '@mechane/sandbox';
 import { SANDBOX_COMPLETION_PATH, SANDBOX_SERVICE_PREFIX } from '@mechane/sandbox-wire';
 import { Redacted } from 'effect';
+import { expireSignOutCookies } from './auth/sign-out.ts';
 import { createConsoleHandler } from './console/handler.ts';
 import { deliverControlChanges } from './control/deliver-changes.ts';
 import { respondFailure } from './http/failure.ts';
@@ -79,21 +80,28 @@ const worker: Readonly<ExportedHandler<WorkerEnvironment>> = {
       const resolved = await resolveRuntimeEnvironment({ environment });
       const configuration = loadRuntimeConfiguration({ environment: resolved });
       const settings = loadServerSettings({ runtime: configuration, environment: resolved });
-      const store = await openServerStore({ configuration });
 
       try {
-        const serve = createServer({
-          store,
-          captureControlChanges: store.captureControlChanges,
-          actors: actorResolver(bindings.actors),
-          configuration,
-          settings,
-          runtimeRevision: import.meta.mechaneRevision ?? 'source',
-        });
+        const store = await openServerStore({ configuration });
 
-        return await serve(request, request.headers.get(HttpHeader.ConnectingIp));
-      } finally {
-        await store.close();
+        try {
+          const serve = createServer({
+            store,
+            captureControlChanges: store.captureControlChanges,
+            actors: actorResolver(bindings.actors),
+            configuration,
+            settings,
+            runtimeRevision: import.meta.mechaneRevision ?? 'source',
+          });
+
+          return await serve(request, request.headers.get(HttpHeader.ConnectingIp));
+        } finally {
+          await store.close();
+        }
+      } catch (failure) {
+        const response = respondFailure({ failure, request });
+
+        return expireSignOutCookies({ request, origin: configuration.publicOrigin, response });
       }
     } catch (failure) {
       return respondFailure({ failure, request });

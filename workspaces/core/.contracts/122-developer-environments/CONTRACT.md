@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -49,6 +49,20 @@ it before readiness and combine it with public roots and a gateway CA injected a
 in machine scratch. Preserve TLS verification; certificate trust cannot come from model tool arguments or a per-stack
 certificate baked into the generic image.
 
+Route local guest API calls and registered fixture requests through one retained, CA-verified HTTPS gateway. Configure
+native host-service access for only that gateway port before starting the environment host. Application code and guest
+startup arguments cannot broaden that declaration. Register fixture handlers under server-chosen opaque paths; never
+proxy an arbitrary guest-supplied host URL. Keep the gateway and guest alive across application reloads.
+
+Stop the environment owner and revoke its grant before releasing the gateway port. Reconcile retained ownership after
+unclean exit before port reuse. Require native Linux bridge reachability and default-denial evidence. Record the actual
+macOS Docker backend and its host-forwarding limits; local checks do not establish equivalent Linux or hosted isolation.
+
+Inspect persisted local storage without changing its privacy assertions. Acquire, read and release one SQLite family
+before acquiring another, with bounded native lock waiting. Read the raw database and observed WAL while its read
+transaction is held. Exclude only identified native SHM coordination files; inspect user files with similar names.
+Missing durable files and locks that exceed the bound remain failures. A raw scan is not one global storage snapshot.
+
 Observe an existing execution without resubmitting its command or requiring a serialized credential. Preserve execution
 identity across transport retries. A missing receipt after a lost machine remains uncertain; never automatically rerun
 an arbitrary command to reconstruct its output.
@@ -82,6 +96,11 @@ Run the production sandbox and guest owners through celld with a real Docker con
 the application without replacing that guest, then destroy and restore the actual container. Record container identity,
 durable file results, multipart size, and explicit cache reconstruction. Process-scope fixtures do not qualify container
 isolation. Local direct networking is an explicit platform composition and cannot establish hosted egress enforcement.
+Exercise the ordinary guest CLI and command gate through the retained gateway on native Linux and a supported macOS
+Docker backend. On Linux, reject undeclared host-service ports, verify one stack's cleanup preserves another stack's
+grant, and confirm guest startup cannot widen native access. Reject arbitrary fixture destinations on both platforms.
+Keep failure diagnostics bounded to known identities, phases, statuses and counts before cleanup, without commands,
+message bodies, output or credentials.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
 Exercise installed CLI startup and actual Node, curl, and git HTTPS verification. Require rejection without the supplied

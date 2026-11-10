@@ -6,9 +6,16 @@ type PageInput = {
   readonly content: string;
   readonly status?: number;
   readonly headers?: Headers;
+  readonly scriptNonce?: string;
 };
 
-export function authPage({ title, content, status = HttpStatusCode.Ok, headers = new Headers() }: PageInput): Response {
+export function authPage({
+  title,
+  content,
+  status = HttpStatusCode.Ok,
+  headers = new Headers(),
+  scriptNonce,
+}: PageInput): Response {
   const responseHeaders = new Headers(headers);
 
   responseHeaders.set(HttpHeader.ContentType, MediaType.Html);
@@ -17,6 +24,13 @@ export function authPage({ title, content, status = HttpStatusCode.Ok, headers =
     HttpHeader.ContentSecurityPolicy,
     "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'",
   );
+
+  if (scriptNonce !== undefined) {
+    responseHeaders.set(
+      HttpHeader.ContentSecurityPolicy,
+      `${responseHeaders.get(HttpHeader.ContentSecurityPolicy)}; script-src 'nonce-${scriptNonce}' 'strict-dynamic'; connect-src 'self'`,
+    );
+  }
 
   if (!responseHeaders.has(HttpHeader.ReferrerPolicy)) {
     responseHeaders.set(HttpHeader.ReferrerPolicy, 'same-origin');

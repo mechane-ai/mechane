@@ -58,10 +58,22 @@ Native logs include the Worker's console messages through `cell_console=info`, b
 console level to that native level. The supervisor preserves other `RUST_LOG` directives and any explicit `cell_console`
 selection. It records the effective filter in its ownership file.
 
-The browser origin stays loopback HTTP. Guest CLI calls use an owned HTTPS byte forwarder to the application listener,
-with a `host.docker.internal` certificate signed by the local development CA. Only the public CA enters guest startup
-trust. Postgres uses verified TLS with SCRAM authentication. The local sandbox explicitly uses direct Docker networking;
-hosted gateway behavior requires its own qualification.
+The browser origin stays loopback HTTP. Guest CLI calls use one owned HTTPS gateway to the application listener, with a
+`host.docker.internal` certificate signed by the local development CA. Command gates register opaque routes on that same
+gateway instead of opening additional host ports. Only the public CA enters guest startup trust.
+
+Before starting the environment host, the stack declares the gateway's exact port in `CELLD_CONTAINER_HOST_SERVICES`.
+The native Linux capability permits that bridge-gateway port while retaining the other guest and private-host fences.
+Application restarts retain the gateway; shutdown closes it after the owned guests and environment host stop. Worker
+authentication and opaque fixture routes authorize requests on this shared bridge capability.
+
+Unconfirmed environment cleanup retains the gateway port, fixtures, database, and ownership records. An explicit Stop
+retry reconciles the same environment state and immutable Worker before confirming cleanup and releasing the port.
+Startup failures carry their owned cleanup callback; successful cleanup preserves the original startup failure. Docker
+Desktop uses its host forwarding, and Linux port isolation requires its native qualification.
+
+Postgres uses verified TLS with SCRAM authentication. The local sandbox explicitly uses direct Docker networking; hosted
+gateway behavior requires its own qualification.
 
 Local server certificates last 365 days. Reopening renews an expired or overlong leaf under the existing development CA,
 preserving the CA, server key, and Postgres data.

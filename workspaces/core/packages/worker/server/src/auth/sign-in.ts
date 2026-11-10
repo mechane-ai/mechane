@@ -11,7 +11,7 @@ import {
 import type { AuthenticationConfiguration } from '@mechane/runtime';
 import { escapeHtml } from '@mechane/utilities';
 import { timingSafeEqual } from 'node:crypto';
-import { cookieHeader, readCookie } from './cookies.ts';
+import { cookieHeader, readCookie, readCookieTokenHash } from './cookies.ts';
 import { exchangeGithubCode } from './github.ts';
 import { authPage, AuthPageError } from './page.ts';
 import type { AuthRequest } from './types.ts';
@@ -67,8 +67,9 @@ export async function startSignIn({ request, store, configuration }: AuthRequest
   const state = createAuthToken(TokenPrefix.SignIn);
   const returnTo = returnDestination(request, configuration.origin);
   const expiresAt = new Date(Date.now() + SIGN_IN_SECONDS * MILLISECONDS_PER_SECOND).toISOString();
+  const previousSignInTokenHash = readCookieTokenHash({ request, origin: configuration.origin, name: 'sign_in' });
 
-  await store.auth.openSignIn({ tokenHash: hashAuthToken(state), returnTo, expiresAt });
+  await store.auth.openSignIn({ tokenHash: hashAuthToken(state), previousSignInTokenHash, returnTo, expiresAt });
 
   const target = new URL('/login/oauth/authorize', configuration.githubWebOrigin);
 
@@ -84,7 +85,7 @@ export async function startSignIn({ request, store, configuration }: AuthRequest
   });
 
   return new Response(null, {
-    status: HttpStatusCode.Found,
+    status: HttpStatusCode.Ok,
     headers: { location: target.href, [HttpHeader.CacheControl]: 'no-store', [HttpHeader.SetCookie]: cookie },
   });
 }
@@ -108,7 +109,10 @@ export async function finishSignIn({ request, store, configuration }: AuthReques
     );
   }
 
-  const returnTo = await store.auth.claimSignIn({ tokenHash: hashAuthToken(state) });
+  const token = createAuthToken(TokenPrefix.Session);
+  const signInTokenHash = hashAuthToken(state);
+  const tokenHash = hashAuthToken(token);
+  const returnTo = await store.auth.claimSignIn({ tokenHash: signInTokenHash, sessionTokenHash: tokenHash });
 
   if (returnTo === null) {
     throw new AuthPageError('The sign-in expired or was already used. Start again.', HttpStatusCode.BadRequest);
@@ -121,20 +125,24 @@ export async function finishSignIn({ request, store, configuration }: AuthReques
     throw new IdentityNotAdmitted({});
   }
 
-  const token = createAuthToken(TokenPrefix.Session);
   const expiresAt = new Date(Date.now() + BROWSER_SESSION_SECONDS * MILLISECONDS_PER_SECOND).toISOString();
   const bootstrap = initialWorkspace({ identity, configuration });
 
-  await store.auth.openIdentitySession({
+  const principal = await store.auth.openIdentitySession({
     identity,
-    tokenHash: hashAuthToken(token),
+    signInTokenHash,
+    tokenHash,
     expiresAt,
     bootstrap,
     personalDailyCapMicros: configuration.dailyCapMicros,
   });
 
+  if (principal === null) {
+    throw new AuthPageError('The sign-in expired or was cancelled. Start again.', HttpStatusCode.BadRequest);
+  }
+
   const destination = new URL(returnTo, configuration.origin).href;
-  const headers = new Headers({ refresh: `0; url=${destination}`, [HttpHeader.ReferrerPolicy]: 'no-referrer' });
+  const headers = new Headers({ location: destination, [HttpHeader.ReferrerPolicy]: 'no-referrer' });
 
   headers.append(
     HttpHeader.SetCookie,

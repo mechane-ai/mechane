@@ -17,6 +17,8 @@ ignores:
     'packages/browser/console/src/conversations/entry.ts',
     'packages/browser/console/src/conversations/transport.ts',
     'packages/browser/console-data/src/api.ts',
+    'packages/browser/console-data/src/browser-authentication.ts',
+    'packages/browser/console-data/src/scope-invalidation.ts',
     'packages/browser/console-data/src/read-recovery.ts',
     'packages/browser/console-data/src/collections.ts',
     'packages/browser/console-data/src/console-data.ts',
