@@ -4,6 +4,9 @@ import { Record } from 'effect';
 /** The spaces each level of a JSON file the programs write is indented by. */
 export const JSON_INDENT_CHARS = 2;
 
+/** Local listeners bind only to this host. */
+export const LOOPBACK_HOST = '127.0.0.1';
+
 /**
  * The migration lock, relative to the product workspace: a hash of each schema step of every store and of each Wrangler
  * migration, in order, which only ever gains steps.

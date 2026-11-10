@@ -3,7 +3,7 @@ import type { Server } from 'node:net';
 
 type CloseLoopbackServerInput = { readonly server: Server };
 
-/** Stops the server listening, once its open connections have ended. */
+/** Releases the listener after its open connections finish. */
 export const closeLoopbackServer = Effect.fn('closeLoopbackServer')(function* ({
   server,
 }: CloseLoopbackServerInput): Effect.fn.Return<void> {

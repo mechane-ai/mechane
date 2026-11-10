@@ -1,7 +1,8 @@
+import { serveRequests } from '@mechane/program';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import type { StackFailed } from '../errors.ts';
-import { serveRequests } from '../loopback/serve-requests.ts';
+import { stackListenFailure } from '../loopback/stack-listen-failure.ts';
 import type { StackSettings } from '../types.ts';
 import { answerLauncherRequest } from './answer-launcher-request.ts';
 import { hostMachines } from './host-machines.ts';
@@ -28,5 +29,7 @@ export const startHostLauncher = Effect.fn('startHostLauncher')(function* ({
 
   yield* Effect.acquireRelease(Effect.void, () => machines.stopEach());
 
-  return yield* serveRequests({ answer: (request) => answerLauncherRequest({ request, machines, launcherKey }) });
+  const listening = serveRequests({ answer: (request) => answerLauncherRequest({ request, machines, launcherKey }) });
+
+  return yield* Effect.mapError(listening, stackListenFailure);
 });

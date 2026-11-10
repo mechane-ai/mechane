@@ -398,7 +398,8 @@
     "bounded-turn submit --max-model-dispatches",
     "bounded-turn submit --max-output-tokens",
     "bounded-turn submit --deadline-at",
-    "execution-access set --access"
+    "execution-access set --access",
+    "slack bind --allowed-user-ids"
   ],
   "variables": [
     "MECHANE_ORIGIN",
@@ -1506,7 +1507,19 @@
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository",
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.secret_reference",
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.variables",
-    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.secrets"
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.secrets",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service.url",
+    "GET /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service.secret_reference",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.request_service",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.request_service.url",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access body.access.request_service.secret_reference",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service.url",
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.request_service.secret_reference",
+    "POST /api/v1/workspaces/:workspace_id/slack-bindings body.allowed_user_ids",
+    "POST /api/v1/workspaces/:workspace_id/slack-bindings output[_tag=Configured].binding.allowed_user_ids",
+    "GET /api/v1/workspaces/:workspace_id/slack-bindings output.bindings[].allowed_user_ids"
   ],
   "members": [
     "GET /api/v1/readiness output.durable_objects[].object_class=DirectoryObject",

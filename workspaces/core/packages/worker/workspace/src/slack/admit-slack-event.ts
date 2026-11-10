@@ -6,6 +6,12 @@ import { Option } from 'effect';
 
 type AdmitEventInput = AdmitSlackEventInput & { readonly store: WorkspaceStore };
 
+type DecideSlackAdmissionInput = Pick<
+  typeof SlackEventAdmission.cases.Admitted.Type,
+  'inboxItemId' | 'eventId' | 'binding'
+> &
+  Pick<AdmitEventInput, 'userId'>;
+
 /** Records one canonical admission per event or message identity before paid work can begin. */
 export function admitSlackEvent({
   store,
@@ -15,11 +21,18 @@ export function admitSlackEvent({
   channelId,
   messageTimestamp,
   fingerprint,
+  userId,
 }: AdmitEventInput): SlackEventAdmission {
   const installation = store.slackInstallation({ connectionId });
   const isInstalled = Option.exists(installation, (current) => current.teamId === teamId);
 
   if (!isInstalled) {
+    return SlackEventAdmission.cases.Ignored.make({});
+  }
+
+  const binding = store.slackRoute({ connectionId, teamId, channelId });
+
+  if (Option.isNone(binding) || !binding.value.isListening) {
     return SlackEventAdmission.cases.Ignored.make({});
   }
 
@@ -30,13 +43,7 @@ export function admitSlackEvent({
       return SlackEventAdmission.cases.Conflicting.make({});
     }
 
-    return SlackEventAdmission.cases.Admitted.make(existing.value);
-  }
-
-  const binding = store.slackRoute({ connectionId, teamId, channelId });
-
-  if (Option.isNone(binding) || !binding.value.isListening) {
-    return SlackEventAdmission.cases.Ignored.make({});
+    return decideSlackAdmission({ ...existing.value, binding: binding.value, userId });
   }
 
   const inboxItemId = InboxItemId.make(crypto.randomUUID());
@@ -44,5 +51,15 @@ export function admitSlackEvent({
 
   store.recordSlackEvent({ connectionId, teamId, channelId, messageTimestamp, ...admitted });
 
-  return SlackEventAdmission.cases.Admitted.make(admitted);
+  return decideSlackAdmission({ ...admitted, userId });
+}
+
+function decideSlackAdmission({ userId, ...admission }: DecideSlackAdmissionInput): SlackEventAdmission {
+  const allowedUsers = Option.fromUndefinedOr(admission.binding.allowedUserIds);
+
+  if (Option.exists(allowedUsers, (users) => !users.includes(userId))) {
+    return SlackEventAdmission.cases.Refused.make(admission);
+  }
+
+  return SlackEventAdmission.cases.Admitted.make(admission);
 }

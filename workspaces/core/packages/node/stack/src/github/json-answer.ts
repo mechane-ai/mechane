@@ -1,6 +1,6 @@
+import type { ServedAnswer } from '@mechane/program';
 import { HttpHeader, MediaType } from '@mechane/records';
 import type { HttpStatusCode } from '@mechane/records';
-import type { ServedAnswer } from '../types.ts';
 
 type JsonAnswerInput = { readonly status: HttpStatusCode; readonly body: unknown };
 

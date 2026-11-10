@@ -13,8 +13,13 @@ export type SlackInstallationAnswer = typeof SlackInstallationAnswer.Type;
 /** The durable inbox identity and binding selected for a signed Slack event. */
 export const SlackEventAdmission = Schema.TaggedUnion({
   Admitted: { inboxItemId: InboxItemId, eventId: SlackEventId, binding: SlackBinding },
+  Refused: { inboxItemId: InboxItemId, eventId: SlackEventId, binding: SlackBinding },
   Ignored: {},
   Conflicting: {},
 });
 
 export type SlackEventAdmission = typeof SlackEventAdmission.Type;
+
+/** Whether the destination mech durably accepted a connector notice. */
+export const SlackNoticeReceipt = Schema.TaggedUnion({ Received: {}, MechMissing: {} });
+export type SlackNoticeReceipt = typeof SlackNoticeReceipt.Type;

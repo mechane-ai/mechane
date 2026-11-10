@@ -3,6 +3,7 @@ import type { MechTables } from '@mechane/mech-store';
 import { LogEvent } from '@mechane/protocol';
 import { settlesWithin, untilAborted } from '@mechane/utilities';
 import { DateTime, Duration, Option } from 'effect';
+import { runRequestWaits } from '../requests/run-request-waits.ts';
 import { runSlackDeliveries } from '../slack/run-slack-deliveries.ts';
 import type { MechHandle } from '../types.ts';
 import { catchUp } from './catch-up.ts';
@@ -32,6 +33,7 @@ export async function runAlarm({ handle }: RunAlarmInput): Promise<void> {
 
   await mech.alarm.arm({ at: DateTime.addDuration(armed, HEARTBEAT) });
   await runSlackDeliveries(mech);
+  await runRequestWaits(mech);
 
   const caught = await catchUp(mech);
   const workEnd = DateTime.addDuration(start, Duration.seconds(mech.settings.alarmWorkSeconds));

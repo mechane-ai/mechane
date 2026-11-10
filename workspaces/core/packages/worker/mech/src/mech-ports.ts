@@ -7,6 +7,7 @@ import type { ObjectSettings } from '@mechane/rpc';
 import type { WakeList } from '@mechane/utilities';
 import { mechFindings } from './findings/mech-findings.ts';
 import { mechHands } from './hands/mech-hands.ts';
+import { mechRequests } from './requests/mech-requests.ts';
 
 /** What the ports of the mech's Harness work through: its store, its settings, its signals and its reset. */
 type MechPortsInput = {
@@ -28,6 +29,7 @@ type MechPorts = Pick<OpenMechHarnessInput, 'extensions' | 'selection'> & { read
 export function mechPorts({ store, settings, signal, recorded, abortObject }: MechPortsInput): MechPorts {
   const remote = mechRemoteTools({ store, settings });
   const findings = mechFindings({ store, recorded });
+  const requests = mechRequests({ store, settings, signal, recorded });
 
   return {
     meter: drainableMeter({ meter: dispatchMeter({ store, settings, abortObject }) }),
@@ -37,6 +39,7 @@ export function mechPorts({ store, settings, signal, recorded, abortObject }: Me
       remote,
       memory: mechMemory({ store }),
       threads: mechThreads({ store, signal, recorded }),
+      requests,
     }),
   };
 }

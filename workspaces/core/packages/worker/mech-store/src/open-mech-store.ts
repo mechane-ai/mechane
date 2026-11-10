@@ -11,6 +11,8 @@ import { inboxItemRecords } from './inbox/inbox-item-records.ts';
 import { mechRecords } from './mechs/mech-records.ts';
 import { memoryRecords } from './memories/memory-records.ts';
 import { MIGRATIONS } from './migrations.ts';
+import { requestSubmissionRecords } from './requests/submission-records.ts';
+import { requestWaitRecords } from './requests/wait-records.ts';
 import { slackDeliveryProgressRecords } from './slack/slack-delivery-progress-records.ts';
 import { slackDeliveryRecords } from './slack/slack-delivery-records.ts';
 import { slackOriginRecords } from './slack/slack-origin-records.ts';
@@ -32,6 +34,8 @@ export async function openMechStore({ storage, transaction }: OpenMechStoreInput
 
   const tables: MechTables = {
     schemaRevision: () => schemaRevision({ sql }),
+    ...requestSubmissionRecords({ sql }),
+    ...requestWaitRecords({ sql }),
     ...boundedTurnRecords({ sql }),
     ...dispatchEvidenceRecords({ sql }),
     ...mechRecords({ sql }),

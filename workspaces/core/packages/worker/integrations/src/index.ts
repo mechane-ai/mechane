@@ -1,13 +1,28 @@
 export { resolveIntegrationSecret } from './resolve-integration-secret.ts';
+export { readServiceRequest } from './requests/read-service-request.ts';
+export type { RequestServiceOutcome } from './requests/types.ts';
 export { encryptIntegrationSecret } from './credentials/encrypt-integration-secret.ts';
 export { IntegrationSecretInvalid } from './credentials/errors.ts';
 export { findSlackInstallation } from './slack/find-slack-installation.ts';
 export { verifySlackSignature } from './slack/verify-slack-signature.ts';
 export { postSlackDelivery } from './slack/post-slack-delivery.ts';
+export { readSlackImage } from './slack/read-slack-image.ts';
 export type { SlackReconciliation } from './slack/types.ts';
 export { reconcileSlackDelivery } from './slack/reconcile-slack-delivery.ts';
-export { SlackEventCallback, SlackPostResult, SlackEnvelope, SlackMessage } from './slack/schemas.ts';
-export { SLACK_REPLY_MAX_CHARS, SlackEnvelopeType } from './slack/constants.ts';
+export {
+  SlackEventCallback,
+  SlackPostResult,
+  SlackEnvelope,
+  SlackMessage,
+  SlackImageMediaType,
+  SlackImageResult,
+} from './slack/schemas.ts';
+export {
+  SLACK_REPLY_MAX_CHARS,
+  SlackEnvelopeType,
+  SlackMessageSubtype,
+  SLACK_IMAGE_MAX_COUNT,
+} from './slack/constants.ts';
 
 export { runRemoteMcp } from './mcp/run-remote-mcp.ts';
 export { createGitHubToken } from './github/tokens/create-github-token.ts';

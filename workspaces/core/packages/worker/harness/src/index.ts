@@ -7,6 +7,7 @@ export type {
   OpenMechHarnessInput,
   OwedNote,
   DeliverInput,
+  InboxImage,
   MechHarness,
 } from './types.ts';
 export type { DispatchMeter, GrantedReservation, Reservation, ReserveInput } from './models/types.ts';

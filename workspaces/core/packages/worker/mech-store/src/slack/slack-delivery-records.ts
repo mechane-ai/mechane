@@ -1,10 +1,10 @@
 import { MechStatus } from '@mechane/protocol';
-import { SlackDeliveryStatus, SlackDestination } from '@mechane/records';
-import type { SlackBindingId, SlackDeliveryId } from '@mechane/records';
+import { SlackDeliveryId, SlackDeliveryStatus, SlackDestination } from '@mechane/records';
+import type { SlackBindingId } from '@mechane/records';
 import { decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
-import { DateTime, Schema } from 'effect';
-import type { Option } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
+import { SlackDeliveryPurpose } from './constants.ts';
 import { SlackDeliveryRow } from './schemas.ts';
 
 type EnqueueSlackDeliveryInput = {
@@ -13,6 +13,14 @@ type EnqueueSlackDeliveryInput = {
   readonly text: string;
   readonly now: DateTime.Utc;
 };
+
+type EnqueueSlackMessageInput = EnqueueSlackDeliveryInput & {
+  readonly purpose: SlackDeliveryPurpose;
+  /** Absent for ordinary deliveries whose explicit delivery ID supplies retry identity. */
+  readonly noticeKey: Option.Option<string>;
+};
+
+type EnqueueSlackNoticeInput = Omit<EnqueueSlackDeliveryInput, 'deliveryId'> & { readonly noticeKey: string };
 
 const SlackDeliveryDue = Schema.Struct({
   /** Absent when no delivery has a scheduled recovery deadline. */
@@ -37,8 +45,12 @@ const SLACK_DELIVERY_LIST_COUNT = 100;
 
 /** Durable reply intents, frozen destinations, and due-delivery queries. */
 export function slackDeliveryRecords({ sql }: RecordsInput) {
+  const noNotice = Option.none<string>();
+
   return {
-    enqueueSlackDelivery: (input: EnqueueSlackDeliveryInput): void => enqueueSlackDelivery({ sql, ...input }),
+    enqueueSlackDelivery: (input: EnqueueSlackDeliveryInput): void =>
+      enqueueSlackDelivery({ sql, ...input, purpose: SlackDeliveryPurpose.Reply, noticeKey: noNotice }),
+    enqueueSlackNotice: (input: EnqueueSlackNoticeInput): void => enqueueSlackNotice({ sql, ...input }),
     enqueueSlackBindingDelivery: (input: EnqueueSlackBindingDeliveryInput): void =>
       enqueueSlackBindingDelivery({ sql, ...input }),
     resolveSlackDelivery: (input: ResolveSlackDeliveryInput): void => resolveSlackDelivery({ sql, ...input }),
@@ -49,13 +61,22 @@ export function slackDeliveryRecords({ sql }: RecordsInput) {
   };
 }
 
-function enqueueSlackDelivery({ sql, deliveryId, destination, text, now }: SqlCall<EnqueueSlackDeliveryInput>): void {
+function enqueueSlackDelivery({
+  sql,
+  deliveryId,
+  destination,
+  text,
+  now,
+  purpose,
+  noticeKey,
+}: SqlCall<EnqueueSlackMessageInput>): void {
   const wire = Schema.fromJsonString(SlackDestination);
   const serialized = Schema.encodeSync(wire)(destination);
   const nowMs = DateTime.toEpochMillis(now);
+  const storedNoticeKey = Option.getOrNull(noticeKey);
 
   sql.exec(
-    'INSERT INTO slack_deliveries (id, binding_id, destination, text, status, created_at, next_attempt_at, reconciliation_count) VALUES (?, ?, ?, ?, ?, ?, ?, 0) ON CONFLICT (id) DO NOTHING',
+    'INSERT INTO slack_deliveries (id, binding_id, destination, text, status, created_at, next_attempt_at, purpose, notice_key, reconciliation_count) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0) ON CONFLICT DO NOTHING',
     deliveryId,
     destination.bindingId,
     serialized,
@@ -63,7 +84,16 @@ function enqueueSlackDelivery({ sql, deliveryId, destination, text, now }: SqlCa
     SlackDeliveryStatus.Pending,
     nowMs,
     nowMs,
+    purpose,
+    storedNoticeKey,
   );
+}
+
+function enqueueSlackNotice({ noticeKey: key, ...input }: SqlCall<EnqueueSlackNoticeInput>): void {
+  const deliveryId = SlackDeliveryId.make(crypto.randomUUID());
+  const noticeKey = Option.some(key);
+
+  enqueueSlackDelivery({ ...input, deliveryId, purpose: SlackDeliveryPurpose.Notice, noticeKey });
 }
 
 function enqueueSlackBindingDelivery({
@@ -97,10 +127,12 @@ function pendingSlackDeliveries({ sql, now }: SqlCall<PendingSlackDeliveriesInpu
   const nowMs = DateTime.toEpochMillis(now);
 
   const cursor = sql.exec(
-    'SELECT * FROM slack_deliveries WHERE status IN (?, ?) AND next_attempt_at <= ? ORDER BY created_at LIMIT ?',
+    'SELECT * FROM slack_deliveries WHERE status IN (?, ?) AND next_attempt_at <= ? AND EXISTS (SELECT id FROM mech WHERE status = ? OR slack_deliveries.purpose = ?) ORDER BY created_at LIMIT ?',
     SlackDeliveryStatus.Pending,
     SlackDeliveryStatus.Uncertain,
     nowMs,
+    MechStatus.Active,
+    SlackDeliveryPurpose.Notice,
     SLACK_DELIVERY_BATCH_COUNT,
   );
 
@@ -115,10 +147,11 @@ function slackDeliveries({ sql }: RecordsInput): ReadonlyArray<SlackDeliveryRow>
 
 function nextSlackDeliveryAt({ sql }: RecordsInput): Option.Option<DateTime.Utc> {
   const cursor = sql.exec(
-    'SELECT MIN(next_attempt_at) AS at FROM slack_deliveries WHERE status IN (?, ?) AND EXISTS (SELECT id FROM mech WHERE status = ?)',
+    'SELECT MIN(next_attempt_at) AS at FROM slack_deliveries WHERE status IN (?, ?) AND EXISTS (SELECT id FROM mech WHERE status = ? OR slack_deliveries.purpose = ?)',
     SlackDeliveryStatus.Pending,
     SlackDeliveryStatus.Uncertain,
     MechStatus.Active,
+    SlackDeliveryPurpose.Notice,
   );
 
   return decodeOne({ cursor, schema: SlackDeliveryDue }).at;

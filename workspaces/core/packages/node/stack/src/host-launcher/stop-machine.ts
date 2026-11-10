@@ -1,6 +1,6 @@
+import type { ServedAnswer } from '@mechane/program';
 import { HttpStatusCode } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
-import type { ServedAnswer } from '../types.ts';
 import type { HostMachines } from './types.ts';
 
 type StopMachineInput = { readonly machines: HostMachines; readonly machineId: RecordId };

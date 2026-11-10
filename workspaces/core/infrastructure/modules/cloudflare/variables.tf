@@ -85,6 +85,7 @@ variable "model" {
     upstream = string
     offers = list(object({
       id                                    = string
+      supports_images                       = optional(bool, false)
       context_window_tokens                 = number
       max_output_tokens                     = number
       input_micros_per_million_tokens       = number

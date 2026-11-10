@@ -1,7 +1,7 @@
+import type { ServedAnswer } from '@mechane/program';
 import { GitHubPath } from '@mechane/protocol';
 import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Array, Option } from 'effect';
-import type { ServedAnswer } from '../types.ts';
 import { exchangeCode } from './exchange-code.ts';
 import { grantCode } from './grant-code.ts';
 import { jsonAnswer } from './json-answer.ts';

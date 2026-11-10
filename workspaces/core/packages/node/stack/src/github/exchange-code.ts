@@ -1,7 +1,7 @@
+import type { ServedAnswer } from '@mechane/program';
 import { GitHubTokenAnswer, GitHubTokenRequest } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { Option, Record, Redacted, Result, Schema } from 'effect';
-import type { ServedAnswer } from '../types.ts';
 import { jsonAnswer } from './json-answer.ts';
 import type { RouteInput } from './types.ts';
 

@@ -17,6 +17,14 @@ export type PrincipalId = typeof PrincipalId.Type;
 export const InboxItemId = RecordId.pipe(Schema.brand('InboxItemId'));
 export type InboxItemId = typeof InboxItemId.Type;
 
+/** The stable ID of an access, token, or action request in an owner-configured external service. */
+export const ExternalRequestId = RecordId.pipe(Schema.brand('ExternalRequestId'));
+export type ExternalRequestId = typeof ExternalRequestId.Type;
+
+/** The ID of an approval owned by the configured external request service. */
+export const ExternalApprovalId = RecordId.pipe(Schema.brand('ExternalApprovalId'));
+export type ExternalApprovalId = typeof ExternalApprovalId.Type;
+
 /** The ID of a configured Slack audience owned by one mech. */
 export const SlackBindingId = RecordId.pipe(Schema.brand('SlackBindingId'));
 export type SlackBindingId = typeof SlackBindingId.Type;

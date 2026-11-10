@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.24.3",
+  "release": "0.24.5",
   "flags": [
     {
       "name": "origin",
@@ -367,6 +367,12 @@
           "kind": "text",
           "summary": "true to deliver replies and notifications, false to mute them",
           "required": true
+        },
+        {
+          "name": "allowed-user-ids",
+          "kind": "text",
+          "summary": "a JSON array of trusted Slack user IDs; omit to trust the channel",
+          "required": false
         }
       ],
       "arguments": [

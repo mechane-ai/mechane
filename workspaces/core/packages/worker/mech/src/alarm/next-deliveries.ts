@@ -40,7 +40,7 @@ export function nextDeliveries({ store, pending }: NextDeliveriesInput): Readonl
     const request = store.boundedTurn({ requestId: inboxItem.id });
     const isBounded = Option.isSome(request);
 
-    return { inboxItem, agent: { ...agent, isBounded } };
+    return { inboxItem: { ...inboxItem, images: [] }, agent: { ...agent, isBounded } };
   });
 
   if (store.runningDrones().length > 0 && deliveries.some((delivery) => delivery.agent.isBounded)) {

@@ -114,4 +114,18 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
     );
     sql.exec('CREATE INDEX thread_updates_due ON thread_updates (resume_at_ms) WHERE resume_at_ms IS NOT NULL');
   },
+  ({ sql }) => {
+    sql.exec("ALTER TABLE slack_deliveries ADD COLUMN purpose TEXT NOT NULL DEFAULT 'reply'");
+    sql.exec('ALTER TABLE slack_deliveries ADD COLUMN notice_key TEXT');
+    sql.exec('CREATE UNIQUE INDEX slack_notices_by_key ON slack_deliveries(notice_key) WHERE notice_key IS NOT NULL');
+  },
+  ({ sql }) => {
+    sql.exec(
+      'CREATE TABLE request_submissions (pi_task_id INTEGER PRIMARY KEY, thread_id TEXT NOT NULL REFERENCES threads(id), request_id TEXT NOT NULL UNIQUE, service_identity TEXT NOT NULL, body TEXT NOT NULL, created_at_ms INTEGER NOT NULL) STRICT',
+    );
+    sql.exec(
+      'CREATE TABLE request_waits (pi_task_id INTEGER PRIMARY KEY REFERENCES thread_updates(pi_task_id), kind TEXT NOT NULL, request_id TEXT NOT NULL, service_identity TEXT NOT NULL, expires_at_ms INTEGER NOT NULL, next_poll_at_ms INTEGER, result TEXT, CHECK (next_poll_at_ms IS NULL OR result IS NULL)) STRICT',
+    );
+    sql.exec('CREATE INDEX request_waits_due ON request_waits(next_poll_at_ms) WHERE next_poll_at_ms IS NOT NULL');
+  },
 ];

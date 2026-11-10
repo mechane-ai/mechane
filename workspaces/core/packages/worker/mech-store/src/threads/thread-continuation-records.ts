@@ -1,4 +1,4 @@
-import { ThreadNote, ThreadTitle } from '@mechane/protocol';
+import { ExternalRequestStatus, ThreadNote, ThreadTitle } from '@mechane/protocol';
 import { InboxItemId, renamedWireStruct, ThreadId } from '@mechane/records';
 import { decodeFirst, decodeRows } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
@@ -26,6 +26,7 @@ const DueContinuation = renamedWireStruct({
     inboxItemId: InboxItemId,
     title: ThreadTitle,
     note: Schema.OptionFromNullOr(ThreadNote),
+    requestResult: Schema.OptionFromNullOr(Schema.fromJsonString(ExternalRequestStatus)),
   },
   renames: { taskId: 'pi_task_id' },
 });
@@ -50,6 +51,12 @@ export function threadContinuationRecords({ sql }: RecordsInput) {
         threadId,
         inboxItemId,
       );
+    },
+    threadOrigin: ({ threadId }: ThreadInput): Option.Option<InboxItemId> => {
+      const cursor = sql.exec('SELECT inbox_item_id FROM thread_origins WHERE thread_id = ?', threadId);
+      const row = decodeFirst({ cursor, schema: Origin });
+
+      return Option.map(row, (origin) => origin.inbox_item_id);
     },
     continuationOrigin: ({ inboxItemId }: InboxInput): Option.Option<InboxItemId> => {
       const cursor = sql.exec(
@@ -82,7 +89,7 @@ export function threadContinuationRecords({ sql }: RecordsInput) {
       const at = DateTime.toEpochMillis(now);
 
       const cursor = sql.exec(
-        'SELECT thread_updates.pi_task_id, thread_updates.thread_id, thread_updates.inbox_item_id, threads.title, threads.note FROM thread_updates JOIN threads ON threads.id = thread_updates.thread_id WHERE thread_updates.resume_at_ms <= ? ORDER BY thread_updates.resume_at_ms, thread_updates.pi_task_id',
+        'SELECT thread_updates.pi_task_id, thread_updates.thread_id, thread_updates.inbox_item_id, threads.title, threads.note, request_waits.result AS request_result FROM thread_updates JOIN threads ON threads.id = thread_updates.thread_id LEFT JOIN request_waits ON request_waits.pi_task_id = thread_updates.pi_task_id WHERE thread_updates.resume_at_ms <= ? ORDER BY thread_updates.resume_at_ms, thread_updates.pi_task_id',
         at,
       );
 

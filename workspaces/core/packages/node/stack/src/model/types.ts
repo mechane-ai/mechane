@@ -1,5 +1,6 @@
+import type { ServedAnswer } from '@mechane/program';
 import type { Duration } from 'effect';
-import type { AnsweredRequest, ServedAnswer } from '../types.ts';
+import type { AnsweredRequest } from '../types.ts';
 import type { ChatMessage } from './schemas.ts';
 
 /**

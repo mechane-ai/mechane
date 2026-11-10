@@ -1,7 +1,7 @@
 import { BYTES_PER_MEBIBYTE } from '@mechane/records';
 import type { FetchLike } from '@modelcontextprotocol/client';
 import { Option } from 'effect';
-import { boundRemoteResponse } from './bound-remote-response.ts';
+import { boundRemoteResponse } from '../http/bound-remote-response.ts';
 import type { RemoteByteCount } from './types.ts';
 
 const REMOTE_RESPONSE_MAX_BYTES = BYTES_PER_MEBIBYTE;

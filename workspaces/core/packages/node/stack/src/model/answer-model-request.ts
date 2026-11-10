@@ -1,8 +1,8 @@
+import type { ServedRequest } from '@mechane/program';
 import { bearerAuthorization } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Array, Option, Record, Result, Schema } from 'effect';
 import { SCRIPTED_OFFERS } from '../constants.ts';
-import type { ServedRequest } from '../types.ts';
 import { ChatRole, SCRIPTED_MODEL_KEY, ScriptedPath } from './constants.ts';
 import { errorAnswer } from './error-answer.ts';
 import { ChatMessage } from './schemas.ts';

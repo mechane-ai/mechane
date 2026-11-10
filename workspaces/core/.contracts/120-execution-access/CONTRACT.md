@@ -1,7 +1,7 @@
 ---
 name: execution-access
 message: Give shell commands only their mech’s current owner grant and keep credential material out of durable execution records.
-paths: ["packages/shared/protocol/src/operations/execution-access/**", "packages/shared/sandbox-wire/src/**", "packages/worker/edge/src/operations/execution-access/**", "packages/worker/integrations/src/github/tokens/**", "packages/worker/integrations/src/resolve-integration-secret.ts", "packages/worker/mech/src/hands/**", "packages/worker/rpc/src/{execution-access.schemas,sandbox.schemas,workspace.types}.ts", "packages/worker/workspace/src/workspace-object.ts", "packages/worker/workspace-store/src/execution-access/**", "packages/worker/sandbox/src/executions/**", "packages/worker/sandbox-store/src/executions/**", "packages/node/guest/src/executions/**"]
+paths: ["packages/shared/protocol/src/operations/execution-access/**", "packages/shared/sandbox-wire/src/**", "packages/worker/edge/src/operations/execution-access/**", "packages/worker/integrations/src/github/tokens/**", "packages/worker/integrations/src/resolve-integration-secret.ts", "packages/worker/integrations/src/requests/**", "packages/worker/harness-tools/src/requests/**", "packages/worker/mech/src/{hands,requests}/**", "packages/worker/rpc/src/{execution-access.schemas,sandbox.schemas,workspace.types}.ts", "packages/worker/workspace/src/workspace-object.ts", "packages/worker/workspace-store/src/execution-access/**", "packages/worker/sandbox/src/executions/**", "packages/worker/sandbox-store/src/executions/**", "packages/node/guest/src/executions/**"]
 ---
 
 ## Rules
@@ -27,12 +27,24 @@ Redact exact injected values before retaining output. Truncated output must not 
 can read its credentials and deliberately copy them; redaction is accidental-disclosure protection, not a restriction
 on the authority granted to arbitrary code.
 
+Keep a request-service credential separate from command credentials. Only the owner-configured collection may receive
+it; models supply a request kind or capability and stable ID, never a URL, credential, or trusted actor. Resolve the
+current grant and credential before every submission and status read. Bound transport time and bytes, refuse redirects,
+validate returned request kind and ID, and keep raw provider failures and credential material out of tool results.
+
+Build requester context from the work thread's persisted verified inbox origin. Ambiguous input has no inferred actor.
+A command key, model-supplied identity, message, or header must not become trusted requester context. The external
+service owns capability policy, approver selection, and grant revocation; Mechane only submits and observes requests.
+Persist automatic-access notices through the existing original-thread outbox, independently of the model's reply.
+
 ## Checks
 
 Run the execution-access smoke through the CLI and packaged runtime. Check grant persistence, immediate revocation,
 output redaction, and absence from scanned runtime files. Exercise foreign ownership and a fresh fork without a grant.
 Review every credential transport and persistence boundary when it changes. Verify the Git helper refuses another
 repository and host. Live qualification checks actual App permissions and ordinary Git/`gh` behavior; it stays outside CI.
+Exercise the request service with a host-only credential through its actual local HTTP boundary. Verify a guest cannot
+read that credential, changed service configuration refuses an older request, and closed work cannot gain a new wait.
 
 ## Local adaptations
 

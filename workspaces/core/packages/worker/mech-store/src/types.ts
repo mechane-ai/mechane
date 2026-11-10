@@ -9,6 +9,8 @@ import type { DroneEndRecords, DroneRecords } from './drone.types.ts';
 import type { FindingRecords } from './findings/finding-records.ts';
 import type { CopyRecords, ForkRecords } from './fork.types.ts';
 import type { MemoryRecords } from './memory.types.ts';
+import type { requestSubmissionRecords } from './requests/submission-records.ts';
+import type { requestWaitRecords } from './requests/wait-records.ts';
 import type { DispatchWork, InboxItemRow, MechRow, PendingItemRow } from './schemas.ts';
 import type { slackDeliveryProgressRecords } from './slack/slack-delivery-progress-records.ts';
 import type { slackDeliveryRecords } from './slack/slack-delivery-records.ts';
@@ -139,6 +141,8 @@ export type CursorInput = { readonly cursor: SqlStorageCursor<Readonly<Record<st
 
 /** Every record function of a mech's own tables, which only a run of the store's transaction receives. */
 export type MechTables = MechRecords &
+  ReturnType<typeof requestSubmissionRecords> &
+  ReturnType<typeof requestWaitRecords> &
   ReturnType<typeof threadContinuationRecords> &
   ReturnType<typeof boundedTurnRecords> &
   ReturnType<typeof dispatchEvidenceRecords> &

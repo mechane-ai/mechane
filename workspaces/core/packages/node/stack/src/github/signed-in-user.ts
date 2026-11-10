@@ -1,7 +1,7 @@
+import type { ServedAnswer } from '@mechane/program';
 import { BEARER_SCHEME, GitHubUser } from '@mechane/protocol';
 import { HttpStatusCode } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
-import type { ServedAnswer } from '../types.ts';
 import { jsonAnswer } from './json-answer.ts';
 import type { RouteInput } from './types.ts';
 

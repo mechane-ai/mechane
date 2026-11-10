@@ -1,4 +1,9 @@
-export { JSON_INDENT_CHARS } from './constants.ts';
+export { JSON_INDENT_CHARS, LOOPBACK_HOST } from './constants.ts';
+export { closeLoopbackServer } from './loopback/close-loopback-server.ts';
+export { loopbackUrl } from './loopback/loopback-url.ts';
+export { serveOnLoopback } from './loopback/serve-on-loopback.ts';
+export { serveRequests } from './loopback/serve-requests.ts';
+export type { ServedAnswer, ServedRequest } from './loopback/types.ts';
 export { identifierWords } from './sources/identifier-words.ts';
 export { finishedProcess } from './finished-process.ts';
 export { exitStatusText } from './exit-status-text.ts';

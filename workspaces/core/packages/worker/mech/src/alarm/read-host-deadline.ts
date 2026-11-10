@@ -9,7 +9,7 @@ type EarliestInput = {
   readonly right: Option.Option<DateTime.Utc>;
 };
 
-/** Reads the earliest watch, check timeout, or Slack delivery deadline. */
+/** Reads the earliest host deadline, admitting work continuations only when their owner is idle. */
 export function readHostDeadline({ store }: TablesInput): Option.Option<DateTime.Utc> {
   const watch = store.nextWatchAt();
   const delivery = store.nextSlackDeliveryAt();
@@ -18,10 +18,12 @@ export function readHostDeadline({ store }: TablesInput): Option.Option<DateTime
 
   const idle = readContinuationOwner({ store });
   const continuation = Option.flatMap(idle, () => store.nextThreadContinuationAt());
+  const request = Option.flatMap(idle, () => store.nextRequestWaitAt());
+  const resumed = earliestDeadline({ left: continuation, right: request });
 
   const next = earliestDeadline({ left: scheduled, right: bounded });
 
-  return earliestDeadline({ left: next, right: continuation });
+  return earliestDeadline({ left: next, right: resumed });
 }
 
 function earliestDeadline({ left, right }: EarliestInput): Option.Option<DateTime.Utc> {

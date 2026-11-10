@@ -1,8 +1,8 @@
+import type { ServedAnswer, ServedRequest } from '@mechane/program';
 import { bearerAuthorization } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType, RecordId } from '@mechane/records';
 import { GuestSegment, HostMachine } from '@mechane/sandbox-wire';
 import { Option, Result, Schema } from 'effect';
-import type { ServedAnswer, ServedRequest } from '../types.ts';
 import { reportMachine } from './report-machine.ts';
 import { stopMachine } from './stop-machine.ts';
 import type { HostMachines } from './types.ts';

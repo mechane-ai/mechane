@@ -12,6 +12,7 @@ credential. `mechane execution-access set <mech-id> --access '<JSON>'` grants th
 ```json
 {
   "github": null,
+  "request_service": null,
   "variables": { "APPLICATION_URL": "https://tools.example.com" },
   "secrets": { "APPLICATION_API_KEY": "application-agent" }
 }
@@ -34,6 +35,13 @@ Application CLIs use their normal environment inputs. Nexus accepts `NEXUS_API_K
 owns its company grants and expiry. The agent receives neither the owner's browser session nor credential-management
 authority. Rotate an application key through its service, update the existing encrypted reference, then revoke the old
 key. Keep its stable service identity.
+
+For service-owned access requests, add `request_service` with the collection's `url` and a host-only `secret_reference`.
+For example, a Nexus installation uses `https://softmax.nexus/api/v1/requests`. Keep this credential in a different
+vault reference from the sandbox's application key. It never enters the command environment or model context. The
+service must separately enable trusted runtime attribution on that credential; a sandbox-supplied header conveys no
+authority. The service decides which capabilities are standing, automatically granted with notification, or
+approval-gated.
 
 Credentials reach each command through trusted runtime transport. Exact values are redacted before captured output is
 retained. The code running in the guest can read and copy its credentials, so grant only intended authority. A grant
@@ -78,7 +86,21 @@ continuation replies; later messages cannot change that destination. Existing Sl
 
 On waking, inspect the external state before acting. Use ordinary `gh` commands for PRs, checks, and authorized merges.
 Read the deployment's actual revision and health evidence before saying a change is live. A timer is sufficient for this
-initial workflow; there is no second webhook/subscription engine or credential callback service.
+workflow; no credential callback service is needed.
+
+Use `request_access` with `thread_id`, the service's capability, a reason, and optional duration in minutes. A pending
+request automatically marks that work waiting. Explain the wait and finish the turn; the host polls the configured
+collection without consuming model turns. It resumes the original work and Slack thread after approval, refusal,
+revocation, expiry, or a permanent service failure. Do not replace this wait with `update_thread` or a polling shell.
+
+For a request already created by a CLI, call `wait_for_request` with `thread_id`, `kind` (`access`, `vend`, or
+`action`), and `request_id`. Read `task_context` when verified attribution helps explain the request. The host attaches
+this context itself; callers cannot choose another requester. A ready vend means the agent may collect it through the
+CLI, not that Mechane has stored a token. Recheck the operation's actual result before declaring the task done.
+
+One wait lasts at most a day and follows the original configured collection and credential reference. Changing that
+configuration fails the wait visibly. Resolving the work or replacing its wait prevents a late decision from reviving
+it.
 
 A repeated execution ID rejoins its original command. Background observation never resubmits the command to recover a
 receipt. If a machine disappears before a result is recorded, the result stays uncertain. Check the remote branch, PR,

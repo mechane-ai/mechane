@@ -4,12 +4,27 @@ A workspace owner can bind an existing Slack channel to one agent. Human message
 answers return to the original thread. There is no history import. Use a dedicated agent for each channel because its
 conversation and memory persist across messages.
 
+Text accompanying a file upload enters the inbox too. The host reads up to four JPEG, PNG, GIF, or WebP images, each at
+most 512 KiB, using the Slack installation's private file access. The complete encoded model submission is limited to 1
+MiB, including the caption, attachment notes and request metadata. Images that would exceed that combined limit are
+omitted with a clear note; the caption is preserved. This leaves room for the durable transcript's record metadata under
+[Cloudflare SQLite's 2 MB row limit](https://developers.cloudflare.com/durable-objects/platform/limits/). Other file
+types need a text caption; an unsupported upload without a caption gets an explanatory reply instead of silently
+starting no work.
+
 ## Installation
 
 Reuse your app, bot identity and channel membership. Its token needs `chat:write`; event subscriptions and history
 access need the scopes for the channel type, such as `channels:history` or `groups:history`. Subscribe to `app_mention`
 and/or the relevant message events. Add scopes and authorize them only when the existing installation lacks them.
 [Slack's Events API](https://docs.slack.dev/apis/events-api/)
+
+Reading screenshots additionally needs `files:read` on the bot credential. File URLs remain untrusted: only
+`https://files.slack.com` receives the file-read credential, and downloads do not follow redirects.
+[Slack file objects](https://docs.slack.dev/reference/objects/file-object/)
+
+The selected model offer must declare `supports_images: true`. Without image support or a readable file credential, the
+original caption still reaches the agent alongside a note that the attachment content was not read.
 
 Select the workspace with `--workspace UUID` or `MECHANE_WORKSPACE_ID`. Save each credential in a private file, then
 upload it with the workspace owner's CLI login:
@@ -42,7 +57,7 @@ later updates:
 mechane slack bind MECH-UUID \
   --binding-id BINDING-UUID --connection-id team-chat \
   --team-id SLACK-TEAM-ID --channel-id SLACK-CHANNEL-ID \
-  --listening true --replies true
+  --listening true --replies true --allowed-user-ids '["SLACK-USER-ID"]'
 mechane slack bindings
 mechane slack deliveries MECH-UUID
 ```
@@ -54,9 +69,14 @@ signed, and the event endpoint authenticates the exact body with Slack's timesta
 The URL stays `/integrations/slack/WORKSPACE-UUID/CONNECTION-ID/events` when credentials or connection metadata change.
 
 A binding keeps its original agent, team and channel. Reuse its UUID and audience to change `--listening` or
-`--replies`. Only one channel binds to an agent, and only one agent binds to a channel per installation. Bot messages,
-the app's own messages, message edits and unbound audiences are ignored. Duplicate events and duplicate mention/message
-subscriptions reuse the same admitted inbox item. The endpoint acknowledges after durable admission, before model work.
+`--replies`. `--allowed-user-ids` limits who can start work to the listed verified Slack users. Omitting it trusts the
+whole bound channel, including when replacing a binding. Use an explicit list for an agent with privileged service
+access. Other human senders receive a refusal in their thread. Only one channel binds to an agent, and only one agent
+binds to a channel per installation. Bot messages, the app's own messages, message edits and unbound audiences are
+ignored. Duplicate events and duplicate mention/message subscriptions reuse the same admitted inbox item. The endpoint
+acknowledges after durable admission, before model work. Each accepted request also gets one durable acknowledgement in
+Slack. A paused agent says the request is queued until it resumes. Unsupported input gets a useful explanation without a
+model call. These notices obey the binding's reply switch and workspace suspension, just like other outbound messages.
 
 ## Import existing configuration
 
@@ -98,7 +118,9 @@ format. The import never changes agents, sandbox files, grants, bindings, or del
 ## Delivery receipts
 
 Replies use the original thread timestamp and a durable delivery identifier. Their text is limited to 39,000 characters.
-Watch notifications use the same outbox and post to the configured channel.
+Intake and access notices share the outbox and use a stable notice key, so a retry cannot post another acknowledgement
+or consume the eventual agent reply. Intake notices can be delivered while agent work is paused. Watch notifications use
+the same outbox and post to the configured channel.
 [Slack threaded messages](https://docs.slack.dev/reference/methods/chat.postMessage/)
 
 Receipts are `pending`, `uncertain`, `sent` or `blocked`. An ambiguous network or provider response becomes `uncertain`.
