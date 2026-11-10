@@ -115,15 +115,17 @@ export async function acceptCompletion(access: ActorAccess, completion: SandboxC
     return;
   }
 
-  if (ACTIVE_RECEIPT_STATUSES.has(receipt.status)) {
-    const turn = await Turns.get(access.harness, receipt.runId, BACKGROUND_CONTEXT);
+  const turn = await Turns.get(access.harness, receipt.runId, BACKGROUND_CONTEXT);
 
-    if (turn !== undefined) {
-      const run = decodeStored(RunRecord, turn.value);
+  if (turn !== undefined) {
+    const run = decodeStored(RunRecord, turn.value);
 
-      if (ACTIVE_RUN_STATUSES.has(run.status)) {
-        throw new ServiceUnavailable({ reason: 'The active tool is still recording its execution outcome' });
-      }
+    if (receipt.kind === SandboxCompletionKind.Sandbox && run.cancelRequestedAt !== null) {
+      return;
+    }
+
+    if (ACTIVE_RECEIPT_STATUSES.has(receipt.status) && ACTIVE_RUN_STATUSES.has(run.status)) {
+      throw new ServiceUnavailable({ reason: 'The active tool is still recording its execution outcome' });
     }
   }
 

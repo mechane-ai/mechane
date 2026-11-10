@@ -40,6 +40,8 @@ import { createBrowserExecutionTask } from '../tools/browser/browser-task.ts';
 import type { BrowserExecutionTask } from '../tools/browser/browser-task.ts';
 import type { McpDiscovery } from '../tools/mcp-definitions.ts';
 import { createPiTools, restorePiTools } from '../tools/pi-tools.ts';
+import { createProcessAdmissionTask } from '../tools/processes/process-task.ts';
+import type { ProcessAdmissionTask } from '../tools/processes/process-task.ts';
 import { historyPage } from '../views/history.ts';
 import { appendImportedHistory } from '../views/imported.ts';
 import {
@@ -125,6 +127,7 @@ function initialRuntime() {
     registry: Option.none<Registry>(),
     bashTask: Option.none<BashExecutionTask>(),
     browserTask: Option.none<BrowserExecutionTask>(),
+    processTask: Option.none<ProcessAdmissionTask>(),
     configuration: Option.none<RuntimeConfiguration>(),
     scope: Option.none<MechScope>(),
     isOpen: false,
@@ -205,6 +208,9 @@ export class MechActor extends DurableObject<RuntimeBindings> {
   get #browserTask(): BrowserExecutionTask {
     return actorResource(this.#runtime.browserTask, 'browser task');
   }
+  get #processTask(): ProcessAdmissionTask {
+    return actorResource(this.#runtime.processTask, 'process admission task');
+  }
   get #configuration(): RuntimeConfiguration {
     return actorResource(this.#runtime.configuration, 'configuration');
   }
@@ -229,11 +235,12 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       this.#runtime.registry = Option.some(createRegistry());
       this.#runtime.bashTask = Option.some(createBashExecutionTask(() => this.#access()));
       this.#runtime.browserTask = Option.some(createBrowserExecutionTask(() => this.#access()));
+      this.#runtime.processTask = Option.some(createProcessAdmissionTask(() => this.#access()));
 
       this.#registry.install(
         defineExtension({
           name: 'mechane',
-          tasks: [SelfWakeTask, this.#bashTask, this.#browserTask],
+          tasks: [SelfWakeTask, this.#bashTask, this.#browserTask, this.#processTask],
           hooks: [
             hook(GenerationTask, {
               beforeRequest: async (request, api) => {
@@ -476,7 +483,13 @@ export class MechActor extends DurableObject<RuntimeBindings> {
     const shouldDiscoverMcp = mech.status === 'active' && policy !== null && !policy.isSuspended;
 
     const prepared = await prepareDefinitionTools(
-      { access, bashTask: this.#bashTask, browserTask: this.#browserTask, shouldDiscoverMcp },
+      {
+        access,
+        bashTask: this.#bashTask,
+        browserTask: this.#browserTask,
+        processTask: this.#processTask,
+        shouldDiscoverMcp,
+      },
       configuration,
     );
 

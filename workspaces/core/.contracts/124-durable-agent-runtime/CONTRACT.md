@@ -29,6 +29,10 @@ cleanup. Its committed intent immediately fences new effects; the existing actor
 across restart. Keep cold initialization free of remote cancellation waits, and preserve the earliest recovery alarm
 while polling.
 
+Acknowledge a canceled foreground command's terminal receipt without admitting a notification or another activation.
+Preserve its outcome and execution identity; a stopped activation does not establish the command's outcome. Continue
+admitting uncanceled and background completions at most once under their existing notification identity.
+
 Persist sanitized remote tool descriptors and availability notices as one bounded native configuration projection
 before acknowledging refresh. Rebuild executable adapters locally from it on cold start. It is registry composition,
 never permission: retain current policy, connection and grant checks at dispatch. Store no connection URL, credential,
@@ -66,6 +70,10 @@ never rerun an arbitrary shell because the response was lost. Unknown external o
 reconciliation. Nexus checks its own actions; an issued provider credential retains its explicit scope and lifetime
 until expiry or provider revocation. A later local policy change cannot undo an already admitted effect.
 
+Keep a background-process start waiting for machine readiness in a native receipt task with an immutable deadline.
+Reuse the original identity and current dispatch checks on each attempt. Report unconfirmed outcomes honestly.
+A pending machine without a durable continuation is not a completed start.
+
 Meter every actual paid provider attempt, including compaction and protocol fallback requests. Use one supported Pi
 provider wrapper with a trusted HTTP transport. Allocate attempt identity durably, reserve the maximum spend under
 current workspace and mech policy, then recheck the actor fence before dispatch. Retries of the reservation retain its
@@ -94,6 +102,13 @@ inspect the projection for credential canaries and its physical byte bound.
 Admit concurrent input, interrupt admission and final idle, restart, and require continued work without duplicate
 publications. Steer during a generation and reject its stale tool; inspect the next provider context for all pending
 input. Exercise independent mechs, cancellation, failed runs, and compaction.
+
+Replay the actual terminal callback of a canceled foreground command and wait for its delivery acknowledgment. Require
+no received notification, added activation, or paid request. Inspect durable admission before provider counts so delayed
+scheduling cannot hide a wake. Retain the ordinary background completion flow's one-wake guarantee.
+
+Hold cold readiness beyond the initial request's wait and require one eventual process dispatch without another
+notification or model poll. Restart or cancel during preparation and verify the original identity and dispatch fence.
 
 Kill the application around tool dispatch and receipt persistence. Reattach to the same command and inspect its
 outcome. Lose the guest and require an honest interrupted or uncertain result. Fail a home checkpoint and require

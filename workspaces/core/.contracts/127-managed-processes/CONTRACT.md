@@ -1,7 +1,7 @@
 ---
 name: managed-processes
 message: Keep managed processes bound to their original machine and preserve files when checkpointing or stopping them.
-paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/operations/environment-completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/environment.tsx"]
+paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/execution/completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/environment.tsx"]
 ---
 
 ## Rules
@@ -27,12 +27,13 @@ That read is passive: it cannot allocate a machine, dispatch work, resolve start
 Reject mismatched identities and outcomes. Only a verified result may become a generic environment notification.
 Repeated delivery retains the same notification identity and cannot create a second receipt or model wake obligation.
 
-After verifying the authoritative receipt, suppress an inbox notice only when the original tool result already recorded
-the terminal outcome. A completed `start_process` receipt may record only successful admission while its nested outcome
-is Running; its later terminal result still needs a notification. An explicit Exited, Stopped, or Lost process observation
-can establish prior observation only when its process, machine, outcome, and exit code match the verified receipt.
+After verifying the authoritative receipt, acknowledge a canceled foreground command without an inbox notice under
+contract 124. Also suppress a notice when the original tool result already recorded the terminal outcome.
+A completed `start_process` receipt may record only successful admission while its nested outcome is Running. Its later
+terminal result still needs a notification. An explicit Exited, Stopped, or Lost process observation can establish prior
+observation only when its process, machine, outcome, and exit code match the verified receipt.
 A pending initial tool result on an active activation makes callback delivery retry until that result settles.
-Detached or uncertain work still receives its terminal notice.
+Detached or uncertain work otherwise receives its terminal notice.
 Never infer prior observation from core receipt completion alone, a callback claim, or in-memory state. The internal
 historical-note exporter may suppress its own completion through a trusted stored purpose; model input cannot select it.
 

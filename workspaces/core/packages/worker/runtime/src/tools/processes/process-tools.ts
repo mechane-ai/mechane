@@ -7,18 +7,23 @@ import { listSandboxProcesses, readSandboxProcess, stopSandboxProcess } from './
 import { processObservation } from './results.ts';
 import type { ProcessToolResult } from './results.ts';
 import { startProcess } from './start.ts';
+import type { ProcessInvocation } from './start.ts';
 
 const ProcessSelection = z.strictObject({ processId: z.uuid(), machineId: z.uuid() });
 type ProcessSelection = RuntimeToolContext & z.infer<typeof ProcessSelection>;
 
+type ProcessToolsInput = RuntimeToolContext & {
+  readonly executeStart?: (input: ProcessInvocation) => Promise<ProcessToolResult>;
+};
+
 /** Generic process tools leave shell commands to the agent while keeping handles durable and machine-bound. */
-export function processTools(context: RuntimeToolContext): ToolSet {
+export function processTools({ executeStart = startProcess, ...context }: ProcessToolsInput): ToolSet {
   return {
     start_process: tool({
       description:
         'Start a long-lived shell process, such as a build or local development server. It survives later activations and ordinary file checkpoints. Its completion arrives as a notification. A running result is not proof of application readiness. Use the returned process and machine IDs for reads and stops.',
       inputSchema: z.strictObject({ command: z.string().min(1) }),
-      execute: (input, options) => startProcess({ ...context, ...input, toolCallId: options.toolCallId }),
+      execute: (input, options) => executeStart({ ...context, ...input, toolCallId: options.toolCallId }),
     }),
     read_process: tool({
       description: 'Read the state and bounded redacted logs of one exact process handle without restarting it.',

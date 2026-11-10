@@ -13,9 +13,10 @@ import { observeSandboxProcessStart, submitProcess } from './client.ts';
 import { processAnswer, ProcessStartReceipt } from './results.ts';
 import type { ProcessToolResult } from './results.ts';
 
-type StartProcessInput = ToolInvocation & { readonly command: string };
+export type ProcessInvocation = ToolInvocation & { readonly command: string };
+type StartProcessInput = ProcessInvocation & { readonly hasExpired?: () => boolean };
 type ProcessAttempt = StartProcessInput & { readonly processId: string; readonly store: RuntimeToolStore };
-type ProcessAdmission = Pick<ProcessAttempt, 'workspaceId' | 'mechId' | 'runId' | 'store'>;
+type ProcessAdmission = Pick<ProcessAttempt, 'workspaceId' | 'mechId' | 'runId' | 'store' | 'hasExpired'>;
 type RecordProcess = ProcessAttempt & { readonly result: ProcessToolResult };
 
 const FINAL_RECEIPT_STATES: ReadonlySet<string> = new Set(['completed', 'failed']);
@@ -54,7 +55,7 @@ export async function startProcess(input: StartProcessInput): Promise<ProcessToo
       }
 
       if (!(await canStartProcess(attempt))) {
-        return { status: 'refused', processId, message: 'This run is inactive or shell access is no longer enabled.' };
+        throw new ToolNotStartedError('The run no longer permits process admission');
       }
 
       const begun = await store.beginExecution({
@@ -82,6 +83,14 @@ export async function startProcess(input: StartProcessInput): Promise<ProcessToo
     });
   } catch (error) {
     if (error instanceof ToolNotStartedError) {
+      if (input.hasExpired?.() === true) {
+        return {
+          status: 'uncertain',
+          processId,
+          message: 'The process admission deadline passed. Inspect its original identity before starting another.',
+        };
+      }
+
       return { status: 'refused', processId, message: 'The originating run no longer permits new work.' };
     }
 
@@ -157,7 +166,7 @@ async function authorizeStart(input: ProcessAttempt): Promise<SandboxProcessAnsw
   });
 }
 
-async function canStartProcess({ store, workspaceId, mechId, runId }: ProcessAdmission): Promise<boolean> {
+async function canStartProcess({ store, workspaceId, mechId, runId, hasExpired }: ProcessAdmission): Promise<boolean> {
   const mech = await store.getMech({ workspaceId, mechId });
   const policy = await store.getRuntimePolicy({ workspaceId });
   const run = await store.getRun({ workspaceId, runId });
@@ -171,7 +180,9 @@ async function canStartProcess({ store, workspaceId, mechId, runId }: ProcessAdm
 
   const canUseRun = isRunActive && mech.status === 'active' && isSandboxEnabled;
 
-  return canUseRun && (await store.canDispatchExecution());
+  const isCurrent = canUseRun && (await store.canDispatchExecution());
+
+  return isCurrent && hasExpired?.() !== true;
 }
 
 async function recordProcessStart(input: RecordProcess): Promise<ProcessToolResult> {

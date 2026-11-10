@@ -1,11 +1,14 @@
-import { TurnCancel, TurnStatus } from '@mechane/protocol';
+import { Event, EventType, TurnCancel, TurnStatus } from '@mechane/protocol';
 import { sandboxInteractiveCancelPath, SandboxRunIdentity } from '@mechane/sandbox-wire';
 import {
   CancellationPhase,
   deleteSandbox,
   readConsoleMessages,
+  readEvents,
   readSandboxCompletion,
   readTrace,
+  readTurns,
+  repeatSandboxCompletion,
   requireFixtures,
   runCli,
   startCancellationGate,
@@ -21,6 +24,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 const COMMAND_TIMEOUT_SECONDS = 120;
+type CompletionNotificationInput = MechContext & { readonly executionId: string };
 
 export async function cancellationSurvivesEnvironmentOutage(owner: MechContext): Promise<void> {
   const sandbox = owner.stack.sandbox;
@@ -70,6 +74,9 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
       turnId: turn.id,
       phase: CancellationPhase.AwaitingCommand,
     };
+
+    const admittedTurns = await readTurns(owner);
+    const expectedTurnIds = admittedTurns.map((candidate) => candidate.id).toSorted();
 
     model.release({ marker, index: 0 });
     await gate.waitForRequest({ count: 1 });
@@ -152,6 +159,17 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
     assert.ok(receipt !== null);
     assert.equal(receipt.executionId, executionId);
 
+    const accepted = await repeatSandboxCompletion({ ...owner, receipt });
+
+    assert.ok(accepted.ok, 'The actual cancellation completion was not acknowledged');
+    await accepted.body?.cancel();
+    await assertNoCompletionNotification({ ...owner, executionId });
+
+    const turns = await readTurns(owner);
+    const turnIds = turns.map((candidate) => candidate.id).toSorted();
+
+    assert.deepEqual(turnIds, expectedTurnIds, 'Cancellation completion admitted another activation');
+
     observed = { ...observed, phase: CancellationPhase.Verifying };
 
     const stopped = await waitForTurn({ ...owner, notificationId: notification.id });
@@ -194,4 +212,32 @@ export async function cancellationSurvivesEnvironmentOutage(owner: MechContext):
   if (failures.length > 0) {
     throw new AggregateError(failures, 'Cancellation recovery or its sandbox cleanup failed');
   }
+}
+
+async function assertNoCompletionNotification(input: CompletionNotificationInput): Promise<void> {
+  let afterSequence = 0;
+  let hasMore = true;
+
+  do {
+    const page = await readEvents({ ...input, after: afterSequence });
+
+    const notifications = page.events.filter(
+      (event) =>
+        Schema.is(Event)(event) &&
+        event.type === EventType.NotificationReceived &&
+        event.source.eventId === input.executionId,
+    );
+
+    assert.equal(notifications.length, 0, 'Cancellation completion admitted another notification');
+
+    hasMore = page.hasMore;
+
+    if (hasMore) {
+      const last = page.events.at(-1);
+
+      assert.ok(last !== undefined && last.sequence > afterSequence, 'The activity cursor did not advance');
+
+      afterSequence = last.sequence;
+    }
+  } while (hasMore);
 }

@@ -21,6 +21,9 @@ import { createBrowserTools } from './browser/browser-tools.ts';
 import { withToolOwner } from './context.ts';
 import { ToolNotStartedError } from './errors.ts';
 import type { McpDefinition, McpDiscovery } from './mcp-definitions.ts';
+import { joinProcessAdmission } from './processes/process-task.ts';
+import type { ProcessAdmissionTask } from './processes/process-task.ts';
+import { processTools } from './processes/process-tools.ts';
 import { prepareRuntimeTools, runtimeTools } from './runtime-tools.ts';
 import { createSandboxEnvironment } from './sandbox-environment.ts';
 import type { ToolInvocation } from './types.ts';
@@ -219,6 +222,7 @@ type CreatePiToolsInput = {
   readonly access: ActorAccess;
   readonly bashTask: BashExecutionTask;
   readonly browserTask: BrowserExecutionTask;
+  readonly processTask: ProcessAdmissionTask;
   readonly shouldDiscoverMcp: boolean;
 };
 
@@ -226,6 +230,7 @@ type ExecutionToolsInput = {
   readonly name: string;
   readonly invocation: ToolInvocation;
   readonly browserTask: BrowserExecutionTask;
+  readonly processTask: ProcessAdmissionTask;
   readonly api: ToolExecutionApi;
   readonly mcpDefinitions: ReadonlyArray<McpDefinition>;
 };
@@ -239,7 +244,7 @@ type RegisterPiToolsInput = Omit<CreatePiToolsInput, 'shouldDiscoverMcp'> & {
 };
 
 function executionTools(
-  { name, invocation: input, browserTask, api, mcpDefinitions }: ExecutionToolsInput,
+  { name, invocation: input, browserTask, processTask, api, mcpDefinitions }: ExecutionToolsInput,
   context: Context,
 ): ToolSet {
   if (name.startsWith('browser_')) {
@@ -250,6 +255,14 @@ function executionTools(
     });
   }
 
+  if (name === 'start_process') {
+    return processTools({
+      ...input,
+      executeStart: async (processInvocation) =>
+        await joinProcessAdmission({ task: processTask, invocation: processInvocation, api }, context),
+    });
+  }
+
   return runtimeTools({ ...input, mcpDefinitions: mcpDefinitions.filter((definition) => definition.name === name) });
 }
 
@@ -257,6 +270,7 @@ export async function createPiTools({
   access,
   bashTask,
   browserTask,
+  processTask,
   shouldDiscoverMcp,
 }: CreatePiToolsInput): Promise<PreparedPiTools> {
   const placeholder = { ...access.scope, sessionId: access.scope.mechId, runId: access.scope.mechId };
@@ -269,13 +283,14 @@ export async function createPiTools({
     async () => await prepareRuntimeTools({ ...placeholder, shouldDiscoverMcp }),
   );
 
-  return await registerPiTools({ access, bashTask, browserTask, prepared });
+  return await registerPiTools({ access, bashTask, browserTask, processTask, prepared });
 }
 
 export async function restorePiTools({
   access,
   bashTask,
   browserTask,
+  processTask,
   configuration,
 }: RestorePiToolsInput): Promise<PreparedPiTools> {
   const placeholder = { ...access.scope, sessionId: access.scope.mechId, runId: access.scope.mechId };
@@ -287,13 +302,14 @@ export async function restorePiTools({
     isComplete: configuration.isComplete,
   };
 
-  return await registerPiTools({ access, bashTask, browserTask, prepared });
+  return await registerPiTools({ access, bashTask, browserTask, processTask, prepared });
 }
 
 async function registerPiTools({
   access,
   bashTask,
   browserTask,
+  processTask,
   prepared,
 }: RegisterPiToolsInput): Promise<PreparedPiTools> {
   const registrations: Array<ToolRegistration> = [];
@@ -344,7 +360,7 @@ async function registerPiTools({
         execute: async (argumentsValue, api, context) =>
           await guarded({ access, api, context, name }, async (input) => {
             const tools = executionTools(
-              { name, invocation: input, browserTask, api, mcpDefinitions: prepared.mcpDefinitions },
+              { name, invocation: input, browserTask, processTask, api, mcpDefinitions: prepared.mcpDefinitions },
               context,
             );
 
