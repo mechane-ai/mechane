@@ -13,6 +13,14 @@ export type ModelReply = {
   readonly tools?: ReadonlyArray<ModelToolCall>;
   readonly isHeld?: boolean;
   readonly status?: number;
+  readonly streamResponseId?: string;
+  readonly streamError?: {
+    readonly code: number;
+    readonly type: string;
+    readonly param: string;
+    readonly message: string;
+    readonly metadata: Readonly<Record<string, unknown>>;
+  };
   readonly promptTokens?: number;
   readonly completionTokens?: number;
 };

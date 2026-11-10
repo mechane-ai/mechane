@@ -132,7 +132,8 @@ export const CATALOG: ReadonlyArray<Scenario> = [
   },
   {
     guarantee: 'a failed native stream reports its error and replays without another model call',
-    regression: 'a failed run appears to finish successfully or reconnecting repeats its model request',
+    regression:
+      'provider errors lose actionable diagnostics, disclose private fields, appear successful, or repeat model work on replay',
     run: nativeStreamFailureIsReplayable,
   },
   {

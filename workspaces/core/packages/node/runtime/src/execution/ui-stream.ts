@@ -5,6 +5,7 @@ import { HttpHeader } from '@mechane/records';
 import { createUIMessageStreamResponse } from 'ai';
 import type { UIMessageChunk } from 'ai';
 import { getRun } from 'workflow/api';
+import { safeModelFailureText } from '../models/model-failure.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { toolEvidence } from './tool-evidence.ts';
 import type { RunSelection } from './types.ts';
@@ -85,7 +86,10 @@ function publicProjection({ runId }: PublicProjectionInput): TransformStream<UIM
       }
 
       if (chunk.type === 'error') {
-        controller.enqueue({ type: 'error', errorText: 'The run did not finish. See its status for recovery.' });
+        const errorText =
+          safeModelFailureText(chunk.errorText) ?? 'The run did not finish. See its status for recovery.';
+
+        controller.enqueue({ type: 'error', errorText });
 
         return;
       }

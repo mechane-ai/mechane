@@ -6,8 +6,8 @@ import type {
   LanguageModelV4StreamResult,
   LanguageModelV4Usage,
 } from '@ai-sdk/provider';
-import { APICallError } from '@ai-sdk/provider';
 import { FatalError } from 'workflow';
+import { modelFailure, modelGenerationId } from './model-failure.ts';
 import { reserveModelRequest, settleModelRequest } from './model-meter.ts';
 import type { ModelRequest } from './model-meter.ts';
 import { prepareModel } from './model-provider.ts';
@@ -18,6 +18,7 @@ type RequestInput = { readonly reference: ModelReference; readonly options: Lang
 type MeteredStreamInput = {
   readonly source: ReadableStream<LanguageModelV4StreamPart>;
   readonly request: ModelRequest;
+  readonly generationId: string | undefined;
 };
 
 export async function executeModelGenerate({
@@ -69,7 +70,9 @@ export async function executeModelStream({ reference, options }: RequestInput): 
   try {
     const result = await prepared.model.doStream(prepared.options);
 
-    return { stream: meteredStream({ source: result.stream, request }) };
+    const generationId = modelGenerationId(result.response?.headers?.['x-generation-id']);
+
+    return { stream: meteredStream({ source: result.stream, request, generationId }) };
   } catch (error) {
     await settleModelRequest({ request, usage: null });
 
@@ -77,9 +80,13 @@ export async function executeModelStream({ reference, options }: RequestInput): 
   }
 }
 
-function meteredStream({ source, request }: MeteredStreamInput): ReadableStream<LanguageModelV4StreamPart> {
+function meteredStream({
+  source,
+  request,
+  generationId,
+}: MeteredStreamInput): ReadableStream<LanguageModelV4StreamPart> {
   const reader = source.getReader();
-  const state = { hasFinished: false };
+  const state = { hasFinished: false, generationId };
 
   return new ReadableStream<LanguageModelV4StreamPart>({
     async pull(controller) {
@@ -99,8 +106,12 @@ function meteredStream({ source, request }: MeteredStreamInput): ReadableStream<
 
         const part = next.value;
 
+        if (part.type === 'response-metadata') {
+          state.generationId ??= modelGenerationId(part.id);
+        }
+
         if (part.type === 'error') {
-          throw modelFailure(part.error);
+          throw part.error;
         }
 
         if (part.type === 'raw') {
@@ -126,7 +137,7 @@ function meteredStream({ source, request }: MeteredStreamInput): ReadableStream<
 
         await Promise.allSettled(cleanup);
         reader.releaseLock();
-        controller.error(modelFailure(error));
+        controller.error(modelFailure(error, state.generationId));
       }
     },
     async cancel() {
@@ -141,7 +152,10 @@ function meteredStream({ source, request }: MeteredStreamInput): ReadableStream<
       reader.releaseLock();
 
       if (results.some((result) => result.status === 'rejected')) {
-        throw new FatalError('The model stream could not close cleanly; its reserved spend remains accounted for');
+        throw modelFailure(
+          new FatalError('The model stream could not close cleanly; its reserved spend remains accounted for'),
+          state.generationId,
+        );
       }
     },
   });
@@ -167,19 +181,4 @@ function responseMetadata(response: LanguageModelV4ResponseMetadata): LanguageMo
   }
 
   return metadata;
-}
-
-function modelFailure(error: unknown): FatalError {
-  if (error instanceof FatalError) {
-    return error;
-  }
-
-  // Provider error messages may contain request bodies; only their status crosses the durable boundary.
-  if (APICallError.isInstance(error) && error.statusCode !== undefined) {
-    return new FatalError(
-      `The model provider returned HTTP ${error.statusCode}; its reserved spend remains accounted for`,
-    );
-  }
-
-  return new FatalError('The model request failed; its reserved spend remains accounted for');
 }

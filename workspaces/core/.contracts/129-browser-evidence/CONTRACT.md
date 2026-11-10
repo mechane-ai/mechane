@@ -37,8 +37,9 @@ and dirty state only from the actual inspected checkout; otherwise say that revi
 checkout observation does not prove which revision a remote page serves. Model labels cannot supply verification.
 
 Keep capture completion separate from application test success and deployed-revision verification. Put durable viewer
-links in PRs through ordinary authorized GitHub operations. The current delivery path uses the existing GitHub App
-identity; unavailable native attachments do not authorize personal-token fallback or public evidence disclosure.
+links in PRs through ordinary authorized application operations. Provider-specific attachment publication belongs to
+the application CLI, outside Mechane. Unavailable native attachments never authorize another credential or public
+disclosure implicitly. An explicitly approved provider copy has an independent access and revocation lifecycle.
 
 ## Checks
 

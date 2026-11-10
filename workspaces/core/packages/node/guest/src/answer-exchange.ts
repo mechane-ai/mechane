@@ -8,6 +8,7 @@ import { answerCapabilities } from './answer-capabilities.ts';
 import { answerHealth } from './answer-health.ts';
 import { routeBrowser } from './browser/route-browser.ts';
 import type { WorkspaceFailed } from './errors.ts';
+import { routeEvidence } from './evidence/route-evidence.ts';
 import { routeExecution } from './executions/route-execution.ts';
 import { guestRequestRoute } from './guest-request-route.ts';
 import type { ProcessFailed } from './processes/process-failed.ts';
@@ -105,6 +106,8 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
       return yield* routeProcess({ request, method, rest, processes, notFound });
     case GuestSegment.Browser:
       return yield* routeBrowser({ request, method, url, rest, browser, ledger, notFound });
+    case GuestSegment.Evidence:
+      return yield* routeEvidence({ request, method, url, rest, ledger, home: settings.home, notFound });
     case GuestSegment.Workspace:
       return yield* routeWorkspace({ request, method, rest, workspace, notFound });
     default:

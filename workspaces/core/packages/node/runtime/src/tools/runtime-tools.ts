@@ -6,6 +6,7 @@ import { createBrowserTools } from './browser/browser-tools.ts';
 import { consoleMessageTool } from './console-message.ts';
 import { BASH_DEFAULT_TIMEOUT_MS, BASH_MAX_TIMEOUT_MS } from './constants.ts';
 import { guardToolDispatch } from './dispatch.ts';
+import { exportEvidenceTool } from './export-evidence.ts';
 import { discoverMcpTools, mcpTools } from './mcp.ts';
 import { processTools } from './processes/process-tools.ts';
 import { readToolResult } from './tool-result.ts';
@@ -26,6 +27,7 @@ function createRuntimeTools(context: RuntimeToolContext): ToolSet {
     ...createBrowserTools(context),
     ...processTools(context),
     console_message: consoleMessageTool(context),
+    export_evidence: exportEvidenceTool(context),
     read_tool_result: tool({
       description:
         'Read a bounded chunk of a saved shell or MCP result without repeating the operation. Offsets count string characters and the result supplies the next offset.',

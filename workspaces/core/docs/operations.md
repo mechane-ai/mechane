@@ -75,6 +75,20 @@ Keep database backups, workspace checkpoints, and vault key versions together in
 URL cannot reverse a migration or recover deleted records. Publish compatible recovery code under a new immutable
 release when the active schema or Workflow histories cannot use an older artifact.
 
+### Model failures
+
+Inspect the failed run's native trace and its existing request reservation. Model failures retain a bounded diagnostic
+object with a category and recognized error fields; arbitrary provider messages, response metadata, and request bodies
+are excluded. An unknown category means the retained evidence cannot establish the cause. A provider can send a
+structured error inside an HTTP 200 stream, so HTTP success alone does not establish a completed model request. When the
+provider supplied a valid generation ID on that request, the diagnostic retains it for provider-side lookup. An absent
+ID means the boundary did not receive one; an earlier call's ID is not evidence about the failed request.
+
+Missing usage remains conservatively charged. Do not replay an uncertain paid request or repeat completed tools to
+recover its output. After addressing the failure, one explicit continuation notification may start a new activation from
+retained context. It must pass the environment checkpoint barrier and inspect previous receipts and external state
+before deciding what work remains. A new activation does not deduplicate a new command with the same intended effect.
+
 ## Secrets
 
 Deployment secret stores own OAuth, model, database, vault, sandbox, and callback credentials. Update only the intended

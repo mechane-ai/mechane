@@ -5,6 +5,7 @@ import type { ModelMessage } from 'ai';
 import { Record } from 'effect';
 import { createHook, getWritable } from 'workflow';
 import { prepareAgentContext } from '../models/context-policy.ts';
+import { safeModelFailureText } from '../models/model-failure.ts';
 import { RuntimeModel } from '../models/runtime-model.ts';
 import { checkpointActivation } from '../tools/activation-checkpoint.ts';
 import { importExistingNotes } from '../tools/imported-notes.ts';
@@ -55,8 +56,8 @@ async function executeAdmission(runId: string): Promise<RunOutcome> {
     }
 
     return await executeRun(runId);
-  } catch {
-    return await failRun(runId);
+  } catch (error) {
+    return await failRun(runId, undefined, safeModelFailureText(error));
   }
 }
 
@@ -214,7 +215,7 @@ async function executeRun(runId: string): Promise<RunOutcome> {
     const shouldContinue = CONTINUATION_FINISH_REASONS.has(result.finishReason);
 
     if ('error' in result || (result.finishReason !== 'stop' && !shouldContinue)) {
-      return await failRun(runId);
+      return await failRun(runId, undefined, safeModelFailureText(result.error));
     }
 
     try {
@@ -230,8 +231,8 @@ async function executeRun(runId: string): Promise<RunOutcome> {
     await closeRunStream(outcome);
 
     return outcome;
-  } catch {
-    return await failRun(runId);
+  } catch (error) {
+    return await failRun(runId, undefined, safeModelFailureText(error));
   }
 }
 

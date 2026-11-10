@@ -13,6 +13,7 @@ import {
 import { Effect, Schema } from 'effect';
 import type { Scope } from 'effect';
 import type { IncomingMessage } from 'node:http';
+import { admitGuestMutation } from '../admit-guest-mutation.ts';
 import { readExecutionBody } from '../executions/read-execution-body.ts';
 import type { ExecutionLedger, ServedAnswer } from '../types.ts';
 
@@ -47,11 +48,11 @@ export const routeBrowser = Effect.fn('routeBrowser')(function* ({
     const schema = Schema.fromJsonString(BrowserRequest);
     const decoded = yield* decodeRequestPart({ schema, value: text });
 
-    if (!ledger.admitProcess()) {
+    const isAdmitted = yield* admitGuestMutation({ ledger });
+
+    if (!isAdmitted) {
       return { status: HttpStatusCode.NoContent, headers: {}, body: '' };
     }
-
-    yield* Effect.acquireRelease(Effect.void, () => Effect.sync(ledger.finishProcessStart));
 
     const response = yield* browser.perform({ request: decoded });
     const responseSchema = Schema.fromJsonString(BrowserResponse);

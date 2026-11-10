@@ -15,6 +15,14 @@ type EvidenceRouteInput = {
 
 /** Service authentication precedes this route; Node separately admits every public metadata and media request. */
 export async function serveEvidence({ request, stub, url, artifactId, action }: EvidenceRouteInput): Promise<Response> {
+  if (request.method === HttpMethod.Post && artifactId !== undefined && action === 'export') {
+    const decoded = decodeURIComponent(artifactId);
+    const identity = Schema.decodeUnknownSync(EvidenceArtifactId)(decoded);
+    const result = await stub.exportEvidence({ artifactId: identity });
+
+    return Response.json(result);
+  }
+
   if (request.method !== HttpMethod.Get) {
     return new Response(null, { status: HttpStatusCode.NotFound });
   }

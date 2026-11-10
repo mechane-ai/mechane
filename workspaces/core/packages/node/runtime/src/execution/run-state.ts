@@ -1,5 +1,6 @@
 import type { ModelMessage } from 'ai';
 import { getWorkflowMetadata } from 'workflow';
+import { safeModelFailureText } from '../models/model-failure.ts';
 import { withRuntimeStore } from '../store/runtime-store.ts';
 import { wakeMech } from './admission.ts';
 import { closeOutcomeStream } from './close-workflow-stream.ts';
@@ -70,7 +71,11 @@ export async function finishRun({
   return outcome;
 }
 
-export async function failRun(runId: string, reason?: keyof typeof RUN_FAILURE_MESSAGES): Promise<RunOutcome> {
+export async function failRun(
+  runId: string,
+  reason?: keyof typeof RUN_FAILURE_MESSAGES,
+  modelFailure?: string,
+): Promise<RunOutcome> {
   'use step';
 
   const { workflowRunId } = getWorkflowMetadata();
@@ -78,6 +83,12 @@ export async function failRun(runId: string, reason?: keyof typeof RUN_FAILURE_M
   const { run, outcome, wasFinished } = await withRuntimeStore(async (store) => {
     if (reason !== undefined) {
       return await stopActivation({ store, runId, status: 'failed', error: RUN_FAILURE_MESSAGES[reason] });
+    }
+
+    const error = safeModelFailureText(modelFailure);
+
+    if (error !== undefined) {
+      return await stopActivation({ store, runId, status: 'failed', error });
     }
 
     return await stopActivation({ store, runId, status: 'failed' });

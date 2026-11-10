@@ -16,3 +16,5 @@ export const managedProcesses = { values: {}, rules: [] } as const satisfies Con
 export const browserControl = { values: {}, rules: [] } as const satisfies ContractEnforcement;
 /** Evidence qualification checks durable capture receipts, authorization and truthful provenance. */
 export const browserEvidence = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+/** Private transfer checks establish capture ownership, byte integrity and safe repeated copies. */
+export const evidenceExport = { values: {}, rules: [] } as const satisfies ContractEnforcement;

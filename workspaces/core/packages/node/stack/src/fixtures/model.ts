@@ -199,8 +199,27 @@ function messageText(content: unknown): string {
 }
 
 function modelResponse(model: string, reply: ModelReply, isStreaming: boolean): Response {
-  const id = `chatcmpl-${randomUUID()}`;
+  const id = reply.streamResponseId ?? `chatcmpl-${randomUUID()}`;
   const created = Math.floor(Date.now() / MILLISECONDS_PER_SECOND);
+
+  if (reply.streamError !== undefined) {
+    const chunks: Array<Readonly<Record<string, unknown>>> = [];
+
+    if (reply.streamResponseId !== undefined) {
+      chunks.push({
+        id,
+        created,
+        model,
+        object: 'chat.completion.chunk',
+        choices: [{ index: 0, delta: { role: 'assistant' }, finish_reason: null }],
+      });
+    }
+
+    chunks.push({ error: reply.streamError });
+
+    return eventStream(chunks);
+  }
+
   const promptTokens = reply.promptTokens ?? DEFAULT_PROMPT_TOKENS;
   const completionTokens = reply.completionTokens ?? DEFAULT_COMPLETION_TOKENS;
 
@@ -250,6 +269,10 @@ function modelResponse(model: string, reply: ModelReply, isStreaming: boolean): 
     },
   ];
 
+  return eventStream(chunks);
+}
+
+function eventStream(chunks: ReadonlyArray<Readonly<Record<string, unknown>>>): Response {
   const body = `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('')}data: [DONE]\n\n`;
 
   return new Response(body, {

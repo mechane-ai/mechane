@@ -153,7 +153,18 @@ duration and bytes; the descriptor reports measured media duration. Pending or f
 
 Reviewers must sign in with current workspace membership. The Node server checks membership on every metadata and media
 read, including video ranges. A viewer link grants no access; sign-in returns to that evidence. Removing membership also
-removes access through a previously shared link. Native GitHub attachments are not the selected App-token path.
+removes access through a previously shared link. Provider uploads are separate application operations with their own
+authority; a copied attachment follows that provider's access policy independently of this original.
+
+Use `export_evidence` with the ready artifact ID when a CLI needs actual media bytes. It copies the saved original into
+`.mechane-evidence` under the current home and returns its absolute path, SHA-256, media type, size, and machine ID. It
+does not open Chromium, capture a changed page, or publish anything. Only this mech's ready artifacts are available.
+Ordinary shell commands can consume the returned file. Use the supplied digest when preparing an upload manifest.
+
+A confirmed copy is available on that machine; it joins the normal home checkpoint. Copy completion alone does not prove
+that a checkpoint committed. After machine replacement, call `export_evidence` again to copy the durable original.
+Repeating an interrupted copy is safe. Remove exported copies when no longer needed to keep home snapshots small;
+removing a local file does not delete the original saved evidence.
 
 Capture metadata identifies the original environment and native invocation, URL, time, dimensions, and digest. Supply
 the inspected repository path when requesting Git provenance. The runtime records its actual head and dirty state, or

@@ -18,6 +18,7 @@ import {
   BrowserArtifactPartRequest,
   BrowserProgress,
   BrowserRequestId,
+  EvidenceExportResult,
   ExecutionProgress,
   OptionalExecutionEnvironment,
   ProcessHandle,
@@ -57,6 +58,7 @@ import type { SandboxEnvironment, SandboxRuntimeSettings } from './environment.t
 import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
 import { cleanupReadyEvidence } from './evidence/evidence-cleanup.ts';
 import { readEvidenceContent } from './evidence/evidence-content.ts';
+import { exportEvidence } from './evidence/export-evidence.ts';
 import { listEvidenceArtifacts, readEvidenceArtifact } from './evidence/read-evidence.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
 import { cancelExecution } from './executions/cancel-execution.ts';
@@ -585,6 +587,33 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     });
 
     return Schema.encodeSync(SandboxBrowserArtifactAnswer)(answer);
+  }
+
+  async exportEvidence({ artifactId }: EvidenceIdentityInput): Promise<typeof EvidenceExportResult.Encoded> {
+    const decoded = Schema.decodeUnknownSync(EvidenceArtifactId)(artifactId);
+    const owner = this.#owner();
+
+    const result = await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+
+        if (maintenanceActive({ store: this.#store })) {
+          return EvidenceExportResult.cases.Pending.make({ reason: 'The environment is completing maintenance' });
+        }
+
+        await this.#touchInteractive();
+
+        return await exportEvidence({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          ...owner,
+          artifactId: decoded,
+        });
+      },
+    });
+
+    return Schema.encodeSync(EvidenceExportResult)(result);
   }
 
   async listEvidence({

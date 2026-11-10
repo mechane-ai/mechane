@@ -102,6 +102,7 @@ export const CONTRACT_NAMES = [
   'managed-processes',
   'browser-control',
   'browser-evidence',
+  'evidence-export',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

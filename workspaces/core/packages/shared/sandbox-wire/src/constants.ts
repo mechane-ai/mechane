@@ -14,6 +14,7 @@ export const GuestSegment = {
   Capabilities: 'capabilities',
   Processes: 'processes',
   Browser: 'browser',
+  Evidence: 'evidence',
   Requests: 'requests',
   Artifacts: 'artifacts',
   Executions: 'executions',

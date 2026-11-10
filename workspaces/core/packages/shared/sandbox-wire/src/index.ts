@@ -150,6 +150,14 @@ export { sandboxInteractiveCancelPath } from './sandbox-interactive-cancel-path.
 export { sandboxBrowserPath } from './sandbox-browser-path.ts';
 export { SandboxCheckpointIdentity, SandboxCheckpointResult, sandboxCheckpointPath } from './checkpoint.ts';
 export {
+  EvidenceExportIdentity,
+  EvidenceExportMetadata,
+  EvidenceExportFile,
+  EvidenceExportResult,
+  sandboxEvidenceExportPath,
+  guestEvidenceExportPath,
+} from './evidence-export.ts';
+export {
   SANDBOX_COMPLETION_PATH,
   SandboxCompletionKind,
   SandboxCompletionStatus,

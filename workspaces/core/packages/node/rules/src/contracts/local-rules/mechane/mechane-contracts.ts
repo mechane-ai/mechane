@@ -3,6 +3,7 @@ import {
   browserControl,
   browserEvidence,
   developerEnvironments,
+  evidenceExport,
   executionAccess,
   managedProcesses,
   modelCaching,
@@ -46,4 +47,5 @@ export const MECHANE_CONTRACTS = {
   'managed-processes': managedProcesses,
   'browser-control': browserControl,
   'browser-evidence': browserEvidence,
+  'evidence-export': evidenceExport,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

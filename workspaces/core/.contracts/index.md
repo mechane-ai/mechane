@@ -139,3 +139,4 @@ from 101 are Mechane's own.
 - [Managed processes](127-managed-processes/CONTRACT.md): machine-bound processes, checkpoint suspension, and explicit lifetime.
 - [Browser control](128-browser-control/CONTRACT.md): native Chromium actions, isolated profiles, bounded observations, and replay safety.
 - [Browser evidence](129-browser-evidence/CONTRACT.md): private durable captures, authenticated viewers, and observed provenance.
+- [Evidence export](130-evidence-export/CONTRACT.md): verified private copies into the current environment, with explicit machine and checkpoint limits.
