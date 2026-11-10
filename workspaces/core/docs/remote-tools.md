@@ -1,8 +1,7 @@
 # Remote MCP tools
 
 A workspace owner can register a remote MCP connection and grant each mech an explicit subset of its tools. Connections
-support tools that only read data and incur no external charge. Model work still uses the workspace's normal model
-budget.
+support owner-approved free reads and idempotent writes. Model work still uses the workspace's normal model budget.
 
 ## Configure a connection
 
@@ -74,8 +73,13 @@ legacy HTTP+SSE fallback, local stdio server, or OAuth flow. Authentication is a
 transport reconnection retries are disabled.
 
 Choosing `read_only_free` is the owner's approval of the listed tools' behavior and charging policy. A server's
-`readOnlyHint` does not establish that approval. An explicit `false` hint additionally blocks the tool. Paid or mutating
-operations remain unsupported until they have reservation and receipt handling.
+`readOnlyHint` does not establish that approval. An explicit `false` hint additionally blocks the tool.
+
+Choose `idempotent_free` to also approve free writes whose MCP metadata explicitly sets `readOnlyHint: false` and
+`idempotentHint: true`. The service must preserve a write's request identity and return its original receipt when the
+same arguments repeat. Grant only the intended operation names. A lost response can mean the write committed; inspect
+the service and retry the exact request identity rather than creating another operation. This policy does not authorize
+paid or non-idempotent writes. Existing read-only connections retain their policy.
 
 Each discovery or invocation has a 30-second deadline and accepts cancellation. Arguments and returned content are
 limited to 64 KiB, aggregate HTTP response bodies to 1 MiB, and discovery to eight pages. There are at most 64

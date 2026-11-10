@@ -1,3 +1,4 @@
+import { RemoteToolPolicy } from '@mechane/protocol';
 import type { RemoteToolsOutcome } from '@mechane/protocol';
 import type { Tool } from '@modelcontextprotocol/client';
 import { Option } from 'effect';
@@ -7,10 +8,11 @@ import { remoteToolMetadata } from './remote-tool-metadata.ts';
 import type { RemoteMcpInput, RemoteSession } from './types.ts';
 
 type ExecuteRemoteMcpInput = RemoteMcpInput & RemoteSession;
-type PermittedToolInput = Pick<RemoteMcpInput, 'tools'> & { readonly tool: Tool };
+type PermittedToolInput = Pick<RemoteMcpInput, 'tools' | 'connection'> & { readonly tool: Tool };
 
-/** Filters discovery through the explicit grant and refuses tools declaring mutating behavior. */
+/** Remote metadata may narrow an owner grant but cannot expand it. */
 export async function executeRemoteMcp({
+  connection,
   client,
   abortSignal: signal,
   tools,
@@ -19,7 +21,7 @@ export async function executeRemoteMcp({
   authorize,
 }: ExecuteRemoteMcpInput): Promise<RemoteToolsOutcome> {
   const listed = await client.listTools(undefined, { signal, timeout: REMOTE_TIMEOUT_MS });
-  const permitted = listed.tools.filter((tool) => isPermittedRemoteTool({ tool, tools }));
+  const permitted = listed.tools.filter((tool) => isPermittedRemoteTool({ tool, tools, connection }));
 
   if (Option.isNone(invocation)) {
     return remoteToolMetadata({ tools: permitted, token });
@@ -35,7 +37,7 @@ export async function executeRemoteMcp({
   });
 }
 
-function isPermittedRemoteTool({ tool, tools }: PermittedToolInput): boolean {
+function isPermittedRemoteTool({ tool, tools, connection }: PermittedToolInput): boolean {
   if (!tools.includes(tool.name)) {
     return false;
   }
@@ -46,5 +48,9 @@ function isPermittedRemoteTool({ tool, tools }: PermittedToolInput): boolean {
     return true;
   }
 
-  return annotations.value.readOnlyHint !== false;
+  if (annotations.value.readOnlyHint !== false) {
+    return true;
+  }
+
+  return connection.policy === RemoteToolPolicy.IdempotentFree && annotations.value.idempotentHint === true;
 }

@@ -11,7 +11,7 @@ export const ConnectionRow = renamedWireStruct({
     /** None means the remote URL accepts unauthenticated requests; the wire carries null. */
     secretReference: Schema.OptionFromNullOr(IntegrationSecretReference),
     allowedTools: Schema.fromJsonString(RemoteToolNames),
-    policy: Schema.Literal(RemoteToolPolicy.ReadOnlyFree),
+    policy: Schema.Enum(RemoteToolPolicy),
     createdAt: Schema.DateTimeUtcFromMillis,
     updatedAt: Schema.DateTimeUtcFromMillis,
   },

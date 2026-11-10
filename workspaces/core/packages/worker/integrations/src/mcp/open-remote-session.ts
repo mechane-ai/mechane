@@ -14,6 +14,7 @@ const REMOTE_LIST_MAX_PAGES = 8;
 const REMOTE_TRANSPORT_NAME = 'mechane';
 
 const REMOTE_TRANSPORT_VERSION = '1.0.0';
+const REMOTE_CLIENT_USER_AGENT = 'Mechane-MCP/1.0';
 
 const REMOTE_RECONNECTION_OPTIONS = {
   maxRetries: 0,
@@ -39,6 +40,8 @@ export function openRemoteSession({ connection, token, signal: callerSignal }: R
   );
 
   const headers = new Headers();
+
+  headers.set(HttpHeader.UserAgent, REMOTE_CLIENT_USER_AGENT);
 
   if (Option.isSome(token)) {
     const credential = Redacted.value(token.value);

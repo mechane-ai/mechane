@@ -26,7 +26,7 @@ export async function callRemoteMcp({
 
   if (Option.isNone(requestedTool)) {
     return RemoteToolsOutcome.cases.Refused.make({
-      reason: 'The tool is not granted or explicitly declares mutating behavior',
+      reason: 'The tool is not allowed by its current grant and connection policy',
     });
   }
 

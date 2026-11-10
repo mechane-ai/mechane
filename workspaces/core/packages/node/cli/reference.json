@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.24.2",
+  "release": "0.24.3",
   "flags": [
     {
       "name": "origin",
@@ -525,7 +525,7 @@
         {
           "name": "policy",
           "kind": "text",
-          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "summary": "read_only_free permits free reads; idempotent_free also permits explicitly idempotent free writes",
           "required": true
         }
       ],
@@ -567,7 +567,7 @@
         {
           "name": "policy",
           "kind": "text",
-          "summary": "read_only_free confirms every allowed tool is read-only and incurs no external charge",
+          "summary": "read_only_free permits free reads; idempotent_free also permits explicitly idempotent free writes",
           "required": true
         }
       ],

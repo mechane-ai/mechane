@@ -1772,7 +1772,12 @@
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.installation_id=NaN",
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=Infinity",
     "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=-Infinity",
-    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=NaN"
+    "PUT /api/v1/workspaces/:workspace_id/mechs/:mech_id/execution-access output.access.github.repository_id=NaN",
+    "POST /api/v1/workspaces/:workspace_id/connections body.policy=idempotent_free",
+    "POST /api/v1/workspaces/:workspace_id/connections output.policy=idempotent_free",
+    "PUT /api/v1/workspaces/:workspace_id/connections/:connection_id body.policy=idempotent_free",
+    "PUT /api/v1/workspaces/:workspace_id/connections/:connection_id output.policy=idempotent_free",
+    "GET /api/v1/workspaces/:workspace_id/connections output.connections[].policy=idempotent_free"
   ],
   "families": [
     "invalid_request=400",
