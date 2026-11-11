@@ -187,8 +187,10 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
       schema: Mech,
     });
 
+    const refreshed = await readDefinition(input);
+
     assert.equal(renamed.revision, saved.revision + 1);
-    assert.deepEqual((await readDefinition(input)).activeRevision, Option.some(renamed.revision));
+    assert.deepEqual(refreshed.activeRevision, Option.some(renamed.revision));
     await stack.restart({ signal: 'SIGKILL' });
 
     const replayed = await readHistoryPage(input);
