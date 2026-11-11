@@ -13,6 +13,12 @@ export const SecureOrigin = Schema.URLFromString.check(
 
 export type SecureOrigin = typeof SecureOrigin.Type;
 
+export const ServiceOrigin = Schema.String.check(Schema.isPattern(/^https?:\/\/[^@/?#\\\s]+\/?$/iu))
+  .pipe(Schema.decodeTo(SecureOrigin))
+  .check(Schema.makeFilter((url) => url.protocol !== OriginProtocol.Loopback || url.port !== ''));
+
+export type ServiceOrigin = typeof ServiceOrigin.Type;
+
 /** The development guest launcher runs on the same machine as the local compute service. */
 export const LoopbackOrigin = Schema.URLFromString.check(
   Schema.makeFilter((url) => url.protocol === OriginProtocol.Loopback && LOOPBACK_HOSTS.has(url.hostname), {

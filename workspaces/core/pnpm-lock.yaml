@@ -1218,6 +1218,9 @@ importers:
       '@mechane/control-store':
         specifier: workspace:*
         version: link:../control-store
+      '@mechane/deployment':
+        specifier: workspace:*
+        version: link:../../shared/deployment
       '@mechane/protocol':
         specifier: workspace:*
         version: link:../../shared/protocol

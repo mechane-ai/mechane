@@ -1,4 +1,5 @@
 import type { CredentialKeyring } from '@mechane/control-store';
+import { OriginProtocol, SecureOrigin, ServiceOrigin } from '@mechane/deployment';
 import { RecordId, SHA256_PATTERN } from '@mechane/records';
 import { Predicate, Record, Redacted, Schema } from 'effect';
 
@@ -35,8 +36,6 @@ const NotificationProducersSchema = Schema.Array(NotificationProducerSchema);
 const DEFAULT_MAX_CONNECTIONS = 4;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
-const HTTP_PROTOCOLS: ReadonlySet<string> = new Set(['https:', 'http:']);
-const LOOPBACK_HOSTNAMES: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 export type ModelOffer = typeof ModelOfferSchema.Type;
 
@@ -112,16 +111,22 @@ function requiredEnvironment(environment: RuntimeEnvironment, name: string): str
   return value;
 }
 
-function httpOrigin(environment: RuntimeEnvironment, name: string): string {
-  const value = requiredEnvironment(environment, name);
-  const url = new URL(value);
+function serviceOrigin(value: unknown, name: string): URL {
+  const decoded = Schema.decodeUnknownResult(ServiceOrigin)(value);
 
-  if (url.username !== '' || url.password !== '' || !HTTP_PROTOCOLS.has(url.protocol)) {
+  if (decoded._tag === 'Failure') {
     throw new Error(`Invalid runtime setting ${name}`);
   }
 
-  if (url.protocol === 'http:' && !LOOPBACK_HOSTNAMES.has(url.hostname)) {
-    throw new Error(`Invalid runtime setting ${name}`);
+  return decoded.success;
+}
+
+function modelEndpoint(environment: RuntimeEnvironment): string {
+  const value = requiredEnvironment(environment, 'MECHANE_MODEL_UPSTREAM_URL');
+  const decoded = Schema.decodeUnknownResult(SecureOrigin)(value);
+
+  if (decoded._tag === 'Failure' || decoded.success.username !== '' || decoded.success.password !== '') {
+    throw new Error('Invalid runtime setting MECHANE_MODEL_UPSTREAM_URL');
   }
 
   return value.replace(/\/$/u, '');
@@ -172,6 +177,16 @@ export function loadRuntimeConfiguration({
     }
   }
 
+  const publicOrigin = serviceOrigin(environment['MECHANE_ORIGIN'], 'MECHANE_ORIGIN');
+  const toolOrigin = toolOriginSetting(environment, publicOrigin);
+
+  const githubApiOrigin = serviceOrigin(
+    environment['MECHANE_GITHUB_API_ORIGIN'] ?? 'https://api.github.com',
+    'MECHANE_GITHUB_API_ORIGIN',
+  );
+
+  const sandboxOrigin = serviceOrigin(environment['MECHANE_SANDBOX_ORIGIN'], 'MECHANE_SANDBOX_ORIGIN');
+
   return {
     databaseUrl: Redacted.make(requiredEnvironment(environment, 'MECHANE_DATABASE_URL')),
     credentialKeyring: Redacted.make(keyring),
@@ -183,18 +198,16 @@ export function loadRuntimeConfiguration({
     ),
     maxMachines: optionalInteger(environment, 'MECHANE_MAX_MACHINES', DEFAULT_MAX_MACHINES),
     defaultModel,
-    publicOrigin: publicOriginSetting(environment),
-    toolOrigin: toolOriginSetting(environment),
-    githubApiOrigin: Schema.decodeUnknownSync(Schema.String)(
-      environment['MECHANE_GITHUB_API_ORIGIN'] ?? 'https://api.github.com',
-    ),
+    publicOrigin: publicOrigin.origin,
+    toolOrigin: toolOrigin.origin,
+    githubApiOrigin: githubApiOrigin.origin,
     model: {
-      upstreamUrl: httpOrigin(environment, 'MECHANE_MODEL_UPSTREAM_URL'),
+      upstreamUrl: modelEndpoint(environment),
       apiKey: Redacted.make(requiredEnvironment(environment, 'MECHANE_MODEL_UPSTREAM_KEY')),
       offers,
     },
     sandbox: {
-      origin: httpOrigin(environment, 'MECHANE_SANDBOX_ORIGIN'),
+      origin: sandboxOrigin.origin,
       bearer: Redacted.make(requiredEnvironment(environment, 'MECHANE_SANDBOX_SERVICE_KEY')),
     },
     notificationProducers: notificationProducerSettings(environment),
@@ -241,30 +254,16 @@ function notificationProducerSettings(environment: RuntimeEnvironment): Readonly
   }
 }
 
-function publicOriginSetting(environment: RuntimeEnvironment): string {
-  const value = httpOrigin(environment, 'MECHANE_ORIGIN');
-  const url = new URL(value);
-
-  if (url.pathname !== '/' || url.search !== '' || url.hash !== '') {
-    throw new Error('Invalid runtime setting MECHANE_ORIGIN');
-  }
-
-  return url.origin;
-}
-
-function toolOriginSetting(environment: RuntimeEnvironment): string {
+function toolOriginSetting(environment: RuntimeEnvironment, publicOrigin: URL): URL {
   if (environment['MECHANE_TOOL_ORIGIN'] === undefined) {
-    return publicOriginSetting(environment);
+    return publicOrigin;
   }
 
-  const url = new URL(httpOrigin(environment, 'MECHANE_TOOL_ORIGIN'));
+  const url = serviceOrigin(environment['MECHANE_TOOL_ORIGIN'], 'MECHANE_TOOL_ORIGIN');
 
-  const hasCredentials = url.username !== '' || url.password !== '';
-  const hasDecoratedPath = url.pathname !== '/' || url.search !== '' || url.hash !== '';
-
-  if (url.protocol !== 'https:' || hasCredentials || hasDecoratedPath) {
+  if (url.protocol !== OriginProtocol.Secure) {
     throw new Error('Invalid runtime setting MECHANE_TOOL_ORIGIN');
   }
 
-  return url.origin;
+  return url;
 }

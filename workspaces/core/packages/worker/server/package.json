@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@mechane/control-store": "workspace:*",
+    "@mechane/deployment": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "@mechane/runtime": "workspace:*",

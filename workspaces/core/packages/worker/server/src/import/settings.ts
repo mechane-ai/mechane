@@ -1,4 +1,5 @@
-import { Redacted } from 'effect';
+import { ServiceOrigin } from '@mechane/deployment';
+import { Redacted, Schema } from 'effect';
 import { loadMigrationSettings } from '../settings/database.ts';
 import { requiredSetting } from '../settings/environment.ts';
 import type { SettingsEnvironment } from '../settings/environment.ts';
@@ -6,7 +7,6 @@ import { parseImportArguments } from './arguments.ts';
 import { HistoryImportFailed } from './errors.ts';
 
 const COMMAND_ARGUMENT_OFFSET = 2;
-const ORIGIN_PROTOCOLS: ReadonlySet<string> = new Set(['http:', 'https:']);
 
 type ImportTarget = { readonly origin: URL; readonly serviceKey: Redacted.Redacted };
 type LoadImportSettingsInput = { readonly environment: SettingsEnvironment; readonly mode: 'dry-run' | 'apply' };
@@ -18,20 +18,16 @@ export function loadImportSettings({ environment, mode }: LoadImportSettingsInpu
     return { ...migration, target: null };
   }
 
-  const value = requiredSetting({ environment, name: 'MECHANE_ORIGIN' });
-  const origin = new URL(value);
+  const origin = Schema.decodeUnknownResult(ServiceOrigin)(environment['MECHANE_ORIGIN']);
 
-  const hasCredentials = origin.username !== '' || origin.password !== '';
-  const hasOriginSuffix = origin.pathname !== '/' || origin.search !== '' || origin.hash !== '';
-
-  if (!ORIGIN_PROTOCOLS.has(origin.protocol) || hasCredentials || hasOriginSuffix) {
+  if (origin._tag === 'Failure') {
     throw new HistoryImportFailed({
-      reason: 'MECHANE_ORIGIN must be an HTTP origin without credentials, a path, or a query',
+      reason: 'MECHANE_ORIGIN must be a bare HTTPS origin or a loopback HTTP origin with a port',
     });
   }
 
   const serviceKey = requiredSetting({ environment, name: 'MECHANE_SANDBOX_SERVICE_KEY' });
-  const target: ImportTarget = { origin, serviceKey: Redacted.make(serviceKey) };
+  const target: ImportTarget = { origin: origin.success, serviceKey: Redacted.make(serviceKey) };
 
   return { ...migration, target };
 }

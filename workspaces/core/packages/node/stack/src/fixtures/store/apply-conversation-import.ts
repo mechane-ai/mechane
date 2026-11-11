@@ -7,6 +7,7 @@ import {
 } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import { Schema } from 'effect';
+import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -75,18 +76,26 @@ export async function applyConversationImport(input: ApplyConversationImportInpu
   const evidenceSha256 = createHash('sha256').update(evidence).digest('hex');
 
   await writeFile(evidenceFile, evidence, { mode: PRIVATE_FILE_MODE });
-  await input.runProgram({
-    name: 'import',
-    arguments: [
-      '--apply',
-      ...selection,
-      '--expect-digest',
-      plan.digest,
-      '--retirement-receipt',
-      evidenceFile,
-      '--retirement-sha256',
-      evidenceSha256,
-    ],
-    environment,
-  });
+
+  const applyArguments = [
+    '--apply',
+    ...selection,
+    '--expect-digest',
+    plan.digest,
+    '--retirement-receipt',
+    evidenceFile,
+    '--retirement-sha256',
+    evidenceSha256,
+  ];
+
+  await assert.rejects(
+    input.runProgram({
+      name: 'import',
+      arguments: applyArguments,
+      environment: { ...environment, MECHANE_ORIGIN: 'http://import.example.invalid', MECHANE_SANDBOX_SERVICE_KEY: '' },
+    }),
+    /MECHANE_ORIGIN must be a bare HTTPS origin or a loopback HTTP origin with a port/u,
+  );
+
+  await input.runProgram({ name: 'import', arguments: applyArguments, environment });
 }

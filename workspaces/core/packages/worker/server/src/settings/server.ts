@@ -1,3 +1,4 @@
+import { ServiceOrigin } from '@mechane/deployment';
 import { RecordId } from '@mechane/records';
 import { DEFAULT_AUTH_RATE_LIMITS, KEY_LIFETIME_MAX_SECONDS } from '@mechane/runtime';
 import type { AuthenticationConfiguration, RuntimeConfiguration } from '@mechane/runtime';
@@ -8,7 +9,6 @@ import { integerSetting, jsonSetting, optionalSetting, requiredSetting } from '.
 const IdentitySchema = Schema.Struct({ provider: Schema.Literal('github'), subject: Schema.NonEmptyString });
 const IdentitiesSchema = Schema.Array(IdentitySchema);
 const AllowedIdentitiesSchema = Schema.NullOr(IdentitiesSchema);
-const LOCAL_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1', '[::1]']);
 const DAY_SECONDS = 86_400;
 const DEFAULT_LOGIN_DAYS = 30;
 const DEFAULT_NAMED_KEY_DAYS = 365;
@@ -27,28 +27,19 @@ const RateLimitsSchema = Schema.Struct({
 export type ServerSettings = { readonly isTrustedProxy: boolean; readonly authentication: AuthenticationConfiguration };
 
 type ServerSettingsInput = { readonly runtime: RuntimeConfiguration; readonly environment: SettingsEnvironment };
-type OriginInput = { readonly value: string; readonly name: string };
-
-function originSetting({ value, name }: OriginInput): string {
-  const url = new URL(value);
-  const isLocal = LOCAL_HOSTS.has(url.hostname);
-  const isSecure = url.protocol === 'https:' || (url.protocol === 'http:' && isLocal);
-  const hasCredentials = url.username !== '' || url.password !== '';
-  const hasResourceParts = url.search !== '' || url.hash !== '' || url.pathname !== '/';
-
-  if (!isSecure || hasCredentials || hasResourceParts) {
-    throw new Error(`Invalid server origin ${name}`);
-  }
-
-  return value.replace(/\/$/u, '');
-}
 
 export function loadServerSettings({ runtime, environment }: ServerSettingsInput): ServerSettings {
-  const githubWebOrigin = optionalSetting({
+  const githubWebOriginSetting = optionalSetting({
     environment,
     name: 'MECHANE_GITHUB_WEB_ORIGIN',
     fallback: 'https://github.com',
   });
+
+  const githubWebOrigin = Schema.decodeUnknownResult(ServiceOrigin)(githubWebOriginSetting);
+
+  if (githubWebOrigin._tag === 'Failure') {
+    throw new Error('Invalid server origin MECHANE_GITHUB_WEB_ORIGIN');
+  }
 
   const allowedIdentities = jsonSetting({ environment, name: 'MECHANE_ALLOWED_IDENTITIES', fallback: 'null' });
   const administrators = jsonSetting({ environment, name: 'MECHANE_ADMINISTRATOR_IDENTITIES', fallback: '[]' });
@@ -82,7 +73,7 @@ export function loadServerSettings({ runtime, environment }: ServerSettingsInput
       origin: runtime.publicOrigin,
       githubClientId: requiredSetting({ environment, name: 'MECHANE_GITHUB_CLIENT_ID' }),
       githubClientSecret: requiredSetting({ environment, name: 'MECHANE_GITHUB_CLIENT_SECRET' }),
-      githubWebOrigin: originSetting({ value: githubWebOrigin, name: 'MECHANE_GITHUB_WEB_ORIGIN' }),
+      githubWebOrigin: githubWebOrigin.success.origin,
       githubApiOrigin: runtime.githubApiOrigin,
       allowedIdentities: Schema.decodeUnknownSync(AllowedIdentitiesSchema)(allowedIdentities),
       administrators: Schema.decodeUnknownSync(IdentitiesSchema)(administrators),

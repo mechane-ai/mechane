@@ -6,7 +6,7 @@ export {
   SandboxWebAccess,
   ORIGIN_VARIABLE,
 } from './constants.ts';
-export { ModelId, SecureOrigin, LoopbackOrigin } from './schemas.ts';
+export { ModelId, SecureOrigin, ServiceOrigin, LoopbackOrigin } from './schemas.ts';
 export {
   APPLICATION_WORKER_MIGRATIONS,
   applicationWorkerDeployment,
