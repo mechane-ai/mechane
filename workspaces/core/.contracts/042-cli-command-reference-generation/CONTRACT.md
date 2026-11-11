@@ -1,7 +1,7 @@
 ---
 name: cli-command-reference-generation
 message: Declare each command once in a model that drives both the CLI parser and its published reference.
-paths: ["packages/node/cli/**"]
+paths: ["mise.toml", "packages/node/cli/**"]
 ---
 
 ## Rules
@@ -17,8 +17,9 @@ Keep network clients, credential storage, update checks, filesystem reads, and c
 Resolve the content a parsed argument points to, such as a file or standard input, in runtime code after parsing.
 Limit the model's dependencies to declaring and serializing commands.
 Generate the reference with a generator that depends only on the model, without building or running the full program.
+Regenerate the committed reference in the normal fix workflow after code fixes and before formatting.
 Publish the reference as data with a declared schema, so documentation consumers read it without depending on the program or its build toolchain.
-Fail checks when a committed copy of the reference differs from the model's current output.
+Keep reference checks read-only and fail when a committed copy differs from the model's current output.
 
 Preserve command names, argument names, defaults, help text, version metadata, and the reference schema when refactoring the model, unless a product change explicitly changes them.
 
@@ -28,6 +29,7 @@ Generate the reference and compare it with the program's help and version output
 Review the generator's dependency closure, and confirm it excludes the full program and network, credential, filesystem, and execution libraries.
 Search the repository for command names, options, or defaults declared outside the model.
 After changing the model, diff the generated reference and confirm each changed name, default, or help line comes from an intended product change.
+Run the normal fix workflow after a model or release change, then repeat it and confirm the reference bytes are unchanged.
 Build each reference consumer without the program's build toolchain.
 
 ## Local adaptations
@@ -35,6 +37,7 @@ Build each reference consumer without the program's build toolchain.
 The command model is `packages/node/commands/src`, and the CLI's parser and `--help` derive from it.
 The generator `packages/node/cli/scripts/reference/main.ts` imports only the model and writes `packages/node/cli/reference.json`, whose `schema_version` the model declares.
 `mise -C workspaces/core run reference` writes the reference, and `mise -C workspaces/core run reference:check` fails when the committed copy differs from the model's output.
+The product's `fix` task runs `reference` after normalizers and autofixes and before formatting.
 Its `release` comes from `RELEASE` in `@mechane/protocol`.
 A release's binary reports the release its stamp holds, and `release:cli` stamps `RELEASE`, so the binary, `--help` and the reference agree; only the smoke stamps two test releases of its own.
 `update` calls no catalog operation. The `--version` flag declares the command word `version`, which the reference publishes as the flag's `command`: it reads no deployment, so the settings carry it out beside the flag rather than as a command that calls an origin.

@@ -256,11 +256,12 @@ run = "bun packages/node/cli/src/main.ts"
 # runs after the oxlint and ast-grep fixers so that their rewrites leave formatted code. A rename map renames wire
 # strings, which changes behavior by design, so only `rename` with no names replays the maps.
 [tasks.fix]
-description = "Apply every fixer in turn: the rule registry's files, each enforced normalizer, each enforced rule's autofix with oxlint and ast-grep, oxfmt, and each ratchet's baseline tightened to the tree"
+description = "Generate owned configuration and the CLI reference, apply normalizers and autofixes, format, and tighten ratchets"
 run = [
   "node packages/node/rule-generator/src/main.ts write",
   "node packages/node/checks/src/main.ts normalize",
   "node packages/node/checks/src/main.ts fix",
+  "mise run reference",
   "oxfmt .",
   "tofu fmt -recursive infrastructure",
   "gofmt -w infrastructure/provider",
