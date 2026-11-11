@@ -10,9 +10,9 @@ const FORBIDDEN_PATH_PARTS: ReadonlySet<string> = new Set(['', '.', '..']);
 
 export const RUNTIME_OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 export const RUNTIME_INVENTORY_FILE = 'runtime.json';
-export const MIGRATION_ENTRYPOINT = 'migrate.mjs';
-export const GRANT_ENTRYPOINT = 'grant.mjs';
-export const IMPORT_ENTRYPOINT = 'import.mjs';
+const MIGRATION_ENTRYPOINT = 'migrate.mjs';
+const GRANT_ENTRYPOINT = 'grant.mjs';
+const IMPORT_ENTRYPOINT = 'import.mjs';
 
 export const RUNTIME_REQUIRED_FILES = [
   'worker.js',
@@ -75,6 +75,10 @@ export const RuntimeRelease = Schema.Struct({
   public_commit: GitCommit,
   runtime: Schema.Struct({ archive: Schema.String.check(Schema.isPattern(ASSET_PATTERN)), ...ArtifactDigest.fields }),
   installation: Schema.Struct({ path: Schema.Literal('installation.json'), ...ArtifactDigest.fields }),
+  provider_setup: Schema.Struct({
+    name: Schema.String.check(Schema.isPattern(ASSET_PATTERN)),
+    ...ArtifactDigest.fields,
+  }),
   commands: Schema.Struct({
     node_version: RuntimeBuild.fields.node_version,
     migrate: OperationCommand,
@@ -88,6 +92,27 @@ export const RuntimeRelease = Schema.Struct({
 });
 
 export type RuntimeRelease = typeof RuntimeRelease.Type;
+
+type RuntimeCommandsInput = { readonly nodeVersion: string };
+
+export function runtimeCommands({ nodeVersion }: RuntimeCommandsInput): RuntimeRelease['commands'] {
+  return {
+    node_version: nodeVersion,
+    migrate: { entrypoint: MIGRATION_ENTRYPOINT, arguments: [], environment: ['MECHANE_MIGRATION_DATABASE_URL'] },
+    grant: {
+      entrypoint: GRANT_ENTRYPOINT,
+      arguments: [],
+      environment: ['MECHANE_MIGRATION_DATABASE_URL', 'MECHANE_RUNTIME_DATABASE_ROLE'],
+    },
+    import: {
+      entrypoint: IMPORT_ENTRYPOINT,
+      arguments: ['--dry-run', '--all'],
+      environment: ['MECHANE_MIGRATION_DATABASE_URL'],
+      apply_environment: ['MECHANE_ORIGIN', 'MECHANE_SANDBOX_SERVICE_KEY'],
+      apply_required_options: ['--expect-digest', '--retirement-receipt', '--retirement-sha256'],
+    },
+  };
+}
 
 type ArtifactPathInput = { readonly path: string };
 

@@ -14,6 +14,8 @@ export type ChecksSettings = {
    * merge's three versions.
    */
   readonly paths: ReadonlyArray<string>;
+  readonly target: Option.Option<string>;
+  readonly targetArguments: ReadonlyArray<string>;
   /** The branch whose merge base with `HEAD` starts the changed set and caps each ratchet's baseline. */
   readonly baseBranch: string;
   /** The parent variables the checks' children inherit. */

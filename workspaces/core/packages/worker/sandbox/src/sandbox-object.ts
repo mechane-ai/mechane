@@ -37,6 +37,7 @@ import {
   SandboxExecutionRefusal,
   SandboxExecutionResult,
   SandboxOwner,
+  SandboxPhase,
   SandboxProcessAnswer,
   SandboxProcessSubmission,
   SandboxRecoveryAction,
@@ -61,11 +62,19 @@ import { readBrowserArtifact } from './browser/read-browser-artifact.ts';
 import { runBrowser } from './browser/run-browser.ts';
 import { capacityClient } from './capacity/capacity-client.ts';
 import { CapacityRefused, machineCapacity } from './capacity/machine-capacity.ts';
+import { advanceCheckpoint } from './checkpoints/advance-checkpoint.ts';
+import { prepareAutomaticCheckpoint } from './checkpoints/automatic-checkpoint.ts';
 import { runFileCheckpoint } from './checkpoints/run-file-checkpoint.ts';
 import { resumeRecoveryCheckpoint } from './checkpoints/run-recovery-checkpoint.ts';
 import { deliverCompletions } from './completions/deliver-completions.ts';
 import { observeBackgroundWork } from './completions/observe-background-work.ts';
-import { BACKGROUND_OBSERVE_INTERVAL, MAINTENANCE_RETRY, SANDBOX_IDLE, STOP_RETRY } from './constants.ts';
+import {
+  AUTOMATIC_CHECKPOINT_QUIET,
+  BACKGROUND_OBSERVE_INTERVAL,
+  MAINTENANCE_RETRY,
+  SANDBOX_IDLE,
+  STOP_RETRY,
+} from './constants.ts';
 import type { SandboxEnvironment, SandboxRuntimeSettings } from './environment.ts';
 import { RecoveryCheckpointRefused } from './errors.ts';
 import { runBrowserWithEvidence } from './evidence/browser-evidence.ts';
@@ -80,6 +89,7 @@ import { runExecution } from './executions/run-execution.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { maintenanceValue } from './maintenance/maintenance-value.ts';
 import { managePortable } from './maintenance/manage-portable.ts';
+import { portableReport } from './maintenance/portable-report.ts';
 import { writeBackgroundObservationFailure } from './output/write-sandbox-diagnostic.ts';
 import { listManagedProcesses } from './processes/list-managed-processes.ts';
 import { observeManagedProcess, startManagedProcess } from './processes/managed-processes.ts';
@@ -90,7 +100,9 @@ import { serveEvidenceContent } from './service/serve-evidence-content.ts';
 import type { MachineIdInput, MachineProvider, WorkspaceFiles } from './types.ts';
 import { advanceSandboxStop, failSandboxStop } from './workspace/advance-sandbox-stop.ts';
 import { backfillSandboxStop } from './workspace/backfill-sandbox-stop.ts';
+import { releaseWorkspaceGeneration } from './workspace/release-workspace.ts';
 import { requestSandboxStop } from './workspace/request-sandbox-stop.ts';
+import { retireWorkspace } from './workspace/retire-workspace.ts';
 
 type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
 type ManageInput = { readonly request: typeof SandboxRequest.Encoded };
@@ -141,6 +153,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   readonly #runtimeSettings: SandboxRuntimeSettings;
   readonly #calls = sandboxCalls();
   readonly #stops = new Set<Promise<void>>();
+  readonly #files = { pending: Option.none<Promise<void>>() };
 
   constructor(state: DurableObjectState, environment: SandboxEnvironment) {
     super(state, environment);
@@ -282,6 +295,20 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
         if (request.action !== SandboxAction.Show) {
           await this.#armMaintenance();
+        }
+
+        const maintenance = this.#store.portableMaintenance();
+        const isDeleting = Option.exists(maintenance, (job) => job.phase === SandboxPhase.Retire);
+
+        if (request.action === SandboxAction.Delete && isDeleting && Option.isSome(this.#files.pending)) {
+          const report = portableReport({
+            store: this.#store,
+            provider: this.#provider,
+            workspace: this.#workspace,
+            providerName: this.#providerName,
+          });
+
+          return Schema.encodeSync(SandboxReport)(report);
         }
 
         const report = await managePortable({
@@ -689,6 +716,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
         await this.#touchInteractive();
 
+        const exportedAt = DateTime.nowUnsafe();
+
+        this.#store.noteWorkspaceActivity({ now: exportedAt });
+
         return await exportEvidence({
           store: this.#store,
           provider: this.#provider,
@@ -865,7 +896,57 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const owner = this.#owner();
 
     await deliverCompletions({ store: this.#store, settings: this.#runtimeSettings, owner });
+
+    const files = this.#advanceFiles();
+
+    this.ctx.waitUntil(files);
     Result.getOrThrow(advanced);
+  }
+
+  async #advanceFiles(): Promise<void> {
+    if (Option.isSome(this.#files.pending)) {
+      return await this.#files.pending.value;
+    }
+
+    const promise = this.#reconcileFiles();
+    this.#files.pending = Option.some(promise);
+
+    const settled = await capturePromise({ promise });
+    this.#files.pending = Option.none();
+
+    await this.#armBackground();
+    Result.getOrThrow(settled);
+  }
+
+  async #reconcileFiles(): Promise<void> {
+    const input = { store: this.#store, provider: this.#provider, workspace: this.#workspace };
+
+    await prepareAutomaticCheckpoint(input);
+
+    const checkpoint = this.#store.workspace().checkpoint;
+
+    if (Option.isSome(checkpoint) && !checkpoint.value.isAborting) {
+      await advanceCheckpoint({ ...input, checkpoint: checkpoint.value });
+
+      const current = this.#store.workspace().checkpoint;
+
+      if (Option.isNone(current) && FileCheckpointPurpose.guards.Automatic(checkpoint.value.purpose)) {
+        const guest = await this.#provider.connect({ machineId: checkpoint.value.machineId });
+
+        if (Option.isSome(guest)) {
+          const lease = Option.some(checkpoint.value.lease);
+
+          await releaseWorkspaceGeneration({
+            guest: guest.value,
+            machineId: checkpoint.value.machineId,
+            generation: checkpoint.value.generation,
+            lease,
+          });
+        }
+      }
+    }
+
+    await retireWorkspace(input);
   }
 
   async #onAlarm(): Promise<void> {
@@ -903,6 +984,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       const maintenance = this.#store.portableMaintenance();
       const job = maintenanceValue({ value: maintenance, field: 'portableMaintenance' });
       const operationId = Option.some(job.id);
+
+      if (job.phase === SandboxPhase.Retire && Option.isSome(this.#files.pending)) {
+        return;
+      }
 
       await managePortable({
         store: this.#store,
@@ -1022,6 +1107,41 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const checkpoint = this.#store.workspace().checkpoint;
     const work = this.#store.backgroundWork();
+    const workspace = this.#store.workspace();
+
+    const live = this.#store.liveMachine();
+    const active = this.#store.activeExecution();
+    const isMaintenanceActive = maintenanceActive({ store: this.#store });
+
+    const canScheduleAutomatic = Option.isNone(this.#files.pending) && Option.isSome(live) && !isMaintenanceActive;
+
+    const isWorkspaceAvailable =
+      Option.isNone(checkpoint) && Option.isNone(active) && Option.isNone(workspace.recovery);
+
+    if (canScheduleAutomatic && isWorkspaceAvailable && Option.isSome(workspace.automaticAt)) {
+      const forceAt = workspace.automaticAt.value;
+      const quiet = Option.map(workspace.lastActivityAt, (at) => DateTime.addDuration(at, AUTOMATIC_CHECKPOINT_QUIET));
+
+      const hasPendingActivity = Option.match(workspace.head, {
+        onNone: () => workspace.activitySequence > 0,
+        onSome: (head) => !Option.contains(head.capturedSequence, workspace.activitySequence),
+      });
+
+      const automaticAt = Option.match(quiet, {
+        onNone: () => forceAt,
+        onSome: (at) => {
+          if (hasPendingActivity && Option.isNone(workspace.checkpointError)) {
+            return DateTime.min(at, forceAt);
+          }
+
+          return forceAt;
+        },
+      });
+
+      const at = DateTime.max(now, automaticAt);
+
+      await this.#alarm.arm({ at });
+    }
 
     const recovery = this.#store.pendingRecoveryCheckpoint();
 
@@ -1029,7 +1149,12 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       return;
     }
 
-    const at = DateTime.addDuration(now, BACKGROUND_OBSERVE_INTERVAL);
+    const interval = Option.match(checkpoint, {
+      onNone: () => BACKGROUND_OBSERVE_INTERVAL,
+      onSome: () => MAINTENANCE_RETRY,
+    });
+
+    const at = DateTime.addDuration(now, interval);
 
     await this.#alarm.arm({ at });
   }

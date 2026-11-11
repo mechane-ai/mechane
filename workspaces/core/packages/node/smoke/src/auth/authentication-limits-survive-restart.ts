@@ -127,7 +127,7 @@ async function assertPublicPollLimited(stack: ScenarioInput['stack'], approval: 
 }
 
 export async function authenticationLimitsSurviveRestart({ stack }: ScenarioInput): Promise<void> {
-  const ownerLogin = stack.fixtures?.github.users.owner.login;
+  const ownerLogin = stack.fixtures?.github?.users.owner.login;
 
   assert.ok(ownerLogin !== undefined && ownerLogin.length > 0, 'The limiter smoke requires two admitted identities');
 

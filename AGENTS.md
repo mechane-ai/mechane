@@ -9,11 +9,13 @@ contract's enforcement block; change the registry instead of generated files.
 Run `.config/bootstrap.sh` on a fresh checkout. Use the pinned tools through mise from the repository root:
 
 - `mise run setup` installs locked dependencies.
-- `mise run check` runs the complete check graph used by CI.
+- `mise run check:static` checks source without runtime builds.
+- `mise run check:fast` runs affected checks and reuses exact successful target results.
+- `mise run check` runs the complete source graph.
 - `mise run fix` regenerates configuration and applies the repository's fixers.
 - `mise run dev` starts the retained local fixture with source reload.
 - `mise run start` runs a retained local installation from source.
-- `mise run local:reset -- --confirm` deletes an inactive local installation after successful shutdown.
+- `mise run dev -- reset --confirm` deletes an inactive local installation after successful shutdown.
 - `mise run mechane -- --help` runs the CLI from source.
 - `mise -C workspaces/core run TASK` runs a focused product task.
 
@@ -39,7 +41,8 @@ serialized task state and inspection output. Public replies and reactions requir
 
 Retain checks for consequential failures under [test curation](.contracts/001-test-curation/CONTRACT.md). Preserve
 existing smoke coverage and follow its approval requirements before changing the scenario catalog. Checks call no paid
-models or cloud accounts.
+models or cloud accounts. Runtime candidate acceptance runs the complete retained catalog against one immutable build;
+promotion reuses those bytes. A cached development result does not replace final acceptance.
 
 Keep secrets and installation state outside source. Publishing artifacts, running paid models, and deploying services
 require explicit operator authorization.

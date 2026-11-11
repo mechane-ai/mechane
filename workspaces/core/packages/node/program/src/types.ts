@@ -33,7 +33,11 @@ export type StartProcessInput = {
   readonly environment: Readonly<Record<string, string>>;
   /** How long the child may run before its exit fails; closing the caller's scope kills it. */
   readonly timeout: Duration.Duration;
+  /** Live progress is observational; captured output and the real exit still own the result. */
+  readonly onOutput?: ((input: ProcessOutput) => void) | undefined;
 };
+
+export type ProcessOutput = { readonly stream: 'stdout' | 'stderr'; readonly contents: string };
 
 /** How a child process ended and what it wrote. */
 export type ProcessRun = {

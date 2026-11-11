@@ -268,6 +268,14 @@ async function createSandboxDriver(input: SandboxOptions, worker: LocalCelldWork
       readFile,
       writeFile,
       restart,
+      applySource: async (update = {}) => {
+        await worker.applySource(update);
+
+        const identities = await containers();
+
+        await record('serving', identities);
+      },
+      inspect: worker.inspect,
       loseMachine,
       close,
     };

@@ -1,8 +1,6 @@
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 import type { CliInput, CliNotice, CliResult, RunningCli } from './types.ts';
 
-const CLI_BINARY = join(import.meta.dirname, '..', '..', '..', 'cli', 'dist', 'mechane');
 const CLI_TIMEOUT_MS = 90_000;
 const OUTPUT_MAX_BYTES = 4_194_304;
 const APPROVAL_NOTICE = /open (\S+), sign in, and type the code ([A-Z]+-[A-Z]+)/u;
@@ -16,13 +14,14 @@ export function startCli({ stack, account, args, environment = {} }: CliInput): 
     ...environment,
   };
 
-  const child = spawn(CLI_BINARY, [...args, '--output', 'json'], { env: variables, stdio: ['ignore', 'pipe', 'pipe'] });
+  const commandArgs = [...stack.cli.args, ...args, '--output', 'json'];
+  const child = spawn(stack.cli.command, commandArgs, { env: variables, stdio: ['ignore', 'pipe', 'pipe'] });
   const output = { stdout: '', stderr: '', bytes: 0 };
   const notices = new Set<(notice: CliNotice) => void>();
   const timeout = setTimeout(() => child.kill('SIGKILL'), CLI_TIMEOUT_MS);
 
   const finished = new Promise<CliResult>((resolve, reject) => {
-    child.once('error', () => reject(new Error('The built CLI could not start')));
+    child.once('error', () => reject(new Error('The CLI could not start')));
     child.once('close', (status, signal) => {
       clearTimeout(timeout);
       resolve({ status, signal, stdout: output.stdout, stderr: output.stderr });

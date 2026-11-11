@@ -1,26 +1,21 @@
-import { RecordId, RecordText } from '@mechane/records';
+import { RecordId, RecordText, Sequence } from '@mechane/records';
 import { decodeOne } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { Option, Schema } from 'effect';
-import {
-  CommandCheckpoint,
-  FileCheckpoint,
-  WorkspaceRecovery,
-  WorkspaceRestoration,
-  WorkspaceSnapshot,
-} from './schemas.ts';
-import type { WorkspaceCheckpoint } from './schemas.ts';
+import { Schema } from 'effect';
+import { WorkspaceCheckpoint, WorkspaceRecovery, WorkspaceRestoration, WorkspaceSnapshot } from './schemas.ts';
 
 /** The selected provider and all durable workspace transfer and recovery state. */
 const StoredWorkspaceState = Schema.Struct({
   /** Absent until the sandbox first chooses its provider. */
   provider: Schema.OptionFromNullOr(RecordText),
+  activitySequence: Sequence,
+  lastActivityAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromMillis),
+  automaticAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromMillis),
+  checkpointError: Schema.OptionFromNullOr(RecordText),
   /** Absent until the first checkpoint commits. */
   head: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceSnapshot)),
-  /** Absent when no settled command awaits a portable save. */
-  checkpoint: Schema.OptionFromNullOr(Schema.fromJsonString(CommandCheckpoint)),
-  /** Absent when no explicit file operation is being checkpointed. */
-  fileCheckpoint: Schema.OptionFromNullOr(Schema.fromJsonString(FileCheckpoint)),
+  /** Absent when no file generation is being captured or uploaded. */
+  checkpoint: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceCheckpoint)),
   /** Absent before any committed generation is restored. */
   restoration: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRestoration)),
   /** Absent when every obsolete generation has been deleted. */
@@ -29,10 +24,7 @@ const StoredWorkspaceState = Schema.Struct({
   recovery: Schema.OptionFromNullOr(Schema.fromJsonString(WorkspaceRecovery)),
 });
 
-type WorkspaceState = Omit<typeof StoredWorkspaceState.Type, 'checkpoint' | 'fileCheckpoint'> & {
-  /** Absent when neither a command nor a file operation owns a transfer. */
-  readonly checkpoint: Option.Option<WorkspaceCheckpoint>;
-};
+type WorkspaceState = typeof StoredWorkspaceState.Type;
 
 type BindProviderInput = { readonly provider: string };
 
@@ -47,13 +39,10 @@ type WorkspaceBindings = {
 export function workspaceBindings({ sql }: RecordsInput): WorkspaceBindings {
   const workspace: WorkspaceBindings['workspace'] = () => {
     const cursor = sql.exec(
-      'SELECT provider, head, checkpoint, file_checkpoint AS fileCheckpoint, restoration, recovery, (SELECT generation FROM workspace_retirements ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1',
+      'SELECT provider, activity_sequence AS activitySequence, last_activity_at_ms AS lastActivityAt, automatic_at_ms AS automaticAt, checkpoint_error AS checkpointError, head, file_checkpoint AS checkpoint, restoration, recovery, (SELECT generation FROM workspace_retirements ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1',
     );
 
-    const { checkpoint, fileCheckpoint, ...state } = decodeOne({ cursor, schema: StoredWorkspaceState });
-    const transfer = Option.orElse(checkpoint, () => fileCheckpoint);
-
-    return { ...state, checkpoint: transfer };
+    return decodeOne({ cursor, schema: StoredWorkspaceState });
   };
 
   const bindProvider: WorkspaceBindings['bindProvider'] = ({ provider }) => {

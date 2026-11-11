@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { CelldWorkerOptions } from './celld/types.ts';
-import type { CelldBinary } from './types.ts';
+import type { CelldBinary, LocalCli } from './types.ts';
 
 const DEFAULT_WORKER_ENTRY = fileURLToPath(new URL('../../../worker/server/src/main.ts', import.meta.url));
 
@@ -9,11 +9,25 @@ const DEFAULT_WORKER_ARTIFACT = fileURLToPath(new URL('../../../worker/server/.o
 
 export const DEFAULT_GUEST_IMAGE = fileURLToPath(new URL('../../guest/image/Dockerfile', import.meta.url));
 const DEFAULT_CONSOLE_ASSETS = fileURLToPath(new URL('../../../browser/console/dist/client', import.meta.url));
+const SOURCE_CLI_ENTRY = fileURLToPath(new URL('../../cli/src/main.ts', import.meta.url));
 
 type SourceInput = { readonly isSource: boolean };
 type LocationsInput = SourceInput & { readonly suppliedEntry: string; readonly artifactDirectory: string };
 type DatabaseProgramInput = SourceInput & { readonly directory: string; readonly name: string };
 type BinaryOptionsInput = { readonly binary: CelldBinary | undefined };
+type CliOptionsInput = SourceInput & { readonly cli: LocalCli | undefined };
+
+export function localCli({ isSource, cli }: CliOptionsInput): LocalCli {
+  if (cli !== undefined) {
+    return cli;
+  }
+
+  if (isSource) {
+    return { command: 'bun', args: [SOURCE_CLI_ENTRY] };
+  }
+
+  throw new Error('Artifact mode requires its explicitly selected candidate CLI');
+}
 
 export function defaultWorkerEntry({ isSource }: SourceInput): string {
   if (isSource) {

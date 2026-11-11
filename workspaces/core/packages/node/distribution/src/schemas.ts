@@ -1,12 +1,11 @@
 import { ArtifactDigest, ReleaseDescriptor } from '@mechane/program';
 import { Release, RELEASE_REPOSITORY } from '@mechane/protocol';
-import { GitCommit, SHA256_PATTERN } from '@mechane/records';
+import { GitCommit, SHA256_DIGEST_PATTERN, SHA256_PATTERN } from '@mechane/records';
 import { WranglerMigrations } from '@mechane/wrangler';
 import { Schema } from 'effect';
 import {
   ASSET_PATTERN,
   ASSETS_CONFIGURATION_KEY,
-  DIGEST_PATTERN,
   DURABLE_EXPORT,
   FORMAT_VERSION,
   RECEIPT_FORMAT_VERSION,
@@ -66,7 +65,7 @@ export const InstallationManifest = Schema.Struct({
     url: Schema.String,
     sha256: Sha256,
     bytes: ByteCount,
-    digest: Schema.String.check(Schema.isPattern(DIGEST_PATTERN)),
+    digest: Schema.String.check(Schema.isPattern(SHA256_DIGEST_PATTERN)),
   }),
   defaults: Schema.Record(Schema.String, Schema.String),
 });

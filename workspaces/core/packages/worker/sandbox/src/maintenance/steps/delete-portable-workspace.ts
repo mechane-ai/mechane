@@ -5,6 +5,12 @@ import type { PortableStepInput } from '../types.ts';
 
 /** Retains the deletion intent until all obsolete R2 generations have been removed. */
 export async function deletePortableWorkspace({ store, provider, workspace, job }: PortableStepInput): Promise<void> {
+  const checkpoint = store.workspace().checkpoint;
+
+  if (Option.isSome(checkpoint)) {
+    return;
+  }
+
   const latest = store.latestMachine();
 
   if (Option.isSome(latest)) {

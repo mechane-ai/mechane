@@ -41,6 +41,16 @@ description = "Run every repository and product check"
 depends = ["contracts:check", "repository:check"]
 run = "mise -C workspaces/core run check"
 
+[tasks."check:static"]
+description = "Check repository guidance and source before canonical artifact acceptance"
+depends = ["contracts:check", "repository:check"]
+run = "mise -C workspaces/core run check:static"
+
+[tasks."check:fast"]
+description = "Check changed source and reuse successful targets with unchanged inputs"
+depends = ["contracts:check", "repository:check"]
+run = "mise -C workspaces/core run check:fast"
+
 [tasks."contracts:check"]
 description = "Validate repository and product contracts"
 run = "tenet validate --root ."
@@ -61,7 +71,7 @@ run = ["workspaces/core/node_modules/.bin/oxfmt . '!workspaces/**'", "mise -C wo
 
 [tasks.dev]
 description = "Run the retained local Worker fixture with source reload and scripted models"
-run = "mise -C workspaces/core run dev"
+run = "mise -C workspaces/core run dev --"
 
 [tasks.start]
 description = "Run a persistent local Mechane installation from source"

@@ -27,7 +27,7 @@ const WorkspacePartRoute = Schema.Tuple([
 const WorkspaceRequestRoute = Schema.Union([WorkspaceRoute, WorkspacePartRoute]);
 
 const WORKSPACE_METHODS: Readonly<Record<WorkspaceStep, ReadonlySet<string>>> = {
-  [WorkspaceStep.Archive]: new Set([HttpMethod.Put]),
+  [WorkspaceStep.Archive]: new Set(),
   [WorkspaceStep.Checkpoint]: new Set([HttpMethod.Put]),
   [WorkspaceStep.Restore]: new Set([HttpMethod.Put]),
   [WorkspaceStep.Release]: new Set([HttpMethod.Delete]),

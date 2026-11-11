@@ -78,12 +78,15 @@ async function activateSnapshot({ store, guest, restoration, archive }: Activate
   const body = Schema.encodeSync(codec)(archive);
   const part = Option.none();
 
+  const lease = Option.none();
+
   const response = await workspaceRequest({
     guest,
     machineId,
     generation,
     step: WorkspaceStep.Restore,
     part,
+    lease,
     init: { method: HttpMethod.Put, headers: { [HttpHeader.ContentType]: MediaType.Json }, body },
   });
 

@@ -7,6 +7,7 @@ export type DistributionSettings = {
   readonly mode: DistributionMode;
   readonly folder: string;
   readonly inherited: Readonly<Record<string, string>>;
+  readonly nodeExecutable: string;
   readonly argument?: string | undefined;
 };
 

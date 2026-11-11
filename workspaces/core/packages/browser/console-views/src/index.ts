@@ -16,6 +16,7 @@ export {
   EnvironmentProcessOutput,
   EnvironmentProcessOutputPlaceholder,
 } from './environment.tsx';
+export { EnvironmentDurability } from './environment-durability.tsx';
 export { EvidenceDetailsPlaceholder } from './evidence.tsx';
 
 export { isImportedTurn } from './turn-outcome.ts';

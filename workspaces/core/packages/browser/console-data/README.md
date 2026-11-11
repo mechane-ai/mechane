@@ -53,10 +53,11 @@ and failed captures remain records, and only ready artifacts have readable media
 its detail and the mech’s capture-page reads before removing the canonical row and page receipts. Peers receive the
 artifact identity and perform the same invalidation; explicit retry waits for the purge.
 
-Managed process summaries use `environmentProcesses`, keyed by mech, machine, and process identity. Each list replaces
-that mech's active and recent membership; omission does not establish that an older process never existed. Bounded logs
-use `environmentProcessDetails` and are fetched only for opened handles. Stop commands target the recorded machine and
-refresh its summary and detail reads; a stale handle cannot stop a replacement machine.
+Passive environment overviews use `environments`, keyed by mech. One read includes the recorded saved checkpoint,
+pending transfer, recovery evidence, and bounded active and recent process summaries. A saved checkpoint describes
+captured files, not every later write; command completion does not establish a save. Bounded logs use
+`environmentProcessDetails` and are fetched only for opened handles. Stop commands target the recorded machine and
+refresh its overview and detail reads; a stale handle cannot stop a replacement machine.
 
 ## Extending the Console
 

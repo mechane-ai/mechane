@@ -7,11 +7,9 @@ type CurrentCheckpointInput = Pick<CheckpointStepInput, 'store' | 'checkpoint'>;
 export function isCurrentCheckpoint({ store, checkpoint }: CurrentCheckpointInput): boolean {
   const current = store.workspace().checkpoint;
 
-  return Option.exists(
-    current,
-    (value) =>
-      value.generation === checkpoint.generation &&
-      value.machineId === checkpoint.machineId &&
-      value.part === checkpoint.part,
-  );
+  return Option.exists(current, (value) => {
+    const isSameOwner = value.generation === checkpoint.generation && value.machineId === checkpoint.machineId;
+
+    return !value.isAborting && isSameOwner && value.part === checkpoint.part;
+  });
 }

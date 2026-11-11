@@ -22,6 +22,7 @@ export const HttpHeader = {
   Host: 'host',
   Location: 'location',
   MechaneClientAddress: 'x-mechane-client-address',
+  MechaneCheckpointLease: 'x-mechane-checkpoint-lease',
   MechaneRunId: 'x-mechane-run-id',
   MechaneSessionId: 'x-mechane-session-id',
   NotificationProducer: 'x-notification-producer',

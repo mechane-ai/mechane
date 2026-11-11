@@ -20,7 +20,6 @@ const VALUES = {
       'packages/worker/server/.output/**',
       '**/.swc/**',
       '**/reference.json',
-      'lint/shipped-wire.json',
       'lint/baseline/**',
       ...PARSER_COMPANIONS.map(({ path }) => path),
     ],

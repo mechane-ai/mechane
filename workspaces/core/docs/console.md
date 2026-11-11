@@ -21,9 +21,11 @@ presentation. Private model text and tool steps do not stream into this conversa
 it does not promise a new activation or a reply. One activation can consume multiple notifications. Historical source
 messages and execution events remain inspectable without a separate session selector or source-specific live agent.
 
-**Environment** observes the mech's existing machine, processes, and evidence. Reads do not wake a machine or extend its
-lease. A process Stop targets its exact handle. Notes, plans, and memory are ordinary durable home files, not separate
-work or memory CRUD views. Settings holds the definition, appearance, grants, and lifecycle controls.
+**Environment** shows the last saved file checkpoint, its recorded capture time, pending upload, and save or recovery
+errors beside the mech's processes. Commands can finish before files are saved; background writes can be newer than the
+captured checkpoint. Reads do not wake a machine or extend its lease. A process Stop targets its exact handle. Notes,
+plans, and memory are ordinary durable home files, not separate work or memory CRUD views. Settings holds the
+definition, appearance, grants, and lifecycle controls.
 
 Mech and activation rows use full-row links and keyboard focus. Open a trace in another tab, or use Back to return to
 the row and reading position. Trace inspection fills the page and temporarily hides workspace navigation without
@@ -101,8 +103,9 @@ establishes the assembled experience.
 TLS Postgres. Default HTTP fixtures provide local identity and scripted models. Console HMR and watched Worker source
 reload preserve the guest. Open the printed origin plus `/console`.
 
-`mise run start` also uses retained local state. Configured providers require `MECHANE_LOCAL_USE_FIXTURES=false` and
-their runtime settings. The [local guide](../packages/node/stack/README.md) owns qualified celld selection, setup, and
+Select model and GitHub providers independently at start with `--model=fixture|live` and `--github=fixture|live`. Live
+providers require their runtime settings. Environment and guest source changes use explicit apply; application reload
+remains automatic. The [local guide](../packages/node/stack/README.md) owns qualified celld selection, setup, and
 service lifetime.
 
 From `workspaces/core`, `pnpm --filter @mechane/console storybook` provides component development and

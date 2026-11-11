@@ -4,6 +4,48 @@ import type { HttpHandler } from './fixtures/http.ts';
 
 export type Environment = Readonly<Record<string, string>>;
 
+export type LocalProvider = 'fixture' | 'live';
+
+export type LocalProviders = { readonly model: LocalProvider; readonly github: LocalProvider };
+
+export type LocalCli = { readonly command: string; readonly args: ReadonlyArray<string> };
+
+export type LocalSourceUpdate = { readonly configuration?: Readonly<Record<string, unknown>> };
+
+export type LocalWorkerStatus = {
+  readonly pid: number | undefined;
+  readonly isSource: boolean;
+  readonly compiledSha256: string | undefined;
+  readonly appliedSha256: string | undefined;
+  readonly lastBuildDurationMs: number | undefined;
+};
+
+export type LocalStackStatus = {
+  readonly origin: string;
+  readonly stateDirectory: string;
+  readonly providers: LocalProviders;
+  readonly cli: LocalCli;
+  readonly application: LocalWorkerStatus | undefined;
+  readonly sandbox: LocalWorkerStatus | undefined;
+  readonly guestImage: string;
+  readonly isAdmissionHeld: boolean;
+};
+
+export type LocalToolAsset = {
+  readonly name: string;
+  readonly version: string;
+  readonly versionOutput: string;
+  readonly target: 'linux-arm64' | 'linux-x64';
+  readonly archivePath: string;
+  readonly sha256: string;
+  readonly executable: string;
+};
+
+export type LocalGuestSetup = {
+  readonly registerFixture: (answer: HttpHandler) => GuestHttpFixture;
+  readonly registerFixturePrefix: (answer: HttpHandler) => GuestHttpFixture;
+};
+
 export type CelldBinary = { readonly executable: string; readonly version: string; readonly sha256: string };
 
 export type ModelToolCall = {
@@ -66,8 +108,8 @@ export type GitHubFixture = {
 export type NotificationProducerFixture = { readonly id: string; readonly signingSecret: string };
 
 export type LocalFixtures = {
-  readonly github: GitHubFixture;
-  readonly model: ModelFixture;
+  readonly github: GitHubFixture | undefined;
+  readonly model: ModelFixture | undefined;
   readonly notifications: NotificationProducerFixture;
   readonly close: () => Promise<void>;
 };
@@ -85,7 +127,10 @@ export type StackOptions = {
   readonly sandbox?: 'container' | 'configured';
   readonly origin?: URL;
   readonly environment?: Environment;
-  readonly useFixtures?: boolean;
+  readonly providers?: LocalProviders;
+  readonly cli?: LocalCli;
+  readonly toolAssets?: ReadonlyArray<LocalToolAsset>;
+  readonly prepareGuest?: (input: LocalGuestSetup) => Promise<ReadonlyArray<LocalToolAsset>>;
 };
 
 export type RestartOptions = { readonly signal?: 'SIGTERM' | 'SIGKILL'; readonly environment?: Environment };
@@ -122,6 +167,8 @@ export type LocalSandbox = {
   readonly readFile: (input: SandboxFixtureFile) => Promise<string | undefined>;
   readonly writeFile: (input: SandboxFixtureWrite) => Promise<void>;
   readonly restart: (input?: Pick<RestartOptions, 'signal'>) => Promise<void>;
+  readonly applySource: (input?: LocalSourceUpdate) => Promise<void>;
+  readonly inspect: () => Promise<LocalWorkerStatus>;
   readonly loseMachine: (id: string) => Promise<void>;
   readonly close: (deadlineMs?: number) => Promise<void>;
 };
@@ -135,9 +182,15 @@ export type LocalStack = {
   readonly serverLog: string;
   readonly postgresContainer: string;
   readonly nodeVersion: string;
+  readonly cli: LocalCli;
+  readonly providers: LocalProviders;
+  readonly inspect: () => Promise<LocalStackStatus>;
+  readonly applySandbox: () => Promise<void>;
+  readonly applyGuest: () => Promise<void>;
   readonly dumpStorage: (options?: DiagnosticOptions) => Promise<string>;
   readonly captureFailure: (label: string) => Promise<string>;
   readonly registerGuestFixture: (answer: HttpHandler) => GuestHttpFixture;
+  readonly registerGuestFixturePrefix: (answer: HttpHandler) => GuestHttpFixture;
   readonly restart: (input?: RestartOptions) => Promise<void>;
   readonly prepareConversationImport: (input: ConversationImportScope) => Promise<PreparedConversationImport>;
   readonly stop: () => Promise<void>;

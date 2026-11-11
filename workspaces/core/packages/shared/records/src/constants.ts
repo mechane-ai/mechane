@@ -14,6 +14,9 @@ export const RANDOM_UUID_VERSION = 4;
 /** A SHA-256 digest as lowercase hex. */
 export const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
+/** A content digest with its explicit SHA-256 algorithm, as used by OCI images. */
+export const SHA256_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
 /** UTC accounting days use four-digit years in `YYYY-MM-DD` form. */
 export const UTC_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

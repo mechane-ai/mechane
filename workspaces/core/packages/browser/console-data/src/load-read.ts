@@ -1,11 +1,11 @@
 import type { Mech } from '@mechane/protocol';
 import {
   Allowance,
+  EnvironmentOverview,
   EvidenceArtifact,
   ListedEvent,
   MechSummary,
   ProcessObservation,
-  ProcessSummary,
   Trace,
   Turn,
   TurnStatus,
@@ -13,7 +13,7 @@ import {
 import { WorkspaceId } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
-import { deleteRows, upsertRows } from './collections.ts';
+import { upsertRows } from './collections.ts';
 import type { CanonicalTables, CanonicalWriter } from './collections.ts';
 import { MechDefinition, recordKey, TraceEvidence, turnVersion } from './records.ts';
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
@@ -32,7 +32,7 @@ type ReadOutputs = {
   readonly trace: Output<'showTurn'>;
   readonly evidence: Output<'listEvidence'>;
   readonly evidenceArtifact: Output<'showEvidence'>;
-  readonly environmentProcesses: Output<'listEnvironmentProcesses'>;
+  readonly environment: Output<'showEnvironment'>;
   readonly environmentProcess: Output<'showEnvironmentProcess'>;
   readonly turnEvents: Output<'listTurnEvents'>;
   readonly events: Output<'listRecentEvents'>;
@@ -129,11 +129,11 @@ export async function fetchRead({ api, workspaceId, request, signal }: FetchRead
           signal,
         ),
       };
-    case 'environmentProcesses':
+    case 'environment':
       return {
         kind: request.kind,
         request,
-        output: await api('listEnvironmentProcesses', { workspaceId, mechId: request.mechId }, signal),
+        output: await api('showEnvironment', { workspaceId, mechId: request.mechId }, signal),
       };
     case 'environmentProcess':
       return {
@@ -388,31 +388,17 @@ export async function applyRead({
         hasMore: answer.kind === 'evidence' ? answer.output.hasMore : null,
       };
     }
-    case 'environmentProcesses': {
+    case 'environment': {
       const mechId = answer.request.mechId;
-
-      const rows = answer.output.map((process) => {
-        const identity = JSON.stringify([process.handle.machineId, process.handle.processId]);
-
-        return { mechId, key: recordKey(mechId, identity), value: Schema.encodeSync(ProcessSummary)(process) };
-      });
-
-      const keys = new Set(rows.map((row) => row.key));
+      const row = { mechId, key: mechId, value: Schema.encodeSync(EnvironmentOverview)(answer.output) };
 
       await writeRows({
         signal,
-        collections: [tables.environmentProcesses],
-        write: () => {
-          const removed = [...tables.environmentProcesses.values()]
-            .filter((row) => row.mechId === mechId && !keys.has(row.key))
-            .map((row) => row.key);
-
-          deleteRows(tables.environmentProcesses, removed);
-          upsertRows(tables.environmentProcesses, rows);
-        },
+        collections: [tables.environments],
+        write: () => upsertRows(tables.environments, [row]),
       });
 
-      return { ...receipt, keys: rows.map((row) => row.key), hasMore: null };
+      return { ...receipt, keys: [row.key], hasMore: null };
     }
     case 'environmentProcess': {
       const mechId = answer.request.mechId;

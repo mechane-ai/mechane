@@ -6,7 +6,7 @@ import type { CheckpointStepInput } from './types.ts';
 
 /** A failed repair retains its old recovery row while its own scratch release is retried durably. */
 export async function releaseRecoveryCheckpoint({ store, provider, checkpoint }: CheckpointStepInput): Promise<void> {
-  if ('executionId' in checkpoint || !FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+  if (!FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
     return;
   }
 
@@ -19,10 +19,13 @@ export async function releaseRecoveryCheckpoint({ store, provider, checkpoint }:
   const guest = await provider.connect({ machineId: checkpoint.machineId });
 
   if (Option.isSome(guest)) {
+    const lease = Option.some(checkpoint.lease);
+
     const isReleased = await releaseWorkspaceGeneration({
       guest: guest.value,
       machineId: checkpoint.machineId,
       generation: checkpoint.generation,
+      lease,
     });
 
     if (!isReleased) {

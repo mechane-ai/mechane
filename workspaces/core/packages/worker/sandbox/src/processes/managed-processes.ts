@@ -9,7 +9,7 @@ import {
   ProcessState,
 } from '@mechane/sandbox-wire';
 import type { ExecutionEnvironment, ProcessHandle, SandboxProcessAnswer } from '@mechane/sandbox-wire';
-import { Option, Result, Schema } from 'effect';
+import { DateTime, Option, Result, Schema } from 'effect';
 import { connectLiveMachine } from '../machines/connect-live-machine.ts';
 import { readyInteractiveMachine } from '../machines/ready-interactive-machine.ts';
 import type { GuestConnection, ProviderStepInput, WorkspaceProviderStepInput } from '../types.ts';
@@ -54,7 +54,7 @@ export async function startManagedProcess({
 
   const input = { store, provider, workspace };
 
-  if (!(await advanceWorkspace(input))) {
+  if (!(await advanceWorkspace({ ...input, shouldAdmitCommand: true }))) {
     return ProcessPending.make({});
   }
 
@@ -115,6 +115,10 @@ export async function startManagedProcess({
   }
 
   const start = Option.some({ processId, command: assigned.command, environment });
+  const dispatchedAt = DateTime.nowUnsafe();
+
+  store.noteWorkspaceActivity({ now: dispatchedAt });
+
   const answer = await processGuest({ guest, handle, method: HttpMethod.Put, start });
 
   if (Option.isNone(answer)) {

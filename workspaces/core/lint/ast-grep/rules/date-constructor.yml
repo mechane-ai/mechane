@@ -13,6 +13,7 @@ ignores:
     'packages/worker/sandbox/src/service/**',
     '**/node_modules/**',
     '**/*.d.ts',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 rule:
   kind: new_expression

@@ -1,24 +1,70 @@
-import { Option } from 'effect';
-import { advanceCheckpoint } from '../checkpoints/advance-checkpoint.ts';
+import { FileCheckpointPurpose } from '@mechane/sandbox-store';
+import { DateTime, Option } from 'effect';
+import { AUTOMATIC_CHECKPOINT_QUIET } from '../constants.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
-import { retireWorkspace } from './retire-workspace.ts';
+import { releaseWorkspaceGeneration } from './release-workspace.ts';
 
-/** Advances bounded retirement or checkpoint work before the next command is dispatched. */
-export async function advanceWorkspace({ store, provider, workspace }: WorkspaceProviderStepInput): Promise<boolean> {
+type AdvanceWorkspaceInput = WorkspaceProviderStepInput & { readonly shouldAdmitCommand: boolean };
+
+/** Required barriers retain admission; an immutable automatic archive uploads independently of live commands. */
+export async function advanceWorkspace({
+  store,
+  provider,
+  shouldAdmitCommand,
+}: AdvanceWorkspaceInput): Promise<boolean> {
   const state = store.workspace();
-  const isRecovering = Option.isSome(state.recovery);
-  const isRetired = isRecovering || (await retireWorkspace({ store, workspace }));
 
-  if (!isRetired) {
+  if (Option.isSome(state.recovery)) {
     return false;
   }
 
-  const checkpoint = store.workspace().checkpoint;
+  const checkpoint = state.checkpoint;
 
-  if (Option.isSome(checkpoint)) {
-    await advanceCheckpoint({ store, provider, workspace, checkpoint: checkpoint.value });
+  if (Option.isNone(checkpoint)) {
+    return true;
+  }
 
+  if (!shouldAdmitCommand || !FileCheckpointPurpose.guards.Automatic(checkpoint.value.purpose)) {
     return false;
+  }
+
+  if (Option.isSome(checkpoint.value.archive) && !checkpoint.value.isAborting) {
+    return true;
+  }
+
+  // Retiring the capture fence first prevents a delayed metadata response from starting an upload.
+  store.saveCheckpoint({ ...checkpoint.value, isAborting: true });
+
+  const guest = await provider.connect({ machineId: checkpoint.value.machineId });
+
+  if (Option.isNone(guest)) {
+    return false;
+  }
+
+  const lease = Option.some(checkpoint.value.lease);
+
+  const released = await releaseWorkspaceGeneration({
+    guest: guest.value,
+    machineId: checkpoint.value.machineId,
+    generation: checkpoint.value.generation,
+    lease,
+  });
+
+  if (!released) {
+    return false;
+  }
+
+  const current = store.workspace().checkpoint;
+
+  if (Option.exists(current, (value) => value.generation === checkpoint.value.generation && value.isAborting)) {
+    const now = DateTime.nowUnsafe();
+    const at = DateTime.addDuration(now, AUTOMATIC_CHECKPOINT_QUIET);
+
+    store.retireWorkspace({ generation: checkpoint.value.generation });
+
+    const error = store.workspace().checkpointError;
+
+    store.scheduleAutomaticCheckpoint({ at, error });
   }
 
   return true;

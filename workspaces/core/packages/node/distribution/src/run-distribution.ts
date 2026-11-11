@@ -1,7 +1,8 @@
 import { Effect } from 'effect';
 import { buildDistribution } from './build/build-distribution.ts';
 import { previewModule } from './build/preview-module.ts';
-import { qualifyDistribution } from './build/qualify-distribution.ts';
+import { acceptDistribution } from './candidate/accept-distribution.ts';
+import { buildCandidate } from './candidate/build-candidate.ts';
 import { DistributionMode } from './constants.ts';
 import type { DistributionFailed } from './errors.ts';
 import { loadDistributionSettings } from './load-distribution-settings.ts';
@@ -19,12 +20,14 @@ export const runDistribution = Effect.fn('runDistribution')(function* (): Effect
   switch (settings.mode) {
     case DistributionMode.Build:
       return yield* buildDistribution({ settings });
+    case DistributionMode.Candidate:
+      return yield* buildCandidate({ settings });
+    case DistributionMode.Accept:
+      return yield* acceptDistribution({ settings });
     case DistributionMode.Verify:
       return yield* verifyDistribution({ settings });
     case DistributionMode.Preview:
       return yield* previewModule({ settings });
-    case DistributionMode.Qualify:
-      return yield* qualifyDistribution({ settings });
     case DistributionMode.VerifyQualified:
       return yield* verifyQualifiedDistribution({ settings });
   }

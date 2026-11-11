@@ -11,6 +11,7 @@ import { readParserCompanions } from './files/read-parser-companions.ts';
 import { readWordLists } from './files/read-word-lists.ts';
 import { staleFiles } from './files/stale-files.ts';
 import { writeFiles } from './files/write-files.ts';
+import { syncRoleIgnores } from './rule-files/sync-role-ignores.ts';
 import { staleLines } from './stale-lines.ts';
 import type { GeneratorRun, RegistryFinding } from './types.ts';
 import { registryFindings } from './validate/registry-findings.ts';
@@ -33,6 +34,10 @@ type WriteStaleInput = {
 export const runGenerator = Effect.fn('runGenerator')(function* ({
   command,
 }: RunGeneratorInput): Effect.fn.Return<ReadonlyArray<string>, GenerateFailed> {
+  if (command === GenerateCommand.Write) {
+    yield* syncRoleIgnores();
+  }
+
   const wordLists = yield* readWordLists();
   const contracts = yield* readContracts();
   const parserCompanions = yield* readParserCompanions();

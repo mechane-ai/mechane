@@ -1,6 +1,6 @@
 import { decodeFile, FileUnwritable, WORKSPACE_FOLDER } from '@mechane/checks-kernel';
 import type { ChecksFailure, Finding } from '@mechane/checks-kernel';
-import { JSON_INDENT_CHARS, Lock, MIGRATION_LOCK, SHIPPED_WIRE_LOCK, WIRE_LOCK } from '@mechane/program';
+import { JSON_INDENT_CHARS, Lock, MIGRATION_LOCK, WIRE_LOCK } from '@mechane/program';
 import { Effect } from 'effect';
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -10,16 +10,16 @@ import { wireNames } from './wire-names.ts';
 
 /** A lock's file, and the entries the source declares now. */
 type AppendLockInput = { readonly path: string; readonly current: Lock };
+type WriteLockInput = { readonly path: string; readonly lock: Lock };
 
-/** Appends current names to both wire ledgers and new schema steps to the migration lock. */
+/** Refreshes current API names and appends new schema steps without rewriting applied steps. */
 export const appendLocks = Effect.fn('appendLocks')(function* (): Effect.fn.Return<
   ReadonlyArray<Finding>,
   ChecksFailure
 > {
   const current = yield* wireNames();
 
-  yield* appendLock({ path: WIRE_LOCK, current });
-  yield* appendLock({ path: SHIPPED_WIRE_LOCK, current });
+  yield* writeLock({ path: WIRE_LOCK, lock: current });
   yield* appendLock({ path: MIGRATION_LOCK, current: yield* migrationHashes() });
 
   return [];
@@ -35,6 +35,14 @@ const appendLock = Effect.fn('appendLock')(function* ({
 }: AppendLockInput): Effect.fn.Return<void, ChecksFailure> {
   const locked = yield* decodeFile({ path, schema: Lock });
   const lock = appendedLock({ locked, current });
+
+  yield* writeLock({ path, lock });
+});
+
+const writeLock = Effect.fn('writeLock')(function* ({
+  path,
+  lock,
+}: WriteLockInput): Effect.fn.Return<void, FileUnwritable> {
   const absolute = resolve(WORKSPACE_FOLDER, path);
   const text = `${JSON.stringify(lock, null, JSON_INDENT_CHARS)}\n`;
 

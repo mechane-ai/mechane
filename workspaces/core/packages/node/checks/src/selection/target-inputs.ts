@@ -6,6 +6,7 @@ import { globSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join, matchesGlob, relative, resolve } from 'node:path';
 import type { CheckTarget } from './check-targets.ts';
+import { SMOKE_SOURCE } from './smoke-catalog.ts';
 
 export type TargetInputsInput = {
   readonly target: CheckTarget;
@@ -67,14 +68,30 @@ export const targetInputs = Effect.fn('targetInputs')(function* ({
   const closure = memberClosure({ reached: holders, members });
   const dependencies = dependencyClosure({ reached: target.roots, graph });
   const imported = new Set(dependencies);
+  const knownFiles = new Set(files);
+
+  const hasCompleteGraph = dependencies.every((path) => {
+    if (!knownFiles.has(path) || !path.endsWith('.ts')) {
+      return true;
+    }
+
+    return Record.has(graph, path);
+  });
+
+  const hasKnownRoots = target.roots.every((path) => Record.has(graph, path));
   const prefixes = closure.map(({ folder }) => folderPrefixPath({ folder }));
   const readmes = closure.map(({ folder }) => join(folder, 'README.md'));
   const documentation = new Set(readmes);
 
   const paths = files.filter((path) => {
+    if (!hasCompleteGraph || !hasKnownRoots) {
+      return true;
+    }
+
     const isMemberInput = prefixes.some((prefix) => path.startsWith(prefix));
     const isDeclaredInput = target.inputs.some((pattern) => matchesGlob(path, pattern));
-    const isOwnedSource = isMemberInput && !documentation.has(path);
+    const isUnselectedScenario = Option.isSome(target.family) && path.startsWith(SMOKE_SOURCE);
+    const isOwnedSource = isMemberInput && !documentation.has(path) && !isUnselectedScenario;
 
     return imported.has(path) || isDeclaredInput || isOwnedSource;
   });

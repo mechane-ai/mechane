@@ -10,7 +10,7 @@ Build the Worker, Console assets, guest image, CLI, and controlled database comm
 Publish immutable artifacts with checksums and an explicit installation manifest. Operators consume those bytes;
 deployment cannot rebuild product code or execute a checkout through an infrastructure provisioner.
 Declare compatible provider version ranges in reusable modules. Pin exact reviewed provider releases in installation
-roots and examples.
+roots and examples. An application-only change does not require a provider release when its provider interface is unchanged.
 
 Require build metadata, module and asset inventories, installation descriptors, and qualification evidence to agree
 on version and public revision. Include original licenses, attribution, and dependency notices in the verified inventory.
@@ -21,9 +21,11 @@ execute them even when the build uses a private umask.
 Build a candidate once, qualify its exact bytes and declared inputs, then promote those same bytes. Qualification
 records identify their source, artifacts, configuration, guarantees, and retained evidence. A check-log hash alone is
 not qualification. Verify every referenced digest before deployment. Do not treat a development preview as a release.
+Use the canonical acceptance command to generate those reports from static checks and the complete retained artifact
+catalog; do not duplicate that catalog in source mode or assemble qualification evidence by hand.
 
-Emit cumulative shipped wire history and the exact migration ledger under contract 047. Preserve published entries
-when an active endpoint is retired. Keep the provider's format-preservation guard enabled.
+Emit the current API catalog and exact applied migration ledger under contract 047. Retired protocol metadata does
+not require a compatibility runtime. Preserve migration integrity and actual stored data through an explicit cutover.
 
 Infrastructure owns service identity, routing, capacity, database roles, global settings, secret references, and
 notification-producer recipient allowlists. Runtime APIs own principals, workspaces, definitions, credentials, grants,
@@ -48,14 +50,17 @@ local HTTPS uses a generated trusted root. Never disable TLS verification or bak
 
 Run the same Worker artifact locally and in production. The local supervisor starts separate celld application and
 environment hosts so an application edit cannot destroy the guest. Source mode uses an explicit compiler graph watch;
-artifact mode does not rebuild. Readiness requires usable control storage and execution bindings, not only a listening
-port. Local Postgres uses verified TLS and the restricted runtime role. PlanetScale is a hosted default, not a local
-or self-hosting requirement.
+artifact mode does not rebuild. Application reload preserves the environment and guest. Environment and guest edits
+require explicit source apply with admission fenced. Drain fresh files before replacing a machine that admitted writers.
+Distinguish source apply
+from same-byte recovery restart; never silently apply an old bundle as new source. Status identifies compiled and applied
+builds. Readiness requires usable control storage and execution bindings, not only a listening port. Local Postgres uses
+verified TLS and the restricted runtime role. PlanetScale is a hosted default, not a local or self-hosting requirement.
 
-Protect persistent resources from accidental replacement. Before cutover, save current policy, fence admission,
-reconcile in-flight effects, positively retire every old execution owner, and preserve files and credentials. Apply
-reviewed migrations and historical imports only after their preflight gates pass. Import does not clear maintenance
-holds. Activate one native owner and restore exact saved policies deliberately; never run both engines.
+Protect persistent resources from accidental replacement. An execution-owner change requires fenced admission,
+reconciled effects, positive retirement of the previous owner, and preserved files and credentials. Activate one owner.
+Run only the migration or import that the actual stored data requires; completed cutover procedures are not recurring
+release prerequisites. Migration and import do not grant authority or clear saved maintenance holds.
 
 Before replacing a guest image, require a fresh committed file checkpoint, actual provider retirement, and capacity
 release. An accepted Stop, elapsed grace period, or successful infrastructure rollout is not a checkpoint receipt.
@@ -76,7 +81,7 @@ incomplete rollout as failure. An empty plan proves convergence, not notificatio
 ## Checks
 
 Run builds, artifact verification, and infrastructure checks without cloud credentials. Verify the Worker module,
-Console inventory, notices, source revision, historical wire entries, migration checksums, and qualification inputs.
+Console inventory, notices, source revision, current API catalog, migration checksums, and qualification inputs.
 Mutate a referenced asset or evidence file and require verification to refuse it. Verify startup from the built guest
 archive as its declared user.
 
@@ -87,15 +92,20 @@ Reject a staged version that binds an unprovisioned class, and verify atomic act
 preserves existing namespaces. Exercise a failed follow-up read and a lost upload response without losing accepted
 resource identities or repeating the upload.
 
-For authorized cloud qualification, verify health, readiness, actual Console assets, notification intake, an application
-restart with pending input, native execution, and explicit tool communication. Qualify a real approval decision after
-restart through its integration owner. Local celld success does not establish workerd container or cloud parity.
+Reuse the retained scenario catalog for local source checks and exact-artifact acceptance. Exercise the shared public
+operation path at each declared target; record target capabilities instead of treating a local provider as hosted proof.
+After authorized cloud activation, verify serving artifact identity, health, readiness, and actual Console assets.
+Run additional hosted or integration qualification when the changed boundary requires it. Notification delivery,
+pending-input recovery, explicit tool communication, and genuine approval decisions retain their owning scenarios.
+Local celld success does not establish workerd container or cloud parity.
 Does every application and environment composition inherit the public-fetch flag from the shared deployment owner?
-After hosted activation, exercise a public sandbox maintenance request that calls the same canonical origin and
-observe its internal handler and result. Standalone workerd cannot qualify Cloudflare's own-zone routing behavior.
+For changed routing or maintenance composition, exercise a hosted public sandbox request through the canonical origin
+and observe its internal handler and result. Standalone workerd cannot qualify Cloudflare's own-zone routing behavior.
 Record artifact identities, live resource readbacks, remaining uncertainties, and end-to-end receipts in the delivery
 issue or pull request. For an image change, retain checkpoint, stopped-provider, capacity-release, and restored-file
 receipts before calling the rollout complete.
+Reload an application-only edit and explicitly apply an environment-handler edit. Verify current served behavior,
+file and command receipts, and the declared guest lifetime. Successful compilation alone does not establish applied code.
 
 ## Local adaptations
 

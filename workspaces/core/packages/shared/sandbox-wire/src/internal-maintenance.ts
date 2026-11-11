@@ -1,4 +1,11 @@
-import { BYTES_PER_KIBIBYTE, RecordText, RemoteSandboxId, SandboxOperationId, wireStruct } from '@mechane/records';
+import {
+  BYTES_PER_KIBIBYTE,
+  RecordText,
+  RemoteSandboxId,
+  SandboxOperationId,
+  SHA256_PATTERN,
+  wireStruct,
+} from '@mechane/records';
 import { Schema } from 'effect';
 import { SandboxEnvironmentState } from './environment-state.ts';
 
@@ -59,7 +66,7 @@ export const SandboxArchive = wireStruct({
   fields: {
     bytes: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
     parts: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
-    sha256: Schema.String.check(Schema.isPattern(/^[a-f0-9]{64}$/)),
+    sha256: Schema.String.check(Schema.isPattern(SHA256_PATTERN)),
   },
 });
 

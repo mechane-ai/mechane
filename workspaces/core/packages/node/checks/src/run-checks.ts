@@ -69,7 +69,7 @@ export const runChecks = Effect.fn('runChecks')(function* ({
   const files = yield* trackedFiles({ inherited });
   const sources = yield* parsedSources({ members });
   const groups = yield* Effect.forEach(CHECKS, (check) => check({ members, files, sources }), { concurrency: 1 });
-  const locks = yield* checkLocks({ members, files, sources, baseBranch, inherited });
+  const locks = yield* checkLocks({ members, files, sources });
   const ratchets = ratchetRules();
   const held = yield* ownedFindings({ members, sources });
   const raised = yield* raisedCounts({ ratchets, baseBranch, inherited });

@@ -13,7 +13,6 @@ import { Option, Result, Schema } from 'effect';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { GuestConnection } from '../types.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
-import { checkpointSupported } from './checkpoint-supported.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 
@@ -28,29 +27,15 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
 
   const codec = Schema.fromJsonString(WorkspaceArchiveRequest);
   const body = Schema.encodeSync(codec)({ mode });
-  const isCheckpointSupported = await checkpointSupported({ guest, machineId, generation });
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {
     return;
   }
 
-  const step: WorkspaceStep = (() => {
-    if (isCheckpointSupported) {
-      return WorkspaceStep.Checkpoint;
-    }
-
-    return WorkspaceStep.Archive;
-  })();
-
-  const init: RequestInit = (() => {
-    if (isCheckpointSupported) {
-      return { method: HttpMethod.Put, headers: { [HttpHeader.ContentType]: MediaType.Json }, body };
-    }
-
-    return { method: HttpMethod.Put };
-  })();
-
-  const response = await workspaceRequest({ guest, machineId, generation, step, part, init });
+  const step = WorkspaceStep.Checkpoint;
+  const init: RequestInit = { method: HttpMethod.Put, headers: { [HttpHeader.ContentType]: MediaType.Json }, body };
+  const lease = Option.some(checkpoint.lease);
+  const response = await workspaceRequest({ guest, machineId, generation, step, part, init, lease });
 
   if (response.status === HttpStatusCode.NoContent) {
     return;
@@ -71,11 +56,11 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
 type ArchiveModeInput = Pick<ArchiveCheckpointInput, 'store' | 'checkpoint'>;
 
 function archiveMode({ store, checkpoint }: ArchiveModeInput): ArchiveMode {
-  if ('executionId' in checkpoint) {
+  const purpose = checkpoint.purpose;
+
+  if (FileCheckpointPurpose.guards.Automatic(purpose)) {
     return ArchiveMode.Snapshot;
   }
-
-  const purpose = checkpoint.purpose;
 
   if (FileCheckpointPurpose.guards.Drain(purpose)) {
     return ArchiveMode.Drain;

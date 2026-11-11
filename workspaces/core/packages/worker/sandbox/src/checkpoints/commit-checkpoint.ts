@@ -6,7 +6,7 @@ import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { assertRecoveryCheckpointFence } from './recovery-checkpoint-fence.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
-/** The receipt cannot become observable before its complete workspace generation is the committed head. */
+/** A file head becomes observable only after its complete immutable manifest is published. */
 export async function commitCheckpoint({
   store,
   workspace,
@@ -25,39 +25,48 @@ export async function commitCheckpoint({
   const commit: () => void = () => {
     const current = store.workspace().checkpoint;
 
-    // Cancellation can retire the command's checkpoint while its last R2 write is in flight.
+    // Cancellation can retire this generation while its last R2 write is in flight.
     if (Option.isNone(current) || !isCurrentCheckpoint({ store, checkpoint })) {
       return;
     }
 
     const now = DateTime.nowUnsafe();
 
-    if ('executionId' in checkpoint) {
-      const { executionId, receipt } = checkpoint;
+    if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+      assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
 
-      store.settleExecution({ executionId, machineId, receipt, now });
-    } else {
-      if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
-        assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
+      const stop = store.latestSandboxStop();
 
-        const stop = store.latestSandboxStop();
+      const hasFailedStop = Option.exists(
+        stop,
+        (value) => Option.contains(value.machineId, machineId) && value.phase === SandboxStopPhase.Failed,
+      );
 
-        const hasFailedStop = Option.exists(
-          stop,
-          (value) => Option.contains(value.machineId, machineId) && value.phase === SandboxStopPhase.Failed,
-        );
-
-        if (hasFailedStop) {
-          store.setSandboxIdleAt({ at: now });
-        }
+      if (hasFailedStop) {
+        store.setSandboxIdleAt({ at: now });
       }
+    }
 
+    if (!FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
       const result = FileCheckpointResult.cases.Committed.make({ generation });
 
       store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
     }
 
-    store.commitWorkspace({ generation, parent, archive, manifestSha256 });
+    const capturedAt = Option.some(checkpoint.startedAt);
+    const capturedMachineId = Option.some(machineId);
+    const shouldClearRecovery = !FileCheckpointPurpose.guards.Automatic(checkpoint.purpose);
+
+    store.commitWorkspace({
+      generation,
+      parent,
+      archive,
+      manifestSha256,
+      capturedAt,
+      capturedMachineId,
+      capturedSequence: checkpoint.capturedSequence,
+      shouldClearRecovery,
+    });
   };
 
   store.atomic({ run: commit });

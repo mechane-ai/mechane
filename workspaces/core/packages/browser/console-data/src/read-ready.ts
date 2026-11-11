@@ -30,7 +30,7 @@ const readDefinitions = {
   turnEvents: { tables: ['events'], cardinality: 'many' },
   evidence: { tables: ['evidenceArtifacts'], cardinality: 'many' },
   evidenceArtifact: { tables: ['evidenceArtifacts'], cardinality: 'one' },
-  environmentProcesses: { tables: ['environmentProcesses'], cardinality: 'many' },
+  environment: { tables: ['environments'], cardinality: 'one' },
   environmentProcess: { tables: ['environmentProcessDetails'], cardinality: 'one' },
   allowance: { tables: ['allowance'], cardinality: 'one' },
 } as const satisfies Readonly<Record<ReadKind, ReadDefinition>>;

@@ -7,6 +7,7 @@ import {
   WORKSPACE_TRANSFER_BATCH_PARTS,
 } from '../constants.ts';
 import { releaseMachineWorkspace } from '../workspace/release-machine-workspace.ts';
+import { releaseWorkspaceGeneration } from '../workspace/release-workspace.ts';
 import { advanceCheckpointStep } from './advance-checkpoint-step.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { failCheckpoint } from './fail-checkpoint.ts';
@@ -62,8 +63,25 @@ export async function advanceCheckpoint({
 
       failCheckpoint({ ...input, cause: advanced.failure });
 
-      if (!('executionId' in checkpoint) && FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+      if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
         await releaseRecoveryCheckpoint(input);
+
+        return;
+      }
+
+      if (FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
+        const guest = await provider.connect({ machineId: checkpoint.machineId });
+
+        if (Option.isSome(guest)) {
+          const lease = Option.some(checkpoint.lease);
+
+          await releaseWorkspaceGeneration({
+            guest: guest.value,
+            machineId: checkpoint.machineId,
+            generation: checkpoint.generation,
+            lease,
+          });
+        }
 
         return;
       }

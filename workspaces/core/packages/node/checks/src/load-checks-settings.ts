@@ -5,14 +5,26 @@ import { resolve } from 'node:path';
 import { ChecksCommand } from './constants.ts';
 import type { ChecksSettings } from './types.ts';
 
-/** The variables the checks' children inherit: git and Bun are found on `PATH`, and git reads the home folder. */
-const INHERITED_VARIABLES = ['PATH', 'HOME'] as const;
+/** Target children inherit tool lookup and the operator's local container connection. */
+const INHERITED_VARIABLES = [
+  'PATH',
+  'HOME',
+  'TMPDIR',
+  'XDG_RUNTIME_DIR',
+  'DOCKER_HOST',
+  'DOCKER_CONTEXT',
+  'DOCKER_CONFIG',
+  'CONTAINER_HOST',
+  'CELLD_CONTAINER_HOST_SERVICES',
+  'MECHANE_NODE_EXECUTABLE',
+  'NODE_OPTIONS',
+] as const;
 
 /** A variable the checks' children inherit, by its name. */
 type InheritedVariable = (typeof INHERITED_VARIABLES)[number];
 
-/** What a command takes from the arguments after its name: a fix's rule, and the paths. */
-type CommandArguments = Pick<ChecksSettings, 'rule' | 'paths'>;
+/** Target execution keeps its arguments intact; fix and file commands resolve their paths. */
+type CommandArguments = Pick<ChecksSettings, 'rule' | 'paths' | 'target' | 'targetArguments'>;
 
 /** A command and the arguments the command line names after it. */
 type CommandArgumentsInput = { readonly command: ChecksCommand; readonly rest: ReadonlyArray<string> };
@@ -49,13 +61,29 @@ export const loadChecksSettings = Effect.fn('loadChecksSettings')(function* (): 
   return { command, ...commandArguments({ command, rest }), baseBranch, inherited };
 });
 
-/** A fix names its rule before its paths; every other argument of a command is a path. */
+/** Target arguments remain separate argv entries, including a scenario filter containing spaces. */
 function commandArguments({ command, rest }: CommandArgumentsInput): CommandArguments {
+  if (command === ChecksCommand.RunTarget) {
+    const [target, ...targetArguments] = rest;
+
+    return { rule: Option.none(), paths: [], target: Option.fromNullishOr(target), targetArguments };
+  }
+
   if (command !== ChecksCommand.Fix) {
-    return { rule: Option.none(), paths: rest.map((path) => resolve(path)) };
+    return {
+      rule: Option.none(),
+      paths: rest.map((path) => resolve(path)),
+      target: Option.none(),
+      targetArguments: [],
+    };
   }
 
   const [rule, ...paths] = rest;
 
-  return { rule: Option.fromNullishOr(rule), paths: paths.map((path) => resolve(path)) };
+  return {
+    rule: Option.fromNullishOr(rule),
+    paths: paths.map((path) => resolve(path)),
+    target: Option.none(),
+    targetArguments: [],
+  };
 }

@@ -1,7 +1,7 @@
 ---
 name: data-stored-and-shipped-formats
-message: Migrate every stored instance and keep what released clients read before narrowing a stored or shipped format.
-paths: ["**/*.ts", "packages/worker/sandbox/src/service/**", "lint/wire.json", "lint/shipped-wire.json", "lint/migrations.json"]
+message: Preserve actual stored data and immutable evidence while updating supported consumers through an explicit cutover.
+paths: ["**/*.ts", "packages/worker/sandbox/src/service/**", "lint/wire.json", "lint/migrations.json"]
 ---
 
 ## Rules
@@ -30,8 +30,12 @@ Treat durable workflow payload models, and every model they embed, as append-onl
 Give new payload fields defaults, and remove or retype a field only after every history that carries it has closed.
 Ship a workflow change that existing histories cannot replay behind a version gate, after draining those histories, or on a new queue with an explicit cutover of old runs.
 
-Keep each field, route, and literal value that a released client reads until a release that stops reading it has shipped and the client's owner has retired the older releases.
-Treat a field, reader, or converter kept because stored data, an open history, or a released client still needs it as part of the current format, not a compatibility shim.
+Update supported clients and services together when changing their shared format.
+An authorized hard cutover may retire old clients, routes, and runtime implementations without keeping a compatibility path.
+Identify the supported consumers and fence retired writers before switching authority.
+Preserve actual stored data, open work, files, credentials, and immutable evidence through the owning migration.
+Retiring a protocol does not authorize deleting those records or replaying their effects.
+Keep a reader or converter only while retained data or a supported consumer needs it.
 
 ## Checks
 
@@ -40,39 +44,20 @@ Parse every stored instance with the changed reader and merge only with zero fai
 Read the diff itself for narrowings that a schema comparison misses, such as changed defaults, validators, converters, and narrowings inside optional fields, list items, or unions.
 Does the diff add a read-time translation without an owner and removal condition, or narrow an existing document version instead of adding a new one?
 For a durable workflow payload change, replay recorded histories that carry the changed models.
-Does a released client read a removed field, route, or literal value at any release its owner still supports, starting from the oldest?
+Are supported consumers updated together, retired writers fenced, and retained records readable after the cutover?
 
 ## Local adaptations
 
-The November 2026 native-runtime cutover replaces the Pi and Durable Object agent stores, old workflow histories,
-and superseded public operations without a compatibility reader. The owner explicitly authorized fresh product
-state for this cutover. Legacy format-lock entries do not require retaining the old execution engine. This is a
-one-time deployment baseline, not permission for later releases to discard data or narrow active workflow payloads.
+The November 11, 2026 local policy replaces the adopted released-client compatibility requirement with the forward-only
+cutover rules above. Completed migration procedures remain historical evidence, not prerequisites for every release.
 
-The owner-approved notification cutover in issue 108 retires the superseded public protocol and CLI surfaces for
-runtime 0.26.0 and client 0.3.0, with owned consumers updated together. This is a release-specific client retirement,
-not another fresh-state cutover. The active wire snapshot may be regenerated from the replacement public catalog for
-this release; subsequent wire changes remain subject to the checks and retirement rules above. This permission does
-not remove entries from the cumulative shipped-format history. Keep the existing migration checksum entries, including
-domain migrations 1 and 2, unchanged. Public route retirement gives no authority to discard stored history, work records,
-memory, files, receipts, credentials, or replayable Workflow state. Preserve
-those through the owning data migration and history readers; do not retain obsolete public endpoints as a second API.
+Keep the current API catalog in `lint/wire.json`. Release descriptors describe their current supported formats; retired
+wire entries do not impose a cumulative deployment veto. Keep the exact applied migration checksum ledger and immutable
+execution receipts. A removed API cannot make retained data unreadable or introduce a second execution owner.
 
-Keep the active API catalog in `lint/wire.json` and cumulative shipped wire history in `lint/shipped-wire.json`.
-Every active entry must appear in the shipped history. Preserve each shipped category and exact entry after its API
-retires; the history records published formats without defining current routes or retaining their implementations.
-Release descriptors emit this cumulative history and the unchanged migration checksum ledger. The active catalog
-cannot substitute for either historical ledger. The existing lock checks enforce active coverage and append-only
-shipped history; the installation provider rejects a descriptor that removes a previously shipped wire or migration entry.
-
-The runtime 0.26.2 metadata repair restores the union of the installed 0.25.4 and already-published 0.26.0 and 0.26.1
-descriptors. It preserves domain migrations 1 through 4 and schema version 4. Correct metadata in a new immutable release;
-do not edit published assets, restore retired endpoints, or bypass the provider's preservation check.
-
-After the initial native-runtime baseline, apply the stored-data and active-history rules above to Mechane Postgres
-records and Workflow histories. Coordinate code and schema changes for overlapping service versions. Keep immutable
-release assets and recorded execution receipts meaningful across retries. The sandbox guest wire remains a separately deployed boundary;
-change its caller and image together or use an explicitly versioned endpoint.
+The sandbox guest is a separately deployed boundary. Update its caller and image together through the installation
+owner, preserving the last committed home and unresolved command outcomes. Do not retain an obsolete guest path solely
+because a previously published descriptor named it.
 
 The admitted Console cache contains derived server records and page metadata only. Its owner may advance the cache
 generation and discard incompatible copies after server admission. This exception excludes authoritative server data,
@@ -80,7 +65,7 @@ credentials, drafts, unsent commands, and submission acknowledgements.
 
 Native AI SDK messages and streams use the upstream format. Structured presentation records keep their validated
 catalog/spec and readable fallback. Domain API encoders remain declared once in the protocol package. A later SDK
-upgrade must qualify stored-message reads, stream replay, and pending workflow resumption before publication.
+upgrade must qualify retained-message reads, native recovery, and pending work before publication.
 
 Public release files are immutable. A changed artifact requires a new release and checksum. The CLI's saved-login,
 JSON-envelope, command-reference, and eval-plan versions remain the responsibility of their owning declarations.

@@ -38,6 +38,10 @@ the admitted workspace and mech. Refuse changed input under an existing executio
 an uncertain response instead of dispatching another effect. Check the active owner's fence and notification watermark
 before a fresh effect, as required by contract 124; a refused dispatch must not allocate compute or mint credentials.
 
+Keep terminal command receipts independent of background file uploads. Observe the original exit, timeout, and bounded
+output without resolving fresh credentials or waiting for a remote snapshot. File-checkpoint status is separate evidence;
+an execution receipt alone cannot establish saved files, safe machine retirement, or external publication success.
+
 Apply the workspace's current `machines` limit before physical acquisition. The capacity owner coordinates command and
 maintenance starts. Check policy and reserve under one workspace lock so concurrent mechs cannot exceed it. Reusing an
 allocated machine consumes no additional slot. A zero limit refuses commands even on an already warm machine.

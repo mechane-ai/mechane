@@ -14,7 +14,9 @@ mise run dev
 ```
 
 Open the printed Console URL. Source development retains local state and supplies deterministic identity and model
-fixtures. Use `mise run mechane -- --help` in another terminal for the source CLI.
+fixtures. Use `mise run dev -- status` to inspect it and `mise run dev -- cli --help` for its source CLI. App/UI reload
+is automatic; environment or guest source changes use explicit apply through the
+[local guide](workspaces/core/packages/node/stack/README.md).
 
 | Installation | Start here                                                   | Requirements                                               |
 | ------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -65,9 +67,12 @@ Load `@mechane-ai/elements/styles.css` once and import the families you use, suc
 - [Development](.config/README.md): pinned tools and standalone checks.
 
 `workspaces/core` contains the product. Its [package map](workspaces/core/dependencies.json) declares packages and
-layers. Read the [repository contracts](.contracts/index.md) before contributing. Checks use deterministic providers
-without cloud accounts or paid models. This public source builds independently and preserves required third-party
-attribution.
+layers. Read the [repository contracts](.contracts/index.md) before contributing.
+
+Use `mise run check:fast` while editing; it reuses successful target results only while their inputs match. Runtime
+releases use one [candidate acceptance](workspaces/core/packages/node/distribution/README.md) against built artifacts.
+Checks use deterministic providers without cloud accounts or paid models. This public source builds independently and
+preserves required third-party attribution.
 
 ## License
 

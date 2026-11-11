@@ -12,19 +12,25 @@ type WorkerBuildOptions = {
   readonly output: string;
   readonly isWatched: boolean;
   readonly logFile: string;
-  readonly onBuild: () => Promise<void>;
+  readonly onBuild: (input: WorkerBuildResult) => Promise<void>;
 };
+
+type WorkerBuildResult = { readonly durationMs: number };
 
 export async function startWorkerBuild(input: WorkerBuildOptions): Promise<BuildContext> {
   const entry = resolve(input.entry);
   const output = resolve(input.output);
   const temporaryOutput = join(dirname(output), 'next-worker.mjs');
+  const measured = { startedAtMs: performance.now() };
 
   await mkdir(dirname(temporaryOutput), { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
 
   const publish: Plugin = {
     name: 'publish-successful-worker',
     setup(build) {
+      build.onStart(() => {
+        measured.startedAtMs = performance.now();
+      });
       build.onEnd(async (result) => {
         const errors = await formatMessages(result.errors, { kind: 'error', color: false });
         const warnings = await formatMessages(result.warnings, { kind: 'warning', color: false });
@@ -58,7 +64,10 @@ export async function startWorkerBuild(input: WorkerBuildOptions): Promise<Build
 
         await writeFile(temporaryOutput, bundle.contents, { mode: PRIVATE_FILE_MODE });
         await rename(temporaryOutput, output);
-        await input.onBuild();
+
+        const durationMs = performance.now() - measured.startedAtMs;
+
+        await input.onBuild({ durationMs });
       });
     },
   };

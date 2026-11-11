@@ -7,7 +7,6 @@
     "packages/worker/server/.output/**",
     "**/.swc/**",
     "**/reference.json",
-    "lint/shipped-wire.json",
     "lint/baseline/**",
     "lint/ast-grep/rules/boolean-names-tsx.yml",
     "lint/ast-grep/rules/ui-control-geometry-typescript.yml",

@@ -1,5 +1,6 @@
 import { PROGRAM_ARGUMENTS_START } from '@mechane/program';
 import { RELEASE } from '@mechane/protocol';
+import { SHA256_PATTERN } from '@mechane/records';
 import { Effect, Option, Record, Schema } from 'effect';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,8 +25,13 @@ const OUTPUT_URL: Readonly<URL> = new URL('../../../../dist/distribution', impor
 const OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 
 const ARGUMENT_MODES: ReadonlySet<DistributionMode> = new Set([
-  DistributionMode.Qualify,
+  DistributionMode.Accept,
   DistributionMode.VerifyQualified,
+]);
+
+const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
+  DistributionMode.Build,
+  DistributionMode.Candidate,
 ]);
 
 /** Reads the distribution command and its allowed child-process environment once. */
@@ -38,7 +44,11 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
 
   const mode = yield* Schema.decodeUnknownEffect(modeSchema)(modeText).pipe(
     Effect.mapError(
-      () => new DistributionFailed({ step: DistributionStep.Settings, reason: 'use build or verify OUTPUT' }),
+      () =>
+        new DistributionFailed({
+          step: DistributionStep.Settings,
+          reason: 'use candidate, accept, build, verify, preview-module, or verify-qualified',
+        }),
     ),
   );
 
@@ -46,14 +56,15 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
   const isMissingFolder = Option.isNone(selectedFolder);
 
   const needsArgument = ARGUMENT_MODES.has(mode);
-  const isMissingRequiredFolder = mode !== DistributionMode.Build && isMissingFolder;
+  const permitsDefaultFolder = DEFAULT_FOLDER_MODES.has(mode);
+  const isMissingRequiredFolder = !permitsDefaultFolder && isMissingFolder;
   const hasWrongArguments = extra.length > 0 || needsArgument !== (argument !== undefined);
 
   if (isMissingRequiredFolder || hasWrongArguments) {
     return yield* new DistributionFailed({
       step: DistributionStep.Settings,
       reason:
-        'use build [OUTPUT], verify OUTPUT, preview-module OUTPUT, qualify OUTPUT REQUEST.json, or verify-qualified OUTPUT SHA256',
+        'use candidate [OUTPUT], accept OUTPUT ARTIFACTS_SHA256, build [OUTPUT], verify OUTPUT, preview-module OUTPUT, or verify-qualified OUTPUT SHA256',
     });
   }
 
@@ -69,5 +80,15 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
 
   const entries = INHERITED_NAMES.flatMap(variableEntries);
 
-  return { mode, folder: resolve(folder), inherited: Record.fromEntries(entries), argument };
+  if (needsArgument && !SHA256_PATTERN.test(argument ?? '')) {
+    return yield* new DistributionFailed({ step: DistributionStep.Settings, reason: 'select an exact SHA-256 digest' });
+  }
+
+  return {
+    mode,
+    folder: resolve(folder),
+    inherited: Record.fromEntries(entries),
+    nodeExecutable: process.execPath,
+    argument,
+  };
 });

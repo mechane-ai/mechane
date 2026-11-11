@@ -75,4 +75,32 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
   ({ sql }) => {
     sql.exec('ALTER TABLE file_checkpoint_results ADD COLUMN purpose TEXT');
   },
+  ({ sql }) => {
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN activity_sequence INTEGER NOT NULL DEFAULT 0');
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN last_activity_at_ms INTEGER');
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN automatic_at_ms INTEGER');
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN checkpoint_error TEXT');
+    sql.exec('ALTER TABLE sandbox_workspace ADD COLUMN checkpoint_lease INTEGER NOT NULL DEFAULT 0');
+    sql.exec(
+      'CREATE TABLE legacy_checkpoint_receipts (execution_id TEXT NOT NULL, generation TEXT NOT NULL, checkpoint TEXT NOT NULL, PRIMARY KEY (execution_id, generation)) STRICT',
+    );
+    sql.exec(
+      "INSERT INTO legacy_checkpoint_receipts (execution_id, generation, checkpoint) SELECT json_extract(checkpoint, '$.executionId'), json_extract(checkpoint, '$.generation'), checkpoint FROM sandbox_workspace WHERE checkpoint IS NOT NULL",
+    );
+    sql.exec(
+      "UPDATE executions SET status = CASE json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.receipt.state') WHEN 'exited' THEN 'exited' ELSE 'timed_out' END, exit_code = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.receipt.exitCode'), duration_ms = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.receipt.duration'), output_text = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.receipt.output.text'), omitted_bytes = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.receipt.output.omittedBytes'), settled_at_ms = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.startedAt') WHERE status = 'dispatched' AND id = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.executionId') AND machine_id = json_extract((SELECT checkpoint FROM sandbox_workspace WHERE slot = 1), '$.machineId')",
+    );
+    sql.exec(
+      "UPDATE sandbox_workspace SET file_checkpoint = json_set(json_remove(checkpoint, '$.executionId', '$.receipt'), '$.purpose', json_object('_tag', 'Maintenance', 'operationId', json_extract(checkpoint, '$.generation'))), checkpoint = NULL WHERE checkpoint IS NOT NULL AND file_checkpoint IS NULL",
+    );
+    sql.exec(
+      "INSERT INTO file_checkpoint_results (operation_id, started_at_ms, result, purpose) SELECT 'maintenance-' || json_extract(file_checkpoint, '$.purpose.operationId'), json_extract(file_checkpoint, '$.startedAt'), json_object('_tag', 'Pending'), json_extract(file_checkpoint, '$.purpose') FROM sandbox_workspace WHERE json_extract(file_checkpoint, '$.purpose._tag') = 'Maintenance' ON CONFLICT DO NOTHING",
+    );
+    sql.exec(
+      "UPDATE sandbox_workspace SET checkpoint_lease = 1, file_checkpoint = json_set(file_checkpoint, '$.lease', 1) WHERE file_checkpoint IS NOT NULL",
+    );
+    sql.exec(
+      "CREATE TRIGGER execution_workspace_activity AFTER UPDATE OF status ON executions WHEN OLD.status = 'pending' AND NEW.status = 'dispatched' BEGIN UPDATE sandbox_workspace SET activity_sequence = activity_sequence + 1, last_activity_at_ms = NEW.dispatched_at_ms, automatic_at_ms = COALESCE(automatic_at_ms, NEW.dispatched_at_ms + 60000) WHERE slot = 1; END",
+    );
+  },
 ];

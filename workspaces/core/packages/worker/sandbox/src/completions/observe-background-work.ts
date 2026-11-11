@@ -10,7 +10,7 @@ import { advanceWorkspace } from '../workspace/advance-workspace.ts';
 export async function observeBackgroundWork({ store, provider, workspace }: WorkspaceProviderStepInput): Promise<void> {
   const input = { store, provider, workspace };
 
-  await advanceWorkspace(input);
+  await advanceWorkspace({ ...input, shouldAdmitCommand: false });
   await observeMachine(input);
 
   for (const execution of store.unfinishedExecutions()) {

@@ -1,6 +1,7 @@
 import { MachineId } from '@mechane/records';
-import { ExecutionStatus, FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
+import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { DateTime, Option, Schema } from 'effect';
+import { AUTOMATIC_CHECKPOINT_RETRY } from '../constants.ts';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { CheckpointStepInput } from './types.ts';
 
@@ -10,37 +11,36 @@ type FailedCheckpointInput = CheckpointStepInput & { readonly cause: unknown };
 export function failCheckpoint({ store, checkpoint, cause }: FailedCheckpointInput): void {
   const { machineId, generation } = checkpoint;
 
-  if ('executionId' in checkpoint) {
-    const execution = store.execution({ executionId: checkpoint.executionId });
-
-    if (Option.isNone(execution) || execution.value.status !== ExecutionStatus.Dispatched) {
-      return;
-    }
-  }
-
   const reason = failureReason({ cause });
 
-  const recover: () => void = () => {
+  if (FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
     const now = DateTime.nowUnsafe();
+    const at = DateTime.addDuration(now, AUTOMATIC_CHECKPOINT_RETRY);
+    const error = Option.some(reason);
 
-    if ('executionId' in checkpoint) {
-      const { executionId, receipt } = checkpoint;
+    store.atomic({
+      run: () => {
+        store.retireWorkspace({ generation });
+        store.scheduleAutomaticCheckpoint({ at, error });
+      },
+    });
 
-      store.failPersistence({ executionId, machineId, receipt, reason, now });
-    } else {
-      const result = FileCheckpointResult.cases.Failed.make({ reason });
+    return;
+  }
 
-      store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
+  const recover: () => void = () => {
+    const result = FileCheckpointResult.cases.Failed.make({ reason });
 
-      if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
-        return;
-      }
+    store.finishFileCheckpoint({ purpose: checkpoint.purpose, result });
 
-      if (FileCheckpointPurpose.guards.Drain(checkpoint.purpose)) {
-        const identity = MachineId.make(machineId);
+    if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+      return;
+    }
 
-        store.clearMachineDrain({ machineId: identity });
-      }
+    if (FileCheckpointPurpose.guards.Drain(checkpoint.purpose)) {
+      const identity = MachineId.make(machineId);
+
+      store.clearMachineDrain({ machineId: identity });
     }
 
     store.recoverWorkspace({ generation, machineId, reason });

@@ -1,7 +1,7 @@
 ---
 name: managed-processes
 message: Keep managed processes bound to their original machine and preserve files when checkpointing or stopping them.
-paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/execution/completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/environment.tsx"]
+paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/execution/completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/{environment,environment-durability}.tsx"]
 ---
 
 ## Rules
@@ -37,13 +37,15 @@ Detached or uncertain work otherwise receives its terminal notice.
 Never infer prior observation from core receipt completion alone, a callback claim, or in-memory state. The internal
 historical-note exporter may suppress its own completion through a trusted stored purpose; model input cannot select it.
 
-Keep terminal execution, saved files, and notification admission distinct. A process exit does not establish a saved home;
-a persistence-failed command does not become successful through delivery. Completion notifications contain bounded
+Keep terminal execution, saved files, and notification admission distinct. Commit the known exit code, timeout, and
+bounded output before returning terminal command completion; remote checkpoint upload is not part of that receipt.
+A process exit does not establish a saved home. Completion notifications contain bounded
 correlation and outcome, not secret-bearing output. The agent chooses whether to inspect output or communicate externally;
 the callback itself sends no conversational message or reaction.
 
-Retain a known foreground exit code or timeout when saving its files fails. Historical failure records that omitted
-that outcome remain explicitly unknown. A save failure never becomes a successful durable command result.
+Retain a known foreground exit code or timeout when saving its files fails. File status reports the save failure
+separately without changing that terminal outcome. Historical failure records that omitted the outcome remain
+explicitly unknown; a background checkpoint cannot rewrite them or turn their failed receipt into success.
 
 Own each process group in the guest scope. Stop that group when its leader exits, on explicit stop, or on guest shutdown.
 Preserve processes across ordinary tool waits and bounded activation completion while their machine remains alive.
@@ -57,11 +59,11 @@ Freeze new mutations before creating a workspace snapshot. In container scope, p
 using process identities that distinguish PID reuse. In host process scope, touch only owned groups. Preserve an existing
 stop and resume only processes this snapshot paused. Bound failure and release an unsuccessful freeze for recovery.
 
-For an ordinary checkpoint, resume writers once the immutable archive is complete. Keep new mutating admission fenced
-until the generation is committed or released. Commit the completed command's receipt with its generation as before.
+For an automatic checkpoint, coalesce requests under one owner and yield to foreground work before capture. Resume
+writers and release mutating admission once the immutable archive is complete. Uploading that archive can proceed
+beside later commands; its committed head represents the captured files, not every later write.
+Required file barriers wait for their complete generation rather than returning a command's earlier terminal receipt.
 For a graceful drain, take a fresh final checkpoint and keep writers frozen until provider stop is confirmed.
-Negotiate the mode-bearing checkpoint route. Older guests retain their released archive behavior, which terminates
-writers, until their machine retires; never send a new request body to that released route.
 
 Preserve live files and the previous committed head after a failed save. A failed provider stop retains the drain fence
 and capacity ownership. Snapshotting files does not preserve process memory or establish application transaction consistency.
@@ -73,10 +75,8 @@ closed recovery action. Completed requires confirmed provider shutdown and match
 were admitted. A failed save leaves repair explicit; a failed provider stop retries its original drain. Retain earlier
 receipts after recovery. Inspection never starts a machine, dispatches work, or renews its lease.
 
-When adopting Stop receipts over retained drain intents, keep their existing operation and machine identities. Leave
-an unrecorded request time unknown. The sandbox owner materializes these receipts during inspection or advancement;
-retire that backfill only after every retained drain has a receipt and no supported writer can create a bare drain.
-A historical committed drain still requires provider confirmation before its new receipt claims completed shutdown.
+Preserve retained Stop and drain operation identities and machine evidence. Leave an unrecorded request time unknown.
+A historical committed drain still requires provider confirmation before its receipt claims completed shutdown.
 
 When an activation requests a file barrier with no live machine, an existing head is insufficient by itself. For an
 environment whose machine became ready and could admit writers, require the latest such machine's recorded drain
@@ -129,7 +129,8 @@ Complete `start_process` with a Running outcome, then observe Exited and Lost se
 notification despite the completed start receipt. Return termination in the original tool result and verify no redundant
 notice. Keep initial admission, terminal observation, and callback authentication as separate assertions.
 
-During checkpoint qualification, keep a managed writer running across ordinary commands. Verify the stable archive,
+During checkpoint qualification, keep a managed writer running across ordinary commands. Hold remote upload and require
+the exited command's durable result and the next command to progress. Verify one coalesced capture, the stable archive,
 resumption after copy, and retained files after restore. Inject a save failure and a provider-stop failure separately;
 confirm the former preserves recoverable live files and the latter never resumes writers after the final snapshot.
 Repeat Stop and inspect its original receipt after Worker replacement. Inject a failed checkpoint and a failed provider

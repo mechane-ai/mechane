@@ -30,12 +30,15 @@ export async function copySnapshotPart({
     return;
   }
 
+  const lease = Option.none();
+
   await workspaceRequest({
     guest,
     machineId,
     generation,
     step: WorkspaceStep.Part,
     part: selectedPart,
+    lease,
     init: { method: HttpMethod.Put, body },
   });
 

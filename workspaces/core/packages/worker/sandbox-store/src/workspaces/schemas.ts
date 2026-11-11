@@ -1,13 +1,11 @@
-import { MachineId, RecordId, SandboxOperationId, SHA256_PATTERN } from '@mechane/records';
+import { MachineId, RecordId, SandboxOperationId, Sequence, SHA256_PATTERN } from '@mechane/records';
 import {
-  ExecutionId,
   ExecutionProgress,
   SandboxArchive,
   SandboxCheckpointResult,
   SandboxRecoveryCheckpointRequest,
-  SettledReceipt,
 } from '@mechane/sandbox-wire';
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
 
 /** The immutable generation document published after every archive part exists. */
@@ -24,11 +22,14 @@ export type WorkspaceManifest = typeof WorkspaceManifest.Type;
 export const WorkspaceSnapshot = Schema.Struct({
   ...WorkspaceManifest.fields,
   manifestSha256: Schema.OptionFromOptionalKey(Schema.String.check(Schema.isPattern(SHA256_PATTERN))),
+  capturedMachineId: Schema.OptionFromOptionalKey(MachineId),
+  capturedAt: Schema.OptionFromOptionalKey(Schema.DateTimeUtcFromMillis),
+  capturedSequence: Schema.OptionFromOptionalKey(Sequence),
 });
 
 export type WorkspaceSnapshot = typeof WorkspaceSnapshot.Type;
 
-/** Transfer state shared by command receipts and explicit file operations. */
+/** One captured generation retains its identity through upload and interruption. */
 const CheckpointTransfer = Schema.Struct({
   generation: RecordId,
   /** Absent for the first committed generation. */
@@ -38,19 +39,14 @@ const CheckpointTransfer = Schema.Struct({
   /** Absent until the guest finishes and validates its archive. */
   archive: Schema.OptionFromNullOr(Schema.toType(SandboxArchive)),
   part: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  capturedSequence: Schema.OptionFromOptionalKey(Sequence),
+  lease: Schema.Int,
+  isAborting: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(false))),
 });
-
-/** A command receipt commits atomically with its filesystem generation. */
-export const CommandCheckpoint = Schema.Struct({
-  ...CheckpointTransfer.fields,
-  executionId: ExecutionId,
-  receipt: SettledReceipt,
-});
-
-export type CommandCheckpoint = typeof CommandCheckpoint.Type;
 
 /** Why a file checkpoint exists; none of these operations executes a shell command. */
 export const FileCheckpointPurpose = Schema.TaggedUnion({
+  Automatic: { operationId: SandboxOperationId },
   Maintenance: { operationId: SandboxOperationId },
   Drain: { operationId: SandboxOperationId, machineId: MachineId },
   Activation: { operationId: SandboxOperationId },
@@ -59,13 +55,8 @@ export const FileCheckpointPurpose = Schema.TaggedUnion({
 
 export type FileCheckpointPurpose = typeof FileCheckpointPurpose.Type;
 
-/** An explicit file operation uses the same transfer machinery as a settled command. */
-export const FileCheckpoint = Schema.Struct({ ...CheckpointTransfer.fields, purpose: FileCheckpointPurpose });
-
-export type FileCheckpoint = typeof FileCheckpoint.Type;
-
-/** Both origins advance one file generation through the same archive, upload, and recovery steps. */
-export const WorkspaceCheckpoint = Schema.Union([CommandCheckpoint, FileCheckpoint]);
+/** Filesystem generations advance independently of terminal command receipts. */
+export const WorkspaceCheckpoint = Schema.Struct({ ...CheckpointTransfer.fields, purpose: FileCheckpointPurpose });
 
 export type WorkspaceCheckpoint = typeof WorkspaceCheckpoint.Type;
 

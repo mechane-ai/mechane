@@ -1,9 +1,10 @@
 import type { ControlStore } from '@mechane/control-store';
-import { catalog, ServiceUnavailable } from '@mechane/protocol';
-import { ProcessObservation, ProcessSummaries } from '@mechane/sandbox-wire';
-import { Schema } from 'effect';
+import { catalog, EnvironmentOverview, ServiceUnavailable } from '@mechane/protocol';
+import { ProcessObservation, SandboxAction } from '@mechane/sandbox-wire';
+import { Option, Schema } from 'effect';
 import type { RuntimeConfiguration } from '../config.ts';
 import { listSandboxProcesses, readSandboxProcess, stopSandboxProcess } from '../tools/processes/client.ts';
+import { manageSandboxWorkspace } from '../tools/sandbox-maintenance.ts';
 import { requireWorkspaceMember } from './auth/admission.ts';
 import type { AuthCaller } from './types.ts';
 import { validatedOperation } from './validated-operation.ts';
@@ -19,16 +20,21 @@ export function createEnvironmentOperations({ store, configuration }: Environmen
   }
 
   return {
-    listEnvironmentProcesses: validatedOperation({
-      operation: catalog.listEnvironmentProcesses,
+    showEnvironment: validatedOperation({
+      operation: catalog.showEnvironment,
       run: async ({ input, caller }) => {
         await requireEnvironment({ ...input, caller });
 
-        const processes = await listSandboxProcesses({ ...input, configuration, shouldTouch: false }).catch(
-          unavailable,
-        );
+        const [sandbox, processes] = await Promise.all([
+          manageSandboxWorkspace({
+            ...input,
+            configuration,
+            request: { action: SandboxAction.Show, operationId: Option.none() },
+          }),
+          listSandboxProcesses({ ...input, configuration, shouldTouch: false }),
+        ]).catch(unavailable);
 
-        return Schema.encodeSync(ProcessSummaries)(processes);
+        return Schema.encodeSync(EnvironmentOverview)({ sandbox, processes });
       },
     }),
     showEnvironmentProcess: validatedOperation({
@@ -55,5 +61,5 @@ export function createEnvironmentOperations({ store, configuration }: Environmen
 }
 
 function unavailable(): never {
-  throw new ServiceUnavailable({ reason: 'The environment could not be observed; retry the same process handle' });
+  throw new ServiceUnavailable({ reason: 'The environment could not be observed; retry the same read' });
 }

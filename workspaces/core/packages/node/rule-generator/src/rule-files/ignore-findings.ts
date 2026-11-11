@@ -31,7 +31,7 @@ export function ignoreFindings({ astGrep, ruleFiles }: IgnoreFindingsInput): Rea
 }
 
 /** The globs of every file role that a rule file's entry exempts. */
-function exemptGlobs({ astGrep, id }: ExemptGlobsInput): ReadonlyArray<string> {
+export function exemptGlobs({ astGrep, id }: ExemptGlobsInput): ReadonlyArray<string> {
   const roleGlobs: (rule: AstGrepRule) => ReadonlyArray<string> = ({ exemptRoles }) =>
     exemptRoles.flatMap((role) => FILE_ROLES[role]);
 

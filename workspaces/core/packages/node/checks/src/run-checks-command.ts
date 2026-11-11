@@ -12,7 +12,7 @@ import { applyNormalizers } from './fixers/apply-normalizers.ts';
 import { loadChecksSettings } from './load-checks-settings.ts';
 import { measureRules } from './measure/measure-rules.ts';
 import { runChecks } from './run-checks.ts';
-import { affectedChecks } from './selection/qualification.ts';
+import { affectedChecks, runAffectedChecks, runQualifiedTarget } from './selection/qualification.ts';
 import { tightenBaselines } from './tighten-baselines.ts';
 import type { ChecksSettings } from './types.ts';
 import { writeLines } from './write-lines.ts';
@@ -58,6 +58,9 @@ const COMMAND_RUNS: Readonly<Record<ChecksCommand, CommandRun>> = {
 
     return printed({ lines });
   },
+  [ChecksCommand.RunAffected]: ({ inherited }) => runAffectedChecks({ inherited }),
+  [ChecksCommand.RunTarget]: ({ target, targetArguments, inherited }) =>
+    runQualifiedTarget({ task: target, args: targetArguments, inherited }),
   [ChecksCommand.Measure]: ({ inherited }) => measureRules({ inherited }),
   [ChecksCommand.Lock]: () => appendLocks(),
   [ChecksCommand.Normalize]: ({ paths }) => applyNormalizers({ paths }),

@@ -15,6 +15,7 @@ ignores:
     'packages/browser/console/src/conversations/entry.ts',
     'packages/browser/console/src/conversations/transport.ts',
     'packages/browser/elements/packages/**',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 rule:
   kind: property_signature

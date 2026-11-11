@@ -9,79 +9,46 @@ Install qualified bytes from one immutable release. Keep the candidate directory
 selected qualification digest. The [distribution guide](../packages/node/distribution/README.md) defines its inventory
 and the [provider](../infrastructure/provider/README.md) verifies it before cloud requests.
 
-Release qualification follows this sequence:
+Release acceptance follows this sequence:
 
-1. Build a candidate from reviewed, clean public source with `mise -C workspaces/core run distribution:build`.
-2. Verify the candidate with `mise -C workspaces/core run distribution:verify -- CANDIDATE`.
-3. Run complete repository checks, compiled-artifact scenarios, and shipped-format preservation checks against those
-   exact bytes. Use the [stack API](../packages/node/stack/src/types.ts) with `isSource: false` and the candidate's
-   `serverEntry`, `assetsDirectory`, and `sandboxImage`. Artifact mode copies the Worker without watching or recompiling
-   it.
-4. Retain exact toolchain, fixture, policy, and configuration inputs with their digests. Prepare the
-   [qualification request](../packages/node/distribution/src/qualification.ts) with successful `complete`,
-   `artifact-scenarios`, and `shipped-formats` evidence. Each report binds the same source, inventories, and input
-   digest.
-5. Run `mise -C workspaces/core run distribution:qualify -- CANDIDATE REQUEST.json`, then independently select the
-   resulting `qualification.json` SHA-256.
-6. Run `mise -C workspaces/core run distribution:verify-qualified -- CANDIDATE QUALIFICATION_SHA256`. Publish and
-   install that same candidate with every referenced file. Changed bytes or inputs require new qualification.
+1. Run `mise -C workspaces/core run distribution:candidate -- CANDIDATE` from reviewed, clean public source. It builds
+   once, runs static checks and the complete artifact catalog, and generates qualification reports. For existing built
+   bytes, use `distribution:accept -- CANDIDATE ARTIFACTS_SHA256` without rebuilding.
+2. Independently select the resulting `qualification.json` SHA-256 and run
+   `mise -C workspaces/core run distribution:verify-qualified -- CANDIDATE QUALIFICATION_SHA256`.
+3. Publish and install those exact bytes with every referenced file. Changed bytes or inputs require new acceptance.
 
-Qualification and verification do not rebuild or publish. Operators supply `qualification.path` and
-`qualification.sha256` to the installation module. Source tests and celld results do not establish hosted behavior.
-After an authorized deployment, verify actual Console assets, intake, execution, restart recovery, and explicit tool
-communication. Record the deployed identities and remaining limits with the receipts.
+Acceptance of existing bytes and verification do not rebuild or publish. Operators supply `qualification.path` and
+`qualification.sha256` to the installation module. Child progress stays on standard error; final qualification JSON
+stays on standard output. Cached development results do not replace candidate acceptance.
+
+After authorized deployment, verify serving artifact identity, health, readiness, and actual Console assets. Qualify
+changed hosted boundaries separately: celld cannot establish Cloudflare routing or containment. Integration changes
+retain their actual delivery and human-approval receipts. Record observed identities and remaining limits with delivery
+work rather than assembling another qualification path.
 
 ## Cutover
 
-Retire the previous execution engine before activating a native actor. Preserve actual Postgres history, pending input,
-credentials, workspace files, checkpoint failures, and uncertain receipts.
+Use a forward-only cutover when an authorized change replaces an execution owner or narrows stored data. Preserve actual
+history, pending input, credentials, workspace files, checkpoint failures, and uncertain receipts. An application-only
+update does not require repeating a completed engine migration.
 
-1. Save each workspace's exact policy and suspend execution. Quiesce native actors through the authenticated
-   [maintenance operation](../packages/shared/protocol/src/operations/mechs/maintenance.schemas.ts) when applicable.
-   Reconcile in-flight model and environment effects using their existing identities.
-2. Save current files and complete sandbox retirement through the [stop procedure](#stopping). Keep capacity callbacks
-   available until release completes. Preserve an authoritative database backup and required key versions.
-3. Positively retire every old application owner, automatic replica, and restart controller. Reconcile provider
-   inventory and runtime database sessions. Retain operator-reviewed retirement evidence; stored run status cannot prove
-   process retirement.
-4. Run the extracted release's `node migrate.mjs`, then `node grant.mjs` with the controlled migration connection.
-   Follow the [database inputs](self-hosting.md#install). Steps 1–5 keep their exact checksums; schema 6 adds control
-   accounting and delivery tables. Historical records and tables remain.
-5. Deploy the qualified Worker while policies remain suspended. Preserve the existing Sandbox namespace, container
-   application, and checkpoint bucket. Fence integration delivery at the Worker while preserving producers' durable
-   outboxes. Keep direct member and Console submissions quiet. Quiesce every fresh target actor through the
-   authenticated maintenance operation before its first import batch. Suspension alone permits notification intake.
-   Verify readiness, the intake fence, and retained authority before importing histories.
-6. Inventory and apply preserved history with the extracted command:
+1. Fence affected admission and record current policy. Quiesce actors through the authenticated
+   [maintenance operation](../packages/shared/protocol/src/operations/mechs/maintenance.schemas.ts), then reconcile
+   in-flight effects under their existing identities.
+2. Before physical guest replacement, complete the fresh file drain, provider retirement, and capacity release described
+   under [stopping](#stopping). Keep required callbacks serving until retirement is confirmed.
+3. Positively retire superseded writers before a narrowing migration. Preserve the database backup and required key
+   versions. Run only the controlled database commands the actual schema requires, with separate migration authority.
+4. Import history only when retained data needs conversion. Use the owning
+   [import guide](../packages/worker/server/src/import/README.md), its reviewed source digest, and retirement evidence.
+   Imported events remain evidence; they cannot replay effects, activate an agent, or clear maintenance holds.
+5. Verify migrated and unchanged records through authenticated product reads. Preserve namespace, bucket, database, and
+   resource identities. Restore exact saved policies deliberately and activate one execution owner.
 
-   ```sh
-   node import.mjs --dry-run --all
-   node import.mjs --apply --all --expect-digest SOURCE_SHA256 --retirement-receipt RETIREMENT.json --retirement-sha256 RETIREMENT_SHA256
-   ```
-
-   Both modes read `MECHANE_MIGRATION_DATABASE_URL`. Apply also reads `MECHANE_ORIGIN` and
-   `MECHANE_SANDBOX_SERVICE_KEY`. Use `--workspace UUID`, optionally with `--mech UUID`, instead of `--all` for a
-   smaller selection. Review the same selection's source digest and the retirement receipt's exact bytes before
-   applying.
-
-7. Check authenticated Conversation and trace reads, retained publications, pending input, and checkpoint markers. Final
-   import leaves the actor inactive. Remove the intake fence after all selected scopes pass verification; require
-   durable producer deliveries to resume. Deliberately resume eligible actors and restore exact saved policies only
-   after checking the maintenance receipt and environment recovery state.
-
-When file recovery requires the new Worker, first prove the old application is quiet. Preserve the live guest and its
-held reservation, retire the old application, and migrate control storage. Stage only the qualified Worker with intake
-fenced; keep the old image unchanged. Complete file recovery, Stop, and capacity release before import and image
-rollout.
-
-The importer uses a consistent read-only source snapshot and rechecks suspension before each delivery batch. Oversized
-records fail preflight without truncation. After a lost acknowledgment, rerun the same reviewed command; immutable
-identities and cursors reject changed batches. The [import guide](../packages/worker/server/src/import/README.md)
-describes its output and guard.
-
-The migrator validates the contiguous ledger and known checksums. It refuses a database newer than its release. Verify
-older Console UUID repairs through authenticated reads and repeat migration without changing repaired or valid records.
-Recover forward after this engine cutover; an old execution binary is not a code-only rollback.
+If file recovery needs new application code, preserve the live guest and reservation while updating that owner; keep the
+image unchanged until recovery and Stop complete. Recover forward after a narrowing. A retired execution binary is not a
+code-only rollback, and an old committed head is not evidence that newer live writes survived.
 
 ## Stopping
 

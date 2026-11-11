@@ -118,7 +118,7 @@ function readInterval(request: ReadRequest): number | false {
     case 'trace':
     case 'evidence':
     case 'evidenceArtifact':
-    case 'environmentProcesses':
+    case 'environment':
     case 'environmentProcess':
       return REFRESH_MS;
   }
@@ -853,7 +853,7 @@ async function createData(options: CreateConsoleData, conversations: WorkspaceOw
         tables.events,
         tables.traceEvidence,
         tables.evidenceArtifacts,
-        tables.environmentProcesses,
+        tables.environments,
         tables.environmentProcessDetails,
       ];
 

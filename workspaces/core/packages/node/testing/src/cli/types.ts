@@ -4,7 +4,7 @@ import type { Schema } from 'effect';
 export type CliAccount = { readonly configurationRoot: string };
 
 export type CliInput = {
-  readonly stack: Pick<LocalStack, 'origin'>;
+  readonly stack: Pick<LocalStack, 'origin' | 'cli'>;
   readonly account: CliAccount;
   readonly args: ReadonlyArray<string>;
   readonly environment?: Readonly<Record<string, string>>;

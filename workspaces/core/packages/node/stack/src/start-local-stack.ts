@@ -1,6 +1,7 @@
-import { applicationWorkerDeployment, sandboxWorkerDeployment } from '@mechane/deployment';
+import { applicationWorkerDeployment, SANDBOX_VARIABLES, sandboxWorkerDeployment } from '@mechane/deployment';
 import { HttpStatusCode } from '@mechane/records';
-import { Record } from 'effect';
+import { SandboxToolsVariable } from '@mechane/sandbox-wire';
+import { Record, Schema } from 'effect';
 import { access, copyFile, cp, mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { captureStackFailure } from './capture-failure.ts';
@@ -23,12 +24,18 @@ import { freeLocalOrigin } from './local-origin.ts';
 import { startPostgres } from './postgres.ts';
 import type { LocalPostgres } from './postgres.ts';
 import { runCommand, startProcess } from './process.ts';
+import { startSandboxIngress } from './sandbox-ingress.ts';
+import type { SandboxIngress } from './sandbox-ingress.ts';
 import { inheritedEnvironment, nodeExecutablePath } from './settings.ts';
+import { prepareSourceGuest } from './source-guest.ts';
 import { openStackState } from './state.ts';
+import { registerToolAssets } from './tool-assets.ts';
+import type { ToolAssetRegistration } from './tool-assets.ts';
 import type {
   ConversationImportScope,
   Environment,
   LocalFixtures,
+  LocalProviders,
   LocalSandbox,
   LocalStack,
   RestartOptions,
@@ -38,6 +45,7 @@ import {
   databaseProgramPath,
   DEFAULT_GUEST_IMAGE,
   defaultWorkerEntry,
+  localCli,
   workerBinaryOptions,
   workerLocations,
 } from './worker-settings.ts';
@@ -45,12 +53,15 @@ import {
 const MIGRATION_TIMEOUT_MS = 60_000;
 const SHUTDOWN_TIMEOUT_MS = 60_000;
 const SANDBOX_START_TIMEOUT_MS = 600_000;
+const APPLY_TIMEOUT_MS = 300_000;
 const PRIVATE_DIRECTORY_MODE = 0o700;
-type ResourceName = 'application' | 'console' | 'sandbox' | 'gateway' | 'fixtures' | 'postgres';
+type ResourceName = 'application' | 'console' | 'sandbox' | 'sandbox-ingress' | 'gateway' | 'fixtures' | 'postgres';
 
 export async function startLocalStack(options: StackOptions): Promise<LocalStack> {
-  const isSource = options.isSource === true;
+  const isSource = options.isSource !== false;
   const isConsoleDevelopment = options.isConsoleDevelopment === true;
+  const providers: LocalProviders = options.providers ?? { model: 'fixture', github: 'fixture' };
+  const cli = localCli({ isSource, cli: options.cli });
 
   if (isConsoleDevelopment && !isSource) {
     throw new Error('Console development requires a source Worker');
@@ -89,7 +100,13 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     gateway?: GuestGateway;
     console?: ConsoleDevelopment;
     hasDrained?: boolean;
-  } = {};
+    ingress?: SandboxIngress;
+    isApplying?: boolean;
+    guestImage: string;
+    sandboxBaseVariables?: Environment;
+    sandboxVariables?: Environment;
+    toolRegistration?: ToolAssetRegistration;
+  } = { guestImage: options.sandboxImage ?? DEFAULT_GUEST_IMAGE };
 
   const configuration: { environment: Environment } = { environment };
   const released = new Set<ResourceName>();
@@ -109,6 +126,8 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       applicationPid: resources.application?.pid,
       sandboxPid: resources.sandbox?.pid,
       sandboxOrigin: resources.sandbox?.origin.origin,
+      sandboxIngressOrigin: resources.ingress?.origin.origin,
+      isAdmissionHeld: resources.ingress?.isHeld() ?? false,
       serverLog,
       migrationLog,
       consoleLog,
@@ -212,6 +231,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
 
     if (shouldDrain && resources.sandbox !== undefined) {
       try {
+        await resources.ingress?.hold();
         await drainSandboxes({ origin: applicationOrigin, sandbox: resources.sandbox, deadlineMs, report: record });
 
         resources.hasDrained = true;
@@ -281,6 +301,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     }
 
     await release('gateway', async () => await resources.gateway?.close());
+    await release('sandbox-ingress', async () => await resources.ingress?.close());
     await release('fixtures', async () => await resources.fixtures?.close());
     await release('postgres', async () => await resources.postgres?.stop(deadlineMs));
 
@@ -342,6 +363,125 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     return { runId: fixture.runId, publications: fixture.publications, applyMigration };
   }
 
+  async function prepareSandboxTools() {
+    const gateway = resources.gateway;
+    const baseVariables = resources.sandboxBaseVariables;
+
+    if (gateway === undefined || baseVariables === undefined) {
+      throw new Error('Local tool preparation requires the owned guest gateway and environment');
+    }
+
+    const preparedAssets =
+      (await options.prepareGuest?.({
+        registerFixture: gateway.registerFixture,
+        registerFixturePrefix: gateway.registerFixturePrefix,
+      })) ?? [];
+
+    const assets = [...(options.toolAssets ?? []), ...preparedAssets];
+    const registration = await registerToolAssets({ assets, gateway });
+
+    try {
+      const configuredTools = Schema.decodeUnknownSync(SandboxToolsVariable)(
+        baseVariables[SANDBOX_VARIABLES.sandboxTools] ?? '[]',
+      );
+
+      const tools = [...configuredTools, ...registration.tools];
+      const encodedTools = Schema.encodeSync(SandboxToolsVariable)(tools);
+
+      return { registration, variables: { ...baseVariables, [SANDBOX_VARIABLES.sandboxTools]: encodedTools } };
+    } catch (cause) {
+      await registration.close();
+
+      throw cause;
+    }
+  }
+
+  async function applyEnvironment(shouldBuildGuest: boolean): Promise<void> {
+    if (!isSource || resources.sandbox === undefined || resources.ingress === undefined) {
+      throw new Error('Source apply requires the owned source environment host');
+    }
+
+    if (resources.isApplying === true) {
+      throw new Error('A source apply is already in progress');
+    }
+
+    resources.isApplying = true;
+
+    const update: {
+      guestImage: string;
+      variables: Environment | undefined;
+      registration: ToolAssetRegistration | undefined;
+    } = { guestImage: resources.guestImage, variables: resources.sandboxVariables, registration: undefined };
+
+    try {
+      await resources.ingress.hold();
+      await record({ phase: 'applying-environment' });
+
+      const deadlineMs = Date.now() + APPLY_TIMEOUT_MS;
+
+      await drainSandboxes({ origin: applicationOrigin, sandbox: resources.sandbox, deadlineMs, report: record });
+
+      if (shouldBuildGuest) {
+        const prepared = await prepareSandboxTools();
+
+        update.variables = prepared.variables;
+        update.registration = prepared.registration;
+        update.guestImage = await prepareSourceGuest({ environment });
+      }
+
+      const variables = update.variables;
+
+      if (variables === undefined) {
+        throw new Error('The source environment deployment is unavailable');
+      }
+
+      const deployment = sandboxWorkerDeployment({
+        name: 'mechane-local-environments',
+        entry,
+        variables,
+        image: update.guestImage,
+        bucketName: 'mechane-local-workspace-files',
+      });
+
+      await resources.sandbox.applySource({ configuration: deployment });
+
+      resources.guestImage = update.guestImage;
+      resources.sandboxVariables = variables;
+
+      if (update.registration !== undefined) {
+        const previous = resources.toolRegistration;
+
+        resources.toolRegistration = update.registration;
+        update.registration = undefined;
+
+        await previous?.close();
+      }
+
+      resources.hasDrained = false;
+
+      resources.ingress.resume();
+
+      await record({ phase: 'serving' });
+    } catch (cause) {
+      await record({
+        phase: 'source-apply-blocked',
+        recovery: 'Repair the source or retained environment and retry apply',
+      });
+
+      try {
+        await update.registration?.close();
+      } catch (cleanupCause) {
+        throw new AggregateError([cause, cleanupCause], 'Source apply and its new tool cleanup failed', {
+          cause: cleanupCause,
+        });
+      }
+
+      throw cause;
+    } finally {
+      resources.isApplying = false;
+    }
+  }
+
   try {
     if (!isSource) {
       await rm(artifactDirectory, { recursive: true, force: true });
@@ -351,16 +491,19 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     await mkdir(applicationDirectory, { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
 
     if (!isConsoleDevelopment) {
-      await access(assetsDirectory);
       await rm(join(applicationDirectory, 'console'), { recursive: true, force: true });
-      await cp(assetsDirectory, join(applicationDirectory, 'console'), { recursive: true });
+
+      if (isSource) {
+        await mkdir(join(applicationDirectory, 'console'), { mode: PRIVATE_DIRECTORY_MODE });
+      } else {
+        await access(assetsDirectory);
+        await cp(assetsDirectory, join(applicationDirectory, 'console'), { recursive: true });
+      }
     }
 
     resources.postgres = await startPostgres({ state, environment });
 
-    if (options.useFixtures !== false) {
-      resources.fixtures = await startFixtures(origin);
-    }
+    resources.fixtures = await startFixtures({ origin, providers });
 
     const configured = serverEnvironment({
       inherited: { ...environment, ...resources.postgres.clientEnvironment },
@@ -398,13 +541,26 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         bearer: state.secrets.sandboxKey,
       });
 
-      const variables = { ...sandboxVariables, MECHANE_SANDBOX_TRUSTED_CERTIFICATES_PEM: certificatesPem };
+      resources.sandboxBaseVariables = {
+        ...sandboxVariables,
+        MECHANE_SANDBOX_TRUSTED_CERTIFICATES_PEM: certificatesPem,
+      };
+
+      const prepared = await prepareSandboxTools();
+      const variables = prepared.variables;
+
+      resources.sandboxVariables = variables;
+      resources.toolRegistration = prepared.registration;
+
+      if (isSource && options.sandboxImage === undefined) {
+        resources.guestImage = await prepareSourceGuest({ environment });
+      }
 
       const deployment = sandboxWorkerDeployment({
         name: 'mechane-local-environments',
         entry,
         variables,
-        image: options.sandboxImage ?? DEFAULT_GUEST_IMAGE,
+        image: resources.guestImage,
         bucketName: 'mechane-local-workspace-files',
       });
 
@@ -434,9 +590,11 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         throw cause;
       }
 
+      resources.ingress = await startSandboxIngress({ target: resources.sandbox.origin });
+
       configuration.environment = {
         ...configuration.environment,
-        MECHANE_SANDBOX_ORIGIN: resources.sandbox.origin.origin,
+        MECHANE_SANDBOX_ORIGIN: resources.ingress.origin.origin,
         MECHANE_SANDBOX_SERVICE_KEY: resources.sandbox.bearer,
         MECHANE_TOOL_ORIGIN: resources.gateway.guestOrigin.origin,
       };
@@ -472,6 +630,20 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       serverLog,
       postgresContainer: postgres.container,
       nodeVersion,
+      cli,
+      providers,
+      inspect: async () => ({
+        origin: origin.origin,
+        stateDirectory: state.directory,
+        providers,
+        cli,
+        application: await resources.application?.inspect(),
+        sandbox: await resources.sandbox?.inspect(),
+        guestImage: resources.guestImage,
+        isAdmissionHeld: resources.ingress?.isHeld() ?? false,
+      }),
+      applySandbox: async () => await applyEnvironment(false),
+      applyGuest: async () => await applyEnvironment(true),
       dumpStorage: async (input = {}) => {
         const [relational, durable] = await Promise.all([
           postgres.dump(input),
@@ -487,6 +659,13 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         }
 
         return resources.gateway.registerFixture(answer);
+      },
+      registerGuestFixturePrefix: (answer) => {
+        if (resources.gateway === undefined) {
+          throw new Error('Guest HTTP fixtures require the owned local container stack');
+        }
+
+        return resources.gateway.registerFixturePrefix(answer);
       },
       restart,
       prepareConversationImport,

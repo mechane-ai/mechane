@@ -51,17 +51,25 @@ Use ordinary files in the durable home for notes, plans, and progress. The insta
 adding a runtime task or memory service. Internal model-context checkpoints are distinct from those files. Remote tools
 come from current owner-configured MCP connections and grants. Remembered instructions cannot expand authority.
 
-A settled foreground command is completed only after its home archive and receipt commit. A running, uncertain, or
-persistence-failed result does not establish saved files. Background writes require a later successful checkpoint.
-Native activation completion does not itself save the home or end managed processes. Explicit recovery and cutover
-barriers must finish before the mech resumes.
+A terminal foreground result records the shell's exit code or timeout and bounded output durably. It does not wait for a
+remote home upload. Automatic file checkpoints coalesce changes in the background and yield to new foreground work.
+Native activation completion does not itself save every file or end managed processes. Explicit file barriers and
+graceful shutdown still wait for a fresh committed generation.
+
+The environment report shows the last committed head separately from automatic capture, upload, and failure status. Its
+[durability schema](../packages/shared/sandbox-wire/src/environment-state.ts) distinguishes observed activity from the
+captured activity of that saved head. A saved head describes files at capture time, not every later write. Automatic
+cadence is not a recovery-point guarantee; a lost machine can lose unsaved changes. Activity records admitted work, not
+a filesystem watch. An already-running process can write after capture without a new dispatch, so equal activity
+sequences do not mean that every live file is saved. Status reads do not create activity.
 
 Keep reproducible caches and build output in scratch locations; archive limits remain explicit. A failed save preserves
 the previous committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and
 private capture scratch.
 
-A persistence-failed receipt retains the known shell exit code or timeout separately from its failed save. Older
-receipts that omitted that outcome remain unknown; output text is not evidence of an exit code.
+A background save failure does not change a terminal command result. Historical persistence-failed receipts retain their
+original status and any known exit code or timeout. Older receipts that omitted the outcome remain unknown; output text
+is not evidence of an exit code.
 
 The guest declares `MECHANE_CACHE_HOME` outside the home and supplies tool-specific npm, pnpm, uv, pip, mise, and Go
 cache paths there. Pinned mise installs are reconstructed after machine replacement; source, lockfiles, configuration,
@@ -82,16 +90,15 @@ Worker cannot raise a limit compiled into an already-running guest. Older compon
 their lower admission limit, even though archive and part formats are unchanged. Preserve unsaved live files before
 replacing an older guest. Move only identified, reproducible data when recovery requires reducing its home first.
 
-Checkpoint uploads transfer at most four archive parts concurrently. Each batch waits for every started transfer to
-settle before advancing its fenced cursor or handling failure. Restoration copies parts sequentially. Both paths retain
-per-part checksums and bounded scheduling. A completed command waits for the entire generation to commit. The scheduling
-budget limits starting another batch or restoration part, while an in-flight transfer keeps its existing timeout. Guest
-command duration excludes saving files. When investigating latency, record archive bytes, part count, and upload or
-restore timing separately from command execution.
+Checkpoint uploads use bounded parallel batches. Each batch waits for every started transfer to settle before advancing
+its fenced cursor or handling failure. Restoration copies parts sequentially. Both paths retain per-part checksums and
+bounded scheduling. After capture, a background upload can proceed beside new commands. A file barrier waits for its own
+complete generation. When investigating latency, record archive bytes, transferred bytes, part count, and capture,
+upload, or restore time separately from command execution.
 
-New generations publish an immutable manifest after their archive parts and before the head and receipt commit.
-Restoration verifies that manifest's digest. Existing committed generations retain their original inline metadata and
-archive verification. Cloudflare-native snapshots are not the portable-home authority and are not required locally.
+New generations publish an immutable manifest after their archive parts and before the head commits. Restoration
+verifies that manifest's digest. Existing committed generations retain their original inline metadata and archive
+verification. Cloudflare-native snapshots are not the portable-home authority and are not required locally.
 
 Stop acknowledges a durable operation ID with HTTP 202. Inspect that ID or the workspace report for requested, waiting
 for commands, checkpointing, stopping, completed, or failed state. Inspection includes the committed generation,
@@ -137,7 +144,7 @@ produces a notification. A callback racing a pending active start waits through 
 abandoned pending execution still produces its completion notification.
 
 A terminal result, a saved home, and notification acceptance are separate facts. An exited process may have unsaved
-background writes. A command whose persistence failed retains that outcome. The notification includes correlation and
+background writes. A failed file save cannot rewrite a completed command. The notification includes correlation and
 status; the agent chooses whether to read output or send a message through its tools.
 
 Managed processes receive the current granted environment at startup. Reads and stops do not renew credentials or prove
@@ -153,10 +160,10 @@ activity renews the existing idle deadline; background execution and Console pol
 handle before deciding whether to start a replacement. Explicitly canceling an activation stops the processes it
 started. Canceling a dispatched foreground shell retires the machine, so other handles on that machine become Lost.
 
-Ordinary checkpoints pause writers while copying the home, then resume them during upload. New mutations stay fenced
-until generation release. Graceful drain takes a fresh snapshot and keeps writers paused until shutdown is confirmed. A
-failed save retains recoverable live files and the previous head. Older guests keep their released checkpoint behavior
-until their machine retires. Snapshots preserve files, not application transaction consistency.
+Automatic checkpoints pause writers while copying the home, then resume them and release foreground admission during
+upload. They share one in-flight owner and coalesce later activity. Graceful drain takes a fresh snapshot and keeps
+writers paused until shutdown is confirmed. A failed save retains recoverable live files and the previous head.
+Snapshots preserve files, not application transaction consistency.
 
 After machine loss, an earlier saved head does not prove that newer background writes survived. A barrier with no live
 machine accepts that head only with matching committed drain evidence from the latest machine that became ready.
@@ -239,9 +246,10 @@ without launching the command. Previously admitted effects retain their original
 
 ## Qualification
 
-Before publishing a runtime, run the compiled local smoke with real Postgres and deterministic providers. Separately
-qualify the selected live image, network policy, repository, and credentials. A missing required tool or environment
-capability is a visible limitation, never a passed suite.
+Before publishing a runtime, accept one built candidate with real Postgres and deterministic providers through the
+[distribution owner](../packages/node/distribution/README.md). Its complete retained catalog exercises those exact
+bytes. Separately qualify affected hosted capabilities, network policy, repositories, and credentials. A missing
+required tool or environment capability is a visible limitation, never a passed suite.
 
 Exercise process identity, cancellation, machine loss, and a live writer during checkpointing. Exercise browser controls
 and native image output through the integrated tool boundary, then decode recordings and inspect their frames. Verify

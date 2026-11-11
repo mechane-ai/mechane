@@ -29,17 +29,15 @@ depends = [
 ]
 run = "node packages/node/checks/src/main.ts record"
 
-# The inner loop selects affected targets against exact evidence from the last complete check.
+# Successful target receipts are reusable independently of a complete release qualification.
 [tasks."check:fast"]
-description = "Check changed source and select affected smoke or infrastructure targets from exact last-green evidence"
+description = "Check changed source and run only targets without matching successful input receipts"
 depends = ["lint:changed", "typecheck:incremental", "knip", "duplicates", "checks", "rules:check", "reference:check"]
-run = '''
-set -eu
-tasks=$(node packages/node/checks/src/main.ts affected)
-if [ -n "$tasks" ]; then
-  mise run $tasks
-fi
-'''
+run = "node packages/node/checks/src/main.ts run-affected"
+
+[tasks."check:static"]
+description = "Run source checks before accepting one immutable application candidate"
+depends = ["format:check", "typecheck", "lint", "knip", "duplicates", "checks", "rules:check", "reference:check"]
 
 [tasks.fingerprint]
 description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"
@@ -47,7 +45,7 @@ wait_for = ["build:server", "build:cli", "build:guest"]
 run = "node packages/node/checks/src/main.ts fingerprint"
 
 [tasks.locks]
-description = "Append current API names to the active catalog and cumulative shipped history, and new schema steps to the migration lock"
+description = "Refresh the current API catalog and append new immutable schema steps"
 run = "node packages/node/checks/src/main.ts lock"
 
 [tasks."rules:measure"]
@@ -193,9 +191,13 @@ run = "node packages/node/release/src/main.ts build"
 description = "Build immutable Worker application candidates from a clean source revision"
 run = "node packages/node/distribution/src/main.ts build"
 
-[tasks."distribution:qualify"]
-description = "Bind successful check evidence to immutable candidate bytes"
-run = "node packages/node/distribution/src/main.ts qualify"
+[tasks."distribution:candidate"]
+description = "Build once and qualify the exact application candidate"
+run = "node packages/node/distribution/src/main.ts candidate"
+
+[tasks."distribution:accept"]
+description = "Qualify an existing candidate by its selected artifact inventory digest"
+run = "node packages/node/distribution/src/main.ts accept"
 
 [tasks."distribution:verify-qualified"]
 description = "Verify candidate bytes and their explicit qualification digest"
@@ -208,6 +210,10 @@ run = "node packages/node/distribution/src/main.ts verify"
 [tasks."infrastructure:check"]
 description = "Check the native provider and validate the release module without using a cloud account"
 depends = ["build:server"]
+run = "node packages/node/checks/src/main.ts run-target infrastructure:check"
+
+[tasks."infrastructure:verify"]
+description = "Verify the provider and installation module using the already prepared application"
 run = "./infrastructure/check.sh"
 
 
@@ -216,8 +222,8 @@ description = "Install Chromium and its native dependencies for the retained Con
 run = "pnpm --filter @mechane/testing exec playwright install --with-deps chromium"
 
 [tasks.smoke]
-description = "Drive the built CLI and Worker against celld, Postgres, and deterministic external fixtures"
-depends = ["build:cli", "build:server", "build:guest", "browser:install"]
+description = "Drive the source CLI and Worker against celld, Postgres, and deterministic external fixtures"
+depends = ["smoke:prepare", "browser:install"]
 # A full check settles static failures before starting disposable services; standalone smoke runs only its builds.
 wait_for = [
   "format:check",
@@ -231,16 +237,54 @@ wait_for = [
   "reference:check",
   "infrastructure:check",
 ]
-run = "node packages/node/smoke/src/main.ts"
+run = "node packages/node/checks/src/main.ts run-target smoke"
+
+[tasks."smoke:prepare"]
+description = "Prepare the guest bundles used by source scenarios; Console checks use Vite source"
+depends = ["build:guest"]
+
+[tasks."smoke:auth"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:auth"
+
+[tasks."smoke:runs"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:runs"
+
+[tasks."smoke:context"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:context"
+
+[tasks."smoke:recovery"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:recovery"
+
+[tasks."smoke:notifications"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:notifications"
+
+[tasks."smoke:evals"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:evals"
+
+[tasks."smoke:compute"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:compute"
+
+[tasks."smoke:security"]
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:security"
+
+[tasks."smoke:console"]
+depends = ["smoke:prepare", "browser:install"]
+run = "node packages/node/checks/src/main.ts run-target smoke:console"
 
 [tasks.dev]
-description = "Run the retained local Worker, Postgres, container guest, and development fixtures"
-depends = ["build:guest"]
-run = "node packages/node/stack/src/main.ts start"
+description = "Start or attach this worktree's retained source development session"
+run = "node packages/node/smoke/src/dev/main.ts"
 
 [tasks.start]
 description = "Start the retained local Worker installation"
-depends = ["build:guest"]
 run = "node packages/node/stack/src/main.ts start"
 
 [tasks."local:reset"]

@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 import { StackCleanupUnconfirmedError } from '../errors.ts';
 import { runCommand, startProcess } from '../process.ts';
-import type { ManagedProcess } from '../types.ts';
+import type { LocalSourceUpdate, ManagedProcess } from '../types.ts';
 import type { CelldCloseOptions, CelldReadiness, CelldWorkerOptions, LocalCelldWorker } from './types.ts';
 import { startWorkerBuild } from './worker-build.ts';
 
@@ -93,7 +93,11 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     closeOptions?: CelldCloseOptions;
     isLaunching?: boolean;
     shouldReload?: boolean;
-  } = {};
+    isApplying?: boolean;
+    appliedSha256?: string;
+    lastBuildDurationMs?: number;
+    configuration: Readonly<Record<string, unknown>>;
+  } = { configuration: input.configuration };
 
   async function record(phase: string): Promise<void> {
     const workerPid = resources.process?.child.pid;
@@ -134,6 +138,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     resources.shouldReload = false;
 
     try {
+      const appliedSha256 = await fileDigest(bundleFile);
       const args = ['dev', configurationFile, '--host', host, '--port', input.origin.port, '--logs', '--no-watch'];
 
       const logOffset = await stat(logFile).then(
@@ -161,6 +166,9 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         deadlineMs,
         shouldStop: () => resources.isClosing === true,
       });
+
+      resources.appliedSha256 = appliedSha256;
+
       await record('serving');
     } finally {
       resources.isLaunching = false;
@@ -198,6 +206,10 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
   }
 
   async function reload(): Promise<void> {
+    if (resources.isApplying === true) {
+      return;
+    }
+
     if (resources.process === undefined || resources.closing !== undefined) {
       return;
     }
@@ -209,6 +221,47 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     }
 
     await restart();
+  }
+
+  async function applySource(update: LocalSourceUpdate = {}): Promise<void> {
+    if (resources.build === undefined || resources.isClosing === true) {
+      throw new Error('Only a running source Worker can apply source changes');
+    }
+
+    resources.isApplying = true;
+
+    try {
+      await resources.build.rebuild();
+    } finally {
+      resources.isApplying = false;
+    }
+
+    if (update.configuration !== undefined) {
+      resources.configuration = update.configuration;
+    }
+
+    await writeConfiguration();
+    await restart();
+  }
+
+  async function inspect() {
+    const compiledSha256 = await fileDigest(bundleFile);
+
+    return {
+      pid: resources.process?.child.pid,
+      isSource: input.isArtifact !== true,
+      compiledSha256,
+      appliedSha256: resources.appliedSha256,
+      lastBuildDurationMs: resources.lastBuildDurationMs,
+    };
+  }
+
+  async function writeConfiguration(): Promise<void> {
+    await writeFile(
+      configurationFile,
+      JSON.stringify({ ...resources.configuration, main: './worker.mjs', no_bundle: true }, null, OWNER_INDENT_SPACES),
+      { mode: PRIVATE_FILE_MODE },
+    );
   }
 
   async function close(options: CelldCloseOptions = {}): Promise<void> {
@@ -319,11 +372,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
 
   try {
     await record('building');
-    await writeFile(
-      configurationFile,
-      JSON.stringify({ ...input.configuration, main: './worker.mjs', no_bundle: true }, null, OWNER_INDENT_SPACES),
-      { mode: PRIVATE_FILE_MODE },
-    );
+    await writeConfiguration();
 
     if (input.isArtifact === true) {
       await copyFile(input.entry, bundleFile);
@@ -336,7 +385,11 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         output: bundleFile,
         logFile: buildLogFile,
         isWatched: input.isWatched !== false,
-        onBuild: reload,
+        onBuild: async ({ durationMs }) => {
+          resources.lastBuildDurationMs = durationMs;
+
+          await reload();
+        },
       });
     }
 
@@ -362,6 +415,8 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         return resources.process?.child.pid ?? pid;
       },
       restart,
+      applySource,
+      inspect,
       close,
     };
   } catch (error) {

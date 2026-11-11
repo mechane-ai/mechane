@@ -14,6 +14,7 @@ ignores:
     'packages/worker/sandbox/src/service/**',
     '**/node_modules/**',
     '**/utilities/**',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 rule:
   any:

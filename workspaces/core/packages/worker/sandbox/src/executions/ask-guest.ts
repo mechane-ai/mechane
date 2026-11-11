@@ -1,7 +1,6 @@
 import { ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
 import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
 import { DateTime, Duration, Match, Option } from 'effect';
-import { beginCheckpoint } from '../checkpoints/begin-checkpoint.ts';
 import { GuestAnswer } from '../schemas.ts';
 import type { DispatchedExecution, WorkspaceProviderStepInput } from '../types.ts';
 import { endOutlived } from './end-outlived.ts';
@@ -38,7 +37,7 @@ export async function askGuest({
   }
 
   await Match.valueTags(answer, {
-    Settled: ({ receipt }) => beginCheckpoint({ store, executionId, machineId, receipt, now }),
+    Settled: ({ receipt }) => store.settleExecution({ executionId, machineId, receipt, now }),
     Unsettled: async () => await endOutlived({ store, provider, execution, now }),
     Lost: () => store.loseMachine({ machineId, now }),
   });

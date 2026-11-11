@@ -24,7 +24,7 @@ async function assertWorkspaceReadRejected({ stack, account, mechId }: Workspace
 }
 
 export async function membershipChangesApplyImmediately({ stack }: ScenarioInput): Promise<void> {
-  const ownerLogin = stack.fixtures?.github.users.owner.login;
+  const ownerLogin = stack.fixtures?.github?.users.owner.login;
 
   assert.ok(
     ownerLogin !== undefined && ownerLogin.length > 0,

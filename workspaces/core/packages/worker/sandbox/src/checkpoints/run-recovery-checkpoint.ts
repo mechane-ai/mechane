@@ -51,15 +51,13 @@ export async function runRecoveryCheckpoint({
     const current = checkpoint.value;
 
     const isSameOperation =
-      !('executionId' in current) &&
-      FileCheckpointPurpose.guards.Recovery(current.purpose) &&
-      current.purpose.operationId === purpose.operationId;
+      FileCheckpointPurpose.guards.Recovery(current.purpose) && current.purpose.operationId === purpose.operationId;
 
     if (!isSameOperation) {
       return refuseRecoveryCheckpoint({ reason: SandboxRecoveryCheckpointRefusalReason.CheckpointActive });
     }
 
-    await advanceWorkspace(input);
+    await advanceWorkspace({ ...input, shouldAdmitCommand: false });
 
     const operation = store.claimFileCheckpoint({ purpose, now });
 
@@ -106,9 +104,14 @@ export async function runRecoveryCheckpoint({
         const parent = purpose.committedGeneration;
         const archive = Option.none();
 
+        const state = store.workspace();
+        const capturedSequence = Option.some(state.activitySequence);
+
         store.saveCheckpoint({
           generation,
           parent,
+          capturedSequence,
+          isAborting: false,
           machineId: purpose.machineId,
           purpose,
           startedAt: operation.startedAt,

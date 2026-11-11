@@ -1,6 +1,6 @@
 import { DateTime, Option } from 'effect';
 import type { MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
-import { releaseWorkspace } from './release-workspace.ts';
+import { hasCapturedAutomaticCheckpoint, releaseWorkspace } from './release-workspace.ts';
 
 type ReleaseMachineWorkspaceInput = WorkspaceProviderStepInput & MachineIdInput;
 
@@ -11,6 +11,21 @@ export async function releaseMachineWorkspace({
   workspace,
   machineId,
 }: ReleaseMachineWorkspaceInput): Promise<boolean> {
+  const state = store.workspace();
+  const isLocalSnapshot = Option.exists(state.head, (head) => Option.contains(head.capturedMachineId, machineId));
+
+  if (isLocalSnapshot && Option.isNone(state.recovery)) {
+    return true;
+  }
+
+  if (Option.isNone(state.head) && Option.isNone(state.recovery) && Option.isNone(state.checkpoint)) {
+    return true;
+  }
+
+  if (hasCapturedAutomaticCheckpoint({ store, machineId })) {
+    return true;
+  }
+
   const guest = await provider.connect({ machineId });
 
   if (Option.isNone(guest)) {

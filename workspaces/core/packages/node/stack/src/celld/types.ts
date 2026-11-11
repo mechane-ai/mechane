@@ -1,4 +1,4 @@
-import type { CelldBinary, Environment } from '../types.ts';
+import type { CelldBinary, Environment, LocalSourceUpdate, LocalWorkerStatus } from '../types.ts';
 
 export type CelldWorkerOptions = {
   readonly entry: string;
@@ -29,5 +29,7 @@ export type LocalCelldWorker = {
   readonly version: string;
   readonly pid: number;
   readonly restart: (signal?: 'SIGTERM' | 'SIGKILL') => Promise<void>;
+  readonly applySource: (input?: LocalSourceUpdate) => Promise<void>;
+  readonly inspect: () => Promise<LocalWorkerStatus>;
   readonly close: (options?: CelldCloseOptions) => Promise<void>;
 };

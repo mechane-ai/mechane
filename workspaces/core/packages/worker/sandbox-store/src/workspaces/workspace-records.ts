@@ -1,47 +1,44 @@
+import { decodeOne } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { Schema } from 'effect';
-import { ExecutionStatus } from '../constants.ts';
+import { DateTime, Duration, Option, Schema } from 'effect';
 import { commitWorkspace } from './commit-workspace.ts';
+import type { CommitWorkspaceInput } from './commit-workspace.ts';
 import { fileCheckpointRecords } from './file-checkpoint-records.ts';
-import { CommandCheckpoint, FileCheckpoint, WorkspaceRestoration } from './schemas.ts';
-import type { WorkspaceCheckpoint, WorkspaceSnapshot } from './schemas.ts';
+import { WorkspaceCheckpoint, WorkspaceRestoration } from './schemas.ts';
 import { workspaceBindings } from './workspace-bindings.ts';
 import { workspaceRecoveryRecords } from './workspace-recovery-records.ts';
+
+type WorkspaceActivityInput = { readonly now: DateTime.Utc };
+type ScheduleAutomaticInput = { readonly at: DateTime.Utc; readonly error: Option.Option<string> };
+type SaveCheckpointInput = Omit<WorkspaceCheckpoint, 'lease'>;
+export const AUTOMATIC_CHECKPOINT_INTERVAL = Duration.minutes(1);
 
 type WorkspaceRecords = ReturnType<typeof workspaceBindings> &
   ReturnType<typeof fileCheckpointRecords> &
   ReturnType<typeof workspaceRecoveryRecords> & {
-    readonly saveCheckpoint: (input: WorkspaceCheckpoint) => void;
+    readonly noteWorkspaceActivity: ({ now }: WorkspaceActivityInput) => void;
+    readonly scheduleAutomaticCheckpoint: ({ at, error }: ScheduleAutomaticInput) => void;
+    readonly saveCheckpoint: ({ ...input }: SaveCheckpointInput) => void;
     readonly saveRestoration: (input: WorkspaceRestoration) => void;
-    readonly commitWorkspace: (input: WorkspaceSnapshot) => void;
+    readonly commitWorkspace: ({ ...input }: CommitWorkspaceInput) => void;
   };
 
-/** The head advances in the same transaction as its execution receipt. Retired data stays named until deletion. */
+/** Files advance independently of terminal command receipts; retired data stays named until deletion. */
 export function workspaceRecords({ sql }: RecordsInput): WorkspaceRecords {
   const saveCheckpoint: WorkspaceRecords['saveCheckpoint'] = (input) => {
-    if (!('executionId' in input)) {
-      const codec = Schema.fromJsonString(FileCheckpoint);
-      const value = Schema.encodeSync(codec)(input);
-
-      sql.exec(
-        'UPDATE sandbox_workspace SET file_checkpoint = ? WHERE slot = 1 AND checkpoint IS NULL AND NOT EXISTS (SELECT 1 FROM executions WHERE status = ?)',
-        value,
-        ExecutionStatus.Dispatched,
-      );
-
-      return;
-    }
-
-    const codec = Schema.fromJsonString(CommandCheckpoint);
-    const value = Schema.encodeSync(codec)(input);
+    const codec = Schema.fromJsonString(WorkspaceCheckpoint);
 
     sql.exec(
-      'UPDATE sandbox_workspace SET checkpoint = ? WHERE slot = 1 AND file_checkpoint IS NULL AND EXISTS (SELECT 1 FROM executions WHERE id = ? AND machine_id = ? AND status = ?)',
-      value,
-      input.executionId,
-      input.machineId,
-      ExecutionStatus.Dispatched,
+      "UPDATE sandbox_workspace SET checkpoint_lease = checkpoint_lease + CASE WHEN file_checkpoint IS NULL OR json_extract(file_checkpoint, '$.generation') <> ? THEN 1 ELSE 0 END WHERE slot = 1",
+      input.generation,
     );
+
+    const cursor = sql.exec('SELECT checkpoint_lease AS lease FROM sandbox_workspace WHERE slot = 1');
+    const schema = Schema.Struct({ lease: Schema.Int });
+    const { lease } = decodeOne({ cursor, schema });
+    const value = Schema.encodeSync(codec)({ ...input, lease });
+
+    sql.exec('UPDATE sandbox_workspace SET file_checkpoint = ? WHERE slot = 1 AND checkpoint IS NULL', value);
   };
 
   const saveRestoration: WorkspaceRecords['saveRestoration'] = (input) => {
@@ -54,6 +51,27 @@ export function workspaceRecords({ sql }: RecordsInput): WorkspaceRecords {
   return {
     ...workspaceBindings({ sql }),
     ...fileCheckpointRecords({ sql }),
+    noteWorkspaceActivity: ({ now }) => {
+      const at = DateTime.toEpochMillis(now);
+      const automatic = DateTime.addDuration(now, AUTOMATIC_CHECKPOINT_INTERVAL);
+      const automaticAt = DateTime.toEpochMillis(automatic);
+
+      sql.exec(
+        'UPDATE sandbox_workspace SET activity_sequence = activity_sequence + 1, last_activity_at_ms = ?, automatic_at_ms = COALESCE(automatic_at_ms, ?) WHERE slot = 1',
+        at,
+        automaticAt,
+      );
+    },
+    scheduleAutomaticCheckpoint: ({ at, error }) => {
+      const timestamp = DateTime.toEpochMillis(at);
+      const text = Option.getOrNull(error);
+
+      sql.exec(
+        'UPDATE sandbox_workspace SET automatic_at_ms = ?, checkpoint_error = ? WHERE slot = 1',
+        timestamp,
+        text,
+      );
+    },
     saveCheckpoint,
     saveRestoration,
     commitWorkspace: (input) => commitWorkspace({ sql, ...input }),

@@ -92,12 +92,15 @@ async function readCheckpointPart({
   const selectedPart = Option.some(part);
   const snapshot = { generation, parent: checkpoint.parent, archive };
 
+  const lease = Option.none();
+
   const response = await workspaceRequest({
     guest,
     machineId,
     generation,
     step: WorkspaceStep.Part,
     part: selectedPart,
+    lease,
     init: { method: HttpMethod.Get },
   });
 

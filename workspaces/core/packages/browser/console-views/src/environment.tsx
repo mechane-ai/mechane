@@ -4,6 +4,7 @@ import { EmptyState, Notice, Skeleton, SkeletonText } from '@mechane-ai/elements
 import type { ProcessHandle, ProcessObservation, ProcessSummaries, ProcessSummary } from '@mechane/protocol';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { EnvironmentDurabilityPlaceholder } from './environment-durability.tsx';
 
 function processKey(handle: ProcessHandle): string {
   return `${handle.machineId}:${handle.processId}`;
@@ -75,6 +76,7 @@ function ProcessRow({
 export function EnvironmentPlaceholder(): ReactNode {
   return (
     <Stack>
+      <EnvironmentDurabilityPlaceholder />
       <Subheading>Processes</Subheading>
       <SkeletonText width="32ch" />
       <Accordion.Root>

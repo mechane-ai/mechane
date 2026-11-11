@@ -20,7 +20,7 @@ export async function advanceSandbox({
   executionId,
   deadline,
 }: AdvanceSandboxInput): Promise<boolean> {
-  const isReady = await advanceWorkspace({ store, provider, workspace });
+  const isReady = await advanceWorkspace({ store, provider, workspace, shouldAdmitCommand: true });
 
   if (!isReady) {
     return false;

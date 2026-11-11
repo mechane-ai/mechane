@@ -15,8 +15,9 @@ export const finishedProcess = Effect.fn('finishedProcess')(function* ({
   args,
   environment,
   timeout,
+  onOutput,
 }: StartProcessInput): Effect.fn.Return<ProcessRun, ProcessFailed, Scope.Scope> {
-  const { exited } = yield* startProcess({ command, args, environment, timeout });
+  const { exited } = yield* startProcess({ command, args, environment, timeout, onOutput });
   const run = yield* exited;
 
   if (!Option.contains(run.status, SUCCESS_STATUS)) {

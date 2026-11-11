@@ -232,6 +232,7 @@ export {
 } from './operations/evidence/evidence-service-paths.ts';
 
 export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';
+export { EnvironmentOverview } from './operations/environment/environment-operations.ts';
 
 export { SELF_TOKEN_VARIABLE, WakeId, WakeStatus, Wake, WakeList } from './operations/self/schemas.ts';
 

@@ -5,7 +5,6 @@ import { archiveWorkspace } from '../archives/archive-workspace.ts';
 import type { ArchiveWorkspaceInput } from '../archives/archive-workspace.ts';
 import { restoreWorkspace } from '../archives/restore-workspace.ts';
 import { WorkspaceFailed } from '../errors.ts';
-import { quiesceWorkspace } from '../quiescence/quiesce-workspace.ts';
 import type { ServedAnswer, WorkspaceFilesInput, WorkspaceRequest } from '../types.ts';
 import { readWorkspaceBody } from './read-workspace-body.ts';
 
@@ -25,9 +24,7 @@ export const workspaceOperation = Effect.fn('workspaceOperation')(function* (
 
   switch (step) {
     case WorkspaceStep.Archive:
-      yield* quiesceWorkspace(input);
-
-      return yield* answerArchive(input);
+      return yield* new WorkspaceFailed({ generation, step, reason: 'the bare archive route is no longer supported' });
     case WorkspaceStep.Checkpoint:
       return yield* answerArchive(input);
     case WorkspaceStep.Part:

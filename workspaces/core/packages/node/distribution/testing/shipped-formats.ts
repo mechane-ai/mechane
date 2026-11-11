@@ -4,7 +4,7 @@ import {
   MIGRATION_LOCK,
   PROGRAM_ARGUMENTS_START,
   ReleaseDescriptor,
-  SHIPPED_WIRE_LOCK,
+  WIRE_LOCK,
 } from '@mechane/program';
 import { Option, Record, Schema } from 'effect';
 import assert from 'node:assert/strict';
@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 
   assert.ok(hasPath && extra.length === 0, 'Pass the staged installation manifest');
 
-  const wirePath = join(CORE_FOLDER, SHIPPED_WIRE_LOCK);
+  const wirePath = join(CORE_FOLDER, WIRE_LOCK);
   const migrationPath = join(CORE_FOLDER, MIGRATION_LOCK);
 
   const reads = [readFile(path.value, 'utf8'), readFile(wirePath, 'utf8'), readFile(migrationPath, 'utf8')] as const;

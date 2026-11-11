@@ -1,25 +1,39 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import type { LocalFixtures } from '../types.ts';
+import type { LocalFixtures, LocalProviders } from '../types.ts';
 import { startGitHubFixture } from './github.ts';
 import { startModelFixture } from './model.ts';
 
 const SIGNING_KEY_BYTES = 32;
 
-export async function startFixtures(origin: URL): Promise<LocalFixtures> {
+type StartFixturesInput = { readonly origin: URL; readonly providers?: LocalProviders };
+
+type StartSelectedFixtureInput<StartedFixture> = {
+  readonly provider: LocalProviders['model'];
+  readonly start: () => Promise<StartedFixture>;
+};
+
+export async function startFixtures({
+  origin,
+  providers = { model: 'fixture', github: 'fixture' },
+}: StartFixturesInput): Promise<LocalFixtures> {
   const cleanup: Array<() => Promise<void>> = [];
 
   try {
-    const github = await startGitHubFixture(origin);
+    const github = await startSelectedFixture({ provider: providers.github, start: () => startGitHubFixture(origin) });
 
-    cleanup.push(github.close);
+    if (github !== undefined) {
+      cleanup.push(github.close);
+    }
 
-    const model = await startModelFixture();
+    const model = await startSelectedFixture({ provider: providers.model, start: () => startModelFixture() });
 
-    cleanup.push(model.close);
+    if (model !== undefined) {
+      cleanup.push(model.close);
+    }
 
     return {
-      github: github.fixture,
-      model: model.fixture,
+      github: github?.fixture,
+      model: model?.fixture,
       notifications: { id: randomUUID(), signingSecret: randomBytes(SIGNING_KEY_BYTES).toString('hex') },
       close: async () => {
         await closeFixtures(cleanup);
@@ -29,6 +43,18 @@ export async function startFixtures(origin: URL): Promise<LocalFixtures> {
     await closeFixtures(cleanup);
 
     throw error;
+  }
+}
+
+async function startSelectedFixture<StartedFixture>({
+  provider,
+  start,
+}: StartSelectedFixtureInput<StartedFixture>): Promise<StartedFixture | undefined> {
+  switch (provider) {
+    case 'fixture':
+      return await start();
+    case 'live':
+      return undefined;
   }
 }
 

@@ -90,8 +90,10 @@ forwarding credentials to another destination.
 
 Keep credentials out of durable model context, tool arguments, and inspection output. Resolve configured references at
 the trusted boundary. Treat private completion as quiet. Public messages and reactions require addressed tools under
-contract 125. A command result and a committed home revision are separate facts; a failed checkpoint cannot claim saved
-files or successful retirement. Preserve actual files, credentials, receipts, and historical evidence during cutover.
+contract 125. A terminal command result and a committed home revision are separate facts. Persist the command's known
+outcome without waiting for background file transfer; checkpoint failure cannot rewrite that outcome or claim saved
+files and successful retirement. Required file barriers retain their own blocking result. Preserve actual files,
+credentials, receipts, and historical evidence during cutover.
 
 ## Checks
 

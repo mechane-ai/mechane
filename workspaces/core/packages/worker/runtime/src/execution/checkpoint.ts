@@ -106,11 +106,13 @@ export async function advanceCheckpoint(access: ActorAccess): Promise<boolean> {
     return false;
   }
 
-  if (report.environment.committedGeneration.value !== result.generation) {
-    return false;
-  }
+  // A later automatic generation cannot invalidate this operation's committed file barrier.
+  const hasRequiredCheckpoint = Option.exists(
+    report.environment.checkpoint,
+    (checkpoint) => checkpoint.isAutomatic !== true,
+  );
 
-  if (Option.isSome(report.environment.checkpoint) || Option.isSome(report.environment.recovery)) {
+  if (hasRequiredCheckpoint || Option.isSome(report.environment.recovery)) {
     return false;
   }
 

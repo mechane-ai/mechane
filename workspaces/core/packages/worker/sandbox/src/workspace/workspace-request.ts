@@ -1,10 +1,9 @@
-import { HttpStatusCode } from '@mechane/records';
+import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
 import { guestWorkspacePath } from '@mechane/sandbox-wire';
 import type { WorkspaceStep } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
-import { Duration, Result } from 'effect';
-import type { Option } from 'effect';
+import { Duration, Option, Result } from 'effect';
 import { ANSWER_SLACK } from '../constants.ts';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { GuestConnection, MachineIdInput } from '../types.ts';
@@ -17,6 +16,7 @@ type WorkspaceRequestInput = {
   /** Absent when the operation addresses the complete generation. */
   readonly part: Option.Option<number>;
   readonly init: RequestInit;
+  readonly lease: Option.Option<number>;
 };
 
 /** Sends one bounded workspace request and preserves a guest failure as a tagged transfer error. */
@@ -27,11 +27,20 @@ export async function workspaceRequest({
   step,
   part,
   init,
+  lease,
 }: WorkspaceRequestInput): Promise<Response> {
   const path = guestWorkspacePath({ machineId, generation, step, part });
   const timeoutMillis = Duration.toMillis(ANSWER_SLACK);
   const signal = AbortSignal.timeout(timeoutMillis);
-  const promise = guest.fetch({ path, init: { ...init, signal } });
+  const headers = new Headers(init.headers);
+
+  if (Option.isSome(lease)) {
+    const value = String(lease.value);
+
+    headers.set(HttpHeader.MechaneCheckpointLease, value);
+  }
+
+  const promise = guest.fetch({ path, init: { ...init, headers, signal } });
   const sent = await capturePromise({ promise });
 
   const transferFailure: (cause: unknown) => WorkspaceTransferFailed = (cause) => {

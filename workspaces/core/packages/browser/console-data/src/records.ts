@@ -1,11 +1,11 @@
 import {
   Allowance,
+  EnvironmentOverview,
   EvidenceArtifact,
   ListedEvent,
   Mech,
   MechSummary,
   ProcessObservation,
-  ProcessSummary,
   Trace,
   Turn,
 } from '@mechane/protocol';
@@ -66,9 +66,9 @@ export type TraceEvidenceRow = typeof TraceEvidenceRow.Type;
 /** Capture metadata keyed by the admitted mech and durable artifact identity. */
 export const EvidenceArtifactRow = mechRecordSchema(EvidenceArtifact);
 export type EvidenceArtifactRow = typeof EvidenceArtifactRow.Type;
-/** A process summary keyed by mech, machine, and process identity. */
-export const EnvironmentProcessRow = mechRecordSchema(ProcessSummary);
-export type EnvironmentProcessRow = typeof EnvironmentProcessRow.Type;
+/** One passive environment snapshot includes its saved files and bounded process summaries. */
+export const EnvironmentOverviewRow = mechRecordSchema(EnvironmentOverview);
+export type EnvironmentOverviewRow = typeof EnvironmentOverviewRow.Type;
 /** Bounded logs fetched only for an explicitly opened process handle. */
 export const EnvironmentProcessDetailsRow = mechRecordSchema(ProcessObservation);
 export type EnvironmentProcessDetailsRow = typeof EnvironmentProcessDetailsRow.Type;
@@ -129,9 +129,8 @@ export function decodeEvidenceArtifact(row: EvidenceArtifactRow): EvidenceArtifa
   return restoreRecord(EvidenceArtifact, row.value);
 }
 
-/** Restores the original process handle and status from its canonical row. */
-export function decodeEnvironmentProcess(row: EnvironmentProcessRow): ProcessSummary {
-  return restoreRecord(ProcessSummary, row.value);
+export function decodeEnvironmentOverview(row: EnvironmentOverviewRow): EnvironmentOverview {
+  return restoreRecord(EnvironmentOverview, row.value);
 }
 
 /** Restores bounded output fetched for one exact process handle. */

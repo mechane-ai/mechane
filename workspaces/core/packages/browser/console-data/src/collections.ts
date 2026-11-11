@@ -11,8 +11,8 @@ import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@
 import { MutableRef, Schema } from 'effect';
 import {
   AllowanceRow,
+  EnvironmentOverviewRow,
   EnvironmentProcessDetailsRow,
-  EnvironmentProcessRow,
   EventRow,
   EvidenceArtifactRow,
   MechDefinitionRow,
@@ -113,9 +113,9 @@ export function createCanonicalCollections(scope: string, persistence: Persisted
       persistence,
       key: rowKey,
     }),
-    environmentProcesses: table({
-      name: collectionId(scope, 'environment-processes'),
-      row: EnvironmentProcessRow,
+    environments: table({
+      name: collectionId(scope, 'environments'),
+      row: EnvironmentOverviewRow,
       persistence,
       key: rowKey,
     }),
@@ -141,7 +141,7 @@ export function materializeCanonicalCollections(db: DbClient, collections: Canon
     events: db.collection(collections.events),
     traceEvidence: db.collection(collections.traceEvidence),
     evidenceArtifacts: db.collection(collections.evidenceArtifacts),
-    environmentProcesses: db.collection(collections.environmentProcesses),
+    environments: db.collection(collections.environments),
     environmentProcessDetails: db.collection(collections.environmentProcessDetails),
     allowance: db.collection(collections.allowance),
     reads: db.collection(collections.reads),

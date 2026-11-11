@@ -10,7 +10,7 @@ const READ_KIND = {
   Trace: 'trace',
   Evidence: 'evidence',
   EvidenceArtifact: 'evidenceArtifact',
-  EnvironmentProcesses: 'environmentProcesses',
+  Environment: 'environment',
   EnvironmentProcess: 'environmentProcess',
   TurnEvents: 'turnEvents',
   Events: 'events',
@@ -33,7 +33,7 @@ const ReadTarget = Schema.Union([
     after: Schema.NullOr(EvidenceArtifactId),
   }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.EvidenceArtifact), mechId: MechId, artifactId: EvidenceArtifactId }),
-  Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcesses), mechId: MechId }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Environment), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.EnvironmentProcess), mechId: MechId, handle: ProcessHandle.to }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.TurnEvents), mechId: MechId, turnId: TurnId, after: Schema.Number }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Events), mechId: MechId, before: Schema.NullOr(Schema.Number) }),
@@ -96,8 +96,7 @@ export const readRequests = {
       mechId: MechId.make(mechId),
       artifactId: EvidenceArtifactId.make(artifactId),
     }),
-  environmentProcesses: (mechId: string) =>
-    request({ kind: READ_KIND.EnvironmentProcesses, mechId: MechId.make(mechId) }),
+  environment: (mechId: string) => request({ kind: READ_KIND.Environment, mechId: MechId.make(mechId) }),
   environmentProcess: (mechId: string, handle: ProcessHandle) =>
     request({ kind: READ_KIND.EnvironmentProcess, mechId: MechId.make(mechId), handle }),
   turnEvents: (mechId: string, turnId: TurnId, after: number) =>

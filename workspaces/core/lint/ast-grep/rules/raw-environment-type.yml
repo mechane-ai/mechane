@@ -22,6 +22,7 @@ ignores:
   - packages/node/checks/src/load-checks-settings.ts
   - packages/node/rename/src/load-rename-settings.ts
   - packages/node/rule-generator/src/load-generate-settings.ts
+  - 'packages/node/stack/src/dev/settings.ts'
 rule:
   kind: nested_type_identifier
   regex: ^NodeJS\.ProcessEnv$

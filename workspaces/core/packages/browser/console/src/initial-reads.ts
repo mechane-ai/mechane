@@ -56,7 +56,7 @@ export function initialReads(
     case 'runs':
       return [heading, readRequests.turns(mechId, pages?.turns?.at(-1) ?? null)];
     case 'environment':
-      return [heading, readRequests.environmentProcesses(mechId)];
+      return [heading, readRequests.environment(mechId)];
     case 'activity':
       return [heading, readRequests.events(mechId, pages?.activity?.at(-1) ?? null)];
     case 'definition':

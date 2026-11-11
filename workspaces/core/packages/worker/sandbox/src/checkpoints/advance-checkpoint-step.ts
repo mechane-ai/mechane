@@ -23,7 +23,7 @@ export async function advanceCheckpointStep({
   const input = { store, provider, workspace, checkpoint };
   const { archive, part } = checkpoint;
 
-  if (!('executionId' in checkpoint) && FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
+  if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
     const result = store.fileCheckpointResult({ purpose: checkpoint.purpose });
 
     if (Option.exists(result, FileCheckpointResult.guards.Failed)) {
@@ -118,7 +118,7 @@ async function connectCheckpointGuest({
 
     store.atomic({
       run: () => {
-        if (!('executionId' in checkpoint)) {
+        if (!FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
           const result = FileCheckpointResult.cases.Failed.make({
             reason: 'machine was lost before the file checkpoint committed',
           });

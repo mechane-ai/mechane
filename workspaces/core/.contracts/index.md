@@ -75,8 +75,8 @@ from 101 are Mechane's own.
 - [Record identifiers](044-data-record-identifiers/CONTRACT.md): random UUIDs; derived ids only where a retry needs them.
 - [Store ownership](045-data-store-ownership/CONTRACT.md): one store module per owner of persisted data.
 - [SQL store boundaries](046-data-sql-store-boundaries/CONTRACT.md): SQL only in the store, each statement once and whole.
-- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): stored format changes and the explicit native-runtime cutover baseline.
-- [Schema rollouts](061-data-sql-schema-rollouts/CONTRACT.md): steps the previous release and existing rows survive.
+- [Stored and shipped formats](047-data-stored-and-shipped-formats/CONTRACT.md): preserved data and explicit consumer cutovers.
+- [Schema rollouts](061-data-sql-schema-rollouts/CONTRACT.md): convergent migrations with rolling or fenced forward-only deployment.
 - [Data and APIs](048-data-and-apis/CONTRACT.md): explicit outcomes behind small APIs.
 - [Request paths](062-api-typescript-request-paths/CONTRACT.md): one named builder per path, which encodes each part.
 - [Scenario functions](049-test-scenario-functions/CONTRACT.md): one function per guarantee, named for it.
@@ -129,7 +129,7 @@ from 101 are Mechane's own.
 
 - [Execution access](120-execution-access/CONTRACT.md): current generic grants, credential references, and honest execution receipts.
 - [Mech notifications](121-mech-notifications/CONTRACT.md): immutable admission, observed input, external outcomes, and durable self-wakes.
-- [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, committed files, and honest recovery.
+- [Developer environments](122-developer-environments/CONTRACT.md): reproducible tools, independent command receipts and file checkpoints, and honest recovery.
 - [Model caching](123-model-caching/CONTRACT.md): provider cache hints, per-mech context, and conservative spend reservations.
 
 - [Durable agent runtime](124-durable-agent-runtime/CONTRACT.md): one Pi execution owner, guarded tools, and metered provider attempts.

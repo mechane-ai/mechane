@@ -4,14 +4,14 @@ import { Result, Schema } from 'effect';
 import { useConversationEntry, useConversationState } from './conversations/provider.tsx';
 import { usePageRead } from './page-read.tsx';
 import type { PageRead } from './page-read.tsx';
-import { useEnvironmentProcesses, useEvents, useEvidenceArtifact, useTrace, useTurns } from './reads.ts';
+import { useEnvironment, useEvents, useEvidenceArtifact, useTrace, useTurns } from './reads.ts';
 import type { ResourceState } from './resource.tsx';
 import type { ConsoleLocation } from './types.ts';
 
 type MechViewRead =
   | { readonly view: 'conversation' | 'definition' }
   | { readonly view: 'runs'; readonly pageRead: PageRead<'turns', ReadRequest<'turns'>> }
-  | { readonly view: 'environment'; readonly request: ReadRequest<'environmentProcesses'> }
+  | { readonly view: 'environment'; readonly request: ReadRequest<'environment'> }
   | { readonly view: 'activity'; readonly pageRead: PageRead<'activity', ReadRequest<'events'>> };
 
 /** Coordinates exact primary readiness while keeping conversation pagination owned across run inspection. */
@@ -41,7 +41,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
     create: (cursors) => data.reads.events(mechId, cursors.at(-1) ?? null),
   });
 
-  const environment = requestedView === 'environment' ? data.reads.environmentProcesses(mechId) : undefined;
+  const environment = requestedView === 'environment' ? data.reads.environment(mechId) : undefined;
   const turnId = Schema.decodeUnknownResult(TurnId, { onExcessProperty: 'error' })(location.turn);
   const trace = Result.isSuccess(turnId) ? data.reads.trace(mechId, turnId.success) : undefined;
   const hasFocusedDetail = location.turn !== undefined || location.artifact !== undefined;
@@ -51,7 +51,7 @@ export function useMechPageReads(data: ConsoleData, mechId: string, location: Co
 
   const turnsState = useTurns(data, hasFocusedDetail ? undefined : turns?.request);
   const activityState = useEvents(data, hasFocusedDetail ? undefined : activity?.request);
-  const environmentState = useEnvironmentProcesses(data, hasFocusedDetail ? undefined : environment);
+  const environmentState = useEnvironment(data, hasFocusedDetail ? undefined : environment);
   const traceState = useTrace(data, location.artifact === undefined ? trace : undefined);
   const evidenceState = useEvidenceArtifact(data, artifact);
 

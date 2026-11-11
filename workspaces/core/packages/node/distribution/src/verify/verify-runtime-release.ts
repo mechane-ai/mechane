@@ -1,11 +1,12 @@
 import { Effect } from 'effect';
 import { join, posix } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { archiveDocument } from '../files/archive-document.ts';
 import { fileDigest } from '../files/file-digest.ts';
 import { readDocument } from '../files/read-document.ts';
-import { RuntimeBuild, RuntimeInventory, RuntimeRelease } from '../runtime-artifact.ts';
+import { RuntimeBuild, runtimeCommands, RuntimeInventory, RuntimeRelease } from '../runtime-artifact.ts';
 import type { ArtifactReceipt, InstallationManifest } from '../schemas.ts';
 import type { DistributionSettings } from '../types.ts';
 
@@ -23,13 +24,19 @@ export const verifyRuntimeRelease = Effect.fn('verifyRuntimeRelease')(function* 
   const release = yield* readDocument({ path: join(settings.folder, 'release.json'), schema: RuntimeRelease });
   const installation = yield* fileDigest({ path: join(settings.folder, release.installation.path) });
   const archive = receipt.assets.find((asset) => asset.name === release.runtime.archive);
+  const providerSetup = receipt.assets.find((asset) => asset.name === release.provider_setup.name);
   const hasMatchingSource = release.public_commit === receipt.public_commit && release.version === receipt.version;
   const hasMatchingArchive = archive?.sha256 === release.runtime.sha256 && archive.bytes === release.runtime.bytes;
 
   const hasMatchingInstallation =
     installation.sha256 === release.installation.sha256 && installation.bytes === release.installation.bytes;
 
-  if (!hasMatchingSource || !hasMatchingArchive || !hasMatchingInstallation) {
+  const hasMatchingProvider =
+    providerSetup?.sha256 === release.provider_setup.sha256 && providerSetup.bytes === release.provider_setup.bytes;
+
+  const hasMatchingArtifacts = hasMatchingArchive && hasMatchingInstallation && hasMatchingProvider;
+
+  if (!hasMatchingSource || !hasMatchingArtifacts) {
     return yield* new DistributionFailed({
       step: DistributionStep.Verify,
       reason: 'runtime descriptor differs from its release inventory',
@@ -59,13 +66,17 @@ export const verifyRuntimeRelease = Effect.fn('verifyRuntimeRelease')(function* 
     build.version === receipt.version &&
     build.node_version === release.commands.node_version;
 
+  const hasMatchingCommands = isDeepStrictEqual(release.commands, runtimeCommands({ nodeVersion: build.node_version }));
+
   const hasMatchingBuildModules =
     build.worker_modules.length === manifest.worker.modules.length &&
     build.worker_modules.every((module) =>
       manifest.worker.modules.some((entry) => entry.path === module.path && entry.content_type === module.content_type),
     );
 
-  if (!hasMatchingInventory || !hasMatchingBuild || !hasMatchingBuildModules) {
+  const hasMatchingRuntimeMetadata = hasMatchingBuild && hasMatchingBuildModules && hasMatchingCommands;
+
+  if (!hasMatchingInventory || !hasMatchingRuntimeMetadata) {
     return yield* new DistributionFailed({
       step: DistributionStep.Verify,
       reason: 'runtime inventory or compiler provenance differs from this release',

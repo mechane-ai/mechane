@@ -14,7 +14,7 @@ const SavedCredential = Schema.Struct({ token: Schema.String });
 const GROUP_AND_OTHER_PERMISSIONS_RANGE = 0o100;
 
 export async function createAccount({ stack, login }: CreateAccountInput): Promise<Account> {
-  const identity = login ?? stack.fixtures?.github.users.member.login;
+  const identity = login ?? stack.fixtures?.github?.users.member.login;
 
   if (identity === undefined) {
     throw new Error('Account creation requires a local GitHub identity');

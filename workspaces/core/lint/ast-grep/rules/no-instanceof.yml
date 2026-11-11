@@ -18,6 +18,7 @@ ignores:
     'packages/browser/console-data/src/browser-authentication.ts',
     'packages/browser/console-data/src/scope-invalidation.ts',
     'packages/browser/console-data/src/read-recovery.ts',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 rule:
   kind: binary_expression

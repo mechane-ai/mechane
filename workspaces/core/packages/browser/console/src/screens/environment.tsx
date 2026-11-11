@@ -1,6 +1,8 @@
+import { Stack } from '@mechane-ai/elements';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData, ReadRequest } from '@mechane/console-data';
 import {
+  EnvironmentDurability,
   EnvironmentPlaceholder,
   EnvironmentProcesses,
   EnvironmentProcessOutput,
@@ -9,7 +11,7 @@ import {
 import type { ProcessSummaries, ProcessSummary } from '@mechane/protocol';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useEnvironmentProcess, useEnvironmentProcesses } from '../reads.ts';
+import { useEnvironment, useEnvironmentProcess } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import { useScreenLifetime } from '../use-screen-lifetime.ts';
 
@@ -19,18 +21,19 @@ export function EnvironmentScreen({
   isActive,
 }: {
   readonly data: ConsoleData;
-  readonly request: ReadRequest<'environmentProcesses'>;
+  readonly request: ReadRequest<'environment'>;
   readonly isActive: boolean;
 }): ReactNode {
-  const state = useEnvironmentProcesses(data, request, isActive);
+  const state = useEnvironment(data, request, isActive);
 
   return (
     <ResourceView state={state} placeholder={<EnvironmentPlaceholder />} label="Loading environment">
-      {(processes, notice) => (
-        <>
+      {(environment, notice) => (
+        <Stack>
           {notice}
-          <ProcessControls data={data} request={request} processes={processes} isActive={isActive} />
-        </>
+          <EnvironmentDurability report={environment.sandbox} />
+          <ProcessControls data={data} request={request} processes={environment.processes} isActive={isActive} />
+        </Stack>
       )}
     </ResourceView>
   );
@@ -43,7 +46,7 @@ function ProcessControls({
   isActive,
 }: {
   readonly data: ConsoleData;
-  readonly request: ReadRequest<'environmentProcesses'>;
+  readonly request: ReadRequest<'environment'>;
   readonly processes: ProcessSummaries;
   readonly isActive: boolean;
 }): ReactNode {

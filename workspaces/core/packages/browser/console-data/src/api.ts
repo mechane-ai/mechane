@@ -38,7 +38,7 @@ export type ConsoleOperation =
   | 'listMechRevisions'
   | 'listEvidence'
   | 'showEvidence'
-  | 'listEnvironmentProcesses'
+  | 'showEnvironment'
   | 'showEnvironmentProcess'
   | 'stopEnvironmentProcess'
   | 'showAllowance';

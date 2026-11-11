@@ -30,7 +30,6 @@ const CelldBinarySettings = Schema.fromJsonString(
   }),
 );
 
-const FixtureSetting = Schema.fromJsonString(Schema.Boolean);
 const RESET_ARGUMENT_COUNT = 4;
 
 type StackSettings =
@@ -55,9 +54,6 @@ export function loadStackSettings(): StackSettings {
 
   const isEphemeral = command === 'fixture';
 
-  const useFixtures =
-    isEphemeral || Schema.decodeUnknownSync(FixtureSetting)(environment['MECHANE_LOCAL_USE_FIXTURES'] ?? 'true');
-
   const stateDirectory = localStateDirectory(environment);
   const origin = new URL(environment['MECHANE_LOCAL_ORIGIN'] ?? DEFAULT_ORIGIN.href);
   const nodeExecutable = environment['MECHANE_NODE_EXECUTABLE'] ?? process.execPath;
@@ -68,7 +64,15 @@ export function loadStackSettings(): StackSettings {
   if (isEphemeral) {
     return {
       command: 'start',
-      options: { mode: 'ephemeral', origin, environment, useFixtures, nodeExecutable, ...toolOptions },
+      options: {
+        mode: 'ephemeral',
+        origin,
+        environment,
+        providers: { model: 'fixture', github: 'fixture' },
+        nodeExecutable,
+        isSource: true,
+        ...toolOptions,
+      },
     };
   }
 
@@ -79,7 +83,7 @@ export function loadStackSettings(): StackSettings {
       stateDirectory,
       origin,
       environment,
-      useFixtures,
+      providers: { model: 'fixture', github: 'fixture' },
       nodeExecutable,
       isSource: true,
       isConsoleDevelopment: true,

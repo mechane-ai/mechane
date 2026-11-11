@@ -5,7 +5,12 @@ import { DistributionFailed } from '../errors.ts';
 import { runCommand } from '../files/run-command.ts';
 import type { DistributionInput } from '../types.ts';
 
-const PUBLIC_REMOTES = ['https://github.com/mechane-ai/mechane.git', 'git@github.com:mechane-ai/mechane.git'] as const;
+const PUBLIC_REMOTES = [
+  'https://github.com/mechane-ai/mechane.git',
+  'https://github.com/mechane-ai/mechane',
+  'git@github.com:mechane-ai/mechane.git',
+  'git@github.com:mechane-ai/mechane',
+] as const;
 
 /** Candidates have immutable public source before a release tag promotes the qualified bytes. */
 export const readPublicSource = Effect.fn('readPublicSource')(function* ({

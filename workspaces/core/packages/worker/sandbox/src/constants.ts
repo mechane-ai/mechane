@@ -4,6 +4,8 @@ import { Duration } from 'effect';
 export const WORKSPACE_OPERATION_TIMEOUT = Duration.minutes(5);
 export const WORKSPACE_TRANSFER_BATCH_PARTS = 8;
 export const WORKSPACE_CHECKPOINT_CONCURRENT_PARTS = 4;
+export const AUTOMATIC_CHECKPOINT_QUIET = Duration.seconds(5);
+export const AUTOMATIC_CHECKPOINT_RETRY = Duration.seconds(30);
 export const WORKSPACE_TRANSFER_BATCH_DURATION = Duration.seconds(2);
 
 /** How long past a request's wait the sandbox waits for the guest's answer before it counts the request as failed. */

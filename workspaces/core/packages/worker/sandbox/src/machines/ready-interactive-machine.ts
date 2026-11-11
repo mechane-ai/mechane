@@ -16,7 +16,7 @@ export async function readyInteractiveMachine({
 }: WorkspaceProviderStepInput): Promise<Option.Option<LiveMachineRow>> {
   const input = { store, provider, workspace };
 
-  if (!(await advanceWorkspace(input))) {
+  if (!(await advanceWorkspace({ ...input, shouldAdmitCommand: true }))) {
     return Option.none();
   }
 

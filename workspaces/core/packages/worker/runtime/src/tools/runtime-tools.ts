@@ -61,7 +61,7 @@ function createRuntimeTools(context: RuntimeToolContext): ToolSet {
     }),
     bash: tool({
       description:
-        'Run a shell command in the mech’s persistent environment with its installed CLIs and granted credentials. Keep durable notes and files in the home directory. A result marked uncertain may already have caused external effects; inspect those effects before repeating it.',
+        'Run a shell command in the mech’s persistent environment with its installed CLIs and granted credentials. Keep notes and files in the home directory. Completed confirms the durable command outcome; home files save separately in background checkpoints. A result marked uncertain may already have caused external effects; inspect those effects before repeating it.',
       inputSchema: z.object({
         command: z.string().min(1),
         timeoutMs: z.number().int().positive().max(BASH_MAX_TIMEOUT_MS).default(BASH_DEFAULT_TIMEOUT_MS),

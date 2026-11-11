@@ -66,7 +66,7 @@ export function createCommands({
     async stopEnvironmentProcess(
       input: CommandInput<'stopEnvironmentProcess'>,
     ): Promise<Output<'stopEnvironmentProcess'>> {
-      const request = readRequests.environmentProcesses(input.mechId);
+      const request = readRequests.environment(input.mechId);
 
       const detailRequest = readRequests.environmentProcess(input.mechId, {
         machineId: input.machineId,

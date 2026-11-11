@@ -1,4 +1,4 @@
-import { MachineId, RecordId, RecordText, SandboxOperationId, wireStruct } from '@mechane/records';
+import { MachineId, RecordId, RecordText, SandboxOperationId, Sequence, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { ExecutionId } from './schemas.ts';
 
@@ -48,6 +48,7 @@ const CheckpointStatus = wireStruct({
   fields: {
     generation: RecordId,
     machineId: MachineId,
+    isAutomatic: Schema.optionalKey(Schema.Boolean),
     executionId: Schema.OptionFromNullOr(ExecutionId),
     operationId: Schema.OptionFromNullOr(SandboxOperationId),
     startedAt: Schema.DateTimeUtcFromString,
@@ -62,6 +63,17 @@ const RecoveryStatus = wireStruct({ fields: { generation: RecordId, machineId: M
 export const SandboxEnvironmentState = wireStruct({
   fields: {
     committedGeneration: Schema.OptionFromNullOr(RecordId),
+    durability: Schema.optionalKey(
+      wireStruct({
+        fields: {
+          activitySequence: Sequence,
+          capturedSequence: Schema.OptionFromNullOr(Sequence),
+          capturedAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromString),
+          nextCheckpointAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromString),
+          lastError: Schema.OptionFromNullOr(RecordText),
+        },
+      }),
+    ),
     checkpoint: Schema.OptionFromNullOr(CheckpointStatus),
     recovery: Schema.OptionFromNullOr(RecoveryStatus),
     stop: Schema.OptionFromNullOr(SandboxStopReceipt),

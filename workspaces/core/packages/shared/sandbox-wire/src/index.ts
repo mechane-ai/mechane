@@ -137,7 +137,6 @@ export { SandboxTool, SandboxTools, SandboxToolArchive, SandboxToolsVariable } f
 
 export { BrowserCertificateVariable, BrowserSandboxDisabledVariable } from './browser-environment.ts';
 export { GuestCapabilities } from './capabilities.schemas.ts';
-export { guestCapabilitiesPath } from './guest-capabilities-path.ts';
 export { SandboxRunId } from './interactive.ts';
 export { GATEWAY_CERTIFICATE } from './constants.ts';
 export { TrustedCertificatesVariable } from './certificate-environment.ts';

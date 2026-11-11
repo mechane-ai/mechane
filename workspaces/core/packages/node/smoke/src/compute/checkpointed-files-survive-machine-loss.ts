@@ -61,10 +61,20 @@ export async function checkpointedFilesSurviveMachineLoss({
 
   assert.match(digest ?? '', /^[a-f0-9]{64}$/);
 
+  const saveOperationId = randomUUID();
+
+  const committed = await waitFor({
+    name: 'the explicit portable-home checkpoint after command completion',
+    read: () => checkpointSandbox({ ...input, operationId: saveOperationId }),
+    accept: (result) => result._tag !== 'Pending',
+  });
+
+  assert.equal(committed._tag, 'Committed');
+
   const savedReport = await readSandboxReport(input);
 
-  assert.ok(Option.isSome(savedReport.environment.committedGeneration), 'Completed Bash left no committed files');
-  assert.ok(Option.isNone(savedReport.environment.checkpoint), 'Completed Bash left an unfinished file checkpoint');
+  assert.ok(Option.isSome(savedReport.environment.committedGeneration), 'The file barrier left no committed files');
+  assert.ok(Option.isNone(savedReport.environment.checkpoint), 'The file barrier left an unfinished checkpoint');
 
   const marker = `lost-writer-${randomUUID()}`;
   const toolCallId = randomUUID();

@@ -23,17 +23,16 @@ export const ARTIFACT_NOTICE_NAMES = ['LICENSE', 'NOTICE'] as const;
 export const OCI_SIZE_KEY = 'size';
 /** The declarative state of each current SQLite Durable Object export. */
 export const DURABLE_EXPORT = { type: 'durable-object', storage: 'sqlite', state: 'created' } as const;
-/** An OCI descriptor digest, including its required hash algorithm. */
-export const DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
 /** Plain filenames accepted by both the artifact receipt and GitHub uploads. */
 export const ASSET_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]+$/;
 
 /** The artifact operations available to a publisher or an offline check. */
 export const DistributionMode = {
   Build: 'build',
+  Candidate: 'candidate',
+  Accept: 'accept',
   Verify: 'verify',
   Preview: 'preview-module',
-  Qualify: 'qualify',
   VerifyQualified: 'verify-qualified',
 } as const;
 

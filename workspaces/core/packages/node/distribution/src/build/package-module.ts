@@ -12,13 +12,19 @@ import type { DistributionSettings } from '../types.ts';
 import { runtimeRelease } from './runtime-release.ts';
 import { stageModule } from './stage-module.ts';
 
-type PackageInput = { readonly settings: DistributionSettings; readonly manifest: InstallationManifest };
+type PackageInput = {
+  readonly settings: DistributionSettings;
+  readonly manifest: InstallationManifest;
+  readonly providerSetup: Artifact;
+};
+
 const ZIP_TIMEOUT = Duration.minutes(30);
 
 /** Packages the complete OpenTofu module and repeats its manifest as a separately verifiable release asset. */
 export const packageModule = Effect.fn('packageModule')(function* ({
   settings,
   manifest,
+  providerSetup,
 }: PackageInput): Effect.fn.Return<ReadonlyArray<Artifact>, DistributionFailed> {
   const folder = join(settings.folder, 'module');
   const files = yield* stageModule({ folder, manifest });
@@ -40,7 +46,14 @@ export const packageModule = Effect.fn('packageModule')(function* ({
   yield* writeDocument({ path: manifestPath, document: manifest });
 
   const manifestDigest = yield* fileDigest({ path: manifestPath });
-  const release = yield* runtimeRelease({ manifest, archive: { name, ...checksum }, installation: manifestDigest });
+
+  const release = yield* runtimeRelease({
+    manifest,
+    archive: { name, ...checksum },
+    installation: manifestDigest,
+    providerSetup,
+  });
+
   const releasePath = join(settings.folder, 'release.json');
 
   yield* writeDocument({ path: releasePath, document: release });

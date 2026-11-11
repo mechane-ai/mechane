@@ -56,6 +56,8 @@ export const QualificationEvidence = Schema.Struct({
   details: Schema.optionalKey(Schema.Unknown),
 });
 
+export type QualificationEvidence = typeof QualificationEvidence.Type;
+
 type QualificationInputsInput = { readonly inputs: QualificationRequest['inputs'] };
 type CanonicalFilesInput = { readonly files: ReadonlyArray<QualifiedFile> };
 

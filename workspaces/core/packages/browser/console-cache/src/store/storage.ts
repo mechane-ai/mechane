@@ -11,7 +11,7 @@ import type { Types } from 'effect';
 import { Base64Url, Hex } from 'effect/encoding';
 
 const CACHE_NAMESPACE = 'mechane-console-opfs';
-const CACHE_SCHEMA_REVISION = 3;
+const CACHE_SCHEMA_REVISION = 4;
 // The native VFS permits 64-character paths, including room for journal suffixes.
 const CACHE_DIRECTORY = 'mc2';
 const GENERATION_BYTES = 16;

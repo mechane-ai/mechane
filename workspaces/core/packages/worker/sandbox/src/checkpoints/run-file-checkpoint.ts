@@ -45,7 +45,7 @@ export async function runFileCheckpoint({
   }
 
   const input = { store, provider, workspace };
-  const isReady = await advanceWorkspace(input);
+  const isReady = await advanceWorkspace({ ...input, shouldAdmitCommand: false });
   const current = store.claimFileCheckpoint({ purpose, now });
 
   if (!isReady || !FileCheckpointResult.guards.Pending(current.result)) {
@@ -92,12 +92,24 @@ export async function runFileCheckpoint({
     return current.result;
   }
 
-  const head = store.workspace().head;
+  const state = store.workspace();
+  const head = state.head;
+  const capturedSequence = Option.some(state.activitySequence);
   const parent = Option.map(head, ({ generation }) => generation);
   const generation = RecordId.make(crypto.randomUUID());
   const archive = Option.none();
 
-  store.saveCheckpoint({ generation, parent, machineId: machine.value.id, purpose, startedAt: now, archive, part: 0 });
+  store.saveCheckpoint({
+    capturedSequence,
+    isAborting: false,
+    generation,
+    parent,
+    machineId: machine.value.id,
+    purpose,
+    startedAt: now,
+    archive,
+    part: 0,
+  });
 
   return current.result;
 }

@@ -1,30 +1,26 @@
 import { Effect } from 'effect';
 import { join } from 'node:path';
-import { DistributionStep, QUALIFICATION_FORMAT_VERSION } from '../constants.ts';
-import { DistributionFailed } from '../errors.ts';
+import { QUALIFICATION_FORMAT_VERSION } from '../constants.ts';
+import type { DistributionFailed } from '../errors.ts';
 import { fileDigest } from '../files/file-digest.ts';
-import { readDocument } from '../files/read-document.ts';
 import { writeDocument } from '../files/write-document.ts';
-import { QualificationRequest } from '../qualification.ts';
-import type { ArtifactQualification } from '../qualification.ts';
-import type { DistributionInput } from '../types.ts';
-import { verifyDistribution } from '../verify/verify-distribution.ts';
+import type { ArtifactQualification, QualificationRequest } from '../qualification.ts';
+import type { ArtifactReceipt } from '../schemas.ts';
+import type { DistributionSettings } from '../types.ts';
 import { verifyQualificationEvidence } from '../verify/verify-qualification-evidence.ts';
 
 /** The complete gate supplies evidence; qualification never recompiles the bytes it approves. */
+type QualifyInput = {
+  readonly settings: DistributionSettings;
+  readonly receipt: ArtifactReceipt;
+  readonly request: QualificationRequest;
+};
+
 export const qualifyDistribution = Effect.fn('qualifyDistribution')(function* ({
   settings,
-}: DistributionInput): Effect.fn.Return<ArtifactQualification, DistributionFailed> {
-  if (settings.argument === undefined) {
-    return yield* new DistributionFailed({
-      step: DistributionStep.Settings,
-      reason: 'use qualify OUTPUT REQUEST.json',
-    });
-  }
-
-  const receipt = yield* verifyDistribution({ settings });
-  const request = yield* readDocument({ path: settings.argument, schema: QualificationRequest });
-
+  receipt,
+  request,
+}: QualifyInput): Effect.fn.Return<ArtifactQualification, DistributionFailed> {
   const artifacts = yield* fileDigest({ path: join(settings.folder, 'artifacts.json') });
   const installation = yield* fileDigest({ path: join(settings.folder, 'installation.json') });
 

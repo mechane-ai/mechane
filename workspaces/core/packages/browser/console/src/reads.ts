@@ -1,7 +1,7 @@
 import {
   canRetainResult,
   decodeAllowance,
-  decodeEnvironmentProcess,
+  decodeEnvironmentOverview,
   decodeEnvironmentProcessDetails,
   decodeEvent,
   decodeEvidenceArtifact,
@@ -15,8 +15,8 @@ import type {
   AllowanceRow,
   CanonicalCollectionOptions,
   ConsoleData,
+  EnvironmentOverviewRow,
   EnvironmentProcessDetailsRow,
-  EnvironmentProcessRow,
   EventRow,
   EvidenceArtifactRow,
   MechSummaryRow,
@@ -259,8 +259,10 @@ function evidenceArtifact(rows: ReadonlyArray<EvidenceArtifactRow>) {
   return row === undefined ? undefined : decodeEvidenceArtifact(row);
 }
 
-function environmentProcesses(rows: ReadonlyArray<EnvironmentProcessRow>) {
-  return rows.map(decodeEnvironmentProcess);
+function environmentOverview(rows: ReadonlyArray<EnvironmentOverviewRow>) {
+  const row = rows[0];
+
+  return row === undefined ? undefined : decodeEnvironmentOverview(row);
 }
 
 function environmentProcessDetails(rows: ReadonlyArray<EnvironmentProcessDetailsRow>) {
@@ -269,18 +271,14 @@ function environmentProcessDetails(rows: ReadonlyArray<EnvironmentProcessDetails
   return row === undefined ? undefined : decodeEnvironmentProcessDetails(row);
 }
 
-/** Projects exact-machine process observations while allowing covered views to release network demand. */
-export function useEnvironmentProcesses(
-  data: ConsoleData,
-  request: ReadRequest<'environmentProcesses'> | undefined,
-  isActive = true,
-) {
+/** Keeps saved-file evidence and process summaries under the same passive read demand. */
+export function useEnvironment(data: ConsoleData, request: ReadRequest<'environment'> | undefined, isActive = true) {
   return useCollectionRead({
     data,
     request,
     isActive,
-    collection: data.collections.environmentProcesses,
-    project: environmentProcesses,
+    collection: data.collections.environments,
+    project: environmentOverview,
   });
 }
 

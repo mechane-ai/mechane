@@ -59,9 +59,9 @@ A scenario exists only for a guarantee from the consequential list above that no
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
 
 The existing infrastructure check also runs `packages/node/distribution/testing/shipped-formats.ts` against its newly
-staged installation descriptor. This publication-safety check compares the actual build output with the canonical
-shipped-wire and migration ledgers. It guards a builder omitting historical entries that source-lock checks cannot see,
-without a second runner or a copied historical fixture.
+staged installation descriptor. This publication-safety check compares the actual build output with the current API
+catalog and exact migration ledger. It guards a builder emitting stale formats or changed migration checksums, without
+a second runner or a copied historical fixture.
 
 The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications

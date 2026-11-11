@@ -11,6 +11,7 @@ ignores:
     'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 severity: error
 message: 'Wrap the call with Effect, such as `Effect.tryPromise({ try: readFile, catch: failed })` (ER-04)'

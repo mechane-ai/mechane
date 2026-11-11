@@ -26,6 +26,7 @@ const PRESENT_ROW_VALUE = 1;
 const PresentRow = Schema.Struct({ present: Schema.Literal(PRESENT_ROW_VALUE) });
 
 const OPERATION_PREFIX = {
+  Automatic: 'automatic',
   Maintenance: 'maintenance',
   Drain: 'drain',
   Activation: 'activation',

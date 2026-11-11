@@ -1,6 +1,6 @@
 import { RELEASE } from '@mechane/protocol';
 import { RemoteSandboxId } from '@mechane/records';
-import { FileCheckpointResult } from '@mechane/sandbox-store';
+import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { SandboxPhase } from '@mechane/sandbox-wire';
 import type { SandboxReport } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
@@ -42,16 +42,24 @@ function environmentState({ store }: Pick<PortableMaintenanceInput, 'store'>): S
       totalParts: Option.map(value.archive, ({ parts }) => parts),
     };
 
-    if ('executionId' in value) {
-      return { ...transfer, executionId: Option.some(value.executionId), operationId: Option.none() };
-    }
-
-    return { ...transfer, executionId: Option.none(), operationId: Option.some(value.purpose.operationId) };
+    return {
+      ...transfer,
+      isAutomatic: FileCheckpointPurpose.guards.Automatic(value.purpose),
+      executionId: Option.none(),
+      operationId: Option.some(value.purpose.operationId),
+    };
   });
 
   return {
     committedGeneration: Option.map(state.head, ({ generation }) => generation),
     checkpoint,
+    durability: {
+      activitySequence: state.activitySequence,
+      capturedSequence: Option.flatMap(state.head, (head) => head.capturedSequence),
+      capturedAt: Option.flatMap(state.head, (head) => head.capturedAt),
+      nextCheckpointAt: state.automaticAt,
+      lastError: state.checkpointError,
+    },
     recovery: state.recovery,
     stop: inspectSandboxStop({ store }),
   };

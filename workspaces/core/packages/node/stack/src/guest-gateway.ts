@@ -1,4 +1,4 @@
-import { HttpHeader, HttpStatusCode } from '@mechane/records';
+import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Record } from 'effect';
 import { randomUUID } from 'node:crypto';
 import { once } from 'node:events';
@@ -19,16 +19,19 @@ export type GuestGateway = {
   readonly origin: URL;
   readonly guestOrigin: URL;
   readonly registerFixture: (answer: HttpHandler) => GuestHttpFixture;
+  readonly registerFixturePrefix: (answer: HttpHandler) => GuestHttpFixture;
   readonly close: () => Promise<void>;
 };
 
 const PRIVATE_HEADERS: ReadonlySet<string> = new Set([HttpHeader.Host, HttpHeader.ProxyAuthorization, 'connection']);
 const FIXTURE_PATH_PREFIX = '/__mechane_fixtures/';
+const BODYLESS_METHODS: ReadonlySet<string> = new Set([HttpMethod.Get, HttpMethod.Head]);
 
 export async function startGuestGateway({ target, tls }: GatewayInput): Promise<GuestGateway> {
   const key = await readFile(tls.key);
   const cert = await readFile(tls.certificate);
   const fixtures = new Map<string, HttpHandler>();
+  const services = new Map<string, HttpHandler>();
 
   const server = createServer({ key, cert }, (incoming, outgoing) => {
     const path = requestPath(incoming, target);
@@ -46,6 +49,18 @@ export async function startGuestGateway({ target, tls }: GatewayInput): Promise<
       void handleFixtureRequest(incoming, outgoing, fixture);
 
       return;
+    }
+
+    for (const [prefix, answer] of services) {
+      if (path.startsWith(prefix)) {
+        void handleFixtureRequest(
+          incoming,
+          outgoing,
+          async (received) => await answerFixtureService({ received, prefix, answer }),
+        );
+
+        return;
+      }
     }
 
     if (path.startsWith(FIXTURE_PATH_PREFIX)) {
@@ -88,11 +103,48 @@ export async function startGuestGateway({ target, tls }: GatewayInput): Promise<
         },
       };
     },
+    registerFixturePrefix: (answer) => {
+      const prefix = `${FIXTURE_PATH_PREFIX}${randomUUID()}/`;
+
+      services.set(prefix, answer);
+
+      return {
+        url: new URL(prefix, guestOrigin),
+        close: async () => {
+          services.delete(prefix);
+        },
+      };
+    },
     close: async () => {
       fixtures.clear();
+      services.clear();
       await closeHttpServer(server);
     },
   };
+}
+
+type FixtureServiceInput = { readonly received: Request; readonly prefix: string; readonly answer: HttpHandler };
+
+async function answerFixtureService({ received, prefix, answer }: FixtureServiceInput): Promise<Response> {
+  const url = new URL(received.url);
+
+  url.pathname = fixtureServicePath({ pathname: url.pathname, prefix });
+
+  const options: RequestInit = { method: received.method, headers: received.headers };
+
+  if (!BODYLESS_METHODS.has(received.method)) {
+    options.body = new Uint8Array(await received.arrayBuffer());
+  }
+
+  const forwarded = new Request(url, options);
+
+  return await answer(forwarded);
+}
+
+type FixtureServicePathInput = { readonly pathname: string; readonly prefix: string };
+
+function fixtureServicePath({ pathname, prefix }: FixtureServicePathInput): string {
+  return `/${pathname.slice(prefix.length)}`;
 }
 
 function requestPath(incoming: IncomingMessage, target: URL): string | undefined {

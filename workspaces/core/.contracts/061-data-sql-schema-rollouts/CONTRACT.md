@@ -1,18 +1,18 @@
 ---
 name: data-sql-schema-rollouts
-message: Ship schema changes that the previous release and existing rows survive, in batches an interrupted deploy resumes.
+message: Preserve existing rows through convergent migrations with one declared writer and an explicit rollout mode.
 paths: ["packages/worker/control-store/**", "packages/worker/server/src/**", "packages/worker/runtime/src/**", "packages/worker/sandbox-store/src/**"]
 ---
 
 ## Rules
 
-Write every migration for the previous release running against the new schema, during the rollout and after a code rollback.
-Ship a migration in the same deploy as the code that uses it only when it is additive: a nullable or defaulted column, a new table, or a new non-unique index.
-Do not drop, rename, or narrow a column, table, or type that the previous release reads or writes.
-Do not add a `NOT NULL` column without a default while the previous release can insert rows without it.
-Set `NOT NULL` only after every running release writes the column and a backfill has filled the existing rows.
-Land a destructive change in a later deploy than the code that stopped depending on the old shape.
-Rename by expand and contract: add the new column, write both, backfill, switch reads, and drop the old column in a later deploy.
+Declare whether supported application versions overlap during migration.
+For a rolling deployment, keep the schema readable and writable by every supported live version until its writer retires.
+Use additive changes and bounded backfills before removing a field those versions need.
+For an authorized hard cutover, fence admission and positively retire old writers before applying the forward migration.
+Preserve retained data and unresolved effects, verify the migrated records, then activate the new writer.
+Do not require dual writes or a retired compatibility engine when versions do not overlap.
+Recover forward after a narrowing; a code-only rollback to a reader that rejects the new schema is unsupported.
 
 Before adding a constraint or rewriting stored values, count the production rows it would reject or change for each kind of row: nulls, legacy values, duplicates, orphans, and every status.
 Record those counts with the change for review.
@@ -24,7 +24,7 @@ Match the exact old value in a rewrite, so a value that merely contains it is ne
 Write bulk data work as a loop that commits each bounded batch and repeats until no rows match, so an interrupted run resumes.
 Select only rows the current pass can change, so a batch of rows it cannot fix neither ends the loop early nor repeats forever.
 Make every statement that commits before a possible interruption safe to run again.
-Keep a statement that cannot be batched, such as one that rewrites a whole table, out of deploy-time migrations, and replace it with a new structure filled by a batched backfill across deploys.
+Keep unbounded rewrites out of deploy-time migrations; use a resumable backfill or a measured maintenance operation.
 State in each expensive migration why it is safe to run: batched and convergent, or small enough to run at once, with its measured row count.
 
 Test each migration that constrains or rewrites rows on the production database engine, seeded with each counted kind of row, including rows that must not change.
@@ -32,7 +32,7 @@ Run a data rewrite twice in that test and assert that the second run changes not
 
 ## Checks
 
-For each added migration, ask whether the previous release reads or writes anything it drops, renames, narrows, or makes required.
+For each migration, verify either compatibility with supported overlapping versions or positive retirement of old writers.
 Confirm the change records production counts for each kind of row a new constraint or rewrite could reject or change.
 Run each constraining or rewriting migration on the production database engine with every counted kind of row seeded.
 Interrupt a batched migration partway and rerun it; confirm it resumes and converges.
@@ -40,30 +40,18 @@ Review each bulk statement for a batched convergent loop or a stated measured ro
 
 ## Local adaptations
 
-The owner-authorized celld/Pi cutover retires all Node/Workflow execution before activating MechObject. It does not
-retain a compatibility engine. Preserve existing Postgres identity, authority, credentials, accounting, source history,
-and Sandbox files. Steps 1 through 5 keep their exact shipped checksums; schema 6 adds the actor control boundary.
-The restricted runtime role cannot write legacy execution tables or the migration ledger.
+The November 11, 2026 local policy replaces mandatory previous-release overlap with the explicit rollout modes above.
+Preserve Postgres identity, authority, credentials, accounting, source history, and sandbox files through either mode.
+Keep applied migration identifiers and checksums unchanged. An older migrator refuses a newer ledger rather than
+modifying it. Serving readers validate their supported schema and checksum prefix.
 
-Import retained histories through a consistent, read-only source snapshot and a bounded, idempotent importer. Verify
-the expected source digest and positive old-owner retirement receipt before applying. Commit each actor import cursor
-with its immutable payload. Imported events remain historical and cannot replay commands, approvals, or publication.
-Import never activates a mech or overrides a saved maintenance hold. A source that exceeds a supported batch refuses
-preflight explicitly; it must not truncate actual history. A code-only rollback to the retired execution engine is
-unsupported. Future control-store migrations follow the rolling-deployment rules above.
-
-Native releases 0.25.0 and 0.25.1 use domain schema 1 and reject every later ledger revision at startup. Upgrading them
-to schema 2, introduced in 0.25.2, requires a controlled stop of all old application instances before migration.
-Preserve native records and historical Workflow data. Retire active histories before switching execution owners.
-After migration, recover forward; a code-only rollback to either schema 1 release is unsupported. This single bootstrap
-boundary does not authorize data deletion or waive additive compatibility for subsequent releases.
-Serving readers validate the contiguous ledger and their known
-checksum prefix; a later suffix is allowed only under these additive rollout rules. An older migrator refuses a newer
-ledger instead of modifying it.
+Historical imports use a consistent read-only source and bounded idempotent writes. Imported events remain evidence;
+they cannot replay commands, approvals, or publication, activate an agent, or override a maintenance hold. Keep any
+still-required import procedure with its owning operator command; completed cutovers do not constrain later releases.
 
 Run schema changes with a dedicated migration connection. The runtime connection receives only the permissions its
-control tables require. Do not edit retired upstream engine tables to repair application state. Preserve retained
-platform history when removing its runtime adapter. Record exact upstream versions in the release.
+control tables require. Preserve retained platform history when removing its runtime adapter. Record exact upstream
+versions in the release.
 
 The isolated sandbox service retains its own SQLite schema ledger and persistent file checkpoints. A service restart
 must not replay a completed command or publish a checkpoint after cancellation. Destructive sandbox changes require

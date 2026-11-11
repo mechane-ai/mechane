@@ -30,10 +30,10 @@ export const buildDistribution = Effect.fn('buildDistribution')(function* ({
   });
 
   const guest = yield* buildGuestArchive({ settings });
-  const manifest = yield* installationManifest({ commit, isPreview: false, guest });
-  const moduleAssets = yield* packageModule({ settings, manifest });
-  const cliAssets = yield* buildCliAssets({ settings, commit });
   const providerSetup = yield* packageProviderSetup({ settings });
+  const manifest = yield* installationManifest({ commit, isPreview: false, guest });
+  const moduleAssets = yield* packageModule({ settings, manifest, providerSetup });
+  const cliAssets = yield* buildCliAssets({ settings, commit });
   const unchanged = yield* readPublicSource({ settings });
 
   if (unchanged !== commit) {

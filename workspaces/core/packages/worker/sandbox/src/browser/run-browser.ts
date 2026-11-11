@@ -2,7 +2,7 @@ import { MachineId } from '@mechane/records';
 import type { BrowserCall } from '@mechane/sandbox-store';
 import { BrowserAction, BrowserProgress } from '@mechane/sandbox-wire';
 import type { BrowserRequest } from '@mechane/sandbox-wire';
-import { Option, Result, Schema } from 'effect';
+import { DateTime, Option, Result, Schema } from 'effect';
 import { connectLiveMachine } from '../machines/connect-live-machine.ts';
 import { readyInteractiveMachine } from '../machines/ready-interactive-machine.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
@@ -25,7 +25,7 @@ export async function runBrowser({ store, provider, workspace, requestId }: RunB
 
   const input = { store, provider, workspace };
 
-  if (!(await advanceWorkspace(input))) {
+  if (!(await advanceWorkspace({ ...input, shouldAdmitCommand: true }))) {
     return BrowserProgress.cases.Pending.make({
       isDispatchRequired: false,
       reason: 'the sandbox is completing a file checkpoint',
@@ -77,6 +77,10 @@ export async function runBrowser({ store, provider, workspace, requestId }: RunB
   if (Option.isSome(canceled)) {
     return canceled.value;
   }
+
+  const dispatchedAt = DateTime.nowUnsafe();
+
+  store.noteWorkspaceActivity({ now: dispatchedAt });
 
   const result = await browserGuest({ guest: guest.value, machineId, request: assigned.request });
 

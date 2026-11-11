@@ -23,3 +23,5 @@ export {
   readEvidenceObject,
 } from './evidence/evidence-objects.ts';
 export type { EvidenceRange } from './evidence/evidence-objects.ts';
+
+export { AUTOMATIC_CHECKPOINT_INTERVAL } from './workspaces/workspace-records.ts';

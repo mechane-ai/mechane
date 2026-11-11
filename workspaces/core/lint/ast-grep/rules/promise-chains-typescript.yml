@@ -11,6 +11,7 @@ ignores:
     'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 severity: error
 message: 'Await the promise, such as `const response = await fetch(url)` (ER-04)'

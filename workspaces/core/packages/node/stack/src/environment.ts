@@ -79,9 +79,27 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
   }
 
   const { github, model } = input.fixtures;
+  const githubEnvironment = githubFixtureEnvironment({ github });
+  const modelEnvironment = modelFixtureEnvironment({ model });
 
   return {
     ...deploymentEnvironment,
+    ...githubEnvironment,
+    ...modelEnvironment,
+    MECHANE_NOTIFICATION_PRODUCERS: input.inherited['MECHANE_NOTIFICATION_PRODUCERS'] ?? '[]',
+    MECHANE_AUTH_RATE_LIMITS: input.inherited['MECHANE_AUTH_RATE_LIMITS'] ?? JSON.stringify(FIXTURE_AUTH_RATE_LIMITS),
+    MECHANE_NAMED_KEY_LIFETIME_SECONDS: input.inherited['MECHANE_NAMED_KEY_LIFETIME_SECONDS'] ?? '31536000',
+  };
+}
+
+type GitHubFixtureEnvironmentInput = Pick<LocalFixtures, 'github'>;
+
+function githubFixtureEnvironment({ github }: GitHubFixtureEnvironmentInput): Environment {
+  if (github === undefined) {
+    return {};
+  }
+
+  return {
     MECHANE_GITHUB_CLIENT_ID: github.clientId,
     MECHANE_GITHUB_CLIENT_SECRET: github.clientSecret,
     MECHANE_GITHUB_WEB_ORIGIN: github.origin.origin,
@@ -90,12 +108,20 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
       [github.users.owner, github.users.member].map((user) => ({ provider: 'github', subject: String(user.id) })),
     ),
     MECHANE_ADMINISTRATOR_IDENTITIES: JSON.stringify([{ provider: 'github', subject: String(github.users.owner.id) }]),
+  };
+}
+
+type ModelFixtureEnvironmentInput = Pick<LocalFixtures, 'model'>;
+
+function modelFixtureEnvironment({ model }: ModelFixtureEnvironmentInput): Environment {
+  if (model === undefined) {
+    return {};
+  }
+
+  return {
     MECHANE_MODEL_UPSTREAM_URL: model.origin.href,
     MECHANE_MODEL_UPSTREAM_KEY: model.apiKey,
     MECHANE_MODEL_OFFERS: JSON.stringify(FIXTURE_MODEL_OFFERS),
     MECHANE_DEFAULT_MODEL: FIXTURE_MODEL,
-    MECHANE_NOTIFICATION_PRODUCERS: input.inherited['MECHANE_NOTIFICATION_PRODUCERS'] ?? '[]',
-    MECHANE_AUTH_RATE_LIMITS: input.inherited['MECHANE_AUTH_RATE_LIMITS'] ?? JSON.stringify(FIXTURE_AUTH_RATE_LIMITS),
-    MECHANE_NAMED_KEY_LIFETIME_SECONDS: input.inherited['MECHANE_NAMED_KEY_LIFETIME_SECONDS'] ?? '31536000',
   };
 }

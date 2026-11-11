@@ -24,6 +24,8 @@ Make every outward conversation write an explicit agent tool call with a destina
 names the current mech's public conversation by its invocation scope. Platform tools name their channel or thread through
 the configured CLI or MCP interface. No intake, end-of-turn, approval, cancellation, or failure callback sends a message
 or reaction. Prompt guidance may recommend acknowledgment; scheduling must not perform it.
+An immediate acknowledgment or progress update still requires that explicit tool call. A scheduler receipt, command
+exit, or background checkpoint does not authorize an outward write.
 
 Keep output authorization and uncertain-delivery reconciliation with the tool's owning service. Use stable operation
 identities for repeated calls. A delivery failure cannot rerun completed application work. Current destination policy

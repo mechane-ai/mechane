@@ -12,6 +12,7 @@ ignores:
     'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     '**/node_modules/**',
+    'packages/node/program/src/{start-process,finished-process,types}.ts',
   ]
 utils:
   unit-name:
