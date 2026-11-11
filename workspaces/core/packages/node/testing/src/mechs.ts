@@ -24,6 +24,7 @@ type MechInput = MechOwner & { readonly mechId: string };
 type CreateMechInput = MechOwner & { readonly name: string; readonly dailyCapMicros?: number };
 type SendNotificationInput = MechInput & { readonly text: string; readonly notificationId?: string };
 type TraceInput = MechInput & { readonly turnId: string; readonly signal?: AbortSignal };
+type ConsoleMessagesInput = MechInput & { readonly beforeSequence?: number; readonly afterSequence?: number };
 type EventsInput = MechInput & { readonly after?: number };
 type HistoryInput = MechInput & { readonly after?: string };
 type AfterQuery = { readonly after?: string | number };
@@ -103,7 +104,7 @@ export async function readTurns(input: MechInput): Promise<ReadonlyArray<Turn>> 
   return turns;
 }
 
-export async function readConsoleMessages(input: MechInput): Promise<ConsoleMessagePage> {
+export async function readConsoleMessages(input: ConsoleMessagesInput): Promise<ConsoleMessagePage> {
   return await readJson({ ...input, path: conversationPath(input), schema: ConsoleMessagePage });
 }
 
@@ -191,8 +192,28 @@ function turnsPath(input: MechInput): string {
   return `${mechPath(input)}/turns`;
 }
 
-function conversationPath(input: MechInput): string {
-  return `${mechPath(input)}/conversation`;
+function conversationPath(input: ConsoleMessagesInput): string {
+  const query = conversationQuery(input);
+
+  return `${mechPath(input)}/conversation${query}`;
+}
+
+function conversationQuery(input: ConsoleMessagesInput): string {
+  const query = new URLSearchParams();
+
+  if (input.beforeSequence !== undefined) {
+    query.set('before_sequence', String(input.beforeSequence));
+  }
+
+  if (input.afterSequence !== undefined) {
+    query.set('after_sequence', String(input.afterSequence));
+  }
+
+  if (query.size === 0) {
+    return '';
+  }
+
+  return `?${query.toString()}`;
 }
 
 export function eventsPath(input: EventsInput): string {

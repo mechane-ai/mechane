@@ -6,14 +6,17 @@ import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
+type ReconcileCheckpointPartInput = ArchivedCheckpointInput & { readonly part: number };
+
 /** A successful upload may have lost its response before the cursor advanced. */
 export async function reconcileCheckpointPart({
   checkpoint,
   archive,
   workspace,
   store,
-}: ArchivedCheckpointInput): Promise<boolean> {
-  const { generation, parent, part } = checkpoint;
+  part,
+}: ReconcileCheckpointPartInput): Promise<boolean> {
+  const { generation, parent } = checkpoint;
   const selectedPart = Option.some(part);
   const key = workspacePartKey({ owner: workspace.owner, generation, part: selectedPart });
   const found = await workspace.bucket.head(key);
@@ -43,8 +46,6 @@ export async function reconcileCheckpointPart({
 
     Result.getOrThrow(failure);
   }
-
-  store.saveCheckpoint({ ...checkpoint, part: part + 1 });
 
   return true;
 }

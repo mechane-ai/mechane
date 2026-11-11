@@ -1,7 +1,19 @@
 import type { Report } from '@earendil-works/pi-durable';
-import { RecordId } from '@mechane/records';
+import { HttpMethod, RecordId } from '@mechane/records';
 import { safeFailureLocation } from '@mechane/utilities';
-import { Schema } from 'effect';
+import { Option, Schema } from 'effect';
+
+export type SandboxMaintenancePhase = 'fetch' | 'http' | 'body' | 'decode';
+
+type SandboxMaintenanceFailureInput = {
+  readonly cause: unknown;
+  readonly pathname: string;
+  readonly phase: SandboxMaintenancePhase;
+  readonly status: Option.Option<number>;
+  readonly ray: Option.Option<string>;
+};
+
+const CLOUDFLARE_RAY = /^[0-9A-Fa-f]{16}(?:-[A-Za-z]{3})?$/u;
 
 const FAILURE_NAMES: ReadonlySet<string> = new Set([
   'Error',
@@ -37,6 +49,8 @@ const FAILURE_FILES: ReadonlySet<string> = new Set([
   'sandbox-client.js',
   'sandbox-transport.ts',
   'sandbox-transport.js',
+  'sandbox-maintenance.ts',
+  'sandbox-maintenance.js',
   'http.ts',
   'http.js',
 ]);
@@ -85,6 +99,32 @@ export function writeActorOperationFailure(cause: unknown): void {
   const location = safeFailureLocation({ cause, allowedNames: FAILURE_NAMES, allowedFiles: FAILURE_FILES });
 
   console.error({ event: 'actor.operation_failed', ...location });
+}
+
+export function writeSandboxMaintenanceFailure({
+  cause,
+  pathname,
+  phase,
+  status,
+  ray,
+}: SandboxMaintenanceFailureInput): void {
+  try {
+    const location = safeFailureLocation({ cause, allowedNames: FAILURE_NAMES, allowedFiles: FAILURE_FILES });
+    const correlatedRay = Option.filter(ray, (value) => CLOUDFLARE_RAY.exec(value)?.[0] === value);
+    const cloudflareRay = Option.getOrUndefined(correlatedRay);
+
+    console.error({
+      event: 'sandbox.maintenance_failed',
+      method: HttpMethod.Post,
+      pathname,
+      phase,
+      status: Option.getOrUndefined(status),
+      cloudflareRay,
+      ...location,
+    });
+  } catch {
+    // Reporting must not replace the maintenance failure.
+  }
 }
 
 export function writeActorDeferred(input: {

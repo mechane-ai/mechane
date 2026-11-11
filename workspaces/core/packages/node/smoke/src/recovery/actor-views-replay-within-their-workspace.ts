@@ -19,6 +19,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 const VIEW_READ_TIMEOUT_MS = 30_000;
+const PUBLICATION_BURST_COUNT = 101;
 const INACCESSIBLE_STATUSES: ReadonlySet<number> = new Set([HttpStatusCode.Forbidden, HttpStatusCode.NotFound]);
 
 export async function actorViewsReplayWithinTheirWorkspace({ stack }: ScenarioInput): Promise<void> {
@@ -107,4 +108,47 @@ export async function actorViewsReplayWithinTheirWorkspace({ stack }: ScenarioIn
   }
 
   assert.equal(fixtures.model.readCalls({ marker }).length, replies.length);
+
+  const pagingMarker = `console-paging-${randomUUID()}`;
+  const expectedMessages = Array.from({ length: PUBLICATION_BURST_COUNT }, (_, index) => `publication-${index}`);
+
+  fixtures.model.configure({
+    marker: pagingMarker,
+    replies: [
+      {
+        isHeld: true,
+        tools: expectedMessages.map((text) => ({ id: randomUUID(), name: 'console_message', input: { text } })),
+      },
+      { text: privateText },
+    ],
+  });
+
+  const { notification: pagingNotification } = await startHeldActivation({ ...owner, marker: pagingMarker });
+
+  const baseline = await readConsoleMessages(owner).finally(() => {
+    fixtures.model.release({ marker: pagingMarker, index: 0 });
+  });
+
+  const lastMessage = baseline.messages.at(-1);
+
+  assert.ok(lastMessage !== undefined);
+
+  const pagingCompleted = await waitForTurn({ ...owner, notificationId: pagingNotification.id });
+
+  assert.equal(pagingCompleted.status, TurnStatus.Completed);
+
+  const refreshedMessages: Array<string> = [];
+  let page = await readConsoleMessages({ ...owner, afterSequence: lastMessage.sequence });
+
+  while (page.messages.length > 0) {
+    refreshedMessages.push(...page.messages.map((message) => message.text));
+
+    const latest = page.messages.at(-1);
+
+    assert.ok(latest !== undefined);
+
+    page = await readConsoleMessages({ ...owner, afterSequence: latest.sequence });
+  }
+
+  assert.deepEqual(refreshedMessages, expectedMessages, 'Incremental history skipped or repeated a public message');
 }

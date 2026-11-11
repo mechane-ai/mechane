@@ -1,9 +1,14 @@
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import { capturePromise } from '@mechane/utilities';
 import { Array, DateTime, Option, Result } from 'effect';
-import { WORKSPACE_TRANSFER_BATCH_DURATION, WORKSPACE_TRANSFER_BATCH_PARTS } from '../constants.ts';
+import {
+  WORKSPACE_CHECKPOINT_CONCURRENT_PARTS,
+  WORKSPACE_TRANSFER_BATCH_DURATION,
+  WORKSPACE_TRANSFER_BATCH_PARTS,
+} from '../constants.ts';
 import { releaseMachineWorkspace } from '../workspace/release-machine-workspace.ts';
 import { advanceCheckpointStep } from './advance-checkpoint-step.ts';
+import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { failCheckpoint } from './fail-checkpoint.ts';
 import { releaseRecoveryCheckpoint } from './release-recovery-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
@@ -19,11 +24,17 @@ export async function advanceCheckpoint({
   const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
   const lastPart = checkpoint.part + WORKSPACE_TRANSFER_BATCH_PARTS - 1;
   const parts = Array.range(checkpoint.part, lastPart);
+  const batches = Array.chunksOf(parts, WORKSPACE_CHECKPOINT_CONCURRENT_PARTS);
 
-  for (const part of parts) {
+  for (const batch of batches) {
+    const part = Array.headNonEmpty(batch);
     const current = store.workspace().checkpoint;
 
-    if (Option.isNone(current) || current.value.generation !== checkpoint.generation) {
+    if (
+      Option.isNone(current) ||
+      current.value.generation !== checkpoint.generation ||
+      current.value.machineId !== checkpoint.machineId
+    ) {
       return;
     }
 
@@ -36,11 +47,19 @@ export async function advanceCheckpoint({
     const advanced = await capturePromise({ promise });
     const saved = store.workspace().checkpoint;
 
-    if (Option.isNone(saved) || saved.value.generation !== checkpoint.generation) {
+    if (
+      Option.isNone(saved) ||
+      saved.value.generation !== checkpoint.generation ||
+      saved.value.machineId !== checkpoint.machineId
+    ) {
       return;
     }
 
     if (Result.isFailure(advanced)) {
+      if (!isCurrentCheckpoint({ store, checkpoint: current.value })) {
+        return;
+      }
+
       failCheckpoint({ ...input, cause: advanced.failure });
 
       if (!('executionId' in checkpoint) && FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
@@ -54,7 +73,7 @@ export async function advanceCheckpoint({
       return;
     }
 
-    if (saved.value.part !== current.value.part + 1) {
+    if (saved.value.part !== current.value.part + batch.length) {
       return;
     }
 

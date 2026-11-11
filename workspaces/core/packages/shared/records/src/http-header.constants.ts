@@ -6,6 +6,7 @@ export const HttpHeader = {
   Authorization: 'authorization',
   BrowserAuthentication: 'x-mechane-browser-authentication',
   CacheControl: 'cache-control',
+  CloudflareRay: 'cf-ray',
   // Cloudflare's edge names the client's address in it, which no client can set there; celld sets it on no request.
   ConnectingIp: 'cf-connecting-ip',
   ContentLength: 'content-length',

@@ -82,11 +82,12 @@ Worker cannot raise a limit compiled into an already-running guest. Older compon
 their lower admission limit, even though archive and part formats are unchanged. Preserve unsaved live files before
 replacing an older guest. Move only identified, reproducible data when recovery requires reducing its home first.
 
-Checkpoint upload and restoration copy existing archive parts in bounded sequential batches. Each part retains its
-checksum and durable progress; a completed command still waits for the entire generation to commit. The scheduling
-budget limits starting another part, not an already-running transfer. Guest command duration excludes that save, so a
-fast shell command can still take longer to return its durable result. When investigating latency, record archive bytes,
-part count, and upload or restore timing separately from command execution.
+Checkpoint uploads transfer at most four archive parts concurrently. Each batch waits for every started transfer to
+settle before advancing its fenced cursor or handling failure. Restoration copies parts sequentially. Both paths retain
+per-part checksums and bounded scheduling. A completed command waits for the entire generation to commit. The scheduling
+budget limits starting another batch or restoration part, while an in-flight transfer keeps its existing timeout. Guest
+command duration excludes saving files. When investigating latency, record archive bytes, part count, and upload or
+restore timing separately from command execution.
 
 New generations publish an immutable manifest after their archive parts and before the head and receipt commit.
 Restoration verifies that manifest's digest. Existing committed generations retain their original inline metadata and

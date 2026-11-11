@@ -1,27 +1,27 @@
-import { Option } from 'effect';
-import { commitCheckpoint } from './commit-checkpoint.ts';
+import { Array, Result } from 'effect';
 import { reconcileCheckpointPart } from './reconcile-checkpoint-part.ts';
-import type { CheckpointStepInput } from './types.ts';
+import type { ArchivedCheckpointInput } from './types.ts';
 
-/** Commits complete archives and reconciles stored parts before contacting the guest. */
+type ReconcileStoredCheckpointInput = ArchivedCheckpointInput & { readonly parts: ReadonlyArray<number> };
+
+/** Reuses immutable parts after interruption without advancing the batch's durable cursor. */
 export async function reconcileStoredCheckpoint({
-  store,
-  provider,
-  workspace,
-  checkpoint,
-}: CheckpointStepInput): Promise<boolean> {
-  const input = { store, provider, workspace, checkpoint };
-  const archive = checkpoint.archive;
+  parts,
+  ...input
+}: ReconcileStoredCheckpointInput): Promise<ReadonlyArray<number>> {
+  const pending = parts.map((part) => reconcileCheckpointPart({ ...input, part }));
+  const settled = await Promise.allSettled(pending);
+  const reconciled = Array.zip(parts, settled);
 
-  if (Option.isNone(archive)) {
-    return false;
+  for (const result of settled) {
+    if ('reason' in result) {
+      const failure = Result.fail(result.reason);
+
+      Result.getOrThrow(failure);
+    }
   }
 
-  if (checkpoint.part === archive.value.parts) {
-    await commitCheckpoint({ ...input, archive: archive.value });
+  const missing = reconciled.filter(([, result]) => 'value' in result && !result.value);
 
-    return true;
-  }
-
-  return await reconcileCheckpointPart({ ...input, archive: archive.value });
+  return missing.map(([part]) => part);
 }

@@ -676,12 +676,13 @@ export async function listEvents(access: ActorAccess, input: EventPageInput) {
 
 export async function listConsoleMessages(access: ActorAccess, input: MessagePageInput) {
   const limit = Math.max(1, Math.min(input.maxRows ?? MESSAGE_PAGE_MAX_ROWS, MESSAGE_PAGE_MAX_ROWS));
+  const isForward = input.afterSequence !== undefined;
 
   const bounds = {
     afterSequence: input.afterSequence ?? 0,
     beforeSequence: input.beforeSequence ?? Number.MAX_SAFE_INTEGER,
     maxRows: limit + 1,
-    isReversed: true,
+    isReversed: !isForward,
   };
 
   const importedSource: SequenceSource<ConsoleMessage> = {
@@ -697,7 +698,14 @@ export async function listConsoleMessages(access: ActorAccess, input: MessagePag
   const imported = await sequenceRows({ source: importedSource, ...bounds });
   const current = await sequenceRows({ source: nativeSource, ...bounds });
   const ordered = [...imported, ...current].toSorted((left, right) => left.sequence - right.sequence);
-  const messages = ordered.slice(-limit);
+
+  const messages: Array<ConsoleMessage> = (() => {
+    if (isForward) {
+      return ordered.slice(0, limit);
+    }
+
+    return ordered.slice(-limit);
+  })();
 
   return { messages, hasMore: ordered.length > limit, beforeSequence: messages[0]?.sequence ?? null };
 }

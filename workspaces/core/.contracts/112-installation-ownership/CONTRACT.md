@@ -1,7 +1,7 @@
 ---
 name: installation-ownership
 message: Deploy immutable artifacts with one owner for each service, secret, and persistent resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/guest/image/**", "packages/worker/server/**", "packages/worker/runtime/**", "packages/worker/control-store/**", "packages/node/stack/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md", "docs/operations.md"]
+paths: ["infrastructure/**", "packages/shared/deployment/**", "packages/node/distribution/**", "packages/node/guest/image/**", "packages/worker/server/**", "packages/worker/runtime/**", "packages/worker/control-store/**", "packages/node/stack/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md", "docs/operations.md"]
 ---
 
 ## Rules
@@ -34,6 +34,9 @@ Give each resource one writer. One Cloudflare application Worker owns HTTP, stat
 and EgressGateway exports. Postgres owns control authority; Pi within MechObject owns execution. Preserve existing
 Sandbox namespaces, container identity, and file buckets when changing the application owner. Upload every declared
 module and Console asset before activating the version. Configure no independent Node host, proxy engine, or World.
+Enable `global_fetch_strictly_public` in the shared Worker deployment configuration so authenticated HTTP calls to the
+canonical origin traverse its public route and can re-enter the same application Worker. A compatibility date alone
+does not enable this routing behavior.
 
 When a binding targets a declared live Durable Object class without an existing namespace, provision and bind it in
 the qualified version's atomic deployment. Stage and verify updates to existing bound namespaces before exclusive
@@ -64,6 +67,8 @@ to the Worker; migration credentials belong only to controlled operator commands
 provider state contain references and fingerprints, never secret values. Keep operational evidence outside source.
 API diagnostics may expose the method, path, status, numeric error codes, and validated request identifiers; never
 emit request headers, query strings, bodies, or arbitrary response messages.
+Sandbox maintenance failures identify their fetch, HTTP, body-read, or decode phase. Capture numeric response status
+before response cleanup, validate any Cloudflare Ray identifier, and preserve the original failure if reporting fails.
 
 Reconcile uncertain infrastructure writes through remote reads before repeating them. Bound rollout waits and report
 incomplete rollout as failure. An empty plan proves convergence, not notification intake or agent behavior.
@@ -85,6 +90,9 @@ resource identities or repeating the upload.
 For authorized cloud qualification, verify health, readiness, actual Console assets, notification intake, an application
 restart with pending input, native execution, and explicit tool communication. Qualify a real approval decision after
 restart through its integration owner. Local celld success does not establish workerd container or cloud parity.
+Does every application and environment composition inherit the public-fetch flag from the shared deployment owner?
+After hosted activation, exercise a public sandbox maintenance request that calls the same canonical origin and
+observe its internal handler and result. Standalone workerd cannot qualify Cloudflare's own-zone routing behavior.
 Record artifact identities, live resource readbacks, remaining uncertainties, and end-to-end receipts in the delivery
 issue or pull request. For an image change, retain checkpoint, stopped-provider, capacity-release, and restored-file
 receipts before calling the rollout complete.

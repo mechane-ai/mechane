@@ -10,7 +10,7 @@ provider "cloudflare" {}
 provider "mechane" {}
 
 module "mechane" {
-  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.28.1/mechane-cloudflare-v0.28.1.zip"
+  source     = "https://github.com/mechane-ai/mechane/releases/download/v0.28.2/mechane-cloudflare-v0.28.2.zip"
   account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
   name       = "mechane-sandbox"
   domain = {

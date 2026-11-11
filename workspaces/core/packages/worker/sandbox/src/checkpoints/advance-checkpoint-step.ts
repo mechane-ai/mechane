@@ -1,8 +1,9 @@
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
-import { DateTime, Option, Result } from 'effect';
-import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
+import { Array, DateTime, Option, Result } from 'effect';
+import { WORKSPACE_CHECKPOINT_CONCURRENT_PARTS, WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { WorkspaceTransferFailed } from '../errors.ts';
+import type { GuestConnection } from '../types.ts';
 import { archiveCheckpoint } from './archive-checkpoint.ts';
 import { commitCheckpoint } from './commit-checkpoint.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
@@ -12,7 +13,7 @@ import { releaseRecoveryCheckpoint } from './release-recovery-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 import { uploadCheckpointPart } from './upload-checkpoint-part.ts';
 
-/** Every call advances one bounded transfer. Complete stored parts can commit even after the guest disappears. */
+/** Every call advances one bounded batch. Complete stored parts can commit even after the guest disappears. */
 export async function advanceCheckpointStep({
   store,
   provider,
@@ -20,7 +21,7 @@ export async function advanceCheckpointStep({
   checkpoint,
 }: CheckpointStepInput): Promise<void> {
   const input = { store, provider, workspace, checkpoint };
-  const { archive, machineId, generation } = checkpoint;
+  const { archive, part } = checkpoint;
 
   if (!('executionId' in checkpoint) && FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
     const result = store.fileCheckpointResult({ purpose: checkpoint.purpose });
@@ -34,20 +35,82 @@ export async function advanceCheckpointStep({
     assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
   }
 
-  if (await reconcileStoredCheckpoint(input)) {
-    await commitCompletedCheckpoint(input);
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
+
+  if (Option.isNone(archive)) {
+    const guest = await connectCheckpointGuest(input);
+
+    if (Option.isSome(guest)) {
+      await archiveCheckpoint({ ...input, guest: guest.value });
+    }
 
     return;
+  }
+
+  const archivedInput = { ...input, archive: archive.value };
+
+  if (part === archive.value.parts) {
+    await commitCheckpoint(archivedInput);
+
+    return;
+  }
+
+  const nextPart = Math.min(part + WORKSPACE_CHECKPOINT_CONCURRENT_PARTS, archive.value.parts);
+  const parts = Array.range(part, nextPart - 1);
+  const missingParts = await reconcileStoredCheckpoint({ ...archivedInput, parts });
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
+
+  if (missingParts.length > 0) {
+    const guest = await connectCheckpointGuest(input);
+
+    if (Option.isNone(guest)) {
+      return;
+    }
+
+    const pending = missingParts.map((missingPart) =>
+      uploadCheckpointPart({ ...archivedInput, guest: guest.value, part: missingPart }),
+    );
+
+    // Every started upload must settle before a failure can release the writer.
+    const settled = await Promise.allSettled(pending);
+
+    for (const result of settled) {
+      if ('reason' in result) {
+        const failure = Result.fail(result.reason);
+
+        Result.getOrThrow(failure);
+      }
+    }
   }
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {
     return;
   }
 
+  const advanced = { ...checkpoint, part: nextPart };
+
+  store.saveCheckpoint(advanced);
+
+  if (nextPart === archive.value.parts) {
+    await commitCheckpoint({ ...archivedInput, checkpoint: advanced });
+  }
+}
+
+async function connectCheckpointGuest({
+  store,
+  provider,
+  checkpoint,
+}: CheckpointStepInput): Promise<Option.Option<GuestConnection>> {
+  const { machineId, generation } = checkpoint;
   const guest = await provider.connect({ machineId });
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {
-    return;
+    return Option.none();
   }
 
   if (Option.isNone(guest)) {
@@ -69,36 +132,15 @@ export async function advanceCheckpointStep({
     });
     await provider.stop({ machineId });
 
-    return;
+    return Option.none();
   }
 
-  assertCheckpointDeadline(input);
+  assertCheckpointDeadline({ checkpoint });
 
-  if (Option.isNone(archive)) {
-    return await archiveCheckpoint({ ...input, guest: guest.value });
-  }
-
-  await uploadCheckpointPart({ ...input, archive: archive.value, guest: guest.value });
-  await commitCompletedCheckpoint(input);
+  return guest;
 }
 
-async function commitCompletedCheckpoint({ store, checkpoint, ...input }: CheckpointStepInput): Promise<void> {
-  const current = store.workspace().checkpoint;
-
-  if (Option.isNone(current) || current.value.generation !== checkpoint.generation) {
-    return;
-  }
-
-  const archive = current.value.archive;
-
-  if (Option.isNone(archive) || current.value.part !== archive.value.parts) {
-    return;
-  }
-
-  await commitCheckpoint({ store, ...input, checkpoint: current.value, archive: archive.value });
-}
-
-function assertCheckpointDeadline({ checkpoint }: CheckpointStepInput): void {
+function assertCheckpointDeadline({ checkpoint }: Pick<CheckpointStepInput, 'checkpoint'>): void {
   const deadline = DateTime.addDuration(checkpoint.startedAt, WORKSPACE_OPERATION_TIMEOUT);
 
   const now = DateTime.nowUnsafe();

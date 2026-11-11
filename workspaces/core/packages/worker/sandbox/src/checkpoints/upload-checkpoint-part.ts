@@ -11,18 +11,19 @@ import { workspaceRequest } from '../workspace/workspace-request.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
-type UploadCheckpointPartInput = ArchivedCheckpointInput & { readonly guest: GuestConnection };
+type UploadCheckpointPartInput = ArchivedCheckpointInput & { readonly guest: GuestConnection; readonly part: number };
 
-/** Stores one validated archive part with an R2 checksum before advancing the durable cursor. */
+/** Stores one validated archive part with an R2 checksum under its batch's unchanged checkpoint fence. */
 export async function uploadCheckpointPart({
   checkpoint,
   archive,
   workspace,
   store,
   guest,
+  part,
 }: UploadCheckpointPartInput): Promise<void> {
-  const { generation, part } = checkpoint;
-  const bytes = await readCheckpointPart({ checkpoint, archive, guest });
+  const { generation } = checkpoint;
+  const bytes = await readCheckpointPart({ checkpoint, archive, guest, part });
   const selectedPart = Option.some(part);
   const key = workspacePartKey({ owner: workspace.owner, generation, part: selectedPart });
   const sha256 = await crypto.subtle.digest('SHA-256', bytes);
@@ -39,55 +40,55 @@ export async function uploadCheckpointPart({
 
   const stored = Option.fromNullishOr(uploaded);
 
-  if (Option.isNone(stored)) {
-    const found = await workspace.bucket.head(key);
-    const existing = Option.fromNullishOr(found);
-    const recorded = Option.flatMap(existing, (value) => Option.fromUndefinedOr(value.checksums.sha256));
-    const expectedBytes = new Uint8Array(sha256);
-    const expected = Hex.encode(expectedBytes);
-
-    const actual = Option.map(recorded, (value) => {
-      const digestBytes = new Uint8Array(value);
-
-      return Hex.encode(digestBytes);
-    });
-
-    const size = Option.map(existing, (value) => value.size);
-    const metadata = Option.flatMap(existing, (value) => Option.fromNullishOr(value.customMetadata));
-    const archiveDigest = Option.map(metadata, (value) => value['archiveSha256']);
-
-    if (
-      !Option.contains(size, bytes.byteLength) ||
-      !Option.contains(actual, expected) ||
-      !Option.contains(archiveDigest, archive.sha256)
-    ) {
-      const cause = new WorkspaceTransferFailed({
-        generation,
-        step: WorkspaceStep.Part,
-        reason: 'immutable archive part conflicts with its checkpoint',
-      });
-
-      const failure = Result.fail(cause);
-
-      Result.getOrThrow(failure);
-    }
-  }
-
-  if (!isCurrentCheckpoint({ store, checkpoint })) {
+  if (Option.isSome(stored)) {
     return;
   }
 
-  store.saveCheckpoint({ ...checkpoint, part: part + 1 });
+  const found = await workspace.bucket.head(key);
+  const existing = Option.fromNullishOr(found);
+  const recorded = Option.flatMap(existing, (value) => Option.fromUndefinedOr(value.checksums.sha256));
+  const expectedBytes = new Uint8Array(sha256);
+  const expected = Hex.encode(expectedBytes);
+
+  const actual = Option.map(recorded, (value) => {
+    const digestBytes = new Uint8Array(value);
+
+    return Hex.encode(digestBytes);
+  });
+
+  const size = Option.map(existing, (value) => value.size);
+  const metadata = Option.flatMap(existing, (value) => Option.fromNullishOr(value.customMetadata));
+  const archiveDigest = Option.map(metadata, (value) => value['archiveSha256']);
+
+  const isMatching =
+    Option.contains(size, bytes.byteLength) &&
+    Option.contains(actual, expected) &&
+    Option.contains(archiveDigest, archive.sha256);
+
+  if (isMatching) {
+    return;
+  }
+
+  const cause = new WorkspaceTransferFailed({
+    generation,
+    step: WorkspaceStep.Part,
+    reason: 'immutable archive part conflicts with its checkpoint',
+  });
+
+  const failure = Result.fail(cause);
+
+  Result.getOrThrow(failure);
 }
 
-type ReadCheckpointPartInput = Pick<UploadCheckpointPartInput, 'checkpoint' | 'archive' | 'guest'>;
+type ReadCheckpointPartInput = Pick<UploadCheckpointPartInput, 'checkpoint' | 'archive' | 'guest' | 'part'>;
 
 async function readCheckpointPart({
   checkpoint,
   archive,
   guest,
+  part,
 }: ReadCheckpointPartInput): Promise<Uint8Array<ArrayBuffer>> {
-  const { generation, machineId, part } = checkpoint;
+  const { generation, machineId } = checkpoint;
   const selectedPart = Option.some(part);
   const snapshot = { generation, parent: checkpoint.parent, archive };
 

@@ -122,7 +122,7 @@ function baseWorkerDeployment(
     name: input.name,
     main: input.entry,
     compatibility_date: WORKER_COMPATIBILITY_DATE,
-    compatibility_flags: ['nodejs_compat'],
+    compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
     vars: input.variables ?? {},
   };
 }

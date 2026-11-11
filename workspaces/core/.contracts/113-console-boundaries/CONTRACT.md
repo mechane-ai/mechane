@@ -1,7 +1,7 @@
 ---
 name: console-boundaries
 message: Keep the console an ordinary API client with admitted data, explicit public conversation, and one release.
-paths: ["packages/browser/**", "packages/worker/server/**", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
+paths: ["packages/browser/**", "packages/worker/server/**", "packages/worker/runtime/src/views/projections.ts", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
 ## Rules
@@ -62,6 +62,10 @@ outcomes outside the replaceable data runtime. Cache recovery must not clear or 
 Keep public Console messages separate from private native model context. The typed `listConsoleMessages` operation
 returns only operator submissions and explicit communication-tool publications. Do not expose the active native model
 stream as a public conversation or reconstruct public messages from activation completion.
+
+Return the newest bounded public-history page for initial and `beforeSequence` reads, in ascending publication sequence.
+For `afterSequence`, return the earliest bounded page above the cursor across imported and native records.
+Advancing to the last returned sequence must reach every later publication without skips.
 
 Treat each new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
 `console-data/src/records.ts`, native table to `collections.ts`, and bounded request to `requests.ts` and `load-read.ts`.
@@ -202,6 +206,10 @@ hide unavailable or truncated evidence in a different tab. Use recorded endpoint
 does not become a zero-duration step.
 
 ## Evidence
+
+Run the existing `actorViewsReplayWithinTheirWorkspace` smoke scenario from the factory root with
+`mise -C workspaces/core run smoke -- actorViewsReplayWithinTheirWorkspace`. Its incremental public-history read must
+recover every publication in a burst larger than one page exactly once, without publishing private completion text.
 
 Inspect a successful command, a nonzero exit, a pending command, truncated output, and a historical call without a safe
 command snapshot. Verify the process outcome, command and output remain readable at narrow widths, copy the displayed
