@@ -7,13 +7,14 @@ import {
   readTrace,
   requireFixtures,
   runCli,
+  runCliFailure,
   sendNotification,
   startHeldMcpInvocation,
   waitFor,
   waitForTurn,
 } from '@mechane/testing';
 import type { Account, McpFixture, MechContext } from '@mechane/testing';
-import { Schema } from 'effect';
+import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
@@ -24,11 +25,25 @@ type PolicyDiscoveryInput = MechContext & {
 };
 
 type PolicyUpdate = MechContext & { readonly administrator: Account; readonly policy: WorkspacePolicy };
+type ControlRefusal = Awaited<ReturnType<typeof runCliFailure>>;
 
 const CONFIRMED_MODEL_CALLS = 2;
 const TOOL_TERMINAL_STATUSES: ReadonlySet<ToolCallStatus> = new Set([ToolCallStatus.Completed, ToolCallStatus.Failed]);
 const PolicyVeto = Schema.fromJsonString(Schema.Struct({ status: Schema.Literals(['refused', 'not_started']) }));
 const decodeVeto = Schema.decodeUnknownResult(PolicyVeto);
+
+const UnconfirmedControlChange = Schema.fromJsonString(
+  Schema.Struct({
+    errors: Schema.NonEmptyArray(
+      Schema.Struct({
+        code: Schema.Literal('ServiceUnavailable'),
+        reason: Schema.Literal(
+          'The configuration was saved, but its runtime refresh is unconfirmed. Read its current state before repeating the command.',
+        ),
+      }),
+    ),
+  }),
+);
 
 export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscoveryInput): Promise<void> {
   const { stack, account, mechId, fixture, model, toolName } = input;
@@ -41,11 +56,7 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
     schema: WorkspacePolicy,
   });
 
-  const current = await runCli({
-    ...input,
-    args: ['mech', 'show', mechId, '--workspace', account.workspaceId],
-    schema: Mech,
-  });
+  const current = await readDefinition(input);
 
   const confirmedMarker = `confirmed-mcp-${randomUUID()}`;
   const confirmedCallId = randomUUID();
@@ -79,10 +90,11 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
   const { turn, toolCallId } = await startHeldMcpInvocation({ ...input, marker });
   const invocation = fixture.holdNextDiscovery();
   const refresh = fixture.holdNextDiscovery();
+  const instructions = `Observe the current workspace policy ${randomUUID()}`;
   const failures: Array<unknown> = [];
   let shouldRestorePolicy = false;
-  let updating: Promise<ReadonlyArray<PromiseSettledResult<Mech>>> = Promise.resolve([]);
-  let pausing: Promise<ReadonlyArray<PromiseSettledResult<WorkspacePolicy>>> = Promise.resolve([]);
+  let updating: Promise<ReadonlyArray<PromiseSettledResult<ControlRefusal>>> = Promise.resolve([]);
+  let pausing: Promise<ReadonlyArray<PromiseSettledResult<ControlRefusal>>> = Promise.resolve([]);
 
   try {
     model.release({ marker, index: 0 });
@@ -94,7 +106,7 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
     assert.equal(admitted.toolCalls?.find((call) => call.id === toolCallId)?.status, ToolCallStatus.Running);
 
     updating = Promise.allSettled([
-      runCli({
+      runCliFailure({
         ...input,
         args: [
           'mech',
@@ -105,9 +117,8 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
           '--expected-revision',
           String(current.revision),
           '--instructions',
-          `Observe the current workspace policy ${randomUUID()}`,
+          instructions,
         ],
-        schema: Mech,
       }),
     ]);
 
@@ -116,21 +127,26 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
     shouldRestorePolicy = true;
 
     pausing = Promise.allSettled([
-      replacePolicy({ ...input, administrator, policy: { ...policy, isSuspended: true } }),
+      runCliFailure(policyCommand({ ...input, administrator, policy: { ...policy, isSuspended: true } })),
     ]);
 
-    const paused = await waitFor({
-      name: 'the workspace suspension to commit before its held runtime refresh is acknowledged',
-      read: () =>
-        runCli({
-          stack,
-          account: administrator,
-          args: ['workspace', 'policy', 'show', account.workspaceId],
-          schema: WorkspacePolicy,
-        }),
-      accept: (currentPolicy) => currentPolicy.isSuspended,
+    const [updated, suspension] = await Promise.all([updating, pausing]);
+
+    assertUnconfirmed(updated[0]);
+    assertUnconfirmed(suspension[0]);
+
+    const saved = await readDefinition(input);
+
+    const paused = await runCli({
+      stack,
+      account: administrator,
+      args: ['workspace', 'policy', 'show', account.workspaceId],
+      schema: WorkspacePolicy,
     });
 
+    assert.equal(saved.revision, current.revision + 1);
+    assert.deepEqual(saved.instructions, Option.some(instructions));
+    assert.deepEqual(saved.activeRevision, Option.some(current.revision));
     assert.equal(paused.isSuspended, true);
     invocation.release();
 
@@ -155,11 +171,24 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
     assert.equal(veto, true, 'The late policy fence did not retain a typed refusal');
     refresh.release();
 
-    const updated = await updating;
-    const suspension = await pausing;
+    const renamed = await runCli({
+      ...input,
+      args: [
+        'mech',
+        'rename',
+        mechId,
+        '--workspace',
+        account.workspaceId,
+        '--expected-revision',
+        String(saved.revision),
+        '--name',
+        `Recovered control ${randomUUID()}`,
+      ],
+      schema: Mech,
+    });
 
-    assert.equal(updated[0]?.status, 'fulfilled', 'The held public definition update failed');
-    assert.equal(suspension[0]?.status, 'fulfilled', 'The committed workspace suspension was not acknowledged');
+    assert.equal(renamed.revision, saved.revision + 1);
+    assert.deepEqual((await readDefinition(input)).activeRevision, Option.some(renamed.revision));
     await stack.restart({ signal: 'SIGKILL' });
 
     const replayed = await readHistoryPage(input);
@@ -186,7 +215,9 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
     await pausing;
 
     if (shouldRestorePolicy) {
-      await replacePolicy({ ...input, administrator, policy }).catch((cause: unknown) => failures.push(cause));
+      await runCli({ ...policyCommand({ ...input, administrator, policy }), schema: WorkspacePolicy }).catch(
+        (cause: unknown) => failures.push(cause),
+      );
     }
   }
 
@@ -195,8 +226,26 @@ export async function policyDuringDiscoveryPreventsDispatch(input: PolicyDiscove
   }
 }
 
-async function replacePolicy({ stack, account, administrator, policy }: PolicyUpdate): Promise<WorkspacePolicy> {
+function assertUnconfirmed(result: PromiseSettledResult<ControlRefusal> | undefined): void {
+  assert.ok(result !== undefined);
+
+  if (result.status === 'rejected') {
+    throw result.reason;
+  }
+
+  Schema.decodeUnknownSync(UnconfirmedControlChange)(result.value.stdout);
+}
+
+async function readDefinition(input: MechContext): Promise<Mech> {
   return await runCli({
+    ...input,
+    args: ['mech', 'show', input.mechId, '--workspace', input.account.workspaceId],
+    schema: Mech,
+  });
+}
+
+function policyCommand({ stack, account, administrator, policy }: PolicyUpdate): Parameters<typeof runCliFailure>[0] {
+  return {
     stack,
     account: administrator,
     args: [
@@ -213,6 +262,5 @@ async function replacePolicy({ stack, account, administrator, policy }: PolicyUp
       '--daily-allowance-micros',
       String(policy.dailyAllowanceMicros),
     ],
-    schema: WorkspacePolicy,
-  });
+  };
 }

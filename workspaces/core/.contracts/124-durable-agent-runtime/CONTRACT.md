@@ -24,6 +24,10 @@ mutation. A factual recipient acknowledgment survives concurrent sweep claims an
 connection recipients from current grants before deleting them; workspace policy changes reach every mech. Skip remote
 tool discovery for inactive recipients and load their current grants when they resume.
 
+Keep each bounded, serialized definition refresh alive in its recipient actor until it settles. An expired caller
+confirmation must leave the refresh queue able to process later changes. The same durable outbox receipt remains
+available to the scheduled delivery owner until it receives an acknowledgment.
+
 Return an accepted cancellation's durable receipt after stopping its local native work, without waiting for environment
 cleanup. Its committed intent immediately fences new effects; the existing actor alarm reconciles remote cancellation
 across restart. Keep cold initialization free of remote cancellation waits, and preserve the earliest recovery alarm
@@ -96,6 +100,8 @@ deterministic external providers.
 Verify committed-only outbox capture, isolated concurrent commands, duplicate and lost acknowledgment, and late failure
 after a positive acknowledgment. After a tool-policy upgrade command succeeds, the next provider request must offer
 the current granted tools even when unrelated control delivery is backlogged.
+Hold discovery past the caller's confirmation limit and verify the saved change's explicit unconfirmed result. Release
+discovery and require a new change to confirm without restarting the actor or repeating the saved mutation.
 Restart with remote discovery held: restored native cleanup and local tools must progress from durable descriptors,
 and new intake must retain its receipt. Exercise failed and partial discovery, verify unconfirmed acknowledgment, and
 inspect the projection for credential canaries and its physical byte bound.

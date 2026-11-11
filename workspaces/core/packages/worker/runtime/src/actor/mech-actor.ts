@@ -456,7 +456,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
   }
 
   async #refreshDefinition(): Promise<boolean> {
-    return await this.#definitionCalls.run({
+    const refresh = this.#definitionCalls.run({
       run: async () => {
         this.#runtime.isDefinitionRefreshing = true;
         this.#runtime.isDiscoveryComplete = false;
@@ -470,6 +470,10 @@ export class MechActor extends DurableObject<RuntimeBindings> {
         }
       },
     });
+
+    this.ctx.waitUntil(refresh);
+
+    return await refresh;
   }
 
   async #configureDefinition(configuration?: McpDiscovery): Promise<boolean> {
