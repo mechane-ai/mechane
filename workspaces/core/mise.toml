@@ -86,6 +86,7 @@ run = "oxfmt --check ."
 # assigns them. Two checkers per program leave CPUs to the other builders of a shared host.
 [tasks.typecheck]
 description = "Type-check each lane's program: the shared lane, the worker lane and the node lane, each with every member dependencies.json puts in it"
+depends = ["routes:generate"]
 wait_for = ["build:server", "build:cli", "build:guest"]
 run = [
   "tsc -p tsconfig.shared.json --checkers 2",
@@ -96,6 +97,7 @@ run = [
 
 [tasks."typecheck:incremental"]
 description = "Type-check each lane's program as typecheck does, reusing each program's build information from its last run"
+depends = ["routes:generate"]
 run = [
   "tsc -p tsconfig.shared.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/shared.tsbuildinfo",
   "tsc -p tsconfig.worker.json --checkers 2 --incremental --tsBuildInfoFile node_modules/.cache/tsc/worker.tsbuildinfo",
@@ -140,6 +142,11 @@ run = "node packages/node/checks/src/main.ts check"
 depends = ["build:console"]
 description = "Compile the Worker, console inventory, and controlled migration commands once"
 run = ["node packages/node/distribution/src/build/build-worker.ts", "node packages/node/wrangler/src/main.ts"]
+
+[tasks."routes:generate"]
+description = "Generate the console route map through its pinned Vite plugins"
+dir = "{{config_root}}/packages/browser/console"
+run = """node --input-type=module -e 'import { resolveConfig } from "vite"; await resolveConfig({}, "build");'"""
 
 [tasks."build:console"]
 depends = ["build:elements"]

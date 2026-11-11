@@ -9,6 +9,8 @@ paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/gue
 Build the Worker, Console assets, guest image, CLI, and controlled database commands from one declared source revision.
 Publish immutable artifacts with checksums and an explicit installation manifest. Operators consume those bytes;
 deployment cannot rebuild product code or execute a checkout through an infrastructure provisioner.
+Declare compatible provider version ranges in reusable modules. Pin exact reviewed provider releases in installation
+roots and examples.
 
 Require build metadata, module and asset inventories, installation descriptors, and qualification evidence to agree
 on version and public revision. Include original licenses, attribution, and dependency notices in the verified inventory.
@@ -33,6 +35,10 @@ and EgressGateway exports. Postgres owns control authority; Pi within MechObject
 Sandbox namespaces, container identity, and file buckets when changing the application owner. Upload every declared
 module and Console asset before activating the version. Configure no independent Node host, proxy engine, or World.
 
+When a binding targets a declared live Durable Object class without an existing namespace, provision and bind it in
+the qualified version's atomic deployment. Stage and verify updates to existing bound namespaces before exclusive
+activation. Retain accepted version and observed deployment identities in provider state if later verification fails.
+
 Validate configured service origins as bare HTTPS origins before reading transport credentials. Reject user information,
 paths, queries, and fragments. Local development may explicitly use a loopback HTTP origin with a port; guest-facing
 local HTTPS uses a generated trusted root. Never disable TLS verification or bake a stack's certificate into an image.
@@ -56,6 +62,8 @@ do not blindly issue another stop or discard live files. Verify restored files a
 Resolve secrets through the deployment secret store and settings boundary. Bind only runtime database credentials
 to the Worker; migration credentials belong only to controlled operator commands. Manifests, public assets, logs, and
 provider state contain references and fingerprints, never secret values. Keep operational evidence outside source.
+API diagnostics may expose the method, path, status, numeric error codes, and validated request identifiers; never
+emit request headers, query strings, bodies, or arbitrary response messages.
 
 Reconcile uncertain infrastructure writes through remote reads before repeating them. Bound rollout waits and report
 incomplete rollout as failure. An empty plan proves convergence, not notification intake or agent behavior.
@@ -70,6 +78,9 @@ archive as its declared user.
 Inspect namespace and resource plans for replacement. Reject unsupported bindings, secret-bearing descriptors,
 decorated origins, inline migration credentials, and an unqualified candidate. Native provider version activation
 must follow complete module and asset upload. Keep one provider writer and qualify repeat-deploy convergence.
+Reject a staged version that binds an unprovisioned class, and verify atomic activation of the qualified version
+preserves existing namespaces. Exercise a failed follow-up read and a lost upload response without losing accepted
+resource identities or repeating the upload.
 
 For authorized cloud qualification, verify health, readiness, actual Console assets, notification intake, an application
 restart with pending input, native execution, and explicit tool communication. Qualify a real approval decision after
