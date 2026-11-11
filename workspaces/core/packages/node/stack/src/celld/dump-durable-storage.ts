@@ -1,3 +1,5 @@
+import { constants } from 'node:buffer';
+import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import type { Dirent } from 'node:fs';
 import { readdir, readFile } from 'node:fs/promises';
@@ -137,7 +139,7 @@ async function* readFamily({ database, projectDirectory, signal, names }: Family
     const selected = sidecars.filter((file) => names === undefined || names.has(file.name));
 
     if (names === undefined || names.has(basename(database))) {
-      yield await readStoredFile({ source: database, signal });
+      yield await readDatabaseFile({ source: database, signal });
     }
 
     for (const file of selected) {
@@ -148,6 +150,25 @@ async function* readFamily({ database, projectDirectory, signal, names }: Family
   } finally {
     readers.close();
   }
+}
+
+async function readDatabaseFile({ source, signal }: StoredFileInput): Promise<StoredFile> {
+  const result = Promise.withResolvers<Buffer>();
+
+  // A separate process keeps the raw file close from releasing the SQLite readers' POSIX locks.
+  execFile('cat', ['--', source], { encoding: 'buffer', maxBuffer: constants.MAX_LENGTH, signal }, (error, bytes) => {
+    if (error !== null) {
+      result.reject(error);
+
+      return;
+    }
+
+    result.resolve(bytes);
+  });
+
+  const bytes = await result.promise;
+
+  return { source, bytes };
 }
 
 async function readStoredFile({ source, signal }: StoredFileInput): Promise<StoredFile> {

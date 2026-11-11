@@ -59,9 +59,11 @@ unclean exit before port reuse. Require native Linux bridge reachability and def
 macOS Docker backend and its host-forwarding limits; local checks do not establish equivalent Linux or hosted isolation.
 
 Inspect persisted local storage without changing its privacy assertions. Acquire, read and release one SQLite family
-before acquiring another, with bounded native lock waiting. Read the raw database and observed WAL while its read
-transaction is held. Exclude only identified native SHM coordination files; inspect user files with similar names.
-Missing durable files and locks that exceed the bound remain failures. A raw scan is not one global storage snapshot.
+before acquiring another, with bounded native lock waiting. Hold the read transaction through enumeration and the
+raw database and observed WAL reads. Read raw main-file bytes in a separate process because a descriptor close in
+the reader process releases same-file POSIX locks from overlapping inspections. Keep partial file bytes out of read
+errors. Exclude only identified native SHM coordination files. Inspect user files with similar names. Missing durable
+files and locks that exceed the bound remain failures. A raw scan is not one global storage snapshot.
 
 Observe an existing execution without resubmitting its command or requiring a serialized credential. Preserve execution
 identity across transport retries. A missing receipt after a lost machine remains uncertain; never automatically rerun
@@ -101,6 +103,8 @@ Docker backend. On Linux, reject undeclared host-service ports, verify one stack
 grant, and confirm guest startup cannot widen native access. Reject arbitrary fixture destinations on both platforms.
 Keep failure diagnostics bounded to known identities, phases, statuses and counts before cleanup, without commands,
 message bodies, output or credentials.
+Finish one live SQLite inspection while another still needs its observed WAL. Verify that the remaining scan reads
+the main file and WAL bytes. Confirm that an interrupted raw read reports its error without captured bytes.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
 Exercise installed CLI startup and actual Node, curl, and git HTTPS verification. Require rejection without the supplied
