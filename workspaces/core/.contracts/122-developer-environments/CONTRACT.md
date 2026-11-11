@@ -76,6 +76,9 @@ Stop the environment owner and revoke its grant before releasing the gateway por
 unclean exit before port reuse. Require native Linux bridge reachability and default-denial evidence. Record the actual
 macOS Docker backend and its host-forwarding limits; local checks do not establish equivalent Linux or hosted isolation.
 
+Fail ephemeral checks promptly when startup or cleanup fails. Report both startup and cleanup failures and retain
+ownership records; reserve repair-and-interrupt waiting for persistent interactive development.
+
 Inspect persisted local storage without changing its privacy assertions. Acquire, read and release one SQLite family
 before acquiring another, with bounded native lock waiting. Hold the read transaction through enumeration and the
 raw database and observed WAL reads. Read raw main-file bytes in a separate process because a descriptor close in
@@ -129,6 +132,8 @@ Keep failure diagnostics bounded to known identities, phases, statuses and count
 message bodies, output or credentials.
 Finish one live SQLite inspection while another still needs its observed WAL. Verify that the remaining scan reads
 the main file and WAL bytes. Confirm that an interrupted raw read reports its error without captured bytes.
+Fail an ephemeral startup with unconfirmed owned cleanup and require a rejected result containing both failures without
+another interrupt. Keep the retained ownership available for repair and preserve persistent interactive recovery.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
 Exercise installed CLI startup and actual Node, curl, and git HTTPS verification. Require rejection without the supplied

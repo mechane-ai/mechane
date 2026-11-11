@@ -1,6 +1,6 @@
 import { writeDiagnostic } from '@mechane/program';
 import { once } from 'node:events';
-import { StackCleanupUnconfirmedError, StackStartupFailedError } from './errors.ts';
+import { StackStartupFailedError } from './errors.ts';
 import { startLocalStack } from './start-local-stack.ts';
 import type { LocalStack, StackOptions } from './types.ts';
 
@@ -82,10 +82,6 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
           try {
             await cause.stop();
           } catch (cleanupError) {
-            if (cleanupError instanceof StackCleanupUnconfirmedError) {
-              await waitForCleanup(cleanupError);
-            }
-
             throw new AggregateError([cause, cleanupError], 'The local startup and its owned cleanup attempt failed', {
               cause: cleanupError,
             });
@@ -103,7 +99,7 @@ export async function runStackProgram({ options, run }: StackProgramInput): Prom
     try {
       await stack.stop();
     } catch (cause) {
-      if (options.mode === 'persistent' || cause instanceof StackCleanupUnconfirmedError) {
+      if (options.mode === 'persistent') {
         await waitForCleanup(cause);
       }
 
