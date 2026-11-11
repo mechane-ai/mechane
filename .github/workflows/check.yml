@@ -64,7 +64,9 @@ jobs:
         run: mise run check:static
       - name: Check public repository guidance
         if: github.repository == 'mechane-ai/mechane'
-        run: mise run contracts:check repository:check
+        run: |
+          mise run contracts:check
+          mise run repository:check
       - name: Build and qualify one public candidate
         if: github.repository == 'mechane-ai/mechane'
         run: mise -C workspaces/core run distribution:candidate
