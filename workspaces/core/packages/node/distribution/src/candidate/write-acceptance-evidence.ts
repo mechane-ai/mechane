@@ -70,7 +70,9 @@ export async function writeAcceptanceEvidence({
     }),
   );
 
-  for (const log of checked.logs) {
+  const logs = checked.logs.filter((log) => log.contents.length > 0);
+
+  for (const log of logs) {
     await writeFile(join(folder, log.name), log.contents, { flag: 'wx' });
     inputs.policy.push({
       path: log.name,
