@@ -1,7 +1,7 @@
 ---
 name: installation-ownership
 message: Deploy immutable artifacts with one owner for each service, secret, and persistent resource.
-paths: ["infrastructure/**", "packages/node/distribution/**", "packages/worker/server/**", "packages/worker/runtime/**", "packages/worker/control-store/**", "packages/node/stack/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md", "docs/operations.md"]
+paths: ["infrastructure/**", "packages/node/distribution/**", "packages/node/guest/image/**", "packages/worker/server/**", "packages/worker/runtime/**", "packages/worker/control-store/**", "packages/node/stack/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox/src/capacity/runtime-transport.ts", "docs/self-hosting.md", "docs/operations.md"]
 ---
 
 ## Rules
@@ -13,6 +13,8 @@ deployment cannot rebuild product code or execute a checkout through an infrastr
 Require build metadata, module and asset inventories, installation descriptors, and qualification evidence to agree
 on version and public revision. Include original licenses, attribution, and dependency notices in the verified inventory.
 Derive notices from actual build inputs; missing notices require reviewed, exact-version supplements.
+Set guest bundle, executable, and notice modes in the image recipe so the declared unprivileged user can read or
+execute them even when the build uses a private umask.
 
 Build a candidate once, qualify its exact bytes and declared inputs, then promote those same bytes. Qualification
 records identify their source, artifacts, configuration, guarantees, and retained evidence. A check-log hash alone is
@@ -62,7 +64,8 @@ incomplete rollout as failure. An empty plan proves convergence, not notificatio
 
 Run builds, artifact verification, and infrastructure checks without cloud credentials. Verify the Worker module,
 Console inventory, notices, source revision, historical wire entries, migration checksums, and qualification inputs.
-Mutate a referenced asset or evidence file and require verification to refuse it.
+Mutate a referenced asset or evidence file and require verification to refuse it. Verify startup from the built guest
+archive as its declared user.
 
 Inspect namespace and resource plans for replacement. Reject unsupported bindings, secret-bearing descriptors,
 decorated origins, inline migration credentials, and an unqualified candidate. Native provider version activation
