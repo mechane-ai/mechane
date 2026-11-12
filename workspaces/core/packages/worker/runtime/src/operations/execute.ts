@@ -13,6 +13,7 @@ import { createEnvironmentOperations } from './environment.ts';
 import { createEvidenceOperations } from './evidence.ts';
 import { createMechOperations } from './mechs/mechs.ts';
 import { createNotificationOperations } from './notifications.ts';
+import { createRoutineOperations } from './routines.ts';
 import { createSelfOperations } from './self.ts';
 import type { NamedOperationContext, OperationHandlers } from './types.ts';
 import { requireAuthenticated, validatedOperation } from './validated-operation.ts';
@@ -38,6 +39,7 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
 
   const handlers: OperationHandlers = {
     ...createNotificationOperations({ store, actors: options.actors }),
+    ...createRoutineOperations({ store, actors: options.actors }),
     ...createSelfOperations({ store, actors: options.actors }),
     ...createAuthOperations({ store, configuration: authentication }),
     ...createEvidenceOperations({ store, configuration }),

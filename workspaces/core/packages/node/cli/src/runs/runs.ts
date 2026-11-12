@@ -30,6 +30,7 @@ import { runNotificationSend } from './mechs/run-notification-send.ts';
 import { runTurnCancel } from './mechs/run-turn-cancel.ts';
 import { runEventList } from './observe/run-event-list.ts';
 import { runTurnShow } from './observe/run-turn-show.ts';
+import { runRoutineDelete, runRoutineList, runRoutinePut, runRoutineShow } from './routines/routine-runs.ts';
 import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
@@ -91,6 +92,10 @@ export const RUNS: Readonly<Runs> = {
   }),
   'mech revisions': documentRun({ run: runMechRevisions }),
   'notification send': documentRun({ run: runNotificationSend }),
+  'routine put': documentRun({ run: runRoutinePut }),
+  'routine show': documentRun({ run: runRoutineShow }),
+  'routine list': documentRun({ run: runRoutineList }),
+  'routine delete': documentRun({ run: runRoutineDelete }),
   'self wake schedule': documentRun({ run: runSelfWakeSchedule }),
   'self wake show': documentRun({ run: runSelfWakeShow }),
   'self wake list': documentRun({ run: runSelfWakeList }),

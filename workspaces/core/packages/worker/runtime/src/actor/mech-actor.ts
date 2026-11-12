@@ -5,9 +5,11 @@ import { openDurableObjectSqliteStorage } from '@earendil-works/pi-durable/stora
 import { openControlStore, StoreConflict } from '@mechane/control-store';
 import type { ControlStore } from '@mechane/control-store';
 import {
+  ExpectedRoutineRevision,
   MechHistoryImportBatch,
   RequestConflict,
   RequestInvalid,
+  RoutineRequest,
   ServerFailure,
   ServiceUnavailable,
 } from '@mechane/protocol';
@@ -33,6 +35,14 @@ import {
 } from '../notifications/admission.ts';
 import { writeActorDeferred, writeActorOperationFailure, writeNativeReport } from '../output/write-actor-diagnostic.ts';
 import { publishSelfMessage } from '../self/messages.ts';
+import {
+  deleteRoutine,
+  listRoutines,
+  observeRoutines,
+  putRoutine,
+  readRoutine,
+  RoutineTask,
+} from '../self/routines.ts';
 import { cancelWake, listWakes, readWake, scheduleWake, SelfWakeTask } from '../self/wakes.ts';
 import { createBashExecutionTask } from '../tools/bash-task.ts';
 import type { BashExecutionTask } from '../tools/bash-task.ts';
@@ -84,6 +94,7 @@ import {
   putAttempt,
   putEffect,
   putTurn,
+  Routines,
   SequenceNotifications,
   Turns,
   UnresolvedImportedEffects,
@@ -240,7 +251,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       this.#registry.install(
         defineExtension({
           name: 'mechane',
-          tasks: [SelfWakeTask, this.#bashTask, this.#browserTask, this.#processTask],
+          tasks: [SelfWakeTask, RoutineTask, this.#bashTask, this.#browserTask, this.#processTask],
           hooks: [
             hook(GenerationTask, {
               beforeRequest: async (request, api) => {
@@ -299,6 +310,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
                     turnId: primary.id,
                     cutoff: checkpoint.cutoff,
                   });
+                  await observeRoutines(transaction, ids, primary.id);
 
                   const run = decodeStored(RunRecord, primary.value);
 
@@ -888,6 +900,22 @@ export class MechActor extends DurableObject<RuntimeBindings> {
         });
       case 'cancelWake':
         return await cancelWake(access, { wakeId: field(input, 'wakeId') });
+      case 'putRoutine':
+        return await putRoutine(access, {
+          ...Schema.decodeUnknownSync(Schema.toType(RoutineRequest))(input),
+          routineId: field(input, 'routineId'),
+          principalId: field(input, 'principalId'),
+        });
+      case 'readRoutine':
+        return await readRoutine(access, { routineId: field(input, 'routineId') });
+      case 'listRoutines':
+        return await listRoutines(access, { after: optionalField(input, 'after') });
+      case 'deleteRoutine':
+        return await deleteRoutine(access, {
+          routineId: field(input, 'routineId'),
+          principalId: field(input, 'principalId'),
+          expectedRevision: Schema.decodeUnknownSync(ExpectedRoutineRevision)(input['expectedRevision']),
+        });
       case 'publishMessage':
         return await publishSelfMessage(
           access,
@@ -1242,6 +1270,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       Attempts,
       Cancellations,
       Wakes,
+      Routines,
       Imports,
       Exports,
       Observations,

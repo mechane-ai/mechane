@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { chmod, mkdir, mkdtemp, open, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { record, text } from './fixtures/http.ts';
@@ -75,6 +75,8 @@ export async function openStackState(options: StackOptions): Promise<StackState>
       writeOwner,
       close: async (input) => {
         if (input?.shouldPreserveFiles === true) {
+          await rename(lockFile, join(directory, `stopped-${randomUUID()}.json`));
+
           return;
         }
 

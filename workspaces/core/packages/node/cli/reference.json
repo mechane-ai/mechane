@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.30.1",
+  "release": "0.31.0",
   "flags": [
     {
       "name": "origin",
@@ -1163,6 +1163,127 @@
         {
           "name": "text",
           "summary": "the public message text"
+        }
+      ]
+    },
+    {
+      "name": "routine put",
+      "summary": "save a recurring notification with a revision check",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "putRoutine"
+      ],
+      "flags": [
+        {
+          "name": "revision",
+          "kind": "text",
+          "summary": "the current routine revision; 0 creates a new identity",
+          "required": true
+        },
+        {
+          "name": "name",
+          "kind": "text",
+          "summary": "the display name of the routine",
+          "required": true
+        },
+        {
+          "name": "text",
+          "kind": "text",
+          "summary": "the ordinary notification text delivered at each interval",
+          "required": true
+        },
+        {
+          "name": "every-minutes",
+          "kind": "text",
+          "summary": "an interval from 1 minute to 30 days",
+          "required": true
+        },
+        {
+          "name": "enabled",
+          "kind": "text",
+          "summary": "true enables delivery; false pauses future delivery",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "routine-id",
+          "summary": "the durable routine identity"
+        }
+      ]
+    },
+    {
+      "name": "routine show",
+      "summary": "show routine configuration and delivery and observation evidence",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showRoutine"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "routine-id",
+          "summary": "the durable routine identity"
+        }
+      ]
+    },
+    {
+      "name": "routine list",
+      "summary": "list routines and retained deletion receipts for one mech",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listRoutines"
+      ],
+      "flags": [
+        {
+          "name": "after",
+          "kind": "text",
+          "summary": "continue after the previous page cursor",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "routine delete",
+      "summary": "stop future delivery while preserving accepted notifications and evidence",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "deleteRoutine"
+      ],
+      "flags": [
+        {
+          "name": "revision",
+          "kind": "text",
+          "summary": "the current routine revision; 0 creates a new identity",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        },
+        {
+          "name": "routine-id",
+          "summary": "the durable routine identity"
         }
       ]
     },

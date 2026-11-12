@@ -18,8 +18,10 @@ import { gradesOnlyValidIsolatedEvaluations } from './evals/grades-only-valid-is
 import { producerIsBoundToRecipient } from './notifications/producer-is-bound-to-recipient.ts';
 import { actorFailureRemainsInspectable } from './recovery/actor-failure-remains-inspectable.ts';
 import { actorViewsReplayWithinTheirWorkspace } from './recovery/actor-views-replay-within-their-workspace.ts';
+import { confirmedCleanupReleasesPersistentOwnership } from './recovery/confirmed-cleanup-releases-persistent-ownership.ts';
 import { externalNotificationSurvivesRestart } from './recovery/external-notification-survives-restart.ts';
 import { importedConversationRemainsReadable } from './recovery/imported-conversation-remains-readable.ts';
+import { routineDeliverySurvivesRestart } from './recovery/routine-delivery-survives-restart.ts';
 import { selfWakeSurvivesRestart } from './recovery/self-wake-survives-restart.ts';
 import { cancellationPreservesPendingNotifications } from './runs/cancellation-preserves-pending-notifications.ts';
 import { duplicateNotificationRunsAndChargesOnce } from './runs/duplicate-notification-runs-and-charges-once.ts';
@@ -123,9 +125,22 @@ export const CATALOG = [
   },
   {
     family: 'recovery',
+    guarantee: 'confirmed cleanup releases persistent ownership while preserving saved work',
+    regression: 'a recovered cleanup leaves the owner lock behind and permanently blocks the next local start',
+    run: confirmedCleanupReleasesPersistentOwnership,
+  },
+  {
+    family: 'recovery',
     guarantee: 'a self wake survives restart with one immutable deadline and respects cancellation',
     regression: 'a scheduled wake is lost, repeated, shifted by retry, or delivered after cancellation',
     run: selfWakeSurvivesRestart,
+  },
+  {
+    family: 'recovery',
+    guarantee: 'recurring notifications preserve absolute cadence and accepted input across pause and restart',
+    regression:
+      'missed intervals repeat paid work, paused routines accumulate a storm, or disabling loses accepted input',
+    run: routineDeliverySurvivesRestart,
   },
   {
     family: 'runs',

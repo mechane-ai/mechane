@@ -1,7 +1,7 @@
 ---
 name: mech-notifications
 message: Admit immutable notifications into one persistent mech and deliver scheduled or external outcomes without held waits.
-paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**", "packages/shared/protocol/src/operations/notifications/**", "packages/node/commands/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**", "packages/shared/protocol/src/operations/notifications/**", "packages/shared/protocol/src/operations/routines/**", "packages/node/commands/**"]
 ---
 
 ## Rules
@@ -44,6 +44,18 @@ Resolve a relative deadline once on first acceptance. Retrying its request ident
 intent conflicts. At delivery, atomically settle the schedule and admit the notification. Cancellation returns canceled
 or already delivered. Use the actor's single alarm owner, not a process sleep or a second timer scheduler.
 
+Keep recurring routines in the mech actor with human-configurable text, bounded intervals, and revision-checked changes.
+Use native Pi sleeping tasks and the existing actor alarm. Compute each due slot from its revision's absolute anchor.
+Admit the slot's stable notification identity and advance the native sleep in one transaction. After downtime or a
+mech pause, deliver only the latest missed slot and then return to the absolute cadence. Never replay a backlog of ticks.
+Fence superseded revisions before admission. Disabling or deleting a routine stops future deliveries and preserves
+accepted notifications, history, and receipts. Keep deletion receipts so delayed retries cannot recreate old schedules.
+Identical mutation retries return the accepted revision; changed or stale revisions conflict.
+
+Report due time, inbox delivery, and actual model observation as distinct evidence. Record observation only from the
+generation's prepared context and an internal routine delivery receipt. Routine text is ordinary input, not a privileged
+instruction. Delivery performs no application action or public reply; the model chooses its tools under current policy.
+
 Keep explicit destinations on outward tool calls. A later notification cannot change a pending request's destination.
 Denied, expired, revoked, canceled, or superseded access never authorizes old arguments. Integration delivery retains
 its own stable identity across lost acknowledgments and temporary recipient unavailability.
@@ -62,6 +74,9 @@ honest result. Cross the Postgres control-outbox commit/delivery boundary and ve
 Hold a recipient's tool discovery while changing configuration. Observe the committed configuration independently,
 admit input without waiting for discovery, then release the refresh and require the command's acknowledgment before
 checking newly offered tools. Unrelated pending outbox rows must not gate that command.
+Pause a mech across multiple routine slots, restart, and resume it. Require one latest-slot notification and model
+observation, then disable during that accepted work and require completion without duplicate paid work or publication.
+Retry configuration and deletion, reject changed duplicate intent, and inspect the retained observation and run identity.
 Restart with a held MCP endpoint and require receipt/read availability and native cleanup from locally restored
 configuration. Fail discovery and require saved-but-unconfirmed configuration, retained pending input, and eventual
 progress through the same alarm rather than another human message.

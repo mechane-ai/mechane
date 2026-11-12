@@ -1,6 +1,6 @@
 import type { ImportedSpendReservation as SpendReservation } from '@mechane/control-store';
 import { MechHistoryImportReceipt, MechMaintenanceReceipt, ServerFailure } from '@mechane/protocol';
-import type { MechHistoryImportBatch } from '@mechane/protocol';
+import type { MechHistoryImportBatch, RoutineRequest } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MechId, MediaType, WorkspaceId } from '@mechane/records';
 import { SandboxCompletion } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
@@ -11,6 +11,7 @@ import {
   ExportRecord,
   MessageRecord,
   NotificationReceiptRecord,
+  RoutineRecord,
   RunRecord,
   StatusRecord,
   TraceRecord,
@@ -43,6 +44,16 @@ export type ScheduleWakeInput = {
   readonly text: string;
   readonly afterSeconds?: number;
   readonly at?: string;
+};
+
+export type ActorRoutine = typeof RoutineRecord.Type;
+
+export type PutRoutineInput = typeof RoutineRequest.Type & { readonly routineId: string; readonly principalId: string };
+
+export type DeleteRoutineInput = {
+  readonly routineId: string;
+  readonly expectedRevision: number;
+  readonly principalId: string;
 };
 
 export type PublishMessageInput = {
@@ -149,6 +160,10 @@ export type MechActorClient = {
   readonly readWake: (input: { readonly wakeId: string }) => Promise<ActorWake | null>;
   readonly listWakes: (input: ActorPageInput) => Promise<ActorPage<ActorWake>>;
   readonly cancelWake: (input: { readonly wakeId: string }) => Promise<ActorWake>;
+  readonly putRoutine: (input: PutRoutineInput) => Promise<ActorRoutine>;
+  readonly readRoutine: (input: { readonly routineId: string }) => Promise<ActorRoutine | null>;
+  readonly listRoutines: (input: ActorPageInput) => Promise<ActorPage<ActorRoutine>>;
+  readonly deleteRoutine: (input: DeleteRoutineInput) => Promise<ActorRoutine>;
   readonly publishMessage: (input: PublishMessageInput) => Promise<ConsoleMessage>;
   readonly quiesce: () => Promise<void>;
   readonly resume: () => Promise<void>;
@@ -247,6 +262,11 @@ export function createMechActorClient(input: CreateClientInput): MechActorClient
     listWakes: (value) =>
       call('listWakes', value, Schema.Struct({ items: Schema.Array(WakeRecord), hasMore: Schema.Boolean })),
     cancelWake: (value) => call('cancelWake', value, WakeRecord),
+    putRoutine: (value) => call('putRoutine', value, RoutineRecord),
+    readRoutine: (value) => call('readRoutine', value, Schema.NullOr(RoutineRecord)),
+    listRoutines: (value) =>
+      call('listRoutines', value, Schema.Struct({ items: Schema.Array(RoutineRecord), hasMore: Schema.Boolean })),
+    deleteRoutine: (value) => call('deleteRoutine', value, RoutineRecord),
     publishMessage: (value) => call('publishMessage', value, MessageRecord),
     quiesce: () => write('quiesce'),
     resume: () => write('resume'),

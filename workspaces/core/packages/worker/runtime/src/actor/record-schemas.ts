@@ -57,6 +57,13 @@ export const WakeRow = Schema.Struct({
   value: Schema.String,
 });
 
+export const RoutineRow = Schema.Struct({
+  id: Schema.String,
+  taskId: Schema.NullOr(NativeTaskId),
+  digest: Schema.String,
+  value: Schema.String,
+});
+
 export const AttemptRow = Schema.Struct({
   id: Schema.String,
   turnId: Schema.String,

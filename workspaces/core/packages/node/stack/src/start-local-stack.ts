@@ -704,8 +704,6 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       );
     }
 
-    await record({ phase: 'startup-failed', resourcesStopped: true });
-
     throw new StackStartupFailedError(state.directory, cause);
   }
 }

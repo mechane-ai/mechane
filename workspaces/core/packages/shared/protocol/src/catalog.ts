@@ -11,6 +11,7 @@ import { EXECUTION_ACCESS_OPERATIONS } from './operations/execution-access/execu
 import { listMechHistory } from './operations/history/list-mech-history.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
 import { sendNotification } from './operations/notifications/send-notification.ts';
+import { ROUTINE_OPERATIONS } from './operations/routines/routine-operations.ts';
 import { manageSandbox } from './operations/sandboxes/manage-sandbox.ts';
 import { SELF_OPERATIONS } from './operations/self/self-operations.ts';
 import { STATUS_OPERATIONS } from './operations/status/status-operations.ts';
@@ -32,6 +33,7 @@ export const catalog = {
   listRecentEvents,
   listConsoleMessages,
   sendNotification,
+  ...ROUTINE_OPERATIONS,
   ...MECH_OPERATIONS,
   listMechHistory,
   manageSandbox,

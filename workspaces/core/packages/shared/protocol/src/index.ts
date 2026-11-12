@@ -234,6 +234,15 @@ export {
 export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';
 
 export { SELF_TOKEN_VARIABLE, WakeId, WakeStatus, Wake, WakeList } from './operations/self/schemas.ts';
+export {
+  Routine,
+  RoutineId,
+  RoutineList,
+  RoutineRequest,
+  RoutineRevision,
+  RoutineStatus,
+  ExpectedRoutineRevision,
+} from './operations/routines/schemas.ts';
 
 export {
   MECH_HISTORY_IMPORT_PATH,

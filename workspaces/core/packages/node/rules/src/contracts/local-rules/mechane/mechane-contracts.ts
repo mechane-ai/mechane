@@ -6,8 +6,8 @@ import {
   evidenceExport,
   executionAccess,
   managedProcesses,
+  mechNotifications,
   modelCaching,
-  threadContinuations,
 } from './agent-runtime.ts';
 import { channelDelivery } from './channel-delivery.ts';
 import { codeStyle } from './code-style.ts';
@@ -39,7 +39,7 @@ export const MECHANE_CONTRACTS = {
   'ui-analytical-graphics': uiAnalyticalGraphics,
   'console-cache-lifecycle': consoleCacheLifecycle,
   'execution-access': executionAccess,
-  'mech-notifications': threadContinuations,
+  'mech-notifications': mechNotifications,
   'developer-environments': developerEnvironments,
   'model-caching': modelCaching,
   'durable-agent-runtime': durableAgentRuntime,

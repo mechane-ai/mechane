@@ -21,6 +21,35 @@ Console submissions use this same inbox. Each mech has one public Console conver
 and the agent can publish a reply through `console_message`. Private model output and quiet completion remain execution
 activity rather than public chat messages.
 
+## Recurring routines
+
+An admitted workspace member can configure a recurring notification without keeping a computer or model call open:
+
+```sh
+mechane routine put MECH_ID ROUTINE_UUID --revision 0 --name 'Review open work' \
+  --text 'Review the latest open work and act through the available tools.' --every-minutes 5 --enabled true
+mechane routine show MECH_ID ROUTINE_UUID
+mechane routine list MECH_ID
+```
+
+Use a new random UUID and revision `0` to create a routine. Replace its complete configuration using the current
+revision from `routine show`. Set `--enabled false` to pause future deliveries. An identical retry with the same
+revision returns its saved result; a changed or stale retry conflicts.
+`routine delete MECH_ID ROUTINE_UUID --revision N` stops future deliveries and retains a deletion receipt. A later
+revision can reuse that identity.
+
+Intervals range from one minute to thirty days. Enabling or updating a routine starts its cadence from that saved
+revision's time. Each slot becomes an ordinary notification. After downtime or a mech pause, only the latest missed slot
+is delivered before the absolute cadence continues. Disabling does not remove input already accepted by the mech.
+
+Inspection distinguishes `last_due_at`, `last_delivered_at`, and `last_observed_at`. Observation means the notification
+was included in the model's prepared context. Its notification and run identities link to the existing events and trace.
+Delivery alone does not establish that the model read the input or completed its requested work. Routine delivery never
+publishes a reply or runs an application action. The agent chooses its tools under the current policy.
+
+The [routine protocol](../packages/shared/protocol/src/operations/routines/routine-operations.ts) owns the member API.
+Native Pi tasks retain its schedule in actor storage and share the mech's existing alarm.
+
 ## Service producers
 
 Configure producer IDs, secret-binding names, and explicit workspace/mech recipients in the Worker's

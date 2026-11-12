@@ -9,6 +9,7 @@ import { decodeStored, WakeRecord as WakeRecordSchema } from '../actor/records.t
 import { fingerprint, State } from '../actor/state.ts';
 import type { ActorAccess } from '../actor/types.ts';
 import { admitInTransaction, appendEvent } from '../notifications/admission.ts';
+import { abortNotificationTask } from './abort-notification-task.ts';
 
 const WAKE_RETRY_DELAY = Duration.seconds(1);
 const WAKE_PAGE_DEFAULT_ROWS = 50;
@@ -95,8 +96,7 @@ export const SelfWakeTask = defineTask<WakeInput, WakeCheckpoint, null>({
       }, context);
     },
   },
-  abort: (_task, runtime, context) =>
-    runtime.commit(() => ({ status: 'terminal', outcome: { status: 'aborted' } }), context),
+  abort: abortNotificationTask,
 });
 
 export async function scheduleWake(access: ActorAccess, input: ScheduleWakeInput): Promise<ActorWake> {

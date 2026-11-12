@@ -116,6 +116,27 @@ export const WakeRecord = Schema.Struct({
   notificationId: NullableText,
 });
 
+export const RoutineRecord = Schema.Struct({
+  id: Schema.String,
+  mechId: Schema.String,
+  revision: Schema.Number,
+  name: Schema.String,
+  text: Schema.String,
+  everySeconds: Schema.Number,
+  status: Schema.Literals(['enabled', 'disabled', 'deleted']),
+  createdAt: Schema.String,
+  updatedAt: Schema.String,
+  anchorAt: Schema.String,
+  nextDueAt: NullableText,
+  lastDueAt: NullableText,
+  lastDeliveredAt: NullableText,
+  lastNotificationId: NullableText,
+  lastObservedAt: NullableText,
+  lastObservedDueAt: NullableText,
+  lastObservedNotificationId: NullableText,
+  lastObservedRunId: NullableText,
+});
+
 export const NotificationRecord = Schema.Struct({
   id: Schema.String,
   ...Scope.fields,

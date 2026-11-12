@@ -9,6 +9,7 @@ import {
   ExportRow,
   NotificationRow,
   ObservationRow,
+  RoutineRow,
   TurnRow,
   WakeRow,
 } from './record-schemas.ts';
@@ -42,6 +43,13 @@ export const PendingCancellations = actorRecordSet('pending-cancellations');
 export const Events = actorRecordCollection('events', ActivityRecord);
 export const Messages = actorRecordCollection('messages', MessageRecord);
 export const Wakes = actorRecordCollection('wakes', WakeRow);
+export const Routines = actorRecordCollection('routines', RoutineRow);
+
+export const RoutineDeliveries = actorRecordCollection(
+  'routine-deliveries',
+  Schema.Struct({ routineId: Schema.String, dueAt: Schema.String }),
+);
+
 export const ControlChanges = actorRecordCollection('control-changes', ControlChangeRow);
 export const Imports = actorRecordCollection('imports', ControlChangeRow);
 export const Exports = actorRecordCollection('exports', ExportRow);

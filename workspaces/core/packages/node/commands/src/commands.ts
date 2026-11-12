@@ -11,6 +11,7 @@ import { MECH_ADMINISTRATION_COMMANDS } from './declarations/mech-administration
 import { MECH_LIFECYCLE_COMMANDS } from './declarations/mech-administration/mech-lifecycle-commands.ts';
 import { MECH_COMMANDS } from './declarations/mech-commands.ts';
 import { RELEASE_COMMANDS } from './declarations/release-commands.ts';
+import { ROUTINE_COMMANDS } from './declarations/routine-commands.ts';
 import { SELF_COMMANDS } from './declarations/self-commands.ts';
 import { TURN_COMMANDS } from './declarations/turn-commands.ts';
 import { WORKSPACE_IMPORT_COMMAND } from './declarations/workspace-import-command.ts';
@@ -34,6 +35,7 @@ export const COMMANDS = {
   ...WORKSPACE_IMPORT_COMMAND,
   ...TURN_COMMANDS,
   ...SELF_COMMANDS,
+  ...ROUTINE_COMMANDS,
   ...EVAL_COMMANDS,
   ...RELEASE_COMMANDS,
 } as const satisfies Readonly<Record<string, CommandDeclaration>>;

@@ -32,6 +32,7 @@ export { HttpHeader } from './http-header.constants.ts';
 export { MediaType } from './media-type.constants.ts';
 export { wireKey } from './wire-key.ts';
 export { toolExecutionId } from './tool-execution-id.ts';
+export { recordIdFromDigest } from './record-id-from-digest.ts';
 export { boundTraceText } from './trace-text.ts';
 export type { TraceText } from './trace-text.ts';
 export { wireStruct } from './wire-struct.ts';
