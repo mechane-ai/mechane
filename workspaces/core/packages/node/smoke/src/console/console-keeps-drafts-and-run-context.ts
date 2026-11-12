@@ -1,4 +1,5 @@
 import {
+  CONSOLE_STORAGE_READY_TIMEOUT_MS,
   consolePath,
   createAccount,
   createMech,
@@ -33,7 +34,10 @@ export async function consoleKeepsDraftsAndRunContext({ stack }: ScenarioInput):
     account,
     run: async (page) => {
       await page.goto(consolePath({ workspaceId: account.workspaceId, mechId: first.id }));
-      await page.getByText(`reply-${marker}`, { exact: true }).first().waitFor();
+      await page
+        .getByText(`reply-${marker}`, { exact: true })
+        .first()
+        .waitFor({ timeout: CONSOLE_STORAGE_READY_TIMEOUT_MS });
 
       const draft = page.getByRole('textbox', { name: `Message ${first.name}`, exact: true });
 

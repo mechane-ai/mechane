@@ -1,6 +1,13 @@
 import { catalog, SandboxReport } from '@mechane/protocol';
 import { HttpStatusCode, MediaType } from '@mechane/records';
-import { consolePath, createAccount, createMech, mechPath, withConsoleBrowser } from '@mechane/testing';
+import {
+  CONSOLE_STORAGE_READY_TIMEOUT_MS,
+  consolePath,
+  createAccount,
+  createMech,
+  mechPath,
+  withConsoleBrowser,
+} from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
@@ -16,29 +23,33 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
     stack,
     account,
     run: async (page) => {
+      const storageReady = { timeout: CONSOLE_STORAGE_READY_TIMEOUT_MS };
+
       await page.goto(consolePath({ workspaceId: account.workspaceId, mechId: mech.id }));
 
       const composer = page.getByRole('textbox', { name: `Message ${mech.name}`, exact: true });
 
-      await composer.waitFor();
+      await composer.waitFor(storageReady);
 
       const shortcut = page.getByRole('link', { name: mech.name, exact: true });
 
-      await shortcut.waitFor();
+      await shortcut.waitFor(storageReady);
 
       const path = mechPath({ account, mechId: mech.id });
       const environment = environmentPath({ workspaceId: account.workspaceId, mechId: mech.id });
       const environmentUrl = new URL(environment, stack.origin).href;
-      const environmentResponse = page.waitForResponse((response) => response.url() === environmentUrl);
+      const environmentResponse = page.waitForResponse((response) => response.url() === environmentUrl, storageReady);
 
-      await page.getByRole('link', { name: 'Environment', exact: true }).click();
+      const [overviewResponse] = await Promise.all([
+        environmentResponse,
+        page.getByRole('link', { name: 'Environment', exact: true }).click(),
+      ]);
 
-      const overviewResponse = await environmentResponse;
       const body: unknown = await overviewResponse.json();
       const overview = Schema.decodeUnknownSync(SandboxReport)(body);
       const savedFiles = page.getByRole('heading', { name: 'Saved files', exact: true });
 
-      await savedFiles.waitFor();
+      await savedFiles.waitFor(storageReady);
       assert.equal(Option.getOrThrow(overview.environment.processes).length, 0);
       assert.equal(Option.isNone(overview.sandboxId), true, 'Passive inspection allocated a machine');
 
@@ -51,10 +62,16 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
         .filter({ has: page.getByText('Refreshing', { exact: true }) })
         .getByRole('definition');
 
-      await refreshingReads.filter({ hasText: /^0$/ }).waitFor();
-      await page.getByText('wa-sqlite / OPFS available', { exact: true }).waitFor();
+      await refreshingReads.filter({ hasText: /^0$/ }).waitFor(storageReady);
+      await page
+        .locator('dl > div')
+        .filter({ has: page.getByText('Failed reads', { exact: true }) })
+        .getByRole('definition')
+        .filter({ hasText: /^0$/ })
+        .waitFor(storageReady);
+      await page.getByText('wa-sqlite / OPFS available', { exact: true }).waitFor(storageReady);
       await shortcut.click();
-      await composer.waitFor();
+      await composer.waitFor(storageReady);
 
       const gate = Promise.withResolvers<void>();
       const pattern = new URL(path, stack.origin).href;
@@ -65,14 +82,12 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
       });
 
       try {
-        const pending = page.waitForRequest((request) => request.url() === pattern);
+        const pending = page.waitForRequest((request) => request.url() === pattern, storageReady);
 
-        await page.reload();
-
-        const request = await pending;
+        const [, request] = await Promise.all([page.reload(), pending]);
 
         await Promise.race([
-          composer.waitFor(),
+          composer.waitFor(storageReady),
           request.response().then(() => {
             throw new Error('The held refresh finished before durable content appeared');
           }),
@@ -81,11 +96,12 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
 
         const failed = page.waitForResponse(
           (response) => response.status() === HttpStatusCode.Unavailable && response.url() === pattern,
+          storageReady,
         );
 
         gate.resolve();
         await failed;
-        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor(storageReady);
         assert.equal(await composer.isEnabled(), true);
       } finally {
         gate.resolve();
@@ -93,16 +109,18 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
       }
 
       await page.getByRole('button', { name: 'Retry refresh', exact: true }).click();
-      await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor({ state: 'hidden' });
+      await page
+        .getByRole('button', { name: 'Retry refresh', exact: true })
+        .waitFor({ ...storageReady, state: 'hidden' });
       await page.getByRole('link', { name: 'Environment', exact: true }).click();
-      await savedFiles.waitFor();
+      await savedFiles.waitFor(storageReady);
       await page.route(environmentUrl, (route) =>
         route.fulfill({ status: HttpStatusCode.Unavailable, contentType: MediaType.Json, body: '{}' }),
       );
 
       try {
         await page.reload();
-        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor();
+        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor(storageReady);
         assert.equal(await savedFiles.isVisible(), true, 'Failed refresh hid the retained environment overview');
       } finally {
         await page.unroute(environmentUrl);
@@ -110,17 +128,22 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
 
       const refreshed = page.waitForResponse(
         (response) => response.url() === environmentUrl && response.status() === HttpStatusCode.Ok,
+        storageReady,
       );
 
-      await page.getByRole('button', { name: 'Retry refresh', exact: true }).click();
+      const [refreshedResponse] = await Promise.all([
+        refreshed,
+        page.getByRole('button', { name: 'Retry refresh', exact: true }).click(),
+      ]);
 
-      const refreshedResponse = await refreshed;
       const refreshedBody: unknown = await refreshedResponse.json();
       const recovered = Schema.decodeUnknownSync(SandboxReport)(refreshedBody);
 
       assert.equal(Option.isNone(recovered.sandboxId), true, 'Refreshing the overview allocated a machine');
-      await savedFiles.waitFor();
-      await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor({ state: 'hidden' });
+      await savedFiles.waitFor(storageReady);
+      await page
+        .getByRole('button', { name: 'Retry refresh', exact: true })
+        .waitFor({ ...storageReady, state: 'hidden' });
     },
   });
 }

@@ -35,6 +35,7 @@ export async function runScenarios({ stack, catalog, match, family }: RunScenari
 
   for (const scenario of selected) {
     const deadline = Promise.withResolvers<never>();
+    const startedAt = performance.now();
 
     const timer = setTimeout(
       () => deadline.reject(new Error(`The smoke timed out: ${scenario.guarantee}`)),
@@ -43,7 +44,10 @@ export async function runScenarios({ stack, catalog, match, family }: RunScenari
 
     try {
       await Promise.race([scenario.run({ stack, guarantee: scenario.guarantee }), deadline.promise]);
-      process.stdout.write(`PASS ${scenario.guarantee}\n`);
+
+      const elapsedMs = Math.round(performance.now() - startedAt);
+
+      process.stdout.write(`PASS ${scenario.guarantee} (${elapsedMs} ms)\n`);
     } finally {
       clearTimeout(timer);
     }
