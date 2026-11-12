@@ -1,17 +1,19 @@
 import { MachineId } from '@mechane/records';
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
-import { DateTime, Option, Schema } from 'effect';
+import { guestWorkspacePath, SANDBOX_FAILURE_MAX_CHARS } from '@mechane/sandbox-wire';
+import { DateTime, Duration, Option, Schema } from 'effect';
 import { AUTOMATIC_CHECKPOINT_RETRY } from '../constants.ts';
-import { WorkspaceTransferFailed } from '../errors.ts';
+import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import type { CheckpointStepInput } from './types.ts';
 
-type FailedCheckpointInput = CheckpointStepInput & { readonly cause: unknown };
+type FailedCheckpointInput = CheckpointStepInput & { readonly cause: unknown; readonly elapsed: Duration.Duration };
+type WorkspaceTransferObservation = NonNullable<WorkspaceTransferFailed['observation']>;
 
 /** Keeps failed live files available without replacing their last committed snapshot. */
-export function failCheckpoint({ store, checkpoint, cause }: FailedCheckpointInput): void {
+export function failCheckpoint({ store, checkpoint, cause, elapsed }: FailedCheckpointInput): void {
   const { machineId, generation } = checkpoint;
 
-  const reason = failureReason({ cause });
+  const reason = failureReason({ checkpoint, cause, elapsed });
 
   if (FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
     const now = DateTime.nowUnsafe();
@@ -49,10 +51,64 @@ export function failCheckpoint({ store, checkpoint, cause }: FailedCheckpointInp
   store.atomic({ run: recover });
 }
 
-function failureReason({ cause }: Pick<FailedCheckpointInput, 'cause'>): string {
-  if (Schema.is(WorkspaceTransferFailed)(cause)) {
-    return cause.reason;
-  }
+function failureReason({
+  checkpoint,
+  cause,
+  elapsed,
+}: Pick<FailedCheckpointInput, 'checkpoint' | 'cause' | 'elapsed'>): string {
+  const transfer: Option.Option<WorkspaceTransferFailed> = (() => {
+    if (Schema.is(WorkspaceTransferFailed)(cause)) {
+      return Option.some(cause);
+    }
 
-  return String(cause);
+    return Option.none();
+  })();
+
+  const defaultPhase: WorkspaceTransferPhase = (() => {
+    if (Option.isNone(checkpoint.archive)) {
+      return WorkspaceTransferPhase.Archive;
+    }
+
+    if (checkpoint.part < checkpoint.archive.value.parts) {
+      return WorkspaceTransferPhase.Parts;
+    }
+
+    return WorkspaceTransferPhase.Manifest;
+  })();
+
+  const observed = Option.flatMap(transfer, (failure) => Option.fromUndefinedOr(failure.observation));
+
+  const observation: WorkspaceTransferObservation = Option.getOrElse(observed, () => ({
+    phase: defaultPhase,
+    elapsed,
+  }));
+
+  const knownPath = Option.map(transfer, (failure) => {
+    const part = Option.fromUndefinedOr(observation.part);
+
+    return guestWorkspacePath({
+      machineId: checkpoint.machineId,
+      generation: failure.generation,
+      step: failure.step,
+      part,
+    });
+  });
+
+  const path = Option.getOrNull(knownPath);
+  const elapsedMs = Duration.toMillis(observation.elapsed);
+  const stepElapsedMs = Duration.toMillis(elapsed);
+
+  const metadata = JSON.stringify({
+    operationId: checkpoint.purpose.operationId,
+    generation: checkpoint.generation,
+    path,
+    cursor: checkpoint.part,
+    phase: observation.phase,
+    elapsedMs,
+    stepElapsedMs,
+  });
+
+  const reason = Option.match(transfer, { onSome: (failure) => failure.reason, onNone: () => String(cause) });
+
+  return `workspace transfer ${metadata}: ${reason}`.slice(0, SANDBOX_FAILURE_MAX_CHARS);
 }

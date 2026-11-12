@@ -2,9 +2,10 @@ import { HttpMethod } from '@mechane/records';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option, Result } from 'effect';
 import { Hex } from 'effect/encoding';
-import { WorkspaceTransferFailed } from '../errors.ts';
+import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
+import { observeWorkspaceTransfer } from '../workspace/observe-workspace-transfer.ts';
 import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
@@ -104,7 +105,14 @@ async function readCheckpointPart({
     init: { method: HttpMethod.Get },
   });
 
-  const bytes = await readArchivePart({ response });
+  const bytes = await observeWorkspaceTransfer({
+    generation,
+    step: WorkspaceStep.Part,
+    part: selectedPart,
+    phase: WorkspaceTransferPhase.ResponseBody,
+    run: () => readArchivePart({ response }),
+  });
+
   const expected = snapshotPartBytes({ snapshot, part });
 
   if (bytes.byteLength !== expected) {

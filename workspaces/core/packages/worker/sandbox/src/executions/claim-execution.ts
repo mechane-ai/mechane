@@ -1,3 +1,4 @@
+import { ExecutionStatus } from '@mechane/sandbox-store';
 import type { ExecutionClaim, ExecutionRow, SandboxStore } from '@mechane/sandbox-store';
 import { ExecutionId } from '@mechane/sandbox-wire';
 import { Duration, Option, Result, Schema } from 'effect';
@@ -35,6 +36,17 @@ export function claimExecution({
       const reused = new ExecutionReused({ executionId: row.id });
 
       return Result.fail(reused);
+    }
+
+    const recovery = store.workspace().recovery;
+
+    if (row.status === ExecutionStatus.Pending && Option.isSome(recovery)) {
+      // A command waiting for repair must not keep the recovery checkpoint busy.
+      store.refusePendingExecution({ executionId });
+
+      const refused: ExecutionRow = { ...row, status: ExecutionStatus.Unavailable };
+
+      return Result.succeed(refused);
     }
 
     return Result.succeed(row);

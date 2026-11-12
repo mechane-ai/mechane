@@ -1,6 +1,6 @@
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import { capturePromise } from '@mechane/utilities';
-import { Array, DateTime, Option, Result } from 'effect';
+import { Array, DateTime, Duration, Option, Result } from 'effect';
 import {
   WORKSPACE_TRANSFER_BATCH_DURATION,
   WORKSPACE_TRANSFER_BATCH_PARTS,
@@ -44,8 +44,12 @@ export async function advanceCheckpoint({
     }
 
     const input = { store, provider, workspace, checkpoint: current.value };
+    const stepStarted = performance.now();
     const promise = advanceCheckpointStep(input);
     const advanced = await capturePromise({ promise });
+    const stepFinished = performance.now();
+    const elapsedMs = Math.round(stepFinished - stepStarted);
+    const elapsed = Duration.millis(elapsedMs);
     const saved = store.workspace().checkpoint;
 
     if (
@@ -61,7 +65,7 @@ export async function advanceCheckpoint({
         return;
       }
 
-      failCheckpoint({ ...input, cause: advanced.failure });
+      failCheckpoint({ ...input, cause: advanced.failure, elapsed });
 
       if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
         await releaseRecoveryCheckpoint(input);

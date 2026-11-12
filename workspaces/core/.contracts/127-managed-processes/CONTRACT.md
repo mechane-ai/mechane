@@ -78,6 +78,11 @@ receipts after recovery. Inspection never starts a machine, dispatches work, or 
 Preserve retained Stop and drain operation identities and machine evidence. Leave an unrecorded request time unknown.
 A historical committed drain still requires provider confirmation before its receipt claims completed shutdown.
 
+Retain the checkpoint operation, known workspace path and part, transfer phase, and monotonic phase and whole-step
+durations in its bounded failure reason. Distinguish request failures from response-body failures. Build this context from admitted
+identities; never record raw request URLs, headers, payloads, or commands in the observation. Preserve the terminal
+receipt and recovery semantics above.
+
 When an activation requests a file barrier with no live machine, an existing head is insufficient by itself. For an
 environment whose machine became ready and could admit writers, require the latest such machine's recorded drain
 operation to have a committed file result matching that head's generation. Never-ready startup attempts cannot create
@@ -139,6 +144,9 @@ Inject R2 head failure 10001 during a real file save and again during its explic
 recovery row, committed head, actual live files, and failed receipts to survive. Hold manifest publication and verify
 that recovery clears only with the atomic new head. Rejoin the successful operation, reject changed fence inputs and
 active work, then require the retained Stop to complete without another external Stop or an execution/outbox row.
+Fail a guest transfer before headers and while reading its body. Require bounded operation and generation context,
+the known part, distinct phases, and elapsed time without request credentials or payloads. Retain the failed receipt,
+previous committed head, live files, and capacity ownership.
 Seed a pre-receipt drain and inspect it before requesting Stop again. Require the original identity, an unknown request
 time, and confirmed shutdown before completion. Historical backfills cannot replace a newer machine's latest receipt.
 Interrupt manifest publication after its last part and cancel the generation while publication is in flight. No stale

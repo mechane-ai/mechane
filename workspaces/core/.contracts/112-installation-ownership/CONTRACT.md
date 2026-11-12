@@ -44,6 +44,11 @@ When a binding targets a declared live Durable Object class without an existing 
 the qualified version's atomic deployment. Stage and verify updates to existing bound namespaces before exclusive
 activation. Retain accepted version and observed deployment identities in provider state if later verification fails.
 
+For staged upgrades to existing bound namespaces, explicitly request immediate Durable Object code adoption on the
+deployment operation. Keep this deployment-owned policy separate from immutable version configuration. Its write-only
+setting applies to every exported class. The atomic new-namespace creation path retains the platform's documented
+adoption behavior; report that scope when verifying active actors.
+
 Validate configured service origins as bare HTTPS origins before reading transport credentials. Reject user information,
 paths, queries, and fragments. Local development may explicitly use a loopback HTTP origin with a port; guest-facing
 local HTTPS uses a generated trusted root. Never disable TLS verification or bake a stack's certificate into an image.
@@ -91,6 +96,8 @@ must follow complete module and asset upload. Keep one provider writer and quali
 Reject a staged version that binds an unprovisioned class, and verify atomic activation of the qualified version
 preserves existing namespaces. Exercise a failed follow-up read and a lost upload response without losing accepted
 resource identities or repeating the upload.
+Inspect a staged upgrade's deployment request for immediate code adoption. After hosted activation, exercise current
+operations on an actor that was active before deployment; Worker readiness alone cannot establish actor code adoption.
 
 Reuse the retained scenario catalog for local source checks and exact-artifact acceptance. Exercise the shared public
 operation path at each declared target; record target capabilities instead of treating a local provider as hosted proof.

@@ -1,6 +1,10 @@
 import { SandboxReport, TurnStatus } from '@mechane/protocol';
-import { BYTES_PER_MEBIBYTE, HttpHeader, HttpMethod } from '@mechane/records';
+import { BYTES_PER_MEBIBYTE, HttpHeader, HttpMethod, MediaType } from '@mechane/records';
 import {
+  ExecutionId,
+  sandboxExecutionPath,
+  SandboxExecutionResult,
+  SandboxRecoveryCheckpointResult,
   SandboxServiceIdentity,
   sandboxStopPath,
   SandboxStopPhase,
@@ -11,6 +15,7 @@ import {
 import {
   checkpointSandbox,
   readModelToolResult,
+  readSandboxCompletion,
   requireFixtures,
   runBash,
   sendNotification,
@@ -23,6 +28,7 @@ import type { MechContext } from '@mechane/testing';
 import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 
 const MULTIPART_FILE_BYTES = 33 * BYTES_PER_MEBIBYTE;
 const RECOVERY_FILE_BYTES = 513 * BYTES_PER_MEBIBYTE;
@@ -70,6 +76,8 @@ export async function checkpointedFilesSurviveMachineLoss({
   });
 
   assert.equal(committed._tag, 'Committed');
+
+  await recoveryFenceRefusesPendingCommands({ ...input, directory });
 
   const savedReport = await readSandboxReport(input);
 
@@ -175,6 +183,114 @@ export async function checkpointedFilesSurviveMachineLoss({
   }
 }
 
+async function recoveryFenceRefusesPendingCommands(input: FilesInput): Promise<void> {
+  const { model } = requireFixtures(input.stack);
+  const gate = await startCommandGate({ stack: input.stack });
+  const operationId = randomUUID();
+  const marker = `repair-${operationId}`;
+  const toolCallId = randomUUID();
+  const directory = join(input.directory, 'unreadable');
+  const identity = sandboxIdentity(input);
+  const pendingId = randomUUID();
+  const pendingExecutionId = ExecutionId.make(pendingId);
+  const pendingPath = sandboxExecutionPath({ ...identity, executionId: pendingExecutionId });
+  const pending = { command: 'printf must-not-run', timeoutMs: REQUEST_DEADLINE_MS, waitMs: 0, environment: null };
+
+  const command = [
+    'set -e',
+    `mkdir '${directory}'`,
+    `trap 'chmod 700 "${directory}"; rmdir "${directory}"' EXIT`,
+    `chmod 000 '${directory}'`,
+    `curl --fail --silent '${gate.url}'`,
+  ].join('\n');
+
+  model.configure({
+    marker,
+    replies: [
+      { tools: [{ id: toolCallId, name: 'start_process', input: { command } }] },
+      { text: 'The checkpoint fixture is waiting' },
+    ],
+  });
+
+  try {
+    const sent = await sendNotification({ ...input, text: marker });
+    const started = Schema.decodeUnknownSync(StartedProcess)(await readModelToolResult({ model, marker, toolCallId }));
+
+    await waitForTurn({ ...input, notificationId: sent.id });
+    await gate.waitForRequest({ count: 1 });
+    await sandboxRequest({ ...input, path: pendingPath, method: HttpMethod.Post, body: pending });
+
+    const failed = await waitFor({
+      name: 'the required checkpoint to retain its unreadable live directory for recovery',
+      read: () => checkpointSandbox({ ...input, operationId }),
+      accept: (result) => result._tag !== 'Pending',
+    });
+
+    assert.equal(failed._tag, 'Failed');
+
+    const before = await readSandboxReport(input);
+    const recovery = Option.getOrThrow(before.environment.recovery);
+    const freshId = randomUUID();
+    const freshExecutionId = ExecutionId.make(freshId);
+    const freshPath = sandboxExecutionPath({ ...identity, executionId: freshExecutionId });
+    const fresh = await sandboxRequest({ ...input, path: freshPath, method: HttpMethod.Post, body: pending });
+    const existing = await sandboxRequest({ ...input, path: pendingPath, method: HttpMethod.Get });
+
+    assert.equal(Schema.decodeUnknownSync(SandboxExecutionResult)(fresh)._tag, 'Unavailable');
+    assert.equal(Schema.decodeUnknownSync(SandboxExecutionResult)(existing)._tag, 'Unavailable');
+
+    const after = await readSandboxReport(input);
+
+    assert.deepEqual(after.environment.recovery, before.environment.recovery);
+    assert.deepEqual(after.environment.committedGeneration, before.environment.committedGeneration);
+
+    model.configure({ marker: started.processId, replies: [{ text: 'The directory is readable again' }] });
+    gate.release();
+
+    await waitFor({
+      name: 'the fixture process to restore the directory permissions',
+      read: () => readSandboxCompletion({ ...input, executionId: started.processId }),
+      accept: (receipt) => receipt !== null,
+    });
+
+    const path = recoveryCheckpointPath({ ...identity, operationId: randomUUID() });
+
+    const body = {
+      machineId: recovery.machineId,
+      recoveryGeneration: recovery.generation,
+      committedGeneration: Option.getOrNull(before.environment.committedGeneration),
+    };
+
+    const repaired = await waitFor({
+      name: 'the recovery checkpoint to commit after refusing never-dispatched commands',
+      read: async () =>
+        Schema.decodeUnknownSync(SandboxRecoveryCheckpointResult)(
+          await sandboxRequest({ ...input, path, method: HttpMethod.Post, body }),
+        ),
+      accept: (result) => result._tag !== 'Pending',
+    });
+
+    assert.equal(repaired._tag, 'Committed', 'A refused command kept its own file recovery busy');
+
+    const retained = await sandboxRequest({ ...input, path: freshPath, method: HttpMethod.Post, body: pending });
+    const repairedReport = await readSandboxReport(input);
+
+    assert.equal(Schema.decodeUnknownSync(SandboxExecutionResult)(retained)._tag, 'Unavailable');
+    assert.deepEqual(repairedReport.sandboxId, before.sandboxId);
+  } finally {
+    gate.release();
+    await gate.close();
+  }
+}
+
+type RecoveryCheckpointPathInput = SandboxServiceIdentity & { readonly operationId: string };
+
+function recoveryCheckpointPath({ operationId, ...identity }: RecoveryCheckpointPathInput): string {
+  const path = sandboxWorkspacePath(identity);
+
+  return `${path}/recovery-checkpoints/${encodeURIComponent(operationId)}`;
+}
+
 async function stoppedReceiptSurvivesReplacement(input: MechContext): Promise<void> {
   const sandbox = requireSandbox(input);
   const identity = sandboxIdentity(input);
@@ -245,7 +361,11 @@ function requireSandbox({ stack }: MechContext) {
   return stack.sandbox;
 }
 
-type SandboxRequestInput = MechContext & { readonly path: string; readonly method: HttpMethod };
+type SandboxRequestInput = MechContext & {
+  readonly path: string;
+  readonly method: HttpMethod;
+  readonly body?: Readonly<Record<string, unknown>>;
+};
 
 async function readSandboxReport(input: MechContext): Promise<SandboxReport> {
   const path = sandboxWorkspacePath(sandboxIdentity(input));
@@ -254,12 +374,13 @@ async function readSandboxReport(input: MechContext): Promise<SandboxReport> {
   return Schema.decodeUnknownSync(SandboxReport)(report);
 }
 
-async function sandboxRequest({ path, method, ...input }: SandboxRequestInput): Promise<unknown> {
+async function sandboxRequest({ path, method, body, ...input }: SandboxRequestInput): Promise<unknown> {
   const sandbox = requireSandbox(input);
 
   const response = await fetch(new URL(path, sandbox.origin), {
     method,
-    headers: { [HttpHeader.Authorization]: `Bearer ${sandbox.bearer}` },
+    headers: { [HttpHeader.Authorization]: `Bearer ${sandbox.bearer}`, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(REQUEST_DEADLINE_MS),
   });
 

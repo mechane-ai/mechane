@@ -89,6 +89,10 @@ Observe an existing execution without resubmitting its command or requiring a se
 identity across transport retries. A missing receipt after a lost machine remains uncertain; never automatically rerun
 an arbitrary command to reconstruct its output.
 
+Refuse a never-dispatched command as unavailable when a durable workspace recovery fence requires repair. Apply this
+to new claims and pending retries so waiting commands cannot block their own recovery checkpoint. Preserve dispatched
+uncertainty and terminal receipts; ordinary startup and capacity waits remain distinct from required file recovery.
+
 Rejoin a starting provider instance only with positive evidence of its original machine identity. A running flag alone
 does not prove that identity or guest readiness. A lost start acknowledgement cannot destroy the matching instance or
 restart its bootstrap. Refuse a conflicting start or stop without replacing the existing guest.
@@ -126,6 +130,8 @@ Run the production sandbox and guest owners through celld with a real Docker con
 the application without replacing that guest, then destroy and restore the actual container. Record container identity,
 durable file results, multipart size, and explicit cache reconstruction. Process-scope fixtures do not qualify container
 isolation. Local direct networking is an explicit platform composition and cannot establish hosted egress enforcement.
+After a required checkpoint fails, require a new command to return unavailable without dispatch, preserve the original
+recovery identity and committed files, and verify that the refused command leaves the recovery checkpoint unblocked.
 Exercise the ordinary guest CLI and command gate through the retained gateway on native Linux and a supported macOS
 Docker backend. On Linux, reject undeclared host-service ports, verify one stack's cleanup preserves another stack's
 grant, and confirm guest startup cannot widen native access. Reject arbitrary fixture destinations on both platforms.

@@ -10,8 +10,9 @@ import {
   WorkspaceStep,
 } from '@mechane/sandbox-wire';
 import { Option, Result, Schema } from 'effect';
-import { WorkspaceTransferFailed } from '../errors.ts';
+import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import type { GuestConnection } from '../types.ts';
+import { observeWorkspaceTransfer } from '../workspace/observe-workspace-transfer.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
@@ -41,7 +42,14 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
     return;
   }
 
-  const text = await response.text();
+  const text = await observeWorkspaceTransfer({
+    generation,
+    step,
+    part,
+    phase: WorkspaceTransferPhase.ResponseBody,
+    run: () => response.text(),
+  });
+
   const archive = decodeCheckpointArchive({ generation, body: text });
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {

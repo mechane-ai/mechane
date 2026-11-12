@@ -2,11 +2,11 @@ import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
 import { guestWorkspacePath } from '@mechane/sandbox-wire';
 import type { WorkspaceStep } from '@mechane/sandbox-wire';
-import { capturePromise } from '@mechane/utilities';
 import { Duration, Option, Result } from 'effect';
 import { ANSWER_SLACK } from '../constants.ts';
-import { WorkspaceTransferFailed } from '../errors.ts';
+import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import type { GuestConnection, MachineIdInput } from '../types.ts';
+import { observeWorkspaceTransfer } from './observe-workspace-transfer.ts';
 
 type WorkspaceRequestInput = {
   readonly guest: GuestConnection;
@@ -40,28 +40,24 @@ export async function workspaceRequest({
     headers.set(HttpHeader.MechaneCheckpointLease, value);
   }
 
-  const promise = guest.fetch({ path, init: { ...init, headers, signal } });
-  const sent = await capturePromise({ promise });
-
-  const transferFailure: (cause: unknown) => WorkspaceTransferFailed = (cause) => {
-    const reason = String(cause);
-
-    return new WorkspaceTransferFailed({ generation, step, reason });
-  };
-
-  const checked = Result.mapError(sent, transferFailure);
-  const response = Result.getOrThrow(checked);
+  const response = await observeWorkspaceTransfer({
+    generation,
+    step,
+    part,
+    phase: WorkspaceTransferPhase.Request,
+    run: () => guest.fetch({ path, init: { ...init, headers, signal } }),
+  });
 
   switch (response.status) {
     case HttpStatusCode.Ok:
     case HttpStatusCode.NoContent:
       return response;
     default:
-      return await failedWorkspaceResponse({ response, generation, step });
+      return await failedWorkspaceResponse({ response, generation, step, part });
   }
 }
 
-type FailedWorkspaceResponseInput = Pick<WorkspaceRequestInput, 'generation' | 'step'> & {
+type FailedWorkspaceResponseInput = Pick<WorkspaceRequestInput, 'generation' | 'step' | 'part'> & {
   readonly response: Response;
 };
 
@@ -69,10 +65,21 @@ async function failedWorkspaceResponse({
   response,
   generation,
   step,
+  part,
 }: FailedWorkspaceResponseInput): Promise<Response> {
-  const reason = await response.text();
-  const cause = new WorkspaceTransferFailed({ generation, step, reason });
-  const failure = Result.fail(cause);
+  const fail: () => Promise<never> = async () => {
+    const reason = await response.text();
+    const cause = new WorkspaceTransferFailed({ generation, step, reason });
+    const failure = Result.fail(cause);
 
-  return Result.getOrThrow(failure);
+    return Result.getOrThrow(failure);
+  };
+
+  return await observeWorkspaceTransfer({
+    generation,
+    step,
+    part,
+    phase: WorkspaceTransferPhase.ResponseBody,
+    run: fail,
+  });
 }
