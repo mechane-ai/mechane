@@ -167,6 +167,7 @@ const styles = stylex.create({
 
 type SidebarProps = {
   readonly header?: ReactNode;
+  readonly navigationHeader?: ReactNode;
   readonly footer?: ReactNode;
   readonly close?: ReactNode;
   readonly children: ReactNode;
@@ -192,7 +193,7 @@ const footerLayouts = { inline: styles.inlineFooter, navigation: styles.navigati
   stylex.StyleXStyles
 >;
 
-export function Sidebar({ header, footer, close, children }: SidebarProps): ReactNode {
+export function Sidebar({ header, navigationHeader, footer, close, children }: SidebarProps): ReactNode {
   const hasHeader = header !== undefined && header !== null;
 
   return (
@@ -201,6 +202,7 @@ export function Sidebar({ header, footer, close, children }: SidebarProps): Reac
         <div {...stylex.props(styles.headerContent)}>{header}</div>
         {close}
       </div>
+      {navigationHeader}
       <div role="region" aria-label="Navigation links" tabIndex={0} {...stylex.props(styles.navigationRegion)}>
         {children}
       </div>

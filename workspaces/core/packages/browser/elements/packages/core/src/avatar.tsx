@@ -5,6 +5,7 @@ import { colors, radii, typography } from '../../foundations/src/tokens.stylex.t
 
 const styles = stylex.create({
   avatar: {
+    boxSizing: 'border-box',
     display: 'inline-flex',
     flexShrink: 0,
     alignItems: 'center',
