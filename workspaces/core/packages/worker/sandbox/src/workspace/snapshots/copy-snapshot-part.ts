@@ -1,4 +1,4 @@
-import { HttpMethod } from '@mechane/records';
+import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
@@ -11,28 +11,30 @@ type CopySnapshotPartInput = WorkspaceProviderStepInput & {
   readonly guest: GuestConnection;
   readonly snapshot: WorkspaceSnapshot;
   readonly restoration: WorkspaceRestoration;
+  readonly part: number;
 };
 
-/** Copies one committed R2 part to a replacement guest before advancing its restore cursor. */
+/** Copies one immutable part while its original batch retains the restore cursor. */
 export async function copySnapshotPart({
   store,
   workspace,
   guest,
   snapshot,
   restoration,
-}: CopySnapshotPartInput): Promise<void> {
+  part,
+}: CopySnapshotPartInput): Promise<boolean> {
   const { generation } = snapshot;
-  const { part, machineId } = restoration;
+  const { machineId } = restoration;
   const body = await readSnapshotPart({ workspace, snapshot, part });
   const selectedPart = Option.some(part);
 
   if (!isCurrentRestoration({ store, restoration })) {
-    return;
+    return false;
   }
 
   const lease = Option.none();
 
-  await workspaceRequest({
+  const response = await workspaceRequest({
     guest,
     machineId,
     generation,
@@ -42,9 +44,5 @@ export async function copySnapshotPart({
     init: { method: HttpMethod.Put, body },
   });
 
-  if (!isCurrentRestoration({ store, restoration })) {
-    return;
-  }
-
-  store.saveRestoration({ ...restoration, part: part + 1 });
+  return response.status === HttpStatusCode.Ok;
 }

@@ -26,14 +26,13 @@ Qualify a capacity change against streaming memory, home plus archive staging di
 deadlines on the selected machine tier. Scratch outside the home still consumes that machine's disk. Preserve unsaved
 files before replacing a guest with older compiled limits; deploying a new Worker does not change that guest's bounds.
 
-Advance checkpoint uploads in bounded batches under one declared concurrency and buffer policy. Give each batch one captured generation,
+Advance checkpoint uploads and restoration copies in bounded parallel batches under one declared concurrency and buffer policy. Give each batch one captured generation,
 writer machine, and starting durable cursor. Settle every started part before reporting a transfer failure, releasing
 the writer, or changing the cursor. Recheck that exact captured identity and cursor before advancing the whole batch,
 and advance only when every part succeeded. Keep the persisted part format, per-part validation, and interruption
 reconciliation through immutable stored parts. Keep buffered bytes bounded by that policy.
-Keep restoration copies sequential and buffer one part at a time. Reload the current restoration after each awaited
-part; stop when its identity changes, progress stalls, or an operation fails. Bound both parts per call and the time
-allowed to start another upload batch or restoration part. An in-flight transfer retains its existing timeout.
+Reload the current transfer after each settled batch; stop when its identity changes, progress stalls, or an operation fails.
+Bound both parts per call and the time allowed to start another batch. An in-flight transfer retains its existing timeout.
 Create archive parts and the complete generation manifest immutably. Publish the manifest only after all parts exist,
 then fence and atomically commit its digest and the head. A delayed upload cannot revive a canceled
 generation. Verify a referenced manifest before restoring its files. Preserve older committed inline metadata as
@@ -109,7 +108,7 @@ Build the image and inspect pinned tool versions. Run the existing command-recov
 For a new workload, record source revision, commands, checkpoint size, restart results, and required-check outcomes in
 the deployment work record. Inspect network configuration for company-specific values and review observation requests
 for command bodies. Live release proof names the checked PR head, merge, workflow run, and observed deployed revision.
-Exercise a multipart save and restoration across batch boundaries. Hold one upload while its siblings finish, fail one
+Exercise a multipart save and restoration across batch boundaries. Hold one part while its siblings finish, fail one
 while another is held, and cancel the captured generation while parts are in flight. Require all started work to settle
 before failure cleanup, and require the unchanged batch cursor until every part succeeds under its original fence.
 Interrupt after immutable parts are stored and reuse them on reconciliation. Verify restored files and the absence of

@@ -24,7 +24,7 @@ import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-const MULTIPART_FILE_BYTES = 9 * BYTES_PER_MEBIBYTE;
+const MULTIPART_FILE_BYTES = 33 * BYTES_PER_MEBIBYTE;
 const RECOVERY_FILE_BYTES = 513 * BYTES_PER_MEBIBYTE;
 const REQUEST_DEADLINE_MS = 15_000;
 const UNSAVED_WRITER_REQUESTS = 2;
