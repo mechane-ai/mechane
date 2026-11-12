@@ -1,4 +1,4 @@
-import { catalog, SandboxReport } from '@mechane/protocol';
+import { catalog } from '@mechane/protocol';
 import { HttpStatusCode, MediaType } from '@mechane/records';
 import {
   CONSOLE_STORAGE_READY_TIMEOUT_MS,
@@ -6,6 +6,7 @@ import {
   createAccount,
   createMech,
   mechPath,
+  requireFixtures,
   withConsoleBrowser,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
@@ -16,7 +17,8 @@ import { randomUUID } from 'node:crypto';
 type EnvironmentPathInput = { readonly workspaceId: string; readonly mechId: string };
 
 export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: ScenarioInput): Promise<void> {
-  const account = await createAccount({ stack });
+  const login = requireFixtures(stack).github.users.owner.login;
+  const account = await createAccount({ stack, login });
   const mech = await createMech({ stack, account, name: `warm-${randomUUID()}` });
 
   await withConsoleBrowser({
@@ -45,8 +47,10 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
         page.getByRole('link', { name: 'Environment', exact: true }).click(),
       ]);
 
+      assert.equal(overviewResponse.status(), HttpStatusCode.Ok, `Environment GET ${environmentUrl} did not succeed`);
+
       const body: unknown = await overviewResponse.json();
-      const overview = Schema.decodeUnknownSync(SandboxReport)(body);
+      const overview = Schema.decodeUnknownSync(catalog.showEnvironment.output)(body);
       const savedFiles = page.getByRole('heading', { name: 'Saved files', exact: true });
 
       await savedFiles.waitFor(storageReady);
@@ -137,7 +141,7 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
       ]);
 
       const refreshedBody: unknown = await refreshedResponse.json();
-      const recovered = Schema.decodeUnknownSync(SandboxReport)(refreshedBody);
+      const recovered = Schema.decodeUnknownSync(catalog.showEnvironment.output)(refreshedBody);
 
       assert.equal(Option.isNone(recovered.sandboxId), true, 'Refreshing the overview allocated a machine');
       await savedFiles.waitFor(storageReady);
