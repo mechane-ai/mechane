@@ -21,6 +21,12 @@ region to settle. It does not announce each text mutation. `Message` presents an
 and actions. Render message text with `Markdown` from `/content/markdown`; use `MessageAttachment` for supplied file
 records. Both attachments and sources use the content module's safe destination policy.
 
+Use `Message variant="chat"` for a compact conversation with end-aligned user messages and accessible authorship.
+`ReplyIndicator` delays a supplied status label and gives it two short shimmer sweeps. Reduced motion keeps the label
+still. The application chooses when delivery or generation is waiting and removes the indicator on real output. Pass
+`isStreaming` only to the active Markdown message. Newly received prose fades briefly; completed renderers stay stable
+while later messages grow. The AI Chat catalog includes a tool reply, an interrupted send, retry and Stop.
+
 The scroller wrapper exposes ordinary live-edge following and prepend preservation. It does not expose the upstream
 anchored-turn mode. That mode has a known scrollbar-drag issue in the pinned dependency. This keeps one scroll owner
 without reproducing its engine in the UI package. See the
@@ -33,11 +39,11 @@ submission result, and retry policy. The component never clears text. A failed o
 both the draft and the application's original request identity.
 
 Newline is the default Enter behavior. `enterBehavior="submit"` submits through the native form and its validation;
-Shift+Enter adds a line. Composition input and held Enter do not submit. Pending input becomes read-only to preserve
-keyboard focus. Explicitly disabled input retains normal disabled semantics.
+Shift+Enter adds a line. Composition input and held Enter do not submit. Pending blocks submission while retaining
+editing and keyboard focus for the next draft. Explicitly disabled input retains normal disabled semantics.
 
-Use `isCompact` for a composer pinned below a conversation. It starts with a smaller input and bounds manual resizing to
-keep the conversation visible. The default remains suitable for a larger standalone prompt.
+Use `isCompact` for a composer pinned below a conversation. Without additional controls or attachments it uses one
+action row and grows with its text up to a bounded height. The default suits a larger standalone prompt.
 
 Supplying `onStop` shows Stop in place of Send. Enter cannot submit while Stop is visible. Pending, disabled, and
 `isSubmitDisabled` also gate programmatic form submission. Model controls, suggestions, attachments, and context

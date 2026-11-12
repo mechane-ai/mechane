@@ -22,6 +22,7 @@ const entryPattern: (target: string) => string = (target) => {
 
 const FOUNDATION_ENTRIES = [
   'accessibility.ts',
+  'visible-motion.ts',
   'control-state.ts',
   'control-styles.ts',
   'style-composition.ts',

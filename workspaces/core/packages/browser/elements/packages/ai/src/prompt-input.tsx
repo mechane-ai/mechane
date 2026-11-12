@@ -45,6 +45,9 @@ const styles = stylex.create({
     },
   },
   invalid: { borderColor: colors.danger },
+  inlineFrame: { flexDirection: 'row', alignItems: 'flex-end', paddingBlock: spacing.sm },
+  inlineInput: { flex: '1 1 auto' },
+  inlineFooter: { flexShrink: 0 },
   footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: '1 1 auto' },
   action: { marginInlineStart: 'auto' },
@@ -128,7 +131,9 @@ export function PromptInput({
   stopLabel = 'Stop response',
 }: PromptInputProps): ReactNode {
   const feedbackId = useId();
-  const isInputDisabled = disabled || isPending;
+  const isInputDisabled = disabled;
+  const isInline = isCompact && attachments === undefined && controls === undefined;
+  const canSubmit = !isInputDisabled && !isPending && !isSubmitDisabled;
   let tooltipLabel = submitLabel;
 
   if (onStop !== undefined) {
@@ -157,7 +162,7 @@ export function PromptInput({
 
     event.preventDefault();
 
-    if (!isInputDisabled && !isSubmitDisabled && onStop === undefined) {
+    if (canSubmit && onStop === undefined) {
       event.currentTarget.form?.requestSubmit();
     }
   }
@@ -165,7 +170,7 @@ export function PromptInput({
   function handleSubmit(event: SubmitEvent<HTMLFormElement>): void {
     event.preventDefault();
 
-    if (!isInputDisabled && !isSubmitDisabled && onStop === undefined) {
+    if (canSubmit && onStop === undefined) {
       onSubmit(event);
     }
   }
@@ -174,11 +179,13 @@ export function PromptInput({
     <form onSubmit={handleSubmit} {...stylex.props(styles.form)}>
       <Field.Root invalid={error !== undefined}>
         <Field.Label {...stylex.props(accessibility.hidden)}>{label}</Field.Label>
-        <div {...stylex.props(styles.frame, error !== undefined && styles.invalid)}>
+        <div {...stylex.props(styles.frame, isInline && styles.inlineFrame, error !== undefined && styles.invalid)}>
           <Textarea
             appearance="plain"
             rows={isCompact ? 1 : 2}
             isCompact={isCompact}
+            shouldGrow={isInline}
+            xstyle={isInline ? styles.inlineInput : undefined}
             name={name}
             value={value}
             onChange={(event) => onValueChange(event.currentTarget.value)}
@@ -187,11 +194,10 @@ export function PromptInput({
             maxLength={maxLength}
             required={required}
             disabled={disabled}
-            readOnly={isPending}
             aria-errormessage={error === undefined ? undefined : feedbackId}
           />
           {attachments}
-          <div {...stylex.props(styles.footer)}>
+          <div {...stylex.props(styles.footer, isInline && styles.inlineFooter)}>
             {controls !== undefined && <div {...stylex.props(styles.controls)}>{controls}</div>}
             <Tooltip.Root>
               <Tooltip.Trigger

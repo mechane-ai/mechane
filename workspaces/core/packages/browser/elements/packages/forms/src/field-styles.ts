@@ -21,6 +21,7 @@ export const fieldStyles = stylex.create({
     '::placeholder': { color: colors.muted },
   },
   compactTextarea: { minHeight: 80, maxHeight: '30dvh' },
+  growingTextarea: { minHeight: 0, maxHeight: '16lh', fieldSizing: 'content', resize: 'none' },
 });
 
 export type TextareaAppearance = 'field' | 'plain';

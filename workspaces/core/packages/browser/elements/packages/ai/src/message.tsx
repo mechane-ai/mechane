@@ -29,6 +29,7 @@ const styles = stylex.create({
   },
   content: { minWidth: 0, overflowWrap: 'anywhere', lineHeight: typography.proseLineHeight },
   user: { paddingBlock: spacing.md, paddingInline: spacing.lg, borderRadius: radii.sm, backgroundColor: colors.canvas },
+  bubble: { width: 'fit-content', maxWidth: '85%', marginInlineStart: 'auto', borderRadius: radii.md },
   assistant: {},
   system: { color: colors.muted, paddingBlock: spacing.sm },
   actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
@@ -84,6 +85,7 @@ export type MessageProps = {
   readonly avatar?: ReactNode;
   readonly actions?: ReactNode;
   readonly attachments?: ReactNode;
+  readonly variant?: 'default' | 'chat';
 };
 
 export type MessageAttachmentProps = {
@@ -107,14 +109,26 @@ export function Message({
   avatar,
   actions,
   attachments,
+  variant = 'default',
 }: MessageProps): ReactNode {
+  const isBubble = variant === 'chat' && kind === 'user';
+  const hasHeader = variant === 'default' || avatar !== undefined || meta !== undefined;
+
+  const header = hasHeader ? (
+    <header {...stylex.props(styles.header)}>
+      {avatar !== undefined && <span {...stylex.props(styles.avatar)}>{avatar}</span>}
+      <span {...stylex.props(styles.author)}>{author}</span>
+      {meta !== undefined && <div {...stylex.props(styles.meta)}>{meta}</div>}
+    </header>
+  ) : null;
+
   return (
-    <article id={id} aria-label={author} {...stylex.props(styles.root, kinds[kind], stylex.defaultMarker())}>
-      <header {...stylex.props(styles.header)}>
-        {avatar !== undefined && <span {...stylex.props(styles.avatar)}>{avatar}</span>}
-        <span {...stylex.props(styles.author)}>{author}</span>
-        {meta !== undefined && <div {...stylex.props(styles.meta)}>{meta}</div>}
-      </header>
+    <article
+      id={id}
+      aria-label={author}
+      {...stylex.props(styles.root, kinds[kind], isBubble && styles.bubble, stylex.defaultMarker())}
+    >
+      {header}
       <div {...stylex.props(styles.content)}>{children}</div>
       {attachments !== undefined && <div {...stylex.props(styles.attachments)}>{attachments}</div>}
       {actions !== undefined && <footer {...stylex.props(styles.actions, styles.messageActions)}>{actions}</footer>}

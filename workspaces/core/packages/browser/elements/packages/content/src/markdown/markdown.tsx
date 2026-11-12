@@ -1,9 +1,10 @@
 import * as stylex from '@stylexjs/stylex';
-import { Children, createElement } from 'react';
+import { Children, createContext, createElement, memo, useContext } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Streamdown, useIsCodeFenceIncomplete } from 'streamdown';
 import type { Components } from 'streamdown';
 import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useVisibleMotion } from '../../../foundations/src/visible-motion.ts';
 import { CodeBlock } from '../code/code-block.tsx';
 import { ContentLink } from '../content-link.tsx';
 import { viewerStyles } from '../viewer-styles.ts';
@@ -106,10 +107,11 @@ export type MarkdownProps = {
   readonly weight?: 'regular' | 'strong';
 };
 
-type MarkdownHeadingProps = ComponentProps<'h1'> & {
-  readonly level: HeadingLevel;
-  readonly headingLevel: HeadingLevel;
-};
+type MarkdownHeadingProps = ComponentProps<'h1'> & { readonly level: HeadingLevel };
+
+const HeadingContext = createContext<HeadingLevel>(1);
+const reveal = stylex.keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } });
+const textMotion = { animation: reveal, duration: 140, stagger: 0, maxBacklogMs: 0, sep: 'word' as const };
 
 type MarkdownCodeProps = ComponentProps<'code'>;
 const TEXT_NODE_TYPES: ReadonlySet<string> = new Set(['string', 'number']);
@@ -135,7 +137,8 @@ function CodeFence({ children, className }: MarkdownCodeProps): ReactNode {
   );
 }
 
-function MarkdownHeading({ level, headingLevel, children, id }: MarkdownHeadingProps): ReactNode {
+function MarkdownHeading({ level, children, id }: MarkdownHeadingProps): ReactNode {
+  const headingLevel = useContext(HeadingContext);
   const tagName = `h${Math.min(level + headingLevel - 1, 6)}`;
   const size = level === 1 ? styles.title : level === 2 ? styles.section : styles.minor;
 
@@ -143,6 +146,12 @@ function MarkdownHeading({ level, headingLevel, children, id }: MarkdownHeadingP
 }
 
 const components: Components = {
+  h1: (props) => <MarkdownHeading {...props} level={1} />,
+  h2: (props) => <MarkdownHeading {...props} level={2} />,
+  h3: (props) => <MarkdownHeading {...props} level={3} />,
+  h4: (props) => <MarkdownHeading {...props} level={4} />,
+  h5: (props) => <MarkdownHeading {...props} level={5} />,
+  h6: (props) => <MarkdownHeading {...props} level={6} />,
   p: ({ children }) => <p {...stylex.props(styles.block)}>{children}</p>,
   ul: ({ children }) => <ul {...stylex.props(styles.block, styles.list)}>{children}</ul>,
   ol: ({ children, start }) => (
@@ -200,6 +209,7 @@ const components: Components = {
 
 const allowedElements = [
   'p',
+  'span',
   'h1',
   'h2',
   'h3',
@@ -231,38 +241,36 @@ const allowedElements = [
   'section',
 ];
 
-export function Markdown({
-  children,
-  isStreaming = false,
-  label,
-  headingLevel = 1,
-  tone = 'default',
-  weight = 'regular',
-}: MarkdownProps): ReactNode {
-  const headingComponents: Components = {
-    h1: (props) => <MarkdownHeading {...props} level={1} headingLevel={headingLevel} />,
-    h2: (props) => <MarkdownHeading {...props} level={2} headingLevel={headingLevel} />,
-    h3: (props) => <MarkdownHeading {...props} level={3} headingLevel={headingLevel} />,
-    h4: (props) => <MarkdownHeading {...props} level={4} headingLevel={headingLevel} />,
-    h5: (props) => <MarkdownHeading {...props} level={5} headingLevel={headingLevel} />,
-    h6: (props) => <MarkdownHeading {...props} level={6} headingLevel={headingLevel} />,
-  };
+export const Markdown = memo(
+  ({
+    children,
+    isStreaming = false,
+    label,
+    headingLevel = 1,
+    tone = 'default',
+    weight = 'regular',
+  }: MarkdownProps): ReactNode => {
+    const { ref, isActive } = useVisibleMotion(isStreaming);
 
-  return (
-    <Streamdown
-      key={headingLevel}
-      {...markdownOptions}
-      {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
-      aria-label={label}
-      components={{ ...components, ...headingComponents }}
-      mode={isStreaming ? 'streaming' : 'static'}
-      isAnimating={isStreaming}
-      animated={false}
-      controls={false}
-      linkSafety={{ enabled: false }}
-      allowedElements={allowedElements}
-    >
-      {children}
-    </Streamdown>
-  );
-}
+    return (
+      <HeadingContext value={headingLevel}>
+        <div ref={ref}>
+          <Streamdown
+            {...markdownOptions}
+            {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
+            aria-label={label}
+            components={components}
+            mode={isStreaming ? 'streaming' : 'static'}
+            isAnimating={isStreaming}
+            animated={isActive ? textMotion : false}
+            controls={false}
+            linkSafety={{ enabled: false }}
+            allowedElements={allowedElements}
+          >
+            {children}
+          </Streamdown>
+        </div>
+      </HeadingContext>
+    );
+  },
+);

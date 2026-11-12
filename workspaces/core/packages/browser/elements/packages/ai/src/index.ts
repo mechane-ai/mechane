@@ -18,5 +18,7 @@ export type { MessageBoundaryProps } from './message-boundary.tsx';
 export { MessageBoundary } from './message-boundary.tsx';
 export type { PromptInputProps, PromptInputPlaceholderProps } from './prompt-input.tsx';
 export { PromptInput, PromptInputPlaceholder } from './prompt-input.tsx';
+export { ReplyIndicator } from './reply-indicator.tsx';
+export type { ReplyIndicatorProps } from './reply-indicator.tsx';
 export type { Source, SourcesProps, InlineCitationProps } from './sources.tsx';
 export { Sources, InlineCitation } from './sources.tsx';

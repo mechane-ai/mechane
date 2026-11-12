@@ -13,6 +13,8 @@ Applications redact private values before passing them to these generic viewers.
 
 Markdown previews use the same parser and emit inert text suitable inside another link. Rejected links retain their
 visible label. Embedded Markdown shifts its heading hierarchy explicitly; it never silently adds another page title.
+Keep Markdown renderer identities stable across streaming updates. Reveal only newly received prose, with immediate
+text under reduced motion. Preserve completed content, selection, focused links and expanded tool details while a later reply streams.
 
 Keep the supplied text available when a renderer is loading, unsupported, or failed. SSR and first client render must
 agree on the readable fallback. A highlighting failure must not hide the source. Load renderer code, grammars, workers,
@@ -43,6 +45,7 @@ the new inputs. Inspect selection and annotations on both sides of a changed dif
 Build the package and an ordinary React consumer. Confirm source remains readable before renderer initialization and
 that every dynamic asset resolves from the packaged build. Inspect vendor content in both themes and a narrow layout.
 Types, existing dependency checks, and this source/browser review enforce the contract; no new test runner is required.
+Use the AI Chat catalog to inspect a later streaming reply beside a completed heading, including reduced motion and interrupted delivery.
 
 ## Local adaptations
 
