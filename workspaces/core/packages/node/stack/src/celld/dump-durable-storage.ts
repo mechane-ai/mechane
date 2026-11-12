@@ -18,7 +18,7 @@ type SelectedFilesInput = {
   readonly names?: ReadonlySet<string>;
 };
 
-type NativeDatabaseInput = { readonly directory: string; readonly file: Dirent };
+type NativeFileInput = { readonly directory: string; readonly file: Dirent };
 type StoredFile = { readonly source: string; readonly bytes: Buffer };
 type StoredFileInput = { readonly source: string; readonly signal: AbortSignal | undefined };
 
@@ -39,6 +39,9 @@ const CELLD_OBJECTS_FILES: ReadonlySet<string> = new Set([
 ]);
 
 const CELLD_RUNTIME_SQLITE = /^\.celld\/dev\/runtime\/[^/]+\/ltx\/e\d+\/db\.sqlite(?:-(?:wal|shm))?$/;
+
+const CELLD_RUNTIME_LTX_STAGING =
+  /^\.celld\/dev\/runtime\/[^/]+\/ltx\/e\d+\/\.db\.sqlite-litestream\/ltx\/\d+\/[0-9a-f]{16}-[0-9a-f]{16}\.ltx\.tmp$/;
 
 // Read locks keep WAL files alive; separate file reads do not form one storage-wide snapshot.
 export async function* persistedFiles({ directory, signal }: PersistedFilesInput): AsyncGenerator<Buffer> {
@@ -107,7 +110,10 @@ async function* readSelectedFiles({
 }: SelectedFilesInput): AsyncGenerator<StoredFile> {
   const current = await readdir(directory, { recursive: true, withFileTypes: true });
   const regular = current.filter((file) => file.isFile());
-  const wanted = regular.filter((file) => names === undefined || names.has(file.name));
+
+  // Celld publishes LTX files by renaming their fsynced staging paths, which can vanish during this live scan.
+  const durable = regular.filter((file) => !isNativeLtxStaging({ directory: projectDirectory, file }));
+  const wanted = durable.filter((file) => names === undefined || names.has(file.name));
   const ordinary = wanted.filter((file) => nativeDatabasePath({ directory: projectDirectory, file }) === null);
 
   for (const file of ordinary) {
@@ -177,17 +183,27 @@ async function readStoredFile({ source, signal }: StoredFileInput): Promise<Stor
   return { source, bytes };
 }
 
-function nativeDatabasePath({ directory, file }: NativeDatabaseInput): string | null {
-  const path = relative(directory, join(file.parentPath, file.name)).split(sep).join('/');
+function nativeFilePath({ directory, file }: NativeFileInput): string {
+  return relative(directory, join(file.parentPath, file.name)).split(sep).join('/');
+}
+
+function isNativeLtxStaging(input: NativeFileInput): boolean {
+  const path = nativeFilePath(input);
+
+  return CELLD_RUNTIME_LTX_STAGING.test(path);
+}
+
+function nativeDatabasePath(input: NativeFileInput): string | null {
+  const path = nativeFilePath(input);
 
   if (!CELLD_OBJECTS_FILES.has(path) && !CELLD_RUNTIME_SQLITE.test(path)) {
     return null;
   }
 
-  return join(directory, path.replace(/-(?:wal|shm)$/, ''));
+  return join(input.directory, path.replace(/-(?:wal|shm)$/, ''));
 }
 
-function isNativeSharedMemory(input: NativeDatabaseInput): boolean {
+function isNativeSharedMemory(input: NativeFileInput): boolean {
   if (!input.file.name.endsWith('-shm')) {
     return false;
   }
