@@ -11,6 +11,11 @@ upstream storage adapter. Pi owns input placement, model/tool execution, compact
 notification identity, current authority, environment boundaries, and explicit publications. Keep a second execution
 engine, dependency patches, private SDK imports, and a separate run scheduler out of the application.
 
+Do not impose a fixed model or tool round count on the root conversation. Current budgets, authority, and cancellation
+bound continued work. Reconcile runtime-owned native configuration on every actor open through supported Pi APIs,
+clearing a previously stored round limit without changing working context, history, or the human definition revision.
+Retain a known native termination cause in safe trace evidence for historical failures without exposing raw errors.
+
 Keep shared accounts, definitions, grants, budgets, and capacity in the Postgres control store. Its transactions own
 those invariants. Actor status in Postgres is a read projection, never execution or cancellation authority. Reliable
 cross-store delivery uses an immutable outbox identity and recipient acknowledgment. A committed outbox must have a
@@ -109,7 +114,9 @@ and new intake must retain its receipt. Exercise failed and partial discovery, v
 inspect the projection for credential canaries and its physical byte bound.
 Admit concurrent input, interrupt admission and final idle, restart, and require continued work without duplicate
 publications. Steer during a generation and reject its stale tool; inspect the next provider context for all pending
-input. Exercise independent mechs, cancellation, failed runs, and compaction.
+input. Exercise independent mechs, cancellation, failed runs, and compaction. Continue one compacting activation past
+32 tool rounds with one publication and complete accounting. Reopen stored native configuration with its old round
+limit and unchanged definition; clearing the limit must preserve the conversation identity, history, and working context.
 
 Replay the actual terminal callback of a canceled foreground command and wait for its delivery acknowledgment. Require
 no received notification, added activation, or paid request. Inspect durable admission before provider counts so delayed

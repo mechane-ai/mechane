@@ -113,7 +113,6 @@ const context = BACKGROUND_CONTEXT;
 const recoveryMilliseconds = 1000;
 const definitionRefreshRetry = Duration.seconds(30);
 const definitionRefreshRetryMilliseconds = Duration.toMillis(definitionRefreshRetry);
-const ROOT_MAX_TURNS = 32;
 const PROVIDER_RETRY_MAX_ATTEMPTS = 2;
 const COMPACTION_RESERVED_TOKENS = 4096;
 const COMPACTION_RECENT_TOKENS = 8192;
@@ -392,12 +391,11 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       this.#runtime.conversation = Option.some(
         await this.#harness.root(context, {
-          agent: {
-            model: { provider: 'mechane', modelId: this.#configuration.defaultModel },
-            maxTurns: ROOT_MAX_TURNS,
-          },
+          agent: { model: { provider: 'mechane', modelId: this.#configuration.defaultModel } },
         }),
       );
+
+      await this.#conversation.configure({ maxTurns: null }, context);
 
       const state = await this.#harness.snapshot(State, context);
       this.#runtime.scope = Option.fromNullishOr(state?.scope);
@@ -525,7 +523,6 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       {
         model: { provider: 'mechane', modelId: mech.model },
         instructions: [mech.instructions ?? '', ...prepared.configuration.notices].join('\n\n'),
-        maxTurns: ROOT_MAX_TURNS,
         compaction: {
           enabled: true,
           reserveTokens: Math.min(

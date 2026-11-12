@@ -43,6 +43,7 @@ const BINARY_SEARCH_PARTITIONS = 2;
 const ALLOWANCE_REFUSALS: ReadonlySet<string> = new Set(['workspace_allowance', 'mech_allowance']);
 const TOOL_END_EVENTS: ReadonlySet<string> = new Set(['tool.completed', 'tool.failed']);
 const REFUSED_ATTEMPT_STATES: ReadonlySet<string> = new Set(['refused', 'released']);
+const NATIVE_TURN_LIMIT_ERROR = 'Native conversation ended unanswered: turn_limit';
 
 type TurnInput = { readonly turnId: string };
 type TurnUpdate = { readonly id: string; readonly status: SubmissionRecord };
@@ -134,6 +135,14 @@ function runFailureReason(error: string | null, hasAllowanceRefusal: boolean): R
   }
 
   return 'faulted';
+}
+
+function failureNotice(error: string | null): string | undefined {
+  if (error === NATIVE_TURN_LIMIT_ERROR) {
+    return error;
+  }
+
+  return providerFailureReason(error);
 }
 
 function meteredUsage(value: Readonly<Record<string, unknown>> | null): SpendReservation['usage'] {
@@ -524,7 +533,7 @@ export async function readTrace(access: ActorAccess, input: TurnInput): Promise<
     }
   }
 
-  const diagnostic = providerFailureReason(run.error);
+  const diagnostic = failureNotice(run.error);
   const evidenceNotices: Array<string> = [];
 
   if (diagnostic !== undefined) {

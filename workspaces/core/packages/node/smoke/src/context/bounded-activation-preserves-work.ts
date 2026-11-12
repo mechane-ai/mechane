@@ -15,7 +15,7 @@ import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-const TOOL_STEPS = 24;
+const TOOL_STEPS = 33;
 const PRIVATE_STEP_CHARACTERS = 8192;
 const MODEL_CONTEXT_MAX_BYTES = 131_072;
 
