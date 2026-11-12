@@ -40,7 +40,9 @@ A cache hit does not prove the input closure, so confirm that a changed input in
 
 Run commands from the factory root after `.config/bootstrap.sh`. `mise run check:static` checks source without rebuilding
 runtime artifacts; `mise run check:fast` selects affected behavior; `mise run check` runs the complete source graph.
-CI uses these same owners. Runtime publication requires the canonical candidate acceptance below, rather than a repeated
+Automatic CI uses the complete static graph in both repositories. Expensive candidate construction is an explicit
+operator command, locally or through the manual runtime candidate workflow. Runtime publication requires the canonical
+candidate acceptance below, rather than a repeated
 complete source-mode catalog followed by the same catalog against artifacts.
 The root `mise.toml` pins Node, pnpm, Bun, Go, OpenTofu, celld, Tenet, ev-grep and ShellCheck; `workspaces/core/pnpm-lock.yaml` pins every package, the lint tools included, and `mise run setup` installs it with `--frozen-lockfile`.
 The lint tools are npm packages, so the lockfile is their one pin and `mise.toml` does not repeat them.

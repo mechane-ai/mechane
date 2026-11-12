@@ -14,6 +14,7 @@ import { codeStyle } from './code-style.ts';
 import { consoleBoundaries } from './console-boundaries.ts';
 import { consoleCacheLifecycle } from './console-cache-lifecycle.ts';
 import { durableAgentRuntime } from './durable-agent-runtime.ts';
+import { environmentStartup } from './environment-startup.ts';
 import { installationOwnership } from './installation-ownership.ts';
 import { packageLayers } from './package-layers.ts';
 import { ruleRegistry } from './rule-registry.ts';
@@ -48,4 +49,5 @@ export const MECHANE_CONTRACTS = {
   'browser-control': browserControl,
   'browser-evidence': browserEvidence,
   'evidence-export': evidenceExport,
+  'environment-startup': environmentStartup,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

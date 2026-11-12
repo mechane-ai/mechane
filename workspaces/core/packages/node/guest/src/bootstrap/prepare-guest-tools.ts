@@ -7,6 +7,7 @@ import { certificateEnvironment } from '../certificate-environment.ts';
 import { GuestMisconfigured } from '../errors.ts';
 import type { GuestSettings } from '../types.ts';
 import { installGuestTool } from './install-guest-tool.ts';
+import type { ObserveStartupPhase } from './startup-progress.ts';
 
 const TOOL_DIRECTORY_MODE = 0o700;
 const TOOL_STARTUP_TIMEOUT = Duration.seconds(SANDBOX_TOOL_LIMITS.startupSeconds);
@@ -19,6 +20,7 @@ const TOOL_STARTUP_BOUND = Effect.timeoutOrElse({
 
 type PrepareGuestToolsInput = {
   readonly tools: SandboxTools;
+  readonly onPhase: ObserveStartupPhase;
   readonly target: string;
   readonly folder: string;
   readonly path: string;
@@ -28,6 +30,7 @@ type PrepareGuestToolsInput = {
 /** The caller owns the private scratch folder until the guest and all its commands stop. */
 export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
   tools,
+  onPhase,
   target,
   folder,
   path,
@@ -63,7 +66,7 @@ export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
       return yield* new GuestMisconfigured({ reason: `${tool.name} has no archive for ${platform}` });
     }
 
-    yield* installGuestTool({ tool, archive: archive.value, folder: toolsFolder, bin, environment });
+    yield* installGuestTool({ tool, archive: archive.value, folder: toolsFolder, bin, environment, onPhase });
   }
 
   return bin;

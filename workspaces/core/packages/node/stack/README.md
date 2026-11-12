@@ -66,6 +66,11 @@ assets; Console and full source runs use Vite. Exact-artifact acceptance explici
 Worker directory, assets, guest image, and built CLI. That mode copies the selected Worker bytes unchanged into celld
 projects and does not compile or watch them.
 
+Computer startup diagnostics are available through `mechane sandbox show MECH_ID --workspace WORKSPACE_ID` and Console's
+Environment view. They report tool preparation, committed-file restoration, the original startup deadline, and command
+admission timing. Status reads remain passive while commands run. Recorded work duration excludes model time; UTC
+observations from different processes are not a synchronized trace.
+
 ## Lifecycle
 
 `runDevelopment` in `src/dev` owns retained source sessions and their private control endpoint. `runStackProgram` owns
@@ -80,8 +85,10 @@ writes mean they are not a transaction-consistent database backup.
 
 Failure paths capture private storage, owned host processes, Docker state and guest process status before destructive
 scenario cleanup. Each capture records its boundary label and unavailable observations within a five-second deadline.
-The runner retains a separate capture after scenario cleanup, with links to the earlier captures. Existing credential
-checks still inspect the complete searchable storage dump. Remove these private diagnostic folders after review.
+`environment-startup.json` retains bounded preparation and command-timing metadata, including partial results when one
+environment cannot answer. It excludes command text and output. The runner retains a separate capture after scenario
+cleanup, with links to the earlier captures. Existing credential checks still inspect the complete searchable storage
+dump. Remove these private diagnostic folders after review.
 
 Native logs include the Worker's console messages through `cell_console=info`, because celld maps every JavaScript
 console level to that native level. The supervisor preserves other `RUST_LOG` directives and any explicit `cell_console`

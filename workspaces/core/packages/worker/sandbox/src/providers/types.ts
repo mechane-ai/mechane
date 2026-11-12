@@ -6,6 +6,7 @@ import type { MachineIdInput } from '../types.ts';
 
 /** The container and Durable Object lifecycle that own its inactivity policy. */
 export type ContainerProviderInput = {
+  readonly onStartupExit: (input: MachineIdInput) => void;
   readonly container: Container;
   readonly state: DurableObjectState;
   readonly gateway: () => Fetcher;

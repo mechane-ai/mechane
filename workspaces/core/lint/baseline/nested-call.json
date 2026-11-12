@@ -280,8 +280,6 @@
   "packages/worker/sandbox/src/executions/end-outlived.ts": 2,
   "packages/worker/sandbox/src/executions/guest-reply.ts": 5,
   "packages/worker/sandbox/src/executions/run-execution.ts": 1,
-  "packages/worker/sandbox/src/machines/await-health.ts": 3,
-  "packages/worker/sandbox/src/machines/fail-late-machine.ts": 2,
   "packages/worker/sandbox/src/machines/observe-machine.ts": 2,
   "packages/worker/sandbox/src/providers/machine-provider.ts": 2,
   "packages/worker/sandbox/src/providers/machine-url.ts": 1,

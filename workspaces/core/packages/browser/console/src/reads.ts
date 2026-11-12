@@ -1,8 +1,8 @@
 import {
   canRetainResult,
   decodeAllowance,
-  decodeEnvironmentOverview,
   decodeEnvironmentProcessDetails,
+  decodeEnvironmentReport,
   decodeEvent,
   decodeEvidenceArtifact,
   decodeMech,
@@ -15,8 +15,8 @@ import type {
   AllowanceRow,
   CanonicalCollectionOptions,
   ConsoleData,
-  EnvironmentOverviewRow,
   EnvironmentProcessDetailsRow,
+  EnvironmentReportRow,
   EventRow,
   EvidenceArtifactRow,
   MechSummaryRow,
@@ -259,10 +259,10 @@ function evidenceArtifact(rows: ReadonlyArray<EvidenceArtifactRow>) {
   return row === undefined ? undefined : decodeEvidenceArtifact(row);
 }
 
-function environmentOverview(rows: ReadonlyArray<EnvironmentOverviewRow>) {
+function environmentOverview(rows: ReadonlyArray<EnvironmentReportRow>) {
   const row = rows[0];
 
-  return row === undefined ? undefined : decodeEnvironmentOverview(row);
+  return row === undefined ? undefined : decodeEnvironmentReport(row);
 }
 
 function environmentProcessDetails(rows: ReadonlyArray<EnvironmentProcessDetailsRow>) {

@@ -140,3 +140,5 @@ from 101 are Mechane's own.
 - [Browser control](128-browser-control/CONTRACT.md): native Chromium actions, isolated profiles, bounded observations, and replay safety.
 - [Browser evidence](129-browser-evidence/CONTRACT.md): private durable captures, authenticated viewers, and observed provenance.
 - [Evidence export](130-evidence-export/CONTRACT.md): verified private copies into the current environment, with explicit machine and checkpoint limits.
+
+- [Environment startup](131-environment-startup/CONTRACT.md): bounded preparation, passive inspection, and shared diagnostics.

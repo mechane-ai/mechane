@@ -2,6 +2,7 @@ import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
 import { ArchiveMode, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Deferred, Effect, Fiber, FiberSet, Option, Schema } from 'effect';
+import type { ObserveStartupPhase } from '../bootstrap/startup-progress.ts';
 import type { ExecutionUnstarted } from '../errors.ts';
 import { WorkspaceFailed } from '../errors.ts';
 import type { FreezeLease } from '../quiescence/freeze.types.ts';
@@ -10,6 +11,7 @@ import { answerWorkspaceFile } from './answer-workspace-file.ts';
 import { completeWorkspaceJob } from './complete-workspace-job.ts';
 
 type WorkspaceJournalInput = {
+  readonly onRestorePhase: ObserveStartupPhase;
   readonly folder: string;
   readonly settings: GuestSettings;
   readonly ledger: ExecutionLedger;
@@ -38,6 +40,7 @@ export function workspaceJournal({
   fibers,
   ownedProcessGroups,
   isBusy,
+  onRestorePhase,
 }: WorkspaceJournalInput): WorkspaceJournal {
   const state = {
     generation: Option.none<RecordId>(),
@@ -163,7 +166,15 @@ export function workspaceJournal({
       state.freeze = Option.some(freeze);
     };
 
-    const job = completeWorkspaceJob({ ...input, folder, settings, result, ownedProcessGroups, retainFreeze });
+    const job = completeWorkspaceJob({
+      ...input,
+      folder,
+      settings,
+      result,
+      ownedProcessGroups,
+      retainFreeze,
+      onRestorePhase,
+    });
 
     const fiber = yield* FiberSet.run(fibers, job);
 

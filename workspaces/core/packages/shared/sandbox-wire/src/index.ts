@@ -188,3 +188,17 @@ export {
   SandboxCompletionIdentity,
   sandboxCompletionPath,
 } from './completion.ts';
+
+export {
+  IMAGE_STARTUP_SECONDS,
+  WORKSPACE_RESTORE_SECONDS,
+  MACHINE_STARTUP_GRACE_MS,
+  StartupPhase,
+  StartupFailure,
+  STARTUP_MAX_STEPS,
+  StartupProgress,
+  StartupFailureObservation,
+  GuestStatus,
+  MachineStartup,
+  ExecutionTiming,
+} from './startup.ts';

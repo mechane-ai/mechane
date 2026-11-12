@@ -1,16 +1,13 @@
 import {
+  AUTOMATION_FILE,
   checkSource,
   documentedExports,
   documentFindings,
   sourceSites,
   workflowFindings,
-  WORKFLOWS,
 } from '@mechane/owned-rules';
 import { runFindings } from './run-findings.ts';
 import type { ExampleIndex, ExampleRun, RunFinding } from './types.ts';
-
-/** The workflows the workflow rule reads, by their paths below the factory root. */
-const WORKFLOW_PATHS: ReadonlySet<string> = new Set(WORKFLOWS);
 
 /**
  * How each owned rule that one small tree shows decides on an example's tree, by the rule's name. Each run makes the
@@ -28,7 +25,7 @@ export const EXAMPLE_RUNS: Readonly<Record<string, ExampleRun>> = {
   'documents': ({ files }) => runFindings({ findings: documentFindings({ files }) }),
   'workflows': ({ files }) =>
     runFindings({
-      findings: files.filter(({ path }) => WORKFLOW_PATHS.has(path)).flatMap((file) => workflowFindings(file)),
+      findings: files.filter(({ path }) => AUTOMATION_FILE.test(path)).flatMap((file) => workflowFindings(file)),
     }),
 };
 

@@ -7,6 +7,7 @@ import { executionRecords } from './executions/execution-records.ts';
 import { interactiveRuns } from './interactive-runs.ts';
 import { machineDrains } from './machines/machine-drains.ts';
 import { machineRecords } from './machines/machine-records.ts';
+import { startupRecords } from './machines/startup-records.ts';
 import { stopRecords } from './machines/stop-records.ts';
 import { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import { MIGRATIONS } from './migrations.ts';
@@ -30,6 +31,7 @@ export function openSandboxStore({ storage }: SandboxStoreInput): SandboxStore {
     ...interactiveRuns({ sql }),
     ...machineDrains({ sql }),
     ...machineRecords({ sql }),
+    ...startupRecords({ sql }),
     ...stopRecords({ sql }),
     ...portableMaintenanceRecords({ sql }),
     ...executionRecords({ sql }),

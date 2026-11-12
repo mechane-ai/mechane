@@ -13,7 +13,7 @@ The [product contracts](../workspaces/core/.contracts/index.md) add the code, CL
 ## Checks
 
 - [Reproducible checks](003-ci-reproducible-checks/CONTRACT.md): pinned tools, exact target reuse, and one immutable candidate acceptance.
-- [Check trust](004-ci-check-trust/CONTRACT.md): one read-only workflow with hash-pinned actions and no cache.
+- [Check trust](004-ci-check-trust/CONTRACT.md): read-only source checks, explicit candidate builds, pinned actions, and no cache.
 
 ## Contracts, context and documents
 

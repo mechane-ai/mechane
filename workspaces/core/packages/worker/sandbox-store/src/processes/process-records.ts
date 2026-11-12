@@ -1,6 +1,7 @@
 import { Bytes, MachineId, ModelToolCallId } from '@mechane/records';
 import {
   PROCESS_HISTORY_MAX_ENTRIES,
+  PROCESS_MAX_INSTANCES,
   ProcessId,
   ProcessObservation,
   ProcessStart,
@@ -9,7 +10,7 @@ import {
 } from '@mechane/sandbox-wire';
 import { decodeFirst, decodeRows } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
-import { Option, Result, Schema } from 'effect';
+import { DateTime, Option, Result, Schema } from 'effect';
 import { interactiveRuns } from '../interactive-runs.ts';
 import { replayInteractiveClaim } from '../replay-interactive-claim.ts';
 
@@ -30,6 +31,7 @@ export type ProcessRecord = typeof ProcessRecord.Type;
 type ProcessIdentity = Pick<ProcessRecord, 'processId'>;
 type ClaimProcessInput = Pick<ProcessRecord, 'processId' | 'runId' | 'toolCallId' | 'command'>;
 type AssignProcessInput = ProcessIdentity & { readonly machineId: typeof MachineId.Type };
+type ProcessObservationTime = { readonly now: DateTime.Utc };
 type SaveProcessInput = { readonly observation: ProcessObservation };
 type CancelProcessRunInput = { readonly runId: SandboxRunId };
 type WriteProcessInput = { readonly record: ProcessRecord };
@@ -58,6 +60,31 @@ export function processRecords({ sql }: RecordsInput) {
     const rows = decodeRows({ cursor, schema: StoredProcess });
 
     return rows.map(({ record }) => record);
+  }
+
+  function runningProcesses(): ReadonlyArray<ProcessRecord> {
+    const cursor = sql.exec(
+      "SELECT record FROM managed_processes WHERE json_extract(record, '$.observation.state._tag') = 'Running' ORDER BY rowid DESC LIMIT ?",
+      PROCESS_MAX_INSTANCES,
+    );
+
+    const rows = decodeRows({ cursor, schema: StoredProcess });
+
+    return rows.map(({ record }) => record);
+  }
+
+  function noteProcessObservation({ now }: ProcessObservationTime): void {
+    const timestamp = DateTime.toEpochMillis(now);
+
+    sql.exec('UPDATE sandbox_activity SET processes_observed_at_ms = ? WHERE slot = 1', timestamp);
+  }
+
+  function processesObservedAt(): Option.Option<DateTime.Utc> {
+    const cursor = sql.exec('SELECT processes_observed_at_ms FROM sandbox_activity WHERE slot = 1');
+    const schema = Schema.Struct({ processes_observed_at_ms: Schema.OptionFromNullOr(Schema.DateTimeUtcFromMillis) });
+    const row = decodeFirst({ cursor, schema });
+
+    return Option.flatMap(row, (value) => value.processes_observed_at_ms);
   }
 
   function recentTerminalProcesses(): ReadonlyArray<ProcessRecord> {
@@ -203,6 +230,9 @@ export function processRecords({ sql }: RecordsInput) {
     process,
     processes,
     recentTerminalProcesses,
+    runningProcesses,
+    noteProcessObservation,
+    processesObservedAt,
     requiredProcess,
     claimProcess,
     assignProcess,

@@ -103,4 +103,8 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
       "CREATE TRIGGER execution_workspace_activity AFTER UPDATE OF status ON executions WHEN OLD.status = 'pending' AND NEW.status = 'dispatched' BEGIN UPDATE sandbox_workspace SET activity_sequence = activity_sequence + 1, last_activity_at_ms = NEW.dispatched_at_ms, automatic_at_ms = COALESCE(automatic_at_ms, NEW.dispatched_at_ms + 60000) WHERE slot = 1; END",
     );
   },
+  ({ sql }) => {
+    sql.exec('ALTER TABLE machines ADD COLUMN startup TEXT');
+    sql.exec('ALTER TABLE sandbox_activity ADD COLUMN processes_observed_at_ms INTEGER');
+  },
 ];

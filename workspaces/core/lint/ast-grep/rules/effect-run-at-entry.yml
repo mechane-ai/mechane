@@ -19,6 +19,7 @@ ignores:
     'packages/browser/console-data/src/scope-invalidation.ts',
     'packages/browser/console-data/src/read-recovery.ts',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
+    'packages/node/guest/src/guest-listener.ts',
   ]
 rule:
   pattern: Effect.$RUN

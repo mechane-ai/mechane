@@ -11,8 +11,8 @@ import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@
 import { MutableRef, Schema } from 'effect';
 import {
   AllowanceRow,
-  EnvironmentOverviewRow,
   EnvironmentProcessDetailsRow,
+  EnvironmentReportRow,
   EventRow,
   EvidenceArtifactRow,
   MechDefinitionRow,
@@ -115,7 +115,7 @@ export function createCanonicalCollections(scope: string, persistence: Persisted
     }),
     environments: table({
       name: collectionId(scope, 'environments'),
-      row: EnvironmentOverviewRow,
+      row: EnvironmentReportRow,
       persistence,
       key: rowKey,
     }),

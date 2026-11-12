@@ -2,6 +2,7 @@ import { MachineId } from '@mechane/records';
 import { SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { observeMachine } from '../../machines/observe-machine.ts';
+import { startMachine } from '../../machines/start-machine.ts';
 import type { PortableStepInput } from '../types.ts';
 
 /** Persists the replacement identity before starting its credential-free guest. */
@@ -35,7 +36,7 @@ export async function startMaintenanceMachine({ store, provider, job }: Portable
     return;
   }
 
-  await provider.start({ machineId: job.target.value });
+  await startMachine({ store, provider, machine: live.value });
   store.savePortableMaintenance({ ...job, phase: SandboxPhase.Restore });
 }
 

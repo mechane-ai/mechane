@@ -1,47 +1,71 @@
 import { createBrowserRuntime } from '@mechane/browser';
-import { writeResult } from '@mechane/program';
-import { GuestListening } from '@mechane/sandbox-wire';
-import { Effect, FiberSet, Queue, Schema } from 'effect';
+import type { GuestStatus } from '@mechane/sandbox-wire';
+import { StartupPhase } from '@mechane/sandbox-wire';
+import { Effect, FiberSet, Option, Queue } from 'effect';
 import type { Scope } from 'effect';
-import { createServer } from 'node:http';
-import type { IncomingMessage, Server, ServerResponse } from 'node:http';
 import { delimiter, join } from 'node:path';
 import { answerNextExchange } from './answer-next-exchange.ts';
 import { prepareGuestTools } from './bootstrap/prepare-guest-tools.ts';
-import { closeServer } from './close-server.ts';
-import { GuestMisconfigured, GuestUnreachable } from './errors.ts';
+import type { StartupPhaseInput } from './bootstrap/startup-progress.ts';
+import { createStartupProgress } from './bootstrap/startup-progress.ts';
+import { GuestMisconfigured } from './errors.ts';
 import type { ExecutionUnstarted } from './errors.ts';
 import { executionLedger } from './executions/execution-ledger.ts';
+import { listenToGuest } from './guest-listener.ts';
 import { loadGuestSettings } from './load-guest-settings.ts';
 import { processLedger } from './processes/process-ledger.ts';
 import type { Exchange, GuestFailure } from './types.ts';
 import { openWorkspaceFolder } from './workspace/open-workspace-folder.ts';
 import { workspaceJournal } from './workspace/workspace-journal.ts';
 
-/** The address a listening TCP server reports, read only for its port. */
-const BoundAddress = Schema.Struct({ port: Schema.Int });
-const GuestListeningLine = Schema.fromJsonString(GuestListening);
-
-type BoundAddress = typeof BoundAddress.Type;
-
-type ListenInput = { readonly server: Server; readonly host: string; readonly port: number };
-
 /**
- * Serves the machine's executions until it is interrupted or one of its fibers fails. Once it writes the port it
- * listens on as one line, it answers each request in a fiber of its own. A run that could not start bash, or any
- * defect, ends the guest at once, which closes the server and stops every execution.
+ * Binds preparation status before installing tools and admits tool requests only after the ledgers are ready. The scope
+ * closes the listener and owned fibers when the guest stops; an execution that cannot start Bash or any defect still
+ * ends the guest at once.
  */
 export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return<void, GuestFailure, Scope.Scope> {
   const folder = yield* openWorkspaceFolder();
   const loadedSettings = yield* loadGuestSettings({ scratchDirectory: folder });
 
-  const managedTools = yield* prepareGuestTools({
+  const startup = createStartupProgress({ phase: StartupPhase.Bootstrap });
+  const restoration = { progress: Option.none<ReturnType<typeof createStartupProgress>>() };
+
+  function onRestorePhase({ phase, tool }: StartupPhaseInput): void {
+    if (Option.isNone(restoration.progress)) {
+      const created = createStartupProgress({ phase });
+
+      restoration.progress = Option.some(created);
+    } else {
+      restoration.progress.value.advance({ phase, tool });
+    }
+  }
+
+  function status(): GuestStatus {
+    return { bootstrap: startup.read(), restoration: Option.map(restoration.progress, (value) => value.read()) };
+  }
+
+  const exchanges = yield* Queue.unbounded<Exchange>();
+
+  yield* listenToGuest({ settings: loadedSettings, exchanges, startup: status });
+
+  const preparing = prepareGuestTools({
     tools: loadedSettings.additionalTools,
+    onPhase: startup.advance,
     target: loadedSettings.toolTarget,
     folder,
     path: loadedSettings.path,
     trustedCertificatesPem: loadedSettings.trustedCertificatesPem,
   });
+
+  const managedTools = yield* preparing.pipe(
+    Effect.catchTags({
+      GuestMisconfigured: () => {
+        startup.fail();
+
+        return Effect.never;
+      },
+    }),
+  );
 
   const settings = { ...loadedSettings, path: [managedTools, loadedSettings.path].join(delimiter) };
   const fibers = yield* FiberSet.make<void, ExecutionUnstarted>();
@@ -66,21 +90,19 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
     return [...processes.ownedProcessGroups(), ...browser.ownedProcessGroups()];
   }
 
-  const workspace = workspaceJournal({ folder, settings, ledger, fibers, ownedProcessGroups, isBusy: browser.isBusy });
-  const exchanges = yield* Queue.unbounded<Exchange>();
+  const workspace = workspaceJournal({
+    folder,
+    settings,
+    ledger,
+    fibers,
+    ownedProcessGroups,
+    isBusy: browser.isBusy,
+    onRestorePhase,
+  });
 
-  const queueExchange: (request: IncomingMessage, response: ServerResponse) => void = (request, response) =>
-    Queue.offerUnsafe(exchanges, { request, response });
+  const tool = Option.none<string>();
 
-  const server = createServer(queueExchange);
-  const listening = listen({ server, host: settings.host, port: settings.port });
-  const port = yield* Effect.acquireRelease(listening, () => closeServer({ server }));
-
-  // The guest's one result, which its starter reads: the port it listens on, a number the server reported, so its
-  // encoding cannot fail.
-  const line = Schema.encodeSync(GuestListeningLine)({ port });
-
-  writeResult({ line });
+  startup.advance({ phase: StartupPhase.GuestReady, tool });
 
   const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace, processes, browser });
   const serving = Effect.forever(next);
@@ -89,31 +111,3 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
 
   return yield* FiberSet.join(fibers);
 }, Effect.scoped);
-
-/** Listens on the host and port, and answers with the port bound, which the system chose for a port of 0. */
-const listen = Effect.fn('listen')(function* ({
-  server,
-  host,
-  port,
-}: ListenInput): Effect.fn.Return<number, GuestUnreachable> {
-  yield* Effect.callback<void, GuestUnreachable>((resume) => {
-    const refuse: (error: Error) => void = (error) => {
-      const failure = new GuestUnreachable({ host, port, reason: error.message });
-
-      resume(failure);
-    };
-
-    const listening: () => void = () => resume(Effect.void);
-
-    server.once('error', refuse);
-    server.listen(port, host, listening);
-  });
-
-  const address = server.address();
-
-  const bound = yield* Schema.decodeUnknownEffect(BoundAddress)(address).pipe(
-    Effect.mapError((error) => new GuestUnreachable({ host, port, reason: error.message })),
-  );
-
-  return bound.port;
-});

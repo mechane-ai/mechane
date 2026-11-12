@@ -1,15 +1,35 @@
 import { RELEASE } from '@mechane/protocol';
 import { RemoteSandboxId } from '@mechane/records';
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
+import type { SandboxStore } from '@mechane/sandbox-store';
 import { SandboxPhase } from '@mechane/sandbox-wire';
 import type { SandboxReport } from '@mechane/sandbox-wire';
-import { Option } from 'effect';
+import { Option, Result } from 'effect';
 import { checkpointInactiveEnvironment } from '../checkpoints/checkpoint-inactive-environment.ts';
-import { inspectSandboxStop } from '../workspace/backfill-sandbox-stop.ts';
-import type { PortableMaintenanceInput } from './types.ts';
+import { storedProcessSummaries } from './stored-process-summaries.ts';
+
+type EnvironmentReportStore = Pick<
+  SandboxStore,
+  | 'portableMaintenance'
+  | 'liveMachine'
+  | 'workspace'
+  | 'latestReadyMachine'
+  | 'machineDrain'
+  | 'fileCheckpointResult'
+  | 'latestSandboxStop'
+  | 'latestStartup'
+  | 'latestExecutionTiming'
+  | 'latestStartupFailure'
+  | 'processesObservedAt'
+  | 'runningProcesses'
+  | 'recentTerminalProcesses'
+>;
+
+type EnvironmentReportInput = { readonly store: EnvironmentReportStore; readonly providerName: string };
+type StoreInput = Pick<EnvironmentReportInput, 'store'>;
 
 /** Reports durable machine and maintenance state without waking a sleeping guest. */
-export function portableReport({ store, providerName }: PortableMaintenanceInput): SandboxReport {
+export function environmentReport({ store, providerName }: EnvironmentReportInput): SandboxReport {
   const job = store.portableMaintenance();
   const live = store.liveMachine();
   const sandboxId = Option.map(live, ({ id }) => RemoteSandboxId.make(id));
@@ -30,8 +50,13 @@ export function portableReport({ store, providerName }: PortableMaintenanceInput
   };
 }
 
-function environmentState({ store }: Pick<PortableMaintenanceInput, 'store'>): SandboxReport['environment'] {
+function environmentState({ store }: StoreInput): SandboxReport['environment'] {
   const state = store.workspace();
+  const observedProcesses = Result.try(() => storedProcessSummaries({ store }));
+  const processes = Result.getSuccess(observedProcesses);
+  const observedTime = Result.try(() => store.processesObservedAt());
+  const processTime = Result.getSuccess(observedTime);
+  const processesObservedAt = Option.flatten(processTime);
 
   const checkpoint = Option.map(state.checkpoint, (value) => {
     const transfer = {
@@ -51,6 +76,11 @@ function environmentState({ store }: Pick<PortableMaintenanceInput, 'store'>): S
   });
 
   return {
+    processes,
+    processesObservedAt,
+    lastStartupFailure: store.latestStartupFailure(),
+    startup: store.latestStartup(),
+    execution: store.latestExecutionTiming(),
     committedGeneration: Option.map(state.head, ({ generation }) => generation),
     checkpoint,
     durability: {
@@ -61,11 +91,11 @@ function environmentState({ store }: Pick<PortableMaintenanceInput, 'store'>): S
       lastError: state.checkpointError,
     },
     recovery: state.recovery,
-    stop: inspectSandboxStop({ store }),
+    stop: store.latestSandboxStop(),
   };
 }
 
-function portableStatus({ store }: Pick<PortableMaintenanceInput, 'store'>): string {
+function portableStatus({ store }: StoreInput): string {
   const live = store.liveMachine();
   const state = store.workspace();
 

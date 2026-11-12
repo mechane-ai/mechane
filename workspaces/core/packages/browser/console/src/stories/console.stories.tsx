@@ -906,7 +906,7 @@ function WorkspaceStory({
             )}
             {view === 'environment' && (
               <EnvironmentProcesses
-                processes={[]}
+                processes={Option.some([])}
                 stopping={new Set()}
                 failure={undefined}
                 onStop={() => undefined}

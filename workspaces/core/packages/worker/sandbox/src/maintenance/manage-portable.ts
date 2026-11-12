@@ -3,10 +3,10 @@ import { SANDBOX_FAILURE_MAX_CHARS, SandboxAction, SandboxPhase } from '@mechane
 import type { SandboxReport } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { Option, Result } from 'effect';
+import { environmentReport } from '../inspection/environment-report.ts';
 import { advancePortableMaintenance } from './advance-portable-maintenance.ts';
 import { beginPortableMaintenance } from './begin-portable-maintenance.ts';
 import { maintenanceActive } from './maintenance-active.ts';
-import { portableReport } from './portable-report.ts';
 import { cancelPortableMaintenance } from './steps/cancel-portable-maintenance.ts';
 import type { ManagePortableInput } from './types.ts';
 
@@ -14,7 +14,7 @@ export async function managePortable({ store, request, ...resources }: ManagePor
   const input = { store, request, ...resources };
 
   if (request.action === SandboxAction.Show || Option.isNone(request.operationId)) {
-    return portableReport(input);
+    return environmentReport(input);
   }
 
   const current = store.portableMaintenance();
@@ -27,7 +27,7 @@ export async function managePortable({ store, request, ...resources }: ManagePor
       beginPortableMaintenance(input);
     }
 
-    return portableReport(input);
+    return environmentReport(input);
   }
 
   const job = matching.value;
@@ -42,7 +42,7 @@ export async function managePortable({ store, request, ...resources }: ManagePor
     store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
   }
 
-  return portableReport(input);
+  return environmentReport(input);
 }
 
 type MaintenanceRequestInput = ManagePortableInput & { readonly job: PortableMaintenance };

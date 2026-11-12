@@ -12,6 +12,7 @@ ignores:
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
+    'packages/node/guest/src/guest-listener.ts',
   ]
 severity: error
 message: 'Await the promise, such as `const response = await fetch(url)` (ER-04)'

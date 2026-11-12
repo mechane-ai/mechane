@@ -1,6 +1,6 @@
 import type { MachineId } from '@mechane/records';
 import type { ExecutionRow, ExecutionStatus, SandboxStore } from '@mechane/sandbox-store';
-import type { ExecutionEnvironment } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment, GuestStatus } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
 import type { GuestAnswer } from './schemas.ts';
 
@@ -28,6 +28,7 @@ export type ExecuteMachineInput = {
 /** The guest's health and idempotent execution protocol, independent of its hosting service. */
 export type GuestConnection = {
   readonly fetch: GuestTransport['fetch'];
+  readonly startup: (input: MachineIdInput) => Promise<Option.Option<GuestStatus>>;
   readonly health: (input: MachineIdInput) => Promise<boolean>;
   readonly execute: (input: ExecuteMachineInput) => Promise<GuestAnswer>;
 };

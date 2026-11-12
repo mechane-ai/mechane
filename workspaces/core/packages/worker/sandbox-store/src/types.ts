@@ -8,6 +8,7 @@ import type { completionRecords } from './completions/completion-records.ts';
 import type { evidenceRecords } from './evidence/evidence-records.ts';
 import type { interactiveRuns } from './interactive-runs.ts';
 import type { machineDrains } from './machines/machine-drains.ts';
+import type { startupRecords } from './machines/startup-records.ts';
 import type { stopRecords } from './machines/stop-records.ts';
 import type { portableMaintenanceRecords } from './maintenance/portable-maintenance-records.ts';
 import type { processRecords } from './processes/process-records.ts';
@@ -95,6 +96,7 @@ export type SandboxStore = DatabaseFunctions &
   ReturnType<typeof machineDrains> &
   ReturnType<typeof stopRecords> &
   ReturnType<typeof processRecords> &
+  ReturnType<typeof startupRecords> &
   MachineRecords &
   ExecutionRecords &
   ReturnType<typeof portableMaintenanceRecords> &

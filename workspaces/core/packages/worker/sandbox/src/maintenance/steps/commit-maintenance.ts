@@ -1,4 +1,4 @@
-import { SandboxPhase } from '@mechane/sandbox-wire';
+import { SandboxPhase, StartupPhase } from '@mechane/sandbox-wire';
 import { DateTime } from 'effect';
 import { maintenanceValue } from '../maintenance-value.ts';
 import type { PortableStepInput } from '../types.ts';
@@ -9,6 +9,7 @@ export function commitMaintenance({ store, job }: PortableStepInput): void {
 
   store.atomic({
     run: () => {
+      store.advanceStartup({ machineId, phase: StartupPhase.Ready, now });
       store.readyMachine({ machineId, now });
       store.savePortableMaintenance({ ...job, phase: SandboxPhase.Done });
     },

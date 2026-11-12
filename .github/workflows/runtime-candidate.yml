@@ -1,0 +1,91 @@
+name: Build runtime candidate
+run-name: Runtime candidate ${{ inputs.source_commit }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Reviewed full public source commit; must match the selected workflow ref
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: runtime-candidate-${{ github.sha }}
+  cancel-in-progress: false
+jobs:
+  candidate:
+    if: github.repository == 'mechane-ai/mechane'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MECHANE_BASE_BRANCH: origin/main
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify the selected source before building
+        env:
+          EXPECTED_COMMIT: ${{ inputs.source_commit }}
+        run: |
+          set -euo pipefail
+          reject_source() {
+            printf '::error::%s\n' "$1"
+            exit 1
+          }
+          [[ "$EXPECTED_COMMIT" =~ ^[0-9a-f]{40}$ ]] || reject_source 'Use the complete 40-character lowercase source commit.'
+          test "$EXPECTED_COMMIT" = "$GITHUB_SHA" || reject_source 'The selected workflow ref differs from the reviewed source. Select a branch or tag at that commit.'
+          checkout_commit=$(git rev-parse HEAD) || reject_source 'Could not read the checked-out commit.'
+          test "$checkout_commit" = "$EXPECTED_COMMIT" || reject_source 'The checkout differs from the reviewed source commit.'
+          checkout_changes=$(git status --porcelain) || reject_source 'Could not inspect the candidate checkout.'
+          test -z "$checkout_changes" || reject_source 'The candidate checkout contains local changes before setup.'
+      - uses: ./.github/actions/setup
+      - name: Set up the candidate image store
+        id: docker
+        uses: docker/setup-docker-action@3f1ab1ab0e29231562e4db4ca600c1a49653bac6
+        with:
+          version: v29.8.2
+          daemon-config: '{"features":{"containerd-snapshotter":true}}'
+      - name: Select one Docker endpoint and check its bridge
+        env:
+          DOCKER_HOST: ${{ steps.docker.outputs.sock }}
+        run: |
+          test -S "${DOCKER_HOST#unix://}"
+          printf 'DOCKER_HOST=%s\n' "$DOCKER_HOST" >> "$GITHUB_ENV"
+          network=$(docker network create \
+            --driver bridge \
+            --opt com.docker.network.bridge.enable_icc=false \
+            --label io.mechane.owner=ci-prerequisite \
+            "mechane-prerequisite-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}")
+          docker network rm "$network"
+      - name: Set up the candidate image builder
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+        with:
+          version: v0.38.2
+          driver-opts: image=moby/buildkit:v0.33.1@sha256:cec9f139f45e93c5c69c60f8b07cfad9f43f4ef6b6a6cd917527fea5ff2e3dea
+      - name: Check public repository guidance
+        run: |
+          mise run contracts:check
+          mise run repository:check
+      - name: Build and qualify the selected candidate once
+        run: mise -C workspaces/core run distribution:candidate
+      - name: Retain the qualified candidate for promotion
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-candidate-${{ github.sha }}
+          path: workspaces/core/dist/distribution/v*
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Print retained local service logs after a failed smoke
+        if: failure()
+        run: |
+          shopt -s nullglob
+          for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log \
+            "${TMPDIR:-/tmp}"/mechane-node-stack-*/application/.celld/{celld,build}.log \
+            "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/.celld/celld.log \
+            "${TMPDIR:-/tmp}"/mechane-node-failure-*/*.log; do
+            echo "== $log"
+            tail -n 80 "$log"
+          done

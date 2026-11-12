@@ -1273,6 +1273,17 @@ module.exports = {
       },
       to: { path: 'node_modules/@json-render/react/' },
     },
+    {
+      name: 'sandbox-inspection-owner',
+      comment:
+        'Read stored observations in inspection, such as `store.latestStartup()`; prepare computers through the machine owner (131)',
+      severity: 'error',
+      from: { path: '^packages/worker/sandbox/src/inspection/' },
+      to: {
+        path: '^packages/worker/sandbox/src/',
+        pathNot: '^packages/worker/sandbox/src/(?:inspection/|checkpoints/checkpoint-inactive-environment[.]ts$)',
+      },
+    },
   ],
   options: {
     doNotFollow: { path: 'node_modules' },

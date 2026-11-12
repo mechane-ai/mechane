@@ -1,28 +1,16 @@
+import { StartupPhase } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { DateTime, Duration, Option } from 'effect';
 import type { MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { restoreMachineWorkspace } from '../workspace/restore-machine-workspace.ts';
 
-/** How often a call asks a starting machine's guest for its health. */
 const HEALTH_INTERVAL = Duration.millis(500);
-
-/**
- * What one ask of a starting machine's guest found: health, no health with time to ask again, or none before the
- * deadline.
- */
-const HealthAnswer = { Healthy: 'healthy', Retry: 'retry', Late: 'late' } as const;
-
+const HealthAnswer = { Healthy: 'healthy', Retry: 'retry', Late: 'late', Failed: 'failed' } as const;
 type HealthAnswer = (typeof HealthAnswer)[keyof typeof HealthAnswer];
-
-/** A machine whose health to wait for, and the time by which the call answers that its execution still runs. */
 type AwaitHealthInput = WorkspaceProviderStepInput & MachineIdInput & { readonly deadline: DateTime.Utc };
+type HealthAnswerInput = Omit<AwaitHealthInput, 'workspace'>;
 
-type HealthAnswerInput = Omit<AwaitHealthInput, 'store' | 'workspace'>;
-
-/**
- * Asks the machine's guest for its health every interval until it answers, which makes the machine ready, or until the
- * next ask would pass the call's deadline. Answers whether the machine became ready.
- */
+/** The call's wait bounds observation; the machine retains its original startup budget across calls. */
 export async function awaitHealth({
   store,
   provider,
@@ -30,12 +18,27 @@ export async function awaitHealth({
   machineId,
   deadline,
 }: AwaitHealthInput): Promise<boolean> {
-  let answer = await healthAnswer({ provider, machineId, deadline });
+  const started = performance.now();
+  let answer = await healthAnswer({ store, provider, machineId, deadline });
 
   while (answer === HealthAnswer.Retry) {
     await waitFor({ span: HEALTH_INTERVAL });
 
-    answer = await healthAnswer({ provider, machineId, deadline });
+    answer = await healthAnswer({ store, provider, machineId, deadline });
+  }
+
+  const finished = performance.now();
+  const milliseconds = finished - started;
+
+  store.recordStartupWork({ machineId, phase: StartupPhase.Bootstrap, milliseconds });
+
+  if (answer === HealthAnswer.Failed) {
+    const now = DateTime.nowUnsafe();
+
+    await provider.stop({ machineId });
+    store.failMachine({ machineId, startupDeadline: now, now });
+
+    return false;
   }
 
   if (answer === HealthAnswer.Late) {
@@ -48,23 +51,47 @@ export async function awaitHealth({
     return false;
   }
 
-  store.readyMachine({ machineId, now: DateTime.nowUnsafe() });
+  const now = DateTime.nowUnsafe();
+
+  store.advanceStartup({ machineId, phase: StartupPhase.Ready, now });
+  store.readyMachine({ machineId, now });
 
   return true;
 }
 
-/** Asks the guest for its health once, and whether another ask fits before the deadline when it has none. */
-async function healthAnswer({ provider, machineId, deadline }: HealthAnswerInput): Promise<HealthAnswer> {
-  const guest = await provider.connect({ machineId });
+async function healthAnswer({ store, provider, machineId, deadline }: HealthAnswerInput): Promise<HealthAnswer> {
+  const stored = store.latestStartup();
 
-  // A guest that does not listen yet refuses the connection, which is not health.
-  const isHealthy = Option.isSome(guest) && (await guest.value.health({ machineId }));
-
-  if (isHealthy) {
-    return HealthAnswer.Healthy;
+  if (Option.exists(stored, (value) => value.machineId === machineId && Option.isSome(value.progress.failure))) {
+    return HealthAnswer.Failed;
   }
 
-  if (DateTime.isGreaterThanOrEqualTo(DateTime.addDuration(DateTime.nowUnsafe(), HEALTH_INTERVAL), deadline)) {
+  const guest = await provider.connect({ machineId });
+
+  if (Option.isSome(guest)) {
+    const progress = await guest.value.startup({ machineId });
+
+    if (Option.isSome(progress)) {
+      const now = DateTime.nowUnsafe();
+
+      store.observeGuestStartup({ machineId, guest: progress.value, now });
+
+      if (Option.isSome(progress.value.bootstrap.failure)) {
+        store.failStartup({ machineId, failure: progress.value.bootstrap.failure.value, now });
+
+        return HealthAnswer.Failed;
+      }
+
+      if (progress.value.bootstrap.phase === StartupPhase.GuestReady) {
+        return HealthAnswer.Healthy;
+      }
+    }
+  }
+
+  const now = DateTime.nowUnsafe();
+  const next = DateTime.addDuration(now, HEALTH_INTERVAL);
+
+  if (DateTime.isGreaterThanOrEqualTo(next, deadline)) {
     return HealthAnswer.Late;
   }
 

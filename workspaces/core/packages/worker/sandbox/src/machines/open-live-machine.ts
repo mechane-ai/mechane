@@ -1,9 +1,11 @@
 import { MachineId } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
 import type { LiveMachineRow } from '@mechane/sandbox-store';
+import { StartupFailure } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import type { ProviderStepInput } from '../types.ts';
 import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
+import { startMachine } from './start-machine.ts';
 
 /**
  * The live machine, or a new one. Deciding that none is live and recording the new one as starting are one transaction.
@@ -64,6 +66,7 @@ export async function openLiveMachine({ store, provider }: ProviderStepInput): P
               return;
             }
 
+            store.failStartup({ machineId: machine.id, failure: StartupFailure.GuestLost, now });
             store.failMachine({ machineId: machine.id, startupDeadline: now, now });
             store.failRestoration({ restoration: current.value, reason });
           },
@@ -73,7 +76,7 @@ export async function openLiveMachine({ store, provider }: ProviderStepInput): P
       }
     }
 
-    await provider.start({ machineId: machine.id });
+    await startMachine({ store, provider, machine });
   }
 
   return opened;

@@ -1,12 +1,13 @@
 import { artifactDigest } from '@mechane/program';
 import { Bytes } from '@mechane/records';
-import { SANDBOX_TOOL_LIMITS } from '@mechane/sandbox-wire';
+import { SANDBOX_TOOL_LIMITS, StartupPhase } from '@mechane/sandbox-wire';
 import type { SandboxTool, SandboxToolArchive } from '@mechane/sandbox-wire';
-import { Duration, Effect, Schema } from 'effect';
+import { Duration, Effect, Option, Schema } from 'effect';
 import { chmod, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GuestMisconfigured } from '../errors.ts';
 import { runToolCommand } from './run-tool-command.ts';
+import type { ObserveStartupPhase } from './startup-progress.ts';
 
 const EXECUTABLE_MODE = 0o755;
 const RegularArchiveMemberPattern = Schema.isPattern(/^-[^\n]+\n?$/u);
@@ -18,6 +19,7 @@ const TOOL_EXECUTABLE_MAX_BYTES = Bytes.make(SANDBOX_TOOL_LIMITS.maxExecutableBy
 
 type InstallGuestToolInput = {
   readonly tool: SandboxTool;
+  readonly onPhase: ObserveStartupPhase;
   readonly archive: SandboxToolArchive;
   readonly folder: string;
   readonly bin: string;
@@ -27,17 +29,21 @@ type InstallGuestToolInput = {
 /** Verifies the pinned archive and executable version before installing one tool into private machine scratch. */
 export const installGuestTool = Effect.fn('installGuestTool')(function* ({
   tool,
+  onPhase,
   archive,
   folder,
   bin,
   environment,
 }: InstallGuestToolInput): Effect.fn.Return<void, GuestMisconfigured> {
+  const toolName = Option.some(tool.name);
   const archivePath = join(folder, `${tool.name}.tar.xz`);
   const stagedPath = join(folder, `${tool.name}.pending`);
   const installedPath = join(bin, tool.name);
   const downloadSeconds = String(SANDBOX_TOOL_LIMITS.downloadSeconds);
   const maxArchiveBytes = String(SANDBOX_TOOL_LIMITS.maxArchiveBytes);
   const url = archive.url.toString();
+
+  onPhase({ phase: StartupPhase.Download, tool: toolName });
 
   yield* runToolCommand({
     name: `download ${tool.name}`,
@@ -64,6 +70,8 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
     maxOutputBytes: TOOL_OUTPUT_MAX_BYTES,
   });
 
+  onPhase({ phase: StartupPhase.Verify, tool: toolName });
+
   const digest = yield* artifactDigest({ path: archivePath }).pipe(
     Effect.mapError(() => new GuestMisconfigured({ reason: `read ${tool.name} archive failed` })),
   );
@@ -87,6 +95,8 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
     Effect.mapError(() => new GuestMisconfigured({ reason: `${tool.name} archive must name one regular executable` })),
   );
 
+  onPhase({ phase: StartupPhase.Extract, tool: toolName });
+
   const executable = yield* runToolCommand({
     name: `extract ${tool.name}`,
     command: '/usr/bin/tar',
@@ -105,6 +115,8 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
     try: () => chmod(stagedPath, EXECUTABLE_MODE),
     catch: () => new GuestMisconfigured({ reason: `prepare ${tool.name} executable failed` }),
   });
+
+  onPhase({ phase: StartupPhase.CheckTool, tool: toolName });
 
   const output = yield* runToolCommand({
     name: `verify ${tool.name} ${tool.version}`,

@@ -19,6 +19,7 @@ ignores:
     '**/*.d.ts',
     'packages/worker/store/src/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
+    'packages/node/guest/src/guest-listener.ts',
   ]
 rule:
   any:

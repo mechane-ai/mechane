@@ -1,11 +1,11 @@
 import {
   Allowance,
-  EnvironmentOverview,
   EvidenceArtifact,
   ListedEvent,
   Mech,
   MechSummary,
   ProcessObservation,
+  SandboxReport,
   Trace,
   Turn,
 } from '@mechane/protocol';
@@ -67,8 +67,8 @@ export type TraceEvidenceRow = typeof TraceEvidenceRow.Type;
 export const EvidenceArtifactRow = mechRecordSchema(EvidenceArtifact);
 export type EvidenceArtifactRow = typeof EvidenceArtifactRow.Type;
 /** One passive environment snapshot includes its saved files and bounded process summaries. */
-export const EnvironmentOverviewRow = mechRecordSchema(EnvironmentOverview);
-export type EnvironmentOverviewRow = typeof EnvironmentOverviewRow.Type;
+export const EnvironmentReportRow = mechRecordSchema(SandboxReport);
+export type EnvironmentReportRow = typeof EnvironmentReportRow.Type;
 /** Bounded logs fetched only for an explicitly opened process handle. */
 export const EnvironmentProcessDetailsRow = mechRecordSchema(ProcessObservation);
 export type EnvironmentProcessDetailsRow = typeof EnvironmentProcessDetailsRow.Type;
@@ -129,8 +129,8 @@ export function decodeEvidenceArtifact(row: EvidenceArtifactRow): EvidenceArtifa
   return restoreRecord(EvidenceArtifact, row.value);
 }
 
-export function decodeEnvironmentOverview(row: EnvironmentOverviewRow): EnvironmentOverview {
-  return restoreRecord(EnvironmentOverview, row.value);
+export function decodeEnvironmentReport(row: EnvironmentReportRow): SandboxReport {
+  return restoreRecord(SandboxReport, row.value);
 }
 
 /** Restores bounded output fetched for one exact process handle. */

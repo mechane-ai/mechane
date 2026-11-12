@@ -4,13 +4,14 @@ import { Effect, Schema } from 'effect';
 import { archiveWorkspace } from '../archives/archive-workspace.ts';
 import type { ArchiveWorkspaceInput } from '../archives/archive-workspace.ts';
 import { restoreWorkspace } from '../archives/restore-workspace.ts';
+import type { ObserveStartupPhase } from '../bootstrap/startup-progress.ts';
 import { WorkspaceFailed } from '../errors.ts';
 import type { ServedAnswer, WorkspaceFilesInput, WorkspaceRequest } from '../types.ts';
 import { readWorkspaceBody } from './read-workspace-body.ts';
 
 type WorkspaceOperationInput = WorkspaceFilesInput &
   WorkspaceRequest &
-  Pick<ArchiveWorkspaceInput, 'ownedProcessGroups' | 'retainFreeze'>;
+  Pick<ArchiveWorkspaceInput, 'ownedProcessGroups' | 'retainFreeze'> & { readonly onRestorePhase: ObserveStartupPhase };
 
 /** Archive transfer metadata uses the decoded record form on the guest wire. */
 const ArchiveRecord = Schema.toType(SandboxArchive);
@@ -40,7 +41,7 @@ export const workspaceOperation = Effect.fn('workspaceOperation')(function* (
     Effect.mapError((failure) => new WorkspaceFailed({ generation, step, reason: failure.message })),
   );
 
-  yield* restoreWorkspace({ ...input, archive });
+  yield* restoreWorkspace({ ...input, archive, onPhase: input.onRestorePhase });
 
   return { status: HttpStatusCode.Ok, headers: {}, body: '' };
 });

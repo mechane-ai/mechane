@@ -2,6 +2,7 @@ import type { Context } from '@earendil-works/chord/context';
 import { defineDoc, defineTask } from '@earendil-works/pi-durable';
 import type { ToolExecutionApi } from '@earendil-works/pi-durable';
 import { toolExecutionId as executionId } from '@mechane/records';
+import { MACHINE_STARTUP_GRACE_MS } from '@mechane/sandbox-wire';
 import type { ActorAccess } from '../actor/types.ts';
 import { executeBash, observeBash } from './bash.ts';
 import type { BashResult } from './bash.ts';
@@ -12,7 +13,6 @@ import type { BashInvocation } from './types.ts';
 type BashInput = BashInvocation & ReceiptTaskControl;
 type BashPhase = { readonly phase: 'submit' } | { readonly phase: 'observe' };
 const BASH_RECEIPT_POLL_MS = 500;
-const BASH_ADMISSION_GRACE_MS = 180_000;
 
 const Join = defineDoc<ReceiptJoin<BashResult>>({
   kind: 'mechane.bash-join',
@@ -97,7 +97,7 @@ export async function joinBash(
   context: Context,
 ): Promise<BashResult> {
   return await joinReceiptTask(
-    { ...input, join: Join, deadlineAt: () => Date.now() + input.invocation.timeoutMs + BASH_ADMISSION_GRACE_MS },
+    { ...input, join: Join, deadlineAt: () => Date.now() + input.invocation.timeoutMs + MACHINE_STARTUP_GRACE_MS },
     context,
   );
 }

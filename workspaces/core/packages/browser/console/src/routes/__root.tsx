@@ -16,7 +16,11 @@ export const Route = createRootRoute({
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       { title: 'Mechane Console' },
     ],
-    links: [{ rel: 'stylesheet', href: css }],
+    links: [
+      { rel: 'stylesheet', href: css },
+      ...(import.meta.env.DEV ? [{ rel: 'stylesheet', href: '/console/virtual:stylex.css' }] : []),
+    ],
+    scripts: import.meta.env.DEV ? [{ type: 'module', src: '/console/@id/virtual:stylex:runtime' }] : [],
   }),
   shellComponent: Root,
   component: ConsoleRoute,

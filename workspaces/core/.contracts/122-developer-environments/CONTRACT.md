@@ -101,6 +101,8 @@ Qualify a real checkout on the selected hosted environment before describing tha
 it. Required checks remain required. A missing Docker capability is an explicit qualification failure, not a passed
 suite. Generic execution cannot establish exactly-once external writes or prove production from an assistant reply.
 
+Startup timing, early guest status and passive inspection follow [contract 131](../131-environment-startup/CONTRACT.md).
+
 ## Checks
 
 Build the image and inspect pinned tool versions. Run the existing command-recovery and file-restoration smoke cases.

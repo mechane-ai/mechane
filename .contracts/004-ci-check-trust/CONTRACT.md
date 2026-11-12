@@ -40,18 +40,29 @@ Confirm that check jobs receive no production credentials and no cache authority
 
 ## Local adaptations
 
-The required workflow, `.github/workflows/check.yml`, runs `mise run check` on `ubuntu-24.04` for pull requests, pushes to `main` and manual runs.
+The local exception to the automatic complete-graph rule is `.github/workflows/check.yml`: it runs the complete source
+graph through `mise run check:static` on `ubuntu-24.04` for pull requests, pushes to `main`, and manual runs in both
+repositories. Automatic checks build no runtime candidates, start no Docker services, and upload no release assets.
+Runtime guarantees remain required at candidate acceptance before publication, rather than on every source push.
 It grants `contents: read` only, pins third-party actions to full commit hashes, restores no cache, and receives no deployment credential.
 Repository actions run from the checked-out source under `.github/actions`.
 It checks out the full history and sets `MECHANE_BASE_BRANCH` to the pull request's target, or `main`, so the owned checks hold each ratchet's baseline to the merge base's.
 Concurrency cancels only a superseded pull-request run, never a run on `main`.
 The owned checks reject unpinned third-party actions, local action paths outside `.github/actions`, and workflows without `permissions`.
-The owned mise bootstrap uses the read-only job token only with GitHub's API and follows an asset redirect without the
+The shared `.github/actions/setup` action owns pinned setup for checks, candidates, and package publication. Its owned
+mise bootstrap uses the read-only job token only with GitHub's API and follows an asset redirect without the
 token. It verifies immutable release metadata, asset and published checksums, and the binary digest declared in
 `.config/mise-release.sh` before executing the binary. The official pinned mise action consumes that verified local
 installation; tool versions and package installation still follow the repository lockfiles.
-When the check fails, a last step prints the retained celld application and environment logs, database setup,
-build, and Console logs. The run's log keeps these diagnostics without dumping durable storage or credentials.
+Workflows in `manualWorkflows` run only through `workflow_dispatch`; push, tag, pull-request, release, and scheduled
+triggers are forbidden for them. The runtime candidate workflow accepts an explicit full source commit and refuses a
+different selected workflow ref before setup. It runs the canonical complete candidate acceptance, uploads only its
+qualified output, and retains that output for three days. It cannot publish or deploy. A skipped candidate job is not
+qualification. The publisher still requires the selected complete qualification receipt.
+Source selection failures name the failed check. A failed Git inspection must reject the candidate rather than count
+as a clean checkout; capture Git results before comparing them.
+When candidate acceptance fails, its last step prints the retained celld application and environment logs, database
+setup, build, and Console logs without dumping durable storage or credentials.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,
@@ -60,8 +71,14 @@ The canonical builder must reproduce the immutable GitHub release asset's digest
 versions must match the same archive. Source pushes, pull requests, and runtime releases cannot publish the UI package;
 the workflow does not deploy services or change installation state.
 
+The owned workflow check discovers every workflow and local action under `.github` in either YAML extension. It checks
+pins inside composite actions as
+well as top-level steps, requires workflow permissions without requiring them on action metadata, and parses events
+to enforce `manualWorkflows`. Review the source workflow to confirm it invokes only source checks and shared setup.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+Values: `manualWorkflows` `.github/workflows/runtime-candidate.yml`.
 - owned check `workflows` (F004): enforced
 
 <!-- End of the generated block. -->

@@ -232,7 +232,6 @@ export {
 } from './operations/evidence/evidence-service-paths.ts';
 
 export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';
-export { EnvironmentOverview } from './operations/environment/environment-operations.ts';
 
 export { SELF_TOKEN_VARIABLE, WakeId, WakeStatus, Wake, WakeList } from './operations/self/schemas.ts';
 
@@ -262,3 +261,5 @@ export {
   MechMaintenanceRequest,
   MechMaintenanceReceipt,
 } from './operations/mechs/maintenance.schemas.ts';
+
+export { StartupFailure, StartupPhase, StartupProgress } from '@mechane/sandbox-wire';

@@ -2,7 +2,7 @@ import { MachineId } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
 import { ProcessState } from '@mechane/sandbox-wire';
 import type { ProcessSummaries, ProcessSummary } from '@mechane/sandbox-wire';
-import { Option, Result, Schema } from 'effect';
+import { DateTime, Option, Result, Schema } from 'effect';
 import { connectLiveMachine } from '../machines/connect-live-machine.ts';
 import type { ProviderStepInput } from '../types.ts';
 import { listGuestProcesses } from './list-guest-processes.ts';
@@ -36,6 +36,10 @@ export async function listManagedProcesses({ store, provider }: ProviderStepInpu
 
     return Option.toArray(summary);
   });
+
+  const now = DateTime.nowUnsafe();
+
+  store.noteProcessObservation({ now });
 
   return [...running, ...finished];
 }

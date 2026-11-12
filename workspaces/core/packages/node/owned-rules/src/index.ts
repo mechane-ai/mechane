@@ -1,6 +1,6 @@
 export { ownedSites } from './owned-sites.ts';
 export { bannedPhrases } from './vocabulary/banned-phrases.ts';
-export { WORKFLOWS } from './documents/constants.ts';
+export { AUTOMATION_FILE } from './documents/constants.ts';
 export { documentFindings } from './documents/document-findings.ts';
 export { workflowFindings } from './documents/workflow-findings.ts';
 export { sourceSites } from './source-sites.ts';

@@ -12,6 +12,7 @@ ignores:
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
+    'packages/node/guest/src/guest-listener.ts',
   ]
 severity: error
 message: 'Fail with a tagged error, such as `new RequestFailed({ reason })` (ER-04)'

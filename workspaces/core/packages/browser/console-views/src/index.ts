@@ -20,3 +20,5 @@ export { EnvironmentDurability } from './environment-durability.tsx';
 export { EvidenceDetailsPlaceholder } from './evidence.tsx';
 
 export { isImportedTurn } from './turn-outcome.ts';
+
+export { EnvironmentStartup } from './environment-startup.tsx';

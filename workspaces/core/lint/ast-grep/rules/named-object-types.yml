@@ -15,6 +15,7 @@ ignores:
     '**/node_modules/**',
     'packages/browser/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
+    'packages/node/guest/src/guest-listener.ts',
   ]
 utils:
   # an intersection's operand that is an object type literal, or an intersection holding one

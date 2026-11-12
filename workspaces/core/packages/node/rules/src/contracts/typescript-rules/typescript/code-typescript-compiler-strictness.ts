@@ -38,6 +38,7 @@ const VALUES = {
     'sourceGrantRecords',
     'sourceRecords',
     'stopRecords',
+    'startupRecords',
     'watchRecords',
     'workspaceRecoveryRecords',
     'workspaceRecords',

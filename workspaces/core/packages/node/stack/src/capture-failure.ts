@@ -2,6 +2,7 @@ import { writeDiagnostic } from '@mechane/program';
 import { appendFile, chmod, mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { captureEnvironmentReports } from './capture-environment-reports.ts';
 import { captureProcessStatus } from './capture-process-status.ts';
 import { dumpDurableStorage } from './celld/dump-durable-storage.ts';
 import { retainFailureLogs } from './retain-failure-logs.ts';
@@ -29,6 +30,12 @@ export async function captureStackFailure({ stack, label, environment }: Capture
   await chmod(directory, PRIVATE_DIRECTORY_MODE);
 
   const captures = await Promise.all([
+    captureFile({
+      directory,
+      name: 'environment-startup.json',
+      signal,
+      read: () => captureEnvironmentReports({ stack, signal }),
+    }),
     captureFile({
       directory,
       name: 'logs-location.txt',

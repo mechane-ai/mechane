@@ -8,6 +8,11 @@ Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked
 mise run check:static
 ```
 
+Automatic CI runs the same static command. Building release assets and running their complete acceptance is an explicit
+operator action through `Build runtime candidate`, or `mise -C workspaces/core run distribution:candidate` locally. The
+workflow requires a full reviewed source commit matching its selected ref. Its qualified artifact expires after three
+days; publication consumes that exact candidate without rebuilding. Source checks alone do not qualify a release.
+
 Start Docker and use the release-qualified celld identity before local runtime work. An explicit
 `MECHANE_LOCAL_CELLD_BINARY` override contains `executable`, `version`, and `sha256`; the launcher verifies them. Follow
 the [local guide](../workspaces/core/packages/node/stack/README.md) for the current pin and prerequisites.

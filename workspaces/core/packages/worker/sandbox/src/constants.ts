@@ -1,7 +1,8 @@
+import { WORKSPACE_RESTORE_SECONDS } from '@mechane/sandbox-wire';
 import { Duration } from 'effect';
 
 /** The deadline for a complete workspace checkpoint or restoration. */
-export const WORKSPACE_OPERATION_TIMEOUT = Duration.minutes(5);
+export const WORKSPACE_OPERATION_TIMEOUT = Duration.seconds(WORKSPACE_RESTORE_SECONDS);
 export const WORKSPACE_TRANSFER_BATCH_PARTS = 8;
 export const WORKSPACE_CHECKPOINT_CONCURRENT_PARTS = 4;
 export const AUTOMATIC_CHECKPOINT_QUIET = Duration.seconds(5);

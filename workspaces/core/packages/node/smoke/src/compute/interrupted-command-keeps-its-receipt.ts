@@ -6,6 +6,7 @@ import {
   createMech,
   deleteSandbox,
   readBashResult,
+  readEnvironment,
   readSandboxMachines,
   readTrace,
   requireFixtures,
@@ -23,6 +24,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { checkpointedFilesSurviveMachineLoss } from './checkpointed-files-survive-machine-loss.ts';
 
+const ENVIRONMENT_READ_TIMEOUT_MS = 2000;
 const COMMAND_RECOVERY_WAIT_MS = 60_000;
 const COMMAND_TIMEOUT_SECONDS = 120;
 const COMPLETED_COMMAND_MODEL_CALLS = 2;
@@ -146,6 +148,12 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     const physicalMachine = await sandbox.inspectMachine(machineId);
 
     assert.ok(physicalMachine !== undefined);
+
+    const overview = await readEnvironment({ ...winner, signal: AbortSignal.timeout(ENVIRONMENT_READ_TIMEOUT_MS) });
+    const startup = Option.getOrThrow(overview.environment.startup);
+
+    assert.equal(startup.machineId, machineId, 'Startup inspection described a different computer');
+    assert.ok(Option.isSome(overview.environment.execution));
 
     const correctionMarker = `correction-${randomUUID()}`;
 

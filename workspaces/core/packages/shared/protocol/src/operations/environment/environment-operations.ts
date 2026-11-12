@@ -1,5 +1,5 @@
 import { HttpMethod, MachineId, wireStruct } from '@mechane/records';
-import { ProcessId, ProcessObservation, ProcessSummaries, SandboxReport } from '@mechane/sandbox-wire';
+import { ProcessId, ProcessObservation, SandboxReport } from '@mechane/sandbox-wire';
 import { MechNotFound, ServiceUnavailable } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
@@ -10,11 +10,6 @@ const EnvironmentProcessPath = wireStruct({
   fields: { ...MechPath.to.fields, machineId: MachineId, processId: ProcessId },
 });
 
-/** A passive saved-state report and the environment's managed processes. */
-export const EnvironmentOverview = wireStruct({ fields: { sandbox: SandboxReport, processes: ProcessSummaries } });
-
-export type EnvironmentOverview = typeof EnvironmentOverview.Type;
-
 const showEnvironment = {
   method: HttpMethod.Get,
   path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/environment',
@@ -22,7 +17,7 @@ const showEnvironment = {
   params: MechPath,
   query: NoFields,
   body: NoFields,
-  output: EnvironmentOverview,
+  output: SandboxReport,
   errors: [MechNotFound, ServiceUnavailable],
 } as const satisfies Operation;
 

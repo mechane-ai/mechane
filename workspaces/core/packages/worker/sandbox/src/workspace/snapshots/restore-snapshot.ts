@@ -1,7 +1,8 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { SandboxArchive, WorkspaceStep } from '@mechane/sandbox-wire';
-import { Array, DateTime, Option, Schema } from 'effect';
+import { SandboxArchive, StartupFailure, StartupPhase, WorkspaceStep } from '@mechane/sandbox-wire';
+import { capturePromise } from '@mechane/utilities';
+import { Array, DateTime, Option, Result, Schema } from 'effect';
 import { WORKSPACE_TRANSFER_BATCH_DURATION, WORKSPACE_TRANSFER_BATCH_PARTS } from '../../constants.ts';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { verifyGenerationManifest } from '../generation-manifest.ts';
@@ -22,7 +23,13 @@ export async function restoreSnapshot({
   snapshot,
 }: RestoreSnapshotInput): Promise<boolean> {
   const { generation, archive } = snapshot;
+  const observedAt = DateTime.nowUnsafe();
+
   const restored = store.workspace().restoration;
+
+  if (Option.isNone(restored) || restored.value.part < archive.parts) {
+    store.advanceStartup({ machineId, phase: StartupPhase.Transfer, now: observedAt });
+  }
 
   if (Option.isNone(restored) || restored.value.machineId !== machineId || restored.value.generation !== generation) {
     await verifyGenerationManifest({ workspace, snapshot });
@@ -51,6 +58,10 @@ export async function restoreSnapshot({
     }
 
     if (part === archive.parts) {
+      const now = DateTime.nowUnsafe();
+
+      store.advanceStartup({ machineId, phase: StartupPhase.Restore, now });
+
       return await activateSnapshot({ store, guest, restoration: current.value, archive });
     }
 
@@ -60,7 +71,25 @@ export async function restoreSnapshot({
       return false;
     }
 
-    await copySnapshotPart({ store, provider, workspace, guest, snapshot, restoration: current.value });
+    const started = performance.now();
+    const promise = copySnapshotPart({ store, provider, workspace, guest, snapshot, restoration: current.value });
+    const copied = await capturePromise({ promise });
+    const finished = performance.now();
+    const milliseconds = finished - started;
+    const copiedAt = DateTime.nowUnsafe();
+
+    store.recordStartupWork({ machineId, phase: StartupPhase.Transfer, milliseconds });
+
+    if (Result.isFailure(copied)) {
+      store.failStartup({ machineId, failure: StartupFailure.Restore, now: copiedAt });
+    }
+
+    Result.getOrThrow(copied);
+    store.observeRestoration({
+      machineId,
+      restoration: { generation, bytes: archive.bytes, parts: archive.parts, copiedParts: part + 1 },
+      now: copiedAt,
+    });
   }
 
   return false;
@@ -80,7 +109,9 @@ async function activateSnapshot({ store, guest, restoration, archive }: Activate
 
   const lease = Option.none();
 
-  const response = await workspaceRequest({
+  const started = performance.now();
+
+  const promise = workspaceRequest({
     guest,
     machineId,
     generation,
@@ -89,6 +120,25 @@ async function activateSnapshot({ store, guest, restoration, archive }: Activate
     lease,
     init: { method: HttpMethod.Put, headers: { [HttpHeader.ContentType]: MediaType.Json }, body },
   });
+
+  const activated = await capturePromise({ promise });
+  const finished = performance.now();
+  const milliseconds = finished - started;
+
+  store.recordStartupWork({ machineId, phase: StartupPhase.Restore, milliseconds });
+
+  const progress = await guest.startup({ machineId });
+  const now = DateTime.nowUnsafe();
+
+  if (Option.isSome(progress)) {
+    store.observeGuestStartup({ machineId, guest: progress.value, now });
+  }
+
+  if (Result.isFailure(activated)) {
+    store.failStartup({ machineId, failure: StartupFailure.Restore, now });
+  }
+
+  const response = Result.getOrThrow(activated);
 
   return response.status === HttpStatusCode.Ok && isCurrentRestoration({ store, restoration });
 }

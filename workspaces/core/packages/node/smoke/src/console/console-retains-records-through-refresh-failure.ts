@@ -1,4 +1,4 @@
-import { catalog, EnvironmentOverview } from '@mechane/protocol';
+import { catalog, SandboxReport } from '@mechane/protocol';
 import { HttpStatusCode, MediaType } from '@mechane/records';
 import { consolePath, createAccount, createMech, mechPath, withConsoleBrowser } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
@@ -35,12 +35,12 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
 
       const overviewResponse = await environmentResponse;
       const body: unknown = await overviewResponse.json();
-      const overview = Schema.decodeUnknownSync(EnvironmentOverview)(body);
+      const overview = Schema.decodeUnknownSync(SandboxReport)(body);
       const savedFiles = page.getByRole('heading', { name: 'Saved files', exact: true });
 
       await savedFiles.waitFor();
-      assert.equal(overview.processes.length, 0);
-      assert.equal(Option.isNone(overview.sandbox.sandboxId), true, 'Passive inspection allocated a machine');
+      assert.equal(Option.getOrThrow(overview.environment.processes).length, 0);
+      assert.equal(Option.isNone(overview.sandboxId), true, 'Passive inspection allocated a machine');
 
       // Visible rows can precede persistence acceptance; establish a completed native read before reloading.
       await page.getByRole('link', { name: `Settings for ${account.login}`, exact: true }).click();
@@ -116,9 +116,9 @@ export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: Scen
 
       const refreshedResponse = await refreshed;
       const refreshedBody: unknown = await refreshedResponse.json();
-      const recovered = Schema.decodeUnknownSync(EnvironmentOverview)(refreshedBody);
+      const recovered = Schema.decodeUnknownSync(SandboxReport)(refreshedBody);
 
-      assert.equal(Option.isNone(recovered.sandbox.sandboxId), true, 'Refreshing the overview allocated a machine');
+      assert.equal(Option.isNone(recovered.sandboxId), true, 'Refreshing the overview allocated a machine');
       await savedFiles.waitFor();
       await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor({ state: 'hidden' });
     },

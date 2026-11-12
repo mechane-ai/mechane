@@ -7,8 +7,10 @@ import {
   EnvironmentProcesses,
   EnvironmentProcessOutput,
   EnvironmentProcessOutputPlaceholder,
+  EnvironmentStartup,
 } from '@mechane/console-views';
 import type { ProcessSummaries, ProcessSummary } from '@mechane/protocol';
+import type { DateTime, Option } from 'effect';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useEnvironment, useEnvironmentProcess } from '../reads.ts';
@@ -31,8 +33,15 @@ export function EnvironmentScreen({
       {(environment, notice) => (
         <Stack>
           {notice}
-          <EnvironmentDurability report={environment.sandbox} />
-          <ProcessControls data={data} request={request} processes={environment.processes} isActive={isActive} />
+          <EnvironmentStartup report={environment} />
+          <EnvironmentDurability report={environment} />
+          <ProcessControls
+            observedAt={environment.environment.processesObservedAt}
+            data={data}
+            request={request}
+            processes={environment.environment.processes}
+            isActive={isActive}
+          />
         </Stack>
       )}
     </ResourceView>
@@ -43,11 +52,13 @@ function ProcessControls({
   data,
   request,
   processes,
+  observedAt,
   isActive,
 }: {
   readonly data: ConsoleData;
   readonly request: ReadRequest<'environment'>;
-  readonly processes: ProcessSummaries;
+  readonly observedAt: Option.Option<DateTime.Utc>;
+  readonly processes: Option.Option<ProcessSummaries>;
   readonly isActive: boolean;
 }): ReactNode {
   const [stopping, setStopping] = useState<ReadonlySet<string>>(new Set());
@@ -85,6 +96,7 @@ function ProcessControls({
 
   return (
     <EnvironmentProcesses
+      observedAt={observedAt}
       processes={processes}
       stopping={stopping}
       failure={failure}

@@ -5,7 +5,6 @@ import { GuestSegment } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import type { IncomingMessage } from 'node:http';
 import { answerCapabilities } from './answer-capabilities.ts';
-import { answerHealth } from './answer-health.ts';
 import { routeBrowser } from './browser/route-browser.ts';
 import type { WorkspaceFailed } from './errors.ts';
 import { routeEvidence } from './evidence/route-evidence.ts';
@@ -43,8 +42,8 @@ type RouteRequestInput = {
 };
 
 /**
- * Answers one request: the machine's health, or an execution's receipt once it settles or its wait passes. A request
- * for another machine gets a bare 404, and a malformed request gets a 400 with what did not decode.
+ * Answers a ready guest's tool and workspace requests. A request for another machine gets a bare 404, and a malformed
+ * request gets a 400 with what did not decode.
  */
 export const answerExchange = Effect.fn('answerExchange')(function* ({
   exchange,
@@ -96,8 +95,6 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
   });
 
   switch (resource) {
-    case GuestSegment.Health:
-      return yield* answerHealth({ method, rest, notFound });
     case GuestSegment.Capabilities:
       return yield* answerCapabilities({ method, rest, notFound });
     case GuestSegment.Executions:

@@ -1,11 +1,11 @@
 import type { Mech } from '@mechane/protocol';
 import {
   Allowance,
-  EnvironmentOverview,
   EvidenceArtifact,
   ListedEvent,
   MechSummary,
   ProcessObservation,
+  SandboxReport,
   Trace,
   Turn,
   TurnStatus,
@@ -390,7 +390,7 @@ export async function applyRead({
     }
     case 'environment': {
       const mechId = answer.request.mechId;
-      const row = { mechId, key: mechId, value: Schema.encodeSync(EnvironmentOverview)(answer.output) };
+      const row = { mechId, key: mechId, value: Schema.encodeSync(SandboxReport)(answer.output) };
 
       await writeRows({
         signal,

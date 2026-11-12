@@ -1,8 +1,6 @@
-import { SANDBOX_TOOL_LIMITS } from '@mechane/sandbox-wire';
+import { IMAGE_STARTUP_SECONDS, SANDBOX_TOOL_LIMITS } from '@mechane/sandbox-wire';
 import type { SandboxTools } from '@mechane/sandbox-wire';
 import { Duration } from 'effect';
-
-const IMAGE_STARTUP_SECONDS = 90;
 
 type MachineStartupTimeoutInput = { readonly tools: SandboxTools };
 

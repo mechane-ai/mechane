@@ -4,6 +4,7 @@ import {
   Mech,
   MechHistoryPage,
   NotificationReceipt,
+  SandboxReport,
   Trace,
   Turn,
   TurnPage,
@@ -21,6 +22,7 @@ import { waitFor } from './wait-for.ts';
 type MechOwner = { readonly stack: LocalStack; readonly account: Account };
 
 type MechInput = MechOwner & { readonly mechId: string };
+type EnvironmentInput = MechInput & { readonly signal: AbortSignal };
 type CreateMechInput = MechOwner & { readonly name: string; readonly dailyCapMicros?: number };
 type SendNotificationInput = MechInput & { readonly text: string; readonly notificationId?: string };
 type TraceInput = MechInput & { readonly turnId: string; readonly signal?: AbortSignal };
@@ -122,6 +124,12 @@ export async function readTrace(input: TraceInput): Promise<Trace> {
   return await readJson({ ...input, path, schema: Trace });
 }
 
+export async function readEnvironment(input: EnvironmentInput): Promise<SandboxReport> {
+  const path = environmentPath(input);
+
+  return await readJson({ ...input, path, schema: SandboxReport });
+}
+
 export async function waitForTurn(input: WaitForTurnInput): Promise<Turn> {
   return await waitForRunState({ ...input, name: 'the notification activation to finish', accept: isFinished });
 }
@@ -190,6 +198,10 @@ function isFinished(turn: Turn): boolean {
 
 function turnsPath(input: MechInput): string {
   return `${mechPath(input)}/turns`;
+}
+
+function environmentPath(input: MechInput): string {
+  return `${mechPath(input)}/environment`;
 }
 
 function conversationPath(input: ConsoleMessagesInput): string {

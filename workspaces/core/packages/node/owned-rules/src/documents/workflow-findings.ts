@@ -1,5 +1,6 @@
 import { siteKey } from '@mechane/checks-kernel';
 import type { Finding, TextFile } from '@mechane/checks-kernel';
+import { manualWorkflowFindings } from './manual-workflow-findings.ts';
 
 /** An action reference pinned to an immutable commit, such as `actions/checkout@<40 hex digits>`. */
 const PINNED_ACTION = /^\s*-?\s*uses:\s*[\w.-]+\/[\w./-]+@[0-9a-f]{40}(\s|$)/;
@@ -33,9 +34,9 @@ export function workflowFindings({ path, text }: TextFile): ReadonlyArray<Findin
     ];
   };
 
-  const unpinned = lines.flatMap(unpinnedFindings);
+  const unpinned = [...lines.flatMap(unpinnedFindings), ...manualWorkflowFindings({ path, text })];
 
-  if (lines.some((line) => line.startsWith(PERMISSIONS_KEY))) {
+  if (path.startsWith('.github/actions/') || lines.some((line) => line.startsWith(PERMISSIONS_KEY))) {
     return unpinned;
   }
 

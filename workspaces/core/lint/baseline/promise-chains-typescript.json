@@ -1,5 +1,4 @@
 {
   "packages/shared/utilities/src/after-settling.ts": 1,
-  "packages/worker/sandbox/src/executions/guest-reply.ts": 2,
-  "packages/worker/sandbox/src/providers/http-guest.ts": 1
+  "packages/worker/sandbox/src/executions/guest-reply.ts": 2
 }

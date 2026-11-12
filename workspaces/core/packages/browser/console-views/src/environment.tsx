@@ -2,9 +2,13 @@ import { Accordion, Button, Row, Stack, Status, Subheading, Text } from '@mechan
 import { LogViewer } from '@mechane-ai/elements/content';
 import { EmptyState, Notice, Skeleton, SkeletonText } from '@mechane-ai/elements/feedback';
 import type { ProcessHandle, ProcessObservation, ProcessSummaries, ProcessSummary } from '@mechane/protocol';
+import { Option } from 'effect';
+import type { DateTime } from 'effect';
 import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { EnvironmentDurabilityPlaceholder } from './environment-durability.tsx';
+import { EnvironmentStartupPlaceholder } from './environment-startup.tsx';
+import { ConsoleTimestamp } from './record-time.tsx';
 
 function processKey(handle: ProcessHandle): string {
   return `${handle.machineId}:${handle.processId}`;
@@ -76,6 +80,7 @@ function ProcessRow({
 export function EnvironmentPlaceholder(): ReactNode {
   return (
     <Stack>
+      <EnvironmentStartupPlaceholder />
       <EnvironmentDurabilityPlaceholder />
       <Subheading>Processes</Subheading>
       <SkeletonText width="32ch" />
@@ -96,12 +101,14 @@ export function EnvironmentPlaceholder(): ReactNode {
 
 export function EnvironmentProcesses({
   processes,
+  observedAt = Option.none(),
   stopping,
   failure,
   onStop,
   renderDetails,
 }: ProcessActions & {
-  readonly processes: ProcessSummaries;
+  readonly observedAt?: Option.Option<DateTime.Utc>;
+  readonly processes: Option.Option<ProcessSummaries>;
   readonly stopping: ReadonlySet<string>;
   readonly failure: string | undefined;
 }): ReactNode {
@@ -110,9 +117,20 @@ export function EnvironmentProcesses({
   return (
     <Stack>
       <Subheading>Processes</Subheading>
+      <Text variant="caption" tone="muted">
+        {Option.isSome(observedAt) ? (
+          <>
+            Recorded <ConsoleTimestamp value={observedAt.value} /> UTC. Expand a process to refresh its output.
+          </>
+        ) : (
+          'No process observation recorded yet.'
+        )}
+      </Text>
       {failure !== undefined && <Notice hasError>{failure}</Notice>}
-      {processes.length === 0 ? (
-        <EmptyState title="No managed processes">
+      {Option.isNone(processes) ? (
+        <Notice hasError>Process status is unavailable. Computer and saved-file status are still shown.</Notice>
+      ) : processes.value.length === 0 ? (
+        <EmptyState title="No recorded processes">
           Development servers and other processes started by this mech appear here.
         </EmptyState>
       ) : (
@@ -121,7 +139,7 @@ export function EnvironmentProcesses({
             Active and recently finished processes.
           </Text>
           <Accordion.Root value={expanded} onValueChange={setExpanded}>
-            {processes.map((process) => {
+            {processes.value.map((process) => {
               const key = processKey(process.handle);
 
               return (

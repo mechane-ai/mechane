@@ -1,7 +1,7 @@
 import { CONTRACTS } from '@mechane/rules';
 
-/** The CI workflows whose steps must pin each action to a full commit. */
-export const WORKFLOWS = ['.github/workflows/check.yml'] as const;
+/** Workflow and local-action metadata discovered under the repository's GitHub directory. */
+export const AUTOMATION_FILE = /^\.github\/(?:workflows\/[^/]+\.ya?ml|actions\/.+\/action\.ya?ml)$/;
 
 /** Each budgeted document of the factory, by its path below the factory root, and the words it may hold. */
 export const DOCUMENT_WORDS: Readonly<Record<string, number>> = {

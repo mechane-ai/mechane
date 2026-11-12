@@ -15,7 +15,7 @@ const READY_TIMEOUT_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 1000;
 const PRIVATE_FILE_MODE = 0o600;
 const PRIVATE_DIRECTORY_MODE = 0o700;
-const APPLICATION_ROUTE = '^(?!/console(?:/|$))';
+const APPLICATION_ROUTE = '^(?!/(?:console(?:/|$)|virtual:stylex(?:[.:/]|$)))';
 const OWNER_INDENT_SPACES = 2;
 const RESOURCE_REVIEW_MS = 3_600_000;
 

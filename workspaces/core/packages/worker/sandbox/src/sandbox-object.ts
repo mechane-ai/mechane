@@ -11,6 +11,7 @@ import {
   BackgroundWork,
   FileCheckpointIdentityReused,
   FileCheckpointPurpose,
+  MachineStatus,
   openSandboxStore,
   ReservationPhase,
   sandboxAlarm,
@@ -51,6 +52,7 @@ import {
   SandboxStopObservation,
   SandboxStopPhase,
   SandboxStopReceipt,
+  StartupFailure,
 } from '@mechane/sandbox-wire';
 import type { ExecutionId, RunExecutionInput } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise } from '@mechane/utilities';
@@ -86,10 +88,11 @@ import { cancelExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
 import { executionProgress } from './executions/execution-progress.ts';
 import { runExecution } from './executions/run-execution.ts';
+import { environmentReport } from './inspection/environment-report.ts';
+import { storedProcessSummaries } from './inspection/stored-process-summaries.ts';
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { maintenanceValue } from './maintenance/maintenance-value.ts';
 import { managePortable } from './maintenance/manage-portable.ts';
-import { portableReport } from './maintenance/portable-report.ts';
 import { writeBackgroundObservationFailure } from './output/write-sandbox-diagnostic.ts';
 import { listManagedProcesses } from './processes/list-managed-processes.ts';
 import { observeManagedProcess, startManagedProcess } from './processes/managed-processes.ts';
@@ -177,7 +180,20 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     });
 
     const settings = sandboxSettings({ store: this.#store, environment });
-    const provider = machineProvider({ settings: settings.variables, state });
+
+    const provider = machineProvider({
+      settings: settings.variables,
+      state,
+      onStartupExit: ({ machineId }) => {
+        const machine = this.#store.liveMachine();
+
+        if (Option.exists(machine, (value) => value.id === machineId && value.status === MachineStatus.Starting)) {
+          const now = DateTime.nowUnsafe();
+
+          this.#store.failStartup({ machineId, failure: StartupFailure.GuestLost, now });
+        }
+      },
+    });
 
     this.#workspace = { bucket: settings.workspaceBucket, owner: state.id.toString() };
     this.#providerName = settings.variables.provider;
@@ -286,6 +302,16 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   }
 
   async manage({ request: input }: ManageInput): Promise<typeof SandboxReport.Encoded> {
+    this.#capacity.requireOwner();
+
+    const decoded = Schema.decodeUnknownSync(SandboxRequest)(input);
+
+    if (decoded.action === SandboxAction.Show) {
+      const report = environmentReport({ store: this.#store, providerName: this.#providerName });
+
+      return Schema.encodeSync(SandboxReport)(report);
+    }
+
     return await this.#calls.run({
       run: async () => {
         await Promise.all(this.#stops);
@@ -301,12 +327,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         const isDeleting = Option.exists(maintenance, (job) => job.phase === SandboxPhase.Retire);
 
         if (request.action === SandboxAction.Delete && isDeleting && Option.isSome(this.#files.pending)) {
-          const report = portableReport({
-            store: this.#store,
-            provider: this.#provider,
-            workspace: this.#workspace,
-            providerName: this.#providerName,
-          });
+          const report = environmentReport({ store: this.#store, providerName: this.#providerName });
 
           return Schema.encodeSync(SandboxReport)(report);
         }
@@ -514,11 +535,17 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
   }
 
   async listProcesses({ shouldTouch }: ProcessActivityInput): Promise<typeof ProcessSummaries.Encoded> {
+    this.#capacity.requireOwner();
+
+    if (!shouldTouch) {
+      const summaries = storedProcessSummaries({ store: this.#store });
+
+      return Schema.encodeSync(ProcessSummaries)(summaries);
+    }
+
     const summaries = await this.#calls.run({
       run: async () => {
-        if (shouldTouch) {
-          await this.#touchInteractive();
-        }
+        await this.#touchInteractive();
 
         return await listManagedProcesses({ store: this.#store, provider: this.#provider });
       },

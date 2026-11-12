@@ -157,6 +157,7 @@
           "sourceGrantRecords",
           "sourceRecords",
           "stopRecords",
+          "startupRecords",
           "watchRecords",
           "workspaceRecoveryRecords",
           "workspaceRecords"
@@ -184,6 +185,7 @@
           "sourceGrantRecords",
           "sourceRecords",
           "stopRecords",
+          "startupRecords",
           "watchRecords",
           "workspaceRecoveryRecords",
           "workspaceRecords"
@@ -799,6 +801,7 @@
     },
     {
       "files": [
+        "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
         "packages/node/{stack,distribution,testing,smoke}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
@@ -1299,6 +1302,7 @@
     },
     {
       "files": [
+        "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
         "packages/node/{stack,distribution,testing,smoke}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",

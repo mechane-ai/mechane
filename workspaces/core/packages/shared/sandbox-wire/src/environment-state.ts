@@ -1,6 +1,8 @@
 import { MachineId, RecordId, RecordText, SandboxOperationId, Sequence, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
+import { ProcessSummaries } from './processes/process.schemas.ts';
 import { ExecutionId } from './schemas.ts';
+import { ExecutionTiming, MachineStartup, StartupFailureObservation } from './startup.ts';
 
 /** Distinguishes accepted stop intent from file saving and confirmed provider shutdown. */
 export const SandboxStopPhase = {
@@ -62,6 +64,11 @@ const RecoveryStatus = wireStruct({ fields: { generation: RecordId, machineId: M
 /** Inspection distinguishes committed files, an unfinished transfer, and retained recovery files. */
 export const SandboxEnvironmentState = wireStruct({
   fields: {
+    processes: Schema.OptionFromNullOr(ProcessSummaries),
+    processesObservedAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromString),
+    lastStartupFailure: Schema.OptionFromNullOr(StartupFailureObservation),
+    startup: Schema.OptionFromNullOr(MachineStartup),
+    execution: Schema.OptionFromNullOr(ExecutionTiming),
     committedGeneration: Schema.OptionFromNullOr(RecordId),
     durability: Schema.optionalKey(
       wireStruct({

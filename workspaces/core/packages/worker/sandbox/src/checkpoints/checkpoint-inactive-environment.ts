@@ -2,7 +2,9 @@ import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-st
 import type { SandboxStore } from '@mechane/sandbox-store';
 import { Option } from 'effect';
 
-type InactiveEnvironmentInput = { readonly store: SandboxStore };
+type InactiveEnvironmentInput = {
+  readonly store: Pick<SandboxStore, 'workspace' | 'latestReadyMachine' | 'machineDrain' | 'fileCheckpointResult'>;
+};
 
 /** Only a matching frozen drain proves a stopped machine's final files; ordinary snapshots resume their writers. */
 export function checkpointInactiveEnvironment({ store }: InactiveEnvironmentInput): FileCheckpointResult {

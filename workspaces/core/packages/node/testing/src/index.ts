@@ -38,6 +38,7 @@ export {
   mechPath,
   readConsoleMessages,
   readEvents,
+  readEnvironment,
   readHistoryPage,
   readTrace,
   readTurns,

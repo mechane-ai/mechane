@@ -856,6 +856,9 @@ importers:
       oxc-parser:
         specifier: 0.156.0
         version: 0.156.0
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
 
   packages/node/program:
     dependencies:
