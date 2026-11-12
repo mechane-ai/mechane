@@ -177,6 +177,7 @@ type NavigationProps = { readonly children: ReactNode; readonly label?: string }
 type NavigationItemProps = ComponentProps<typeof BaseButton> & {
   readonly icon?: ReactNode;
   readonly isSelected?: boolean;
+  readonly shouldCloseOnActivate?: boolean;
 };
 
 type NavigationLinkProps = ComponentProps<'a'> & { readonly icon?: ReactNode; readonly isSelected?: boolean };
@@ -254,6 +255,7 @@ export function NavigationItem({
   children,
   icon,
   isSelected = false,
+  shouldCloseOnActivate = true,
   onClick,
   className,
   style,
@@ -285,7 +287,7 @@ export function NavigationItem({
             onClick(event);
           }
 
-          if (!event.defaultPrevented && sidebar !== null) {
+          if (!event.defaultPrevented && sidebar !== null && shouldCloseOnActivate) {
             sidebar.onNavigate();
           }
         }}

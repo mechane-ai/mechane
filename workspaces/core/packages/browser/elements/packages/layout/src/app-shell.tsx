@@ -63,6 +63,7 @@ export function AppShell({
   const sidebarId = useId();
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const mobileNavigationToggleRef = useRef<HTMLButtonElement>(null);
+  const didNavigate = useRef(false);
 
   useEffect(() => {
     const desktop = globalThis.matchMedia(frameConditions.sidebarDesktopQuery);
@@ -87,7 +88,11 @@ export function AppShell({
         navigationToggleRef,
         mobileNavigationToggleRef,
         onToggle: () => setIsExpanded((expanded) => !expanded),
-        onNavigate: () => setIsOpen(false),
+        onNavigate: () => {
+          didNavigate.current = isOpen;
+
+          setIsOpen(false);
+        },
       }}
     >
       <div {...stylex.props(styles.shell)}>
@@ -113,6 +118,19 @@ export function AppShell({
             <Drawer.Popup
               xstyle={styles.drawer}
               finalFocus={() => {
+                if (didNavigate.current) {
+                  didNavigate.current = false;
+
+                  const main = document.querySelector<HTMLElement>(`#${CSS.escape(mainId)}`);
+                  const focused = document.activeElement;
+
+                  if (focused instanceof HTMLElement && main?.contains(focused) === true) {
+                    return focused;
+                  }
+
+                  return main;
+                }
+
                 if (globalThis.matchMedia(frameConditions.sidebarDesktopQuery).matches) {
                   return navigationToggleRef.current;
                 }

@@ -99,6 +99,9 @@ Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit 
 navigation and reserve the divided sidebar footer for persistent account controls. Use
 `SidebarFooter layout="navigation"` for a group of commands; its intrinsic height keeps the scrolling navigation clear.
 
+Navigation closes the mobile drawer and preserves focus set by the destination. Use
+`NavigationItem shouldCloseOnActivate={false}` for menu triggers.
+
 `AppShell shouldFocus` temporarily hides navigation while retaining its expansion state. `ViewStack.Panel` keeps
 inactive content mounted and measurable but removes it from keyboard and assistive-technology navigation. The
 application owns which view is active and when to unmount it; use this for a draft or reading position that must survive
