@@ -42,6 +42,12 @@ synthetic catalog documentation does not require a separate assertion suite.
 
 ## Local adaptations
 
+BarChart accepts prepared composition buckets alongside ordinary grouped and stacked bars. A parts bucket draws supplied
+nonnegative components, a total bucket draws its independent signed value, and a gap omits the account mark. Null component
+values remain unavailable. The caller owns reconciliation and the supplied fixed domain. Series focus is independent of
+category selection and keeps the independent context visible. Inspect both amounts through the shared text disclosure.
+Use interruptible transform and opacity transitions for series focus under contract 073.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

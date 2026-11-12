@@ -19,7 +19,11 @@ export type ChartFrameProps = {
 
 export type ChartLegendItem = { readonly id: string; readonly label: string; readonly tone: ChartTone };
 
-export type ChartLegendProps = { readonly items: ReadonlyArray<ChartLegendItem>; readonly label?: string | undefined };
+export type ChartLegendProps = {
+  readonly items: ReadonlyArray<ChartLegendItem>;
+  readonly label?: string | undefined;
+  readonly isScrollable?: boolean | undefined;
+};
 
 const styles = stylex.create({
   frame: {
@@ -76,6 +80,8 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
   },
+  scrollLegend: { flexWrap: 'nowrap', overflowX: 'auto', minHeight: typography.captionLineHeight },
+  scrollItem: { flexShrink: 0, maxWidth: 'none', whiteSpace: 'nowrap' },
   legendItem: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -167,11 +173,11 @@ export function ChartFrame({ title, description, children, actions, footer }: Ch
   );
 }
 
-export function ChartLegend({ items, label = 'Legend' }: ChartLegendProps): ReactNode {
+export function ChartLegend({ items, label = 'Legend', isScrollable = false }: ChartLegendProps): ReactNode {
   return (
-    <ul aria-label={label} {...stylex.props(styles.legend)}>
+    <ul aria-label={label} {...stylex.props(styles.legend, isScrollable && styles.scrollLegend)}>
       {items.map((item) => (
-        <li key={item.id} {...stylex.props(styles.legendItem)}>
+        <li key={item.id} {...stylex.props(styles.legendItem, isScrollable && styles.scrollItem)}>
           <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
           {item.label}
         </li>

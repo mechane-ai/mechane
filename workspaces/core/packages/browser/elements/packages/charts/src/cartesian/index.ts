@@ -1,4 +1,4 @@
-export type { BarSeries, BarChartProps, BarChartPlaceholderProps } from './bar-chart.tsx';
+export type { BarSeries, BarBucket, BarComposition, BarChartProps, BarChartPlaceholderProps } from './bar-chart.tsx';
 export { BarChart, BarChartPlaceholder } from './bar-chart.tsx';
 export type { BreakdownBarProps } from './breakdown-bar.tsx';
 export { BreakdownBar } from './breakdown-bar.tsx';

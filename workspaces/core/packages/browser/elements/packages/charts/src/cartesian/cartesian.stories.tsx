@@ -449,3 +449,51 @@ export const NarrowLoadingGeometry: Story = {
   globals: { viewport: { value: 'narrow', isRotated: false } },
   render: () => <BarLoadingGeometry />,
 };
+
+function CompositionExample(): ReactNode {
+  const series: ReadonlyArray<BarSeries> = [
+    { id: 'compute', label: 'Compute', tone: 'series1', values: [70, 55, 7, 0, 50] },
+    { id: 'storage', label: 'Storage', tone: 'series2', values: [30, -5, null, null, 20] },
+  ];
+
+  const [focused, setFocused] = useState<string>();
+  const [selected, setSelected] = useState<string>();
+  const focus = series.find((item) => item.id === focused);
+
+  return (
+    <Stack>
+      <Row>
+        {series.map((item) => (
+          <Button
+            key={item.id}
+            aria-pressed={focused === item.id}
+            onClick={() => setFocused(focused === item.id ? undefined : item.id)}
+          >
+            {item.label}
+          </Button>
+        ))}
+      </Row>
+      <BarChart
+        title="Reported daily usage"
+        categories={['1', '2', '3', '4', '5'].map((id) => ({ id, label: `Day ${id}` }))}
+        series={series}
+        domain={[-10, 110]}
+        formatValue={(value) => `$${value}`}
+        selection={{ selectedId: selected ?? '', onSelect: setSelected }}
+        composition={{
+          contextLabel: 'Account total',
+          focusedSeries: focus,
+          buckets: [
+            { kind: 'parts', total: 100 },
+            { kind: 'total', total: 50 },
+            { kind: 'gap' },
+            { kind: 'parts', total: 0 },
+            { kind: 'total', total: 80 },
+          ],
+        }}
+      />
+    </Stack>
+  );
+}
+
+export const ComposedBars: Story = { render: () => <CompositionExample /> };

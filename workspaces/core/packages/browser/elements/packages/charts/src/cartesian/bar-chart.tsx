@@ -10,10 +10,15 @@ import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
-import type { ChartTone } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
+import { validateComposition } from './bar-data.ts';
+import type { BarComposition, BarSeries } from './bar-data.ts';
+import { CompositionBars } from './composition-bars.tsx';
+
+export type { BarSeries, BarBucket, BarComposition } from './bar-data.ts';
 
 const styles = stylex.create({
+  legend: { minHeight: typography.captionLineHeight },
   empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
   plot: { marginBlock: spacing.md },
   inspection: {
@@ -21,7 +26,7 @@ const styles = stylex.create({
     flexWrap: 'wrap',
     columnGap: spacing.md,
     rowGap: spacing.xs,
-    minHeight: typography.captionLineHeight,
+    minHeight: `calc(${typography.captionLineHeight} * 2)`,
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
     fontVariantNumeric: 'tabular-nums',
@@ -37,13 +42,6 @@ const selectionKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
 const DEFAULT_HEIGHT = 200;
 const INSPECTION_HINT = 'Point, tap, or use the arrow keys to inspect values.';
 
-export type BarSeries = {
-  readonly id: string;
-  readonly label: string;
-  readonly values: ReadonlyArray<number | null>;
-  readonly tone?: ChartTone | undefined;
-};
-
 export type BarChartProps = {
   readonly title: string;
   readonly description?: string | undefined;
@@ -55,6 +53,7 @@ export type BarChartProps = {
   readonly series: ReadonlyArray<BarSeries>;
   readonly domain: readonly [number, number];
   readonly mode?: 'grouped' | 'stacked' | undefined;
+  readonly composition?: BarComposition | undefined;
   readonly formatValue: (value: number) => string;
   readonly selection?: ChartSelection | undefined;
   readonly height?: number | undefined;
@@ -75,7 +74,9 @@ function BarChartFrame({ title, description, series, children }: BarChartFramePr
 
   return (
     <ChartFrame title={title} description={description}>
-      <ChartLegend items={legend} />
+      <div {...stylex.props(styles.legend)}>
+        <ChartLegend items={legend} isScrollable />
+      </div>
       {children}
     </ChartFrame>
   );
@@ -179,8 +180,47 @@ export function BarChart({
   formatValue,
   selection,
   height = DEFAULT_HEIGHT,
+  composition,
 }: BarChartProps): ReactNode {
-  const issue = validateBars({ categories, series, domain, mode }) ?? barHeightError(height);
+  const focusSeries = composition?.focusedSeries;
+  const contextId = useId();
+
+  const focusIssue =
+    focusSeries === undefined
+      ? undefined
+      : validateBars({ categories, series: [focusSeries], domain, mode: 'grouped' });
+
+  const inputIssue = validateBars({ categories, series, domain, mode }) ?? focusIssue;
+
+  const frameIssue =
+    validateComposition({ composition, series, categoryIds: categories.map((category) => category.id), domain }) ??
+    barHeightError(height);
+
+  const issue = inputIssue ?? frameIssue;
+
+  const context: BarSeries | undefined =
+    composition === undefined
+      ? undefined
+      : {
+          id: contextId,
+          label: composition.contextLabel,
+          tone: 'neutral',
+          values: composition.buckets.map((bucket) => (bucket.kind === 'gap' ? null : bucket.total)),
+        };
+
+  const inspectedSeries =
+    context === undefined ? series : [context, ...(focusSeries === undefined ? [] : [focusSeries])];
+
+  const disclosedSeries =
+    context === undefined
+      ? series
+      : [
+          context,
+          ...series,
+          ...(focusSeries === undefined || series.some((item) => item.id === focusSeries.id) ? [] : [focusSeries]),
+        ];
+
+  const legend = series.length > 0 ? series : inspectedSeries;
   const { ref, width } = usePlotWidth();
   const inspectionId = useId();
   const [inspection, setInspection] = useState<{ readonly id: string; readonly source: 'pointer' | 'keyboard' }>();
@@ -208,6 +248,8 @@ export function BarChart({
   );
 
   const labelEvery = Math.max(1, Math.ceil((labelWidth + 16) / x.step()));
+  const hasData = categories.length > 0 && (series.length > 0 || composition !== undefined);
+
   const labelCharacters = Math.max(1, Math.floor((x.step() * labelEvery - 16) / 7));
 
   function inspectPointer(event: PointerEvent<SVGSVGElement>): void {
@@ -259,9 +301,9 @@ export function BarChart({
   }
 
   return (
-    <BarChartFrame title={title} description={description} series={series}>
+    <BarChartFrame title={title} description={description} series={legend}>
       <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
-        {categories.length === 0 || series.length === 0 ? (
+        {categories.length === 0 || (series.length === 0 && composition === undefined) ? (
           <p {...stylex.props(styles.empty)}>No categories</p>
         ) : (
           <svg
@@ -314,41 +356,65 @@ export function BarChart({
                 </text>
               </g>
             ))}
+            {composition?.annotation !== undefined &&
+              categories.some((category) => category.id === composition.annotation?.categoryId) && (
+                <text
+                  x={x(composition.annotation.categoryId)}
+                  y={Math.max(12, y(composition.annotation.value) - 8)}
+                  {...stylex.props(chartStyles.label)}
+                >
+                  {composition.annotation.label}
+                </text>
+              )}
             {categories.map((category, categoryIndex) => {
               const axisLabel = category.axisLabel ?? category.label;
+              const composedBucket = composition?.buckets[categoryIndex];
 
               return (
                 <g key={category.id}>
-                  {series.map((item, seriesIndex) => {
-                    const value = item.values[categoryIndex];
+                  {composedBucket === undefined ? (
+                    series.map((item, seriesIndex) => {
+                      const value = item.values[categoryIndex];
 
-                    if (value === null || value === undefined) {
-                      return null;
-                    }
+                      if (value === null || value === undefined) {
+                        return null;
+                      }
 
-                    const base =
-                      mode === 'stacked'
-                        ? series
-                            .slice(0, seriesIndex)
-                            .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
-                        : 0;
+                      const base =
+                        mode === 'stacked'
+                          ? series
+                              .slice(0, seriesIndex)
+                              .reduce((sum, previous) => sum + (previous.values[categoryIndex] ?? 0), 0)
+                          : 0;
 
-                    const start = y(base);
-                    const end = y(base + value);
-                    const isHighlighted = selection?.selectedId === category.id || active?.id === category.id;
+                      const start = y(base);
+                      const end = y(base + value);
+                      const isHighlighted = selection?.selectedId === category.id || active?.id === category.id;
 
-                    return (
-                      <Bar
-                        key={item.id}
-                        x={(x(category.id) ?? left) + (mode === 'stacked' ? 0 : (grouped(item.id) ?? 0))}
-                        y={Math.min(start, end)}
-                        width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
-                        height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
-                        fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-                        {...stylex.props(isHighlighted && chartStyles.selected)}
-                      />
-                    );
-                  })}
+                      return (
+                        <Bar
+                          key={item.id}
+                          x={(x(category.id) ?? left) + (mode === 'stacked' ? 0 : (grouped(item.id) ?? 0))}
+                          y={Math.min(start, end)}
+                          width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
+                          height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
+                          fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
+                          {...stylex.props(isHighlighted && chartStyles.selected)}
+                        />
+                      );
+                    })
+                  ) : (
+                    <CompositionBars
+                      bucket={composedBucket}
+                      series={series}
+                      focusedSeries={focusSeries}
+                      index={categoryIndex}
+                      x={x(category.id) ?? left}
+                      width={x.bandwidth()}
+                      y={y}
+                      isHighlighted={selection?.selectedId === category.id || active?.id === category.id}
+                    />
+                  )}
                   {categoryIndex % labelEvery === 0 && (
                     <text
                       x={(x(category.id) ?? left) + x.bandwidth() / 2}
@@ -365,7 +431,7 @@ export function BarChart({
           </svg>
         )}
       </div>
-      {categories.length > 0 && series.length > 0 && (
+      {hasData && (
         <div
           id={inspectionId}
           aria-live={inspection?.source === 'pointer' ? 'off' : 'polite'}
@@ -376,7 +442,7 @@ export function BarChart({
           ) : (
             <>
               <span>{readout.label}</span>
-              {series.map((item) => (
+              {inspectedSeries.map((item) => (
                 <span key={item.id}>
                   {item.label}:{' '}
                   {item.values[readoutIndex] === null || item.values[readoutIndex] === undefined
@@ -393,7 +459,7 @@ export function BarChart({
           items={categories.map((category, index) => ({
             id: category.id,
             label: category.label,
-            valueLabel: barValueLabel(series, index, formatValue),
+            valueLabel: barValueLabel(disclosedSeries, index, formatValue),
             tone: 'neutral',
           }))}
           selection={selection}
