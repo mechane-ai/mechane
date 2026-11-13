@@ -3,7 +3,7 @@ import { File } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { ContentLink } from '../../content/src/link.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   root: {
@@ -30,6 +30,7 @@ const styles = stylex.create({
   content: { minWidth: 0, overflowWrap: 'anywhere', lineHeight: typography.proseLineHeight },
   user: { paddingBlock: spacing.md, paddingInline: spacing.lg, borderRadius: radii.sm, backgroundColor: colors.canvas },
   bubble: { width: 'fit-content', maxWidth: '85%', marginInlineStart: 'auto', borderRadius: radii.md },
+  chatReply: { minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget } },
   assistant: {},
   system: { color: colors.muted, paddingBlock: spacing.sm },
   actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
@@ -100,6 +101,8 @@ const kinds = { user: styles.user, assistant: styles.assistant, system: styles.s
   stylex.StyleXStyles
 >;
 
+const chatKinds = { user: styles.bubble, assistant: styles.chatReply, system: null };
+
 export function Message({
   author,
   children,
@@ -111,8 +114,8 @@ export function Message({
   attachments,
   variant = 'default',
 }: MessageProps): ReactNode {
-  const isBubble = variant === 'chat' && kind === 'user';
-  const hasHeader = variant === 'default' || avatar !== undefined || meta !== undefined;
+  const isChat = variant === 'chat';
+  const hasHeader = !isChat || avatar !== undefined || meta !== undefined;
 
   const header = hasHeader ? (
     <header {...stylex.props(styles.header)}>
@@ -126,7 +129,7 @@ export function Message({
     <article
       id={id}
       aria-label={author}
-      {...stylex.props(styles.root, kinds[kind], isBubble && styles.bubble, stylex.defaultMarker())}
+      {...stylex.props(styles.root, kinds[kind], isChat && chatKinds[kind], stylex.defaultMarker())}
     >
       {header}
       <div {...stylex.props(styles.content)}>{children}</div>

@@ -23,11 +23,13 @@ region to settle. It does not announce each text mutation. `Message` presents an
 and actions. Render message text with `Markdown` from `/content/markdown`; use `MessageAttachment` for supplied file
 records. Both attachments and sources use the content module's safe destination policy.
 
-Use `Message variant="chat"` for a compact conversation with end-aligned user messages and accessible authorship.
-`ReplyIndicator` delays a supplied status label and gives it two short shimmer sweeps. Reduced motion keeps the label
-still. The application chooses when delivery or generation is waiting and removes the indicator on real output. Pass
-`isStreaming` only to the active Markdown message. Newly received prose fades briefly; completed renderers stay stable
-while later messages grow. The AI Chat catalog includes a tool reply, an interrupted send, retry and Stop.
+Use `Message variant="chat"` for a compact conversation with end-aligned user messages and accessible authorship. The
+assistant message reserves one control row while its waiting indicator gives way to a tool or text. Keeping that space
+on the message itself preserves the viewport even when a browser measures between child replacements. `ReplyIndicator`
+delays a supplied status label and gives it two short shimmer sweeps. Reduced motion keeps the label still. The
+application chooses when delivery or generation is waiting and removes the indicator on real output. Pass `isStreaming`
+only to the active Markdown message. Newly received prose fades briefly; completed renderers stay stable while later
+messages grow. The AI Chat catalog includes a tool reply, an interrupted send, retry and Stop.
 
 The scroller wrapper exposes ordinary live-edge following and prepend preservation. It does not expose the upstream
 anchored-turn mode. That mode has a known scrollbar-drag issue in the pinned dependency. This keeps one scroll owner
