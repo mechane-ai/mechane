@@ -40,6 +40,7 @@ export const graderTurn = Effect.fn('graderTurn')(function* ({
     access,
     mech,
     text: graderText({ evalCase, reply }),
+    creation: files.graderCreation,
     intent: files.graderIntent,
   });
 

@@ -10,7 +10,7 @@ import type {
   PlanChanged,
   SuiteInvalid,
 } from './errors.ts';
-import type { Intent, OutFolderLock } from './schemas.ts';
+import type { CreationIntent, Intent, OutFolderLock } from './schemas.ts';
 import type { GradeRecord, Plan, Report, TurnRecord } from './store/schemas.ts';
 
 /** Every way an eval fails beside its calls: its suite, its out folder's plan or files, the allowance, or a Ctrl-C. */
@@ -42,8 +42,10 @@ export type OnceFile<A> = {
 
 /** The records of one trial, in its own folder. */
 export type TrialFiles = {
+  readonly subjectCreation: OnceFile<CreationIntent>;
   readonly subjectIntent: OnceFile<Intent>;
   readonly subject: OnceFile<TurnRecord>;
+  readonly graderCreation: OnceFile<CreationIntent>;
   readonly graderIntent: OnceFile<Intent>;
   readonly grade: OnceFile<GradeRecord>;
 };

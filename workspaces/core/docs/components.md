@@ -18,10 +18,12 @@ version.
 
 The [package guide](../packages/browser/elements/README.md) covers installing the npm package and its compiled CSS.
 
-The [visual system](visual-system.md) explains the design decisions and shared geometry. Ordinary controls share one
-outer height and body typography; coarse pointers use the shared target and text-entry sizes. The source tokens own
-these values. Body text, captions, section headings, and record titles use their respective typography roles. Small
-radii soften controls; page frames and shared dividers stay square.
+The [visual system](visual-system.md) explains shared geometry and visual roles. Single-line controls default to
+standard density; choose compact explicitly for scoped report actions. The
+[geometry guide](visual-system.md#geometry-and-alignment) owns their sizing and coarse-pointer targets.
+
+Body text, captions, section headings, and record titles use their respective typography roles. Small radii soften
+controls; page frames and shared dividers stay square.
 
 ## Add or change a component
 

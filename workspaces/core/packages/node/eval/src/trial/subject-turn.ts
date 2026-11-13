@@ -16,5 +16,12 @@ export const subjectTurn = Effect.fn('subjectTurn')(function* ({
 }: RunTrialInput): Effect.fn.Return<TurnRecord, EvalRunFailure> {
   const mech = { ...suite.subject, name: `${Role.Subject} ${trial.id}`, dailyCapMicros: suite.trialCapMicros };
 
-  return yield* roleTurn({ call, access, mech, text: evalCase.input, intent: files.subjectIntent });
+  return yield* roleTurn({
+    call,
+    access,
+    mech,
+    text: evalCase.input,
+    creation: files.subjectCreation,
+    intent: files.subjectIntent,
+  });
 });

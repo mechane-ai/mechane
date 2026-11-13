@@ -2,7 +2,7 @@ import { jsonFileText, replaceFile } from '@mechane/program';
 import { Effect, Option } from 'effect';
 import { join } from 'node:path';
 import { EvalFileFailed } from '../errors.ts';
-import { Intent, OutFolderLock } from '../schemas.ts';
+import { CreationIntent, Intent, OutFolderLock } from '../schemas.ts';
 import type { EvalStore } from '../types.ts';
 import { RECORD_MODE } from './constants.ts';
 import { onceFile } from './once-file.ts';
@@ -21,8 +21,10 @@ const TRIALS_FOLDER = 'trials';
 
 /** The intent is saved before admission, and the result is saved before grading or reporting. */
 const TrialFile = {
+  SubjectCreation: 'subject-creation.json',
   SubjectIntent: 'subject-intent.json',
   Subject: 'subject.json',
+  GraderCreation: 'grader-creation.json',
   GraderIntent: 'grader-intent.json',
   Grade: 'grade.json',
 } as const;
@@ -35,10 +37,14 @@ export function evalStore({ outFolder }: OutFolderInput): EvalStore {
 
   const trial: EvalStore['trial'] = ({ trialId }) => {
     const folder = join(outFolder, TRIALS_FOLDER, trialId);
+    const subjectCreationPath = join(folder, TrialFile.SubjectCreation);
+    const graderCreationPath = join(folder, TrialFile.GraderCreation);
 
     return {
+      subjectCreation: onceFile({ path: subjectCreationPath, schema: CreationIntent }),
       subjectIntent: onceFile({ path: join(folder, TrialFile.SubjectIntent), schema: Intent }),
       subject: onceFile({ path: join(folder, TrialFile.Subject), schema: TurnRecord }),
+      graderCreation: onceFile({ path: graderCreationPath, schema: CreationIntent }),
       graderIntent: onceFile({ path: join(folder, TrialFile.GraderIntent), schema: Intent }),
       grade: onceFile({ path: join(folder, TrialFile.Grade), schema: GradeRecord }),
     };

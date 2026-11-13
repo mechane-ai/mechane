@@ -1,6 +1,6 @@
 import type { OperationCall } from '@mechane/client';
 import type { catalog, OperationInput } from '@mechane/protocol';
-import type { Case, Intent, Suite } from '../schemas.ts';
+import type { Case, CreationIntent, Intent, Suite } from '../schemas.ts';
 import type { Trial } from '../store/schemas.ts';
 import type { OnceFile, TrialFiles, WorkspaceAccess, WriteProgress } from '../types.ts';
 
@@ -27,5 +27,6 @@ export type RoleTurnInput = {
   readonly access: WorkspaceAccess;
   readonly mech: MechSettings;
   readonly text: string;
+  readonly creation: OnceFile<CreationIntent>;
   readonly intent: OnceFile<Intent>;
 };

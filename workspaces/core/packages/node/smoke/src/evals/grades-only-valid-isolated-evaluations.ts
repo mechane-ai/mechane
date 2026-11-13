@@ -1,10 +1,11 @@
-import { createAccount, requireFixtures, startCli } from '@mechane/testing';
+import { createAccount, requireFixtures, runCli, startCli } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { mkdtemp, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { creationResponseProxy } from './creation-response-proxy.ts';
 
 const EXPECTED_MODEL_CALLS = 9;
 const SUBJECT_MODEL_CALLS = 2;
@@ -12,6 +13,9 @@ const SUBJECT_MODEL_CALLS = 2;
 const EvalEnvelope = Schema.Struct({
   result: Schema.Struct({ trials: Schema.Array(Schema.Struct({ case_id: Schema.String, verdict: Schema.String })) }),
 });
+
+const Plan = Schema.Struct({ trials: Schema.Array(Schema.Struct({ id: Schema.String })) });
+const MechList = Schema.Struct({ mechs: Schema.Array(Schema.Struct({ id: Schema.String, name: Schema.String })) });
 
 export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInput): Promise<void> {
   const account = await createAccount({ stack });
@@ -68,6 +72,47 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
     account.workspaceId,
   ];
 
+  const proxy = await creationResponseProxy({ origin: stack.origin, workspaceId: account.workspaceId });
+
+  const interrupted = startCli({
+    stack: { origin: proxy.origin, cli: stack.cli },
+    account,
+    args,
+    environment: { MECHANE_API_KEY: account.token },
+  });
+
+  try {
+    const result = await interrupted.finished;
+
+    assert.notEqual(result.status, 0, 'A lost creation response was reported as successful');
+    assert.equal(proxy.state.failure, null);
+    assert.equal(proxy.state.isDropped, true, 'The creation response was not dropped');
+  } finally {
+    await interrupted.stop();
+    await proxy.stop();
+  }
+
+  const plan = Schema.decodeUnknownSync(Schema.fromJsonString(Plan))(
+    await readFile(join(folder, 'out', 'plan.json'), 'utf8'),
+  );
+
+  const firstTrial = plan.trials[0];
+
+  assert.ok(firstTrial !== undefined);
+
+  const subjectName = `subject ${firstTrial.id}`;
+
+  const first = await runCli({
+    stack,
+    account,
+    args: ['mech', 'list', '--workspace', account.workspaceId],
+    schema: MechList,
+  });
+
+  const created = first.mechs.filter((mech) => mech.name === subjectName);
+
+  assert.equal(created.length, 1, 'The interrupted creation did not leave one identifiable subject');
+
   for (const repeat of [false, true]) {
     const command = startCli({ stack, account, args });
 
@@ -98,6 +143,18 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
         .some((call) => JSON.stringify(call.body).includes(expectation));
 
       assert.equal(didExposeExpectation, false, 'A subject saw its grading expectation');
+
+      const listed = await runCli({
+        stack,
+        account,
+        args: ['mech', 'list', '--workspace', account.workspaceId],
+        schema: MechList,
+      });
+
+      assert.deepEqual(
+        listed.mechs.filter((mech) => mech.name === subjectName),
+        created,
+      );
     } finally {
       await command.stop();
     }

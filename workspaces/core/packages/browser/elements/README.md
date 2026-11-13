@@ -157,20 +157,21 @@ record and store named choices rather than catalog indexes. Identity palettes re
 
 `MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
 record summaries. `Metric` offers `statistic` and `headline` variants, a concise `detail`, and a passive `trend` slot.
-Use `isLoading` and `hasDetail` to reserve its value and qualification while the application loads data. For a
-self-contained analytical report, full charts accept `report={{ meta, summary }}` to place period metrics between a
-shared `SectionHeading` and the plot. An embedded chart can use the ordinary frame inside its containing region. Bar and
-time-series charts also accept `report={{ meta, seriesValues }}`, a map of formatted period values keyed by series
-identifier. It reuses their labels and colors as the legend. Undefined values reserve loading space. `SmallMultiples`
-aligns date axes and inspection across panels, with one date axis at the bottom; its placeholder accepts the same report
-layout without observations. The application owns periods, aggregates, coverage and read state. Keep full-width tables
-outside `PageContent` so their cell insets remain the only gutter. `ReportContent` owns the inset for its optional
-`summary` and leaves its `breakdown` full width. Pass summary content directly; omit it when a section contains only
-rows. Absent, `null` and `false` summaries reserve no empty space. `ContentTabs` uses `defaultSelectedId` for an initial
-local choice or `navigation` for application-controlled links; the two modes are mutually exclusive. `SettingsSection`
-keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. Use `isPlaceholder` on a
-decorative row without a control ID; ready rows require a real `controlId` for their label. `FormActions` owns
-submission rows and their internal spacing. The enclosing section owns the gap before and after the actions.
+Use `isLoading` and `hasDetail` to reserve its value and qualification while the application loads data.
+
+Use a chart's `report` input for a self-contained analytical report with a compact caption, period summary and plot. The
+[chart guide](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/ui-charts.md#composition) explains
+summary choices, scoped actions and matching placeholders, with links to the maintained examples. Embedded charts use
+their ordinary frame within the containing region. The application owns periods, aggregates, coverage and read state.
+
+Keep full-width tables outside `PageContent` so their cell insets remain the only gutter. `ReportContent` owns the inset
+for its optional `summary` and leaves its `breakdown` full width. Pass summary content directly; omit it when a section
+contains only rows. Absent, `null` and `false` summaries reserve no empty space. `ContentTabs` uses `defaultSelectedId`
+for an initial local choice or `navigation` for application-controlled links; the two modes are mutually exclusive.
+`SettingsSection` keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. Use
+`isPlaceholder` on a decorative row without a control ID; ready rows require a real `controlId` for their label.
+`FormActions` owns submission rows and their internal spacing. The enclosing section owns the gap before and after the
+actions.
 
 Elements 0.29 removes `ReportSection`. Move its metric summary into the explanatory chart's `report.summary` or
 `report.seriesValues`. Use ordinary `Stack` composition when content already belongs to an existing region.

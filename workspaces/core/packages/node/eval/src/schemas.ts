@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
 import { Instructions, NotificationId, NotificationText } from '@mechane/protocol';
-import { isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
+import { CreationRequestId, isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
 import { Effect, Predicate, Schema } from 'effect';
 import {
   CASES_PER_SUITE,
@@ -19,6 +19,10 @@ import {
 export const OutFolderLock = wireStruct({ fields: { processId: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)) } });
 
 export type OutFolderLock = typeof OutFolderLock.Type;
+
+export const CreationIntent = wireStruct({ fields: { requestId: CreationRequestId, notificationId: NotificationId } });
+
+export type CreationIntent = typeof CreationIntent.Type;
 
 /** The notification identity is saved before sending, so resuming does not repeat paid work. */
 export const Intent = wireStruct({ fields: { mechId: MechId, notificationId: NotificationId } });

@@ -1,6 +1,6 @@
 import { NotificationId, TurnStatus } from '@mechane/protocol';
 import type { ConsoleMessage, Turn } from '@mechane/protocol';
-import { MechId } from '@mechane/records';
+import { CreationRequestId, MechId } from '@mechane/records';
 import { Array, Effect, Option } from 'effect';
 import { PUBLICATION_INSTRUCTIONS, RoleStatus } from '../constants.ts';
 import type { Intent } from '../schemas.ts';
@@ -17,10 +17,11 @@ export const roleTurn = Effect.fn('roleTurn')(function* ({
   access,
   mech,
   text,
+  creation,
   intent,
 }: RoleTurnInput): Effect.fn.Return<TurnRecord, EvalRunFailure> {
   const { token, workspaceId } = access;
-  const { mechId, notificationId } = yield* roleIntent({ call, access, mech, intent });
+  const { mechId, notificationId } = yield* roleIntent({ call, access, mech, creation, intent });
 
   yield* call({
     name: 'sendNotification',
@@ -56,6 +57,7 @@ const roleIntent = Effect.fn('roleIntent')(function* ({
   call,
   access,
   mech,
+  creation,
   intent,
 }: RoleIntentInput): Effect.fn.Return<Intent, EvalRunFailure> {
   const saved = yield* intent.read();
@@ -72,8 +74,24 @@ const roleIntent = Effect.fn('roleIntent')(function* ({
     onSome: (text) => `${text}\n\n${PUBLICATION_INSTRUCTIONS}`,
   });
 
-  const created = yield* call({ name: 'createMech', input: { ...mech, instructions, workspaceId }, credential: token });
-  const record = { mechId: MechId.make(created.id), notificationId: NotificationId.make(crypto.randomUUID()) };
+  const savedCreation = yield* creation.read();
+
+  const request = Option.getOrElse(savedCreation, () => ({
+    requestId: CreationRequestId.make(crypto.randomUUID()),
+    notificationId: NotificationId.make(crypto.randomUUID()),
+  }));
+
+  if (Option.isNone(savedCreation)) {
+    yield* creation.create({ record: request });
+  }
+
+  const created = yield* call({
+    name: 'createMech',
+    input: { ...mech, instructions, workspaceId, requestId: request.requestId },
+    credential: token,
+  });
+
+  const record = { mechId: MechId.make(created.id), notificationId: request.notificationId };
 
   yield* intent.create({ record });
 

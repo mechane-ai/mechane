@@ -21,10 +21,11 @@ The [product contracts](../../../.contracts/index.md) apply, with
 ## Use
 
 The CLI's `eval run` calls `runEval` with its calls, its workspace and the out folder. A rerun with the same out folder
-resumes: every record a run saved stays. Each role's notification identity is saved before admission. The runner waits
-for that fresh mech's activations to stop, records their charges, and uses its latest published Console message. A quiet
-completion is `no_reply`, a stopped activation is `stopped`, and a failed activation is `run_failed`; none becomes a
-grade. Plan and report versions reject incompatible saved formats without changing those files.
+resumes: every record a run saved stays. Each role's creation request and notification identity are saved before the
+mech is created, so an uncertain creation is retried with the same identity. The runner waits for that fresh mech's
+activations to stop, records their charges, and uses its latest published Console message. A quiet completion is
+`no_reply`, a stopped activation is `stopped`, and a failed activation is `run_failed`; none becomes a grade. Plan and
+report versions reject incompatible saved formats without changing those files.
 
 ## Never
 

@@ -44,7 +44,8 @@ Grader instructions belong to that release. Invalid suites fail before sending, 
 Plan version 2 and report version 3 describe notification-driven evaluation. Older out folders are refused without being
 rewritten or deleted; the version change does not authorize another paid evaluation automatically.
 
-Persist each role's fresh mech and random `notificationId` before admission. Retry uncertain admission under that identity,
+Persist each role's creation request and random `notificationId` before creating its mech. Retry uncertain creation
+with the same request identity, then save the resulting mech before admission. Retry uncertain admission under that identity,
 never with a replacement notification. Observe all bounded activations on that fresh mech, save their `runIds`, and collect
 all corresponding trace dispatches. A role is complete only after its activation chain settles. Save its explicit public
 Console message identity and text, or the recorded quiet, failed, or stopped outcome. Native final model text is not output.
@@ -53,9 +54,8 @@ Each output file is created once, atomically. Save the subject before creating i
 or grades a saved role again. The local out-folder lock rejects a running owner and removes itself on ordinary exit.
 Trials and roles run sequentially, with no waiting queue. Each role uses a fresh mech with no inherited context or grant.
 
-The existing lifecycle has explicit gaps: takeover of a dead-process lock is not atomic between competing clients;
-mech creation precedes its saved intent; and no public archive operation removes completed role mechs. A crash can leave
-an unused mech, but cannot justify deleting another role or changing a saved result. Ctrl-C still detaches rather than
+The existing lifecycle has explicit gaps: takeover of a dead-process lock is not atomic between competing clients,
+and no public archive operation removes completed role mechs. Ctrl-C still detaches rather than
 canceling the remote activation. These limitations do not satisfy the stronger cancellation and cleanup Rules above.
 
 The plan freezes each role's cap and checks available allowance before creation. No role-wide deadline is persisted;

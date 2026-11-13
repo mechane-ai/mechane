@@ -34,10 +34,16 @@ The public types and synthetic catalog examples are beside each implementation:
 
 ## Composition
 
-Use `report` when the chart is a self-contained analytical report. Its shared heading, period summary and plot form one
+Use `report` when the chart is a self-contained analytical report. Its compact caption, period summary and plot form one
 subtle boundary. Supply mixed metrics with `report.summary`, or matching bar and time-series metrics with
 `report.seriesValues`. Keys match the supplied series identifiers. Explicit undefined values reserve loading space. The
 period summary stays steady while the inspector shows an individual observation.
+
+Supply scoped controls through `report.actions` with explicit `density="compact"`. Cartesian charts place them beside
+their built-in Chart data action. Popup options and dialog contents keep standard density. The
+[Report captions examples](../packages/browser/elements/packages/charts/src/chart-frame.stories.tsx) show local
+controls, matching loading geometry, and long labels at narrow widths. The
+[geometry guide](visual-system.md#geometry-and-alignment) owns caption and control sizing.
 
 Use the ordinary chart inside a region that already owns its grouping, such as an inspector or composed message. Every
 full chart still owns its title and value inspection. ChartFrame supplies title, summary, action and footer layout for a
