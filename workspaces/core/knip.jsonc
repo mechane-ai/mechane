@@ -83,6 +83,7 @@
     "packages/node/stack": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/testing": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/node/wrangler": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/shared/bash": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/client": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/deployment": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/shared/protocol": { "project": ["src/**/*.{ts,tsx}!"] },

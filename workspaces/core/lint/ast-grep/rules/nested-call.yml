@@ -22,6 +22,7 @@ ignores:
     '**/*.schemas.ts',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/node/guest/src/guest-listener.ts',
+    'packages/shared/bash/src/**',
   ]
 utils:
   # A function, class, or JSX element restarts the count.

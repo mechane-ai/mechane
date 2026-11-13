@@ -44,6 +44,9 @@ Does a change turn a rule off without a reason that `code-lint-strictness` lists
 
 ## Local adaptations
 
+Two `max-params` suppressions belong to the shared Bash executor declaration and its Mechane runtime callback.
+They preserve Pi's command, options, and context arguments while adding the current native tool API for durable joins.
+
 Directive forms: `// oxlint-disable-next-line rule -- reason`, which names every rule that reports its one site, as the two of `wireKeys`' type assertion do; a reason comment, or the doc comment that states the reason, on the line above `// ast-grep-ignore: rule`; `// jscpd:ignore-start -- reason` with `// jscpd:ignore-end`; `/** @public -- consumer */` for knip; a knip ignore entry with a reason comment beside it.
 Unused directives fail: oxlint through `reportUnusedDisableDirectives`, ast-grep through `--error=unused-suppression`, and knip through `treatConfigHintsAsErrors`.
 ast-grep `suppression-form` rejects a malformed directive, oxlint `unicorn/no-abusive-eslint-disable` a directive without a rule, and `typescript/ban-ts-comment` every `@ts-` directive.

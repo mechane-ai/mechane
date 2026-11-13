@@ -16,6 +16,7 @@ ignores:
     packages/worker/sandbox-service/src/**,
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/node/guest/src/guest-listener.ts',
+    'packages/shared/bash/src/**',
   ]
 utils:
   path-like:

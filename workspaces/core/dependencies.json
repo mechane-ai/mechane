@@ -459,5 +459,15 @@
     "criterion": "state",
     "consumers": ["@mechane/runtime", "@mechane/server"],
     "confines": ["pg"]
+  },
+  "@mechane-ai/bash": {
+    "owns": "The reusable Pi native Bash registration bound to a caller-owned command executor",
+    "layer": 1,
+    "lane": "shared",
+    "dialect": "plain",
+    "kind": "library",
+    "criterion": "reuse",
+    "consumers": ["@mechane/runtime"],
+    "confines": ["@earendil-works/pi-durable"]
   }
 }

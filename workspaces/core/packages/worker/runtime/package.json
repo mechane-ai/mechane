@@ -10,6 +10,7 @@
     "@earendil-works/chord": "1.5.1",
     "@earendil-works/pi-ai": "1.5.1",
     "@earendil-works/pi-durable": "1.5.1",
+    "@mechane-ai/bash": "workspace:*",
     "@mechane/control-store": "workspace:*",
     "@mechane/deployment": "workspace:*",
     "@mechane/protocol": "workspace:*",

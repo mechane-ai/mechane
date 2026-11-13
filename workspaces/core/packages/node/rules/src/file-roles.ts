@@ -10,6 +10,7 @@ const BROWSER_BUILD_CONFIGURATION = [
 export const FILE_ROLES = {
   [FileRole.Browser]: ['packages/browser/**'],
   [FileRole.NativeRuntime]: [
+    'packages/shared/bash/src/**',
     'packages/node/guest/src/guest-listener.ts',
     'packages/shared/deployment/src/worker-deployment.ts',
     'packages/node/{stack,distribution,testing,smoke}/src/**',

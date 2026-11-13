@@ -1,7 +1,7 @@
 ---
 name: durable-agent-runtime
 message: Give each mech one Pi execution owner with durable recovery, guarded tools, and metered provider attempts.
-paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**"]
+paths: ["packages/shared/bash/**", "packages/worker/runtime/**", "packages/worker/server/**", "packages/worker/control-store/**"]
 ---
 
 ## Rules
@@ -74,6 +74,12 @@ new dispatch after asynchronous preparation cannot bypass it. Look up an identic
 new-effect guard: reconciling an admitted command or publication must retain its original identity and known outcome
 when newer input arrives. Execute tool batches serially. Do not allow provider-executed effects to bypass admission.
 
+Expose Pi's native Bash registration through `@mechane-ai/bash`. Its caller supplies the working directory and
+invocation-bound executor using native `ExecutionEnv.exec` types. Keep actors, storage, authorization, machine selection,
+and receipt tasks in their application owners. Return actual process output and native errors to Pi; internal receipt
+JSON is not command stdout. Preserve known exits, timeout, cancellation, truncation evidence, and original receipts.
+Validate the built package from an independent install without sibling workspace source.
+
 Give commands stable identities derived from their durable tool identity. Reattach to recorded execution on replay;
 never rerun an arbitrary shell because the response was lost. Unknown external outcomes require receipt lookup or
 reconciliation. Nexus checks its own actions; an issued provider credential retains its explicit scope and lifetime
@@ -143,6 +149,7 @@ identity adapter against the pinned upstream public APIs. Generated dependency r
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - dependency-cruiser `single-durable-agent-owner` (124): enforced: Use Pi for agent execution, such as `Harness` in the Worker runtime
+- dependency-cruiser `shared-bash-native-surface` (124): enforced: Import native Bash tools and environment APIs in the shared binding, such as `createBashTool`; applications own Harness
 - dependency-cruiser `durable-harness-owner` (124): enforced: Construct Pi in its Worker owner, such as `Harness` in packages/worker/runtime
 
 <!-- End of the generated block. -->

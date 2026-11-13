@@ -1,7 +1,7 @@
 import type { Context } from '@earendil-works/chord/context';
 import { defineTool } from '@earendil-works/pi-durable';
 import type { TaskId, ToolExecutionApi, ToolExecutionResult, ToolRegistration, Tx } from '@earendil-works/pi-durable';
-import { createBashTool } from '@earendil-works/pi-durable/tools';
+import { createBashRegistration } from '@mechane-ai/bash';
 import { toolExecutionId as executionId } from '@mechane/records';
 import { asSchema } from 'ai';
 import type { ToolSet } from 'ai';
@@ -14,6 +14,7 @@ import { appendEvent } from '../notifications/admission.ts';
 import { isExecutionCurrent } from './admission.ts';
 import { hasBashJoin, joinBash } from './bash-task.ts';
 import type { BashExecutionTask } from './bash-task.ts';
+import { observeBash } from './bash.ts';
 import { browserModelOutput, readBrowserToolResult } from './browser/browser-result.ts';
 import { joinBrowser } from './browser/browser-task.ts';
 import type { BrowserExecutionTask } from './browser/browser-task.ts';
@@ -25,7 +26,7 @@ import { joinProcessAdmission } from './processes/process-task.ts';
 import type { ProcessAdmissionTask } from './processes/process-task.ts';
 import { processTools } from './processes/process-tools.ts';
 import { prepareRuntimeTools, runtimeTools } from './runtime-tools.ts';
-import { createSandboxEnvironment } from './sandbox-environment.ts';
+import { executeSandboxShell } from './sandbox-environment.ts';
 import type { ToolInvocation } from './types.ts';
 
 async function invocation(access: ActorAccess, api: ToolExecutionApi, context: Context): Promise<ToolInvocation> {
@@ -314,24 +315,45 @@ async function registerPiTools({
 }: RegisterPiToolsInput): Promise<PreparedPiTools> {
   const registrations: Array<ToolRegistration> = [];
 
-  const nativeBash = createBashTool();
+  const nativeBash = createBashRegistration({
+    cwd: '/home/node',
+    // oxlint-disable-next-line max-params -- Pi shell execution gains the invocation-bound native tool API.
+    execute: async (command, options, api, context) => {
+      const input = await invocation(access, api, context);
+
+      return await executeSandboxShell({
+        command,
+        options,
+        context,
+        api,
+        invocation: input,
+        execute: async (bashInvocation, bashContext) =>
+          await joinBash({ task: bashTask, invocation: bashInvocation, api }, bashContext),
+      });
+    },
+  });
 
   registrations.push({
     ...nativeBash,
     replay: 'safe',
-    execute: async (argumentsValue, api, context) =>
+    execute: async (argumentsValue: Parameters<typeof nativeBash.execute>[0], api, context) =>
       await guarded({ access, api, context, name: 'bash' }, async (input) => {
-        const environment = createSandboxEnvironment({
-          invocation: () => input,
-          execute: async (bashInvocation, bashContext) =>
-            await joinBash({ task: bashTask, invocation: bashInvocation, api }, bashContext),
-        });
+        const result = await nativeBash.execute(argumentsValue, api, context);
+        const structured = result.structuredOutput;
 
-        const argumentsDecoded = Schema.decodeUnknownSync(
-          Schema.Struct({ command: Schema.String, timeout: Schema.optionalKey(Schema.Number) }),
-        )(argumentsValue);
+        if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
+          return result;
+        }
 
-        return await nativeBash.execute(argumentsDecoded, { ...api, env: environment }, context);
+        const receipt = await observeBash({ ...input, executionId: await executionId(input) });
+
+        return {
+          ...result,
+          structuredOutput: {
+            ...structured,
+            truncated: structured['truncated'] === true || receipt.isTruncated === true,
+          },
+        };
       }),
   });
 

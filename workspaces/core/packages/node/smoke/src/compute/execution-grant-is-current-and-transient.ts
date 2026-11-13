@@ -98,11 +98,10 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   const output = Schema.decodeUnknownSync(Schema.String)(result.output);
 
   assert.equal(turn.status, TurnStatus.Completed);
-  assert.equal(result.status, 'completed');
   assert.equal(output.includes('setting=current\n'), true);
   assert.equal(output.includes('injected=yes\n'), true);
+  assert.ok(output.includes('Command exited with code 127'));
   assert.equal(output.includes(secret), false, 'The shell result exposed its injected credential');
-  assert.equal(result.exitCode, COMMAND_FAILURE_EXIT_CODE);
 
   const trace = await readTrace({ ...owner, turnId: turn.id });
   const tool = trace.toolCalls?.find((call) => call.id === toolCallId);

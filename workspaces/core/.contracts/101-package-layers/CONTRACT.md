@@ -6,7 +6,7 @@ paths: ["**/*.ts", "**/*.tsx", "**/package.json", "dependencies.json", ".depende
 
 ## Rules
 
-The runtime and build programs form one pnpm workspace of private packages under the `@mechane` scope. The native OpenTofu provider is an independent Go module under `infrastructure/provider`; HCL installation modules live under `infrastructure/modules`. These infrastructure components do not import runtime implementation packages.
+The runtime and build programs form one pnpm workspace of private `@mechane` packages and published `@mechane-ai` libraries. The native OpenTofu provider is an independent Go module under `infrastructure/provider`; HCL installation modules live under `infrastructure/modules`. These infrastructure components do not import runtime implementation packages.
 `dependencies.json` declares each member once: what it owns; its `layer`, from 0 for vocabulary through configuration, wire, platform, adapters, domain and surfaces to 7 for entries; its `lane`, `shared` for code that runs in the Worker, in Bun and in Node, `worker` for the Workers runtime, `node` for Node and Bun programs, and `browser` for the Console; its `dialect`, `data`, `plain` or `effect`; its `kind`, the template its package follows; and its `criterion`, the boundary that admits it: `state`, `closure`, `reuse` or `program`.
 `consumers`, when present, names the only members that may import it, and `confines` names the third-party packages that only it and the other members naming them may import.
 A member imports another only when that member sits in a strictly lower layer of a lane its own lane imports, `shared` from every lane, `worker` from the worker lane, `node` from the node lane, and `browser` from the browser lane, and its `consumers` allow it.

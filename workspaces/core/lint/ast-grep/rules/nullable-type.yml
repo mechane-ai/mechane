@@ -18,6 +18,7 @@ ignores:
     '**/node_modules/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/node/guest/src/guest-listener.ts',
+    'packages/shared/bash/src/**',
   ]
 utils:
   # The type arguments a generic that no Mechane module declares takes, which follow that dependency's own types: the

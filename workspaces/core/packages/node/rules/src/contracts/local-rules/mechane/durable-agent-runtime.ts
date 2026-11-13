@@ -16,9 +16,22 @@ export const durableAgentRuntime = {
     {
       ...CRUISER_DEFAULTS,
       ...ADOPTED,
+      name: 'shared-bash-native-surface',
+      comment:
+        'Import native Bash tools and environment APIs in the shared binding, such as `createBashTool`; applications own Harness',
+      from: { path: '^packages/shared/bash/' },
+      to: {
+        path: 'node_modules/@earendil-works/pi-durable/',
+        pathNot: 'node_modules/@earendil-works/pi-durable/dist/(?:env|tools)/',
+      },
+      standard: '124',
+    },
+    {
+      ...CRUISER_DEFAULTS,
+      ...ADOPTED,
       name: 'durable-harness-owner',
       comment: 'Construct Pi in its Worker owner, such as `Harness` in packages/worker/runtime',
-      from: { path: '^packages/', pathNot: '^packages/(?:worker/runtime|node/smoke|node/testing)/' },
+      from: { path: '^packages/', pathNot: '^packages/(?:worker/runtime|shared/bash|node/smoke|node/testing)/' },
       to: { path: 'node_modules/@earendil-works/pi-durable/' },
       standard: '124',
     },

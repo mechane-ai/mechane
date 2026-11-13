@@ -65,7 +65,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const disabled = await runBash({ stack, account, mechId: primary.id, command: 'printf disabled' });
 
-    assert.equal(disabled.result.status, 'refused');
+    assert.equal(disabled.receipt.status, 'refused');
     assert.equal(disabled.turn.status, TurnStatus.Completed);
     assert.deepEqual(await readSandboxMachines(stack), initialMachines, 'Zero capacity started a physical machine');
 
@@ -131,7 +131,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const refusal = await readBashResult({ model, ...refused });
 
-    assert.equal(refusal.status, 'refused', 'Concurrent mechs exceeded the workspace machine limit');
+    assert.match(refusal.output, /workspace machine limit/);
 
     const refusedTurn = await waitForTurn(refused);
 
@@ -182,15 +182,18 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     const turn = await waitForTurn(winner);
 
     assert.equal(turn.status, TurnStatus.Completed);
-    assert.equal(result.status, 'completed');
-    assert.equal(result.exitCode, 0);
 
     assert.equal(result.output, `${marker}\n`);
+
+    const trace = await readTrace({ ...winner, turnId: turn.id });
+    const tool = trace.toolCalls?.find((call) => call.id === winner.toolCallId);
+
+    assert.ok(tool?.inspection !== undefined);
 
     const executionIdentity = Schema.decodeUnknownSync(SandboxExecutionIdentity)({
       workspaceId: account.workspaceId,
       mechId: winner.mechId,
-      executionId: result.executionId,
+      executionId: tool.inspection.executionId,
     });
 
     const executionPath = sandboxExecutionPath(executionIdentity);
@@ -223,10 +226,6 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       'Recovery repeated the completed model request',
     );
 
-    const trace = await readTrace({ ...winner, turnId: turn.id });
-    const tool = trace.toolCalls?.find((call) => call.id === winner.toolCallId);
-
-    assert.ok(tool?.inspection !== undefined);
     assert.equal(Option.getOrThrow(tool.inspection.command).text, command);
 
     const inspectedResult = Option.getOrThrow(tool.inspection.result);
@@ -241,7 +240,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const persisted = await runBash({ ...winner, command: `cat '${directory}/effects'` });
 
-    assert.equal(persisted.result.status, 'completed');
+    assert.equal(persisted.receipt.status, 'completed');
     assert.equal(persisted.result.output, `${marker}\n`);
 
     const reusedMachines = await readSandboxMachines(stack);
@@ -251,12 +250,12 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const disabledWarm = await runBash({ ...winner, command: 'printf disabled-warm' });
 
-    assert.equal(disabledWarm.result.status, 'refused', 'Zero capacity dispatched through an already-warm machine');
+    assert.equal(disabledWarm.receipt.status, 'refused', 'Zero capacity dispatched through an already-warm machine');
     await setMachineLimit({ stack, account, machines: 1 });
 
     const stillFull = await runBash({ ...refused, command: 'printf over-capacity' });
 
-    assert.equal(stillFull.result.status, 'refused', 'Completing a run released its still-live machine allocation');
+    assert.equal(stillFull.receipt.status, 'refused', 'Completing a run released its still-live machine allocation');
 
     const retainedMachines = await readSandboxMachines(stack);
 
@@ -271,8 +270,8 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       command: `test ! -e '${directory}/effects' && printf 'separate\\n'`,
     });
 
-    assert.equal(separated.result.status, 'completed');
-    assert.equal(separated.result.exitCode, 0);
+    assert.equal(separated.receipt.status, 'completed');
+    assert.equal(Option.getOrThrow(separated.receipt.exitCode), 0);
     assert.equal(separated.result.output, 'separate\n');
   } catch (cause) {
     await stack.captureFailure('interruptedCommandKeepsItsReceipt:before-sandbox-cleanup').catch(() => undefined);

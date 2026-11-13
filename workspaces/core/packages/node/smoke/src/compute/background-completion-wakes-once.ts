@@ -84,7 +84,7 @@ export async function backgroundCompletionWakesOnce({ stack }: ScenarioInput): P
 
     const foreground = await runBash({ ...owner, command: `test ! -f '${directory}/finished' && printf concurrent` });
 
-    assert.equal(foreground.result.status, 'completed', foreground.result.message);
+    assert.equal(foreground.receipt.status, 'completed');
     assert.equal(foreground.result.output, 'concurrent');
     gate.release();
 

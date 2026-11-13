@@ -13,6 +13,9 @@ const VALUES = {
   chartCoordinates: ['x', 'y'],
   chartFiles: ['packages/browser/elements/packages/charts/**/*.{ts,tsx}'],
   externalNames: [
+    'createDir',
+    'listDir',
+    'openDirReader',
     'createTempDir',
     'createTempFile',
     'configHome',

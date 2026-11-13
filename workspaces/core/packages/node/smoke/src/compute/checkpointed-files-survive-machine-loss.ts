@@ -67,11 +67,11 @@ export async function checkpointedFilesSurviveMachineLoss({
   const initializationCommand = createCheckpointFilesCommand({ directory, cacheMarker });
   const saved = await runBash({ ...input, command: initializationCommand });
 
-  assert.equal(saved.result.status, 'completed');
+  assert.equal(saved.receipt.status, 'completed');
 
   const digest = saved.result.output;
 
-  assert.match(digest ?? '', /^[a-f0-9]{64}$/);
+  assert.match(digest, /^[a-f0-9]{64}$/);
 
   const saveOperationId = randomUUID();
 
@@ -142,7 +142,7 @@ export async function checkpointedFilesSurviveMachineLoss({
     const blocked = await runBash({ ...input, command: `printf forbidden > '${directory}/after-loss'` });
     const blockedReport = await readSandboxReport(input);
 
-    assert.equal(blocked.result.status, 'unavailable', 'Fresh work bypassed the lost-machine file barrier');
+    assert.equal(blocked.receipt.status, 'unavailable', 'Fresh work bypassed the lost-machine file barrier');
     assert.deepEqual(await sandbox.readMachines(), otherMachines, 'Fresh work silently allocated after machine loss');
     assert.deepEqual(blockedReport.environment.committedGeneration, savedReport.environment.committedGeneration);
 
@@ -212,7 +212,7 @@ async function restoreLastCommittedFilesAfterMachineLoss(input: FilesInput): Pro
     command: `mkdir '${unreadable}' && printf unsaved > '${unsaved}' && chmod 000 '${unreadable}'`,
   });
 
-  assert.equal(written.result.status, 'completed');
+  assert.equal(written.receipt.status, 'completed');
 
   const original = await requestStopReceipt(input);
 

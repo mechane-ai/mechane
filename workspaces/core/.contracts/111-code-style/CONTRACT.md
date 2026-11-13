@@ -103,7 +103,7 @@ The remaining rules retain their generated enforcement except for the explicit n
 ### Native SDK dialect
 
 The registry's native role covers Worker `runtime`, `server`, and `control-store`, Node `stack`, `testing`, `smoke`,
-and `distribution`, the Sandbox HTTP composition, and the canonical deployment description. These programs use ordinary asynchronous SDK interfaces rather
+and `distribution`, the Sandbox HTTP composition, the shared Bash binding, and the canonical deployment description. These programs use ordinary asynchronous SDK interfaces rather
 than the retired Effect/DO application dialect. This replaces conflicting syntax requirements in SC-01, SC-03,
 SC-08, SC-09, SC-10, and SC-11 for that role only.
 

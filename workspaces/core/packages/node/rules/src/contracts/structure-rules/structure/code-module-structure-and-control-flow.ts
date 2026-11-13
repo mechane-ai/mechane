@@ -88,6 +88,7 @@ export const codeModuleStructureAndControlFlow = {
     {
       ...OXLINT_DEFAULTS,
       name: 'max-params',
+      maxSuppressions: 2,
       value: [Severity.Error, { max: VALUES.functionParameters }],
       standard: 'ST-25',
       status: RuleStatus.Enforced,

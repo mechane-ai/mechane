@@ -188,6 +188,7 @@
 /packages/node/stack/tsconfig.json linguist-generated merge=ours
 /packages/node/testing/tsconfig.json linguist-generated merge=ours
 /packages/node/wrangler/tsconfig.json linguist-generated merge=ours
+/packages/shared/bash/tsconfig.json linguist-generated merge=ours
 /packages/shared/client/tsconfig.json linguist-generated merge=ours
 /packages/shared/deployment/tsconfig.json linguist-generated merge=ours
 /packages/shared/protocol/tsconfig.json linguist-generated merge=ours

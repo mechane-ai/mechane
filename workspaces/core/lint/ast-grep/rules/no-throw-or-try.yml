@@ -28,6 +28,7 @@ ignores:
     'packages/browser/elements/packages/content/src/code/use-highlighted-code.ts',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/node/guest/src/guest-listener.ts',
+    'packages/shared/bash/src/**',
   ]
 rule:
   any:

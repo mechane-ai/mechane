@@ -10,7 +10,7 @@ import {
   waitForTurn,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { DateTime, Schema } from 'effect';
+import { DateTime, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
@@ -64,8 +64,8 @@ export async function selfWakeSurvivesRestart({ stack }: ScenarioInput): Promise
   try {
     const scheduled = await runBash({ ...owner, command: `node -e '${commandSource}'` });
 
-    assert.equal(scheduled.result.status, 'completed');
-    assert.equal(scheduled.result.exitCode, 0);
+    assert.equal(scheduled.receipt.status, 'completed');
+    assert.equal(Option.getOrThrow(scheduled.receipt.exitCode), 0);
 
     const output = Schema.decodeUnknownSync(Schema.String)(scheduled.result.output);
     const receipts = Schema.decodeUnknownSync(Schema.fromJsonString(WakeReceipts))(output);

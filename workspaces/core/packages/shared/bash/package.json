@@ -1,0 +1,33 @@
+{
+  "name": "@mechane-ai/bash",
+  "version": "0.1.0",
+  "description": "Pi native Bash registration with an invocation-bound executor",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mechane-ai/mechane.git",
+    "directory": "workspaces/core/packages/shared/bash"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "dependencies": {
+    "@earendil-works/pi-durable": "1.5.1"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2"
+  }
+}

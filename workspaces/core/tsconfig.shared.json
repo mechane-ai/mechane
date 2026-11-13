@@ -3,6 +3,7 @@
   "compilerOptions": { "lib": ["es2024", "dom"] },
   "files": ["lint/types/shared/strict-globals.d.ts"],
   "include": [
+    "packages/shared/bash/src",
     "packages/shared/client/src",
     "packages/shared/deployment/src",
     "packages/shared/protocol/src",

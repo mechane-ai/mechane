@@ -17,13 +17,13 @@ export type ModelToolResultInput = {
   readonly timeoutMs?: number;
 };
 
-export async function readModelToolResult({
+export async function readModelToolText({
   model,
   marker,
   toolCallId,
   index = 1,
   timeoutMs = TOOL_RESULT_WAIT_MS,
-}: ModelToolResultInput): Promise<unknown> {
+}: ModelToolResultInput): Promise<string> {
   const call = await model.waitForCall({ marker, index, timeoutMs });
   const messages = Schema.decodeUnknownSync(Schema.Array(Schema.Unknown))(call.body['messages']);
 
@@ -35,14 +35,16 @@ export async function readModelToolResult({
     throw new Error('The model request has no result for its tool call');
   }
 
-  // Runtime receipts occupy one JSON line; Pi may append diagnostics after it.
-  const diagnosticStart = message.content.indexOf('\n');
+  return message.content;
+}
+
+export async function readModelToolResult(input: ModelToolResultInput): Promise<unknown> {
+  const output = await readModelToolText(input);
+  const diagnosticStart = output.indexOf('\n');
 
   if (diagnosticStart === -1) {
-    return JSON.parse(message.content);
+    return JSON.parse(output);
   }
 
-  const result = message.content.slice(0, diagnosticStart);
-
-  return JSON.parse(result);
+  return JSON.parse(output.slice(0, diagnosticStart));
 }
