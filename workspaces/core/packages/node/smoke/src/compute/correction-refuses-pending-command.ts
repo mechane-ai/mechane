@@ -26,8 +26,8 @@ const REQUEST_TIMEOUT_MS = 15_000;
 const TERMINAL_TOOL_STATES: ReadonlySet<ToolCallStatus> = new Set([ToolCallStatus.Completed, ToolCallStatus.Failed]);
 
 /** A correction must not wait for the startup deadline of a command that current admission refuses to dispatch. */
-export async function correctionRefusesPendingCommand(input: MechContext): Promise<void> {
-  const { stack, account, mechId } = input;
+export async function correctionRefusesPendingCommand({ stack, account, mechId }: MechContext): Promise<void> {
+  const input = { stack, account, mechId };
   const sandbox = stack.sandbox;
 
   assert.ok(sandbox !== undefined);
