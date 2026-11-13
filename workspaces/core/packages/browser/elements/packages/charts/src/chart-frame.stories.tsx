@@ -17,7 +17,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'A report uses a compact chart caption beneath the containing page or section heading. The report owns its subtle border and body inset. Supply local controls through report.actions with density="compact"; Cartesian charts place their Chart data action after those controls. The dialog and independent page controls keep standard density. Use an ordinary chart when an existing region owns the boundary. Keep the same title, qualifications, controls and known series in the pending report. Long titles, metadata and actions wrap without clipping.',
+          'A report uses a compact chart caption beneath the containing page or section heading. The report owns its subtle border and body inset. Supply local controls through report.actions with density="compact"; bar and time-series reports place their Chart data action after those controls. The dialog and independent page controls keep standard density. Use an ordinary chart when an existing region owns the boundary. Keep the same title, qualifications, controls and known series in the pending report. Long titles, metadata and actions wrap without clipping.',
       },
     },
   },

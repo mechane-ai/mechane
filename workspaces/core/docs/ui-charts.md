@@ -39,8 +39,8 @@ subtle boundary. Supply mixed metrics with `report.summary`, or matching bar and
 `report.seriesValues`. Keys match the supplied series identifiers. Explicit undefined values reserve loading space. The
 period summary stays steady while the inspector shows an individual observation.
 
-Supply scoped controls through `report.actions` with explicit `density="compact"`. Cartesian charts place them beside
-their built-in Chart data action. Popup options and dialog contents keep standard density. The
+Supply scoped controls through `report.actions` with explicit `density="compact"`. Bar and time-series reports place
+them beside their built-in Chart data action. Popup options and dialog contents keep standard density. The
 [Report captions examples](../packages/browser/elements/packages/charts/src/chart-frame.stories.tsx) show local
 controls, matching loading geometry, and long labels at narrow widths. The
 [geometry guide](visual-system.md#geometry-and-alignment) owns caption and control sizing.
