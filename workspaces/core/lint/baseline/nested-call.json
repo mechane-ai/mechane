@@ -88,7 +88,6 @@
   "packages/node/cli/src/failures/own-message.ts": 1,
   "packages/node/cli/src/failures/update-failure-messages.ts": 5,
   "packages/node/cli/src/invoke/invoke.ts": 3,
-  "packages/node/cli/src/main.ts": 1,
   "packages/node/cli/src/output/render-document.ts": 1,
   "packages/node/cli/src/output/render-line.ts": 1,
   "packages/node/cli/src/output/write-command-failure.ts": 1,

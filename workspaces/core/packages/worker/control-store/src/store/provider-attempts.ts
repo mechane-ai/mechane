@@ -9,6 +9,7 @@ import type {
   ProviderAttemptIdentity,
   ProviderAttemptRefusal,
   ProviderAttemptScope,
+  ProviderAttemptsScope,
   ProviderAttemptStore,
   ReleaseUnusedProviderAttempt,
   SettleProviderAttempt,
@@ -17,6 +18,9 @@ import type { StoreContext } from './context.ts';
 import { ProviderDispatchRefused, RecordNotFound, StoreConflict } from './errors.ts';
 import { StoredChecksum, StoredText, StoredTimestamp } from './row-values.ts';
 import { lockWorkspace } from './scope-locks.ts';
+
+const QUERY_MAX_ATTEMPTS = 256;
+const AttemptPresence = Schema.Struct({ id: Schema.NullOr(RecordId) });
 
 const AttemptRow = Schema.Struct({
   id: RecordId,
@@ -91,6 +95,16 @@ function providerAttempt(value: unknown): ProviderAttempt {
     settledAt: row.settled_at,
     releasedAt: row.released_at,
   };
+}
+
+function optionalProviderAttempt(value: unknown): ProviderAttempt | null {
+  const row = Schema.decodeUnknownSync(AttemptPresence)(value);
+
+  if (row.id === null) {
+    return null;
+  }
+
+  return providerAttempt(value);
 }
 
 function validateMicros(value: number): void {
@@ -292,6 +306,25 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
     },
     async getProviderAttempt(input: ProviderAttemptScope): Promise<ProviderAttempt | null> {
       return await readAttempt(context, input);
+    },
+    async getProviderAttempts(input: ProviderAttemptsScope): Promise<ReadonlyArray<ProviderAttempt | null>> {
+      const attempts: Array<ProviderAttempt | null> = [];
+
+      for (let offset = 0; offset < input.ids.length; offset += QUERY_MAX_ATTEMPTS) {
+        const ids = input.ids.slice(offset, offset + QUERY_MAX_ATTEMPTS);
+
+        const found = await context.client.query(
+          `SELECT attempt.* FROM unnest($3::uuid[]) WITH ORDINALITY AS requested(id, position)
+           LEFT JOIN mechane.provider_attempts AS attempt
+             ON attempt.id=requested.id AND attempt.workspace_id=$1 AND attempt.mech_id=$2
+           ORDER BY requested.position`,
+          [input.workspaceId, input.mechId, ids],
+        );
+
+        attempts.push(...found.rows.map(optionalProviderAttempt));
+      }
+
+      return attempts;
     },
     async markProviderAttemptDispatched(input: DispatchProviderAttempt): Promise<ProviderAttemptDispatch> {
       return await context.atomic(async (transaction) => {

@@ -9,10 +9,11 @@ const HELP_COLUMNS = { commandChars: 16, flagChars: 10, optionChars: 22, variabl
 type ReferenceCommand = CommandReference['commands'][number];
 
 type CommandLinesInput = { readonly command: ReferenceCommand };
+type HelpLinesInput = { readonly release: string };
 
 /** The lines `--help` prints, rendered from the command reference. */
-export function helpLines(): ReadonlyArray<string> {
-  const { program, release, commands, flags, variables, exitStatuses } = commandReference();
+export function helpLines({ release }: HelpLinesInput): ReadonlyArray<string> {
+  const { program, commands, flags, variables, exitStatuses } = commandReference({ release });
   const readFrom: (variable: string) => string = (variable) => `; read from ${variable} when absent`;
 
   const flagLine: (flag: CommandReference['flags'][number]) => string = ({ name, summary, variable }) =>

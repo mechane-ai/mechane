@@ -198,11 +198,12 @@ async function readDispatches(access: ActorAccess, run: Run, ids: ReadonlyArray<
 
   return await access.withControl(async (store) => {
     const dispatches: Array<SpendReservation> = [];
+    const attempts = await store.getProviderAttempts({ ...access.scope, ids });
 
-    for (const id of ids) {
-      const attempt = await store.getProviderAttempt({ ...access.scope, id });
+    for (const [index, id] of ids.entries()) {
+      const attempt = attempts[index];
 
-      if (attempt !== null) {
+      if (attempt !== null && attempt !== undefined) {
         const hasScope = attempt.workspaceId === access.scope.workspaceId && attempt.mechId === access.scope.mechId;
         const hasIdentity = attempt.id === id && attempt.activationId === run.id;
 

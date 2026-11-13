@@ -8,10 +8,10 @@ import type { ArtifactReceipt } from '../schemas.ts';
 import type { DistributionInput } from '../types.ts';
 import { verifyDistribution } from '../verify/verify-distribution.ts';
 import { buildCliAssets } from './build-cli-assets.ts';
-import { buildGuestArchive } from './build-guest-archive.ts';
 import { installationManifest } from './installation-manifest.ts';
 import { packageModule } from './package-module.ts';
 import { packageProviderSetup } from './package-provider-setup.ts';
+import { prepareGuest } from './prepare-guest.ts';
 import { readPublicSource } from './read-public-source.ts';
 import { writeReceipt } from './write-receipt.ts';
 
@@ -29,7 +29,8 @@ export const buildDistribution = Effect.fn('buildDistribution')(function* ({
     settings,
   });
 
-  const guest = yield* buildGuestArchive({ settings });
+  const prepared = yield* prepareGuest({ settings });
+  const { guest } = prepared;
   const providerSetup = yield* packageProviderSetup({ settings });
   const manifest = yield* installationManifest({ commit, isPreview: false, guest });
   const moduleAssets = yield* packageModule({ settings, manifest, providerSetup });
@@ -44,7 +45,7 @@ export const buildDistribution = Effect.fn('buildDistribution')(function* ({
   }
 
   const guestAsset = { name: guest.name, sha256: guest.sha256, bytes: guest.bytes };
-  const assets = [guestAsset, ...moduleAssets, ...cliAssets, providerSetup];
+  const assets = [guestAsset, prepared.provenance, ...moduleAssets, ...cliAssets, providerSetup];
 
   yield* writeReceipt({ folder: settings.folder, commit, assets });
 

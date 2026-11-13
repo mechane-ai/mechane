@@ -21,11 +21,11 @@ const MISMATCH_REASONS: Readonly<MismatchReasons> = {
 
 /** The report of each way an update fails beside its requests, under its tag; each leaves the binary as it was. */
 export const UPDATE_FAILURE_MESSAGES: Readonly<FailureMessages<UpdateFailure>> = {
-  ReleaseStampMissing: ({ _tag, release, installScriptUrl }) =>
+  ReleaseStampMissing: ({ _tag, identity, installScriptUrl }) =>
     ownMessage({
       code: _tag,
       status: ExitStatus.Failed,
-      message: `this ${PROGRAM} ${release} is no release's binary, such as a run from source`,
+      message: `this ${PROGRAM} ${identity} is no release's binary, such as a run from source`,
       next: Option.some(`install a release with curl -fsSL ${installScriptUrl.href} | sh`),
     }),
   TargetUnpublished: ({ _tag, release, target }) =>

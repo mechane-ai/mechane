@@ -16,10 +16,11 @@ export const runUpdate = Effect.fn('runUpdate')(function* ({
   input,
   program,
 }: RunInput<'update'>): Effect.fn.Return<CommandResult<'update'>, RunFailure> {
-  const { release, binary, userAgent } = program;
+  const { identity, release, binary, userAgent } = program;
 
   const result = yield* updateRelease({
     origin,
+    identity,
     release,
     binary,
     userAgent,

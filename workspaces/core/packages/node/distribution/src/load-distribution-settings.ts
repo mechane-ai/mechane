@@ -34,12 +34,16 @@ const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
   DistributionMode.Candidate,
 ]);
 
+const REUSE_MODES: ReadonlySet<DistributionMode> = new Set([DistributionMode.Build, DistributionMode.Candidate]);
+
 /** Reads the distribution command and its allowed child-process environment once. */
 export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(function* (): Effect.fn.Return<
   DistributionSettings,
   DistributionFailed
 > {
-  const [modeText, destination, argument, ...extra] = process.argv.slice(PROGRAM_ARGUMENTS_START);
+  const [modeText, destination, argument, previousFolder, previousDigest, ...extra] =
+    process.argv.slice(PROGRAM_ARGUMENTS_START);
+
   const modeSchema = Schema.Enum(DistributionMode);
 
   const mode = yield* Schema.decodeUnknownEffect(modeSchema)(modeText).pipe(
@@ -58,7 +62,11 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
   const needsArgument = ARGUMENT_MODES.has(mode);
   const permitsDefaultFolder = DEFAULT_FOLDER_MODES.has(mode);
   const isMissingRequiredFolder = !permitsDefaultFolder && isMissingFolder;
-  const hasWrongArguments = extra.length > 0 || needsArgument !== (argument !== undefined);
+
+  const isReuse = REUSE_MODES.has(mode) && argument === '--reuse-guest';
+
+  const hasExtraArguments = previousFolder !== undefined || previousDigest !== undefined || extra.length > 0;
+  const hasWrongArguments = !isReuse && (hasExtraArguments || needsArgument !== (argument !== undefined));
 
   if (isMissingRequiredFolder || hasWrongArguments) {
     return yield* new DistributionFailed({
@@ -80,6 +88,37 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
 
   const entries = INHERITED_NAMES.flatMap(variableEntries);
 
+  if (isReuse) {
+    if (destination === undefined || previousFolder === undefined || previousDigest === undefined) {
+      return yield* new DistributionFailed({
+        step: DistributionStep.Settings,
+        reason: 'select a previous qualified guest folder and SHA-256',
+      });
+    }
+
+    if (extra.length > 0) {
+      return yield* new DistributionFailed({
+        step: DistributionStep.Settings,
+        reason: 'guest reuse accepts one folder and qualification digest',
+      });
+    }
+
+    if (!SHA256_PATTERN.test(previousDigest)) {
+      return yield* new DistributionFailed({
+        step: DistributionStep.Settings,
+        reason: 'select an exact qualification SHA-256',
+      });
+    }
+
+    return {
+      mode,
+      folder: resolve(folder),
+      inherited: Record.fromEntries(entries),
+      nodeExecutable: process.execPath,
+      reuseGuest: Option.some({ folder: resolve(previousFolder), qualificationSha256: previousDigest }),
+    };
+  }
+
   if (needsArgument && !SHA256_PATTERN.test(argument ?? '')) {
     return yield* new DistributionFailed({ step: DistributionStep.Settings, reason: 'select an exact SHA-256 digest' });
   }
@@ -90,5 +129,6 @@ export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(fu
     inherited: Record.fromEntries(entries),
     nodeExecutable: process.execPath,
     argument,
+    reuseGuest: Option.none(),
   };
 });

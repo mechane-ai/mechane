@@ -169,7 +169,7 @@
     "dialect": "plain",
     "kind": "library-program",
     "criterion": "closure",
-    "consumers": ["@mechane/testing", "@mechane/smoke"]
+    "consumers": ["@mechane/testing", "@mechane/smoke", "@mechane/distribution"]
   },
   "@mechane/testing": {
     "owns": "HTTP, native UI-stream, CLI, and fixture drivers for the consequential smoke flows",

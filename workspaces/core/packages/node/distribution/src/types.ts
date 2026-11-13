@@ -1,6 +1,9 @@
+import type { Option } from 'effect';
 import type { DistributionMode } from './constants.ts';
 import type { ArtifactQualification } from './qualification.ts';
 import type { Artifact, ArtifactReceipt } from './schemas.ts';
+
+export type GuestReuseSelection = { readonly folder: string; readonly qualificationSha256: string };
 
 /** The chosen output folder and the environment allowed into build tools. */
 export type DistributionSettings = {
@@ -9,6 +12,7 @@ export type DistributionSettings = {
   readonly inherited: Readonly<Record<string, string>>;
   readonly nodeExecutable: string;
   readonly argument?: string | undefined;
+  readonly reuseGuest: Option.Option<GuestReuseSelection>;
 };
 
 /** Settings shared by the distribution command implementations. */

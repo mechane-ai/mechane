@@ -1,4 +1,3 @@
-import { RELEASE } from '@mechane/protocol';
 import { Option, Record, SchemaAST } from 'effect';
 import { COMMANDS } from './commands.ts';
 import { ErrorCode, ExitStatus, PROGRAM } from './constants.ts';
@@ -14,12 +13,13 @@ type ReferenceCommand = CommandReference['commands'][number];
 type ReferenceCommandFlag = ReferenceCommand['flags'][number];
 
 type RequiredFieldsInput = { readonly input: CommandDeclaration['input'] };
+type CommandReferenceInput = { readonly release: string };
 
 /** The version of the command reference document; a consumer reads it before any other field. */
 const REFERENCE_SCHEMA_VERSION = 4;
 
 /** The reference of every command, flag, variable, exit status and error code the model declares, in declared order. */
-export function commandReference(): CommandReference {
+export function commandReference({ release }: CommandReferenceInput): CommandReference {
   const referenceCommand: (entry: readonly [string, CommandDeclaration]) => ReferenceCommand = ([name, command]) => {
     const required = requiredFields({ input: command.input });
 
@@ -44,7 +44,7 @@ export function commandReference(): CommandReference {
   return {
     schemaVersion: REFERENCE_SCHEMA_VERSION,
     program: PROGRAM,
-    release: RELEASE,
+    release,
     flags: Record.toEntries(GLOBAL_FLAGS).map(([name, flag]) => ({ name, ...flag })),
     commands: Record.toEntries(COMMANDS).map(referenceCommand),
     variables: Record.toEntries(VARIABLES).map(([name, variable]) => ({ name, ...variable })),

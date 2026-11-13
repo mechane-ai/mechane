@@ -14,13 +14,19 @@ export function programSettings({ stamp, executablePath }: ProgramSettingsInput)
   const decoded = Schema.decodeUnknownSync(Schema.OptionFromUndefinedOr(ReleaseStamp))(stamp);
 
   if (Option.isNone(decoded)) {
-    return { release: RELEASE, binary: Option.none(), userAgent: `${PROGRAM}/${RELEASE} (source)` };
+    return {
+      identity: RELEASE,
+      release: Option.some(RELEASE),
+      binary: Option.none(),
+      userAgent: `${PROGRAM}/${RELEASE} (source)`,
+    };
   }
 
   const { release, target } = decoded.value;
 
   return {
-    release,
+    identity: release,
+    release: Option.some(release),
     binary: Option.some({ target, path: executablePath }),
     userAgent: `${PROGRAM}/${release} (${target})`,
   };

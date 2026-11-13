@@ -164,7 +164,7 @@ run = '''
 set -e
 notices=$(cat ../../../licenses/apache-2.0.js ../../../licenses/effect.js)
 bun build src/main.ts --target=node --outfile image/guest.mjs --banner "$notices"
-bun build ../cli/src/main.ts --target=node --outfile image/mechane.mjs --banner "$notices"
+bun build ../cli/src/guest/main.ts --target=node --outfile image/mechane.mjs --banner "$notices"
 '''
 
 [tasks."build:cli"]

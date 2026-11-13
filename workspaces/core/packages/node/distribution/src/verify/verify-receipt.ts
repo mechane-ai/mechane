@@ -5,6 +5,7 @@ import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
 import { fileDigest } from '../files/file-digest.ts';
+import { GUEST_INPUTS_NAME } from '../guest-provenance.ts';
 import type { Artifact, ArtifactReceipt } from '../schemas.ts';
 import type { DistributionSettings } from '../types.ts';
 
@@ -21,7 +22,7 @@ export const verifyReceipt = Effect.fn('verifyReceipt')(function* ({
   const moduleName = assetName({ kind: 'cloudflare' });
   const guestName = assetName({ kind: 'guest' });
   const providerSetup = assetName({ kind: 'setup-provider' });
-  const metadata = ['installation.json', 'release.json', ReleaseAsset.Manifest, 'SHA256SUMS'];
+  const metadata = ['installation.json', 'release.json', GUEST_INPUTS_NAME, ReleaseAsset.Manifest, 'SHA256SUMS'];
   const expected = [...binaries, moduleName, guestName, providerSetup, ...metadata];
   const names = receipt.assets.map((asset) => asset.name);
   const uniqueNames = new Set(names);

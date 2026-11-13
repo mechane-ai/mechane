@@ -714,6 +714,9 @@ importers:
       '@mechane/release':
         specifier: workspace:*
         version: link:../release
+      '@mechane/stack':
+        specifier: workspace:*
+        version: link:../stack
       '@mechane/wrangler':
         specifier: workspace:*
         version: link:../wrangler

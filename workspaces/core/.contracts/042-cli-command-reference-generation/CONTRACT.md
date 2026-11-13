@@ -11,7 +11,8 @@ Build the executable's argument parser from that model.
 Generate the published command reference from the same model.
 Do not maintain a second command catalogue, such as a hand-written reference page or a separate list of commands, options, or defaults.
 Declare the defaults the program applies, such as the default server address, in the model rather than in runtime code.
-Take the version the program reports and the version recorded in the reference from one declaration.
+Take the host CLI release and the version recorded in its reference from one declaration. A guest CLI reports the
+SHA-256 of its own installed bundle instead of claiming a Worker release.
 
 Keep network clients, credential storage, update checks, filesystem reads, and command execution out of the command model.
 Resolve the content a parsed argument points to, such as a file or standard input, in runtime code after parsing.
@@ -39,7 +40,7 @@ The generator `packages/node/cli/scripts/reference/main.ts` imports only the mod
 `mise -C workspaces/core run reference` writes the reference, and `mise -C workspaces/core run reference:check` fails when the committed copy differs from the model's output.
 The product's `fix` task runs `reference` after normalizers and autofixes and before formatting.
 Its `release` comes from `RELEASE` in `@mechane/protocol`.
-A release's binary reports the release its stamp holds, and `release:cli` stamps `RELEASE`, so the binary, `--help` and the reference agree; only the smoke stamps two test releases of its own.
+A release's host binary reports the release its stamp holds, and `release:cli` stamps `RELEASE`, so the binary, `--help` and the reference agree; only the smoke stamps two test releases of its own. The guest entry reports its own bundle hash in version, help and user agent, without treating environment metadata as authority.
 `update` calls no catalog operation. The `--version` flag declares the command word `version`, which the reference publishes as the flag's `command`: it reads no deployment, so the settings carry it out beside the flag rather than as a command that calls an origin.
 The model is to name each command's output schema, which the output module encodes once, so a run returns its result unencoded: ast-grep `encode-in-runs` ratchets an encode in `packages/node/cli/src/runs` and in the eval runner, `packages/node/eval/src`, until the declarations name it.
 `eval run` declares every operation its trials call, and the reference lists the exit status `Interrupted`, 130, which it ends with on Ctrl-C.

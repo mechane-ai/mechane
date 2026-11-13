@@ -39,7 +39,7 @@ export class ReleaseMisreported extends Schema.TaggedError<ReleaseMisreported>()
 
 /** The program is no release's binary, such as a run from source, so no release replaces it. */
 export class ReleaseStampMissing extends Schema.TaggedError<ReleaseStampMissing>()('ReleaseStampMissing', {
-  release: Release,
+  identity: Schema.String,
   installScriptUrl: Schema.URL,
 }) {}
 

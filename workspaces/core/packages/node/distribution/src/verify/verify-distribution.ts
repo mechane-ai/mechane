@@ -7,6 +7,7 @@ import { ArtifactReceipt, InstallationManifest } from '../schemas.ts';
 import type { DistributionInput } from '../types.ts';
 import { verifyCliAssets } from './verify-cli-assets.ts';
 import { verifyGuestAsset } from './verify-guest-asset.ts';
+import { verifyGuestProvenance } from './verify-guest-provenance.ts';
 import { verifyModule } from './verify-module.ts';
 import { verifyReceipt } from './verify-receipt.ts';
 import { verifyRuntimeRelease } from './verify-runtime-release.ts';
@@ -31,6 +32,7 @@ export const verifyDistribution = Effect.fn('verifyDistribution')(function* ({
   }
 
   yield* verifyGuestAsset({ settings, manifest, receipt });
+  yield* verifyGuestProvenance({ settings, manifest });
   yield* verifyModule({ settings, manifest });
   yield* verifyCliAssets({ settings, receipt });
   yield* verifyRuntimeRelease({ settings, receipt, manifest });

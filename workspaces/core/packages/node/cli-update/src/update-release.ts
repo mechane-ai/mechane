@@ -12,7 +12,8 @@ import { installRelease } from './install-release.ts';
 /** The running program, the deployment whose latest release replaces it, and whether only a report is asked for. */
 type UpdateReleaseInput = {
   readonly origin: URL;
-  readonly release: Release;
+  readonly identity: string;
+  readonly release: Option.Option<Release>;
   /** None for a program no release compiled, such as a run from source. */
   readonly binary: Option.Option<ReleasedBinary>;
   readonly userAgent: string;
@@ -26,22 +27,23 @@ type UpdateReleaseInput = {
  */
 export const updateRelease = Effect.fn('updateRelease')(function* ({
   origin,
+  identity,
   release,
   binary,
   userAgent,
   timeout,
   isCheckOnly,
 }: UpdateReleaseInput): Effect.fn.Return<UpdateResult, UpdateFailure | ClientFailure> {
-  if (Option.isNone(binary)) {
+  if (Option.isNone(binary) || Option.isNone(release)) {
     const installerUrl = installScriptUrl({ origin });
 
-    return yield* new ReleaseStampMissing({ release, installScriptUrl: installerUrl });
+    return yield* new ReleaseStampMissing({ identity, installScriptUrl: installerUrl });
   }
 
   const latest = yield* latestRelease({ origin, timeout, userAgent });
-  const found = { from: release, to: latest.release, binary: binary.value.path };
+  const found = { from: release.value, to: latest.release, binary: binary.value.path };
 
-  if (latest.release === release) {
+  if (latest.release === release.value) {
     return { ...found, outcome: UpdateOutcome.UpToDate };
   }
 

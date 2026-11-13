@@ -1,5 +1,11 @@
 export type ProviderAttemptScope = { readonly id: string; readonly workspaceId: string; readonly mechId: string };
 
+export type ProviderAttemptsScope = {
+  readonly ids: ReadonlyArray<string>;
+  readonly workspaceId: string;
+  readonly mechId: string;
+};
+
 export type ProviderAttemptIdentity = ProviderAttemptScope & {
   readonly activationId: string;
   readonly generationTaskId?: string;
@@ -56,6 +62,7 @@ export type SettleProviderAttempt = DispatchProviderAttempt & {
 export type ProviderAttemptStore = {
   readonly reserveProviderAttempt: (input: ProviderAttemptIdentity) => Promise<ProviderAttemptDecision>;
   readonly getProviderAttempt: (input: ProviderAttemptScope) => Promise<ProviderAttempt | null>;
+  readonly getProviderAttempts: (input: ProviderAttemptsScope) => Promise<ReadonlyArray<ProviderAttempt | null>>;
   readonly markProviderAttemptDispatched: (input: DispatchProviderAttempt) => Promise<ProviderAttemptDispatch>;
   readonly releaseUnusedProviderAttempt: (input: ReleaseUnusedProviderAttempt) => Promise<ProviderAttempt>;
   readonly settleProviderAttempt: (input: SettleProviderAttempt) => Promise<ProviderAttempt>;

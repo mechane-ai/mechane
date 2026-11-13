@@ -9,7 +9,8 @@ paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,env
 Keep the generic developer image in `node/guest/image`. Pin downloaded tools and verify architecture-specific checksums
 before installing them. Use repository-owned setup for revision-specific dependencies. Company endpoints and agent
 instructions belong to installation configuration, never the generic image or runtime.
-Build the installed Mechane CLI from the same source as a portable Node artifact in that image.
+Build the installed Mechane CLI from the same source as a portable Node artifact in that image, or reuse a previously
+qualified image whose recorded guest inputs match those generated from the current source under contract 112.
 
 Keep useful source, Git metadata, notes, and progress records in the committed home. Memory and work organization are
 ordinary agent-managed files, not another runtime task or memory service. Keep internal model-context checkpoints in

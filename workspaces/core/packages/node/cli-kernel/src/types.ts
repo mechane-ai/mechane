@@ -78,14 +78,14 @@ export type UsageProblem = UsageInvalid['problem'];
 export type FailureReport = { readonly status: ExitStatus; readonly record: ErrorRecord; readonly diagnostic: string };
 
 /**
- * The program the runtime runs: its release, the binary a release compiled, and the `user-agent` its requests send. It
- * has no binary when it runs from source or as a binary no release stamped, such as `mise run build:cli` compiles.
+ * The running program's identity, optional release and released binary, and request user agent. A guest identifies its
+ * own bundle by digest; source and unstamped builds have no released binary.
  */
 export type ProgramSettings = {
-  readonly release: Release;
+  readonly identity: string;
+  readonly release: Option.Option<Release>;
   /** Absent when no release stamped the program. */
   readonly binary: Option.Option<ReleasedBinary>;
-  /** Its release and its binary's target, such as `mechane/0.1.0 (linux-x64)`, or `source` for an unstamped one. */
   readonly userAgent: string;
 };
 

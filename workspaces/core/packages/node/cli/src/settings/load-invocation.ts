@@ -14,7 +14,6 @@ import {
 import type { OutputMode } from '@mechane/commands';
 import { ORIGIN_VARIABLE } from '@mechane/deployment';
 import { SELF_TOKEN_VARIABLE } from '@mechane/protocol';
-import type { Release } from '@mechane/protocol';
 import { renamedWireStruct } from '@mechane/records';
 import { Effect, Option, Record, Schema } from 'effect';
 import { homedir } from 'node:os';
@@ -28,7 +27,7 @@ import { decodeSelfCredentials } from './decode-self-credentials.ts';
 import { decodeWorkspace } from './decode-workspace.ts';
 import { defaultOutput } from './default-output.ts';
 import { parseOptions } from './parse-options.ts';
-import { programSettings } from './program-settings.ts';
+import type { ProgramFactory } from './program-factory.ts';
 
 declare global {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- only an interface merges into ImportMeta
@@ -39,13 +38,14 @@ declare global {
 }
 
 /** A request for the commands, flags and variables, by `--help`. */
-type HelpInvocation = { readonly kind: typeof InvocationKind.Help };
+type HelpInvocation = { readonly kind: typeof InvocationKind.Help; readonly identity: string };
 
 /** A request for the release the program reports, by `--version` or the version command. */
-type VersionInvocation = { readonly kind: typeof InvocationKind.Version; readonly release: Release };
+type VersionInvocation = { readonly kind: typeof InvocationKind.Version; readonly identity: string };
 
 /** What one command line asks the program to do. */
 type Invocation = HelpInvocation | VersionInvocation | CommandInvocation;
+type LoadInvocationInput = { readonly selectProgram: ProgramFactory };
 
 /** The file descriptor of standard output, whose kind decides the default output mode. */
 const STDOUT_DESCRIPTOR = 1;
@@ -88,7 +88,9 @@ type CommandInvocationInput = {
  * Reads the command line and the environment once; it is the only code that reads either. The output mode decodes
  * first, as a document command's, so a later usage error is written in it, and again for the selected command's shape.
  */
-export const loadInvocation = Effect.fn('loadInvocation')(function* (): Effect.fn.Return<Invocation, UsageInvalid> {
+export const loadInvocation = Effect.fn('loadInvocation')(function* ({
+  selectProgram,
+}: LoadInvocationInput): Effect.fn.Return<Invocation, UsageInvalid> {
   const isTerminal = isatty(STDOUT_DESCRIPTOR);
   const fallback = defaultOutput({ isTerminal, shape: CommandShape.Document });
   const usage: (problem: UsageProblem) => UsageInvalid = (problem) => new UsageInvalid({ problem, output: fallback });
@@ -111,14 +113,14 @@ export const loadInvocation = Effect.fn('loadInvocation')(function* (): Effect.f
 
   const outputText = Option.orElse(flags.output, () => Option.fromNullishOr(process.env[OUTPUT_VARIABLE]));
   const usageOutput = yield* decodeOutput({ text: outputText, isTerminal, shape: CommandShape.Document });
-  const program = programSettings({ stamp: import.meta.mechaneStamp, executablePath: process.execPath });
+  const program = selectProgram({ executablePath: process.execPath });
 
   if (flags.isHelpRequested) {
-    return { kind: InvocationKind.Help };
+    return { kind: InvocationKind.Help, identity: program.identity };
   }
 
   if (flags.isVersionRequested || positionals.join(' ') === VERSION_COMMAND) {
-    return { kind: InvocationKind.Version, release: program.release };
+    return { kind: InvocationKind.Version, identity: program.identity };
   }
 
   return yield* commandInvocation({ positionals, values, flags, outputText, isTerminal, usageOutput, program });

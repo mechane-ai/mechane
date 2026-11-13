@@ -6,7 +6,9 @@ paths: ["infrastructure/**", "packages/shared/deployment/**", "packages/node/dis
 
 ## Rules
 
-Build the Worker, Console assets, guest image, CLI, and controlled database commands from one declared source revision.
+Build the Worker, Console assets, CLI, and controlled database commands from one declared source revision. Build the
+guest from that source, or reuse an explicitly selected previously qualified guest archive only when the current generated
+guest bundles, image recipe, installer, wrapper, licenses, modes, and platform match its recorded inputs.
 Publish immutable artifacts with checksums and an explicit installation manifest. Operators consume those bytes;
 deployment cannot rebuild product code or execute a checkout through an infrastructure provisioner.
 Declare compatible provider version ranges in reusable modules. Pin exact reviewed provider releases in installation
@@ -21,6 +23,9 @@ execute them even when the build uses a private umask.
 Build a candidate once, qualify its exact bytes and declared inputs, then promote those same bytes. Qualification
 records identify their source, artifacts, configuration, guarantees, and retained evidence. A check-log hash alone is
 not qualification. Verify every referenced digest before deployment. Do not treat a development preview as a release.
+Bind guest inputs and image digests into the candidate receipt. Reuse verifies the selected prior qualification and its
+evidence, copies that exact archive, and records the prior qualification identity. A missing or mismatched proof fails
+the build; it never silently selects an image or treats guest environment metadata as compatibility authority.
 Use the canonical acceptance command to generate those reports from static checks and the complete retained artifact
 catalog; do not duplicate that catalog in source mode or assemble qualification evidence by hand.
 

@@ -1,11 +1,17 @@
 # Mechane distribution
 
-Builds immutable Worker, Console, guest, database-tool, and CLI artifacts from one clean public source revision.
+Builds immutable Worker, Console, guest, database-tool, and CLI artifacts for one clean public source revision.
 Operators install the compiled bytes without rebuilding source. This is a Node program at layer 7.
 
 Run `mise -C workspaces/core run distribution:candidate -- OUTPUT` from the reviewed public checkout before its release
 tag. The builder needs Docker Buildx with an OCI exporter, tar, ZIP, and the pinned tools. Output goes to
 `dist/distribution/vVERSION`; an existing directory is never overwritten.
+
+To reuse a guest from a prior qualified candidate, pass `--reuse-guest PRIOR_FOLDER QUALIFICATION_SHA256` after
+`OUTPUT`. The builder verifies that qualification and its evidence, checks the generated build context and platform
+against the prior record, and copies the exact qualified archive. A mismatch fails the build. Reuse does not refresh or
+check upstream packages fetched by the Dockerfile; build a fresh guest when those should be updated. The candidate still
+runs its full artifact acceptance against the image.
 
 The release contains:
 
@@ -15,6 +21,8 @@ The release contains:
 - `release.json`: the archive and installation-manifest digests, source revision, pinned Node version for database
   commands, and their explicit arguments and environment names.
 - The Linux amd64 guest OCI archive, CLI binaries and manifest, and the versioned provider setup helper.
+- `guest-inputs.json`: the generated guest inputs and the guest archive and image digests, with the prior qualification
+  identity when the archive was reused.
 
 `mise -C workspaces/core run distribution:verify -- OUTPUT` checks the complete receipt, archive inventory, raw binary
 bytes, and compiler provenance. The installation manifest distinguishes the guest archive checksum from its OCI image
