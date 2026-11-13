@@ -166,7 +166,7 @@ function AreaShell(): ReactNode {
       }
       railFooter={
         <NavigationRailMenu
-          label="Account menu"
+          label="Account menu, PO"
           icon={<Avatar label="Preview Operator" fallback="PO" size="sm" shape="circle" />}
         >
           <Menu.Group>
