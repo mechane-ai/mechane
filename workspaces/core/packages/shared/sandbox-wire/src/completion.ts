@@ -36,7 +36,6 @@ export const SandboxCompletion = Schema.Struct({ ...SandboxOwner.fields, ...Sand
 export type SandboxCompletion = typeof SandboxCompletion.Type;
 
 export const SandboxCompletionAccepted = Schema.Struct({ accepted: Schema.Literal(true) });
-export const SandboxPendingCompletions = Schema.Struct({ receipts: Schema.Array(SandboxCompletionReceipt) });
 
 export const SandboxCompletionIdentity = Schema.Struct({ ...SandboxOwner.fields, executionId: ExecutionId });
 

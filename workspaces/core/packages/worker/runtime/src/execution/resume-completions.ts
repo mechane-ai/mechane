@@ -4,7 +4,6 @@ import {
   SandboxCompletionAccepted,
   SandboxCompletionReceipt,
   SandboxOwner,
-  SandboxPendingCompletions,
   sandboxPendingCompletionsPath,
 } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
@@ -14,6 +13,8 @@ import { acceptCompletion } from './completion.ts';
 
 const RESUME_COMPLETIONS_TIMEOUT_MS = 15_000;
 const RESUME_COMPLETIONS_MAX_BYTES = 32_768;
+const CompletionReceipts = Schema.Array(SandboxCompletionReceipt);
+const SandboxPendingCompletions = Schema.Struct({ receipts: CompletionReceipts });
 
 export async function reconcileResumeCompletions(access: ActorAccess): Promise<boolean> {
   const owner = Schema.decodeUnknownSync(SandboxOwner)(access.scope);
