@@ -65,6 +65,7 @@ export type WorkerDeployment = {
 export const APPLICATION_WORKER_MIGRATIONS: ReadonlyArray<WorkerMigration> = [
   { tag: 'v1', new_sqlite_classes: ['SandboxObject'] },
   { tag: 'v2', new_sqlite_classes: ['MechObject'] },
+  { tag: 'v3', new_sqlite_classes: ['MachineObject'] },
 ];
 
 /** Preserves the environment namespace when the application joins an existing installation. */
@@ -78,7 +79,11 @@ export function applicationWorkerDeployment(input: ApplicationWorkerDeploymentIn
   if (sandbox !== undefined) {
     embedded = sandboxResources(sandbox);
     migrations = APPLICATION_WORKER_MIGRATIONS;
-    environmentBindings = [{ name: 'SANDBOXES', class_name: 'SandboxObject' }];
+
+    environmentBindings = [
+      { name: 'SANDBOXES', class_name: 'SandboxObject' },
+      { name: 'MACHINES', class_name: 'MachineObject' },
+    ];
   }
 
   let assets: Pick<WorkerDeployment, 'assets'> = {};
@@ -110,8 +115,16 @@ export function sandboxWorkerDeployment(input: SandboxWorkerDeploymentInput): Wo
   return {
     ...baseWorkerDeployment(input),
     ...sandboxResources(input),
-    durable_objects: { bindings: [{ name: 'SANDBOXES', class_name: 'SandboxObject' }] },
-    migrations: [{ tag: 'v1', new_sqlite_classes: ['SandboxObject'] }],
+    durable_objects: {
+      bindings: [
+        { name: 'SANDBOXES', class_name: 'SandboxObject' },
+        { name: 'MACHINES', class_name: 'MachineObject' },
+      ],
+    },
+    migrations: [
+      { tag: 'v1', new_sqlite_classes: ['SandboxObject'] },
+      { tag: 'v2', new_sqlite_classes: ['MachineObject'] },
+    ],
   };
 }
 
@@ -132,7 +145,7 @@ function sandboxResources(input: SandboxWorkerResources): Pick<WorkerDeployment,
     r2_buckets: [{ binding: 'WORKSPACE_FILES', bucket_name: input.bucketName }],
     containers: [
       {
-        class_name: 'SandboxObject',
+        class_name: 'MachineObject',
         image: input.image,
         instance_type: input.instanceType ?? 'standard-1',
         max_instances: input.maximumInstances ?? DEFAULT_MAXIMUM_INSTANCES,

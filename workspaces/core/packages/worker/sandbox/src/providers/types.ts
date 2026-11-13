@@ -14,6 +14,8 @@ export type ContainerProviderInput = {
   readonly additionalTools: SandboxTools;
   readonly isBrowserSandboxDisabled: boolean;
   readonly trustedCertificatesPem: Option.Option<string>;
+  readonly nativeImage: Option.Option<string>;
+  readonly instance: NonNullable<ContainerStartupOptions['instance']>;
 };
 
 type GatewayModule = { readonly EgressGateway: typeof EgressGateway };

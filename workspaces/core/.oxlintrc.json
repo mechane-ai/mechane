@@ -807,7 +807,8 @@
         "packages/node/{stack,distribution,testing,smoke}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
         "packages/worker/{runtime,server,control-store}/src/**",
-        "packages/worker/sandbox/src/service/**"
+        "packages/worker/sandbox/src/service/**",
+        "packages/worker/sandbox/src/providers/machine-object.ts"
       ],
       "excludeFiles": [],
       "rules": {
@@ -863,6 +864,7 @@
         "packages/node/stack/src/dev/settings.ts",
         "packages/node/testing/src/cli/start-cli.ts",
         "packages/worker/sandbox/src/service/settings.ts",
+        "packages/worker/sandbox/src/service/machine-settings.ts",
         "packages/worker/sandbox/src/providers/sandbox-settings.ts",
         "packages/node/guest/src/load-guest-settings.ts",
         "packages/node/release/src/load-release-settings.ts",
@@ -1309,7 +1311,8 @@
         "packages/node/{stack,distribution,testing,smoke}/src/**",
         "packages/node/program/src/{start-process,finished-process,types}.ts",
         "packages/worker/{runtime,server,control-store}/src/**",
-        "packages/worker/sandbox/src/service/**"
+        "packages/worker/sandbox/src/service/**",
+        "packages/worker/sandbox/src/providers/machine-object.ts"
       ],
       "excludeFiles": [
         "packages/node/stack/src/run-stack-program.ts",
@@ -1331,7 +1334,8 @@
         "packages/worker/runtime/src/operations/notifications.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
-        "packages/worker/sandbox/src/service/settings.ts"
+        "packages/worker/sandbox/src/service/settings.ts",
+        "packages/worker/sandbox/src/service/machine-settings.ts"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -2797,6 +2801,7 @@
         "packages/node/stack/src/dev/settings.ts",
         "packages/node/testing/src/cli/start-cli.ts",
         "packages/worker/sandbox/src/service/settings.ts",
+        "packages/worker/sandbox/src/service/machine-settings.ts",
         "packages/node/distribution/src/load-distribution-settings.ts"
       ],
       "excludeFiles": [],

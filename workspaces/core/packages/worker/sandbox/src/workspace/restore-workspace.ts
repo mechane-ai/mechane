@@ -1,6 +1,7 @@
 import { Option } from 'effect';
 import type { DateTime } from 'effect';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
+import { CachedRestoreResult, restoreCachedWorkspace } from './restore-cached-workspace.ts';
 import { restoreSnapshot } from './snapshots/restore-snapshot.ts';
 
 type RestoreWorkspaceInput = WorkspaceProviderStepInput & {
@@ -25,6 +26,19 @@ export async function restoreWorkspace({
   }
 
   const admissionDeadline = Option.some(deadline);
+
+  const cached = await restoreCachedWorkspace({
+    store,
+    provider,
+    workspace,
+    machineId,
+    snapshot: state.head.value,
+    deadline,
+  });
+
+  if (cached !== CachedRestoreResult.Miss) {
+    return cached === CachedRestoreResult.Restored;
+  }
 
   return await restoreSnapshot({
     store,

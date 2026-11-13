@@ -88,7 +88,8 @@ export async function advanceSandboxStop({
 
   store.saveSandboxStop(stopping);
 
-  const stoppingPromise = provider.stop({ machineId });
+  const checkpoint = state.head;
+  const stoppingPromise = provider.stop({ machineId, checkpoint });
   const stopped = await capturePromise({ promise: stoppingPromise });
 
   if (Result.isFailure(stopped)) {

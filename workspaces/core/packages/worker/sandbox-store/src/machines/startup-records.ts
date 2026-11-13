@@ -34,6 +34,7 @@ type GuestInput = Identity & { readonly guest: GuestStatus; readonly now: DateTi
 
 type RestorationProgress = {
   readonly generation: RecordId;
+  readonly source: 'archive' | 'native';
   readonly bytes: number;
   readonly parts: number;
   readonly copiedParts: number;

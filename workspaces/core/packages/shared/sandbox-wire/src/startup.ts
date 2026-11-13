@@ -1,5 +1,5 @@
 import { MachineId, RecordId, RecordText, wireStruct } from '@mechane/records';
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import { ExecutionId } from './schemas.ts';
 import { SANDBOX_TOOL_LIMITS } from './tools/constants.ts';
 
@@ -34,6 +34,7 @@ export const StartupFailure = {
 } as const;
 
 export type StartupFailure = (typeof StartupFailure)[keyof typeof StartupFailure];
+export const WorkspaceRestoreSource = { Archive: 'archive', Native: 'native' } as const;
 
 export const STARTUP_MAX_STEPS = 48;
 const IsFinite = Schema.isFinite();
@@ -88,7 +89,17 @@ export const MachineStartup = wireStruct({
     progress: StartupProgress,
     guest: Schema.OptionFromNullOr(GuestStatus),
     restoration: Schema.OptionFromNullOr(
-      wireStruct({ fields: { generation: RecordId, bytes: Nonnegative, parts: Schema.Int, copiedParts: Schema.Int } }),
+      wireStruct({
+        fields: {
+          generation: RecordId,
+          source: Schema.Enum(WorkspaceRestoreSource).pipe(
+            Schema.withDecodingDefaultKey(Effect.succeed(WorkspaceRestoreSource.Archive)),
+          ),
+          bytes: Nonnegative,
+          parts: Schema.Int,
+          copiedParts: Schema.Int,
+        },
+      }),
     ),
   },
 });

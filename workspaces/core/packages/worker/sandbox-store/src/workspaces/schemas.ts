@@ -4,6 +4,7 @@ import {
   SandboxArchive,
   SandboxCheckpointResult,
   SandboxRecoveryCheckpointRequest,
+  WorkspaceRestoreSource,
 } from '@mechane/sandbox-wire';
 import { Effect, Schema } from 'effect';
 import { MachineIdRow } from '../schemas.ts';
@@ -71,6 +72,9 @@ export const WorkspaceRestoration = Schema.Struct({
   generation: RecordId,
   startedAt: Schema.DateTimeUtcFromMillis,
   part: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+  source: Schema.Enum(WorkspaceRestoreSource).pipe(
+    Schema.withDecodingDefaultKey(Effect.succeed(WorkspaceRestoreSource.Archive)),
+  ),
 });
 
 export type WorkspaceRestoration = typeof WorkspaceRestoration.Type;

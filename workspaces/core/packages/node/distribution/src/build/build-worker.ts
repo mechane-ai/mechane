@@ -23,7 +23,7 @@ const requireBanner = [
   'const require = createMechaneRequire(import.meta.url);',
 ].join('\n');
 
-const REQUIRED_EXPORTS = ['default', 'MechObject', 'SandboxObject', 'EgressGateway'] as const;
+const REQUIRED_EXPORTS = ['default', 'MechObject', 'SandboxObject', 'MachineObject', 'EgressGateway'] as const;
 const SOURCE_TIMEOUT_MS = 10_000;
 
 async function writeWorkerConfiguration(): Promise<void> {
@@ -104,7 +104,9 @@ async function main(): Promise<void> {
   const workerOutput = Record.values(worker.metafile.outputs).find((output) => output.entryPoint !== undefined);
 
   if (workerOutput === undefined || !REQUIRED_EXPORTS.every((name) => workerOutput.exports.includes(name))) {
-    throw new Error('Worker must export its fetch handler, MechObject, SandboxObject, and EgressGateway');
+    throw new Error(
+      'Worker must export its fetch handler, MechObject, SandboxObject, MachineObject, and EgressGateway',
+    );
   }
 
   const migration = await bundleCommand({ entry: 'src/migrate/main.ts', output: 'migrate.mjs' });

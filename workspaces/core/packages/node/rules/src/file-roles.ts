@@ -17,6 +17,7 @@ export const FILE_ROLES = {
     'packages/node/program/src/{start-process,finished-process,types}.ts',
     'packages/worker/{runtime,server,control-store}/src/**',
     'packages/worker/sandbox/src/service/**',
+    'packages/worker/sandbox/src/providers/machine-object.ts',
   ],
   [FileRole.NativePresentation]: ['packages/shared/protocol/src/presentation/**'],
   [FileRole.NativeConversation]: [
@@ -70,6 +71,7 @@ export const FILE_ROLES = {
     'packages/node/stack/src/dev/settings.ts',
     'packages/node/testing/src/cli/start-cli.ts',
     'packages/worker/sandbox/src/service/settings.ts',
+    'packages/worker/sandbox/src/service/machine-settings.ts',
     'packages/worker/sandbox/src/providers/sandbox-settings.ts',
     'packages/node/guest/src/load-guest-settings.ts',
     'packages/node/release/src/load-release-settings.ts',
@@ -106,7 +108,10 @@ export const FILE_ROLES = {
     'packages/browser/elements/packages/foundations/src/tokens.ts',
   ],
   [FileRole.Catalog]: ['packages/node/smoke/src/catalog.ts'],
-  [FileRole.ObjectClass]: ['packages/worker/sandbox/src/sandbox-object.ts'],
+  [FileRole.ObjectClass]: [
+    'packages/worker/sandbox/src/sandbox-object.ts',
+    'packages/worker/sandbox/src/providers/machine-object.ts',
+  ],
   [FileRole.Migrations]: ['**/migrations.ts'],
   [FileRole.CruiserConfiguration]: ['.dependency-cruiser.cjs'],
   [FileRole.Utilities]: ['**/utilities/**'],

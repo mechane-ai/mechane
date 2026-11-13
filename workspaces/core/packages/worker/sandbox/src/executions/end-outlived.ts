@@ -1,5 +1,5 @@
 import type { SandboxStore } from '@mechane/sandbox-store';
-import { DateTime, Duration } from 'effect';
+import { DateTime, Duration, Option } from 'effect';
 import type { DispatchedExecution, MachineProvider } from '../types.ts';
 
 /**
@@ -28,6 +28,8 @@ export async function endOutlived({ store, provider, execution, now }: EndOutliv
     return;
   }
 
-  await provider.stop({ machineId });
+  const cacheCheckpoint = Option.none();
+
+  await provider.stop({ machineId, checkpoint: cacheCheckpoint });
   store.loseMachine({ machineId, now: DateTime.nowUnsafe() });
 }

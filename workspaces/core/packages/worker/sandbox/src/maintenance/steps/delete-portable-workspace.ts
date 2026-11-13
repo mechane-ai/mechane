@@ -17,7 +17,10 @@ export async function deletePortableWorkspace({ store, provider, workspace, job 
     const now = DateTime.nowUnsafe();
 
     store.loseMachine({ machineId: latest.value.id, now });
-    await provider.stop({ machineId: latest.value.id });
+
+    const cacheCheckpoint = Option.none();
+
+    await provider.stop({ machineId: latest.value.id, checkpoint: cacheCheckpoint });
   }
 
   const head = store.workspace().head;

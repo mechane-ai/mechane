@@ -130,7 +130,10 @@ async function connectCheckpointGuest({
         store.loseMachine({ machineId, now });
       },
     });
-    await provider.stop({ machineId });
+
+    const cacheCheckpoint = Option.none();
+
+    await provider.stop({ machineId, checkpoint: cacheCheckpoint });
 
     return Option.none();
   }

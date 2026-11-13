@@ -1,5 +1,5 @@
 import type { MachineId } from '@mechane/records';
-import type { ExecutionRow, ExecutionStatus, SandboxStore } from '@mechane/sandbox-store';
+import type { ExecutionRow, ExecutionStatus, SandboxStore, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import type { ExecutionEnvironment, GuestStatus } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
 import type { GuestAnswer } from './schemas.ts';
@@ -14,6 +14,10 @@ export type DispatchedExecution = Extract<ExecutionRow, StatusOf<typeof Executio
 export type GuestRequestInput = { readonly path: string; readonly init: RequestInit };
 
 export type MachineIdInput = { readonly machineId: MachineId };
+
+export type MachineStartInput = MachineIdInput & { readonly checkpoint: Option.Option<WorkspaceSnapshot> };
+export type MachineStopInput = MachineStartInput;
+export type MachineCheckpointInput = MachineIdInput & { readonly checkpoint: WorkspaceSnapshot };
 
 /** One machine's guest, reached by HTTP. */
 export type GuestTransport = { readonly fetch: (input: GuestRequestInput) => Promise<Response> };
@@ -38,13 +42,15 @@ export type MachineProvider = {
   /** The declared tool manifest determines the bounded cold startup deadline. */
   readonly startupTimeout: () => Duration.Duration;
   /** Starts or rejoins the identity without resetting its files; capacity owns replacement. */
-  readonly start: (input: MachineIdInput) => Promise<void>;
+  readonly start: (input: MachineStartInput) => Promise<void>;
   /** Reads the machine's guest without allocating; none before it runs and after it stops. */
   readonly connect: (input: MachineIdInput) => Promise<Option.Option<GuestConnection>>;
   /** Positive platform absence only; unavailable health and inspection errors cannot establish loss. */
   readonly isAbsent: (input: MachineIdInput) => Promise<boolean>;
   /** Confirms the machine stopped. A rejection does not acknowledge stop or permit capacity release. */
-  readonly stop: (input: MachineIdInput) => Promise<void>;
+  readonly stop: (input: MachineStopInput) => Promise<void>;
+  /** A provider cache may accelerate only the exact committed generation on this physical machine. */
+  readonly restoredWorkspace: (input: MachineCheckpointInput) => Promise<boolean>;
 };
 
 /** The object-owned bucket and namespace of every portable workspace generation. */

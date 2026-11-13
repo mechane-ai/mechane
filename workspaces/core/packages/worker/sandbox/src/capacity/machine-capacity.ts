@@ -4,7 +4,7 @@ import { SandboxCapacityIdentity, SandboxCapacityRefusalReason, SandboxCapacityS
 import type { SandboxOwner } from '@mechane/sandbox-wire';
 import { capturePromise, serialCalls } from '@mechane/utilities';
 import { DateTime, Option, Result, Schema } from 'effect';
-import type { MachineIdInput, MachineProvider } from '../types.ts';
+import type { MachineProvider, MachineStartInput, MachineStopInput } from '../types.ts';
 import type { CapacityClient } from './capacity-client.ts';
 
 class InvalidSandboxOwner extends Schema.TaggedError<InvalidSandboxOwner>()('InvalidSandboxOwner', {}) {}
@@ -14,6 +14,8 @@ export class CapacityRefused extends Schema.TaggedError<CapacityRefused>()('Capa
 }) {}
 
 class CapacityReleaseFailed extends Schema.TaggedError<CapacityReleaseFailed>()('CapacityReleaseFailed', {}) {}
+
+class MachineStopUnconfirmed extends Schema.TaggedError<MachineStopUnconfirmed>()('MachineStopUnconfirmed', {}) {}
 
 type MachineCapacityInput = {
   readonly store: SandboxStore;
@@ -96,10 +98,19 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     });
   }
 
-  async function stopReservation({ held }: HeldInput): Promise<void> {
+  async function stopReservation({
+    held,
+    checkpoint,
+  }: HeldInput & Pick<MachineStopInput, 'checkpoint'>): Promise<void> {
     // A failed stop retains its intent, so another request cannot allocate a replacement prematurely.
     save({ held: { ...held, phase: ReservationPhase.Stopping } });
-    await provider.stop({ machineId: held.machineId });
+    await provider.stop({ machineId: held.machineId, checkpoint });
+
+    const isAbsent = await provider.isAbsent({ machineId: held.machineId });
+
+    if (!isAbsent) {
+      throw new MachineStopUnconfirmed({});
+    }
 
     const allocation = identity({ held });
     const released = await client.release(allocation);
@@ -113,7 +124,10 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     store.saveReservation({ reservation: clearedReservation });
   }
 
-  async function startReservation({ held }: HeldInput): Promise<void> {
+  async function startReservation({
+    held,
+    checkpoint,
+  }: HeldInput & Pick<MachineStartInput, 'checkpoint'>): Promise<void> {
     const allocation = identity({ held });
     const admitted = await client.acquire(allocation);
 
@@ -122,7 +136,8 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
 
       store.failMachine({ machineId: held.machineId, startupDeadline: now, now });
 
-      const cleanup = stopReservation({ held });
+      const cacheCheckpoint = Option.none();
+      const cleanup = stopReservation({ held, checkpoint: cacheCheckpoint });
       const stopped = await capturePromise({ promise: cleanup });
 
       if (Result.isFailure(stopped)) {
@@ -137,11 +152,11 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
       throw new InvalidSandboxOwner({});
     }
 
-    await provider.start({ machineId: held.machineId });
+    await provider.start({ machineId: held.machineId, checkpoint });
     save({ held: { ...held, phase: ReservationPhase.Held } });
   }
 
-  async function start({ machineId }: MachineIdInput): Promise<void> {
+  async function start({ machineId, checkpoint }: MachineStartInput): Promise<void> {
     await calls.run({
       run: async () => {
         requireOwner();
@@ -156,12 +171,14 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
           }
 
           if (held.machineId === machineId && held.phase === ReservationPhase.Starting) {
-            await startReservation({ held });
+            await startReservation({ held, checkpoint });
 
             return;
           }
 
-          await stopReservation({ held });
+          const cacheCheckpoint = Option.none();
+
+          await stopReservation({ held, checkpoint: cacheCheckpoint });
         }
 
         const held: MachineReservation = {
@@ -171,26 +188,26 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
         };
 
         save({ held });
-        await startReservation({ held });
+        await startReservation({ held, checkpoint });
       },
     });
   }
 
-  async function stop({ machineId }: MachineIdInput): Promise<void> {
+  async function stop({ machineId, checkpoint }: MachineStopInput): Promise<void> {
     await calls.run({
       run: async () => {
         const held = reservation();
 
         if (Option.isSome(held)) {
           if (held.value.machineId === machineId) {
-            await stopReservation({ held: held.value });
+            await stopReservation({ held: held.value, checkpoint });
           }
 
           // A delayed stop cannot destroy the replacement occupying this container slot.
           return;
         }
 
-        await provider.stop({ machineId });
+        await provider.stop({ machineId, checkpoint });
       },
     });
   }
@@ -202,6 +219,7 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
       stop,
       startupTimeout: provider.startupTimeout,
       isAbsent: provider.isAbsent,
+      restoredWorkspace: provider.restoredWorkspace,
     },
     bindOwner,
     requireOwner,

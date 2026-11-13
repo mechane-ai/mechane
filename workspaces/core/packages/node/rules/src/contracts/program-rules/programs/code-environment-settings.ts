@@ -46,6 +46,7 @@ export const codeEnvironmentSettings = {
       ...AST_GREP_DEFAULTS,
       ...ADOPTED,
       name: 'raw-binding-read',
+      exemptRoles: [FileRole.Settings],
       standard: 'ST-31',
       violation: ['const origin = env.ORIGIN;', 'const variables = this.env;'],
       allowed: ['const origin = settings.origin;'],

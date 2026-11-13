@@ -94,6 +94,7 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
   const execution = Option.getOrUndefined(report.environment.execution);
   const isPreparing = isLive && !isReady;
   const hasProgress = isPreparing && failure === undefined;
+  const isCopyingArchive = restoration?.source === 'archive' && !isReady;
 
   return (
     <Stack isCompact>
@@ -110,7 +111,7 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
           {' · '}Last progress: <ConsoleTimestamp value={progress.updatedAt} /> UTC.
         </Text>
       )}
-      {restoration !== undefined && !isReady && (
+      {restoration !== undefined && isCopyingArchive && (
         <Text variant="caption" tone="muted">
           {restoration.copiedParts} of {restoration.parts} parts copied · {restoration.bytes.toLocaleString('en-US')}{' '}
           archive bytes.
@@ -134,6 +135,15 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
                 { label: 'Started (UTC)', value: <ConsoleTimestamp value={progress.startedAt} /> },
                 { label: 'Overall startup deadline (UTC)', value: <ConsoleTimestamp value={startup.deadlineAt} /> },
                 { label: 'Recorded phase', value: PHASE_LABELS[progress.phase] },
+                {
+                  label: 'Workspace restore',
+                  value:
+                    restoration === undefined
+                      ? 'Not observed'
+                      : restoration.source === 'native'
+                        ? 'Native snapshot'
+                        : 'Portable archive',
+                },
               ]}
             />
             <Text variant="caption" tone="muted">

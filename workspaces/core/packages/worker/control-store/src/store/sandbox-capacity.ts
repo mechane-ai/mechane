@@ -15,6 +15,7 @@ export type ActiveSandboxOwner = {
 };
 
 type CapacityIdentity = ActiveSandboxOwner;
+type CapacityAdmission = CapacityIdentity & { readonly maximumMachines: number };
 export type ActiveSandboxOwnerPage = { readonly afterMechId: string | null; readonly maxRows: number };
 const MAXIMUM_OWNER_ROWS = 200;
 
@@ -30,7 +31,7 @@ const AllocationSchema = Schema.Struct({
   state: Schema.Literals(['held', 'released']),
 });
 
-const HeldMachinesSchema = Schema.Struct({ held_machines: Schema.Number });
+const HeldMachinesSchema = Schema.Struct({ held_machines: Schema.Number, workspace_machines: Schema.Number });
 type Allocation = typeof AllocationSchema.Type;
 
 export function createSandboxCapacityStore(context: StoreContext) {
@@ -49,10 +50,15 @@ export function createSandboxCapacityStore(context: StoreContext) {
 
       return { items: result.rows.slice(0, input.maxRows), hasMore: result.rows.length > input.maxRows };
     },
-    async acquireSandboxCapacity(identity: CapacityIdentity): Promise<CapacityAcquisition> {
+    async acquireSandboxCapacity({ maximumMachines, ...identity }: CapacityAdmission): Promise<CapacityAcquisition> {
       validateReservation(identity.reservationId);
 
+      if (!Number.isSafeInteger(maximumMachines) || maximumMachines < 1) {
+        throw new StoreConflict('Installation machine capacity must be a positive safe integer');
+      }
+
       return await context.atomic(async (transaction) => {
+        await transaction.client.query("SELECT pg_advisory_xact_lock(hashtext('mechane-machine-capacity'))");
         await lockCapacityScope(transaction, identity);
 
         const policy = await createWorkspaceRecords(transaction).getRuntimePolicy(identity);
@@ -86,13 +92,13 @@ export function createSandboxCapacityStore(context: StoreContext) {
         }
 
         const counted = await transaction.client.query(
-          "SELECT count(*) AS held_machines FROM mechane.sandbox_capacity WHERE workspace_id=$1 AND state='held'",
+          "SELECT count(*) AS held_machines, count(*) FILTER (WHERE workspace_id=$1) AS workspace_machines FROM mechane.sandbox_capacity WHERE state='held'",
           [identity.workspaceId],
         );
 
         const allocation = Schema.decodeUnknownSync(HeldMachinesSchema)(counted.rows[0]);
 
-        if (allocation.held_machines >= policy.machines) {
+        if (allocation.held_machines >= maximumMachines || allocation.workspace_machines >= policy.machines) {
           return { status: 'refused', reason: 'capacity' };
         }
 

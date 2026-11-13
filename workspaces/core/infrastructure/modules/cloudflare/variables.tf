@@ -96,8 +96,6 @@ variable "sandboxes" {
     application_name         = optional(string)
     instance_type            = optional(string, "standard-1")
     max_instances            = optional(number, 4)
-    rollout_grace_seconds    = optional(number, 60)
-    rollout_deadline_seconds = optional(number, 1200)
     additional_hosts         = optional(set(string), [])
     web_access               = optional(string, "packages")
     browser_sandbox_disabled = optional(bool, false)

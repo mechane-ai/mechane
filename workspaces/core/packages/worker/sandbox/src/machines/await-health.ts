@@ -1,6 +1,6 @@
 import { MachineId } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
-import { StartupPhase } from '@mechane/sandbox-wire';
+import { StartupPhase, WorkspaceRestoreSource } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { DateTime, Duration, Option } from 'effect';
 import { writeRestoreStageTiming } from '../output/write-sandbox-diagnostic.ts';
@@ -60,7 +60,9 @@ export async function awaitHealth({
   if (answer === HealthAnswer.Failed) {
     const now = DateTime.nowUnsafe();
 
-    await provider.stop({ machineId });
+    const cacheCheckpoint = Option.none();
+
+    await provider.stop({ machineId, checkpoint: cacheCheckpoint });
     store.failMachine({ machineId, startupDeadline: now, now });
 
     return false;
@@ -113,13 +115,14 @@ export async function awaitHealth({
     onSome: (snapshot) => {
       const sameHead = Option.exists(state.head, (currentHead) => currentHead.generation === snapshot.generation);
 
-      const restored = Option.exists(
-        state.restoration,
-        (restoration) =>
-          restoration.machineId === machineId &&
-          restoration.generation === snapshot.generation &&
-          restoration.part === snapshot.archive.parts,
-      );
+      const restored = Option.exists(state.restoration, (restoration) => {
+        const sameMachine = restoration.machineId === machineId && restoration.generation === snapshot.generation;
+
+        const complete =
+          restoration.source === WorkspaceRestoreSource.Native || restoration.part === snapshot.archive.parts;
+
+        return sameMachine && complete;
+      });
 
       return sameHead && restored;
     },

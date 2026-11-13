@@ -26,7 +26,9 @@ export async function startMachine({ store, provider, machine }: StartMachineInp
 
   const startedAt = DateTime.nowUnsafe();
   const started = performance.now();
-  const promise = provider.start({ machineId: machine.id });
+  const state = store.workspace();
+  const checkpoint = state.head;
+  const promise = provider.start({ machineId: machine.id, checkpoint });
   const result = await capturePromise({ promise });
   const finished = performance.now();
   const milliseconds = finished - started;

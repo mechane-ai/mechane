@@ -71,5 +71,8 @@ async function stopPreviousMachine({ store, provider }: Pick<PortableStepInput, 
   const now = DateTime.nowUnsafe();
 
   store.loseMachine({ machineId, now });
-  await provider.stop({ machineId });
+
+  const cacheCheckpoint = Option.none();
+
+  await provider.stop({ machineId, checkpoint: cacheCheckpoint });
 }

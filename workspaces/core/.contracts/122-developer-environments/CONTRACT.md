@@ -22,6 +22,15 @@ Declare machine-local package caches and reinstallable tool versions through the
 Keep source, lockfiles, configuration, Git metadata, and unknown files in the durable home. A fresh machine may rebuild
 only those declared scratch locations. Existing home files remain data until an explicit recovery operation moves them.
 
+Treat native container snapshots as disposable acceleration, never workspace authority. Capture only the frozen final
+drain after its portable generation and manifest commit. Bind a cache to that complete checkpoint, qualified image,
+instance size, tool configuration and network/trust configuration. Bound capture time; a cache failure cannot invalidate
+committed portable files or prevent retirement. Expired, absent or incompatible caches use portable restore. A restored
+cache must match the live machine and committed manifest before readiness; recheck generation, drain and original
+deadline after asynchronous reads. Never turn a blocked cache admission into archive activation. Native snapshots
+restore files, not process memory or a previous command identity. Keep local celld on this same compute API and qualify
+the native snapshot boundary separately against Cloudflare.
+
 Keep the expanded and compressed checkpoint bounds in the shared sandbox wire constants used by the guest and Worker.
 Qualify a capacity change against streaming memory, home plus archive staging disk, part counts, and existing operation
 deadlines on the selected machine tier. Scratch outside the home still consumes that machine's disk. Preserve unsaved

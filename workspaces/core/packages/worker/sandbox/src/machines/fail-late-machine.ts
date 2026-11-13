@@ -27,7 +27,10 @@ export async function failLateMachine({ store, provider, machineId, startedAt }:
   }
 
   store.failStartup({ machineId, failure: StartupFailure.Deadline, now });
-  await provider.stop({ machineId });
+
+  const cacheCheckpoint = Option.none();
+
+  await provider.stop({ machineId, checkpoint: cacheCheckpoint });
 
   const stoppedAt = DateTime.nowUnsafe();
 

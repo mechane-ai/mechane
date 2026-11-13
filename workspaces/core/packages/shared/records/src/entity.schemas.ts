@@ -8,6 +8,9 @@ export type MechId = typeof MechId.Type;
 export const MachineId = RecordId.pipe(Schema.brand('MachineId'));
 export type MachineId = typeof MachineId.Type;
 
+export const NativeSnapshotId = RecordId.pipe(Schema.brand('NativeSnapshotId'));
+export type NativeSnapshotId = typeof NativeSnapshotId.Type;
+
 /** The ID of the workspace that owns its resources and grants. */
 export const WorkspaceId = RecordId.pipe(Schema.brand('WorkspaceId'));
 export type WorkspaceId = typeof WorkspaceId.Type;

@@ -87,6 +87,7 @@ export function createServer({
 
   const capacity = createSandboxCapacityHandler({
     bearer: configuration.sandbox.bearer,
+    maximumMachines: configuration.maxMachines,
     acquire: async (input) => await store.acquireSandboxCapacity(input),
     release: async (input) => await store.releaseSandboxCapacity(input),
   });

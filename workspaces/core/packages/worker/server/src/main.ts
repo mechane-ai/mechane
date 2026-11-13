@@ -27,7 +27,7 @@ export { MechActor as MechObject } from '@mechane/runtime';
  *
  * @public
  */
-export { SandboxObject, EgressGateway } from '@mechane/sandbox';
+export { SandboxObject, MachineObject, EgressGateway } from '@mechane/sandbox';
 
 const SCHEDULED_DELIVERY_MAX_ROWS = 50;
 const SCHEDULED_DELIVERY_MAX_MILLISECONDS = 20_000;

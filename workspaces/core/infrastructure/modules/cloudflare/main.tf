@@ -9,6 +9,9 @@ locals {
     MECHANE_INSTALLATION_HOSTS       = jsonencode(setunion(var.domain.aliases, [var.domain.hostname]))
     MECHANE_WORKER_REVISION          = local.installation.public_commit
     MECHANE_SANDBOX_PROVIDER         = "container"
+    MECHANE_CONTAINER_IMAGE          = mechane_cloudflare_container_image.guest.image
+    MECHANE_CONTAINER_INSTANCE_TYPE  = var.sandboxes.instance_type
+    MECHANE_MAX_MACHINES             = tostring(var.sandboxes.max_instances)
     MECHANE_SANDBOX_HOSTS            = jsonencode(var.sandboxes.additional_hosts)
     MECHANE_SANDBOX_TOOLS            = jsonencode(var.sandboxes.additional_tools)
     MECHANE_SANDBOX_WEB_ACCESS       = var.sandboxes.web_access
@@ -101,7 +104,7 @@ resource "mechane_cloudflare_container_image" "guest" {
   source_file   = "${dirname(var.qualification.path)}/${basename(local.installation.guest.url)}"
   source_sha256 = local.installation.guest.sha256
   digest        = local.installation.guest.digest
-  depends_on    = [mechane_cloudflare_worker_release.release]
+  depends_on    = [cloudflare_worker.service]
 }
 
 resource "cloudflare_workers_cron_trigger" "control_delivery" {
@@ -111,15 +114,10 @@ resource "cloudflare_workers_cron_trigger" "control_delivery" {
   depends_on  = [mechane_cloudflare_worker_release.release]
 }
 
-resource "mechane_cloudflare_container_application" "sandboxes" {
+resource "mechane_cloudflare_machine_application" "machines" {
   account_id                  = var.account_id
-  name                        = coalesce(var.sandboxes.application_name, "${var.name}-sandboxes")
-  durable_object_namespace_id = mechane_cloudflare_worker_release.release.durable_object_namespaces["SandboxObject"]
-  image                       = mechane_cloudflare_container_image.guest.image
-  instance_type               = var.sandboxes.instance_type
-  max_instances               = var.sandboxes.max_instances
-  rollout_active_grace_period = var.sandboxes.rollout_grace_seconds
-  operation_timeout_seconds   = var.sandboxes.rollout_deadline_seconds
+  name                        = coalesce(var.sandboxes.application_name, "${var.name}-machines")
+  durable_object_namespace_id = mechane_cloudflare_worker_release.release.durable_object_namespaces["MachineObject"]
   delete_protection           = true
   logs_enabled                = true
 }
@@ -130,5 +128,5 @@ resource "cloudflare_workers_custom_domain" "service" {
   hostname   = each.value
   zone_id    = var.domain.zone_id
   service    = cloudflare_worker.service.name
-  depends_on = [mechane_cloudflare_container_application.sandboxes]
+  depends_on = [mechane_cloudflare_machine_application.machines]
 }

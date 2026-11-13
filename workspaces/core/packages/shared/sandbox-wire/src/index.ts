@@ -202,6 +202,7 @@ export {
   WORKSPACE_RESTORE_SECONDS,
   MACHINE_STARTUP_GRACE_MS,
   StartupPhase,
+  WorkspaceRestoreSource,
   StartupFailure,
   STARTUP_MAX_STEPS,
   StartupProgress,

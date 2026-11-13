@@ -10,11 +10,10 @@ type CurrentRestorationInput = Pick<WorkspaceProviderStepInput, 'store'> & {
 export function isCurrentRestoration({ store, restoration }: CurrentRestorationInput): boolean {
   const current = store.workspace().restoration;
 
-  return Option.exists(
-    current,
-    (value) =>
-      value.machineId === restoration.machineId &&
-      value.generation === restoration.generation &&
-      value.part === restoration.part,
-  );
+  return Option.exists(current, (value) => {
+    const sameMachine = value.machineId === restoration.machineId && value.generation === restoration.generation;
+    const sameProgress = value.source === restoration.source && value.part === restoration.part;
+
+    return sameMachine && sameProgress;
+  });
 }

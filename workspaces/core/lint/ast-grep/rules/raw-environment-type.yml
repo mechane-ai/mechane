@@ -23,6 +23,7 @@ ignores:
   - packages/node/rename/src/load-rename-settings.ts
   - packages/node/rule-generator/src/load-generate-settings.ts
   - 'packages/node/stack/src/dev/settings.ts'
+  - 'packages/worker/sandbox/src/service/machine-settings.ts'
 rule:
   kind: nested_type_identifier
   regex: ^NodeJS\.ProcessEnv$

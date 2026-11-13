@@ -1,37 +1,36 @@
 import { SandboxProvider } from '@mechane/deployment';
-import { Option } from 'effect';
+import type { SandboxEnvironment } from '../environment.ts';
+import { machineStub } from '../service/machine-settings.ts';
 import type { MachineIdInput, MachineProvider } from '../types.ts';
-import { containerProvider } from './container-provider.ts';
 import { hostProvider } from './host-provider.ts';
+import { remoteContainerProvider } from './remote-container-provider.ts';
 import type { SandboxVariables } from './schemas.ts';
 
 /** Where a sandbox's object runs its machines. */
 type SandboxSettings = SandboxVariables;
 
-/** The settings a sandbox's machines run by, and the object's own state, which holds its container. */
+/** The sandbox ledger selects a separate compute object or the local host launcher. */
 type MachineProviderInput = {
   readonly settings: SandboxSettings;
   readonly state: DurableObjectState;
+  readonly environment: SandboxEnvironment;
   readonly onStartupExit: (input: MachineIdInput) => void;
 };
 
-/**
- * The provider the settings name. Only a class that `containers` names has a container, so a container setting without
- * one is a misconfigured deployment, whose object fails to construct and so fails readiness.
- */
-export function machineProvider({ settings, state, onStartupExit }: MachineProviderInput): MachineProvider {
+/** Provider selection leaves workspace authority in the sandbox ledger. */
+export function machineProvider({
+  settings,
+  state,
+  environment,
+  onStartupExit,
+}: MachineProviderInput): MachineProvider {
   switch (settings.provider) {
-    case SandboxProvider.Container:
-      return containerProvider({
-        state,
-        onStartupExit,
-        additionalTools: settings.additionalTools,
-        isBrowserSandboxDisabled: settings.isBrowserSandboxDisabled,
-        trustedCertificatesPem: settings.trustedCertificatesPem,
-        container: Option.getOrThrow(Option.fromNullishOr(state.container)),
-        gateway: () => state.exports.EgressGateway({ props: {} }),
-        containerNetwork: settings.containerNetwork,
-      });
+    case SandboxProvider.Container: {
+      const name = state.id.toString();
+      const machine = machineStub({ environment, name });
+
+      return remoteContainerProvider({ machine, onStartupExit, tools: settings.additionalTools });
+    }
     case SandboxProvider.Host:
       return hostProvider({
         launcherOrigin: settings.launcherOrigin,

@@ -6,7 +6,8 @@ export { sandboxAlarm } from './sandbox-alarm.ts';
 export { BackgroundWork } from './completions/completion-records.ts';
 
 export type { PortableMaintenance } from './maintenance/schemas.ts';
-export type { WorkspaceSnapshot, WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';
+export { WorkspaceSnapshot } from './workspaces/schemas.ts';
+export type { WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';
 export { WorkspaceManifest } from './workspaces/schemas.ts';
 export type { WorkspaceRestore } from './workspaces/workspace-restore-records.ts';
 export { FileCheckpointPurpose, FileCheckpointResult } from './workspaces/schemas.ts';
@@ -26,3 +27,5 @@ export {
 export type { EvidenceRange } from './evidence/evidence-objects.ts';
 
 export { AUTOMATIC_CHECKPOINT_INTERVAL } from './workspaces/workspace-records.ts';
+export { machineCacheRecords } from './workspaces/machine-cache-records.ts';
+export type { MachineCacheSnapshot } from './workspaces/machine-cache-records.ts';

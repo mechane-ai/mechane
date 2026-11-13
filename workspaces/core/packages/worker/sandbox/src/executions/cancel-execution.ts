@@ -60,5 +60,8 @@ export async function cancelExecution({ store, provider, executionId }: CancelSa
   };
 
   store.atomic({ run: cancel });
-  await provider.stop({ machineId: execution.machineId });
+
+  const cacheCheckpoint = Option.none();
+
+  await provider.stop({ machineId: execution.machineId, checkpoint: cacheCheckpoint });
 }

@@ -1,7 +1,13 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import { MachineStatus } from '@mechane/sandbox-store';
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { SandboxArchive, StartupFailure, StartupPhase, WorkspaceStep } from '@mechane/sandbox-wire';
+import {
+  SandboxArchive,
+  StartupFailure,
+  StartupPhase,
+  WorkspaceRestoreSource,
+  WorkspaceStep,
+} from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { Array, DateTime, Duration, Option, Result, Schema } from 'effect';
 import {
@@ -89,7 +95,14 @@ export async function restoreSnapshot({
     }
 
     const startedAt = DateTime.nowUnsafe();
-    const restoration = { machineId, generation, part: 0, startedAt };
+
+    const restoration: WorkspaceRestoration = {
+      machineId,
+      generation,
+      part: 0,
+      startedAt,
+      source: WorkspaceRestoreSource.Archive,
+    };
 
     store.saveRestoration(restoration);
 
@@ -186,7 +199,13 @@ export async function restoreSnapshot({
 
     store.observeRestoration({
       machineId,
-      restoration: { generation, bytes: archive.bytes, parts: archive.parts, copiedParts: advanced.value.part },
+      restoration: {
+        generation,
+        source: WorkspaceRestoreSource.Archive,
+        bytes: archive.bytes,
+        parts: archive.parts,
+        copiedParts: advanced.value.part,
+      },
       now: copiedAt,
     });
 

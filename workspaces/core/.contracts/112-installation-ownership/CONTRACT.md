@@ -37,9 +37,13 @@ notification-producer recipient allowlists. Runtime APIs own principals, workspa
 notifications, explicit messages, and files. Integration services own platform subscriptions and delivery. An
 infrastructure apply cannot seed or overwrite runtime records.
 
-Give each resource one writer. One Cloudflare application Worker owns HTTP, static assets, MechObject, SandboxObject,
+Give each resource one writer. One Cloudflare application Worker owns HTTP, static assets, MechObject, SandboxObject, MachineObject,
 and EgressGateway exports. Postgres owns control authority; Pi within MechObject owns execution. Preserve existing
-Sandbox namespaces, container identity, and file buckets when changing the application owner. Upload every declared
+Sandbox namespaces and file buckets when changing the application owner. MachineObject owns disposable physical compute
+under Cloudflare's Durable Object scheduling policy. The installation's aggregate machine limit is atomically enforced
+in the control-store admission ledger in addition to per-workspace policy. Retain reservations until provider absence
+is confirmed. A compute namespace cutover requires final file checkpoints and positive retirement of its former owner;
+it cannot reset workspace ledgers or command receipts. Upload every declared
 module and Console asset before activating the version. Configure no independent Node host, proxy engine, or World.
 Enable `global_fetch_strictly_public` in the shared Worker deployment configuration so authenticated HTTP calls to the
 canonical origin traverse its public route and can re-enter the same application Worker. A compatibility date alone

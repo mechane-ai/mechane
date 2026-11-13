@@ -22,7 +22,8 @@ output "resources" {
     worker_name            = cloudflare_worker.service.name
     worker_version_id      = mechane_cloudflare_worker_release.release.version_id
     workspace_bucket       = cloudflare_r2_bucket.workspace_files.name
-    sandbox_application_id = mechane_cloudflare_container_application.sandboxes.id
+    machine_application_id = mechane_cloudflare_machine_application.machines.id
+    machine_namespace_id   = mechane_cloudflare_worker_release.release.durable_object_namespaces["MachineObject"]
     sandbox_namespace_id   = mechane_cloudflare_worker_release.release.durable_object_namespaces["SandboxObject"]
     mech_namespace_id      = mechane_cloudflare_worker_release.release.durable_object_namespaces["MechObject"]
     guest_image            = mechane_cloudflare_container_image.guest.image

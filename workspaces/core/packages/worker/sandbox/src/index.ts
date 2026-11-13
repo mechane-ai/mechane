@@ -4,6 +4,8 @@
  * @public
  */
 export { SandboxObject } from './sandbox-object.ts';
+/** Physical containers use their own replaceable namespace. @public */
+export { MachineObject } from './providers/machine-object.ts';
 /**
  * The Cloudflare container provider calls this entrypoint through state.exports.EgressGateway.
  *

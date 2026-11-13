@@ -191,6 +191,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const provider = machineProvider({
       settings: settings.variables,
       state,
+      environment,
       onStartupExit: ({ machineId }) => {
         const machine = this.#store.liveMachine();
 
@@ -1060,7 +1061,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     if (Option.isSome(reservation) && reservation.value.phase === ReservationPhase.Stopping) {
       await this.#armRetry();
-      await this.#provider.stop({ machineId: reservation.value.machineId });
+
+      const cacheCheckpoint = Option.none();
+
+      await this.#provider.stop({ machineId: reservation.value.machineId, checkpoint: cacheCheckpoint });
     }
 
     if (maintenanceActive({ store: this.#store })) {

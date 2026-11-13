@@ -14,7 +14,10 @@ export async function cancelPortableMaintenance({ store, provider, job }: Portab
     const now = DateTime.nowUnsafe();
 
     store.loseMachine({ machineId, now });
-    await provider.stop({ machineId });
+
+    const cacheCheckpoint = Option.none();
+
+    await provider.stop({ machineId, checkpoint: cacheCheckpoint });
 
     const restoration = store.workspace().restoration;
     const source = job.source;

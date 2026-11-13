@@ -4,7 +4,10 @@ import { CONTAINER_MACHINE_LABEL } from './container-machine.ts';
 import type { ContainerProviderInput } from './types.ts';
 
 type StartContainerInput = Pick<ContainerProviderInput, 'container' | 'gateway' | 'containerNetwork'> &
-  MachineIdInput & { readonly environment: Readonly<Record<string, string>> };
+  MachineIdInput & {
+    readonly environment: Readonly<Record<string, string>>;
+    readonly startup: ContainerStartupOptions;
+  };
 
 /** Intercepts must precede startup and hostname rules must precede the HTTP catch-all. */
 export async function startContainer({
@@ -13,12 +16,13 @@ export async function startContainer({
   environment,
   containerNetwork,
   machineId,
+  startup,
 }: StartContainerInput): Promise<void> {
   const labels = { [CONTAINER_MACHINE_LABEL]: machineId };
 
   switch (containerNetwork) {
     case SandboxContainerNetwork.Direct:
-      container.start({ enableInternet: true, env: environment, labels });
+      container.start({ ...startup, enableInternet: true, env: environment, labels });
 
       return;
     case SandboxContainerNetwork.Gateway: {
@@ -27,7 +31,7 @@ export async function startContainer({
       await container.interceptOutboundHttps('*', outbound);
       await container.interceptAllOutboundHttp(outbound);
 
-      container.start({ enableInternet: false, env: environment, labels });
+      container.start({ ...startup, enableInternet: false, env: environment, labels });
     }
   }
 }

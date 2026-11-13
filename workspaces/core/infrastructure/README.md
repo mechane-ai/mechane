@@ -1,12 +1,12 @@
 # Mechane infrastructure
 
-Operators deploy one Cloudflare application Worker with Mech and Sandbox Durable Objects, Console assets, a checkpoint
-bucket, and a container application. Postgres owns shared control data. Each installation consumes qualified immutable
-release bytes; infrastructure does not compile application code or seed runtime records.
+Operators deploy one Cloudflare application Worker with Mech, Sandbox and Machine Durable Objects, Console assets, a
+checkpoint bucket, and a container application. Postgres owns shared control data. Each installation consumes qualified
+immutable release bytes; infrastructure does not compile application code or seed runtime records.
 
 - `modules/cloudflare/` declares application identity, bindings, domain routing, storage, and sandbox capacity.
 - `provider/` verifies qualification, uploads Worker modules and assets, activates the version, and manages guest images
-  and container rollout.
+  and the Durable Object-scheduled compute application.
 - `examples/cloudflare/` shows an extracted release module and provider setup.
 - `check.sh` validates the module and provider without a cloud account.
 

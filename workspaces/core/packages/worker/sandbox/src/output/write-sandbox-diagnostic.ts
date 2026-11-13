@@ -18,6 +18,21 @@ type RestoreTiming = {
 
 type RestoreStageTiming = RestoreTiming & { readonly stage: 'provider' | 'health' | 'manifest' | 'copy' };
 type RestoreAdmissionTiming = RestoreTiming & { readonly executionId: ExecutionId };
+type CacheSavedInput = { readonly machineId: MachineId; readonly bytes: number; readonly elapsed: Duration.Duration };
+type CacheFailedInput = { readonly machineId: MachineId };
+
+export function writeWorkspaceCacheSaved({ machineId, bytes, elapsed }: CacheSavedInput): void {
+  const elapsedMs = Duration.toMillis(elapsed);
+  const line = JSON.stringify({ event: 'sandbox.workspace_cache_saved', machineId, bytes, elapsedMs });
+
+  console.log(line);
+}
+
+export function writeWorkspaceCacheFailed({ machineId }: CacheFailedInput): void {
+  const line = JSON.stringify({ event: 'sandbox.workspace_cache_failed', machineId });
+
+  console.warn(line);
+}
 
 export function writeRestoreStageTiming({
   stage,

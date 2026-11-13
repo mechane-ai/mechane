@@ -34,6 +34,10 @@ Store only validated phase names, tool names, identities, timestamps, durations,
 diagnostics. Exclude commands, output, paths, request bodies, URLs and credentials. Preserve command receipts, committed
 files and recovery fences independently of diagnostic presentation. A missing terminal receipt remains uncertain.
 
+Record the workspace restoration source explicitly. A native snapshot reports zero archive parts copied; its portable
+archive size is not transferred bytes. Keep cache capture failures visible as bounded metadata without treating them
+as loss of a successfully committed portable checkpoint.
+
 Console and CLI consume the same single report, including optional recorded process status. An unavailable process
 observation is distinct from a successful empty list. Reuse Console's canonical environment record and Elements presentation.
 Present startup separately from saved-file durability. Draw completed timing intervals only with recorded endpoints;

@@ -41,7 +41,7 @@ export { listQuery } from './list-query.ts';
 export { renamedWireStruct } from './renamed-wire-struct.ts';
 export { unknownMember } from './unknown-member.ts';
 export { boundedText } from './bounded-text.ts';
-export { MechId, MachineId, WorkspaceId, PrincipalId, SessionId } from './entity.schemas.ts';
+export { MechId, MachineId, NativeSnapshotId, WorkspaceId, PrincipalId, SessionId } from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';
 export { ModelToolCallId } from './model-tool-call-id.schemas.ts';

@@ -9,13 +9,12 @@ const CAPACITY_BODY_MAX_BYTES = 1024;
 
 type CapacityHandlerInput = {
   readonly bearer: Redacted.Redacted;
+  readonly maximumMachines: number;
   readonly acquire: ControlStore['acquireSandboxCapacity'];
   readonly release: ControlStore['releaseSandboxCapacity'];
 };
 
-export function createSandboxCapacityHandler({ bearer, acquire, release }: CapacityHandlerInput) {
-  const mutations = { acquire, release };
-
+export function createSandboxCapacityHandler({ bearer, acquire, release, maximumMachines }: CapacityHandlerInput) {
   return createInternalPostHandler({
     pathname: SANDBOX_CAPACITY_PATH,
     bearer,
@@ -28,7 +27,14 @@ export function createSandboxCapacityHandler({ bearer, acquire, release }: Capac
       }
 
       const { action, ...identity } = decoded.success;
-      const result = await mutations[action](identity);
+
+      if (action === 'acquire') {
+        const result = await acquire({ ...identity, maximumMachines });
+
+        return Schema.encodeSync(SandboxCapacityResult)(result);
+      }
+
+      const result = await release(identity);
 
       return Schema.encodeSync(SandboxCapacityResult)(result);
     },
