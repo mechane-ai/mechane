@@ -422,7 +422,6 @@ export function BarChart({
             valueLabel: barValueLabel(disclosedSeries, index, formatValue),
             tone: 'neutral',
           }))}
-          selection={selection}
         />
       }
     >

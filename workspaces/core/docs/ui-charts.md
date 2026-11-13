@@ -93,12 +93,11 @@ calculate a new embedding or select a dataset outside the supplied window.
 
 BarChart supports pointer, tap, and arrow-key inspection. Home and End reach the boundary categories; Escape dismisses
 the readout. An optional controlled selection responds to click or Enter. Category `label` retains the full meaning in
-inspection and an accessible exact-value table. The application owns any visible breakdown table. Optional `axisLabel`
-supplies a concise tick such as “Oct 6” without changing record identity. Use `formatTick` for compact axes and
-`formatValue` for exact inspection and data values. Cartesian charts share an inspector beside desktop marks and a
-mobile legend with reserved value space. Keep a composed chart's focused series and independent context in its legend.
-Supply `highlightedSeriesId` for temporary emphasis from a linked row. The application retains selection and data
-ownership.
+inspection and accessible exact values. The application owns any visible breakdown table. Optional `axisLabel` supplies
+a concise tick such as “Oct 6” without changing record identity. Use `formatTick` for compact axes and `formatValue` for
+exact inspection and data values. Cartesian charts share an inspector beside desktop marks and a mobile legend with
+reserved value space. Keep a composed chart's focused series and independent context in its legend. Supply
+`highlightedSeriesId` for temporary emphasis from a linked row. The application retains selection and data ownership.
 
 Bar domains include zero. Grouped bars can show signed values; stacked bars require nonnegative observations. Missing
 values remain unavailable, and a zero remains a zero. BreakdownBar receives a declared total, shows any unassigned

@@ -54,7 +54,7 @@ choice to erase those roles. An independently scoped collection keeps its standa
 Document explicit `density="compact"` on report actions and matching placeholders, with standard popup and dialog
 contents. Show wrapping and coarse-pointer targets beside the default composition. Density selects the control's
 shared recipe; it does not propagate through the page or report. Keep the caption quiet inside its one subtle frame,
-while preserving page insets and full-width table breakdowns. Charts expose exact values through inspection and accessible tables without adding default dialog controls.
+while preserving page insets and full-width table breakdowns. Charts expose exact values through inspection and accessible values without adding default dialog controls.
 
 The chart report examples in `layout/src/page-content.stories.tsx` place summaries inside their explanatory charts.
 The ReportContent examples in `layout/src/collection-layout.stories.tsx` document one inset summary followed by full-width rows,

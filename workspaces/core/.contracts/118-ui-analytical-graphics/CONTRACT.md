@@ -49,11 +49,12 @@ synthetic catalog documentation does not require a separate assertion suite.
 BarChart accepts prepared composition buckets alongside ordinary grouped and stacked bars. A parts bucket draws supplied
 nonnegative components, a total bucket draws its independent signed value, and a gap omits the account mark. Null component
 values remain unavailable. The caller owns reconciliation and the supplied fixed domain. Series focus is independent of
-category selection and keeps the independent context visible. Inspect both amounts through the shared inspector and accessible value table.
+category selection and keeps the independent context visible. Inspect both amounts through the shared inspector and accessible value list.
 Use interruptible transform and opacity transitions for series focus under contract 073.
 
-Cartesian charts share chart-owned inspection and an accessible exact-value table. Do not add a default data-dialog
-button. Product reports own useful visible breakdowns; the library does not decide which diagnostic tables belong on a page.
+Cartesian charts share chart-owned inspection and accessible exact values. Do not add a default data-dialog
+button or hidden interactive controls. The plot owns keyboard selection; its screen-reader alternative is static.
+Product reports own useful visible breakdowns; the library does not decide which diagnostic tables belong on a page.
 Use a full chart's `report` input for a self-contained analytical report with its title, metadata, period summary and
 plot in one subtle frame. Use the ordinary chart when an existing region owns the grouping and separation.
 The report frame uses the shared `SectionHeading`. Its body owns the inset and summary-to-plot spacing.
@@ -76,7 +77,7 @@ When bar-series identity is unknown during the initial read, reserve a neutral r
 Keep placeholder slots inert and unlabeled; known series use their actual labels and layout.
 
 Inspect a spike by pointer, keyboard and touch at desktop and phone widths. Confirm that inspection preserves the
-controlled selection, activation changes the linked breakdown, Escape dismisses details while preserving plot focus, and the accessible table retains exact values. Compare the displayed components with the inputs and check that hovering never fetches data.
+controlled selection, activation changes the linked breakdown, Escape dismisses details while preserving plot focus, and the accessible alternative retains exact values. Compare the displayed components with the inputs and check that hovering never fetches data.
 Review the containing page or inspector. Does the chosen chart mode have one owner for its visual boundary?
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
