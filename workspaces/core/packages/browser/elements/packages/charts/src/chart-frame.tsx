@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { useId } from 'react';
+import { Children, useId } from 'react';
 import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
@@ -192,11 +192,19 @@ export function ChartFrame({
       );
 
     const hasSummary = summary !== undefined && summary !== null && summary !== false;
+    const hasCaptionActions = Children.toArray([report.actions, actions]).length > 0;
+
+    const captionActions = (
+      <>
+        {report.actions}
+        {actions}
+      </>
+    );
 
     return (
       <figure aria-labelledby={titleId} {...stylex.props(styles.frame, styles.report)}>
         <figcaption>
-          <ChartHeading id={titleId} title={title} meta={report.meta} actions={[report.actions, actions]} />
+          <ChartHeading id={titleId} title={title} meta={report.meta} actions={hasCaptionActions && captionActions} />
         </figcaption>
         <div {...stylex.props(styles.reportBody)}>
           {hasSummary && <div {...stylex.props(styles.summary)}>{summary}</div>}
