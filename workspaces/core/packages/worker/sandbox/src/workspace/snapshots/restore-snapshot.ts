@@ -4,9 +4,9 @@ import { SandboxArchive, StartupFailure, StartupPhase, WorkspaceStep } from '@me
 import { capturePromise } from '@mechane/utilities';
 import { Array, DateTime, Option, Result, Schema } from 'effect';
 import {
+  WORKSPACE_RESTORE_CONCURRENT_PARTS,
   WORKSPACE_TRANSFER_BATCH_DURATION,
   WORKSPACE_TRANSFER_BATCH_PARTS,
-  WORKSPACE_TRANSFER_CONCURRENT_PARTS,
 } from '../../constants.ts';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { verifyGenerationManifest } from '../generation-manifest.ts';
@@ -53,7 +53,7 @@ export async function restoreSnapshot({
   const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
   const partLimit = Math.min(restored.value.part + WORKSPACE_TRANSFER_BATCH_PARTS, archive.parts);
   const parts = Array.range(restored.value.part, partLimit - 1);
-  const batches = Array.chunksOf(parts, WORKSPACE_TRANSFER_CONCURRENT_PARTS);
+  const batches = Array.chunksOf(parts, WORKSPACE_RESTORE_CONCURRENT_PARTS);
 
   for (const batch of batches) {
     const part = Array.headNonEmpty(batch);
@@ -97,7 +97,7 @@ export async function restoreSnapshot({
     if (
       advanced.value.machineId !== machineId ||
       advanced.value.generation !== generation ||
-      advanced.value.part !== Math.min(part + WORKSPACE_TRANSFER_CONCURRENT_PARTS, archive.parts)
+      advanced.value.part !== Math.min(part + WORKSPACE_RESTORE_CONCURRENT_PARTS, archive.parts)
     ) {
       return false;
     }

@@ -90,11 +90,11 @@ Worker cannot raise a limit compiled into an already-running guest. Older compon
 their lower admission limit, even though archive and part formats are unchanged. Preserve unsaved live files before
 replacing an older guest. Move only identified, reproducible data when recovery requires reducing its home first.
 
-Checkpoint uploads use bounded parallel batches. Each batch waits for every started transfer to settle before advancing
-its fenced cursor or handling failure. Restoration copies parts sequentially. Both paths retain per-part checksums and
-bounded scheduling. After capture, a background upload can proceed beside new commands. A file barrier waits for its own
-complete generation. When investigating latency, record archive bytes, transferred bytes, part count, and capture,
-upload, or restore time separately from command execution.
+Checkpoint uploads and restoration use bounded parallel batches with separate limits. Each batch waits for every started
+transfer to settle before advancing its fenced cursor or handling failure. Both paths validate part sizes and archive
+metadata; restoration verifies the complete archive checksum. After capture, a background upload can proceed beside new
+commands. A file barrier waits for its own complete generation. When investigating latency, record archive bytes,
+transferred bytes, part count, and capture, upload, or restore time separately from command execution.
 
 New generations publish an immutable manifest after their archive parts and before the head commits. Restoration
 verifies that manifest's digest. Existing committed generations retain their original inline metadata and archive

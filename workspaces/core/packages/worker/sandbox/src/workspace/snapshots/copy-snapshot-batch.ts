@@ -1,7 +1,7 @@
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { capturePromise } from '@mechane/utilities';
 import { Array, Result } from 'effect';
-import { WORKSPACE_TRANSFER_CONCURRENT_PARTS } from '../../constants.ts';
+import { WORKSPACE_RESTORE_CONCURRENT_PARTS } from '../../constants.ts';
 import type { GuestConnection, WorkspaceProviderStepInput } from '../../types.ts';
 import { copySnapshotPart } from './copy-snapshot-part.ts';
 import { isCurrentRestoration } from './current-restoration.ts';
@@ -21,7 +21,7 @@ export async function copySnapshotBatch({
   snapshot,
   restoration,
 }: CopySnapshotBatchInput): Promise<void> {
-  const nextPart = Math.min(restoration.part + WORKSPACE_TRANSFER_CONCURRENT_PARTS, snapshot.archive.parts);
+  const nextPart = Math.min(restoration.part + WORKSPACE_RESTORE_CONCURRENT_PARTS, snapshot.archive.parts);
   const parts = Array.range(restoration.part, nextPart - 1);
 
   const pending = parts.map((part) =>

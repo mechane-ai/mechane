@@ -1,7 +1,7 @@
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Array, DateTime, Option, Result } from 'effect';
-import { WORKSPACE_OPERATION_TIMEOUT, WORKSPACE_TRANSFER_CONCURRENT_PARTS } from '../constants.ts';
+import { WORKSPACE_CHECKPOINT_CONCURRENT_PARTS, WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { WorkspaceTransferFailed } from '../errors.ts';
 import type { GuestConnection } from '../types.ts';
 import { archiveCheckpoint } from './archive-checkpoint.ts';
@@ -57,7 +57,7 @@ export async function advanceCheckpointStep({
     return;
   }
 
-  const nextPart = Math.min(part + WORKSPACE_TRANSFER_CONCURRENT_PARTS, archive.value.parts);
+  const nextPart = Math.min(part + WORKSPACE_CHECKPOINT_CONCURRENT_PARTS, archive.value.parts);
   const parts = Array.range(part, nextPart - 1);
   const missingParts = await reconcileStoredCheckpoint({ ...archivedInput, parts });
 

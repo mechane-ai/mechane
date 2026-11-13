@@ -4,7 +4,8 @@ import { Duration } from 'effect';
 /** The deadline for a complete workspace checkpoint or restoration. */
 export const WORKSPACE_OPERATION_TIMEOUT = Duration.seconds(WORKSPACE_RESTORE_SECONDS);
 export const WORKSPACE_TRANSFER_BATCH_PARTS = 32;
-export const WORKSPACE_TRANSFER_CONCURRENT_PARTS = 4;
+export const WORKSPACE_CHECKPOINT_CONCURRENT_PARTS = 4;
+export const WORKSPACE_RESTORE_CONCURRENT_PARTS = 16;
 export const AUTOMATIC_CHECKPOINT_QUIET = Duration.seconds(5);
 export const AUTOMATIC_CHECKPOINT_RETRY = Duration.seconds(30);
 export const WORKSPACE_TRANSFER_BATCH_DURATION = Duration.seconds(2);

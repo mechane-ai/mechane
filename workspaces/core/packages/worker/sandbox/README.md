@@ -20,18 +20,18 @@ conflict. Observation carries no command or credentials. A missing guest after d
 command never runs again automatically. Cancellation records its intent before stopping an active machine. An accepted
 command that has not reached its guest can resume with fresh credentials under the same execution ID.
 
-Commands run serially against the mech’s shared files. Before returning a settled receipt, the object saves `/home/node`
-as independent R2 parts and commits the generation with the receipt. Replacement machines verify and restore the last
-committed generation before running commands. A failed restore never becomes an empty workspace.
+Commands run serially against the mech’s shared files. Their receipts are independent of file checkpoints. Automatic
+checkpoints save `/home/node` in the background; explicit barriers and graceful stops wait for committed files.
+Replacement machines verify and restore the last committed generation before running commands. A failed restore never
+becomes an empty workspace.
 
-Upload and restoration advance existing archive parts in bounded sequential batches. Each part retains its durable
-cursor and validation. Batch limits bound scheduling; only the complete checkpoint establishes saved files. New
-generations publish an immutable manifest before the head and receipt commit. Restoration verifies its digest. Earlier
-committed generations retain their original inline archive metadata and integrity checks.
+Upload and restoration advance archive parts in bounded parallel batches with separate concurrency limits. Each batch
+advances its durable cursor only after every part succeeds under the captured fence. Only a complete checkpoint
+establishes saved files. New generations publish an immutable manifest before the head commits. Restoration verifies its
+digest. Earlier committed generations retain their original inline archive metadata and integrity checks.
 
-`PersistenceFailed` retains the known command outcome, output, and live files for recovery. It keeps the previous
-committed head intact. A later command can inspect or clean those files and retry the save. Losing that machine restores
-the previous head.
+Historical `PersistenceFailed` receipts retain any known command outcome. A failed checkpoint preserves the previous
+committed head and live files for recovery. Losing the machine can lose files written after that head was captured.
 
 Maintenance progresses through durable alarms even when its caller disconnects. Failed checkpoints and replacement
 deadlines end maintenance without blocking recovery commands. Cancellation preserves the source and discards only an
@@ -44,7 +44,7 @@ or fresh recovery evidence. Completion requires confirmed shutdown; accepting St
 ## Limits
 
 The guest pauses writers while archiving. Archives permit at most 2 GiB uncompressed and 512 MiB compressed, with a
-five-minute operation deadline. Each command copies the full home; large repositories need workload qualification.
+five-minute operation deadline. Checkpoints copy the full home; large repositories need workload qualification.
 Generated caches belong outside the committed home.
 
 Cloudflare containers have direct internet disabled. HTTP and HTTPS pass through `EgressGateway`, which validates

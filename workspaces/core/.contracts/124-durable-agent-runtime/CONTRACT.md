@@ -82,7 +82,9 @@ Validate the built package from an independent install without sibling workspace
 
 When newer input or current authority rejects a confirmed, never-dispatched command's continuation, settle its pending
 claim through the sandbox's atomic pending-only cancellation owner. Persist the authoritative returned receipt and let
-the native child finish so the next provider context observes the input. A racing dispatch remains running and
+the native child finish so the next provider context observes the input. Explain confirmed non-dispatch as a refusal,
+including the admission reason and the need to reconsider current input before issuing another command. Do not report
+it as computer startup failure. A racing dispatch remains running and
 observational; do not stop its machine, replay it, or rewrite uncertainty or a terminal outcome.
 Record a known native Bash execution failure as a terminal tool invocation while preserving its separate command
 receipt. Leave native interruption and retry signals with Pi rather than publishing a false tool failure.
@@ -140,7 +142,8 @@ notification or model poll. Restart or cancel during preparation and verify the 
 
 Accept a correction after a shell claim but before dispatch. Require the old command to remain unexecuted, its pending
 claim and native wait to settle promptly, and the next provider context to include the correction. Race pending-only
-cancellation with dispatch and preserve the original running, uncertain and terminal receipts.
+cancellation with dispatch and preserve the original running, uncertain and terminal receipts. Require the refused
+command's trace and model result to distinguish non-dispatch from unavailable infrastructure.
 
 Kill the application around tool dispatch and receipt persistence. Reattach to the same command and inspect its
 outcome. Lose the guest and require an honest interrupted or uncertain result. Fail a home checkpoint and require

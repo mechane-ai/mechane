@@ -259,6 +259,14 @@ async function refuseBeforeDispatch(input: AuthorizeBashInput, message: string):
     const progress = await cancelPendingSandboxExecution(input);
     const result = bashResult({ executionId: input.executionId, progress });
 
+    if (progress._tag === 'Unavailable') {
+      result.status = 'refused';
+
+      result.message =
+        `The command did not run and cannot dispatch later. ${message} ` +
+        'Consider the latest notifications and current permissions before issuing a new command if it is still needed.';
+    }
+
     await recordBashResult({ store: input.store, result });
 
     return result;

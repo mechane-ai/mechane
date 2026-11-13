@@ -105,7 +105,9 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
     const pendingId = Option.getOrThrow(pending).executionId;
     const correction = await sendNotification({ ...input, text: `${marker}: do not run the old command` });
 
-    await readBashResult({ model, marker, toolCallId, timeoutMs: REQUEST_TIMEOUT_MS });
+    const result = await readBashResult({ model, marker, toolCallId, timeoutMs: REQUEST_TIMEOUT_MS });
+
+    assert.ok(result.output.includes(`Execution ${pendingId}: refused.`));
 
     const reconsideration = await model.waitForCall({ marker, index: 1, timeoutMs: REQUEST_TIMEOUT_MS });
 
@@ -126,7 +128,7 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
     assert.ok(tool !== undefined && TERMINAL_TOOL_STATES.has(tool.status));
     assert.ok(tool.inspection !== undefined);
     assert.equal(tool.inspection.executionId, pendingId);
-    assert.equal(Option.getOrThrow(tool.inspection.result).status, 'unavailable');
+    assert.equal(Option.getOrThrow(tool.inspection.result).status, 'refused');
 
     gate.release();
 

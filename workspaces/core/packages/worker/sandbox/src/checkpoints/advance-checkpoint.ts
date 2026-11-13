@@ -2,9 +2,9 @@ import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import { capturePromise } from '@mechane/utilities';
 import { Array, DateTime, Duration, Option, Result } from 'effect';
 import {
+  WORKSPACE_CHECKPOINT_CONCURRENT_PARTS,
   WORKSPACE_TRANSFER_BATCH_DURATION,
   WORKSPACE_TRANSFER_BATCH_PARTS,
-  WORKSPACE_TRANSFER_CONCURRENT_PARTS,
 } from '../constants.ts';
 import { releaseMachineWorkspace } from '../workspace/release-machine-workspace.ts';
 import { releaseWorkspaceGeneration } from '../workspace/release-workspace.ts';
@@ -25,7 +25,7 @@ export async function advanceCheckpoint({
   const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
   const lastPart = checkpoint.part + WORKSPACE_TRANSFER_BATCH_PARTS - 1;
   const parts = Array.range(checkpoint.part, lastPart);
-  const batches = Array.chunksOf(parts, WORKSPACE_TRANSFER_CONCURRENT_PARTS);
+  const batches = Array.chunksOf(parts, WORKSPACE_CHECKPOINT_CONCURRENT_PARTS);
 
   for (const batch of batches) {
     const part = Array.headNonEmpty(batch);

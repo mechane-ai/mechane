@@ -26,11 +26,12 @@ Qualify a capacity change against streaming memory, home plus archive staging di
 deadlines on the selected machine tier. Scratch outside the home still consumes that machine's disk. Preserve unsaved
 files before replacing a guest with older compiled limits; deploying a new Worker does not change that guest's bounds.
 
-Advance checkpoint uploads and restoration copies in bounded parallel batches under one declared concurrency and buffer policy. Give each batch one captured generation,
-writer machine, and starting durable cursor. Settle every started part before reporting a transfer failure, releasing
+Advance checkpoint uploads and restoration copies in bounded parallel batches with declared limits for each operation.
+Bound buffered bytes by those limits. Give each batch one captured generation, writer machine, and starting durable
+cursor. Settle every started part before reporting a transfer failure, releasing
 the writer, or changing the cursor. Recheck that exact captured identity and cursor before advancing the whole batch,
 and advance only when every part succeeded. Keep the persisted part format, per-part validation, and interruption
-reconciliation through immutable stored parts. Keep buffered bytes bounded by that policy.
+reconciliation through immutable stored parts.
 Reload the current transfer after each settled batch; stop when its identity changes, progress stalls, or an operation fails.
 Bound both parts per call and the time allowed to start another batch. An in-flight transfer retains its existing timeout.
 Create archive parts and the complete generation manifest immutably. Publish the manifest only after all parts exist,
