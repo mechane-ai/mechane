@@ -1,5 +1,6 @@
-import type { HttpMethod } from '@mechane/records';
+import { HttpMethod } from '@mechane/records';
 import {
+  sandboxExecutionCancelPendingPath,
   SandboxExecutionIdentity,
   sandboxExecutionPath,
   SandboxExecutionResult,
@@ -39,6 +40,28 @@ export async function requestSandboxExecution(input: SandboxRequest): Promise<Sa
     maximumBytes: TOOL_RESPONSE_MAX_BYTES,
   });
 
+  return decodeExecutionResult(body);
+}
+
+export async function cancelPendingSandboxExecution(
+  input: Pick<SandboxRequest, 'workspaceId' | 'mechId' | 'executionId'>,
+): Promise<SandboxExecutionResult> {
+  const configuration = toolConfiguration();
+  const identity = Schema.decodeUnknownSync(SandboxExecutionIdentity)(input);
+  const url = new URL(sandboxExecutionCancelPendingPath(identity), configuration.sandbox.origin);
+
+  const body = await requestSandboxJson({
+    configuration,
+    url,
+    method: HttpMethod.Post,
+    body: null,
+    maximumBytes: TOOL_RESPONSE_MAX_BYTES,
+  });
+
+  return decodeExecutionResult(body);
+}
+
+function decodeExecutionResult(body: unknown): SandboxExecutionResult {
   try {
     return Schema.decodeUnknownSync(SandboxExecutionResult)(body);
   } catch {

@@ -93,6 +93,9 @@ Refuse a never-dispatched command as unavailable when a durable workspace recove
 to new claims and pending retries so waiting commands cannot block their own recovery checkpoint. Preserve dispatched
 uncertainty and terminal receipts; ordinary startup and capacity waits remain distinct from required file recovery.
 
+Pending-only command cancellation atomically refuses a never-dispatched claim and returns its authoritative receipt.
+It cannot stop a machine or change a dispatched, uncertain or terminal execution, including when dispatch wins the race.
+
 Restore last committed files after physical machine loss only through an explicit operation UUID and exact expected
 machine, recovery generation and committed head. Require positive provider absence before replacing the machine or
 releasing its reservation. Failed health, a null stored pointer and inspection errors do not prove absence. Recheck

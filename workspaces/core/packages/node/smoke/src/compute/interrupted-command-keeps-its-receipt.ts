@@ -23,6 +23,7 @@ import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { checkpointedFilesSurviveMachineLoss } from './checkpointed-files-survive-machine-loss.ts';
+import { correctionRefusesPendingCommand } from './correction-refuses-pending-command.ts';
 
 const ENVIRONMENT_READ_TIMEOUT_MS = 2000;
 const COMMAND_RECOVERY_WAIT_MS = 60_000;
@@ -261,6 +262,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     assert.deepEqual(retainedMachines, allocatedMachines);
 
+    await correctionRefusesPendingCommand(winner);
     await checkpointedFilesSurviveMachineLoss({ ...winner, directory });
 
     await deleteSandbox(winner);

@@ -80,6 +80,13 @@ and receipt tasks in their application owners. Return actual process output and 
 JSON is not command stdout. Preserve known exits, timeout, cancellation, truncation evidence, and original receipts.
 Validate the built package from an independent install without sibling workspace source.
 
+When newer input or current authority rejects a confirmed, never-dispatched command's continuation, settle its pending
+claim through the sandbox's atomic pending-only cancellation owner. Persist the authoritative returned receipt and let
+the native child finish so the next provider context observes the input. A racing dispatch remains running and
+observational; do not stop its machine, replay it, or rewrite uncertainty or a terminal outcome.
+Record a known native Bash execution failure as a terminal tool invocation while preserving its separate command
+receipt. Leave native interruption and retry signals with Pi rather than publishing a false tool failure.
+
 Give commands stable identities derived from their durable tool identity. Reattach to recorded execution on replay;
 never rerun an arbitrary shell because the response was lost. Unknown external outcomes require receipt lookup or
 reconciliation. Nexus checks its own actions; an issued provider credential retains its explicit scope and lifetime
@@ -130,6 +137,10 @@ scheduling cannot hide a wake. Retain the ordinary background completion flow's 
 
 Hold cold readiness beyond the initial request's wait and require one eventual process dispatch without another
 notification or model poll. Restart or cancel during preparation and verify the original identity and dispatch fence.
+
+Accept a correction after a shell claim but before dispatch. Require the old command to remain unexecuted, its pending
+claim and native wait to settle promptly, and the next provider context to include the correction. Race pending-only
+cancellation with dispatch and preserve the original running, uncertain and terminal receipts.
 
 Kill the application around tool dispatch and receipt persistence. Reattach to the same command and inspect its
 outcome. Lose the guest and require an honest interrupted or uncertain result. Fail a home checkpoint and require

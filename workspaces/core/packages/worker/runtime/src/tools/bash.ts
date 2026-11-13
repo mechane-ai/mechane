@@ -13,7 +13,7 @@ import { prepareEnvironment } from './environment.ts';
 import { ToolUnavailableError } from './errors.ts';
 import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { recordBashInput } from './record-bash-input.ts';
-import { requestSandboxExecution } from './sandbox-client.ts';
+import { cancelPendingSandboxExecution, requestSandboxExecution } from './sandbox-client.ts';
 import type { BashArguments, BashInvocation, PreparedEnvironment, RuntimeToolContext } from './types.ts';
 
 const BashResultSchema = z.object({
@@ -252,6 +252,17 @@ async function currentBashReceipt(input: AuthorizeBashInput): Promise<ExecutionR
 async function refuseBeforeDispatch(input: AuthorizeBashInput, message: string): Promise<BashResult> {
   const current = await currentBashReceipt(input);
   const known = knownBashOutcome(current);
+
+  const canRefusePending = known === null || known.status === 'running';
+
+  if (canRefusePending && input.observed._tag === 'ExecutionEnvironmentRequired') {
+    const progress = await cancelPendingSandboxExecution(input);
+    const result = bashResult({ executionId: input.executionId, progress });
+
+    await recordBashResult({ store: input.store, result });
+
+    return result;
+  }
 
   if (known !== null) {
     return known;

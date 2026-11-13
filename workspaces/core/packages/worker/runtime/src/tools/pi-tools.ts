@@ -1,6 +1,7 @@
 import type { Context } from '@earendil-works/chord/context';
 import { defineTool } from '@earendil-works/pi-durable';
 import type { TaskId, ToolExecutionApi, ToolExecutionResult, ToolRegistration, Tx } from '@earendil-works/pi-durable';
+import { ExecutionError } from '@earendil-works/pi-durable/env';
 import { createBashRegistration } from '@mechane-ai/bash';
 import { toolExecutionId as executionId } from '@mechane/records';
 import { asSchema } from 'ai';
@@ -191,30 +192,44 @@ async function guarded(
     };
   }
 
-  const result = await runAdmittedTool(
+  async function finishTool(type: 'tool.completed' | 'tool.failed'): Promise<void> {
+    await access.harness.commit(async (transaction) => {
+      const transition = `${String(api.taskId)}:${type}`;
+
+      if ((await ToolTransitions.read(transaction, transition)) === undefined) {
+        await appendEvent(transaction, {
+          type,
+          runId: input.runId,
+          payload: { toolName: name, toolCallId: api.callId, nativeTaskId: api.taskId },
+        });
+        await ToolTransitions.put(transaction, transition, transition);
+      }
+    }, context);
+  }
+
+  const pending = runAdmittedTool(
     { access, api, context, name },
     { invocation: input, generationTaskId: task?.owner },
     execute,
   );
 
-  await access.harness.commit(async (transaction) => {
-    let type = 'tool.completed';
+  const result = await pending.catch(async (cause: unknown) => {
+    const isBashFailure = name === 'bash' && cause instanceof ExecutionError && cause.code !== 'aborted';
 
-    if (result.isError === true) {
-      type = 'tool.failed';
+    if (isBashFailure && context.abortSignal?.aborted !== true) {
+      await finishTool('tool.failed');
     }
 
-    const transition = `${String(api.taskId)}:${type}`;
+    throw cause;
+  });
 
-    if ((await ToolTransitions.read(transaction, transition)) === undefined) {
-      await appendEvent(transaction, {
-        type,
-        runId: input.runId,
-        payload: { toolName: name, toolCallId: api.callId, nativeTaskId: api.taskId },
-      });
-      await ToolTransitions.put(transaction, transition, transition);
-    }
-  }, context);
+  let type: 'tool.completed' | 'tool.failed' = 'tool.completed';
+
+  if (result.isError === true) {
+    type = 'tool.failed';
+  }
+
+  await finishTool(type);
 
   return result;
 }

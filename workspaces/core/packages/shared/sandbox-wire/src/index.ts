@@ -65,6 +65,7 @@ export {
   SandboxExecutionRefusal,
   sandboxExecutionPath,
   sandboxExecutionCancelPath,
+  sandboxExecutionCancelPendingPath,
   sandboxExecutionResumePath,
   sandboxWorkspacePath,
   sandboxStopPath,

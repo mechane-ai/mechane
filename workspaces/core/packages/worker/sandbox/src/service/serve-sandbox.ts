@@ -221,6 +221,12 @@ async function executionRoute({ request, stub, url, executionId, action }: Execu
     return new Response(null, { status: HttpStatusCode.NoContent });
   }
 
+  if (action === 'cancel-pending' && request.method === HttpMethod.Post) {
+    const answer = await stub.cancelPendingExecution({ executionId: identity });
+
+    return executionResponse(answer);
+  }
+
   if (action === 'resume' && request.method === HttpMethod.Post) {
     const input = Schema.decodeUnknownSync(SandboxExecutionResume)(await readBody(request));
     const encoded = Schema.encodeSync(SandboxExecutionResume)(input);

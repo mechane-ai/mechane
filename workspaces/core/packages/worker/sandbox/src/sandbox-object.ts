@@ -88,7 +88,7 @@ import { cleanupReadyEvidence } from './evidence/evidence-cleanup.ts';
 import { exportEvidence } from './evidence/export-evidence.ts';
 import { listEvidenceArtifacts, readEvidenceArtifact } from './evidence/read-evidence.ts';
 import { cancelActiveExecutions } from './executions/cancel-active-executions.ts';
-import { cancelExecution } from './executions/cancel-execution.ts';
+import { cancelExecution, cancelPendingExecution } from './executions/cancel-execution.ts';
 import { claimExecution } from './executions/claim-execution.ts';
 import { executionProgress } from './executions/execution-progress.ts';
 import { runExecution } from './executions/run-execution.ts';
@@ -423,6 +423,14 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
   async observeExecution({ executionId, waitMs }: ObserveInput): Promise<typeof SandboxExecutionResult.Encoded> {
     return await this.resumeExecution({ executionId, waitMs, environment: null });
+  }
+
+  async cancelPendingExecution({ executionId }: CancelInput): Promise<typeof SandboxExecutionResult.Encoded> {
+    this.#capacity.requireOwner();
+
+    const result = cancelPendingExecution({ store: this.#store, executionId });
+
+    return Schema.encodeSync(SandboxExecutionResult)(result);
   }
 
   async resumeExecution({

@@ -69,6 +69,16 @@ export function sandboxExecutionCancelPath({ workspaceId, mechId, executionId }:
   return `${path}/cancel`;
 }
 
+export function sandboxExecutionCancelPendingPath({
+  workspaceId,
+  mechId,
+  executionId,
+}: SandboxExecutionIdentity): string {
+  const path = sandboxExecutionPath({ workspaceId, mechId, executionId });
+
+  return `${path}/cancel-pending`;
+}
+
 export function sandboxExecutionResumePath({ workspaceId, mechId, executionId }: SandboxExecutionIdentity): string {
   const path = sandboxExecutionPath({ workspaceId, mechId, executionId });
 
