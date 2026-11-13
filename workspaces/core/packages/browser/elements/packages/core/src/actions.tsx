@@ -77,7 +77,14 @@ const styles = stylex.create({
     minWidth: 0,
   },
   hidden: { visibility: 'hidden' },
-  icon: { width: controls.iconSize, height: controls.iconSize, flexShrink: 0, display: 'inline-flex' },
+  icon: {
+    width: controls.iconSize,
+    height: controls.iconSize,
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   text: {
     'display': 'inline-block',
     'boxSizing': 'border-box',

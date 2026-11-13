@@ -96,12 +96,14 @@ Use `ToolbarAction` for page-header actions, including links composed with `rend
 `CopyValue render={<ToolbarAction />}`; the rendered control owns its appearance and CopyValue owns copy feedback. Use
 `Row` for aligned inline actions, `Stack` for related content, and `RecordPage.Content` for separated page sections.
 Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Supply `AppShell` with a
-`NavigationRail` in its `rail` slot for persistent area links and an optional action. It occupies 48px of the 240px
-navigation budget beside a 192px contextual sidebar. Collapsing hides the contextual sidebar and retains the rail. The
-phone drawer renders those area links with visible labels above its pages. Applications supply selection, URLs, native
-link handlers, and action callbacks. Omit the rail for a sidebar that collapses to page icons.
-`SidebarFooter layout="navigation"` holds persistent controls in the contextual sidebar and reserves their intrinsic
-height while its pages scroll independently.
+`NavigationRail` in its `rail` slot for persistent area links. It occupies 48px of the 240px navigation budget beside a
+192px contextual sidebar. Collapsing hides the contextual sidebar and retains the rail. The phone drawer renders those
+area links with visible labels above its pages. Its width, toolbar height, and footer cell share the same 48px geometry.
+Put a `NavigationRailMenu` in `railFooter` for a pinned icon menu beside the desktop rail and above the phone drawer's
+bottom-left control. Applications supply the menu content and actions. `Avatar` supports `shape="circle"` for an
+initials or photo trigger. Applications supply selection, URLs, native link handlers, and action callbacks. Omit the
+rail for a sidebar that collapses to page icons. `SidebarFooter layout="navigation"` holds persistent controls in the
+contextual sidebar and reserves their intrinsic height while its pages scroll independently.
 
 Navigation closes the mobile drawer and preserves focus set by the destination. Use
 `NavigationItem shouldCloseOnActivate={false}` for menu triggers.

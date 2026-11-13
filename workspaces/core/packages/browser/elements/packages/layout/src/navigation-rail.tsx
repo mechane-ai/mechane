@@ -17,7 +17,7 @@ import {
 import { Tooltip } from '../../overlays/src/index.ts';
 import { SidebarContext } from './sidebar.tsx';
 
-export const NavigationRailContext = createContext(false);
+export const NavigationRailContext = createContext<'rail' | 'drawer'>('rail');
 
 export type NavigationRailLink = Omit<
   ComponentProps<'a'>,
@@ -96,7 +96,7 @@ const styles = stylex.create({
 });
 
 export function NavigationRail({ label, links, action }: NavigationRailProps): ReactNode {
-  const isInDrawer = useContext(NavigationRailContext);
+  const isInDrawer = useContext(NavigationRailContext) === 'drawer';
   const sidebar = useContext(SidebarContext);
 
   function activateLink(onClick: NavigationRailLink['onClick'], event: MouseEvent<HTMLAnchorElement>): void {

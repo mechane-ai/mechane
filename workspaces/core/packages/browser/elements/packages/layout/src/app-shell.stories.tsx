@@ -2,9 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Archive, FileText, Folder, LayoutGrid, LogOut, Plus, RefreshCw, Server, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
+import { Avatar, Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
+import { Menu } from '../../overlays/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
+import { NavigationRailMenu } from './navigation-rail-menu.tsx';
 import { NavigationRail } from './navigation-rail.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import {
@@ -160,8 +162,22 @@ function AreaShell(): ReactNode {
               setPage(item.pages[0]);
             },
           }))}
-          action={{ label: 'Sign out', icon: <LogOut size={16} aria-hidden />, onClick: () => setIsSignedOut(true) }}
         />
+      }
+      railFooter={
+        <NavigationRailMenu
+          label="Account menu"
+          icon={<Avatar label="Preview Operator" fallback="PO" size="sm" shape="circle" />}
+        >
+          <Menu.Group>
+            <Menu.GroupLabel>Preview Operator</Menu.GroupLabel>
+            <Menu.Separator />
+            <Menu.Item onClick={() => setIsSignedOut(true)}>
+              <LogOut size={16} aria-hidden />
+              Sign out
+            </Menu.Item>
+          </Menu.Group>
+        </NavigationRailMenu>
       }
       sidebarHeader={<SidebarLabel>{area.label}</SidebarLabel>}
       sidebar={

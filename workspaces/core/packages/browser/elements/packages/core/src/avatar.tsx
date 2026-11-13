@@ -25,16 +25,20 @@ const styles = stylex.create({
   small: { width: 24, height: 24 },
   medium: { width: 32, height: 32 },
   large: { width: 40, height: 40 },
+  rounded: {},
+  circle: { borderRadius: '50%' },
   image: { width: '100%', height: '100%', objectFit: 'cover' },
 });
 
 type AvatarSize = 'sm' | 'md' | 'lg';
+type AvatarShape = 'rounded' | 'circle';
 
 export type AvatarProps = {
   readonly label: string;
   readonly fallback: string;
   readonly src?: string;
   readonly size?: AvatarSize;
+  readonly shape?: AvatarShape;
 };
 
 const sizes = { sm: styles.small, md: styles.medium, lg: styles.large } satisfies Record<
@@ -42,9 +46,11 @@ const sizes = { sm: styles.small, md: styles.medium, lg: styles.large } satisfie
   stylex.StyleXStyles
 >;
 
-export function Avatar({ label, fallback, src, size = 'md' }: AvatarProps): ReactNode {
+const shapes = { rounded: styles.rounded, circle: styles.circle } satisfies Record<AvatarShape, stylex.StyleXStyles>;
+
+export function Avatar({ label, fallback, src, size = 'md', shape = 'rounded' }: AvatarProps): ReactNode {
   return (
-    <BaseAvatar.Root role="img" aria-label={label} {...stylex.props(styles.avatar, sizes[size])}>
+    <BaseAvatar.Root role="img" aria-label={label} {...stylex.props(styles.avatar, sizes[size], shapes[shape])}>
       {src !== undefined && <BaseAvatar.Image src={src} alt="" {...stylex.props(styles.image)} />}
       <BaseAvatar.Fallback aria-hidden>{fallback}</BaseAvatar.Fallback>
     </BaseAvatar.Root>

@@ -1,6 +1,8 @@
 export { AppShell } from './app-shell.tsx';
 export { NavigationRail } from './navigation-rail.tsx';
 export type { NavigationRailLink, NavigationRailProps } from './navigation-rail.tsx';
+export { NavigationRailMenu } from './navigation-rail-menu.tsx';
+export type { NavigationRailMenuProps } from './navigation-rail-menu.tsx';
 export { DetailPage } from './detail-page.tsx';
 export { FocusPage } from './focus-page.tsx';
 export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';

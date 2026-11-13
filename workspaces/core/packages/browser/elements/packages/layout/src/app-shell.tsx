@@ -38,6 +38,15 @@ const styles = stylex.create({
   collapsed: { width: pageGeometry.toolbarHeight },
   secondary: { width: `calc(${frame.sidebarWidth} - ${pageGeometry.toolbarHeight})` },
   rail: { width: pageGeometry.toolbarHeight },
+  railBody: { flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehaviorY: 'contain' },
+  railFooter: { flexShrink: 0, paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
+  railFooterCell: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: pageGeometry.toolbarHeight,
+    height: pageGeometry.toolbarHeight,
+  },
   hidden: { display: 'none' },
   main: { minWidth: 0, flex: 1 },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },
@@ -45,6 +54,7 @@ const styles = stylex.create({
 
 type AppShellProps = {
   readonly rail?: ReactNode;
+  readonly railFooter?: ReactNode;
   readonly sidebarHeader?: ReactNode;
   readonly sidebar: ReactNode;
   readonly footer?: ReactNode;
@@ -55,6 +65,7 @@ type AppShellProps = {
 
 export function AppShell({
   rail,
+  railFooter,
   sidebarHeader,
   sidebar,
   footer,
@@ -63,6 +74,7 @@ export function AppShell({
   shouldFocus = false,
 }: AppShellProps): ReactNode {
   const hasRail = rail !== undefined && rail !== null;
+  const hasRailFooter = railFooter !== undefined && railFooter !== null;
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const shouldHideSidebar = shouldFocus || (hasRail && !isExpanded);
@@ -106,7 +118,12 @@ export function AppShell({
       <div {...stylex.props(styles.shell)}>
         {hasRail && (
           <div hidden={shouldFocus} {...stylex.props(styles.sidebar, styles.rail, shouldFocus && styles.hidden)}>
-            {rail}
+            <div {...stylex.props(styles.railBody)}>{rail}</div>
+            {hasRailFooter && (
+              <div {...stylex.props(styles.railFooter)}>
+                <div {...stylex.props(styles.railFooterCell)}>{railFooter}</div>
+              </div>
+            )}
           </div>
         )}
         <aside
@@ -169,9 +186,20 @@ export function AppShell({
               <Sidebar
                 header={sidebarHeader}
                 navigationHeader={
-                  hasRail && <NavigationRailContext.Provider value>{rail}</NavigationRailContext.Provider>
+                  hasRail && <NavigationRailContext.Provider value="drawer">{rail}</NavigationRailContext.Provider>
                 }
-                footer={footer}
+                footer={
+                  <>
+                    {footer}
+                    {hasRail && hasRailFooter && (
+                      <NavigationRailContext.Provider value="drawer">
+                        <div {...stylex.props(styles.railFooter)}>
+                          <div {...stylex.props(styles.railFooterCell)}>{railFooter}</div>
+                        </div>
+                      </NavigationRailContext.Provider>
+                    )}
+                  </>
+                }
                 close={<SidebarClose />}
               >
                 {sidebar}
