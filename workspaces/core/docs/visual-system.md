@@ -55,6 +55,11 @@ record content, while PageContent arranges report sections inside an existing pa
 rows, and SettingsRow aligns labels with one bounded field column. These are small compositions with application-owned
 content and callbacks; they introduce no routing, query, or lifecycle protocol.
 
+ReportSection places a metric summary above the full-width chart that explains it. Metric supplies inline, statistic and
+headline presentations, with shared pending value and qualification geometry. The caller supplies formatted values,
+reporting scope and coverage. Current inventory and historical activity can describe different populations, so they stay
+in independent report groups. A metric's optional trend slot holds its passive graphic.
+
 Base UI owns control semantics and composition.[^base-composition] Sonner owns toast stacking, timers, and dismissal;
 Elements owns its appearance.[^sonner] A missing initial result needs a local error with a way to retry. A failed
 refresh keeps the last usable content and reports once. A mutation reports at its operation owner. Two renderers for one

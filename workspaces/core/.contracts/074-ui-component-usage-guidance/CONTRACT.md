@@ -34,6 +34,10 @@ Review changed public components: does the guidance say when to choose each over
 
 ## Local adaptations
 
+The ReportSection examples in `layout/src/page-content.stories.tsx` document a summary above its explanatory chart.
+The Metric examples in `collections/src/record-details.stories.tsx` document formatted values, qualifications,
+pending geometry and passive trends. Review the populations and time windows in the consuming application.
+
 Colocated stories, source guidance, and package documentation describe implemented public components.
 A component family may document its public parts in one story file. Supported means that the component is part of
 the published `@mechane-ai/elements` API, with reviewed behavior, exported types, examples, and maintained guidance.

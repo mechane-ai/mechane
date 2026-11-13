@@ -142,10 +142,13 @@ acknowledgement, and draft retention.
 record and store named choices rather than catalog indexes. Identity palettes remain separate from status colors.
 
 `MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
-record summaries. `PageContent` owns report insets and section gaps; keep full-width tables outside it so their cell
-insets remain the only gutter. `SettingsSection` keeps wide tables inside their scroll region, and `SettingsRow` aligns
-labels and controls. `FormActions` owns submission rows and their internal spacing. The enclosing section owns the gap
-before and after the actions.
+record summaries. `Metric` offers `statistic` and `headline` variants, a concise `detail`, and a passive `trend` slot.
+Use `isLoading` and `hasDetail` to reserve its value and qualification while the application loads data. `ReportSection`
+takes a `summary` element and a chart as its child, placing the number above the full-width chart that explains it. The
+application supplies the measure, period, formatting, coverage and read state. `PageContent` owns report insets and
+section gaps; keep full-width tables outside it so their cell insets remain the only gutter. `SettingsSection` keeps
+wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. `FormActions` owns submission rows
+and their internal spacing. The enclosing section owns the gap before and after the actions.
 
 The default theme is light, with system fonts and a compact spacing scale. Import `themeProps` from
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content

@@ -8,6 +8,8 @@ export { ViewStack } from './view-stack.tsx';
 export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 export type { PageContentProps } from './page-content.tsx';
 export { PageContent } from './page-content.tsx';
+export type { ReportSectionProps } from './report-section.tsx';
+export { ReportSection } from './report-section.tsx';
 export type {
   RecordPageRootProps,
   RecordPageToolbarProps,
