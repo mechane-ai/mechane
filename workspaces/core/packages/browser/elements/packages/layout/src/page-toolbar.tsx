@@ -86,6 +86,7 @@ export function PageToolbar({
   }
 
   const Title = showBreadcrumb ? 'nav' : 'h1';
+  const Label = showBreadcrumb ? 'div' : 'span';
 
   return (
     <div {...stylex.props(styles.toolbar)}>
@@ -96,7 +97,7 @@ export function PageToolbar({
           aria-label={showBreadcrumb ? 'Breadcrumb' : undefined}
           {...stylex.props(styles.title)}
         >
-          <span {...stylex.props(styles.label)}>{title}</span>
+          <Label {...stylex.props(styles.label)}>{title}</Label>
         </Title>
       )}
       {hasViews && <div {...stylex.props(styles.views)}>{views}</div>}
