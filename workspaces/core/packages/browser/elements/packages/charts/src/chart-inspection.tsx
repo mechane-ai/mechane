@@ -124,9 +124,12 @@ export function ChartInspection({
   const preferredLeft = x > width / 2 ? x - inspectorWidth - offset : x + offset;
   const left = Math.max(0, Math.min(width - inspectorWidth, preferredLeft));
 
-  const text = [label, summary, ...rows.map((row) => `${row.label}: ${row.value}`), ...notes].filter(
-    (value) => value !== undefined,
-  );
+  const text =
+    label === undefined
+      ? []
+      : [label, summary, ...rows.map((row) => `${row.label}: ${row.value}`), ...notes].filter(
+          (value) => value !== undefined,
+        );
 
   return (
     <div {...stylex.props(styles.frame)}>
