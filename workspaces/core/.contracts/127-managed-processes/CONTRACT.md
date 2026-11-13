@@ -18,7 +18,7 @@ after merging a guest response, so concurrent cancellation cannot expose a stale
 
 Record an environment execution's terminal receipt and completion outbox entry atomically in the sandbox store.
 The additive migration's transition triggers create one entry per stable execution and kind; retries never invent a
-replacement identity. Retain a pending entry until the authenticated runtime acknowledges the verified result. Failed
+replacement identity. Retain a pending entry until its authenticated owner acknowledges the verified result. Failed
 attempts use the store's bounded exponential backoff and survive host or worker replacement.
 
 Authenticate completion callbacks with the existing environment-service credential. The Worker receiver scopes the execution
@@ -30,7 +30,10 @@ Repeated delivery retains the same notification identity and cannot create a sec
 After verifying the authoritative receipt, acknowledge a canceled foreground command without an inbox notice under
 contract 124. Also suppress a notice when the original tool result already recorded the terminal outcome.
 Expose retained undelivered receipts to the owning mech's bounded resume reconciliation, regardless of callback backoff.
-Accept an acknowledgment only for the matching immutable receipt after the mech has durably admitted its outcome.
+For a mech-owned execution, acknowledge only its matching immutable receipt after the mech has durably admitted its outcome.
+When an operator directly starts a diagnostic execution, the caller owns its completion instead of the mech.
+The caller records the intent and observed terminal outcome, then acknowledges the exact matching receipt.
+Never acknowledge an unknown receipt solely because the mech has no matching execution.
 A completed `start_process` receipt may record only successful admission while its nested outcome is Running. Its later
 terminal result still needs a notification. An explicit Exited, Stopped, or Lost process observation can establish prior
 observation only when its process, machine, outcome, and exit code match the verified receipt.
@@ -125,6 +128,9 @@ Startup credentials follow [execution access](../120-execution-access/CONTRACT.m
 provider credential revocation, and a running handle does not promise that startup credentials remain valid.
 
 ## Checks
+
+For each direct diagnostic execution, does its caller retain the intent and observed outcome before acknowledging its
+matching completion? Does an unknown receipt remain pending until its owner and outcome are established?
 
 Inspect `node/guest/src/processes`, `node/guest/src/quiescence`, and the sandbox checkpoint and machine-drain owners.
 Check that a repeated start cannot spawn twice, a changed start is rejected, and a read or stop cannot reach a replacement

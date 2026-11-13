@@ -34,7 +34,12 @@ import {
   pendingNotification,
   turnForNativeInputs,
 } from '../notifications/admission.ts';
-import { writeActorDeferred, writeActorOperationFailure, writeNativeReport } from '../output/write-actor-diagnostic.ts';
+import {
+  writeActorDeferred,
+  writeActorOperationFailure,
+  writeNativeReport,
+  writeResumeCompletionFailure,
+} from '../output/write-actor-diagnostic.ts';
 import { publishSelfMessage } from '../self/messages.ts';
 import {
   deleteRoutine,
@@ -649,8 +654,8 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
     try {
       await this.#finishResume();
-    } catch {
-      writeActorDeferred({ kind: 'completions' });
+    } catch (error) {
+      writeResumeCompletionFailure({ cause: error, mechId: this.#scope?.mechId });
     }
 
     await this.#resumePending();
@@ -1119,7 +1124,9 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
     try {
       isReconciled = await this.#finishResume();
-    } catch {
+    } catch (error) {
+      writeResumeCompletionFailure({ cause: error, mechId: access.scope.mechId });
+
       throw new ServiceUnavailable({
         reason: 'Environment completion reconciliation is pending; the mech remains quiesced',
       });

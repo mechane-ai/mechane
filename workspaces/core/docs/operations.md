@@ -78,6 +78,14 @@ Native traces describe actor-owned turns, provider attempts, and tools. Imported
 an explicit evidence notice; importing them never replays tools or publications. Pending historical notifications and
 uncertain executions remain evidence for later reconciliation.
 
+Direct sandbox diagnostic executions create completion receipts even when no mech owns the execution. Prefer an isolated
+fixture for diagnostics. When a direct execution is necessary, retain its intent and observed terminal outcome. Read
+`GET /internal/sandboxes/WORKSPACE_ID/MECH_ID/completions/EXECUTION_ID` and compare the complete receipt with that
+evidence. Send requests to the sandbox origin with the service credential. Acknowledge the exact matching receipt with
+`POST /internal/sandboxes/WORKSPACE_ID/MECH_ID/completions` and retain the response. Keep the evidence private. Preserve
+unknown receipts until their owner and outcome are established; an absent mech execution alone does not establish
+ownership.
+
 Provider attempts reserve before dispatch and recheck current policy and caps at dispatch admission. Confirmed usage
 settles once; unknown dispatched attempts remain charged. Only an undispatched reservation can be released as unused. Do
 not repeat a paid request or completed tool to recover missing output.
