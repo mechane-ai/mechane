@@ -68,6 +68,11 @@ For a graceful drain, take a fresh final checkpoint and keep writers frozen unti
 Preserve live files and the previous committed head after a failed save. A failed provider stop retains the drain fence
 and capacity ownership. Snapshotting files does not preserve process memory or establish application transaction consistency.
 
+Retain the expected recovery computer's provider lease through the sandbox's existing alarm while its files await
+explicit repair or retirement. A ready computer's failed health observation refuses work without ending its identity.
+Provider absence ends the live pointer, preserving its committed head, recovery record, and capacity reservation. A historical ended
+pointer alone does not establish provider absence; retain only the recovery computer's latest assigned identity.
+
 Stop returns a durable operation receipt before background retirement completes. Repeated requests attach to its current
 machine and operation; they cannot hide a retained failure behind another acknowledgement. Expose requested, waiting for
 commands, checkpointing, stopping, completed, and failed phases, with timestamps, generation, bounded last error, and a
@@ -122,6 +127,10 @@ provider credential revocation, and a running handle does not promise that start
 Inspect `node/guest/src/processes`, `node/guest/src/quiescence`, and the sandbox checkpoint and machine-drain owners.
 Check that a repeated start cannot spawn twice, a changed start is rejected, and a read or stop cannot reach a replacement
 machine. Observe natural exit, explicit stop, run cancellation, and machine loss through the existing runtime boundary.
+Keep a recovery computer leased across idle alarm cycles and owner replacement without allocating or stopping it.
+Return unavailable for a failed health probe while retaining its identity and access to the original repair fence.
+Repeat with an ended pointer and the same latest assigned recovery identity; refuse renewal for a later replacement.
+Confirm that provider absence preserves the head, recovery, and reservation and ends retention scheduling.
 
 Interrupt delivery after the sandbox terminal receipt commits, lose the runtime acknowledgment, and restart the owner.
 Verify the outbox remains pending or retries with its original identity and one admitted notification. Exercise an invalid

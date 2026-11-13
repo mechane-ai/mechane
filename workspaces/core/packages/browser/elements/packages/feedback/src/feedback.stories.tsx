@@ -3,7 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { useState } from 'react';
 import { DataTable, DataTablePlaceholder } from '../../collections/src/index.ts';
 import type { DataTableColumn } from '../../collections/src/index.ts';
-import { Button, Columns, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
+import { Avatar, Button, Columns, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { AsyncRegion, ContentReveal, LoadingScope } from './async-region.tsx';
 import type { AsyncRegionState } from './async-region.tsx';
@@ -18,7 +18,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
+          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Its image presentation shows the placeholder immediately and fades a newly ready image in over 200ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
       },
     },
   },
@@ -38,6 +38,7 @@ const styles = stylex.create({
   },
   surface: { backgroundColor: colors.surface },
   canvas: { backgroundColor: colors.canvas },
+  image: { display: 'flex', width: 40, height: 40 },
 });
 
 type PlaceholderSampleProps = { readonly label: string };
@@ -199,3 +200,46 @@ function ReadExample({ initialState = 'pending' }: { readonly initialState?: Asy
 export const DelayedRegion: Story = { render: () => <ReadExample /> };
 export const CachedRegion: Story = { render: () => <ReadExample initialState="ready" /> };
 export const FailedRegion: Story = { render: () => <ReadExample initialState="failed" /> };
+
+const image = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#647b96"/><circle cx="20" cy="15" r="8" fill="#e6edf4"/><circle cx="20" cy="39" r="15" fill="#e6edf4"/></svg>',
+)}`;
+
+function ImageExample() {
+  const [state, setState] = useState<AsyncRegionState>('pending');
+  const [visit, setVisit] = useState(0);
+  const region = { label: 'Loading image', placeholder: <Skeleton width={40} height={40} /> };
+
+  return (
+    <Stack>
+      <Row>
+        <Button onClick={() => setState('pending')}>Start read</Button>
+        <Button onClick={() => setState('ready')}>Complete read</Button>
+        <Button onClick={() => setState('failed')}>Fail read</Button>
+        <Button
+          onClick={() => {
+            setState('ready');
+            setVisit((current) => current + 1);
+          }}
+        >
+          Reopen cached image
+        </Button>
+      </Row>
+      <div key={visit} {...stylex.props(styles.image)}>
+        {state === 'pending' ? (
+          <AsyncRegion {...region} presentation="image" state="pending" />
+        ) : (
+          <AsyncRegion {...region} presentation="image" state={state}>
+            {state === 'ready' ? (
+              <Avatar label="Example person" fallback="EP" src={image} size="lg" />
+            ) : (
+              <Avatar label="Example person" fallback="EP" size="lg" />
+            )}
+          </AsyncRegion>
+        )}
+      </div>
+    </Stack>
+  );
+}
+
+export const ImageRegion: Story = { render: () => <ImageExample /> };

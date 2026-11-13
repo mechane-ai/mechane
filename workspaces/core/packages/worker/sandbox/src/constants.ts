@@ -16,4 +16,5 @@ export const SANDBOX_IDLE = Duration.minutes(15);
 export const STOP_RETRY = Duration.minutes(1);
 export const MAINTENANCE_RETRY = Duration.millis(500);
 export const BACKGROUND_OBSERVE_INTERVAL = Duration.seconds(5);
+export const RECOVERY_OBSERVE_INTERVAL = Duration.minutes(1);
 export const CONTAINER_INACTIVITY = Duration.sum(SANDBOX_IDLE, STOP_RETRY);

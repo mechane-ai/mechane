@@ -74,6 +74,7 @@ import {
   AUTOMATIC_CHECKPOINT_QUIET,
   BACKGROUND_OBSERVE_INTERVAL,
   MAINTENANCE_RETRY,
+  RECOVERY_OBSERVE_INTERVAL,
   SANDBOX_IDLE,
   STOP_RETRY,
 } from './constants.ts';
@@ -1031,6 +1032,12 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       return;
     }
 
+    const workspace = this.#store.workspace();
+
+    if (Option.isSome(workspace.recovery)) {
+      return;
+    }
+
     const idleAt = this.#store.sandboxIdleAt();
     const now = DateTime.nowUnsafe();
     const stop = this.#store.latestSandboxStop();
@@ -1119,8 +1126,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const now = DateTime.nowUnsafe();
     const nextCompletion = this.#store.nextCompletionAt();
     const idleAt = this.#store.sandboxIdleAt();
+    const workspace = this.#store.workspace();
+    const hasRecovery = Option.isSome(workspace.recovery);
 
-    if (Option.isSome(idleAt)) {
+    if (Option.isSome(idleAt) && !hasRecovery) {
       const at = DateTime.max(now, idleAt.value);
 
       await this.#alarm.arm({ at });
@@ -1132,13 +1141,34 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       await this.#alarm.arm({ at });
     }
 
-    const checkpoint = this.#store.workspace().checkpoint;
+    const checkpoint = workspace.checkpoint;
     const work = this.#store.backgroundWork();
-    const workspace = this.#store.workspace();
 
     const live = this.#store.liveMachine();
+    const latest = this.#store.latestMachine();
     const active = this.#store.activeExecution();
     const isMaintenanceActive = maintenanceActive({ store: this.#store });
+
+    const retainedRecovery = Option.filter(workspace.recovery, (recovery) =>
+      Option.exists(latest, (machine) => machine.id === recovery.machineId),
+    );
+
+    if (Option.isSome(retainedRecovery) && !isMaintenanceActive) {
+      const promise = this.#provider.connect({ machineId: retainedRecovery.value.machineId });
+      const connected = await capturePromise({ promise });
+
+      const shouldObserveRecovery = Result.match(connected, {
+        onFailure: () => true,
+        onSuccess: (guest) => Option.isSome(guest) || Option.isSome(live),
+      });
+
+      if (shouldObserveRecovery) {
+        const observedAt = DateTime.nowUnsafe();
+        const at = DateTime.addDuration(observedAt, RECOVERY_OBSERVE_INTERVAL);
+
+        await this.#alarm.arm({ at });
+      }
+    }
 
     const canScheduleAutomatic = Option.isNone(this.#files.pending) && Option.isSome(live) && !isMaintenanceActive;
 

@@ -70,6 +70,10 @@ keep its decoration invisible until the delay expires. A result ends pending pre
 neither the delay nor an unfinished placeholder fade imposes a minimum dwell. Failed reads and action feedback appear
 immediately. Cached ready content starts fully visible.
 
+`AsyncRegion presentation="image"` is the image-loading exception. Show its decorative placeholder immediately and
+reveal a newly ready image using `loading.imageRevealMs`. The delayed loading announcement still follows the shared
+deadline. Ready-at-mount and failed images remain immediate, and reduced motion disables the fade.
+
 The Console route owns `LoadingScope` identity. Its initial page reads share one elapsed clock instead of restarting
 the delay as each dependent read mounts. The application coordinates the heading, resource actions, and selected
 view's primary content before their single reveal. Optional reads report their own state without delaying the primary

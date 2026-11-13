@@ -4,7 +4,7 @@ import type { GuestConnection, MachineIdInput, ProviderStepInput } from '../type
 
 type ConnectLiveMachineInput = ProviderStepInput & MachineIdInput;
 
-/** Connects only an already-ready original machine; failed health retires its durable handles without replacement. */
+/** Provider absence ends the original identity; failed health leaves it available for a later observation. */
 export async function connectLiveMachine({
   store,
   provider,
@@ -18,11 +18,15 @@ export async function connectLiveMachine({
 
   const guest = await provider.connect({ machineId });
 
-  if (Option.isNone(guest) || !(await guest.value.health({ machineId }))) {
+  if (Option.isNone(guest)) {
     const now = DateTime.nowUnsafe();
 
     store.loseMachine({ machineId, now });
 
+    return Option.none();
+  }
+
+  if (!(await guest.value.health({ machineId }))) {
     return Option.none();
   }
 

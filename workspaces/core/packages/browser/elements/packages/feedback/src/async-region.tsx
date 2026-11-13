@@ -23,7 +23,10 @@ const styles = stylex.create({
     animationTimingFunction: motion.easing,
   },
   placeholderReveal: { animationDuration: `${loading.placeholderMs}ms` },
+  imageReveal: { animationDuration: `${loading.imageRevealMs}ms` },
 });
+
+const presentationStyles = { content: null, image: styles.imageReveal };
 
 export type LoadingScopeProps = {
   readonly identity: string | number;
@@ -45,9 +48,13 @@ export function LoadingScope({ identity, initialStartedAt, children }: LoadingSc
   return <LoadingStarted value={current}>{children}</LoadingStarted>;
 }
 
-export type ContentRevealProps = { readonly shouldEnter: boolean; readonly children: ReactNode };
+export type ContentRevealProps = {
+  readonly shouldEnter: boolean;
+  readonly presentation?: 'content' | 'image';
+  readonly children: ReactNode;
+};
 
-export function ContentReveal({ shouldEnter, children }: ContentRevealProps): ReactNode {
+export function ContentReveal({ shouldEnter, presentation = 'content', children }: ContentRevealProps): ReactNode {
   const isAncestorRevealing = useContext(RevealingTogether);
   const [isRevealing, setIsRevealing] = useState(shouldEnter && !isAncestorRevealing);
   const content = useRef<HTMLDivElement>(null);
@@ -73,7 +80,10 @@ export function ContentReveal({ shouldEnter, children }: ContentRevealProps): Re
   }, [isRevealing]);
 
   return (
-    <div ref={content} {...stylex.props(styles.content, isRevealing && styles.reveal)}>
+    <div
+      ref={content}
+      {...stylex.props(styles.content, isRevealing && styles.reveal, presentationStyles[presentation])}
+    >
       <RevealingTogether value={isAncestorRevealing || isRevealing}>{children}</RevealingTogether>
     </div>
   );
@@ -81,19 +91,29 @@ export function ContentReveal({ shouldEnter, children }: ContentRevealProps): Re
 
 export type AsyncRegionState = 'pending' | 'ready' | 'failed';
 
-export type AsyncRegionProps = { readonly label: string; readonly placeholder: ReactNode } & (
+export type AsyncRegionProps = {
+  readonly label: string;
+  readonly placeholder: ReactNode;
+  readonly presentation?: 'content' | 'image';
+} & (
   | { readonly state: 'pending'; readonly children?: never }
   | { readonly state: 'ready' | 'failed'; readonly children: ReactNode }
 );
 
-type PendingContentProps = { readonly label: string; readonly placeholder: ReactNode; readonly startedAt: number };
+type PendingContentProps = {
+  readonly label: string;
+  readonly placeholder: ReactNode;
+  readonly startedAt: number;
+  readonly presentation: 'content' | 'image';
+};
 
-function PendingContent({ label, placeholder, startedAt }: PendingContentProps): ReactNode {
+function PendingContent({ label, placeholder, startedAt, presentation }: PendingContentProps): ReactNode {
   const [shownFor, setShownFor] = useState<number | undefined>(() =>
     Date.now() - startedAt >= PLACEHOLDER_DELAY_MS ? startedAt : undefined,
   );
 
   const isVisible = shownFor === startedAt;
+  const isImage = presentation === 'image';
 
   useEffect(() => {
     const remaining = Math.max(0, PLACEHOLDER_DELAY_MS - (Date.now() - startedAt));
@@ -110,8 +130,8 @@ function PendingContent({ label, placeholder, startedAt }: PendingContentProps):
           inert
           {...stylex.props(
             styles.content,
-            !isVisible && styles.hidden,
-            isVisible && styles.reveal,
+            !isImage && !isVisible && styles.hidden,
+            !isImage && isVisible && styles.reveal,
             styles.placeholderReveal,
           )}
         >
@@ -162,11 +182,18 @@ export function AsyncRegion(props: AsyncRegionProps): ReactNode {
   return (
     <div {...stylex.props(styles.region)}>
       {props.state === 'pending' ? (
-        <PendingContent label={props.label} placeholder={props.placeholder} startedAt={current.startedAt} />
+        <PendingContent
+          label={props.label}
+          placeholder={props.placeholder}
+          startedAt={current.startedAt}
+          presentation={props.presentation ?? 'content'}
+        />
       ) : props.state === 'failed' ? (
         <div {...stylex.props(styles.content)}>{props.children}</div>
       ) : (
-        <ContentReveal shouldEnter={current.wasPending}>{props.children}</ContentReveal>
+        <ContentReveal shouldEnter={current.wasPending} presentation={props.presentation ?? 'content'}>
+          {props.children}
+        </ContentReveal>
       )}
     </div>
   );
