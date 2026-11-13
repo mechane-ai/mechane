@@ -4,6 +4,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { Streamdown, useIsCodeFenceIncomplete } from 'streamdown';
 import type { Components } from 'streamdown';
 import { colors, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { useVisibleMotion } from '../../../foundations/src/visible-motion.ts';
 import { CodeBlock } from '../code/code-block.tsx';
 import { ContentLink } from '../content-link.tsx';
@@ -145,6 +146,22 @@ function MarkdownHeading({ level, children, id }: MarkdownHeadingProps): ReactNo
   return createElement(tagName, { id, ...stylex.props(styles.heading, size) }, children);
 }
 
+function MarkdownTable({ children }: { readonly children?: ReactNode }): ReactNode {
+  const scroll = useScrollTabIndex<HTMLDivElement>();
+
+  return (
+    <div
+      ref={scroll.ref}
+      role="region"
+      aria-label="Markdown table"
+      tabIndex={scroll.tabIndex}
+      {...stylex.props(viewerStyles.scrollRegion, styles.block, styles.tableRegion)}
+    >
+      <table {...stylex.props(styles.table)}>{children}</table>
+    </div>
+  );
+}
+
 const components: Components = {
   h1: (props) => <MarkdownHeading {...props} level={1} />,
   h2: (props) => <MarkdownHeading {...props} level={2} />,
@@ -173,16 +190,7 @@ const components: Components = {
       {alt !== undefined && alt.length > 0 ? `Open image: ${alt}` : 'Open image'}
     </ContentLink>
   ),
-  table: ({ children }) => (
-    <div
-      role="region"
-      aria-label="Markdown table"
-      tabIndex={0}
-      {...stylex.props(viewerStyles.scrollRegion, styles.block, styles.tableRegion)}
-    >
-      <table {...stylex.props(styles.table)}>{children}</table>
-    </div>
-  ),
+  table: ({ children }) => <MarkdownTable>{children}</MarkdownTable>,
   thead: ({ children }) => <thead>{children}</thead>,
   tbody: ({ children }) => <tbody>{children}</tbody>,
   tr: ({ children }) => <tr>{children}</tr>,

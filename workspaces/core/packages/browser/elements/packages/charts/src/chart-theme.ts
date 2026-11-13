@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import { chartColors, colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
+import { chartColors, colors, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export type ChartTone =
   | 'series1'
@@ -38,13 +38,5 @@ export const chartStyles = stylex.create({
   },
   mark: { strokeWidth: 1.5, vectorEffect: 'non-scaling-stroke' },
   selected: { stroke: colors.ink, strokeWidth: 2, vectorEffect: 'non-scaling-stroke' },
-  focus: {
-    'outlineStyle': 'none',
-    ':focus-visible': {
-      outlineColor: colors.focus,
-      outlineStyle: 'solid',
-      outlineWidth: controls.focusWidth,
-      outlineOffset: `calc(-1 * ${controls.focusWidth})`,
-    },
-  },
+  inspectable: { outlineStyle: 'none' },
 });

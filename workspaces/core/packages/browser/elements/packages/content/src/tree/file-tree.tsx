@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { spacing } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from '../viewer-styles.ts';
 import type { FileTreeProps } from './file-tree-types.ts';
 import type { PierreTree } from './pierre-tree.tsx';
@@ -22,6 +23,7 @@ const styles = stylex.create({
 });
 
 export function FileTree(props: FileTreeProps): ReactNode {
+  const scroll = useScrollTabIndex<HTMLUListElement>();
   const [renderer, setRenderer] = useState<TreeRenderer>({ Component: null, hasFailed: false });
   const { label, paths, selectedPaths, onSelectedPathsChange, height = 320 } = props;
 
@@ -62,8 +64,9 @@ export function FileTree(props: FileTreeProps): ReactNode {
             <p {...stylex.props(viewerStyles.note)}>Tree navigation is unavailable. Select a path below.</p>
           )}
           <ul
+            ref={scroll.ref}
             aria-label={`${label} paths`}
-            tabIndex={0}
+            tabIndex={scroll.tabIndex}
             {...stylex.props(viewerStyles.scrollRegion, styles.paths(height))}
           >
             {paths.slice(0, FALLBACK_PATHS).map((path) => (

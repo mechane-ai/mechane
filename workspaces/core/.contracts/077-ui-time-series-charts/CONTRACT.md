@@ -30,6 +30,8 @@ Show inspection details in one chart-owned surface that consumers do not rebuild
 Expose inspected values as text, not only as graphic marks.
 Support touch inspection without blocking scrolling of the surrounding content.
 Dismiss inspection details on Escape or an outside press, and keep keyboard focus on the plot after Escape.
+Keep a visible cursor at the inspected timestamp after Escape. Resume arrow-key inspection from that timestamp.
+Mark only the focused plot's keyboard cursor when small multiples share inspection across panels.
 Keep inspection open when equivalent observations arrive in new arrays, and close it when values, series identity, or markers change.
 Keep inspection details inside the viewport and in the active theme, and keep series legends visible while idle.
 

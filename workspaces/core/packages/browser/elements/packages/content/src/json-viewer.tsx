@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { CopyValue } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from './viewer-styles.ts';
 
 export type JsonValue =
@@ -138,6 +139,7 @@ function JsonEntry({ value, name, path, depth, maxDepth, maxEntries }: JsonEntry
 }
 
 export function JsonViewer({ value, label, maxDepth = 6, maxEntries = 50 }: JsonViewerProps): ReactNode {
+  const scroll = useScrollTabIndex<HTMLDivElement>();
   const copyValue = useCallback(() => JSON.stringify(value, null, 2), [value]);
 
   return (
@@ -149,9 +151,10 @@ export function JsonViewer({ value, label, maxDepth = 6, maxEntries = 50 }: Json
         </CopyValue>
       </div>
       <div
+        ref={scroll.ref}
         role="region"
         aria-label={`${label} fields`}
-        tabIndex={0}
+        tabIndex={scroll.tabIndex}
         {...stylex.props(viewerStyles.scrollRegion, styles.body)}
       >
         <JsonEntry

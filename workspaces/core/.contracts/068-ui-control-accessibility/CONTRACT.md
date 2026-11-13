@@ -16,13 +16,18 @@ Keep native table semantics, and expose the sort state of each sortable column h
 Give every control an accessible name, and give an icon-only control an explicit text label.
 Convey state with text or shape in addition to color.
 Expose a disclosure through a labeled button that reports its expanded state.
-Make scrollable content regions keyboard-focusable and give them accessible names.
+Give a region its own Tab stop when it handles a keyboard interaction or is needed to reach overflowing content.
+Keep layout and navigation wrappers out of the sequential Tab order when their child controls provide access.
+Name keyboard-scrollable regions and preserve access after resize, asynchronous content, and disclosure changes.
 
 Support the keyboard actions that the platform's interaction pattern defines for each control, such as Enter, Space, arrow keys, Home, End, and Escape.
 Show a visible focus indicator during keyboard navigation.
 Style chart and scroll-region focus with `:focus-visible`, with no browser outline on pointer focus. Do not remove
 keyboard focusability to hide an unwanted pointer ring. Programmatically focused, noninteractive page titles may
 omit the outline. Verify a pointer click followed by Tab and arrow-key inspection; a screenshot alone cannot prove this.
+Show chart keyboard focus at the inspected datum. After Escape dismisses inspection, keep its position visible until
+focus leaves. Give a true tab panel a reading entry point when its first meaningful content has no focusable control.
+Use links for destinations and the adopted Tabs for switching associated panels within a view.
 Keep interactive targets at or above the declared minimum size on coarse pointers.
 Change a selection only on activation by click, tap, or key press; hover or focus alone must not change a selection, start requests, or change destinations.
 
@@ -32,6 +37,10 @@ Name the affected record in a destructive confirmation.
 Return focus to the invoking control when an overlay or disclosure closes, or to a surviving related control when the invoker was removed.
 
 ## Checks
+
+Tab through the rendered page, then Shift+Tab back. Can each stop operate a control, inspect a chart, read a tab panel,
+or scroll otherwise unreachable content? Inspect fitting and overflowing tables and viewers at the same widths.
+Use `foundations/src/use-scroll-tab-index.ts` for Elements scroll regions, including conditionally mounted disclosures.
 
 Operate each changed control with a pointer and with Tab, Shift+Tab, arrow keys, Enter, Space, and Escape as applicable.
 Inspect each changed control's role, accessible name, and state in the accessibility tree.

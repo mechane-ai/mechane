@@ -3,7 +3,8 @@ import { scaleLinear } from '@visx/scale';
 import { AreaClosed } from '@visx/shape';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
@@ -55,12 +56,6 @@ type SharedInspection = {
 
 const styles = stylex.create({
   frame: { minWidth: 0 },
-  plot: {
-    'minWidth': 0,
-    'outlineStyle': 'none',
-    'outlineOffset': -2,
-    ':focus-visible': { outlineColor: colors.focus, outlineStyle: 'solid', outlineWidth: controls.focusWidth },
-  },
   body: { display: 'grid', gap: spacing.md },
   timeAxis: {
     display: 'flex',
@@ -266,6 +261,8 @@ function TimeChart({
   const points = prepared[0]?.points ?? [];
   const { ref, width, element } = usePlotWidth();
   const rootRef = useRef<HTMLDivElement>(null);
+  const [keyboardTimestamp, setKeyboardTimestamp] = useState<number>();
+  const cursor = points.find((point) => point.timestamp === keyboardTimestamp) ?? points[0];
   const [inspection, setInspection] = useState<Inspection | undefined>();
   const signature = timeSeriesSignature({ series, markers, timestampUnit, isStacked });
 
@@ -367,7 +364,7 @@ function TimeChart({
       return;
     }
 
-    const currentIndex = points.findIndex((point) => point.timestamp === active?.timestamp);
+    const currentIndex = points.findIndex((point) => point.timestamp === cursor?.timestamp);
 
     const navigation = {
       ArrowRight: Math.min(points.length - 1, currentIndex + 1),
@@ -392,6 +389,7 @@ function TimeChart({
         const point = points[navigation[event.key]];
 
         if (point !== undefined) {
+          setKeyboardTimestamp(point.timestamp);
           updateInspection({ signature, timestamp: point.timestamp, source: 'keyboard' });
         }
 
@@ -416,13 +414,21 @@ function TimeChart({
               viewBox={`0 0 ${width} ${svgHeight}`}
               height={svgHeight}
               onKeyDown={inspectKey}
+              onFocus={(event) => {
+                if (event.currentTarget.matches(':focus-visible')) {
+                  const timestamp = active?.timestamp ?? first;
+
+                  setKeyboardTimestamp(timestamp);
+                  updateInspection({ signature, timestamp, source: 'keyboard' });
+                }
+              }}
               onPointerMove={(event) => {
                 if (event.pointerType === 'mouse') {
                   inspectClient(event.clientX);
                 }
               }}
               onPointerDown={(event) => inspectClient(event.clientX)}
-              {...stylex.props(chartStyles.svg, styles.plot)}
+              {...stylex.props(chartStyles.svg, chartStyles.inspectable, stylex.defaultMarker())}
             >
               {yTicks.map((tick) => (
                 <g key={tick}>
@@ -491,6 +497,14 @@ function TimeChart({
                   y1={top}
                   y2={bottom}
                   {...stylex.props(styles.guide)}
+                />
+              )}
+              {cursor !== undefined && (
+                <ChartCursor
+                  x={x(cursor.timestamp)}
+                  top={top}
+                  bottom={bottom}
+                  width={Math.min(16, (right - left) / 2)}
                 />
               )}
             </svg>

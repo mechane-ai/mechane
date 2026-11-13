@@ -96,7 +96,7 @@ export function PageNavigation<ItemId extends string>({
   isEmbedded = false,
 }: PageNavigationProps<ItemId>): ReactNode {
   return (
-    <nav aria-label={label} tabIndex={0} {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
+    <nav aria-label={label} {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
       {items.map((item) => (
         <a
           key={item.id}

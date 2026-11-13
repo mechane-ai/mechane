@@ -9,6 +9,7 @@ import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
 import { conditions, layers, tableGeometry } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
@@ -534,7 +535,8 @@ export function DataTable<Row extends object>({
   }, [columns]);
 
   const table = useTable({ features, columns: model, data: rows, getRowId });
-  const viewport = useRef<HTMLDivElement>(null);
+  const scroll = useScrollTabIndex<HTMLDivElement>();
+  const viewport = scroll.viewport;
   const endElement = useRef<HTMLDivElement>(null);
   const captionElement = useRef<HTMLTableCaptionElement>(null);
   const headerElement = useRef<HTMLTableSectionElement>(null);
@@ -716,10 +718,10 @@ export function DataTable<Row extends object>({
   return (
     <div {...stylex.props(styles.frame, frameStyles[sizing])}>
       <div
-        ref={viewport}
+        ref={scroll.ref}
         role="region"
         aria-label={caption}
-        tabIndex={0}
+        tabIndex={scroll.tabIndex}
         {...stylex.props(
           styles.viewport,
           viewportStyles[sizing],

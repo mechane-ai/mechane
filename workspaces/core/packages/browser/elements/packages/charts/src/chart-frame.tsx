@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Collapsible } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { chartToneColors } from './chart-theme.ts';
 import type { ChartTone } from './chart-theme.ts';
 
@@ -229,12 +230,20 @@ export function ChartDataDisclosure({
   readonly children: ReactNode;
   readonly label?: string | undefined;
 }): ReactNode {
+  const scroll = useScrollTabIndex<HTMLDivElement>();
+
   return (
     <div {...stylex.props(styles.disclosure)}>
       <Collapsible.Root>
         <Collapsible.Trigger>{label}</Collapsible.Trigger>
         <Collapsible.Panel>
-          <div role="region" aria-label={label} tabIndex={0} {...stylex.props(styles.data)}>
+          <div
+            ref={scroll.ref}
+            role="region"
+            aria-label={label}
+            tabIndex={scroll.tabIndex}
+            {...stylex.props(styles.data)}
+          >
             {children}
           </div>
         </Collapsible.Panel>

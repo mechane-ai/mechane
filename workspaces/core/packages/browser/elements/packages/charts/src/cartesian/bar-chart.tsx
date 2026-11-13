@@ -6,6 +6,7 @@ import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-values.tsx';
+import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
@@ -224,10 +225,13 @@ export function BarChart({
   const { ref, width } = usePlotWidth();
   const inspectionId = useId();
   const [inspection, setInspection] = useState<{ readonly id: string; readonly source: 'pointer' | 'keyboard' }>();
+  const [keyboardId, setKeyboardId] = useState<string>();
   const activeIndex = categories.findIndex((category) => category.id === inspection?.id);
   const active = categories[activeIndex];
   const selectedIndex = categories.findIndex((category) => category.id === selection?.selectedId);
   const selected = categories[selectedIndex];
+  const cursor = categories.find((category) => category.id === keyboardId) ?? selected ?? categories[0];
+  const cursorIndex = categories.findIndex((category) => category.id === cursor?.id);
   const readout = active ?? selected;
   const readoutIndex = active === undefined ? selectedIndex : activeIndex;
 
@@ -259,6 +263,10 @@ export function BarChart({
     const category = categories[Math.max(0, Math.min(categories.length - 1, index))];
 
     if (category !== undefined) {
+      if (event.type === 'pointerdown') {
+        setKeyboardId(category.id);
+      }
+
       setInspection({ id: category.id, source: 'pointer' });
     }
   }
@@ -277,17 +285,17 @@ export function BarChart({
     }
 
     if (selectionKeys.has(event.key)) {
-      if (active !== undefined && selection !== undefined) {
+      if (cursor !== undefined && selection !== undefined) {
         event.preventDefault();
-        selection.onSelect(active.id);
+        selection.onSelect(cursor.id);
       }
 
       return;
     }
 
     const index = {
-      ArrowRight: Math.min(categories.length - 1, activeIndex + 1),
-      ArrowLeft: Math.max(0, activeIndex - 1),
+      ArrowRight: Math.min(categories.length - 1, cursorIndex + 1),
+      ArrowLeft: Math.max(0, cursorIndex - 1),
       Home: 0,
       End: categories.length - 1,
     }[event.key];
@@ -296,6 +304,7 @@ export function BarChart({
 
     if (category !== undefined) {
       event.preventDefault();
+      setKeyboardId(category.id);
       setInspection({ id: category.id, source: 'keyboard' });
     }
   }
@@ -314,6 +323,14 @@ export function BarChart({
             viewBox={`0 0 ${width} ${height}`}
             height={height}
             onKeyDown={inspectKey}
+            onFocus={(event) => {
+              if (event.currentTarget.matches(':focus-visible')) {
+                const category = selected ?? categories[0];
+
+                setKeyboardId(category?.id);
+                setInspection(category === undefined ? undefined : { id: category.id, source: 'keyboard' });
+              }
+            }}
             onPointerMove={(event) => {
               if (event.pointerType === 'mouse') {
                 inspectPointer(event);
@@ -331,7 +348,7 @@ export function BarChart({
                 selection?.onSelect(active.id);
               }
             }}
-            {...stylex.props(chartStyles.svg, chartStyles.focus)}
+            {...stylex.props(chartStyles.svg, chartStyles.inspectable, stylex.defaultMarker())}
           >
             {active !== undefined && (
               <rect
@@ -428,6 +445,14 @@ export function BarChart({
                 </g>
               );
             })}
+            {cursor !== undefined && (
+              <ChartCursor
+                x={(x(cursor.id) ?? left) + x.bandwidth() / 2}
+                top={12}
+                bottom={bottom}
+                width={Math.max(8, x.bandwidth())}
+              />
+            )}
           </svg>
         )}
       </div>

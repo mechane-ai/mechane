@@ -5,6 +5,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { highlightTheme, pierreCSS } from '../pierre-theme.ts';
 import { viewerStyles } from '../viewer-styles.ts';
 import type { DiffAnnotation, DiffFile, DiffSource } from './diff-source.ts';
@@ -59,16 +60,19 @@ export function PierreDiff({
   label,
 }: PierreDiffProps): ReactNode {
   const [virtualizer] = useState(() => new Virtualizer());
+  const scroll = useScrollTabIndex<HTMLDivElement>();
 
   const viewport = useCallback(
     (node: HTMLDivElement | null) => {
+      scroll.ref(node);
+
       if (node === null) {
         virtualizer.cleanUp();
       } else {
         virtualizer.setup(node);
       }
     },
-    [virtualizer],
+    [virtualizer, scroll.ref],
   );
 
   return (
@@ -77,7 +81,7 @@ export function PierreDiff({
         ref={viewport}
         role="region"
         aria-label={`${label} changes`}
-        tabIndex={0}
+        tabIndex={scroll.tabIndex}
         {...stylex.props(viewerStyles.scrollRegion, styles.viewport(maxHeight))}
       >
         <div>

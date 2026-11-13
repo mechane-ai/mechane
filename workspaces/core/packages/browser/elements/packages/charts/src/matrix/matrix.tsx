@@ -2,6 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
@@ -140,6 +141,7 @@ export function Matrix({
   selection,
   emptyLabel,
 }: MatrixProps): ReactNode {
+  const scroll = useScrollTabIndex<HTMLDivElement>();
   const problem = matrixProblem({ rows, columns, cells, domain, palette });
 
   if (problem !== null) {
@@ -221,7 +223,13 @@ export function Matrix({
       {rows.length === 0 || columns.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <div role="region" aria-label={`${title} cells`} tabIndex={0} {...stylex.props(styles.scroll)}>
+        <div
+          ref={scroll.ref}
+          role="region"
+          aria-label={`${title} cells`}
+          tabIndex={scroll.tabIndex}
+          {...stylex.props(styles.scroll)}
+        >
           <table {...stylex.props(styles.table)}>
             <thead>
               <tr>

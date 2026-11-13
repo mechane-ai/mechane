@@ -95,13 +95,9 @@ asynchronous work and pass its pending, success, or failure state to controls.
 Use `ToolbarAction` for page-header actions, including links composed with `render`. A clipboard action can compose
 `CopyValue render={<ToolbarAction />}`; the rendered control owns its appearance and CopyValue owns copy feedback. Use
 `Row` for aligned inline actions, `Stack` for related content, and `RecordPage.Content` for separated page sections.
-Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Supply `AppShell` with a
-`NavigationRail` in its `rail` slot for persistent area links and an optional action. It occupies 48px of the 240px
-navigation budget beside a 192px contextual sidebar. Collapsing hides the contextual sidebar and retains the rail. The
-phone drawer renders those area links with visible labels above its pages. Applications supply selection, URLs, native
-link handlers, and action callbacks. Omit the rail for a sidebar that collapses to page icons.
-`SidebarFooter layout="navigation"` holds persistent controls in the contextual sidebar and reserves their intrinsic
-height while its pages scroll independently.
+Detail titles wrap; list metadata truncates. Sidebar items share contiguous hit areas. Put scrolling commands with the
+navigation and reserve the divided sidebar footer for persistent account controls. Use
+`SidebarFooter layout="navigation"` for a group of commands; its intrinsic height keeps the scrolling navigation clear.
 
 Navigation closes the mobile drawer and preserves focus set by the destination. Use
 `NavigationItem shouldCloseOnActivate={false}` for menu triggers.
@@ -110,7 +106,10 @@ Navigation closes the mobile drawer and preserves focus set by the destination. 
 inactive content mounted and measurable but removes it from keyboard and assistive-technology navigation. The
 application owns which view is active and when to unmount it; use this for a draft or reading position that must survive
 inspection. `WorkbenchScroll` requires an accessible `label`; its `isFlush` mode leaves list insets to the table. Its
-`scrollRestorationId` identifies the actual scroll region for application-owned restoration.
+`scrollRestorationId` identifies the actual scroll region for application-owned restoration. Layout wrappers leave
+sequential keyboard navigation to their controls. Tables and viewers add a named scroll stop when overflow needs one.
+Interactive Cartesian charts have one Tab stop, a local datum cursor, and arrow-key inspection. Enter or Space activates
+supplied selection; Escape dismisses details while retaining the cursor.
 
 `Workbench` accepts an optional `inspector={{ label: 'Workspace', content: <WorkspaceFiles /> }}`. The application
 supplies the accessible name with the panel content and owns opening, closing, and focus restoration. The inspector
@@ -194,10 +193,6 @@ Use `AsyncRegion` from `/feedback` with an explicit `pending`, `ready`, or `fail
 `placeholder`. Pending reserves that geometry immediately and reveals it after two seconds. Ready content enters in
 80ms; ready-at-mount and failed content appear immediately. Reduced motion removes the fades. There is no minimum
 loading duration, and ordinary callers do not configure timing.
-
-For a photo or image, set `presentation="image"` to show its placeholder immediately and reveal the ready image in
-200ms. Ready-at-mount images keep full opacity, including cached revisits. The supplied state covers the application's
-fetch and decode, and the reduced-motion preference removes the transition.
 
 Wrap a page in `LoadingScope` and pass its navigation `identity` to share one clock across dependent reads. Updating the
 identity resets pending presentation without remounting ready children. Use `initialStartedAt` only to preserve elapsed

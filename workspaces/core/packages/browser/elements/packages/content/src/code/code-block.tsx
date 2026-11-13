@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { CopyValue } from '../../../core/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from '../viewer-styles.ts';
 import { useHighlightedCode } from './use-highlighted-code.ts';
 
@@ -94,6 +95,7 @@ export function CodeBlock({
   maxLines = 2000,
 }: CodeBlockProps): ReactNode {
   const result = useHighlightedCode(code, language);
+  const scroll = useScrollTabIndex<HTMLDivElement>();
   const previewLines = code.slice(0, MAX_PREVIEW_CHARACTERS).split(/\r\n|\n|\r/u);
   const lines = previewLines.slice(0, Math.max(1, maxLines)).map((text, position) => ({ text, line: position + 1 }));
   const label = filename ?? language;
@@ -110,9 +112,10 @@ export function CodeBlock({
         </CopyValue>
       </div>
       <div
+        ref={scroll.ref}
         role="region"
         aria-label={`${label} source`}
-        tabIndex={0}
+        tabIndex={scroll.tabIndex}
         {...stylex.props(viewerStyles.scrollRegion, styles.viewport(maxHeight))}
       >
         <pre {...stylex.props(styles.code, shouldWrap && styles.wrapped)}>

@@ -99,6 +99,8 @@ loaded cells, and placeholders at the same width, including long primary text be
 Confirm reusable column definitions are checked before their first spread or projection, so an unsupported property
 fails compilation at its declaration.
 At narrow widths, check horizontal keyboard scrolling, independent embedded controls, and one separator above the footer.
+At fitting widths, Tab reaches the first table control directly. Keep a named viewport stop when horizontal scrolling
+or read-only overflow needs its own keyboard target. Preserve focused rows when a virtualized window changes.
 Compare empty, loaded, and windowed tables across the compact breakpoint. Headers must keep the same widths and fill
 the table when secondary columns disappear, including after a viewport resize.
 

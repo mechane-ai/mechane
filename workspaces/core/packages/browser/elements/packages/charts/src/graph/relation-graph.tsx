@@ -3,6 +3,7 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
@@ -150,6 +151,7 @@ export function RelationGraph({
   emptyLabel,
 }: RelationGraphProps): ReactNode {
   const markerId = useId();
+  const scroll = useScrollTabIndex<HTMLDivElement>();
   const problem = graphProblem({ nodes, edges, groups, width, height });
 
   if (problem !== null) {
@@ -186,7 +188,13 @@ export function RelationGraph({
       }
     >
       {hasNodes ? (
-        <div role="region" aria-label={`${title} graph`} tabIndex={0} {...stylex.props(styles.viewport)}>
+        <div
+          ref={scroll.ref}
+          role="region"
+          aria-label={`${title} graph`}
+          tabIndex={scroll.tabIndex}
+          {...stylex.props(styles.viewport)}
+        >
           <div {...stylex.props(styles.canvas(width, height))}>
             <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
               <defs>

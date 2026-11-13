@@ -24,6 +24,10 @@ proximity never implies an edge or causal claim. A read-only graph must not expo
 Make the selected record and its exact value available as text. Provide keyboard and touch access to the same
 information as pointer inspection. Keep selection controlled where an application links a chart to another view.
 Use shared color roles, visible focus, and a readable alternative to color alone in both supported themes.
+Give an interactive plot one Tab stop and mark its keyboard cursor at a supplied category or timestamp.
+Keep cursor movement separate from controlled selection. Activate a linked selection with Enter or Space.
+Keep the cursor visible at zero and missing values, after Escape dismisses details, and while equivalent data refreshes.
+Use the shared ChartCursor for Cartesian plots. Check its local marker in light, dark, and forced-colors modes.
 
 Bound SVG workloads and document the accepted window. A render limit must produce an explicit unavailable or truncated
 state, not a partial graphic that looks complete. Require measured need before adding another rendering engine.

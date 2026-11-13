@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { frameConditions } from './frame.stylex.ts';
 
 const styles = stylex.create({
@@ -104,11 +105,14 @@ export function WorkbenchScroll({
   readonly isFlush?: boolean;
   readonly scrollRestorationId?: string;
 }): ReactNode {
+  const scroll = useScrollTabIndex<HTMLDivElement>();
+
   return (
     <div
+      ref={scroll.ref}
       role="region"
       aria-label={label}
-      tabIndex={0}
+      tabIndex={scroll.tabIndex}
       data-scroll-restoration-id={scrollRestorationId}
       {...stylex.props(styles.scroll, isFlush && styles.flush)}
     >

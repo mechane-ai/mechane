@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Row, Text } from '../../core/src/index.ts';
 import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { useEndReached } from './use-end-reached.ts';
 
 const styles = stylex.create({
@@ -81,7 +82,8 @@ export function CollectionScroll({
   endPosition = 'end',
   label = 'Collection',
 }: CollectionScrollProps): ReactNode {
-  const viewport = useRef<HTMLDivElement>(null);
+  const scroll = useScrollTabIndex<HTMLDivElement>();
+  const viewport = scroll.viewport;
   const end = useRef<HTMLDivElement>(null);
 
   useEndReached({ end, viewport: shouldFill ? viewport : undefined, onEndReached, content: children });
@@ -94,10 +96,10 @@ export function CollectionScroll({
 
   return (
     <div
-      ref={viewport}
+      ref={scroll.ref}
       role={shouldFill ? 'region' : undefined}
       aria-label={shouldFill ? label : undefined}
-      tabIndex={shouldFill ? 0 : undefined}
+      tabIndex={scroll.tabIndex}
       {...stylex.props(styles.root, shouldFill && styles.viewport)}
     >
       {endPosition === 'start' && boundary}

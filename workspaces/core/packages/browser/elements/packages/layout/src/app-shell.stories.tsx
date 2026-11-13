@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Archive, FileText, Folder, LayoutGrid, LogOut, Plus, RefreshCw, Server, Settings } from 'lucide-react';
+import { Archive, FileText, Folder, LogOut, Plus, RefreshCw, Settings } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
-import { NavigationRail } from './navigation-rail.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import {
   Navigation,
@@ -29,14 +28,13 @@ const meta = {
     NavigationSection,
     SidebarLabel,
     SidebarFooter,
-    NavigationRail,
   },
   parameters: {
     layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. Supplying rail adds a permanent area rail beside the contextual sidebar. NavigationRail takes ordered links, the current area, and an optional action. The application owns URLs, selection, routing, preloading, and the action. A rail uses icon links with managed tooltips on desktop and visible labels in the drawer. The toolbar toggle hides the contextual sidebar while retaining the rail. Without rail, collapse shows each page icon. Focus mode hides navigation while retaining the expansion preference. Navigation groups NavigationLink destinations or NavigationItem actions; NavigationSection labels related groups. SidebarLabel hides supporting text on the collapsed sidebar. SidebarFooter groups persistent controls in the contextual pane. PageToolbar owns its outer border, optional leading control, and view choices. ToolbarAction supplies resource actions with concise labels. DetailPage centers a form or detail view; tables stay flush in the main area. Inspect the final item in a short viewport, use the phone examples to inspect dismissal and focus, and open the desktop icon tooltips with pointer and keyboard.',
+          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. Its focus mode hides navigation while retaining the expansion preference. Navigation groups NavigationLink destinations or NavigationItem actions; NavigationSection labels related groups. SidebarLabel hides supporting text on the collapsed rail. SidebarFooter groups a persistent identity; use layout="navigation" for a persistent Navigation group whose content sets the footer height. Keep other commands in the scrolling navigation. PageToolbar owns its outer border, optional leading control, and view choices. ToolbarAction supplies resource actions; give compact actions an icon and a concise accessible label. DetailPage centers a form or detail view; tables stay flush in the main area. The application supplies routing, selection, branding, account controls, and commands. Inspect the last navigation item above the footer in a short viewport, then use the phone example to inspect focus and drawer dismissal.',
       },
     },
   },
@@ -111,107 +109,6 @@ function CollectionShell(): ReactNode {
 
 export const Recommended: Story = { render: () => <CollectionShell /> };
 export const PhoneNavigation: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
-
-const areas = [
-  { label: 'Workspace', icon: <LayoutGrid size={16} aria-hidden />, pages: ['Overview', 'People', 'Tools'] },
-  {
-    label: 'Infra',
-    icon: <Server size={16} aria-hidden />,
-    pages: ['Systems', 'Previews', ...Array.from({ length: 16 }, (_, index) => `Environment ${index + 1}`)],
-  },
-  {
-    label: 'Settings',
-    icon: <Settings size={16} aria-hidden />,
-    pages: ['My profile', 'Preferences', 'Connected accounts'],
-  },
-] as const;
-
-function AreaShell(): ReactNode {
-  const [area, setArea] = useState<(typeof areas)[number]>(areas[0]);
-  const [page, setPage] = useState<string>(areas[0].pages[0]);
-  const [shouldFocus, setShouldFocus] = useState(false);
-  const [isSignedOut, setIsSignedOut] = useState(false);
-
-  if (isSignedOut) {
-    return <Button onClick={() => setIsSignedOut(false)}>Return to workspace</Button>;
-  }
-
-  return (
-    <AppShell
-      shouldFocus={shouldFocus}
-      rail={
-        <NavigationRail
-          label="Workspace areas"
-          links={areas.map((item) => ({
-            label: item.label,
-            icon: item.icon,
-            href: `#${item.label.toLowerCase()}`,
-            isCurrent: item === area,
-            onClick: (event) => {
-              const hasCommandModifier = event.metaKey || event.ctrlKey;
-              const hasAlternateModifier = event.shiftKey || event.altKey;
-
-              if (event.button !== 0 || hasCommandModifier || hasAlternateModifier) {
-                return;
-              }
-
-              event.preventDefault();
-              setArea(item);
-              setPage(item.pages[0]);
-            },
-          }))}
-          action={{ label: 'Sign out', icon: <LogOut size={16} aria-hidden />, onClick: () => setIsSignedOut(true) }}
-        />
-      }
-      sidebarHeader={<SidebarLabel>{area.label}</SidebarLabel>}
-      sidebar={
-        <Navigation label="Pages">
-          {area.pages.map((name) => (
-            <NavigationLink
-              key={name}
-              href={`#${name.toLowerCase().replaceAll(' ', '-')}`}
-              icon={<FileText size={16} aria-hidden />}
-              isSelected={page === name}
-              onClick={(event) => {
-                const hasCommandModifier = event.metaKey || event.ctrlKey;
-                const hasAlternateModifier = event.shiftKey || event.altKey;
-
-                if (event.button !== 0 || hasCommandModifier || hasAlternateModifier) {
-                  return;
-                }
-
-                event.preventDefault();
-                setPage(name);
-              }}
-            >
-              {name}
-            </NavigationLink>
-          ))}
-        </Navigation>
-      }
-    >
-      <PageToolbar
-        title={page}
-        showNavigation={!shouldFocus}
-        actions={
-          <ToolbarAction onClick={() => setShouldFocus((value) => !value)}>
-            {shouldFocus ? 'Leave focus mode' : 'Enter focus mode'}
-          </ToolbarAction>
-        }
-      />
-      <DetailPage>
-        <Muted>Switch areas, collapse the page list, or open navigation on a phone.</Muted>
-      </DetailPage>
-    </AppShell>
-  );
-}
-
-export const AreaNavigation: Story = { render: () => <AreaShell /> };
-
-export const PhoneAreaNavigation: Story = {
-  ...AreaNavigation,
-  globals: { viewport: { value: 'narrow', isRotated: false } },
-};
 
 export const ToolbarWithoutNavigation: Story = {
   render: () => (

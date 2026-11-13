@@ -67,7 +67,7 @@ export const darkSyntaxColors = stylex.defineConsts({
   type: '#84bce3',
 });
 
-export const loading = stylex.defineConsts({ delaySeconds: 2, revealMs: 80, imageRevealMs: 200, placeholderMs: 120 });
+export const loading = stylex.defineConsts({ delaySeconds: 2, revealMs: 80, placeholderMs: 120 });
 
 export const darkShadows = stylex.defineConsts({ popup: '0 4px 16px #00000066' });
 

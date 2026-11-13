@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import stripAnsi from 'strip-ansi';
 import { Button, CopyValue } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { viewerStyles } from './viewer-styles.ts';
 
 export type LogViewerProps = {
@@ -39,7 +40,8 @@ export function LogViewer({
   maxHeight = 320,
   isRunning = false,
 }: LogViewerProps): ReactNode {
-  const scroll = useRef<HTMLPreElement>(null);
+  const keyboardScroll = useScrollTabIndex<HTMLPreElement>();
+  const scroll = keyboardScroll.viewport;
   const isFollowFocused = useRef(false);
   const [isFollowing, setFollowing] = useState(true);
   const text = stripAnsi(output);
@@ -99,10 +101,10 @@ export function LogViewer({
         </div>
       )}
       <pre
-        ref={scroll}
+        ref={keyboardScroll.ref}
         role="region"
         aria-label={`${label} output`}
-        tabIndex={0}
+        tabIndex={keyboardScroll.tabIndex}
         onScroll={(event) => {
           const node = event.currentTarget;
 

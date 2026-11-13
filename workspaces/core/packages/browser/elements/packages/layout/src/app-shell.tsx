@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 import { colors, pageGeometry, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
-import { NavigationRailContext } from './navigation-rail.tsx';
 import { Sidebar, SidebarClose, SidebarContext } from './sidebar.tsx';
 
 const styles = stylex.create({
@@ -36,15 +35,12 @@ const styles = stylex.create({
     minWidth: 0,
   },
   collapsed: { width: pageGeometry.toolbarHeight },
-  secondary: { width: `calc(${frame.sidebarWidth} - ${pageGeometry.toolbarHeight})` },
-  rail: { width: pageGeometry.toolbarHeight },
   hidden: { display: 'none' },
   main: { minWidth: 0, flex: 1 },
   drawer: { width: frame.sidebarWidth, maxWidth: 'calc(100vw - 48px)' },
 });
 
 type AppShellProps = {
-  readonly rail?: ReactNode;
   readonly sidebarHeader?: ReactNode;
   readonly sidebar: ReactNode;
   readonly footer?: ReactNode;
@@ -54,7 +50,6 @@ type AppShellProps = {
 };
 
 export function AppShell({
-  rail,
   sidebarHeader,
   sidebar,
   footer,
@@ -62,15 +57,12 @@ export function AppShell({
   mainId = 'main',
   shouldFocus = false,
 }: AppShellProps): ReactNode {
-  const hasRail = rail !== undefined && rail !== null;
   const [isExpanded, setIsExpanded] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-  const shouldHideSidebar = shouldFocus || (hasRail && !isExpanded);
   const [drawerHandle] = useState(() => Drawer.createHandle());
   const sidebarId = useId();
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
   const mobileNavigationToggleRef = useRef<HTMLButtonElement>(null);
-  const drawerPopupRef = useRef<HTMLDivElement>(null);
   const didNavigate = useRef(false);
 
   useEffect(() => {
@@ -104,21 +96,11 @@ export function AppShell({
       }}
     >
       <div {...stylex.props(styles.shell)}>
-        {hasRail && (
-          <div hidden={shouldFocus} {...stylex.props(styles.sidebar, styles.rail, shouldFocus && styles.hidden)}>
-            {rail}
-          </div>
-        )}
         <aside
           id={sidebarId}
           aria-label="Navigation"
-          hidden={shouldHideSidebar}
-          {...stylex.props(
-            styles.sidebar,
-            hasRail && styles.secondary,
-            !hasRail && !isExpanded && styles.collapsed,
-            shouldHideSidebar && styles.hidden,
-          )}
+          hidden={shouldFocus}
+          {...stylex.props(styles.sidebar, !isExpanded && styles.collapsed, shouldFocus && styles.hidden)}
         >
           <Sidebar header={sidebarHeader} footer={footer}>
             {sidebar}
@@ -134,7 +116,6 @@ export function AppShell({
           <Drawer.Backdrop />
           <Drawer.Viewport>
             <Drawer.Popup
-              ref={drawerPopupRef}
               xstyle={styles.drawer}
               finalFocus={() => {
                 if (didNavigate.current) {
@@ -142,14 +123,6 @@ export function AppShell({
 
                   const main = document.querySelector<HTMLElement>(`#${CSS.escape(mainId)}`);
                   const focused = document.activeElement;
-
-                  if (focused instanceof HTMLElement) {
-                    const dialog = focused.closest('[role="dialog"], [role="alertdialog"]');
-
-                    if (dialog !== null && dialog !== drawerPopupRef.current) {
-                      return focused;
-                    }
-                  }
 
                   if (focused instanceof HTMLElement && main?.contains(focused) === true) {
                     return focused;
@@ -166,14 +139,7 @@ export function AppShell({
               }}
             >
               <Drawer.Title isVisuallyHidden>Navigation</Drawer.Title>
-              <Sidebar
-                header={sidebarHeader}
-                navigationHeader={
-                  hasRail && <NavigationRailContext.Provider value>{rail}</NavigationRailContext.Provider>
-                }
-                footer={footer}
-                close={<SidebarClose />}
-              >
+              <Sidebar header={sidebarHeader} footer={footer} close={<SidebarClose />}>
                 {sidebar}
               </Sidebar>
             </Drawer.Popup>
