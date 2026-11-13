@@ -146,10 +146,9 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
 async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
   const authorizationStarted = performance.now();
   const { store } = input;
-  const mech = await store.getMech(input);
-  const policy = await store.getRuntimePolicy(input);
+  const authority = await store.getRuntimeAuthority(input);
 
-  if (!canRunShell({ mech, policy })) {
+  if (!canRunShell(authority)) {
     return await refuseBeforeDispatch(input, 'Shell execution is not enabled for this mech.');
   }
 
@@ -209,10 +208,9 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
 }
 
 async function currentBashRefusal(input: AuthorizeBashInput): Promise<string | null> {
-  const mech = await input.store.getMech(input);
-  const policy = await input.store.getRuntimePolicy(input);
+  const authority = await input.store.getRuntimeAuthority(input);
 
-  if (!canRunShell({ mech, policy })) {
+  if (!canRunShell(authority)) {
     return 'Shell execution is not enabled for this mech.';
   }
 
@@ -339,16 +337,16 @@ async function refuseBeforeDispatch(input: AuthorizeBashInput, message: string):
   }
 }
 
-type ShellAdmissionInput = { readonly mech: Mech; readonly policy: WorkspacePolicy | null };
+type ShellAdmissionInput = { readonly status: Mech['status']; readonly policy: WorkspacePolicy | null };
 
-function canRunShell({ mech, policy }: ShellAdmissionInput): boolean {
+function canRunShell({ status, policy }: ShellAdmissionInput): boolean {
   if (policy === null) {
     return false;
   }
 
   const hasSandboxAccess = !policy.isSuspended && policy.hasSandboxes && policy.machines > 0;
 
-  return mech.status === 'active' && hasSandboxAccess;
+  return status === 'active' && hasSandboxAccess;
 }
 
 type BashProgressInput = { readonly executionId: string; readonly progress: SandboxExecutionResult };

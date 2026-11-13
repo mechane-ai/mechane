@@ -1,6 +1,7 @@
 import type { Context } from '@earendil-works/chord/context';
 import type { TaskId, Tx } from '@earendil-works/pi-durable';
 import { LiveDoc } from '@earendil-works/pi-durable';
+import type { ControlStore } from '@mechane/control-store';
 import { Observations, PendingNotifications, Turns } from '../actor/collections.ts';
 import { decodeStored, RunRecord } from '../actor/records.ts';
 import { State } from '../actor/state.ts';
@@ -11,6 +12,7 @@ type ExecutionAdmissionInput = {
   readonly generationTaskId: TaskId;
   readonly runId: string;
   readonly transaction?: Tx | undefined;
+  readonly control?: ControlStore | undefined;
 };
 
 async function currentInTransaction(input: ExecutionAdmissionInput, transaction: Tx): Promise<boolean> {
@@ -50,12 +52,17 @@ async function currentInTransaction(input: ExecutionAdmissionInput, transaction:
     return false;
   }
 
-  return await input.access.withControl(async (store) => {
-    const mech = await store.getMech(input.access.scope);
-    const policy = await store.getRuntimePolicy(input.access.scope);
+  async function checkAuthority(store: ControlStore): Promise<boolean> {
+    const authority = await store.getRuntimeAuthority(input.access.scope);
 
-    return mech.status === 'active' && policy !== null && !policy.isSuspended;
-  });
+    return authority.status === 'active' && authority.policy !== null && !authority.policy.isSuspended;
+  }
+
+  if (input.control !== undefined) {
+    return await checkAuthority(input.control);
+  }
+
+  return await input.access.withControl(checkAuthority);
 }
 
 export async function isExecutionCurrent(input: ExecutionAdmissionInput, context: Context): Promise<boolean> {

@@ -1,4 +1,5 @@
 import {
+  MechNotFound,
   PersonalWorkspaceProtected,
   PrincipalNotFound,
   WorkspaceCreationConflict,
@@ -9,6 +10,7 @@ import {
 } from '@mechane/protocol';
 import { PrincipalId, RecordId, WorkspaceId } from '@mechane/records';
 import { Record, Schema } from 'effect';
+import type { Mech } from '../../../domain.ts';
 import type { StoreContext } from '../../context.ts';
 import { recordConfigurationChange } from './audit.ts';
 import { lockWorkspaceAuthority } from './authority.ts';
@@ -40,6 +42,7 @@ type WorkspaceCreation = {
 
 type MemberChange = WorkspaceActor & { readonly memberPrincipalId: string; readonly role: 'owner' | 'member' | null };
 type PolicyRow = { readonly policy: unknown; readonly daily_cap_micros: number };
+type RuntimeAuthorityRow = PolicyRow & { readonly status: Mech['status']; readonly workspace_id: string | null };
 type PolicyChange = WorkspaceActor & { readonly policy: WorkspacePolicy; readonly isCreateOnly: boolean };
 
 const StoredPolicy = Schema.Struct({
@@ -213,6 +216,26 @@ export function createWorkspaceRecords(context: StoreContext) {
     },
     async getRuntimePolicy(input: { readonly workspaceId: string }): Promise<WorkspacePolicy | null> {
       return await readRuntimePolicy(context, input.workspaceId);
+    },
+    async getRuntimeAuthority(input: { readonly workspaceId: string; readonly mechId: string }) {
+      const result = await context.client.query<RuntimeAuthorityRow>(
+        `SELECT mech.status, workspace.id AS workspace_id, workspace.policy, workspace.daily_cap_micros
+         FROM mechane.mechs AS mech LEFT JOIN mechane.workspaces AS workspace ON workspace.id = mech.workspace_id
+         WHERE mech.workspace_id = $1 AND mech.id = $2`,
+        [input.workspaceId, input.mechId],
+      );
+
+      const row = result.rows[0];
+
+      if (row === undefined) {
+        throw new MechNotFound({ mechId: input.mechId });
+      }
+
+      if (row.workspace_id === null) {
+        return { status: row.status, policy: null };
+      }
+
+      return { status: row.status, policy: workspacePolicy(row) };
     },
     async setWorkspacePolicy(input: PolicyChange): Promise<WorkspacePolicy> {
       return await context.atomic(async (transaction) => {

@@ -33,7 +33,7 @@ export async function withReceiptTaskOwner<Result>(
               access,
               control,
               async (transaction) =>
-                await isExecutionCurrent({ access, generationTaskId, runId, transaction }, context),
+                await isExecutionCurrent({ access, control, generationTaskId, runId, transaction }, context),
             ),
           ),
         ),
