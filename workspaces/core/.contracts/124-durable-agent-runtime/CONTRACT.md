@@ -42,6 +42,11 @@ Acknowledge a canceled foreground command's terminal receipt without admitting a
 Preserve its outcome and execution identity; a stopped activation does not establish the command's outcome. Continue
 admitting uncanceled and background completions at most once under their existing notification identity.
 
+Before releasing a quiesced mech, reconcile the environment's retained completion outbox while admission remains fenced.
+Durably admit each verified result under its existing identity before acknowledging it. Bound each reconciliation pass;
+leave an incomplete resume quiesced and retry through the existing alarm. Do not hold an actor transaction across
+environment requests, bypass an export hold, or let a completed read suppress a new unobserved notification.
+
 Persist sanitized remote tool descriptors and availability notices as one bounded native configuration projection
 before acknowledging refresh. Rebuild executable adapters locally from it on cold start. It is registry composition,
 never permission: retain current policy, connection and grant checks at dispatch. Store no connection URL, credential,
@@ -137,6 +142,8 @@ limit and unchanged definition; clearing the limit must preserve the conversatio
 Replay the actual terminal callback of a canceled foreground command and wait for its delivery acknowledgment. Require
 no received notification, added activation, or paid request. Inspect durable admission before provider counts so delayed
 scheduling cannot hide a wake. Retain the ordinary background completion flow's one-wake guarantee.
+Quiesce, stop an environment with a running background process, and resume with its retained completion. Require its
+single notification before new work, including after an unavailable environment owner and a repeated callback.
 
 Hold cold readiness beyond the initial request's wait and require one eventual process dispatch without another
 notification or model poll. Restart or cancel during preparation and verify the original identity and dispatch fence.

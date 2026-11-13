@@ -148,7 +148,7 @@ export function writeSandboxMaintenanceFailure({
 }
 
 export function writeActorDeferred(input: {
-  readonly kind: 'settlement' | 'release' | 'checkpoint';
+  readonly kind: 'settlement' | 'release' | 'checkpoint' | 'completions';
   readonly attemptId?: string;
 }): void {
   console.error({ event: `actor.${input.kind}_deferred`, attemptId: input.attemptId });

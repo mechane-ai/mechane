@@ -9,6 +9,7 @@ import { revokedKeyCannotAuthorizeRequests } from './auth/revoked-key-cannot-aut
 import { backgroundCompletionWakesOnce } from './compute/background-completion-wakes-once.ts';
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
+import { resumeReconcilesStoppedCompletions } from './compute/resume-reconciles-stopped-completions.ts';
 import { consoleKeepsDraftsAndRunContext } from './console/console-keeps-drafts-and-run-context.ts';
 import { consoleRetainsRecordsThroughRefreshFailure } from './console/console-retains-records-through-refresh-failure.ts';
 import { boundedActivationPreservesWork } from './context/bounded-activation-preserves-work.ts';
@@ -200,6 +201,12 @@ export const CATALOG = [
     guarantee: 'background completion wakes once while unrelated foreground work remains available',
     regression: 'callbacks repeat wakes or ordinary work stops the managed process before completion',
     run: backgroundCompletionWakesOnce,
+  },
+  {
+    family: 'compute',
+    guarantee: 'resume reconciles stopped environment completions before new work',
+    regression: 'a delayed completion interrupts the first command after a stopped environment resumes',
+    run: resumeReconcilesStoppedCompletions,
   },
   {
     family: 'compute',

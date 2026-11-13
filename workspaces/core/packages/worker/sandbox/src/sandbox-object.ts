@@ -120,6 +120,7 @@ type RecoveryCheckpointInput = CheckpointInput & { readonly request: typeof Sand
 type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
 type ResumeInput = ObserveInput & { readonly environment: RunExecutionInput['environment'] };
 type CancelInput = { readonly executionId: ExecutionId };
+type AcknowledgeCompletionInput = { readonly input: typeof SandboxCompletionReceipt.Encoded };
 type StopCallInput = { readonly promise: Promise<void> };
 
 type ProcessIdentityInput = { readonly processId: ProcessId };
@@ -233,6 +234,35 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const encode = Schema.encodeSync(SandboxCompletionReceipt);
 
     return Option.match(stored, { onNone: () => null, onSome: encode });
+  }
+
+  async retainedCompletions(): Promise<ReadonlyArray<typeof SandboxCompletionReceipt.Encoded>> {
+    this.#capacity.requireOwner();
+
+    return this.#store.retainedCompletions().map((receipt) => Schema.encodeSync(SandboxCompletionReceipt)(receipt));
+  }
+
+  async acknowledgeCompletion({ input }: AcknowledgeCompletionInput): Promise<boolean> {
+    this.#capacity.requireOwner();
+
+    const receipt = Schema.decodeUnknownSync(SandboxCompletionReceipt)(input);
+    const retained = this.#store.completionReceipt({ executionId: receipt.executionId });
+    const encode = Schema.encodeSync(SandboxCompletionReceipt);
+
+    if (Option.isNone(retained)) {
+      return false;
+    }
+
+    const expected = encode(retained.value);
+    const actual = encode(receipt);
+
+    if (JSON.stringify(expected) !== JSON.stringify(actual)) {
+      return false;
+    }
+
+    this.#store.completeDelivery(receipt);
+
+    return true;
   }
 
   async checkpoint({ operationId }: CheckpointInput): Promise<typeof SandboxCheckpointResult.Encoded> {

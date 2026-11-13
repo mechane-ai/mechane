@@ -63,7 +63,11 @@ function completionWasObserved(input: {
   );
 }
 
-export async function acceptCompletion(access: ActorAccess, completion: SandboxCompletion): Promise<void> {
+export async function acceptCompletion(
+  access: ActorAccess,
+  completion: SandboxCompletion,
+  options?: { readonly isResumeCompletion: boolean; readonly signal: AbortSignal },
+): Promise<void> {
   if (completion.workspaceId !== access.scope.workspaceId || completion.mechId !== access.scope.mechId) {
     throw new RequestInvalid({ reason: 'The completion belongs to another mech' });
   }
@@ -93,6 +97,7 @@ export async function acceptCompletion(access: ActorAccess, completion: SandboxC
     method: HttpMethod.Get,
     body: null,
     maximumBytes: COMPLETION_MAX_BYTES,
+    signal: options?.signal,
   });
 
   const retained = Schema.encodeSync(SandboxCompletionReceipt)(
@@ -136,11 +141,15 @@ export async function acceptCompletion(access: ActorAccess, completion: SandboxC
     exit = `, exit code ${String(completion.exitCode.value)}`;
   }
 
-  await admitNotification(access, {
-    id,
-    text: `Execution ${receipt.id} finished: ${completion.status}${exit}. Its retained output is available through the environment tools.`,
-    source: { name: 'environment', eventId: receipt.id },
-    producer: { kind: 'producer', id: 'mechane-environment' },
-    data: { ...retained, runId: receipt.runId },
-  });
+  await admitNotification(
+    access,
+    {
+      id,
+      text: `Execution ${receipt.id} finished: ${completion.status}${exit}. Its retained output is available through the environment tools.`,
+      source: { name: 'environment', eventId: receipt.id },
+      producer: { kind: 'producer', id: 'mechane-environment' },
+      data: { ...retained, runId: receipt.runId },
+    },
+    options,
+  );
 }

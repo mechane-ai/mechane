@@ -36,6 +36,7 @@ export const SandboxCompletion = Schema.Struct({ ...SandboxOwner.fields, ...Sand
 export type SandboxCompletion = typeof SandboxCompletion.Type;
 
 export const SandboxCompletionAccepted = Schema.Struct({ accepted: Schema.Literal(true) });
+export const SandboxPendingCompletions = Schema.Struct({ receipts: Schema.Array(SandboxCompletionReceipt) });
 
 export const SandboxCompletionIdentity = Schema.Struct({ ...SandboxOwner.fields, executionId: ExecutionId });
 
@@ -45,4 +46,8 @@ export function sandboxCompletionPath({
   executionId,
 }: typeof SandboxCompletionIdentity.Type): string {
   return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/completions/${encodeURIComponent(executionId)}`;
+}
+
+export function sandboxPendingCompletionsPath({ workspaceId, mechId }: typeof SandboxOwner.Type): string {
+  return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/completions`;
 }

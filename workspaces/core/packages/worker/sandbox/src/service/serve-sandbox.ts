@@ -3,6 +3,7 @@ import {
   SandboxAction,
   SandboxCheckpointIdentity,
   SandboxCompletionIdentity,
+  SandboxCompletionReceipt,
   SandboxExecutionIdentity,
   SandboxExecutionObservation,
   SandboxExecutionResume,
@@ -95,6 +96,22 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
   }
 
   const isCompletion = resource === 'completions' && executionId !== undefined;
+
+  if (resource === 'completions' && executionId === undefined && request.method === HttpMethod.Get) {
+    return Response.json({ receipts: await stub.retainedCompletions() });
+  }
+
+  if (resource === 'completions' && executionId === undefined && request.method === HttpMethod.Post) {
+    const receipt = Schema.decodeUnknownSync(SandboxCompletionReceipt)(await readBody(request));
+    const input = Schema.encodeSync(SandboxCompletionReceipt)(receipt);
+    const accepted = await stub.acknowledgeCompletion({ input });
+
+    if (!accepted) {
+      return Response.json({ error: 'CompletionMismatch' }, { status: HttpStatusCode.Conflict });
+    }
+
+    return Response.json({ accepted: true });
+  }
 
   if (isCompletion && action === undefined && request.method === HttpMethod.Get) {
     const completion = Schema.decodeUnknownSync(SandboxCompletionIdentity)({

@@ -9,10 +9,10 @@ import { runCommand } from '../process.ts';
 import type {
   DiagnosticOptions,
   LocalSandbox,
-  RestartOptions,
   SandboxFixtureFile,
   SandboxFixtureMachine,
   SandboxFixtureWrite,
+  SandboxRestartOptions,
 } from '../types.ts';
 import { persistedFiles } from './dump-durable-storage.ts';
 import { startCelldWorker } from './start-celld-worker.ts';
@@ -190,8 +190,8 @@ async function createSandboxDriver(input: SandboxOptions, worker: LocalCelldWork
     });
   }
 
-  async function restart(inputRestart: Pick<RestartOptions, 'signal'> = {}): Promise<void> {
-    await worker.restart(inputRestart.signal);
+  async function restart(inputRestart: SandboxRestartOptions = {}): Promise<void> {
+    await worker.restart(inputRestart.signal, inputRestart.whileStopped);
 
     const identities = await containers();
 

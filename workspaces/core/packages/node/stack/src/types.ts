@@ -134,6 +134,7 @@ export type StackOptions = {
 };
 
 export type RestartOptions = { readonly signal?: 'SIGTERM' | 'SIGKILL'; readonly environment?: Environment };
+export type SandboxRestartOptions = Pick<RestartOptions, 'signal'> & { readonly whileStopped?: () => Promise<void> };
 
 export type ConversationImportScope = { readonly workspaceId: string; readonly mechId: string };
 
@@ -166,7 +167,7 @@ export type LocalSandbox = {
   readonly persistedFiles: (options?: DiagnosticOptions) => AsyncIterable<Buffer>;
   readonly readFile: (input: SandboxFixtureFile) => Promise<string | undefined>;
   readonly writeFile: (input: SandboxFixtureWrite) => Promise<void>;
-  readonly restart: (input?: Pick<RestartOptions, 'signal'>) => Promise<void>;
+  readonly restart: (input?: SandboxRestartOptions) => Promise<void>;
   readonly applySource: (input?: LocalSourceUpdate) => Promise<void>;
   readonly inspect: () => Promise<LocalWorkerStatus>;
   readonly loseMachine: (id: string) => Promise<void>;

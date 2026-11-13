@@ -23,6 +23,7 @@ import { loadRuntimeConfiguration, resolveRuntimeEnvironment } from '../config.t
 import type { RuntimeConfiguration } from '../config.ts';
 import { advanceCheckpoint } from '../execution/checkpoint.ts';
 import { acceptCompletion } from '../execution/completion.ts';
+import { reconcileResumeCompletions } from '../execution/resume-completions.ts';
 import { createRuntimeModels } from '../models/metered-provider.ts';
 import {
   admitInTransaction,
@@ -418,7 +419,6 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       await this.#recoverUndispatchedAttempts();
       await abortPendingCancellations(this.#access());
-      await this.#finishResume();
       await this.#resumePending();
     });
   }
@@ -596,10 +596,10 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
         const hasSettlement = (await PendingAttempts.count(this.#harness, context)) > 0;
 
-        const hasCheckpoint = current?.isResumePending === true && current.isEnvironmentCheckpointRequired;
+        const hasResume = current?.isResumePending === true;
         const hasNotifications = await this.#hasReadyPendingNotifications(current);
 
-        const hasDeferredRecovery = hasSettlement || hasCheckpoint || hasNotifications;
+        const hasDeferredRecovery = hasSettlement || hasResume || hasNotifications;
 
         if (isRecovery || wake.active || hasDeferredRecovery) {
           times.push(Date.now() + recoveryMilliseconds);
@@ -647,7 +647,12 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       }
     }
 
-    await this.#finishResume();
+    try {
+      await this.#finishResume();
+    } catch {
+      writeActorDeferred({ kind: 'completions' });
+    }
+
     await this.#resumePending();
     await this.#arm(false);
   }
@@ -1009,7 +1014,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       pendingEffectCount:
         (await PendingEffects.count(this.#harness, context)) +
         (await PendingCancellations.count(this.#harness, context)) +
-        Number(state?.isResumePending === true && isCheckpointRequired),
+        Number(state?.isResumePending === true),
       isCheckpointRequired,
       isImportComplete,
       canResume: permitted && isImportComplete && !isCheckpointRequired,
@@ -1044,7 +1049,6 @@ export class MechActor extends DurableObject<RuntimeBindings> {
     const isComplete = await this.#refreshDefinition();
 
     await this.#arm(true);
-    await this.#finishResume();
     await this.#resumePending();
 
     if (!isComplete) {
@@ -1081,73 +1085,91 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
     await this.#arm(true);
 
-    if (before?.isEnvironmentCheckpointRequired === true) {
-      await this.#harness.commit(async (transaction) => {
-        const state = await transaction.doc(State);
-        const live = await transaction.doc(LiveDoc, this.#conversation.id);
+    if (before?.isQuiesced !== true && before?.isResumePending !== true) {
+      await this.#resumePending();
 
-        if (live.run !== undefined) {
-          throw new RequestInvalid({ reason: 'The environment barrier requires an idle mech' });
-        }
+      return;
+    }
 
-        if (state.exportHold !== null) {
-          throw new RequestConflict({ reason: 'The context export must finish before resuming' });
-        }
+    await this.#harness.commit(async (transaction) => {
+      const state = await transaction.doc(State);
+      const live = await transaction.doc(LiveDoc, this.#conversation.id);
 
-        if (!state.isResumePending) {
-          state.checkpointBarrier = null;
-        }
-
-        state.isQuiesced = true;
-        state.isResumePending = true;
-      }, context);
-
-      if (!(await advanceCheckpoint(access))) {
-        return;
+      if (live.run !== undefined) {
+        throw new RequestInvalid({ reason: 'The environment barrier requires an idle mech' });
       }
 
-      await this.#finishResume();
-    } else {
-      await this.#harness.commit(async (transaction) => {
-        const state = await transaction.doc(State);
+      if (state.exportHold !== null) {
+        throw new RequestConflict({ reason: 'The context export must finish before resuming' });
+      }
 
-        if (state.exportHold !== null) {
-          throw new RequestConflict({ reason: 'The context export must finish before resuming' });
-        }
+      if (!state.isResumePending) {
+        state.checkpointBarrier = null;
+      }
 
-        state.isQuiesced = false;
-      }, context);
+      state.isQuiesced = true;
+      state.isResumePending = true;
+    }, context);
+
+    if (before.isEnvironmentCheckpointRequired && !(await advanceCheckpoint(access))) {
+      return;
+    }
+
+    let isReconciled = false;
+
+    try {
+      isReconciled = await this.#finishResume();
+    } catch {
+      throw new ServiceUnavailable({
+        reason: 'Environment completion reconciliation is pending; the mech remains quiesced',
+      });
+    }
+
+    if (!isReconciled) {
+      throw new ServiceUnavailable({
+        reason: 'Environment completion reconciliation is pending; the mech remains quiesced',
+      });
     }
 
     await this.#resumePending();
   }
 
-  async #finishResume(): Promise<void> {
+  async #finishResume(): Promise<boolean> {
     const state = await this.#harness.snapshot(State, context);
 
     if (state?.isResumePending !== true || state.isEnvironmentCheckpointRequired || !state.isImportComplete) {
-      return;
+      return state?.isQuiesced === false && !state.isResumePending;
     }
 
     const allowed = await this.#hasActivePolicy();
 
     if (!allowed) {
-      return;
+      return false;
     }
 
-    await this.#harness.commit(async (transaction) => {
+    if (!(await reconcileResumeCompletions(this.#access()))) {
+      return false;
+    }
+
+    if (!(await this.#hasActivePolicy())) {
+      return false;
+    }
+
+    return await this.#harness.commit(async (transaction) => {
       const current = await transaction.doc(State);
 
       if (!current.isResumePending || current.isEnvironmentCheckpointRequired || !current.isImportComplete) {
-        return;
+        return !current.isQuiesced && !current.isResumePending;
       }
 
-      if (current.exportHold !== null) {
-        return;
+      if (current.exportHold !== null || current.isPolicyPaused) {
+        return false;
       }
 
       current.isResumePending = false;
       current.isQuiesced = false;
+
+      return true;
     }, context);
   }
 

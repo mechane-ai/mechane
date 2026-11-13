@@ -194,6 +194,8 @@ export {
   SandboxCompletionAccepted,
   SandboxCompletionIdentity,
   sandboxCompletionPath,
+  sandboxPendingCompletionsPath,
+  SandboxPendingCompletions,
 } from './completion.ts';
 
 export {

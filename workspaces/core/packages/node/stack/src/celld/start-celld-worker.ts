@@ -175,11 +175,11 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     }
   }
 
-  async function restart(signal: 'SIGTERM' | 'SIGKILL' = 'SIGTERM'): Promise<void> {
+  async function restart(signal: 'SIGTERM' | 'SIGKILL' = 'SIGTERM', whileStopped?: () => Promise<void>): Promise<void> {
     const previous = resources.restarting ?? Promise.resolve();
 
     async function replace(): Promise<void> {
-      await replaceProcess(signal);
+      await replaceProcess(signal, whileStopped);
     }
 
     const next = previous.then(replace, replace);
@@ -189,7 +189,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
     await next;
   }
 
-  async function replaceProcess(signal: 'SIGTERM' | 'SIGKILL'): Promise<void> {
+  async function replaceProcess(signal: 'SIGTERM' | 'SIGKILL', whileStopped?: () => Promise<void>): Promise<void> {
     if (resources.closing !== undefined || resources.process === undefined) {
       throw new Error('The local Worker is stopped');
     }
@@ -201,7 +201,11 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         return;
       }
 
-      await launch();
+      try {
+        await whileStopped?.();
+      } finally {
+        await launch();
+      }
     } while (resources.shouldReload === true);
   }
 

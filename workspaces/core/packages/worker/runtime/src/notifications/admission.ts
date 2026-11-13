@@ -52,6 +52,7 @@ type NotificationAdmissionInput = {
   readonly receivedSequence?: number;
   readonly isDeferred?: boolean;
   readonly isRelease?: boolean;
+  readonly isResumeCompletion?: boolean | undefined;
 };
 
 type NotificationCommitInput = {
@@ -270,7 +271,14 @@ export async function admitInTransaction(input: NotificationAdmissionInput): Pro
     await PendingNotifications.remove(input.transaction, input.notification.id);
   }
 
-  if (state.isQuiesced) {
+  const isResumeBarrier = state.isQuiesced && state.isResumePending && state.exportHold === null;
+  const canAdmitResumeCompletion = input.isResumeCompletion === true && isResumeBarrier;
+
+  if (input.isResumeCompletion === true && !canAdmitResumeCompletion) {
+    throw new RequestInvalid({ reason: 'The completion resume barrier is no longer active' });
+  }
+
+  if (state.isQuiesced && !canAdmitResumeCompletion) {
     throw new RequestInvalid({ reason: 'The mech is quiesced' });
   }
 
@@ -374,6 +382,7 @@ export async function admitInTransaction(input: NotificationAdmissionInput): Pro
 export async function admitNotification(
   access: ActorAccess,
   notification: ActorNotification,
+  options?: { readonly isResumeCompletion: boolean },
 ): Promise<NotificationReceipt> {
   const digest = await notificationFingerprint(notification);
   const previous = await Notifications.get(access.harness, notification.id);
@@ -435,6 +444,13 @@ export async function admitNotification(
     access,
     notification,
     run: async (transaction) =>
-      await admitInTransaction({ transaction, conversation: access.conversation, notification, digest, isDeferred }),
+      await admitInTransaction({
+        transaction,
+        conversation: access.conversation,
+        notification,
+        digest,
+        isDeferred: isDeferred || options?.isResumeCompletion === true,
+        isResumeCompletion: options?.isResumeCompletion,
+      }),
   });
 }

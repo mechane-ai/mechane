@@ -45,6 +45,15 @@ export function completionRecords({ sql }: RecordsInput) {
     return decodeRows({ cursor, schema: CompletionRow }).map(({ receipt }) => receipt);
   }
 
+  function retainedCompletions(): ReadonlyArray<SandboxCompletionReceipt> {
+    const cursor = sql.exec(
+      'SELECT receipt FROM sandbox_completions WHERE is_delivered = 0 ORDER BY rowid LIMIT ?',
+      COMPLETION_BATCH_ROWS,
+    );
+
+    return decodeRows({ cursor, schema: CompletionRow }).map(({ receipt }) => receipt);
+  }
+
   function completeDelivery({ executionId, kind }: CompleteDeliveryInput): void {
     sql.exec('UPDATE sandbox_completions SET is_delivered = 1 WHERE execution_id = ? AND kind = ?', executionId, kind);
   }
@@ -121,6 +130,7 @@ export function completionRecords({ sql }: RecordsInput) {
   return {
     completionReceipt,
     pendingCompletions,
+    retainedCompletions,
     completeDelivery,
     failCompletionDelivery,
     nextCompletionAt,

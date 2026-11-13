@@ -48,6 +48,8 @@ does not enable this routing behavior.
 When a binding targets a declared live Durable Object class without an existing namespace, provision and bind it in
 the qualified version's atomic deployment. Stage and verify updates to existing bound namespaces before exclusive
 activation. Retain accepted version and observed deployment identities in provider state if later verification fails.
+After an accepted upload, reconcile a temporarily invisible version with bounded reads, never another upload. A 404
+with Cloudflare error 10071 does not establish that a recorded version was deleted; retain its identity on refresh.
 
 For staged upgrades to existing bound namespaces, explicitly request immediate Durable Object code adoption on the
 deployment operation. Keep this deployment-owned policy separate from immutable version configuration. Its write-only
@@ -101,6 +103,7 @@ must follow complete module and asset upload. Keep one provider writer and quali
 Reject a staged version that binds an unprovisioned class, and verify atomic activation of the qualified version
 preserves existing namespaces. Exercise a failed follow-up read and a lost upload response without losing accepted
 resource identities or repeating the upload.
+Exercise delayed version visibility, its deadline, and a subsequent refresh that preserves the accepted identity.
 Inspect a staged upgrade's deployment request for immediate code adoption. After hosted activation, exercise current
 operations on an actor that was active before deployment; Worker readiness alone cannot establish actor code adoption.
 

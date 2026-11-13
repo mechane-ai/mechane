@@ -29,6 +29,8 @@ Repeated delivery retains the same notification identity and cannot create a sec
 
 After verifying the authoritative receipt, acknowledge a canceled foreground command without an inbox notice under
 contract 124. Also suppress a notice when the original tool result already recorded the terminal outcome.
+Expose retained undelivered receipts to the owning mech's bounded resume reconciliation, regardless of callback backoff.
+Accept an acknowledgment only for the matching immutable receipt after the mech has durably admitted its outcome.
 A completed `start_process` receipt may record only successful admission while its nested outcome is Running. Its later
 terminal result still needs a notification. An explicit Exited, Stopped, or Lost process observation can establish prior
 observation only when its process, machine, outcome, and exit code match the verified receipt.

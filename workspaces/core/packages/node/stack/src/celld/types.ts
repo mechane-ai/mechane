@@ -28,7 +28,7 @@ export type LocalCelldWorker = {
   readonly buildLogFile: string;
   readonly version: string;
   readonly pid: number;
-  readonly restart: (signal?: 'SIGTERM' | 'SIGKILL') => Promise<void>;
+  readonly restart: (signal?: 'SIGTERM' | 'SIGKILL', whileStopped?: () => Promise<void>) => Promise<void>;
   readonly applySource: (input?: LocalSourceUpdate) => Promise<void>;
   readonly inspect: () => Promise<LocalWorkerStatus>;
   readonly close: (options?: CelldCloseOptions) => Promise<void>;

@@ -12,6 +12,7 @@ type SandboxJsonRequest = {
   /** Null leaves observations free of commands and credentials. */
   readonly body: string | null;
   readonly maximumBytes: number;
+  readonly signal?: AbortSignal | undefined;
 };
 
 /** The private sandbox transport has one credential, deadline, redirect policy, and bounded response reader. */
@@ -24,7 +25,7 @@ export async function requestSandboxJson(input: SandboxJsonRequest): Promise<unk
     },
     body: input.body,
     redirect: 'manual',
-    signal: AbortSignal.timeout(TOOL_REQUEST_TIMEOUT_MS),
+    signal: input.signal ?? AbortSignal.timeout(TOOL_REQUEST_TIMEOUT_MS),
   });
 
   await rejectRedirect(response);
