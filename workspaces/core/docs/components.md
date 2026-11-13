@@ -27,8 +27,8 @@ radii soften controls; page frames and shared dividers stay square.
 
 1. Choose an existing family and neighboring composition. Reuse its control behavior, tokens, and named variants. Add a
    token only for a reusable visual decision that existing roles cannot express.
-2. Let parents own layout. Use Row for centered controls, Stack for related groups, RecordPage for details, PageContent
-   for report sections, and DataTable for comparable records. Keep explanatory copy beside the decision it informs.
+2. Choose the [task's composition](visual-system.md#composition-decisions). Let its parent own spacing and scrolling.
+   Use DataTable for comparable records and keep explanatory copy beside the decision it informs.
 3. Keep pointer hover, press, keyboard focus, pending, unavailable, and selection states distinct. Repeated navigation
    stays immediate. Use the adopted behavior library for focus and dismissal instead of writing another state machine.
 4. Add useful synthetic catalog examples. Inspect long text, narrow layouts, both themes, empty and failed content, and
@@ -61,6 +61,9 @@ fixed region an explicit divider; content must not scroll behind an unseparated 
 Each family’s metadata describes its root and public parts, their alternatives, and the decisions the application must
 supply. Components accept presentation values; resource mapping, authorization, routing, and requests stay with their
 application owners. Use a component’s named variant before adding placement styles.
+
+The [composition decision table](visual-system.md#composition-decisions) distinguishes inset content, full-width rows,
+bounded collection viewports, record pages and self-contained reports. Start there before adding a wrapper.
 
 Compound APIs such as Field and Dialog are documented through their family compositions and exported types. Inferred
 Storybook prop tables are partial with the pinned compiler. Read the owning source types for inherited native and Base
@@ -106,8 +109,9 @@ owns the shared top edge and optional back link; the header owns a focusable rec
 wrap naturally at narrow widths. `PageNavigation` exposes ordinary anchors with controlled current-item state.
 `SettingsSection` groups settings; each `SettingsRow` binds a real control ID to its label and description. Its bounded
 field column aligns ordinary controls across rows, with smaller toggles at the trailing edge. Use `PageContent` for
-report sections inside their existing page frame. It owns the common inset and section gap; keep tables at their
-containing frame's edge because table cells already own their insets.
+inset content in an existing page. Use `ReportContent` when inset content leads to full-width report rows, and
+`CollectionLayout` when one primary collection fills the available height. Table cells own their inset within the
+containing task region. A dialog or inspector can provide that region without taking the width of the application.
 
 Field associates its label, description, and error with the input. Native input events remain available. Choose a
 controlled value with its change callback or an uncontrolled default value. A read-only value remains selectable; a

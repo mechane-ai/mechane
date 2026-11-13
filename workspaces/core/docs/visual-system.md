@@ -34,11 +34,39 @@ choice, not a requirement from another design system.
 
 ## Composition decisions
 
+Choose the containing task before its inset, scrolling behavior, or visual boundary.
+
+| Need                                                               | Composition and boundary                                                                        |
+| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                  |
+| Section title, metadata and scoped actions                         | `SectionHeading` defines the section. `Subheading` names content within it.                     |
+| Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                 |
+| An inset report followed by a finite breakdown                     | `ReportContent` scrolls with the page and leaves its breakdown full width.                      |
+| One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.              |
+| One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                          |
+| A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                      |
+| A standalone sign-in or focused step outside the application shell | `FocusPage` centers one bounded task.                                                           |
+| Tool panes and an independently scrolling inspector                | `Workbench` and its scroll regions own those boundaries.                                        |
+| A self-contained analytical report                                 | The chart's `report` input groups its heading, summary and plot in one subtle frame.            |
+| A plot embedded in an existing content region                      | The chart supplies its own title, legend and inspection. The containing region owns separation. |
+| A bounded decision, linked item or structured message Card         | `Panel` provides the unit's boundary.                                                           |
+
+Prefer vertically stacked sections for related page content. Use columns when the views need simultaneous comparison and
+remain readable at their actual widths. A self-contained report owns one frame. Its surrounding page can stay flat.
+Charts, tables and settings already supply their internal structure, so choose a Panel only for an additional
+independent unit. Component examples show valid local contexts rather than prescribing a grid of cards for every page.
+
 Comparable records use tables. Each column declares a role: primary identity, text, status, number, timestamp, or
 actions. Primary text absorbs available width. Text and status align to the start; numbers, timestamps, and actions
 align to the end. Headers and placeholders follow the same roles. Spectrum similarly distinguishes text from comparable
 numbers and aligns headers with their cells.[^spectrum-table] Trailing timestamps and actions are our composition
 choice. Explicit widths and truncation remain available for content that needs them.
+
+Tables use the full width of their containing task region. Their cells own the inset. A report's chart may be inset
+while its supporting rows extend to the section edges. Dialogs, inspectors and structured message Cards provide their
+own containing width and scroll boundary. Read-only reference tables that explain nearby prose, such as argument
+definitions, can remain in a reading column. Keep summaries outside the table's viewport and controls with their
+collection.
 
 Ordinary table rows share a 48px height and vertically centered content. Long prose belongs in the record view;
 multiline operational content uses explicit content-sized rows. A timeline describes a sequence of events, rather than
@@ -50,15 +78,21 @@ meaningful content.
 
 Each shared edge has one separator. Each scrolling region has one owner. A pinned footer has an opaque surface and a
 visible divider, with enough height for its actual content. Adjacent navigation targets meet without dead gaps. Parent
-Row and Stack compositions own spacing; individual children do not accumulate corrective margins. RecordPage groups
-record content, while PageContent arranges report sections inside an existing page frame. FormActions owns submission
-rows, and SettingsRow aligns labels with one bounded field column. These are small compositions with application-owned
-content and callbacks; they introduce no routing, query, or lifecycle protocol.
+Row and Stack compositions own spacing; individual children do not accumulate corrective margins. FormActions owns
+submission rows, and SettingsRow aligns labels with one bounded field column. Applications own the content and
+callbacks.
 
-ReportSection places a metric summary above the full-width chart that explains it. Metric supplies inline, statistic and
-headline presentations, with shared pending value and qualification geometry. The caller supplies formatted values,
-reporting scope and coverage. Current inventory and historical activity can describe different populations, so they stay
-in independent report groups. A metric's optional trend slot holds its passive graphic.
+Supply a chart's mixed metrics through `report.summary`. Use `report.seriesValues` when period metrics correspond to its
+series. The chart reuses their labels and colors. Metric supplies inline, statistic and headline presentations, with
+shared pending value and qualification geometry. The caller owns formatted aggregates, reporting scope and coverage.
+Current inventory and historical activity retain separate groups because they describe different populations. A metric's
+optional trend slot holds a passive graphic.
+
+Use SmallMultiples when readers compare observations at the same timestamps. A local selector changes the analytical
+question, such as total time or time per run. Independent browsing or operational tasks use separate destinations.
+Related forms, finite breakdowns and selected-record details can stay together. Different populations need clear scope
+within their sections. PageNavigation links destinations. ContentTabs mounts the selected content. ViewStack retains
+mounted views when drafts or reading positions need to survive a switch.
 
 Base UI owns control semantics and composition.[^base-composition] Sonner owns toast stacking, timers, and dismissal;
 Elements owns its appearance.[^sonner] A missing initial result needs a local error with a way to retry. A failed

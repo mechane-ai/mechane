@@ -12,7 +12,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Tabs.Root owns the current value, List names the choices, and each Tab selects the matching Panel. ContentTabs mounts one selected view and accepts defaultSelectedId for an initial local choice. Use its navigation mode for application-controlled URLs; it cannot be combined with defaultSelectedId. The application supplies stable values, content and route synchronization. Arrow keys move among available tabs. Disabled tabs communicate unavailable views without changing the current selection.',
+          'Supported. Tabs.Root owns the current value, List names the choices, and each Tab selects the matching Panel within one task. ContentTabs mounts only the selected view and accepts defaultSelectedId for an initial local choice. Use its navigation mode for application-controlled URLs, with no defaultSelectedId. Use PageNavigation for independent destinations. Choose ViewStack when inactive drafts or reading positions must remain mounted. Stack related sections when readers need to compare them together. The application supplies stable values, content and route synchronization. Arrow keys move among available tabs. Disabled tabs communicate unavailable views without changing the current selection.',
       },
     },
   },

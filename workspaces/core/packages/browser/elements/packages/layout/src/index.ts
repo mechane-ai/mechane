@@ -14,8 +14,6 @@ export { ReportContent } from './report-content.tsx';
 export type { ReportContentProps } from './report-content.tsx';
 export { CollectionLayout } from './collection-layout.tsx';
 export type { CollectionLayoutProps } from './collection-layout.tsx';
-export type { ReportSectionProps } from './report-section.tsx';
-export { ReportSection } from './report-section.tsx';
 export type {
   RecordPageRootProps,
   RecordPageToolbarProps,

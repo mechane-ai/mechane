@@ -88,6 +88,12 @@ input limits, and readable fallbacks.
 
 ## Composition and themes
 
+Choose the
+[containing task and layout](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/visual-system.md#composition-decisions)
+before adding a surface. Stack related page sections. `PageContent` insets content, `ReportContent` combines inset
+content with full-width finite rows, and `CollectionLayout` gives a primary collection its available height. Dialogs,
+inspectors and structured message Cards retain their own containing width. `Panel` bounds an independent unit.
+
 Use Base UI's `render` composition and named variants for appearance. Native attributes, events, and refs remain
 available. Typed `xstyle` inputs permit placement styles compiled by the application's StyleX setup. Applications own
 asynchronous work and pass its pending, success, or failure state to controls.
@@ -145,8 +151,9 @@ record and store named choices rather than catalog indexes. Identity palettes re
 
 `MetricGrid layout="columns"` distributes supplied metrics by available container width. Its inline layout suits compact
 record summaries. `Metric` offers `statistic` and `headline` variants, a concise `detail`, and a passive `trend` slot.
-Use `isLoading` and `hasDetail` to reserve its value and qualification while the application loads data. Full charts
-accept `report={{ meta, summary }}` to place period metrics between a shared `SectionHeading` and the plot. Bar and
+Use `isLoading` and `hasDetail` to reserve its value and qualification while the application loads data. For a
+self-contained analytical report, full charts accept `report={{ meta, summary }}` to place period metrics between a
+shared `SectionHeading` and the plot. An embedded chart can use the ordinary frame inside its containing region. Bar and
 time-series charts also accept `report={{ meta, seriesValues }}`, a map of formatted period values keyed by series
 identifier. It reuses their labels and colors as the legend. Undefined values reserve loading space. `SmallMultiples`
 aligns date axes and inspection across panels, with one date axis at the bottom; its placeholder accepts the same report
@@ -158,6 +165,9 @@ local choice or `navigation` for application-controlled links; the two modes are
 keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. Use `isPlaceholder` on a
 decorative row without a control ID; ready rows require a real `controlId` for their label. `FormActions` owns
 submission rows and their internal spacing. The enclosing section owns the gap before and after the actions.
+
+Elements 0.29 removes `ReportSection`. Move its metric summary into the explanatory chart's `report.summary` or
+`report.seriesValues`. Use ordinary `Stack` composition when content already belongs to an existing region.
 
 The default theme is light, with system fonts and a compact spacing scale. Import `themeProps` from
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content

@@ -34,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'CollectionLayout reserves the available height for one table or collection. The header stays above its viewport. ReportContent instead lets the containing page scroll an optional inset summary and a content-sized breakdown together. Pass summary content directly; do not wrap it in PageContent. Omit summary for table-only sections so no empty inset is reserved. Table cells own the shared inset. ContentTabs mounts one independent collection at a time. Supply controlled selection and href for shareable sections.',
+          'CollectionLayout reserves the available height for one primary table or collection, with its header above the viewport. Use ReportContent for an optional inset summary and finite breakdown that scroll together with the page. Pass summary content directly. Omit it for table-only sections so no empty inset is reserved. Table cells own the inset within their containing task region, including a dialog or inspector. Keep controls and pagination with the collection. Related report sections can remain stacked. ContentTabs mounts one selected task view, with application-controlled destinations for shareable choices. Use ViewStack when inactive content must remain mounted.',
       },
     },
   },

@@ -32,6 +32,22 @@ The public types and synthetic catalog examples are beside each implementation:
 - [Relationships](../packages/browser/elements/packages/charts/src/graph/index.ts).
 - [Waterfall](../packages/browser/elements/packages/charts/src/timeline/waterfall.tsx).
 
+## Composition
+
+Use `report` when the chart is a self-contained analytical report. Its shared heading, period summary and plot form one
+subtle boundary. Supply mixed metrics with `report.summary`, or matching bar and time-series metrics with
+`report.seriesValues`. Keys match the supplied series identifiers. Explicit undefined values reserve loading space. The
+period summary stays steady while the inspector shows an individual observation.
+
+Use the ordinary chart inside a region that already owns its grouping, such as an inspector or composed message. Every
+full chart still owns its title and value inspection. ChartFrame supplies title, summary, action and footer layout for a
+custom plot. Its renderer composes geometry, legend and inspection. Let one frame own a report's boundary and use Stack
+for related sections in page flow. The [composition guide](visual-system.md#composition-decisions) explains table width
+and parent layout choices.
+
+SmallMultiples supports simultaneous comparison across the same timestamps, with independent units and populations. Use
+a local selector for alternate analytical questions and route navigation for distinct tasks.
+
 ## Data and interaction
 
 Time series require finite, strictly increasing timestamps in declared seconds or milliseconds. Every series has one
@@ -42,11 +58,12 @@ LineChart and AreaChart support pointing, tapping, arrow keys, Home, End, and Es
 guide and readable values. Equivalent observations in new arrays preserve inspection. Changed values, identities, or
 markers close it. Inspection stays inside the chart and touch interaction preserves page scrolling.
 
-Use `TimeSeriesChartPlaceholder` for LineChart, AreaChart, and each SmallMultiples panel while the first read is
-pending. Supply the same title, description, series labels, height and heading actions as the loaded chart. It shares
-the responsive inspection legend, frame and plot geometry, without observations or interactive controls. The surrounding
-AsyncRegion owns the busy state and delayed loading announcement. Use SkeletonText in the description slot when its
-metadata is unknown. Keep the real chart mounted during refresh.
+Use `TimeSeriesChartPlaceholder` for an initially pending LineChart or AreaChart. Use `SmallMultiplesPlaceholder` for
+the aligned group so its panel summaries and bottom date axis share the ready layout. Supply the same title, report,
+description, series labels, height and heading actions as the loaded chart. Unknown metadata can use SkeletonText.
+BarChartPlaceholder uses known series identities when available and a neutral legend skeleton while they are unknown.
+Placeholders reserve geometry without observations or interactive controls. The surrounding AsyncRegion owns the busy
+state and delayed loading announcement. Keep the real chart mounted during refresh.
 
 Sparkline is a passive 128 × 32 inline trend for a metric row. It requires an application-written `summary`, a value
 `unit`, `timestampUnit`, and an explicit `valueDomain`. It shares the time-series validation and line geometry,
@@ -54,9 +71,9 @@ including missing gaps and isolated points, but has no focus, hover, or inspecti
 supplies the meaning of the trend. Use LineChart when the reader needs to inspect individual observations. Empty and
 invalid trends retain the compact footprint and state their reason.
 
-SmallMultiples shares the time range and inspected timestamp. Each panel owns its value formatter and annotations, so
-latency and cost can keep their different units. All panels must supply the same timestamps. Panel identifiers remain
-stable through updates.
+SmallMultiples shares the time range, plot gutter and inspected timestamp, with one visible date axis at the bottom.
+Each panel owns its value formatter, annotations, period summary and exact-data action. Latency and cost keep their
+different units. All panels supply the same timestamps. Panel identifiers remain stable through updates.
 
 Other families accept an optional `selection` containing `selectedId` and `onSelect`. Omit it for a read-only graphic.
 The component reports an identifier; the application owns the linked inspector, URL, or other view. Exact values remain
@@ -124,9 +141,10 @@ measured workloads before adding a Canvas or WebGL renderer. No component fetche
 ## Appearance
 
 ChartFrame and ChartLegend give custom plots the shared title, description, actions, footer and labeled color roles.
-Full chart families already include their own frame and legend; Sparkline stays inline. The canonical tokens supply
-light and dark colors. Components measure available width so responsive plots retain readable labels. Explicit series
-tones preserve identity across filters; applications should pin them when colors carry that identity.
+Full chart families include their own frame and legend. Their optional report composition adds a self-contained
+boundary, while Sparkline stays inline. The canonical tokens supply light and dark colors. Components measure available
+width so responsive plots retain readable labels. Explicit series tones preserve identity across filters; applications
+should pin them when colors carry that identity.
 
 The catalog contains synthetic missing, zero, masked, signed, partial, narrow, invalid, and linked-selection examples.
 These examples document public behavior. They do not imply that the Mechane API produces every illustrated dataset.

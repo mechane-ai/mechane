@@ -34,11 +34,20 @@ Review changed public components: does the guidance say when to choose each over
 
 ## Local adaptations
 
+Use the public `docs/visual-system.md#composition-decisions` as the shared component-selection guide.
+Colocated guidance names the containing task, its inset and scroll owner, and the nearby alternative that changes behavior.
+Use ordinary stacked sections as the default for related page content. A Panel or report frame needs a bounded unit.
+Show full-width tables within their containing task region and inset chart content in the existing layout examples.
+Review the actual composition before adding another surface or layout API.
+
 The chart report examples in `layout/src/page-content.stories.tsx` place summaries inside their explanatory charts.
 The ReportContent examples in `layout/src/collection-layout.stories.tsx` document one inset summary followed by full-width rows,
 including a section without a summary. Pass content directly to the summary slot; do not nest PageContent inside it.
 The Metric examples in `collections/src/record-details.stories.tsx` document formatted values, qualifications,
 pending geometry and passive trends. Review the populations and time windows in the consuming application.
+
+Read the selected story beside its component guide. Can a caller choose the appropriate layout and identify which
+component owns width, spacing, scrolling and state retention? Document legitimate embedded contexts at that owner.
 
 Colocated stories, source guidance, and package documentation describe implemented public components.
 A component family may document its public parts in one story file. Supported means that the component is part of

@@ -16,7 +16,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'PageContent owns the report inset and section rhythm. Charts group their title, summary and plot through the report prop. Supply the same report composition to the loading chart. ReportContent owns one PageContent around its optional summary and keeps its breakdown full width. Pass summary content directly and omit it for a table-only section. The application owns measures, populations, periods, formatting and read state. Use DetailPage for a centered reading column.',
+          'PageContent owns one inset and the rhythm between content sections inside an existing page. Related sections can stack without additional panels. Use the chart report prop for a self-contained report with one heading, summary and plot. Embedded charts use their ordinary frame within the containing region. Supply the same composition while loading. ReportContent owns one PageContent around its optional summary and keeps its breakdown full width. Pass summary content directly and omit it for a table-only section. Table cells own their inset within the containing task region. Use CollectionLayout for a primary collection filling available height, and DetailPage for a centered reading column. The application owns measures, populations, periods, formatting and read state.',
       },
     },
   },

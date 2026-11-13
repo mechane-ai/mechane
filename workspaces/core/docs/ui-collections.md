@@ -6,6 +6,18 @@ requests, URL state, permissions and persisted preferences.
 
 ## Tables
 
+Choose the [containing task region](visual-system.md#composition-decisions) before the table's viewport. Use
+`ReportContent` for an optional inset summary followed by full-width finite report rows. Pass content directly to its
+summary slot. A table-only section omits that slot. Use `CollectionLayout` for one primary collection whose header stays
+above a viewport filling the available height.
+
+Table cells own their inset within that region. A report chart can be inset while the breakdown reaches the section
+edges. Dialogs, inspectors and structured message Cards have their own containing width. Keep collection controls and
+pagination with their rows. Related report sections can remain stacked in page flow. Read-only reference tables
+explaining nearby prose can use its reading column. Give an independent browsing or operational task its own destination
+when that task needs separate search, paging or recovery. Related forms, finite breakdowns and selected-record details
+can share a view.
+
 [`DataTable`](../packages/browser/elements/packages/collections/src/data-table.tsx) compares records across named
 columns. Supply the already filtered, ordered page, a stable row ID, a caption and an empty-state message. Column IDs
 remain stable when labels or visibility change. Each cell receives the caller's record type and can render ordinary
@@ -13,7 +25,7 @@ links and controls.
 
 Columns keep a readable minimum width and scroll within the table on narrow screens. A column's optional `width` sets
 its minimum in pixels for both the header and cells. Use it when the content needs a wider measure or a compact numeric
-column. The scroll region remains keyboard-focusable; horizontal overflow does not widen the page.
+column. An overflowing viewport has a named keyboard scroll target. Horizontal overflow stays within the table.
 
 Sortable columns require the controlled `sort` and `onSortChange` pair. Clicking a header cycles through ascending,
 descending and no sort. Until the application supplies another sort value and row page, the displayed values remain

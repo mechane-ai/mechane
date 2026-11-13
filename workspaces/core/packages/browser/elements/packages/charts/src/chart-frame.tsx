@@ -189,13 +189,15 @@ export function ChartFrame({
         <ChartSeriesSummary series={series} values={report.seriesValues} />
       );
 
+    const hasSummary = summary !== undefined && summary !== null && summary !== false;
+
     return (
       <figure aria-labelledby={titleId} {...stylex.props(styles.frame, styles.report)}>
         <figcaption>
           <SectionHeading id={titleId} title={title} meta={report.meta} actions={actions} />
         </figcaption>
         <div {...stylex.props(styles.reportBody)}>
-          {summary !== undefined && <div {...stylex.props(styles.summary)}>{summary}</div>}
+          {hasSummary && <div {...stylex.props(styles.summary)}>{summary}</div>}
           {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
           {children}
           {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}

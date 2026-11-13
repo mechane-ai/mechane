@@ -41,17 +41,24 @@ Review changed custom table layouts: do unusual grouped or spanning cells use se
 
 Allow native vertical scroll chaining through every table viewport, including tables with no vertical overflow.
 Use content sizing for a finite report breakdown. A primary virtualized collection fills its containing pane.
-Give each active page one primary collection. Put independent collections in separate tabs or destinations.
+Give each browsing task one primary collection. Use a separate tab or destination when searching, paging or operating
+on another collection forms a distinct task. Related forms, finite breakdowns and selected-record details can stay together.
+Different measurement populations require clear scope, and can share a page.
 Keep pagination, retry, and load-more controls with their collection.
 
-Use `ReportContent` for an inset summary followed by a full-width breakdown. Use `CollectionLayout` for a
-header above the collection viewport. Table cells own the page inset. Keep tables outside centered reading columns
-and padded `PageContent`. Keep page context and independent actions above the collection.
-Use `ContentTabs` to mount one related section at a time. Supply real destinations and controlled selection for
-shareable sections. An isolated dialog, navigation pane, or inspector owns its own scrolling boundary.
+Use `ReportContent` for an optional inset summary followed by a finite full-width breakdown.
+Use `CollectionLayout` for a header above a primary collection viewport filling the available height.
+Table cells own their inset within the containing task region. Page tables extend to their section edges, while
+dialogs, inspectors and structured message Cards supply their own containing width and scroll boundary.
+Keep primary browsing tables outside centered reading columns and padded `PageContent`.
+Read-only reference tables that explain nearby prose, such as argument definitions, can remain in the reading column.
+Keep page context above the collection. Use `ContentTabs` when choosing one task view at a time is useful.
+Supply real destinations and controlled selection for shareable tasks. An isolated dialog, navigation pane, or
+inspector owns its own scrolling boundary.
 
 Check real wheel input over rows in both directions with short and overflowing data. A report scrolls through its
-table, and a collection scrolls inside its pane. Check horizontal overflow and keyboard access at narrow widths.
+table, and a collection scrolls inside its pane. Does the containing task supply one width and inset owner?
+Check horizontal overflow and keyboard access at narrow widths.
 Inspect the report's last row and its following siblings for another task or collection. The table source's vertical
 scroll chaining is reviewed alongside the page compositions and their stories.
 

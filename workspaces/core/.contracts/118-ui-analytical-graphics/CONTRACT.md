@@ -53,13 +53,16 @@ category selection and keeps the independent context visible. Inspect both amoun
 Use interruptible transform and opacity transitions for series focus under contract 073.
 
 Cartesian charts share chart-owned inspection and a labeled Chart data action in their heading.
-Use a full chart's `report` input for an inset report with its title, metadata, period summary and plot in one frame.
-The frame uses the shared `SectionHeading`; its body owns the inset and summary-to-plot spacing.
+Use a full chart's `report` input for a self-contained analytical report with its title, metadata, period summary and
+plot in one subtle frame. Use the ordinary chart when an existing region owns the grouping and separation.
+The report frame uses the shared `SectionHeading`. Its body owns the inset and summary-to-plot spacing.
+Related sections can stack. Give each report boundary one owner. Supporting rows can occupy a full-width section.
 Supply mixed metrics through `report.summary`. Bar and time-series charts also accept `report.seriesValues`, keyed by
 their supplied series identifiers. This summary reuses series labels and tones, and replaces the idle legend.
 An undefined series value reserves loading space. Supply explicit text for a known unavailable value.
 Keep period summaries stable while inspection shows the selected observation. Give each sample count or scope one owner.
 The report and its loading representation share the same frame, title and summary geometry.
+An absent, null or false summary reserves no summary spacing.
 Use the same report input across the other full graphic families; passive sparklines retain their compact representation.
 Keep compact axis formatting separate from the exact inspection formatter. Inspect a parts bucket with its supplied
 components, a total-only bucket with its independent total, and a gap with an explicit missing value.
@@ -74,6 +77,7 @@ Keep placeholder slots inert and unlabeled; known series use their actual labels
 Inspect a spike by pointer, keyboard and touch at desktop and phone widths. Confirm that inspection preserves the
 controlled selection, activation changes the linked breakdown, Escape dismisses details, and Chart data returns focus
 to its trigger. Compare the displayed components with the inputs and check that hovering never fetches data.
+Review the containing page or inspector. Does the chosen chart mode have one owner for its visual boundary?
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

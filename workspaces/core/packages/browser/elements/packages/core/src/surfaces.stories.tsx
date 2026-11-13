@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { EmptyState, Notice } from '../../feedback/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Button } from './actions.tsx';
+import { SectionHeading } from './section-heading.tsx';
 import { Columns, Divider, Panel, Row, Stack, SurfaceLink } from './surfaces.tsx';
 import { Muted, Subheading } from './text.tsx';
 
@@ -11,12 +12,12 @@ const styles = stylex.create({ linkContent: { padding: spacing.lg } });
 const meta = {
   title: 'Feedback/Surfaces',
   component: Panel,
-  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, SurfaceLink },
+  subcomponents: { Columns, Divider, EmptyState, Notice, Row, Stack, SurfaceLink, SectionHeading },
   parameters: {
     docs: {
       description: {
         component:
-          'Supported. Panel groups related content; Stack, Row, Columns, and Divider provide ordinary flow and separation. SurfaceLink makes supplied content one native navigation target with shared hover, press, and inset keyboard focus. Put it inside an unpadded Panel when a border is needed; its child owns content layout and padding. Use TextLink for inline navigation and Button for actions. Keep other interactive controls outside SurfaceLink. EmptyState explains an empty result and its next action. Notice announces progress or a local error. AsyncRegion owns delayed loading presentation with a destination-specific placeholder. The application chooses the read state, retry handler, and permission-aware action. Keep existing content mounted during refreshes and report a failed refresh alongside it with Retry. Reserve the pending and initial-failure views for reads with no usable result.',
+          'Supported. Use Stack for vertically related sections and Row for aligned controls. SectionHeading identifies a section with optional metadata and actions. Use Subheading inside an existing section. Columns supports views that need simultaneous comparison and remain readable at their containing widths. Panel bounds an independent unit such as a conflict decision or navigable item. A chart report owns its frame. SurfaceLink makes supplied content one native navigation target with shared hover, press, and inset keyboard focus. Put it inside an unpadded Panel when the item needs a boundary. Its child owns content layout and padding. Use TextLink for inline navigation and Button for actions. Keep other interactive controls outside SurfaceLink. EmptyState explains an empty result and its next action. Notice announces progress or a local error. AsyncRegion owns delayed loading with a destination-specific placeholder. The application chooses read state, retry behavior and permission-aware actions. Keep existing content mounted during refreshes.',
       },
     },
   },
@@ -27,24 +28,17 @@ type Story = StoryObj;
 
 export const Recommended: Story = {
   render: () => (
-    <Columns>
-      <Panel>
-        <Stack isCompact>
-          <Subheading>Summary</Subheading>
-          <Muted>Related information stays together.</Muted>
-          <Divider />
-          <Row shouldSpaceBetween>
-            <Muted>Last saved just now</Muted>
-            <Button>View details</Button>
-          </Row>
-        </Stack>
-      </Panel>
-      <Panel isPadded={false}>
-        <EmptyState title="No items yet" action={<Button variant="solid">Create item</Button>}>
-          Create the first item when you are ready.
-        </EmptyState>
-      </Panel>
-    </Columns>
+    <Stack>
+      <SectionHeading title="Release checklist" meta="Draft" actions={<Button>View details</Button>} />
+      <Stack isCompact>
+        <Subheading>Summary</Subheading>
+        <Muted>Last saved just now</Muted>
+      </Stack>
+      <Divider />
+      <EmptyState title="No attachments" action={<Button variant="solid">Add attachment</Button>}>
+        Attach supporting files when needed.
+      </EmptyState>
+    </Stack>
   ),
 };
 
@@ -79,4 +73,4 @@ export const UnavailableAction: Story = {
   ),
 };
 
-export const NarrowColumns: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
+export const NarrowSections: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };

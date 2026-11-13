@@ -115,7 +115,9 @@ Responsive groups follow their container width. Metric columns use `MetricGrid l
 Settings sections constrain grid tracks so wide tables scroll inside their region without expanding the page.
 Multiple toolbar actions supply concise labels and icons so compact toolbars preserve navigation and accessible actions.
 Keep toolbar action groups at their intrinsic width while the title shrinks and truncates within the remaining space.
-Keep chart frames unboxed; a caller may group them in a Panel. Chart titles and action groups wrap independently.
+Ordinary embedded charts leave their visual boundary with the containing region.
+Use a chart's report composition for a self-contained report with one subtle frame.
+Let one component own each boundary. Chart titles and action groups wrap independently.
 
 Choose typography and weight by role: body for records and ordinary controls, caption for metadata and chart inspection
 hints, section for grouped content, and heading for record identity. Pending compositions use the same semantic tokens.
