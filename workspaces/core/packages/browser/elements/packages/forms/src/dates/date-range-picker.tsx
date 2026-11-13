@@ -1,113 +1,126 @@
-import * as stylex from '@stylexjs/stylex';
-import { CalendarDays } from 'lucide-react';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { Button, TextButton } from '../../../core/src/index.ts';
-import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { Popover } from '../../../overlays/src/index.ts';
+import type { ControlDensity } from '../../../foundations/src/control-density.ts';
 import { Calendar } from './calendar.tsx';
 import type { CalendarEnvironment, CalendarRange } from './calendar.tsx';
+import { dateInput, dateValidation, formatDate, isDate } from './civil.ts';
+import type { DateRange } from './civil.ts';
+import { DateInput, RangeInputs } from './date-inputs.tsx';
+import { PickerPopover } from './picker-popover.tsx';
+import type { PickerPreset } from './picker-popover.tsx';
 
-const styles = stylex.create({
-  popup: { display: 'flex', flexDirection: 'column', gap: spacing.sm },
-  presets: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
-  },
-  footer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: spacing.lg,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopStyle: 'solid',
-    borderTopColor: colors.line,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    overflowWrap: 'anywhere',
-    color: colors.muted,
-  },
-});
+export type DateRangePreset = PickerPreset<DateRange>;
 
-export type DateRangePreset = { readonly id: string; readonly label: string; readonly value: CalendarRange };
-
-export type DateRangePickerProps = {
+export type DateRangePickerProps = CalendarEnvironment & {
   readonly label: string;
-  readonly value: CalendarRange | undefined;
-  readonly onValueChange: (value: CalendarRange | undefined) => void;
-  readonly formatValue: (value: CalendarRange) => string;
+  readonly value: DateRange | undefined;
+  readonly onValueChange: (value: DateRange | undefined) => void;
+  readonly formatValue?: (value: DateRange) => string;
   readonly presets?: ReadonlyArray<DateRangePreset>;
+  readonly validateRange?: (value: DateRange) => string | undefined;
+  readonly density?: ControlDensity;
   readonly disabled?: boolean;
-} & CalendarEnvironment;
+  readonly isClearable?: boolean;
+};
 
 export function DateRangePicker({
   label,
   value,
   onValueChange,
   formatValue,
-  presets = [],
+  presets,
+  validateRange,
+  density,
   disabled,
+  isClearable,
   ...environment
 }: DateRangePickerProps): ReactNode {
-  const [isOpen, setOpen] = useState(false);
+  function validate(draft: CalendarRange): string | undefined {
+    if (draft.to === undefined) {
+      return 'Select a start and end date.';
+    }
+
+    const invalid =
+      dateValidation(draft.from, environment.minimum, environment.maximum) ??
+      dateValidation(draft.to, environment.minimum, environment.maximum);
+
+    if (invalid !== undefined) {
+      return invalid;
+    }
+
+    if (dateInput(draft.from) > dateInput(draft.to)) {
+      return 'End date must be on or after start date.';
+    }
+
+    return validateRange?.({ from: draft.from, to: draft.to });
+  }
+
+  function describe(draft: CalendarRange): string {
+    if (draft.to === undefined) {
+      return formatDate(draft.from, environment.locale);
+    }
+
+    const complete = { from: draft.from, to: draft.to };
+
+    return (
+      formatValue?.(complete) ??
+      `${formatDate(complete.from, environment.locale)} – ${formatDate(complete.to, environment.locale)}`
+    );
+  }
 
   return (
-    <Popover.Root open={isOpen} onOpenChange={setOpen}>
-      <Popover.Trigger disabled={disabled} render={<Button variant="outline" />} aria-label={label}>
-        <CalendarDays size={16} aria-hidden="true" />
-        {value === undefined ? label : formatValue(value)}
-      </Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Positioner align="start">
-          <Popover.Popup aria-label={label}>
-            <div {...stylex.props(styles.popup)}>
-              {presets.length > 0 && (
-                <div role="group" aria-label="Date presets" {...stylex.props(styles.presets)}>
-                  {presets.map((preset) => (
-                    <Button
-                      key={preset.id}
-                      variant="ghost"
-                      onClick={() => {
-                        onValueChange(preset.value);
-                        setOpen(false);
-                      }}
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                </div>
-              )}
-              <Calendar
-                {...environment}
-                label={label}
-                mode="range"
-                autoFocus
-                value={value}
-                onValueChange={(next) => {
-                  onValueChange(next);
-
-                  if (next?.to !== undefined) {
-                    setOpen(false);
-                  }
-                }}
-              />
-              <div {...stylex.props(styles.footer)}>
-                <span>{environment.timeZone}</span>
-                <TextButton disabled={value === undefined} onClick={() => onValueChange(undefined)}>
-                  Clear
-                </TextButton>
-              </div>
-            </div>
-          </Popover.Popup>
-        </Popover.Positioner>
-      </Popover.Portal>
-    </Popover.Root>
+    <PickerPopover<CalendarRange>
+      label={label}
+      value={value}
+      formatValue={describe}
+      validateValue={validate}
+      presets={presets}
+      density={density}
+      disabled={disabled}
+      isClearable={isClearable}
+      timeZone={environment.timeZone}
+      onValueChange={(next) => {
+        if (next === undefined) {
+          onValueChange(undefined);
+        } else if (next.to !== undefined) {
+          onValueChange({ from: next.from, to: next.to });
+        }
+      }}
+    >
+      {(draft, setDraft) => (
+        <>
+          <RangeInputs>
+            <DateInput
+              label="Start date"
+              value={draft?.from}
+              minimum={environment.minimum}
+              maximum={environment.maximum}
+              onValueChange={(from) => setDraft(from === undefined ? undefined : { from, to: draft?.to })}
+            />
+            <DateInput
+              label="End date"
+              value={draft?.to}
+              minimum={environment.minimum}
+              maximum={environment.maximum}
+              onValueChange={(to) => {
+                if (draft !== undefined) {
+                  setDraft({ from: draft.from, to });
+                } else if (to !== undefined) {
+                  setDraft({ from: to, to });
+                }
+              }}
+            />
+          </RangeInputs>
+          <Calendar
+            {...environment}
+            label={label}
+            mode="range"
+            autoFocus
+            value={draft}
+            initialMonth={draft !== undefined && isDate(draft.from) ? draft.from : environment.initialMonth}
+            onValueChange={setDraft}
+          />
+        </>
+      )}
+    </PickerPopover>
   );
 }

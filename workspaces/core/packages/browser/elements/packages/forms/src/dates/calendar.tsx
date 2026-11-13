@@ -4,6 +4,10 @@ import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, radii, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { isDate } from './civil.ts';
+import type { CalendarDate } from './civil.ts';
+
+export type { CalendarDate } from './civil.ts';
 
 const styles = stylex.create({
   calendar: {
@@ -116,8 +120,6 @@ const styles = stylex.create({
   hidden: { visibility: 'hidden' },
 });
 
-export type CalendarDate = { readonly year: number; readonly month: number; readonly day: number };
-
 export type CalendarRange = { readonly from: CalendarDate; readonly to?: CalendarDate | undefined };
 
 export type CalendarEnvironment = {
@@ -145,7 +147,12 @@ export type CalendarProps = CalendarEnvironment & { readonly label: string; read
 
 function zonedDate(value: CalendarDate, timeZone: string): Date {
   // Noon avoids zones whose civil day starts with a daylight-saving transition.
-  return new TZDate(value.year, value.month - 1, value.day, 12, 0, 0, timeZone);
+  const date = new TZDate(0, timeZone);
+
+  date.setFullYear(value.year, value.month - 1, value.day);
+  date.setHours(12, 0, 0, 0);
+
+  return date;
 }
 
 function calendarDate(value: Date): CalendarDate {
@@ -171,7 +178,11 @@ function CalendarDayButton({ className, modifiers, ...props }: ComponentProps<ty
 }
 
 export function Calendar(props: CalendarProps): ReactNode {
-  const { locale, timeZone, today, initialMonth, minimum, maximum, weekStartsOn = 1, label } = props;
+  const { locale, timeZone, weekStartsOn = 1, label } = props;
+  const today = isDate(props.today) ? props.today : { year: 2000, month: 1, day: 1 };
+  const initialMonth = isDate(props.initialMonth) ? props.initialMonth : today;
+  const minimum = props.minimum !== undefined && isDate(props.minimum) ? props.minimum : undefined;
+  const maximum = props.maximum !== undefined && isDate(props.maximum) ? props.maximum : undefined;
   const disabled = [];
 
   if (minimum !== undefined) {
@@ -226,18 +237,18 @@ export function Calendar(props: CalendarProps): ReactNode {
         key={timeZone}
         {...shared}
         mode="single"
-        selected={props.value === undefined ? undefined : zonedDate(props.value, timeZone)}
+        selected={props.value !== undefined && isDate(props.value) ? zonedDate(props.value, timeZone) : undefined}
         onSelect={(date) => props.onValueChange(date === undefined ? undefined : calendarDate(date))}
       />
     );
   }
 
   const selected =
-    props.value === undefined
+    props.value === undefined || !isDate(props.value.from)
       ? undefined
       : {
           from: zonedDate(props.value.from, timeZone),
-          to: props.value.to === undefined ? undefined : zonedDate(props.value.to, timeZone),
+          to: props.value.to !== undefined && isDate(props.value.to) ? zonedDate(props.value.to, timeZone) : undefined,
         };
 
   return (

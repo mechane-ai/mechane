@@ -28,6 +28,34 @@ The [selection stories](../packages/browser/elements/packages/forms/src/selectio
 [composed form stories](../packages/browser/elements/packages/forms/src/form-controls.stories.tsx) show the maintained
 APIs. They use synthetic values and perform no requests.
 
+## Dates and reporting periods
+
+Import date controls from `@mechane-ai/elements/forms/dates`.
+
+| Need                                        | Control            |
+| ------------------------------------------- | ------------------ |
+| One civil date                              | `DatePicker`       |
+| An inclusive day interval                   | `DateRangePicker`  |
+| One billing month                           | `MonthPicker`      |
+| An inclusive interval of billing months     | `MonthRangePicker` |
+| An inline calendar with immediate selection | `Calendar`         |
+
+The pickers keep an uncommitted draft in their popup. Apply commits one complete value. Cancel, Escape and outside
+dismissal discard edits. A supplied preset commits its complete interval immediately. `CalendarRange` permits a partial
+inline selection; `DateRange` and `MonthRange` require both endpoints. Use `isClearable={false}` for required query
+periods.
+
+Supply locale, time zone, today, initial month, bounds and preset values explicitly. Civil values retain their calendar
+components across time zones. The application converts inclusive dates to its API's timestamps or exclusive bounds.
+Pickers perform no requests, read no clock and persist no view state. `validateRange` returns a visible message and
+disables Apply for unsupported intervals; it does not change a selection into a different interval.
+
+Type values in the labeled fields or choose them from the calendar. Month selection uses a twelve-month grid with arrow
+keys, Home/End and Page Up/Down. Choose compact density only for a scoped report trigger; popup fields, calendar targets
+and actions keep their standard density. The
+[date stories](../packages/browser/elements/packages/forms/src/dates/calendar.stories.tsx) show the family, bounds,
+validation, committed values and required periods.
+
 ## Color scheme
 
 Import `themeProps` from `@mechane-ai/elements/theme`. Spread `themeProps.light` or `themeProps.dark` onto the document

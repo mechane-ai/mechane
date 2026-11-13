@@ -35,6 +35,12 @@ Mechane display formatting belongs to `packages/browser/console-views/src/format
 Generic value displays receive strings or explicit formatting callbacks. Keep any declared locale, time zone,
 precision, and reference time with that owner, and never rely on a browser or server default.
 
+Civil-date and billing-month pickers use Gregorian calendar components, rather than instants. Preserve those
+components when formatting in the supplied locale; a fixed UTC formatting proxy does not change the chosen date.
+Supply the reporting time zone, today and bounds explicitly. The consuming application converts complete inclusive
+selections to its API interval. Never infer relative presets, provider coverage or query bounds inside the picker.
+Review the date stories with the same values in two reporting time zones and verify that their calendar dates agree.
+
 Presentation collection ordering remains with its application owner under contract 070. The instruction to sort a copy
 governs an owner that is allowed to sort; it does not permit generic UI to reorder supplied records.
 Contract 113 defines which request timestamps and usage records exist, and contract 115 defines their generic geometry.

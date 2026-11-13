@@ -42,6 +42,13 @@ server collection as though that page were the full dataset.
 Contract 113 owns the API page boundary, session/workspace invalidation, and revision-conflict semantics.
 Check draft behavior through create/edit screens, including refreshes, rejected saves, and a record switch during a save.
 
+Date and month pickers keep edits local until Apply. Their range callbacks accept complete intervals; partial inline
+calendar selection never commits a query. Cancel, Escape and outside dismissal discard the draft, while a declared
+preset commits its supplied complete interval. Reopening starts from the current supplied value. Set
+`isClearable={false}` for a required period whose consumer cannot apply an empty value.
+Review `forms/src/dates/calendar.stories.tsx`: select only a range start, cancel or press Escape, reopen, then apply a
+complete interval. Confirm that only Apply or a preset changes the committed readout, and that focus returns to the trigger.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.
