@@ -32,7 +32,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Ordinary controls and their placeholders share one border-box height and typography. Compare the outer edges, grouped inputs, and file selector at desktop and coarse-pointer widths. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column; FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
+          'Ordinary controls and their placeholders share one border-box height and typography. Compare the outer edges, grouped inputs, and file selector at desktop and coarse-pointer widths. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column. Ready rows require controlId; use isPlaceholder for decorative rows without inventing label targets. FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
       },
     },
   },
@@ -191,6 +191,30 @@ export const SettingsAndActions: Story = {
         <FormActions>
           <Button>Cancel</Button>
           <Button variant="solid">Save preferences</Button>
+        </FormActions>
+      </Stack>
+    </div>
+  ),
+};
+
+export const SettingsLoading: Story = {
+  render: () => (
+    <div {...stylex.props(styles.settings)}>
+      <Stack>
+        <SettingsSection title="Preferences" description="Fields align without application width overrides.">
+          <SettingsRow label="Name" description="A recognizable name for the collection." isPlaceholder>
+            <FieldPlaceholder />
+          </SettingsRow>
+          <SettingsRow label="Default status" isPlaceholder>
+            <FieldPlaceholder />
+          </SettingsRow>
+          <SettingsRow label="Notifications" isPlaceholder>
+            <FieldPlaceholder />
+          </SettingsRow>
+        </SettingsSection>
+        <FormActions>
+          <ButtonPlaceholder width="5ch" />
+          <ButtonPlaceholder width="14ch" />
         </FormActions>
       </Stack>
     </div>

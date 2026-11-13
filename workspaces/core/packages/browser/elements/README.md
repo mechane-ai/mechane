@@ -151,9 +151,13 @@ time-series charts also accept `report={{ meta, seriesValues }}`, a map of forma
 identifier. It reuses their labels and colors as the legend. Undefined values reserve loading space. `SmallMultiples`
 aligns date axes and inspection across panels, with one date axis at the bottom; its placeholder accepts the same report
 layout without observations. The application owns periods, aggregates, coverage and read state. Keep full-width tables
-outside `PageContent` so their cell insets remain the only gutter. `SettingsSection` keeps wide tables inside their
-scroll region, and `SettingsRow` aligns labels and controls. `FormActions` owns submission rows and their internal
-spacing. The enclosing section owns the gap before and after the actions.
+outside `PageContent` so their cell insets remain the only gutter. `ReportContent` owns the inset for its optional
+`summary` and leaves its `breakdown` full width. Pass summary content directly; omit it when a section contains only
+rows. Absent, `null` and `false` summaries reserve no empty space. `ContentTabs` uses `defaultSelectedId` for an initial
+local choice or `navigation` for application-controlled links; the two modes are mutually exclusive. `SettingsSection`
+keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. Use `isPlaceholder` on a
+decorative row without a control ID; ready rows require a real `controlId` for their label. `FormActions` owns
+submission rows and their internal spacing. The enclosing section owns the gap before and after the actions.
 
 The default theme is light, with system fonts and a compact spacing scale. Import `themeProps` from
 `@mechane-ai/elements/theme` and spread `themeProps.light` or `themeProps.dark` onto the document root. Portaled content

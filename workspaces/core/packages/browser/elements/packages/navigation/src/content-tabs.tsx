@@ -17,14 +17,16 @@ export type ContentTabNavigation = {
   readonly href: (id: string) => string;
 };
 
-export type ContentTabsProps = {
-  readonly label: string;
-  readonly items: ReadonlyArray<ContentTab>;
-  readonly navigation?: ContentTabNavigation;
-};
+type ContentTabsContent = { readonly label: string; readonly items: ReadonlyArray<ContentTab> };
+
+export type ContentTabsProps = ContentTabsContent &
+  (
+    | { readonly navigation: ContentTabNavigation; readonly defaultSelectedId?: never }
+    | { readonly navigation?: undefined; readonly defaultSelectedId?: string }
+  );
 
 export function ContentTabs(props: ContentTabsProps): ReactNode {
-  const [localId, setLocalId] = useState(props.items[0]?.id);
+  const [localId, setLocalId] = useState(props.defaultSelectedId ?? props.items[0]?.id);
   const navigation = props.navigation;
   const selectedId = navigation?.selectedId ?? localId;
   const selected = props.items.find((item) => item.id === selectedId) ?? props.items[0];

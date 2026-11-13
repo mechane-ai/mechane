@@ -34,7 +34,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'CollectionLayout reserves the available height for one table or collection. The header stays above its viewport. ReportContent instead lets the containing page scroll an inset summary and a content-sized breakdown together. Table cells own the shared inset. ContentTabs mounts one independent collection at a time. Supply controlled selection and href for shareable sections.',
+          'CollectionLayout reserves the available height for one table or collection. The header stays above its viewport. ReportContent instead lets the containing page scroll an optional inset summary and a content-sized breakdown together. Pass summary content directly; do not wrap it in PageContent. Omit summary for table-only sections so no empty inset is reserved. Table cells own the shared inset. ContentTabs mounts one independent collection at a time. Supply controlled selection and href for shareable sections.',
       },
     },
   },
@@ -70,10 +70,10 @@ export const FullHeight: Story = {
   ),
 };
 
-export const ShortReport: Story = {
-  render: () => (
+function RecordReport({ hasSummary = true }: { readonly hasSummary?: boolean }) {
+  return (
     <ReportContent
-      summary={<p>Reported entries for this period.</p>}
+      summary={hasSummary && <p>Reported entries for this period.</p>}
       breakdown={
         <DataTable
           rows={records.slice(0, 6)}
@@ -84,5 +84,8 @@ export const ShortReport: Story = {
         />
       }
     />
-  ),
-};
+  );
+}
+
+export const ShortReport: Story = { render: () => <RecordReport /> };
+export const TableOnly: Story = { render: () => <RecordReport hasSummary={false} /> };

@@ -2,22 +2,21 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Download } from 'lucide-react';
 import { BarChart, BarChartPlaceholder } from '../../charts/src/cartesian/index.ts';
 import { CollectionToolbar, DataTable, Metric, MetricGrid } from '../../collections/src/index.ts';
-import { Stack, Subheading, Text } from '../../core/src/index.ts';
+import { SectionHeading } from '../../core/src/index.ts';
 import { PageContent } from './page-content.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import { ReportContent } from './report-content.tsx';
-import { ReportSection } from './report-section.tsx';
 
 const meta = {
   title: 'Layout/PageContent',
   component: PageContent,
-  subcomponents: { ReportSection },
+  subcomponents: { ReportContent },
   parameters: {
     layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'PageContent gives reports a 16px content inset and 32px between sections. It leaves width and scrolling with the containing page. ReportSection places a supplied metric summary directly above a full-width chart. Use it when the chart explains the summary. Supply the same composition while loading, with Metric and the chart placeholder. The application owns measure, population, period, formatting, and read state. Inventory counts and event history can have different populations and belong in separate sections. Keep full-width tables outside PageContent: their cells own the same 16px inset. PageToolbar and CollectionToolbar each own their bottom separator and omit an empty bar. Use DetailPage for a centered reading column.',
+          'PageContent owns the report inset and section rhythm. Charts group their title, summary and plot through the report prop. Supply the same report composition to the loading chart. ReportContent owns one PageContent around its optional summary and keeps its breakdown full width. Pass summary content directly and omit it for a table-only section. The application owns measures, populations, periods, formatting and read state. Use DetailPage for a centered reading column.',
       },
     },
   },
@@ -40,11 +39,8 @@ export const ReportWithRecords: Story = {
           <Metric label="open requests" value="6" />
           <Metric label="median review time" value="8 min" />
         </MetricGrid>
-        <Stack isCompact>
-          <Subheading>Review queue</Subheading>
-          <Text>Records awaiting a decision remain available below.</Text>
-        </Stack>
       </PageContent>
+      <SectionHeading title="Review queue" />
       <CollectionToolbar label="Review controls" />
       <DataTable
         caption="Pending reviews"
@@ -71,23 +67,26 @@ export const NarrowReport: Story = {
 };
 
 function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean }) {
+  const report = {
+    summary: (
+      <MetricGrid>
+        {isLoading ? (
+          <Metric label="Completed operations" variant="headline" isLoading hasDetail />
+        ) : (
+          <Metric label="Completed operations" value="480" variant="headline" detail="Nov 1–3 · UTC" />
+        )}
+      </MetricGrid>
+    ),
+  };
+
   return (
     <ReportContent
       summary={
-        <ReportSection
-          summary={
-            <MetricGrid>
-              {isLoading ? (
-                <Metric label="Completed operations" variant="headline" isLoading hasDetail />
-              ) : (
-                <Metric label="Completed operations" value="480" variant="headline" detail="Nov 1–3 · UTC" />
-              )}
-            </MetricGrid>
-          }
-        >
+        <>
           {isLoading ? (
             <BarChartPlaceholder
               title="Daily completed operations"
+              report={report}
               height={180}
               series={[
                 { id: 'build', label: 'Build', tone: 'series1' },
@@ -97,6 +96,7 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
           ) : (
             <BarChart
               title="Daily completed operations"
+              report={report}
               height={180}
               categories={[
                 { id: 'day-1', label: 'November 1' },
@@ -112,7 +112,7 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
               formatValue={(value) => value.toLocaleString()}
             />
           )}
-        </ReportSection>
+        </>
       }
       breakdown={
         <DataTable

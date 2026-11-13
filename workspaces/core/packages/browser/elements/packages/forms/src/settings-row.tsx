@@ -37,24 +37,38 @@ const styles = stylex.create({
   },
 });
 
-export type SettingsRowProps = {
-  readonly label: string;
-  readonly description?: string;
-  readonly controlId: string;
-  readonly children: ReactNode;
-};
+type SettingsRowContent = { readonly label: string; readonly description?: string; readonly children: ReactNode };
 
-export function SettingsRow({ label, description, controlId, children }: SettingsRowProps): ReactNode {
+export type SettingsRowProps = SettingsRowContent &
+  (
+    | { readonly isPlaceholder: true; readonly controlId?: never }
+    | { readonly isPlaceholder?: false; readonly controlId: string }
+  );
+
+export function SettingsRow({
+  label,
+  description,
+  controlId,
+  isPlaceholder = false,
+  children,
+}: SettingsRowProps): ReactNode {
   const labelId = useId();
+  const descriptionId = `${controlId ?? labelId}-description`;
 
   return (
-    <div role="group" aria-labelledby={labelId} {...stylex.props(styles.setting)}>
+    <div
+      role="group"
+      aria-labelledby={labelId}
+      aria-hidden={isPlaceholder || undefined}
+      inert={isPlaceholder || undefined}
+      {...stylex.props(styles.setting)}
+    >
       <div {...stylex.props(styles.explanation)}>
         <label id={labelId} htmlFor={controlId} {...stylex.props(styles.label)}>
           {label}
         </label>
         {description !== undefined && (
-          <p id={`${controlId}-description`} {...stylex.props(styles.description)}>
+          <p id={descriptionId} {...stylex.props(styles.description)}>
             {description}
           </p>
         )}

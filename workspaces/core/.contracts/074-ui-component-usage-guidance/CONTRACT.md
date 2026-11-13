@@ -34,7 +34,9 @@ Review changed public components: does the guidance say when to choose each over
 
 ## Local adaptations
 
-The ReportSection examples in `layout/src/page-content.stories.tsx` document a summary above its explanatory chart.
+The chart report examples in `layout/src/page-content.stories.tsx` place summaries inside their explanatory charts.
+The ReportContent examples in `layout/src/collection-layout.stories.tsx` document one inset summary followed by full-width rows,
+including a section without a summary. Pass content directly to the summary slot; do not nest PageContent inside it.
 The Metric examples in `collections/src/record-details.stories.tsx` document formatted values, qualifications,
 pending geometry and passive trends. Review the populations and time windows in the consuming application.
 
