@@ -10,6 +10,10 @@ export { ViewStack } from './view-stack.tsx';
 export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 export type { PageContentProps } from './page-content.tsx';
 export { PageContent } from './page-content.tsx';
+export { ReportContent } from './report-content.tsx';
+export type { ReportContentProps } from './report-content.tsx';
+export { CollectionLayout } from './collection-layout.tsx';
+export type { CollectionLayoutProps } from './collection-layout.tsx';
 export type { ReportSectionProps } from './report-section.tsx';
 export { ReportSection } from './report-section.tsx';
 export type {

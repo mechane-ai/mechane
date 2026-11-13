@@ -14,10 +14,11 @@ const styles = stylex.create({
     paddingTop: { default: frame.detailTop, [frameConditions.detailMobile]: frame.detailMobileTop },
     paddingBottom: { default: frame.detailBottom, [frameConditions.detailMobile]: frame.detailMobileBottom },
   },
+  wide: { width: '100%', maxWidth: 'none', paddingInline: 0, paddingTop: 0, paddingBottom: 0 },
 });
 
-type DetailPageProps = { readonly children: ReactNode };
+type DetailPageProps = { readonly children: ReactNode; readonly isWide?: boolean };
 
-export function DetailPage({ children }: DetailPageProps): ReactNode {
-  return <div {...stylex.props(styles.detail)}>{children}</div>;
+export function DetailPage({ children, isWide = false }: DetailPageProps): ReactNode {
+  return <div {...stylex.props(styles.detail, isWide && styles.wide)}>{children}</div>;
 }

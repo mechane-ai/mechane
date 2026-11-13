@@ -39,6 +39,22 @@ Review changed custom table layouts: do unusual grouped or spanning cells use se
 
 ## Local adaptations
 
+Allow native vertical scroll chaining through every table viewport, including tables with no vertical overflow.
+Use content sizing for a finite report breakdown. A primary virtualized collection fills its containing pane.
+Give each active page one primary collection. Put independent collections in separate tabs or destinations.
+Keep pagination, retry, and load-more controls with their collection.
+
+Use `ReportContent` for an inset summary followed by a full-width breakdown. Use `CollectionLayout` for a
+header above the collection viewport. Table cells own the page inset. Keep tables outside centered reading columns
+and padded `PageContent`. Keep page context and independent actions above the collection.
+Use `ContentTabs` to mount one related section at a time. Supply real destinations and controlled selection for
+shareable sections. An isolated dialog, navigation pane, or inspector owns its own scrolling boundary.
+
+Check real wheel input over rows in both directions with short and overflowing data. A report scrolls through its
+table, and a collection scrolls inside its pane. Check horizontal overflow and keyboard access at narrow widths.
+Inspect the report's last row and its following siblings for another task or collection. The table source's vertical
+scroll chaining is reviewed alongside the page compositions and their stories.
+
 `DataTable` is the shared renderer for comparable records, including small finite lists. The library's typed columns
 and callbacks hide TanStack implementation types.
 

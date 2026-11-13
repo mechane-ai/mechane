@@ -5,6 +5,7 @@ import { CollectionToolbar, DataTable, Metric, MetricGrid } from '../../collecti
 import { Stack, Subheading, Text } from '../../core/src/index.ts';
 import { PageContent } from './page-content.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
+import { ReportContent } from './report-content.tsx';
 import { ReportSection } from './report-section.tsx';
 
 const meta = {
@@ -71,60 +72,64 @@ export const NarrowReport: Story = {
 
 function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean }) {
   return (
-    <PageContent>
-      <ReportSection
-        summary={
-          <MetricGrid>
-            {isLoading ? (
-              <Metric label="Completed operations" variant="headline" isLoading hasDetail />
-            ) : (
-              <Metric label="Completed operations" value="480" variant="headline" detail="Nov 1–3 · UTC" />
-            )}
-          </MetricGrid>
-        }
-      >
-        {isLoading ? (
-          <BarChartPlaceholder
-            title="Daily completed operations"
-            height={180}
-            series={[
-              { id: 'build', label: 'Build', tone: 'series1' },
-              { id: 'publish', label: 'Publish', tone: 'series2' },
-            ]}
-          />
-        ) : (
-          <BarChart
-            title="Daily completed operations"
-            height={180}
-            categories={[
-              { id: 'day-1', label: 'November 1' },
-              { id: 'day-2', label: 'November 2' },
-              { id: 'day-3', label: 'November 3' },
-            ]}
-            series={[
-              { id: 'build', label: 'Build', tone: 'series1', values: [100, 140, 120] },
-              { id: 'publish', label: 'Publish', tone: 'series2', values: [20, 60, 40] },
-            ]}
-            mode="stacked"
-            domain={[0, 200]}
-            formatValue={(value) => value.toLocaleString()}
-          />
-        )}
-      </ReportSection>
-      <DataTable
-        caption="Completed operations by type"
-        rows={[
-          { id: 'build', label: 'Build', count: 360 },
-          { id: 'publish', label: 'Publish', count: 120 },
-        ]}
-        columns={[
-          { id: 'label', label: 'Type', role: 'primary', cell: (row) => row.label },
-          { id: 'count', label: 'Completed', role: 'number', cell: (row) => row.count.toLocaleString() },
-        ]}
-        getRowId={(row) => row.id}
-        empty="No completed operations."
-      />
-    </PageContent>
+    <ReportContent
+      summary={
+        <ReportSection
+          summary={
+            <MetricGrid>
+              {isLoading ? (
+                <Metric label="Completed operations" variant="headline" isLoading hasDetail />
+              ) : (
+                <Metric label="Completed operations" value="480" variant="headline" detail="Nov 1–3 · UTC" />
+              )}
+            </MetricGrid>
+          }
+        >
+          {isLoading ? (
+            <BarChartPlaceholder
+              title="Daily completed operations"
+              height={180}
+              series={[
+                { id: 'build', label: 'Build', tone: 'series1' },
+                { id: 'publish', label: 'Publish', tone: 'series2' },
+              ]}
+            />
+          ) : (
+            <BarChart
+              title="Daily completed operations"
+              height={180}
+              categories={[
+                { id: 'day-1', label: 'November 1' },
+                { id: 'day-2', label: 'November 2' },
+                { id: 'day-3', label: 'November 3' },
+              ]}
+              series={[
+                { id: 'build', label: 'Build', tone: 'series1', values: [100, 140, 120] },
+                { id: 'publish', label: 'Publish', tone: 'series2', values: [20, 60, 40] },
+              ]}
+              mode="stacked"
+              domain={[0, 200]}
+              formatValue={(value) => value.toLocaleString()}
+            />
+          )}
+        </ReportSection>
+      }
+      breakdown={
+        <DataTable
+          caption="Completed operations by type"
+          rows={[
+            { id: 'build', label: 'Build', count: 360 },
+            { id: 'publish', label: 'Publish', count: 120 },
+          ]}
+          columns={[
+            { id: 'label', label: 'Type', role: 'primary', cell: (row) => row.label },
+            { id: 'count', label: 'Completed', role: 'number', cell: (row) => row.count.toLocaleString() },
+          ]}
+          getRowId={(row) => row.id}
+          empty="No completed operations."
+        />
+      }
+    />
   );
 }
 

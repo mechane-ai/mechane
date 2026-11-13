@@ -62,7 +62,7 @@ const styles = stylex.create({
 });
 
 export type RecordPageRootProps = { readonly children: ReactNode };
-export type RecordPageBodyProps = { readonly children: ReactNode };
+export type RecordPageBodyProps = { readonly children: ReactNode; readonly isWide?: boolean };
 export type RecordPageContentProps = { readonly children: ReactNode };
 
 export type RecordPageToolbarProps = {
@@ -126,9 +126,9 @@ function RecordPageToolbar({
   );
 }
 
-function RecordPageBody({ children }: RecordPageBodyProps): ReactNode {
+function RecordPageBody({ children, isWide = false }: RecordPageBodyProps): ReactNode {
   return (
-    <DetailPage>
+    <DetailPage isWide={isWide}>
       <div {...stylex.props(styles.body)}>{children}</div>
     </DetailPage>
   );

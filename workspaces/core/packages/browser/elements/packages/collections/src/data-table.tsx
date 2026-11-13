@@ -38,7 +38,7 @@ const styles = stylex.create({
   viewport: {
     'minWidth': 0,
     'overflow': 'auto',
-    'overscrollBehavior': 'contain',
+    'overscrollBehaviorY': 'auto',
     'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
@@ -719,6 +719,7 @@ export function DataTable<Row extends object>({
     <div {...stylex.props(styles.frame, frameStyles[sizing])}>
       <div
         ref={scroll.ref}
+        data-table-viewport
         role="region"
         aria-label={caption}
         tabIndex={scroll.tabIndex}

@@ -12,7 +12,7 @@ const styles = stylex.create({
     'flex': 1,
     'minHeight': 0,
     'overflowY': 'auto',
-    'overscrollBehaviorY': 'contain',
+    'overscrollBehaviorY': 'auto',
     'outlineStyle': 'none',
     ':focus-visible': {
       outlineWidth: controls.focusWidth,
