@@ -8,5 +8,10 @@ export type { SparklineProps } from './sparkline.tsx';
 export { Sparkline } from './sparkline.tsx';
 export type { TimeSeriesPoint, TimeSeries, TimeSeriesMarker } from './time-series-data.ts';
 export { timeSeriesLimits } from './time-series-data.ts';
-export type { TimeSeriesChartProps, AreaChartProps, SmallMultiplesProps } from './time-series.tsx';
-export { LineChart, AreaChart, SmallMultiples } from './time-series.tsx';
+export type {
+  TimeSeriesChartProps,
+  TimeSeriesChartPlaceholderProps,
+  AreaChartProps,
+  SmallMultiplesProps,
+} from './time-series.tsx';
+export { LineChart, AreaChart, SmallMultiples, TimeSeriesChartPlaceholder } from './time-series.tsx';

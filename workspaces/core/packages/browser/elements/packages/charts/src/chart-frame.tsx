@@ -12,7 +12,7 @@ export type ChartSelection = { readonly selectedId: string | undefined; readonly
 
 export type ChartFrameProps = {
   readonly title: ReactNode;
-  readonly description?: string | undefined;
+  readonly description?: ReactNode;
   readonly children: ReactNode;
   readonly actions?: ReactNode;
   readonly footer?: ReactNode;

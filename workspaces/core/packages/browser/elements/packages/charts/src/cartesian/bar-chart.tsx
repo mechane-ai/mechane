@@ -32,7 +32,7 @@ const DEFAULT_HEIGHT = 200;
 
 export type BarChartProps = {
   readonly title: string;
-  readonly description?: string | undefined;
+  readonly description?: ReactNode;
   readonly categories: ReadonlyArray<{
     readonly id: string;
     readonly label: string;

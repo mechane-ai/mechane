@@ -18,7 +18,7 @@ export function ChartInputError({
   message,
 }: {
   readonly title: string;
-  readonly description?: string | undefined;
+  readonly description?: ReactNode;
   readonly message: string;
 }): ReactNode {
   return (

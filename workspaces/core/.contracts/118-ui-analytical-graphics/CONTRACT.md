@@ -57,7 +57,9 @@ Keep compact axis formatting separate from the exact inspection formatter. Inspe
 components, a total-only bucket with its independent total, and a gap with an explicit missing value.
 Match a focused chart's legend to its focused series and independent context. Row highlighting changes emphasis only.
 Reserve mobile legend value space so inspection does not move the plot or linked rows.
-Use the same frame and inspection geometry in the loading representation.
+Use the same frame and inspection geometry in the loading representation. BarChartPlaceholder and
+TimeSeriesChartPlaceholder accept known labels and dimensions without invented observations. Keep their heading,
+responsive legend and plot footprint aligned with the loaded chart; the enclosing async region owns announcements.
 
 Inspect a spike by pointer, keyboard and touch at desktop and phone widths. Confirm that inspection preserves the
 controlled selection, activation changes the linked breakdown, Escape dismisses details, and Chart data returns focus

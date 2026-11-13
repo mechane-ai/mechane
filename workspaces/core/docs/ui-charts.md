@@ -42,6 +42,12 @@ LineChart and AreaChart support pointing, tapping, arrow keys, Home, End, and Es
 guide and readable values. Equivalent observations in new arrays preserve inspection. Changed values, identities, or
 markers close it. Inspection stays inside the chart and touch interaction preserves page scrolling.
 
+Use `TimeSeriesChartPlaceholder` for LineChart, AreaChart, and each SmallMultiples panel while the first read is
+pending. Supply the same title, description, series labels, height and heading actions as the loaded chart. It shares
+the responsive inspection legend, frame and plot geometry, without observations or interactive controls. The surrounding
+AsyncRegion owns the busy state and delayed loading announcement. Use SkeletonText in the description slot when its
+metadata is unknown. Keep the real chart mounted during refresh.
+
 Sparkline is a passive 128 × 32 inline trend for a metric row. It requires an application-written `summary`, a value
 `unit`, `timestampUnit`, and an explicit `valueDomain`. It shares the time-series validation and line geometry,
 including missing gaps and isolated points, but has no focus, hover, or inspection state. Its accessible summary

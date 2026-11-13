@@ -10,7 +10,7 @@ import type { BarSeries } from './bar-chart.tsx';
 import { BreakdownBar } from './breakdown-bar.tsx';
 import { Sparkline } from './sparkline.tsx';
 import type { TimeSeries } from './time-series-data.ts';
-import { AreaChart, LineChart, SmallMultiples } from './time-series.tsx';
+import { AreaChart, LineChart, SmallMultiples, TimeSeriesChartPlaceholder } from './time-series.tsx';
 
 const meta = {
   title: 'Charts/Cartesian',
@@ -19,6 +19,7 @@ const meta = {
     AreaChart,
     Sparkline,
     SmallMultiples,
+    TimeSeriesChartPlaceholder,
     BarChart,
     BarChartPlaceholder,
     BreakdownBar,
@@ -96,6 +97,16 @@ export const Observations: Story = {
         ]}
       />
     </Panel>
+  ),
+};
+
+export const TimeSeriesLoading: Story = {
+  render: () => (
+    <AsyncRegion
+      state="pending"
+      label="Loading request latency"
+      placeholder={<TimeSeriesChartPlaceholder title="Request latency" series={[baseline, candidate]} />}
+    />
   ),
 };
 

@@ -3,6 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { AreaClosed } from '@visx/shape';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
+import { Skeleton, SkeletonText } from '../../../feedback/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
@@ -23,7 +24,7 @@ import { TimeSeriesLine } from './time-series-line.tsx';
 
 export type TimeSeriesChartProps = {
   readonly title: string;
-  readonly description?: string | undefined;
+  readonly description?: ReactNode;
   readonly series: ReadonlyArray<TimeSeries>;
   readonly timestampUnit: 'seconds' | 'milliseconds';
   readonly formatTimestamp: (timestamp: number) => string;
@@ -36,6 +37,11 @@ export type TimeSeriesChartProps = {
 
 export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boolean | undefined };
 
+export type TimeSeriesChartPlaceholderProps = Pick<
+  TimeSeriesChartProps,
+  'title' | 'description' | 'height' | 'actions'
+> & { readonly series: ReadonlyArray<Pick<TimeSeries, 'id' | 'label' | 'tone'>> };
+
 export type SmallMultiplesProps = Omit<
   TimeSeriesChartProps,
   'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'formatTick' | 'markers'
@@ -44,7 +50,7 @@ export type SmallMultiplesProps = Omit<
     readonly id: string;
     readonly title: string;
     readonly series: ReadonlyArray<TimeSeries>;
-    readonly description?: string | undefined;
+    readonly description?: ReactNode;
     readonly formatValue: (value: number) => string;
     readonly formatTick?: ((value: number) => string) | undefined;
     readonly markers?: ReadonlyArray<TimeSeriesMarker> | undefined;
@@ -111,6 +117,61 @@ export function LineChart(props: TimeSeriesChartProps): ReactNode {
 
 export function AreaChart({ isStacked = false, ...props }: AreaChartProps): ReactNode {
   return <TimeChart {...props} kind="area" isStacked={isStacked} />;
+}
+
+export function TimeSeriesChartPlaceholder({
+  title,
+  description,
+  series,
+  actions,
+  height = 180,
+}: TimeSeriesChartPlaceholderProps): ReactNode {
+  const inspectionId = useId();
+
+  const legend = prepareTimeSeries(
+    series.map((item) => ({ ...item, points: [] })),
+    false,
+  );
+
+  if (!Number.isFinite(height) || height < 48) {
+    return (
+      <ChartInputError title={title} description={description} message="Chart height must be at least 48 pixels." />
+    );
+  }
+
+  return (
+    <div aria-hidden inert {...stylex.props(styles.frame)}>
+      <ChartFrame
+        title={title}
+        description={description}
+        actions={
+          <>
+            {actions}
+            <ChartData title={title}>{null}</ChartData>
+          </>
+        }
+      >
+        <div {...stylex.props(styles.body)}>
+          <ChartInspection
+            id={inspectionId}
+            label={undefined}
+            legend={legend}
+            rows={[]}
+            x={0}
+            width={0}
+            source={undefined}
+          />
+          <div {...stylex.props(chartStyles.plot)}>
+            <Skeleton height={height - 16} />
+            <div {...stylex.props(styles.timeAxis)}>
+              <SkeletonText width="8ch" />
+              <SkeletonText width="8ch" />
+            </div>
+          </div>
+        </div>
+      </ChartFrame>
+    </div>
+  );
 }
 
 export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): ReactNode {
