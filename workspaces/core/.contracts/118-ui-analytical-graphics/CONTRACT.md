@@ -68,6 +68,8 @@ Reserve mobile legend value space so inspection does not move the plot or linked
 Use the same frame and inspection geometry in the loading representation. BarChartPlaceholder and
 TimeSeriesChartPlaceholder accept known labels and dimensions without invented observations. Keep their heading,
 responsive legend and plot footprint aligned with the loaded chart; the enclosing async region owns announcements.
+When bar-series identity is unknown during the initial read, reserve a neutral responsive legend skeleton.
+Keep placeholder slots inert and unlabeled; known series use their actual labels and layout.
 
 Inspect a spike by pointer, keyboard and touch at desktop and phone widths. Confirm that inspection preserves the
 controlled selection, activation changes the linked breakdown, Escape dismisses details, and Chart data returns focus

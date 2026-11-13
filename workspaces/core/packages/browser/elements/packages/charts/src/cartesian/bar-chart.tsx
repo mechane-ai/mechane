@@ -11,7 +11,7 @@ import { ChartData } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
-import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
+import { ChartInspection, ChartInspectionTitle, ChartLegendLoading } from '../chart-inspection.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import { validateComposition } from './bar-data.ts';
@@ -70,6 +70,7 @@ type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'
   readonly offset?: number | undefined;
   readonly source?: 'pointer' | 'keyboard' | undefined;
   readonly data?: ReactNode;
+  readonly isLoading?: boolean | undefined;
   readonly children: ReactNode;
 };
 
@@ -92,6 +93,7 @@ function BarChartFrame({
   offset,
   source,
   data,
+  isLoading = false,
 }: BarChartFrameProps): ReactNode {
   const legend = series.map((item, seriesIndex) => ({
     id: item.id,
@@ -105,6 +107,8 @@ function BarChartFrame({
     tone: colorTone(item.tone, seriesIndex),
   }));
 
+  const hasUnknownLegend = isLoading && series.length === 0 && report?.seriesValues === undefined;
+
   return (
     <ChartFrame
       title={<ChartInspectionTitle title={title} detail={detail} />}
@@ -113,27 +117,31 @@ function BarChartFrame({
       series={legend}
       actions={<ChartData title={title}>{data}</ChartData>}
     >
-      <ChartInspection
-        id={inspectionId}
-        label={label}
-        summary={summary}
-        legend={legend}
-        hasSeriesSummary={report?.seriesValues !== undefined}
-        layoutLegend={layoutLegend}
-        rows={rows.map((item, seriesIndex) => ({
-          id: item.id,
-          label: item.label,
-          tone: colorTone(item.tone, seriesIndex),
-          value:
-            item.values[index] === null || item.values[index] === undefined
-              ? 'Unavailable'
-              : formatValue(item.values[index]),
-        }))}
-        x={x}
-        width={width}
-        offset={offset}
-        source={source}
-      />
+      {hasUnknownLegend ? (
+        <ChartLegendLoading />
+      ) : (
+        <ChartInspection
+          id={inspectionId}
+          label={label}
+          summary={summary}
+          legend={legend}
+          hasSeriesSummary={report?.seriesValues !== undefined}
+          layoutLegend={layoutLegend}
+          rows={rows.map((item, seriesIndex) => ({
+            id: item.id,
+            label: item.label,
+            tone: colorTone(item.tone, seriesIndex),
+            value:
+              item.values[index] === null || item.values[index] === undefined
+                ? 'Unavailable'
+                : formatValue(item.values[index]),
+          }))}
+          x={x}
+          width={width}
+          offset={offset}
+          source={source}
+        />
+      )}
       {children}
     </ChartFrame>
   );
@@ -161,6 +169,7 @@ export function BarChartPlaceholder({
         report={report}
         series={series}
         inspectionId={inspectionId}
+        isLoading
       >
         <div {...stylex.props(chartStyles.plot, styles.plot)}>
           <Skeleton height={height} />

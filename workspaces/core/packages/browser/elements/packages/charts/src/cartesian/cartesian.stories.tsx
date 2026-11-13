@@ -524,6 +524,10 @@ export const NarrowLoadingGeometry: Story = {
   render: () => <BarLoadingGeometry />,
 };
 
+export const UnknownSeriesLoading: Story = {
+  render: () => <BarChartPlaceholder title="Daily spend" report={{}} height={240} />,
+};
+
 function CompositionExample(): ReactNode {
   const series: ReadonlyArray<BarSeries> = [
     { id: 'compute', label: 'Compute', tone: 'series1', values: [70, 55, 7, 0, 50] },

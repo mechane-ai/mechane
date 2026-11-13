@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import { SkeletonText } from '../../feedback/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import type { ChartLegendItem } from './chart-frame.tsx';
@@ -45,6 +46,9 @@ const styles = stylex.create({
   },
   item: { display: 'flex', alignItems: 'baseline', gap: spacing.xs, minWidth: 0, overflowWrap: 'anywhere' },
   itemText: { minWidth: 0 },
+  loadingItem: { width: { default: '18%', [conditions.compactText]: 'auto' } },
+  loadingText: { flex: '1 1 0', minWidth: 0 },
+  secondLoadingLine: { display: { default: 'none', [conditions.compactText]: 'block' } },
   swatch: (tone: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: tone }),
   mobileValue: {
     display: { default: 'none', [conditions.compactText]: 'block' },
@@ -89,6 +93,29 @@ const styles = stylex.create({
     whiteSpace: 'nowrap',
   },
 });
+
+const UNKNOWN_LEGEND_SLOTS = 4;
+
+export function ChartLegendLoading(): ReactNode {
+  return (
+    <ul aria-hidden inert {...stylex.props(styles.legend)}>
+      {Array.from({ length: UNKNOWN_LEGEND_SLOTS }, (_, index) => (
+        <li key={index} {...stylex.props(styles.item, styles.loadingItem)}>
+          <span {...stylex.props(styles.swatch(colors.line))} />
+          <span {...stylex.props(styles.loadingText)}>
+            <SkeletonText />
+            <span {...stylex.props(styles.secondLoadingLine)}>
+              <SkeletonText />
+            </span>
+            <span {...stylex.props(styles.mobileValue)}>
+              <SkeletonText />
+            </span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function ChartInspectionTitle({
   title,
