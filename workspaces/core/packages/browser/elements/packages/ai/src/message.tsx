@@ -45,6 +45,7 @@ const styles = stylex.create({
       },
     },
   },
+  reservedActions: { minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget } },
   attachments: { display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: spacing.sm, minWidth: 0 },
   attachment: {
     display: 'flex',
@@ -116,6 +117,7 @@ export function Message({
 }: MessageProps): ReactNode {
   const isChat = variant === 'chat';
   const hasHeader = !isChat || avatar !== undefined || meta !== undefined;
+  const shouldReserveActions = isChat && kind === 'assistant';
 
   const header = hasHeader ? (
     <header {...stylex.props(styles.header)}>
@@ -134,7 +136,13 @@ export function Message({
       {header}
       <div {...stylex.props(styles.content)}>{children}</div>
       {attachments !== undefined && <div {...stylex.props(styles.attachments)}>{attachments}</div>}
-      {actions !== undefined && <footer {...stylex.props(styles.actions, styles.messageActions)}>{actions}</footer>}
+      {(actions !== undefined || shouldReserveActions) && (
+        <footer
+          {...stylex.props(styles.actions, styles.messageActions, shouldReserveActions && styles.reservedActions)}
+        >
+          {actions}
+        </footer>
+      )}
     </article>
   );
 }

@@ -14,6 +14,8 @@ export const viewerStyles = stylex.create({
     lineHeight: typography.bodyLineHeight,
     fontWeight: typography.regularWeight,
   },
+  embedded: { borderWidth: 0, backgroundColor: colors.canvas },
+  embeddedHeader: { borderBlockEndWidth: 0, paddingBlock: spacing.xs },
   header: {
     display: 'flex',
     flexWrap: 'wrap',

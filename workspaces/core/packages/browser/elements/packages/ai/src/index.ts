@@ -1,5 +1,9 @@
 export type { ApprovalProps } from './approval.tsx';
 export { Approval } from './approval.tsx';
+export { CommandActivity } from './command-activity.tsx';
+export type { CommandActivityProps, CommandStatus } from './command-activity.tsx';
+export { CommandDetails } from './command-details.tsx';
+export type { CommandDetailsProps } from './command-details.tsx';
 export type {
   ConversationRootProps,
   ConversationViewportProps,

@@ -10,7 +10,7 @@ import type { LocalSourceUpdate, ManagedProcess } from '../types.ts';
 import type { CelldCloseOptions, CelldReadiness, CelldWorkerOptions, LocalCelldWorker } from './types.ts';
 import { startWorkerBuild } from './worker-build.ts';
 
-const CELLD_VERSION = 'celld 0.6.3-mechane.3';
+const CELLD_VERSION = 'celld 0.6.3-mechane.4';
 const PRIVATE_DIRECTORY_MODE = 0o700;
 const PRIVATE_FILE_MODE = 0o600;
 const OWNER_INDENT_SPACES = 2;

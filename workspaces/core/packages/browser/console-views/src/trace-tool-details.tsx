@@ -1,17 +1,12 @@
-import { CopyValue, Stack, Text } from '@mechane-ai/elements';
+import { CopyValue, Stack } from '@mechane-ai/elements';
+import { CommandDetails } from '@mechane-ai/elements/ai';
 import { Details } from '@mechane-ai/elements/collections';
-import { LogViewer } from '@mechane-ai/elements/content';
-import { CodeBlock } from '@mechane-ai/elements/content/code';
 import type { TurnToolCall } from '@mechane/protocol';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
 import { preciseTimeLabel } from './format.ts';
 
 type BashInspection = NonNullable<TurnToolCall['inspection']>;
-
-const COMMAND_VIEW_HEIGHT = 240;
-const OUTPUT_VIEW_HEIGHT = 320;
-const OUTPUT_VIEW_LINES = 200;
 
 export function TraceToolDetails({
   call,
@@ -61,54 +56,20 @@ function BashDetails({
   const output = result === undefined ? undefined : Option.getOrUndefined(result.output);
 
   return (
-    <>
-      {command === undefined ? (
-        <Text tone="muted">Command unavailable for this run.</Text>
-      ) : (
-        <Stack isCompact>
-          {command.text.length === 0 && command.omittedBytes > 0 ? (
-            <Text tone="muted">Command omitted from this trace preview.</Text>
-          ) : (
-            <CodeBlock
-              code={command.text}
-              language="bash"
-              filename="Command"
-              shouldWrap
-              showLineNumbers={false}
-              maxHeight={COMMAND_VIEW_HEIGHT}
-            />
-          )}
-          {command.omittedBytes > 0 && (
-            <Text variant="caption" tone="muted">
-              {command.omittedBytes.toLocaleString('en-US')} command bytes omitted from this preview.
-            </Text>
-          )}
-        </Stack>
-      )}
-      {output === undefined ? (
-        <Text tone="muted">Output unavailable.</Text>
-      ) : (
-        <Stack isCompact>
-          {output.text.length > 0 ? (
-            <LogViewer
-              output={output.text}
-              label="Combined output"
-              maxLines={OUTPUT_VIEW_LINES}
-              maxHeight={OUTPUT_VIEW_HEIGHT}
-              isRunning={!isImported && result?.status === 'running'}
-            />
-          ) : (
-            <Text tone="muted">
-              {output.omittedBytes > 0 ? 'Output omitted from this trace preview.' : 'No output.'}
-            </Text>
-          )}
-          {output.omittedBytes > 0 && (
-            <Text variant="caption" tone="muted">
-              {output.omittedBytes.toLocaleString('en-US')} output bytes omitted from this preview.
-            </Text>
-          )}
-        </Stack>
-      )}
-    </>
+    <CommandDetails
+      command={command?.text}
+      output={output?.text}
+      isRunning={!isImported && result?.status === 'running'}
+      commandNotice={
+        command !== undefined && command.omittedBytes > 0
+          ? `${command.omittedBytes.toLocaleString('en-US')} command bytes omitted from this preview.`
+          : undefined
+      }
+      outputNotice={
+        output !== undefined && output.omittedBytes > 0
+          ? `${output.omittedBytes.toLocaleString('en-US')} output bytes omitted from this preview.`
+          : undefined
+      }
+    />
   );
 }

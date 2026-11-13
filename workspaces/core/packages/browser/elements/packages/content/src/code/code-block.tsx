@@ -12,6 +12,7 @@ export type CodeSelection = { readonly start: number; readonly end?: number };
 
 export type CodeBlockProps = {
   readonly code: string;
+  readonly variant?: 'default' | 'embedded';
   readonly language?: string | undefined;
   readonly filename?: string | undefined;
   readonly isStreaming?: boolean;
@@ -84,6 +85,7 @@ function CodeToken({ token }: CodeTokenProps): ReactNode {
 
 export function CodeBlock({
   code,
+  variant = 'default',
   language = 'text',
   filename,
   isStreaming = false,
@@ -99,15 +101,16 @@ export function CodeBlock({
   const previewLines = code.slice(0, MAX_PREVIEW_CHARACTERS).split(/\r\n|\n|\r/u);
   const lines = previewLines.slice(0, Math.max(1, maxLines)).map((text, position) => ({ text, line: position + 1 }));
   const label = filename ?? language;
+  const isEmbedded = variant === 'embedded';
 
   return (
-    <section aria-label={filename ?? 'Code'} {...stylex.props(viewerStyles.root)}>
-      <div {...stylex.props(viewerStyles.header)}>
+    <section aria-label={filename ?? 'Code'} {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}>
+      <div {...stylex.props(viewerStyles.header, isEmbedded && viewerStyles.embeddedHeader)}>
         <span {...stylex.props(viewerStyles.label)}>
           {label}
-          {isStreaming && ' · streaming'}
+          {isStreaming && !isEmbedded && ' · streaming'}
         </span>
-        <CopyValue label={filename ?? 'code'} value={code}>
+        <CopyValue label={filename ?? 'code'} value={code} display={isEmbedded ? 'icon' : 'value'}>
           Copy
         </CopyValue>
       </div>

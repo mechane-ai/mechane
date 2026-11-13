@@ -10,6 +10,7 @@ import { viewerStyles } from './viewer-styles.ts';
 export type LogViewerProps = {
   readonly output: string;
   readonly label: string;
+  readonly variant?: 'default' | 'embedded';
   readonly maxLines?: number;
   readonly maxHeight?: number;
   readonly isRunning?: boolean;
@@ -36,6 +37,7 @@ const MAX_PREVIEW_CHARACTERS = 200_000;
 export function LogViewer({
   output,
   label,
+  variant = 'default',
   maxLines = 500,
   maxHeight = 320,
   isRunning = false,
@@ -48,6 +50,8 @@ export function LogViewer({
   const lines = text.slice(-MAX_PREVIEW_CHARACTERS).split('\n');
   const retainedLines = lines.slice(-Math.max(1, maxLines));
   const omittedLines = lines.length - retainedLines.length;
+  const isEmbedded = variant === 'embedded';
+  const shouldShowFollow = isRunning && (isEmbedded ? !isFollowing : true);
 
   useEffect(() => {
     if (isFollowing && scroll.current !== null) {
@@ -64,14 +68,14 @@ export function LogViewer({
   }, [isRunning]);
 
   return (
-    <section aria-label={label} {...stylex.props(viewerStyles.root)}>
-      <div {...stylex.props(viewerStyles.header)}>
+    <section aria-label={label} {...stylex.props(viewerStyles.root, isEmbedded && viewerStyles.embedded)}>
+      <div {...stylex.props(viewerStyles.header, isEmbedded && viewerStyles.embeddedHeader)}>
         <span {...stylex.props(viewerStyles.label)}>
           {label}
-          {isRunning && ' · running'}
+          {isRunning && !isEmbedded && ' · running'}
         </span>
         <div {...stylex.props(viewerStyles.actions)}>
-          {isRunning && (
+          {shouldShowFollow && (
             <Button
               variant="ghost"
               onClick={() => setFollowing(!isFollowing)}
@@ -85,7 +89,7 @@ export function LogViewer({
               {isFollowing ? 'Pause following' : 'Follow output'}
             </Button>
           )}
-          <CopyValue value={output} label={label}>
+          <CopyValue value={output} label={label} display={isEmbedded ? 'icon' : 'value'}>
             Copy
           </CopyValue>
         </div>

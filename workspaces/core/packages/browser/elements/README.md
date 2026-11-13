@@ -139,6 +139,12 @@ sizing. The table owns its cell insets, so an enclosing page should not add anot
 `Timeline.Item` compose readable activity with supplied titles, icons, timestamps, metadata, and body content, without
 interpreting domain events.
 
+`CommandActivity` from `/ai` presents a collapsed Bash command with supplied execution state. Its `CommandDetails` body
+is also available for an existing trace disclosure. Supply command and output text separately, with explicit omission
+notices when a preview is shortened. Commands use Bash highlighting; output stays plain unless the application supplies
+a known `outputLanguage`. The embedded code and log variants share compact frames and separate copy controls. Keep
+overall `ReplyIndicator` progress below command activity.
+
 `Message` reserves space for secondary actions and reveals them on hover and keyboard focus; touch devices keep them
 visible. `MessageAction` supplies a named icon button and tooltip. Keep errors, decisions, and current activity outside
 that action region. `MessageBoundary` groups expandable context between messages. `PromptInput` keeps its label

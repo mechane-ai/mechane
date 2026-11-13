@@ -24,6 +24,13 @@ pending; display the application's acknowledged outcome rather than treating a c
 Citations and source previews remain operable with keyboard and touch and expose an actual destination or supplied
 source record. Context capacity distinguishes unknown usage from zero.
 
+Present Bash activity with the shared command disclosure and command-details body. Keep the recorded input inspectable
+beside its output, including after settlement. Preserve disclosure state while its supplied content changes.
+Place overall reply progress after activity, outside command triggers, with one progress owner.
+
+Keep the pending reply line on the same typography and baseline as prose. Reserve chat response actions before text
+arrives so the first token does not introduce a new action row or collapse the pending line.
+
 Announce meaningful state changes without reading every streamed token. Do not move focus when a reply grows.
 Compose named AI recipes from the shared controls, content viewers, and activity parts rather than adding a separate
 state machine for each recipe. Each recipe explains which values and commands its application owns.

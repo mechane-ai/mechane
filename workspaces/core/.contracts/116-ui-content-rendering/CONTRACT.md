@@ -30,6 +30,10 @@ renderer work when its owning input changes or unmounts.
 
 Bound nested or large output with visible truncation or a declared render window. Preserve the full supplied copy
 value where copying is supported. A collapsed, truncated, missing, or empty value must have its own truthful state.
+Use the embedded code and log variants for command details. Keep input and output separately copyable, and retain
+explicit omission notices supplied by the application. Render known languages with the shared highlighter; arbitrary
+stdout remains recorded text. Do not render an empty source viewer as pending command output.
+
 Use one token-based theme bridge for vendor content, including its Shadow DOM, so light and dark match the surrounding
 Mechane controls. Keep vendor implementation types and worker configuration out of the public component API.
 

@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useRef, useState } from 'react';
 import { Markdown } from '../../content/src/markdown/index.ts';
-import { Button, Collapsible, Muted, Stack } from '../../core/src/index.ts';
+import { Button, CopyValue, Muted, Stack } from '../../core/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
+import { CommandActivity } from './command-activity.tsx';
 import { Conversation } from './conversation.tsx';
 import { Message } from './message.tsx';
 import { PromptInput } from './prompt-input.tsx';
@@ -32,7 +33,7 @@ const words = [
   '```',
 ];
 
-const waitingPhases: ReadonlySet<Turn['phase']> = new Set(['sending', 'working']);
+const waitingPhases: ReadonlySet<Turn['phase']> = new Set(['sending', 'working', 'tool']);
 const settledPhases: ReadonlySet<Turn['phase']> = new Set(['unconfirmed', 'done', 'stopped']);
 const toolPhases: ReadonlySet<Turn['phase']> = new Set(['tool', 'answer', 'done', 'stopped']);
 
@@ -122,19 +123,25 @@ function Chat({ scenario }: { scenario: Scenario }) {
                   ) : null}
                 </Conversation.Item>
                 <Conversation.Item messageId={`reply:${turn.id}`}>
-                  <Message author="Assistant" variant="chat">
+                  <Message
+                    author="Assistant"
+                    variant="chat"
+                    actions={
+                      turn.answer.length > 0 ? (
+                        <CopyValue value={turn.answer} label="response" display="icon" />
+                      ) : undefined
+                    }
+                  >
                     <Stack isCompact>
-                      {waitingPhases.has(turn.phase) ? <ReplyIndicator label="Working…" /> : null}
                       {showTool ? (
-                        <Collapsible.Root>
-                          <Collapsible.Trigger variant="inline">
-                            {turn.phase === 'tool' ? 'Checking submissions…' : 'Checked submissions'}
-                          </Collapsible.Trigger>
-                          <Collapsible.Panel>
-                            <Muted>Read the submitted policy and league status.</Muted>
-                          </Collapsible.Panel>
-                        </Collapsible.Root>
+                        <CommandActivity
+                          command="coworld submissions --json"
+                          status={turn.phase === 'tool' ? 'running' : 'complete'}
+                          output={turn.phase === 'tool' ? '' : '{"policy":"scout-v3","league":"Classic 1v1"}'}
+                          outputLanguage="json"
+                        />
                       ) : null}
+                      {waitingPhases.has(turn.phase) ? <ReplyIndicator label="Working…" /> : null}
                       {turn.answer.length > 0 ? (
                         <Markdown isStreaming={turn.phase === 'answer'}>{turn.answer}</Markdown>
                       ) : null}

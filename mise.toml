@@ -16,21 +16,21 @@ opentofu = "1.13.0"
 "aqua:koalaman/shellcheck" = "0.11.0"
 
 [tools."github:mechane-ai/celld"]
-version = "0.6.3-mechane.3"
+version = "0.6.3-mechane.4"
 prerelease = true
 rename_exe = "celld"
 
 [tools."github:mechane-ai/celld".platforms.linux-arm64]
 asset_pattern = "celld-aarch64-unknown-linux-gnu.gz"
-checksum = "sha256:0ea3545ea53557e91c3b1602381e3dbf94a80820e507a1d5456b042eec473d09"
+checksum = "sha256:7907a5850eb2deb148a95e6836e7252c9dd917b493df9b1be1a0488952970e59"
 
 [tools."github:mechane-ai/celld".platforms.linux-x64]
 asset_pattern = "celld-x86_64-unknown-linux-gnu.gz"
-checksum = "sha256:3559950018314ec3db05b4550c7c8b370f891381f4070737dde33ef5db192fd8"
+checksum = "sha256:295af7747c38fd2dc0134b2445689a31134bb1a791f4fc682a0306366d9305b3"
 
 [tools."github:mechane-ai/celld".platforms.macos-arm64]
 asset_pattern = "celld-aarch64-apple-darwin.gz"
-checksum = "sha256:d5682aae32604066b65246736497b86e7128ae422d4113a25c29e3e3fd70a5b4"
+checksum = "sha256:e733b7f719edca82f6bf0571038f4ed9eb7d49b2c488bb9eb46e24367853bb10"
 
 [tasks.setup]
 description = "Install the product's locked packages"

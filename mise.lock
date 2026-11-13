@@ -144,44 +144,45 @@ url = "https://github.com/macromackie/tenet/releases/download/v0.13.0/tenet-x86_
 url_api = "https://api.github.com/repos/macromackie/tenet/releases/assets/694132748"
 
 [[tools."github:mechane-ai/celld"]]
-version = "0.6.3-mechane.3"
+version = "0.6.3-mechane.4"
 backend = "github:mechane-ai/celld"
-specifiers = ["0.6.3-mechane.3"]
+specifiers = ["0.6.3-mechane.4"]
 
 [tools."github:mechane-ai/celld".options]
 asset_pattern = "celld-aarch64-apple-darwin.gz"
 
 [tools."github:mechane-ai/celld"."platforms.macos-arm64"]
-checksum = "sha256:d5682aae32604066b65246736497b86e7128ae422d4113a25c29e3e3fd70a5b4"
-url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.3/celld-aarch64-apple-darwin.gz"
-url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/732953544"
-
-[[tools."github:mechane-ai/celld"]]
-version = "0.6.3-mechane.3"
-backend = "github:mechane-ai/celld"
-specifiers = ["0.6.3-mechane.3"]
-
-[tools."github:mechane-ai/celld".options]
-asset_pattern = "celld-x86_64-unknown-linux-gnu.gz"
-
-[tools."github:mechane-ai/celld"."platforms.linux-x64"]
-checksum = "sha256:3559950018314ec3db05b4550c7c8b370f891381f4070737dde33ef5db192fd8"
-url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.3/celld-x86_64-unknown-linux-gnu.gz"
-url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/732954038"
+checksum = "sha256:e733b7f719edca82f6bf0571038f4ed9eb7d49b2c488bb9eb46e24367853bb10"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.4/celld-aarch64-apple-darwin.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/744561984"
 provenance = "github-attestations"
 
 [[tools."github:mechane-ai/celld"]]
-version = "0.6.3-mechane.3"
+version = "0.6.3-mechane.4"
 backend = "github:mechane-ai/celld"
-specifiers = ["0.6.3-mechane.3"]
+specifiers = ["0.6.3-mechane.4"]
 
 [tools."github:mechane-ai/celld".options]
 asset_pattern = "celld-aarch64-unknown-linux-gnu.gz"
 
 [tools."github:mechane-ai/celld"."platforms.linux-arm64"]
-checksum = "sha256:0ea3545ea53557e91c3b1602381e3dbf94a80820e507a1d5456b042eec473d09"
-url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.3/celld-aarch64-unknown-linux-gnu.gz"
-url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/732953797"
+checksum = "sha256:7907a5850eb2deb148a95e6836e7252c9dd917b493df9b1be1a0488952970e59"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.4/celld-aarch64-unknown-linux-gnu.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/744563112"
+provenance = "github-attestations"
+
+[[tools."github:mechane-ai/celld"]]
+version = "0.6.3-mechane.4"
+backend = "github:mechane-ai/celld"
+specifiers = ["0.6.3-mechane.4"]
+
+[tools."github:mechane-ai/celld".options]
+asset_pattern = "celld-x86_64-unknown-linux-gnu.gz"
+
+[tools."github:mechane-ai/celld"."platforms.linux-x64"]
+checksum = "sha256:295af7747c38fd2dc0134b2445689a31134bb1a791f4fc682a0306366d9305b3"
+url = "https://github.com/mechane-ai/celld/releases/download/v0.6.3-mechane.4/celld-x86_64-unknown-linux-gnu.gz"
+url_api = "https://api.github.com/repos/mechane-ai/celld/releases/assets/744568509"
 provenance = "github-attestations"
 
 [[tools.go]]
