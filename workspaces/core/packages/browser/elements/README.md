@@ -111,6 +111,11 @@ initials or photo trigger. Applications supply selection, URLs, native link hand
 rail for a sidebar that collapses to page icons. `SidebarFooter layout="navigation"` holds persistent controls in the
 contextual sidebar and reserves their intrinsic height while its pages scroll independently.
 
+`PageNavigation` uses real destination links; `Tabs` switches associated local panels with keyboard tab semantics. Both
+share the same typography, height, inset and selected indicator. Supply view controls through `PageNavigation.actions`
+so the links keep their own scroll region. Do not wrap page navigation in another padded collection toolbar. A
+collection's title and controls belong in one named header; applied filter chips may follow it.
+
 Navigation closes the mobile drawer and preserves focus set by the destination. Use
 `NavigationItem shouldCloseOnActivate={false}` for menu triggers.
 

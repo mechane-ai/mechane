@@ -1,60 +1,33 @@
 import * as stylex from '@stylexjs/stylex';
+import { Children } from 'react';
 import type { ReactNode } from 'react';
-import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
+import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
+import { tabStyles } from './tab-styles.ts';
 
 const styles = stylex.create({
-  navigation: {
-    'display': 'flex',
-    'gap': 0,
-    'minWidth': 0,
-    'overflowX': 'auto',
-    'borderBottomWidth': 1,
-    'borderBottomStyle': 'solid',
-    'borderBottomColor': colors.line,
-    'fontFamily': typography.fontFamily,
-    'fontSize': typography.bodySize,
-    'fontWeight': typography.regularWeight,
-    'lineHeight': typography.bodyLineHeight,
-    'WebkitFontSmoothing': 'antialiased',
-    ':focus-visible': {
-      outlineWidth: controls.focusWidth,
-      outlineStyle: 'solid',
-      outlineColor: colors.focus,
-      outlineOffset: -2,
-    },
+  row: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'stretch',
+    minWidth: 0,
+    flexShrink: 0,
+    borderBottomWidth: 1,
+    borderBottomStyle: 'solid',
+    borderBottomColor: colors.line,
   },
   embedded: { borderBottomWidth: 0 },
-  link: {
-    'position': 'relative',
-    'boxSizing': 'border-box',
-    'display': 'inline-flex',
-    'alignItems': 'center',
-    'flexShrink': 0,
-    'minHeight': controls.coarseTarget,
-    'paddingBlock': spacing.sm,
-    'paddingInline': spacing.md,
-    'textDecorationLine': 'none',
-    'whiteSpace': 'nowrap',
-    'color': colors.muted,
-    ':hover': { color: { [conditions.hoverPointer]: colors.ink } },
-    ':active': { backgroundColor: colors.canvas, color: colors.ink },
-    '::after': {
-      content: '""',
-      position: 'absolute',
-      insetInline: spacing.md,
-      bottom: 0,
-      height: 2,
-      backgroundColor: 'transparent',
-    },
-    ':focus-visible': {
-      outlineWidth: controls.focusWidth,
-      outlineStyle: 'solid',
-      outlineColor: colors.focus,
-      outlineOffset: -2,
-    },
+  navigation: { borderBottomWidth: 0, flex: '1 1 auto', maxWidth: '100%' },
+  actions: {
+    display: 'flex',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginInlineStart: 'auto',
+    minWidth: 0,
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   },
-  selected: { 'color': colors.ink, '::after': { backgroundColor: colors.ink } },
 });
 
 export type PageNavigationItem<ItemId extends string = string> = {
@@ -69,21 +42,30 @@ export type PageNavigationProps<ItemId extends string = string> = {
   readonly onNavigate?: (id: ItemId) => void;
   readonly label?: string;
   readonly isEmbedded?: boolean;
+  readonly actions?: ReactNode;
 };
 
 export type PageNavigationPlaceholderProps = {
   readonly items: ReadonlyArray<Pick<PageNavigationItem, 'id' | 'label'>>;
   readonly isEmbedded?: boolean;
+  readonly actions?: ReactNode;
 };
 
-export function PageNavigationPlaceholder({ items, isEmbedded = false }: PageNavigationPlaceholderProps): ReactNode {
+export function PageNavigationPlaceholder({
+  items,
+  isEmbedded = false,
+  actions,
+}: PageNavigationPlaceholderProps): ReactNode {
   return (
-    <div aria-hidden inert {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
-      {items.map((item) => (
-        <span key={item.id} {...stylex.props(styles.link)}>
-          {item.label}
-        </span>
-      ))}
+    <div aria-hidden inert {...stylex.props(styles.row, isEmbedded && styles.embedded)}>
+      <div {...stylex.props(tabStyles.list, styles.navigation)}>
+        {items.map((item) => (
+          <span key={item.id} {...stylex.props(tabStyles.item)}>
+            {item.label}
+          </span>
+        ))}
+      </div>
+      {Children.toArray(actions).length > 0 && <div {...stylex.props(headerStyles.row, styles.actions)}>{actions}</div>}
     </div>
   );
 }
@@ -94,34 +76,38 @@ export function PageNavigation<ItemId extends string>({
   onNavigate,
   label = 'Page sections',
   isEmbedded = false,
+  actions,
 }: PageNavigationProps<ItemId>): ReactNode {
   return (
-    <nav aria-label={label} {...stylex.props(styles.navigation, isEmbedded && styles.embedded)}>
-      {items.map((item) => (
-        <a
-          key={item.id}
-          href={item.href}
-          aria-current={item.id === selectedId ? 'page' : undefined}
-          {...stylex.props(styles.link, item.id === selectedId && styles.selected)}
-          onClick={(event) => {
-            if (onNavigate === undefined || event.defaultPrevented || event.button !== 0) {
-              return;
-            }
+    <div {...stylex.props(styles.row, isEmbedded && styles.embedded)}>
+      <nav aria-label={label} {...stylex.props(tabStyles.list, styles.navigation)}>
+        {items.map((item) => (
+          <a
+            key={item.id}
+            href={item.href}
+            aria-current={item.id === selectedId ? 'page' : undefined}
+            {...stylex.props(tabStyles.item)}
+            onClick={(event) => {
+              if (onNavigate === undefined || event.defaultPrevented || event.button !== 0) {
+                return;
+              }
 
-            const hasCommandModifier = event.metaKey || event.ctrlKey;
-            const hasAlternateModifier = event.shiftKey || event.altKey;
+              const hasCommandModifier = event.metaKey || event.ctrlKey;
+              const hasAlternateModifier = event.shiftKey || event.altKey;
 
-            if (hasCommandModifier || hasAlternateModifier) {
-              return;
-            }
+              if (hasCommandModifier || hasAlternateModifier) {
+                return;
+              }
 
-            event.preventDefault();
-            onNavigate(item.id);
-          }}
-        >
-          {item.label}
-        </a>
-      ))}
-    </nav>
+              event.preventDefault();
+              onNavigate(item.id);
+            }}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+      {Children.toArray(actions).length > 0 && <div {...stylex.props(headerStyles.row, styles.actions)}>{actions}</div>}
+    </div>
   );
 }

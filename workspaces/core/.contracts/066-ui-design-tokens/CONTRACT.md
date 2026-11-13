@@ -104,6 +104,11 @@ The Console and ConsoleViews control-override rule resolves named Elements impor
 typed `xstyle` placement. Base UI's injected prop spreads, rendered native elements, and Positioner styles remain valid.
 This rule does not resolve arbitrary stylesheet references or prove that a prop spread contains only composition data.
 
+Use one tab geometry for route links and local panels. `PageNavigation` and `Tabs` share the navigation family's
+`tab-styles.ts`; their semantics differ, not their typography, inset, height or selected indicator. Put adjacent
+view controls in `PageNavigation.actions`, outside the scrolling links. Do not nest page navigation in a padded
+collection toolbar. Embedded navigation belongs only inside a containing toolbar that already owns its separator.
+
 Compose page headers with `PageToolbar` and `ToolbarAction`, including navigation links and copy behavior through
 `render`. Use `RecordPage` for record bodies and `PageContent` for report sections inside an existing page frame.
 These components own page insets and section gaps. Use `FormActions` for form submission rows and `SettingsRow` for
@@ -152,6 +157,8 @@ composition. A conditional width must not erase the base width or make loaded an
 Page titles stand alone by default. Keep record-supplied descriptions and explanations needed to make a decision, but
 omit generic subtitles that restate the destination. Put field help beside its field. Comparable records use shared
 table geometry; event prose uses a timeline or detail view rather than an uneven grid of record cards.
+Keep the page title readable when controls crowd a narrow toolbar. Wrap its actions into another row before shrinking
+the title away or overflowing the page; preserve the ordinary toolbar height when everything fits.
 
 Review mixed controls and their placeholders at fine and coarse pointer sizes: do their outer boxes and text align,
 including when a trigger composes a button? Review a collection, record, report, and settings form at desktop and narrow

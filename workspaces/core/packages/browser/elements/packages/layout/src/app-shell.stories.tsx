@@ -289,6 +289,23 @@ export const ToolbarWithoutNavigation: Story = {
   ),
 };
 
+export const ToolbarWithManyActions: Story = {
+  render: () => (
+    <PageToolbar
+      showNavigation={false}
+      title="Connected accounts"
+      actions={
+        <>
+          <ToolbarAction>Find</ToolbarAction>
+          <ToolbarAction>Filter</ToolbarAction>
+          <ToolbarAction>Display</ToolbarAction>
+          <ToolbarAction>Create account</ToolbarAction>
+        </>
+      }
+    />
+  ),
+};
+
 export const PersistentNavigation: Story = {
   render: () => (
     <AppShell
