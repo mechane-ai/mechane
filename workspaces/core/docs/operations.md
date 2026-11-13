@@ -70,6 +70,12 @@ retained local supervisor leaves hosts available if draining fails or exceeds it
 
 ## Recovery
 
+For a hosted guest exit, inspect container stderr as well as Worker errors. Cloudflare's
+[observability API](https://developers.cloudflare.com/api/resources/workers/subresources/observability/) can query
+retained container events over a bounded time range. Discover the available telemetry keys first; one installation's
+container events used `$container.applicationId` to select the application. Worker logs alone may show only a failed
+guest request and omit the process error that caused it.
+
 Inspect the original turn and effect receipts after interruption. A restart resumes Pi-owned work; submitting another
 notification creates new input. A lost HTTP response does not prove an external write failed. Inspect its external
 outcome before authorizing another effect.

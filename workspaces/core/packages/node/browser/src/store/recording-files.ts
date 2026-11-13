@@ -18,7 +18,7 @@ const RecordedDuration = Schema.NumberFromString.pipe(Schema.decodeTo(Schema.Dur
 const MediaProbe = Schema.Struct({ format: Schema.Struct({ duration: RecordedDuration }) });
 const MediaProbeJson = Schema.fromJsonString(MediaProbe);
 
-type RecordedBrowserMedia = { readonly bytes: Uint8Array; readonly duration: Duration.Duration };
+export type RecordedBrowserMedia = { readonly bytes: Uint8Array; readonly duration: Duration.Duration };
 type AppendNativeChunkInput = { readonly bytes: Uint8Array };
 
 type BrowserRecordingFiles = {

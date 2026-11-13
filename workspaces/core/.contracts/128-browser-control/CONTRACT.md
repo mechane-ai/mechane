@@ -42,6 +42,8 @@ bytes. Report omitted targets and logs instead of implying complete inspection.
 Automatic recording finalization obeys the same checkpoint admission gate as explicit actions. Cap the encoded clip
 itself and report its measured media duration. Release native streams and temporary encoding files after success or
 failure; a rejected capture must not accumulate unowned scratch files.
+Contain expected recording and stream-cleanup failures in the recording's terminal result. Keep the guest, its home,
+and unrelated managed processes available after a capture fails.
 
 Return screenshots as actual image content to the model when a preview is available. Measure the whole serialized tool
 result, including image data and metadata, against its one-MiB bound. Report an omitted preview explicitly. Keep full
@@ -65,6 +67,8 @@ and process must survive, and repeated abandonment must not reinterpret a known 
 
 Inspect the actual provider request for the tool's decodable image block and complete serialized result within its bound.
 Decode the saved recording and inspect its frames; successful file creation alone does not establish playable media.
+Run `recordingFailurePreservesEnvironment` with a failed encoder and lost DevTools stream. Verify the recording fails
+while its original guest, home, and managed process remain usable.
 Review profile paths, workspace archives, backup ownership, and fork copying for accidental authentication inheritance.
 Keep hosted network and Chromium-sandbox qualification distinct from host fixtures.
 

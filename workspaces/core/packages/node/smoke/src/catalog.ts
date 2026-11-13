@@ -11,6 +11,7 @@ import { drainCompletesBeforePendingBash } from './compute/drain-completes-befor
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
 import { largeHomeSurvivesRestore } from './compute/large-home-survives-restore.ts';
+import { recordingFailurePreservesEnvironment } from './compute/recording-failure-preserves-environment.ts';
 import { resumeReconcilesStoppedCompletions } from './compute/resume-reconciles-stopped-completions.ts';
 import { consoleKeepsDraftsAndRunContext } from './console/console-keeps-drafts-and-run-context.ts';
 import { consoleRetainsRecordsThroughRefreshFailure } from './console/console-retains-records-through-refresh-failure.ts';
@@ -222,6 +223,13 @@ export const CATALOG = [
     regression: 'a large valid archive is refused or its restored files differ',
     timeoutMs: 660_000,
     run: largeHomeSurvivesRestore,
+  },
+  {
+    family: 'compute',
+    guarantee: 'a failed browser recording preserves the original environment and process',
+    regression: 'a failed recording cleanup terminates the guest and loses unrelated work',
+    timeoutMs: 360_000,
+    run: recordingFailurePreservesEnvironment,
   },
   {
     family: 'compute',

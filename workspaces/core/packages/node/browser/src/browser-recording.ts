@@ -6,7 +6,7 @@ import {
   BrowserMediaType,
 } from '@mechane/sandbox-wire';
 import type { BrowserArtifact, BrowserTab } from '@mechane/sandbox-wire';
-import { DateTime, Deferred, Effect, Option } from 'effect';
+import { DateTime, Deferred, Effect, Option, Result } from 'effect';
 import type { Scope } from 'effect';
 import type { BrowserPage } from './browser-pages.ts';
 import type { BrowserChildren } from './browser-process.ts';
@@ -17,6 +17,7 @@ import { devtoolsCommand } from './devtools.ts';
 import type { BrowserError } from './errors.ts';
 import { saveBrowserArtifact } from './store/browser-artifacts.ts';
 import { openBrowserRecordingFiles } from './store/recording-files.ts';
+import type { RecordedBrowserMedia } from './store/recording-files.ts';
 import type { BrowserSettings } from './types.ts';
 
 const RECORDING_FRAME_RATE = 15;
@@ -111,12 +112,44 @@ export const stopBrowserRecording = Effect.fn('stopBrowserRecording')(function* 
   return yield* Deferred.await(recording.settled);
 });
 
-const encodeBrowserRecording = Effect.fn('encodeBrowserRecording')(function* ({
+const encodeBrowserRecording = Effect.fn('encodeBrowserRecording')(function* (
+  input: StopBrowserRecordingInput,
+): Effect.fn.Return<BrowserArtifact, BrowserError> {
+  const state = { closeFailure: Option.none<BrowserError>() };
+
+  const onCloseFailure: EncodeRecordingInput['onCloseFailure'] = (failure) => {
+    state.closeFailure = Option.some(failure);
+  };
+
+  const media = yield* encodeRecordingInScope({ ...input, onCloseFailure }).pipe(Effect.scoped);
+
+  if (Option.isSome(state.closeFailure)) {
+    return yield* state.closeFailure.value;
+  }
+
+  const { recording, settings } = input;
+
+  return yield* saveBrowserArtifact({
+    settings,
+    artifactId: recording.recordingId,
+    bytes: media.bytes,
+    mediaType: BrowserMediaType.Mp4,
+    tab: recording.tab,
+    duration: media.duration,
+    capturedAt: recording.capturedAt,
+    provenance: recording.provenance,
+  });
+});
+
+type EncodeRecordingInput = StopBrowserRecordingInput & { readonly onCloseFailure: (failure: BrowserError) => void };
+
+const encodeRecordingInScope = Effect.fn('encodeRecordingInScope')(function* ({
   settings,
   session,
   children,
   recording,
-}: StopBrowserRecordingInput): Effect.fn.Return<BrowserArtifact, BrowserError, Scope.Scope> {
+  onCloseFailure,
+}: EncodeRecordingInput): Effect.fn.Return<RecordedBrowserMedia, BrowserError, Scope.Scope> {
   const connection = session.connection;
   const sessionId = Option.some(recording.page.sessionId);
 
@@ -138,7 +171,15 @@ const encodeBrowserRecording = Effect.fn('encodeBrowserRecording')(function* ({
         schema: EmptyReply,
       });
 
-      yield* closing.pipe(Effect.orDie);
+      const failed: (failure: BrowserError) => Effect.Effect<void> = (failure) => {
+        onCloseFailure(failure);
+
+        const completed = Result.succeed(undefined);
+
+        return Effect.fromResult(completed);
+      };
+
+      yield* closing.pipe(Effect.catchTags({ BrowserFailed: failed, BrowserUncertain: failed }));
     },
   );
 
@@ -169,21 +210,8 @@ const encodeBrowserRecording = Effect.fn('encodeBrowserRecording')(function* ({
     state.isFinished = chunk.isFinished;
   }
 
-  const media = yield* files.finishRecording();
-
-  const artifact = yield* saveBrowserArtifact({
-    settings,
-    artifactId: recording.recordingId,
-    bytes: media.bytes,
-    mediaType: BrowserMediaType.Mp4,
-    tab: recording.tab,
-    duration: media.duration,
-    capturedAt: recording.capturedAt,
-    provenance: recording.provenance,
-  });
-
-  return artifact;
-}, Effect.scoped);
+  return yield* files.finishRecording();
+});
 
 type RecordingChunkInput = { readonly chunk: StreamReply };
 
