@@ -79,6 +79,12 @@ export {
   SandboxReport,
   SANDBOX_ARCHIVE_PART_BYTES,
 } from './internal-maintenance.ts';
+export {
+  SandboxRestoreRequest,
+  SandboxRestoreResult,
+  SandboxRestoreRefusalReason,
+  sandboxRestorePath,
+} from './restore.ts';
 
 export {
   BrowserRequestId,

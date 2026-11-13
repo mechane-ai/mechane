@@ -1,4 +1,4 @@
-import { RecordId, renamedWireStruct, SandboxOperationId } from '@mechane/records';
+import { MachineId, RecordId, renamedWireStruct, SandboxOperationId } from '@mechane/records';
 import { Schema } from 'effect';
 import { CommandShape, FlagKind } from '../constants.ts';
 import type { CommandDeclaration } from '../types.ts';
@@ -34,6 +34,34 @@ export const WORKSPACE_LIFECYCLE_COMMANDS = {
     summary: 'replace an idle sandbox with the deployed image, preserving its files',
     flags: CHANGE_FLAGS,
     input: renamedWireStruct({ fields: CHANGE_FIELDS, renames: CHANGE_RENAMES }),
+  },
+  'sandbox restore': {
+    shape: CommandShape.Document,
+    operations: ['listWorkspaces', 'restoreSandbox'],
+    arguments: [MECH_ARGUMENT],
+    summary: 'restore the last saved files after confirmed machine loss; unsaved files are not captured',
+    flags: {
+      'operation-id': { kind: FlagKind.Text, summary: 'one required UUID retained across every retry' },
+      'machine-id': { kind: FlagKind.Text, summary: 'the lost machine id in the observed recovery state' },
+      'recovery-generation': { kind: FlagKind.Text, summary: 'the exact observed failed generation' },
+      'committed-generation': { kind: FlagKind.Text, summary: 'the exact last saved generation to restore' },
+    },
+    input: renamedWireStruct({
+      fields: {
+        ...TARGET_FIELDS,
+        operationId: SandboxOperationId,
+        machineId: MachineId,
+        recoveryGeneration: RecordId,
+        committedGeneration: RecordId,
+      },
+      renames: {
+        ...TARGET_RENAMES,
+        operationId: 'operation-id',
+        machineId: 'machine-id',
+        recoveryGeneration: 'recovery-generation',
+        committedGeneration: 'committed-generation',
+      },
+    }),
   },
   'sandbox delete': {
     ...WORKSPACE_LIFECYCLE_COMMAND,

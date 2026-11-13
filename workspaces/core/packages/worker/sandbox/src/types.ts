@@ -41,6 +41,8 @@ export type MachineProvider = {
   readonly start: (input: MachineIdInput) => Promise<void>;
   /** Reads the machine's guest without allocating; none before it runs and after it stops. */
   readonly connect: (input: MachineIdInput) => Promise<Option.Option<GuestConnection>>;
+  /** Positive platform absence only; unavailable health and inspection errors cannot establish loss. */
+  readonly isAbsent: (input: MachineIdInput) => Promise<boolean>;
   /** Confirms the machine stopped. A rejection does not acknowledge stop or permit capacity release. */
   readonly stop: (input: MachineIdInput) => Promise<void>;
 };

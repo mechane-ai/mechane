@@ -11,6 +11,7 @@ import {
   BackgroundWork,
   FileCheckpointIdentityReused,
   FileCheckpointPurpose,
+  FileCheckpointResult,
   MachineStatus,
   openSandboxStore,
   ReservationPhase,
@@ -48,6 +49,8 @@ import {
   SandboxRecoveryCheckpointResult,
   SandboxReport,
   SandboxRequest,
+  SandboxRestoreRequest,
+  SandboxRestoreResult,
   SandboxRunId,
   SandboxStopObservation,
   SandboxStopPhase,
@@ -94,6 +97,7 @@ import { storedProcessSummaries } from './inspection/stored-process-summaries.ts
 import { maintenanceActive } from './maintenance/maintenance-active.ts';
 import { maintenanceValue } from './maintenance/maintenance-value.ts';
 import { managePortable } from './maintenance/manage-portable.ts';
+import { restoreWorkspace } from './maintenance/restore-workspace.ts';
 import { writeBackgroundObservationFailure } from './output/write-sandbox-diagnostic.ts';
 import { listManagedProcesses } from './processes/list-managed-processes.ts';
 import { observeManagedProcess, startManagedProcess } from './processes/managed-processes.ts';
@@ -110,6 +114,7 @@ import { retireWorkspace } from './workspace/retire-workspace.ts';
 
 type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
 type ManageInput = { readonly request: typeof SandboxRequest.Encoded };
+type RestoreInput = { readonly request: typeof SandboxRestoreRequest.Encoded };
 type CheckpointInput = { readonly operationId: SandboxOperationId };
 type RecoveryCheckpointInput = CheckpointInput & { readonly request: typeof SandboxRecoveryCheckpointRequest.Encoded };
 type ObserveInput = Pick<RunExecutionInput, 'executionId' | 'waitMs'>;
@@ -348,6 +353,40 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         return Schema.encodeSync(SandboxReport)(report);
       },
     });
+  }
+
+  async restore({ request }: RestoreInput): Promise<typeof SandboxRestoreResult.Encoded> {
+    const decoded = Schema.decodeUnknownSync(SandboxRestoreRequest)(request);
+
+    const result = await this.#calls.run({
+      run: async () => {
+        await Promise.all(this.#stops);
+        this.#capacity.requireOwner();
+
+        const retained = this.#store.workspaceRestore({ operationId: decoded.operationId });
+        const isFinished = Option.exists(retained, (record) => !SandboxRestoreResult.guards.Pending(record.result));
+
+        if (!isFinished) {
+          await this.#armMaintenance();
+        }
+
+        const restored = await restoreWorkspace({
+          store: this.#store,
+          provider: this.#provider,
+          workspace: this.#workspace,
+          providerName: this.#providerName,
+          request: decoded,
+        });
+
+        if (!isFinished && SandboxRestoreResult.guards.Restored(restored)) {
+          await this.#armIdle();
+        }
+
+        return restored;
+      },
+    });
+
+    return Schema.encodeSync(SandboxRestoreResult)(result);
   }
 
   async runExecution({
@@ -1035,6 +1074,39 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const workspace = this.#store.workspace();
 
     if (Option.isSome(workspace.recovery)) {
+      const machineId = workspace.recovery.value.machineId;
+      const stop = this.#store.latestSandboxStop();
+
+      const pending = Option.filter(stop, (receipt) => {
+        switch (receipt.phase) {
+          case SandboxStopPhase.Failed:
+          case SandboxStopPhase.Completed:
+            return false;
+
+          case SandboxStopPhase.Requested:
+          case SandboxStopPhase.WaitingForCommands:
+          case SandboxStopPhase.Checkpointing:
+          case SandboxStopPhase.Stopping:
+            return Option.contains(receipt.machineId, machineId);
+        }
+      });
+
+      if (Option.isSome(pending)) {
+        const receipt = pending.value;
+        const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId: receipt.operationId });
+        const result = this.#store.fileCheckpointResult({ purpose });
+        const failed = Option.filter(result, FileCheckpointResult.guards.Failed);
+
+        if (Option.isSome(failed)) {
+          failSandboxStop({
+            store: this.#store,
+            receipt,
+            cause: failed.value.reason,
+            recoveryAction: SandboxRecoveryAction.RepairWorkspace,
+          });
+        }
+      }
+
       return;
     }
 

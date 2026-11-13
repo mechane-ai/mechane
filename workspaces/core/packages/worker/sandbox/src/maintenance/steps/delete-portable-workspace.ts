@@ -27,6 +27,7 @@ export async function deletePortableWorkspace({ store, provider, workspace, job 
       store.retireWorkspace({ generation: head.value.generation });
     }
 
+    store.retireRestoreArtifacts();
     store.clearWorkspace();
   };
 

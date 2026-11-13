@@ -2,7 +2,8 @@ import type { PortableMaintenance } from '@mechane/sandbox-store';
 import { SANDBOX_FAILURE_MAX_CHARS, SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import type { SandboxReport } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
-import { Option, Result } from 'effect';
+import { Option, Result, Schema } from 'effect';
+import { PortableMaintenanceRefused } from '../errors.ts';
 import { environmentReport } from '../inspection/environment-report.ts';
 import { advancePortableMaintenance } from './advance-portable-maintenance.ts';
 import { beginPortableMaintenance } from './begin-portable-maintenance.ts';
@@ -36,13 +37,24 @@ export async function managePortable({ store, request, ...resources }: ManagePor
   const advanced = await capturePromise({ promise });
 
   if (Result.isFailure(advanced)) {
-    const reason = String(advanced.failure).slice(0, SANDBOX_FAILURE_MAX_CHARS).toWellFormed();
+    const detail = maintenanceFailureReason({ cause: advanced.failure });
+    const reason = detail.slice(0, SANDBOX_FAILURE_MAX_CHARS).toWellFormed();
     const lastError = Option.some(reason);
 
     store.savePortableMaintenance({ ...job, phase: SandboxPhase.Failed, lastError });
   }
 
   return environmentReport(input);
+}
+
+type MaintenanceFailureInput = { readonly cause: unknown };
+
+function maintenanceFailureReason({ cause }: MaintenanceFailureInput): string {
+  if (Schema.is(PortableMaintenanceRefused)(cause)) {
+    return cause.reason;
+  }
+
+  return String(cause);
 }
 
 type MaintenanceRequestInput = ManagePortableInput & { readonly job: PortableMaintenance };

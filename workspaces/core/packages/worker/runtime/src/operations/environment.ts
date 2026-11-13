@@ -1,11 +1,13 @@
 import type { ControlStore } from '@mechane/control-store';
 import { catalog, ServiceUnavailable } from '@mechane/protocol';
-import { ProcessObservation, SandboxAction, SandboxReport } from '@mechane/sandbox-wire';
+import { ProcessObservation, SandboxAction, SandboxReport, SandboxRestoreResult } from '@mechane/sandbox-wire';
 import { Option, Schema } from 'effect';
 import type { RuntimeConfiguration } from '../config.ts';
 import { readSandboxProcess, stopSandboxProcess } from '../tools/processes/client.ts';
+import { restoreSandboxWorkspace } from '../tools/restore-sandbox.ts';
 import { manageSandboxWorkspace } from '../tools/sandbox-maintenance.ts';
 import { requireWorkspaceMember } from './auth/admission.ts';
+import { requireSandboxEnabled } from './require-sandbox-enabled.ts';
 import type { AuthCaller } from './types.ts';
 import { validatedOperation } from './validated-operation.ts';
 
@@ -20,6 +22,22 @@ export function createEnvironmentOperations({ store, configuration }: Environmen
   }
 
   return {
+    restoreSandbox: validatedOperation({
+      operation: catalog.restoreSandbox,
+      run: async ({ input, caller }) => {
+        await requireEnvironment({ ...input, caller });
+
+        await requireSandboxEnabled({ store, workspaceId: input.workspaceId });
+
+        const result = await restoreSandboxWorkspace({ ...input, request: input, configuration }).catch(() => {
+          throw new ServiceUnavailable({
+            reason: 'The restore outcome is unknown; retry the same operation id and fences',
+          });
+        });
+
+        return Schema.encodeSync(SandboxRestoreResult)(result);
+      },
+    }),
     showEnvironment: validatedOperation({
       operation: catalog.showEnvironment,
       run: async ({ input, caller }) => {

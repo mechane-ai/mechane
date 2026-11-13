@@ -9,6 +9,7 @@ import {
   SandboxExecutionSubmission,
   SandboxRecoveryCheckpointRequest,
   SandboxRequest,
+  SandboxRestoreRequest,
   SandboxServiceIdentity,
   SandboxStopIdentity,
 } from '@mechane/sandbox-wire';
@@ -112,6 +113,16 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
 
   const isCheckpoint = resource === 'workspace' && executionId === 'checkpoints';
   const isRecoveryCheckpoint = resource === 'workspace' && executionId === 'recovery-checkpoints';
+
+  const isRestore = resource === 'workspace' && executionId === 'restore' && action === undefined;
+
+  if (isRestore && request.method === HttpMethod.Post) {
+    const decoded = Schema.decodeUnknownSync(SandboxRestoreRequest)(await readBody(request));
+    const encoded = Schema.encodeSync(SandboxRestoreRequest)(decoded);
+    const result = await stub.restore({ request: encoded });
+
+    return Response.json(result);
+  }
 
   if (isRecoveryCheckpoint && action !== undefined && request.method === HttpMethod.Get) {
     const operationId = Schema.decodeUnknownSync(SandboxOperationId)(decodeURIComponent(action));

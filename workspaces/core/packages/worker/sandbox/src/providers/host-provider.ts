@@ -119,7 +119,21 @@ export function hostProvider({
 
   const startupTimeout: MachineProvider['startupTimeout'] = () => machineStartupTimeout({ tools: additionalTools });
 
-  return { start, connect, stop, startupTimeout };
+  const isAbsent: MachineProvider['isAbsent'] = async ({ machineId }) => {
+    const machine = await hostMachine({
+      launcherOrigin,
+      launcherKey,
+      additionalTools,
+      isBrowserSandboxDisabled,
+      trustedCertificatesPem,
+      machineId,
+      method: HttpMethod.Get,
+    });
+
+    return machine.state === HostMachineStatus.Exited;
+  };
+
+  return { start, connect, stop, startupTimeout, isAbsent };
 }
 
 /** PUT starts one identity once; GET observes it without allocating. The launcher returns only a machine report. */

@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.31.1",
+  "release": "0.31.2",
   "flags": [
     {
       "name": "origin",
@@ -942,6 +942,47 @@
           "kind": "text",
           "summary": "resume the operation id printed by an earlier attempt",
           "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane mech list prints it"
+        }
+      ]
+    },
+    {
+      "name": "sandbox restore",
+      "summary": "restore the last saved files after confirmed machine loss; unsaved files are not captured",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "restoreSandbox"
+      ],
+      "flags": [
+        {
+          "name": "operation-id",
+          "kind": "text",
+          "summary": "one required UUID retained across every retry",
+          "required": true
+        },
+        {
+          "name": "machine-id",
+          "kind": "text",
+          "summary": "the lost machine id in the observed recovery state",
+          "required": true
+        },
+        {
+          "name": "recovery-generation",
+          "kind": "text",
+          "summary": "the exact observed failed generation",
+          "required": true
+        },
+        {
+          "name": "committed-generation",
+          "kind": "text",
+          "summary": "the exact last saved generation to restore",
+          "required": true
         }
       ],
       "arguments": [

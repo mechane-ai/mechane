@@ -1,7 +1,8 @@
 import type { PortableMaintenance } from '@mechane/sandbox-store';
-import type { SandboxRequest } from '@mechane/sandbox-wire';
+import type { SandboxAction, SandboxRequest } from '@mechane/sandbox-wire';
 import type { WorkspaceProviderStepInput } from '../types.ts';
 
 export type PortableMaintenanceInput = WorkspaceProviderStepInput & { readonly providerName: string };
-export type ManagePortableInput = PortableMaintenanceInput & { readonly request: SandboxRequest };
+type PortableRequest = Pick<SandboxRequest, 'operationId'> & { readonly action: SandboxAction };
+export type ManagePortableInput = PortableMaintenanceInput & { readonly request: PortableRequest };
 export type PortableStepInput = PortableMaintenanceInput & { readonly job: PortableMaintenance };

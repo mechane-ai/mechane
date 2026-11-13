@@ -15,6 +15,18 @@ export async function cancelPortableMaintenance({ store, provider, job }: Portab
 
     store.loseMachine({ machineId, now });
     await provider.stop({ machineId });
+
+    const restoration = store.workspace().restoration;
+    const source = job.source;
+
+    if (Option.isSome(restoration) && Option.isSome(source)) {
+      const matches =
+        restoration.value.machineId === machineId && restoration.value.generation === source.value.generation;
+
+      if (matches) {
+        store.clearRestoration(restoration.value);
+      }
+    }
   }
 
   store.savePortableMaintenance({ ...job, action: SandboxAction.Cancel, phase: SandboxPhase.Done });

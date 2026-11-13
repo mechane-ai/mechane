@@ -1,8 +1,6 @@
 import type { ControlStore } from '@mechane/control-store';
-import { catalog, SandboxDisabled } from '@mechane/protocol';
+import { catalog } from '@mechane/protocol';
 import type { OperationInput } from '@mechane/protocol';
-import { WorkspaceId } from '@mechane/records';
-import { Schema } from 'effect';
 import type { MechActorResolver } from '../actor/client.ts';
 import type { RuntimeConfiguration } from '../config.ts';
 import { isInstallationAdministrator } from './auth/admission.ts';
@@ -13,6 +11,7 @@ import { createEnvironmentOperations } from './environment.ts';
 import { createEvidenceOperations } from './evidence.ts';
 import { createMechOperations } from './mechs/mechs.ts';
 import { createNotificationOperations } from './notifications.ts';
+import { requireSandboxEnabled } from './require-sandbox-enabled.ts';
 import { createRoutineOperations } from './routines.ts';
 import { createSelfOperations } from './self.ts';
 import type { NamedOperationContext, OperationHandlers } from './types.ts';
@@ -65,11 +64,7 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
           isOwnerRequired: true,
         });
 
-        const policy = await store.showWorkspacePolicy(input.workspaceId);
-
-        if (!policy.hasSandboxes || policy.isSuspended) {
-          throw new SandboxDisabled({ workspaceId: Schema.decodeUnknownSync(WorkspaceId)(input.workspaceId) });
-        }
+        await requireSandboxEnabled({ store, workspaceId: input.workspaceId });
 
         return await options.manageSandbox({ workspaceId: input.workspaceId, mechId: input.mechId, request: input });
       },

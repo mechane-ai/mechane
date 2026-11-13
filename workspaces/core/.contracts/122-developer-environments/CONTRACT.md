@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,restore,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,maintenance,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "packages/worker/sandbox-store/src/{maintenance,workspaces}/**", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -93,6 +93,15 @@ Refuse a never-dispatched command as unavailable when a durable workspace recove
 to new claims and pending retries so waiting commands cannot block their own recovery checkpoint. Preserve dispatched
 uncertainty and terminal receipts; ordinary startup and capacity waits remain distinct from required file recovery.
 
+Restore last committed files after physical machine loss only through an explicit operation UUID and exact expected
+machine, recovery generation and committed head. Require positive provider absence before replacing the machine or
+releasing its reservation. Failed health, a null stored pointer and inspection errors do not prove absence. Recheck
+the intent after awaited provider observations. Preserve terminal uncertainty without replaying commands, and refuse
+work that can still dispatch or conflict. Verify the committed archive on the replacement before readiness and clearing
+the matching recovery fence. Retain the original failed generation and its partial archive objects until explicit file
+deletion, preserving Stop failures and operation receipts. A restore receipt describes saved files restored, never a
+fresh capture or recovery of unsaved files.
+
 Rejoin a starting provider instance only with positive evidence of its original machine identity. A running flag alone
 does not prove that identity or guest readiness. A lost start acknowledgement cannot destroy the matching instance or
 restart its bootstrap. Refuse a conflicting start or stop without replacing the existing guest.
@@ -132,6 +141,9 @@ durable file results, multipart size, and explicit cache reconstruction. Process
 isolation. Local direct networking is an explicit platform composition and cannot establish hosted egress enforcement.
 After a required checkpoint fails, require a new command to return unavailable without dispatch, preserve the original
 recovery identity and committed files, and verify that the refused command leaves the recovery checkpoint unblocked.
+Refuse restoration while its provider remains active and when the selected fences or reused UUID change. Destroy the
+actual guest after a failed final drain, restore its committed home through the public CLI, and require the unchanged
+head and failed Stop receipt. Retry the original UUID after later maintenance without another replacement or replay.
 Exercise the ordinary guest CLI and command gate through the retained gateway on native Linux and a supported macOS
 Docker backend. On Linux, reject undeclared host-service ports, verify one stack's cleanup preserves another stack's
 grant, and confirm guest startup cannot widen native access. Reject arbitrary fixture destinations on both platforms.

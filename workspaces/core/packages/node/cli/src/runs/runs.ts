@@ -34,6 +34,7 @@ import { runRoutineDelete, runRoutineList, runRoutinePut, runRoutineShow } from 
 import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
+import { runSandboxRestore } from './sandboxes/run-sandbox-restore.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
 import {
   runSelfMessage,
@@ -63,6 +64,7 @@ export const RUNS: Readonly<Runs> = {
   'grant revoke': documentRun({ run: runGrantRevoke }),
 
   'sandbox show': documentRun({ run: runSandboxShow }),
+  'sandbox restore': documentRun({ run: runSandboxRestore }),
   'sandbox upgrade': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Upgrade }) }),
   'sandbox delete': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Delete }) }),
   'sandbox cancel': documentRun({ run: (input) => runSandboxChange({ ...input, action: SandboxAction.Cancel }) }),

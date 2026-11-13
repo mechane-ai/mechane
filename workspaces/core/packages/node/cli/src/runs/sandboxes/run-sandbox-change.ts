@@ -1,5 +1,5 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
-import type { SandboxAction } from '@mechane/protocol';
+import type { SandboxRequest } from '@mechane/protocol';
 import { SandboxOperationId } from '@mechane/records';
 import { Effect, Option } from 'effect';
 import { randomUUID } from 'node:crypto';
@@ -7,7 +7,7 @@ import { withWorkspace } from '../mechs/with-workspace.ts';
 import { maintainSandbox } from './maintain-sandbox.ts';
 
 type ChangeCommand = 'sandbox upgrade' | 'sandbox delete' | 'sandbox cancel';
-type RunSandboxChangeInput<N extends ChangeCommand> = RunInput<N> & { readonly action: SandboxAction };
+type RunSandboxChangeInput<N extends ChangeCommand> = RunInput<N> & { readonly action: SandboxRequest['action'] };
 
 /** The CLI creates a retry id once and prints it before starting maintenance. */
 export const runSandboxChange = Effect.fn('runSandboxChange')(function* <N extends ChangeCommand>({

@@ -2,13 +2,11 @@ import { SandboxMaintenanceFailed } from '@mechane/cli-kernel';
 import type { RunFailure } from '@mechane/cli-kernel';
 import { SandboxPhase } from '@mechane/protocol';
 import type { SandboxReport } from '@mechane/protocol';
-import { DateTime, Duration, Effect, Option } from 'effect';
+import { DateTime, Effect, Option } from 'effect';
 import { announceMaintenance } from './announce-maintenance.ts';
+import { MAINTENANCE_POLL, MAINTENANCE_TIMEOUT } from './constants.ts';
 import { maintenanceFailure } from './maintenance-failure.ts';
 import type { SandboxCallInput } from './types.ts';
-
-const MAINTENANCE_TIMEOUT = Duration.minutes(15);
-const MAINTENANCE_POLL = Duration.millis(500);
 
 /** Each retry carries the same operation id; interruption leaves the journal available to resume. */
 export const maintainSandbox = Effect.fn('maintainSandbox')(function* ({

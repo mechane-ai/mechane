@@ -21,9 +21,10 @@ import { workspaceRecords } from './workspaces/workspace-records.ts';
  */
 export function openSandboxStore({ storage }: SandboxStoreInput): SandboxStore {
   const { sql } = storage;
+  const database = openDatabase({ storage, migrations: MIGRATIONS });
 
   return {
-    ...openDatabase({ storage, migrations: MIGRATIONS }),
+    ...database,
     ...browserRecords({ sql }),
     ...capacityRecords({ sql }),
     ...completionRecords({ sql }),
@@ -33,7 +34,7 @@ export function openSandboxStore({ storage }: SandboxStoreInput): SandboxStore {
     ...machineRecords({ sql }),
     ...startupRecords({ sql }),
     ...stopRecords({ sql }),
-    ...portableMaintenanceRecords({ sql }),
+    ...portableMaintenanceRecords({ sql, atomic: database.atomic }),
     ...executionRecords({ sql }),
     ...processRecords({ sql }),
     ...workspaceRecords({ sql }),

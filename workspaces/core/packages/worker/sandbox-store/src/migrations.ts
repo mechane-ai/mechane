@@ -107,4 +107,7 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
     sql.exec('ALTER TABLE machines ADD COLUMN startup TEXT');
     sql.exec('ALTER TABLE sandbox_activity ADD COLUMN processes_observed_at_ms INTEGER');
   },
+  ({ sql }) => {
+    sql.exec('CREATE TABLE workspace_restores (operation_id TEXT PRIMARY KEY, record TEXT NOT NULL) STRICT');
+  },
 ];

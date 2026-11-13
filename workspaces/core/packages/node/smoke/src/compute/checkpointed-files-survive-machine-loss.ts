@@ -5,6 +5,10 @@ import {
   sandboxExecutionPath,
   SandboxExecutionResult,
   SandboxRecoveryCheckpointResult,
+  sandboxRestorePath,
+  SandboxRestoreRefusalReason,
+  SandboxRestoreRequest,
+  SandboxRestoreResult,
   SandboxServiceIdentity,
   sandboxStopPath,
   SandboxStopPhase,
@@ -18,6 +22,7 @@ import {
   readSandboxCompletion,
   requireFixtures,
   runBash,
+  runCli,
   sendNotification,
   startCommandGate,
   upgradeSandbox,
@@ -47,6 +52,7 @@ const STOP_TERMINAL_PHASES: ReadonlySet<SandboxStopReceipt['phase']> = new Set([
 ]);
 
 type FilesInput = MechContext & { readonly directory: string };
+type RestoreReceipt = { readonly request: SandboxRestoreRequest; readonly result: SandboxRestoreResult };
 
 export async function checkpointedFilesSurviveMachineLoss({
   stack,
@@ -78,6 +84,8 @@ export async function checkpointedFilesSurviveMachineLoss({
   assert.equal(committed._tag, 'Committed');
 
   await recoveryFenceRefusesPendingCommands({ ...input, directory });
+
+  const restoreReceipt = await restoreLastCommittedFilesAfterMachineLoss({ ...input, directory });
 
   const savedReport = await readSandboxReport(input);
 
@@ -168,6 +176,18 @@ export async function checkpointedFilesSurviveMachineLoss({
     });
 
     assert.equal(afterReplacement.result.output, digest);
+
+    const beforeRetry = await readSandboxReport(input);
+    const retainedRestore = await requestRestore({ ...input, request: restoreReceipt.request });
+    const afterRetry = await readSandboxReport(input);
+
+    assert.deepEqual(retainedRestore, restoreReceipt.result, 'Later maintenance replaced the original restore receipt');
+    assert.deepEqual(afterRetry.environment.committedGeneration, beforeRetry.environment.committedGeneration);
+    assert.deepEqual(
+      afterRetry.sandboxId,
+      beforeRetry.sandboxId,
+      'Retrying a completed restore allocated another guest',
+    );
     assert.equal(
       gate.readRequests().length,
       UNSAVED_WRITER_REQUESTS,
@@ -181,6 +201,130 @@ export async function checkpointedFilesSurviveMachineLoss({
     gate.release();
     await gate.close();
   }
+}
+
+async function restoreLastCommittedFilesAfterMachineLoss(input: FilesInput): Promise<RestoreReceipt> {
+  const unreadable = join(input.directory, 'restore-unreadable');
+  const unsaved = join(input.directory, 'restore-unsaved');
+
+  const written = await runBash({
+    ...input,
+    command: `mkdir '${unreadable}' && printf unsaved > '${unsaved}' && chmod 000 '${unreadable}'`,
+  });
+
+  assert.equal(written.result.status, 'completed');
+
+  const original = await requestStopReceipt(input);
+
+  const failed = await waitFor({
+    name: 'the unreadable final drain to retain its failed Stop and recovery generation',
+    read: () => readStopReceipt({ ...input, operationId: original.operationId }),
+    accept: (receipt) => STOP_TERMINAL_PHASES.has(receipt.phase),
+  });
+
+  assert.equal(failed.phase, SandboxStopPhase.Failed);
+
+  const before = await readSandboxReport(input);
+  const recovery = Option.getOrThrow(before.environment.recovery);
+  const committedGeneration = Option.getOrThrow(before.environment.committedGeneration);
+
+  const request = Schema.decodeUnknownSync(Schema.toType(SandboxRestoreRequest))({
+    operationId: randomUUID(),
+    machineId: recovery.machineId,
+    recoveryGeneration: recovery.generation,
+    committedGeneration,
+  });
+
+  const wrongHead = Schema.decodeUnknownSync(Schema.toType(SandboxRestoreRequest))({
+    ...request,
+    committedGeneration: randomUUID(),
+  });
+
+  const changed = await requestRestore({ ...input, request: wrongHead });
+  const active = await requestRestore({ ...input, request });
+
+  assert.deepEqual(changed, { _tag: 'RestoreRefused', reason: SandboxRestoreRefusalReason.WorkspaceChanged });
+  assert.deepEqual(active, { _tag: 'RestoreRefused', reason: SandboxRestoreRefusalReason.ProviderActive });
+
+  const afterRefusal = await readSandboxReport(input);
+
+  assert.deepEqual(afterRefusal.environment.recovery, before.environment.recovery);
+  assert.deepEqual(afterRefusal.environment.committedGeneration, before.environment.committedGeneration);
+  assert.deepEqual(afterRefusal.sandboxId, before.sandboxId);
+
+  await requireSandbox(input).loseMachine(request.machineId);
+
+  const admitted = await requestRestore({ ...input, request });
+  const reused = await requestRestore({ ...input, request: wrongHead });
+
+  assert.equal(admitted._tag, 'Pending');
+  assert.deepEqual(reused, { _tag: 'RestoreRefused', reason: SandboxRestoreRefusalReason.OperationReused });
+
+  const result = await runCli({
+    ...input,
+    args: [
+      'sandbox',
+      'restore',
+      input.mechId,
+      '--workspace',
+      input.account.workspaceId,
+      '--operation-id',
+      request.operationId,
+      '--machine-id',
+      request.machineId,
+      '--recovery-generation',
+      request.recoveryGeneration,
+      '--committed-generation',
+      request.committedGeneration,
+    ],
+    schema: SandboxRestoreResult,
+  });
+
+  assert.equal(result._tag, 'Restored');
+
+  const after = await readSandboxReport(input);
+
+  const retainedStop = await readStopReceipt({ ...input, operationId: original.operationId });
+
+  assert.ok(Option.isNone(after.environment.recovery));
+  assert.notDeepEqual(after.sandboxId, before.sandboxId);
+  assert.deepEqual(after.environment.committedGeneration, before.environment.committedGeneration);
+  assert.deepEqual(retainedStop, failed, 'Restoring older files rewrote the failed final-drain receipt');
+
+  const files = await runBash({
+    ...input,
+    command: `test ! -e '${unsaved}' && test ! -e '${unreadable}' && test -f '${input.directory}/multipart' && printf restored`,
+  });
+
+  assert.equal(files.result.output, 'restored', 'Restore did not activate exactly the last saved home');
+
+  return { request, result };
+}
+
+async function requestStopReceipt(input: MechContext): Promise<SandboxStopReceipt> {
+  const path = sandboxStopPath(sandboxIdentity(input));
+  const result = await sandboxRequest({ ...input, path, method: HttpMethod.Post });
+
+  return Schema.decodeUnknownSync(SandboxStopReceipt)(result);
+}
+
+type ReadStopInput = MechContext & Pick<SandboxStopReceipt, 'operationId'>;
+
+async function readStopReceipt({ operationId, ...input }: ReadStopInput): Promise<SandboxStopReceipt> {
+  const path = sandboxStopReadPath({ ...sandboxIdentity(input), operationId });
+  const result = await sandboxRequest({ ...input, path, method: HttpMethod.Get });
+
+  return Schema.decodeUnknownSync(SandboxStopReceipt)(result);
+}
+
+type RestoreRequestInput = MechContext & { readonly request: SandboxRestoreRequest };
+
+async function requestRestore({ request, ...input }: RestoreRequestInput): Promise<SandboxRestoreResult> {
+  const path = sandboxRestorePath(sandboxIdentity(input));
+  const body = Schema.encodeSync(SandboxRestoreRequest)(request);
+  const result = await sandboxRequest({ ...input, path, method: HttpMethod.Post, body });
+
+  return Schema.decodeUnknownSync(SandboxRestoreResult)(result);
 }
 
 async function recoveryFenceRefusesPendingCommands(input: FilesInput): Promise<void> {
@@ -293,23 +437,14 @@ function recoveryCheckpointPath({ operationId, ...identity }: RecoveryCheckpoint
 
 async function stoppedReceiptSurvivesReplacement(input: MechContext): Promise<void> {
   const sandbox = requireSandbox(input);
-  const identity = sandboxIdentity(input);
-  const stopPath = sandboxStopPath(identity);
-  const accepted = await sandboxRequest({ ...input, path: stopPath, method: HttpMethod.Post });
-  const original = Schema.decodeUnknownSync(SandboxStopReceipt)(accepted);
-  const duplicate = await sandboxRequest({ ...input, path: stopPath, method: HttpMethod.Post });
-  const repeated = Schema.decodeUnknownSync(SandboxStopReceipt)(duplicate);
+  const original = await requestStopReceipt(input);
+  const repeated = await requestStopReceipt(input);
 
   assert.equal(repeated.operationId, original.operationId);
 
-  const readPath = sandboxStopReadPath({ ...identity, operationId: original.operationId });
-
   const receipt = await waitFor({
     name: 'the final environment checkpoint and confirmed provider shutdown',
-    read: async () =>
-      Schema.decodeUnknownSync(SandboxStopReceipt)(
-        await sandboxRequest({ ...input, path: readPath, method: HttpMethod.Get }),
-      ),
+    read: () => readStopReceipt({ ...input, operationId: original.operationId }),
     accept: (value) => STOP_TERMINAL_PHASES.has(value.phase),
   });
 
@@ -322,9 +457,7 @@ async function stoppedReceiptSurvivesReplacement(input: MechContext): Promise<vo
 
   await sandbox.restart({ signal: 'SIGKILL' });
 
-  const retained = Schema.decodeUnknownSync(SandboxStopReceipt)(
-    await sandboxRequest({ ...input, path: readPath, method: HttpMethod.Get }),
-  );
+  const retained = await readStopReceipt({ ...input, operationId: original.operationId });
 
   assert.deepEqual(retained, receipt, 'Environment owner replacement changed the original Stop receipt');
 }

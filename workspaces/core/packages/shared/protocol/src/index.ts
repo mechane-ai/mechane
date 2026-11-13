@@ -170,6 +170,7 @@ export {
 export { MembershipRole } from './operations/workspaces/constants.ts';
 
 export { SandboxAction, SandboxPhase, SandboxRequest, SandboxReport } from '@mechane/sandbox-wire';
+export { SandboxRestoreRequest, SandboxRestoreResult } from '@mechane/sandbox-wire';
 
 export {
   WorkspaceOwnerRequired,

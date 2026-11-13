@@ -10,7 +10,13 @@ import { Schema } from 'effect';
 import { SandboxEnvironmentState } from './environment-state.ts';
 
 /** Maintenance is explicit; inspecting a sandbox never wakes it. */
-export const SandboxAction = { Show: 'show', Upgrade: 'upgrade', Delete: 'delete', Cancel: 'cancel' } as const;
+export const SandboxAction = {
+  Show: 'show',
+  Upgrade: 'upgrade',
+  Delete: 'delete',
+  Cancel: 'cancel',
+  Restore: 'restore',
+} as const;
 
 export type SandboxAction = (typeof SandboxAction)[keyof typeof SandboxAction];
 
@@ -31,7 +37,7 @@ export type SandboxPhase = (typeof SandboxPhase)[keyof typeof SandboxPhase];
 /** A maintenance id makes retries resume the same operation; null selects inspection only. */
 export const SandboxRequest = wireStruct({
   fields: {
-    action: Schema.Enum(SandboxAction),
+    action: Schema.Literals([SandboxAction.Show, SandboxAction.Upgrade, SandboxAction.Delete, SandboxAction.Cancel]),
     /** Null for inspection; changes carry the id used by every retry. */
     operationId: Schema.OptionFromNullOr(SandboxOperationId),
   },

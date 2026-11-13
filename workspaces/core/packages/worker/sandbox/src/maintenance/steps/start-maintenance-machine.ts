@@ -1,14 +1,34 @@
 import { MachineId } from '@mechane/records';
-import { SandboxPhase } from '@mechane/sandbox-wire';
+import { SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { observeMachine } from '../../machines/observe-machine.ts';
 import { startMachine } from '../../machines/start-machine.ts';
+import { refusePortableMaintenance } from '../refuse-portable-maintenance.ts';
 import type { PortableStepInput } from '../types.ts';
+import { requireWorkspaceRestore } from '../workspace-restore-fence.ts';
 
 /** Persists the replacement identity before starting its credential-free guest. */
 export async function startMaintenanceMachine({ store, provider, job }: PortableStepInput): Promise<void> {
   if (Option.isNone(job.target)) {
+    if (job.action === SandboxAction.Restore) {
+      const record = requireWorkspaceRestore({ store, job });
+      const machines = new Set([record.request.machineId, record.previousMachineId]);
+      const probes = Array.from(machines, (machineId) => provider.isAbsent({ machineId }));
+      const observations = await Promise.all(probes);
+      const isAbsent = observations.every(Boolean);
+
+      if (!isAbsent) {
+        return refusePortableMaintenance({ reason: 'the original provider machine is active; restore refused' });
+      }
+
+      requireWorkspaceRestore({ store, job });
+    }
+
     await stopPreviousMachine({ store, provider });
+
+    if (job.action === SandboxAction.Restore) {
+      requireWorkspaceRestore({ store, job });
+    }
 
     const machineId = MachineId.make(crypto.randomUUID());
     const target = Option.some(machineId);

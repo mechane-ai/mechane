@@ -1,13 +1,18 @@
-import { SandboxPhase } from '@mechane/sandbox-wire';
+import { SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { checkpointMaintenance } from './steps/checkpoint-maintenance.ts';
 import { commitMaintenance } from './steps/commit-maintenance.ts';
 import { deletePortableWorkspace } from './steps/delete-portable-workspace.ts';
 import { restoreMaintenance } from './steps/restore-maintenance.ts';
 import { startMaintenanceMachine } from './steps/start-maintenance-machine.ts';
 import type { PortableStepInput } from './types.ts';
+import { requireWorkspaceRestore } from './workspace-restore-fence.ts';
 
 export async function advancePortableMaintenance({ job, ...input }: PortableStepInput): Promise<void> {
   const step = { ...input, job };
+
+  if (job.action === SandboxAction.Restore) {
+    requireWorkspaceRestore(step);
+  }
 
   switch (job.phase) {
     case SandboxPhase.Quiesce:

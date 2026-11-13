@@ -39,7 +39,7 @@ type WorkspaceBindings = {
 export function workspaceBindings({ sql }: RecordsInput): WorkspaceBindings {
   const workspace: WorkspaceBindings['workspace'] = () => {
     const cursor = sql.exec(
-      'SELECT provider, activity_sequence AS activitySequence, last_activity_at_ms AS lastActivityAt, automatic_at_ms AS automaticAt, checkpoint_error AS checkpointError, head, file_checkpoint AS checkpoint, restoration, recovery, (SELECT generation FROM workspace_retirements ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1',
+      "SELECT provider, activity_sequence AS activitySequence, last_activity_at_ms AS lastActivityAt, automatic_at_ms AS automaticAt, checkpoint_error AS checkpointError, head, file_checkpoint AS checkpoint, restoration, recovery, (SELECT generation FROM workspace_retirements WHERE generation IS NOT json_extract(sandbox_workspace.recovery, '$.generation') AND generation NOT IN (SELECT json_extract(record, '$.recovery.generation') FROM workspace_restores WHERE json_extract(record, '$.shouldRetainArtifacts') = 1) ORDER BY rowid LIMIT 1) AS retired FROM sandbox_workspace WHERE slot = 1",
     );
 
     return decodeOne({ cursor, schema: StoredWorkspaceState });

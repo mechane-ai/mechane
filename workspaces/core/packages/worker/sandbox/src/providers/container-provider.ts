@@ -89,6 +89,11 @@ export function containerProvider({
       await container.setInactivityTimeout(timeout);
     },
     connect: () => containerGuest({ container }),
+    isAbsent: async () => {
+      const inspected = await container.inspect();
+
+      return Schema.is(Schema.Null)(inspected);
+    },
     stop: async ({ machineId }) => {
       const identity = MachineId.make(machineId);
 

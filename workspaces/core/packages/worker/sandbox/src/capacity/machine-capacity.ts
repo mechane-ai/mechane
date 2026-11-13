@@ -196,7 +196,13 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
   }
 
   return {
-    provider: { start, connect: provider.connect, stop, startupTimeout: provider.startupTimeout },
+    provider: {
+      start,
+      connect: provider.connect,
+      stop,
+      startupTimeout: provider.startupTimeout,
+      isAbsent: provider.isAbsent,
+    },
     bindOwner,
     requireOwner,
     reservation,
