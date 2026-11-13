@@ -38,7 +38,7 @@ export const GuestScope = { Container: 'container', Process: 'process' } as cons
 /** The largest uncompressed tar stream accepted for a portable checkpoint. */
 export const WORKSPACE_MAX_BYTES = 2048 * BYTES_PER_MEBIBYTE;
 /** The largest compressed archive accepted for a portable checkpoint. */
-export const WORKSPACE_ARCHIVE_MAX_BYTES = 512 * BYTES_PER_MEBIBYTE;
+export const WORKSPACE_ARCHIVE_MAX_BYTES = 2048 * BYTES_PER_MEBIBYTE;
 
 /** The variables a provider starts a guest with, keyed by the guest's settings field. */
 export const GUEST_VARIABLES = {

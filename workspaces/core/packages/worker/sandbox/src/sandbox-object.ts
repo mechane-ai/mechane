@@ -539,7 +539,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
           return ProcessPending.make({});
         }
 
-        await this.#touchInteractive();
+        await this.#armIdle();
 
         return await startManagedProcess({
           store: this.#store,
@@ -582,7 +582,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const observation = await this.#calls.run({
       run: async () => {
         if (shouldTouch) {
-          await this.#touchInteractive();
+          await this.#armIdle();
         }
 
         return await observeManagedProcess({
@@ -623,7 +623,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const summaries = await this.#calls.run({
       run: async () => {
-        await this.#touchInteractive();
+        await this.#armIdle();
 
         return await listManagedProcesses({ store: this.#store, provider: this.#provider });
       },
@@ -673,7 +673,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const result = await this.#calls.run({
       run: async () => {
         await Promise.all(this.#stops);
-        await this.#touchInteractive();
+        await this.#armIdle();
 
         return await this.#browserEvidence({ call, shouldDispatch: true });
       },
@@ -819,7 +819,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
           return EvidenceExportResult.cases.Pending.make({ reason: 'The environment is completing maintenance' });
         }
 
-        await this.#touchInteractive();
+        await this.#armIdle();
 
         const exportedAt = DateTime.nowUnsafe();
 
@@ -874,26 +874,6 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
   #owner(): SandboxOwner {
     return this.#capacity.requireOwner();
-  }
-
-  async #touchInteractive(): Promise<void> {
-    const live = this.#store.liveMachine();
-
-    const drain = Option.flatMap(live, ({ id }) => {
-      const machineId = MachineId.make(id);
-
-      return this.#store.machineDrain({ machineId });
-    });
-
-    if (Option.isSome(drain)) {
-      const at = DateTime.nowUnsafe();
-
-      await this.#alarm.arm({ at });
-
-      return;
-    }
-
-    await this.#armIdle();
   }
 
   async stop(): Promise<typeof SandboxStopReceipt.Encoded> {
@@ -1162,7 +1142,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       return;
     }
 
-    if (Option.isSome(idleAt) && DateTime.isLessThan(now, idleAt.value)) {
+    if (Option.isSome(idleAt) && DateTime.isLessThan(now, idleAt.value) && !this.#hasPendingStop()) {
       await this.#alarm.arm({ at: idleAt.value });
 
       return;
@@ -1225,6 +1205,20 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
   async #armIdle(): Promise<void> {
     const now = DateTime.nowUnsafe();
+    const live = this.#store.liveMachine();
+
+    const drain = Option.flatMap(live, ({ id }) => {
+      const machineId = MachineId.make(id);
+
+      return this.#store.machineDrain({ machineId });
+    });
+
+    if (Option.isSome(drain)) {
+      await this.#alarm.arm({ at: now });
+
+      return;
+    }
+
     const at = DateTime.addDuration(now, SANDBOX_IDLE);
 
     this.#store.setSandboxIdleAt({ at });
@@ -1238,6 +1232,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const idleAt = this.#store.sandboxIdleAt();
     const workspace = this.#store.workspace();
     const hasRecovery = Option.isSome(workspace.recovery);
+
+    if (!hasRecovery && this.#hasPendingStop()) {
+      await this.#armRetry();
+    }
 
     if (Option.isSome(idleAt) && !hasRecovery) {
       const at = DateTime.max(now, idleAt.value);
@@ -1331,6 +1329,31 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const at = DateTime.addDuration(now, STOP_RETRY);
 
     await this.#alarm.arm({ at });
+  }
+
+  #hasPendingStop(): boolean {
+    const stop = this.#store.latestSandboxStop();
+    const reservation = this.#capacity.reservation();
+    const lastMachine = this.#store.latestMachine();
+    const held = Option.map(reservation, ({ machineId }) => machineId);
+    const latest = Option.map(lastMachine, ({ id }) => id);
+    const machineId = Option.orElse(held, () => latest);
+
+    if (Option.isNone(machineId) || Option.isNone(stop)) {
+      return false;
+    }
+
+    const receipt = stop.value;
+
+    if (!Option.contains(receipt.machineId, machineId.value) || receipt.phase === SandboxStopPhase.Completed) {
+      return false;
+    }
+
+    if (receipt.phase === SandboxStopPhase.Failed) {
+      return receipt.recoveryAction === SandboxRecoveryAction.RetryStop;
+    }
+
+    return true;
   }
 
   async #armMaintenance(): Promise<void> {

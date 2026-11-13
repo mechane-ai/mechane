@@ -8,13 +8,13 @@ import {
 } from '@mechane/sandbox-wire';
 import {
   readBashResult,
-  readEnvironment,
   readTrace,
   requireFixtures,
   runBash,
   sendNotification,
   startCommandGate,
   waitFor,
+  waitForPendingExecution,
   waitForTurn,
 } from '@mechane/testing';
 import type { MechContext } from '@mechane/testing';
@@ -90,19 +90,12 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
 
     const original = await sendNotification({ ...input, text: marker });
 
-    const pending = await waitFor({
-      name: 'the native shell claim before dispatch',
-      read: async () => {
-        const report = await readEnvironment({ ...input, signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
-
-        return report.environment.execution;
-      },
-      accept: (execution) =>
-        Option.exists(execution, (value) => value.executionId !== blockerId && Option.isNone(value.dispatchedAt)),
+    const pendingId = await waitForPendingExecution({
+      ...input,
+      excludeExecutionId: blockerId,
       timeoutMs: REQUEST_TIMEOUT_MS,
     });
 
-    const pendingId = Option.getOrThrow(pending).executionId;
     const correction = await sendNotification({ ...input, text: `${marker}: do not run the old command` });
 
     const result = await readBashResult({ model, marker, toolCallId, timeoutMs: REQUEST_TIMEOUT_MS });

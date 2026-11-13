@@ -7,8 +7,10 @@ import { onlyBrowserCanApproveKeys } from './auth/only-browser-can-approve-keys.
 import { repeatedSignInReusesIdentity } from './auth/repeated-sign-in-reuses-identity.ts';
 import { revokedKeyCannotAuthorizeRequests } from './auth/revoked-key-cannot-authorize-requests.ts';
 import { backgroundCompletionWakesOnce } from './compute/background-completion-wakes-once.ts';
+import { drainCompletesBeforePendingBash } from './compute/drain-completes-before-pending-bash.ts';
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
+import { largeHomeSurvivesRestore } from './compute/large-home-survives-restore.ts';
 import { resumeReconcilesStoppedCompletions } from './compute/resume-reconciles-stopped-completions.ts';
 import { consoleKeepsDraftsAndRunContext } from './console/console-keeps-drafts-and-run-context.ts';
 import { consoleRetainsRecordsThroughRefreshFailure } from './console/console-retains-records-through-refresh-failure.ts';
@@ -207,6 +209,19 @@ export const CATALOG = [
     guarantee: 'resume reconciles stopped environment completions before new work',
     regression: 'a delayed completion interrupts the first command after a stopped environment resumes',
     run: resumeReconcilesStoppedCompletions,
+  },
+  {
+    family: 'compute',
+    guarantee: 'a pending Bash cannot postpone its environment drain',
+    regression: 'a later command delays a started stop or is repeated after the drain',
+    run: drainCompletesBeforePendingBash,
+  },
+  {
+    family: 'compute',
+    guarantee: 'a home with an archive over 512 MiB survives a drain and restore',
+    regression: 'a large valid archive is refused or its restored files differ',
+    timeoutMs: 660_000,
+    run: largeHomeSurvivesRestore,
   },
   {
     family: 'compute',

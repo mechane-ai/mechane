@@ -69,6 +69,8 @@ writers and release mutating admission once the immutable archive is complete. U
 beside later commands; its committed head represents the captured files, not every later write.
 Required file barriers wait for their complete generation rather than returning a command's earlier terminal receipt.
 For a graceful drain, take a fresh final checkpoint and keep writers frozen until provider stop is confirmed.
+Bound both the uncompressed tar stream and compressed archive to 2 GiB. Keep transfers part-bounded and retain their
+operation deadlines; the byte ceilings do not guarantee that every archive finishes within the deadline.
 
 Preserve live files and the previous committed head after a failed save. A failed provider stop retains the drain fence
 and capacity ownership. Snapshotting files does not preserve process memory or establish application transaction consistency.
@@ -122,6 +124,8 @@ operation creates neither an execution row nor a completion outbox entry.
 
 Count explicit process and browser tool activity toward the existing machine idle deadline. Background execution and
 internal observation alone do not retain paid compute indefinitely. Retire all handles when their machine ends.
+Once a stop has claimed a machine's drain, later activity cannot postpone that stop by extending its idle deadline.
+Continue a matching unfinished stop even when a previously stored idle deadline is still in the future.
 Console polling is passive observation. Route it through the admitted runtime owner, preserving authorization and exact process
 identity, without renewing a lease or allocating a replacement machine.
 Startup credentials follow [execution access](../120-execution-access/CONTRACT.md). A stopped handle does not establish
@@ -131,6 +135,10 @@ provider credential revocation, and a running handle does not promise that start
 
 For each direct diagnostic execution, does its caller retain the intent and observed outcome before acknowledging its
 matching completion? Does an unknown receipt remain pending until its owner and outcome are established?
+
+Hold a dispatched command while stopping its machine. Claim a later Bash, then release the command and require the same
+stop to finish. Verify the claimed Bash runs once after the drain and its files survive on the restored machine.
+Drain and restore a home whose compressed archive exceeds 512 MiB. Compare the restored file's digest to its original.
 
 Inspect `node/guest/src/processes`, `node/guest/src/quiescence`, and the sandbox checkpoint and machine-drain owners.
 Check that a repeated start cannot spawn twice, a changed start is rejected, and a read or stop cannot reach a replacement

@@ -53,3 +53,5 @@ export { deliverNotification, notificationPath, notificationProducerEnvironment 
 export { readModelToolResult } from './model-result.ts';
 export { startHeldActivation } from './start-held-activation.ts';
 export { checkpointSandbox, readSandboxCompletion, repeatSandboxCompletion } from './compute/sandbox-completion.ts';
+export { requestSandboxStop } from './compute/sandbox-stop.ts';
+export { waitForPendingExecution } from './compute/wait-for-pending-execution.ts';

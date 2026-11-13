@@ -39,7 +39,7 @@ export async function runScenarios({ stack, catalog, match, family }: RunScenari
 
     const timer = setTimeout(
       () => deadline.reject(new Error(`The smoke timed out: ${scenario.guarantee}`)),
-      SCENARIO_DEADLINE_MS,
+      scenario.timeoutMs ?? SCENARIO_DEADLINE_MS,
     );
 
     try {

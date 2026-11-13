@@ -4,11 +4,9 @@ import {
   SandboxCompletionReceipt,
   sandboxPendingCompletionsPath,
   SandboxServiceIdentity,
-  sandboxStopPath,
   SandboxStopPhase,
-  sandboxStopReadPath,
-  SandboxStopReceipt,
 } from '@mechane/sandbox-wire';
+import type { SandboxStopReceipt } from '@mechane/sandbox-wire';
 import {
   createAccount,
   createMech,
@@ -17,6 +15,7 @@ import {
   readModelToolResult,
   readSandboxCompletion,
   repeatSandboxCompletion,
+  requestSandboxStop,
   requireFixtures,
   sendNotification,
   startCommandGate,
@@ -58,46 +57,11 @@ async function maintenance(input: MechContext, action: 'quiesce' | 'resume'): Pr
 }
 
 async function sandboxStop(input: MechContext): Promise<void> {
-  const sandbox = input.stack.sandbox;
-
-  if (sandbox === undefined) {
-    throw new Error('The scenario requires the sandbox service');
-  }
-
-  const identity = Schema.decodeUnknownSync(SandboxServiceIdentity)({
-    workspaceId: input.account.workspaceId,
-    mechId: input.mechId,
-  });
-
-  const { origin, bearer } = sandbox;
-
-  async function request({
-    path,
-    method,
-  }: {
-    readonly path: string;
-    readonly method: typeof HttpMethod.Get | typeof HttpMethod.Post;
-  }) {
-    const response = await fetch(new URL(path, origin), {
-      method,
-      headers: { [HttpHeader.Authorization]: `Bearer ${bearer}` },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-
-    assert.ok(response.ok, `Sandbox stop returned ${response.status}`);
-
-    return Schema.decodeUnknownSync(SandboxStopReceipt)(await response.json());
-  }
-
-  const requested = await request({ path: sandboxStopPath(identity), method: HttpMethod.Post });
+  const requested = await requestSandboxStop(input);
 
   const stopped = await waitFor({
     name: 'the old environment stop',
-    read: () =>
-      request({
-        path: sandboxStopReadPath({ ...identity, operationId: requested.operationId }),
-        method: HttpMethod.Get,
-      }),
+    read: () => requestSandboxStop({ ...input, operationId: requested.operationId }),
     accept: (receipt) => STOP_TERMINAL_PHASES.has(receipt.phase),
   });
 

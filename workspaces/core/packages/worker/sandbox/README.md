@@ -43,7 +43,7 @@ or fresh recovery evidence. Completion requires confirmed shutdown; accepting St
 
 ## Limits
 
-The guest pauses writers while archiving. Archives permit at most 2 GiB uncompressed and 512 MiB compressed, with a
+The guest pauses writers while archiving. Archives permit at most 2 GiB uncompressed and 2 GiB compressed, with a
 five-minute operation deadline. Checkpoints copy the full home; large repositories need workload qualification.
 Generated caches belong outside the committed home.
 

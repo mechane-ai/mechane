@@ -79,11 +79,12 @@ explicit recovery; the runtime does not delete or exclude them. See the tools' d
 [mise](https://mise.jdx.dev/directories.html), [pnpm](https://pnpm.io/pnpm-cli), and
 [uv](https://docs.astral.sh/uv/concepts/cache/#cache-directory).
 
-The portable home is bounded to a 2 GiB uncompressed tar stream and a 512 MiB gzip archive. Tar metadata and padding
-count toward the first limit. Compression, splitting, transfer, and restoration buffer bounded parts, but saving and
-restoring stage both the archive and its parts on disk. Allow home size plus twice the compressed size, as well as
-tools, caches, build scratch, and filesystem overhead, when selecting the machine tier. Scratch outside the home still
-uses that machine's disk. These bounds do not promise that every repository or build fits the selected environment.
+The portable home is bounded to a 2 GiB uncompressed tar stream and a 2 GiB gzip archive. Tar metadata and padding count
+toward the first limit. Compression, splitting, transfer, and restoration buffer bounded parts, but saving and restoring
+stage both the archive and its parts on disk. Allow home size plus twice the compressed size, as well as tools, caches,
+build scratch, and filesystem overhead, when selecting the machine tier. Scratch outside the home still uses that
+machine's disk. These bounds do not promise that every repository or build fits the selected environment. The
+five-minute checkpoint and restore deadlines can also limit a home before it reaches the byte ceilings.
 
 The guest and Worker share these limits. Roll them out together after committing the existing guest's files; a new
 Worker cannot raise a limit compiled into an already-running guest. Older components may reject a new checkpoint at
