@@ -11,7 +11,7 @@ import type { ChartTone } from './chart-theme.ts';
 export type ChartSelection = { readonly selectedId: string | undefined; readonly onSelect: (id: string) => void };
 
 export type ChartFrameProps = {
-  readonly title: string;
+  readonly title: ReactNode;
   readonly description?: string | undefined;
   readonly children: ReactNode;
   readonly actions?: ReactNode;
@@ -45,7 +45,7 @@ const styles = stylex.create({
     gap: spacing.md,
     paddingBlockEnd: spacing.lg,
   },
-  title: { flex: '1 1 200px', minWidth: 0, overflowWrap: 'anywhere' },
+  title: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
   caption: {
     margin: 0,
     fontSize: typography.inputSize,

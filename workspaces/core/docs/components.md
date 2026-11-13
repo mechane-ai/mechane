@@ -187,7 +187,8 @@ accessibility results alone do not establish complete accessibility.
 
 Use the theme toolbar to switch the entire preview between light and dark, including portaled menus and dialogs. The
 viewport control reviews the same examples at narrow widths. Open disclosures and popups in both themes; a closed
-trigger does not show the panel's layout. Chart data and source disclosures use the same Collapsible as activity views.
+trigger does not show the panel's layout. Source disclosures use the same Collapsible as activity views. Cartesian Chart
+data actions open the shared Dialog with keyboard focus return.
 
 `pnpm --filter @mechane-ai/elements build-storybook` uses the application’s React and StyleX compiler settings. Stories
 are developer documentation: the preview removes the inherited test tag, and no play assertion runs by default. Add a

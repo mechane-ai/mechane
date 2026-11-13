@@ -23,6 +23,7 @@ type CompositionBarsProps = {
   readonly width: number;
   readonly y: (value: number) => number;
   readonly isHighlighted: boolean;
+  readonly highlightedSeriesId?: string | undefined;
 };
 
 export function CompositionBars({
@@ -34,6 +35,7 @@ export function CompositionBars({
   width,
   y,
   isHighlighted,
+  highlightedSeriesId,
 }: CompositionBarsProps): ReactNode {
   const hasFocus = focusedSeries !== undefined;
   const extra = focusedSeries !== undefined && !series.some((item) => item.id === focusedSeries.id);
@@ -76,6 +78,7 @@ export function CompositionBars({
           : series.slice(0, seriesIndex).reduce((amount, previous) => amount + (previous.values[index] ?? 0), 0);
 
         const isVisible = hasFocus ? isFocused : bucket.kind === 'parts';
+        const isMuted = !hasFocus && highlightedSeriesId !== undefined && highlightedSeriesId !== item.id;
 
         return (
           <rect
@@ -87,7 +90,7 @@ export function CompositionBars({
             vectorEffect="non-scaling-stroke"
             fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
             {...stylex.props(styles.mark, isHighlighted && chartStyles.selected)}
-            style={{ transform: geometry(value, base), opacity: isVisible ? 1 : 0 }}
+            style={{ transform: geometry(value, base), opacity: isVisible ? (isMuted ? 0.3 : 1) : 0 }}
           />
         );
       })}

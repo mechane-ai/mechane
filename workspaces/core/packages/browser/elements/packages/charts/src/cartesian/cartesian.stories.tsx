@@ -29,7 +29,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Application-prepared observations and categories. Formatters own units and time zones. Missing observations remain gaps. LineChart, AreaChart, and SmallMultiples support pointer, touch, and arrow-key value inspection; Escape dismisses it. These full charts retain exact records under View data and preserve inspection when equivalent values replace their input arrays. Choose LineChart for trends, AreaChart for magnitude or explicit stacking, Sparkline for a passive inline trend with an application-written summary and explicit value domain, and SmallMultiples for aligned panels. BarChart compares categories with pointer, touch, and arrow-key inspection; optional axisLabel keeps ticks concise while full labels remain inspectable. BarChartPlaceholder shares its frame, legend, plot height, idle inspection, and closed disclosure geometry. Pass the known title, description, series labels, and matching height through AsyncRegion; the placeholder is inert and supplies no data or loading announcement. Unknown titles use the explicit label Loading chart. BreakdownBar shows nonnegative parts of a whole. ChartFrame supplies a title, description, actions and footer for a custom plot. ChartLegend labels supplied tones. Full charts already own their frame and legend; do not wrap them in a second frame.',
+          'Application-prepared observations and categories. Formatters own units and time zones. Missing observations remain gaps. LineChart, AreaChart, and SmallMultiples support pointer, touch, and arrow-key value inspection; Escape dismisses it. These full charts retain exact records under the heading’s Chart data action and preserve inspection when equivalent values replace their input arrays. Choose LineChart for trends, AreaChart for magnitude or explicit stacking, Sparkline for a passive inline trend with an application-written summary and explicit value domain, and SmallMultiples for aligned panels. BarChart compares categories with pointer, touch, and arrow-key inspection; optional axisLabel keeps ticks concise while full labels remain inspectable. BarChartPlaceholder shares the chart header, responsive legend, and plot height. Pass the known title, description, series labels, and matching height through AsyncRegion; the placeholder is inert and supplies no data or loading announcement. Unknown titles use the explicit label Loading chart. BreakdownBar shows nonnegative parts of a whole. A shared inspector shows exact values beside desktop marks and in a stable mobile legend. Optional formatTick keeps axis labels compact without changing exact inspection values. ChartFrame supplies a title, description, actions and footer for a custom plot. ChartLegend labels supplied tones. Full charts already own their frame and legend; do not wrap them in a second frame.',
       },
     },
   },
@@ -457,6 +457,7 @@ function CompositionExample(): ReactNode {
   ];
 
   const [focused, setFocused] = useState<string>();
+  const [highlighted, setHighlighted] = useState<string>();
   const [selected, setSelected] = useState<string>();
   const focus = series.find((item) => item.id === focused);
 
@@ -467,6 +468,10 @@ function CompositionExample(): ReactNode {
           <Button
             key={item.id}
             aria-pressed={focused === item.id}
+            onPointerEnter={() => setHighlighted(item.id)}
+            onPointerLeave={() => setHighlighted(undefined)}
+            onFocus={() => setHighlighted(item.id)}
+            onBlur={() => setHighlighted(undefined)}
             onClick={() => setFocused(focused === item.id ? undefined : item.id)}
           >
             {item.label}
@@ -478,7 +483,9 @@ function CompositionExample(): ReactNode {
         categories={['1', '2', '3', '4', '5'].map((id) => ({ id, label: `Day ${id}` }))}
         series={series}
         domain={[-10, 110]}
-        formatValue={(value) => `$${value}`}
+        formatValue={(value) => `$${value.toFixed(2)}`}
+        formatTick={(value) => `$${value}`}
+        highlightedSeriesId={highlighted}
         selection={{ selectedId: selected ?? '', onSelect: setSelected }}
         composition={{
           contextLabel: 'Account total',

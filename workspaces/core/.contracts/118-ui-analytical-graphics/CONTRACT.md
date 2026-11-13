@@ -52,6 +52,17 @@ values remain unavailable. The caller owns reconciliation and the supplied fixed
 category selection and keeps the independent context visible. Inspect both amounts through the shared text disclosure.
 Use interruptible transform and opacity transitions for series focus under contract 073.
 
+Cartesian charts share chart-owned inspection and a labeled Chart data action in their heading.
+Keep compact axis formatting separate from the exact inspection formatter. Inspect a parts bucket with its supplied
+components, a total-only bucket with its independent total, and a gap with an explicit missing value.
+Match a focused chart's legend to its focused series and independent context. Row highlighting changes emphasis only.
+Reserve mobile legend value space so inspection does not move the plot or linked rows.
+Use the same frame and inspection geometry in the loading representation.
+
+Inspect a spike by pointer, keyboard and touch at desktop and phone widths. Confirm that inspection preserves the
+controlled selection, activation changes the linked breakdown, Escape dismisses details, and Chart data returns focus
+to its trigger. Compare the displayed components with the inputs and check that hovering never fetches data.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

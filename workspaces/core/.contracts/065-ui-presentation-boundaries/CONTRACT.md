@@ -55,7 +55,7 @@ The family graph permits these dependencies:
 | `collections` | `foundations`, `core`, `forms`, `overlays`, `feedback` |
 | `content` | `foundations`, `core`, `forms` |
 | `ai` | `foundations`, `core`, `forms`, `overlays`, `content`, `feedback` |
-| `charts` | `foundations`, `core`, `forms`, `feedback` |
+| `charts` | `foundations`, `core`, `forms`, `overlays`, `feedback` |
 
 Import another family through a declared public entry. The registry explicitly permits shared foundations for
 accessibility, controlled state, style composition, overlay geometry, and popup styles without exposing them to npm

@@ -5,8 +5,10 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
-import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import {
@@ -26,6 +28,7 @@ export type TimeSeriesChartProps = {
   readonly timestampUnit: 'seconds' | 'milliseconds';
   readonly formatTimestamp: (timestamp: number) => string;
   readonly formatValue: (value: number) => string;
+  readonly formatTick?: ((value: number) => string) | undefined;
   readonly markers?: ReadonlyArray<TimeSeriesMarker> | undefined;
   readonly height?: number | undefined;
   readonly actions?: ReactNode;
@@ -35,7 +38,7 @@ export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boole
 
 export type SmallMultiplesProps = Omit<
   TimeSeriesChartProps,
-  'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'markers'
+  'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'formatTick' | 'markers'
 > & {
   readonly charts: ReadonlyArray<{
     readonly id: string;
@@ -43,6 +46,7 @@ export type SmallMultiplesProps = Omit<
     readonly series: ReadonlyArray<TimeSeries>;
     readonly description?: string | undefined;
     readonly formatValue: (value: number) => string;
+    readonly formatTick?: ((value: number) => string) | undefined;
     readonly markers?: ReadonlyArray<TimeSeriesMarker> | undefined;
   }>;
 };
@@ -70,27 +74,6 @@ const styles = stylex.create({
   timeAxisInset: (left: number, right: number) => ({ paddingInlineStart: left, paddingInlineEnd: right }),
   timestamp: { flex: '1 1 0', minWidth: 0, overflowWrap: 'anywhere' },
   lastTimestamp: { textAlign: 'end' },
-  inspection: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'baseline',
-    columnGap: spacing.md,
-    rowGap: spacing.xs,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    minHeight: typography.captionLineHeight,
-    overflowWrap: 'anywhere',
-  },
-  values: { display: 'flex', flexWrap: 'wrap', columnGap: spacing.md, rowGap: spacing.xs, margin: 0, minWidth: 0 },
-  value: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    margin: 0,
-    minWidth: 0,
-    fontVariantNumeric: 'tabular-nums',
-  },
-  valueText: { margin: 0, color: colors.ink },
   muted: { color: colors.muted },
   markerList: {
     display: 'flex',
@@ -201,7 +184,9 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
     ...charts.flatMap((chart) =>
       chart.series.flatMap((series) =>
         series.points.flatMap((point) =>
-          point.value === null || !Number.isFinite(point.value) ? [] : [chart.formatValue(point.value).length * 7 + 12],
+          point.value === null || !Number.isFinite(point.value)
+            ? []
+            : [(chart.formatTick ?? chart.formatValue)(point.value).length * 7 + 12],
         ),
       ),
     ),
@@ -217,6 +202,7 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
           description={chart.description}
           series={chart.series}
           formatValue={chart.formatValue}
+          formatTick={chart.formatTick}
           markers={chart.markers}
           kind="line"
           isStacked={false}
@@ -235,6 +221,7 @@ function TimeChart({
   timestampUnit,
   formatTimestamp,
   formatValue,
+  formatTick = formatValue,
   markers = [],
   height = 180,
   actions,
@@ -325,7 +312,7 @@ function TimeChart({
   const high = observed.length === 0 ? 1 : maximum;
   const y = scaleLinear({ domain: [...observationDomain(low, high, kind === 'area')], range: [bottom, top] });
   const yTicks = y.ticks(3);
-  const left = axisWidth ?? Math.max(52, ...yTicks.map((tick) => formatValue(tick).length * 7 + 12));
+  const left = axisWidth ?? Math.max(44, ...yTicks.map((tick) => formatTick(tick).length * 7 + 12));
   const right = Math.max(left + 1, width - 16);
   const x = scaleLinear({ domain: [...observationDomain(first, last)], range: [left, right] });
 
@@ -402,9 +389,73 @@ function TimeChart({
 
   return (
     <div ref={rootRef} {...stylex.props(styles.frame)}>
-      <ChartFrame title={title} description={description} actions={actions}>
+      <ChartFrame
+        title={
+          <ChartInspectionTitle
+            title={title}
+            detail={active === undefined ? undefined : formatTimestamp(active.timestamp)}
+          />
+        }
+        description={description}
+        actions={
+          <>
+            {actions}{' '}
+            <ChartData title={title}>
+              <table {...stylex.props(styles.table)}>
+                <caption>{title} observations</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" {...stylex.props(styles.cell)}>
+                      Time ({timestampUnit})
+                    </th>
+                    {prepared.map((item) => (
+                      <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
+                        {item.label}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {points.map((point, index) => (
+                    <tr key={point.timestamp}>
+                      <th scope="row" {...stylex.props(styles.cell)}>
+                        {formatTimestamp(point.timestamp)}
+                      </th>
+                      {prepared.map((item) => (
+                        <td key={item.id} {...stylex.props(styles.cell)}>
+                          {item.points[index]?.value === null || item.points[index]?.value === undefined
+                            ? 'Unavailable'
+                            : formatValue(item.points[index].value)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </ChartData>
+          </>
+        }
+      >
         <div {...stylex.props(styles.body)}>
-          <ChartLegend items={prepared.map(({ id, label, tone }) => ({ id, label, tone }))} />
+          <ChartInspection
+            id={inspectionId}
+            label={active === undefined ? undefined : formatTimestamp(active.timestamp)}
+            legend={prepared.map(({ id, label, tone }) => ({ id, label, tone }))}
+            rows={prepared.map((item) => {
+              const point = item.points.find((value) => value.timestamp === active?.timestamp);
+
+              return {
+                id: item.id,
+                label: item.label,
+                tone: item.tone,
+                value: point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value),
+              };
+            })}
+            x={x(active?.timestamp ?? first)}
+            width={width}
+            source={active?.source}
+            notes={markers.filter((marker) => marker.timestamp === active?.timestamp).map((marker) => marker.label)}
+          />
           <div ref={ref} {...stylex.props(chartStyles.plot)}>
             <svg
               role="img"
@@ -428,6 +479,12 @@ function TimeChart({
                 }
               }}
               onPointerDown={(event) => inspectClient(event.clientX)}
+              onPointerLeave={(event) => {
+                if (event.pointerType === 'mouse' && active?.source === 'pointer') {
+                  updateInspection(undefined);
+                }
+              }}
+              onBlur={() => updateInspection(undefined)}
               {...stylex.props(chartStyles.svg, chartStyles.inspectable, stylex.defaultMarker())}
             >
               {yTicks.map((tick) => (
@@ -440,7 +497,7 @@ function TimeChart({
                     dominantBaseline="middle"
                     {...stylex.props(chartStyles.label)}
                   >
-                    {formatValue(tick)}
+                    {formatTick(tick)}
                   </text>
                 </g>
               ))}
@@ -515,38 +572,6 @@ function TimeChart({
               )}
             </div>
           </div>
-          <div
-            id={inspectionId}
-            aria-live={active?.source === 'keyboard' ? 'polite' : 'off'}
-            {...stylex.props(styles.inspection)}
-          >
-            {active === undefined ? (
-              <span {...stylex.props(styles.muted)}>Point, tap, or use the arrow keys to inspect values.</span>
-            ) : (
-              <>
-                <span>{formatTimestamp(active.timestamp)}</span>
-                <dl {...stylex.props(styles.values)}>
-                  {prepared.map((item) => {
-                    const point = item.points.find((value) => value.timestamp === active.timestamp);
-
-                    return (
-                      <div key={item.id} {...stylex.props(styles.value)}>
-                        <dt>{item.label}</dt>
-                        <dd {...stylex.props(styles.valueText)}>
-                          {point?.value === null || point === undefined ? 'Unavailable' : formatValue(point.value)}
-                        </dd>
-                      </div>
-                    );
-                  })}
-                </dl>
-                {markers
-                  .filter((marker) => marker.timestamp === active.timestamp)
-                  .map((marker) => (
-                    <span key={marker.id}>{marker.label}</span>
-                  ))}
-              </>
-            )}
-          </div>
           {markers.length > 0 && (
             <ul {...stylex.props(styles.markerList)}>
               {markers.map((marker) => (
@@ -558,39 +583,6 @@ function TimeChart({
             </ul>
           )}
         </div>
-        <ChartDataDisclosure>
-          <table {...stylex.props(styles.table)}>
-            <caption>{title} observations</caption>
-            <thead>
-              <tr>
-                <th scope="col" {...stylex.props(styles.cell)}>
-                  Time ({timestampUnit})
-                </th>
-                {prepared.map((item) => (
-                  <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
-                    {item.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {points.map((point, index) => (
-                <tr key={point.timestamp}>
-                  <th scope="row" {...stylex.props(styles.cell)}>
-                    {formatTimestamp(point.timestamp)}
-                  </th>
-                  {prepared.map((item) => (
-                    <td key={item.id} {...stylex.props(styles.cell)}>
-                      {item.points[index]?.value === null || item.points[index]?.value === undefined
-                        ? 'Unavailable'
-                        : formatValue(item.points[index].value)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </ChartDataDisclosure>
       </ChartFrame>
     </div>
   );

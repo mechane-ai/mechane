@@ -257,7 +257,7 @@ module.exports = {
       comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
       severity: 'error',
       from: { path: '^(?:packages/browser/elements/packages)/(?:charts)/', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:charts|foundations|core|forms|feedback)/)' },
+      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:charts|foundations|core|forms|overlays|feedback)/)' },
     },
     {
       name: 'ui-dates-vendor-owner',

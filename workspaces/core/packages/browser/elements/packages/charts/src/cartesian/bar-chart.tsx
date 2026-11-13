@@ -1,15 +1,17 @@
 import * as stylex from '@stylexjs/stylex';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-values.tsx';
 import { ChartCursor } from '../chart-cursor.tsx';
-import { ChartDataDisclosure, ChartFrame, ChartLegend } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
+import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import { validateComposition } from './bar-data.ts';
@@ -19,29 +21,14 @@ import { CompositionBars } from './composition-bars.tsx';
 export type { BarSeries, BarBucket, BarComposition } from './bar-data.ts';
 
 const styles = stylex.create({
-  legend: { minHeight: typography.captionLineHeight },
   empty: { color: colors.muted, margin: 0, fontSize: typography.captionSize },
   plot: { marginBlock: spacing.md },
-  inspection: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    columnGap: spacing.md,
-    rowGap: spacing.xs,
-    minHeight: `calc(${typography.captionLineHeight} * 2)`,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-    fontVariantNumeric: 'tabular-nums',
-    overflowWrap: 'anywhere',
-  },
   guide: { fill: colors.canvas },
-  placeholderHint: { position: 'relative', minWidth: 0 },
-  placeholderDecoration: { position: 'absolute', inset: 0 },
-  hidden: { visibility: 'hidden' },
+  mutedMark: { opacity: 0.3 },
 });
 
 const selectionKeys: ReadonlySet<string> = new Set(['Enter', ' ']);
 const DEFAULT_HEIGHT = 200;
-const INSPECTION_HINT = 'Point, tap, or use the arrow keys to inspect values.';
 
 export type BarChartProps = {
   readonly title: string;
@@ -56,6 +43,8 @@ export type BarChartProps = {
   readonly mode?: 'grouped' | 'stacked' | undefined;
   readonly composition?: BarComposition | undefined;
   readonly formatValue: (value: number) => string;
+  readonly formatTick?: ((value: number) => string) | undefined;
+  readonly highlightedSeriesId?: string | undefined;
   readonly selection?: ChartSelection | undefined;
   readonly height?: number | undefined;
 };
@@ -67,17 +56,79 @@ export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'heig
 
 type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description'> & {
   readonly series: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>>;
+  readonly layoutSeries?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
+  readonly inspectionId: string;
+  readonly label?: string | undefined;
+  readonly detail?: string | undefined;
+  readonly summary?: string | undefined;
+  readonly rows?: ReadonlyArray<BarSeries> | undefined;
+  readonly index?: number | undefined;
+  readonly formatValue?: ((value: number) => string) | undefined;
+  readonly x?: number | undefined;
+  readonly width?: number | undefined;
+  readonly offset?: number | undefined;
+  readonly source?: 'pointer' | 'keyboard' | undefined;
+  readonly data?: ReactNode;
   readonly children: ReactNode;
 };
 
-function BarChartFrame({ title, description, series, children }: BarChartFrameProps): ReactNode {
-  const legend = series.map((item, index) => ({ id: item.id, label: item.label, tone: colorTone(item.tone, index) }));
+function BarChartFrame({
+  title,
+  description,
+  series,
+  layoutSeries,
+  children,
+  inspectionId,
+  label,
+  detail,
+  summary,
+  rows = [],
+  index = -1,
+  formatValue = String,
+  x = 0,
+  width = 0,
+  offset,
+  source,
+  data,
+}: BarChartFrameProps): ReactNode {
+  const legend = series.map((item, seriesIndex) => ({
+    id: item.id,
+    label: item.label,
+    tone: colorTone(item.tone, seriesIndex),
+  }));
+
+  const layoutLegend = layoutSeries?.map((item, seriesIndex) => ({
+    id: item.id,
+    label: item.label,
+    tone: colorTone(item.tone, seriesIndex),
+  }));
 
   return (
-    <ChartFrame title={title} description={description}>
-      <div {...stylex.props(styles.legend)}>
-        <ChartLegend items={legend} isScrollable />
-      </div>
+    <ChartFrame
+      title={<ChartInspectionTitle title={title} detail={detail} />}
+      description={description}
+      actions={<ChartData title={title}>{data}</ChartData>}
+    >
+      <ChartInspection
+        id={inspectionId}
+        label={label}
+        summary={summary}
+        legend={legend}
+        layoutLegend={layoutLegend}
+        rows={rows.map((item, seriesIndex) => ({
+          id: item.id,
+          label: item.label,
+          tone: colorTone(item.tone, seriesIndex),
+          value:
+            item.values[index] === null || item.values[index] === undefined
+              ? 'Unavailable'
+              : formatValue(item.values[index]),
+        }))}
+        x={x}
+        width={width}
+        offset={offset}
+        source={source}
+      />
       {children}
     </ChartFrame>
   );
@@ -90,6 +141,7 @@ export function BarChartPlaceholder({
   height = DEFAULT_HEIGHT,
 }: BarChartPlaceholderProps): ReactNode {
   const issue = barHeightError(height);
+  const inspectionId = useId();
 
   if (issue !== undefined) {
     return <ChartInputError title={title} description={description} message={issue} />;
@@ -97,20 +149,9 @@ export function BarChartPlaceholder({
 
   return (
     <div aria-hidden inert>
-      <BarChartFrame title={title} description={description} series={series}>
+      <BarChartFrame title={title} description={description} series={series} inspectionId={inspectionId}>
         <div {...stylex.props(chartStyles.plot, styles.plot)}>
           <Skeleton height={height} />
-        </div>
-        <div {...stylex.props(styles.inspection)}>
-          <span {...stylex.props(styles.placeholderHint)}>
-            <span {...stylex.props(styles.hidden)}>{INSPECTION_HINT}</span>
-            <span {...stylex.props(styles.placeholderDecoration)}>
-              <Skeleton height="100%" />
-            </span>
-          </span>
-        </div>
-        <div {...stylex.props(styles.hidden)}>
-          <ChartDataDisclosure>{null}</ChartDataDisclosure>
         </div>
       </BarChartFrame>
     </div>
@@ -179,6 +220,8 @@ export function BarChart({
   domain,
   mode = 'grouped',
   formatValue,
+  formatTick = formatValue,
+  highlightedSeriesId,
   selection,
   height = DEFAULT_HEIGHT,
   composition,
@@ -209,9 +252,6 @@ export function BarChart({
           values: composition.buckets.map((bucket) => (bucket.kind === 'gap' ? null : bucket.total)),
         };
 
-  const inspectedSeries =
-    context === undefined ? series : [context, ...(focusSeries === undefined ? [] : [focusSeries])];
-
   const disclosedSeries =
     context === undefined
       ? series
@@ -221,19 +261,43 @@ export function BarChart({
           ...(focusSeries === undefined || series.some((item) => item.id === focusSeries.id) ? [] : [focusSeries]),
         ];
 
-  const legend = series.length > 0 ? series : inspectedSeries;
-  const { ref, width } = usePlotWidth();
+  const legend = focusSeries !== undefined && context !== undefined ? [focusSeries, context] : series;
+  const { ref, width, element } = usePlotWidth();
   const inspectionId = useId();
   const [inspection, setInspection] = useState<{ readonly id: string; readonly source: 'pointer' | 'keyboard' }>();
   const [keyboardId, setKeyboardId] = useState<string>();
+
+  useEffect(() => {
+    function dismiss(event: globalThis.PointerEvent): void {
+      if (event.target instanceof Node && element?.contains(event.target) !== true) {
+        setInspection(undefined);
+      }
+    }
+
+    document.addEventListener('pointerdown', dismiss);
+
+    return () => document.removeEventListener('pointerdown', dismiss);
+  }, [element]);
+
   const activeIndex = categories.findIndex((category) => category.id === inspection?.id);
   const active = categories[activeIndex];
   const selectedIndex = categories.findIndex((category) => category.id === selection?.selectedId);
   const selected = categories[selectedIndex];
   const cursor = categories.find((category) => category.id === keyboardId) ?? selected ?? categories[0];
   const cursorIndex = categories.findIndex((category) => category.id === cursor?.id);
-  const readout = active ?? selected;
-  const readoutIndex = active === undefined ? selectedIndex : activeIndex;
+  const readout = active;
+  const readoutIndex = activeIndex;
+  const bucket = composition?.buckets[readoutIndex];
+
+  const inspectedSeries =
+    focusSeries !== undefined && context !== undefined
+      ? [focusSeries, context]
+      : context === undefined || bucket?.kind === 'parts'
+        ? series
+        : [];
+
+  const summary =
+    bucket === undefined ? undefined : bucket.kind === 'gap' ? 'No reported value' : formatValue(bucket.total);
 
   if (issue !== undefined) {
     return <ChartInputError title={title} description={description} message={issue} />;
@@ -241,7 +305,7 @@ export function BarChart({
 
   const bottom = height - 28;
   const y = scaleLinear({ domain: [...domain], range: [bottom, 12] });
-  const left = Math.max(52, ...y.ticks(3).map((tick) => formatValue(tick).length * 7 + 12));
+  const left = Math.max(44, ...y.ticks(3).map((tick) => formatTick(tick).length * 7 + 12));
   const right = Math.max(left + 1, width - 16);
   const x = scaleBand({ domain: categories.map((category) => category.id), range: [left, right], padding: 0.3 });
   const grouped = scaleBand({ domain: series.map((item) => item.id), range: [0, x.bandwidth()], padding: 0.08 });
@@ -252,7 +316,6 @@ export function BarChart({
   );
 
   const labelEvery = Math.max(1, Math.ceil((labelWidth + 16) / x.step()));
-  const hasData = categories.length > 0 && (series.length > 0 || composition !== undefined);
 
   const labelCharacters = Math.max(1, Math.floor((x.step() * labelEvery - 16) / 7));
 
@@ -310,7 +373,36 @@ export function BarChart({
   }
 
   return (
-    <BarChartFrame title={title} description={description} series={legend}>
+    <BarChartFrame
+      title={title}
+      description={description}
+      series={legend}
+      layoutSeries={series}
+      inspectionId={inspectionId}
+      label={readout?.label}
+      detail={
+        readout === undefined ? undefined : [readout.axisLabel ?? readout.label, summary].filter(Boolean).join(' · ')
+      }
+      summary={summary}
+      rows={inspectedSeries}
+      index={readoutIndex}
+      formatValue={formatValue}
+      x={(x(readout?.id ?? '') ?? left) + x.bandwidth() / 2}
+      width={width}
+      offset={x.bandwidth() / 2 + 8}
+      source={inspection?.source}
+      data={
+        <CategoricalValues
+          items={categories.map((category, index) => ({
+            id: category.id,
+            label: category.label,
+            valueLabel: barValueLabel(disclosedSeries, index, formatValue),
+            tone: 'neutral',
+          }))}
+          selection={selection}
+        />
+      }
+    >
       <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
         {categories.length === 0 || (series.length === 0 && composition === undefined) ? (
           <p {...stylex.props(styles.empty)}>No categories</p>
@@ -369,7 +461,7 @@ export function BarChart({
                   dominantBaseline="middle"
                   {...stylex.props(chartStyles.label)}
                 >
-                  {formatValue(tick)}
+                  {formatTick(tick)}
                 </text>
               </g>
             ))}
@@ -416,7 +508,10 @@ export function BarChart({
                           width={mode === 'stacked' ? x.bandwidth() : grouped.bandwidth()}
                           height={Math.max(value === 0 ? 1 : 0, Math.abs(end - start))}
                           fill={chartToneColors[colorTone(item.tone, seriesIndex)]}
-                          {...stylex.props(isHighlighted && chartStyles.selected)}
+                          {...stylex.props(
+                            isHighlighted && chartStyles.selected,
+                            highlightedSeriesId !== undefined && highlightedSeriesId !== item.id && styles.mutedMark,
+                          )}
                         />
                       );
                     })
@@ -430,6 +525,7 @@ export function BarChart({
                       width={x.bandwidth()}
                       y={y}
                       isHighlighted={selection?.selectedId === category.id || active?.id === category.id}
+                      highlightedSeriesId={highlightedSeriesId}
                     />
                   )}
                   {categoryIndex % labelEvery === 0 && (
@@ -456,40 +552,6 @@ export function BarChart({
           </svg>
         )}
       </div>
-      {hasData && (
-        <div
-          id={inspectionId}
-          aria-live={inspection?.source === 'pointer' ? 'off' : 'polite'}
-          {...stylex.props(styles.inspection)}
-        >
-          {readout === undefined ? (
-            <span {...stylex.props(styles.empty)}>{INSPECTION_HINT}</span>
-          ) : (
-            <>
-              <span>{readout.label}</span>
-              {inspectedSeries.map((item) => (
-                <span key={item.id}>
-                  {item.label}:{' '}
-                  {item.values[readoutIndex] === null || item.values[readoutIndex] === undefined
-                    ? 'Unavailable'
-                    : formatValue(item.values[readoutIndex])}
-                </span>
-              ))}
-            </>
-          )}
-        </div>
-      )}
-      <ChartDataDisclosure>
-        <CategoricalValues
-          items={categories.map((category, index) => ({
-            id: category.id,
-            label: category.label,
-            valueLabel: barValueLabel(disclosedSeries, index, formatValue),
-            tone: 'neutral',
-          }))}
-          selection={selection}
-        />
-      </ChartDataDisclosure>
     </BarChartFrame>
   );
 }
