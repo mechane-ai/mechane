@@ -86,6 +86,14 @@ export async function routineDeliverySurvivesRestart({ stack }: ScenarioInput): 
     ],
     schema: Mech,
   });
+
+  await waitFor({
+    name: 'the resumed routine to admit its due notification',
+    timeoutMs: Duration.toMillis(ROUTINE_INTERVAL),
+    read: () => showRoutine(selected),
+    accept: (routine) => Option.isSome(routine.lastNotificationId),
+  });
+
   await model.waitForCall({ marker, index: 0 });
 
   try {
