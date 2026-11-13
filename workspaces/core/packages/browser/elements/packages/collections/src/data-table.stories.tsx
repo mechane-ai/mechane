@@ -9,7 +9,10 @@ import { DataTable, DataTablePlaceholder, DataTableText, DataTableTextPlaceholde
 import type { DataTableColumn, DataTableSort } from './data-table.tsx';
 import { ListFooter } from './list-footer.tsx';
 
-const styles = stylex.create({ search: { width: 280, maxWidth: '100%' } });
+const styles = stylex.create({
+  search: { width: 280, maxWidth: '100%' },
+  fillFrame: { display: 'flex', flexDirection: 'column', height: 360, minWidth: 0 },
+});
 
 interface Run {
   readonly id: string;
@@ -31,6 +34,13 @@ const columns: ReadonlyArray<DataTableColumn<Run>> = [
 ];
 
 const displayColumns = columns.map(({ canSort: _sortable, ...column }) => column);
+
+const emptyColumns = [
+  ...displayColumns,
+  { id: 'identifier', label: 'Run ID', role: 'text', isSecondary: true, cell: (run) => run.id },
+  { id: 'updated', label: 'Updated', role: 'timestamp', cell: () => 'Nov 13, 2026' },
+  { id: 'actions', label: 'Actions', role: 'actions', cell: () => <Button>Review</Button> },
+] satisfies ReadonlyArray<DataTableColumn<Run>>;
 
 function PreparedRows() {
   const [query, setQuery] = useState('');
@@ -182,14 +192,39 @@ export const ColumnRoles: Story = {
 };
 
 export const Empty: Story = {
+  parameters: {
+    docs: {
+      description: { story: 'Empty feedback wraps to the table viewport and stays visible while wide columns scroll.' },
+    },
+  },
   render: () => (
     <DataTable
       rows={[]}
-      columns={displayColumns}
+      columns={emptyColumns}
       getRowId={(run) => run.id}
       caption="Runs — no results"
-      empty="No runs match these filters."
+      empty="No runs match these filters. Clear a filter or choose another date range to see recorded runs."
     />
+  ),
+};
+
+export const EmptyFill: Story = {
+  render: () => (
+    <div {...stylex.props(styles.fillFrame)}>
+      <DataTable
+        rows={[]}
+        columns={emptyColumns}
+        getRowId={(run) => run.id}
+        caption="Runs — empty collection"
+        empty={
+          <Stack>
+            <Text>No runs match these filters.</Text>
+            <Text>Clear a filter or choose another date range to see recorded runs.</Text>
+          </Stack>
+        }
+        window={{ height: 'fill' }}
+      />
+    </div>
   ),
 };
 

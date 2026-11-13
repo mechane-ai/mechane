@@ -92,6 +92,8 @@ Keep readable columns inside the table's named scroll region; narrow screens scr
 into a few characters or widening the page. The table owns cell insets from shared `pageGeometry`.
 Spanning empty and virtual spacer cells count only columns visible at the current responsive width, including selection.
 Use the same responsive condition for that count and column visibility, so empty rows do not introduce extra columns.
+Keep empty feedback and its actions within the visible viewport while wide columns scroll. Wrap the message to that
+width, including unbroken identifiers. Inspect empty content-sized and fill-height tables before and after horizontal scrolling.
 
 The default row is 48px high, with vertically centered content. Use `rowSizing="content"` when
 multiline records or controls cannot fit that height. Never crop an interactive control to preserve row geometry.

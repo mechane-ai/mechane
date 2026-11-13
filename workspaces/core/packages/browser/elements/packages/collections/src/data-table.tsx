@@ -37,6 +37,7 @@ const styles = stylex.create({
   fillFrame: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
   viewport: {
     'minWidth': 0,
+    'containerType': 'inline-size',
     'overflow': 'auto',
     'overscrollBehaviorY': 'auto',
     'outlineStyle': 'none',
@@ -202,7 +203,19 @@ const styles = stylex.create({
   contentViewport: { height: 'auto' },
   selection: { width: selectionColumnWidth, minWidth: 0, paddingInline: pageGeometry.inset },
   spacer: (height: number) => ({ height, padding: 0, borderWidth: 0 }),
-  empty: { padding: spacing.xxl, textAlign: 'center', color: colors.muted },
+  emptyCell: { padding: 0 },
+  empty: {
+    boxSizing: 'border-box',
+    position: 'sticky',
+    insetInlineStart: 0,
+    width: '100cqi',
+    maxWidth: '100%',
+    padding: spacing.xxl,
+    textAlign: 'center',
+    whiteSpace: 'normal',
+    overflowWrap: 'anywhere',
+    color: colors.muted,
+  },
   footer: { padding: pageGeometry.inset, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
   endContent: {
     'minHeight': controls.coarseTarget,
@@ -885,8 +898,8 @@ export function DataTable<Row extends object>({
             )}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={columnCount} {...stylex.props(styles.empty)}>
-                  {empty}
+                <td colSpan={columnCount} {...stylex.props(styles.emptyCell)}>
+                  <div {...stylex.props(styles.empty)}>{empty}</div>
                 </td>
               </tr>
             )}
