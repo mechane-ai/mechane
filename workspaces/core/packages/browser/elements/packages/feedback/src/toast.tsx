@@ -13,7 +13,7 @@ const styles = stylex.create({
     'flexWrap': 'wrap',
     'alignItems': 'center',
     'gap': spacing.sm,
-    'padding': spacing.lg,
+    'padding': spacing.md,
     ':has([data-close-button])': {
       paddingInlineEnd: {
         default: `calc(${spacing.md} + ${controls.height})`,
@@ -59,9 +59,23 @@ const styles = stylex.create({
     transitionDuration: `var(--elements-toast-duration, ${motion.duration}) !important`,
     transitionTimingFunction: `${motion.easing} !important`,
   },
-  content: { display: 'flex', flexDirection: 'column', flex: '1 1 12ch', minWidth: 0, gap: spacing.xxs },
-  title: { fontWeight: typography.mediumWeight },
-  description: { color: colors.muted },
+  content: { display: 'flex', flexDirection: 'column', flex: '1 1 24ch', minWidth: 0, gap: spacing.xxs },
+  title: {
+    fontWeight: typography.mediumWeight,
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    overflow: 'hidden',
+    overflowWrap: 'anywhere',
+  },
+  description: {
+    color: colors.muted,
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 2,
+    overflow: 'hidden',
+    overflowWrap: 'anywhere',
+  },
   icon: { display: 'flex', position: 'relative', flexShrink: 0, width: controls.iconSize, height: controls.iconSize },
   glyph: {
     width: controls.iconSize,

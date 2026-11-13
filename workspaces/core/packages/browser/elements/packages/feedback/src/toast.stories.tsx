@@ -180,7 +180,7 @@ function LongMessageExample(): ReactNode {
             description:
               'The selected records are available under /exports/workspace_platform_observability_archive_20261105.',
             duration: Infinity,
-            action: { label: 'Open export activity and download options', onClick: () => setOpened(true) },
+            action: { label: 'View export', onClick: () => setOpened(true) },
           })
         }
       >

@@ -54,6 +54,10 @@ Run the repository's automated accessibility checks where they exist; they do no
 Base UI is the adopted control behavior library. Elements wrappers keep its native form behavior and typed callbacks.
 Sonner owns notification stacking, timing, dismissal, and keyboard access. Mount one Toaster per application; report
 each operation through one feedback owner. Elements owns the toast's shared typography, color, geometry, and motion.
+Keep toast titles and descriptions brief, bounded to two visible lines each, with short action labels. Actions must not
+compress the message into a narrow column. Wrap actions instead, preserving keyboard access and touch targets.
+Opening a page does not warrant a notification. Put background status and durable diagnostics in their owning view.
+Use local initial-read failures and validation; a failed refresh may notify once while retaining usable content.
 Field composition associates labels, descriptions, and errors without adding a second form-state protocol.
 Empty values and form resets keep the semantics of the chosen native or Base UI control.
 

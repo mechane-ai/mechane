@@ -164,18 +164,7 @@ function TimeChartPlaceholder({
 
   return (
     <div aria-hidden inert {...stylex.props(styles.frame)}>
-      <ChartFrame
-        title={title}
-        description={description}
-        report={report}
-        series={legend}
-        actions={
-          <>
-            {actions}
-            <ChartData title={title}>{null}</ChartData>
-          </>
-        }
-      >
+      <ChartFrame title={title} description={description} report={report} series={legend} actions={actions}>
         <div {...stylex.props(styles.body)}>
           <ChartInspection
             id={inspectionId}
@@ -525,45 +514,41 @@ function TimeChart({
         description={description}
         report={report}
         series={prepared}
-        actions={
-          <>
-            {actions}{' '}
-            <ChartData title={title}>
-              <table {...stylex.props(styles.table)}>
-                <caption>{title} observations</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" {...stylex.props(styles.cell)}>
-                      Time ({timestampUnit})
-                    </th>
-                    {prepared.map((item) => (
-                      <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
-                        {item.label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {points.map((point, index) => (
-                    <tr key={point.timestamp}>
-                      <th scope="row" {...stylex.props(styles.cell)}>
-                        {formatTimestamp(point.timestamp)}
-                      </th>
-                      {prepared.map((item) => (
-                        <td key={item.id} {...stylex.props(styles.cell)}>
-                          {item.points[index]?.value === null || item.points[index]?.value === undefined
-                            ? 'Unavailable'
-                            : formatValue(item.points[index].value)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </ChartData>
-          </>
-        }
+        actions={actions}
       >
+        <ChartData>
+          <table {...stylex.props(styles.table)}>
+            <caption>{title} observations</caption>
+            <thead>
+              <tr>
+                <th scope="col" {...stylex.props(styles.cell)}>
+                  Time ({timestampUnit})
+                </th>
+                {prepared.map((item) => (
+                  <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
+                    {item.label}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {points.map((point, index) => (
+                <tr key={point.timestamp}>
+                  <th scope="row" {...stylex.props(styles.cell)}>
+                    {formatTimestamp(point.timestamp)}
+                  </th>
+                  {prepared.map((item) => (
+                    <td key={item.id} {...stylex.props(styles.cell)}>
+                      {item.points[index]?.value === null || item.points[index]?.value === undefined
+                        ? 'Unavailable'
+                        : formatValue(item.points[index].value)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </ChartData>
         <div {...stylex.props(styles.body)}>
           <ChartInspection
             id={inspectionId}

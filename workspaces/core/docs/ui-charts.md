@@ -39,8 +39,8 @@ subtle boundary. Supply mixed metrics with `report.summary`, or matching bar and
 `report.seriesValues`. Keys match the supplied series identifiers. Explicit undefined values reserve loading space. The
 period summary stays steady while the inspector shows an individual observation.
 
-Supply scoped controls through `report.actions` with explicit `density="compact"`. Bar and time-series reports place
-them beside their built-in Chart data action. Popup options and dialog contents keep standard density. The
+Supply scoped controls through `report.actions` with explicit `density="compact"`. Charts add no default data-dialog
+control. Popup options and dialog contents keep standard density. The
 [Report captions examples](../packages/browser/elements/packages/charts/src/chart-frame.stories.tsx) show local
 controls, matching loading geometry, and long labels at narrow widths. The
 [geometry guide](visual-system.md#geometry-and-alignment) owns caption and control sizing.
@@ -93,9 +93,9 @@ calculate a new embedding or select a dataset outside the supplied window.
 
 BarChart supports pointer, tap, and arrow-key inspection. Home and End reach the boundary categories; Escape dismisses
 the readout. An optional controlled selection responds to click or Enter. Category `label` retains the full meaning in
-inspection and the heading's Chart data action. The data dialog returns focus to its trigger when dismissed. Optional
-`axisLabel` supplies a concise tick such as “Oct 6” without changing record identity. Use `formatTick` for compact axes
-and `formatValue` for exact inspection and data values. Cartesian charts share an inspector beside desktop marks and a
+inspection and an accessible exact-value table. The application owns any visible breakdown table. Optional `axisLabel`
+supplies a concise tick such as “Oct 6” without changing record identity. Use `formatTick` for compact axes and
+`formatValue` for exact inspection and data values. Cartesian charts share an inspector beside desktop marks and a
 mobile legend with reserved value space. Keep a composed chart's focused series and independent context in its legend.
 Supply `highlightedSeriesId` for temporary emphasis from a linked row. The application retains selection and data
 ownership.

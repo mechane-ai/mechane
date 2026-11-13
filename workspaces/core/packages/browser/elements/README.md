@@ -223,7 +223,9 @@ as Select's scrollbar rules. The application owns nonce generation and its secur
 Mount one `Toaster` from `/feedback` and call its exported `toast` API for notifications. Elements includes Sonner's
 structural styles in the published stylesheet, so the production package injects no additional toast style tag. Keep
 initial-read failures and field validation local; retained-content refresh failures can use one notification with Retry.
-The application owns stable notification IDs and dismissal on recovery or navigation.
+Keep titles, descriptions and action labels brief; longer explanations belong in the relevant view. Shared toasts bound
+visible text and wrap actions without narrowing the message. Opening a page or discovering background status does not
+warrant a notification. The application owns stable IDs and dismissal on recovery or navigation.
 
 ## Loading content
 

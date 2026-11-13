@@ -115,8 +115,8 @@ function BarChartFrame({
       description={description}
       report={report}
       series={legend}
-      actions={<ChartData title={title}>{data}</ChartData>}
     >
+      <ChartData>{data}</ChartData>
       {hasUnknownLegend ? (
         <ChartLegendLoading />
       ) : (

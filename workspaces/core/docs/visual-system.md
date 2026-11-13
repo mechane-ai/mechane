@@ -74,9 +74,9 @@ Choose a heading by its scope:
 | Prose or form content within a section | `Subheading`; standard form controls.                                                              | Uses the containing reading column or form inset.                                |
 
 `ControlDensity` has only `standard` and `compact`; standard is the default. Set `density="compact"` on each supported
-report control and its matching placeholder. The built-in Chart data trigger is compact, while its dialog remains
-standard. Select and combobox popup contents also remain standard. A compound control scopes density to its own input,
-addons and buttons; an unrelated nested control keeps its own default. Layouts never propagate density.
+report control and its matching placeholder. Charts add no default data-dialog control. Select and combobox popup
+contents also remain standard. A compound control scopes density to its own input, addons and buttons; an unrelated
+nested control keeps its own default. Layouts never propagate density.
 
 Keep role decisions independent. A collection inside a report may still define an independent browsing task and use its
 standard heading and controls. The 16px content edge and full-width table rows remain the same at both densities.
@@ -136,9 +136,9 @@ Row and Stack compositions own spacing; individual children do not accumulate co
 submission rows, and SettingsRow aligns labels with one bounded field column. Applications own the content and
 callbacks.
 
-Supply scoped report actions through `report.actions`, with explicit compact density on their controls. The chart places
-them beside its built-in Chart data action. Keep page commands in the page toolbar and collection commands with their
-independent collection. Density does not change action ownership or hide actions needed for recovery.
+Supply scoped report actions through `report.actions`, with explicit compact density on their controls. The chart does
+not add unrelated actions. Keep page commands in the page toolbar and collection commands with their independent
+collection. Density does not change action ownership or hide actions needed for recovery.
 
 Supply a chart's mixed metrics through `report.summary`. Use `report.seriesValues` when period metrics correspond to its
 series. The chart reuses their labels and colors. Metric supplies inline, statistic and headline presentations, with
