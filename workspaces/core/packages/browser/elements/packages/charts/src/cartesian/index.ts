@@ -13,5 +13,12 @@ export type {
   TimeSeriesChartPlaceholderProps,
   AreaChartProps,
   SmallMultiplesProps,
+  SmallMultiplesPlaceholderProps,
 } from './time-series.tsx';
-export { LineChart, AreaChart, SmallMultiples, TimeSeriesChartPlaceholder } from './time-series.tsx';
+export {
+  LineChart,
+  AreaChart,
+  SmallMultiples,
+  SmallMultiplesPlaceholder,
+  TimeSeriesChartPlaceholder,
+} from './time-series.tsx';

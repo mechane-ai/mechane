@@ -16,12 +16,17 @@ Keep labels, units, formatting, and evidence meaning with the consumer. Keep vis
 Make the same values available as readable text. Distinguish unavailable evidence from a zero duration and a point.
 Support keyboard selection with an accessible name and visible focus. Keep labels and values readable in narrow layouts.
 
+Use `report` for a standalone analytical section. Its shared ChartFrame owns the visible title, metadata, and supplied
+summary above the rows. Keep exact row timing directly available alongside selection. When a row updates another
+region, supply its `controls` identifier so the native button exposes that relationship through `aria-controls`.
+
 ## Checks
 
 Inspect interval, point, unavailable, zero-duration, overlapping, and long-label stories in the built catalog.
 Confirm every row uses the same scale and that missing endpoints never produce a completed bar.
 Select a row by keyboard, update selection from its owner, and refresh reordered input with stable identifiers.
 Read the same evidence without the graphic, and compare its labels and values with the plotted records.
+Inspect the Report story and follow a selected row's controls relationship to its recorded detail.
 
 ## Local adaptations
 

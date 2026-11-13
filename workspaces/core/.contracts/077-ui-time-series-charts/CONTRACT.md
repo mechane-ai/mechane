@@ -35,6 +35,15 @@ Mark only the focused plot's keyboard cursor when small multiples share inspecti
 Keep inspection open when equivalent observations arrive in new arrays, and close it when values, series identity, or markers change.
 Keep inspection details inside the viewport and in the active theme, and keep series legends visible while idle.
 
+Use SmallMultiples for measures compared on the same observation timestamps. Share the plot gutter and show the
+visible date axis beneath the final panel. Keep each panel's value scale, units, sample population and exact-data
+action independent. Show one inspection surface at the source panel while the shared timestamp guides all panels.
+Keep dates available through every panel's keyboard inspection and Chart data action.
+
+Pass each panel's report summary and metadata into the chart frame. When seriesValues supplies the period summary,
+use the supplied series labels and tones once and keep those period values steady during daily inspection.
+Use SmallMultiplesPlaceholder with the same known panels, summary shape and height for an initial read.
+
 ## Checks
 
 Render examples with a gap, irregular intervals, a single observation, a partial period, and no observations.
@@ -42,6 +51,8 @@ Inspect one timestamp by pointer, touch, and keyboard, and confirm the displayed
 Replace the data with equivalent arrays and then with changed values, and confirm inspection persists and then closes.
 Review consumer projections for units, aggregation, timestamp order, and color identity.
 Inspect light and dark themes and a narrow layout with inspection details open.
+Compare AlignedReports and AlignedReportsLoading in the Cartesian catalog. Verify one visible date axis, matching
+panel geometry, independent value units, and one source-panel inspector with linked guides, including across a gap.
 
 ## Local adaptations
 

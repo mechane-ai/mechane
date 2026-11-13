@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Details } from '../../../collections/src/index.ts';
 import { Muted, Panel, Stack } from '../../../core/src/index.ts';
+import type { ChartReport } from '../chart-frame.tsx';
 import { Waterfall } from './waterfall.tsx';
 import type { WaterfallItem } from './waterfall.tsx';
 
@@ -88,45 +89,58 @@ const partialTiming: ReadonlyArray<WaterfallItem> = [
 function SelectableWaterfall({
   items,
   end = 1200,
+  report,
 }: {
   readonly items: ReadonlyArray<WaterfallItem>;
   readonly end?: number;
+  readonly report?: ChartReport;
 }): ReactNode {
+  const detailsId = useId();
   const [selectedId, setSelectedId] = useState<string>();
   const selected = items.find((item) => item.id === selectedId);
 
+  const chart = (
+    <Waterfall
+      items={items.map((item) => ({ ...item, controls: detailsId }))}
+      start={0}
+      end={end}
+      label="Operation timing"
+      report={report}
+      rowLabel="Operation"
+      summaryLabel="Recorded result"
+      emptyLabel="No timing records are available."
+      selectedId={selectedId}
+      onSelect={setSelectedId}
+      formatOffset={(offset) => `${offset} ms`}
+    />
+  );
+
   return (
     <Stack>
-      <Panel isPadded={false}>
-        <Waterfall
-          items={items}
-          start={0}
-          end={end}
-          label="Example operation timing"
-          rowLabel="Operation"
-          summaryLabel="Recorded result"
-          emptyLabel="No timing records are available."
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          formatOffset={(offset) => `${offset} ms`}
-        />
-      </Panel>
-      {selected === undefined ? (
-        <Muted>Select an operation to inspect its recorded result.</Muted>
-      ) : (
-        <Details
-          items={[
-            { label: 'Operation', value: selected.label },
-            { label: 'Measured boundaries', value: selected.detail },
-            { label: 'Result', value: selected.summary },
-          ]}
-        />
-      )}
+      {report === undefined ? <Panel isPadded={false}>{chart}</Panel> : chart}
+      <div id={detailsId}>
+        {selected === undefined ? (
+          <Muted>Select an operation to inspect its recorded result.</Muted>
+        ) : (
+          <Details
+            items={[
+              { label: 'Operation', value: selected.label },
+              { label: 'Measured boundaries', value: selected.detail },
+              { label: 'Result', value: selected.summary },
+            ]}
+          />
+        )}
+      </div>
     </Stack>
   );
 }
 
 export const Recommended: Story = { render: () => <SelectableWaterfall items={intervals} /> };
+
+export const Report: Story = {
+  render: () => <SelectableWaterfall items={intervals} report={{ meta: '3 recorded intervals' }} />,
+};
+
 export const PointsAndUnavailableTiming: Story = { render: () => <SelectableWaterfall items={partialTiming} /> };
 
 export const UnavailableTiming: Story = {

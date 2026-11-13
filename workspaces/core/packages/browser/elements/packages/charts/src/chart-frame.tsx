@@ -1,12 +1,23 @@
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { Collapsible } from '../../core/src/index.ts';
+import { Collapsible, SectionHeading } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, controls, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, pageGeometry, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
+import { ChartSeriesSummary } from './chart-series-summary.tsx';
 import { chartToneColors } from './chart-theme.ts';
-import type { ChartTone } from './chart-theme.ts';
+import type { ChartLegendItem } from './chart-theme.ts';
+
+export type ChartReport = { readonly meta?: ReactNode; readonly summary?: ReactNode; readonly seriesValues?: never };
+
+export type ChartSeriesReport =
+  | ChartReport
+  | {
+      readonly meta?: ReactNode;
+      readonly summary?: never;
+      readonly seriesValues: Readonly<Record<string, string | undefined>>;
+    };
 
 export type ChartSelection = { readonly selectedId: string | undefined; readonly onSelect: (id: string) => void };
 
@@ -16,9 +27,11 @@ export type ChartFrameProps = {
   readonly children: ReactNode;
   readonly actions?: ReactNode;
   readonly footer?: ReactNode;
+  readonly report?: ChartSeriesReport | undefined;
+  readonly series?: ReadonlyArray<ChartLegendItem> | undefined;
 };
 
-export type ChartLegendItem = { readonly id: string; readonly label: string; readonly tone: ChartTone };
+export type { ChartLegendItem } from './chart-theme.ts';
 
 export type ChartLegendProps = {
   readonly items: ReadonlyArray<ChartLegendItem>;
@@ -37,6 +50,9 @@ const styles = stylex.create({
     fontWeight: typography.regularWeight,
     lineHeight: typography.bodyLineHeight,
   },
+  report: { borderWidth: 1, borderStyle: 'solid', borderColor: colors.line },
+  reportBody: { minWidth: 0, padding: pageGeometry.inset },
+  summary: { marginBlockEnd: spacing.lg, minWidth: 0 },
   heading: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -154,8 +170,39 @@ const styles = stylex.create({
   },
 });
 
-export function ChartFrame({ title, description, children, actions, footer }: ChartFrameProps): ReactNode {
+export function ChartFrame({
+  title,
+  description,
+  children,
+  actions,
+  footer,
+  report,
+  series = [],
+}: ChartFrameProps): ReactNode {
   const titleId = useId();
+
+  if (report !== undefined) {
+    const summary =
+      report.seriesValues === undefined ? (
+        report.summary
+      ) : (
+        <ChartSeriesSummary series={series} values={report.seriesValues} />
+      );
+
+    return (
+      <figure aria-labelledby={titleId} {...stylex.props(styles.frame, styles.report)}>
+        <figcaption>
+          <SectionHeading id={titleId} title={title} meta={report.meta} actions={actions} />
+        </figcaption>
+        <div {...stylex.props(styles.reportBody)}>
+          {summary !== undefined && <div {...stylex.props(styles.summary)}>{summary}</div>}
+          {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
+          {children}
+          {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}
+        </div>
+      </figure>
+    );
+  }
 
   return (
     <figure aria-labelledby={titleId} {...stylex.props(styles.frame)}>

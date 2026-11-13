@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Notice } from '../../feedback/src/index.ts';
 import { ChartFrame } from './chart-frame.tsx';
+import type { ChartSeriesReport } from './chart-frame.tsx';
 
 export function isFiniteDomain(domain: readonly [number, number]): boolean {
   const hasFiniteBounds = Number.isFinite(domain[0]) && Number.isFinite(domain[1]);
@@ -16,13 +17,15 @@ export function ChartInputError({
   title,
   description,
   message,
+  report,
 }: {
   readonly title: string;
   readonly description?: ReactNode;
   readonly message: string;
+  readonly report?: ChartSeriesReport | undefined;
 }): ReactNode {
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame title={title} description={description} report={report}>
       <Notice hasError>{message}</Notice>
     </ChartFrame>
   );

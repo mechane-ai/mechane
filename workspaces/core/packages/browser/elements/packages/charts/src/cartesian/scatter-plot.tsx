@@ -7,7 +7,7 @@ import { Slider } from '../../../forms/src/index.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -33,6 +33,7 @@ export type ScatterRangeSelection = {
 
 export type ScatterPlotProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description: string;
   readonly points: ReadonlyArray<ScatterPoint>;
   readonly xDomain: readonly [number, number];
@@ -123,6 +124,7 @@ const styles = stylex.create({
 export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   const {
     title,
+    report,
     description,
     points,
     xDomain,
@@ -140,7 +142,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   const problem = scatterProblem(props);
 
   if (problem !== null) {
-    return <ChartInputError title={title} description={description} message={problem} />;
+    return <ChartInputError title={title} report={report} description={description} message={problem} />;
   }
 
   const scaleX = scaleLinear({
@@ -154,6 +156,7 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         selection !== undefined && points.length > 0 ? (

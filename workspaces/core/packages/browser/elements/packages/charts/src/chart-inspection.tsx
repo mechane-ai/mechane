@@ -19,6 +19,7 @@ type ChartInspectionProps = {
   readonly offset?: number | undefined;
   readonly source: 'pointer' | 'keyboard' | undefined;
   readonly notes?: ReadonlyArray<string> | undefined;
+  readonly hasSeriesSummary?: boolean | undefined;
 };
 
 const styles = stylex.create({
@@ -72,6 +73,7 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     overflowWrap: 'anywhere',
   },
+  summaryInspector: { display: { default: 'grid', [conditions.compactText]: 'grid' } },
   position: (left: number, width: number) => ({ left, width }),
   heading: { display: 'flex', justifyContent: 'space-between', gap: spacing.sm, fontWeight: typography.mediumWeight },
   values: { display: 'grid', gap: spacing.xs, margin: 0 },
@@ -119,6 +121,7 @@ export function ChartInspection({
   offset = 16,
   source,
   notes = [],
+  hasSeriesSummary = false,
 }: ChartInspectionProps): ReactNode {
   const inspectorWidth = Math.min(260, width);
   const preferredLeft = x > width / 2 ? x - inspectorWidth - offset : x + offset;
@@ -133,40 +136,48 @@ export function ChartInspection({
 
   return (
     <div {...stylex.props(styles.frame)}>
-      <div {...stylex.props(styles.legends)}>
-        {layoutLegend !== undefined && (
-          <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
-            {layoutLegend.map((item) => (
+      {!hasSeriesSummary && (
+        <div {...stylex.props(styles.legends)}>
+          {layoutLegend !== undefined && (
+            <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
+              {layoutLegend.map((item) => (
+                <li key={item.id} {...stylex.props(styles.item)}>
+                  <span {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+                  <span {...stylex.props(styles.itemText)}>
+                    {item.label}
+                    <span {...stylex.props(styles.mobileValue)} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
+            {legend.map((item) => (
               <li key={item.id} {...stylex.props(styles.item)}>
-                <span {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+                <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
                 <span {...stylex.props(styles.itemText)}>
                   {item.label}
-                  <span {...stylex.props(styles.mobileValue)} />
+                  <span {...stylex.props(styles.mobileValue)}>
+                    {label === undefined ? '' : (rows.find((row) => row.id === item.id)?.value ?? '—')}
+                  </span>
                 </span>
               </li>
             ))}
           </ul>
-        )}
-        <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
-          {legend.map((item) => (
-            <li key={item.id} {...stylex.props(styles.item)}>
-              <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
-              <span {...stylex.props(styles.itemText)}>
-                {item.label}
-                <span {...stylex.props(styles.mobileValue)}>
-                  {label === undefined ? '' : (rows.find((row) => row.id === item.id)?.value ?? '—')}
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
+        </div>
+      )}
       <span id={id} aria-live={source === 'keyboard' ? 'polite' : 'off'} {...stylex.props(styles.accessible)}>
         {text.join(' · ')}
       </span>
       {label !== undefined && (
         <div aria-hidden {...stylex.props(styles.anchor)}>
-          <div {...stylex.props(styles.inspector, styles.position(left, inspectorWidth))}>
+          <div
+            {...stylex.props(
+              styles.inspector,
+              hasSeriesSummary && styles.summaryInspector,
+              styles.position(left, inspectorWidth),
+            )}
+          >
             <div {...stylex.props(styles.heading)}>
               <span>{label}</span>
               {summary !== undefined && <span>{summary}</span>}

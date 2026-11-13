@@ -4,7 +4,7 @@ import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
@@ -20,6 +20,7 @@ export type MatrixCell = { readonly id: string; readonly rowId: string; readonly
 
 export type MatrixProps = HeatmapScale & {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description: string;
   readonly rows: ReadonlyArray<MatrixAxisItem>;
   readonly columns: ReadonlyArray<MatrixAxisItem>;
@@ -130,6 +131,7 @@ const MAX_CELL_TEXT_LENGTH = 6;
 
 export function Matrix({
   title,
+  report,
   description,
   rows,
   columns,
@@ -145,7 +147,7 @@ export function Matrix({
   const problem = matrixProblem({ rows, columns, cells, domain, palette });
 
   if (problem !== null) {
-    return <ChartInputError title={title} description={description} message={problem} />;
+    return <ChartInputError title={title} report={report} description={description} message={problem} />;
   }
 
   const cellRows = new Map<string, Map<string, MatrixCell>>();
@@ -169,6 +171,7 @@ export function Matrix({
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         <div {...stylex.props(styles.footer)}>

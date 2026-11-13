@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
@@ -18,6 +18,7 @@ export type HeatmapToken = {
 
 export type TokenHeatmapProps = HeatmapScale & {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description: string;
   readonly tokens: ReadonlyArray<HeatmapToken>;
   readonly valueLabel: string;
@@ -93,6 +94,7 @@ export const MAX_HEATMAP_TOKENS = 2048;
 
 export function TokenHeatmap({
   title,
+  report,
   description,
   tokens,
   domain,
@@ -105,7 +107,7 @@ export function TokenHeatmap({
   const problem = tokenProblem({ tokens, domain, palette });
 
   if (problem !== null) {
-    return <ChartInputError title={title} description={description} message={problem} />;
+    return <ChartInputError title={title} report={report} description={description} message={problem} />;
   }
 
   const selected = tokens.find((token) => token.id === selection?.selectedId);
@@ -113,6 +115,7 @@ export function TokenHeatmap({
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         <div {...stylex.props(styles.footer)}>

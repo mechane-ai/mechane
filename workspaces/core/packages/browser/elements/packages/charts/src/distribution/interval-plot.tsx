@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
 import { ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -22,6 +22,7 @@ export type IntervalDatum = {
 
 export type IntervalPlotProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string;
   readonly items: ReadonlyArray<IntervalDatum>;
   readonly domain: NumericDomain;
@@ -34,6 +35,7 @@ export type IntervalPlotProps = {
 
 export function IntervalPlot({
   title,
+  report,
   description,
   items,
   domain,
@@ -47,13 +49,13 @@ export function IntervalPlot({
   const inputError = intervalInputError({ items, domain });
 
   if (inputError !== undefined) {
-    return <ChartInputError title={title} description={description} message={inputError} />;
+    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
   }
 
   const scale = scaleLinear({ domain: [...domain], range: [0, width] });
 
   return (
-    <ChartFrame title={title} description={description} footer={`${valueLabel} · ${intervalLabel}`}>
+    <ChartFrame title={title} report={report} description={description} footer={`${valueLabel} · ${intervalLabel}`}>
       {items.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (

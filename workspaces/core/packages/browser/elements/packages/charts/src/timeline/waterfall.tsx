@@ -5,6 +5,8 @@ import type { ReactNode, Ref } from 'react';
 import { Text } from '../../../core/src/index.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, shadows, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
+import { ChartFrame } from '../chart-frame.tsx';
+import type { ChartReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 
 type WaterfallGeometry =
@@ -19,6 +21,7 @@ export type WaterfallItem = {
   readonly summary: string;
   readonly tone: 'neutral' | 'positive' | 'negative';
   readonly geometry: WaterfallGeometry;
+  readonly controls?: string;
 };
 
 type WaterfallProps = {
@@ -26,6 +29,7 @@ type WaterfallProps = {
   readonly start: number;
   readonly end: number;
   readonly label: string;
+  readonly report?: ChartReport | undefined;
   readonly rowLabel: string;
   readonly summaryLabel: string;
   readonly emptyLabel: string;
@@ -135,6 +139,7 @@ export function Waterfall({
   start,
   end,
   label,
+  report,
   rowLabel,
   summaryLabel,
   emptyLabel,
@@ -146,7 +151,7 @@ export function Waterfall({
   const problem = waterfallProblem({ items, start, end });
 
   if (problem !== undefined) {
-    return <ChartInputError title={label} message={problem} />;
+    return <ChartInputError title={label} report={report} message={problem} />;
   }
 
   const span = end - start;
@@ -154,7 +159,7 @@ export function Waterfall({
   const ticks = span > 0 ? TICKS : [0];
   const hasTiming = items.some((item) => item.geometry.kind !== 'unavailable');
 
-  return (
+  const rows = (
     <div role="group" aria-label={label} {...stylex.props(styles.frame)}>
       <div {...stylex.props(styles.grid, styles.head)}>
         <Text variant="caption" tone="muted">
@@ -187,6 +192,7 @@ export function Waterfall({
             ref={selectedId === item.id ? selectedRef : undefined}
             type="button"
             aria-pressed={selectedId === item.id}
+            aria-controls={item.controls}
             aria-label={`${item.label} · ${item.detail} · ${item.summary} · ${timing}`}
             onClick={() => onSelect(item.id)}
             {...stylex.props(styles.grid, styles.row, selectedId === item.id && styles.active)}
@@ -237,6 +243,14 @@ export function Waterfall({
         );
       })}
     </div>
+  );
+
+  return report === undefined ? (
+    rows
+  ) : (
+    <ChartFrame title={label} report={report}>
+      {rows}
+    </ChartFrame>
   );
 }
 

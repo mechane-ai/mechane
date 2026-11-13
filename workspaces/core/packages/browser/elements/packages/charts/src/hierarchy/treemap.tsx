@@ -5,7 +5,7 @@ import { colors, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -19,6 +19,7 @@ const styles = stylex.create({
 
 export type TreemapProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string | undefined;
   readonly items: ReadonlyArray<BreakdownItem>;
   readonly formatValue: (value: number) => string;
@@ -34,7 +35,15 @@ type TreemapDatum = {
   readonly children?: ReadonlyArray<TreemapDatum>;
 };
 
-export function Treemap({ title, description, items, formatValue, selection, height = 180 }: TreemapProps): ReactNode {
+export function Treemap({
+  title,
+  report,
+  description,
+  items,
+  formatValue,
+  selection,
+  height = 180,
+}: TreemapProps): ReactNode {
   const issue = validateBreakdown(items);
   const total = items.reduce((sum, item) => sum + (item.value ?? 0), 0);
   const { ref, width } = usePlotWidth();
@@ -43,6 +52,7 @@ export function Treemap({ title, description, items, formatValue, selection, hei
     return (
       <ChartInputError
         title={title}
+        report={report}
         description={description}
         message={issue ?? 'Chart height must be at least 48 pixels.'}
       />
@@ -60,7 +70,7 @@ export function Treemap({ title, description, items, formatValue, selection, hei
   ).sum((datum) => datum.value);
 
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame title={title} report={report} description={description}>
       <div ref={ref} {...stylex.props(chartStyles.plot)}>
         {total === 0 ? (
           <p {...stylex.props(styles.empty)}>No positive values to size the areas</p>

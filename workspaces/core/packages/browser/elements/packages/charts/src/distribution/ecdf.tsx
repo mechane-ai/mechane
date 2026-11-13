@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -14,6 +14,7 @@ export type ECDFPoint = { readonly id: string; readonly value: number; readonly 
 
 export type ECDFProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string;
   readonly points: ReadonlyArray<ECDFPoint>;
   readonly domain: NumericDomain;
@@ -28,6 +29,7 @@ export type ECDFProps = {
 
 export function ECDF({
   title,
+  report,
   description,
   points,
   domain,
@@ -42,7 +44,7 @@ export function ECDF({
   const inputError = ecdfInputError({ points, domain });
 
   if (inputError !== undefined) {
-    return <ChartInputError title={title} description={description} message={inputError} />;
+    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
   }
 
   const yScale = scaleLinear({ domain: [0, 1], range: [distributionGeometry.height, 0] });
@@ -51,6 +53,7 @@ export function ECDF({
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         selection !== undefined && points.length > 0 ? (

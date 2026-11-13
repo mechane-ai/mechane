@@ -4,7 +4,7 @@ import { colors, spacing, typography } from '../../../foundations/src/tokens.sty
 import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 
@@ -25,6 +25,7 @@ const styles = stylex.create({
 
 export type BreakdownBarProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string | undefined;
   readonly items: ReadonlyArray<BreakdownItem>;
   readonly total: number;
@@ -34,6 +35,7 @@ export type BreakdownBarProps = {
 
 export function BreakdownBar({
   title,
+  report,
   description,
   items,
   total,
@@ -45,13 +47,14 @@ export function BreakdownBar({
   const roundingTolerance = Number.EPSILON * Math.max(recorded, total, 1) * items.length;
 
   if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} message={issue} />;
+    return <ChartInputError title={title} report={report} description={description} message={issue} />;
   }
 
   if (!Number.isFinite(total) || total < 0 || recorded - total > roundingTolerance) {
     return (
       <ChartInputError
         title={title}
+        report={report}
         description={description}
         message="The total must be finite and at least the sum of recorded values."
       />
@@ -59,7 +62,7 @@ export function BreakdownBar({
   }
 
   return (
-    <ChartFrame title={title} description={description}>
+    <ChartFrame title={title} report={report} description={description}>
       {items.length === 0 ? (
         <p {...stylex.props(styles.empty)}>No values</p>
       ) : (

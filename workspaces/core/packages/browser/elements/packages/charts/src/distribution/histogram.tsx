@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -21,6 +21,7 @@ export type HistogramBin = {
 
 export type HistogramProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string;
   readonly bins: ReadonlyArray<HistogramBin>;
   readonly domain: NumericDomain;
@@ -36,6 +37,7 @@ export type HistogramProps = {
 
 export function Histogram({
   title,
+  report,
   description,
   bins,
   domain,
@@ -51,7 +53,7 @@ export function Histogram({
   const inputError = histogramInputError({ bins, domain, maximumCount });
 
   if (inputError !== undefined) {
-    return <ChartInputError title={title} description={description} message={inputError} />;
+    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
   }
 
   const yScale = scaleLinear({ domain: [0, maximumCount], range: [distributionGeometry.height, 0] });
@@ -60,6 +62,7 @@ export function Histogram({
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         selection !== undefined && bins.length > 0 ? (

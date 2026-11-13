@@ -53,6 +53,14 @@ category selection and keeps the independent context visible. Inspect both amoun
 Use interruptible transform and opacity transitions for series focus under contract 073.
 
 Cartesian charts share chart-owned inspection and a labeled Chart data action in their heading.
+Use a full chart's `report` input for an inset report with its title, metadata, period summary and plot in one frame.
+The frame uses the shared `SectionHeading`; its body owns the inset and summary-to-plot spacing.
+Supply mixed metrics through `report.summary`. Bar and time-series charts also accept `report.seriesValues`, keyed by
+their supplied series identifiers. This summary reuses series labels and tones, and replaces the idle legend.
+An undefined series value reserves loading space. Supply explicit text for a known unavailable value.
+Keep period summaries stable while inspection shows the selected observation. Give each sample count or scope one owner.
+The report and its loading representation share the same frame, title and summary geometry.
+Use the same report input across the other full graphic families; passive sparklines retain their compact representation.
 Keep compact axis formatting separate from the exact inspection formatter. Inspect a parts bucket with its supplied
 components, a total-only bucket with its independent total, and a gap with an explicit missing value.
 Match a focused chart's legend to its focused series and independent context. Row highlighting changes emphasis only.

@@ -12,6 +12,8 @@ export type ChartTone =
   | 'negative'
   | 'neutral';
 
+export type ChartLegendItem = { readonly id: string; readonly label: string; readonly tone: ChartTone };
+
 export const chartToneColors: Readonly<Record<ChartTone, string>> = {
   series1: chartColors.series1,
   series2: chartColors.series2,

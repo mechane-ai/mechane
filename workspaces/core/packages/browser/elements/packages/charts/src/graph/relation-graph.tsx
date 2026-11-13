@@ -5,7 +5,7 @@ import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -41,6 +41,7 @@ export type RelationGroup = {
 
 export type RelationGraphProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description: string;
   readonly nodes: ReadonlyArray<RelationNode>;
   readonly edges: ReadonlyArray<RelationEdge>;
@@ -141,6 +142,7 @@ export const MAX_RELATION_DIMENSION = 8192;
 
 export function RelationGraph({
   title,
+  report,
   description,
   nodes,
   edges,
@@ -155,7 +157,7 @@ export function RelationGraph({
   const problem = graphProblem({ nodes, edges, groups, width, height });
 
   if (problem !== null) {
-    return <ChartInputError title={title} description={description} message={problem} />;
+    return <ChartInputError title={title} report={report} description={description} message={problem} />;
   }
 
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
@@ -167,6 +169,7 @@ export function RelationGraph({
     return (
       <ChartInputError
         title={title}
+        report={report}
         description={description}
         message="Every relationship must refer to two supplied nodes."
       />
@@ -176,6 +179,7 @@ export function RelationGraph({
   return (
     <ChartFrame
       title={title}
+      report={report}
       description={description}
       footer={
         selection !== undefined && hasNodes ? (

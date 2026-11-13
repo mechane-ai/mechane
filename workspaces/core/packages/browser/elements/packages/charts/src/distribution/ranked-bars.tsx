@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { ChartDatumButton, ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
 import { chartToneColors } from '../chart-theme.ts';
 import type { ChartTone } from '../chart-theme.ts';
@@ -22,6 +22,7 @@ export type RankedBarDatum = {
 
 export type RankedBarsProps = {
   readonly title: string;
+  readonly report?: ChartReport | undefined;
   readonly description?: string;
   readonly items: ReadonlyArray<RankedBarDatum>;
   readonly domain: NumericDomain;
@@ -33,6 +34,7 @@ export type RankedBarsProps = {
 
 export function RankedBars({
   title,
+  report,
   description,
   items,
   domain,
@@ -45,14 +47,14 @@ export function RankedBars({
   const inputError = rankedInputError({ items, domain });
 
   if (inputError !== undefined) {
-    return <ChartInputError title={title} description={description} message={inputError} />;
+    return <ChartInputError title={title} report={report} description={description} message={inputError} />;
   }
 
   const scale = scaleLinear({ domain: [...domain], range: [0, width] });
   const zero = scale(0);
 
   return (
-    <ChartFrame title={title} description={description} footer={valueLabel}>
+    <ChartFrame title={title} report={report} description={description} footer={valueLabel}>
       {items.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (

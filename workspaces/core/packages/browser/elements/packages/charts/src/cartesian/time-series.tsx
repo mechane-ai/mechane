@@ -8,6 +8,7 @@ import { colors, spacing, typography } from '../../../foundations/src/tokens.sty
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
+import type { ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
@@ -33,18 +34,19 @@ export type TimeSeriesChartProps = {
   readonly markers?: ReadonlyArray<TimeSeriesMarker> | undefined;
   readonly height?: number | undefined;
   readonly actions?: ReactNode;
+  readonly report?: ChartSeriesReport | undefined;
 };
 
 export type AreaChartProps = TimeSeriesChartProps & { readonly isStacked?: boolean | undefined };
 
 export type TimeSeriesChartPlaceholderProps = Pick<
   TimeSeriesChartProps,
-  'title' | 'description' | 'height' | 'actions'
+  'title' | 'description' | 'height' | 'actions' | 'report'
 > & { readonly series: ReadonlyArray<Pick<TimeSeries, 'id' | 'label' | 'tone'>> };
 
 export type SmallMultiplesProps = Omit<
   TimeSeriesChartProps,
-  'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'formatTick' | 'markers'
+  'series' | 'title' | 'description' | 'actions' | 'formatValue' | 'formatTick' | 'markers' | 'report'
 > & {
   readonly charts: ReadonlyArray<{
     readonly id: string;
@@ -54,15 +56,23 @@ export type SmallMultiplesProps = Omit<
     readonly formatValue: (value: number) => string;
     readonly formatTick?: ((value: number) => string) | undefined;
     readonly markers?: ReadonlyArray<TimeSeriesMarker> | undefined;
+    readonly report?: ChartSeriesReport | undefined;
   }>;
+};
+
+export type SmallMultiplesPlaceholderProps = Pick<SmallMultiplesProps, 'height'> & {
+  readonly charts: ReadonlyArray<TimeSeriesChartPlaceholderProps & { readonly id: string }>;
 };
 
 type Inspection = { readonly signature: string; readonly timestamp: number; readonly source: 'pointer' | 'keyboard' };
 
 type SharedInspection = {
   readonly value: Inspection | undefined;
+  readonly isSource: boolean;
   readonly onChange: (value: Inspection | undefined) => void;
 };
+
+const REPORT_BORDER_WIDTH_PX = 1;
 
 const styles = stylex.create({
   frame: { minWidth: 0 },
@@ -108,6 +118,8 @@ const styles = stylex.create({
     fontWeight: typography.regularWeight,
   },
   multiples: { display: 'grid', gap: spacing.xl },
+  reports: { gap: 0 },
+  joinedPanel: { marginBlockStart: -REPORT_BORDER_WIDTH_PX },
   guide: { stroke: colors.muted, strokeDasharray: '3 3', vectorEffect: 'non-scaling-stroke' },
 });
 
@@ -119,13 +131,19 @@ export function AreaChart({ isStacked = false, ...props }: AreaChartProps): Reac
   return <TimeChart {...props} kind="area" isStacked={isStacked} />;
 }
 
-export function TimeSeriesChartPlaceholder({
+export function TimeSeriesChartPlaceholder(props: TimeSeriesChartPlaceholderProps): ReactNode {
+  return <TimeChartPlaceholder {...props} />;
+}
+
+function TimeChartPlaceholder({
   title,
   description,
   series,
   actions,
+  report,
   height = 180,
-}: TimeSeriesChartPlaceholderProps): ReactNode {
+  showTimeAxis = true,
+}: TimeSeriesChartPlaceholderProps & { readonly showTimeAxis?: boolean }): ReactNode {
   const inspectionId = useId();
 
   const legend = prepareTimeSeries(
@@ -135,7 +153,12 @@ export function TimeSeriesChartPlaceholder({
 
   if (!Number.isFinite(height) || height < 48) {
     return (
-      <ChartInputError title={title} description={description} message="Chart height must be at least 48 pixels." />
+      <ChartInputError
+        title={title}
+        description={description}
+        report={report}
+        message="Chart height must be at least 48 pixels."
+      />
     );
   }
 
@@ -144,6 +167,8 @@ export function TimeSeriesChartPlaceholder({
       <ChartFrame
         title={title}
         description={description}
+        report={report}
+        series={legend}
         actions={
           <>
             {actions}
@@ -160,13 +185,16 @@ export function TimeSeriesChartPlaceholder({
             x={0}
             width={0}
             source={undefined}
+            hasSeriesSummary={report?.seriesValues !== undefined}
           />
           <div {...stylex.props(chartStyles.plot)}>
             <Skeleton height={height - 16} />
-            <div {...stylex.props(styles.timeAxis)}>
-              <SkeletonText width="8ch" />
-              <SkeletonText width="8ch" />
-            </div>
+            {showTimeAxis && (
+              <div {...stylex.props(styles.timeAxis)}>
+                <SkeletonText width="8ch" />
+                <SkeletonText width="8ch" />
+              </div>
+            )}
           </div>
         </div>
       </ChartFrame>
@@ -176,7 +204,7 @@ export function TimeSeriesChartPlaceholder({
 
 export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): ReactNode {
   const root = useRef<HTMLDivElement>(null);
-  const [inspection, setInspection] = useState<Inspection | undefined>();
+  const [inspection, setInspection] = useState<(Inspection & { readonly chartId: string }) | undefined>();
 
   const signature = JSON.stringify(
     charts.map((chart) => [
@@ -234,12 +262,6 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
     );
   }
 
-  const sharedInspection = {
-    value: inspection?.signature === signature ? inspection : undefined,
-    onChange: (value: Inspection | undefined): void =>
-      setInspection(value === undefined ? undefined : { ...value, signature }),
-  };
-
   const axisWidth = Math.max(
     52,
     ...charts.flatMap((chart) =>
@@ -253,23 +275,56 @@ export function SmallMultiples({ charts, ...props }: SmallMultiplesProps): React
     ),
   );
 
+  const isReportGroup = charts.every((chart) => chart.report !== undefined);
+
   return (
-    <div ref={root} {...stylex.props(styles.multiples)}>
-      {charts.map((chart) => (
-        <TimeChart
-          key={chart.id}
-          {...props}
-          title={chart.title}
-          description={chart.description}
-          series={chart.series}
-          formatValue={chart.formatValue}
-          formatTick={chart.formatTick}
-          markers={chart.markers}
-          kind="line"
-          isStacked={false}
-          sharedInspection={sharedInspection}
-          axisWidth={axisWidth}
-        />
+    <div ref={root} {...stylex.props(styles.multiples, isReportGroup && styles.reports)}>
+      {charts.map((chart, index) => (
+        <div key={chart.id} {...stylex.props(isReportGroup && index > 0 && styles.joinedPanel)}>
+          <TimeChart
+            {...props}
+            title={chart.title}
+            description={chart.description}
+            report={chart.report}
+            series={chart.series}
+            formatValue={chart.formatValue}
+            formatTick={chart.formatTick}
+            markers={chart.markers}
+            kind="line"
+            isStacked={false}
+            sharedInspection={{
+              value: inspection?.signature === signature ? inspection : undefined,
+              isSource: inspection?.chartId === chart.id,
+              onChange: (value): void =>
+                setInspection(value === undefined ? undefined : { ...value, signature, chartId: chart.id }),
+            }}
+            axisWidth={axisWidth}
+            showTimeAxis={index === charts.length - 1}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function SmallMultiplesPlaceholder({ charts, height }: SmallMultiplesPlaceholderProps): ReactNode {
+  if (!hasUniqueIds(charts) || charts.length > timeSeriesLimits.panels) {
+    return (
+      <ChartInputError
+        title="Small multiples"
+        message={`Choose at most ${timeSeriesLimits.panels} panels with unique identifiers.`}
+      />
+    );
+  }
+
+  const isReportGroup = charts.every((chart) => chart.report !== undefined);
+
+  return (
+    <div aria-hidden inert {...stylex.props(styles.multiples, isReportGroup && styles.reports)}>
+      {charts.map((chart, index) => (
+        <div key={chart.id} {...stylex.props(isReportGroup && index > 0 && styles.joinedPanel)}>
+          <TimeChartPlaceholder {...chart} height={height} showTimeAxis={index === charts.length - 1} />
+        </div>
       ))}
     </div>
   );
@@ -286,15 +341,18 @@ function TimeChart({
   markers = [],
   height = 180,
   actions,
+  report,
   kind,
   isStacked,
   sharedInspection,
   axisWidth,
+  showTimeAxis = true,
 }: TimeSeriesChartProps & {
   readonly kind: 'line' | 'area';
   readonly isStacked: boolean;
   readonly sharedInspection?: SharedInspection;
   readonly axisWidth?: number;
+  readonly showTimeAxis?: boolean;
 }): ReactNode {
   const issue =
     !Number.isFinite(height) || height < 48
@@ -321,6 +379,9 @@ function TimeChart({
         : undefined
       : sharedInspection.value;
 
+  const inspected = sharedInspection === undefined || sharedInspection.isSource ? active : undefined;
+  const hasSeriesSummary = report?.seriesValues !== undefined;
+
   const inspectionId = useId();
 
   if (inspection !== undefined && (inspection.signature !== signature || issue !== undefined)) {
@@ -346,12 +407,12 @@ function TimeChart({
   }, [hasSharedInspection]);
 
   if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} message={issue} />;
+    return <ChartInputError title={title} description={description} report={report} message={issue} />;
   }
 
   if (points.length === 0) {
     return (
-      <ChartFrame title={title} description={description} actions={actions}>
+      <ChartFrame title={title} description={description} actions={actions} report={report} series={prepared}>
         <p {...stylex.props(styles.muted)}>No observations</p>
       </ChartFrame>
     );
@@ -452,12 +513,18 @@ function TimeChart({
     <div ref={rootRef} {...stylex.props(styles.frame)}>
       <ChartFrame
         title={
-          <ChartInspectionTitle
-            title={title}
-            detail={active === undefined ? undefined : formatTimestamp(active.timestamp)}
-          />
+          hasSeriesSummary ? (
+            title
+          ) : (
+            <ChartInspectionTitle
+              title={title}
+              detail={inspected === undefined ? undefined : formatTimestamp(inspected.timestamp)}
+            />
+          )
         }
         description={description}
+        report={report}
+        series={prepared}
         actions={
           <>
             {actions}{' '}
@@ -500,10 +567,10 @@ function TimeChart({
         <div {...stylex.props(styles.body)}>
           <ChartInspection
             id={inspectionId}
-            label={active === undefined ? undefined : formatTimestamp(active.timestamp)}
+            label={inspected === undefined ? undefined : formatTimestamp(inspected.timestamp)}
             legend={prepared.map(({ id, label, tone }) => ({ id, label, tone }))}
             rows={prepared.map((item) => {
-              const point = item.points.find((value) => value.timestamp === active?.timestamp);
+              const point = item.points.find((value) => value.timestamp === inspected?.timestamp);
 
               return {
                 id: item.id,
@@ -514,8 +581,9 @@ function TimeChart({
             })}
             x={x(active?.timestamp ?? first)}
             width={width}
-            source={active?.source}
-            notes={markers.filter((marker) => marker.timestamp === active?.timestamp).map((marker) => marker.label)}
+            source={inspected?.source}
+            notes={markers.filter((marker) => marker.timestamp === inspected?.timestamp).map((marker) => marker.label)}
+            hasSeriesSummary={hasSeriesSummary}
           />
           <div ref={ref} {...stylex.props(chartStyles.plot)}>
             <svg
@@ -626,12 +694,17 @@ function TimeChart({
                 />
               )}
             </svg>
-            <div aria-hidden {...stylex.props(styles.timeAxis, styles.timeAxisInset(left, Math.max(0, width - right)))}>
-              <span {...stylex.props(styles.timestamp)}>{formatTimestamp(first)}</span>
-              {last !== first && (
-                <span {...stylex.props(styles.timestamp, styles.lastTimestamp)}>{formatTimestamp(last)}</span>
-              )}
-            </div>
+            {showTimeAxis && (
+              <div
+                aria-hidden
+                {...stylex.props(styles.timeAxis, styles.timeAxisInset(left, Math.max(0, width - right)))}
+              >
+                <span {...stylex.props(styles.timestamp)}>{formatTimestamp(first)}</span>
+                {last !== first && (
+                  <span {...stylex.props(styles.timestamp, styles.lastTimestamp)}>{formatTimestamp(last)}</span>
+                )}
+              </div>
+            )}
           </div>
           {markers.length > 0 && (
             <ul {...stylex.props(styles.markerList)}>

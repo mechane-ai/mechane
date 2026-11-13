@@ -9,7 +9,7 @@ import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
-import type { ChartSelection } from '../chart-frame.tsx';
+import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
 import { chartStyles, chartToneColors } from '../chart-theme.ts';
@@ -33,6 +33,7 @@ const DEFAULT_HEIGHT = 200;
 export type BarChartProps = {
   readonly title: string;
   readonly description?: ReactNode;
+  readonly report?: ChartSeriesReport | undefined;
   readonly categories: ReadonlyArray<{
     readonly id: string;
     readonly label: string;
@@ -49,12 +50,12 @@ export type BarChartProps = {
   readonly height?: number | undefined;
 };
 
-export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'height'> & {
+export type BarChartPlaceholderProps = Pick<BarChartProps, 'description' | 'height' | 'report'> & {
   readonly title?: string | undefined;
   readonly series?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
 };
 
-type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description'> & {
+type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'> & {
   readonly series: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>>;
   readonly layoutSeries?: ReadonlyArray<Pick<BarSeries, 'id' | 'label' | 'tone'>> | undefined;
   readonly inspectionId: string;
@@ -75,6 +76,7 @@ type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description'> & {
 function BarChartFrame({
   title,
   description,
+  report,
   series,
   layoutSeries,
   children,
@@ -107,6 +109,8 @@ function BarChartFrame({
     <ChartFrame
       title={<ChartInspectionTitle title={title} detail={detail} />}
       description={description}
+      report={report}
+      series={legend}
       actions={<ChartData title={title}>{data}</ChartData>}
     >
       <ChartInspection
@@ -114,6 +118,7 @@ function BarChartFrame({
         label={label}
         summary={summary}
         legend={legend}
+        hasSeriesSummary={report?.seriesValues !== undefined}
         layoutLegend={layoutLegend}
         rows={rows.map((item, seriesIndex) => ({
           id: item.id,
@@ -137,6 +142,7 @@ function BarChartFrame({
 export function BarChartPlaceholder({
   title = 'Loading chart',
   description,
+  report,
   series = [],
   height = DEFAULT_HEIGHT,
 }: BarChartPlaceholderProps): ReactNode {
@@ -144,12 +150,18 @@ export function BarChartPlaceholder({
   const inspectionId = useId();
 
   if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} message={issue} />;
+    return <ChartInputError title={title} description={description} report={report} message={issue} />;
   }
 
   return (
     <div aria-hidden inert>
-      <BarChartFrame title={title} description={description} series={series} inspectionId={inspectionId}>
+      <BarChartFrame
+        title={title}
+        description={description}
+        report={report}
+        series={series}
+        inspectionId={inspectionId}
+      >
         <div {...stylex.props(chartStyles.plot, styles.plot)}>
           <Skeleton height={height} />
         </div>
@@ -215,6 +227,7 @@ function validateBars({
 export function BarChart({
   title,
   description,
+  report,
   categories,
   series,
   domain,
@@ -300,7 +313,7 @@ export function BarChart({
     bucket === undefined ? undefined : bucket.kind === 'gap' ? 'No reported value' : formatValue(bucket.total);
 
   if (issue !== undefined) {
-    return <ChartInputError title={title} description={description} message={issue} />;
+    return <ChartInputError title={title} description={description} report={report} message={issue} />;
   }
 
   const bottom = height - 28;
@@ -376,6 +389,7 @@ export function BarChart({
     <BarChartFrame
       title={title}
       description={description}
+      report={report}
       series={legend}
       layoutSeries={series}
       inspectionId={inspectionId}

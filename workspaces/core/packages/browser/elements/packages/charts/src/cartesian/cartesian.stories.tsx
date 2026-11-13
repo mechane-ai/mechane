@@ -10,7 +10,13 @@ import type { BarSeries } from './bar-chart.tsx';
 import { BreakdownBar } from './breakdown-bar.tsx';
 import { Sparkline } from './sparkline.tsx';
 import type { TimeSeries } from './time-series-data.ts';
-import { AreaChart, LineChart, SmallMultiples, TimeSeriesChartPlaceholder } from './time-series.tsx';
+import {
+  AreaChart,
+  LineChart,
+  SmallMultiples,
+  SmallMultiplesPlaceholder,
+  TimeSeriesChartPlaceholder,
+} from './time-series.tsx';
 
 const meta = {
   title: 'Charts/Cartesian',
@@ -19,6 +25,7 @@ const meta = {
     AreaChart,
     Sparkline,
     SmallMultiples,
+    SmallMultiplesPlaceholder,
     TimeSeriesChartPlaceholder,
     BarChart,
     BarChartPlaceholder,
@@ -216,6 +223,54 @@ export const AlignedMetrics: Story = {
   ),
 };
 
+function AlignedReportsExample({ isPending = false }: { readonly isPending?: boolean }): ReactNode {
+  const charts = [
+    {
+      id: 'latency',
+      title: 'Request latency',
+      series: [baseline, candidate],
+      formatValue: formatLatency,
+      report: {
+        meta: 'Period mean · 6 minutes',
+        seriesValues: { baseline: isPending ? undefined : '17.3 ms', candidate: isPending ? undefined : '14.1 ms' },
+      },
+    },
+    {
+      id: 'output',
+      title: 'Output tokens',
+      series: [
+        {
+          ...candidate,
+          id: 'output',
+          label: 'Output',
+          tone: 'series2',
+          points: candidate.points.map((point) => ({
+            ...point,
+            value: point.value === null ? null : point.value * 10,
+          })),
+        },
+      ] as const,
+      formatValue: formatTokens,
+      report: { meta: 'Period mean · 6 minutes', seriesValues: { output: isPending ? undefined : '141 tokens' } },
+    },
+  ];
+
+  const placeholder = <SmallMultiplesPlaceholder charts={charts} height={148} />;
+
+  if (isPending) {
+    return <AsyncRegion state="pending" label="Loading analytical reports" placeholder={placeholder} />;
+  }
+
+  return (
+    <AsyncRegion state="ready" label="Loading analytical reports" placeholder={placeholder}>
+      <SmallMultiples charts={charts} timestampUnit="seconds" formatTimestamp={formatTime} height={148} />
+    </AsyncRegion>
+  );
+}
+
+export const AlignedReports: Story = { render: () => <AlignedReportsExample /> };
+export const AlignedReportsLoading: Story = { render: () => <AlignedReportsExample isPending /> };
+
 export const CategoricalSeries: Story = {
   render: () => (
     <Stack>
@@ -284,6 +339,14 @@ export const MissingSingleAndEmpty: Story = {
 export const InvalidEvidence: Story = {
   render: () => (
     <Stack>
+      <LineChart
+        title="Mismatched period values"
+        report={{ seriesValues: { misspelled: '17 ms' } }}
+        series={[baseline]}
+        timestampUnit="seconds"
+        formatTimestamp={formatTime}
+        formatValue={formatLatency}
+      />
       <LineChart
         title="Unsorted timestamps"
         series={[
