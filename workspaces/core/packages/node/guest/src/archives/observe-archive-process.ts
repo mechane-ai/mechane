@@ -1,5 +1,6 @@
+import { Bytes } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
+import { OUTPUT_TAIL_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Deferred, Effect, Result } from 'effect';
 import type { ChildProcess } from 'node:child_process';
 import { WorkspaceFailed } from '../errors.ts';
@@ -20,7 +21,8 @@ type ArchiveOutcomeInput = {
 
 /** Observes startup and completion immediately, retaining only the bounded diagnostic tail. */
 export function observeArchiveProcess({ generation, child, exited, resume }: ObserveArchiveProcessInput): void {
-  const output = outputTail();
+  const limit = Bytes.make(OUTPUT_TAIL_BYTES);
+  const output = outputTail({ limit });
 
   const refused: (error: Error) => void = (error) => {
     const reason = error.message;

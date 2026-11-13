@@ -22,3 +22,9 @@ deadlines.
 
 Build with `mise -C workspaces/core exec -- pnpm --filter @mechane-ai/bash build` from the factory root. The immutable
 package archive contains ESM and declarations, without workspace dependencies.
+
+Executors must return an observed exit code for completed commands. Missing outcome evidence is a typed error, never
+exit zero. Reject unsupported timeouts before dispatch instead of silently shortening them. Output capture belongs to
+the sandbox provider: keep model excerpts small, retain a bounded file when possible, and report whether that file is
+complete. The tool stays Bash; file inspection and application operations use ordinary programs and installed CLIs.
+Runtime compatibility fixes belong in their owning source distributions, never consumer patch files.

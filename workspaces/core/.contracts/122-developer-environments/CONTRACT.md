@@ -52,6 +52,11 @@ Automatic checkpoint cadence is not a recovery-point guarantee. Unsaved writes c
 An activity sequence records admitted work, not every write from a running process. Its equality with the captured
 sequence cannot establish that all live files are saved. Inspection never marks new activity merely to report status.
 
+Keep short command excerpts distinct from saved output. Foreground Bash retains at most 4 MiB of redacted output and
+keeps the newest 64 owned output logs in the durable home. Report exact omitted prefixes and the saved path after a
+successful write. Redact injected credentials before writing a log. Log failure cannot rewrite the observed command
+outcome or repeat it. Only owned capture files expire; user artifacts and execution receipts remain separate.
+
 Keep guest command duration distinct from time spent saving or restoring files. Performance evidence names archive
 bytes, transferred bytes, part count, and the measured boundary. Qualify representative fixed workloads; a faster shell
 receipt does not establish faster persistence or a stronger saved-file guarantee.

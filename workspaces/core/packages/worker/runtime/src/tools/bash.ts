@@ -1,11 +1,11 @@
 import type { Mech, WorkspacePolicy } from '@mechane/control-store';
-import { BashExecutionStatus } from '@mechane/protocol';
 import { HttpMethod, toolExecutionId } from '@mechane/records';
 import type { SandboxCapacityRefusalReason, SandboxExecutionResult } from '@mechane/sandbox-wire';
 import { Duration, Option } from 'effect';
-import { z } from 'zod';
 import type { ExecutionReceipt } from '../domain.ts';
 import { writeBashUncertain } from '../output/write-actor-diagnostic.ts';
+import { BashResultSchema } from './bash-result.schemas.ts';
+import type { BashResult } from './bash-result.schemas.ts';
 import { BASH_OBSERVE_WAIT_MS, TOOL_MODEL_RESULT_MAX_BYTES } from './constants.ts';
 import type { RuntimeToolStore } from './context.ts';
 import { withToolStore } from './context.ts';
@@ -15,25 +15,6 @@ import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { recordBashInput } from './record-bash-input.ts';
 import { cancelPendingSandboxExecution, requestSandboxExecution } from './sandbox-client.ts';
 import type { BashArguments, BashInvocation, PreparedEnvironment, RuntimeToolContext } from './types.ts';
-
-const BashResultSchema = z.object({
-  status: z.enum(BashExecutionStatus),
-  executionId: z.string(),
-  output: z.string().optional(),
-  omittedBytes: z.number().int().nonnegative().optional(),
-  exitCode: z.number().int().optional(),
-  durationMs: z.number().nonnegative().optional(),
-  message: z.string().optional(),
-  isTruncated: z.boolean().optional(),
-  commandOutcome: z
-    .discriminatedUnion('state', [
-      z.object({ state: z.literal('exited'), exitCode: z.number().int() }),
-      z.object({ state: z.literal('timed_out') }),
-    ])
-    .optional(),
-});
-
-export type BashResult = z.infer<typeof BashResultSchema>;
 
 type ObserveBashInput = RuntimeToolContext & { readonly executionId: string };
 

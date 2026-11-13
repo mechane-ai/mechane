@@ -1,8 +1,11 @@
+import { MachineId } from '@mechane/records';
+import { MachineStatus } from '@mechane/sandbox-store';
 import { StartupPhase } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { DateTime, Duration, Option } from 'effect';
 import type { MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { restoreMachineWorkspace } from '../workspace/restore-machine-workspace.ts';
+import { failLateMachine } from './fail-late-machine.ts';
 
 const HEALTH_INTERVAL = Duration.millis(500);
 const HealthAnswer = { Healthy: 'healthy', Retry: 'retry', Late: 'late', Failed: 'failed' } as const;
@@ -10,7 +13,7 @@ type HealthAnswer = (typeof HealthAnswer)[keyof typeof HealthAnswer];
 type AwaitHealthInput = WorkspaceProviderStepInput & MachineIdInput & { readonly deadline: DateTime.Utc };
 type HealthAnswerInput = Omit<AwaitHealthInput, 'workspace'>;
 
-/** The call's wait bounds observation; the machine retains its original startup budget across calls. */
+/** Retains the machine's original startup budget while health and restoration are observed. */
 export async function awaitHealth({
   store,
   provider,
@@ -45,9 +48,62 @@ export async function awaitHealth({
     return false;
   }
 
-  const isRestored = await restoreMachineWorkspace({ store, provider, workspace, machineId });
+  const head = store.workspace().head;
+  const isRestored = await restoreMachineWorkspace({ store, provider, workspace, machineId, deadline });
 
   if (!isRestored) {
+    return false;
+  }
+
+  const live = store.liveMachine();
+
+  const starting = Option.filter(
+    live,
+    (machine) => machine.id === machineId && machine.status === MachineStatus.Starting,
+  );
+
+  if (Option.isNone(starting)) {
+    return false;
+  }
+
+  const identity = MachineId.make(machineId);
+
+  const pendingDrain = store.machineDrain({ machineId: identity });
+
+  if (Option.isSome(pendingDrain)) {
+    return false;
+  }
+
+  await failLateMachine({ store, provider, machineId, startedAt: starting.value.startedAt });
+
+  const current = store.liveMachine();
+
+  const isStarting = Option.exists(
+    current,
+    (machine) => machine.id === machineId && machine.status === MachineStatus.Starting,
+  );
+
+  const drain = store.machineDrain({ machineId: identity });
+  const state = store.workspace();
+
+  const filesRestored = Option.match(head, {
+    onNone: () => Option.isNone(state.head),
+    onSome: (snapshot) => {
+      const sameHead = Option.exists(state.head, (currentHead) => currentHead.generation === snapshot.generation);
+
+      const restored = Option.exists(
+        state.restoration,
+        (restoration) =>
+          restoration.machineId === machineId &&
+          restoration.generation === snapshot.generation &&
+          restoration.part === snapshot.archive.parts,
+      );
+
+      return sameHead && restored;
+    },
+  });
+
+  if (!isStarting || Option.isSome(drain) || !filesRestored) {
     return false;
   }
 

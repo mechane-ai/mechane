@@ -2,6 +2,7 @@ import type { ExecutionId, ExecutionRequest } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import { ExecutionUnstarted } from '../errors.ts';
 import type { GuestSettings } from '../types.ts';
+import { OUTPUT_FILE_BYTES } from './retain-command-output.ts';
 import { shellEnvironment } from './shell-environment.ts';
 import { spawnShell } from './spawn-shell.ts';
 import { spawnedBash } from './spawned-bash.ts';
@@ -31,7 +32,7 @@ export const spawnBash = Effect.fn('spawnBash')(function* ({
     const refuse: (error: Error) => void = (error) =>
       resume(Effect.fail(new ExecutionUnstarted({ executionId, reason: error.message })));
 
-    const start: () => void = () => resume(Effect.succeed(spawnedBash({ child })));
+    const start: () => void = () => resume(Effect.succeed(spawnedBash({ child, outputLimit: OUTPUT_FILE_BYTES })));
 
     child.once('error', refuse);
     child.once('spawn', start);

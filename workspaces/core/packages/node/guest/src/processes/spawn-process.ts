@@ -1,3 +1,5 @@
+import { Bytes } from '@mechane/records';
+import { OUTPUT_TAIL_BYTES } from '@mechane/sandbox-wire';
 import type { ProcessStart } from '@mechane/sandbox-wire';
 import { Effect, Result } from 'effect';
 import { shellEnvironment } from '../executions/shell-environment.ts';
@@ -25,7 +27,8 @@ export const spawnProcess = Effect.fn('spawnProcess')(function* ({
       resume(error);
     });
     child.once('spawn', () => {
-      const run = spawnedBash({ child });
+      const outputLimit = Bytes.make(OUTPUT_TAIL_BYTES);
+      const run = spawnedBash({ child, outputLimit });
       const result = Result.succeed(run);
       const started = Effect.fromResult(result);
 

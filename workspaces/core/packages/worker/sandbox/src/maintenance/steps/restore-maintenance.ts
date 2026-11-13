@@ -52,7 +52,17 @@ export async function restoreMaintenance({ store, provider, workspace, job }: Po
   }
 
   const snapshot = maintenanceValue({ value: job.source, field: 'source' });
-  const isRestored = await restoreSnapshot({ store, provider, workspace, machineId, guest: guest.value, snapshot });
+  const deadline = Option.none();
+
+  const isRestored = await restoreSnapshot({
+    store,
+    provider,
+    workspace,
+    machineId,
+    guest: guest.value,
+    snapshot,
+    deadline,
+  });
 
   if (!isRestored) {
     return;

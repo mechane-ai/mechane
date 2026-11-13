@@ -30,7 +30,7 @@ import { remoteToolGrantsHonorPolicy } from './remote-tool-grants-honor-policy.t
 const CREDENTIAL_BYTES = 32;
 const COMMAND_FAILURE_EXIT_CODE = 127;
 const COMMAND_PADDING_CHARACTERS = 1500;
-const OUTPUT_PADDING_COLUMNS = 9000;
+const OUTPUT_PADDING_COLUMNS = 131_072;
 const TRACE_READ_TIMEOUT_MS = 10_000;
 const TRACE_INACCESSIBLE_STATUSES: ReadonlySet<number> = new Set([HttpStatusCode.Forbidden, HttpStatusCode.NotFound]);
 
@@ -75,6 +75,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
 
   const command = [
     'test -n "$SMOKE_SECRET" || exit 1',
+    String.raw`printf 'capture-start\n'`,
     `printf '%${OUTPUT_PADDING_COLUMNS}s' ''`,
     String.raw`printf "setting=%s\n" "$SMOKE_SETTING"`,
     String.raw`printf "secret=%s\n" "$SMOKE_SECRET"`,
@@ -102,6 +103,85 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   assert.equal(output.includes('injected=yes\n'), true);
   assert.ok(output.includes('Command exited with code 127'));
   assert.equal(output.includes(secret), false, 'The shell result exposed its injected credential');
+
+  const fileMatch = /Output file: (\S+) \(complete, redacted output\)/u.exec(output);
+
+  assert.ok(fileMatch !== null, 'Large command output did not identify its complete saved log');
+
+  const logMarker = `execution-output-file-${randomUUID()}`;
+  const logToolId = randomUUID();
+
+  const readLog = [
+    `test "$(head -1 '${fileMatch[1]}')" = capture-start`,
+    `test "$(wc -c < '${fileMatch[1]}')" -gt ${OUTPUT_PADDING_COLUMNS}`,
+    `! grep -Fq "$SMOKE_SECRET" '${fileMatch[1]}'`,
+    `grep -Fq 'secret=[redacted]' '${fileMatch[1]}'`,
+    "printf 'output-file-verified'",
+  ].join(' && ');
+
+  fixtures.model.configure({
+    marker: logMarker,
+    replies: [
+      { tools: [{ id: logToolId, name: 'bash', input: { command: readLog } }] },
+      { text: 'The saved output is readable and redacted' },
+    ],
+  });
+
+  const logSent = await sendNotification({ ...owner, text: logMarker });
+  const logResult = await readBashResult({ model: fixtures.model, marker: logMarker, toolCallId: logToolId });
+
+  await waitForTurn({ ...owner, notificationId: logSent.id });
+  assert.equal(logResult.output, 'output-file-verified');
+
+  const failedLogMarker = `execution-output-unavailable-${randomUUID()}`;
+  const failedLogToolId = randomUUID();
+  const restoreLogsToolId = randomUUID();
+
+  const blockedLog = [
+    'mv .mechane-output .mechane-output-held && touch .mechane-output',
+    `printf '%${OUTPUT_PADDING_COLUMNS}s' ''`,
+    String.raw`printf 'observed-failure\n'`,
+    `exit ${COMMAND_FAILURE_EXIT_CODE}`,
+  ].join('\n');
+
+  fixtures.model.configure({
+    marker: failedLogMarker,
+    summary: `Continue ${failedLogMarker}: inspect the failed command receipt and restore the output directory.`,
+    replies: [
+      { tools: [{ id: failedLogToolId, name: 'bash', input: { command: blockedLog } }] },
+      {
+        tools: [
+          {
+            id: restoreLogsToolId,
+            name: 'bash',
+            input: { command: 'rm .mechane-output && mv .mechane-output-held .mechane-output && echo restored' },
+          },
+        ],
+      },
+      { text: 'The process outcome survived the failed output capture' },
+    ],
+  });
+
+  const failedLogSent = await sendNotification({ ...owner, text: failedLogMarker });
+
+  const failedLog = await readBashResult({
+    model: fixtures.model,
+    marker: failedLogMarker,
+    toolCallId: failedLogToolId,
+  });
+
+  const restored = await readBashResult({
+    model: fixtures.model,
+    marker: failedLogMarker,
+    toolCallId: restoreLogsToolId,
+    index: 2,
+  });
+
+  await waitForTurn({ ...owner, notificationId: failedLogSent.id });
+  assert.match(failedLog.output, /observed-failure/u);
+  assert.match(failedLog.output, /Output file unavailable/u);
+  assert.match(failedLog.output, /Command exited with code 127/u);
+  assert.match(restored.output, /restored/u);
 
   const trace = await readTrace({ ...owner, turnId: turn.id });
   const tool = trace.toolCalls?.find((call) => call.id === toolCallId);

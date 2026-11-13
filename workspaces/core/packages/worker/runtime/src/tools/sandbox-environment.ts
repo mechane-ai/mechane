@@ -2,7 +2,7 @@ import type { Context } from '@earendil-works/chord/context';
 import type { ToolExecutionApi } from '@earendil-works/pi-durable';
 import { err, ExecutionError, ok } from '@earendil-works/pi-durable/env';
 import type { ExecutionEnv } from '@earendil-works/pi-durable/env';
-import type { BashResult } from './bash.ts';
+import type { BashResult } from './bash-result.schemas.ts';
 import type { BashInvocation, ToolInvocation } from './types.ts';
 
 const SHELL_TIMEOUT_DEFAULT_SECONDS = 120;
@@ -25,10 +25,11 @@ export async function executeSandboxShell(input: ExecuteSandboxShellInput): Retu
     return err(new ExecutionError('spawn_error', 'This environment accepts shell commands'));
   }
 
-  const timeoutMs = Math.min(
-    Math.max(1, Math.floor((options?.timeout ?? SHELL_TIMEOUT_DEFAULT_SECONDS) * MILLISECONDS_PER_SECOND)),
-    SHELL_TIMEOUT_MAX_MS,
-  );
+  const timeoutMs = Math.floor((options?.timeout ?? SHELL_TIMEOUT_DEFAULT_SECONDS) * MILLISECONDS_PER_SECOND);
+
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 1 || timeoutMs > SHELL_TIMEOUT_MAX_MS) {
+    return err(new ExecutionError('spawn_error', 'The command timeout must be between 0.001 and 600 seconds'));
+  }
 
   const result = await input.execute({ ...input.invocation, command, timeoutMs }, context);
 
@@ -45,7 +46,7 @@ export async function executeSandboxShell(input: ExecuteSandboxShellInput): Retu
   }
 
   if (result.status === 'completed') {
-    return ok({ exitCode: result.exitCode ?? 0 });
+    return ok({ exitCode: result.exitCode });
   }
 
   if (result.status === 'timed_out' || result.commandOutcome?.state === 'timed_out') {

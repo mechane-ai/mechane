@@ -12,6 +12,14 @@ Retries rejoin that identity and retain its budget. Bootstrap and restoration ea
 original overall deadline; observation and small progress updates never renew either ceiling. Keep shell execution duration separate from environment preparation.
 Pi remains the agent execution owner.
 
+Bound each restore transfer pass by time and part count. Maintenance uses a two-second, 32-part slice. Foreground
+admission can use the caller's remaining wait, up to five seconds and 64 parts, but retains the two-second, 32-part
+slice when the wait is shorter or has elapsed. Check the deadline before each concurrent batch; an in-flight batch can
+finish afterward. The caller's wait is not a hard response deadline.
+
+After guest activation, recheck the starting machine, drain, committed generation and original startup deadline before
+marking the machine ready. A retired or superseded owner cannot admit work.
+
 Serve identity-bound guest preparation status before managed tools finish. Refuse commands during bootstrap. Record
 phase changes, failures and actual transfer progress using the shared startup schemas. Bound retained steps and machine
 reports. Use monotonic clocks for measured work within one invocation; UTC phase boundaries describe observations and

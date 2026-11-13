@@ -1,5 +1,4 @@
 import { Bytes } from '@mechane/records';
-import { OUTPUT_TAIL_BYTES } from '@mechane/sandbox-wire';
 import type { SettledReceipt } from '@mechane/sandbox-wire';
 import { MutableRef } from 'effect';
 
@@ -11,29 +10,42 @@ const UTF8_CONTINUATION = { mask: 0xc0, marker: 0x80 } as const;
 /** The tail of an execution's combined output as it arrives. */
 type OutputTail = { readonly push: (input: ChunkInput) => void; readonly output: () => SettledReceipt['output'] };
 
-/** The bytes of the output kept so far, and how many bytes before them were dropped. */
-type KeptTail = { readonly bytes: Buffer; readonly droppedBytes: Bytes };
+type OutputTailInput = { readonly limit: Bytes };
 
-/**
- * The combined output's tail, at most the receipt's bytes, and how many bytes before it were dropped. Its text starts
- * on a character, and an invalid sequence decodes to the replacement character.
- */
-export function outputTail(): OutputTail {
-  const kept = MutableRef.make<KeptTail>({ bytes: Buffer.alloc(0), droppedBytes: Bytes.make(0) });
+/** A fixed-size ring keeps draining noisy processes without repeatedly copying the retained output. */
+export function outputTail({ limit }: OutputTailInput): OutputTail {
+  const buffer = Buffer.alloc(limit);
+  const received = MutableRef.make(0);
 
   const push: OutputTail['push'] = ({ chunk }) => {
-    const { bytes, droppedBytes } = MutableRef.get(kept);
-    const joined = Buffer.concat([bytes, chunk]);
-    const excess = Math.max(joined.length - OUTPUT_TAIL_BYTES, 0);
+    const total = MutableRef.get(received);
+    const skipped = Math.max(0, chunk.length - limit);
+    const written = chunk.subarray(skipped);
+    const position = (total + skipped) % limit;
+    const firstLength = Math.min(written.length, limit - position);
 
-    MutableRef.set(kept, { bytes: joined.subarray(excess), droppedBytes: Bytes.make(droppedBytes + excess) });
+    written.copy(buffer, position, 0, firstLength);
+    written.copy(buffer, 0, firstLength);
+    MutableRef.set(received, total + chunk.length);
   };
 
   const output: OutputTail['output'] = () => {
-    const { bytes, droppedBytes } = MutableRef.get(kept);
+    const total = MutableRef.get(received);
+    const size = Math.min(total, limit);
+    let start = 0;
+
+    if (total >= limit) {
+      start = total % limit;
+    }
+
+    const firstEnd = Math.min(limit, start + size);
+    const first = buffer.subarray(start, firstEnd);
+    const second = buffer.subarray(0, size - first.length);
+    const bytes = Buffer.concat([first, second]);
+    const droppedBytes = Math.max(0, total - limit);
     // oxlint-disable-next-line no-bitwise -- a UTF-8 continuation byte is marked in its top two bits
-    const start = bytes.findIndex((byte) => (byte & UTF8_CONTINUATION.mask) !== UTF8_CONTINUATION.marker);
-    const skipped = Math.max(start, 0);
+    const character = bytes.findIndex((byte) => (byte & UTF8_CONTINUATION.mask) !== UTF8_CONTINUATION.marker);
+    const skipped = Math.max(character, 0);
 
     return {
       text: new TextDecoder().decode(bytes.subarray(skipped)),

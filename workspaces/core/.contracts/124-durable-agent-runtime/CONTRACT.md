@@ -78,6 +78,7 @@ Expose Pi's native Bash registration through `@mechane-ai/bash`. Its caller supp
 invocation-bound executor using native `ExecutionEnv.exec` types. Keep actors, storage, authorization, machine selection,
 and receipt tasks in their application owners. Return actual process output and native errors to Pi; internal receipt
 JSON is not command stdout. Preserve known exits, timeout, cancellation, truncation evidence, and original receipts.
+Require an observed exit code on completed shell results. Missing exit evidence must not default to success. Reject an unsupported timeout before dispatch instead of silently clamping it.
 Validate the built package from an independent install without sibling workspace source.
 
 When newer input or current authority rejects a confirmed, never-dispatched command's continuation, settle its pending

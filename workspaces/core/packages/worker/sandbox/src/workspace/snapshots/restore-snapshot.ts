@@ -4,6 +4,8 @@ import { SandboxArchive, StartupFailure, StartupPhase, WorkspaceStep } from '@me
 import { capturePromise } from '@mechane/utilities';
 import { Array, DateTime, Option, Result, Schema } from 'effect';
 import {
+  WORKSPACE_RESTORE_ADMISSION_BATCH_PARTS,
+  WORKSPACE_RESTORE_ADMISSION_DURATION,
   WORKSPACE_RESTORE_CONCURRENT_PARTS,
   WORKSPACE_TRANSFER_BATCH_DURATION,
   WORKSPACE_TRANSFER_BATCH_PARTS,
@@ -15,7 +17,11 @@ import { copySnapshotBatch } from './copy-snapshot-batch.ts';
 import { isCurrentRestoration } from './current-restoration.ts';
 
 type RestoreSnapshotInput = WorkspaceProviderStepInput &
-  MachineIdInput & { readonly guest: GuestConnection; readonly snapshot: WorkspaceSnapshot };
+  MachineIdInput & {
+    readonly guest: GuestConnection;
+    readonly snapshot: WorkspaceSnapshot;
+    readonly deadline: Option.Option<DateTime.Utc>;
+  };
 
 /** An imported candidate must pass the same bounded guest verification as a committed snapshot. */
 export async function restoreSnapshot({
@@ -25,6 +31,7 @@ export async function restoreSnapshot({
   guest,
   machineId,
   snapshot,
+  deadline: admissionDeadline,
 }: RestoreSnapshotInput): Promise<boolean> {
   const { generation, archive } = snapshot;
   const observedAt = DateTime.nowUnsafe();
@@ -50,8 +57,24 @@ export async function restoreSnapshot({
   }
 
   const startedAt = DateTime.nowUnsafe();
-  const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
-  const partLimit = Math.min(restored.value.part + WORKSPACE_TRANSFER_BATCH_PARTS, archive.parts);
+  const sliceDeadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
+  const maximumDeadline = DateTime.addDuration(startedAt, WORKSPACE_RESTORE_ADMISSION_DURATION);
+
+  // Keep the existing progress slice even when the caller's wait has elapsed.
+  const requestedDeadline = Option.match(admissionDeadline, {
+    onNone: () => sliceDeadline,
+    onSome: (value) => DateTime.max(sliceDeadline, value),
+  });
+
+  const deadline = DateTime.min(requestedDeadline, maximumDeadline);
+  const hasExtraBudget = DateTime.isGreaterThan(deadline, sliceDeadline);
+  let batchParts = WORKSPACE_TRANSFER_BATCH_PARTS;
+
+  if (hasExtraBudget) {
+    batchParts = WORKSPACE_RESTORE_ADMISSION_BATCH_PARTS;
+  }
+
+  const partLimit = Math.min(restored.value.part + batchParts, archive.parts);
   const parts = Array.range(restored.value.part, partLimit - 1);
   const batches = Array.chunksOf(parts, WORKSPACE_RESTORE_CONCURRENT_PARTS);
 

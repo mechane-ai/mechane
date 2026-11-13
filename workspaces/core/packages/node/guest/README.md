@@ -9,7 +9,7 @@ Layer 6 · node lane · effect dialect · no consumers
 
 - `src/`: the program: its settings, the server that answers each request in a fiber of its own, and its exit.
 - `src/executions/`: the executions resource: its route, the ledger of every execution by id, one run of bash in a
-  process group of its own, and the receipt with its output's tail.
+  process group of its own, and the receipt with its output excerpt and saved log.
 - `src/workspace/`, `src/archives/` and `src/archive-files/`: asynchronous archive/restore jobs and bounded part IO.
 - `src/quiescence/`: pauses writers before a container workspace snapshot and retains a final drain until shutdown.
 - `image/`: the Dockerfile, installed `mechane` shim, and guest and CLI bundles that `mise run build:guest` writes
@@ -53,3 +53,9 @@ verification.
 
 Injected secret values are redacted before command output enters a receipt. A truncated tail also hides a possible
 secret suffix. This prevents accidental disclosure; arbitrary authorized commands can still read their own environment.
+
+Foreground Bash keeps a short receipt and up to 4 MiB of combined output in `.mechane-output` under the home directory.
+Injected secrets are redacted before writing. A saved-log notice names its path and states whether any earlier bytes
+were omitted. The newest 64 logs are retained through ordinary file checkpoints; user artifacts are untouched. The
+command's exit remains factual when a log cannot be saved. Background process and archive diagnostic tails retain their
+existing bounds.

@@ -4,8 +4,8 @@ import type { ToolExecutionApi } from '@earendil-works/pi-durable';
 import { toolExecutionId as executionId } from '@mechane/records';
 import { MACHINE_STARTUP_GRACE_MS } from '@mechane/sandbox-wire';
 import type { ActorAccess } from '../actor/types.ts';
+import type { BashResult } from './bash-result.schemas.ts';
 import { executeBash, observeBash } from './bash.ts';
-import type { BashResult } from './bash.ts';
 import { joinReceiptTask, withReceiptTaskOwner } from './receipt-task.ts';
 import type { ReceiptJoin, ReceiptTaskControl } from './receipt-task.ts';
 import type { BashInvocation } from './types.ts';
@@ -63,13 +63,15 @@ export function createBashExecutionTask(getAccess: () => ActorAccess) {
         if (result.status === 'running' && runtime.now() < task.input.deadlineAt) {
           await runtime.sleepUntil(runtime.now() + BASH_RECEIPT_POLL_MS, { phase: 'observe' }, context);
         } else {
-          const retained: BashResult = { ...result };
+          let retained: BashResult = result;
 
           if (result.status === 'running') {
-            retained.status = 'uncertain';
-
-            retained.message =
-              'The command remains owned by its original receipt. Inspect bash_status before issuing another command.';
+            retained = {
+              ...result,
+              status: 'uncertain',
+              message:
+                'The command remains owned by its original receipt. Inspect bash_status before issuing another command.',
+            };
           }
 
           await runtime.commit(
