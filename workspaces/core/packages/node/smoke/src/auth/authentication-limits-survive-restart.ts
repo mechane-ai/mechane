@@ -10,6 +10,7 @@ import assert from 'node:assert/strict';
 const LOW_AUTH_LIMITS = {
   ...FIXTURE_AUTH_RATE_LIMITS,
   address: { requests: 4, windowSeconds: 600 },
+  principal: { requests: 8, windowSeconds: 60 },
   codeAttempt: { requests: 3, windowSeconds: 600 },
 } as const;
 
@@ -64,17 +65,17 @@ async function assertDeviceRequestAccepted(input: DeviceStartInput): Promise<Dev
 async function assertDeviceRequestLimited(input: DeviceStartInput): Promise<void> {
   const response = await startDeviceRequest(input);
 
-  await assertAddressLimited(response);
+  await assertRateLimited(response);
 }
 
-async function assertAddressLimited(response: Response): Promise<void> {
-  assert.equal(response.status, HttpStatusCode.TooManyRequests, 'Anonymous authentication evaded its address limit');
+async function assertRateLimited(response: Response): Promise<void> {
+  assert.equal(response.status, HttpStatusCode.TooManyRequests);
 
   const { error } = Schema.decodeUnknownSync(Schema.fromJsonString(ErrorBody))(await response.text());
 
   const failure = await Effect.runPromise(detailFailure({ detail: error, failures: ROUTE_FAILURES }));
 
-  assert.equal(failure._tag, 'RateLimited', 'The device-creation refusal is not decodable by the native client');
+  assert.equal(failure._tag, 'RateLimited', 'The authentication refusal is not decodable by the native client');
   assert.ok(failure.retryAfterSeconds > 0);
   assert.equal(response.headers.get(HttpHeader.RetryAfter), String(failure.retryAfterSeconds));
 }
@@ -103,8 +104,8 @@ async function assertAuthenticationFailuresLimited({ stack }: Pick<ScenarioInput
   const invalidResponse = await fetch(url, { headers: badBearer });
   const missingResponse = await fetch(url, { headers });
 
-  await assertAddressLimited(invalidResponse);
-  await assertAddressLimited(missingResponse);
+  await assertRateLimited(invalidResponse);
+  await assertRateLimited(missingResponse);
 
   const unrecognized = await fetch(url, {
     headers: { ...badBearer, [HttpHeader.MechaneClientAddress]: CLIENT_ADDRESSES.invalidAuthentication },
@@ -123,7 +124,7 @@ async function assertPublicPollLimited(stack: ScenarioInput['stack'], approval: 
     body: JSON.stringify(body),
   });
 
-  await assertAddressLimited(response);
+  await assertRateLimited(response);
 }
 
 export async function authenticationLimitsSurviveRestart({ stack }: ScenarioInput): Promise<void> {
@@ -185,9 +186,24 @@ export async function authenticationLimitsSurviveRestart({ stack }: ScenarioInpu
       HttpStatusCode.NotFound,
       'One principal exhausted another principal’s code-attempt allowance',
     );
+
+    const url = new URL(catalog.listWorkspaces.path, stack.origin);
+
+    for (let attempt = 0; attempt < LOW_AUTH_LIMITS.principal.requests; attempt += 1) {
+      await member.browser.request({ url });
+    }
+
     await stack.restart();
     await assertDeviceRequestLimited(limitedClient);
     await assertDeviceRequestAccepted(otherClient);
+
+    const bearer = await fetch(url, {
+      headers: { [HttpHeader.Authorization]: `Bearer ${member.token}` },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    });
+
+    await assertRateLimited(bearer);
+    await assertAuthenticatedRequestsAccepted({ stack, account: owner });
 
     const retained = await wrongCode({ account: member, page: memberPage });
 

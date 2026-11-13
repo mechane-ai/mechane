@@ -31,7 +31,7 @@ export function localSandboxVariables(input: SandboxEnvironmentOptions): Environ
 export const FIXTURE_AUTH_RATE_LIMITS = {
   address: { requests: 1000, windowSeconds: 600 },
   deviceStart: { requests: 1000, windowSeconds: 600 },
-  principal: { requests: 300, windowSeconds: 60 },
+  principal: { requests: 1000, windowSeconds: 60 },
   codeAttempt: { requests: 1000, windowSeconds: 600 },
 } as const;
 
