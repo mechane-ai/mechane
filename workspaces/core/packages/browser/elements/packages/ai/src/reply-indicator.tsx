@@ -1,13 +1,16 @@
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useState } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useVisibleMotion } from '../../foundations/src/visible-motion.ts';
 
 const sweep = stylex.keyframes({ from: { backgroundPosition: '200% 0' }, to: { backgroundPosition: '-100% 0' } });
 
 const styles = stylex.create({
   root: {
+    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    display: 'flex',
+    alignItems: 'center',
     color: colors.muted,
     fontFamily: typography.fontFamily,
     fontSize: typography.captionSize,

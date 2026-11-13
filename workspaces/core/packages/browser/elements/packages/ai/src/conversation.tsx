@@ -85,7 +85,13 @@ export type ConversationViewportProps = {
 };
 
 export type ConversationContentProps = { readonly children: ReactNode; readonly isStreaming?: boolean };
-export type ConversationItemProps = { readonly messageId: string; readonly children: ReactNode };
+
+export type ConversationItemProps = {
+  readonly messageId: string;
+  readonly shouldRevealOnAppend?: boolean;
+  readonly children: ReactNode;
+};
+
 export type ConversationJumpProps = { readonly label?: string };
 export type ConversationControlsProps = { readonly children: ReactNode };
 export type ConversationLatestButtonProps = { readonly label: string; readonly onActivate?: () => void };
@@ -148,7 +154,15 @@ function ConversationContent({ children, isStreaming = false }: ConversationCont
   );
 }
 
-function ConversationItem({ messageId, children }: ConversationItemProps): ReactNode {
+function ConversationItem({ messageId, shouldRevealOnAppend = false, children }: ConversationItemProps): ReactNode {
+  const { scrollToEnd } = useMessageScroller();
+
+  useLayoutEffect(() => {
+    if (shouldRevealOnAppend) {
+      scrollToEnd({ behavior: 'instant' });
+    }
+  }, [messageId, shouldRevealOnAppend, scrollToEnd]);
+
   return (
     <MessageScroller.Item messageId={messageId} {...stylex.props(styles.item)}>
       {children}

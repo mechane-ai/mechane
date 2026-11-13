@@ -111,8 +111,7 @@ export type MarkdownProps = {
 type MarkdownHeadingProps = ComponentProps<'h1'> & { readonly level: HeadingLevel };
 
 const HeadingContext = createContext<HeadingLevel>(1);
-const reveal = stylex.keyframes({ from: { opacity: 0.4 }, to: { opacity: 1 } });
-const textMotion = { animation: reveal, duration: 140, stagger: 0, maxBacklogMs: 0, sep: 'word' as const };
+const textMotion = { animation: 'fadeIn', duration: 160, stagger: 14, maxBacklogMs: 100 };
 
 type MarkdownCodeProps = ComponentProps<'code'>;
 const TEXT_NODE_TYPES: ReadonlySet<string> = new Set(['string', 'number']);
@@ -262,7 +261,7 @@ export const Markdown = memo(
 
     return (
       <HeadingContext value={headingLevel}>
-        <div ref={ref}>
+        <div ref={ref} data-streamdown-paused={isStreaming && !isActive ? '' : undefined}>
           <Streamdown
             {...markdownOptions}
             {...stylex.props(styles.root, toneStyles[tone], weightStyles[weight])}
@@ -270,7 +269,7 @@ export const Markdown = memo(
             components={components}
             mode={isStreaming ? 'streaming' : 'static'}
             isAnimating={isStreaming}
-            animated={isActive ? textMotion : false}
+            animated={isStreaming ? textMotion : false}
             controls={false}
             linkSafety={{ enabled: false }}
             allowedElements={allowedElements}

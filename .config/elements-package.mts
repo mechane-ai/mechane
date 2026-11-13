@@ -29,6 +29,7 @@ export function buildElementsPackage(source: string, destination: string) {
   const staged = join(output, 'package');
   const distribution = join(staged, 'dist');
   cpSync(join(sourcePackage, 'dist'), distribution, { recursive: true });
+  copyFileSync(join(sourcePackage, 'packages/foundations/src/styles.css'), join(distribution, 'foundations.css'));
   // StyleX hashes references from the package and defining path, which must match the compiled CSS.
   for (const [name, definition] of Object.entries(manifest.exports as Record<string, string>)) {
     if (!name.endsWith('.stylex')) continue;

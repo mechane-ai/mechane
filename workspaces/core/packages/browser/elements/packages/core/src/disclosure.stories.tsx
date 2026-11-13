@@ -58,7 +58,7 @@ export const Single: Story = {
     <Stack>
       <Muted>The main result stays visible.</Muted>
       <Collapsible.Root>
-        <Collapsible.Trigger>Supporting details</Collapsible.Trigger>
+        <Collapsible.Trigger variant="inline">Supporting details</Collapsible.Trigger>
         <Collapsible.Panel>This detail is optional and receives no independent loading state.</Collapsible.Panel>
       </Collapsible.Root>
     </Stack>

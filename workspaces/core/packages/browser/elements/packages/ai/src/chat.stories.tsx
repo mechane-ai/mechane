@@ -32,6 +32,7 @@ const words = [
   '```',
 ];
 
+const waitingPhases: ReadonlySet<Turn['phase']> = new Set(['sending', 'working']);
 const settledPhases: ReadonlySet<Turn['phase']> = new Set(['unconfirmed', 'done', 'stopped']);
 const toolPhases: ReadonlySet<Turn['phase']> = new Set(['tool', 'answer', 'done', 'stopped']);
 
@@ -107,13 +108,10 @@ function Chat({ scenario }: { scenario: Scenario }) {
             </Conversation.Item>
             {turn === undefined ? null : (
               <>
-                <Conversation.Item messageId={turn.id}>
+                <Conversation.Item messageId={turn.id} shouldRevealOnAppend>
                   <Message author="You" kind="user" variant="chat">
                     <Markdown>{turn.text}</Markdown>
                   </Message>
-                  {turn.phase === 'sending' ? (
-                    <ReplyIndicator label="Sending…" delayMs={400} isAnimated={false} />
-                  ) : null}
                   {turn.phase === 'unconfirmed' ? (
                     <Stack isCompact>
                       <Muted>Delivery unconfirmed</Muted>
@@ -126,10 +124,10 @@ function Chat({ scenario }: { scenario: Scenario }) {
                 <Conversation.Item messageId={`reply:${turn.id}`}>
                   <Message author="Assistant" variant="chat">
                     <Stack isCompact>
-                      {turn.phase === 'working' ? <ReplyIndicator label="Working…" /> : null}
+                      {waitingPhases.has(turn.phase) ? <ReplyIndicator label="Working…" /> : null}
                       {showTool ? (
                         <Collapsible.Root>
-                          <Collapsible.Trigger>
+                          <Collapsible.Trigger variant="inline">
                             {turn.phase === 'tool' ? 'Checking submissions…' : 'Checked submissions'}
                           </Collapsible.Trigger>
                           <Collapsible.Panel>

@@ -46,7 +46,7 @@ const styles = stylex.create({
   },
   invalid: { borderColor: colors.danger },
   inlineFrame: { flexDirection: 'row', alignItems: 'flex-end', paddingBlock: spacing.sm },
-  inlineInput: { flex: '1 1 auto' },
+  inlineInput: { flex: '1 1 auto', alignSelf: 'center' },
   inlineFooter: { flexShrink: 0 },
   footer: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm, minWidth: 0, flex: '1 1 auto' },

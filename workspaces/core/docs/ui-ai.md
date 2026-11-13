@@ -9,7 +9,9 @@ the rest of Elements by Mechane.
 
 `Conversation` owns scrolling through the headless `@shadcn/react/message-scroller` primitive. Compose `Root`,
 `Viewport`, `Content`, and stable `Item` rows. Add `JumpToLatest` inside the root. Give the viewport a descriptive label
-and each item a stable `messageId`. Key the root by conversation identity when switching conversations.
+and each item a stable `messageId`. Key the root by conversation identity when switching conversations. Mark the locally
+submitted user item with `shouldRevealOnAppend` to return to the live edge when the user sends. Keep its ID through
+acknowledgement.
 
 A height-constrained parent creates a scrolling transcript. Without that constraint, the content grows in ordinary
 document flow. `initialPosition="start"` and `shouldFollow={false}` suit a historical page. Live conversations default
@@ -59,9 +61,10 @@ Clicking a button does not itself change the displayed status.
 popover. It supports keyboard and touch and links to the real supplied destination. Source provenance and visibility
 remain application decisions.
 
-Use the shared `Trace` for recorded steps, `Collapsible` for supplied summaries, and content viewers for recorded input
-and output. A supplied explanation is not evidence of a model's hidden reasoning. A recorded command is not a live
-terminal. Context capacity uses `Meter` with `null` for unknown usage and an explicit display label.
+Use `Collapsible.Trigger variant="inline"` to keep a tool summary and its disclosure arrow together. Use the shared
+`Trace` for recorded steps, `Collapsible` for supplied summaries, and content viewers for recorded input and output. A
+supplied explanation is not evidence of a model's hidden reasoning. A recorded command is not a live terminal. Context
+capacity uses `Meter` with `null` for unknown usage and an explicit display label.
 
 ## Recipe coverage
 

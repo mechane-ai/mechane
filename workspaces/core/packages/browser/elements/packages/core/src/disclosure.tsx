@@ -6,7 +6,7 @@ import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import type { OpenStateProperties, ValueStateProperties } from '../../foundations/src/control-state.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
-import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, motion, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 const styles = stylex.create({
   root: {
@@ -51,6 +51,23 @@ const styles = stylex.create({
       outlineOffset: 2,
     },
   },
+  inline: {
+    'width': 'fit-content',
+    'paddingBlock': 0,
+    'maxWidth': '100%',
+    'justifyContent': 'flex-start',
+    'gap': spacing.xs,
+    'color': colors.muted,
+    'fontWeight': typography.regularWeight,
+    ':hover:not([data-disabled])': { color: { default: null, [conditions.hoverPointer]: colors.ink } },
+  },
+  inlineIcon: {
+    width: 14,
+    height: 14,
+    transitionProperty: 'transform',
+    transitionDuration: { default: motion.duration, [conditions.reducedMotion]: '0ms' },
+    transitionTimingFunction: motion.easing,
+  },
   icon: {
     flexShrink: 0,
     width: controls.iconSize,
@@ -60,6 +77,9 @@ const styles = stylex.create({
   },
   panel: { paddingBottom: spacing.md, overflowWrap: 'anywhere' },
 });
+
+const triggerStyles = { default: null, inline: styles.inline };
+const iconStyles = { default: null, inline: styles.inlineIcon };
 
 type AccordionRootProps<Value> = Omit<BaseAccordion.Root.Props<Value>, 'value' | 'defaultValue' | 'onValueChange'> &
   ValueStateProperties<Array<Value>, NonNullable<BaseAccordion.Root.Props<Value>['onValueChange']>>;
@@ -72,7 +92,10 @@ type AccordionPanelProps = ComponentProps<typeof BaseAccordion.Panel>;
 type CollapsibleRootProps = Omit<BaseCollapsible.Root.Props, 'open' | 'defaultOpen' | 'onOpenChange'> &
   OpenStateProperties<NonNullable<BaseCollapsible.Root.Props['onOpenChange']>>;
 
-type CollapsibleTriggerProps = ComponentProps<typeof BaseCollapsible.Trigger>;
+type CollapsibleTriggerProps = ComponentProps<typeof BaseCollapsible.Trigger> & {
+  readonly variant?: 'default' | 'inline';
+};
+
 type CollapsiblePanelProps = ComponentProps<typeof BaseCollapsible.Panel>;
 
 function AccordionRoot<Value = string>({ className, style, ...props }: AccordionRootProps<Value>): ReactNode {
@@ -136,18 +159,24 @@ function CollapsibleRoot({ className, style, ...props }: CollapsibleRootProps): 
   );
 }
 
-function CollapsibleTrigger({ className, style, children, ...props }: CollapsibleTriggerProps): ReactNode {
+function CollapsibleTrigger({
+  className,
+  style,
+  children,
+  variant = 'default',
+  ...props
+}: CollapsibleTriggerProps): ReactNode {
   return (
     <BaseCollapsible.Trigger
       {...props}
       {...mergeStyles<BaseCollapsible.Trigger.State>({
         className,
         style,
-        styles: stylex.props(styles.trigger, stylex.defaultMarker()),
+        styles: stylex.props(styles.trigger, triggerStyles[variant], stylex.defaultMarker()),
       })}
     >
       {children}
-      <ChevronDown aria-hidden {...stylex.props(styles.icon)} />
+      <ChevronDown aria-hidden {...stylex.props(styles.icon, iconStyles[variant])} />
     </BaseCollapsible.Trigger>
   );
 }
