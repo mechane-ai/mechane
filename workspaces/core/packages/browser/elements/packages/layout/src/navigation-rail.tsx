@@ -5,15 +5,7 @@ import type { ComponentProps, MouseEvent, MouseEventHandler, ReactNode } from 'r
 import { Button, IconButton, IconLink } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { controlStyles } from '../../foundations/src/control-styles.ts';
-import {
-  colors,
-  controls,
-  pageGeometry,
-  radii,
-  shadows,
-  spacing,
-  typography,
-} from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Tooltip } from '../../overlays/src/index.ts';
 import { SidebarContext } from './sidebar.tsx';
 
@@ -51,8 +43,7 @@ const styles = stylex.create({
     justifyContent: 'center',
     minHeight: pageGeometry.toolbarHeight,
   },
-  selected: { backgroundColor: colors.canvas, boxShadow: shadows.selection },
-  mobileSelected: { backgroundColor: colors.canvas },
+  selected: { ':is([aria-current="location"])': { backgroundColor: colors.canvas } },
   mobileLink: {
     'flexDirection': 'column',
     'minHeight': controls.coarseTarget,
@@ -133,7 +124,7 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
                   controlStyles.button,
                   styles.mobileLink,
                   styles.rounded,
-                  isCurrent && styles.mobileSelected,
+                  styles.selected,
                 ),
                 link,
               )}
@@ -166,12 +157,12 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
       <div {...stylex.props(styles.root)}>
         <nav aria-label={label} {...stylex.props(styles.links)}>
           {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
-            <div key={link.href} {...stylex.props(styles.cell, isCurrent && styles.selected)}>
+            <div key={link.href} {...stylex.props(styles.cell)}>
               <Tooltip.Root>
                 <Tooltip.Trigger
                   render={
                     <IconLink
-                      {...link}
+                      {...mergeProps(stylex.props(styles.selected), link)}
                       aria-label={linkLabel}
                       aria-current={isCurrent ? 'location' : undefined}
                       onClick={(event) => activateLink(link.onClick, event)}
