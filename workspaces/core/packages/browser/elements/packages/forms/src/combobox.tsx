@@ -190,6 +190,7 @@ function ComboboxInput({ className, style, ...props }: ComboboxInputProps): Reac
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
+          controlStyles.singleLineField,
           fieldStyles.input,
           controlStyles.embedded,
           styles.input,

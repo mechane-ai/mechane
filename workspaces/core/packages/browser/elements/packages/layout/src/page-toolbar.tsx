@@ -2,6 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { Children } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '../../core/src/index.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { frameConditions } from './frame.stylex.ts';
 import { SidebarToggle } from './sidebar.tsx';
@@ -9,15 +10,13 @@ import { SidebarToggle } from './sidebar.tsx';
 const styles = stylex.create({
   toolbar: {
     boxSizing: 'border-box',
+    position: 'relative',
     display: 'flex',
     containerType: 'inline-size',
     containerName: 'toolbar',
     alignItems: 'stretch',
     height: pageGeometry.toolbarHeight,
     flexShrink: 0,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
     backgroundColor: colors.surface,
     color: colors.ink,
     fontFamily: typography.fontFamily,
@@ -89,7 +88,7 @@ export function PageToolbar({
   const Label = showBreadcrumb ? 'div' : 'span';
 
   return (
-    <div {...stylex.props(styles.toolbar)}>
+    <div {...stylex.props(styles.toolbar, headerStyles.blockEnd)}>
       {hasLeading ? <div {...stylex.props(styles.leading)}>{leading}</div> : showNavigation && <SidebarToggle />}
       {hasTitle && (
         <Title

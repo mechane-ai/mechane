@@ -92,7 +92,13 @@ export function Input({ className, style, xstyle, ...props }: InputProps): React
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.base, controlStyles.field, styles.input, xstyle),
+        styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
+          controlStyles.singleLineField,
+          styles.input,
+          xstyle,
+        ),
       })}
     />
   );

@@ -40,6 +40,7 @@ export const controlStyles = stylex.create({
     color: colors.ink,
     fontSize: { default: typography.bodySize, [conditions.coarsePointer]: typography.touchInputSize },
   },
+  singleLineField: { height: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget } },
   fieldRoot: {
     display: 'flex',
     flexDirection: 'column',

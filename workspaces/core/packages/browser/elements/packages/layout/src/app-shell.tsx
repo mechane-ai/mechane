@@ -1,6 +1,7 @@
 import * as stylex from '@stylexjs/stylex';
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, pageGeometry, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
 import { frame, frameConditions } from './frame.stylex.ts';
@@ -23,9 +24,6 @@ const styles = stylex.create({
     boxSizing: 'border-box',
     display: { default: 'flex', [frameConditions.sidebarMobile]: 'none' },
     flexDirection: 'column',
-    borderRightWidth: 1,
-    borderRightStyle: 'solid',
-    borderRightColor: colors.line,
     backgroundColor: colors.surface,
     position: 'sticky',
     top: 0,
@@ -117,7 +115,10 @@ export function AppShell({
     >
       <div {...stylex.props(styles.shell)}>
         {hasRail && (
-          <div hidden={shouldFocus} {...stylex.props(styles.sidebar, styles.rail, shouldFocus && styles.hidden)}>
+          <div
+            hidden={shouldFocus}
+            {...stylex.props(styles.sidebar, headerStyles.inlineEnd, styles.rail, shouldFocus && styles.hidden)}
+          >
             <div {...stylex.props(styles.railBody)}>{rail}</div>
             {hasRailFooter && (
               <div {...stylex.props(styles.railFooter)}>
@@ -132,6 +133,7 @@ export function AppShell({
           hidden={shouldHideSidebar}
           {...stylex.props(
             styles.sidebar,
+            headerStyles.inlineEnd,
             hasRail && styles.secondary,
             !hasRail && !isExpanded && styles.collapsed,
             shouldHideSidebar && styles.hidden,

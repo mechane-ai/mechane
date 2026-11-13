@@ -255,6 +255,7 @@ function InputGroupInput({ className, style, xstyle, ...props }: InputProps): Re
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
+          controlStyles.singleLineField,
           fieldStyles.input,
           controlStyles.embedded,
           xstyle,
@@ -296,6 +297,7 @@ function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps)
         styles: stylex.props(
           controlStyles.base,
           controlStyles.field,
+          controlStyles.singleLineField,
           fieldStyles.input,
           controlStyles.embedded,
           styles.numberInput,
@@ -417,7 +419,14 @@ export function FilePicker({ className, style, xstyle, ...props }: FilePickerPro
       {...mergeStyles<BaseInput.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.base, controlStyles.field, fieldStyles.input, styles.file, xstyle),
+        styles: stylex.props(
+          controlStyles.base,
+          controlStyles.field,
+          controlStyles.singleLineField,
+          fieldStyles.input,
+          styles.file,
+          xstyle,
+        ),
       })}
     />
   );

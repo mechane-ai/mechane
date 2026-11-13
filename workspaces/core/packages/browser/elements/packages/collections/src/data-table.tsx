@@ -2,7 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-table';
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Children, Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { SkeletonText } from '../../feedback/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
@@ -185,7 +185,17 @@ const styles = stylex.create({
   rowControl: { position: 'relative', zIndex: 1 },
   text: { display: 'block', minWidth: 0, width: '100%' },
   textColumn: { flex: 1, minWidth: 0 },
-  textRow: { display: 'flex', alignItems: 'center', gap: spacing.md, minWidth: 0, width: '100%' },
+  textRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: spacing.md,
+    minWidth: 0,
+    width: '100%',
+    fontFamily: typography.fontFamily,
+    fontSize: typography.bodySize,
+    lineHeight: typography.bodyLineHeight,
+    fontWeight: typography.regularWeight,
+  },
   primaryRow: { display: 'flex', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
   primaryText: { width: 'auto', flexShrink: 1 },
   adornment: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
@@ -422,9 +432,11 @@ function TextCellLayout({
   readonly leading?: ReactNode;
   readonly isDecorative?: boolean;
 }): ReactNode {
+  const hasLeading = Children.toArray(leading).length > 0;
+
   return (
     <span aria-hidden={isDecorative || undefined} inert={isDecorative || undefined} {...stylex.props(styles.textRow)}>
-      {leading !== undefined && (
+      {hasLeading && (
         <span aria-hidden {...stylex.props(styles.adornment)}>
           {leading}
         </span>
@@ -435,13 +447,15 @@ function TextCellLayout({
 }
 
 export function DataTableText({ children, secondary, leading, trailing }: DataTableTextProps): ReactNode {
+  const hasTrailing = Children.toArray(trailing).length > 0;
+
   return (
     <TextCellLayout leading={leading}>
       <span {...stylex.props(styles.primaryRow)}>
         <span title={children} {...stylex.props(styles.text, styles.primaryText, styles.truncated)}>
           {children}
         </span>
-        {trailing !== undefined && trailing !== null && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
+        {hasTrailing && <span {...stylex.props(styles.adornment)}>{trailing}</span>}
       </span>
       {secondary !== undefined && (
         <span title={secondary} {...stylex.props(styles.text, styles.truncated, styles.secondaryText)}>

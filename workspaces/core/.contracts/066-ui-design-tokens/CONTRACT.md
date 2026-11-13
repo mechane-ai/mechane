@@ -55,9 +55,10 @@ The supported themes are light and dark. Apply the chosen theme to the document 
 Text uses the declared `textContrast` and `largeTextContrast` ratios against its actual
 surface, with WCAG 2.2 AA's exceptions for inactive controls and decorative text.
 
-Ordinary buttons, icon controls, inputs, selection triggers, and input groups share `controls.height` as their outer
-height, including borders. Use the shared `controlStyles` recipe and body typography; coarse pointers use
-`controls.coarseTarget` and text entry uses `typography.touchInputSize`. Keep multiline text entry content-sized.
+Single-line ordinary controls share `controls.height` as their outer height, including borders. Use the shared
+`controlStyles` recipe and body typography; coarse pointers use `controls.coarseTarget` and text entry uses
+`typography.touchInputSize`. Native date and month fields share that sizing. Let controls grow for wrapped labels or
+larger leading artwork, and keep multiline text entry content-sized. Apply fixed sizing only to single-line fields.
 Expose emphasis and intent through named variants, without public control size, padding, or radius choices.
 `ButtonPlaceholder` and `FieldPlaceholder` reuse that recipe; pending and loaded controls have the same geometry.
 Use the same intrinsic content row for ordinary and reserved button labels. Keep icons at their supplied size while
@@ -107,6 +108,17 @@ Use supported layout modes rather than negative margins or application selectors
 Parent `Row` and `Stack` own alignment and gaps. Structural gaps use the shared 4px scale; borders and measured optical
 alignment have separate geometry. Detail titles and prose wrap without widening their container.
 
+Use the shared header-row recipe for `SectionHeading` and `CollectionToolbar`. A standard single-line row fits
+`pageGeometry.toolbarHeight`, including its separator; wrapping may grow it. Shell toolbar and navigation-cell rules
+do not consume the area used to centre their contents. Keep `pageGeometry`, `controls`, and `tableGeometry` independent
+by role, even where values match. The public `docs/visual-system.md#geometry-and-alignment` defines their relationships.
+
+Give the expanded sidebar header its inset at the slot, rather than in supplied branding or selectors. Use
+`NavigationSection` for group-label geometry. Keep collapsed rails and phone drawers within their supported layout;
+an expanded header's padding must not squeeze a collapsed control. Ordinary navigation uses the shared control height.
+Expanded navigation uses 8px outer and item insets; collapsed items centre in the rail. Logos and avatars retain their
+content geometry instead of inheriting an icon size.
+
 Keep navigation hit areas contiguous within a group. Scrolling commands belong in the navigation region. Reserve
 fixed footer regions for persistent content with an explicit separator and opaque surface; never float a command over
 the last scrolling item. Inspect the last navigation item and footer with a short viewport as well as the first screen.
@@ -131,6 +143,9 @@ table geometry; event prose uses a timeline or detail view rather than an uneven
 Review mixed controls and their placeholders at fine and coarse pointer sizes: do their outer boxes and text align,
 including when a trigger composes a button? Review a collection, record, report, and settings form at desktop and narrow
 widths for shared gutters, section rhythm, field alignment, and a single separator at each boundary.
+Compare native date and month fields with placeholders, and a header with its pending and wrapped forms. Check the
+complete cell used for centring, not only its declared height. Inspect expanded, collapsed and drawer navigation after
+switching between them; preserve readable content, visible focus and usable targets with enlarged text.
 Open a disclosure and inspect a chart value. Check computed responsive widths and the last navigation item in a short
 viewport; a passing style or type check does not establish these visual properties.
 

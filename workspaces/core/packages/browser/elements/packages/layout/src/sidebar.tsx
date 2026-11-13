@@ -5,6 +5,7 @@ import { createContext, useContext, useId } from 'react';
 import type { ComponentProps, ReactNode, RefObject } from 'react';
 import { IconButton } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Drawer } from '../../overlays/src/index.ts';
@@ -25,17 +26,19 @@ export const SidebarContext = createContext<SidebarState | null>(null);
 const styles = stylex.create({
   header: {
     boxSizing: 'border-box',
+    position: 'relative',
     display: 'flex',
     alignItems: 'stretch',
     height: pageGeometry.toolbarHeight,
     flexShrink: 0,
     minWidth: 0,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
   },
   emptyHeader: { display: { default: 'none', [frameConditions.sidebarMobile]: 'flex' } },
-  headerContent: { display: 'flex', alignItems: 'center', flex: 1, minWidth: 0 },
+  headerContent: { display: 'flex', alignItems: 'center', flex: 1, minWidth: 0, paddingInline: pageGeometry.inset },
+  collapsedHeader: {
+    justifyContent: { default: 'center', [frameConditions.sidebarMobile]: 'flex-start' },
+    paddingInline: { default: 0, [frameConditions.sidebarMobile]: pageGeometry.inset },
+  },
   navigationRegion: {
     'flex': 1,
     'minHeight': 0,
@@ -52,10 +55,11 @@ const styles = stylex.create({
   },
   footerRegion: { flexShrink: 0, minWidth: 0, marginTop: 'auto', backgroundColor: colors.surface, color: colors.muted },
   navigation: { display: 'flex', flexDirection: 'column', paddingInline: frame.navigationPadding },
-  section: { paddingBlock: spacing.sm },
+  section: { minWidth: 0 },
   sectionTitle: {
     minWidth: 0,
-    paddingBlock: spacing.sm,
+    paddingBlockStart: spacing.lg,
+    paddingBlockEnd: spacing.xs,
     paddingInline: frame.navigationPadding,
     color: colors.muted,
     fontFamily: typography.fontFamily,
@@ -70,8 +74,8 @@ const styles = stylex.create({
   navigationControl: {
     justifyContent: 'flex-start',
     gap: spacing.sm,
-    height: { default: frame.navigationHeight, [conditions.coarsePointer]: controls.coarseTarget },
-    minHeight: frame.navigationHeight,
+    height: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: controls.height,
     width: '100%',
     minWidth: 0,
     paddingBlock: 0,
@@ -119,16 +123,14 @@ const styles = stylex.create({
   collapsedLabel: { display: { default: 'none', [frameConditions.sidebarMobile]: 'inline-flex' } },
   footer: {
     boxSizing: 'border-box',
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     gap: spacing.sm,
     minHeight: frame.footerHeight,
     minWidth: 0,
     flexShrink: 0,
-    paddingInline: frame.footerPadding,
-    borderTopWidth: 1,
-    borderTopStyle: 'solid',
-    borderTopColor: colors.line,
+    paddingInline: pageGeometry.inset,
     backgroundColor: colors.surface,
     color: colors.muted,
     fontFamily: typography.fontFamily,
@@ -139,20 +141,18 @@ const styles = stylex.create({
   },
   collapsedFooter: {
     justifyContent: { default: 'center', [frameConditions.sidebarMobile]: 'flex-start' },
-    paddingInline: { default: 0, [frameConditions.sidebarMobile]: frame.footerPadding },
+    paddingInline: { default: 0, [frameConditions.sidebarMobile]: pageGeometry.inset },
   },
   inlineFooter: {},
   navigationFooter: { display: 'block', paddingInline: 0, paddingBlock: spacing.sm },
   toggleCell: {
     boxSizing: 'border-box',
+    position: 'relative',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
     width: pageGeometry.toolbarHeight,
-    borderRightWidth: 1,
-    borderRightStyle: 'solid',
-    borderRightColor: colors.line,
   },
   closeCell: {
     display: 'flex',
@@ -194,12 +194,14 @@ const footerLayouts = { inline: styles.inlineFooter, navigation: styles.navigati
 >;
 
 export function Sidebar({ header, navigationHeader, footer, close, children }: SidebarProps): ReactNode {
+  const sidebar = useContext(SidebarContext);
+  const isCollapsed = sidebar !== null && !sidebar.isExpanded;
   const hasHeader = header !== undefined && header !== null;
 
   return (
     <>
-      <div {...stylex.props(styles.header, !hasHeader && styles.emptyHeader)}>
-        <div {...stylex.props(styles.headerContent)}>{header}</div>
+      <div {...stylex.props(styles.header, headerStyles.blockEnd, !hasHeader && styles.emptyHeader)}>
+        <div {...stylex.props(styles.headerContent, isCollapsed && styles.collapsedHeader)}>{header}</div>
         {close}
       </div>
       {navigationHeader}
@@ -383,7 +385,16 @@ export function SidebarFooter({ children, layout = 'inline' }: SidebarFooterProp
   const isCollapsed = sidebar !== null && !sidebar.isExpanded;
 
   return (
-    <div {...stylex.props(styles.footer, isCollapsed && styles.collapsedFooter, footerLayouts[layout])}>{children}</div>
+    <div
+      {...stylex.props(
+        styles.footer,
+        headerStyles.blockStart,
+        isCollapsed && styles.collapsedFooter,
+        footerLayouts[layout],
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -396,7 +407,7 @@ export function SidebarToggle(): ReactNode {
 
   return (
     <>
-      <div {...stylex.props(styles.toggleCell, styles.desktop)}>
+      <div {...stylex.props(styles.toggleCell, headerStyles.inlineEnd, styles.desktop)}>
         <IconButton
           ref={sidebar.navigationToggleRef}
           variant="ghost"
@@ -408,7 +419,7 @@ export function SidebarToggle(): ReactNode {
           <PanelLeft size={16} aria-hidden />
         </IconButton>
       </div>
-      <div {...stylex.props(styles.toggleCell, styles.mobile)}>
+      <div {...stylex.props(styles.toggleCell, headerStyles.inlineEnd, styles.mobile)}>
         <Drawer.Trigger
           ref={sidebar.mobileNavigationToggleRef}
           handle={sidebar.drawerHandle}

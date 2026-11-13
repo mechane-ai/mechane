@@ -1,6 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
+import { Children } from 'react';
 import type { ReactNode } from 'react';
-import { colors, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
+import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
 export type SectionHeadingProps = {
   readonly title: ReactNode;
@@ -11,18 +13,7 @@ export type SectionHeadingProps = {
 
 const styles = stylex.create({
   root: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
     gap: spacing.md,
-    minHeight: pageGeometry.toolbarHeight,
-    minWidth: 0,
-    boxSizing: 'border-box',
-    paddingBlock: spacing.sm,
-    paddingInline: pageGeometry.inset,
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: colors.line,
     backgroundColor: colors.canvas,
     color: colors.ink,
     fontFamily: typography.fontFamily,
@@ -59,12 +50,14 @@ const styles = stylex.create({
 });
 
 export function SectionHeading({ title, id, meta, actions }: SectionHeadingProps): ReactNode {
-  const hasTrailing = meta !== undefined || actions !== undefined;
-  const metadata = meta !== undefined && <div {...stylex.props(styles.meta)}>{meta}</div>;
-  const controlActions = actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>;
+  const hasMetadata = Children.toArray(meta).length > 0;
+  const hasActions = Children.toArray(actions).length > 0;
+  const hasTrailing = hasMetadata || hasActions;
+  const metadata = hasMetadata && <div {...stylex.props(styles.meta)}>{meta}</div>;
+  const controlActions = hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>;
 
   return (
-    <div {...stylex.props(styles.root)}>
+    <div {...stylex.props(headerStyles.row, headerStyles.blockEnd, styles.root)}>
       <h2 id={id} {...stylex.props(styles.title)}>
         {title}
       </h2>

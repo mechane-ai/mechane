@@ -5,26 +5,13 @@ import type { ReactNode } from 'react';
 import { Button, IconButton, Text } from '../../core/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { colors, controls, pageGeometry, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
+import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { Popover } from '../../overlays/src/index.ts';
 
 const styles = stylex.create({
   toolbar: {
-    'boxSizing': 'border-box',
-    'display': 'flex',
-    'alignItems': 'center',
-    'flexWrap': 'wrap',
-    'minWidth': 0,
-    'minHeight': pageGeometry.toolbarHeight,
     'gap': spacing.sm,
-    'paddingInline': pageGeometry.inset,
-    'paddingBlock': {
-      default: `calc((${pageGeometry.toolbarHeight} - ${controls.height} - 1px) / 2)`,
-      [conditions.coarsePointer]: `calc((${pageGeometry.toolbarHeight} - ${controls.coarseTarget} - 1px) / 2)`,
-    },
-    'borderBottomWidth': 1,
-    'borderBottomStyle': 'solid',
-    'borderBottomColor': colors.line,
     'color': colors.ink,
     'fontFamily': typography.fontFamily,
     'fontSize': typography.bodySize,
@@ -106,7 +93,7 @@ export function CollectionToolbar({ label, children, actions }: CollectionToolba
   }
 
   return (
-    <div role="group" aria-label={label} {...stylex.props(styles.toolbar)}>
+    <div role="group" aria-label={label} {...stylex.props(headerStyles.row, headerStyles.blockEnd, styles.toolbar)}>
       {children}
       {hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>

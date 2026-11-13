@@ -61,6 +61,7 @@ export function FieldPlaceholder({
         {...stylex.props(
           controlStyles.base,
           controlStyles.field,
+          !isMultiline && controlStyles.singleLineField,
           !isMultiline && styles.singleLine,
           isMultiline && controlStyles.textarea,
           isMultiline && styles.rows(rows),

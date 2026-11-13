@@ -40,6 +40,11 @@ Use ordinary stacked sections as the default for related page content. A Panel o
 Show full-width tables within their containing task region and inset chart content in the existing layout examples.
 Review the actual composition before adding another surface or layout API.
 
+The public `docs/visual-system.md#geometry-and-alignment` identifies content edges, local report insets, shell cells
+and growing rows. Colocated layout and control examples show those relationships in one composition, including native
+fields and their placeholders. Guidance names which slot owns an inset and when wrapped content can change height.
+Use `NavigationSection` to demonstrate navigation groups; supplied sidebar-header content adds no second gutter.
+
 The chart report examples in `layout/src/page-content.stories.tsx` place summaries inside their explanatory charts.
 The ReportContent examples in `layout/src/collection-layout.stories.tsx` document one inset summary followed by full-width rows,
 including a section without a summary. Pass content directly to the summary slot; do not nest PageContent inside it.
@@ -48,6 +53,8 @@ pending geometry and passive trends. Review the populations and time windows in 
 
 Read the selected story beside its component guide. Can a caller choose the appropriate layout and identify which
 component owns width, spacing, scrolling and state retention? Document legitimate embedded contexts at that owner.
+Compare the same composition at narrow and desktop widths with long text, both themes and coarse-pointer targets.
+Keep alignment guides in catalog examples, not a production layout API or a parallel component registry.
 
 Colocated stories, source guidance, and package documentation describe implemented public components.
 A component family may document its public parts in one story file. Supported means that the component is part of

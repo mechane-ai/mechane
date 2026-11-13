@@ -115,6 +115,11 @@ inherit an ellipsis guarantee from its cell. Preserve the full value in accessib
 disclosure. Keep dates, amounts, and comparable numeric values readable with adequate width or explicit content sizing.
 Inspect a long composed text cell beside these values; neither a clipped glyph nor a hidden control counts as truncation.
 
+Keep leading artwork nonshrinking and text flexible. Use the same artwork size, fallback and record-identity gap
+within a collection and its `DataTableTextPlaceholder`. An absent leading or trailing adornment contributes no empty
+slot or gap. Logos and avatars may differ from ordinary glyphs; reserve a missing slot only for a mixed collection
+whose labels need that alignment. A table's internal text layout does not redefine the page inset.
+
 Completed collection boundaries are silent by default. An explicit useful summary may remain, but do not show generic
 "End of results" messages or reserve an empty footer block after the last row. Preserve loading, retry, and load-more
 controls when more records may exist.

@@ -32,7 +32,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Ordinary controls and their placeholders share one border-box height and typography. Compare the outer edges, grouped inputs, and file selector at desktop and coarse-pointer widths. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column. Ready rows require controlId; use isPlaceholder for decorative rows without inventing label targets. FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
+          'Ordinary controls and their placeholders share one border-box height and typography. Compare the outer edges, native date/month fields, grouped inputs, and file selector at desktop and coarse-pointer widths. Single-line fields keep native editing and pickers within the shared height. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column. Ready rows require controlId; use isPlaceholder for decorative rows without inventing label targets. FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
       },
     },
   },
@@ -76,6 +76,16 @@ export const Recommended: Story = {
         <Field.Root>
           <Field.Label>Name</Field.Label>
           <Input defaultValue="Release notes" />
+          <FieldPlaceholder />
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Recorded date</Field.Label>
+          <Input type="date" defaultValue="2026-11-01" />
+          <FieldPlaceholder />
+        </Field.Root>
+        <Field.Root>
+          <Field.Label>Reporting month</Field.Label>
+          <Input type="month" defaultValue="2026-11" />
           <FieldPlaceholder />
         </Field.Root>
         <Field.Root>

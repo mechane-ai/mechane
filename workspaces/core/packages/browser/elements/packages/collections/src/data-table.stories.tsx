@@ -272,7 +272,7 @@ export const LongLabels: Story = {
           role: 'primary',
           cell: (run) => (
             <DataTableText
-              leading={<FileCheck size={20} />}
+              leading={<FileCheck size={16} />}
               secondary="Recorded against the repository’s current definition"
             >
               {run.name}
@@ -332,6 +332,10 @@ export const TextPlaceholder: Story = {
         Release review
       </DataTableText>
       <DataTableTextPlaceholder leading={<FileCheck size={16} />} isSecondary />
+      <DataTableText leading={null} trailing={false}>
+        No adornment
+      </DataTableText>
+      <DataTableTextPlaceholder leading={false} />
     </Stack>
   ),
 };

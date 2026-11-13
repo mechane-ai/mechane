@@ -19,18 +19,51 @@ structural scale expresses relationships: close metadata, related controls, form
 Tiny glyph offsets, borders, and optical control padding have different jobs. Forcing every measurement onto that scale
 would damage alignment. Text sizes follow the compact type hierarchy, not the spacing scale.
 
-Ordinary buttons, icon controls, inputs, and selection triggers share one 32px outer height, including borders. Their
-shared recipe owns padding, radius, and body typography. Coarse pointers use 44px targets and 16px text entry; multiline
-text entry keeps its own content height. Consumers choose intent and placement without adjusting control geometry.
-Decorative control placeholders use the same recipe, so a pending form fits its loaded composition.
-
-The foundation's `pageGeometry` defines a 16px page inset, 48px toolbar height, and 32px section gap. Layout and
-collections consume it independently. The same values align a record, collection, or report without making them share a
-page controller. A table owns its cell insets; wrapping it in another page gutter would double that spacing.
-
 Radix's Button and Text Field share a default size, and its Text Field guide recommends matching sizes when composing
 controls.[^radix-button][^radix-text-field] That supports the shared-size approach. The particular geometry here is our
 choice, not a requirement from another design system.
+
+## Geometry and alignment
+
+The foundation's `pageGeometry`, `controls`, and `tableGeometry` own different roles. Equal values do not couple those
+roles: changing a touch target does not change page padding, and a table row does not inherit toolbar behavior. Layout
+and collections consume foundations independently, without sharing a page controller.
+
+| Role                                   | Geometry and owner                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Page content edge                      | `pageGeometry.inset` is 16px. Section headings, table-cell content, and inset report frames share that edge.                    |
+| Shell toolbar and navigation cell      | 48px. Separators do not subtract from the area used to centre their contents.                                                   |
+| Section heading and collection toolbar | 48px minimum. A single row of ordinary controls fits that height; wrapped content grows.                                        |
+| Ordinary single-line control           | 32px including borders; 44px for coarse pointers. The shared control recipe owns its geometry.                                  |
+| Navigation item                        | 32px; 44px for coarse pointers. Expanded navigation has 8px outer and item insets; collapsed items centre in the rail.          |
+| Standard navigation or leading glyph   | A 16px box that does not shrink beside text. Small indicators, artwork and avatars retain their intended sizes.                 |
+| Table row and column header            | 48px row; 36px header baseline, growing for larger sort targets. Table geometry owns the virtualizer's matching fixed estimate. |
+| Page section gap                       | `pageGeometry.sectionGap` is 32px. The containing composition owns it.                                                          |
+
+Use the same edge for equivalent content, rather than aligning every label on a page. Table rules reach the task-pane
+edges while cells own their inset. An inset report frame starts at the content edge, then its heading, summary and
+legend share an internal inset. A plot also reserves room for axis labels. Toolbar titles follow their leading
+navigation control; that title does not define the body's left edge. Reading columns, dialogs and inspectors keep their
+own containing width.
+
+Header rows share one [padding recipe](../packages/browser/elements/packages/foundations/src/header-styles.ts) around
+ordinary controls, with 8px above and below a 32px control or 2px around a 44px target. Their noninteractive separators
+do not add another layout pixel. Titles and action groups may wrap; never clip content to preserve a nominal row height.
+Shell cells centre their controls; text rows align by their line boxes, and adjacent text uses a common baseline.
+Measured glyph and border adjustments stay with the owning component.
+
+The expanded sidebar header owns its inset; supply branding or a selector without another outer gutter. Its collapsed
+rail and phone drawer use their own supported layout. Use `NavigationSection` for group labels and `NavigationLink` or
+`NavigationItem` for destinations or actions. Parent navigation owns spacing; children do not add corrective margins.
+
+Native single-line fields, including date and month inputs, and their placeholders share outer sizing. Controls with
+wrapped labels or larger leading artwork may grow, as may multiline text entry. Coarse-pointer text entry uses 16px
+type. Keep native editing and picker affordances, and compare field and placeholder geometry in the same browser.
+Consumers choose intent and placement without changing control height, padding or typography.
+
+`DataTableText` preserves the size of supplied leading artwork and its record-identity gap. Use the same size and
+fallback within a collection, including its placeholder. An absent adornment contributes no slot or gap. A logo or
+avatar need not share the ordinary glyph's size; reserve an empty slot only when mixed records need aligned labels.
 
 ## Composition decisions
 

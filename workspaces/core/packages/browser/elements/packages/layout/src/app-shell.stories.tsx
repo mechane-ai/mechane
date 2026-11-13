@@ -1,8 +1,21 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Archive, FileText, Folder, LayoutGrid, LogOut, Plus, RefreshCw, Server, Settings } from 'lucide-react';
+import * as stylex from '@stylexjs/stylex';
+import {
+  Archive,
+  ChevronDown,
+  FileText,
+  Folder,
+  LayoutGrid,
+  LogOut,
+  Plus,
+  RefreshCw,
+  Server,
+  Settings,
+} from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Avatar, Button, Heading, Muted, Panel, Stack } from '../../core/src/index.ts';
+import { Select } from '../../forms/src/index.ts';
 import { Menu } from '../../overlays/src/index.ts';
 import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
@@ -38,7 +51,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. Supplying rail adds a permanent area rail beside the contextual sidebar. NavigationRail takes ordered links, the current area, and an optional action. The application owns URLs, selection, routing, preloading, and the action. A rail uses icon links with managed tooltips on desktop and visible labels in the drawer. The toolbar toggle hides the contextual sidebar while retaining the rail. Without rail, collapse shows each page icon. Focus mode hides navigation while retaining the expansion preference. Navigation groups NavigationLink destinations or NavigationItem actions; NavigationSection labels related groups. SidebarLabel hides supporting text on the collapsed sidebar. SidebarFooter groups persistent controls in the contextual pane. PageToolbar owns its outer border, optional leading control, and view choices. ToolbarAction supplies resource actions with concise labels. DetailPage centers a form or detail view; tables stay flush in the main area. Inspect the final item in a short viewport, use the phone examples to inspect dismissal and focus, and open the desktop icon tooltips with pointer and keyboard.',
+          'Supported. AppShell owns the expanded sidebar, collapsed rail, and phone drawer. The sidebar header owns its inset; supply content without another outer gutter. Its desktop collapsed state centres content, and the drawer restores the expanded inset. Supplying rail adds a permanent area rail beside the contextual sidebar. NavigationRail takes ordered links, the current area, and an optional action. The application owns URLs, selection, routing, preloading, and the action. A rail uses icon links with managed tooltips on desktop and visible labels in the drawer. The toolbar toggle hides the contextual sidebar while retaining the rail. Without rail, collapse shows each page icon. Focus mode hides navigation while retaining the expansion preference. Navigation groups NavigationLink destinations or NavigationItem actions; NavigationSection owns the label inset and spacing for related groups. SidebarLabel hides supporting text on the collapsed sidebar. SidebarFooter groups persistent controls in the contextual pane. PageToolbar owns its outer separator, optional leading control, and view choices. ToolbarAction supplies resource actions with concise labels. DetailPage centres a form or detail view; tables stay flush in the main area. Inspect the final item in a short viewport, use the phone examples to inspect dismissal and focus, and open the desktop icon tooltips with pointer and keyboard.',
       },
     },
   },
@@ -47,12 +60,48 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-function CollectionShell(): ReactNode {
+const styles = stylex.create({ headerControl: { width: '100%' } });
+
+const workspaceOptions = [
+  { value: 'example', label: 'Example collection' },
+  { value: 'personal', label: 'Personal collection' },
+];
+
+function WorkspaceHeader(): ReactNode {
+  return (
+    <Select.Root items={workspaceOptions} defaultValue="example">
+      <Select.Trigger variant="ghost" aria-label="Workspace" xstyle={styles.headerControl}>
+        <Avatar label="Example collection" fallback="EC" size="sm" />
+        <SidebarLabel shouldGrow>
+          <Select.Value />
+          <Select.Icon>
+            <ChevronDown size={16} aria-hidden />
+          </Select.Icon>
+        </SidebarLabel>
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Positioner>
+          <Select.Popup>
+            <Select.List>
+              {workspaceOptions.map((workspace) => (
+                <Select.Item key={workspace.value} value={workspace.value}>
+                  <Select.ItemText>{workspace.label}</Select.ItemText>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
+
+function CollectionShell({ hasHeaderControl = false }: { readonly hasHeaderControl?: boolean }): ReactNode {
   const [view, setView] = useState('Release notes');
 
   return (
     <AppShell
-      sidebarHeader={<SidebarLabel>Example collection</SidebarLabel>}
+      sidebarHeader={hasHeaderControl ? <WorkspaceHeader /> : <SidebarLabel>Example collection</SidebarLabel>}
       sidebar={
         <Navigation label="Collection">
           <NavigationItem
@@ -112,6 +161,7 @@ function CollectionShell(): ReactNode {
 }
 
 export const Recommended: Story = { render: () => <CollectionShell /> };
+export const HeaderControl: Story = { render: () => <CollectionShell hasHeaderControl /> };
 export const PhoneNavigation: Story = { ...Recommended, globals: { viewport: { value: 'narrow', isRotated: false } } };
 
 const areas = [

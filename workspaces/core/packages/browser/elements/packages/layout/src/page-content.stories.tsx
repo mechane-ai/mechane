@@ -1,11 +1,34 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import * as stylex from '@stylexjs/stylex';
 import { Download } from 'lucide-react';
+import { useState } from 'react';
 import { BarChart, BarChartPlaceholder } from '../../charts/src/cartesian/index.ts';
 import { CollectionToolbar, DataTable, Metric, MetricGrid } from '../../collections/src/index.ts';
-import { SectionHeading } from '../../core/src/index.ts';
+import { Button, SectionHeading } from '../../core/src/index.ts';
+import { ButtonPlaceholder, FieldPlaceholder } from '../../feedback/src/index.ts';
+import { Input } from '../../forms/src/index.ts';
+import { colors, pageGeometry } from '../../foundations/src/tokens.stylex.ts';
 import { PageContent } from './page-content.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import { ReportContent } from './report-content.tsx';
+
+const styles = stylex.create({
+  comparison: { position: 'relative', minWidth: 0 },
+  guides: {
+    '::before': {
+      content: '""',
+      position: 'absolute',
+      insetBlock: 0,
+      insetInlineStart: pageGeometry.inset,
+      width: 1,
+      backgroundColor: colors.focus,
+      opacity: 0.3,
+      pointerEvents: 'none',
+      zIndex: 1,
+    },
+  },
+  field: { width: 192 },
+});
 
 const meta = {
   title: 'Layout/PageContent',
@@ -140,3 +163,45 @@ export const NarrowChartReport: Story = {
   ...ChartReport,
   globals: { viewport: { value: 'narrow', isRotated: false } },
 };
+
+function AlignmentReport({ isLoading = false }: { readonly isLoading?: boolean }) {
+  const [hasGuides, setHasGuides] = useState(false);
+
+  return (
+    <div {...stylex.props(styles.comparison, hasGuides && styles.guides)}>
+      <PageToolbar
+        showNavigation={false}
+        title="Account activity"
+        actions={
+          <ToolbarAction aria-pressed={hasGuides} onClick={() => setHasGuides(!hasGuides)}>
+            Alignment guides
+          </ToolbarAction>
+        }
+      />
+      <SectionHeading
+        title="Reporting period"
+        actions={
+          isLoading ? (
+            <FieldPlaceholder width={192} />
+          ) : (
+            <Input type="month" aria-label="Reporting month" defaultValue="2026-11" xstyle={styles.field} />
+          )
+        }
+      />
+      <CollectionToolbar
+        label="Activity controls"
+        actions={isLoading ? <ButtonPlaceholder width="6ch" /> : <Button>Export</Button>}
+      >
+        {isLoading ? (
+          <FieldPlaceholder width={192} />
+        ) : (
+          <Input aria-label="Find activity" placeholder="Find activity" xstyle={styles.field} />
+        )}
+      </CollectionToolbar>
+      <ActivityReport isLoading={isLoading} />
+    </div>
+  );
+}
+
+export const Alignment: Story = { render: () => <AlignmentReport /> };
+export const AlignmentLoading: Story = { render: () => <AlignmentReport isLoading /> };

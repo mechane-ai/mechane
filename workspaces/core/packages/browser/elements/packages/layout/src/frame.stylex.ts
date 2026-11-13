@@ -2,11 +2,9 @@ import * as stylex from '@stylexjs/stylex';
 
 export const frame = stylex.defineVars({
   sidebarWidth: '240px',
-  navigationHeight: '34px',
   navigationInset: '8px',
-  navigationPadding: '7px',
+  navigationPadding: '8px',
   footerHeight: '40px',
-  footerPadding: '14px',
   detailWidth: '84%',
   detailMaxWidth: '980px',
   detailTop: '44px',

@@ -26,6 +26,7 @@ const FOUNDATION_ENTRIES = [
   'use-scroll-tab-index.ts',
   'control-state.ts',
   'control-styles.ts',
+  'header-styles.ts',
   'style-composition.ts',
   'overlay-styles.ts',
   'popup-styles.ts',

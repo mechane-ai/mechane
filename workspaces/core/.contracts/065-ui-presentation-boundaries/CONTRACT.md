@@ -58,8 +58,8 @@ The family graph permits these dependencies:
 | `charts` | `foundations`, `core`, `forms`, `overlays`, `feedback` |
 
 Import another family through a declared public entry. The registry explicitly permits shared foundations for
-accessibility, controlled state, style composition, overlay geometry, and popup styles without exposing them to npm
-consumers. Import token definitions directly, as contract 114 requires. Foundations import no other family.
+accessibility, controlled state, control and header styles, style composition, overlay geometry, and popup styles
+without exposing them to npm consumers. Import token definitions directly, as contract 114 requires. Foundations import no other family.
 Catalog stories may compose public entries together. Applications compose charts, layout, content, and AI without
 adding reverse dependencies. Keep the sidebar context with its layout owner and shared chart geometry with charts.
 Collections and AI use feedback's skeleton primitives to reserve table and composer geometry; feedback does not depend
