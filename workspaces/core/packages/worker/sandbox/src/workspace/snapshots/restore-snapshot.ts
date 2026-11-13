@@ -1,8 +1,9 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+import { MachineStatus } from '@mechane/sandbox-store';
 import type { WorkspaceRestoration, WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { SandboxArchive, StartupFailure, StartupPhase, WorkspaceStep } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
-import { Array, DateTime, Option, Result, Schema } from 'effect';
+import { Array, DateTime, Duration, Option, Result, Schema } from 'effect';
 import {
   WORKSPACE_RESTORE_ADMISSION_BATCH_PARTS,
   WORKSPACE_RESTORE_ADMISSION_DURATION,
@@ -10,6 +11,7 @@ import {
   WORKSPACE_TRANSFER_BATCH_DURATION,
   WORKSPACE_TRANSFER_BATCH_PARTS,
 } from '../../constants.ts';
+import { writeRestoreStageTiming } from '../../output/write-sandbox-diagnostic.ts';
 import type { GuestConnection, MachineIdInput, WorkspaceProviderStepInput } from '../../types.ts';
 import { verifyGenerationManifest } from '../generation-manifest.ts';
 import { workspaceRequest } from '../workspace-request.ts';
@@ -36,24 +38,76 @@ export async function restoreSnapshot({
   const { generation, archive } = snapshot;
   const observedAt = DateTime.nowUnsafe();
 
-  const restored = store.workspace().restoration;
+  let restored = store.workspace().restoration;
 
-  if (Option.isNone(restored) || restored.value.part < archive.parts) {
+  const isSameRestore = Option.exists(
+    restored,
+    (value) => value.machineId === machineId && value.generation === generation,
+  );
+
+  const hasRemainingParts = Option.exists(restored, (value) => value.part < archive.parts);
+
+  if (!isSameRestore || hasRemainingParts) {
     store.advanceStartup({ machineId, phase: StartupPhase.Transfer, now: observedAt });
   }
 
-  if (Option.isNone(restored) || restored.value.machineId !== machineId || restored.value.generation !== generation) {
-    await verifyGenerationManifest({ workspace, snapshot });
+  if (!isSameRestore) {
+    const manifestStartedAt = DateTime.nowUnsafe();
+    const started = performance.now();
+    const promise = verifyGenerationManifest({ workspace, snapshot });
+    const result = await capturePromise({ promise });
+    const milliseconds = performance.now() - started;
+    const elapsed = Duration.millis(milliseconds);
+
+    writeRestoreStageTiming({ stage: 'manifest', machineId, generation, startedAt: manifestStartedAt, elapsed });
+
+    Result.getOrThrow(result);
+
+    if (Option.isSome(admissionDeadline)) {
+      const live = store.liveMachine();
+
+      const starting = Option.exists(
+        live,
+        (machine) => machine.id === machineId && machine.status === MachineStatus.Starting,
+      );
+
+      const drain = store.machineDrain({ machineId });
+      const state = store.workspace();
+
+      const sameHead = Option.exists(state.head, (head) => head.generation === generation);
+
+      const sameRestoration = Option.match(restored, {
+        onNone: () => Option.isNone(state.restoration),
+        onSome: (restoration) => isCurrentRestoration({ store, restoration }),
+      });
+
+      const stillCurrent = sameHead && sameRestoration;
+
+      if (!starting || Option.isSome(drain) || !stillCurrent) {
+        return false;
+      }
+    }
 
     const startedAt = DateTime.nowUnsafe();
+    const restoration = { machineId, generation, part: 0, startedAt };
 
-    store.saveRestoration({ machineId, generation, part: 0, startedAt });
+    store.saveRestoration(restoration);
 
+    if (Option.isNone(admissionDeadline) || DateTime.isGreaterThanOrEqualTo(startedAt, admissionDeadline.value)) {
+      return false;
+    }
+
+    restored = Option.some(restoration);
+  }
+
+  if (Option.isNone(restored)) {
     return false;
   }
 
-  if (restored.value.part === archive.parts) {
-    return await activateSnapshot({ store, guest, restoration: restored.value, archive });
+  const restoration = restored.value;
+
+  if (restoration.part === archive.parts) {
+    return await activateSnapshot({ store, guest, restoration, archive });
   }
 
   const startedAt = DateTime.nowUnsafe();
@@ -74,8 +128,8 @@ export async function restoreSnapshot({
     batchParts = WORKSPACE_RESTORE_ADMISSION_BATCH_PARTS;
   }
 
-  const partLimit = Math.min(restored.value.part + batchParts, archive.parts);
-  const parts = Array.range(restored.value.part, partLimit - 1);
+  const partLimit = Math.min(restoration.part + batchParts, archive.parts);
+  const parts = Array.range(restoration.part, partLimit - 1);
   const batches = Array.chunksOf(parts, WORKSPACE_RESTORE_CONCURRENT_PARTS);
 
   for (const batch of batches) {
@@ -96,12 +150,17 @@ export async function restoreSnapshot({
       return false;
     }
 
+    const batchStartedAt = DateTime.nowUnsafe();
     const started = performance.now();
     const promise = copySnapshotBatch({ store, provider, workspace, guest, snapshot, restoration: current.value });
     const copied = await capturePromise({ promise });
     const finished = performance.now();
     const milliseconds = finished - started;
     const copiedAt = DateTime.nowUnsafe();
+
+    const elapsed = Duration.millis(milliseconds);
+
+    writeRestoreStageTiming({ stage: 'copy', machineId, generation, startedAt: batchStartedAt, elapsed });
 
     store.recordStartupWork({ machineId, phase: StartupPhase.Transfer, milliseconds });
 

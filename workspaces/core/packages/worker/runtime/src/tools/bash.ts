@@ -3,7 +3,11 @@ import { HttpMethod, toolExecutionId } from '@mechane/records';
 import type { SandboxCapacityRefusalReason, SandboxExecutionResult } from '@mechane/sandbox-wire';
 import { Duration, Option } from 'effect';
 import type { ExecutionReceipt } from '../domain.ts';
-import { writeBashUncertain } from '../output/write-actor-diagnostic.ts';
+import {
+  writeBashRestoreAdmission,
+  writeBashRestoreObservation,
+  writeBashUncertain,
+} from '../output/write-actor-diagnostic.ts';
 import { BashResultSchema } from './bash-result.schemas.ts';
 import type { BashResult } from './bash-result.schemas.ts';
 import { BASH_OBSERVE_WAIT_MS, TOOL_MODEL_RESULT_MAX_BYTES } from './constants.ts';
@@ -104,9 +108,17 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
         return decoded.data;
       }
 
+      const startedAtMs = Date.now();
+      const started = performance.now();
       const progress = await requestSandboxExecution({ ...input, method: HttpMethod.Get });
 
       if (progress._tag === 'ExecutionEnvironmentRequired' && receipt.runId === input.runId) {
+        writeBashRestoreObservation({
+          executionId: input.executionId,
+          startedAtMs,
+          elapsedMs: performance.now() - started,
+        });
+
         return await authorizeBash({
           ...input,
           store,
@@ -132,6 +144,7 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
 }
 
 async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
+  const authorizationStarted = performance.now();
   const { store } = input;
   const mech = await store.getMech(input);
   const policy = await store.getRuntimePolicy(input);
@@ -167,12 +180,26 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
     ...input.submission,
   };
 
+  const authorizationMs = performance.now() - authorizationStarted;
+  const startedAtMs = Date.now();
+  const started = performance.now();
+
   const progress = await requestSandboxExecution({
     ...input,
     method: HttpMethod.Post,
     isResume: input.submission === null,
     body: JSON.stringify(body),
   });
+
+  if (input.observed._tag === 'ExecutionEnvironmentRequired' || progress._tag === 'ExecutionEnvironmentRequired') {
+    writeBashRestoreAdmission({
+      executionId: input.executionId,
+      startedAtMs,
+      elapsedMs: performance.now() - started,
+      authorizationMs,
+      isResume: input.submission === null,
+    });
+  }
 
   const result = bashResult({ executionId: input.executionId, progress });
 

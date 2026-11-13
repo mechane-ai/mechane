@@ -1,9 +1,10 @@
-import { ExecutionStatus } from '@mechane/sandbox-store';
+import { ExecutionStatus, MachineStatus } from '@mechane/sandbox-store';
 import type { ExecutionRow } from '@mechane/sandbox-store';
 import { ExecutionEnvironmentRequired } from '@mechane/sandbox-wire';
 import type { ExecutionAttempt, ExecutionEnvironment } from '@mechane/sandbox-wire';
-import { DateTime, Option } from 'effect';
+import { DateTime, Duration, Option } from 'effect';
 import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
+import { writeRestoreAdmissionTiming } from '../output/write-sandbox-diagnostic.ts';
 import type { StatusOf, WorkspaceProviderStepInput } from '../types.ts';
 import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
 import { askGuest } from './ask-guest.ts';
@@ -32,7 +33,29 @@ export async function dispatchPending({
   deadline,
   environment,
 }: DispatchPendingInput): Promise<ExecutionAttempt> {
+  const previous = store.liveMachine();
+  const startedAt = DateTime.nowUnsafe();
+  const started = performance.now();
   const machine = await readyWorkspaceMachine({ store, provider, workspace, deadline });
+  const live = store.liveMachine();
+  const head = store.workspace().head;
+
+  if (
+    !Option.exists(previous, (value) => value.status === MachineStatus.Ready) &&
+    Option.isSome(live) &&
+    Option.isSome(head)
+  ) {
+    const milliseconds = performance.now() - started;
+    const elapsed = Duration.millis(milliseconds);
+
+    writeRestoreAdmissionTiming({
+      executionId: execution.id,
+      machineId: live.value.id,
+      generation: head.value.generation,
+      startedAt,
+      elapsed,
+    });
+  }
 
   if (Option.isNone(machine)) {
     if (hasUncheckpointedMachineLoss({ store })) {

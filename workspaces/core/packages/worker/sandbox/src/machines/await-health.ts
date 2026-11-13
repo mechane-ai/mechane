@@ -3,6 +3,7 @@ import { MachineStatus } from '@mechane/sandbox-store';
 import { StartupPhase } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { DateTime, Duration, Option } from 'effect';
+import { writeRestoreStageTiming } from '../output/write-sandbox-diagnostic.ts';
 import type { MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { restoreMachineWorkspace } from '../workspace/restore-machine-workspace.ts';
 import { failLateMachine } from './fail-late-machine.ts';
@@ -21,6 +22,7 @@ export async function awaitHealth({
   machineId,
   deadline,
 }: AwaitHealthInput): Promise<boolean> {
+  const startedAt = DateTime.nowUnsafe();
   const started = performance.now();
   let answer = await healthAnswer({ store, provider, machineId, deadline });
 
@@ -32,6 +34,26 @@ export async function awaitHealth({
 
   const finished = performance.now();
   const milliseconds = finished - started;
+
+  const startup = store.latestStartup();
+  const timingHead = store.workspace().head;
+
+  const isTransferring = Option.exists(
+    startup,
+    (value) => value.machineId === machineId && value.progress.phase === StartupPhase.Transfer,
+  );
+
+  if (isTransferring && Option.isSome(timingHead)) {
+    const elapsed = Duration.millis(milliseconds);
+
+    writeRestoreStageTiming({
+      stage: 'health',
+      machineId,
+      generation: timingHead.value.generation,
+      startedAt,
+      elapsed,
+    });
+  }
 
   store.recordStartupWork({ machineId, phase: StartupPhase.Bootstrap, milliseconds });
 

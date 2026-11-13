@@ -55,6 +55,26 @@ const FAILURE_FILES: ReadonlySet<string> = new Set([
   'http.js',
 ]);
 
+type BashRestoreTiming = { readonly executionId: string; readonly startedAtMs: number; readonly elapsedMs: number };
+
+export function writeBashRestoreObservation(input: BashRestoreTiming): void {
+  if (Schema.is(RecordId)(input.executionId)) {
+    const line = JSON.stringify({ event: 'actor.restore_observe', ...input });
+
+    console.log(line);
+  }
+}
+
+export function writeBashRestoreAdmission(
+  input: BashRestoreTiming & { readonly authorizationMs: number; readonly isResume: boolean },
+): void {
+  if (Schema.is(RecordId)(input.executionId)) {
+    const line = JSON.stringify({ event: 'actor.restore_admission', ...input });
+
+    console.log(line);
+  }
+}
+
 export function writeBashUncertain(input: { readonly executionId: string; readonly cause: unknown }): void {
   try {
     if (Schema.is(RecordId)(input.executionId)) {
