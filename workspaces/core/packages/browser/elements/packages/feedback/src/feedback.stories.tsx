@@ -1,24 +1,36 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as stylex from '@stylexjs/stylex';
+import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { DataTable, DataTablePlaceholder } from '../../collections/src/index.ts';
 import type { DataTableColumn } from '../../collections/src/index.ts';
-import { Avatar, Button, Columns, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
+import { Avatar, Button, Columns, IconButton, Muted, Panel, Row, Stack, Text } from '../../core/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { AsyncRegion, ContentReveal, LoadingScope } from './async-region.tsx';
 import type { AsyncRegionState } from './async-region.tsx';
+import { ButtonPlaceholder, FieldPlaceholder } from './control-placeholders.tsx';
 import { Meter, Progress } from './progress.tsx';
 import { Skeleton, SkeletonText, Spinner } from './skeleton.tsx';
 
 const meta = {
   title: 'Feedback/Loading and progress',
   component: Progress,
-  subcomponents: { Meter, Skeleton, SkeletonText, Spinner, AsyncRegion, ContentReveal, LoadingScope },
+  subcomponents: {
+    Meter,
+    Skeleton,
+    SkeletonText,
+    Spinner,
+    ButtonPlaceholder,
+    FieldPlaceholder,
+    AsyncRegion,
+    ContentReveal,
+    LoadingScope,
+  },
   parameters: {
     docs: {
       description: {
         component:
-          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Its image presentation shows the placeholder immediately and fades a newly ready image in over 200ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
+          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. ButtonPlaceholder and single-line FieldPlaceholder use the loaded control’s explicit density: standard by default, compact for a local report. Both densities grow to 44px on coarse pointers. Multiline fields retain their row sizing. Supply placeholder widths for the expected content, and announce loading at the owning region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Its image presentation shows the placeholder immediately and fades a newly ready image in over 200ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
       },
     },
   },
@@ -90,6 +102,45 @@ export const PlaceholderGeometry: Story = {
         Placeholders remain visible on either application surface. They reserve layout without implying records or
         permissions.
       </Muted>
+    </Stack>
+  ),
+};
+
+export const ControlDensities: Story = {
+  render: () => (
+    <Stack>
+      <Row>
+        <Button>OK</Button>
+        <ButtonPlaceholder width="1ch" />
+        <Button pendingLabel="Refreshing report…">Refresh report</Button>
+        <Button isPending pendingLabel="Refreshing report…">
+          Refresh report
+        </Button>
+        <ButtonPlaceholder width="12ch" />
+        <IconButton aria-label="Refresh report">
+          <RefreshCw size={16} aria-hidden />
+        </IconButton>
+        <ButtonPlaceholder isIconOnly />
+      </Row>
+      <Row>
+        <Button density="compact">OK</Button>
+        <ButtonPlaceholder density="compact" width="1ch" />
+        <Button density="compact" pendingLabel="Refreshing report…">
+          Refresh report
+        </Button>
+        <Button density="compact" isPending pendingLabel="Refreshing report…">
+          Refresh report
+        </Button>
+        <ButtonPlaceholder density="compact" width="12ch" />
+        <IconButton density="compact" aria-label="Refresh report">
+          <RefreshCw size={16} aria-hidden />
+        </IconButton>
+        <ButtonPlaceholder density="compact" isIconOnly />
+      </Row>
+      <Columns>
+        <FieldPlaceholder label="Standard field" hint="Ordinary form control" />
+        <FieldPlaceholder density="compact" label="Compact field" hint="Local report control" />
+      </Columns>
     </Stack>
   ),
 };

@@ -2,8 +2,13 @@ import { Field as BaseField } from '@base-ui/react/field';
 import { Input as BaseInput } from '@base-ui/react/input';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type { TextValueProperties } from '../../foundations/src/control-state.ts';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import {
+  controlDensityStyles,
+  controlStyles,
+  singleLineControlDensityStyles,
+} from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { fieldStyles as styles, textareaAppearanceStyles } from './field-styles.ts';
@@ -23,7 +28,7 @@ export type InputProps = Omit<
     NonNullable<BaseInputProps['value']>,
     NonNullable<BaseInputProps['onChange']>,
     NonNullable<BaseInputProps['onValueChange']>
-  > & { readonly xstyle?: PlacementStyle };
+  > & { readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
 type NativeTextareaProps = ComponentProps<'textarea'>;
 
@@ -85,7 +90,7 @@ function FieldError({ className, style, ...props }: FieldErrorProps): ReactNode 
 
 export const Field = { Root: FieldRoot, Label: FieldLabel, Description: FieldDescription, Error: FieldError };
 
-export function Input({ className, style, xstyle, ...props }: InputProps): ReactNode {
+export function Input({ density = 'standard', className, style, xstyle, ...props }: InputProps): ReactNode {
   return (
     <BaseInput
       {...props}
@@ -97,6 +102,8 @@ export function Input({ className, style, xstyle, ...props }: InputProps): React
           controlStyles.field,
           controlStyles.singleLineField,
           styles.input,
+          controlDensityStyles[density],
+          singleLineControlDensityStyles[density],
           xstyle,
         ),
       })}

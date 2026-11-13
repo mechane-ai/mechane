@@ -231,7 +231,7 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
       series: [baseline, candidate],
       formatValue: formatLatency,
       report: {
-        meta: 'Period mean · 6 minutes',
+        meta: 'Period mean · baseline 6/7, candidate 7/7 observations · 6 minutes',
         seriesValues: { baseline: isPending ? undefined : '17.3 ms', candidate: isPending ? undefined : '14.1 ms' },
       },
     },
@@ -251,7 +251,10 @@ function AlignedReportsExample({ isPending = false }: { readonly isPending?: boo
         },
       ] as const,
       formatValue: formatTokens,
-      report: { meta: 'Period mean · 6 minutes', seriesValues: { output: isPending ? undefined : '141 tokens' } },
+      report: {
+        meta: 'Period mean · 7/7 output observations · 6 minutes',
+        seriesValues: { output: isPending ? undefined : '141 tokens' },
+      },
     },
   ];
 

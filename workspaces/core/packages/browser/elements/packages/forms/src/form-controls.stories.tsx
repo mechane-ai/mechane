@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Muted, Row, Stack } from '../../core/src/index.ts';
+import type { ControlDensity } from '../../core/src/index.ts';
 import { Fieldset, FilePicker, InputGroup, NumberField, Slider } from './form-controls.tsx';
 import { Field } from './forms.tsx';
 
@@ -31,7 +32,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. NumberField offers exact numeric entry and step controls; Slider is for adjusting a bounded range. Both require an explicit locale for deterministic formatting. InputGroup keeps an input beside a noneditable prefix or suffix. Fieldset groups related fields. FilePicker retains the browser file dialog and change event; the application validates, stores, and uploads selected files. Choose Input for plain text and avoid a Slider when a precise value is essential.',
+          'Supported. NumberField offers exact numeric entry and step controls; Slider is for adjusting a bounded range. Both require an explicit locale for deterministic formatting. InputGroup keeps an input beside a noneditable prefix or suffix. Set density on NumberField.Root or InputGroup.Root so their own inputs, addons, and step buttons agree. Standard is the default; compact is for local report controls. Unrelated nested controls and sliders keep their own sizing. Fieldset groups related fields. FilePicker accepts explicit density and retains the browser file dialog and change event; the application validates, stores, and uploads selected files. Choose Input for plain text and avoid a Slider when a precise value is essential.',
       },
     },
   },
@@ -40,7 +41,9 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-function Settings(): ReactNode {
+type SettingsProps = { readonly density?: ControlDensity };
+
+function Settings({ density = 'standard' }: SettingsProps): ReactNode {
   const [count, setCount] = useState<number | null>(4);
   const [threshold, setThreshold] = useState(60);
   const [fileNames, setFileNames] = useState('No files selected.');
@@ -51,7 +54,7 @@ function Settings(): ReactNode {
       <Stack>
         <Field.Root>
           <Field.Label>Endpoint</Field.Label>
-          <InputGroup.Root>
+          <InputGroup.Root density={density}>
             <InputGroup.Addon>https://</InputGroup.Addon>
             <InputGroup.Input defaultValue="example.test" />
             <InputGroup.Addon>/api</InputGroup.Addon>
@@ -59,7 +62,7 @@ function Settings(): ReactNode {
         </Field.Root>
         <Field.Root>
           <Field.Label>Concurrent jobs</Field.Label>
-          <NumberField.Root locale="en-US" value={count} onValueChange={setCount} min={1} max={16}>
+          <NumberField.Root density={density} locale="en-US" value={count} onValueChange={setCount} min={1} max={16}>
             <NumberField.Group>
               <NumberField.Decrement />
               <NumberField.Input />
@@ -83,6 +86,7 @@ function Settings(): ReactNode {
         <Field.Root>
           <Field.Label>Attachments</Field.Label>
           <FilePicker
+            density={density}
             multiple
             accept=".txt,.json,.md"
             onChange={(event) => {
@@ -106,6 +110,7 @@ function Settings(): ReactNode {
 }
 
 export const Recommended: Story = { render: () => <Settings /> };
+export const Compact: Story = { render: () => <Settings density="compact" /> };
 
 export const InvalidInputGroup: Story = {
   render: () => (

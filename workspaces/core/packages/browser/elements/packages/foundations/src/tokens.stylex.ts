@@ -103,16 +103,22 @@ export const typography = stylex.defineVars({
 
 export const controls = stylex.defineVars({
   height: '32px',
+  compactHeight: '28px',
   coarseTarget: '44px',
   iconSize: '16px',
   paddingInline: '10px',
+  compactPaddingInline: '8px',
   paddingBlock: '5px',
+  compactPaddingBlock: '3px',
   gap: '6px',
+  compactGap: '4px',
   focusWidth: '2px',
   disabledOpacity: '0.45',
 });
 
 export const pageGeometry = stylex.defineVars({ inset: '16px', toolbarHeight: '48px', sectionGap: '32px' });
+
+export const reportGeometry = stylex.defineVars({ headerHeight: '36px' });
 
 export const radii = stylex.defineVars({ sm: '4px', md: '6px' });
 

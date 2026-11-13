@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Stack } from '../../core/src/index.ts';
+import type { ControlDensity } from '../../core/src/index.ts';
 import { Combobox } from './combobox.tsx';
 import { Field } from './forms.tsx';
 
@@ -42,7 +43,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. Combobox selects from a searchable option domain, with one or multiple selected values. Use Select when the options fit without search. Supply stable identifiers and label/value conversion for object records. Base UI owns intrinsic matching and keyboard movement. For server search, the application owns query results and passes filteredItems, inputValue, and onInputValueChange; never treat a bounded server page as the entire option domain. Pending and failed reads belong to the application, and Status can present their messages.',
+          'Supported. Combobox selects from a searchable option domain, with one or multiple selected values. Use Select when the options fit without search. Set density on Root so its input, trigger, clear button, and chips agree. Compact fits a local report control; standard is the default, including popup options and unrelated nested controls. Supply stable identifiers and label/value conversion for object records. Base UI owns intrinsic matching and keyboard movement. For server search, the application owns query results and passes filteredItems, inputValue, and onInputValueChange; never treat a bounded server page as the entire option domain. Pending and failed reads belong to the application, and Status can present their messages.',
       },
     },
   },
@@ -83,13 +84,16 @@ function ChoiceList(): ReactNode {
   );
 }
 
-function SingleChoice(): ReactNode {
+type ChoiceExampleProps = { readonly density?: ControlDensity };
+
+function SingleChoice({ density = 'standard' }: ChoiceExampleProps): ReactNode {
   const [selected, setSelected] = useState<Choice | null>(null);
 
   return (
     <Field.Root name="model">
       <Field.Label>Model</Field.Label>
       <Combobox.Root
+        density={density}
         items={choices}
         value={selected}
         onValueChange={setSelected}
@@ -109,7 +113,7 @@ function SingleChoice(): ReactNode {
   );
 }
 
-function MultipleChoices(): ReactNode {
+function MultipleChoices({ density = 'standard' }: ChoiceExampleProps): ReactNode {
   const [selected, setSelected] = useState<Array<Choice>>([]);
 
   return (
@@ -117,6 +121,7 @@ function MultipleChoices(): ReactNode {
       <Field.Label>Compare models</Field.Label>
       <Combobox.Root
         multiple
+        density={density}
         items={choices}
         value={selected}
         onValueChange={setSelected}
@@ -145,6 +150,15 @@ function MultipleChoices(): ReactNode {
 
 export const Recommended: Story = { render: () => <SingleChoice /> };
 export const Multiple: Story = { render: () => <MultipleChoices /> };
+
+export const Compact: Story = {
+  render: () => (
+    <Stack>
+      <SingleChoice density="compact" />
+      <MultipleChoices density="compact" />
+    </Stack>
+  ),
+};
 
 export const DisabledAndEmpty: Story = {
   render: () => (

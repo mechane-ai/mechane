@@ -1,12 +1,17 @@
 import { Select as BaseSelect } from '@base-ui/react/select';
 import * as stylex from '@stylexjs/stylex';
 import type { ComponentProps, ReactNode } from 'react';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type {
   OpenStateProperties,
   ReadOnlyValueProperties,
   ValueStateProperties,
 } from '../../foundations/src/control-state.ts';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import {
+  actionTargetDensityStyles,
+  controlDensityStyles,
+  controlStyles,
+} from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { selectionStyles as styles } from './selection-styles.ts';
@@ -31,6 +36,7 @@ type SelectRootProps<Value, Multiple extends boolean | undefined> = Omit<
 
 type SelectTriggerProps = ComponentProps<typeof BaseSelect.Trigger> & {
   readonly variant?: SelectVariant;
+  readonly density?: ControlDensity;
   readonly xstyle?: PlacementStyle;
 };
 
@@ -50,14 +56,28 @@ function SelectRoot<Value, Multiple extends boolean | undefined = false>(
   return <BaseSelect.Root<Value, Multiple> {...props} />;
 }
 
-function SelectTrigger({ variant = 'outline', className, style, xstyle, ...props }: SelectTriggerProps): ReactNode {
+function SelectTrigger({
+  variant = 'outline',
+  density = 'standard',
+  className,
+  style,
+  xstyle,
+  ...props
+}: SelectTriggerProps): ReactNode {
   return (
     <BaseSelect.Trigger
       {...props}
       {...mergeStyles<BaseSelect.Trigger.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.base, styles.trigger, variants[variant], xstyle),
+        styles: stylex.props(
+          controlStyles.base,
+          styles.trigger,
+          variants[variant],
+          controlDensityStyles[density],
+          actionTargetDensityStyles[density],
+          xstyle,
+        ),
       })}
     />
   );

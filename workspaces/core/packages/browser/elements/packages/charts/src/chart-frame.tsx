@@ -1,23 +1,26 @@
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
-import { Collapsible, SectionHeading } from '../../core/src/index.ts';
+import { Collapsible } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
+import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, controls, pageGeometry, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
+import { ChartHeading } from './chart-heading.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
 import { chartToneColors } from './chart-theme.ts';
 import type { ChartLegendItem } from './chart-theme.ts';
 
-export type ChartReport = { readonly meta?: ReactNode; readonly summary?: ReactNode; readonly seriesValues?: never };
+type ChartReportHeading = { readonly meta?: ReactNode; readonly actions?: ReactNode };
+
+export type ChartReport = ChartReportHeading & { readonly summary?: ReactNode; readonly seriesValues?: never };
 
 export type ChartSeriesReport =
   | ChartReport
-  | {
-      readonly meta?: ReactNode;
+  | (ChartReportHeading & {
       readonly summary?: never;
       readonly seriesValues: Readonly<Record<string, string | undefined>>;
-    };
+    });
 
 export type ChartSelection = { readonly selectedId: string | undefined; readonly onSelect: (id: string) => void };
 
@@ -75,7 +78,6 @@ const styles = stylex.create({
     fontSize: typography.captionSize,
     lineHeight: typography.captionLineHeight,
   },
-  actions: { display: 'flex', flexWrap: 'wrap', gap: spacing.sm, maxWidth: '100%' },
   footer: {
     marginBlockStart: spacing.md,
     minWidth: 0,
@@ -194,7 +196,7 @@ export function ChartFrame({
     return (
       <figure aria-labelledby={titleId} {...stylex.props(styles.frame, styles.report)}>
         <figcaption>
-          <SectionHeading id={titleId} title={title} meta={report.meta} actions={actions} />
+          <ChartHeading id={titleId} title={title} meta={report.meta} actions={[report.actions, actions]} />
         </figcaption>
         <div {...stylex.props(styles.reportBody)}>
           {hasSummary && <div {...stylex.props(styles.summary)}>{summary}</div>}
@@ -215,7 +217,7 @@ export function ChartFrame({
           </p>
           {description !== undefined && <p {...stylex.props(styles.description)}>{description}</p>}
         </div>
-        {actions !== undefined && <div {...stylex.props(styles.actions)}>{actions}</div>}
+        {actions !== undefined && <div {...stylex.props(headerStyles.actions)}>{actions}</div>}
       </figcaption>
       {children}
       {footer !== undefined && <div {...stylex.props(styles.footer)}>{footer}</div>}

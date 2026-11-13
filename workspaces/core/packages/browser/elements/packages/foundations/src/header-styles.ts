@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { conditions } from './constants.stylex.ts';
-import { colors, controls, pageGeometry } from './tokens.stylex.ts';
+import { colors, controls, pageGeometry, reportGeometry, spacing, typography } from './tokens.stylex.ts';
 
 export const headerStyles = stylex.create({
   row: {
@@ -17,6 +17,40 @@ export const headerStyles = stylex.create({
       [conditions.coarsePointer]: `calc((${pageGeometry.toolbarHeight} - ${controls.coarseTarget}) / 2)`,
     },
   },
+  reportRow: {
+    minHeight: { default: reportGeometry.headerHeight, [conditions.coarsePointer]: pageGeometry.toolbarHeight },
+    paddingBlock: {
+      default: `calc((${reportGeometry.headerHeight} - ${controls.compactHeight}) / 2)`,
+      [conditions.coarsePointer]: `calc((${pageGeometry.toolbarHeight} - ${controls.coarseTarget}) / 2)`,
+    },
+  },
+  title: {
+    flex: '1 1 auto',
+    minWidth: 0,
+    margin: 0,
+    overflowWrap: 'anywhere',
+    fontSize: typography.inputSize,
+    fontWeight: typography.mediumWeight,
+    lineHeight: typography.bodyLineHeight,
+  },
+  trailing: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginInlineStart: 'auto',
+    minWidth: 0,
+    maxWidth: '100%',
+  },
+  meta: {
+    minWidth: 0,
+    marginInlineStart: 'auto',
+    overflowWrap: 'anywhere',
+    color: colors.muted,
+    fontSize: typography.captionSize,
+    lineHeight: typography.captionLineHeight,
+  },
+  actions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, minWidth: 0, maxWidth: '100%' },
   blockEnd: {
     '::after': {
       content: '""',

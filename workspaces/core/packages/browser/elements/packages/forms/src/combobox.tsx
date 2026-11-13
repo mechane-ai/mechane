@@ -1,19 +1,29 @@
 import { Combobox as BaseCombobox } from '@base-ui/react/combobox';
 import * as stylex from '@stylexjs/stylex';
 import { Check, ChevronDown, X } from 'lucide-react';
+import { createContext, useContext } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type {
   OpenStateProperties,
   ReadOnlyValueProperties,
   ValueStateProperties,
 } from '../../foundations/src/control-state.ts';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import {
+  actionTargetDensityStyles,
+  controlDensityStyles,
+  controlStyles,
+  controlTargetDensityStyles,
+  singleLineControlDensityStyles,
+} from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { fieldStyles } from './field-styles.ts';
 import { selectionStyles } from './selection-styles.ts';
+
+const ComboboxDensityContext = createContext<ControlDensity>('standard');
 
 const styles = stylex.create({
   inputGroup: { gap: spacing.xs },
@@ -24,8 +34,6 @@ const styles = stylex.create({
     'justifyContent': 'center',
     'flexShrink': 0,
     'boxSizing': 'border-box',
-    'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'borderWidth': 0,
     'borderRadius': radii.sm,
     'padding': 0,
@@ -120,7 +128,7 @@ type ComboboxRootProps<Value, Multiple extends boolean | undefined, Item> = Omit
         Exclude<BaseCombobox.Root.Props<Value, Multiple, Item>['value'], undefined>,
         NonNullable<BaseCombobox.Root.Props<Value, Multiple, Item>['onValueChange']>
       >
-  );
+  ) & { readonly density?: ControlDensity };
 
 type ComboboxInputGroupProps = ComponentProps<typeof BaseCombobox.InputGroup> & { readonly xstyle?: PlacementStyle };
 type ComboboxLabelProps = ComponentProps<typeof BaseCombobox.Label>;
@@ -148,20 +156,27 @@ type ComboboxChipsProps = ComponentProps<typeof BaseCombobox.Chips>;
 type ComboboxChipProps = ComponentProps<typeof BaseCombobox.Chip>;
 type ComboboxChipRemoveProps = ComponentProps<typeof BaseCombobox.ChipRemove>;
 
-function ComboboxRoot<Value, Multiple extends boolean | undefined = false, Item = Value>(
-  props: ComboboxRootProps<Value, Multiple, Item>,
-): ReactNode {
-  return <BaseCombobox.Root<Value, Multiple, Item> {...props} />;
+function ComboboxRoot<Value, Multiple extends boolean | undefined = false, Item = Value>({
+  density = 'standard',
+  ...props
+}: ComboboxRootProps<Value, Multiple, Item>): ReactNode {
+  return (
+    <ComboboxDensityContext value={density}>
+      <BaseCombobox.Root<Value, Multiple, Item> {...props} />
+    </ComboboxDensityContext>
+  );
 }
 
 function ComboboxInputGroup({ className, style, xstyle, ...props }: ComboboxInputGroupProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.InputGroup
       {...props}
       {...mergeStyles<BaseCombobox.InputGroup.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.group, styles.inputGroup, xstyle),
+        styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density], styles.inputGroup, xstyle),
       })}
     />
   );
@@ -181,6 +196,8 @@ function ComboboxValue<Value>(props: ComboboxValueProps<Value>): ReactNode {
 }
 
 function ComboboxInput({ className, style, ...props }: ComboboxInputProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.Input
       {...props}
@@ -192,6 +209,8 @@ function ComboboxInput({ className, style, ...props }: ComboboxInputProps): Reac
           controlStyles.field,
           controlStyles.singleLineField,
           fieldStyles.input,
+          controlDensityStyles[density],
+          singleLineControlDensityStyles[density],
           controlStyles.embedded,
           styles.input,
         ),
@@ -207,11 +226,17 @@ function ComboboxTrigger({
   style,
   ...props
 }: ComboboxTriggerProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.Trigger
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseCombobox.Trigger.State>({ className, style, styles: stylex.props(styles.action) })}
+      {...mergeStyles<BaseCombobox.Trigger.State>({
+        className,
+        style,
+        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
+      })}
     >
       {children}
     </BaseCombobox.Trigger>
@@ -225,11 +250,17 @@ function ComboboxClear({
   style,
   ...props
 }: ComboboxClearProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.Clear
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseCombobox.Clear.State>({ className, style, styles: stylex.props(styles.action) })}
+      {...mergeStyles<BaseCombobox.Clear.State>({
+        className,
+        style,
+        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
+      })}
     >
       {children}
     </BaseCombobox.Clear>
@@ -340,28 +371,36 @@ function ComboboxChips({ className, style, ...props }: ComboboxChipsProps): Reac
 }
 
 function ComboboxChip({ className, style, ...props }: ComboboxChipProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.Chip
       {...props}
       {...mergeStyles<BaseCombobox.Chip.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.group, styles.chip),
+        styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density], styles.chip),
       })}
     />
   );
 }
 
 function ComboboxChipRemove({
-  children = <X size={14} aria-hidden="true" />,
+  children = <X size={16} aria-hidden="true" />,
   className,
   style,
   ...props
 }: ComboboxChipRemoveProps): ReactNode {
+  const density = useContext(ComboboxDensityContext);
+
   return (
     <BaseCombobox.ChipRemove
       {...props}
-      {...mergeStyles<BaseCombobox.ChipRemove.State>({ className, style, styles: stylex.props(styles.action) })}
+      {...mergeStyles<BaseCombobox.ChipRemove.State>({
+        className,
+        style,
+        styles: stylex.props(actionTargetDensityStyles[density], styles.action),
+      })}
     >
       {children}
     </BaseCombobox.ChipRemove>

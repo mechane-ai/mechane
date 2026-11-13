@@ -55,12 +55,20 @@ The supported themes are light and dark. Apply the chosen theme to the document 
 Text uses the declared `textContrast` and `largeTextContrast` ratios against its actual
 surface, with WCAG 2.2 AA's exceptions for inactive controls and decorative text.
 
-Single-line ordinary controls share `controls.height` as their outer height, including borders. Use the shared
-`controlStyles` recipe and body typography; coarse pointers use `controls.coarseTarget` and text entry uses
-`typography.touchInputSize`. Native date and month fields share that sizing. Let controls grow for wrapped labels or
-larger leading artwork, and keep multiline text entry content-sized. Apply fixed sizing only to single-line fields.
-Expose emphasis and intent through named variants, without public control size, padding, or radius choices.
-`ButtonPlaceholder` and `FieldPlaceholder` reuse that recipe; pending and loaded controls have the same geometry.
+Single-line controls expose one finite `ControlDensity`: `standard` by default and explicitly selected `compact`.
+The shared `controlStyles` recipe uses `controls.height` for standard controls and `controls.compactHeight` for compact
+controls, including borders. Both use `controls.coarseTarget` for coarse pointers. Body typography and text-entry
+`typography.touchInputSize` remain shared. Native date and month fields follow the same density recipe.
+Keep multiline entry content-sized. Let wrapped labels or larger leading artwork grow instead of clipping them.
+Expose emphasis, intent and density through named variants, without arbitrary control size, padding or radius choices.
+`ButtonPlaceholder` and single-line `FieldPlaceholder` accept the same density as their loaded control.
+Pending and loaded compositions keep matching geometry.
+
+Choose compact controls explicitly for a compact chart caption or another documented dense composition.
+Keep page toolbars, independent section and collection controls, forms, popup options and dialog contents standard by
+default. A compact compound control scopes density to its own parts; it does not shrink unrelated nested controls.
+Do not inherit density from a page, report or layout container. Preserve independent roles when a standard collection
+appears inside a compact report composition.
 Use the same intrinsic content row for ordinary and reserved button labels. Keep icons at their supplied size while
 text wraps; inline SVG baseline space can turn a 32px control into 33px, and flex shrink can compress a 16px glyph.
 Reserve visible pending text only. Icon-only actions use `IconButton` and keep their accessible name and busy state
@@ -113,6 +121,11 @@ Use the shared header-row recipe for `SectionHeading` and `CollectionToolbar`. A
 do not consume the area used to centre their contents. Keep `pageGeometry`, `controls`, and `tableGeometry` independent
 by role, even where values match. The public `docs/visual-system.md#geometry-and-alignment` defines their relationships.
 
+Keep chart captions separate from page-level `SectionHeading`. A private chart heading uses the compact
+`reportGeometry.headerHeight` with explicitly compact actions; coarse pointers retain at least the standard header
+height. Keep its surface quiet, without a gray header fill. The chart report retains its one subtle outer frame.
+Page and collection headings remain standard even beside a compact chart caption.
+
 Give the expanded sidebar header its inset at the slot, rather than in supplied branding or selectors. Use
 `NavigationSection` for group-label geometry. Keep collapsed rails and phone drawers within their supported layout;
 an expanded header's padding must not squeeze a collapsed control. Ordinary navigation uses the shared control height.
@@ -146,6 +159,8 @@ widths for shared gutters, section rhythm, field alignment, and a single separat
 Compare native date and month fields with placeholders, and a header with its pending and wrapped forms. Check the
 complete cell used for centring, not only its declared height. Inspect expanded, collapsed and drawer navigation after
 switching between them; preserve readable content, visible focus and usable targets with enlarged text.
+Compare explicit compact controls with standard neighbors, popup contents and dialogs. Does a wrapped or coarse-pointer
+caption grow without changing the density of an independent collection or clipping its title, actions or focus ring?
 Open a disclosure and inspect a chart value. Check computed responsive widths and the last navigation item in a short
 viewport; a passing style or type check does not establish these visual properties.
 

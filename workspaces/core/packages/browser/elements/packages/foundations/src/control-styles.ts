@@ -1,5 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import { conditions } from './constants.stylex.ts';
+import type { ControlDensity } from './control-density.ts';
 import { colors, controls, radii, spacing, typography } from './tokens.stylex.ts';
 
 export const controlStyles = stylex.create({
@@ -28,10 +29,7 @@ export const controlStyles = stylex.create({
     overflowWrap: 'anywhere',
     textAlign: 'center',
   },
-  iconButton: {
-    minWidth: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
-    paddingInline: 0,
-  },
+  iconButton: { paddingInline: 0 },
   field: {
     display: 'block',
     width: '100%',
@@ -109,3 +107,44 @@ export const controlStyles = stylex.create({
     ':focus-visible': { outlineOffset: `calc(0px - ${controls.focusWidth})` },
   },
 });
+
+const densityStyles = stylex.create({
+  standard: {},
+  compact: {
+    minHeight: { default: controls.compactHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    paddingBlock: controls.compactPaddingBlock,
+    paddingInline: controls.compactPaddingInline,
+    gap: controls.compactGap,
+  },
+  compactField: { height: { default: controls.compactHeight, [conditions.coarsePointer]: controls.coarseTarget } },
+  standardActionTarget: {
+    minWidth: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
+  },
+  compactActionTarget: {
+    minWidth: { default: controls.compactHeight, [conditions.coarsePointer]: controls.coarseTarget },
+    minHeight: { default: controls.compactHeight, [conditions.coarsePointer]: controls.coarseTarget },
+  },
+  standardTarget: { minHeight: { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget } },
+  compactTarget: { minHeight: { default: controls.compactHeight, [conditions.coarsePointer]: controls.coarseTarget } },
+});
+
+export const controlDensityStyles = {
+  standard: densityStyles.standard,
+  compact: densityStyles.compact,
+} as const satisfies Readonly<Record<ControlDensity, stylex.StyleXStyles>>;
+
+export const singleLineControlDensityStyles = {
+  standard: densityStyles.standard,
+  compact: densityStyles.compactField,
+} as const satisfies Readonly<Record<ControlDensity, stylex.StyleXStyles>>;
+
+export const actionTargetDensityStyles = {
+  standard: densityStyles.standardActionTarget,
+  compact: densityStyles.compactActionTarget,
+} as const satisfies Readonly<Record<ControlDensity, stylex.StyleXStyles>>;
+
+export const controlTargetDensityStyles = {
+  standard: densityStyles.standardTarget,
+  compact: densityStyles.compactTarget,
+} as const satisfies Readonly<Record<ControlDensity, stylex.StyleXStyles>>;

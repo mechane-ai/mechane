@@ -1,0 +1,22 @@
+id: ui-chart-caption-role
+language: Tsx
+severity: error
+message: 'Keep page sections outside chart captions, such as `<ChartHeading title={title} />` (074)'
+files:
+  - packages/browser/elements/packages/charts/src/chart-frame.tsx
+  - packages/browser/elements/packages/charts/src/chart-heading.tsx
+rule:
+  any:
+    - kind: import_specifier
+      has:
+        field: name
+        regex: ^SectionHeading$
+    - any:
+        - kind: jsx_opening_element
+        - kind: jsx_self_closing_element
+      has:
+        field: name
+        kind: member_expression
+        has:
+          field: property
+          regex: ^SectionHeading$

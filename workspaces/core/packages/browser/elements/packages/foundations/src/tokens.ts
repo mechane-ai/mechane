@@ -17,6 +17,7 @@ export {
   motion,
   pageGeometry,
   radii,
+  reportGeometry,
   shadows,
   spacing,
   syntaxColors,

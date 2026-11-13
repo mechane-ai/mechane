@@ -3,6 +3,7 @@ import * as stylex from '@stylexjs/stylex';
 import { ChevronDown, Settings } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button, IconButton, Row, Stack } from '../../core/src/index.ts';
+import type { ControlDensity } from '../../core/src/index.ts';
 import { ButtonPlaceholder, FieldPlaceholder } from '../../feedback/src/index.ts';
 import { spacing } from '../../foundations/src/tokens.stylex.ts';
 import { Combobox } from './combobox.tsx';
@@ -32,7 +33,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Ordinary controls and their placeholders share one border-box height and typography. Compare the outer edges, native date/month fields, grouped inputs, and file selector at desktop and coarse-pointer widths. Single-line fields keep native editing and pickers within the shared height. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column. Ready rows require controlId; use isPlaceholder for decorative rows without inventing label targets. FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
+          'Ordinary controls and their placeholders share one border-box height and typography. Standard is 32px; explicit compact density is 28px. Both use 44px targets on coarse pointers, 16px icons, and readable labels. Compare the outer edges, native date/month fields, grouped inputs, and file selector at both pointer sizes. Single-line fields keep native editing and pickers within the shared height. Compound roots apply density to their own parts, while popup options remain standard. Labels and descriptions stay outside that geometry. Textareas retain their row height and vertical growth. SettingsRow owns a bounded field column. Ready rows require controlId; use isPlaceholder for decorative rows without inventing label targets. FormActions owns action alignment, gap, and wrapping. The containing form or section owns separation from the fields.',
       },
     },
   },
@@ -41,12 +42,12 @@ const meta = {
 export default meta;
 type Story = StoryObj;
 
-type StatusSelectProps = { readonly id?: string };
+type StatusSelectProps = { readonly id?: string; readonly density?: ControlDensity };
 
-function StatusSelect({ id }: StatusSelectProps): ReactNode {
+function StatusSelect({ id, density = 'standard' }: StatusSelectProps): ReactNode {
   return (
     <Select.Root items={options} defaultValue="Ready">
-      <Select.Trigger id={id}>
+      <Select.Trigger id={id} density={density}>
         <Select.Value />
         <Select.Icon>
           <ChevronDown size={16} aria-hidden />
@@ -69,33 +70,35 @@ function StatusSelect({ id }: StatusSelectProps): ReactNode {
   );
 }
 
-export const Recommended: Story = {
-  render: () => (
+type ControlGeometryProps = { readonly density?: ControlDensity };
+
+function ControlGeometry({ density = 'standard' }: ControlGeometryProps): ReactNode {
+  return (
     <Stack>
       <div {...stylex.props(styles.controls)}>
         <Field.Root>
           <Field.Label>Name</Field.Label>
-          <Input defaultValue="Release notes" />
-          <FieldPlaceholder />
+          <Input density={density} defaultValue="Release notes" />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Recorded date</Field.Label>
-          <Input type="date" defaultValue="2026-11-01" />
-          <FieldPlaceholder />
+          <Input density={density} type="date" defaultValue="2026-11-01" />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Reporting month</Field.Label>
-          <Input type="month" defaultValue="2026-11" />
-          <FieldPlaceholder />
+          <Input density={density} type="month" defaultValue="2026-11" />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Status</Field.Label>
-          <StatusSelect />
-          <FieldPlaceholder />
+          <StatusSelect density={density} />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Search status</Field.Label>
-          <Combobox.Root items={choices} defaultValue="Ready">
+          <Combobox.Root density={density} items={choices} defaultValue="Ready">
             <Combobox.InputGroup>
               <Combobox.Input />
               <Combobox.Trigger />
@@ -114,49 +117,56 @@ export const Recommended: Story = {
               </Combobox.Positioner>
             </Combobox.Portal>
           </Combobox.Root>
-          <FieldPlaceholder />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Endpoint</Field.Label>
-          <InputGroup.Root>
+          <InputGroup.Root density={density}>
             <InputGroup.Addon>https://</InputGroup.Addon>
             <InputGroup.Input defaultValue="example.test" />
           </InputGroup.Root>
-          <FieldPlaceholder />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Concurrent jobs</Field.Label>
-          <NumberField.Root locale="en-US" defaultValue={4} min={1}>
+          <NumberField.Root density={density} locale="en-US" defaultValue={4} min={1}>
             <NumberField.Group>
               <NumberField.Decrement />
               <NumberField.Input />
               <NumberField.Increment />
             </NumberField.Group>
           </NumberField.Root>
-          <FieldPlaceholder />
+          <FieldPlaceholder density={density} />
         </Field.Root>
         <Field.Root>
           <Field.Label>Attachment</Field.Label>
-          <FilePicker />
-          <FieldPlaceholder />
+          <FilePicker density={density} />
+          <FieldPlaceholder density={density} />
         </Field.Root>
       </div>
       <Row>
-        <Button variant="solid">Save changes</Button>
-        <Button>Cancel</Button>
-        <Button variant="ghost">Preview</Button>
-        <Button nativeButton={false} render={<a href="#control-settings" />}>
+        <Button density={density} variant="solid">
+          Save changes
+        </Button>
+        <Button density={density}>Cancel</Button>
+        <Button density={density} variant="ghost">
+          Preview
+        </Button>
+        <Button density={density} nativeButton={false} render={<a href="#control-settings" />}>
           Open settings
         </Button>
-        <ButtonPlaceholder />
-        <IconButton aria-label="Settings">
+        <ButtonPlaceholder density={density} />
+        <IconButton density={density} aria-label="Settings">
           <Settings size={16} aria-hidden />
         </IconButton>
-        <ButtonPlaceholder isIconOnly />
+        <ButtonPlaceholder density={density} isIconOnly />
       </Row>
     </Stack>
-  ),
-};
+  );
+}
+
+export const Recommended: Story = { render: () => <ControlGeometry /> };
+export const Compact: Story = { render: () => <ControlGeometry density="compact" /> };
 
 export const TextareaRows: Story = {
   render: () => (

@@ -1,6 +1,12 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
+import {
+  actionTargetDensityStyles,
+  controlDensityStyles,
+  controlStyles,
+  singleLineControlDensityStyles,
+} from '../../foundations/src/control-styles.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls } from '../../foundations/src/tokens.stylex.ts';
 import { Skeleton, SkeletonText } from './skeleton.tsx';
@@ -12,7 +18,7 @@ const styles = stylex.create({
   rows: (rows: number) => ({ height: `calc(${rows} * 1lh + 2 * ${controls.paddingBlock} + 2px)` }),
 });
 
-export type ButtonPlaceholderProps = { readonly xstyle?: PlacementStyle } & (
+export type ButtonPlaceholderProps = { readonly density?: ControlDensity; readonly xstyle?: PlacementStyle } & (
   | { readonly isIconOnly: true; readonly width?: never }
   | { readonly isIconOnly?: false; readonly width?: number | string }
 );
@@ -20,13 +26,20 @@ export type ButtonPlaceholderProps = { readonly xstyle?: PlacementStyle } & (
 export type FieldPlaceholderProps = {
   readonly label?: string;
   readonly hint?: string;
-  readonly isMultiline?: boolean;
   readonly rows?: number;
   readonly width?: number | string;
   readonly xstyle?: PlacementStyle;
-};
+} & (
+  | { readonly isMultiline?: false; readonly density?: ControlDensity }
+  | { readonly isMultiline: true; readonly density?: never }
+);
 
-export function ButtonPlaceholder({ width = '7ch', isIconOnly = false, xstyle }: ButtonPlaceholderProps): ReactNode {
+export function ButtonPlaceholder({
+  width = '7ch',
+  isIconOnly = false,
+  density = 'standard',
+  xstyle,
+}: ButtonPlaceholderProps): ReactNode {
   return (
     <span
       aria-hidden
@@ -34,6 +47,8 @@ export function ButtonPlaceholder({ width = '7ch', isIconOnly = false, xstyle }:
       {...stylex.props(
         controlStyles.base,
         controlStyles.button,
+        controlDensityStyles[density],
+        actionTargetDensityStyles[density],
         isIconOnly && controlStyles.iconButton,
         styles.button,
         xstyle,
@@ -48,6 +63,7 @@ export function FieldPlaceholder({
   label,
   hint,
   isMultiline = false,
+  density = 'standard',
   rows = 4,
   width = '100%',
   xstyle,
@@ -61,7 +77,9 @@ export function FieldPlaceholder({
         {...stylex.props(
           controlStyles.base,
           controlStyles.field,
+          controlDensityStyles[density],
           !isMultiline && controlStyles.singleLineField,
+          !isMultiline && singleLineControlDensityStyles[density],
           !isMultiline && styles.singleLine,
           isMultiline && controlStyles.textarea,
           isMultiline && styles.rows(rows),

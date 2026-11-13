@@ -4,15 +4,26 @@ import { mergeProps } from '@base-ui/react/merge-props';
 import { NumberField as BaseNumberField } from '@base-ui/react/number-field';
 import { Slider as BaseSlider } from '@base-ui/react/slider';
 import * as stylex from '@stylexjs/stylex';
+import { createContext, useContext } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
 import type { ReadOnlyValueProperties, ValueStateProperties } from '../../foundations/src/control-state.ts';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import {
+  actionTargetDensityStyles,
+  controlDensityStyles,
+  controlStyles,
+  controlTargetDensityStyles,
+  singleLineControlDensityStyles,
+} from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { fieldStyles } from './field-styles.ts';
 import type { InputProps } from './forms.tsx';
+
+const InputGroupDensityContext = createContext<ControlDensity>('standard');
+const NumberFieldDensityContext = createContext<ControlDensity>('standard');
 
 const styles = stylex.create({
   fieldset: {
@@ -51,8 +62,6 @@ const styles = stylex.create({
     'alignItems': 'center',
     'justifyContent': 'center',
     'boxSizing': 'border-box',
-    'width': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
-    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'padding': 0,
     'borderWidth': 0,
     'borderRadius': radii.sm,
@@ -180,10 +189,43 @@ const styles = stylex.create({
   },
 });
 
+const addonDensityStyles = stylex.create<Record<ControlDensity, stylex.CSSProperties>>({
+  standard: {},
+  compact: { paddingInline: controls.compactPaddingInline },
+});
+
+const fileStyles = stylex.create({
+  standard: {},
+  compact: {
+    'lineHeight': {
+      default: `calc(${controls.compactHeight} - 2px)`,
+      [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+    },
+    '::file-selector-button': {
+      paddingInline: controls.compactPaddingInline,
+      minHeight: {
+        default: `calc(${controls.compactHeight} - 2px)`,
+        [conditions.coarsePointer]: `calc(${controls.coarseTarget} - 2px)`,
+      },
+    },
+  },
+});
+
+const fileDensityStyles = { standard: fileStyles.standard, compact: fileStyles.compact } satisfies Record<
+  ControlDensity,
+  stylex.CompiledStyles
+>;
+
 type FieldsetRootProps = ComponentProps<typeof BaseFieldset.Root> & { readonly xstyle?: PlacementStyle };
 type FieldsetLegendProps = ComponentProps<typeof BaseFieldset.Legend>;
-type InputGroupRootProps = ComponentProps<'div'> & { readonly xstyle?: PlacementStyle };
+
+type InputGroupRootProps = ComponentProps<'div'> & {
+  readonly density?: ControlDensity;
+  readonly xstyle?: PlacementStyle;
+};
+
 type InputGroupAddonProps = ComponentProps<'span'>;
+type InputGroupInputProps = Omit<InputProps, 'density'>;
 
 type NumberFieldRootProps = Omit<
   ComponentProps<typeof BaseNumberField.Root>,
@@ -192,7 +234,7 @@ type NumberFieldRootProps = Omit<
   (
     | ValueStateProperties<number | null, NonNullable<BaseNumberField.Root.Props['onValueChange']>, number>
     | ReadOnlyValueProperties<number | null, NonNullable<BaseNumberField.Root.Props['onValueChange']>>
-  ) & { readonly locale: string; readonly xstyle?: PlacementStyle };
+  ) & { readonly locale: string; readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
 type NumberFieldGroupProps = ComponentProps<typeof BaseNumberField.Group>;
 type NumberFieldInputProps = ComponentProps<typeof BaseNumberField.Input>;
@@ -216,6 +258,7 @@ type SliderLabelProps = ComponentProps<typeof BaseSlider.Label>;
 type SliderValueProps = ComponentProps<typeof BaseSlider.Value>;
 
 type FilePickerProps = Omit<ComponentProps<typeof BaseInput>, 'type' | 'value' | 'defaultValue' | 'onValueChange'> & {
+  readonly density?: ControlDensity;
   readonly xstyle?: PlacementStyle;
 };
 
@@ -237,15 +280,25 @@ function FieldsetLegend({ className, style, ...props }: FieldsetLegendProps): Re
   );
 }
 
-function InputGroupRoot({ xstyle, ...props }: InputGroupRootProps): ReactNode {
-  return <div {...mergeProps<'div'>(stylex.props(controlStyles.group, xstyle), props)} />;
+function InputGroupRoot({ density = 'standard', xstyle, ...props }: InputGroupRootProps): ReactNode {
+  return (
+    <InputGroupDensityContext value={density}>
+      <div
+        {...mergeProps<'div'>(stylex.props(controlStyles.group, controlTargetDensityStyles[density], xstyle), props)}
+      />
+    </InputGroupDensityContext>
+  );
 }
 
 function InputGroupAddon(props: InputGroupAddonProps): ReactNode {
-  return <span {...mergeProps<'span'>(stylex.props(styles.addon), props)} />;
+  const density = useContext(InputGroupDensityContext);
+
+  return <span {...mergeProps<'span'>(stylex.props(styles.addon, addonDensityStyles[density]), props)} />;
 }
 
-function InputGroupInput({ className, style, xstyle, ...props }: InputProps): ReactNode {
+function InputGroupInput({ className, style, xstyle, ...props }: InputGroupInputProps): ReactNode {
+  const density = useContext(InputGroupDensityContext);
+
   return (
     <BaseInput
       {...props}
@@ -257,6 +310,8 @@ function InputGroupInput({ className, style, xstyle, ...props }: InputProps): Re
           controlStyles.field,
           controlStyles.singleLineField,
           fieldStyles.input,
+          controlDensityStyles[density],
+          singleLineControlDensityStyles[density],
           controlStyles.embedded,
           xstyle,
         ),
@@ -265,29 +320,45 @@ function InputGroupInput({ className, style, xstyle, ...props }: InputProps): Re
   );
 }
 
-function NumberFieldRoot({ className, style, xstyle, ...props }: NumberFieldRootProps): ReactNode {
+function NumberFieldRoot({
+  density = 'standard',
+  className,
+  style,
+  xstyle,
+  ...props
+}: NumberFieldRootProps): ReactNode {
   return (
-    <BaseNumberField.Root
+    <NumberFieldDensityContext value={density}>
+      <BaseNumberField.Root
+        {...props}
+        {...mergeStyles<BaseNumberField.Root.State>({
+          className,
+          style,
+          styles: stylex.props(controlStyles.fieldRoot, xstyle),
+        })}
+      />
+    </NumberFieldDensityContext>
+  );
+}
+
+function NumberFieldGroup({ className, style, ...props }: NumberFieldGroupProps): ReactNode {
+  const density = useContext(NumberFieldDensityContext);
+
+  return (
+    <BaseNumberField.Group
       {...props}
-      {...mergeStyles<BaseNumberField.Root.State>({
+      {...mergeStyles<BaseNumberField.Group.State>({
         className,
         style,
-        styles: stylex.props(controlStyles.fieldRoot, xstyle),
+        styles: stylex.props(controlStyles.group, controlTargetDensityStyles[density]),
       })}
     />
   );
 }
 
-function NumberFieldGroup({ className, style, ...props }: NumberFieldGroupProps): ReactNode {
-  return (
-    <BaseNumberField.Group
-      {...props}
-      {...mergeStyles<BaseNumberField.Group.State>({ className, style, styles: stylex.props(controlStyles.group) })}
-    />
-  );
-}
-
 function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps): ReactNode {
+  const density = useContext(NumberFieldDensityContext);
+
   return (
     <BaseNumberField.Input
       {...props}
@@ -299,6 +370,8 @@ function NumberFieldInput({ className, style, ...props }: NumberFieldInputProps)
           controlStyles.field,
           controlStyles.singleLineField,
           fieldStyles.input,
+          controlDensityStyles[density],
+          singleLineControlDensityStyles[density],
           controlStyles.embedded,
           styles.numberInput,
         ),
@@ -314,11 +387,17 @@ function NumberFieldIncrement({
   style,
   ...props
 }: NumberFieldIncrementProps): ReactNode {
+  const density = useContext(NumberFieldDensityContext);
+
   return (
     <BaseNumberField.Increment
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseNumberField.Increment.State>({ className, style, styles: stylex.props(styles.stepper) })}
+      {...mergeStyles<BaseNumberField.Increment.State>({
+        className,
+        style,
+        styles: stylex.props(actionTargetDensityStyles[density], styles.stepper),
+      })}
     >
       {children}
     </BaseNumberField.Increment>
@@ -332,11 +411,17 @@ function NumberFieldDecrement({
   style,
   ...props
 }: NumberFieldDecrementProps): ReactNode {
+  const density = useContext(NumberFieldDensityContext);
+
   return (
     <BaseNumberField.Decrement
       {...props}
       aria-label={label}
-      {...mergeStyles<BaseNumberField.Decrement.State>({ className, style, styles: stylex.props(styles.stepper) })}
+      {...mergeStyles<BaseNumberField.Decrement.State>({
+        className,
+        style,
+        styles: stylex.props(actionTargetDensityStyles[density], styles.stepper),
+      })}
     >
       {children}
     </BaseNumberField.Decrement>
@@ -411,7 +496,7 @@ function SliderValue({ className, style, ...props }: SliderValueProps): ReactNod
   );
 }
 
-export function FilePicker({ className, style, xstyle, ...props }: FilePickerProps): ReactNode {
+export function FilePicker({ density = 'standard', className, style, xstyle, ...props }: FilePickerProps): ReactNode {
   return (
     <BaseInput
       {...props}
@@ -424,7 +509,10 @@ export function FilePicker({ className, style, xstyle, ...props }: FilePickerPro
           controlStyles.field,
           controlStyles.singleLineField,
           fieldStyles.input,
+          controlDensityStyles[density],
+          singleLineControlDensityStyles[density],
           styles.file,
+          fileDensityStyles[density],
           xstyle,
         ),
       })}

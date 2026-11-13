@@ -45,6 +45,18 @@ and growing rows. Colocated layout and control examples show those relationships
 fields and their placeholders. Guidance names which slot owns an inset and when wrapped content can change height.
 Use `NavigationSection` to demonstrate navigation groups; supplied sidebar-header content adds no second gutter.
 
+Distinguish page sections, compact chart captions and prose or form subheadings in the shared selection guide.
+Use standard `SectionHeading` or `CollectionToolbar` for independently scoped page and collection sections.
+A chart's `report` owns its private compact caption; callers supply scoped actions through `report.actions`.
+Use `Subheading` within prose or forms. Do not reuse a page heading inside a chart caption or add a public heading-size
+choice to erase those roles. An independently scoped collection keeps its standard heading and controls even when nested.
+
+Document explicit `density="compact"` on report actions and matching placeholders, with standard popup and dialog
+contents. Show wrapping and coarse-pointer targets beside the default composition. Density selects the control's
+shared recipe; it does not propagate through the page or report. Keep the caption quiet inside its one subtle frame,
+while preserving page insets and full-width table breakdowns. The chart's built-in Chart data trigger is compact;
+its dialog retains standard controls.
+
 The chart report examples in `layout/src/page-content.stories.tsx` place summaries inside their explanatory charts.
 The ReportContent examples in `layout/src/collection-layout.stories.tsx` document one inset summary followed by full-width rows,
 including a section without a summary. Pass content directly to the summary slot; do not nest PageContent inside it.
@@ -55,6 +67,10 @@ Read the selected story beside its component guide. Can a caller choose the appr
 component owns width, spacing, scrolling and state retention? Document legitimate embedded contexts at that owner.
 Compare the same composition at narrow and desktop widths with long text, both themes and coarse-pointer targets.
 Keep alignment guides in catalog examples, not a production layout API or a parallel component registry.
+
+The `ui-chart-caption-role` ast-grep rule rejects `SectionHeading` imports and namespace use in the shared chart frame
+and private heading. Its examples cover direct imports, aliases and namespace markup. This narrow syntax check does
+not establish density, inset ownership or rendered wrapping; review those properties in the compositions above.
 
 Colocated stories, source guidance, and package documentation describe implemented public components.
 A component family may document its public parts in one story file. Supported means that the component is part of
@@ -82,6 +98,6 @@ Keep component guidance beside its owner; the Console guide explains application
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-No rule of the registry decides this contract; review does.
+- ast-grep `ui-chart-caption-role` (074): enforced
 
 <!-- End of the generated block. -->

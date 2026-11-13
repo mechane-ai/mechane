@@ -125,6 +125,7 @@
 /lint/ast-grep/tests/try-promise-shape.yml linguist-generated merge=ours
 /lint/ast-grep/tests/type-predicate.yml linguist-generated merge=ours
 /lint/ast-grep/tests/types-file-role.yml linguist-generated merge=ours
+/lint/ast-grep/tests/ui-chart-caption-role.yml linguist-generated merge=ours
 /lint/ast-grep/tests/ui-control-geometry-typescript.yml linguist-generated merge=ours
 /lint/ast-grep/tests/ui-control-geometry.yml linguist-generated merge=ours
 /lint/ast-grep/tests/ui-control-style-overrides.yml linguist-generated merge=ours

@@ -5,7 +5,12 @@ import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
-import { controlStyles } from '../../foundations/src/control-styles.ts';
+import type { ControlDensity } from '../../foundations/src/control-density.ts';
+import {
+  actionTargetDensityStyles,
+  controlDensityStyles,
+  controlStyles,
+} from '../../foundations/src/control-styles.ts';
 import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, typography } from '../../foundations/src/tokens.stylex.ts';
@@ -88,7 +93,6 @@ const styles = stylex.create({
   text: {
     'display': 'inline-block',
     'boxSizing': 'border-box',
-    'minHeight': { default: controls.height, [conditions.coarsePointer]: controls.coarseTarget },
     'minWidth': 0,
     'paddingBlock': 0,
     'paddingInline': 0,
@@ -103,6 +107,7 @@ const styles = stylex.create({
     'maxWidth': '100%',
     'overflow': 'hidden',
     'textOverflow': 'ellipsis',
+    'textAlign': 'center',
     'verticalAlign': 'middle',
     'cursor': 'pointer',
     ':hover:not([data-disabled])': { textDecorationLine: { [conditions.hoverPointer]: 'underline' } },
@@ -139,7 +144,12 @@ type ButtonTone = 'neutral' | 'danger';
 type PendingProps = { readonly isPending?: boolean; readonly pendingLabel?: string | undefined };
 
 type ButtonProps = ComponentProps<typeof BaseButton> &
-  PendingProps & { readonly variant?: ButtonVariant; readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
+  PendingProps & {
+    readonly variant?: ButtonVariant;
+    readonly tone?: ButtonTone;
+    readonly density?: ControlDensity;
+    readonly xstyle?: PlacementStyle;
+  };
 
 type ActionButtonProps = ButtonProps & { readonly isIconOnly?: boolean };
 
@@ -147,14 +157,25 @@ type IconButtonProps = Omit<ButtonProps, 'aria-label' | 'pendingLabel'> & { read
 
 type IconLinkProps = Omit<useRender.ComponentProps<'a'>, 'aria-label'> & {
   readonly 'aria-label': string;
+  readonly 'density'?: ControlDensity;
   readonly 'xstyle'?: PlacementStyle;
 };
 
 type TextButtonProps = ComponentProps<typeof BaseButton> &
-  PendingProps & { readonly tone?: ButtonTone; readonly xstyle?: PlacementStyle };
+  PendingProps & { readonly tone?: ButtonTone; readonly density?: ControlDensity; readonly xstyle?: PlacementStyle };
 
 type TextLinkProps = ComponentProps<'a'> & { readonly xstyle?: PlacementStyle };
-type ButtonLabelsProps = PendingProps & { readonly id: string; readonly children?: ReactNode };
+
+type ButtonLabelsProps = PendingProps & {
+  readonly id: string;
+  readonly density: ControlDensity;
+  readonly children?: ReactNode;
+};
+
+const labelDensityStyles = stylex.create<Record<ControlDensity, stylex.CSSProperties>>({
+  standard: {},
+  compact: { gap: controls.compactGap },
+});
 
 const variants = {
   neutral: { solid: styles.solidNeutral, outline: styles.outlineNeutral, ghost: styles.ghostNeutral },
@@ -166,19 +187,22 @@ const textTones = { neutral: styles.neutralText, danger: styles.dangerText } sat
   stylex.StyleXStyles
 >;
 
-function ButtonLabels({ id, children, isPending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
+function ButtonLabels({ id, density, children, isPending = false, pendingLabel }: ButtonLabelsProps): ReactNode {
   const shouldShowPendingLabel = isPending && pendingLabel !== undefined;
 
   return (
     <span id={id} {...stylex.props(styles.labels)}>
       <span
         aria-hidden={shouldShowPendingLabel}
-        {...stylex.props(styles.label, shouldShowPendingLabel && styles.hidden)}
+        {...stylex.props(styles.label, labelDensityStyles[density], shouldShowPendingLabel && styles.hidden)}
       >
         {children}
       </span>
       {pendingLabel !== undefined && (
-        <span aria-hidden={!isPending} {...stylex.props(styles.label, !isPending && styles.hidden)}>
+        <span
+          aria-hidden={!isPending}
+          {...stylex.props(styles.label, labelDensityStyles[density], !isPending && styles.hidden)}
+        >
           {pendingLabel}
         </span>
       )}
@@ -189,6 +213,7 @@ function ButtonLabels({ id, children, isPending = false, pendingLabel }: ButtonL
 function ActionButton({
   variant = 'outline',
   tone = 'neutral',
+  density = 'standard',
   isIconOnly = false,
   isPending = false,
   pendingLabel,
@@ -206,6 +231,8 @@ function ActionButton({
     controlStyles.button,
     styles.button,
     variants[tone][variant],
+    controlDensityStyles[density],
+    actionTargetDensityStyles[density],
     isIconOnly && controlStyles.iconButton,
     xstyle,
   );
@@ -222,7 +249,7 @@ function ActionButton({
       }
       aria-busy={isPending || props['aria-busy']}
     >
-      <ButtonLabels id={labelId} isPending={isPending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} density={density} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>
@@ -245,6 +272,7 @@ export function IconButton({ children, ...props }: IconButtonProps): ReactNode {
 
 export function TextButton({
   tone = 'neutral',
+  density = 'standard',
   isPending = false,
   pendingLabel,
   children,
@@ -255,7 +283,7 @@ export function TextButton({
   ...props
 }: TextButtonProps): ReactNode {
   const labelId = useId();
-  const appearance = stylex.props(styles.text, textTones[tone], xstyle);
+  const appearance = stylex.props(styles.text, actionTargetDensityStyles[density], textTones[tone], xstyle);
 
   return (
     <BaseButton
@@ -269,7 +297,7 @@ export function TextButton({
       }
       aria-busy={isPending || props['aria-busy']}
     >
-      <ButtonLabels id={labelId} isPending={isPending} pendingLabel={pendingLabel}>
+      <ButtonLabels id={labelId} density={density} isPending={isPending} pendingLabel={pendingLabel}>
         {children}
       </ButtonLabels>
     </BaseButton>
@@ -280,7 +308,7 @@ export function TextLink({ xstyle, ...props }: TextLinkProps): ReactNode {
   return <a {...mergeProps(stylex.props(styles.link, xstyle), props)} />;
 }
 
-export function IconLink({ children, xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
+export function IconLink({ children, density = 'standard', xstyle, render, ref, ...props }: IconLinkProps): ReactNode {
   return useRender({
     defaultTagName: 'a',
     render,
@@ -291,7 +319,9 @@ export function IconLink({ children, xstyle, render, ref, ...props }: IconLinkPr
         controlStyles.button,
         styles.button,
         styles.ghostNeutral,
+        controlDensityStyles[density],
         controlStyles.iconButton,
+        actionTargetDensityStyles[density],
         xstyle,
       ),
       props,

@@ -34,7 +34,9 @@ and collections consume foundations independently, without sharing a page contro
 | Page content edge                      | `pageGeometry.inset` is 16px. Section headings, table-cell content, and inset report frames share that edge.                    |
 | Shell toolbar and navigation cell      | 48px. Separators do not subtract from the area used to centre their contents.                                                   |
 | Section heading and collection toolbar | 48px minimum. A single row of ordinary controls fits that height; wrapped content grows.                                        |
-| Ordinary single-line control           | 32px including borders; 44px for coarse pointers. The shared control recipe owns its geometry.                                  |
+| Standard single-line control           | 32px including borders; 44px for coarse pointers. This is the default shared control recipe.                                    |
+| Compact report caption                 | 36px minimum; at least 48px for coarse pointers. Titles and action groups may wrap independently.                               |
+| Explicit compact single-line control   | 28px including borders; 44px for coarse pointers. The same recipe owns focus, padding and pending geometry.                     |
 | Navigation item                        | 32px; 44px for coarse pointers. Expanded navigation has 8px outer and item insets; collapsed items centre in the rail.          |
 | Standard navigation or leading glyph   | A 16px box that does not shrink beside text. Small indicators, artwork and avatars retain their intended sizes.                 |
 | Table row and column header            | 48px row; 36px header baseline, growing for larger sort targets. Table geometry owns the virtualizer's matching fixed estimate. |
@@ -46,11 +48,13 @@ legend share an internal inset. A plot also reserves room for axis labels. Toolb
 navigation control; that title does not define the body's left edge. Reading columns, dialogs and inspectors keep their
 own containing width.
 
-Header rows share one [padding recipe](../packages/browser/elements/packages/foundations/src/header-styles.ts) around
-ordinary controls, with 8px above and below a 32px control or 2px around a 44px target. Their noninteractive separators
-do not add another layout pixel. Titles and action groups may wrap; never clip content to preserve a nominal row height.
-Shell cells centre their controls; text rows align by their line boxes, and adjacent text uses a common baseline.
-Measured glyph and border adjustments stay with the owning component.
+Page and collection header rows share one
+[padding recipe](../packages/browser/elements/packages/foundations/src/header-styles.ts) around standard controls, with
+8px above and below a 32px control or 2px around a 44px target. Their noninteractive separators do not add another
+layout pixel. A report caption uses `reportGeometry.headerHeight` and 28px compact controls; coarse pointers expand its
+header and targets. Titles and action groups may wrap; never clip content to preserve a nominal row height. Shell cells
+centre their controls; text rows align by their line boxes, and adjacent text uses a common baseline. Measured glyph and
+border adjustments stay with the owning component.
 
 The expanded sidebar header owns its inset; supply branding or a selector without another outer gutter. Its collapsed
 rail and phone drawer use their own supported layout. Use `NavigationSection` for group labels and `NavigationLink` or
@@ -59,7 +63,24 @@ rail and phone drawer use their own supported layout. Use `NavigationSection` fo
 Native single-line fields, including date and month inputs, and their placeholders share outer sizing. Controls with
 wrapped labels or larger leading artwork may grow, as may multiline text entry. Coarse-pointer text entry uses 16px
 type. Keep native editing and picker affordances, and compare field and placeholder geometry in the same browser.
-Consumers choose intent and placement without changing control height, padding or typography.
+Consumers choose intent, the finite control density and placement without overriding height, padding or typography.
+
+Choose a heading by its scope:
+
+| Scope                                  | Heading and controls                                                                               | Boundary                                                                         |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Independent page section or collection | `SectionHeading` or `CollectionToolbar`; 48px standard row and 32px standard controls.             | Owns its page inset and section separation.                                      |
+| One chart report                       | The chart's private caption; 36px row and explicit 28px compact controls through `report.actions`. | Stays quiet without a gray header fill, inside the report's single subtle frame. |
+| Prose or form content within a section | `Subheading`; standard form controls.                                                              | Uses the containing reading column or form inset.                                |
+
+`ControlDensity` has only `standard` and `compact`; standard is the default. Set `density="compact"` on each supported
+report control and its matching placeholder. The built-in Chart data trigger is compact, while its dialog remains
+standard. Select and combobox popup contents also remain standard. A compound control scopes density to its own input,
+addons and buttons; an unrelated nested control keeps its own default. Layouts never propagate density.
+
+Keep role decisions independent. A collection inside a report may still define an independent browsing task and use its
+standard heading and controls. The 16px content edge and full-width table rows remain the same at both densities.
+Pending captions keep the known title, actions, density and wrapping of their ready composition.
 
 `DataTableText` preserves the size of supplied leading artwork and its record-identity gap. Use the same size and
 fallback within a collection, including its placeholder. An absent adornment contributes no slot or gap. A logo or
@@ -69,20 +90,20 @@ avatar need not share the ordinary glyph's size; reserve an empty slot only when
 
 Choose the containing task before its inset, scrolling behavior, or visual boundary.
 
-| Need                                                               | Composition and boundary                                                                        |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                  |
-| Section title, metadata and scoped actions                         | `SectionHeading` defines the section. `Subheading` names content within it.                     |
-| Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                 |
-| An inset report followed by a finite breakdown                     | `ReportContent` scrolls with the page and leaves its breakdown full width.                      |
-| One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.              |
-| One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                          |
-| A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                      |
-| A standalone sign-in or focused step outside the application shell | `FocusPage` centers one bounded task.                                                           |
-| Tool panes and an independently scrolling inspector                | `Workbench` and its scroll regions own those boundaries.                                        |
-| A self-contained analytical report                                 | The chart's `report` input groups its heading, summary and plot in one subtle frame.            |
-| A plot embedded in an existing content region                      | The chart supplies its own title, legend and inspection. The containing region owns separation. |
-| A bounded decision, linked item or structured message Card         | `Panel` provides the unit's boundary.                                                           |
+| Need                                                               | Composition and boundary                                                                           |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                     |
+| Independent section title, metadata and scoped actions             | Standard `SectionHeading` defines the section. `Subheading` names prose or form content within it. |
+| Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                    |
+| An inset report followed by a finite breakdown                     | `ReportContent` scrolls with the page and leaves its breakdown full width.                         |
+| One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.                 |
+| One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                             |
+| A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                         |
+| A standalone sign-in or focused step outside the application shell | `FocusPage` centers one bounded task.                                                              |
+| Tool panes and an independently scrolling inspector                | `Workbench` and its scroll regions own those boundaries.                                           |
+| A self-contained analytical report                                 | The chart's `report` input groups its compact caption, summary and plot in one subtle frame.       |
+| A plot embedded in an existing content region                      | The chart supplies its own title, legend and inspection. The containing region owns separation.    |
+| A bounded decision, linked item or structured message Card         | `Panel` provides the unit's boundary.                                                              |
 
 Prefer vertically stacked sections for related page content. Use columns when the views need simultaneous comparison and
 remain readable at their actual widths. A self-contained report owns one frame. Its surrounding page can stay flat.
@@ -114,6 +135,10 @@ visible divider, with enough height for its actual content. Adjacent navigation 
 Row and Stack compositions own spacing; individual children do not accumulate corrective margins. FormActions owns
 submission rows, and SettingsRow aligns labels with one bounded field column. Applications own the content and
 callbacks.
+
+Supply scoped report actions through `report.actions`, with explicit compact density on their controls. The chart places
+them beside its built-in Chart data action. Keep page commands in the page toolbar and collection commands with their
+independent collection. Density does not change action ownership or hide actions needed for recovery.
 
 Supply a chart's mixed metrics through `report.summary`. Use `report.seriesValues` when period metrics correspond to its
 series. The chart reuses their labels and colors. Metric supplies inline, statistic and headline presentations, with

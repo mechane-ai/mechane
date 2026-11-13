@@ -1,0 +1,10 @@
+# Generated from @mechane/rules by `mise run fix`; change the registry, never this file.
+id: ui-chart-caption-role
+valid:
+  - "import { ChartHeading } from './chart-heading.tsx';"
+  - 'const caption = <ChartHeading title={title} actions={actions} />;'
+  - 'const caption = <Core.Subheading>{title}</Core.Subheading>;'
+invalid:
+  - "import { SectionHeading } from '../../core/src/index.ts';"
+  - "import { SectionHeading as Caption } from '../../core/src/index.ts';"
+  - 'const caption = <Core.SectionHeading title={title} />;'

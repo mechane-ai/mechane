@@ -20,49 +20,22 @@ const styles = stylex.create({
     fontSize: typography.bodySize,
     lineHeight: typography.bodyLineHeight,
   },
-  title: {
-    flex: '1 1 auto',
-    minWidth: 0,
-    margin: 0,
-    overflowWrap: 'anywhere',
-    fontSize: typography.inputSize,
-    fontWeight: typography.mediumWeight,
-    lineHeight: typography.bodyLineHeight,
-  },
-  trailing: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginInlineStart: 'auto',
-    minWidth: 0,
-    maxWidth: '100%',
-  },
-  meta: {
-    minWidth: 0,
-    marginInlineStart: 'auto',
-    overflowWrap: 'anywhere',
-    color: colors.muted,
-    fontSize: typography.captionSize,
-    lineHeight: typography.captionLineHeight,
-  },
-  actions: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: spacing.sm, maxWidth: '100%' },
 });
 
 export function SectionHeading({ title, id, meta, actions }: SectionHeadingProps): ReactNode {
   const hasMetadata = Children.toArray(meta).length > 0;
   const hasActions = Children.toArray(actions).length > 0;
   const hasTrailing = hasMetadata || hasActions;
-  const metadata = hasMetadata && <div {...stylex.props(styles.meta)}>{meta}</div>;
-  const controlActions = hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>;
+  const metadata = hasMetadata && <div {...stylex.props(headerStyles.meta)}>{meta}</div>;
+  const controlActions = hasActions && <div {...stylex.props(headerStyles.actions)}>{actions}</div>;
 
   return (
     <div {...stylex.props(headerStyles.row, headerStyles.blockEnd, styles.root)}>
-      <h2 id={id} {...stylex.props(styles.title)}>
+      <h2 id={id} {...stylex.props(headerStyles.title)}>
         {title}
       </h2>
       {hasTrailing && (
-        <div {...stylex.props(styles.trailing)}>
+        <div {...stylex.props(headerStyles.trailing)}>
           {metadata}
           {controlActions}
         </div>

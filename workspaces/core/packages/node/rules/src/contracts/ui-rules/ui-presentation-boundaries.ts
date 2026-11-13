@@ -25,6 +25,7 @@ const FOUNDATION_ENTRIES = [
   'visible-motion.ts',
   'use-scroll-tab-index.ts',
   'control-state.ts',
+  'control-density.ts',
   'control-styles.ts',
   'header-styles.ts',
   'style-composition.ts',

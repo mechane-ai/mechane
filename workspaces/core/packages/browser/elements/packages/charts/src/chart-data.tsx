@@ -12,7 +12,7 @@ export function ChartData({ title, children }: { readonly title: string; readonl
 
   return (
     <Dialog.Root>
-      <Dialog.Trigger render={<TextButton />}>Chart data</Dialog.Trigger>
+      <Dialog.Trigger render={<TextButton density="compact" />}>Chart data</Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop />
         <Dialog.Popup>
