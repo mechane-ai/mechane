@@ -70,7 +70,8 @@ and safe retirement against unstarted inspection failure, live identity gaps, an
 failure when reporting fails. `gateway-self.ts` guards canonical self-API forwarding with unchanged credentials while
 rejecting other control-plane routes, aliases, invalid authorities, and private destinations. Its upstream fixture does
 not authenticate tokens; the application remains that authority. These process-scope fixtures do not establish hosted
-container behavior or full runtime qualification.
+container behavior or full runtime qualification. `workspace-retirement.ts` uses the real sandbox store over SQLite
+to guard deletion against delayed automatic publication, preserving required checkpoints, recovery and command receipts.
 The repository keeps no general unit-test suite or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
 exercise the public producer boundary directly; the product implementation, native Pi, actual database, and

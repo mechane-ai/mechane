@@ -148,6 +148,7 @@ run = "jscpd"
 
 [tasks.checks]
 description = "Run the repository's own checks: layout, blank lines, patterns, orphans, documents, pins, the wire and migration locks, the boundaries with one dependency-cruiser cruise of every rule, the owned ratchets with their baselines, and every baseline against the merge base's"
+depends = ["routes:generate"]
 wait_for = ["build:server", "build:cli", "build:guest"]
 run = "node packages/node/checks/src/main.ts check"
 

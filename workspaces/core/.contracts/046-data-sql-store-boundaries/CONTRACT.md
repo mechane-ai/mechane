@@ -59,6 +59,8 @@ It exposes no query API to product callers and accepts no user-supplied SQL.
 The historical Console fixture in `packages/node/stack/src/fixtures/store/conversation-import.ts` owns its fixed local
 Postgres seed and upgrade preparation statements. It accepts typed fixture identities, exposes no query API, and runs
 only in the disposable fixture stack. Upgrade checks use the compiled production migrator and authenticated HTTP reads.
+The retirement fixture's `packages/worker/sandbox/testing/store/sqlite-store.ts` adapter runs the owning sandbox
+store's complete SQL and bindings through Node SQLite. The fixture exports only the typed store and its close operation.
 
 Control transitions that must be atomic, such as reserving usage or committing a control-outbox event, execute in one
 Postgres transaction. Notification admission and its native submission commit in one Harness transaction. Delivery

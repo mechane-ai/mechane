@@ -58,6 +58,11 @@ one in-flight capture and upload owner; repeated command completion cannot creat
 foreground work before an automatic capture. Release its writer fence after the immutable archive is complete so a
 remote upload does not block the next command. Required barriers and final drains still wait for fresh committed files.
 
+An active deletion intent fences new work and commits for an optional automatic checkpoint. Keep its generation and
+lease attached until machine retirement begins, so canceling before retirement can resume the original capture or upload.
+Settle started transfers before retiring the machine and journaling the superseded generation for cleanup. Preserve
+required checkpoint and recovery fences, and retain the committed head until the explicit deletion advances.
+
 Expose the last committed file head separately from capture, upload, and failure status. A background save failure
 cannot rewrite a terminal exit code or claim a saved generation. Retain live files and the previous head for recovery.
 Automatic checkpoint cadence is not a recovery-point guarantee. Unsaved writes can be lost with their physical machine.
@@ -158,6 +163,9 @@ as a latency promise.
 Hold or fail a background upload after a command exits. Require its durable terminal receipt and the next foreground
 command to progress, with one coalesced checkpoint and honest file status. A required barrier must still wait for a
 complete fresh head, and a failed drain must retain recoverable files and capacity ownership.
+In `sandbox:native:check`, hold an automatic manifest write while admitting deletion. Require the previous head to
+survive admission and the superseded generation to be cleaned up. Cancel before retirement and resume the same
+generation. Require checkpoints for an activation, drain, or recovery to refuse deletion.
 For a raised capacity, save and restore a home exceeding the former bound, and retain explicit failures above each new
 bound. Establish the tar-stream size from actual written data; a sparse file's logical length alone is insufficient.
 Qualify a representative compressed archive near the accepted maximum separately from ordinary small smoke
