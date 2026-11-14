@@ -62,7 +62,16 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     await unlink(file);
   }
 
-  const access = { variables: { SMOKE_SETTING: 'current' }, secrets: { SMOKE_SECRET: reference } };
+  const access = {
+    variables: {
+      SMOKE_SETTING: 'current',
+      MECHANE_WORKSPACE_ID: 'configured-workspace',
+      MECHANE_MECH_ID: 'configured-mech',
+      MECHANE_SESSION_ID: 'configured-session',
+      MECHANE_RUN_ID: 'configured-run',
+    },
+    secrets: { SMOKE_SECRET: reference, MECHANE_RUN_ID: reference },
+  };
 
   await runCli({
     stack,
@@ -78,6 +87,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     String.raw`printf 'capture-start\n'`,
     `printf '%${OUTPUT_PADDING_COLUMNS}s' ''`,
     String.raw`printf "setting=%s\n" "$SMOKE_SETTING"`,
+    String.raw`printf "attribution=%s/%s/%s/%s\n" "$MECHANE_WORKSPACE_ID" "$MECHANE_MECH_ID" "$MECHANE_SESSION_ID" "$MECHANE_RUN_ID"`,
     String.raw`printf "secret=%s\n" "$SMOKE_SECRET"`,
     String.raw`printf "injected=yes\n"`,
     `# ${'界'.repeat(COMMAND_PADDING_CHARACTERS)}`,
@@ -101,6 +111,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   assert.equal(turn.status, TurnStatus.Completed);
   assert.equal(output.includes('setting=current\n'), true);
   assert.equal(output.includes('injected=yes\n'), true);
+  assert.equal(output.includes(`attribution=${account.workspaceId}/${mech.id}/${mech.id}/${turn.id}\n`), true);
   assert.ok(output.includes('Command exited with code 127'));
   assert.equal(output.includes(secret), false, 'The shell result exposed its injected credential');
 

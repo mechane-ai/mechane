@@ -11,6 +11,11 @@ upstream storage adapter. Pi owns input placement, model/tool execution, compact
 notification identity, current authority, environment boundaries, and explicit publications. Keep a second execution
 engine, dependency patches, private SDK imports, and a separate run scheduler out of the application.
 
+Expose the current native workspace, mech, session and run identity in the command environment as `MECHANE_*`
+variables. Runtime identity and origin override configured variables and credential names; a secret grant cannot
+replace attribution. Keep these identities stable when retrying the same native execution receipt. They are references
+for ordinary tools, not authority to create external work, report success or publish a response.
+
 Do not impose a fixed model or tool round count on the root conversation. Current budgets, authority, and cancellation
 bound continued work. Reconcile runtime-owned native configuration on every actor open through supported Pi APIs,
 clearing a previously stored round limit without changing working context, history, or the human definition revision.
