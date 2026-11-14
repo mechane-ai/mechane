@@ -1,5 +1,5 @@
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { hasUniqueIds } from '../chart-input.tsx';
-import type { ChartTone } from '../chart-theme.ts';
 
 export type TimeSeriesPoint = { readonly timestamp: number; readonly value: number | null };
 

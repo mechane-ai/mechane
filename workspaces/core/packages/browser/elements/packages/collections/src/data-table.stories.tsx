@@ -142,7 +142,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction stretches the first visible primary cell’s native link or button across noninteractive cells and adds arrow-key navigation; supply a complete label for its tooltip. Links retain native modifier and middle clicks. Embedded controls and selection stay independent. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. DisplayOptions reports supplied choices through one icon menu, disables required choices, and invokes the application’s reset callback. Apply the choices to the rendered columns; the control does not transform records. CollectionPagination supplies previous and next buttons. Use ListFooter for a result summary with application-defined cursor actions. A cursor does not imply a page count. Inspect narrow tables through their named horizontal scroll region.',
+          'Prepared records and stable IDs. The application owns filtering, sorting, pagination and selection. Every column declares a role: primary, text and status align at the start; number, timestamp and actions align at the end. Primary columns absorb remaining width. Numeric identifiers use text. Use width only for a concrete content need. Ordinary rows stay 48px high with primary and text strings truncated; use rowSizing="content" for multiline details or larger controls. DataTableText truncates primary and secondary strings beside an optional leading icon. Its trailing slot keeps a badge next to the primary label while the text truncates. DataTablePlaceholder reuses the supplied column roles, metadata and row sizing. DataTableTextPlaceholder shares the text cell geometry. Both are noninteractive decoration; AsyncRegion owns their visibility. Arbitrary composed cells own their text layout. rowAction stretches the first visible primary cell’s native link or button across noninteractive cells and adds arrow-key navigation; supply a complete label for its tooltip. Links retain native modifier and middle clicks. Button row actions accept disabled for unavailable operations. onRowHighlightChange reports pointer or keyboard inspection by stable row ID, independently of activeRowId and selection. Keyboard focus takes over from an earlier hover; leaving the table restores its focused row. Use focusRowId to return to the shared primary action after inspection. Embedded controls and selection stay independent. The table renders supplied order and reports sort intent. CollectionToolbar owns its 16px inset and separator, and omits an empty bar. DisplayOptions reports supplied choices through one icon menu, disables required choices, and invokes the application’s reset callback. Apply the choices to the rendered columns; the control does not transform records. CollectionPagination supplies previous and next buttons. Use ListFooter for a result summary with application-defined cursor actions. A cursor does not imply a page count. Inspect narrow tables through their named horizontal scroll region.',
       },
     },
   },
@@ -152,6 +152,54 @@ export default meta;
 type Story = StoryObj;
 
 export const Controlled: Story = { render: () => <PreparedRows /> };
+
+function LinkedInspection() {
+  const [highlightedId, setHighlightedId] = useState<string>();
+  const [activeId, setActiveId] = useState<string>();
+  const [focusRowId, setFocusRowId] = useState<string>();
+  const [isDisabled, setDisabled] = useState(false);
+
+  return (
+    <Stack>
+      <Text>
+        Highlighted: {highlightedId ?? 'none'} · Inspected: {activeId ?? 'none'}
+      </Text>
+      <Button onClick={() => setDisabled(!isDisabled)}>
+        {isDisabled ? 'Enable inspection' : 'Disable inspection'}
+      </Button>
+      {activeId !== undefined && (
+        <Button
+          onClick={() => {
+            setFocusRowId(activeId);
+            setActiveId(undefined);
+          }}
+        >
+          Return to inspected row
+        </Button>
+      )}
+      <DataTable
+        rows={runs}
+        columns={displayColumns}
+        getRowId={(run) => run.id}
+        caption="Runs with linked inspection"
+        empty="No runs."
+        activeRowId={activeId}
+        focusRowId={focusRowId}
+        onRowHighlightChange={setHighlightedId}
+        rowAction={{
+          label: (run) => `Inspect ${run.name}`,
+          disabled: isDisabled,
+          onActivate: (run) => {
+            setFocusRowId(undefined);
+            setActiveId(run.id);
+          },
+        }}
+      />
+    </Stack>
+  );
+}
+
+export const RowInspection: Story = { render: () => <LinkedInspection /> };
 
 export const ColumnRoles: Story = {
   render: () => (

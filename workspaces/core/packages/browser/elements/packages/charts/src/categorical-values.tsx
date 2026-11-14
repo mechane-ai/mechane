@@ -1,11 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import { chartToneColors } from '../../foundations/src/chart-tones.ts';
+import type { ChartTone } from '../../foundations/src/chart-tones.ts';
 import { colors, spacing } from '../../foundations/src/tokens.stylex.ts';
 import { ChartDatumButton } from './chart-frame.tsx';
 import type { ChartSelection } from './chart-frame.tsx';
 import { hasUniqueIds } from './chart-input.tsx';
-import { chartToneColors } from './chart-theme.ts';
-import type { ChartTone } from './chart-theme.ts';
 
 const styles = stylex.create({
   rows: { display: 'grid', margin: 0, padding: 0, listStyle: 'none' },

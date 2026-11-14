@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { ControlDensity } from '../../../foundations/src/control-density.ts';
 import { Calendar } from './calendar.tsx';
 import type { CalendarEnvironment, CalendarRange } from './calendar.tsx';
-import { dateInput, dateValidation, formatDate, isDate } from './civil.ts';
+import { dateValidation, formatDate, isDate, serializeCalendarDate } from './civil.ts';
 import type { DateRange } from './civil.ts';
 import { DateInput, RangeInputs } from './date-inputs.tsx';
 import { PickerPopover } from './picker-popover.tsx';
@@ -47,7 +47,7 @@ export function DateRangePicker({
       return invalid;
     }
 
-    if (dateInput(draft.from) > dateInput(draft.to)) {
+    if (serializeCalendarDate(draft.from) > serializeCalendarDate(draft.to)) {
       return 'End date must be on or after start date.';
     }
 

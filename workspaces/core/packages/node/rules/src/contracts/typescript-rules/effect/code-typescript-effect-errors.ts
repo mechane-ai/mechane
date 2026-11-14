@@ -53,6 +53,7 @@ export const codeTypescriptEffectErrors = {
       ...ADOPTED,
       name: 'no-throw-or-try',
       exemptRoles: [
+        FileRole.NativeCalendar,
         FileRole.BrowserAdapter,
         FileRole.BrowserQuery,
         FileRole.BrowserCommand,

@@ -79,10 +79,13 @@ export const uiDesignTokens = {
         "import { Button } from '@mechane-ai/elements'; const control = <Button style={{ height: 40 }} />;",
         "import { Input as Field } from '@mechane-ai/elements/forms'; const control = <Field className={styles.field} />;",
         "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Trigger {...stylex.props(styles.trigger)} />;",
+        "import { SelectControl as Choice } from '@mechane-ai/elements/forms'; const control = <Choice style={{ height: 40 }} />;",
+        "import { MonthRangePicker } from '@mechane-ai/elements/forms/dates'; const control = <MonthRangePicker className={styles.field} />;",
       ],
       allowed: [
         "import { Button } from '@mechane-ai/elements'; const control = <Button xstyle={styles.placement} {...injectedProps} />;",
         "import { Select } from '@mechane-ai/elements/forms'; const control = <Select.Positioner style={{ left: position }} />;",
+        'import { SelectControl } from \'@mechane-ai/elements/forms\'; const control = <SelectControl density="compact" xstyle={styles.placement} />;',
         'const control = <input style={{ width: measuredWidth }} />;',
         "import { Input } from './local-input'; const control = <Input className={styles.input} />;",
       ],

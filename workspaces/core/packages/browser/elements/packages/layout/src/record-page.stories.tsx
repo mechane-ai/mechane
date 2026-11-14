@@ -73,16 +73,32 @@ function RecordExample(): ReactNode {
               titleRef={titleRef}
             />
             <PageNavigation label="Record pages" items={pages} selectedId={selectedId} onNavigate={setSelectedId} />
-            <SettingsSection title="Document" description="The application owns the draft and save action.">
-              <SettingsRow label="Name" controlId="record-example-name">
-                <Input id="record-example-name" defaultValue="Release checklist" />
-              </SettingsRow>
-              <SettingsRow label="Notify reviewers" controlId="record-example-notifications">
-                <Switch.Root id="record-example-notifications" defaultChecked>
-                  <Switch.Thumb />
-                </Switch.Root>
-              </SettingsRow>
-            </SettingsSection>
+            {selectedId === 'overview' && (
+              <SettingsSection title="Document">
+                <SettingsRow label="Name" controlId="record-example-name">
+                  <Input id="record-example-name" defaultValue="Release checklist" />
+                </SettingsRow>
+                <SettingsRow label="Notify reviewers" controlId="record-example-notifications">
+                  <Switch.Root id="record-example-notifications" defaultChecked>
+                    <Switch.Thumb />
+                  </Switch.Root>
+                </SettingsRow>
+              </SettingsSection>
+            )}
+            {selectedId === 'history' && (
+              <Stack>
+                <Subheading>History</Subheading>
+                <Text>Version 3 · Release review completed</Text>
+                <Muted>Version 2 · Added publication steps</Muted>
+              </Stack>
+            )}
+            {selectedId === 'sharing' && (
+              <Stack>
+                <Subheading>Sharing</Subheading>
+                <Text>Example team can edit</Text>
+                <Muted>Workspace members can view</Muted>
+              </Stack>
+            )}
             <div>
               <Button onClick={() => titleRef.current?.focus()}>Focus record title</Button>
             </div>

@@ -125,7 +125,7 @@ export const codeModuleStructureAndControlFlow = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'date-constructor',
-      exemptRoles: [FileRole.NativeRuntime],
+      exemptRoles: [FileRole.NativeRuntime, FileRole.NativeCalendar],
       standard: 'EF-17',
       status: RuleStatus.Enforced,
       phase: RolloutPhase.Time,

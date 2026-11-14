@@ -3,7 +3,7 @@ import { createColumnHelper, tableFeatures, useTable } from '@tanstack/react-tab
 import { defaultRangeExtractor, useVirtualizer } from '@tanstack/react-virtual';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { Children, Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import type { KeyboardEvent, MouseEvent, ReactNode } from 'react';
+import type { ComponentProps, KeyboardEvent, MouseEvent, ReactNode } from 'react';
 import { SkeletonText } from '../../feedback/src/index.ts';
 import { Checkbox } from '../../forms/src/index.ts';
 import { accessibility } from '../../foundations/src/accessibility.ts';
@@ -159,6 +159,7 @@ const styles = stylex.create({
         outlineOffset: -2,
       },
     },
+    ':disabled': { cursor: 'default', color: colors.muted },
   },
   cell: {
     boxSizing: 'border-box',
@@ -486,8 +487,8 @@ export type DataTableSort = { readonly columnId: string; readonly direction: 'as
 export type DataTableWindow = { readonly height: number | 'fill'; readonly estimatedRowHeight?: number };
 
 export type DataTableRowAction<Row> = { readonly label?: (row: Row) => string } & (
-  | { readonly href: (row: Row) => string; readonly onActivate?: (row: Row) => void }
-  | { readonly href?: never; readonly onActivate: (row: Row) => void }
+  | { readonly href: (row: Row) => string; readonly onActivate?: (row: Row) => void; readonly disabled?: never }
+  | ({ readonly href?: never; readonly onActivate: (row: Row) => void } & Pick<ComponentProps<'button'>, 'disabled'>)
 );
 
 type SortProperties<Row> =
@@ -512,6 +513,8 @@ type OptionalSelection<Row> =
   | SelectionProperties<Row>
   | { readonly selectedIds?: never; readonly onSelectionChange?: never; readonly selectionLabel?: never };
 
+type ReportedRowHighlight = { readonly id: string | undefined };
+
 export type DataTableProps<Row> = SortProperties<Row> &
   OptionalSelection<Row> & {
     readonly rows: ReadonlyArray<Row>;
@@ -521,6 +524,7 @@ export type DataTableProps<Row> = SortProperties<Row> &
     readonly rowAction?: DataTableRowAction<Row>;
     readonly activeRowId?: string | undefined;
     readonly focusRowId?: string | undefined;
+    readonly onRowHighlightChange?: ((rowId: string | undefined) => void) | undefined;
     readonly hideCaption?: boolean;
     readonly hideHeaders?: boolean;
     readonly rowSizing?: RowSizing;
@@ -544,6 +548,7 @@ export function DataTable<Row extends object>({
   rowAction,
   activeRowId,
   focusRowId,
+  onRowHighlightChange,
   hideCaption = false,
   hideHeaders = false,
   rowSizing = 'fixed',
@@ -569,6 +574,8 @@ export function DataTable<Row extends object>({
   const headerElement = useRef<HTMLTableSectionElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [focusedId, setFocusedId] = useState<string>();
+  const [hoveredId, setHoveredId] = useState<string>();
+  const reportedHighlight = useRef<ReportedRowHighlight | undefined>(undefined);
   const pendingFocusId = useRef<string | undefined>(undefined);
   const restoredFocusId = useRef<string | undefined>(undefined);
   const focusedIndex = rows.findIndex((row) => getRowId(row) === focusedId);
@@ -578,34 +585,12 @@ export function DataTable<Row extends object>({
     primaryColumnIndex === -1 ? columns.findIndex((column) => column.isSecondary !== true) : primaryColumnIndex;
 
   const sizing = typeof window?.height === 'string' ? window.height : 'content';
+  const rowIds = new Set(rows.map(getRowId));
+  const validFocusedId = focusedId !== undefined && rowIds.has(focusedId) ? focusedId : undefined;
 
-  useLayoutEffect(() => {
-    if (focusRowId === undefined) {
-      restoredFocusId.current = undefined;
-
-      return;
-    }
-
-    if (restoredFocusId.current === focusRowId) {
-      return;
-    }
-
-    const row = viewport.current?.querySelector<HTMLElement>(
-      `[data-row-id="${CSS.escape(focusRowId)}"] [data-row-action]`,
-    );
-
-    if (row === undefined || row === null) {
-      return;
-    }
-
-    const frame = requestAnimationFrame(() => {
-      row.focus({ preventScroll: true });
-
-      restoredFocusId.current = focusRowId;
-    });
-
-    return () => cancelAnimationFrame(frame);
-  }, [rows, focusRowId]);
+  if (focusedId !== undefined && validFocusedId === undefined) {
+    setFocusedId(undefined);
+  }
 
   useEndReached({
     end: endElement,
@@ -673,6 +658,83 @@ export function DataTable<Row extends object>({
 
           return [{ row, index: item.index, spacerHeight: item.start - (items[index - 1]?.end ?? headerHeight) }];
         });
+
+  const validHoveredId = rendered.some(({ row }) => row.id === hoveredId) ? hoveredId : undefined;
+  const highlightedId = validHoveredId ?? validFocusedId;
+
+  if (hoveredId !== undefined && validHoveredId === undefined) {
+    setHoveredId(undefined);
+  }
+
+  useEffect(() => {
+    if (onRowHighlightChange === undefined) {
+      reportedHighlight.current = undefined;
+
+      return;
+    }
+
+    if (reportedHighlight.current !== undefined && reportedHighlight.current.id === highlightedId) {
+      return;
+    }
+
+    const delivery = { isCurrent: true };
+
+    queueMicrotask(() => {
+      if (!delivery.isCurrent) {
+        return;
+      }
+
+      reportedHighlight.current = { id: highlightedId };
+
+      onRowHighlightChange(highlightedId);
+    });
+
+    return () => {
+      delivery.isCurrent = false;
+    };
+  }, [highlightedId, onRowHighlightChange]);
+
+  const isReturnRowRendered = rendered.some(({ row }) => row.id === focusRowId);
+
+  useLayoutEffect(() => {
+    if (focusRowId === undefined) {
+      restoredFocusId.current = undefined;
+
+      return;
+    }
+
+    if (restoredFocusId.current === focusRowId) {
+      return;
+    }
+
+    if (!isReturnRowRendered && window !== undefined) {
+      const index = rows.findIndex((row) => getRowId(row) === focusRowId);
+
+      if (index !== -1) {
+        virtualizer.scrollToIndex(index, { align: 'auto' });
+      }
+
+      return;
+    }
+
+    const row = viewport.current?.querySelector<HTMLElement>(
+      `[data-row-id="${CSS.escape(focusRowId)}"] [data-row-action]`,
+    );
+
+    if (row === undefined || row === null || row.matches(':disabled')) {
+      return;
+    }
+
+    const frame = requestAnimationFrame(() => {
+      row.focus({ preventScroll: true });
+
+      if (document.activeElement === row) {
+        restoredFocusId.current = focusRowId;
+      }
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [rows, focusRowId, rowAction?.disabled, isReturnRowRendered, window, getRowId, viewport, virtualizer]);
 
   // Row measurements can move a footer out of view before its intersection callback runs.
   const isAtEnd = window !== undefined && (rows.length === 0 || virtualizer.range?.endIndex === rows.length - 1);
@@ -819,6 +881,8 @@ export function DataTable<Row extends object>({
             </tr>
           </thead>
           <tbody
+            onPointerLeave={() => setHoveredId(undefined)}
+            onKeyDownCapture={() => setHoveredId(undefined)}
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget)) {
                 setFocusedId(undefined);
@@ -837,10 +901,31 @@ export function DataTable<Row extends object>({
                   data-row-id={row.id}
                   aria-rowindex={window === undefined ? undefined : index + 2}
                   ref={window === undefined || rowSizing === 'fixed' ? undefined : virtualizer.measureElement}
-                  onFocus={() => setFocusedId(row.id)}
+                  onPointerMove={(event) => {
+                    if (event.pointerType === 'mouse') {
+                      setHoveredId(row.id);
+                    }
+                  }}
+                  onPointerEnter={(event) => {
+                    if (event.pointerType === 'mouse') {
+                      setHoveredId(row.id);
+                    }
+                  }}
+                  onPointerLeave={() => {
+                    setHoveredId((current) => (current === row.id ? undefined : current));
+                  }}
+                  onPointerDown={(event) => {
+                    if (event.pointerType !== 'mouse') {
+                      setHoveredId(undefined);
+                    }
+                  }}
+                  onFocus={() => {
+                    setHoveredId(undefined);
+                    setFocusedId(row.id);
+                  }}
                   {...stylex.props(
                     styles.row,
-                    rowAction !== undefined && styles.actionable,
+                    rowAction !== undefined && rowAction.disabled !== true && styles.actionable,
                     (selectedIds?.has(row.id) === true || activeRowId === row.id) && styles.selected,
                   )}
                 >
@@ -990,6 +1075,7 @@ function RowTrigger<Row>({ row, action, isActive, children, onKeyDown }: RowTrig
     action.href === undefined ? (
       <button
         type="button"
+        disabled={action.disabled}
         aria-label={label}
         aria-pressed={isActive}
         data-row-action

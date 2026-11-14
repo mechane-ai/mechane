@@ -42,6 +42,12 @@ server collection as though that page were the full dataset.
 Contract 113 owns the API page boundary, session/workspace invalidation, and revision-conflict semantics.
 Check draft behavior through create/edit screens, including refreshes, rejected saves, and a record switch during a save.
 
+`SelectControl` composes one controlled choice from supplied labeled string values. Keep its supplied value when
+options change, including a value absent from the latest options; opening or focusing cannot choose a replacement.
+Use explicit `readOnly` to omit the change callback. The application owns permission filtering and any policy that
+changes an unavailable selection. Inspect the unselected and read-only select stories, then replace their options
+without changing the value and confirm no selection callback occurs.
+
 Date and month pickers keep edits local until Apply. Their range callbacks accept complete intervals; partial inline
 calendar selection never commits a query. Cancel, Escape and outside dismissal discard the draft, while a declared
 preset commits its supplied complete interval. Reopening starts from the current supplied value. Set

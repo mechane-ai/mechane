@@ -30,7 +30,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Skeleton and SkeletonText are decorative geometry for a labelled loading region. ButtonPlaceholder and single-line FieldPlaceholder use the loaded control’s explicit density: standard by default, compact for a local report. Both densities grow to 44px on coarse pointers. Multiline fields retain their row sizing. Supply placeholder widths for the expected content, and announce loading at the owning region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Its image presentation shows the placeholder immediately and fades a newly ready image in over 200ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
+          'Progress describes task completion; Meter describes a bounded current measurement. Both require caller-formatted labels, an explicit maximum and a value; null is unavailable or indeterminate, never zero. Meter defaults to a stacked label and track. Use layout="inline" for a numeric table cell, with its accessible label hidden visually and the formatted value beside a short track. Supply a chart tone to match related marks. Invalid, negative or out-of-range values retain their text and an unfilled unknown track rather than a clamped fill. Skeleton and SkeletonText are decorative geometry for a labelled loading region. ButtonPlaceholder and single-line FieldPlaceholder use the loaded control’s explicit density: standard by default, compact for a local report. Both densities grow to 44px on coarse pointers. Multiline fields retain their row sizing. Supply placeholder widths for the expected content, and announce loading at the owning region. Spinner provides a steady busy glyph and accessible label without continuous motion. AsyncRegion reserves its placeholder immediately, waits two seconds before showing it, and reveals ready content in 80ms. Its image presentation shows the placeholder immediately and fades a newly ready image in over 200ms. Ready-at-mount and failed states are immediate. LoadingScope shares one clock across a page and resets it by identity without remounting children. Pass destination-specific decorative geometry, such as DataTablePlaceholder using the same columns as the real table. Keep ready content mounted while refreshing; the data owner supplies refresh notices alongside it. The loading announcement is separate from the busy region so assistive technology can announce it once.',
       },
     },
   },
@@ -78,6 +78,47 @@ export const Measurements: Story = {
       <Meter label="Context capacity" value={12_400} max={128_000} valueLabel="12,400 of 128,000 tokens" />
       <Meter label="Unreported capacity" value={null} max={128_000} valueLabel="Usage unavailable" />
     </Stack>
+  ),
+};
+
+export const InlineMeasurements: Story = {
+  render: () => (
+    <DataTable
+      rows={[
+        { id: 'metrics', label: 'Metrics', value: 42, valueLabel: '42%', tone: 'series2' as const },
+        { id: 'zero', label: 'No recorded usage', value: 0, valueLabel: '0%', tone: 'series3' as const },
+        { id: 'unknown', label: 'Unreported usage', value: null, valueLabel: 'Unavailable', tone: 'neutral' as const },
+        {
+          id: 'outside',
+          label: 'Outside the declared range',
+          value: 125,
+          valueLabel: '125%',
+          tone: 'series4' as const,
+        },
+      ]}
+      columns={[
+        { id: 'name', label: 'Measurement', role: 'primary', cell: (record) => record.label },
+        {
+          id: 'share',
+          label: 'Share',
+          role: 'number',
+          cell: (record) => (
+            <Meter
+              label={record.label}
+              layout="inline"
+              value={record.value}
+              max={100}
+              valueLabel={record.valueLabel}
+              tone={record.tone}
+            />
+          ),
+        },
+      ]}
+      rowSizing="content"
+      getRowId={(record) => record.id}
+      caption="Supplied measurement shares"
+      empty="No measurements."
+    />
   ),
 };
 

@@ -2,8 +2,8 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { Notice, SkeletonText } from '../../feedback/src/index.ts';
 import { colors, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import type { ChartLegendItem } from './chart-theme.ts';
-import { chartToneColors } from './chart-theme.ts';
 
 const styles = stylex.create({
   root: { display: 'flex', flexWrap: 'wrap', gap: spacing.lg, margin: 0, minWidth: 0 },
@@ -21,7 +21,6 @@ const styles = stylex.create({
     color: colors.muted,
     fontSize: typography.captionSize,
   },
-  swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
   value: {
     margin: 0,
     color: colors.ink,
@@ -53,7 +52,7 @@ export function ChartSeriesSummary({
       {series.map((item, index) => (
         <div key={item.id} {...stylex.props(styles.metric, index > 0 && styles.divided)}>
           <dt {...stylex.props(styles.label)}>
-            <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+            <ChartSeriesMarker tone={item.tone} />
             {item.label}
           </dt>
           <dd {...stylex.props(styles.value)}>

@@ -1,4 +1,4 @@
-import type { ChartTone } from '../chart-theme.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 
 export type BarSeries = {
   readonly id: string;

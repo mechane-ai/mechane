@@ -110,6 +110,15 @@ remain readable at their actual widths. A self-contained report owns one frame. 
 Charts, tables and settings already supply their internal structure, so choose a Panel only for an additional
 independent unit. Component examples show valid local contexts rather than prescribing a grid of cards for every page.
 
+Start from the complete
+[collection and report examples](../packages/browser/elements/packages/layout/src/collection-layout.stories.tsx) or
+[record example](../packages/browser/elements/packages/layout/src/record-page.stories.tsx). A primary collection keeps
+its named header and controls above a table filling the pane. An analytical report keeps the period summary above its
+plot and finite contributors in full-width rows. Shared row highlighting connects those contributors to series identity
+without committing selection. A record places its identity and commands before one task-navigation row. The examples use
+synthetic application-owned values, including pending, empty and unavailable reads. The application supplies
+authorization, query state and any usable retained snapshot; layout components own geometry.
+
 Comparable records use tables. Each column declares a role: primary identity, text, status, number, timestamp, or
 actions. Primary text absorbs available width. Text and status align to the start; numbers, timestamps, and actions
 align to the end. Headers and placeholders follow the same roles. Spectrum similarly distinguishes text from comparable

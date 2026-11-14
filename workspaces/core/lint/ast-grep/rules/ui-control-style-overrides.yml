@@ -5,7 +5,7 @@ message: 'Use a named control variant or placement, such as `xstyle={styles.plac
 files: ['packages/browser/console/**/*.tsx', 'packages/browser/console-views/**/*.tsx']
 utils:
   control-export:
-    regex: ^(Button|IconButton|TextButton|TextLink|IconLink|Input|Textarea|FilePicker|ToolbarAction|ButtonPlaceholder|FieldPlaceholder|Select|Combobox|Checkbox|RadioGroup|Switch|ToggleGroup|Field|Fieldset|InputGroup|NumberField|Slider|DateRangePicker|AgentAvatarPicker|Dialog|Drawer|Menu|Popover|Tooltip)$
+    regex: ^(Button|IconButton|TextButton|TextLink|IconLink|Input|Textarea|FilePicker|ToolbarAction|ButtonPlaceholder|FieldPlaceholder|Select|SelectControl|Combobox|Checkbox|RadioGroup|Switch|ToggleGroup|Field|Fieldset|InputGroup|NumberField|Slider|DatePicker|DateRangePicker|MonthPicker|MonthRangePicker|AgentAvatarPicker|Dialog|Drawer|Menu|Popover|Tooltip)$
   control-import:
     kind: program
     has:

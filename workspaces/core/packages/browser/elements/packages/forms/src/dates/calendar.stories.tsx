@@ -3,7 +3,16 @@ import { useState } from 'react';
 import { Row, Stack, Text } from '../../../core/src/index.ts';
 import { Calendar } from './calendar.tsx';
 import type { CalendarDate } from './calendar.tsx';
-import { dateInput, formatDate, formatMonth } from './civil.ts';
+import {
+  addCalendarDays,
+  addCalendarMonths,
+  formatDate,
+  formatMonth,
+  parseCalendarDate,
+  parseCalendarMonth,
+  serializeCalendarDate,
+  serializeCalendarMonth,
+} from './civil.ts';
 import type { CalendarMonth, DateRange, MonthRange } from './civil.ts';
 import { DatePicker } from './date-picker.tsx';
 import { DateRangePicker } from './date-range-picker.tsx';
@@ -28,7 +37,8 @@ function RangeExample() {
         minimum={{ year: 2024, month: 1, day: 1 }}
         maximum={today}
         validateRange={(range) =>
-          (Date.parse(dateInput(range.to)) - Date.parse(dateInput(range.from))) / 86_400_000 >= 31
+          (Date.parse(serializeCalendarDate(range.to)) - Date.parse(serializeCalendarDate(range.from))) / 86_400_000 >=
+          31
             ? 'Select at most 31 calendar days.'
             : undefined
         }
@@ -132,6 +142,26 @@ function CompactExample() {
   );
 }
 
+function CivilValuesExample() {
+  const date = parseCalendarDate('2024-02-28');
+  const month = parseCalendarMonth('2026-12');
+
+  if (date === undefined || month === undefined) {
+    return null;
+  }
+
+  return (
+    <Stack isCompact>
+      <Text>
+        {serializeCalendarDate(date)} + 1 day = {serializeCalendarDate(addCalendarDays(date, 1))}
+      </Text>
+      <Text>
+        {serializeCalendarMonth(month)} + 1 month = {serializeCalendarMonth(addCalendarMonths(month, 1))}
+      </Text>
+    </Stack>
+  );
+}
+
 const meta = {
   title: 'Forms/Dates',
   component: Calendar,
@@ -154,6 +184,7 @@ export const RangePicker: Story = { render: () => <RangeExample /> };
 export const BillingMonth: Story = { render: () => <MonthExample /> };
 export const BillingRange: Story = { render: () => <MonthRangeExample /> };
 export const CompactPickers: Story = { render: () => <CompactExample /> };
+export const CivilValues: Story = { render: () => <CivilValuesExample /> };
 
 export const NarrowRangePicker: Story = {
   ...RangePicker,

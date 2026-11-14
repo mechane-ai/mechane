@@ -78,8 +78,8 @@ supplies the meaning of the trend. Use LineChart when the reader needs to inspec
 invalid trends retain the compact footprint and state their reason.
 
 SmallMultiples shares the time range, plot gutter and inspected timestamp, with one visible date axis at the bottom.
-Each panel owns its value formatter, annotations, period summary and exact-data action. Latency and cost keep their
-different units. All panels supply the same timestamps. Panel identifiers remain stable through updates.
+Each panel owns its value formatter, annotations, period summary and accessible exact values. Latency and cost keep
+their different units. All panels supply the same timestamps. Panel identifiers remain stable through updates.
 
 Other families accept an optional `selection` containing `selectedId` and `onSelect`. Omit it for a read-only graphic.
 The component reports an identifier; the application owns the linked inspector, URL, or other view. Exact values remain
@@ -97,7 +97,10 @@ inspection and accessible exact values. The application owns any visible breakdo
 a concise tick such as “Oct 6” without changing record identity. Use `formatTick` for compact axes and `formatValue` for
 exact inspection and data values. Cartesian charts share an inspector beside desktop marks and a mobile legend with
 reserved value space. Keep a composed chart's focused series and independent context in its legend. Supply
-`highlightedSeriesId` for temporary emphasis from a linked row. The application retains selection and data ownership.
+`highlightedSeriesId` for temporary emphasis from a linked row. Connect a DataTable through its `onRowHighlightChange`
+callback and map its stable row identity to the corresponding series identity. Hover and keyboard inspection leave
+activation, selected records and application queries unchanged. Use the table’s `rowAction` and `focusRowId` for
+inspection and return focus. The application retains selection and data ownership.
 
 Bar domains include zero. Grouped bars can show signed values; stacked bars require nonnegative observations. Missing
 values remain unavailable, and a zero remains a zero. BreakdownBar receives a declared total, shows any unassigned
@@ -149,7 +152,13 @@ ChartFrame and ChartLegend give custom plots the shared title, description, acti
 Full chart families include their own frame and legend. Their optional report composition adds a self-contained
 boundary, while Sparkline stays inline. The canonical tokens supply light and dark colors. Components measure available
 width so responsive plots retain readable labels. Explicit series tones preserve identity across filters; applications
-should pin them when colors carry that identity.
+should pin them when colors carry that identity. Use `ChartSeriesMarker` beside a label in a legend or related table
+row. Omit artwork for the shared swatch, or supply a 16px decorative icon. Use `Meter layout="inline"` from `/feedback`
+for a caller-formatted bounded value and short matching bar in a numeric table cell. The default meter stays stacked.
+Unknown or out-of-range values retain their supplied text with an unfilled track; they are never presented as zero or a
+clamped percentage. The
+[marker examples](../packages/browser/elements/packages/charts/src/chart-series-marker.stories.tsx) and
+[measurement examples](../packages/browser/elements/packages/feedback/src/feedback.stories.tsx) show these roles.
 
 The catalog contains synthetic missing, zero, masked, signed, partial, narrow, invalid, and linked-selection examples.
 These examples document public behavior. They do not imply that the Mechane API produces every illustrated dataset.

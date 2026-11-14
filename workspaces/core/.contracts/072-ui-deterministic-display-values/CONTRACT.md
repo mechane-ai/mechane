@@ -41,6 +41,12 @@ Supply the reporting time zone, today and bounds explicitly. The consuming appli
 selections to its API interval. Never infer relative presets, provider coverage or query bounds inside the picker.
 Review the date stories with the same values in two reporting time zones and verify that their calendar dates agree.
 
+Use the public civil-date helpers from `/forms/dates` for canonical parsing, serialization and calendar arithmetic.
+Parsing returns `undefined` for malformed, noncanonical or impossible values. Serialization and arithmetic reject
+invalid values, noninteger offsets and results outside Gregorian years 1–9999 with `RangeError`. Arithmetic returns
+a new value and reads no clock or ambient time zone. Keep relative presets, reporting limits and exclusive API-bound
+conversion with the consuming application. Review leap days and year transitions alongside the picker composition.
+
 Presentation collection ordering remains with its application owner under contract 070. The instruction to sort a copy
 governs an owner that is allowed to sort; it does not permit generic UI to reorder supplied records.
 Contract 113 defines which request timestamps and usage records exist, and contract 115 defines their generic geometry.

@@ -1,7 +1,8 @@
 import * as stylex from '@stylexjs/stylex';
 import { LinePath } from '@visx/shape';
 import type { ReactNode } from 'react';
-import { chartStyles, chartToneColors } from '../chart-theme.ts';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import { chartStyles } from '../chart-theme.ts';
 import type { PlotPoint, PlotSeries } from './time-series-data.ts';
 
 export function TimeSeriesLine({

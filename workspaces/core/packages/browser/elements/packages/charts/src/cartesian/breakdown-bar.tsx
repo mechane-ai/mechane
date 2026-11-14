@@ -1,12 +1,12 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { CategoricalValues, colorTone, validateBreakdown } from '../categorical-values.tsx';
 import type { BreakdownItem } from '../categorical-values.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
-import { chartToneColors } from '../chart-theme.ts';
 
 const styles = stylex.create({
   track: {

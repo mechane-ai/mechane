@@ -4,6 +4,7 @@ import { AreaClosed } from '@visx/shape';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Skeleton, SkeletonText } from '../../../feedback/src/index.ts';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
@@ -11,7 +12,7 @@ import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
 import { ChartInspection, ChartInspectionTitle } from '../chart-inspection.tsx';
-import { chartStyles, chartToneColors } from '../chart-theme.ts';
+import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import {
   observationDomain,

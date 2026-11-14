@@ -7,8 +7,8 @@ import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, controls, pageGeometry, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { ChartHeading } from './chart-heading.tsx';
+import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
-import { chartToneColors } from './chart-theme.ts';
 import type { ChartLegendItem } from './chart-theme.ts';
 
 type ChartReportHeading = { readonly meta?: ReactNode; readonly actions?: ReactNode };
@@ -109,7 +109,6 @@ const styles = stylex.create({
     maxWidth: '100%',
     overflowWrap: 'anywhere',
   },
-  swatch: (color: string) => ({ width: 8, height: 8, flexShrink: 0, backgroundColor: color }),
   datum: {
     display: 'flex',
     flexWrap: 'wrap',
@@ -238,7 +237,7 @@ export function ChartLegend({ items, label = 'Legend', isScrollable = false }: C
     <ul aria-label={label} {...stylex.props(styles.legend, isScrollable && styles.scrollLegend)}>
       {items.map((item) => (
         <li key={item.id} {...stylex.props(styles.legendItem, isScrollable && styles.scrollItem)}>
-          <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+          <ChartSeriesMarker tone={item.tone} />
           {item.label}
         </li>
       ))}

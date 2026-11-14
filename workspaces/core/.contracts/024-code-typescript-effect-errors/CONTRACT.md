@@ -94,6 +94,11 @@ failure category, without serializing arbitrary caught objects.
 `Effect.try` may wrap one constructor call with a typed failure, such as parsing an X509 certificate. A constructor is
 a throwing call; requiring a forwarding helper would hide the actual boundary without adding validation.
 
+Elements' pure public civil-date operations in `forms/src/dates/civil.ts` use native `RangeError` for invalid
+serialization or arithmetic. Parsing malformed input returns undefined. These synchronous library functions do not
+introduce Effect; application domain failures retain their existing typed boundary. Review the public date examples
+and verify invalid inputs cannot normalize into another valid date.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - oxlint `no-throw-literal` (ER-04): enforced in phase F3, `"error"`

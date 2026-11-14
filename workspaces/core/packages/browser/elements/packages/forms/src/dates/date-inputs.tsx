@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { spacing } from '../../../foundations/src/tokens.stylex.ts';
 import { Field, Input } from '../forms.tsx';
 import type { CalendarDate } from './calendar.tsx';
-import { dateInput, monthInput, parseDate, parseMonth } from './civil.ts';
+import { parseCalendarDate, parseCalendarMonth, serializeCalendarDate, serializeCalendarMonth } from './civil.ts';
 import type { CalendarMonth } from './civil.ts';
 
 const styles = stylex.create({
@@ -29,10 +29,10 @@ export function DateInput({
       <Field.Label>{label}</Field.Label>
       <Input
         type="date"
-        value={value === undefined ? '' : dateInput(value)}
-        min={minimum === undefined ? '0001-01-01' : dateInput(minimum)}
-        max={maximum === undefined ? '9999-12-31' : dateInput(maximum)}
-        onChange={(event) => onValueChange(parseDate(event.target.value))}
+        value={value === undefined ? '' : serializeCalendarDate(value)}
+        min={minimum === undefined ? '0001-01-01' : serializeCalendarDate(minimum)}
+        max={maximum === undefined ? '9999-12-31' : serializeCalendarDate(maximum)}
+        onChange={(event) => onValueChange(parseCalendarDate(event.target.value))}
         xstyle={styles.input}
       />
     </Field.Root>
@@ -57,10 +57,10 @@ export function MonthInput({
       <Field.Label>{label}</Field.Label>
       <Input
         type="month"
-        value={value === undefined ? '' : monthInput(value)}
-        min={minimum === undefined ? '0001-01' : monthInput(minimum)}
-        max={maximum === undefined ? '9999-12' : monthInput(maximum)}
-        onChange={(event) => onValueChange(parseMonth(event.target.value))}
+        value={value === undefined ? '' : serializeCalendarMonth(value)}
+        min={minimum === undefined ? '0001-01' : serializeCalendarMonth(minimum)}
+        max={maximum === undefined ? '9999-12' : serializeCalendarMonth(maximum)}
+        onChange={(event) => onValueChange(parseCalendarMonth(event.target.value))}
         xstyle={styles.input}
       />
     </Field.Root>

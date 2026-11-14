@@ -71,6 +71,15 @@ Keep embedded controls and selection independently operable above that hit area,
 Show the row's keyboard focus without moving its geometry, and preserve the primary trigger as the return-focus target.
 Inspect a non-primary cell, an embedded control, and keyboard return in the existing Console navigation flow.
 
+Use `onRowHighlightChange` for transient inspection shared with a chart or another view. Report the supplied row ID
+for mouse hover or keyboard focus without changing controlled selection, active rows or application queries. Keyboard
+focus takes over from an earlier hover; pointer movement can inspect another row, and leaving restores the focused
+row. Clear inspection when its row disappears or neither input identifies a row. Touch scrolling creates no hover.
+Use `rowAction.disabled` for an unavailable button operation; link actions retain native navigation. Restore a row’s
+primary action through `focusRowId`; the application chooses a named fallback when that row no longer exists.
+Review the `RowInspection` story with mouse and keyboard, remove an inspected row, and confirm that activation and
+selection remain explicit. Keep the same behavior when virtual rows leave the ordinary rendered window.
+
 Check reusable column metadata against `DataTableColumnLayout` at its definition with an annotation or `satisfies`.
 Check complete columns against `DataTableColumn<Row>` there. A later spread or `Object.values` call must not be the
 first type check: structural assignment can accept stale extra properties and silently lose their behavior.

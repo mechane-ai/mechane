@@ -57,7 +57,8 @@ button or hidden interactive controls. The plot owns keyboard selection; its scr
 Product reports own useful visible breakdowns; the library does not decide which diagnostic tables belong on a page.
 Use a full chart's `report` input for a self-contained analytical report with its title, metadata, period summary and
 plot in one subtle frame. Use the ordinary chart when an existing region owns the grouping and separation.
-The report frame uses the shared `SectionHeading`. Its body owns the inset and summary-to-plot spacing.
+The report frame owns its private compact caption. Its body owns the inset and summary-to-plot spacing.
+Independent page and collection sections retain the standard heading role under contract 074.
 Related sections can stack. Give each report boundary one owner. Supporting rows can occupy a full-width section.
 Supply mixed metrics through `report.summary`. Bar and time-series charts also accept `report.seriesValues`, keyed by
 their supplied series identifiers. This summary reuses series labels and tones, and replaces the idle legend.
@@ -69,6 +70,9 @@ Use the same report input across the other full graphic families; passive sparkl
 Keep compact axis formatting separate from the exact inspection formatter. Inspect a parts bucket with its supplied
 components, a total-only bucket with its independent total, and a gap with an explicit missing value.
 Match a focused chart's legend to its focused series and independent context. Row highlighting changes emphasis only.
+Use `ChartSeriesMarker` for a decorative series swatch or icon beside a meaningful label. Supply the same tone in
+related marks, legends and rows; keep product identity and palette assignment with the application. Shared chart tones
+live in foundations so feedback measurements can use them without depending on the charts family.
 Reserve mobile legend value space so inspection does not move the plot or linked rows.
 Use the same frame and inspection geometry in the loading representation. BarChartPlaceholder and
 TimeSeriesChartPlaceholder accept known labels and dimensions without invented observations. Keep their heading,

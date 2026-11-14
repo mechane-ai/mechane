@@ -1,6 +1,6 @@
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors } from '../../../foundations/src/tokens.stylex.ts';
 import { isFiniteDomain } from '../chart-input.tsx';
-import { chartToneColors } from '../chart-theme.ts';
 
 export type HeatmapPalette = 'sequential' | 'diverging';
 

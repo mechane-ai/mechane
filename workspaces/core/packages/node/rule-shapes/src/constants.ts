@@ -187,6 +187,7 @@ export const FileRole = {
   Browser: 'browser',
   NativeRuntime: 'native-runtime',
   NativePresentation: 'native-presentation',
+  NativeCalendar: 'native-calendar',
   NativeConversation: 'native-conversation',
   NativeSandboxBoundary: 'native-sandbox-boundary',
   NativeLifecycle: 'native-lifecycle',

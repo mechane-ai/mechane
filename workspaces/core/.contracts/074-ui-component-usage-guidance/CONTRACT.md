@@ -40,6 +40,11 @@ Use ordinary stacked sections as the default for related page content. A Panel o
 Show full-width tables within their containing task region and inset chart content in the existing layout examples.
 Review the actual composition before adding another surface or layout API.
 
+Make the complete report, primary collection and record examples the starting points for new pages. Their stories
+show the containing task, scoped controls, pending and unavailable states, and the component owning width and scrolling.
+Keep query, authorization and retained-snapshot decisions with the application. Use `SelectControl` for a finite
+single string choice, compound `Select` for custom parts, and `Combobox` when option search is useful.
+
 The public `docs/visual-system.md#geometry-and-alignment` identifies content edges, local report insets, shell cells
 and growing rows. Colocated layout and control examples show those relationships in one composition, including native
 fields and their placeholders. Guidance names which slot owns an inset and when wrapped content can change height.

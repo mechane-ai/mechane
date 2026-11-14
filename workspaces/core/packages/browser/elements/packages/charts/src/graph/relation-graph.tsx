@@ -1,14 +1,14 @@
 import * as stylex from '@stylexjs/stylex';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
-import { chartToneColors } from '../chart-theme.ts';
-import type { ChartTone } from '../chart-theme.ts';
 
 export type RelationNode = {
   readonly id: string;

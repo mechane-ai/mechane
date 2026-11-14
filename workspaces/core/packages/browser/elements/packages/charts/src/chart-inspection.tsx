@@ -4,7 +4,7 @@ import { SkeletonText } from '../../feedback/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, radii, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import type { ChartLegendItem } from './chart-frame.tsx';
-import { chartToneColors } from './chart-theme.ts';
+import { ChartSeriesMarker } from './chart-series-marker.tsx';
 
 export type ChartInspectionRow = ChartLegendItem & { readonly value: string };
 
@@ -169,7 +169,7 @@ export function ChartInspection({
             <ul aria-hidden inert {...stylex.props(styles.legend, styles.legendLayer, styles.reserved)}>
               {layoutLegend.map((item) => (
                 <li key={item.id} {...stylex.props(styles.item)}>
-                  <span {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+                  <ChartSeriesMarker tone={item.tone} />
                   <span {...stylex.props(styles.itemText)}>
                     {item.label}
                     <span {...stylex.props(styles.mobileValue)} />
@@ -181,7 +181,7 @@ export function ChartInspection({
           <ul aria-label="Legend" {...stylex.props(styles.legend, styles.legendLayer)}>
             {legend.map((item) => (
               <li key={item.id} {...stylex.props(styles.item)}>
-                <span aria-hidden {...stylex.props(styles.swatch(chartToneColors[item.tone]))} />
+                <ChartSeriesMarker tone={item.tone} />
                 <span {...stylex.props(styles.itemText)}>
                   {item.label}
                   <span {...stylex.props(styles.mobileValue)}>
@@ -213,7 +213,7 @@ export function ChartInspection({
               {rows.map((row) => (
                 <div key={row.id} {...stylex.props(styles.row)}>
                   <dt {...stylex.props(styles.item)}>
-                    <span {...stylex.props(styles.swatch(chartToneColors[row.tone]))} />
+                    <ChartSeriesMarker tone={row.tone} />
                     {row.label}
                   </dt>
                   <dd {...stylex.props(styles.value)}>{row.value}</dd>

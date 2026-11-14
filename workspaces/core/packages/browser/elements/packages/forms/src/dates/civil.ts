@@ -61,26 +61,71 @@ export function monthOrder(value: CalendarMonth): number {
   return value.year * gregorian.monthsPerYear + value.month;
 }
 
-export function dateInput(value: CalendarDate): string {
-  return `${monthInput(value)}-${String(value.day).padStart(gregorian.componentDigits, '0')}`;
+export function serializeCalendarDate(value: CalendarDate): string {
+  if (!isDate(value)) {
+    throw new RangeError('Cannot serialize an invalid calendar date.');
+  }
+
+  return `${serializeCalendarMonth(value)}-${String(value.day).padStart(gregorian.componentDigits, '0')}`;
 }
 
-export function monthInput(value: CalendarMonth): string {
+export function serializeCalendarMonth(value: CalendarMonth): string {
+  if (!isMonth(value)) {
+    throw new RangeError('Cannot serialize an invalid calendar month.');
+  }
+
   return `${String(value.year).padStart(gregorian.yearDigits, '0')}-${String(value.month).padStart(gregorian.componentDigits, '0')}`;
 }
 
-export function parseDate(value: string): CalendarDate | undefined {
+export function parseCalendarDate(value: string): CalendarDate | undefined {
   const [year = 0, month = 0, day = 0] = value.split('-').map(Number);
   const date = { year, month, day };
 
-  return isDate(date) && dateInput(date) === value ? date : undefined;
+  return isDate(date) && serializeCalendarDate(date) === value ? date : undefined;
 }
 
-export function parseMonth(value: string): CalendarMonth | undefined {
+export function parseCalendarMonth(value: string): CalendarMonth | undefined {
   const [year = 0, month = 0] = value.split('-').map(Number);
   const date = { year, month };
 
-  return isMonth(date) && monthInput(date) === value ? date : undefined;
+  return isMonth(date) && serializeCalendarMonth(date) === value ? date : undefined;
+}
+
+export function addCalendarDays(value: CalendarDate, amount: number): CalendarDate {
+  if (!isDate(value) || !Number.isInteger(amount)) {
+    throw new RangeError('Calendar-day arithmetic requires a valid date and integer offset.');
+  }
+
+  const date = new Date(`${serializeCalendarDate(value)}T00:00:00Z`);
+
+  date.setUTCDate(date.getUTCDate() + amount);
+
+  const result = { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() };
+
+  if (!isDate(result)) {
+    throw new RangeError('Calendar-day arithmetic exceeds the supported years 1–9999.');
+  }
+
+  return result;
+}
+
+export function addCalendarMonths(value: CalendarMonth, amount: number): CalendarMonth {
+  if (!isMonth(value) || !Number.isInteger(amount)) {
+    throw new RangeError('Calendar-month arithmetic requires a valid month and integer offset.');
+  }
+
+  const index = (value.year - 1) * gregorian.monthsPerYear + value.month - 1 + amount;
+
+  const result = {
+    year: Math.floor(index / gregorian.monthsPerYear) + 1,
+    month: (index % gregorian.monthsPerYear) + 1,
+  };
+
+  if (!isMonth(result)) {
+    throw new RangeError('Calendar-month arithmetic exceeds the supported years 1–9999.');
+  }
+
+  return result;
 }
 
 export function formatDate(value: CalendarDate, locale: string): string {
@@ -89,7 +134,7 @@ export function formatDate(value: CalendarDate, locale: string): string {
   }
 
   return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeZone: 'UTC', calendar: 'gregory' }).format(
-    Date.parse(`${dateInput(value)}T12:00:00Z`),
+    Date.parse(`${serializeCalendarDate(value)}T12:00:00Z`),
   );
 }
 
@@ -103,7 +148,7 @@ export function formatMonth(value: CalendarMonth, locale: string): string {
     year: 'numeric',
     timeZone: 'UTC',
     calendar: 'gregory',
-  }).format(Date.parse(`${monthInput(value)}-01T12:00:00Z`));
+  }).format(Date.parse(`${serializeCalendarMonth(value)}-01T12:00:00Z`));
 }
 
 export function dateValidation(
@@ -115,12 +160,12 @@ export function dateValidation(
     return 'Select a valid date.';
   }
 
-  if (minimum !== undefined && dateInput(value) < dateInput(minimum)) {
-    return `Select a date on or after ${dateInput(minimum)}.`;
+  if (minimum !== undefined && serializeCalendarDate(value) < serializeCalendarDate(minimum)) {
+    return `Select a date on or after ${serializeCalendarDate(minimum)}.`;
   }
 
-  if (maximum !== undefined && dateInput(value) > dateInput(maximum)) {
-    return `Select a date on or before ${dateInput(maximum)}.`;
+  if (maximum !== undefined && serializeCalendarDate(value) > serializeCalendarDate(maximum)) {
+    return `Select a date on or before ${serializeCalendarDate(maximum)}.`;
   }
 
   return undefined;
@@ -136,11 +181,11 @@ export function monthValidation(
   }
 
   if (minimum !== undefined && monthOrder(value) < monthOrder(minimum)) {
-    return `Select a month on or after ${monthInput(minimum)}.`;
+    return `Select a month on or after ${serializeCalendarMonth(minimum)}.`;
   }
 
   if (maximum !== undefined && monthOrder(value) > monthOrder(maximum)) {
-    return `Select a month on or before ${monthInput(maximum)}.`;
+    return `Select a month on or before ${serializeCalendarMonth(maximum)}.`;
   }
 
   return undefined;

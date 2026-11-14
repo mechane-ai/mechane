@@ -1,11 +1,11 @@
 import * as stylex from '@stylexjs/stylex';
 import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
-import { chartToneColors } from '../chart-theme.ts';
-import type { ChartTone } from '../chart-theme.ts';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
 import { distributionGeometry, distributionStyles, NumericPlot } from './distribution-plot.tsx';

@@ -4,13 +4,14 @@ import { useId, useState } from 'react';
 import type { PointerEvent, ReactNode } from 'react';
 import { TextButton } from '../../../core/src/index.ts';
 import { Slider } from '../../../forms/src/index.ts';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
+import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
-import { chartStyles, chartToneColors } from '../chart-theme.ts';
-import type { ChartTone } from '../chart-theme.ts';
+import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 
 export type ScatterPoint = {

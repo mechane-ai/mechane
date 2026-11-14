@@ -1,8 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
+import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { motion } from '../../../foundations/src/tokens.stylex.ts';
 import { colorTone } from '../categorical-values.tsx';
-import { chartStyles, chartToneColors } from '../chart-theme.ts';
+import { chartStyles } from '../chart-theme.ts';
 import type { BarBucket, BarSeries } from './bar-data.ts';
 
 const styles = stylex.create({

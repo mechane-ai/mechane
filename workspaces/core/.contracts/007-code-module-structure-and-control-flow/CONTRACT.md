@@ -67,6 +67,8 @@ Time is read only with `DateTime.nowUnsafe()` (EF-17): ast-grep `date-constructo
 Browser presentation may read the native clock for ephemeral interaction deadlines, such as delayed placeholders.
 It does not introduce Effect just to time a visual transition. Displayed record times still arrive as explicit inputs
 under contract 072; backend domain timestamps retain the clock rule.
+Elements' `forms/src/dates/civil.ts` constructs a native Date only from a validated supplied civil date for UTC
+calendar arithmetic. It reads no clock; review its explicit input and timezone independently of ephemeral deadlines.
 Contract 064 governs every TypeScript file, so its bound statements take the place of "Name intermediate values when nested calls hide the sequence", and its `nested-call` ratchet holds them.
 
 For them this replaces "Extract a helper only when it names a real concept, collapses real duplication, or isolates an independent operation, never just to shorten a block".

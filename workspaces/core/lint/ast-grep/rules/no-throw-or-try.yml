@@ -31,6 +31,7 @@ ignores:
     'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
     'packages/node/eval/src/environment/http-entry.ts',
+    'packages/browser/elements/packages/forms/src/dates/civil.ts',
   ]
 rule:
   any:

@@ -1,10 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { SectionHeading, Stack } from '../../core/src/index.ts';
 import { AsyncRegion } from '../../feedback/src/index.ts';
-import { Select } from '../../forms/src/index.ts';
+import { SelectControl } from '../../forms/src/index.ts';
 import { BarChart, BarChartPlaceholder } from './cartesian/index.ts';
 import type { BarSeries } from './cartesian/index.ts';
 import { ChartFrame } from './chart-frame.tsx';
@@ -69,27 +68,13 @@ function ReportCaptionExample({ isPending = false, hasLongLabels = false }: Repo
       output: isPending ? undefined : formatTokens(outputTotal),
     },
     actions: (
-      <Select.Root<string> items={scopes} value={scope} onValueChange={setScope}>
-        <Select.Trigger density="compact" aria-label="Token report scope">
-          <Select.Value />
-          <Select.Icon>
-            <ChevronDown size={16} aria-hidden />
-          </Select.Icon>
-        </Select.Trigger>
-        <Select.Portal>
-          <Select.Positioner>
-            <Select.Popup>
-              <Select.List>
-                {scopes.map((option) => (
-                  <Select.Item key={option.value} value={option.value}>
-                    <Select.ItemText>{option.label}</Select.ItemText>
-                  </Select.Item>
-                ))}
-              </Select.List>
-            </Select.Popup>
-          </Select.Positioner>
-        </Select.Portal>
-      </Select.Root>
+      <SelectControl
+        label="Token report scope"
+        items={scopes}
+        value={scope}
+        onValueChange={setScope}
+        density="compact"
+      />
     ),
   };
 

@@ -6,6 +6,8 @@ export type { FormActionsProps } from './form-actions.tsx';
 export { FormActions } from './form-actions.tsx';
 export { Field, Input, Textarea } from './forms.tsx';
 export { Select } from './select.tsx';
+export type { SelectControlProps, SelectOption } from './select-control.tsx';
+export { SelectControl } from './select-control.tsx';
 export { Checkbox, RadioGroup, Switch, ToggleGroup } from './selection.tsx';
 export type { SettingsRowProps } from './settings-row.tsx';
 export { SettingsRow } from './settings-row.tsx';
