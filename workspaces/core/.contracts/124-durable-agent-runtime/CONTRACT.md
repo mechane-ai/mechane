@@ -50,8 +50,9 @@ across restart. Keep cold initialization free of remote cancellation waits, and 
 while polling.
 
 Acknowledge a canceled foreground command's terminal receipt without admitting a notification or another activation.
+Also acknowledge an already-observed terminal command result, including a confirmed refusal, without another wake.
 Preserve its outcome and execution identity; a stopped activation does not establish the command's outcome. Continue
-admitting uncanceled and background completions at most once under their existing notification identity.
+admitting unobserved command and background completions at most once under their existing notification identity.
 
 Before releasing a quiesced mech, reconcile the environment's retained completion outbox while admission remains fenced.
 Durably admit each verified result under its existing identity before acknowledging it. Bound each reconciliation pass;
@@ -163,6 +164,8 @@ Accept a correction after a shell claim but before dispatch. Require the old com
 claim and native wait to settle promptly, and the next provider context to include the correction. Race pending-only
 cancellation with dispatch and preserve the original running, uncertain and terminal receipts. Require the refused
 command's trace and model result to distinguish non-dispatch from unavailable infrastructure.
+Replay its retained terminal callback and require acknowledgment without another completion notification or interruption
+of subsequent work.
 
 Kill the application around tool dispatch and receipt persistence. Reattach to the same command and inspect its
 outcome. Lose the guest and require an honest interrupted or uncertain result. Fail a home checkpoint and require

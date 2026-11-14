@@ -21,6 +21,7 @@ import { requestSandboxJson } from '../tools/sandbox-transport.ts';
 const COMPLETION_MAX_BYTES = 4096;
 const ACTIVE_RUN_STATUSES: ReadonlySet<string> = new Set(['queued', 'running', 'waiting']);
 const ACTIVE_RECEIPT_STATUSES: ReadonlySet<EffectRecord['status']> = new Set(['pending', 'running']);
+const TERMINAL_RECEIPT_STATUSES: ReadonlySet<EffectRecord['status']> = new Set(['completed', 'failed']);
 
 const TERMINAL_PROCESS_STATUSES: ReadonlySet<string> = new Set([
   SandboxCompletionStatus.Exited,
@@ -32,7 +33,7 @@ function completionWasObserved(input: {
   readonly receipt: EffectRecord;
   readonly completion: SandboxCompletion;
 }): boolean {
-  if (input.receipt.status !== 'completed') {
+  if (!TERMINAL_RECEIPT_STATUSES.has(input.receipt.status)) {
     return false;
   }
 

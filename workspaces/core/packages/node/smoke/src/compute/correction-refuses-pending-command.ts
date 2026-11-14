@@ -1,4 +1,4 @@
-import { catalog, Mech, ToolCallStatus, TurnStatus } from '@mechane/protocol';
+import { catalog, Event, EventType, Mech, ToolCallStatus, TurnStatus } from '@mechane/protocol';
 import type { NativeTools } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import {
@@ -10,7 +10,10 @@ import {
 import {
   mechPath,
   readBashResult,
+  readEvents,
+  readSandboxCompletion,
   readTrace,
+  repeatSandboxCompletion,
   requireFixtures,
   runBash,
   runCli,
@@ -128,6 +131,26 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
     assert.ok(tool.inspection !== undefined);
     assert.equal(tool.inspection.executionId, pendingId);
     assert.equal(Option.getOrThrow(tool.inspection.result).status, 'refused');
+
+    const completion = await readSandboxCompletion({ ...input, executionId: pendingId });
+
+    assert.ok(completion !== null);
+
+    const acknowledged = await repeatSandboxCompletion({ ...input, receipt: completion });
+
+    assert.ok(acknowledged.ok);
+
+    const activity = await readEvents(input);
+
+    assert.ok(
+      !activity.events.some(
+        (event) =>
+          Schema.is(Event)(event) &&
+          event.type === EventType.NotificationReceived &&
+          event.source.eventId === pendingId,
+      ),
+      'An observed command refusal admitted another completion notification',
+    );
 
     await updateNativeToolProfile({ ...input, nativeTools: Option.some(['bash']) });
 
