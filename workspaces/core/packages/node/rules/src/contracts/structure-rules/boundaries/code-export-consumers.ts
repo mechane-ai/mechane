@@ -13,6 +13,7 @@ const VALUES = {
     treatConfigHintsAsErrors: true,
     ignoreExportsUsedInFile: { type: true, interface: true },
     ignoreDependencies: ['@swc/core', 'cloudflare'],
+    ignoreBinaries: ['openssl'],
     ignore: ['.dependency-cruiser.cjs'],
     ignoreWorkspaces: ['packages/browser/catalog!'],
     ignoreIssues: {
@@ -46,6 +47,10 @@ const VALUES = {
         "dependency-cruiser loads swc to parse TypeScript, as .dependency-cruiser.cjs selects with `parser: 'swc'`; the",
         'Workers runtime provides `cloudflare:workers`, which no package installs.',
       ],
+    },
+    {
+      path: ['ignoreBinaries'],
+      lines: ['The guest image installs OpenSSL through Debian for Java trust-store generation.'],
     },
     {
       path: ['ignore'],

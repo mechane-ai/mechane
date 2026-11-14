@@ -62,16 +62,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     await unlink(file);
   }
 
-  const access = {
-    variables: {
-      SMOKE_SETTING: 'current',
-      MECHANE_WORKSPACE_ID: 'configured-workspace',
-      MECHANE_MECH_ID: 'configured-mech',
-      MECHANE_SESSION_ID: 'configured-session',
-      MECHANE_RUN_ID: 'configured-run',
-    },
-    secrets: { SMOKE_SECRET: reference, MECHANE_RUN_ID: reference },
-  };
+  const access = { variables: { SMOKE_SETTING: 'current' }, secrets: { SMOKE_SECRET: reference } };
 
   await runCli({
     stack,

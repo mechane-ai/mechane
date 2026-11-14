@@ -22,14 +22,22 @@ export function shellEnvironment({ request, settings }: ShellEnvironmentInput): 
   const localCommands = join(settings.home, '.local', 'bin');
   const commandPath = [localCommands, settings.path].join(delimiter);
 
+  const granted = { ...access.variables, ...secrets };
+
+  const grantedJava = Record.get(granted, 'JAVA_TOOL_OPTIONS');
+  const javaOptions = Option.getOrElse(grantedJava, () => '');
+  const javaTrust = Record.get(certificates, 'JAVA_TOOL_OPTIONS');
+
+  const java = Option.map(javaTrust, (trust) => ({ JAVA_TOOL_OPTIONS: `${javaOptions} ${trust}`.trim() }));
+
   return {
     ...cacheEnvironment(settings),
-    ...access.variables,
-    ...secrets,
+    ...granted,
     ...github,
     PATH: commandPath,
     HOME: settings.home,
     ...EXECUTION_VARIABLES,
     ...certificates,
+    ...Option.getOrElse(java, () => ({})),
   };
 }

@@ -11,6 +11,8 @@
   // dependency-cruiser loads swc to parse TypeScript, as .dependency-cruiser.cjs selects with `parser: 'swc'`; the
   // Workers runtime provides `cloudflare:workers`, which no package installs.
   "ignoreDependencies": ["@swc/core", "cloudflare"],
+  // The guest image installs OpenSSL through Debian for Java trust-store generation.
+  "ignoreBinaries": ["openssl"],
   // The checks program loads the cruiser's configuration through dependency-cruiser's API, which knip cannot see,
   // since the root configuration is outside the package source projects.
   "ignore": [".dependency-cruiser.cjs"],

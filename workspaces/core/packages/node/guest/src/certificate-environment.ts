@@ -1,7 +1,8 @@
 import { GATEWAY_CERTIFICATE } from '@mechane/sandbox-wire';
-import { Effect, Option, Record } from 'effect';
+import { Duration, Effect, Option, Record } from 'effect';
+import { execFileSync } from 'node:child_process';
 import { X509Certificate } from 'node:crypto';
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { rootCertificates } from 'node:tls';
 import { GuestMisconfigured } from './errors.ts';
@@ -14,9 +15,12 @@ const CERTIFICATE_VARIABLES = [
   'CURL_CA_BUNDLE',
   'REQUESTS_CA_BUNDLE',
   'PIP_CERT',
+  'NIX_SSL_CERT_FILE',
 ] as const;
 
 const CERTIFICATE_MODE = 0o600;
+const CERTIFICATE_TIMEOUT = Duration.seconds(5);
+const CERTIFICATE_TIMEOUT_MS = Duration.toMillis(CERTIFICATE_TIMEOUT);
 const PEM_CERTIFICATE = /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/gu;
 
 type TrustInput = Pick<GuestSettings, 'scratchDirectory' | 'trustedCertificatesPem'>;
@@ -58,15 +62,41 @@ export function certificateEnvironment({
   const additional = Option.getOrElse(trustedCertificatesPem, () => '');
   const content = [...rootCertificates, additional, gateway].join('\n');
   const certificateFile = join(scratchDirectory, 'trusted-certificates.pem');
+  const javaTrustFile = join(scratchDirectory, 'trusted-certificates.p12');
   const staged = join(scratchDirectory, 'trusted-certificates.pending');
+  const javaStaged = join(scratchDirectory, 'trusted-certificates.p12.pending');
 
-  writeFileSync(staged, content, { mode: CERTIFICATE_MODE });
-  renameSync(staged, certificateFile);
+  if (!existsSync(javaTrustFile) || !existsSync(certificateFile) || readFileSync(certificateFile, 'utf8') !== content) {
+    writeFileSync(staged, content, { mode: CERTIFICATE_MODE });
+    execFileSync(
+      'openssl',
+      [
+        'pkcs12',
+        '-export',
+        '-nokeys',
+        '-jdktrust',
+        'anyExtendedKeyUsage',
+        '-in',
+        staged,
+        '-out',
+        javaStaged,
+        '-passout',
+        'pass:changeit',
+      ],
+      { timeout: CERTIFICATE_TIMEOUT_MS, stdio: 'pipe' },
+    );
+    chmodSync(javaStaged, CERTIFICATE_MODE);
+    renameSync(javaStaged, javaTrustFile);
+    renameSync(staged, certificateFile);
+  }
 
   const certificate: (name: string) => readonly [string, string] = (name) => [name, certificateFile];
   const entries = CERTIFICATE_VARIABLES.map(certificate);
 
-  return Record.fromEntries(entries);
+  return {
+    ...Record.fromEntries(entries),
+    JAVA_TOOL_OPTIONS: `"-Djavax.net.ssl.trustStore=${javaTrustFile}" -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=changeit`,
+  };
 }
 
 function readGatewayCertificate(): string {

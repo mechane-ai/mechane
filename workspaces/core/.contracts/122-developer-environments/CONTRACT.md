@@ -9,6 +9,8 @@ paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,env
 Keep the generic developer image in `node/guest/image`. Pin downloaded tools and verify architecture-specific checksums
 before installing them. Use repository-owned setup for revision-specific dependencies. Company endpoints and agent
 instructions belong to installation configuration, never the generic image or runtime.
+Provide an unprivileged single-user Nix store outside the durable home for repository-owned flake toolchains. Keep its
+package payloads disposable; do not install a privileged daemon or persist rebuildable closures with agent files.
 Build the installed Mechane CLI from the same source as a portable Node artifact in that image, or reuse a previously
 qualified image whose recorded guest inputs match those generated from the current source under contract 112.
 
@@ -79,6 +81,9 @@ Supply additional certificate-authority trust as bounded public PEM through trus
 it before readiness and combine it with public roots and a gateway CA injected after startup. Keep generated trust files
 in machine scratch. Preserve TLS verification; certificate trust cannot come from model tool arguments or a per-stack
 certificate baked into the generic image.
+Project the same authorities into Nix and Java as the PEM consumers. Refresh both formats when the gateway authority
+arrives, retain public roots, and preserve other authorized JVM options. Bound trust-store generation and reuse it
+while its authorities remain unchanged.
 
 Route local guest API calls and registered fixture requests through one retained, CA-verified HTTPS gateway. Configure
 native host-service access for only that gateway port before starting the environment host. Application code and guest
@@ -174,7 +179,8 @@ Fail an ephemeral startup with unconfirmed owned cleanup and require a rejected 
 another interrupt. Keep the retained ownership available for repair and preserve persistent interactive recovery.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
-Exercise installed CLI startup and actual Node, curl, and git HTTPS verification. Require rejection without the supplied
+Exercise installed CLI startup, unprivileged Nix store use, and actual Node, curl, git, Nix, and Java HTTPS verification.
+Require rejection without the supplied
 CA, acceptance with trusted startup configuration, and retained acceptance of both authorities after a late gateway CA.
 Lose the HTTP start acknowledgement while real bootstrap is held, then rejoin the same machine and require the exact
 container identity, one bootstrap, and one command effect. Reject conflicting start and stop identities. Lose a guest

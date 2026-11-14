@@ -36,6 +36,12 @@ The generic image includes the developer tools needed to clone, edit, test, and 
 display server, and media encoding. Repository pins remain authoritative. The
 [native tool definitions](../packages/worker/runtime/src/tools/runtime-tools.ts) own current names and input shapes.
 
+Nix runs as the guest user with flakes enabled. Its single-user store lives at `/nix`, outside the durable home; the
+outer container owns isolation. Use the repository's flake or setup entrypoint for Bazel and other pinned toolchains.
+The store is disposable and may be rebuilt after machine replacement. Installation and gateway certificate authorities
+are projected into PEM and Java trust stores in scratch, including `NIX_SSL_CERT_FILE` and `JAVA_TOOL_OPTIONS`. Keep
+certificate verification enabled when a tool downloads dependencies.
+
 Configure installation-owned CLIs through `sandboxes.additional_tools` in the
 [Cloudflare module](../infrastructure/modules/cloudflare/variables.tf). The
 [tool manifest](../packages/shared/sandbox-wire/src/tools/schemas.ts) declares platform archives, SHA-256 digests,
