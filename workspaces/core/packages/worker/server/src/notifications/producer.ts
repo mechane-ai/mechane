@@ -1,12 +1,11 @@
-import { catalog, RequestInvalid } from '@mechane/protocol';
+import { catalog, findRoute, RequestInvalid } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode, SHA256_PATTERN } from '@mechane/records';
 import { admitNotification } from '@mechane/runtime';
 import type { MechActorResolver, NotificationProducer } from '@mechane/runtime';
-import { Redacted, Schema } from 'effect';
+import { Option, Redacted, Schema } from 'effect';
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readTextBody } from '../http/body.ts';
 import { respondFailure } from '../http/failure.ts';
-import { findRoute } from '../http/route.ts';
 import { NOTIFICATION_BODY_MAX_BYTES } from './constants.ts';
 
 const SIGNATURE_MAX_AGE_SECONDS = 300;
@@ -65,7 +64,8 @@ export function createNotificationProducerHandler({ actors, producers }: Produce
 
     try {
       const url = new URL(request.url);
-      const route = findRoute({ method: request.method, pathname: url.pathname });
+      const matched = findRoute({ method: request.method, pathname: url.pathname });
+      const route = Option.getOrNull(matched);
       const producer = producers.find((entry) => entry.id === request.headers.get(HttpHeader.NotificationProducer));
 
       if (route?.name !== 'sendNotification' || producer === undefined || url.search !== '') {

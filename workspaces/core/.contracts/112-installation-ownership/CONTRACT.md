@@ -14,6 +14,11 @@ deployment cannot rebuild product code or execute a checkout through an infrastr
 Declare compatible provider version ranges in reusable modules. Pin exact reviewed provider releases in installation
 roots and examples. An application-only change does not require a provider release when its provider interface is unchanged.
 
+Image resource create and update must verify registry content and complete runtime image preparation for the exact
+digest before accepting their state, including when the registry manifest already exists. Bound pending preparation
+by the operation deadline and reject terminal errors, mismatched images and incomplete ready responses. Keep refresh
+observational; a registry manifest alone does not establish runtime readiness.
+
 Require build metadata, module and asset inventories, installation descriptors, and qualification evidence to agree
 on version and public revision. Include original licenses, attribution, and dependency notices in the verified inventory.
 Derive notices from actual build inputs; missing notices require reviewed, exact-version supplements.

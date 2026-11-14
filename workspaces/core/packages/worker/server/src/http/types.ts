@@ -25,5 +25,3 @@ export type ProtocolHandlerOptions = {
   readonly authorizeMembership: MembershipAuthorizer;
   readonly limitPublicRequest: PublicRequestLimiter;
 };
-
-export type RouteMatch = { readonly name: OperationName; readonly params: Readonly<Record<string, string>> };

@@ -51,7 +51,7 @@ depends = [
 ]
 
 [tasks."sandbox:native:check"]
-description = "Check native container safety and workspace transfer diagnostics without cloud credentials"
+description = "Check native container safety, transfer diagnostics and Gateway self routing without cloud credentials"
 run = "node --test packages/worker/sandbox/testing/*.ts"
 
 [tasks.fingerprint]

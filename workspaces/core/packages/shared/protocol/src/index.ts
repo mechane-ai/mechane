@@ -1,4 +1,6 @@
 export { catalog } from './catalog.ts';
+export { findRoute } from './find-route.ts';
+export type { RouteMatch } from './find-route.ts';
 export { CredentialAlreadyExists } from './errors/credential.errors.ts';
 export {
   CredentialValue,

@@ -1,4 +1,5 @@
-import { SandboxWebAccess } from '@mechane/deployment';
+import { OriginProtocol, SandboxWebAccess } from '@mechane/deployment';
+import { Access, catalog, findRoute } from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
 import { Option, Result, Schema } from 'effect';
 import { ROOT_DOT } from './constants.ts';
@@ -16,7 +17,9 @@ type ReadEgressDestinationInput = {
   readonly webAccess: SandboxWebAccess;
 };
 
-/** Public access still excludes private destinations and both installation control-plane hosts. */
+type SelfRouteInput = { readonly request: Request; readonly destination: URL };
+
+/** Only declared self operations can reach the canonical public control plane through its normal authentication. */
 export function readEgressDestination({
   request,
   origin,
@@ -32,6 +35,7 @@ export function readEgressDestination({
   }
 
   const destination = new URL(decoded.success.href);
+  const isCanonicalOrigin = destination.origin === origin.origin;
 
   destination.hostname = destination.hostname.replace(ROOT_DOT, '');
 
@@ -48,7 +52,12 @@ export function readEgressDestination({
     destination.hostname === installationHost ||
     destination.hostname === runtimeHost;
 
-  if (!isAllowedHost || !isPublicHost({ hostname: destination.hostname }) || isControlPlaneHost) {
+  const isSelfOperation =
+    isCanonicalOrigin && destination.protocol === OriginProtocol.Secure && isSelfRoute({ request, destination });
+
+  const isAllowedDestination = isSelfOperation || (isAllowedHost && !isControlPlaneHost);
+
+  if (!isAllowedDestination || !isPublicHost({ hostname: destination.hostname })) {
     return Option.none();
   }
 
@@ -60,4 +69,24 @@ export function readEgressDestination({
   }
 
   return Option.some(destination);
+}
+
+function isSelfRoute({ request, destination }: SelfRouteInput): boolean {
+  const matched = Result.try(() => findRoute({ method: request.method, pathname: destination.pathname }));
+
+  if (Result.isFailure(matched)) {
+    return false;
+  }
+
+  return Option.exists(matched.success, (route) => {
+    const operation = catalog[route.name];
+
+    if (operation.access !== Access.Self) {
+      return false;
+    }
+
+    const params = Schema.decodeUnknownResult(operation.params, { onExcessProperty: 'error' })(route.params);
+
+    return Result.isSuccess(params);
+  });
 }

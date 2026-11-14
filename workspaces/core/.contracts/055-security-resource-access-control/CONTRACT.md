@@ -72,6 +72,15 @@ The Cloudflare compute provider disables direct internet and routes HTTP through
 Invalid or disagreeing URL and Host authorities, literal private targets, and unsupported ports are refused. Local
 compute fixtures remain explicitly isolated and cannot become a production fallback.
 
+Allow the canonical public HTTPS origin through that gateway only for exact catalog-declared method and path matches
+whose access is Self and whose path parameters satisfy the operation schema. Forward the caller's credential unchanged
+to the normal API; its scoped self-token verification remains authoritative. Other control-plane operations,
+installation aliases and the separate runtime origin remain
+blocked, including with public web access. Keep the public-host, authority, port and manual-redirect checks.
+Run the package-local Gateway fixture with `mise -C workspaces/core run sandbox:native:check` to verify forwarding and
+refusal at that boundary. Qualify the ordinary self CLI through the hosted Gateway separately; its local upstream
+fixture does not establish token authentication or Cloudflare network behavior.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

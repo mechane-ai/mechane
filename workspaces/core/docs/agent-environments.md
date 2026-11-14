@@ -51,7 +51,10 @@ again on a fresh machine. Company CLIs such as Nexus remain explicit installatio
 
 Use `sandboxes.web_access: "public"` for general browsing, or the default `packages` mode with explicit
 `additional_hosts`. Both modes retain the outbound gateway. Public browsing does not authorize private destinations or
-the installation's control plane. Development servers use loopback inside their own sandbox.
+general access to the installation's control plane. The canonical public self API admits only catalog-declared self
+operations through normal scoped-token authentication, so `mechane self message` and `mechane self wake` work without
+additional credentials. Other control-plane routes and installation aliases remain blocked. Development servers use
+loopback inside their own sandbox.
 
 Use ordinary files in the durable home for notes, plans, and progress. The installation can recommend a layout without
 adding a runtime task or memory service. Internal model-context checkpoints are distinct from those files. Remote tools

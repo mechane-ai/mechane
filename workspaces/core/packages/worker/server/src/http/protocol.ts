@@ -1,13 +1,12 @@
-import { Access, catalog, KeyMissing, RequestInvalid, RouteNotFound } from '@mechane/protocol';
-import type { Operation } from '@mechane/protocol';
+import { Access, catalog, findRoute, KeyMissing, RequestInvalid, RouteNotFound } from '@mechane/protocol';
+import type { Operation, RouteMatch } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, RecordId } from '@mechane/records';
 import type { AuthCaller } from '@mechane/runtime';
-import { Record, Schema } from 'effect';
+import { Option, Record, Schema } from 'effect';
 import { NOTIFICATION_BODY_MAX_BYTES } from '../notifications/constants.ts';
 import { readJsonBody } from './body.ts';
 import { respondFailure } from './failure.ts';
-import { findRoute } from './route.ts';
-import type { ProtocolHandlerOptions, ProtocolRequest, RouteMatch } from './types.ts';
+import type { ProtocolHandlerOptions, ProtocolRequest } from './types.ts';
 
 type DecodeInput = {
   readonly request: Request;
@@ -90,7 +89,8 @@ export function createProtocolHandler({
   return async function handleProtocol(request: Request, peerAddress: string | null = null): Promise<Response | null> {
     try {
       const url = new URL(request.url);
-      const route = findRoute({ method: request.method, pathname: url.pathname });
+      const matched = findRoute({ method: request.method, pathname: url.pathname });
+      const route = Option.getOrNull(matched);
 
       if (route === null) {
         if (url.pathname.startsWith('/api/')) {

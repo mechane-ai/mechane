@@ -8,7 +8,7 @@ terraform {
     }
     mechane = {
       source  = "mechane-ai/mechane"
-      version = ">= 0.12.0, < 1.0.0"
+      version = ">= 0.12.2, < 1.0.0"
     }
   }
 }

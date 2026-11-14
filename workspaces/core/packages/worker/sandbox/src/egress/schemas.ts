@@ -21,7 +21,7 @@ const InstallationHosts = Schema.fromJsonString(Schema.Array(PublicHostname)).pi
   Schema.withDecodingDefaultKey(Effect.succeed('[]')),
 );
 
-/** Both control-plane origins are excluded from sandbox egress. */
+/** Control-plane hosts stay private except for canonical self operations authenticated by the application. */
 export const EgressVariables = renamedWireStruct({
   fields: {
     origin: SecureOrigin,
