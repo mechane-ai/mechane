@@ -32,7 +32,9 @@ files, and hosts for recovery.
 
 To replay one failure without opening a retained development session, run the command printed by the smoke runner. For
 example, `mise -C workspaces/core exec -- node packages/node/smoke/src/main.ts largeHomeSurvivesRestore` runs the real
-drain and restore in a fresh local stack. A non-Console selection starts no Vite server.
+drain and restore in a fresh local stack. A non-Console selection starts no Vite server. Add
+`--reuse-guest /path/to/guest-inputs.json` to reuse an installed candidate guest for the source replay. The launcher
+compares its inputs with the current guest build and checks Docker's image digest. A changed guest needs a fresh build.
 
 After rebuilding an installation-owned CLI, update its tool archive and descriptor, then use `apply guest`. That apply
 reruns guest preparation and captures the new tool bytes before replacing the machine. `apply sandbox` does not rebuild

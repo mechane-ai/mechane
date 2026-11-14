@@ -20,7 +20,7 @@ async function main(): Promise<void> {
     if (settings.artifacts === undefined) {
       const isConsoleDevelopment = catalog.some(({ family }) => family === 'console');
 
-      return { ...shared, isSource: true, isConsoleDevelopment };
+      return { ...shared, isSource: true, isConsoleDevelopment, reuseGuest: settings.reuseGuest };
     }
 
     return {

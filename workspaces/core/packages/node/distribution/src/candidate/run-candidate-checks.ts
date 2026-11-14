@@ -1,4 +1,5 @@
 import { CliTarget, releaseBinaryName } from '@mechane/protocol';
+import { inspectGuestImage } from '@mechane/stack';
 import { Effect, Schema } from 'effect';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { arch, homedir, platform, tmpdir } from 'node:os';
@@ -15,13 +16,6 @@ const SUMMARY_PREFIX = 'SMOKE_CATALOG_SUMMARY ';
 const CatalogSummary = Schema.Struct({
   count: Schema.Int.check(Schema.isGreaterThan(0)),
   guarantees: Schema.Array(Schema.NonEmptyString),
-});
-
-const DockerImage = Schema.Struct({
-  Id: Schema.NonEmptyString,
-  Os: Schema.Literal('linux'),
-  Architecture: Schema.Literal('amd64'),
-  Descriptor: Schema.Struct({ digest: Schema.NonEmptyString }),
 });
 
 type CandidateChecksInput = {
@@ -93,16 +87,19 @@ export async function runCandidateChecks({
       throw new Error('The candidate guest archive is missing');
     }
 
-    const loaded = await execute('docker', ['load', '--input', join(settings.folder, guest.name)]);
+    const selection = { environment: settings.inherited, digest: manifest.guest.digest };
 
-    retain('qualification-guest-load.log', loaded);
+    const image = await inspectGuestImage(selection).catch(async () => {
+      await execute('docker', ['load', '--input', join(settings.folder, guest.name)]);
 
-    const images = await execute('docker', ['image', 'inspect', manifest.guest.digest]);
-    const [image] = Schema.decodeUnknownSync(Schema.fromJsonString(Schema.Array(DockerImage)))(images);
+      return await inspectGuestImage(selection);
+    });
 
-    if (image === undefined || image.Descriptor.digest !== manifest.guest.digest) {
-      throw new Error('Docker did not load the selected guest OCI manifest');
+    if (image.Architecture !== 'amd64') {
+      throw new Error('The candidate must run with its Linux amd64 guest');
     }
+
+    retain('qualification-guest-image.log', `${JSON.stringify(image)}\n`);
 
     const target = Schema.decodeUnknownSync(Schema.Enum(CliTarget))(`${platform()}-${arch()}`);
     const cli = releaseBinaryName({ target });

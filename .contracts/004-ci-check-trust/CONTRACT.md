@@ -68,6 +68,10 @@ as a clean checkout; capture Git results before comparing them.
 When candidate acceptance fails, its last step prints the retained celld application and environment logs, database
 setup, build, and Console logs without dumping durable storage or credentials.
 
+The manual guest copy runs on public main with repository contents write access. It may attach one reviewed guest
+archive from an immutable release in the same repository to an existing App-owned draft. Verify the source digest,
+downloaded bytes and final asset metadata. The copy never publishes a release, replaces assets or uses a publisher key.
+
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,
 and authenticates to npm through its package-specific trusted publisher rather than a stored registry token.
@@ -82,7 +86,7 @@ to enforce `manualWorkflows`. Review the source workflow to confirm it invokes o
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `manualWorkflows` `.github/workflows/runtime-candidate.yml`.
+Values: `manualWorkflows` `.github/workflows/copy-runtime-guest.yml`, `.github/workflows/runtime-candidate.yml`.
 - owned check `workflows` (F004): enforced
 
 <!-- End of the generated block. -->

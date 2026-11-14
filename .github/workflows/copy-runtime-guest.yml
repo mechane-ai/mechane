@@ -1,0 +1,77 @@
+name: Copy reused runtime guest
+run-name: Copy guest for ${{ inputs.target_tag }}
+on:
+  workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Immutable release containing the reused guest
+        required: true
+        type: string
+      target_tag:
+        description: Existing App-owned release draft
+        required: true
+        type: string
+      archive_sha256:
+        description: Guest archive SHA-256 from the qualified candidate
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: copy-runtime-guest-${{ inputs.target_tag }}
+  cancel-in-progress: false
+jobs:
+  copy:
+    if: github.repository_id == '1437633529' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Copy the reviewed guest between releases in this repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
+          TARGET_TAG: ${{ inputs.target_tag }}
+          ARCHIVE_SHA256: ${{ inputs.archive_sha256 }}
+        run: |
+          set -euo pipefail
+          valid_tag='^v[0-9]+\.[0-9]+\.[0-9]+$'
+          if [[ ! "$SOURCE_TAG" =~ $valid_tag || ! "$TARGET_TAG" =~ $valid_tag || "$SOURCE_TAG" == "$TARGET_TAG" ]]; then
+            echo '::error::Select two distinct stable runtime tags.'
+            exit 1
+          fi
+          if [[ ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            echo '::error::Select the guest archive SHA-256 from the candidate.'
+            exit 1
+          fi
+
+          repo="github.com/$GITHUB_REPOSITORY"
+          source_file="mechane-guest-$SOURCE_TAG.oci.tar"
+          target_file="mechane-guest-$TARGET_TAG.oci.tar"
+          digest="sha256:$ARCHIVE_SHA256"
+          source=$(gh release view "$SOURCE_TAG" --repo "$repo" --json isImmutable,isDraft,assets)
+          size=$(jq -er --arg name "$source_file" --arg digest "$digest" '
+            select(.isImmutable and (.isDraft | not))
+            | .assets[]
+            | select(.name == $name and .digest == $digest and .state == "uploaded" and .size > 0)
+            | .size
+          ' <<< "$source")
+          draft=$(gh release view "$TARGET_TAG" --repo "$repo" --json isDraft,author,assets)
+          jq -e '.isDraft and .author.login == "mechane-engineering[bot]"' <<< "$draft" > /dev/null
+          existing=$(jq -c --arg name "$target_file" '.assets[] | select(.name == $name)' <<< "$draft")
+          if [[ -n "$existing" ]]; then
+            jq -e --arg digest "$digest" --argjson size "$size" '
+              .state == "uploaded" and .digest == $digest and .size == $size
+            ' <<< "$existing" > /dev/null
+            exit 0
+          fi
+
+          directory=$(mktemp -d)
+          trap 'rm -rf -- "$directory"' EXIT
+          gh release download "$SOURCE_TAG" --repo "$repo" --pattern "$source_file" --dir "$directory"
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$directory/$source_file" | sha256sum --check --status
+          mv -- "$directory/$source_file" "$directory/$target_file"
+          gh release upload "$TARGET_TAG" "$directory/$target_file" --repo "$repo"
+          gh release view "$TARGET_TAG" --repo "$repo" --json isDraft,assets |
+            jq -e --arg name "$target_file" --arg digest "$digest" --argjson size "$size" '
+              .isDraft and any(.assets[]; .name == $name and .state == "uploaded" and .digest == $digest and .size == $size)
+            ' > /dev/null

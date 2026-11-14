@@ -11,7 +11,8 @@ To reuse a guest from a prior qualified candidate, pass `--reuse-guest PRIOR_FOL
 `OUTPUT`. The builder verifies that qualification and its evidence, checks the generated build context and platform
 against the prior record, and copies the exact qualified archive. A mismatch fails the build. Reuse does not refresh or
 check upstream packages fetched by the Dockerfile; build a fresh guest when those should be updated. The candidate still
-runs its full artifact acceptance against the image.
+runs its full artifact acceptance against the image. Acceptance reuses an already loaded image when Docker reports the
+selected Linux amd64 manifest. Otherwise it loads the candidate archive.
 
 The release contains:
 

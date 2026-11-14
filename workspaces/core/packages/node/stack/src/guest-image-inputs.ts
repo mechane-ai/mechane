@@ -1,4 +1,5 @@
-import { SHA256_PATTERN } from '@mechane/records';
+import { ArtifactDigest } from '@mechane/program';
+import { SHA256_DIGEST_PATTERN, SHA256_PATTERN } from '@mechane/records';
 import { Schema } from 'effect';
 import { createHash } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
@@ -22,6 +23,16 @@ export const GuestImageInputs = Schema.Struct({
 });
 
 export type GuestImageInputs = typeof GuestImageInputs.Type;
+
+export const GuestImageRecord = Schema.Struct({
+  format_version: Schema.Literal(1),
+  inputs: GuestImageInputs,
+  guest: Schema.Struct({
+    ...ArtifactDigest.fields,
+    digest: Schema.String.check(Schema.isPattern(SHA256_DIGEST_PATTERN)),
+  }),
+});
+
 type GuestImageInputsInput = { readonly directory: string; readonly platform: string };
 
 export async function guestImageInputs({ directory, platform }: GuestImageInputsInput): Promise<GuestImageInputs> {

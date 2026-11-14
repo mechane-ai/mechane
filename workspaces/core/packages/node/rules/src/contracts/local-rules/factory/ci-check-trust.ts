@@ -3,7 +3,7 @@ import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** What enforces `ci-check-trust`. */
 export const ciCheckTrust = {
-  values: { manualWorkflows: ['.github/workflows/runtime-candidate.yml'] },
+  values: { manualWorkflows: ['.github/workflows/copy-runtime-guest.yml', '.github/workflows/runtime-candidate.yml'] },
   rules: [
     {
       ...OWNED_DEFAULTS,

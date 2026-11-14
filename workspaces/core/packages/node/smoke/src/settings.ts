@@ -10,6 +10,7 @@ type SmokeSettings = {
   readonly family: ScenarioFamily | undefined;
   readonly nodeExecutable: string;
   readonly artifacts: ArtifactSettings | undefined;
+  readonly reuseGuest: string | undefined;
 };
 
 type ArtifactArguments = {
@@ -27,6 +28,7 @@ export function smokeSettings(): SmokeSettings {
       'artifact-directory': { type: 'string' },
       'guest-image': { type: 'string' },
       'cli-executable': { type: 'string' },
+      'reuse-guest': { type: 'string' },
     },
     allowPositionals: true,
   });
@@ -43,11 +45,18 @@ export function smokeSettings(): SmokeSettings {
     cliExecutable: values['cli-executable'],
   });
 
+  const reuseGuest = values['reuse-guest'];
+
+  if (reuseGuest !== undefined && (artifacts !== undefined || !isAbsolute(reuseGuest))) {
+    throw new Error('--reuse-guest selects an absolute guest-inputs.json path for a source replay');
+  }
+
   return {
     match: positionals[0],
     family,
     nodeExecutable: process.env['MECHANE_NODE_EXECUTABLE'] ?? process.execPath,
     artifacts,
+    reuseGuest,
   };
 }
 

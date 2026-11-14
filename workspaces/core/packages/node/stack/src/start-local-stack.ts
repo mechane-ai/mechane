@@ -553,7 +553,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       resources.toolRegistration = prepared.registration;
 
       if (isSource && options.sandboxImage === undefined) {
-        resources.guestImage = await prepareSourceGuest({ environment });
+        resources.guestImage = await prepareSourceGuest({ environment, reuseGuest: options.reuseGuest });
       }
 
       const deployment = sandboxWorkerDeployment({

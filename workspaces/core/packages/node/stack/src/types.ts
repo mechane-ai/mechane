@@ -123,6 +123,7 @@ export type StackOptions = {
   readonly isConsoleDevelopment?: boolean;
   readonly assetsDirectory?: string;
   readonly sandboxImage?: string;
+  readonly reuseGuest?: string | undefined;
   readonly celldBinary?: CelldBinary;
   readonly nodeExecutable?: string;
   readonly sandbox?: 'container' | 'configured';

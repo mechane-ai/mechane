@@ -70,6 +70,8 @@ Runtime candidate acceptance runs static checks and the complete retained catalo
 generated qualification binds the selected source, artifacts, fixtures, configuration, and actual reports. That accepted
 candidate can be promoted without another build or a duplicate source-mode catalog. A cached inner-loop result does not
 substitute for complete candidate acceptance. Hosted-only guarantees still require their declared provider target.
+Reuse a loaded guest by its selected OCI manifest and platform. A source replay also compares the current guest
+build inputs with the selected build record.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
