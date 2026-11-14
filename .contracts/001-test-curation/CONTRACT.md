@@ -57,6 +57,8 @@ Warm-reload fixtures establish completion of their initial native read before ho
 Initial optimistic row visibility alone does not establish that the receipt is durable.
 A scenario exists only for a guarantee from the consequential list above that no scenario covers, and only after a maintainer approves its addition to the scenario catalog, `workspaces/core/packages/node/smoke/src/catalog.ts`.
 Each catalog entry names its guarantee and the regression it guards; the pull request that adds it names the coverage gap.
+Report the failed scenario, elapsed time and its local replay command. Retain the primary failure when teardown
+also fails.
 
 The existing infrastructure check also runs `packages/node/distribution/testing/shipped-formats.ts` against its newly
 staged installation descriptor. This publication-safety check compares the actual build output with the current API
@@ -67,7 +69,8 @@ The fixtures in `packages/worker/sandbox/testing` use Node's built-in test runne
 `mise -C workspaces/core run sandbox:native:check`, also in source checks. `native-container.ts` guards cold startup
 and safe retirement against unstarted inspection failure, live identity gaps, and uncertain inspection.
 `workspace-transfer.ts` guards safe transfer failure context, private-data redaction, and preservation of the original
-failure when reporting fails. `gateway-self.ts` guards canonical self-API forwarding with unchanged credentials while
+failure when reporting fails. A required checkpoint retries a part read timeout without retrying a rejected response.
+`gateway-self.ts` guards canonical self-API forwarding with unchanged credentials while
 rejecting other control-plane routes, aliases, invalid authorities, and private destinations. Its upstream fixture does
 not authenticate tokens; the application remains that authority. These process-scope fixtures do not establish hosted
 container behavior or full runtime qualification. `workspace-retirement.ts` uses the real sandbox store over SQLite

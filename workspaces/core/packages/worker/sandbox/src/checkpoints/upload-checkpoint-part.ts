@@ -1,7 +1,10 @@
 import { HttpMethod } from '@mechane/records';
+import { FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
-import { Option, Result } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
+import { ANSWER_SLACK, WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
@@ -12,7 +15,10 @@ import { workspaceRequest } from '../workspace/workspace-request.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
-type UploadCheckpointPartInput = ArchivedCheckpointInput & { readonly guest: GuestConnection; readonly part: number };
+type UploadCheckpointPartInput = Pick<ArchivedCheckpointInput, 'store' | 'checkpoint' | 'archive' | 'workspace'> & {
+  readonly guest: GuestConnection;
+  readonly part: number;
+};
 
 /** Stores one validated archive part with an R2 checksum under its batch's unchanged checkpoint fence. */
 export async function uploadCheckpointPart({
@@ -24,7 +30,7 @@ export async function uploadCheckpointPart({
   part,
 }: UploadCheckpointPartInput): Promise<void> {
   const { generation } = checkpoint;
-  const bytes = await readCheckpointPart({ checkpoint, archive, guest, part });
+  const bytes = await readCheckpointPart({ store, checkpoint, archive, guest, part });
   const selectedPart = Option.some(part);
   const key = workspacePartKey({ owner: workspace.owner, generation, part: selectedPart });
   const sha256 = await crypto.subtle.digest('SHA-256', bytes);
@@ -81,9 +87,10 @@ export async function uploadCheckpointPart({
   Result.getOrThrow(failure);
 }
 
-type ReadCheckpointPartInput = Pick<UploadCheckpointPartInput, 'checkpoint' | 'archive' | 'guest' | 'part'>;
+type ReadCheckpointPartInput = Pick<UploadCheckpointPartInput, 'store' | 'checkpoint' | 'archive' | 'guest' | 'part'>;
 
 async function readCheckpointPart({
+  store,
   checkpoint,
   archive,
   guest,
@@ -92,18 +99,7 @@ async function readCheckpointPart({
   const { generation, machineId } = checkpoint;
   const selectedPart = Option.some(part);
   const snapshot = { generation, parent: checkpoint.parent, archive };
-
-  const lease = Option.none();
-
-  const response = await workspaceRequest({
-    guest,
-    machineId,
-    generation,
-    step: WorkspaceStep.Part,
-    part: selectedPart,
-    lease,
-    init: { method: HttpMethod.Get },
-  });
+  const response = await requestCheckpointPart({ store, checkpoint, guest, part });
 
   const observedResponse = Option.some(response);
 
@@ -133,4 +129,90 @@ async function readCheckpointPart({
   }
 
   return bytes;
+}
+
+type RequestCheckpointPartInput = Omit<ReadCheckpointPartInput, 'archive'>;
+
+/** Repeats only a timed-out read of the same immutable part while its required checkpoint is still pending. */
+async function requestCheckpointPart({
+  store,
+  checkpoint,
+  guest,
+  part,
+}: RequestCheckpointPartInput): Promise<Response> {
+  const { generation, machineId } = checkpoint;
+
+  const request = {
+    guest,
+    machineId,
+    generation,
+    step: WorkspaceStep.Part,
+    part: Option.some(part),
+    lease: Option.none<number>(),
+    init: { method: HttpMethod.Get },
+  };
+
+  const promise = workspaceRequest(request);
+  const first = await capturePromise({ promise });
+
+  if (Result.isSuccess(first)) {
+    return first.success;
+  }
+
+  const timeout = checkpointPartRetryTimeout({ store, checkpoint, cause: first.failure });
+
+  if (Option.isNone(timeout)) {
+    return Result.getOrThrow(first);
+  }
+
+  const timeoutMs = Duration.toMillis(timeout.value);
+  const signal = AbortSignal.timeout(timeoutMs);
+
+  return await workspaceRequest({ ...request, init: { ...request.init, signal } });
+}
+
+type CheckpointPartRetryInput = Pick<ReadCheckpointPartInput, 'store' | 'checkpoint'> & { readonly cause: unknown };
+
+function checkpointPartRetryTimeout({
+  store,
+  checkpoint,
+  cause,
+}: CheckpointPartRetryInput): Option.Option<Duration.Duration> {
+  if (!Schema.is(WorkspaceTransferFailed)(cause)) {
+    return Option.none();
+  }
+
+  const observation = Option.fromUndefinedOr(cause.observation);
+
+  const isRequestTimeout = Option.exists(
+    observation,
+    ({ phase, isTimedOut }) => phase === WorkspaceTransferPhase.Request && isTimedOut,
+  );
+
+  if (!isRequestTimeout) {
+    return Option.none();
+  }
+
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return Option.none();
+  }
+
+  const operation = store.readFileCheckpoint({ purpose: checkpoint.purpose });
+  const pending = Option.filter(operation, ({ result }) => FileCheckpointResult.guards.Pending(result));
+
+  return Option.flatMap(pending, ({ startedAt }) => {
+    const now = DateTime.nowUnsafe();
+    const deadline = DateTime.addDuration(startedAt, WORKSPACE_OPERATION_TIMEOUT);
+    const remainingMs = DateTime.toEpochMillis(deadline) - DateTime.toEpochMillis(now);
+    const requestMs = Duration.toMillis(ANSWER_SLACK);
+    const timeoutMs = Math.min(remainingMs, requestMs);
+
+    if (timeoutMs <= 0) {
+      return Option.none();
+    }
+
+    const timeout = Duration.millis(timeoutMs);
+
+    return Option.some(timeout);
+  });
 }

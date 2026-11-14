@@ -31,7 +31,8 @@ export async function workspaceRequest({
 }: WorkspaceRequestInput): Promise<Response> {
   const path = guestWorkspacePath({ machineId, generation, step, part });
   const timeoutMillis = Duration.toMillis(ANSWER_SLACK);
-  const signal = AbortSignal.timeout(timeoutMillis);
+  const providedSignal = Option.fromNullishOr(init.signal);
+  const signal = Option.getOrElse(providedSignal, () => AbortSignal.timeout(timeoutMillis));
   const headers = new Headers(init.headers);
 
   if (Option.isSome(lease)) {

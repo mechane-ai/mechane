@@ -30,6 +30,10 @@ changed. `sandbox` recompiles and applies the environment Worker; `guest` rebuil
 use an admission hold and real file drain before replacing their affected owner. Failed apply retains that hold, live
 files, and hosts for recovery.
 
+To replay one failure without opening a retained development session, run the command printed by the smoke runner. For
+example, `mise -C workspaces/core exec -- node packages/node/smoke/src/main.ts largeHomeSurvivesRestore` runs the real
+drain and restore in a fresh local stack. A non-Console selection starts no Vite server.
+
 After rebuilding an installation-owned CLI, update its tool archive and descriptor, then use `apply guest`. That apply
 reruns guest preparation and captures the new tool bytes before replacing the machine. `apply sandbox` does not rebuild
 external CLIs, and editing their source alone does not update an already-running guest.

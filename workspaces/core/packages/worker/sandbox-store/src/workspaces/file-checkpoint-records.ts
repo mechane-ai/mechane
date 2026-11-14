@@ -148,6 +148,7 @@ export function fileCheckpointRecords({ sql }: RecordsInput) {
   }
 
   return {
+    readFileCheckpoint,
     fileCheckpointResult,
     recoveryCheckpointResult,
     pendingRecoveryCheckpoint,

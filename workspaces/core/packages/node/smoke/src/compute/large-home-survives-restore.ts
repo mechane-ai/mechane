@@ -34,6 +34,7 @@ export async function largeHomeSurvivesRestore({ stack }: ScenarioInput): Promis
   const input = await createMechContext({ stack, name: marker });
   const { model } = requireFixtures(stack);
   const filename = `.large-home-${randomUUID()}`;
+  const failures: Array<unknown> = [];
 
   try {
     const generationSource = [
@@ -60,7 +61,7 @@ export async function largeHomeSurvivesRestore({ stack }: ScenarioInput): Promis
       timeoutMs: TRANSFER_TIMEOUT_MS,
     });
 
-    assert.equal(stopped.phase, SandboxStopPhase.Completed);
+    assert.equal(stopped.phase, SandboxStopPhase.Completed, Option.getOrUndefined(stopped.lastError));
 
     const restoreMarker = `restore-${randomUUID()}`;
     const toolCallId = randomUUID();
@@ -89,7 +90,14 @@ export async function largeHomeSurvivesRestore({ stack }: ScenarioInput): Promis
     assert.equal(turn.status, TurnStatus.Completed);
     assert.equal(restoration.generation, Option.getOrThrow(stopped.generation));
     assert.ok(restoration.bytes > PREVIOUS_ARCHIVE_BYTES, 'The fixture did not exceed the old compressed limit');
+  } catch (error) {
+    failures.push(error);
+    await stack.captureFailure('largeHomeSurvivesRestore:before-sandbox-cleanup').catch(() => undefined);
   } finally {
-    await deleteSandbox(input);
+    await deleteSandbox(input).catch((error: unknown) => failures.push(error));
+  }
+
+  if (failures.length > 0) {
+    throw new AggregateError(failures, 'The large home restore or its sandbox cleanup failed');
   }
 }

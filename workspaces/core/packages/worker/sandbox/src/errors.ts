@@ -28,6 +28,7 @@ export class WorkspaceTransferFailed extends Schema.TaggedError<WorkspaceTransfe
       phase: Schema.Enum(WorkspaceTransferPhase),
       elapsed: Schema.DurationFromMillis,
       part: Schema.optionalKey(Schema.Int.check(Schema.isGreaterThanOrEqualTo(0))),
+      isTimedOut: Schema.Boolean,
     }),
   ),
 }) {}

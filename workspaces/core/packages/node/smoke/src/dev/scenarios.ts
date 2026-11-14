@@ -57,7 +57,7 @@ export async function runDevelopmentScenario({
   switch (scope) {
     case 'retained':
       try {
-        await runScenarios({ stack, catalog: [scenario], match: name });
+        await runScenarios({ stack, catalog: [scenario] });
       } catch (cause) {
         const evidence = await stack.captureFailure('dev-scenario-failure').catch((captureCause: unknown) => {
           throw new AggregateError(
@@ -89,7 +89,7 @@ export async function runDevelopmentScenario({
           ...binaryOptions,
         },
         run: async ({ stack: isolatedStack }) => {
-          await runScenarios({ stack: isolatedStack, catalog: [scenario], match: name });
+          await runScenarios({ stack: isolatedStack, catalog: [scenario] });
         },
       });
 

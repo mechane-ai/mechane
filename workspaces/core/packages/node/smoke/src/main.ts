@@ -2,11 +2,12 @@ import { runStackProgram } from '@mechane/stack';
 import type { StackOptions } from '@mechane/stack';
 import { join } from 'node:path';
 import { CATALOG } from './catalog.ts';
-import { runScenarios, writeCatalogSummary } from './run-scenarios.ts';
+import { runScenarios, selectScenarios, writeCatalogSummary } from './run-scenarios.ts';
 import { smokeSettings } from './settings.ts';
 
 async function main(): Promise<void> {
   const settings = smokeSettings();
+  const catalog = selectScenarios({ catalog: CATALOG, match: settings.match, family: settings.family });
 
   const options: StackOptions = (() => {
     const shared: StackOptions = {
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
     };
 
     if (settings.artifacts === undefined) {
-      const isConsoleDevelopment = settings.family === undefined || settings.family === 'console';
+      const isConsoleDevelopment = catalog.some(({ family }) => family === 'console');
 
       return { ...shared, isSource: true, isConsoleDevelopment };
     }
@@ -35,12 +36,12 @@ async function main(): Promise<void> {
   await runStackProgram({
     options,
     run: async ({ stack }) => {
-      await runScenarios({ stack, catalog: CATALOG, match: settings.match, family: settings.family });
+      await runScenarios({ stack, catalog });
     },
   });
 
   if (settings.match === undefined && settings.family === undefined) {
-    writeCatalogSummary({ catalog: CATALOG });
+    writeCatalogSummary({ catalog });
   }
 }
 

@@ -81,6 +81,7 @@ function failureReason({
   const observation: WorkspaceTransferObservation = Option.getOrElse(observed, () => ({
     phase: defaultPhase,
     elapsed,
+    isTimedOut: false,
   }));
 
   const knownPath = Option.map(transfer, (failure) => {
