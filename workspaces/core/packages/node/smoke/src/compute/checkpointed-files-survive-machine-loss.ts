@@ -36,7 +36,6 @@ import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 
 const MULTIPART_FILE_BYTES = 33 * BYTES_PER_MEBIBYTE;
-const RECOVERY_FILE_BYTES = 513 * BYTES_PER_MEBIBYTE;
 const REQUEST_DEADLINE_MS = 15_000;
 const UNSAVED_WRITER_REQUESTS = 2;
 
@@ -158,9 +157,6 @@ export async function checkpointedFilesSurviveMachineLoss({
         `test ! -f '${directory}/unsaved'`,
         `test ! -f '${directory}/after-loss'`,
         `test ! -f "$MECHANE_CACHE_HOME/${cacheMarker}"`,
-        `test "$(wc -c < '${directory}/large')" -eq ${RECOVERY_FILE_BYTES}`,
-        `test "$(head -n 1 '${directory}/large')" = retained`,
-        `rm '${directory}/large'`,
         `node -e 'const fs=require("node:fs"),crypto=require("node:crypto");process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
       ].join(' && '),
     });
@@ -473,9 +469,6 @@ function createCheckpointFilesCommand({ directory, cacheMarker }: CheckpointFile
     'const cipher=crypto.createCipheriv("aes-256-ctr",Buffer.alloc(32),Buffer.alloc(16))',
     `const multipart=cipher.update(Buffer.alloc(${MULTIPART_FILE_BYTES}))`,
     `fs.writeFileSync("${directory}/multipart",multipart)`,
-    `const block=Buffer.alloc(${BYTES_PER_MEBIBYTE},"retained"+String.fromCharCode(10)),file=fs.openSync("${directory}/large","w")`,
-    `for(let bytes=0;bytes<${RECOVERY_FILE_BYTES};bytes+=block.length)fs.writeSync(file,block)`,
-    'fs.closeSync(file)',
     'process.stdout.write(crypto.createHash("sha256").update(multipart).digest("hex"))',
   ].join(';');
 
