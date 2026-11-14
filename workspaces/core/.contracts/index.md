@@ -121,6 +121,8 @@ from 101 are Mechane's own.
 - [Conversation state](117-ui-conversation-state/CONTRACT.md): reader intent, draft preservation, and supplied agent activity.
 - [Analytical graphics](118-ui-analytical-graphics/CONTRACT.md): explicit measurements, missing values, domains, and relationships.
 
+- [Notification feedback](133-ui-notification-feedback/CONTRACT.md): concise application-owned outcomes through one supported toast API.
+
 ## Mechane
 
 - [Package layers](101-package-layers/CONTRACT.md): each package's layer, lane and consumers, from `dependencies.json`.

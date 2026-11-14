@@ -2,10 +2,11 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
@@ -143,7 +144,15 @@ export function Matrix({
   selection,
   emptyLabel,
 }: MatrixProps): ReactNode {
-  const scroll = useScrollTabIndex<HTMLDivElement>();
+  const navigation = useChartNavigation({
+    title,
+    selection,
+    items: cells.map((cell) => ({
+      id: cell.id,
+      label: `${rows.find((row) => row.id === cell.rowId)?.label ?? cell.rowId} → ${columns.find((column) => column.id === cell.columnId)?.label ?? cell.columnId}: ${matrixValueText(cell, domain, formatValue)}`,
+    })),
+  });
+
   const problem = matrixProblem({ rows, columns, cells, domain, palette });
 
   if (problem !== null) {
@@ -158,15 +167,6 @@ export function Matrix({
     row.set(cell.columnId, cell);
     cellRows.set(cell.rowId, row);
   }
-
-  const selected = cells.find((cell) => cell.id === selection?.selectedId);
-  const selectedRow = rows.find((row) => row.id === selected?.rowId);
-  const selectedColumn = columns.find((column) => column.id === selected?.columnId);
-
-  const selectedLabel =
-    selected === undefined
-      ? undefined
-      : `${selectedRow?.label ?? selected.rowId} → ${selectedColumn?.label ?? selected.columnId}: ${matrixValueText(selected, domain, formatValue)}`;
 
   return (
     <ChartFrame
@@ -184,55 +184,33 @@ export function Matrix({
               <li>! Outside domain</li>
             )}
             {cells.some((cell) => cell.kind === 'value' && formatValue(cell.value).length > MAX_CELL_TEXT_LENGTH) && (
-              <li>• See exact values in View data</li>
+              <li>• Inspect a cell for its exact value</li>
             )}
           </ul>
-          {selection !== undefined && (
-            <ChartReadout>{selectedLabel ?? 'Select a cell to inspect its value.'}</ChartReadout>
-          )}
-          {rows.length > 0 && columns.length > 0 && (
-            <ChartDataDisclosure>
-              <ul {...stylex.props(styles.data)}>
-                {rows.flatMap((row) =>
-                  columns.map((column) => {
-                    const cell = cellRows.get(row.id)?.get(column.id);
-                    const label = `${row.label} → ${column.label}`;
-                    const value = matrixValueText(cell, domain, formatValue);
-
-                    return (
-                      <li key={JSON.stringify([row.id, column.id])}>
-                        <ChartDatumButton
-                          label={`${label}: ${value}`}
-                          isSelected={cell !== undefined && selection?.selectedId === cell.id}
-                          onSelect={
-                            cell === undefined || selection === undefined
-                              ? undefined
-                              : () => selection.onSelect(cell.id)
-                          }
-                        >
-                          <span>{label}</span>
-                          <span>{value}</span>
-                        </ChartDatumButton>
-                      </li>
-                    );
-                  }),
-                )}
-              </ul>
-            </ChartDataDisclosure>
-          )}
+          <ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>
+          <ChartData
+            label={`${title} cells`}
+            columns={[
+              { id: 'cell', label: 'Cell' },
+              { id: 'value', label: valueLabel },
+            ]}
+            rows={rows.flatMap((row) =>
+              columns.map((column) => ({
+                id: JSON.stringify([row.id, column.id]),
+                values: [
+                  `${row.label} → ${column.label}`,
+                  matrixValueText(cellRows.get(row.id)?.get(column.id), domain, formatValue),
+                ],
+              })),
+            )}
+          />
         </div>
       }
     >
       {rows.length === 0 || columns.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <div
-          ref={scroll.ref}
-          role="region"
-          aria-label={`${title} cells`}
-          tabIndex={scroll.tabIndex}
-          {...stylex.props(styles.scroll)}
-        >
+        <div {...navigation.props} {...stylex.props(styles.scroll)}>
           <table {...stylex.props(styles.table)}>
             <thead>
               <tr>
@@ -254,9 +232,18 @@ export function Matrix({
                     const cell = cellRows.get(row.id)?.get(column.id);
 
                     return (
-                      <td key={column.id} {...stylex.props(styles.cell)}>
+                      <td
+                        key={column.id}
+                        onPointerEnter={() => {
+                          if (cell !== undefined) {
+                            navigation.inspect(cell.id);
+                          }
+                        }}
+                        {...stylex.props(styles.cell)}
+                      >
                         <MatrixValue
                           cell={cell}
+                          isInspected={navigation.label !== undefined && navigation.activeId === cell?.id}
                           label={`${row.label}, ${column.label}`}
                           domain={domain}
                           palette={palette}
@@ -278,12 +265,14 @@ export function Matrix({
 
 function MatrixValue({
   cell,
+  isInspected,
   label,
   domain,
   palette,
   formatValue,
   selection,
 }: HeatmapScale & {
+  readonly isInspected: boolean;
   readonly cell: MatrixCell | undefined;
   readonly label: string;
   readonly formatValue: (value: number) => string;
@@ -315,7 +304,7 @@ function MatrixValue({
     measuredColor !== undefined && styles.measured(measuredColor),
     isOutsideDomain && styles.missing,
     selection !== undefined && styles.interactive,
-    selection?.selectedId === cell.id && styles.selected,
+    (isInspected || selection?.selectedId === cell.id) && styles.selected,
   );
 
   const glyph = matrixCellGlyph(cell, text, isOutsideDomain);
@@ -332,6 +321,7 @@ function MatrixValue({
   return (
     <button
       type="button"
+      tabIndex={-1}
       aria-label={accessibleLabel}
       title={accessibleLabel}
       aria-pressed={selection.selectedId === cell.id}

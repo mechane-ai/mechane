@@ -3,9 +3,11 @@ import { scaleLinear } from '@visx/scale';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
 import { distributionGeometry, distributionStyles, NumericPlot } from './distribution-plot.tsx';
@@ -41,6 +43,12 @@ export function ECDF({
   selection,
   emptyLabel = 'No cumulative distribution points are available.',
 }: ECDFProps): ReactNode {
+  const items = points.map((point) => ({
+    id: point.id,
+    label: `${valueLabel}: ${formatValue(point.value)}, ${probabilityLabel}: ${point.probability === null ? 'Unavailable' : formatProbability(point.probability)}`,
+  }));
+
+  const navigation = useChartNavigation({ title, items, selection });
   const inputError = ecdfInputError({ points, domain });
 
   if (inputError !== undefined) {
@@ -48,28 +56,38 @@ export function ECDF({
   }
 
   const yScale = scaleLinear({ domain: [0, 1], range: [distributionGeometry.height, 0] });
-  const selected = points.find((point) => point.id === selection?.selectedId);
 
   return (
     <ChartFrame
       title={title}
       report={report}
       description={description}
-      footer={
-        selection !== undefined && points.length > 0 ? (
-          <ChartReadout>
-            {selected === undefined
-              ? 'Select a point in View data to inspect its probability.'
-              : `${valueLabel}: ${formatValue(selected.value)}, ${probabilityLabel}: ${selected.probability === null ? 'Unavailable' : formatProbability(selected.probability)}`}
-          </ChartReadout>
-        ) : undefined
-      }
+      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
     >
       {points.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (
         <>
           <NumericPlot
+            navigation={navigation.props}
+            onInspectValue={(value) => {
+              const nearest = { point: points[0] };
+
+              for (const item of points) {
+                if (
+                  nearest.point === undefined ||
+                  Math.abs(item.value - value) < Math.abs(nearest.point.value - value)
+                ) {
+                  nearest.point = item;
+                }
+              }
+
+              const point = nearest.point;
+
+              if (point !== undefined) {
+                navigation.inspect(point.id);
+              }
+            }}
             xDomain={domain}
             yDomain={[0, 1]}
             xLabel={valueLabel}
@@ -115,9 +133,16 @@ export function ECDF({
                     return (
                       <circle
                         key={point.id}
+                        onPointerEnter={() => navigation.inspect(point.id)}
+                        onClick={() => selection?.onSelect(point.id)}
                         cx={xScale(point.value)}
                         cy={yScale(point.probability)}
-                        r={selection?.selectedId === point.id ? 4 : 2}
+                        r={
+                          selection?.selectedId === point.id ||
+                          (navigation.label !== undefined && navigation.activeId === point.id)
+                            ? 4
+                            : 2
+                        }
                         fill={chartToneColors[tone]}
                       />
                     );
@@ -126,28 +151,11 @@ export function ECDF({
               );
             }}
           </NumericPlot>
-          <ChartDataDisclosure>
-            <div {...stylex.props(distributionStyles.values)}>
-              {points.map((point) => {
-                const value = formatValue(point.value);
-                const probability = point.probability === null ? 'Unavailable' : formatProbability(point.probability);
-
-                return (
-                  <ChartDatumButton
-                    key={point.id}
-                    label={`${valueLabel}: ${value}, ${probabilityLabel}: ${probability}`}
-                    isSelected={selection?.selectedId === point.id}
-                    onSelect={selection === undefined ? undefined : () => selection.onSelect(point.id)}
-                  >
-                    <span {...stylex.props(distributionStyles.value)}>
-                      <span>{value}</span>
-                      <span {...stylex.props(distributionStyles.summary)}>{probability}</span>
-                    </span>
-                  </ChartDatumButton>
-                );
-              })}
-            </div>
-          </ChartDataDisclosure>
+          <ChartData
+            label={`${title} observations`}
+            columns={[{ id: 'observation', label: 'Observation' }]}
+            rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
+          />
         </>
       )}
     </ChartFrame>

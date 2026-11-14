@@ -1,11 +1,9 @@
 import * as stylex from '@stylexjs/stylex';
 import { Children, useId } from 'react';
 import type { ReactNode } from 'react';
-import { Collapsible } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, controls, pageGeometry, shadows, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
-import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { ChartHeading } from './chart-heading.tsx';
 import { ChartSeriesMarker } from './chart-series-marker.tsx';
 import { ChartSeriesSummary } from './chart-series-summary.tsx';
@@ -156,19 +154,6 @@ const styles = stylex.create({
     fontVariantNumeric: 'tabular-nums',
     overflowWrap: 'anywhere',
   },
-  disclosure: { marginBlockStart: spacing.md, borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: colors.line },
-  data: {
-    'minWidth': 0,
-    'maxHeight': 320,
-    'overflow': 'auto',
-    'outlineStyle': 'none',
-    ':focus-visible': {
-      outlineColor: colors.focus,
-      outlineStyle: 'solid',
-      outlineWidth: controls.focusWidth,
-      outlineOffset: -2,
-    },
-  },
 });
 
 export function ChartFrame({
@@ -273,39 +258,10 @@ export function ChartDatumButton({
   );
 }
 
-export function ChartReadout({ children }: { readonly children: ReactNode }): ReactNode {
+export function ChartReadout({ children, id }: { readonly children: ReactNode; readonly id?: string }): ReactNode {
   return (
-    <p aria-live="polite" {...stylex.props(styles.readout)}>
+    <p id={id} aria-live="polite" {...stylex.props(styles.readout)}>
       {children}
     </p>
-  );
-}
-
-export function ChartDataDisclosure({
-  children,
-  label = 'View data',
-}: {
-  readonly children: ReactNode;
-  readonly label?: string | undefined;
-}): ReactNode {
-  const scroll = useScrollTabIndex<HTMLDivElement>();
-
-  return (
-    <div {...stylex.props(styles.disclosure)}>
-      <Collapsible.Root>
-        <Collapsible.Trigger>{label}</Collapsible.Trigger>
-        <Collapsible.Panel>
-          <div
-            ref={scroll.ref}
-            role="region"
-            aria-label={label}
-            tabIndex={scroll.tabIndex}
-            {...stylex.props(styles.data)}
-          >
-            {children}
-          </div>
-        </Collapsible.Panel>
-      </Collapsible.Root>
-    </div>
   );
 }

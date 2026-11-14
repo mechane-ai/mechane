@@ -32,6 +32,8 @@ Use the shared ChartCursor for Cartesian plots. Check its local marker in light,
 Bound SVG workloads and document the accepted window. A render limit must produce an explicit unavailable or truncated
 state, not a partial graphic that looks complete. Require measured need before adding another rendering engine.
 
+Keep exact values available through direct inspection and static text alternatives. Charts add no automatic data accordion. Preserve relationships, missing values and selection when changing their presentation. Use a visible application-supplied table when comparing records is part of the task.
+
 ## Checks
 
 Inspect signed values, zero, missing and masked cells, irregular bins, invalid dimensions, exact whitespace tokens,

@@ -61,6 +61,7 @@ export type CommandAction = {
   readonly description?: string;
   readonly shortcut?: CommandShortcut;
   readonly isDisabled?: boolean;
+  readonly shouldRun?: (event: KeyboardEvent) => boolean;
   readonly onSelect: () => void;
 };
 
@@ -80,7 +81,7 @@ export function useCommandShortcuts({ commands, target, isEnabled }: CommandShor
       {
         hotkey: command.shortcut,
         callback: (event: KeyboardEvent) => {
-          if (event.defaultPrevented || event.repeat) {
+          if (event.defaultPrevented || event.repeat || command.shouldRun?.(event) === false) {
             return;
           }
 

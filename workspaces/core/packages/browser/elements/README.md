@@ -220,12 +220,14 @@ When an application's Content Security Policy requires nonces, wrap its componen
 This is [Base UI's CSP provider](https://base-ui.com/react/utils/csp-provider); it authorizes component style tags such
 as Select's scrollbar rules. The application owns nonce generation and its security policy.
 
-Mount one `Toaster` from `/feedback` and call its exported `toast` API for notifications. Elements includes Sonner's
-structural styles in the published stylesheet, so the production package injects no additional toast style tag. Keep
-initial-read failures and field validation local; retained-content refresh failures can use one notification with Retry.
-Keep titles, descriptions and action labels brief; longer explanations belong in the relevant view. Shared toasts bound
-visible text and wrap actions without narrowing the message. Opening a page or discovering background status does not
-warrant a notification. The application owns stable IDs and dismissal on recovery or navigation.
+Mount one `Toaster` from `/feedback` and call its exported `toast` API with a plain-text object such as
+`toast.error({ title: 'Could not save' })`. Elements includes Sonner's structural styles in the published stylesheet, so
+the production package injects no additional toast style tag. Keep initial-read failures and field validation local;
+retained-content refresh failures can use one notification with Retry. Loading updates require a stable ID, and
+dismissal names its ID through `toast.dismiss({ id })`. Actions and loading notices persist. Keep titles, descriptions
+and action labels brief; longer explanations belong in the relevant view. Shared toasts bound visible text and wrap
+actions without narrowing the message. Opening a page or discovering background status does not warrant a notification.
+The application owns stable IDs and dismissal on recovery or navigation.
 
 ## Loading content
 

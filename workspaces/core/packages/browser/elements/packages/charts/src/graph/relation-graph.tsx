@@ -5,10 +5,11 @@ import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { useScrollTabIndex } from '../../../foundations/src/use-scroll-tab-index.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
 
 export type RelationNode = {
   readonly id: string;
@@ -152,8 +153,16 @@ export function RelationGraph({
   selection,
   emptyLabel,
 }: RelationGraphProps): ReactNode {
+  const navigation = useChartNavigation({
+    title,
+    selection,
+    items: nodes.map((node) => ({
+      id: node.id,
+      label: [node.label, node.description].filter((part) => part !== undefined).join(', '),
+    })),
+  });
+
   const markerId = useId();
-  const scroll = useScrollTabIndex<HTMLDivElement>();
   const problem = graphProblem({ nodes, edges, groups, width, height });
 
   if (problem !== null) {
@@ -162,7 +171,6 @@ export function RelationGraph({
 
   const nodeMap = new Map(nodes.map((node) => [node.id, node]));
   const links = resolveRelationships(edges, nodeMap);
-  const selected = selection?.selectedId === undefined ? undefined : nodeMap.get(selection.selectedId);
   const hasNodes = nodes.length > 0;
 
   if (links === null) {
@@ -181,24 +189,10 @@ export function RelationGraph({
       title={title}
       report={report}
       description={description}
-      footer={
-        selection !== undefined && hasNodes ? (
-          <ChartReadout>
-            {selected === undefined
-              ? 'Select a node to inspect its record.'
-              : [selected.label, selected.description].filter((part) => part !== undefined).join(' · ')}
-          </ChartReadout>
-        ) : undefined
-      }
+      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
     >
       {hasNodes ? (
-        <div
-          ref={scroll.ref}
-          role="region"
-          aria-label={`${title} graph`}
-          tabIndex={scroll.tabIndex}
-          {...stylex.props(styles.viewport)}
-        >
+        <div {...navigation.props} {...stylex.props(styles.viewport)}>
           <div {...stylex.props(styles.canvas(width, height))}>
             <svg width={width} height={height} aria-hidden {...stylex.props(styles.svg)}>
               <defs>
@@ -257,6 +251,8 @@ export function RelationGraph({
               })}
             </svg>
             {nodes.map((node) => {
+              const isInspected = navigation.label !== undefined && navigation.activeId === node.id;
+
               const groupLabels = groups.filter((group) => group.nodeIds.includes(node.id)).map((group) => group.label);
 
               const accessibleLabel = [...groupLabels, node.label, node.description]
@@ -269,7 +265,7 @@ export function RelationGraph({
                 styles.size(node.width, node.height),
                 styles.tone(chartToneColors[node.tone]),
                 selection !== undefined && styles.action,
-                selection?.selectedId === node.id && styles.selected,
+                (selection?.selectedId === node.id || isInspected) && styles.selected,
               );
 
               const content = (
@@ -282,13 +278,22 @@ export function RelationGraph({
               );
 
               return selection === undefined ? (
-                <div key={node.id} role="group" aria-label={accessibleLabel} title={accessibleLabel} {...appearance}>
+                <div
+                  key={node.id}
+                  onPointerEnter={() => navigation.inspect(node.id)}
+                  role="group"
+                  aria-label={accessibleLabel}
+                  title={accessibleLabel}
+                  {...appearance}
+                >
                   {content}
                 </div>
               ) : (
                 <button
                   key={node.id}
                   type="button"
+                  tabIndex={-1}
+                  onPointerEnter={() => navigation.inspect(node.id)}
                   aria-label={accessibleLabel}
                   title={accessibleLabel}
                   aria-pressed={selection.selectedId === node.id}
@@ -304,46 +309,33 @@ export function RelationGraph({
       ) : (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       )}
-      {hasNodes ? (
-        <ChartDataDisclosure label="Graph data">
-          <ul aria-label="Nodes" {...stylex.props(styles.data)}>
-            {nodes.map((node) => (
-              <li key={node.id}>
-                <ChartDatumButton
-                  label={[node.label, node.description].filter((part) => part !== undefined).join(', ')}
-                  isSelected={selection?.selectedId === node.id}
-                  onSelect={selection === undefined ? undefined : () => selection.onSelect(node.id)}
-                >
-                  <span {...stylex.props(styles.record)}>
-                    <span>{node.label}</span>
-                    {node.description !== undefined && (
-                      <span {...stylex.props(styles.recordDetail)}>{node.description}</span>
-                    )}
-                  </span>
-                </ChartDatumButton>
-              </li>
-            ))}
-          </ul>
-          {groups.length > 0 && (
-            <ul aria-label="Groups" {...stylex.props(styles.list)}>
-              {groups.map((group) => (
-                <li key={group.id}>
-                  {group.label}: {group.nodeIds.map((nodeId) => nodeMap.get(nodeId)?.label).join(', ')}
-                </li>
-              ))}
-            </ul>
-          )}
-          {links.length > 0 && (
-            <ul aria-label="Relationships" {...stylex.props(styles.list)}>
-              {links.map(({ edge, source, target }) => (
-                <li key={edge.id}>
-                  {source.label} {edge.direction === 'directed' ? '→' : '↔'} {target.label}: {edge.label}
-                </li>
-              ))}
-            </ul>
-          )}
-        </ChartDataDisclosure>
-      ) : null}
+      <ChartData
+        label={`${title} graph data`}
+        columns={[
+          { id: 'kind', label: 'Kind' },
+          { id: 'description', label: 'Description' },
+        ]}
+        rows={[
+          ...nodes.map((node) => ({
+            id: `node:${node.id}`,
+            values: ['Node', [node.label, node.description].filter((part) => part !== undefined).join(', ')],
+          })),
+          ...groups.map((group) => ({
+            id: `group:${group.id}`,
+            values: [
+              'Group',
+              `${group.label}: ${group.nodeIds.map((nodeId) => nodeMap.get(nodeId)?.label).join(', ')}`,
+            ],
+          })),
+          ...links.map(({ edge, source, target }) => ({
+            id: `edge:${edge.id}`,
+            values: [
+              'Relationship',
+              `${source.label + (edge.direction === 'directed' ? ' → ' : ' ↔ ') + target.label}: ${edge.label}`,
+            ],
+          })),
+        ]}
+      />
     </ChartFrame>
   );
 }

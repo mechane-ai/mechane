@@ -105,6 +105,7 @@ export const CONTRACT_NAMES = [
   'evidence-export',
   'environment-startup',
   'eval-adapter-boundaries',
+  'ui-notification-feedback',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

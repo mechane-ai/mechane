@@ -200,3 +200,7 @@ data actions open the shared Dialog with keyboard focus return.
 are developer documentation: the preview removes the inherited test tag, and no play assertion runs by default. Add a
 retained interaction check only for a consequential gap under the repository’s test-curation rules. Browser acceptance
 against the packaged Console remains necessary for application wiring and real requests.
+
+The Collection interactions catalog composes the shared search/filter mechanics with a page title, navigation and a
+table. Review its pending, failed and ready states at the same width. The application retains the query and read state;
+the controls retain local disclosure and focus state.

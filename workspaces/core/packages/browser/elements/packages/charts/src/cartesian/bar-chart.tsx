@@ -6,9 +6,10 @@ import type { KeyboardEvent, PointerEvent, ReactNode } from 'react';
 import { Skeleton } from '../../../feedback/src/index.ts';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { categoricalLimits, CategoricalValues, colorTone } from '../categorical-values.tsx';
+import { categoricalLimits, colorTone } from '../categorical-values.tsx';
 import { ChartCursor } from '../chart-cursor.tsx';
 import { ChartData } from '../chart-data.tsx';
+import type { ChartDataProps } from '../chart-data.tsx';
 import { ChartFrame } from '../chart-frame.tsx';
 import type { ChartSelection, ChartSeriesReport } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
@@ -70,7 +71,7 @@ type BarChartFrameProps = Pick<BarChartProps, 'title' | 'description' | 'report'
   readonly width?: number | undefined;
   readonly offset?: number | undefined;
   readonly source?: 'pointer' | 'keyboard' | undefined;
-  readonly data?: ReactNode;
+  readonly data?: ChartDataProps;
   readonly isLoading?: boolean | undefined;
   readonly children: ReactNode;
 };
@@ -117,7 +118,7 @@ function BarChartFrame({
       report={report}
       series={legend}
     >
-      <ChartData>{data}</ChartData>
+      {data !== undefined && <ChartData {...data} />}
       {hasUnknownLegend ? (
         <ChartLegendLoading />
       ) : (
@@ -415,16 +416,17 @@ export function BarChart({
       width={width}
       offset={x.bandwidth() / 2 + 8}
       source={inspection?.source}
-      data={
-        <CategoricalValues
-          items={categories.map((category, index) => ({
-            id: category.id,
-            label: category.label,
-            valueLabel: barValueLabel(disclosedSeries, index, formatValue),
-            tone: 'neutral',
-          }))}
-        />
-      }
+      data={{
+        label: `${title} observations`,
+        columns: [
+          { id: 'category', label: 'Category' },
+          { id: 'value', label: 'Value' },
+        ],
+        rows: categories.map((category, index) => ({
+          id: category.id,
+          values: [category.label, barValueLabel(disclosedSeries, index, formatValue)],
+        })),
+      }}
     >
       <div ref={ref} {...stylex.props(chartStyles.plot, styles.plot)}>
         {categories.length === 0 || (series.length === 0 && composition === undefined) ? (

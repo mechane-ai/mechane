@@ -32,6 +32,8 @@ Give a binding that uses a single character key without a modifier a setting to 
 Define each binding once, and derive every displayed shortcut label, tooltip, and help entry from that definition.
 Write bindings with a platform-neutral primary modifier, and display the key names of the current platform.
 
+Supply `CommandAction.shouldRun` when eligibility depends on the original keyboard event, such as preserving native find inside document content. Evaluate it before consuming the event. A collection registers commands on its own focus region.
+
 ## Checks
 
 Type ordinary text containing each new binding's keys into every text field in the affected view, and confirm only an opted-in editor command runs.

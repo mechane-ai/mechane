@@ -7,6 +7,7 @@ import { uiDesignTokens } from './ui-design-tokens.ts';
 import { uiDeterministicDisplayValues } from './ui-deterministic-display-values.ts';
 import { uiKeyboardShortcuts } from './ui-keyboard-shortcuts.ts';
 import { uiMotionLifecycle } from './ui-motion-lifecycle.ts';
+import { uiNotificationFeedback } from './ui-notification-feedback.ts';
 import { uiPresentationBoundaries } from './ui-presentation-boundaries.ts';
 import { uiPresentationState } from './ui-presentation-state.ts';
 import { uiReactInteractionOwnership } from './ui-react-interaction-ownership.ts';
@@ -30,4 +31,5 @@ export const UI_CONTRACTS = {
   'ui-data-tables': uiDataTables,
   'ui-time-series-charts': uiTimeSeriesCharts,
   'ui-keyboard-shortcuts': uiKeyboardShortcuts,
+  'ui-notification-feedback': uiNotificationFeedback,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

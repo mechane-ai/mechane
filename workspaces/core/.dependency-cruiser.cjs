@@ -347,6 +347,17 @@ module.exports = {
       to: { path: '^packages/browser/(?:catalog/|.*[.]stories[.]tsx$|[^/]+/[.]storybook/|[^/]+/vite[.]config[.]ts$)' },
     },
     {
+      name: 'ui-toast-vendor-owner',
+      comment:
+        'Import Elements notifications, such as `import { toast } from "@mechane-ai/elements/feedback"`; Sonner belongs only to the adapter and renderer (133)',
+      severity: 'error',
+      from: {
+        path: '^packages/browser/',
+        pathNot: '^packages/browser/elements/packages/feedback/src/(?:notifications[.]ts|toast[.]tsx)$',
+      },
+      to: { path: 'node_modules/sonner' },
+    },
+    {
       name: 'layer:@mechane/catalog',
       comment:
         'Import another member only through the entry point of a member in a lower layer that its lane and consumers allow, such as `@mechane/protocol` in `@mechane/client`',

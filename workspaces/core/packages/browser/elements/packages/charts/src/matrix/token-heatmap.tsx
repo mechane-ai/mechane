@@ -2,9 +2,11 @@ import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
 import { ColorLegend } from './color-legend.tsx';
 import { heatmapColor, heatmapScaleProblem, isHeatmapValueInDomain } from './heatmap-scale.ts';
 import type { HeatmapScale } from './heatmap-scale.ts';
@@ -104,13 +106,17 @@ export function TokenHeatmap({
   selection,
   emptyLabel,
 }: TokenHeatmapProps): ReactNode {
+  const items = tokens.map((token) => ({
+    id: token.id,
+    label: `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${tokenScoreText(token, domain, formatValue)}`,
+  }));
+
+  const navigation = useChartNavigation({ title, items, selection });
   const problem = tokenProblem({ tokens, domain, palette });
 
   if (problem !== null) {
     return <ChartInputError title={title} report={report} description={description} message={problem} />;
   }
-
-  const selected = tokens.find((token) => token.id === selection?.selectedId);
 
   return (
     <ChartFrame
@@ -120,21 +126,17 @@ export function TokenHeatmap({
       footer={
         <div {...stylex.props(styles.footer)}>
           <ColorLegend label={valueLabel} domain={domain} palette={palette} formatValue={formatValue} />
-          {selection !== undefined && tokens.length > 0 && (
-            <ChartReadout>
-              {selected === undefined
-                ? 'Select a token to inspect its exact text and score.'
-                : `Token ${selected.index}, ${JSON.stringify(selected.text)}, ${valueLabel}: ${tokenScoreText(selected, domain, formatValue)}`}
-            </ChartReadout>
-          )}
+          <ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>
         </div>
       }
     >
       {tokens.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <p aria-label={`${title} token text`} {...stylex.props(styles.text)}>
+        <p {...navigation.props} {...stylex.props(styles.text)}>
           {tokens.map((token) => {
+            const isInspected = navigation.label !== undefined && navigation.activeId === token.id;
+
             const isOutsideDomain = token.score !== null && !isHeatmapValueInDomain(token.score, domain);
 
             const label = `Token ${token.index}, ${JSON.stringify(token.text)}, ${valueLabel}: ${tokenScoreText(token, domain, formatValue)}`;
@@ -145,17 +147,19 @@ export function TokenHeatmap({
                 ? styles.missing
                 : styles.color(heatmapColor(token.score, { domain, palette })),
               selection !== undefined && styles.interactive,
-              selection?.selectedId === token.id && styles.selected,
+              (selection?.selectedId === token.id || isInspected) && styles.selected,
             );
 
             return selection === undefined ? (
-              <span key={token.id} title={label} {...appearance}>
+              <span key={token.id} title={label} onPointerEnter={() => navigation.inspect(token.id)} {...appearance}>
                 {token.text}
               </span>
             ) : (
               <button
                 key={token.id}
                 type="button"
+                tabIndex={-1}
+                onPointerEnter={() => navigation.inspect(token.id)}
                 aria-label={label}
                 aria-pressed={selection.selectedId === token.id}
                 onClick={() => selection.onSelect(token.id)}
@@ -167,42 +171,18 @@ export function TokenHeatmap({
           })}
         </p>
       )}
-      {tokens.length > 0 && (
-        <ChartDataDisclosure label="Token values">
-          <table {...stylex.props(styles.table)}>
-            <thead>
-              <tr>
-                <th scope="col" {...stylex.props(styles.cell)}>
-                  Index
-                </th>
-                <th scope="col" {...stylex.props(styles.cell)}>
-                  Exact text
-                </th>
-                <th scope="col" {...stylex.props(styles.cell)}>
-                  {valueLabel}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tokens.map((token) => (
-                <tr key={token.id}>
-                  <td {...stylex.props(styles.cell, styles.index)}>
-                    <ChartDatumButton
-                      label={`Select token ${token.index}: ${JSON.stringify(token.text)}`}
-                      isSelected={selection?.selectedId === token.id}
-                      onSelect={selection === undefined ? undefined : () => selection.onSelect(token.id)}
-                    >
-                      {token.index}
-                    </ChartDatumButton>
-                  </td>
-                  <td {...stylex.props(styles.cell, styles.literal)}>{JSON.stringify(token.text)}</td>
-                  <td {...stylex.props(styles.cell)}>{tokenScoreText(token, domain, formatValue)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </ChartDataDisclosure>
-      )}
+      <ChartData
+        label={`${title} token values`}
+        columns={[
+          { id: 'index', label: 'Index' },
+          { id: 'text', label: 'Exact text' },
+          { id: 'value', label: valueLabel },
+        ]}
+        rows={tokens.map((token) => ({
+          id: token.id,
+          values: [String(token.index), JSON.stringify(token.text), tokenScoreText(token, domain, formatValue)],
+        }))}
+      />
     </ChartFrame>
   );
 }

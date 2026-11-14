@@ -14,12 +14,12 @@ before acting. `AlertDialog` names a consequential action and affected record. K
 dialog with an inline error until the application acknowledges success. These controls compose their triggers through
 `render` and delegate positioning, dismissal and focus to Base UI.
 
-Mount one `Toaster` from `/feedback` at the application root and call the exported Sonner `toast` API for outcomes.
-Elements supplies its typography, surfaces, controls, and motion; Sonner owns queueing, dismissal, pause behavior, and
-keyboard access. Use a stable notification ID for a resource's refresh failure and offer Retry. Retain usable content
-and drafts, and dismiss owned notifications on recovery or navigation. A failed first read uses a local `Notice` and
-Retry instead of an empty result. Field validation stays beside its field. Give each failure one presentation owner
-rather than showing it as both a banner and a toast.
+Mount one `Toaster` from `/feedback` at the application root and call the supported Elements `toast` API for outcomes.
+Elements owns plain-text payloads, one optional action and compact visual defaults; Sonner owns queueing, dismissal,
+pause behavior, and keyboard access. Use a stable notification ID for a resource's refresh failure and offer Retry.
+Retain usable content and drafts, and dismiss owned notifications on recovery or navigation. A failed first read uses a
+local `Notice` and Retry instead of an empty result. Field validation stays beside its field. Give each failure one
+presentation owner rather than showing it as both a banner and a toast.
 
 `Accordion` groups related disclosures; `Collapsible` owns a single optional region. Their controlled and default values
 are mutually exclusive. They contain supplied content and do not fetch on opening. `Breadcrumb` describes location using
@@ -54,3 +54,8 @@ The source families are [overlays](../packages/browser/elements/packages/overlay
 [feedback](../packages/browser/elements/packages/feedback/src/progress.tsx), and
 [trace](../packages/browser/elements/packages/content/src/trace.tsx). Storybook builds those same implementations from
 synthetic inputs without application providers or live services.
+
+Use `toast.error({ title: 'Could not save', id: 'save-record', action: { label: 'Retry', onClick: retry } })` for an
+actionable outcome. The same object form applies to success, info and warning. Loading requires a stable ID; dismiss
+with `toast.dismiss({ id })`. Actionable and loading notifications persist, and `shouldPersist: true` keeps another
+required notice available. Applications own updates and cleanup. There is no custom-markup or request-lifecycle API.

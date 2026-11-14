@@ -136,3 +136,17 @@ application-owned persistence. The component writes no browser storage. To resto
 layout's React key with its initial values. The
 [resizing story](../packages/browser/elements/packages/layout/src/resizable.stories.tsx) shows a source pane and
 inspector that stay mounted throughout the gesture.
+
+## Collection interactions
+
+Use `useCollectionControls` from `/collections` for search, filter picking, applied chips and focus restoration. Supply
+current values and callbacks; the hook does not fetch, filter records or write URL state. Option icons are supplied
+React content. It returns `actions`, `chips`, local `onKeyDown` handling and `openSearch`.
+
+Place actions in the existing page or section header, or beside PageNavigation when that row owns the view controls.
+Place active chips below it through CollectionToolbar. Keep the title, navigation and row layout with their existing
+owners. The Collection interactions catalog demonstrates this composition and its pending and failed states.
+
+Applications can register `openSearch` through `useCommandShortcuts` with an explicit focus region and eligibility. The
+collection hook adds no global shortcut or fixed shortcut hint. Text entry, native document find and modal focus retain
+their normal behavior.

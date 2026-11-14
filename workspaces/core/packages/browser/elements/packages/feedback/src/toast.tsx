@@ -64,7 +64,7 @@ const styles = stylex.create({
     fontWeight: typography.mediumWeight,
     display: '-webkit-box',
     WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 2,
+    WebkitLineClamp: 1,
     overflow: 'hidden',
     overflowWrap: 'anywhere',
   },
@@ -72,7 +72,7 @@ const styles = stylex.create({
     color: colors.muted,
     display: '-webkit-box',
     WebkitBoxOrient: 'vertical',
-    WebkitLineClamp: 2,
+    WebkitLineClamp: 1,
     overflow: 'hidden',
     overflowWrap: 'anywhere',
   },
@@ -141,7 +141,6 @@ export type ToasterProps = Pick<
   | 'position'
   | 'hotkey'
   | 'expand'
-  | 'duration'
   | 'visibleToasts'
   | 'closeButton'
   | 'offset'

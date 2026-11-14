@@ -162,3 +162,7 @@ clamped percentage. The
 
 The catalog contains synthetic missing, zero, masked, signed, partial, narrow, invalid, and linked-selection examples.
 These examples document public behavior. They do not imply that the Mechane API produces every illustrated dataset.
+
+Charts keep their exact-value alternatives static. Use arrow keys in a plot to inspect observations and Enter to
+activate supplied selection. Matrix and graph alternatives retain cell states and relationships. A visible breakdown
+table is supplied by the application; charts add no data accordion.

@@ -31,3 +31,8 @@ export type { TimestampProps } from './timestamp.tsx';
 export { Timestamp } from './timestamp.tsx';
 export { Timeline } from './timeline.tsx';
 export type { TimelineProps, TimelineItemProps } from './timeline.tsx';
+
+export { useCollectionControls } from './use-collection-controls.tsx';
+export type { CollectionSearch, CollectionControlsProps } from './use-collection-controls.tsx';
+export { CollectionFilters } from './collection-filters.tsx';
+export type { CollectionFilter, FilterOption } from './collection-filters.tsx';

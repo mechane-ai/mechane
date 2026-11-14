@@ -28,6 +28,8 @@ Show the empty-state message in place of rows when the supplied rows are empty, 
 Use a data table to compare several records across shared columns, not to lay out one record's labels and values or to arrange a page.
 Build unusual grouped or spanning table structures with semantic HTML instead of adding options for them to the data table.
 
+Use `useCollectionControls` for reusable search disclosure, filter picking, applied chips and focus restoration. Applications own queries, URL state, view composition and keyboard-command eligibility. The hook registers no document listener.
+
 ## Checks
 
 Review the data table's public interface for row-processing inputs, data-access types, and internal table-engine types.

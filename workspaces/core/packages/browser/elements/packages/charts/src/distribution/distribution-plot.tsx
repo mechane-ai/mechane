@@ -1,5 +1,5 @@
 import * as stylex from '@stylexjs/stylex';
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { colors, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
 import { usePlotWidth } from '../plot-width.ts';
 import type { NumericDomain } from './distribution-input.ts';
@@ -76,6 +76,8 @@ export const distributionStyles = stylex.create({
 });
 
 type NumericPlotProps = {
+  readonly navigation?: HTMLAttributes<HTMLElement>;
+  readonly onInspectValue?: (value: number) => void;
   readonly xDomain: NumericDomain;
   readonly yDomain: NumericDomain;
   readonly xLabel: string;
@@ -86,6 +88,8 @@ type NumericPlotProps = {
 };
 
 export function NumericPlot({
+  navigation,
+  onInspectValue,
   xDomain,
   yDomain,
   xLabel,
@@ -109,9 +113,19 @@ export function NumericPlot({
           <span key={tick}>{formatY(tick)}</span>
         ))}
       </div>
-      <div ref={ref} {...stylex.props(distributionStyles.plotArea)}>
+      <div ref={ref} {...navigation} {...stylex.props(distributionStyles.plotArea)}>
         <svg
           aria-hidden
+          onPointerMove={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect();
+
+            onInspectValue?.(xDomain[0] + ((event.clientX - bounds.left) / bounds.width) * (xDomain[1] - xDomain[0]));
+          }}
+          onPointerDown={(event) => {
+            const bounds = event.currentTarget.getBoundingClientRect();
+
+            onInspectValue?.(xDomain[0] + ((event.clientX - bounds.left) / bounds.width) * (xDomain[1] - xDomain[0]));
+          }}
           viewBox={`0 0 ${width} ${distributionGeometry.height}`}
           preserveAspectRatio="none"
           {...stylex.props(distributionStyles.svg)}

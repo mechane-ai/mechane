@@ -4,9 +4,12 @@ import { Bar } from '@visx/shape';
 import type { ReactNode } from 'react';
 import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
+import { chartStyles } from '../chart-theme.ts';
 import { distributionInputError, distributionLimits, outsideDomain } from './distribution-input.ts';
 import type { NumericDomain } from './distribution-input.ts';
 import { distributionGeometry, distributionStyles, NumericPlot } from './distribution-plot.tsx';
@@ -50,6 +53,12 @@ export function Histogram({
   selection,
   emptyLabel = 'No histogram bins are available.',
 }: HistogramProps): ReactNode {
+  const items = bins.map((bin) => ({
+    id: bin.id,
+    label: `${bin.label}, ${formatValue(bin.lowerBound)} – ${formatValue(bin.upperBound)}, ${countLabel}: ${bin.count === null ? 'Unavailable' : formatCount(bin.count)}`,
+  }));
+
+  const navigation = useChartNavigation({ title, items, selection });
   const inputError = histogramInputError({ bins, domain, maximumCount });
 
   if (inputError !== undefined) {
@@ -57,28 +66,27 @@ export function Histogram({
   }
 
   const yScale = scaleLinear({ domain: [0, maximumCount], range: [distributionGeometry.height, 0] });
-  const selected = bins.find((bin) => bin.id === selection?.selectedId);
 
   return (
     <ChartFrame
       title={title}
       report={report}
       description={description}
-      footer={
-        selection !== undefined && bins.length > 0 ? (
-          <ChartReadout>
-            {selected === undefined
-              ? 'Select a bin in View data to inspect its count.'
-              : `${selected.label}, ${formatValue(selected.lowerBound)} – ${formatValue(selected.upperBound)}, ${countLabel}: ${selected.count === null ? 'Unavailable' : formatCount(selected.count)}`}
-          </ChartReadout>
-        ) : undefined
-      }
+      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
     >
       {bins.length === 0 ? (
         <p {...stylex.props(distributionStyles.empty)}>{emptyLabel}</p>
       ) : (
         <>
           <NumericPlot
+            navigation={navigation.props}
+            onInspectValue={(value) => {
+              const bin = bins.find((item) => value >= item.lowerBound && value <= item.upperBound);
+
+              if (bin !== undefined) {
+                navigation.inspect(bin.id);
+              }
+            }}
             xDomain={domain}
             yDomain={[0, maximumCount]}
             xLabel={valueLabel}
@@ -93,12 +101,17 @@ export function Histogram({
                 const left = xScale(bin.lowerBound);
                 const width = xScale(bin.upperBound) - left;
                 const gap = Math.min(2, width * 0.2);
-                const isSelected = selection?.selectedId === bin.id;
+
+                const isSelected =
+                  selection?.selectedId === bin.id ||
+                  (navigation.label !== undefined && navigation.activeId === bin.id);
 
                 if (bin.count === null) {
                   return (
                     <Bar
                       key={bin.id}
+                      onPointerEnter={() => navigation.inspect(bin.id)}
+                      onClick={() => selection?.onSelect(bin.id)}
                       x={left + gap / 2}
                       y={distributionGeometry.height - 6}
                       width={width - gap}
@@ -113,41 +126,25 @@ export function Histogram({
                 return (
                   <Bar
                     key={bin.id}
+                    onPointerEnter={() => navigation.inspect(bin.id)}
+                    onClick={() => selection?.onSelect(bin.id)}
                     x={left + gap / 2}
                     y={top}
                     width={width - gap}
                     height={distributionGeometry.height - top}
                     fill={chartToneColors[tone]}
+                    {...stylex.props(isSelected && chartStyles.selected)}
                     opacity={selection?.selectedId === undefined || isSelected ? 1 : 0.45}
                   />
                 );
               });
             }}
           </NumericPlot>
-          <ChartDataDisclosure>
-            <div {...stylex.props(distributionStyles.values)}>
-              {bins.map((bin) => {
-                const count = bin.count === null ? 'Unavailable' : formatCount(bin.count);
-                const range = `${formatValue(bin.lowerBound)} – ${formatValue(bin.upperBound)}`;
-
-                return (
-                  <ChartDatumButton
-                    key={bin.id}
-                    label={`${bin.label}, ${range}, ${countLabel}: ${count}`}
-                    isSelected={selection?.selectedId === bin.id}
-                    onSelect={selection === undefined ? undefined : () => selection.onSelect(bin.id)}
-                  >
-                    <span {...stylex.props(distributionStyles.value)}>
-                      <span>
-                        {bin.label} · {range}
-                      </span>
-                      <span {...stylex.props(distributionStyles.summary)}>{count}</span>
-                    </span>
-                  </ChartDatumButton>
-                );
-              })}
-            </div>
-          </ChartDataDisclosure>
+          <ChartData
+            label={`${title} observations`}
+            columns={[{ id: 'observation', label: 'Observation' }]}
+            rows={items.map((item) => ({ id: item.id, values: [item.label] }))}
+          />
         </>
       )}
     </ChartFrame>

@@ -8,9 +8,11 @@ import { chartToneColors } from '../../../foundations/src/chart-tones.ts';
 import type { ChartTone } from '../../../foundations/src/chart-tones.ts';
 import { conditions } from '../../../foundations/src/constants.stylex.ts';
 import { colors, controls, spacing, typography } from '../../../foundations/src/tokens.stylex.ts';
-import { ChartDataDisclosure, ChartDatumButton, ChartFrame, ChartReadout } from '../chart-frame.tsx';
+import { ChartData } from '../chart-data.tsx';
+import { ChartFrame, ChartReadout } from '../chart-frame.tsx';
 import type { ChartReport, ChartSelection } from '../chart-frame.tsx';
 import { ChartInputError, hasUniqueIds, isFiniteDomain } from '../chart-input.tsx';
+import { useChartNavigation } from '../chart-navigation.tsx';
 import { chartStyles } from '../chart-theme.ts';
 import { usePlotWidth } from '../plot-width.ts';
 
@@ -139,6 +141,15 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
     emptyLabel,
   } = props;
 
+  const navigation = useChartNavigation({
+    title,
+    selection,
+    items: points.map((point) => ({
+      id: point.id,
+      label: `${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`,
+    })),
+  });
+
   const { ref, width } = usePlotWidth();
   const problem = scatterProblem(props);
 
@@ -152,27 +163,18 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
   });
 
   const scaleY = scaleLinear({ domain: [...yDomain], range: [PLOT_HEIGHT - BOTTOM_MARGIN, TOP_MARGIN] });
-  const selected = points.find((point) => point.id === selection?.selectedId);
 
   return (
     <ChartFrame
       title={title}
       report={report}
       description={description}
-      footer={
-        selection !== undefined && points.length > 0 ? (
-          <ChartReadout>
-            {selected === undefined
-              ? 'Select a point to inspect its label and coordinates.'
-              : `${selected.label}, ${xLabel}: ${formatX(selected.x)}, ${yLabel}: ${formatY(selected.y)}`}
-          </ChartReadout>
-        ) : undefined
-      }
+      footer={<ChartReadout id={navigation.id}>{navigation.label ?? '\u00A0'}</ChartReadout>}
     >
       {points.length === 0 ? (
         <p {...stylex.props(styles.empty)}>{emptyLabel}</p>
       ) : (
-        <div ref={ref} {...stylex.props(styles.plot)}>
+        <div ref={ref} {...navigation.props} {...stylex.props(styles.plot)}>
           <ScatterCanvas
             key={`${xDomain[0]}:${xDomain[1]}:${yDomain[0]}:${yDomain[1]}:${width}`}
             width={width}
@@ -180,49 +182,50 @@ export function ScatterPlot(props: ScatterPlotProps): ReactNode {
             scaleY={scaleY}
             {...props}
           />
-          {selection !== undefined && (
+          {points.length > 0 && (
             <div {...stylex.props(styles.marks)}>
-              {points.map((point) => (
-                <button
-                  key={point.id}
-                  type="button"
-                  title={point.label}
-                  aria-label={`${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`}
-                  aria-pressed={selection.selectedId === point.id}
-                  onClick={() => selection.onSelect(point.id)}
-                  {...stylex.props(styles.target, styles.location(scaleX(point.x), scaleY(point.y)))}
-                >
-                  <span
-                    aria-hidden
-                    {...stylex.props(
-                      styles.dot(chartToneColors[point.tone]),
-                      selection.selectedId === point.id && styles.selected,
-                    )}
-                  />
-                </button>
-              ))}
+              {points.map((point) => {
+                const isInspected = navigation.label !== undefined && navigation.activeId === point.id;
+
+                return (
+                  <button
+                    key={point.id}
+                    type="button"
+                    tabIndex={-1}
+                    onPointerEnter={() => navigation.inspect(point.id)}
+                    title={point.label}
+                    aria-label={`${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`}
+                    aria-pressed={selection === undefined ? undefined : selection.selectedId === point.id}
+                    onClick={() => {
+                      navigation.inspect(point.id);
+                      selection?.onSelect(point.id);
+                    }}
+                    {...stylex.props(styles.target, styles.location(scaleX(point.x), scaleY(point.y)))}
+                  >
+                    <span
+                      aria-hidden
+                      {...stylex.props(
+                        styles.dot(chartToneColors[point.tone]),
+                        (selection?.selectedId === point.id || isInspected) && styles.selected,
+                      )}
+                    />
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       )}
       {rangeSelection !== undefined && <RangeControls {...props} rangeSelection={rangeSelection} />}
-      {points.length > 0 && (
-        <ChartDataDisclosure>
-          {points.map((point) => (
-            <ChartDatumButton
-              key={point.id}
-              label={`${point.label}, ${xLabel}: ${formatX(point.x)}, ${yLabel}: ${formatY(point.y)}`}
-              isSelected={selection?.selectedId === point.id}
-              onSelect={selection === undefined ? undefined : () => selection.onSelect(point.id)}
-            >
-              <span>{point.label}</span>
-              <span {...stylex.props(styles.values)}>
-                {formatX(point.x)} · {formatY(point.y)}
-              </span>
-            </ChartDatumButton>
-          ))}
-        </ChartDataDisclosure>
-      )}
+      <ChartData
+        label={`${title} points`}
+        columns={[
+          { id: 'point', label: 'Point' },
+          { id: 'x', label: xLabel },
+          { id: 'y', label: yLabel },
+        ]}
+        rows={points.map((point) => ({ id: point.id, values: [point.label, formatX(point.x), formatY(point.y)] }))}
+      />
     </ChartFrame>
   );
 }
@@ -231,12 +234,10 @@ function ScatterCanvas({
   width,
   scaleX,
   scaleY,
-  points,
   xLabel,
   yLabel,
   formatX,
   formatY,
-  selection,
   rangeSelection,
 }: ScatterPlotProps & {
   readonly width: number;
@@ -400,10 +401,6 @@ function ScatterCanvas({
             {...stylex.props(styles.range)}
           />
         )}
-        {selection === undefined &&
-          points.map((point) => (
-            <circle key={point.id} cx={scaleX(point.x)} cy={scaleY(point.y)} r={4} fill={chartToneColors[point.tone]} />
-          ))}
       </g>
     </svg>
   );

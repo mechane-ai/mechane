@@ -36,6 +36,8 @@ Open at most one modal overlay at a time.
 Name the affected record in a destructive confirmation.
 Return focus to the invoking control when an overlay or disclosure closes, or to a surviving related control when the invoker was removed.
 
+Keep chart textual alternatives static and noninteractive. Inspection and selection belong in visible chart controls. A hidden data alternative accepts formatted text records, never arbitrary interactive content.
+
 ## Checks
 
 Tab through the rendered page, then Shift+Tab back. Can each stop operate a control, inspect a chart, read a tab panel,

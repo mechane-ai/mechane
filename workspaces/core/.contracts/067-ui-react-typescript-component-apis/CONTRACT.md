@@ -22,6 +22,8 @@ Keep data-layer types, such as query builders, database collections, and transpo
 
 Guard a consequential rejected combination with a compile-time assertion such as `@ts-expect-error` rather than prose alone.
 
+Elements notifications accept plain text and a labelled action through their own API. Keep implementation-library options private. Collection interaction inputs contain supplied values, callbacks and generic icon content.
+
 ## Checks
 
 Run the TypeScript compiler over the component package and its consumers.

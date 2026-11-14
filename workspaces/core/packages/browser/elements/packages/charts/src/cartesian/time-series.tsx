@@ -517,39 +517,24 @@ function TimeChart({
         series={prepared}
         actions={actions}
       >
-        <ChartData>
-          <table {...stylex.props(styles.table)}>
-            <caption>{title} observations</caption>
-            <thead>
-              <tr>
-                <th scope="col" {...stylex.props(styles.cell)}>
-                  Time ({timestampUnit})
-                </th>
-                {prepared.map((item) => (
-                  <th key={item.id} scope="col" {...stylex.props(styles.cell)}>
-                    {item.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {points.map((point, index) => (
-                <tr key={point.timestamp}>
-                  <th scope="row" {...stylex.props(styles.cell)}>
-                    {formatTimestamp(point.timestamp)}
-                  </th>
-                  {prepared.map((item) => (
-                    <td key={item.id} {...stylex.props(styles.cell)}>
-                      {item.points[index]?.value === null || item.points[index]?.value === undefined
-                        ? 'Unavailable'
-                        : formatValue(item.points[index].value)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </ChartData>
+        <ChartData
+          label={`${title} observations`}
+          columns={[
+            { id: 'time', label: `Time (${timestampUnit})` },
+            ...prepared.map((item) => ({ id: `series:${item.id}`, label: item.label })),
+          ]}
+          rows={points.map((point, index) => ({
+            id: point.timestamp,
+            values: [
+              formatTimestamp(point.timestamp),
+              ...prepared.map((item) =>
+                item.points[index]?.value === null || item.points[index]?.value === undefined
+                  ? 'Unavailable'
+                  : formatValue(item.points[index].value),
+              ),
+            ],
+          }))}
+        />
         <div {...stylex.props(styles.body)}>
           <ChartInspection
             id={inspectionId}
