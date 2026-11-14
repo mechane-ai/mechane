@@ -40,22 +40,26 @@ Confirm that an evaluation request produced no external effect, and that a requi
 
 ## Local adaptations
 
-The runner reaches `/api/v1` through `@mechane/client` and `@mechane/protocol`, using `sendNotification`, `listTurns`,
-`showTurn`, and `listConsoleMessages`. It exercises the normal notification-driven Pi path and explicit Console
-communication tool. It imports no private runtime implementation and adds no evaluation-only runtime callback.
+The shared runner calls the declared `/api/v1` operations through `@mechane/client` and protocol schemas. It uses the
+ordinary notification/activation/Pi path, with explicit Console publication only when the suite assesses that reply.
+Application tools are supplied through scoped MCP connections; the runner does not import private Worker handlers.
+Run coordination and grading records stay in the Node library/CLI, outside the deployed execution engine.
 
-Each repeat derives its trial identity from the plan, case, and repeat. Each role uses a fresh mech with empty working
-context, no retained home notes, and no inherited execution grant. Cases currently have one round. The plan records the
-release and runtime revision; suite subject instructions and both models remain frozen, with grader instructions in the
-release. Collected activation and explicit message identities tie the saved outcome to that role's notification.
+Each trial and repeat has fresh subject/judge mechs and no inherited conversation, home notes, or execution grant.
+`nativeTools` is an ordinary definition capability: application-tool subjects can select no native tools, and the
+legacy reply subject selects `console_message`. Current runtime authorization still governs dispatch and replay.
+Application adapters must disclose whether tool results establish capture, accepted state, or an observed effect.
+Synthetic fixture receipts alone cannot establish application transactions, UI rendering, or external delivery.
 
-Trials need workspace and sandbox policy that prevents external publication. A missing credential grant does not prove
-network or effect isolation. Verify policy and observe required effects in local fakes. Public API use does not waive the
-Rules above.
+The manifest records the actual deployment release/runtime revision, model settings, tool definitions, grade schema,
+and adapter/component identities. The published library archive includes its canonical client/schema closure.
+Consumers pin an immutable artifact or configure an explicit deployment endpoint; a sibling checkout is no dependency.
+Local and hosted runs share the coordinator, with loopback or scoped tunnel transport chosen at composition.
 
-The retained runner does not yet mark evaluation mechs separately from ordinary workspace mechs or record every resolved
-model and empty-state fact required by this contract. Keep these coverage gaps explicit; a public-path smoke is not
-complete evaluation isolation.
+Eval resources are identified by their stable names, operation identities, and scoped grants. They do not have a
+separate server-side resource category. Fresh tools-only profiles constrain native effects, but supplied remote tools
+still require their own authorized fixture/effect boundary. A passing public-path smoke does not establish every
+external platform's isolation or runtime compatibility.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

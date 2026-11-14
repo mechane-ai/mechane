@@ -7,13 +7,14 @@ import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { WorkspacePath } from '../workspaces/schemas.ts';
-import { Instructions, Mech, MechName } from './schemas.ts';
+import { Instructions, Mech, MechName, NativeTools } from './schemas.ts';
 
 /** A mech to create; without a model, it gets the deployment's first offer, and without a cap, its default cap. */
 const CreateMechBody = wireStruct({
   fields: {
     name: MechName,
     instructions: Schema.optional(Instructions),
+    nativeTools: Schema.optional(NativeTools),
     model: Schema.optional(ModelId),
     dailyCapMicros: Schema.optional(Micros),
     requestId: Schema.optional(CreationRequestId),

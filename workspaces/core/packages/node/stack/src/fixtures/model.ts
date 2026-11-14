@@ -2,7 +2,7 @@ import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/reco
 import { Option } from 'effect';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
-import type { ModelCall, ModelCallSelector, ModelFixture, ModelPlan, ModelReply } from '../types.ts';
+import type { ModelCall, ModelCallSelector, ModelFixture, ModelPlan, ModelReply, ModelToolCall } from '../types.ts';
 import { record, startHttpService, text } from './http.ts';
 import type { HttpService } from './http.ts';
 
@@ -152,7 +152,9 @@ export async function startModelFixture(): Promise<StartedModel> {
 
     const measuredReply = { ...reply, promptTokens: reply.promptTokens ?? estimatedPromptTokens };
 
-    return modelResponse(text(body['model']), measuredReply, body['stream'] === true);
+    const resolvedReply = resolveReplyTools(measuredReply, body);
+
+    return modelResponse(text(body['model']), resolvedReply, body['stream'] === true);
   }
 
   const service = await startHttpService(handle);
@@ -175,6 +177,39 @@ export async function startModelFixture(): Promise<StartedModel> {
       await service.close();
     },
   };
+}
+
+function resolveReplyTools(reply: ModelReply, body: Readonly<Record<string, unknown>>): ModelReply {
+  if (reply.tools === undefined) {
+    return reply;
+  }
+
+  const tools = reply.tools.map((tool) => ({ ...tool, name: resolveToolName(tool, body) }));
+
+  return { ...reply, tools };
+}
+
+function resolveToolName(tool: ModelToolCall, body: Readonly<Record<string, unknown>>): string {
+  if (tool.namePrefix === undefined) {
+    return tool.name;
+  }
+
+  const offered = body['tools'];
+
+  if (!Array.isArray(offered)) {
+    throw new TypeError('The configured tool prefix has no offered tools');
+  }
+
+  const names = offered.map((candidate) => text(record(record(candidate)['function'])['name']));
+  const prefix = tool.namePrefix;
+  const matching = names.filter((name) => name.startsWith(prefix));
+  const [name] = matching;
+
+  if (matching.length !== 1 || name === undefined) {
+    throw new Error(`The configured tool prefix ${prefix} matched ${matching.length} offered tools`);
+  }
+
+  return name;
 }
 
 function latestMatchingPlan(plans: Iterable<PlanState>, prompt: string): PlanState | undefined {

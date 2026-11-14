@@ -1,7 +1,7 @@
 import { tool } from 'ai';
 import type { ToolSet } from 'ai';
 import { z } from 'zod';
-import { toolConfiguration, withToolStore } from '../context.ts';
+import { requireNativeTool, toolConfiguration } from '../context.ts';
 import type { RuntimeToolContext } from '../types.ts';
 import { listSandboxProcesses, readSandboxProcess, stopSandboxProcess } from './client.ts';
 import { processObservation } from './results.ts';
@@ -44,6 +44,8 @@ export function processTools({ executeStart = startProcess, ...context }: Proces
 }
 
 async function readProcess(input: ProcessSelection): Promise<ProcessToolResult> {
+  await requireNativeTool({ ...input, name: 'read_process' });
+
   const configuration = toolConfiguration();
   const observation = await readSandboxProcess({ ...input, configuration, shouldTouch: true });
 
@@ -51,6 +53,8 @@ async function readProcess(input: ProcessSelection): Promise<ProcessToolResult> 
 }
 
 async function stopProcess(input: ProcessSelection): Promise<ProcessToolResult> {
+  await requireNativeTool({ ...input, name: 'stop_process' });
+
   const configuration = toolConfiguration();
   const observation = await stopSandboxProcess({ ...input, configuration });
 
@@ -60,7 +64,7 @@ async function stopProcess(input: ProcessSelection): Promise<ProcessToolResult> 
 async function listProcesses(input: RuntimeToolContext) {
   const configuration = toolConfiguration();
 
-  await withToolStore(async (store) => await store.getMech(input));
+  await requireNativeTool({ ...input, name: 'list_processes' });
 
   const processes = await listSandboxProcesses({ ...input, configuration, shouldTouch: true });
 

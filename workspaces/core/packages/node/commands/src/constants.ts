@@ -37,6 +37,9 @@ export const ErrorCode = {
   AllowanceExhausted: 'AllowanceExhausted',
   EvalFileFailed: 'EvalFileFailed',
   EvalInterrupted: 'EvalInterrupted',
+  EvalAdapterFailed: 'EvalAdapterFailed',
+  EvalTransportFailed: 'EvalTransportFailed',
+  EvalManifestMissing: 'EvalManifestMissing',
   EvalResponseInvalid: 'EvalResponseInvalid',
 } as const;
 

@@ -8,7 +8,7 @@ import { isExecutionCurrent } from '../admission.ts';
 import { joinReceiptTask, withReceiptTaskOwner } from '../receipt-task.ts';
 import type { ReceiptJoin, ReceiptTaskControl } from '../receipt-task.ts';
 import type { BrowserToolResult } from './browser-result.ts';
-import { abandonBrowserExecution, executeBrowser, observeBrowser } from './browser.ts';
+import { abandonBrowserExecution, browserToolName, executeBrowser, observeBrowser } from './browser.ts';
 import type { BrowserInvocation } from './browser.ts';
 
 type BrowserInput = BrowserInvocation & ReceiptTaskControl & { readonly isCleanup?: boolean };
@@ -40,7 +40,12 @@ export function createBrowserExecutionTask(getAccess: () => ActorAccess) {
     const access = getAccess();
 
     const result = await withReceiptTaskOwner(
-      { access, ...input, run: async () => await executeBrowser({ ...input, hasExpired }) },
+      {
+        access,
+        ...input,
+        toolName: browserToolName(input.action._tag),
+        run: async () => await executeBrowser({ ...input, hasExpired }),
+      },
       context,
     );
 
@@ -48,7 +53,10 @@ export function createBrowserExecutionTask(getAccess: () => ActorAccess) {
       return { result, isCleanupRequired: false };
     }
 
-    const isCurrent = await isExecutionCurrent({ access, ...input }, context).catch(() => false);
+    const isCurrent = await isExecutionCurrent(
+      { access, ...input, toolName: browserToolName(input.action._tag) },
+      context,
+    ).catch(() => false);
 
     if (!hasExpired() && isCurrent) {
       return { result, isCleanupRequired: false };
@@ -56,7 +64,12 @@ export function createBrowserExecutionTask(getAccess: () => ActorAccess) {
 
     try {
       const abandoned = await withReceiptTaskOwner(
-        { access, ...input, run: async () => await abandonBrowserExecution(input) },
+        {
+          access,
+          ...input,
+          toolName: browserToolName(input.action._tag),
+          run: async () => await abandonBrowserExecution(input),
+        },
         context,
       );
 
@@ -76,6 +89,7 @@ export function createBrowserExecutionTask(getAccess: () => ActorAccess) {
         {
           access: getAccess(),
           ...current.input,
+          toolName: browserToolName(current.input.action._tag),
           run: async () => {
             if (current.state.checkpoint.phase === 'abandon') {
               return await abandonBrowserExecution(current.input);

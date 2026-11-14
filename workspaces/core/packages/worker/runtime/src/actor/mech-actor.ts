@@ -508,6 +508,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
         browserTask: this.#browserTask,
         processTask: this.#processTask,
         shouldDiscoverMcp,
+        nativeTools: mech.nativeTools,
       },
       configuration,
     );

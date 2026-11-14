@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.32.0",
+  "release": "0.33.0",
   "flags": [
     {
       "name": "origin",
@@ -1329,6 +1329,50 @@
       ]
     },
     {
+      "name": "eval inspect",
+      "summary": "inspect saved evaluation completion, evidence, grades, usage, and cleanup without credentials or a runtime",
+      "shape": "document",
+      "operations": [],
+      "flags": [
+        {
+          "name": "case",
+          "kind": "text",
+          "summary": "show the saved trials of one case while retaining the whole-run denominators",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "run-folder",
+          "summary": "the saved evaluation directory"
+        }
+      ]
+    },
+    {
+      "name": "eval compare",
+      "summary": "compare saved evaluations with matching cases, judge, fixture, evidence, and grading rules without model requests",
+      "shape": "document",
+      "operations": [],
+      "flags": [
+        {
+          "name": "fail-on-regression",
+          "kind": "switch",
+          "summary": "fail for a complete, comparable regression in the suite grade projection",
+          "required": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "baseline-folder",
+          "summary": "the saved baseline evaluation directory"
+        },
+        {
+          "name": "candidate-folder",
+          "summary": "the saved candidate evaluation directory"
+        }
+      ]
+    },
+    {
       "name": "eval run",
       "summary": "run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume",
       "shape": "document",
@@ -1337,10 +1381,21 @@
         "readiness",
         "showAllowance",
         "createMech",
+        "showMech",
+        "updateMech",
         "sendNotification",
         "listTurns",
         "showTurn",
-        "listConsoleMessages"
+        "cancelTurn",
+        "listConsoleMessages",
+        "createConnection",
+        "listConnections",
+        "updateConnection",
+        "deleteConnection",
+        "grantTools",
+        "putCredential",
+        "deleteCredential",
+        "configureExecutionAccess"
       ],
       "flags": [
         {
@@ -1443,6 +1498,9 @@
     "AllowanceExhausted",
     "EvalFileFailed",
     "EvalInterrupted",
+    "EvalAdapterFailed",
+    "EvalTransportFailed",
+    "EvalManifestMissing",
     "EvalResponseInvalid"
   ]
 }

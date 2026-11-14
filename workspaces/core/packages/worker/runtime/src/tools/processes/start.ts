@@ -8,6 +8,7 @@ import { toolConfiguration, withToolStore } from '../context.ts';
 import type { RuntimeToolStore } from '../context.ts';
 import { prepareEnvironment } from '../environment.ts';
 import { ToolNotStartedError, ToolUnavailableError } from '../errors.ts';
+import { permitsNativeTool } from '../native-tools.ts';
 import type { ToolInvocation } from '../types.ts';
 import { observeSandboxProcessStart, submitProcess } from './client.ts';
 import { processAnswer, ProcessStartReceipt } from './results.ts';
@@ -168,6 +169,11 @@ async function authorizeStart(input: ProcessAttempt): Promise<SandboxProcessAnsw
 
 async function canStartProcess({ store, workspaceId, mechId, runId, hasExpired }: ProcessAdmission): Promise<boolean> {
   const mech = await store.getMech({ workspaceId, mechId });
+
+  if (!permitsNativeTool({ name: 'start_process', nativeTools: mech.nativeTools })) {
+    return false;
+  }
+
   const policy = await store.getRuntimePolicy({ workspaceId });
   const run = await store.getRun({ workspaceId, runId });
 

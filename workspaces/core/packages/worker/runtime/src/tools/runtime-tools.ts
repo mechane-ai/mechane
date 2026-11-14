@@ -1,5 +1,7 @@
+import type { NativeToolName } from '@mechane/protocol';
 import { tool } from 'ai';
 import type { ToolSet } from 'ai';
+import { Record } from 'effect';
 import { z } from 'zod';
 import { executeBash, observeBash } from './bash.ts';
 import { createBrowserTools } from './browser/browser-tools.ts';
@@ -8,6 +10,7 @@ import { BASH_DEFAULT_TIMEOUT_MS, BASH_MAX_TIMEOUT_MS } from './constants.ts';
 import { exportEvidenceTool } from './export-evidence.ts';
 import type { McpDefinition } from './mcp-definitions.ts';
 import { discoverMcpTools, mcpTools } from './mcp.ts';
+import { permitsNativeTool } from './native-tools.ts';
 import { processTools } from './processes/process-tools.ts';
 import { readToolResult } from './tool-result.ts';
 import type { RuntimeToolContext } from './types.ts';
@@ -19,8 +22,11 @@ type PreparedTools = {
   readonly isComplete: boolean;
 };
 
-type PrepareRuntimeToolsInput = RuntimeToolContext & { readonly shouldDiscoverMcp?: boolean };
-type RuntimeToolsInput = RuntimeToolContext & { readonly mcpDefinitions: ReadonlyArray<McpDefinition> };
+type NativeToolsInput = { readonly nativeTools?: ReadonlyArray<NativeToolName> | null | undefined };
+type PrepareRuntimeToolsInput = RuntimeToolContext & NativeToolsInput & { readonly shouldDiscoverMcp?: boolean };
+
+type RuntimeToolsInput = RuntimeToolContext &
+  NativeToolsInput & { readonly mcpDefinitions: ReadonlyArray<McpDefinition> };
 
 export async function prepareRuntimeTools({
   shouldDiscoverMcp = true,
@@ -40,8 +46,8 @@ export async function prepareRuntimeTools({
   };
 }
 
-export function runtimeTools({ mcpDefinitions, ...context }: RuntimeToolsInput): ToolSet {
-  const native = createRuntimeTools(context);
+export function runtimeTools({ mcpDefinitions, nativeTools, ...context }: RuntimeToolsInput): ToolSet {
+  const native = Record.filter(createRuntimeTools(context), (_tool, name) => permitsNativeTool({ name, nativeTools }));
   const remote = mcpTools(context, mcpDefinitions);
 
   return { ...native, ...remote };

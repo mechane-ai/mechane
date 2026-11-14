@@ -42,12 +42,14 @@ The product's `fix` task runs `reference` after normalizers and autofixes and be
 Its `release` comes from `RELEASE` in `@mechane/protocol`.
 A release's host binary reports the release its stamp holds, and `release:cli` stamps `RELEASE`, so the binary, `--help` and the reference agree; only the smoke stamps two test releases of its own. The guest entry reports its own bundle hash in version, help and user agent, without treating environment metadata as authority.
 `update` calls no catalog operation. The `--version` flag declares the command word `version`, which the reference publishes as the flag's `command`: it reads no deployment, so the settings carry it out beside the flag rather than as a command that calls an origin.
-The model is to name each command's output schema, which the output module encodes once, so a run returns its result unencoded: ast-grep `encode-in-runs` ratchets an encode in `packages/node/cli/src/runs` and in the eval runner, `packages/node/eval/src`, until the declarations name it.
+The model names each command's output schema, which the output module encodes once, so a run returns its result unencoded.
+Ast-grep `encode-in-runs` enforces this in CLI runs and the eval coordinator. The eval store's persistence codec
+separately encodes saved records and bytes used for hashes; its exact `PersistenceCodec` role preserves that owner.
 `eval run` declares every operation its trials call, and the reference lists the exit status `Interrupted`, 130, which it ends with on Ctrl-C.
 The model declares `ErrorCode`, the code of each failure the CLI reports under its own name, and the reference lists them as `error_codes`; every report of such a failure takes it as a `ReportInput`, whose failure's tag must be one of them, so a code the model does not declare fails to compile.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-- ast-grep `encode-in-runs` (CP-03): a ratchet until phase F2
+- ast-grep `encode-in-runs` (CP-03): enforced in phase F2
 
 <!-- End of the generated block. -->

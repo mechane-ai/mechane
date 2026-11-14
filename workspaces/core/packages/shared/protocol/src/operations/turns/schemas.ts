@@ -11,6 +11,7 @@ import {
   renamedWireStruct,
   Sequence,
   Tokens,
+  ToolInvocationId,
   TurnId,
   unknownMember,
   wireStruct,
@@ -196,6 +197,8 @@ const BashToolInspection = wireStruct({
 export const TurnToolCall = wireStruct({
   fields: {
     id: ModelToolCallId,
+    /** Older traces may not retain the native identity used by adapter receipts. */
+    invocationId: Schema.optionalKey(ToolInvocationId),
     name: RecordName,
     status: Schema.Enum(ToolCallStatus),
     /** Absent when the result does not record a tool duration. */

@@ -1,4 +1,4 @@
-import { AST_GREP_DEFAULTS, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
+import { AST_GREP_DEFAULTS, FileRole, RolloutPhase, RuleStatus } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 /** What enforces `cli-command-reference-generation`: a run returns its result, which the output module encodes. */
@@ -8,8 +8,9 @@ export const cliCommandReferenceGeneration = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'encode-in-runs',
+      exemptRoles: [FileRole.PersistenceCodec],
       standard: 'CP-03',
-      status: RuleStatus.Ratchet,
+      status: RuleStatus.Enforced,
       phase: RolloutPhase.DataShapes,
       violation: ['const text = Schema.encodeSync(Document)(result);'],
       allowed: ['const run = () => ({ lines, result });'],

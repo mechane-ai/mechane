@@ -1,4 +1,5 @@
-import { ToolCallStatus, TurnStatus } from '@mechane/protocol';
+import { catalog, Mech, ToolCallStatus, TurnStatus } from '@mechane/protocol';
+import type { NativeTools } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import {
   sandboxExecutionCancelPendingPath,
@@ -7,10 +8,12 @@ import {
   SandboxExecutionResult,
 } from '@mechane/sandbox-wire';
 import {
+  mechPath,
   readBashResult,
   readTrace,
   requireFixtures,
   runBash,
+  runCli,
   sendNotification,
   startCommandGate,
   waitFor,
@@ -24,6 +27,8 @@ import { randomUUID } from 'node:crypto';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 const TERMINAL_TOOL_STATES: ReadonlySet<ToolCallStatus> = new Set([ToolCallStatus.Completed, ToolCallStatus.Failed]);
+const OfferedTools = Schema.Array(Schema.Struct({ function: Schema.Struct({ name: Schema.String }) }));
+type NativeToolProfileInput = MechContext & { readonly nativeTools: Option.Option<NativeTools> };
 
 /** A correction must not wait for the startup deadline of a command that current admission refuses to dispatch. */
 export async function correctionRefusesPendingCommand({ stack, account, mechId }: MechContext): Promise<void> {
@@ -38,6 +43,7 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
   const blockerId = randomUUID();
   const marker = `pending-correction-${randomUUID()}`;
   const staleFile = `.stale-${randomUUID()}`;
+  const revokedFile = `.revoked-${randomUUID()}`;
   const toolCallId = randomUUID();
 
   function identity(executionId: string): SandboxExecutionIdentity {
@@ -123,18 +129,91 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
     assert.equal(tool.inspection.executionId, pendingId);
     assert.equal(Option.getOrThrow(tool.inspection.result).status, 'refused');
 
-    gate.release();
+    await updateNativeToolProfile({ ...input, nativeTools: Option.some(['bash']) });
 
-    const settled = await waitFor({
-      name: 'the original dispatched command to finish',
-      read: () => request(blockerPath, HttpMethod.Get),
-      accept: (receipt) => receipt._tag === 'Exited',
-      timeoutMs: REQUEST_TIMEOUT_MS,
+    const profileMarker = `native-profile-${randomUUID()}`;
+    const profileCallId = randomUUID();
+
+    model.configure({
+      marker: profileMarker,
+      replies: [
+        {
+          isHeld: true,
+          tools: [{ id: profileCallId, name: 'bash', input: { command: `printf forbidden > '${revokedFile}'` } }],
+        },
+        { text: 'The current native tool policy was observed' },
+      ],
     });
 
-    assert.deepEqual(await request(sandboxExecutionCancelPendingPath(identity(blockerId)), HttpMethod.Post), settled);
+    try {
+      const profileNotice = await sendNotification({ ...input, text: profileMarker });
+      const proposed = await model.waitForCall({ marker: profileMarker, index: 0 });
+      const offered = Schema.decodeUnknownSync(OfferedTools)(proposed.body['tools']);
 
-    const checked = await runBash({ ...input, command: `test ! -e '${staleFile}' && printf current` });
+      assert.deepEqual(
+        new Set(offered.map((offeredTool) => offeredTool.function.name)),
+        new Set(['bash']),
+        'The model received native tools outside its profile',
+      );
+      model.release({ marker: profileMarker, index: 0 });
+
+      const profileExecutionId = await waitForPendingExecution({
+        ...input,
+        excludeExecutionId: pendingId,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
+
+      const profile = await updateNativeToolProfile({ ...input, nativeTools: Option.some([]) });
+
+      assert.deepEqual(profile.nativeTools, Option.some([]));
+      gate.release();
+
+      const profileResult = await readBashResult({
+        model,
+        marker: profileMarker,
+        toolCallId: profileCallId,
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
+
+      assert.ok(
+        profileResult.output.includes(`Execution ${profileExecutionId}: refused.`),
+        `The native policy removal returned ${JSON.stringify(profileResult)}`,
+      );
+
+      const profileReconsideration = await model.waitForCall({ marker: profileMarker, index: 1 });
+      const currentTools = Schema.decodeUnknownSync(OfferedTools)(profileReconsideration.body['tools'] ?? []);
+
+      assert.deepEqual(currentTools, [], 'A removed native tool remained in the next model request');
+      await waitForTurn({ ...input, notificationId: profileNotice.id });
+
+      const refusedProfile = await request(sandboxExecutionPath(identity(profileExecutionId)), HttpMethod.Get);
+
+      assert.equal(refusedProfile._tag, 'Unavailable', 'Removing native Bash left a dispatchable pending claim');
+
+      const settled = await waitFor({
+        name: 'the previously admitted command to finish after native permission removal',
+        read: () => request(blockerPath, HttpMethod.Get),
+        accept: (receipt) => receipt._tag === 'Exited',
+        timeoutMs: REQUEST_TIMEOUT_MS,
+      });
+
+      assert.equal(settled._tag, 'Exited');
+      assert.equal(settled.exitCode, 0);
+      assert.deepEqual(await request(sandboxExecutionCancelPendingPath(identity(blockerId)), HttpMethod.Post), settled);
+      assert.deepEqual(
+        await readTrace({ ...input, turnId: turn.id }),
+        trace,
+        'Native permission removal rewrote an admitted tool receipt',
+      );
+    } finally {
+      model.release({ marker: profileMarker, index: 0 });
+      await updateNativeToolProfile({ ...input, nativeTools: Option.none() });
+    }
+
+    const checked = await runBash({
+      ...input,
+      command: `test ! -e '${staleFile}' && test ! -e '${revokedFile}' && printf current`,
+    });
 
     assert.equal(checked.receipt.status, 'completed');
     assert.equal(checked.result.output, 'current');
@@ -143,4 +222,32 @@ export async function correctionRefusesPendingCommand({ stack, account, mechId }
     gate.release();
     await gate.close();
   }
+}
+
+async function updateNativeToolProfile({ nativeTools, ...input }: NativeToolProfileInput): Promise<Mech> {
+  const { stack, account, mechId } = input;
+
+  const current = await runCli({
+    ...input,
+    args: ['mech', 'show', mechId, '--workspace', account.workspaceId],
+    schema: Mech,
+  });
+
+  const body = Schema.encodeSync(catalog.updateMech.body)({ expectedRevision: current.revision, nativeTools });
+  const path = nativeToolDefinitionPath(input);
+
+  const response = await fetch(new URL(path, stack.origin), {
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Authorization]: `Bearer ${account.token}`, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+  assert.equal(response.status, HttpStatusCode.Ok);
+
+  return Schema.decodeUnknownSync(Mech)(await response.json());
+}
+
+function nativeToolDefinitionPath(input: Pick<MechContext, 'account' | 'mechId'>): string {
+  return `${mechPath(input)}/definition`;
 }

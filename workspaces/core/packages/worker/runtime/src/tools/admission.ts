@@ -6,6 +6,7 @@ import { Observations, PendingNotifications, Turns } from '../actor/collections.
 import { decodeStored, RunRecord } from '../actor/records.ts';
 import { State } from '../actor/state.ts';
 import type { ActorAccess } from '../actor/types.ts';
+import { isNativeToolCurrent } from './native-tools.ts';
 
 type ExecutionAdmissionInput = {
   readonly access: ActorAccess;
@@ -13,6 +14,7 @@ type ExecutionAdmissionInput = {
   readonly runId: string;
   readonly transaction?: Tx | undefined;
   readonly control?: ControlStore | undefined;
+  readonly toolName?: string | undefined;
 };
 
 async function currentInTransaction(input: ExecutionAdmissionInput, transaction: Tx): Promise<boolean> {
@@ -54,6 +56,14 @@ async function currentInTransaction(input: ExecutionAdmissionInput, transaction:
 
   async function checkAuthority(store: ControlStore): Promise<boolean> {
     const authority = await store.getRuntimeAuthority(input.access.scope);
+
+    if (input.toolName !== undefined) {
+      const isPermitted = await isNativeToolCurrent({ store, ...input.access.scope, name: input.toolName });
+
+      if (!isPermitted) {
+        return false;
+      }
+    }
 
     return authority.status === 'active' && authority.policy !== null && !authority.policy.isSuspended;
   }

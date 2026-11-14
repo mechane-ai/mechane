@@ -42,21 +42,24 @@ Does any average include an unknown, a failure, or an empty denominator?
 
 ## Local adaptations
 
-Subject outcomes distinguish `published`, `no_reply`, `failed`, and `stopped`. A grader has `graded`, `no_grade`, `no_reply`,
-`failed`, or `stopped`. Quiet completion has no public answer; it cannot be scored from private model text. A failed role
-maps to `run_failed`, a stopped role to `stopped`, a quiet role to `no_reply`, and an invalid published grade to `no_grade`.
-Only valid grades contribute criterion verdicts. Their worst criterion yields `pass`, `fail`, or `uncertain`; criteria
-are not averaged. An unsaved role remains `unavailable`.
+Inspection derives from the manifest and per-trial records. Subject completion/failure/cancellation, evidence
+availability, grade outcome, and cleanup are separate fields. Completed grades remain visible when cleanup fails,
+while overall run completion stays false. Missing stages or grades do not become zero or disappear from the selected
+trial count. An answered subject that fails its declared task is a quality outcome, not an infrastructure exclusion.
 
-The report counts each verdict against all selected trials and derives solely from saved role records. It identifies
-judgments as grader verdicts. `subject_charged_micros` and `grader_charged_micros` aggregate all collected activation
-dispatches separately by role. Unknown dispatch statuses use the reserved upper bound. Missing role records make reported
-spend partial. Current reserved dispatches contribute zero; this remains an explicit accounting gap, not evidence of zero
-spend or permission to describe incomplete cost as complete.
+The shared envelope preserves each suite's grade schema. The reply-suite projection retains `pass`, `fail`, and
+`uncertain` criterion verdicts without averaging uncertainty. A numeric projection names its scale and shows its
+numerator and graded denominator. No grades means an unavailable mean. Keep raw grades and evidence inspectable.
 
-The files identify which role failed, but a report-level `run_failed` does not distinguish subject from grader failure.
-An unsaved role's spend also lacks its own unknown value. Preserve these existing coverage gaps in review rather than
-claiming all Rules above are established by the report schema.
+Subject and judge accounting are separate. Refused requests are known zero; reserved/unknown dispatches and absent
+usage are explicitly unknown. Settled reservation charges can be known while token usage remains unavailable.
+Recorded totals are partial whenever an attempt lacks the required evidence. They are not a claim that unobserved
+provider attempts were free.
+
+Regrades and calibration write additional audit records. Comparison checks cases, repeats, tools, fixture/evidence
+semantics, and judge configuration before deriving per-case differences. Explicit subject-component variations are
+disclosed, and cannot bypass the independently frozen judge/case checks. Historical reports are read-only evidence;
+inspection must not invent new observations, resumability, or cleanup proof for them.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

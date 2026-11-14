@@ -3,7 +3,8 @@ import { defineTool } from '@earendil-works/pi-durable';
 import type { TaskId, ToolExecutionApi, ToolExecutionResult, ToolRegistration, Tx } from '@earendil-works/pi-durable';
 import { ExecutionError } from '@earendil-works/pi-durable/env';
 import { createBashRegistration } from '@mechane-ai/bash';
-import { toolExecutionId as executionId } from '@mechane/records';
+import type { NativeToolName } from '@mechane/protocol';
+import { toolExecutionId as executionId, toolInvocationId } from '@mechane/records';
 import { asSchema } from 'ai';
 import type { ToolSet } from 'ai';
 import { Record, Schema } from 'effect';
@@ -23,6 +24,7 @@ import { createBrowserTools } from './browser/browser-tools.ts';
 import { withToolOwner } from './context.ts';
 import { ToolNotStartedError } from './errors.ts';
 import type { McpDefinition, McpDiscovery } from './mcp-definitions.ts';
+import { isNativeToolCurrent } from './native-tools.ts';
 import { joinProcessAdmission } from './processes/process-task.ts';
 import type { ProcessAdmissionTask } from './processes/process-task.ts';
 import { processTools } from './processes/process-tools.ts';
@@ -48,7 +50,7 @@ async function invocation(access: ActorAccess, api: ToolExecutionApi, context: C
     ...access.scope,
     runId: observation.turnId,
     sessionId: access.scope.mechId,
-    toolCallId: `${access.scope.mechId}:${String(api.taskId)}`,
+    toolCallId: toolInvocationId({ mechId: access.scope.mechId, nativeTaskId: api.taskId }),
   };
 }
 
@@ -89,31 +91,41 @@ async function canReconcileReceipt(transaction: Tx, identity: ReceiptIdentity): 
 }
 
 async function runAdmittedTool(
-  { access, context }: GuardedToolInput,
-  owner: { readonly invocation: ToolInvocation; readonly generationTaskId: TaskId | undefined },
+  { access, context, name }: GuardedToolInput,
+  owner: {
+    readonly invocation: ToolInvocation;
+    readonly generationTaskId: TaskId | undefined;
+    readonly canReconcile: boolean;
+  },
   execute: (input: ToolInvocation) => Promise<ToolExecutionResult>,
 ): Promise<ToolExecutionResult> {
-  const { invocation: toolInvocation, generationTaskId } = owner;
+  const { invocation: toolInvocation, generationTaskId, canReconcile } = owner;
 
   try {
     return await withToolOwner(
       {
         configuration: access.configuration,
         withStore: async (operation) =>
-          await access.withControl((control) =>
-            operation(
+          await access.withControl(async (control) => {
+            const isPermitted = canReconcile || (await isNativeToolCurrent({ store: control, ...access.scope, name }));
+
+            if (!isPermitted) {
+              throw new ToolNotStartedError('The current definition does not permit this native tool');
+            }
+
+            return await operation(
               toolStore(access, control, async (transaction) => {
                 if (generationTaskId === undefined) {
                   return false;
                 }
 
                 return await isExecutionCurrent(
-                  { access, generationTaskId, runId: toolInvocation.runId, transaction },
+                  { access, control, generationTaskId, runId: toolInvocation.runId, transaction, toolName: name },
                   context,
                 );
               }),
-            ),
-          ),
+            );
+          }),
       },
       async () => await execute(toolInvocation),
     );
@@ -142,11 +154,26 @@ async function guarded(
 
   const admission = await access.harness.commit(async (transaction) => {
     const mayReconcile = await canReconcileReceipt(transaction, identity);
+
+    const isPermitted =
+      mayReconcile ||
+      (await access.withControl(async (store) => await isNativeToolCurrent({ store, ...access.scope, name })));
+
+    if (!isPermitted) {
+      await appendEvent(transaction, {
+        type: 'tool.not_started',
+        runId: input.runId,
+        payload: { toolName: name, taskId: api.taskId, reason: 'native_tool_not_permitted' },
+      });
+
+      return { admitted: false, reason: 'native_tool_not_permitted', canReconcile: false };
+    }
+
     let canExecute = false;
 
     if (!mayReconcile && task?.owner !== undefined) {
       canExecute = await isExecutionCurrent(
-        { access, generationTaskId: task.owner, runId: input.runId, transaction },
+        { access, generationTaskId: task.owner, runId: input.runId, transaction, toolName: name },
         context,
       );
     }
@@ -168,7 +195,7 @@ async function guarded(
         reason = 'execution_stopped';
       }
 
-      return { admitted: false, reason };
+      return { admitted: false, reason, canReconcile: false };
     }
 
     const transition = `${String(api.taskId)}:tool.started`;
@@ -182,7 +209,7 @@ async function guarded(
       await ToolTransitions.put(transaction, transition, transition);
     }
 
-    return { admitted: true, reason: '' };
+    return { admitted: true, reason: '', canReconcile: mayReconcile };
   }, context);
 
   if (!admission.admitted) {
@@ -209,7 +236,7 @@ async function guarded(
 
   const pending = runAdmittedTool(
     { access, api, context, name },
-    { invocation: input, generationTaskId: task?.owner },
+    { invocation: input, generationTaskId: task?.owner, canReconcile: admission.canReconcile },
     execute,
   );
 
@@ -240,6 +267,7 @@ type CreatePiToolsInput = {
   readonly browserTask: BrowserExecutionTask;
   readonly processTask: ProcessAdmissionTask;
   readonly shouldDiscoverMcp: boolean;
+  readonly nativeTools?: ReadonlyArray<NativeToolName> | null | undefined;
 };
 
 type ExecutionToolsInput = {
@@ -288,6 +316,7 @@ export async function createPiTools({
   browserTask,
   processTask,
   shouldDiscoverMcp,
+  nativeTools,
 }: CreatePiToolsInput): Promise<PreparedPiTools> {
   const placeholder = { ...access.scope, sessionId: access.scope.mechId, runId: access.scope.mechId };
 
@@ -296,7 +325,7 @@ export async function createPiTools({
       configuration: access.configuration,
       withStore: async (operation) => await access.withControl((control) => operation(toolStore(access, control))),
     },
-    async () => await prepareRuntimeTools({ ...placeholder, shouldDiscoverMcp }),
+    async () => await prepareRuntimeTools({ ...placeholder, shouldDiscoverMcp, nativeTools }),
   );
 
   return await registerPiTools({ access, bashTask, browserTask, processTask, prepared });
@@ -308,11 +337,12 @@ export async function restorePiTools({
   browserTask,
   processTask,
   configuration,
+  nativeTools,
 }: RestorePiToolsInput): Promise<PreparedPiTools> {
   const placeholder = { ...access.scope, sessionId: access.scope.mechId, runId: access.scope.mechId };
 
   const prepared = {
-    tools: runtimeTools({ ...placeholder, mcpDefinitions: configuration.tools }),
+    tools: runtimeTools({ ...placeholder, mcpDefinitions: configuration.tools, nativeTools }),
     notices: configuration.notices,
     mcpDefinitions: configuration.tools,
     isComplete: configuration.isComplete,
@@ -348,29 +378,31 @@ async function registerPiTools({
     },
   });
 
-  registrations.push({
-    ...nativeBash,
-    replay: 'safe',
-    execute: async (argumentsValue: Parameters<typeof nativeBash.execute>[0], api, context) =>
-      await guarded({ access, api, context, name: 'bash' }, async (input) => {
-        const result = await nativeBash.execute(argumentsValue, api, context);
-        const structured = result.structuredOutput;
+  if (prepared.tools['bash'] !== undefined) {
+    registrations.push({
+      ...nativeBash,
+      replay: 'safe',
+      execute: async (argumentsValue: Parameters<typeof nativeBash.execute>[0], api, context) =>
+        await guarded({ access, api, context, name: 'bash' }, async (input) => {
+          const result = await nativeBash.execute(argumentsValue, api, context);
+          const structured = result.structuredOutput;
 
-        if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
-          return result;
-        }
+          if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
+            return result;
+          }
 
-        const receipt = await observeBash({ ...input, executionId: await executionId(input) });
+          const receipt = await observeBash({ ...input, executionId: await executionId(input) });
 
-        return {
-          ...result,
-          structuredOutput: {
-            ...structured,
-            truncated: structured['truncated'] === true || receipt.isTruncated === true,
-          },
-        };
-      }),
-  });
+          return {
+            ...result,
+            structuredOutput: {
+              ...structured,
+              truncated: structured['truncated'] === true || receipt.isTruncated === true,
+            },
+          };
+        }),
+    });
+  }
 
   for (const [name, candidate] of Record.toEntries(prepared.tools).filter(([toolName]) => toolName !== 'bash')) {
     const schema: unknown = await asSchema(candidate.inputSchema).jsonSchema;

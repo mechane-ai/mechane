@@ -8,7 +8,7 @@ import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
 import { MechPath } from '../schemas.ts';
 import { MechStatus } from './constants.ts';
-import { DefinitionRevision, Instructions, Mech, MechName } from './schemas.ts';
+import { DefinitionRevision, Instructions, Mech, MechName, NativeTools } from './schemas.ts';
 
 const UpdateMechBody = wireStruct({
   fields: {
@@ -16,6 +16,7 @@ const UpdateMechBody = wireStruct({
     name: Schema.optional(MechName),
     model: Schema.optional(ModelId),
     instructions: Schema.optional(Schema.OptionFromNullOr(Instructions)),
+    nativeTools: Schema.optional(Schema.OptionFromNullOr(NativeTools)),
     dailyCapMicros: Schema.optional(Micros),
     status: Schema.optional(Schema.Enum(MechStatus)),
   },

@@ -2,5 +2,9 @@
 id: error-free-text
 valid:
   - "class Missing extends Schema.TaggedError<Missing>()('Missing', { mechId: MechId, reason: Schema.String }) {}"
+  - "class Refused extends Schema.TaggedError<Refused>()('Refused', { operation: Schema.Enum(Operation), reason: Schema.String }) {}"
+  - "class Refused extends Schema.TaggedError<Refused>()('Refused', { code: Schema.Enum(Code), reason: Schema.String }) {}"
 invalid:
   - "class Missing extends Schema.TaggedError<Missing>()('Missing', { message: Schema.String }) {}"
+  - "class Refused extends Schema.TaggedError<Refused>()('Refused', { operation: Schema.String }) {}"
+  - "class Refused extends Schema.TaggedError<Refused>()('Refused', { code: Schema.NonEmptyString }) {}"

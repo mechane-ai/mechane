@@ -2,7 +2,14 @@ import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { SubmissionRecord, Tx } from '@earendil-works/pi-durable';
 import type { ControlStore, ImportedSpendReservation as SpendReservation } from '@mechane/control-store';
 import { RequestInvalid, TOOL_TRACE_OUTPUT_MAX_BYTES, TurnNotFound } from '@mechane/protocol';
-import { boundTraceText, Bytes, toolExecutionId as executionId, RecordText, TurnId } from '@mechane/records';
+import {
+  boundTraceText,
+  Bytes,
+  toolExecutionId as executionId,
+  RecordText,
+  toolInvocationId,
+  TurnId,
+} from '@mechane/records';
 import { Schema } from 'effect';
 import type { ActorPageInput, ActorTrace } from '../actor/client.ts';
 import {
@@ -505,7 +512,7 @@ export async function readTrace(access: ActorAccess, input: TurnInput): Promise<
       }
     }
 
-    const call = {
+    const call: Record<string, unknown> = {
       id: String(start.payload['toolCallId']),
       name: String(start.payload['toolName']),
       status,
@@ -513,11 +520,16 @@ export async function readTrace(access: ActorAccess, input: TurnInput): Promise<
       ended_at: end?.createdAt ?? null,
     };
 
-    if (start.payload['toolName'] === 'bash') {
-      const id = await executionId({
-        runId: run.id,
-        toolCallId: `${run.mechId}:${String(start.payload['nativeTaskId'])}`,
-      });
+    const nativeTaskId = start.payload['nativeTaskId'];
+
+    if (Schema.is(Schema.Int)(nativeTaskId)) {
+      call['invocation_id'] = toolInvocationId({ mechId: run.mechId, nativeTaskId });
+    }
+
+    const invocationId = call['invocation_id'];
+
+    if (start.payload['toolName'] === 'bash' && typeof invocationId === 'string') {
+      const id = await executionId({ runId: run.id, toolCallId: invocationId });
 
       const effect = await Effects.get(access.harness, id, BACKGROUND_CONTEXT);
 

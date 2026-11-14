@@ -104,6 +104,8 @@ export {
   MechPage,
   MechSummary,
   DefinitionRevision,
+  NativeToolName,
+  NativeTools,
   MechRevision,
   MechRevisionPage,
 } from './operations/mechs/schemas.ts';

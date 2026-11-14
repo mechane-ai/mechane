@@ -29,6 +29,7 @@ export function mechRecord(mech: Mech, activeRevision: number = mech.revision) {
   return {
     ...mechSummary(mech),
     instructions: mech.instructions,
+    native_tools: mech.nativeTools ?? null,
     daily_cap_micros: mech.dailyCapMicros,
     active_revision: installedRevision(activeRevision),
     updated_at: mech.updatedAt,
@@ -50,6 +51,7 @@ export function revisionRecord(revision: MechRevision) {
     name: revision.name,
     model: revision.model,
     instructions: revision.instructions,
+    native_tools: revision.nativeTools ?? null,
     daily_cap_micros: revision.dailyCapMicros,
     status: revision.status,
     updated_at: revision.updatedAt,

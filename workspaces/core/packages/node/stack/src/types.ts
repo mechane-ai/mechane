@@ -51,6 +51,7 @@ export type CelldBinary = { readonly executable: string; readonly version: strin
 export type ModelToolCall = {
   readonly id: string;
   readonly name: string;
+  readonly namePrefix?: string;
   readonly input: Readonly<Record<string, unknown>>;
 };
 

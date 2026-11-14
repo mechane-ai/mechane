@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { EvalFileStep } from '../constants.ts';
 import { EvalFileFailed } from '../errors.ts';
-import { RECORD_MODE } from './constants.ts';
+import { RECORD_FOLDER_MODE, RECORD_MODE } from './constants.ts';
 
 type CreateRecordFileInput = { readonly path: string; readonly text: string };
 
@@ -16,10 +16,10 @@ export const createRecordFile = Effect.fn('createRecordFile')(function* ({
   const folder = dirname(path);
 
   yield* Effect.tryPromise({
-    try: () => mkdir(folder, { recursive: true }),
+    try: () => mkdir(folder, { recursive: true, mode: RECORD_FOLDER_MODE }),
     catch: (cause) => new EvalFileFailed({ step: EvalFileStep.CreateFolder, path: folder, reason: String(cause) }),
   });
   yield* createFile({ path, contents: text, mode: RECORD_MODE }).pipe(
     Effect.mapError(({ step, path: failedPath, reason }) => new EvalFileFailed({ step, path: failedPath, reason })),
   );
-});
+}, Effect.uninterruptible);

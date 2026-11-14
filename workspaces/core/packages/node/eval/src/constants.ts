@@ -32,19 +32,9 @@ export const DESCRIPTION_MAX_CHARS = 1024;
 export const PUBLICATION_INSTRUCTIONS =
   'Publish your completed answer exactly once using console_message with your answer in text. After publishing, finish quietly. Internal final text is not sent to the requester.';
 
-/**
- * The version of the plan file's format and of its trials' records, which the digest covers; a narrowing of either
- * increments it, so a rerun refuses an older out folder.
- */
-export const PLAN_VERSION = 2;
-
-/** The version of the report's format, in its file and on standard output; a narrowing change increments it. */
-export const REPORT_VERSION = 3;
-
 /** The hexadecimal digits of a trial's id: 128 bits of its SHA-256, as many as a UUID's, so a mech's name holds it. */
 export const TRIAL_ID_HEX_CHARS = 32;
 
-/** A trial's id as its files and records write it. */
 export const TRIAL_ID_PATTERN: Readonly<RegExp> = new RegExp(`^[0-9a-f]{${TRIAL_ID_HEX_CHARS}}$`);
 
 /** How the grader judged one expectation. */
@@ -52,32 +42,17 @@ export const CriterionVerdict = { Pass: 'pass', Fail: 'fail', Uncertain: 'uncert
 
 export type CriterionVerdict = (typeof CriterionVerdict)[keyof typeof CriterionVerdict];
 
-export const RoleStatus = {
-  Published: 'published',
-  NoReply: 'no_reply',
-  Failed: 'failed',
-  Stopped: 'stopped',
-} as const;
-
-export const GraderStatus = {
-  Graded: 'graded',
-  NoGrade: 'no_grade',
-  NoReply: RoleStatus.NoReply,
-  Failed: RoleStatus.Failed,
-  Stopped: RoleStatus.Stopped,
-} as const;
-
 /**
  * Only a completed grade contributes a criterion verdict. Missing publications and failed or stopped work remain
  * separate outcomes.
  */
 export const TrialVerdict = {
   ...CriterionVerdict,
-  NoGrade: GraderStatus.NoGrade,
-  NoReply: RoleStatus.NoReply,
+  NoGrade: 'no_grade',
+  NoReply: 'no_reply',
   Unavailable: 'unavailable',
   RunFailed: 'run_failed',
-  Stopped: RoleStatus.Stopped,
+  Stopped: 'stopped',
 } as const;
 
 export type TrialVerdict = (typeof TrialVerdict)[keyof typeof TrialVerdict];
@@ -86,3 +61,23 @@ export type TrialVerdict = (typeof TrialVerdict)[keyof typeof TrialVerdict];
 export const EvalFileStep = { ...FileStep, Read: 'read', Decode: 'decode', CreateFolder: 'create the folder' } as const;
 
 export type EvalFileStep = (typeof EvalFileStep)[keyof typeof EvalFileStep];
+
+/** A fresh agent either proposes application changes or judges frozen evidence. */
+export const EvalRole = { Subject: 'subject', Judge: 'judge' } as const;
+export type EvalRole = (typeof EvalRole)[keyof typeof EvalRole];
+
+/** The selected infrastructure runs the same notification and tool protocol. */
+export const EvalTargetKind = { Local: 'local', Hosted: 'hosted' } as const;
+export type EvalTargetKind = (typeof EvalTargetKind)[keyof typeof EvalTargetKind];
+
+/** Audits grade saved evidence or fixed calibration examples without running subjects. */
+export const EvalAuditKind = { Regrade: 'regrade', Calibrate: 'calibrate' } as const;
+export type EvalAuditKind = (typeof EvalAuditKind)[keyof typeof EvalAuditKind];
+
+/** Judge-only records do not claim that the audit executed its source subjects. */
+export const EvalScope = { Full: 'full', JudgeOnly: 'judge_only' } as const;
+export type EvalScope = (typeof EvalScope)[keyof typeof EvalScope];
+
+/** Recorded observations come from authenticated MCP tool requests. */
+export const ObservationProvenance = { Mcp: 'mcp' } as const;
+export type ObservationProvenance = (typeof ObservationProvenance)[keyof typeof ObservationProvenance];

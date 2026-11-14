@@ -1,5 +1,3 @@
 {
-  "packages/node/eval/src/errors.ts": 2,
-  "packages/node/eval/src/store/schemas.ts": 2,
   "packages/shared/records/src/bounded-text.ts": 1
 }

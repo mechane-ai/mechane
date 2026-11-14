@@ -16,11 +16,12 @@ type ReceiptOwnerInput<Result> = {
   readonly access: ActorAccess;
   readonly generationTaskId: TaskId;
   readonly runId: string;
+  readonly toolName: string;
   readonly run: () => Promise<Result>;
 };
 
 export async function withReceiptTaskOwner<Result>(
-  { access, generationTaskId, runId, run }: ReceiptOwnerInput<Result>,
+  { access, generationTaskId, runId, toolName, run }: ReceiptOwnerInput<Result>,
   context: Context,
 ): Promise<Result> {
   return await withToolOwner(
@@ -33,7 +34,7 @@ export async function withReceiptTaskOwner<Result>(
               access,
               control,
               async (transaction) =>
-                await isExecutionCurrent({ access, control, generationTaskId, runId, transaction }, context),
+                await isExecutionCurrent({ access, control, generationTaskId, runId, transaction, toolName }, context),
             ),
           ),
         ),

@@ -20,8 +20,11 @@ export function onceFile<S extends Schema.Codec<unknown, unknown>>({
 }: OnceFileInput<S>): OnceFile<S['Type']> {
   const file = Schema.fromJsonString(schema);
 
-  const create: OnceFile<S['Type']>['create'] = ({ record }) =>
-    createRecordFile({ path, text: jsonFileText({ schema, value: record }) });
+  const create: OnceFile<S['Type']>['create'] = ({ record }) => {
+    const text = jsonFileText({ schema, value: record });
+
+    return createRecordFile({ path, text });
+  };
 
   return { path, read: () => readRecord({ path, file }), create };
 }

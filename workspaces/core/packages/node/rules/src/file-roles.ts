@@ -10,6 +10,7 @@ const BROWSER_BUILD_CONFIGURATION = [
 export const FILE_ROLES = {
   [FileRole.Browser]: ['packages/browser/**'],
   [FileRole.NativeRuntime]: [
+    'packages/node/eval/src/environment/http-entry.ts',
     'packages/shared/bash/src/**',
     'packages/node/guest/src/guest-listener.ts',
     'packages/shared/deployment/src/worker-deployment.ts',
@@ -98,6 +99,7 @@ export const FILE_ROLES = {
     'packages/worker/sandbox/src/evidence/evidence-cleanup.ts',
     'packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts',
   ],
+  [FileRole.PersistenceCodec]: ['packages/node/eval/src/store/encode-eval-records.ts'],
   [FileRole.WorkerModule]: ['packages/worker/server/src/main.ts'],
   [FileRole.EntryPoint]: [
     'packages/**/src/index.ts',

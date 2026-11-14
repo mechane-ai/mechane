@@ -33,6 +33,7 @@ type OpenMcpInput = {
   readonly workspaceId: string;
   readonly connection: ConnectionRecord;
   readonly discoverySignal?: AbortSignal | undefined;
+  readonly toolCallId?: string;
 };
 
 type PermittedToolInput = {
@@ -152,7 +153,7 @@ async function describeMcpConnection({
             connectionId: connection.id,
             name: `mcp_${readableName}_${suffix}`,
             remoteName: definition.name,
-            description: definition.description ?? definition.name,
+            description: `MCP connection ${JSON.stringify(connection.name)}.\n\n${definition.description ?? definition.name}`,
             inputSchema: schemaDocument,
           }),
         );
@@ -231,7 +232,13 @@ async function callMcp(input: McpCall): Promise<unknown> {
         return { status: 'refused', message: 'This MCP connection is no longer granted to the mech.' };
       }
 
-      const session = await openMcp({ store, workspaceId: input.workspaceId, connection });
+      const session = await openMcp({
+        store,
+        workspaceId: input.workspaceId,
+        connection,
+        toolCallId: input.toolCallId,
+      });
+
       const outcome: { value: unknown } = { value: null };
 
       try {
@@ -370,9 +377,19 @@ async function closeMcp(client: MCPClient): Promise<boolean> {
   }
 }
 
-async function openMcp({ store, workspaceId, connection, discoverySignal }: OpenMcpInput): Promise<McpSession> {
+async function openMcp({
+  store,
+  workspaceId,
+  connection,
+  discoverySignal,
+  toolCallId,
+}: OpenMcpInput): Promise<McpSession> {
   const headers: Record<string, string> = { [HttpHeader.UserAgent]: 'Mechane-MCP/1.0' };
   const credential: { value: string | null } = { value: null };
+
+  if (toolCallId !== undefined) {
+    headers['x-mechane-tool-call-id'] = toolCallId;
+  }
 
   if (connection.secretReference !== null) {
     const stored = await store.getCredential({ workspaceId, reference: connection.secretReference });

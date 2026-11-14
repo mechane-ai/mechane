@@ -1,7 +1,5 @@
 {
   "packages/node/commands/src/declarations/access/key-commands.ts": 1,
-  "packages/node/eval/src/schemas.ts": 1,
-  "packages/node/eval/src/store/schemas.ts": 1,
   "packages/shared/protocol/src/errors/errors.ts": 6,
   "packages/shared/protocol/src/operations/auth/revoke-key.ts": 1,
   "packages/shared/protocol/src/operations/auth/schemas.ts": 2,

@@ -22,6 +22,7 @@ ignores:
     'packages/node/guest/src/guest-listener.ts',
     'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
+    'packages/node/eval/src/environment/http-entry.ts',
   ]
 rule:
   kind: binary_expression

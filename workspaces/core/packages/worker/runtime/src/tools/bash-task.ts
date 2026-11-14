@@ -31,6 +31,7 @@ export function createBashExecutionTask(getAccess: () => ActorAccess) {
         access,
         generationTaskId: input.generationTaskId,
         runId: input.runId,
+        toolName: 'bash',
         run: async () => {
           if (isSubmit) {
             return await executeBash(input);

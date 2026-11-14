@@ -94,6 +94,7 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
             name: input.name,
             model,
             instructions: input.instructions ?? null,
+            nativeTools: input.nativeTools ?? null,
             dailyCapMicros: input.dailyCapMicros ?? configuration.maxDailyAllowanceMicros,
             status: 'active',
           },
@@ -139,12 +140,17 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
           name: input.name ?? previous.name,
           model: input.model ?? previous.model,
           instructions: previous.instructions,
+          nativeTools: previous.nativeTools ?? null,
           dailyCapMicros: input.dailyCapMicros ?? previous.dailyCapMicros,
           status: input.status ?? previous.status,
         };
 
         if (input.instructions !== undefined) {
           changes.instructions = Option.getOrNull(input.instructions);
+        }
+
+        if (input.nativeTools !== undefined) {
+          changes.nativeTools = Option.getOrNull(input.nativeTools);
         }
 
         const mech = await store.updateMech({

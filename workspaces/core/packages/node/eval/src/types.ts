@@ -3,15 +3,16 @@ import type { WorkspaceId } from '@mechane/records';
 import type { Effect, Option, Redacted } from 'effect';
 import type {
   AllowanceExhausted,
+  EvalAdapterFailed,
   EvalFileFailed,
   EvalInterrupted,
+  EvalManifestMissing,
   EvalResponseInvalid,
+  EvalTransportFailed,
   OutFolderBusy,
   PlanChanged,
   SuiteInvalid,
 } from './errors.ts';
-import type { CreationIntent, Intent, OutFolderLock } from './schemas.ts';
-import type { GradeRecord, Plan, Report, TurnRecord } from './store/schemas.ts';
 
 /** Every way an eval fails beside its calls: its suite, its out folder's plan or files, the allowance, or a Ctrl-C. */
 export type EvalFailure =
@@ -21,7 +22,10 @@ export type EvalFailure =
   | AllowanceExhausted
   | EvalFileFailed
   | EvalInterrupted
-  | EvalResponseInvalid;
+  | EvalResponseInvalid
+  | EvalAdapterFailed
+  | EvalTransportFailed
+  | EvalManifestMissing;
 
 /** The key a mech command sends, and the caller's one workspace, where every mech command acts. */
 export type WorkspaceAccess = { readonly token: Redacted.Redacted; readonly workspaceId: WorkspaceId };
@@ -40,20 +44,6 @@ export type OnceFile<A> = {
   readonly create: (input: RecordInput<A>) => Effect.Effect<void, EvalFileFailed>;
 };
 
-/** The records of one trial, in its own folder. */
-export type TrialFiles = {
-  readonly subjectCreation: OnceFile<CreationIntent>;
-  readonly subjectIntent: OnceFile<Intent>;
-  readonly subject: OnceFile<TurnRecord>;
-  readonly graderCreation: OnceFile<CreationIntent>;
-  readonly graderIntent: OnceFile<Intent>;
-  readonly grade: OnceFile<GradeRecord>;
-};
-
-type TrialIdInput = { readonly trialId: string };
-
-type ReportInput = { readonly report: Report };
-
 /** A line of a run's progress, such as the role of a trial it runs. */
 type ProgressLine = { readonly line: string };
 
@@ -62,14 +52,3 @@ export type WriteProgress = (input: ProgressLine) => void;
 
 /** Every way a run fails: its own failures, and its calls'. */
 export type EvalRunFailure = EvalFailure | ClientFailure;
-
-/**
- * The out folder's records: the plan, each trial's files, and the report, which a run replaces each time it derives
- * one, since only the records decide it.
- */
-export type EvalStore = {
-  readonly lock: OnceFile<OutFolderLock>;
-  readonly plan: OnceFile<Plan>;
-  readonly trial: (input: TrialIdInput) => TrialFiles;
-  readonly saveReport: (input: ReportInput) => Effect.Effect<void, EvalFileFailed>;
-};

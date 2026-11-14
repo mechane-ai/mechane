@@ -1,5 +1,5 @@
-# A tagged error field of free text: a `message`, `issue`, `detail`, `code` or `operation`, or a URL or timeout held
-# as a string; `tagged-error-cause` refuses `cause`.
+# Tagged errors derive messages from structured fields. Codes and operations use closed enums; URL and timeout
+# fields retain their native types. `tagged-error-cause` refuses `cause`.
 id: error-free-text
 language: TypeScript
 severity: error
@@ -24,7 +24,18 @@ rule:
   any:
     - has:
         field: key
-        regex: ^(message|issue|detail|code|operation)$
+        regex: ^(message|issue|detail)$
+    - all:
+        - has:
+            field: key
+            regex: ^(code|operation)$
+        - not:
+            has:
+              field: value
+              kind: call_expression
+              has:
+                field: function
+                regex: ^Schema\.Enum$
     - all:
         - has:
             field: key

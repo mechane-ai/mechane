@@ -14,7 +14,7 @@ import {
 } from '@mechane/records';
 import { Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { INSTRUCTIONS_MAX_CHARS, MECH_NAME_MAX_CHARS, MechStatus } from './constants.ts';
+import { INSTRUCTIONS_MAX_CHARS, MECH_NAME_MAX_CHARS, MechStatus, NativeTool } from './constants.ts';
 
 /** A mech's name, such as `scout`, which its creator chooses to tell mechs apart. */
 export const MechName = PrintableName.check(Schema.isBetweenLength(1, MECH_NAME_MAX_CHARS));
@@ -30,6 +30,16 @@ export type Instructions = typeof Instructions.Type;
 export const DefinitionRevision = Schema.Int.check(Schema.isGreaterThan(0));
 
 export type DefinitionRevision = typeof DefinitionRevision.Type;
+
+/** Names a runtime-owned tool that a definition may expose independently of its MCP grants. */
+export const NativeToolName = Schema.Enum(NativeTool);
+
+export type NativeToolName = typeof NativeToolName.Type;
+
+/** Selects native model tools; an empty selection exposes none. */
+export const NativeTools = Schema.Array(NativeToolName);
+
+export type NativeTools = typeof NativeTools.Type;
 
 /**
  * Where a forked mech's life left its parent's: the parent, and the sequence of the parent's last event at the fork, 0
@@ -63,6 +73,8 @@ export const Mech = wireStruct({
     ...MECH_SUMMARY_FIELDS,
     /** None for a mech created without instructions, which the wire sends as null. */
     instructions: Schema.OptionFromNullOr(RecordText),
+    /** Absent in older responses; None selects the standard native tools. */
+    nativeTools: Schema.optional(Schema.OptionFromNullOr(NativeTools)),
     dailyCapMicros: Micros,
     /** None while the actor has not installed its first definition. */
     activeRevision: Schema.OptionFromNullOr(DefinitionRevision),
@@ -81,6 +93,8 @@ export const MechRevision = wireStruct({
     model: ModelId,
     /** Absent when this revision gives the mech no additional instructions. */
     instructions: Schema.OptionFromNullOr(RecordText),
+    /** Absent in older responses; None selects the standard native tools for this revision. */
+    nativeTools: Schema.optional(Schema.OptionFromNullOr(NativeTools)),
     dailyCapMicros: Micros,
     status: Schema.Enum(MechStatus),
     updatedAt: WireTime,

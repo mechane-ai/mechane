@@ -34,19 +34,22 @@ Confirm that the grader shares no producing component with the assessed system, 
 
 ## Local adaptations
 
-A subject receives only the case input through its notification and the suite's subject instructions. A common publication
-instruction asks every role to use `console_message`; it supplies no expected answer or alternate runtime path. The caller's
-out folder holds suites, plans, grading material, and records outside the mech's environment. Mech names use role and trial
-identity, not case names. The scripted eval scenario checks that expectations never appear in subject model requests.
+A suite supplies visible inputs separately from private rubrics. Only its visible input and this trial's recorded
+calls reach the application environment. Fresh mechs use role/trial identities rather than case names and receive no
+runner directory or other trial's context. A suite's evidence builder explicitly selects the assessed output; the
+reply adapter selects an explicit Console publication, while application adapters select captured tool evidence.
 
-The grader is a fresh mech with fixed release instructions. Its notification contains the frozen input, expectation IDs
-and descriptions, and the subject's latest explicit public Console reply, bounded to 32,768 characters with an omission
-marker. It receives no private model text, subject events, tool calls, identity, settings, condition labels, or prior grades.
-A quiet subject outcome remains `no_reply` instead of exposing its private completion text to the grader.
+Each fresh judge has `nativeTools: []` and only its private `submit_grade` MCP grant. Its model request receives the
+frozen evidence value, rubric, and grade instructions/schema. Model identities, case labels, prior grades, and
+calibration expectations remain outside that input. Subject diagnostic text stays private; a reply-grading suite
+explicitly selects its public reply as assessed evidence.
+Validate and persist a submitted grade before returning its receipt. Exact retries preserve it; a conflicting second
+submission cannot replace it. Final prose alone is not a grade.
 
-The suite declares different subject and grader models unless `self_grading` is true. An omitted model resolves from the
-deployment and is not yet reported by the runner; such a suite must explicitly declare self-grading. The scripted smoke
-uses one model and declares that condition. No grader calibration or saved-output regrade operation is implemented.
+The suite declares different models unless it explicitly selects self-grading. Save requested and resolved identities;
+provider weight revisions remain unavailable when the provider does not report them. `calibrateEval` and `regradeEval`
+use the ordinary grading implementation and freeze their own audit manifest. Calibration expectations stay separate
+from judge input, and audit records never overwrite source evidence or grades.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

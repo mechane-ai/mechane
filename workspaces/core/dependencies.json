@@ -142,7 +142,7 @@
     "dialect": "effect",
     "kind": "library",
     "criterion": "closure",
-    "consumers": ["@mechane/cli-kernel", "@mechane/cli"]
+    "consumers": ["@mechane/cli-kernel", "@mechane/cli", "@mechane/smoke"]
   },
   "@mechane/release": {
     "owns": "Build CLI binaries and download manifests for every supported target",

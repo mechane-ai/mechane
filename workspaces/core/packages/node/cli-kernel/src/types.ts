@@ -83,6 +83,7 @@ export type FailureReport = { readonly status: ExitStatus; readonly record: Erro
  */
 export type ProgramSettings = {
   readonly identity: string;
+  readonly executablePath: string;
   readonly release: Option.Option<Release>;
   /** Absent when no release stamped the program. */
   readonly binary: Option.Option<ReleasedBinary>;

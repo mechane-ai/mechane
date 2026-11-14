@@ -38,29 +38,27 @@ Compare a resumed run's deadlines, budgets, and trace sequence with the original
 
 ## Local adaptations
 
-`mechane eval run` reaches the deployed `/api/v1` system only on explicit invocation. The smoke uses the scripted upstream.
-The frozen `plan.json` holds suite inputs, expectations, models, repeats, caps, workspace, release revision, and digest.
-Grader instructions belong to that release. Invalid suites fail before sending, and a changed frozen plan is `PlanChanged`.
-Plan version 2 and report version 3 describe notification-driven evaluation. Older out folders are refused without being
-rewritten or deleted; the version change does not authorize another paid evaluation automatically.
+`@mechane/eval` owns the Node run coordinator, reached through its public library or `mechane eval run`.
+Both application-tool suites and the reply-suite adapter use the same notification-driven role lifecycle.
+`manifest.json` freezes the suite, adapter fingerprint, tools, grade schema, bounds, target identity, and selected trials.
+Validate the suite and deployment readiness before agent creation. Verify each created role's selected tool profile
+before notification admission or model work. Record transport credentials separately from the manifest.
 
-Persist each role's creation request and random `notificationId` before creating its mech. Retry uncertain creation
-with the same request identity, then save the resulting mech before admission. Retry uncertain admission under that identity,
-never with a replacement notification. Observe all bounded activations on that fresh mech, save their `runIds`, and collect
-all corresponding trace dispatches. A role is complete only after its activation chain settles. Save its explicit public
-Console message identity and text, or the recorded quiet, failed, or stopped outcome. Native final model text is not output.
+Each role intent records its creation request identity, notification identity, selected native tools, cap, and original
+deadline before either public operation is sent. A saved receipt identifies the same mech and notification across
+recovery. Native activations and trace dispatches belong to that receipt; final private model text is diagnostic only.
+MCP observations are saved before acknowledgment, and evidence is saved before its judge starts. Per-stage files are
+created once. The SQLite exclusive writer lock is released by the operating system after a crash.
 
-Each output file is created once, atomically. Save the subject before creating its grader intent. Resuming never requests
-or grades a saved role again. The local out-folder lock rejects a running owner and removes itself on ordinary exit.
-Trials and roles run sequentially, with no waiting queue. Each role uses a fresh mech with no inherited context or grant.
+Run trials and roles sequentially. Resume verifies the frozen experiment and preserves completed stages. A completed
+resume does not call a model. A failed or cancelled role is evidence, not authority to rerun it silently. Ctrl-C
+requests cancellation and retains recorded results. Cleanup waits for terminal activation state within its deadline,
+archives owned mechs, and deletes their scoped connections and credentials. An unconfirmed cleanup remains visible
+and can be retried without executing or grading again.
 
-The existing lifecycle has explicit gaps: takeover of a dead-process lock is not atomic between competing clients,
-and no public archive operation removes completed role mechs. Ctrl-C still detaches rather than
-canceling the remote activation. These limitations do not satisfy the stronger cancellation and cleanup Rules above.
-
-The plan freezes each role's cap and checks available allowance before creation. No role-wide deadline is persisted;
-individual dispatches have bounded deadlines. Reserved dispatches still contribute zero recorded charge in this runner,
-so an interrupted unsettled attempt is an accounting gap rather than proof of no spend. Preserve these gaps in eval review.
+A transport restart can recreate endpoint addresses and credentials, while preserving recorded calls and request
+receipts. It cannot guarantee that an agent interrupted by the outage is still running. Pi/provider retry behavior
+can issue another paid attempt; stable operation identities are not an exactly-once billing guarantee.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

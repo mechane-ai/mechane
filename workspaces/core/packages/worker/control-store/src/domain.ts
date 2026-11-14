@@ -1,9 +1,12 @@
+import type { NativeToolName } from '@mechane/protocol';
+
 export type Identity = { readonly provider: 'github'; readonly subject: string; readonly login: string };
 
 export type MechDefinition = {
   readonly name: string;
   readonly model: string;
   readonly instructions: string | null;
+  readonly nativeTools?: ReadonlyArray<NativeToolName> | null;
   readonly dailyCapMicros: number;
   readonly status: 'active' | 'paused' | 'archived';
 };

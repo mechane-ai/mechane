@@ -16,6 +16,7 @@ export function programSettings({ stamp, executablePath }: ProgramSettingsInput)
   if (Option.isNone(decoded)) {
     return {
       identity: RELEASE,
+      executablePath,
       release: Option.some(RELEASE),
       binary: Option.none(),
       userAgent: `${PROGRAM}/${RELEASE} (source)`,
@@ -26,6 +27,7 @@ export function programSettings({ stamp, executablePath }: ProgramSettingsInput)
 
   return {
     identity: release,
+    executablePath,
     release: Option.some(release),
     binary: Option.some({ target, path: executablePath }),
     userAgent: `${PROGRAM}/${release} (${target})`,

@@ -419,4 +419,11 @@ CREATE INDEX control_changes_pending ON mechane.control_changes(next_attempt_at,
 ALTER TABLE mechane.oauth_states ADD COLUMN session_token_hash text;
 `,
   },
+  {
+    version: 8,
+    sql: `
+ALTER TABLE mechane.mechs ADD COLUMN native_tools text[];
+ALTER TABLE mechane.mech_revisions ADD COLUMN native_tools text[];
+`,
+  },
 ] as const;

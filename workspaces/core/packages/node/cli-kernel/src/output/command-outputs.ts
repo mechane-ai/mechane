@@ -1,5 +1,5 @@
 import type { CommandName } from '@mechane/commands';
-import { Report } from '@mechane/eval';
+import { EvalComparison, EvalInspection } from '@mechane/eval';
 import {
   ConnectionDeletion,
   ConnectionList,
@@ -80,6 +80,8 @@ export const COMMAND_OUTPUTS = {
   'event list': ListedEvent,
   'turn show': Trace,
   'turn cancel': TurnCancel,
-  'eval run': Report,
+  'eval run': EvalInspection,
+  'eval inspect': EvalInspection,
+  'eval compare': EvalComparison,
   'update': UpdateResult,
 } as const satisfies Readonly<Record<CommandName, Schema.Top>>;

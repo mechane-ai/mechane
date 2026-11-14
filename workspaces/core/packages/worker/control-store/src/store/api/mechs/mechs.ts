@@ -44,7 +44,7 @@ type StoredMech = Mech & { readonly creationFingerprint: string };
 
 async function getMech(context: StoreContext, scope: MechScope): Promise<Mech> {
   const result = await context.client.query<StoredMech>(
-    `SELECT id, workspace_id AS "workspaceId", name, model, instructions,
+    `SELECT id, workspace_id AS "workspaceId", name, model, instructions, native_tools AS "nativeTools",
   daily_cap_micros AS "dailyCapMicros", status, revision, creator_id AS "creatorId",
   updater_id AS "updaterId", created_at AS "createdAt", updated_at AS "updatedAt",
   forked_from AS "forkedFrom", creation_fingerprint AS "creationFingerprint" FROM mechane.mechs WHERE workspace_id = $1 AND id = $2`,
@@ -63,8 +63,8 @@ async function getMech(context: StoreContext, scope: MechScope): Promise<Mech> {
 async function saveRevision(context: StoreContext, mechId: string): Promise<void> {
   await context.client.query(
     `INSERT INTO mechane.mech_revisions
-      (mech_id, revision, name, model, instructions, daily_cap_micros, status, updater_id, updated_at)
-     SELECT id, revision, name, model, instructions, daily_cap_micros, status, updater_id, updated_at
+      (mech_id, revision, name, model, instructions, daily_cap_micros, status, updater_id, updated_at, native_tools)
+     SELECT id, revision, name, model, instructions, daily_cap_micros, status, updater_id, updated_at, native_tools
      FROM mechane.mechs WHERE id = $1`,
     [mechId],
   );
@@ -74,13 +74,24 @@ function creationFingerprint(value: object): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
 
+function definitionFingerprint(input: CreateMechInput): string {
+  const { nativeTools, ...definition } = input.definition;
+  const request = { principalId: input.principalId, ...definition };
+
+  if (nativeTools === null || nativeTools === undefined) {
+    // The standard policy preserves existing creation-request fingerprints.
+    return creationFingerprint(request);
+  }
+
+  return creationFingerprint({ ...request, nativeTools });
+}
+
 async function createMech(context: StoreContext, input: CreateMechInput, requestFingerprint?: string): Promise<Mech> {
   return await context.atomic(async (transaction) => {
     await lockWorkspace({ client: transaction.client, workspaceId: input.workspaceId });
     await lockMember(transaction, input.workspaceId, input.principalId);
 
-    const fingerprint =
-      requestFingerprint ?? creationFingerprint({ principalId: input.principalId, ...input.definition });
+    const fingerprint = requestFingerprint ?? definitionFingerprint(input);
 
     const existing = await findCreatedMech(transaction, {
       workspaceId: input.workspaceId,
@@ -98,8 +109,8 @@ async function createMech(context: StoreContext, input: CreateMechInput, request
     await transaction.client.query(
       `INSERT INTO mechane.mechs
         (id, workspace_id, name, model, instructions, daily_cap_micros, status, revision,
-         creation_request_id, creation_fingerprint, creator_id, updater_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,$9,$10,$10)`,
+         creation_request_id, creation_fingerprint, creator_id, updater_id, native_tools)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,1,$8,$9,$10,$10,$11)`,
       [
         mechId,
         input.workspaceId,
@@ -111,6 +122,7 @@ async function createMech(context: StoreContext, input: CreateMechInput, request
         input.requestId,
         fingerprint,
         input.principalId,
+        definition.nativeTools ?? null,
       ],
     );
     await saveRevision(transaction, mechId);
@@ -133,7 +145,7 @@ async function listMechs(context: StoreContext, input: MechPageInput): Promise<P
   }
 
   const result = await context.client.query<StoredMech>(
-    `SELECT id, workspace_id AS "workspaceId", name, model, instructions,
+    `SELECT id, workspace_id AS "workspaceId", name, model, instructions, native_tools AS "nativeTools",
   daily_cap_micros AS "dailyCapMicros", status, revision, creator_id AS "creatorId",
   updater_id AS "updaterId", created_at AS "createdAt", updated_at AS "updatedAt",
   forked_from AS "forkedFrom", creation_fingerprint AS "creationFingerprint" FROM mechane.mechs
@@ -152,7 +164,7 @@ async function updateMech(context: StoreContext, input: UpdateMechInput): Promis
     await lockMember(transaction, input.workspaceId, input.principalId);
 
     const locked = await transaction.client.query<StoredMech>(
-      `SELECT id, workspace_id AS "workspaceId", name, model, instructions,
+      `SELECT id, workspace_id AS "workspaceId", name, model, instructions, native_tools AS "nativeTools",
   daily_cap_micros AS "dailyCapMicros", status, revision, creator_id AS "creatorId",
   updater_id AS "updaterId", created_at AS "createdAt", updated_at AS "updatedAt",
   forked_from AS "forkedFrom", creation_fingerprint AS "creationFingerprint" FROM mechane.mechs WHERE workspace_id = $1 AND id = $2 FOR UPDATE`,
@@ -177,7 +189,7 @@ async function updateMech(context: StoreContext, input: UpdateMechInput): Promis
 
     await transaction.client.query(
       `UPDATE mechane.mechs SET name=$3,model=$4,instructions=$5,daily_cap_micros=$6,status=$7,
-        revision=revision+1,updater_id=$8,updated_at=now() WHERE workspace_id=$1 AND id=$2`,
+        revision=revision+1,updater_id=$8,updated_at=now(),native_tools=$9 WHERE workspace_id=$1 AND id=$2`,
       [
         input.workspaceId,
         input.mechId,
@@ -187,6 +199,7 @@ async function updateMech(context: StoreContext, input: UpdateMechInput): Promis
         definition.dailyCapMicros,
         definition.status,
         input.principalId,
+        definition.nativeTools ?? null,
       ],
     );
     await saveRevision(transaction, input.mechId);
@@ -200,7 +213,7 @@ async function listMechRevisions(context: StoreContext, input: MechRevisionsInpu
   await getMech(context, input);
 
   const result = await context.client.query<MechRevision>(
-    `SELECT mech_id AS "mechId", revision, name, model, instructions, daily_cap_micros AS "dailyCapMicros",
+    `SELECT mech_id AS "mechId", revision, name, model, instructions, native_tools AS "nativeTools", daily_cap_micros AS "dailyCapMicros",
       status, updater_id AS "updaterId", updated_at AS "updatedAt"
      FROM mechane.mech_revisions WHERE mech_id=$1 AND revision>$2 ORDER BY revision LIMIT $3`,
     [input.mechId, input.after, input.maxRows + 1],
@@ -211,7 +224,7 @@ async function listMechRevisions(context: StoreContext, input: MechRevisionsInpu
 
 async function getMechRevision(context: StoreContext, input: MechRevisionInput): Promise<MechRevision | null> {
   const result = await context.client.query<MechRevision>(
-    `SELECT revisions.mech_id AS "mechId",revisions.revision,revisions.name,revisions.model,revisions.instructions,
+    `SELECT revisions.mech_id AS "mechId",revisions.revision,revisions.name,revisions.model,revisions.instructions,revisions.native_tools AS "nativeTools",
       revisions.daily_cap_micros AS "dailyCapMicros",revisions.status,revisions.updater_id AS "updaterId",revisions.updated_at AS "updatedAt"
      FROM mechane.mech_revisions revisions JOIN mechane.mechs mechs ON mechs.id=revisions.mech_id
      WHERE mechs.workspace_id=$1 AND mechs.id=$2 AND revisions.revision=$3`,
@@ -308,7 +321,7 @@ type CreationLookup = { readonly workspaceId: string; readonly requestId: string
 
 async function findCreatedMech(context: StoreContext, input: CreationLookup): Promise<Mech | undefined> {
   const previous = await context.client.query<StoredMech>(
-    `SELECT id, workspace_id AS "workspaceId", name, model, instructions,
+    `SELECT id, workspace_id AS "workspaceId", name, model, instructions, native_tools AS "nativeTools",
   daily_cap_micros AS "dailyCapMicros", status, revision, creator_id AS "creatorId",
   updater_id AS "updaterId", created_at AS "createdAt", updated_at AS "updatedAt",
   forked_from AS "forkedFrom", creation_fingerprint AS "creationFingerprint" FROM mechane.mechs WHERE workspace_id=$1 AND creation_request_id=$2`,
@@ -333,6 +346,7 @@ function copiedMechInput(input: CloneMechInput, source: Mech): CreateMechInput {
       name: input.name,
       model: source.model,
       instructions: source.instructions,
+      nativeTools: source.nativeTools ?? null,
       dailyCapMicros: source.dailyCapMicros,
       status: 'paused',
     },

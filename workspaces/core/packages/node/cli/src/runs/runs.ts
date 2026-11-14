@@ -31,6 +31,8 @@ import { runTurnCancel } from './mechs/run-turn-cancel.ts';
 import { runEventList } from './observe/run-event-list.ts';
 import { runTurnShow } from './observe/run-turn-show.ts';
 import { runRoutineDelete, runRoutineList, runRoutinePut, runRoutineShow } from './routines/routine-runs.ts';
+import { runEvalCompare } from './run-eval-compare.ts';
+import { runEvalInspect } from './run-eval-inspect.ts';
 import { runEvalRun } from './run-eval-run.ts';
 import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
@@ -107,5 +109,7 @@ export const RUNS: Readonly<Runs> = {
   'turn show': documentRun({ run: runTurnShow }),
   'turn cancel': documentRun({ run: runTurnCancel }),
   'eval run': runEvalRun,
+  'eval inspect': runEvalInspect,
+  'eval compare': runEvalCompare,
   'update': documentRun({ run: runUpdate }),
 };

@@ -15,6 +15,7 @@ import type { RuntimeToolStore } from './context.ts';
 import { withToolStore } from './context.ts';
 import { prepareEnvironment } from './environment.ts';
 import { ToolUnavailableError } from './errors.ts';
+import { isNativeToolCurrent } from './native-tools.ts';
 import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { recordBashInput } from './record-bash-input.ts';
 import { cancelPendingSandboxExecution, requestSandboxExecution } from './sandbox-client.ts';
@@ -152,6 +153,10 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
     return await refuseBeforeDispatch(input, 'Shell execution is not enabled for this mech.');
   }
 
+  if (!(await isNativeToolCurrent({ ...input, name: 'bash' }))) {
+    return await refuseBeforeDispatch(input, 'The current definition does not permit shell execution.');
+  }
+
   const preparedEnvironment = await prepareEnvironment({ ...input, store });
   const run = await store.getRun({ runId: input.runId, workspaceId: input.workspaceId });
 
@@ -208,6 +213,10 @@ async function authorizeBash(input: AuthorizeBashInput): Promise<BashResult> {
 }
 
 async function currentBashRefusal(input: AuthorizeBashInput): Promise<string | null> {
+  if (!(await isNativeToolCurrent({ ...input, name: 'bash' }))) {
+    return 'The current definition does not permit shell execution.';
+  }
+
   const authority = await input.store.getRuntimeAuthority(input);
 
   if (!canRunShell(authority)) {

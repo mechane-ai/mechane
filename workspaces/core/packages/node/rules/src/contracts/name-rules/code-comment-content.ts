@@ -6,6 +6,7 @@ const VALUES = {
   docSentences: 3,
   docSentenceWords: 30,
   publicEntrypoints: [
+    'packages/node/eval/src/index.ts',
     'packages/shared/client/src/index.ts',
     'packages/shared/client/src/presentation/index.ts',
     'packages/shared/protocol/src/index.ts',

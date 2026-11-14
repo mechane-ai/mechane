@@ -21,6 +21,12 @@ those invariants. Actor status in Postgres is a read projection, never execution
 cross-store delivery uses an immutable outbox identity and recipient acknowledgment. A committed outbox must have a
 bounded recovery sweep; it does not drive the agent loop.
 
+Persist an optional native-tool allowlist with the definition and its revisions. An absent or null selection retains
+the ordinary product tools; an empty list exposes none. Keep granted MCP tools independently scoped. Filter the native
+model registrations and check current selection before new native effects or pending dispatch. Reconcile an identical
+admitted terminal receipt before rejecting a newly revoked tool, without starting another effect. Pi may interrupt cold
+replay when a removed registration no longer resolves; preserve the original application receipt and report that limit.
+
 Capture a configuration operation's exact recipient outbox rows only after their control transaction commits. Refresh
 those recipients through the shared idempotent delivery owner and confirm their immutable identities before returning
 command success. Do not hold a Postgres transaction over actor RPC or drain unrelated backlog to acknowledge a command.

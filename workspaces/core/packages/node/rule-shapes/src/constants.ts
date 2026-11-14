@@ -201,6 +201,7 @@ export const FileRole = {
   BrowserCacheLifecycle: 'browser-cache-lifecycle',
   Settings: 'settings',
   Output: 'output',
+  PersistenceCodec: 'persistence-codec',
   WorkerModule: 'worker-module',
   EntryPoint: 'entry-point',
   Catalog: 'catalog',

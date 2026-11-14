@@ -20,6 +20,7 @@ ignores:
     'packages/node/guest/src/guest-listener.ts',
     'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
+    'packages/node/eval/src/environment/http-entry.ts',
   ]
 utils:
   # The type arguments a generic that no Mechane module declares takes, which follow that dependency's own types: the

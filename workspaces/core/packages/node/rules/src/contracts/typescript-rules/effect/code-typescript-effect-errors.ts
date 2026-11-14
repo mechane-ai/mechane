@@ -29,9 +29,15 @@ export const codeTypescriptEffectErrors = {
       standard: 'ER-02',
       status: RuleStatus.Ratchet,
       phase: RolloutPhase.DataShapes,
-      violation: ["class Missing extends Schema.TaggedError<Missing>()('Missing', { message: Schema.String }) {}"],
+      violation: [
+        "class Missing extends Schema.TaggedError<Missing>()('Missing', { message: Schema.String }) {}",
+        "class Refused extends Schema.TaggedError<Refused>()('Refused', { operation: Schema.String }) {}",
+        "class Refused extends Schema.TaggedError<Refused>()('Refused', { code: Schema.NonEmptyString }) {}",
+      ],
       allowed: [
         "class Missing extends Schema.TaggedError<Missing>()('Missing', { mechId: MechId, reason: Schema.String }) {}",
+        "class Refused extends Schema.TaggedError<Refused>()('Refused', { operation: Schema.Enum(Operation), reason: Schema.String }) {}",
+        "class Refused extends Schema.TaggedError<Refused>()('Refused', { code: Schema.Enum(Code), reason: Schema.String }) {}",
       ],
     },
     {

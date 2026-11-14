@@ -34,12 +34,17 @@ export function createProcessAdmissionTask(getAccess: () => ActorAccess) {
         const hasExpired: () => boolean = () => runtime.now() >= current.input.deadlineAt;
 
         const result = await withReceiptTaskOwner(
-          { access, ...current.input, run: async () => await startProcess({ ...current.input, hasExpired }) },
+          {
+            access,
+            ...current.input,
+            toolName: 'start_process',
+            run: async () => await startProcess({ ...current.input, hasExpired }),
+          },
           context,
         );
 
         if (result.status === 'pending') {
-          const isCurrent = await isExecutionCurrent({ access, ...current.input }, context);
+          const isCurrent = await isExecutionCurrent({ access, ...current.input, toolName: 'start_process' }, context);
 
           if (!hasExpired() && isCurrent) {
             const nextAt = Math.min(current.input.deadlineAt, runtime.now() + PROCESS_ADMISSION_POLL_MS);

@@ -12,6 +12,16 @@ const RESPONSE_RETRY = Option.some('inspect the mech activation history, then re
  * rerun resumes.
  */
 export const EVAL_FAILURE_MESSAGES: Readonly<FailureMessages<EvalFailure>> = {
+  EvalAdapterFailed: ({ _tag, operation, reason }) =>
+    bareMessage({ code: _tag, status: ExitStatus.Failed, message: `${operation}: ${reason}` }),
+  EvalTransportFailed: ({ _tag, operation, reason }) =>
+    bareMessage({ code: _tag, status: ExitStatus.Unavailable, message: `${operation}: ${reason}` }),
+  EvalManifestMissing: ({ _tag, outFolder }) =>
+    bareMessage({
+      code: _tag,
+      status: ExitStatus.InvalidRequest,
+      message: `read evaluation manifest in ${outFolder}: no manifest exists`,
+    }),
   SuiteInvalid: ({ _tag, path, reason }) =>
     ownMessage({
       code: _tag,
@@ -19,12 +29,12 @@ export const EVAL_FAILURE_MESSAGES: Readonly<FailureMessages<EvalFailure>> = {
       message: `the suite ${path} is not one: ${reason}`,
       next: Option.none(),
     }),
-  OutFolderBusy: ({ _tag, path, processId }) =>
+  OutFolderBusy: ({ _tag, path }) =>
     ownMessage({
       code: _tag,
       status: ExitStatus.Conflict,
-      message: `process ${processId} runs into this out folder, as ${path} says`,
-      next: Option.some('wait for it to end, or remove the lock if no run uses the folder'),
+      message: `acquire evaluation lock ${path}: another writer holds it`,
+      next: Option.some('wait for the current writer to finish, then retry the same output folder'),
     }),
   PlanChanged: ({ _tag, path, savedDigest, plannedDigest }) =>
     ownMessage({

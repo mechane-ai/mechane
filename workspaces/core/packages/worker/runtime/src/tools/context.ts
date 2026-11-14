@@ -3,6 +3,9 @@ import type { ControlStore } from '@mechane/control-store';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { RuntimeConfiguration } from '../config.ts';
 import type { ActivityEvent, ConsoleMessage, ExecutionReceipt, Run } from '../domain.ts';
+import { ToolNotStartedError } from './errors.ts';
+import { isNativeToolCurrent } from './native-tools.ts';
+import type { RuntimeToolContext } from './types.ts';
 
 export type RuntimeToolStore = ControlStore & {
   readonly canDispatchExecution: (transaction?: Tx) => Promise<boolean>;
@@ -56,6 +59,14 @@ export async function withToolStore<T>(operation: (store: RuntimeToolStore) => P
   }
 
   return await owner.withStore(operation);
+}
+
+export async function requireNativeTool(input: RuntimeToolContext & { readonly name: string }): Promise<void> {
+  await withToolStore(async (store) => {
+    if (!(await isNativeToolCurrent({ store, ...input }))) {
+      throw new ToolNotStartedError('The current definition does not permit this native tool');
+    }
+  });
 }
 
 export function toolConfiguration(): RuntimeConfiguration {

@@ -1,6 +1,6 @@
 import { ModelId } from '@mechane/deployment';
-import { Instructions, NotificationId, NotificationText } from '@mechane/protocol';
-import { CreationRequestId, isWellFormedText, MechId, Micros, RecordId, wireStruct } from '@mechane/records';
+import { Instructions, NotificationText } from '@mechane/protocol';
+import { isWellFormedText, Micros, wireStruct } from '@mechane/records';
 import { Effect, Predicate, Schema } from 'effect';
 import {
   CASES_PER_SUITE,
@@ -9,25 +9,10 @@ import {
   EVAL_ID_PATTERN,
   EXPECTATIONS_PER_CASE,
   INPUT_MAX_CHARS,
-  PLAN_VERSION,
   PUBLICATION_INSTRUCTIONS,
   REPEATS_PER_CASE,
   SUITE_VERSION,
 } from './constants.ts';
-
-/** The out folder's lock: the id of the process whose run writes its records. */
-export const OutFolderLock = wireStruct({ fields: { processId: Schema.Int.check(Schema.isGreaterThanOrEqualTo(1)) } });
-
-export type OutFolderLock = typeof OutFolderLock.Type;
-
-export const CreationIntent = wireStruct({ fields: { requestId: CreationRequestId, notificationId: NotificationId } });
-
-export type CreationIntent = typeof CreationIntent.Type;
-
-/** The notification identity is saved before sending, so resuming does not repeat paid work. */
-export const Intent = wireStruct({ fields: { mechId: MechId, notificationId: NotificationId } });
-
-export type Intent = typeof Intent.Type;
 
 /** The id of a suite, a case or an expectation. */
 export const EvalId = Schema.String.check(Schema.isPattern(EVAL_ID_PATTERN));
@@ -44,10 +29,12 @@ const hasDistinctIds = Schema.makeFilter(
 );
 
 /** One thing a case's reply should do, which the grader judges and the subject never sees. */
-const Expectation = Schema.Struct({
+export const Expectation = Schema.Struct({
   id: EvalId,
   description: Schema.String.check(isWellFormedText, Schema.isBetweenLength(1, DESCRIPTION_MAX_CHARS)),
 });
+
+export type Expectation = typeof Expectation.Type;
 
 /** Expectations belong to the grader and are never included in the subject's notification. */
 const Case = Schema.Struct({
@@ -100,19 +87,6 @@ export const Suite = wireStruct({
 );
 
 export type Suite = typeof Suite.Type;
-
-/** What a plan's digest covers: the suite, and the deployment and workspace it runs against. */
-export const PlanBasis = wireStruct({
-  fields: {
-    version: Schema.Literal(PLAN_VERSION),
-    suite: Suite,
-    release: Schema.String,
-    runtimeRevision: Schema.String,
-    workspaceId: RecordId,
-  },
-});
-
-export type PlanBasis = typeof PlanBasis.Type;
 
 /** A grade: one criterion for each of the case's expectations, under its id, with a verdict and its evidence. */
 export const Grade = Schema.Struct({

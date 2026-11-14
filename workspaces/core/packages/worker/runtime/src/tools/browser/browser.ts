@@ -1,5 +1,6 @@
 import { StoreConflict } from '@mechane/control-store';
 import { BrowserEvidenceProgress, evidenceViewerPath } from '@mechane/protocol';
+import type { NativeToolName } from '@mechane/protocol';
 import { toolExecutionId as executionId } from '@mechane/records';
 import { BrowserAction, SandboxBrowserSubmission } from '@mechane/sandbox-wire';
 import { Option, Schema } from 'effect';
@@ -7,6 +8,7 @@ import { isDeepStrictEqual } from 'node:util';
 import type { ExecutionReceipt } from '../../domain.ts';
 import { toolConfiguration, withToolStore } from '../context.ts';
 import type { RuntimeToolStore } from '../context.ts';
+import { permitsNativeTool } from '../native-tools.ts';
 import { readExecutionReceipt } from '../read-execution-receipt.ts';
 import type { RuntimeToolContext, ToolInvocation } from '../types.ts';
 import { BrowserTransportInterruptedError, requestBrowser, requestBrowserAbandon } from './browser-client.ts';
@@ -22,6 +24,27 @@ const BROWSER_READ_OR_CLEANUP: ReadonlySet<BrowserAction['_tag']> = new Set([
   'Close',
   'RecordStop',
 ]);
+
+const BROWSER_TOOL_NAMES: Readonly<Record<BrowserAction['_tag'], NativeToolName>> = {
+  Tabs: 'browser_tabs',
+  Open: 'browser_open',
+  Close: 'browser_close',
+  Navigate: 'browser_navigate',
+  Observe: 'browser_observe',
+  Click: 'browser_click',
+  Type: 'browser_type',
+  Scroll: 'browser_scroll',
+  Key: 'browser_key',
+  Screenshot: 'browser_screenshot',
+  RecordStart: 'browser_record_start',
+  RecordStop: 'browser_record_stop',
+  Console: 'browser_console',
+  Network: 'browser_network',
+};
+
+export function browserToolName(action: BrowserAction['_tag']): NativeToolName {
+  return BROWSER_TOOL_NAMES[action];
+}
 
 const FINAL_RECEIPT_STATES: ReadonlySet<string> = new Set(['completed', 'failed']);
 export type BrowserInvocation = ToolInvocation & { readonly action: typeof BrowserAction.Encoded };
@@ -188,6 +211,12 @@ type BrowserAdmissionInput = {
 
 async function permitsBrowserSubmission({ input, store, action }: BrowserAdmissionInput): Promise<boolean> {
   const mech = await store.getMech(input);
+  const name = browserToolName(action);
+
+  if (!permitsNativeTool({ name, nativeTools: mech.nativeTools })) {
+    return false;
+  }
+
   const policy = await store.getRuntimePolicy(input);
   const run = await store.getRun({ workspaceId: input.workspaceId, runId: input.runId });
   const isWorkspaceEnabled = policy !== null && !policy.isSuspended;

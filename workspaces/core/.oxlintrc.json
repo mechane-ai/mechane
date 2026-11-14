@@ -801,6 +801,7 @@
     },
     {
       "files": [
+        "packages/node/eval/src/environment/http-entry.ts",
         "packages/shared/bash/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
@@ -1305,6 +1306,7 @@
     },
     {
       "files": [
+        "packages/node/eval/src/environment/http-entry.ts",
         "packages/shared/bash/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
