@@ -117,7 +117,7 @@ The default row is 48px high, with vertically centered content. Use `rowSizing="
 multiline records or controls cannot fit that height. Never crop an interactive control to preserve row geometry.
 The virtualizer's fixed estimate must equal the rendered row height; measure only content-sized rows. Keep row keys,
 keyboard navigation, and focused-row retention stable when scrolling. Inspect a long identifier beside a short one,
-then scroll beyond the initial viewport and return by keyboard. Placeholders use the same table geometry.
+then scroll beyond the initial viewport and return by keyboard. Placeholders render through DataTable with the same column layout, row sizing, caption and footer. Supply the same viewport mode for the pending and ready table; AsyncRegion owns visibility. Do not maintain a second placeholder table renderer in a consumer.
 
 Fixed primary and text cells truncate by default; numbers, timestamps, and actions remain readable.
 Compose a primary and secondary text value with `DataTableText`, whose string inputs put ellipsis on the text-bearing

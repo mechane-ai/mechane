@@ -41,6 +41,7 @@ export function MechsPagePlaceholder(): ReactNode {
 function MechListPlaceholder(): ReactNode {
   return (
     <DataTablePlaceholder
+      caption="Mechs"
       columns={[
         {
           ...mechColumns.name,

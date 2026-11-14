@@ -1,3 +1,4 @@
+import { getFiletypeFromFileName } from '@pierre/diffs';
 import type { ThemedToken } from '@pierre/highlights';
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
@@ -86,7 +87,7 @@ function CodeToken({ token }: CodeTokenProps): ReactNode {
 export function CodeBlock({
   code,
   variant = 'default',
-  language = 'text',
+  language,
   filename,
   isStreaming = false,
   shouldWrap = false,
@@ -96,11 +97,12 @@ export function CodeBlock({
   maxHeight = 400,
   maxLines = 2000,
 }: CodeBlockProps): ReactNode {
-  const result = useHighlightedCode(code, language);
+  const sourceLanguage = language ?? (filename === undefined ? 'text' : getFiletypeFromFileName(filename));
+  const result = useHighlightedCode(code, sourceLanguage);
   const scroll = useScrollTabIndex<HTMLDivElement>();
   const previewLines = code.slice(0, MAX_PREVIEW_CHARACTERS).split(/\r\n|\n|\r/u);
   const lines = previewLines.slice(0, Math.max(1, maxLines)).map((text, position) => ({ text, line: position + 1 }));
-  const label = filename ?? language;
+  const label = filename ?? sourceLanguage;
   const isEmbedded = variant === 'embedded';
 
   return (

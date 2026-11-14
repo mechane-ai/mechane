@@ -81,10 +81,14 @@ function CollectionExample({ state = 'ready', hasNavigation = false }: Collectio
         <AsyncRegion
           state="pending"
           label="Loading projects"
-          placeholder={<DataTablePlaceholder columns={columns} />}
+          placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
         />
       ) : (
-        <AsyncRegion state={state} label="Loading projects" placeholder={<DataTablePlaceholder columns={columns} />}>
+        <AsyncRegion
+          state={state}
+          label="Loading projects"
+          placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
+        >
           {state === 'failed' ? (
             <Notice hasError>The application supplies its recovery action here.</Notice>
           ) : (

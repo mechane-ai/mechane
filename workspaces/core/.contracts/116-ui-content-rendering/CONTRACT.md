@@ -53,6 +53,8 @@ Use the AI Chat catalog to inspect a later streaming reply beside a completed he
 
 ## Local adaptations
 
+CodeBlock infers the language from its supplied filename through Pierre when the caller supplies no language. Applications supply source text and file identity; they do not maintain another language-extension map.
+
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 No rule of the registry decides this contract; review does.

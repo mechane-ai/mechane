@@ -45,7 +45,7 @@ Review new bindings for scope, activation conditions, repeat handling, conflicts
 
 ## Local adaptations
 
-The shared mechanism is implemented through TanStack Hotkeys. Applications supply commands and own their eligibility;
+The shared mechanism is implemented through TanStack Hotkeys. It rejects editable targets and bindings outside an open overlay before consuming the key. A control inside that overlay keeps its native dismissal and focus behavior. Applications supply commands and own their eligibility;
 presentation code may bind those supplied commands but must not define business actions or their permission rules.
 Base UI and native elements continue to own menu navigation, control activation, and overlay focus.
 

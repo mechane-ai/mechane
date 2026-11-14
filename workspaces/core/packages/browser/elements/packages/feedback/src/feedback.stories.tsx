@@ -242,7 +242,11 @@ const recordColumns = [
 function ReadExample({ initialState = 'pending' }: { readonly initialState?: AsyncRegionState }) {
   const [state, setState] = useState(initialState);
   const [attempt, setAttempt] = useState(0);
-  const region = { label: 'Loading records', placeholder: <DataTablePlaceholder columns={recordColumns} /> };
+
+  const region = {
+    label: 'Loading records',
+    placeholder: <DataTablePlaceholder caption="Records" columns={recordColumns} />,
+  };
 
   return (
     <Stack>

@@ -9,12 +9,12 @@ const code =
 const meta = {
   title: 'Content/Code',
   component: CodeBlock,
-  args: { code, filename: 'src/example.ts', language: 'typescript' },
+  args: { code, filename: 'src/example.ts' },
   parameters: {
     docs: {
       description: {
         component:
-          'CodeBlock presents supplied source with readable text before highlighting is ready. Choose DiffViewer for changes between revisions and Markdown for prose containing code. Applications supply the original source, language, file identity and streaming state; annotations and selected lines use one-based source coordinates. Wrapping, line limits and highlighting do not change the copied source. Unsupported languages remain readable plain text, and truncated displays identify omitted content.',
+          'CodeBlock presents supplied source with readable text before highlighting is ready. Choose DiffViewer for changes between revisions and Markdown for prose containing code. Applications supply original source, file identity and streaming state. The filename selects its language through Pierre unless an explicit language is supplied; annotations and selected lines use one-based source coordinates. Wrapping, line limits and highlighting do not change the copied source. Unsupported languages remain readable plain text, and truncated displays identify omitted content.',
       },
     },
   },

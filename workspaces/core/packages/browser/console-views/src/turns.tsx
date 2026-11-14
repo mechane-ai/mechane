@@ -19,7 +19,7 @@ const turnColumns = {
 } as const satisfies Record<string, DataTableColumnLayout>;
 
 export function TurnListPlaceholder(): ReactNode {
-  return <DataTablePlaceholder columns={Object.values(turnColumns)} />;
+  return <DataTablePlaceholder caption="Turns" columns={Object.values(turnColumns)} />;
 }
 
 function elapsedLabel(turn: Turn): string {

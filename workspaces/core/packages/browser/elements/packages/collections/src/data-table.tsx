@@ -292,11 +292,14 @@ export type DataTableColumn<Row> = DataTableColumnLayout & {
   readonly canSort?: boolean;
 };
 
-export type DataTablePlaceholderProps = {
-  readonly columns: ReadonlyArray<DataTableColumnLayout & { readonly placeholder?: ReactNode }>;
-  readonly sizing?: TableSizing;
-  readonly rowSizing?: RowSizing;
-  readonly hideHeaders?: boolean;
+export type DataTablePlaceholderProps = Pick<
+  DataTableProps<object>,
+  'caption' | 'hideCaption' | 'hideHeaders' | 'rowSizing' | 'window' | 'footer'
+> & {
+  readonly columns: ReadonlyArray<
+    DataTableColumnLayout & { readonly shouldTruncate?: boolean; readonly placeholder?: ReactNode }
+  >;
+  readonly rows?: number;
 };
 
 function prepareColumns<Column extends DataTableColumnLayout>(columns: ReadonlyArray<Column>) {
@@ -357,60 +360,29 @@ function ColumnGroup({
 }
 
 export function DataTablePlaceholder({
-  columns: suppliedColumns,
-  sizing = 'content',
-  rowSizing = 'fixed',
-  hideHeaders = false,
+  columns,
+  rows = 3,
+  hideCaption = true,
+  ...props
 }: DataTablePlaceholderProps): ReactNode {
-  const columns = prepareColumns(suppliedColumns);
-  const { minimumWidth, compactWidth } = tableWidths(columns);
+  const sizing = typeof props.window?.height === 'string' ? props.window.height : 'content';
+  const positions = Array.from({ length: rows }, (_, index) => ({ id: String(index) }));
+
+  const placeholders = columns.map(({ placeholder, ...column }) => ({
+    ...column,
+    cell: () => placeholder ?? <SkeletonText width="60%" />,
+  }));
 
   return (
-    <div aria-hidden inert {...stylex.props(styles.frame, frameStyles[sizing], styles.placeholder)}>
-      <div {...stylex.props(styles.viewport, viewportStyles[sizing])}>
-        <table {...stylex.props(styles.table, styles.fixed, styles.minimumWidth(minimumWidth, compactWidth))}>
-          <ColumnGroup columns={columns} />
-          <thead {...stylex.props(hideHeaders && accessibility.hidden)}>
-            <tr>
-              {columns.map((column) => (
-                <th
-                  key={column.id}
-                  {...stylex.props(
-                    styles.header,
-                    columnRoleStyles[column.role],
-                    column.width !== undefined && styles.width(column.width),
-                    column.isSecondary === true && styles.secondary,
-                  )}
-                >
-                  <span {...stylex.props(styles.headerLabel)}>{column.label}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {['first', 'second', 'third'].map((row) => (
-              <tr key={row} {...stylex.props(styles.row)}>
-                {columns.map((column) => (
-                  <td
-                    key={column.id}
-                    {...stylex.props(
-                      styles.cell,
-                      cellSizingStyles[rowSizing],
-                      columnRoleStyles[column.role],
-                      column.width !== undefined && styles.width(column.width),
-                      column.isSecondary === true && styles.secondary,
-                    )}
-                  >
-                    <TableCellContent role={column.role} isFixed={rowSizing === 'fixed'} shouldTruncate={undefined}>
-                      {column.placeholder ?? <SkeletonText width="60%" />}
-                    </TableCellContent>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+    <div aria-hidden inert {...stylex.props(frameStyles[sizing], styles.placeholder)}>
+      <DataTable
+        {...props}
+        hideCaption={hideCaption}
+        rows={positions}
+        getRowId={(position) => position.id}
+        columns={placeholders}
+        empty={null}
+      />
     </div>
   );
 }

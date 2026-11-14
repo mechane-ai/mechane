@@ -55,7 +55,7 @@ function CollectionExample({ initialState = 'ready' }: { readonly initialState?:
   const [state, setState] = useState(initialState);
   const [query, setQuery] = useState('');
   const rows = state === 'empty' ? [] : records.filter((row) => row.name.toLowerCase().includes(query.toLowerCase()));
-  const placeholder = <DataTablePlaceholder columns={columns} sizing="fill" />;
+  const placeholder = <DataTablePlaceholder caption="Records" columns={columns} window={{ height: 'fill' }} />;
 
   return (
     <CollectionLayout
@@ -200,7 +200,7 @@ function RecordReport({
         <>
           <SectionHeading title="Services" />
           {isPending ? (
-            <DataTablePlaceholder columns={reportColumns} />
+            <DataTablePlaceholder caption="Records" columns={reportColumns} />
           ) : (
             <DataTable
               rows={rows}

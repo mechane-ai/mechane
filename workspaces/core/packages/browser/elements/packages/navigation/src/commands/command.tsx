@@ -87,12 +87,22 @@ export function useCommandShortcuts({ commands, target, isEnabled }: CommandShor
 
           const region = target !== null && 'current' in target ? target.current : target;
 
-          const modal =
-            event.target instanceof Element
-              ? event.target.closest('dialog[open], [role="dialog"][aria-modal="true"], [role="alertdialog"]')
-              : null;
+          const document = region?.ownerDocument ?? globalThis.document;
 
-          if (modal !== null && (region === null || !modal.contains(region))) {
+          const overlays = document.querySelectorAll(
+            ':is(dialog[open], [role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"], [data-base-ui-popover-popup]):not([data-closed])',
+          );
+
+          for (const overlay of overlays) {
+            if (region === null || !overlay.contains(region)) {
+              return;
+            }
+          }
+
+          if (
+            event.target instanceof Element &&
+            event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null
+          ) {
             return;
           }
 

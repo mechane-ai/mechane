@@ -371,7 +371,9 @@ export const OperationalDetails: Story = {
   ),
 };
 
-export const Placeholder: Story = { render: () => <DataTablePlaceholder columns={columns} /> };
+export const Placeholder: Story = {
+  render: () => <DataTablePlaceholder caption="Loading records" columns={columns} />,
+};
 
 export const TextPlaceholder: Story = {
   render: () => (
