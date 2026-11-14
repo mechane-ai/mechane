@@ -8,7 +8,6 @@ files: ['**/*.ts']
 ignores:
   [
     'packages/node/{stack,distribution,testing,smoke}/src/**',
-    'packages/worker/{runtime,server,control-store}/src/**',
     'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     'packages/shared/deployment/src/worker-deployment.ts',
@@ -21,6 +20,7 @@ ignores:
     'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
     'packages/node/eval/src/environment/http-entry.ts',
+    'packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**',
   ]
 utils:
   # The type arguments a generic that no Mechane module declares takes, which follow that dependency's own types: the

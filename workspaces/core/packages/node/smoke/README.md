@@ -17,12 +17,18 @@ The sandbox service runs on a separate celld host and executes real commands in 
 application preserves this host. Environment scenarios check execution receipts, workspace recovery, and transient
 credentials. Cloudflare platform behavior still requires hosted qualification.
 
-`src/main.ts` owns one stack and always stops it. `src/catalog.ts` orders checks that share this stack; authentication
-limits run first and credential leak checks run last. `src/run-scenarios.ts` applies a bounded deadline and can select
-one scenario by its exported function name or a guarantee substring. For example,
-`mise -C workspaces/core run smoke -- duplicateNotificationRunsAndChargesOnce` selects the admission and charging
-guarantee. Full smoke runs the complete catalog. Failed scenarios retain private runtime and sandbox logs at the printed
-path; review and remove that folder afterward. Each resource folder contains the scenarios for its guarantees.
+`src/main.ts` owns a bounded pool of independent stacks and joins every stack's cleanup. Source runs use one stack to
+preserve ownership of their build outputs. Artifact runs default to four; `--stack-count` or `MECHANE_SMOKE_STACK_COUNT`
+selects one to eight artifact stacks. Each stack has its own database, provider fixtures, ports, celld state, and Docker
+ownership. The pool admits each case once, starting cases with longer declared deadlines first. A failure stops new
+admissions while active cases finish and their stacks stop. Credential inspection runs after the other work on every
+stack. The complete summary records all distinct guarantees and every execution, including those repeated inspections.
+
+`src/run-scenarios.ts` applies a bounded deadline and can select one scenario by its exported function name or a
+guarantee substring. For example, `mise -C workspaces/core run smoke -- duplicateNotificationRunsAndChargesOnce` selects
+the admission and charging guarantee. Full smoke runs the complete catalog. Failed scenarios retain private runtime and
+sandbox logs at the printed path; review and remove that folder afterward. Each resource folder contains the scenarios
+for its guarantees.
 
 `@mechane/stack` owns retained development sessions through `runDevelopment`. Smoke supplies its catalog callback; only
 explicitly marked fixture cases reuse retained state, and other cases use isolation. Generic session control does not

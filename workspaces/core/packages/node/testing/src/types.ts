@@ -9,6 +9,7 @@ export type ScenarioInput = { readonly stack: LocalStack; readonly guarantee: st
 export type Scenario = {
   readonly family: string;
   readonly canUseRetainedStack?: boolean;
+  readonly isStackInspection?: boolean;
   readonly timeoutMs?: number;
   readonly guarantee: string;
   readonly regression: string;

@@ -94,7 +94,10 @@
     "packages/shared/utilities": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/control-store": { "project": ["src/**/*.{ts,tsx}!"] },
     "packages/worker/runtime": { "project": ["src/**/*.{ts,tsx}!"] },
-    "packages/worker/sandbox": { "project": ["src/**/*.{ts,tsx}!"] },
+    "packages/worker/sandbox": {
+      "entry": ["testing/native-container.ts"],
+      "project": ["src/**/*.ts!", "testing/**/*.ts"],
+    },
     "packages/worker/sandbox-store": { "project": ["src/**/*.{ts,tsx}!"] },
     // knip's Wrangler plugin reads `main` from wrangler.jsonc, the file the Workers runtime loads.
     "packages/worker/server": { "entry": ["src/**/main.ts!"], "project": ["src/**/*.{ts,tsx}!"] },

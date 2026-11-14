@@ -118,10 +118,7 @@ export function containerProvider({
 
         await cache.invalidateSelected({ machineId });
 
-        const observed = await container.inspect();
-        const isAbsent = Schema.is(Schema.Null)(observed);
-
-        if (!isAbsent) {
+        if (container.running) {
           Result.getOrThrow(started);
         }
 
@@ -134,18 +131,18 @@ export function containerProvider({
       await container.setInactivityTimeout(timeout);
     },
     connect: () => containerGuest({ container }),
-    isAbsent: async () => {
-      const inspected = await container.inspect();
-
-      return Schema.is(Schema.Null)(inspected);
-    },
+    isAbsent: async () => !container.running,
     restoredWorkspace: cache.restoredWorkspace,
     stop: async ({ machineId, checkpoint }) => {
       const identity = MachineId.make(machineId);
 
       const isRunning = await requireContainerMachine({ container, machineId: identity });
 
-      if (isRunning && Option.isSome(checkpoint)) {
+      if (!isRunning) {
+        return;
+      }
+
+      if (Option.isSome(checkpoint)) {
         await cache.capture({ machineId, checkpoint: checkpoint.value });
       }
 

@@ -1,14 +1,21 @@
 import type { SandboxContainerNetwork } from '@mechane/deployment';
+import type { machineCacheRecords } from '@mechane/sandbox-store';
 import type { SandboxTools } from '@mechane/sandbox-wire';
 import type { Option, Redacted } from 'effect';
 import type { EgressGateway } from '../egress/egress-gateway.ts';
 import type { MachineIdInput } from '../types.ts';
 
+type ContainerState = {
+  readonly waitUntil: DurableObjectState['waitUntil'];
+  readonly blockConcurrencyWhile: DurableObjectState['blockConcurrencyWhile'];
+  readonly storage: Parameters<typeof machineCacheRecords>[0]['storage'];
+};
+
 /** The container and Durable Object lifecycle that own its inactivity policy. */
 export type ContainerProviderInput = {
   readonly onStartupExit: (input: MachineIdInput) => void;
   readonly container: Container;
-  readonly state: DurableObjectState;
+  readonly state: ContainerState;
   readonly gateway: () => Fetcher;
   readonly containerNetwork: SandboxContainerNetwork;
   readonly additionalTools: SandboxTools;

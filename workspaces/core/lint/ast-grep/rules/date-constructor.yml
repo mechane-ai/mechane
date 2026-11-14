@@ -9,7 +9,6 @@ ignores:
   [
     'packages/node/{stack,distribution,testing,smoke}/src/**',
     'packages/shared/deployment/src/worker-deployment.ts',
-    'packages/worker/{runtime,server,control-store}/src/**',
     'packages/worker/sandbox/src/service/**',
     '**/node_modules/**',
     '**/*.d.ts',
@@ -19,6 +18,7 @@ ignores:
     'packages/worker/sandbox/src/providers/machine-object.ts',
     'packages/node/eval/src/environment/http-entry.ts',
     'packages/browser/elements/packages/forms/src/dates/civil.ts',
+    'packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**',
   ]
 rule:
   kind: new_expression

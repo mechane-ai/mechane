@@ -13,7 +13,7 @@ const CACHE_LIFETIME = Duration.days(29);
 const CAPTURE_TIMEOUT = Duration.minutes(1);
 
 type CacheInput = Pick<ContainerProviderInput, 'container' | 'nativeImage' | 'instance'> & {
-  readonly storage: DurableObjectStorage;
+  readonly storage: ContainerProviderInput['state']['storage'];
   readonly configuration: Pick<
     ContainerProviderInput,
     'additionalTools' | 'isBrowserSandboxDisabled' | 'trustedCertificatesPem' | 'containerNetwork'

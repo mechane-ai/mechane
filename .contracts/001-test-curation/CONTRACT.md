@@ -2,7 +2,7 @@
 name: test-curation
 message: Treat development tests as disposable, and commit only checks that guard consequential regressions and declared example tests.
 requires-tenet: 0.11.0
-paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/packages/node/distribution/testing/**", "workspaces/core/infrastructure/check.sh", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
+paths: ["workspaces/core/packages/node/smoke/src/**", "workspaces/core/packages/node/testing/src/**", "workspaces/core/packages/node/distribution/testing/**", "workspaces/core/packages/worker/sandbox/testing/**", "workspaces/core/infrastructure/check.sh", "workspaces/core/packages/browser/**", "workspaces/core/**/package.json", "workspaces/core/pnpm-lock.yaml"]
 ---
 
 ## Rules
@@ -63,7 +63,11 @@ staged installation descriptor. This publication-safety check compares the actua
 catalog and exact migration ledger. It guards a builder emitting stale formats or changed migration checksums, without
 a second runner or a copied historical fixture.
 
-The repository keeps no separate unit-test runner or sampled model benchmark in `mise run check`. Deterministic
+The native container lifecycle fixture in `packages/worker/sandbox/testing/native-container.ts` uses Node's built-in
+test runner with scoped deadlines under `mise -C workspaces/core run sandbox:native:check`, also in source checks.
+It guards cold startup and safe retirement against the native API's unstarted inspection failure, live identity gaps,
+and uncertain inspection. This process-scope fixture does not establish hosted container behavior.
+The repository keeps no general unit-test suite or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
 exercise the public producer boundary directly; the product implementation, native Pi, actual database, and
 authorization boundaries remain real. Browser TSX, Storybook configuration,

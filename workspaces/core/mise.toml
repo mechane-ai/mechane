@@ -25,6 +25,7 @@ depends = [
   "build:guest",
   "reference:check",
   "infrastructure:check",
+  "sandbox:native:check",
   "smoke",
 ]
 run = "node packages/node/checks/src/main.ts record"
@@ -37,7 +38,21 @@ run = "node packages/node/checks/src/main.ts run-affected"
 
 [tasks."check:static"]
 description = "Run source checks before accepting one immutable application candidate"
-depends = ["format:check", "typecheck", "lint", "knip", "duplicates", "checks", "rules:check", "reference:check"]
+depends = [
+  "format:check",
+  "typecheck",
+  "lint",
+  "knip",
+  "duplicates",
+  "checks",
+  "rules:check",
+  "reference:check",
+  "sandbox:native:check",
+]
+
+[tasks."sandbox:native:check"]
+description = "Check native container cold lifecycle and identity safety without cloud credentials"
+run = "node --test packages/worker/sandbox/testing/native-container.ts"
 
 [tasks.fingerprint]
 description = "Print the fingerprint: the hash of each role's minified bundle, of the inputs besides TypeScript the smoke reads, and of them all"

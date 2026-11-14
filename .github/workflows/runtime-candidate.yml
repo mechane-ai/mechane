@@ -69,6 +69,8 @@ jobs:
           mise run contracts:check
           mise run repository:check
       - name: Build and qualify the selected candidate once
+        env:
+          MECHANE_SMOKE_STACK_COUNT: '4'
         run: mise -C workspaces/core run distribution:candidate
       - name: Retain the qualified candidate for promotion
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

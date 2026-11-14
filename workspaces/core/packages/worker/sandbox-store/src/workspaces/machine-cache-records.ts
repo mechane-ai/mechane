@@ -23,7 +23,9 @@ const MachineCacheSelection = Schema.Struct({
 });
 
 export type MachineCacheSelection = typeof MachineCacheSelection.Type;
-type CacheStoreInput = { readonly storage: DurableObjectStorage };
+
+type CacheStoreInput = { readonly storage: Pick<DurableObjectStorage, 'get' | 'put'> };
+
 type SaveCacheInput = { readonly value: MachineCacheSnapshot };
 type SaveSelectionInput = { readonly value: MachineCacheSelection };
 type MachineIdentity = { readonly machineId: MachineId };

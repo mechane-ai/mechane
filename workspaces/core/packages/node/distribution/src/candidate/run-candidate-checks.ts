@@ -15,6 +15,15 @@ const SUMMARY_PREFIX = 'SMOKE_CATALOG_SUMMARY ';
 const CatalogSummary = Schema.Struct({
   count: Schema.Int.check(Schema.isGreaterThan(0)),
   guarantees: Schema.Array(Schema.NonEmptyString),
+  stackCount: Schema.Int.check(Schema.isGreaterThan(0)),
+  stackInspections: Schema.Array(Schema.NonEmptyString),
+  executions: Schema.Array(
+    Schema.Struct({
+      stack: Schema.Int.check(Schema.isGreaterThan(0)),
+      guarantee: Schema.NonEmptyString,
+      elapsedMs: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+    }),
+  ),
 });
 
 const DockerImage = Schema.Struct({
@@ -147,6 +156,8 @@ export async function runCandidateChecks({
       throw new Error('The artifact catalog summary is incomplete');
     }
 
+    verifyCatalogExecutions({ catalog });
+
     const formats = await execute(settings.nodeExecutable, [
       join(CORE_FOLDER, 'packages/node/distribution/testing/shipped-formats.ts'),
       join(settings.folder, 'installation.json'),
@@ -163,6 +174,36 @@ export async function runCandidateChecks({
     };
   } finally {
     await rm(temporary, { recursive: true, force: true });
+  }
+}
+
+type VerifyCatalogExecutionsInput = { readonly catalog: typeof CatalogSummary.Type };
+
+function verifyCatalogExecutions({ catalog }: VerifyCatalogExecutionsInput): void {
+  const hasUnknownExecution = catalog.executions.some(
+    (execution) => !catalog.guarantees.includes(execution.guarantee) || execution.stack > catalog.stackCount,
+  );
+
+  const hasUnknownInspection = catalog.stackInspections.some((guarantee) => !catalog.guarantees.includes(guarantee));
+
+  if (hasUnknownExecution || hasUnknownInspection) {
+    throw new Error('The artifact catalog reports undeclared executions');
+  }
+
+  for (const guarantee of catalog.guarantees) {
+    const executions = catalog.executions.filter((execution) => execution.guarantee === guarantee);
+
+    const expected: number = (() => {
+      if (catalog.stackInspections.includes(guarantee)) {
+        return catalog.stackCount;
+      }
+
+      return 1;
+    })();
+
+    if (executions.length !== expected || new Set(executions.map(({ stack }) => stack)).size !== expected) {
+      throw new Error(`The artifact catalog did not inspect every required stack: ${guarantee}`);
+    }
   }
 }
 

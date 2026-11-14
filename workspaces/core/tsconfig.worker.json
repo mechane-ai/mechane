@@ -6,6 +6,7 @@
     "packages/worker/control-store/src",
     "packages/worker/runtime/src",
     "packages/worker/sandbox/src",
+    "packages/worker/sandbox/testing",
     "packages/worker/sandbox-store/src",
     "packages/worker/server/src",
     "packages/worker/store/src"

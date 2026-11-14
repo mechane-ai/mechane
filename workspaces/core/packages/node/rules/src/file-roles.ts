@@ -16,7 +16,7 @@ export const FILE_ROLES = {
     'packages/shared/deployment/src/worker-deployment.ts',
     'packages/node/{stack,distribution,testing,smoke}/src/**',
     'packages/node/program/src/{start-process,finished-process,types}.ts',
-    'packages/worker/{runtime,server,control-store}/src/**',
+    'packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**',
     'packages/worker/sandbox/src/service/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
   ],

@@ -10,8 +10,13 @@ export const testSupportModules = {
       name: 'tests-outside-production',
       comment:
         'Import the smoke and its testing support only from each other, such as `packages/node/testing/src/cli/run-cli.ts` from `packages/node/smoke/src`',
-      from: { pathNot: '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing)/' },
-      to: { path: '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing)/' },
+      from: {
+        pathNot:
+          '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/sandbox/testing)/',
+      },
+      to: {
+        path: '^(packages/node/smoke/src|packages/node/testing/src|packages/node/distribution/testing|packages/worker/sandbox/testing)/',
+      },
       standard: '050',
       ...ADOPTED,
     },

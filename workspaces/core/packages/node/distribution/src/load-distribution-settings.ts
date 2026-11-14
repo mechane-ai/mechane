@@ -19,6 +19,7 @@ const INHERITED_NAMES = [
   'MISE_SYSTEM_CONFIG_DIR',
   'MISE_IGNORED_CONFIG_PATHS',
   'MISE_TRUSTED_CONFIG_PATHS',
+  'MECHANE_SMOKE_STACK_COUNT',
 ] as const;
 
 const OUTPUT_URL: Readonly<URL> = new URL('../../../../dist/distribution', import.meta.url);

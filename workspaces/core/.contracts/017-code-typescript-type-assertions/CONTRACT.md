@@ -59,6 +59,9 @@ For each type argument a change passes to a dependency's function, does that fun
 
 ## Local adaptations
 
+The native container fixture in `packages/worker/sandbox/testing/native-container.ts` has one scoped assertion adapting
+an in-memory map to Cloudflare's generic storage get/put overloads. Production storage keeps the public SDK types.
+
 oxlint with type information enforces `typescript/consistent-type-assertions` set to `never`, `no-non-null-assertion`, `no-explicit-any`, `no-unnecessary-type-parameters`, and `no-unsafe-member-access`, `no-unsafe-call`, `no-unsafe-assignment`, `no-unsafe-return` and `no-unsafe-argument` for each use of an `any` value.
 ast-grep `return-only-type-parameter` rejects a type parameter that only a return type uses, and `type-predicate` rejects a type predicate and an assertion signature.
 A store reads each row through `Schema.decodeUnknownSync`, whose failure is a defect because only that store writes its database.

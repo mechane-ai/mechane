@@ -12,7 +12,6 @@ ignores:
   [
     'packages/node/{stack,distribution,testing,smoke}/src/**',
     'packages/shared/deployment/src/worker-deployment.ts',
-    'packages/worker/{runtime,server,control-store}/src/**',
     'packages/worker/sandbox/src/service/**',
     'packages/shared/protocol/src/presentation/**',
     'packages/browser/**',
@@ -25,6 +24,7 @@ ignores:
     'packages/shared/bash/src/**',
     'packages/worker/sandbox/src/providers/machine-object.ts',
     'packages/node/eval/src/environment/http-entry.ts',
+    'packages/worker/{runtime/src,server/src,control-store/src,sandbox/testing}/**',
   ]
 utils:
   # A function, class, or JSX element restarts the count.

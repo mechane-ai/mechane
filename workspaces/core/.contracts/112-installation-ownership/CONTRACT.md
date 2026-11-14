@@ -55,10 +55,12 @@ activation. Retain accepted version and observed deployment identities in provid
 After an accepted upload, reconcile a temporarily invisible version with bounded reads, never another upload. A 404
 with Cloudflare error 10071 does not establish that a recorded version was deleted; retain its identity on refresh.
 
-For staged upgrades to existing bound namespaces, explicitly request immediate Durable Object code adoption on the
-deployment operation. Keep this deployment-owned policy separate from immutable version configuration. Its write-only
-setting applies to every exported class. The atomic new-namespace creation path retains the platform's documented
-adoption behavior; report that scope when verifying active actors.
+For every intentional release create or update, explicitly request immediate Durable Object code adoption on the
+exclusive deployment operation, including when its version is already active. After atomic new-namespace creation,
+use its observed deployment identity to guard the immediate activation in the same operation. Keep this deployment-owned
+policy separate from immutable version configuration. Require a successful acknowledgement of its write-only setting,
+which applies to every exported class; traffic readback cannot establish it after a failed write. Confirm the acknowledged
+deployment identity and exclusive version before reporting success.
 
 Validate configured service origins as bare HTTPS origins before reading transport credentials. Reject user information,
 paths, queries, and fragments. Local development may explicitly use a loopback HTTP origin with a port; guest-facing
@@ -108,8 +110,10 @@ Reject a staged version that binds an unprovisioned class, and verify atomic act
 preserves existing namespaces. Exercise a failed follow-up read and a lost upload response without losing accepted
 resource identities or repeating the upload.
 Exercise delayed version visibility, its deadline, and a subsequent refresh that preserves the accepted identity.
-Inspect a staged upgrade's deployment request for immediate code adoption. After hosted activation, exercise current
-operations on an actor that was active before deployment; Worker readiness alone cannot establish actor code adoption.
+Inspect staged, atomic new-namespace, and already-active release paths for acknowledged immediate code adoption.
+Reject a failed adoption write and a concurrent deployment even when readback shows the selected version at 100%.
+After hosted activation, exercise current operations on an actor that was active before deployment; Worker readiness
+alone cannot establish actor code adoption.
 
 Reuse the retained scenario catalog for local source checks and exact-artifact acceptance. Exercise the shared public
 operation path at each declared target; record target capabilities instead of treating a local provider as hosted proof.

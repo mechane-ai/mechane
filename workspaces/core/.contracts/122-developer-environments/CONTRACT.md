@@ -129,6 +129,10 @@ fresh capture or recovery of unsaved files.
 Rejoin a starting provider instance only with positive evidence of its original machine identity. A running flag alone
 does not prove that identity or guest readiness. A lost start acknowledgement cannot destroy the matching instance or
 restart its bootstrap. Refuse a conflicting start or stop without replacing the existing guest.
+Read the native container lifecycle flag before inspecting an instance or attempting retirement. Its stopped state
+establishes absence for that Durable Object; starting and running instances remain present before guest readiness.
+Inspect only a present instance, and reject missing identity metadata or inspection errors while it remains present.
+An already stopped instance needs no destroy call. A failed snapshot start may fall back only after native absence.
 Keep restoration progress bound to its physical guest. If that guest is lost after a partial copy, preserve the committed
 source and fence the never-dispatched command. Do not apply its advanced cursor to a newly created instance. Whole local
 environment-host loss may destroy its guest; application-host replacement must preserve the separate environment owner.
@@ -185,6 +189,9 @@ CA, acceptance with trusted startup configuration, and retained acceptance of bo
 Lose the HTTP start acknowledgement while real bootstrap is held, then rejoin the same machine and require the exact
 container identity, one bootstrap, and one command effect. Reject conflicting start and stop identities. Lose a guest
 after two restored parts; require a full fresh restore or an explicit recovery fence with the committed source intact.
+Run `mise -C workspaces/core run sandbox:native:check` from the factory root for the native lifecycle fixture.
+An unstarted inspection must throw in that fixture; require cold startup, stopped retirement, native absence,
+rejected snapshot fallback, and rejection of unproved live identity without hiding inspection failures.
 
 ## Local adaptations
 

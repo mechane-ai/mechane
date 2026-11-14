@@ -29,6 +29,7 @@ const PROGRAM_ENTRIES = '**/main.ts!';
 const GENERATOR_ENTRIES = '*/main.ts!';
 
 const DISTRIBUTION_PACKAGE = '@mechane/distribution';
+const SANDBOX_PACKAGE = '@mechane/sandbox';
 
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
@@ -106,6 +107,10 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
       entry: ['src/**/main.ts!', 'src/build/build-worker.ts!', 'testing/shipped-formats.ts'],
       project: ['src/**/*.ts!', 'testing/**/*.ts'],
     };
+  }
+
+  if (member.name === SANDBOX_PACKAGE) {
+    return { entry: ['testing/native-container.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
   }
 
   if (member.hasStories) {

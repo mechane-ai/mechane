@@ -44,6 +44,9 @@ Does a change turn a rule off without a reason that `code-lint-strictness` lists
 
 ## Local adaptations
 
+The native container fixture may suppress `typescript/consistent-type-assertions` and `typescript/no-unsafe-type-assertion`
+on its single in-memory storage adapter. This test boundary does not admit assertions in production container code.
+
 Two `max-params` suppressions belong to the shared Bash executor declaration and its Mechane runtime callback.
 They preserve Pi's command, options, and context arguments while adding the current native tool API for durable joins.
 

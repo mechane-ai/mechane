@@ -16,11 +16,24 @@ class ContainerIdentityUnconfirmed extends Schema.TaggedError<ContainerIdentityU
 
 /** A running instance must prove its identity before a start joins it or a stop retires it. */
 export async function requireContainerMachine({ container, machineId }: ContainerMachineInput): Promise<boolean> {
+  function isRunning(): boolean {
+    return container.running;
+  }
+
+  if (!isRunning()) {
+    return false;
+  }
+
   const inspected = await container.inspect();
+
+  if (!isRunning()) {
+    return false;
+  }
+
   const instance = Option.fromNullishOr(inspected);
 
   if (Option.isNone(instance)) {
-    return false;
+    return identityFailure({ machineId, reason: 'running container metadata is unavailable' });
   }
 
   const label = Option.fromUndefinedOr(instance.value.labels[CONTAINER_MACHINE_LABEL]);
