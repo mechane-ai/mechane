@@ -133,7 +133,7 @@ export async function discoverMcpTools({
 }
 
 export function findOfferedMcpTool({ tools, description }: FindToolInput): string | undefined {
-  return tools.find((tool) => tool.function.description === description)?.function.name;
+  return tools.find((tool) => tool.function.description?.includes(description) === true)?.function.name;
 }
 
 export async function startHeldMcpInvocation(input: HeldInvocationInput) {
