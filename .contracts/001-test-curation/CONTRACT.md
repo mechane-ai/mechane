@@ -63,10 +63,12 @@ staged installation descriptor. This publication-safety check compares the actua
 catalog and exact migration ledger. It guards a builder emitting stale formats or changed migration checksums, without
 a second runner or a copied historical fixture.
 
-The native container lifecycle fixture in `packages/worker/sandbox/testing/native-container.ts` uses Node's built-in
-test runner with scoped deadlines under `mise -C workspaces/core run sandbox:native:check`, also in source checks.
-It guards cold startup and safe retirement against the native API's unstarted inspection failure, live identity gaps,
-and uncertain inspection. This process-scope fixture does not establish hosted container behavior.
+The fixtures in `packages/worker/sandbox/testing` use Node's built-in test runner with scoped deadlines under
+`mise -C workspaces/core run sandbox:native:check`, also in source checks. `native-container.ts` guards cold startup
+and safe retirement against unstarted inspection failure, live identity gaps, and uncertain inspection.
+`workspace-transfer.ts` guards safe transfer failure context, private-data redaction, and preservation of the original
+failure when reporting fails. These process-scope fixtures do not establish hosted container behavior or full runtime
+qualification.
 The repository keeps no general unit-test suite or sampled model benchmark in `mise run check`. Deterministic
 external-service fixtures replace model and GitHub authentication network dependencies. Generic signed notifications
 exercise the public producer boundary directly; the product implementation, native Pi, actual database, and

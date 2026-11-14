@@ -105,11 +105,16 @@ async function readCheckpointPart({
     init: { method: HttpMethod.Get },
   });
 
+  const observedResponse = Option.some(response);
+
   const bytes = await observeWorkspaceTransfer({
+    machineId,
     generation,
     step: WorkspaceStep.Part,
     part: selectedPart,
     phase: WorkspaceTransferPhase.ResponseBody,
+    failurePhase: 'body',
+    response: observedResponse,
     run: () => readArchivePart({ response }),
   });
 

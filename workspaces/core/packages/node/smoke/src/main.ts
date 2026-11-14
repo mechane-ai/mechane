@@ -1,8 +1,8 @@
+import { runStackProgram } from '@mechane/stack';
 import type { StackOptions } from '@mechane/stack';
 import { join } from 'node:path';
 import { CATALOG } from './catalog.ts';
-import { runScenarioStacks } from './run-scenario-stacks.ts';
-import { selectScenarios, writeCatalogSummary } from './run-scenarios.ts';
+import { runScenarios, writeCatalogSummary } from './run-scenarios.ts';
 import { smokeSettings } from './settings.ts';
 
 async function main(): Promise<void> {
@@ -32,12 +32,15 @@ async function main(): Promise<void> {
     };
   })();
 
-  const catalog = selectScenarios({ catalog: CATALOG, match: settings.match, family: settings.family });
-
-  const results = await runScenarioStacks({ options, catalog, stackCount: settings.stackCount });
+  await runStackProgram({
+    options,
+    run: async ({ stack }) => {
+      await runScenarios({ stack, catalog: CATALOG, match: settings.match, family: settings.family });
+    },
+  });
 
   if (settings.match === undefined && settings.family === undefined) {
-    writeCatalogSummary({ catalog, results });
+    writeCatalogSummary({ catalog: CATALOG });
   }
 }
 

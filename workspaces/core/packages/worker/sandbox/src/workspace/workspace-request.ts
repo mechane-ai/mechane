@@ -40,11 +40,16 @@ export async function workspaceRequest({
     headers.set(HttpHeader.MechaneCheckpointLease, value);
   }
 
+  const pendingResponse = Option.none<Response>();
+
   const response = await observeWorkspaceTransfer({
+    machineId,
     generation,
     step,
     part,
     phase: WorkspaceTransferPhase.Request,
+    failurePhase: 'fetch',
+    response: pendingResponse,
     run: () => guest.fetch({ path, init: { ...init, headers, signal } }),
   });
 
@@ -53,22 +58,35 @@ export async function workspaceRequest({
     case HttpStatusCode.NoContent:
       return response;
     default:
-      return await failedWorkspaceResponse({ response, generation, step, part });
+      return await failedWorkspaceResponse({ response, machineId, generation, step, part });
   }
 }
 
-type FailedWorkspaceResponseInput = Pick<WorkspaceRequestInput, 'generation' | 'step' | 'part'> & {
+type FailedWorkspaceResponseInput = Pick<WorkspaceRequestInput, 'machineId' | 'generation' | 'step' | 'part'> & {
   readonly response: Response;
 };
 
 async function failedWorkspaceResponse({
   response,
+  machineId,
   generation,
   step,
   part,
 }: FailedWorkspaceResponseInput): Promise<Response> {
+  const observed = Option.some(response);
+
+  const reason = await observeWorkspaceTransfer({
+    machineId,
+    generation,
+    step,
+    part,
+    phase: WorkspaceTransferPhase.ResponseBody,
+    failurePhase: 'body',
+    response: observed,
+    run: () => response.text(),
+  });
+
   const fail: () => Promise<never> = async () => {
-    const reason = await response.text();
     const cause = new WorkspaceTransferFailed({ generation, step, reason });
     const failure = Result.fail(cause);
 
@@ -76,10 +94,13 @@ async function failedWorkspaceResponse({
   };
 
   return await observeWorkspaceTransfer({
+    machineId,
     generation,
     step,
     part,
     phase: WorkspaceTransferPhase.ResponseBody,
+    failurePhase: 'http',
+    response: observed,
     run: fail,
   });
 }

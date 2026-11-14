@@ -70,8 +70,6 @@ Runtime candidate acceptance runs static checks and the complete retained catalo
 generated qualification binds the selected source, artifacts, fixtures, configuration, and actual reports. That accepted
 candidate can be promoted without another build or a duplicate source-mode catalog. A cached inner-loop result does not
 substitute for complete candidate acceptance. Hosted-only guarantees still require their declared provider target.
-The complete artifact catalog can use a bounded pool of independent fixture stacks. Its evidence records every case
-execution and required per-stack inspection; it cannot substitute a shard's success for the complete catalog.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

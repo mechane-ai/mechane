@@ -31,19 +31,15 @@ For each pair of scenarios a change runs concurrently, does either one write sta
 
 ## Local adaptations
 
-`packages/node/smoke/src/catalog.ts` lists each scenario function with its guarantee and regression. The native
-Promise-based smoke entry runs a bounded pool of independently owned stacks and joins every stack's cleanup before
-reporting success. Requests and assertions belong to scenario functions and their focused support operations.
+`packages/node/smoke/src/catalog.ts` lists each scenario function with its guarantee and regression. The one native
+Promise-based smoke entry starts the shared stack, runs the catalog, stops the stack in `finally`, and lets its entry
+boundary report failure. Requests and assertions belong to scenario functions and their focused support operations.
 
 Scenarios use the compiled Worker on celld, verified TLS Postgres, real Docker guests, and external HTTP fixtures.
 They run sequentially while they
 share service state, provider counters, or restart the same process. Each case isolates the principals and records it
 owns. Restart checks preserve the tested durable state and remove only their temporary settings and processes.
-Each parallel stack has independent database, provider fixtures, ports, celld state, and Docker ownership. Stop admitting
-cases after a failure and await active cases and their owned cleanup. Run each ordinary case once. Mark stack-wide
-inspections in the catalog and run them after preceding work on every stack. Derive the complete report from successful
-executions and distinguish repeated inspections from distinct catalog guarantees. Credential scans inspect all stacks'
-state and logs before their cleanup. A passing local compute fixture does not
+Credential scans inspect the state and logs produced by preceding work. A passing local compute fixture does not
 claim hosted container isolation or live-provider delivery.
 
 ast-grep `check-name-sequence-marker` rejects sequence markers in check names and catalog guarantees. The shipped

@@ -7,6 +7,14 @@ on:
         description: Reviewed full public source commit; must match the selected workflow ref
         required: true
         type: string
+      reuse_guest_release:
+        description: Existing runtime release tag for verified guest reuse, paired with its qualification SHA-256
+        required: false
+        type: string
+      reuse_guest_qualification_sha256:
+        description: Exact qualification.json SHA-256 for the selected existing guest release
+        required: false
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -40,7 +48,44 @@ jobs:
           test "$checkout_commit" = "$EXPECTED_COMMIT" || reject_source 'The checkout differs from the reviewed source commit.'
           checkout_changes=$(git status --porcelain) || reject_source 'Could not inspect the candidate checkout.'
           test -z "$checkout_changes" || reject_source 'The candidate checkout contains local changes before setup.'
+      - name: Validate the qualified guest selection
+        env:
+          REUSE_GUEST_RELEASE: ${{ inputs.reuse_guest_release }}
+          REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$REUSE_GUEST_RELEASE" && -z "$REUSE_GUEST_QUALIFICATION_SHA256" ]]; then
+            exit 0
+          fi
+          if [[ -z "$REUSE_GUEST_RELEASE" || -z "$REUSE_GUEST_QUALIFICATION_SHA256" ]]; then
+            printf '::error::Select both an existing guest release and its qualification SHA-256.\n'
+            exit 1
+          fi
+          if [[ ! "$REUSE_GUEST_RELEASE" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            printf '::error::Use a runtime release tag such as v0.33.1.\n'
+            exit 1
+          fi
+          if [[ ! "$REUSE_GUEST_QUALIFICATION_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            printf '::error::Use the complete 64-character lowercase qualification SHA-256.\n'
+            exit 1
+          fi
       - uses: ./.github/actions/setup
+      - name: Download the selected qualified guest
+        id: guest
+        if: inputs.reuse_guest_release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REUSE_GUEST_RELEASE: ${{ inputs.reuse_guest_release }}
+          REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
+        run: |
+          set -euo pipefail
+          guest_directory="$RUNNER_TEMP/mechane-qualified-guest"
+          mkdir "$guest_directory"
+          gh release download "$REUSE_GUEST_RELEASE" \
+            --repo "github.com/$GITHUB_REPOSITORY" \
+            --dir "$guest_directory"
+          printf '%s  %s\n' "$REUSE_GUEST_QUALIFICATION_SHA256" "$guest_directory/qualification.json" | sha256sum -c
+          printf 'directory=%s\n' "$guest_directory" >> "$GITHUB_OUTPUT"
       - name: Set up the candidate image store
         id: docker
         uses: docker/setup-docker-action@3f1ab1ab0e29231562e4db4ca600c1a49653bac6
@@ -70,8 +115,19 @@ jobs:
           mise run repository:check
       - name: Build and qualify the selected candidate once
         env:
-          MECHANE_SMOKE_STACK_COUNT: '4'
-        run: mise -C workspaces/core run distribution:candidate
+          REUSE_GUEST_DIRECTORY: ${{ steps.guest.outputs.directory }}
+          REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$REUSE_GUEST_DIRECTORY" ]]; then
+            mise -C workspaces/core run distribution:candidate
+          else
+            candidate_version=$(mise -C workspaces/core/packages/node/distribution exec -- node --input-type=module \
+              --eval 'import { RELEASE } from "@mechane/protocol"; process.stdout.write(RELEASE)')
+            candidate_directory="$GITHUB_WORKSPACE/workspaces/core/dist/distribution/v$candidate_version"
+            mise -C workspaces/core run distribution:candidate -- "$candidate_directory" \
+              --reuse-guest "$REUSE_GUEST_DIRECTORY" "$REUSE_GUEST_QUALIFICATION_SHA256"
+          fi
       - name: Retain the qualified candidate for promotion
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:

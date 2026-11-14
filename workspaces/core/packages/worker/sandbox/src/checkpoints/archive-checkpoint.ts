@@ -42,15 +42,29 @@ export async function archiveCheckpoint({ store, checkpoint, guest }: ArchiveChe
     return;
   }
 
+  const observedResponse = Option.some(response);
+
   const text = await observeWorkspaceTransfer({
+    machineId,
     generation,
     step,
     part,
     phase: WorkspaceTransferPhase.ResponseBody,
+    failurePhase: 'body',
+    response: observedResponse,
     run: () => response.text(),
   });
 
-  const archive = decodeCheckpointArchive({ generation, body: text });
+  const archive = await observeWorkspaceTransfer({
+    machineId,
+    generation,
+    step: WorkspaceStep.Archive,
+    part,
+    phase: WorkspaceTransferPhase.ResponseBody,
+    failurePhase: 'decode',
+    response: observedResponse,
+    run: async () => decodeCheckpointArchive({ generation, body: text }),
+  });
 
   if (!isCurrentCheckpoint({ store, checkpoint })) {
     return;

@@ -1,7 +1,7 @@
 import type { Report } from '@earendil-works/pi-durable';
 import { RequestInvalid, ServiceUnavailable } from '@mechane/protocol';
 import { HttpMethod, RecordId } from '@mechane/records';
-import { safeFailureLocation } from '@mechane/utilities';
+import { safeCloudflareRay, safeFailureLocation } from '@mechane/utilities';
 import { Option, Schema } from 'effect';
 
 export type SandboxMaintenancePhase = 'fetch' | 'http' | 'body' | 'decode';
@@ -13,8 +13,6 @@ type SandboxMaintenanceFailureInput = {
   readonly status: Option.Option<number>;
   readonly ray: Option.Option<string>;
 };
-
-const CLOUDFLARE_RAY = /^[0-9A-Fa-f]{16}(?:-[A-Za-z]{3})?$/u;
 
 const COMPLETION_FAILURE_REASONS: ReadonlyMap<string, string> = new Map([
   ['The completion has no matching execution receipt', 'missing_execution'],
@@ -168,7 +166,7 @@ export function writeSandboxMaintenanceFailure({
 }: SandboxMaintenanceFailureInput): void {
   try {
     const location = safeFailureLocation({ cause, allowedNames: FAILURE_NAMES, allowedFiles: FAILURE_FILES });
-    const correlatedRay = Option.filter(ray, (value) => CLOUDFLARE_RAY.exec(value)?.[0] === value);
+    const correlatedRay = safeCloudflareRay({ ray });
     const cloudflareRay = Option.getOrUndefined(correlatedRay);
 
     console.error({

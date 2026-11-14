@@ -110,7 +110,7 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
   }
 
   if (member.name === SANDBOX_PACKAGE) {
-    return { entry: ['testing/native-container.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
+    return { entry: ['testing/*.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
   }
 
   if (member.hasStories) {

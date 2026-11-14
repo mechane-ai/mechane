@@ -241,7 +241,6 @@ export const CATALOG = [
     family: 'security',
     guarantee: 'credentials stay out of durable execution records and logs',
     regression: 'actor persistence or diagnostics retain a resolved provider or user credential',
-    isStackInspection: true,
     run: credentialsStayOutOfDurableExecution,
   },
   {

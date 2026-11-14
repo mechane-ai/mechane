@@ -10,7 +10,6 @@ type SmokeSettings = {
   readonly family: ScenarioFamily | undefined;
   readonly nodeExecutable: string;
   readonly artifacts: ArtifactSettings | undefined;
-  readonly stackCount: number;
 };
 
 type ArtifactArguments = {
@@ -20,8 +19,6 @@ type ArtifactArguments = {
 };
 
 const ARTIFACT_ARGUMENT_COUNT = 3;
-const DEFAULT_ARTIFACT_STACK_COUNT = 4;
-const MAXIMUM_STACK_COUNT = 8;
 
 export function smokeSettings(): SmokeSettings {
   const { values, positionals } = parseArgs({
@@ -30,7 +27,6 @@ export function smokeSettings(): SmokeSettings {
       'artifact-directory': { type: 'string' },
       'guest-image': { type: 'string' },
       'cli-executable': { type: 'string' },
-      'stack-count': { type: 'string' },
     },
     allowPositionals: true,
   });
@@ -47,39 +43,12 @@ export function smokeSettings(): SmokeSettings {
     cliExecutable: values['cli-executable'],
   });
 
-  const stackCount = scenarioStackCount({ argument: values['stack-count'], artifacts });
-
   return {
     match: positionals[0],
     family,
     nodeExecutable: process.env['MECHANE_NODE_EXECUTABLE'] ?? process.execPath,
     artifacts,
-    stackCount,
   };
-}
-
-type StackCountInput = { readonly argument: string | undefined; readonly artifacts: ArtifactSettings | undefined };
-
-function scenarioStackCount({ argument, artifacts }: StackCountInput): number {
-  const defaultCount: number = (() => {
-    if (artifacts === undefined) {
-      return 1;
-    }
-
-    return DEFAULT_ARTIFACT_STACK_COUNT;
-  })();
-
-  const count = Number(argument ?? process.env['MECHANE_SMOKE_STACK_COUNT'] ?? defaultCount);
-
-  if (!Number.isSafeInteger(count) || count < 1 || count > MAXIMUM_STACK_COUNT) {
-    throw new Error(`The smoke stack count must be an integer from 1 to ${MAXIMUM_STACK_COUNT}`);
-  }
-
-  if (artifacts === undefined && count !== 1) {
-    throw new Error(`The source smoke requires one stack instead of ${count}`);
-  }
-
-  return count;
 }
 
 function scenarioFamily(value: string | undefined): ScenarioFamily | undefined {

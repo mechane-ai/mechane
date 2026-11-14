@@ -59,6 +59,10 @@ triggers are forbidden for them. The runtime candidate workflow accepts an expli
 different selected workflow ref before setup. It runs the canonical complete candidate acceptance, uploads only its
 qualified output, and retains that output for three days. It cannot publish or deploy. A skipped candidate job is not
 qualification. The publisher still requires the selected complete qualification receipt.
+Optional guest reuse requires both a runtime release tag and its exact qualification digest before any download.
+Download only the current repository's release assets into the job's temporary directory. Pass the selected folder and
+digest to the existing canonical builder; its complete qualification and guest-input checks remain authoritative.
+A mismatch fails the candidate rather than falling back to another image or an unverified reuse path.
 Source selection failures name the failed check. A failed Git inspection must reject the candidate rather than count
 as a clean checkout; capture Git results before comparing them.
 When candidate acceptance fails, its last step prints the retained celld application and environment logs, database
