@@ -1,4 +1,4 @@
-import { DateTime, Effect } from 'effect';
+import { DateTime, Effect, Option } from 'effect';
 import type { EvidenceRecord } from './application-schemas.ts';
 import type { CollectedEvidence } from './application-types.ts';
 import { EvalAdapterFailed, EvalAdapterOperation } from './errors.ts';
@@ -9,10 +9,28 @@ type ValidateEvidenceRecordInput = { readonly evidence: EvidenceRecord };
 
 /** Evidence is content-addressed before a judge can consume it. */
 export function createEvidenceRecord({ evidence }: CreateEvidenceRecordInput): EvidenceRecord {
-  const digest = jsonDigest({ value: evidence });
+  const contents = evidenceContents({ evidence });
+  const digest = jsonDigest({ value: contents });
   const createdAt = DateTime.nowUnsafe();
 
-  return { ...evidence, digest, createdAt };
+  return { ...contents, digest, createdAt };
+}
+
+function evidenceContents({ evidence }: CreateEvidenceRecordInput): CollectedEvidence {
+  const contents = {
+    schema: evidence.schema,
+    value: evidence.value,
+    scope: evidence.scope,
+    isComplete: evidence.isComplete,
+  };
+
+  const issue = Option.fromUndefinedOr(evidence.issue);
+
+  if (Option.isNone(issue)) {
+    return contents;
+  }
+
+  return { ...contents, issue: issue.value };
 }
 
 /** Editing a saved bundle cannot retain the original evidence identity. */

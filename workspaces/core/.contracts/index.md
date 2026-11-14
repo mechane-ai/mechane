@@ -97,6 +97,7 @@ from 101 are Mechane's own.
 - [Eval grading isolation](058-eval-grading-isolation/CONTRACT.md): expectations only for the grader, on another model.
 - [Eval production path](059-eval-production-path/CONTRACT.md): the deployment through `/api/v1`, on fresh mechs.
 - [Eval score accounting](060-eval-score-accounting/CONTRACT.md): distinct verdicts, and spend by role.
+- [Eval adapter boundaries](132-eval-adapter-boundaries/CONTRACT.md): application meaning, source identity, target selection, and frozen calibration reports.
 
 ## UI
 

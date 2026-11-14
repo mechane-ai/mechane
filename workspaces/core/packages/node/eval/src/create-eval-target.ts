@@ -4,6 +4,7 @@ import { Duration, Effect, Option, Schema } from 'effect';
 import type { Redacted } from 'effect';
 import type { EvalTarget, OpenEvalTransport } from './application-types.ts';
 import { EvalAdapterFailed, EvalAdapterOperation } from './errors.ts';
+import { validateTargetOrigin } from './validate-target-origin.ts';
 
 type CreateEvalTargetInput = {
   readonly origin: URL;
@@ -26,6 +27,8 @@ export const createEvalTarget = Effect.fn('createEvalTarget')(function* ({
   artifactIdentity,
   openTransport,
 }: CreateEvalTargetInput): Effect.fn.Return<EvalTarget, EvalAdapterFailed> {
+  yield* validateTargetOrigin({ origin, kind });
+
   const admittedWorkspaceId = yield* Schema.decodeUnknownEffect(WorkspaceId)(workspaceId).pipe(
     Effect.mapError(
       (failure) => new EvalAdapterFailed({ operation: EvalAdapterOperation.ValidateTarget, reason: failure.message }),

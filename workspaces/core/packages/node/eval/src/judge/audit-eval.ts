@@ -27,6 +27,7 @@ import { holdApplicationStore } from '../store/hold-application-store.ts';
 import { readJudgeRecords } from '../store/read-judge-records.ts';
 import { recordTrialFailure } from '../store/record-trial-failure.ts';
 import type { EvalRunFailure, WriteProgress } from '../types.ts';
+import type { CalibrationComponents } from './calibration-components.ts';
 import { gradeEvidence } from './grade-evidence.ts';
 
 /** Encoded judge overrides change only an audit, leaving the source run frozen. */
@@ -179,6 +180,15 @@ export const calibrateEval = Effect.fn('calibrateEval')(function* ({
     evidence: createEvidenceRecord({ evidence: example.evidence }),
   }));
 
+  const components: CalibrationComponents = {
+    suite: suite.definition.components,
+    calibration: selected.map((example) => ({
+      id: example.id,
+      evidenceDigest: example.evidence.digest,
+      expected: example.expected,
+    })),
+  };
+
   const calibrationConfiguration: EvalSuite = {
     ...suite,
     definition: {
@@ -190,14 +200,7 @@ export const calibrateEval = Effect.fn('calibrateEval')(function* ({
         visible: null,
         rubric: example.rubric,
       })),
-      components: {
-        suite: suite.definition.components,
-        calibration: selected.map((example) => ({
-          id: example.id,
-          evidenceDigest: example.evidence.digest,
-          expected: example.expected,
-        })),
-      },
+      components,
     },
   };
 

@@ -1,5 +1,15 @@
-import { createEvalTarget, defineGradeSchema, localTransport, readEval, runEval } from '@mechane/eval';
-import type { EvalEnvironment, EvalGradeSchema, EvalSuite } from '@mechane/eval';
+import {
+  calibrateEval,
+  createEvalTarget,
+  DEFAULT_INSPECTION_OPTIONS,
+  defineGradeSchema,
+  evalInspection,
+  inspectCalibration,
+  localTransport,
+  readEval,
+  runEval,
+} from '@mechane/eval';
+import type { CompareCalibration, EvalEnvironment, EvalGradeSchema, EvalSuite } from '@mechane/eval';
 import { TurnToolCall } from '@mechane/protocol';
 import { BYTES_PER_KIBIBYTE } from '@mechane/records';
 import type { LocalStack } from '@mechane/stack';
@@ -8,6 +18,7 @@ import type { Account } from '@mechane/testing';
 import { Duration, Effect, Option, Redacted, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
 
 type ObservedToolEvidenceInput = { readonly stack: LocalStack; readonly account: Account; readonly outFolder: string };
 
@@ -48,6 +59,12 @@ export async function gradesObservedToolEvidence({
         ],
       },
       { text: 'The judgment was submitted' },
+      {
+        tools: [
+          { id: randomUUID(), name: 'submit_grade', namePrefix: 'mcp_submit_grade_', input: { isAccepted: true } },
+        ],
+      },
+      { text: 'The calibration judgment was submitted' },
     ],
   });
 
@@ -57,6 +74,8 @@ export async function gradesObservedToolEvidence({
   assert.ok(artifactIdentity !== undefined);
 
   const progress: Array<string> = [];
+
+  await refusesRemoteLocalTarget({ token: account.token, workspaceId: account.workspaceId });
 
   const executeTrial = Effect.fn('executeTrial')(function* (): Effect.fn.Return<void, TrialFailure> {
     const gradeSchema = yield* defineGradeSchema({ id: 'mechane.smoke-grade', version: '1', schema: Grade });
@@ -91,6 +110,56 @@ export async function gradesObservedToolEvidence({
       connections.connections.some((connection) => connection.name === CONNECTION_NAME),
       false,
     );
+
+    const source = yield* readEval({ outFolder });
+    const evidence = source.trials.at(0)?.evidence;
+
+    assert.ok(evidence !== undefined && Option.isSome(evidence));
+
+    const auditId = 'frozen-calibration';
+
+    yield* calibrateEval({
+      suite,
+      target,
+      outFolder,
+      auditId,
+      writeProgress: () => undefined,
+      examples: [
+        {
+          id: 'observed-tool',
+          rubric: 'Accept the recorded fixture value.',
+          evidence: evidence.value,
+          expected: { isAccepted: false },
+        },
+      ],
+    });
+
+    const audit = yield* readEval({ outFolder: join(outFolder, 'audits', auditId) });
+    const inspection = evalInspection({ ...DEFAULT_INSPECTION_OPTIONS, saved: audit });
+
+    const compareExpected: CompareCalibration = ({ expected, observed }) =>
+      Option.some(
+        Schema.decodeUnknownSync(Grade)(expected).isAccepted === Schema.decodeUnknownSync(Grade)(observed).isAccepted,
+      );
+
+    const calibration = yield* inspectCalibration({ inspection, compareExpected });
+
+    assert.ok(Option.isSome(calibration));
+    assert.deepEqual(
+      [calibration.value.comparedTrials, calibration.value.agreedTrials],
+      [1, 0],
+      'A disagreement with the saved label was lost',
+    );
+
+    const incomplete = evalInspection({
+      ...DEFAULT_INSPECTION_OPTIONS,
+      saved: { ...audit, trials: audit.trials.map((trial) => ({ ...trial, grade: Option.none() })) },
+    });
+
+    const missingGrade = yield* inspectCalibration({ inspection: incomplete, compareExpected });
+
+    assert.ok(Option.isSome(missingGrade));
+    assert.equal(missingGrade.value.comparedTrials, 0, 'An absent grade entered calibration agreement');
   });
 
   await Effect.runPromise(executeTrial());
@@ -187,4 +256,22 @@ function createObservedSuite({ gradeSchema, marker }: ObservedSuiteInput): EvalS
   };
 
   return suite;
+}
+
+type RefusedTargetInput = { readonly token: string; readonly workspaceId: string };
+
+async function refusesRemoteLocalTarget({ token, workspaceId }: RefusedTargetInput): Promise<void> {
+  await assert.rejects(
+    Effect.runPromise(
+      createEvalTarget({
+        origin: new URL('https://example.invalid'),
+        kind: 'local',
+        token: Redacted.make(token),
+        workspaceId,
+        artifactIdentity: 'rejected-local-target',
+        openTransport: localTransport,
+      }),
+    ),
+    /loopback origin/u,
+  );
 }

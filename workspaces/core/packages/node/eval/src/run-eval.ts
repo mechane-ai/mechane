@@ -43,6 +43,7 @@ import { holdApplicationStore } from './store/hold-application-store.ts';
 import { recordTrialFailure } from './store/record-trial-failure.ts';
 import { runRole } from './trial/run-role.ts';
 import type { EvalRunFailure, WriteProgress } from './types.ts';
+import { validateTargetOrigin } from './validate-target-origin.ts';
 
 type EvalRun = {
   readonly outcome: EvalOutcome;
@@ -408,6 +409,8 @@ export const cleanupEval = Effect.fn('cleanupEval')(function* ({
   outFolder,
   writeProgress,
 }: CleanupEvalInput): Effect.fn.Return<SavedEval, EvalRunFailure, Scope.Scope> {
+  yield* validateTargetOrigin(target);
+
   yield* holdApplicationStore({ outFolder });
 
   const saved = yield* readEval({ outFolder });

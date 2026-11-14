@@ -15,12 +15,14 @@ Layer 4 · node lane · effect dialect · consumers: cli-kernel, cli, smoke
 - `src/judge/`: structured submission, regrading and calibration.
 - `src/store/`: immutable records and the operating-system writer lock.
 - `src/report/`: read-only inspection, comparison and historical adapters.
+- `src/fingerprint-eval-sources.ts`: deterministic fingerprints of explicitly selected application sources.
 
 ## Rules
 
 The [product contracts](../../../.contracts/index.md) apply, with
 [057](../../../.contracts/057-eval-run-lifecycle/CONTRACT.md) to
 [060](../../../.contracts/060-eval-score-accounting/CONTRACT.md) for the run, its grading and its scores.
+[132](../../../.contracts/132-eval-adapter-boundaries/CONTRACT.md) defines the application adapter boundary.
 
 ## Use
 
@@ -31,6 +33,13 @@ Effect factories; yield them before calling `runEval`. `resumeEval` requires mat
 operation identities, deadlines, evidence and grades. `cleanupEval` retries cancellation and archival without grading.
 The CLI's `eval run --suite-file FILE --out-folder RUN` uses the same core through the reply-suite adapter; repeating
 that command resumes its saved run.
+
+`createEvalTarget` rejects remote origins for local targets, insecure hosted origins, and URLs containing credentials or
+non-origin components before making requests. Readiness repeats that check for targets supplied directly.
+
+Use `fingerprintEvalSources` with a root URL and explicit file patterns for application behavior. Every pattern must
+match regular files; relative names and contents determine the digest. Keep CLI and documentation outside fixture
+patterns. Use `evalRunnerFingerprint` separately for installed runner bytes.
 
 Set `definition.connectionName` when subject instructions require a named application connection. Tool descriptions show
 that name; each role keeps a separate credential reference for recovery and cleanup.
@@ -49,6 +58,11 @@ Comparison requires matching MCP connection names and judge models, instructions
 declared self-grading relationship can change when the subject model changes under a fixed judge; comparison reports
 that relationship with the subject experiment differences. The judge receives neither the subject identity nor that
 relationship.
+
+`inspectCalibration` reads expectations from saved audit metadata and accepts a `compareExpected` callback. Returning
+`Option.none()` means the label and grade cannot be compared. Its summary separates disagreement, missing grades, and
+unavailable comparisons, with selected and compared counts. `calibrationLines` formats that projection. Neither reads
+current case files nor changes the saved grade.
 
 ## Never
 

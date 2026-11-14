@@ -11,6 +11,7 @@ import type { ApplicationStore } from './store/application-store.ts';
 import { digestManifest } from './store/encode-eval-records.ts';
 import { trialId } from './trial-id.ts';
 import type { EvalRunFailure } from './types.ts';
+import { validateTargetOrigin } from './validate-target-origin.ts';
 
 type ValidateEvalSuiteInput = { readonly suite: EvalSuite };
 type ResolveEvalTargetInput = { readonly target: EvalTarget };
@@ -104,6 +105,8 @@ export const validateEvalSuite = Effect.fn('validateEvalSuite')(function* (
 export const resolveEvalTarget = Effect.fn('resolveEvalTarget')(function* ({
   target,
 }: ResolveEvalTargetInput): Effect.fn.Return<EvalTargetIdentity, EvalRunFailure> {
+  yield* validateTargetOrigin(target);
+
   const credential = Option.none();
 
   const readiness = yield* target.call({ name: 'readiness', input: {}, credential }).pipe(

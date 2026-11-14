@@ -1,4 +1,5 @@
 import type { ContractEnforcement, ContractName } from '@mechane/rule-shapes';
+import { evalAdapterBoundaries } from './eval-adapter-boundaries.ts';
 import { evalGradingIsolation } from './eval-grading-isolation.ts';
 import { evalProductionPath } from './eval-production-path.ts';
 import { evalRunLifecycle } from './eval-run-lifecycle.ts';
@@ -10,4 +11,5 @@ export const EVAL_CONTRACTS = {
   'eval-grading-isolation': evalGradingIsolation,
   'eval-production-path': evalProductionPath,
   'eval-score-accounting': evalScoreAccounting,
+  'eval-adapter-boundaries': evalAdapterBoundaries,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

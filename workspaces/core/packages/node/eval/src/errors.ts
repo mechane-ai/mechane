@@ -98,7 +98,11 @@ export class EvalFileFailed extends Schema.TaggedError<EvalFileFailed>()('EvalFi
   step: Schema.Enum(EvalFileStep),
   path: Schema.String,
   reason: Schema.String,
-}) {}
+}) {
+  override get message(): string {
+    return `${this.step} ${this.path}: ${this.reason}`;
+  }
+}
 
 /** Ctrl-C interrupted an eval run once its finalizers ran; every record it saved stays, so a rerun resumes. */
 export class EvalInterrupted extends Schema.TaggedError<EvalInterrupted>()('EvalInterrupted', {
@@ -122,7 +126,11 @@ export class PlanChanged extends Schema.TaggedError<PlanChanged>()('PlanChanged'
   path: Schema.String,
   savedDigest: Schema.String,
   plannedDigest: Schema.String,
-}) {}
+}) {
+  override get message(): string {
+    return `Saved eval inputs differ at ${this.path}. Use the original configuration to resume, or choose a new output directory.`;
+  }
+}
 
 /** The suite file could not be read, or does not decode as a suite, for `reason`. */
 export class SuiteInvalid extends Schema.TaggedError<SuiteInvalid>()('SuiteInvalid', {

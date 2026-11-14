@@ -7,6 +7,8 @@ export { runEval, resumeEval, runReplyEval, cleanupEval } from './run-eval.ts';
 export { createEvalTarget, localTransport } from './create-eval-target.ts';
 /** Identifies the executing runner bytes for experiment provenance. @public */
 export { evalRunnerFingerprint } from './eval-runner-fingerprint.ts';
+/** Hashes explicitly selected application sources independently of terminal and documentation code. @public */
+export { fingerprintEvalSources } from './fingerprint-eval-sources.ts';
 /** Couples an external suite's grade schema with its typed decoder. @public */
 export { defineGradeSchema } from './define-grade-schema.ts';
 /** Freezes evidence and its digest for grading and calibration. @public */
@@ -82,6 +84,15 @@ export { EvalInspection } from './report/inspection-schemas.ts';
 export type { GradeQuality, QualityKind, InspectionScope } from './report/inspection-schemas.ts';
 /** Decodes the public comparison projection. @public */
 export { EvalComparison } from './report/comparison-schemas.ts';
+/** Inspects calibration against its frozen labels, with explicit missing and unavailable outcomes. @public */
+export {
+  inspectCalibration,
+  calibrationLines,
+  EvalCalibration,
+  CalibrationStatus,
+} from './report/calibration-inspection.ts';
+/** Defines application-specific agreement between a saved expectation and an observed grade. @public */
+export type { CompareCalibration } from './report/calibration-inspection.ts';
 /** Describes per-trial changes in a comparison. @public */
 export type { GradeDifference, GradeChange } from './report/comparison-schemas.ts';
 /** Defines a suite's conversion from structured grades to visible quality. @public */
