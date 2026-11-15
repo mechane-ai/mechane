@@ -18,6 +18,8 @@ import {
 } from '@mechane/sandbox-wire';
 import {
   checkpointSandbox,
+  createMechContext,
+  deleteSandbox,
   readModelToolResult,
   readSandboxCompletion,
   requireFixtures,
@@ -29,7 +31,7 @@ import {
   waitFor,
   waitForTurn,
 } from '@mechane/testing';
-import type { MechContext } from '@mechane/testing';
+import type { MechContext, ScenarioInput } from '@mechane/testing';
 import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -53,12 +55,25 @@ const STOP_TERMINAL_PHASES: ReadonlySet<SandboxStopReceipt['phase']> = new Set([
 type FilesInput = MechContext & { readonly directory: string };
 type RestoreReceipt = { readonly request: SandboxRestoreRequest; readonly result: SandboxRestoreResult };
 
-export async function checkpointedFilesSurviveMachineLoss({
-  stack,
-  account,
-  mechId,
-  directory,
-}: FilesInput): Promise<void> {
+export async function checkpointedFilesSurviveMachineLoss({ stack }: ScenarioInput): Promise<void> {
+  const name = `checkpointed-files-${randomUUID()}`;
+  const input = await createMechContext({ stack, name });
+
+  try {
+    await exerciseFileRecovery({ ...input, directory: `.${name}` });
+  } catch (error) {
+    await stack.captureFailure('checkpointedFilesSurviveMachineLoss:before-sandbox-cleanup').catch(() => undefined);
+    await deleteSandbox(input).catch((cleanupError: unknown) => {
+      throw new AggregateError([error, cleanupError], 'File recovery and its sandbox cleanup failed', { cause: error });
+    });
+
+    throw error;
+  }
+
+  await deleteSandbox(input);
+}
+
+async function exerciseFileRecovery({ stack, account, mechId, directory }: FilesInput): Promise<void> {
   const input = { stack, account, mechId };
   const { model } = requireFixtures(stack);
   const sandbox = requireSandbox(input);
@@ -470,6 +485,7 @@ function createCheckpointFilesCommand({ directory, cacheMarker }: CheckpointFile
     'const fs=require("node:fs"),crypto=require("node:crypto"),cache=process.env.MECHANE_CACHE_HOME',
     'if(!cache || cache.startsWith(process.env.HOME+"/"))throw new Error("cache must be outside home")',
     'fs.mkdirSync(cache,{recursive:true})',
+    `fs.mkdirSync("${directory}")`,
     `fs.writeFileSync(cache+"/${cacheMarker}","reconstructible")`,
     'const cipher=crypto.createCipheriv("aes-256-ctr",Buffer.alloc(32),Buffer.alloc(16))',
     `const multipart=cipher.update(Buffer.alloc(${MULTIPART_FILE_BYTES}))`,

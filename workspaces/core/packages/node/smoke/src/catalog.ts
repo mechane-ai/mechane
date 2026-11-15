@@ -7,6 +7,7 @@ import { onlyBrowserCanApproveKeys } from './auth/only-browser-can-approve-keys.
 import { repeatedSignInReusesIdentity } from './auth/repeated-sign-in-reuses-identity.ts';
 import { revokedKeyCannotAuthorizeRequests } from './auth/revoked-key-cannot-authorize-requests.ts';
 import { backgroundCompletionWakesOnce } from './compute/background-completion-wakes-once.ts';
+import { checkpointedFilesSurviveMachineLoss } from './compute/checkpointed-files-survive-machine-loss.ts';
 import { drainCompletesBeforePendingBash } from './compute/drain-completes-before-pending-bash.ts';
 import { executionGrantIsCurrentAndTransient } from './compute/execution-grant-is-current-and-transient.ts';
 import { interruptedCommandKeepsItsReceipt } from './compute/interrupted-command-keeps-its-receipt.ts';
@@ -195,9 +196,16 @@ export const CATALOG = [
   },
   {
     family: 'compute',
-    guarantee: 'an interrupted command retains one receipt and recovers its committed environment',
-    regression: 'a restart repeats a shell effect, loses committed files, or bypasses a failed checkpoint fence',
+    guarantee: 'an interrupted command retains one receipt and executes its shell effect once',
+    regression: 'a lost acknowledgement or restart repeats a shell effect or loses its command receipt',
     run: interruptedCommandKeepsItsReceipt,
+  },
+  {
+    family: 'compute',
+    guarantee: 'committed files and recovery receipts survive machine loss and replacement',
+    regression:
+      'machine loss discards committed files, bypasses a failed checkpoint fence, or rewrites a recovery receipt',
+    run: checkpointedFilesSurviveMachineLoss,
   },
   {
     family: 'compute',
