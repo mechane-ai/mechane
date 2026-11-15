@@ -894,6 +894,7 @@
         "packages/node/stack/src/dev/output.ts",
         "packages/worker/sandbox/src/egress/pass-egress.ts",
         "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
+        "packages/worker/sandbox/src/output/write-container-startup-timing.ts",
         "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"
       ],
       "excludeFiles": [],
@@ -3956,6 +3957,7 @@
         "packages/node/program/src/output/**",
         "packages/worker/sandbox/src/egress/pass-egress.ts",
         "packages/worker/sandbox/src/evidence/evidence-cleanup.ts",
+        "packages/worker/sandbox/src/output/write-container-startup-timing.ts",
         "packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts"
       ],
       "excludeFiles": [],

@@ -34,6 +34,11 @@ Store only validated phase names, tool names, identities, timestamps, durations,
 diagnostics. Exclude commands, output, paths, request bodies, URLs and credentials. Preserve command receipts, committed
 files and recovery fences independently of diagnostic presentation. A missing terminal receipt remains uncertain.
 
+Distinguish cold container cache selection, outbound rule registration, start submission and inactivity-lease establishment
+with fixed diagnostic step names. Emit the original machine identity and each step's start and settlement. Measure elapsed
+work with a monotonic clock. A pending lease call can include platform startup; its duration is not an idle timeout.
+Diagnostic failures must preserve the operation's result or original error, and must not add retries or renew deadlines.
+
 Record the workspace restoration source explicitly. A native snapshot reports zero archive parts copied; its portable
 archive size is not transferred bytes. Keep cache capture failures visible as bounded metadata without treating them
 as loss of a successfully committed portable checkpoint.
@@ -57,6 +62,9 @@ its original command identity. Restart owners and confirm files, the deadline an
 Hold tool preparation in a local fixture, read its guest status before releasing it, then verify one preparation and one
 command. Fail preparation and require a bounded failure code without dispatch. Inspect restoration progress and retained
 failure evidence. Compare fixed cold and warm workloads separately; performance samples do not establish hosted latency.
+
+Review container startup observations at the provider boundary. Hold a step, then settle it with success and rejection;
+confirm that start and settlement share its identity. A throwing log writer must not change the returned value or error.
 
 ## Local adaptations
 

@@ -4,11 +4,13 @@ import { GATEWAY_CERTIFICATE, GuestScope, GuestStart } from '@mechane/sandbox-wi
 import { capturePromise } from '@mechane/utilities';
 import { Duration, Option, Result, Schema } from 'effect';
 import { CONTAINER_INACTIVITY } from '../constants.ts';
+import { ContainerStartupStep } from '../output/write-container-startup-timing.ts';
 import type { MachineIdInput, MachineProvider } from '../types.ts';
 import { containerGuest } from './container-guest.ts';
 import { requireContainerMachine } from './container-machine.ts';
 import { containerWorkspaceCache } from './container-workspace-cache.ts';
 import { machineStartupTimeout } from './machine-startup-timeout.ts';
+import { observeContainerStartup } from './observe-container-startup.ts';
 import { startContainer } from './start-container.ts';
 import type { ContainerProviderInput } from './types.ts';
 
@@ -106,7 +108,12 @@ export function containerProvider({
         trustedCertificatesPem,
       });
 
-      const startup = await cache.startup({ machineId, checkpoint });
+      const startup = await observeContainerStartup({
+        machineId,
+        step: ContainerStartupStep.Cache,
+        run: () => cache.startup({ machineId, checkpoint }),
+      });
+
       const start = startContainer({ container, gateway, environment, containerNetwork, machineId, startup });
       const started = await capturePromise({ promise: start });
 
@@ -127,7 +134,11 @@ export function containerProvider({
       }
 
       watchStartup({ machineId: identity });
-      await container.setInactivityTimeout(timeout);
+      await observeContainerStartup({
+        machineId,
+        step: ContainerStartupStep.InactivityLease,
+        run: () => container.setInactivityTimeout(timeout),
+      });
     },
     connect: () => containerGuest({ container }),
     isAbsent: async () => !container.running,

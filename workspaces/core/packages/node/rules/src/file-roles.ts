@@ -98,6 +98,7 @@ export const FILE_ROLES = {
     'packages/node/stack/src/dev/output.ts',
     'packages/worker/sandbox/src/egress/pass-egress.ts',
     'packages/worker/sandbox/src/evidence/evidence-cleanup.ts',
+    'packages/worker/sandbox/src/output/write-container-startup-timing.ts',
     'packages/worker/sandbox/src/output/write-sandbox-diagnostic.ts',
   ],
   [FileRole.PersistenceCodec]: ['packages/node/eval/src/store/encode-eval-records.ts'],

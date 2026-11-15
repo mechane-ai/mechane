@@ -51,7 +51,8 @@ The local supervisor's `packages/node/stack/src/run-stack-program.ts` owns signa
 status. The application Worker owns no process listener or process-exit path.
 
 The runtime's `runtime/src/output/write-actor-diagnostic.ts` and sandbox's
-`sandbox/src/output/write-sandbox-diagnostic.ts` own their bounded native recovery diagnostics. The sandbox's
+`sandbox/src/output/write-sandbox-diagnostic.ts` own their bounded native recovery diagnostics.
+`sandbox/src/output/write-container-startup-timing.ts` owns fixed container startup steps and their measured outcomes. The sandbox's
 `sandbox/src/egress/pass-egress.ts` may write its fixed egress-refusal event and reason.
 `sandbox/src/evidence/evidence-cleanup.ts` may report its fixed cleanup-failure tag and artifact identity while retaining
 the ready artifact and its retry receipt.
