@@ -109,8 +109,12 @@ receipt. Leave native interruption and retry signals with Pi rather than publish
 
 Give commands stable identities derived from their durable tool identity. Reattach to recorded execution on replay;
 never rerun an arbitrary shell because the response was lost. Unknown external outcomes require receipt lookup or
-reconciliation. Nexus checks its own actions; an issued provider credential retains its explicit scope and lifetime
-until expiry or provider revocation. A later local policy change cannot undo an already admitted effect.
+reconciliation. After an unconfirmed Bash transport response, the original native task observes the same receipt
+until its recorded deadline. A missing receipt can race submission. Resume only a confirmed pending claim under
+the current dispatch checks. Return a confirmed terminal result as soon as it is known and report uncertainty at
+the deadline if the outcome remains unconfirmed. Nexus checks its own actions; an issued provider credential retains
+its explicit scope and lifetime until expiry or provider revocation. A later local policy change cannot undo an already
+admitted effect.
 
 Keep a background-process start waiting for machine readiness in a native receipt task with an immutable deadline.
 Reuse the original identity and current dispatch checks on each attempt. Report unconfirmed outcomes honestly.
@@ -167,8 +171,9 @@ command's trace and model result to distinguish non-dispatch from unavailable in
 Replay its retained terminal callback and require acknowledgment without another completion notification or interruption
 of subsequent work.
 
-Kill the application around tool dispatch and receipt persistence. Reattach to the same command and inspect its
-outcome. Lose the guest and require an honest interrupted or uncertain result. Fail a home checkpoint and require
+Drop an acknowledged cold Bash submission response, then kill the application during receipt observation. Require
+the original command's terminal tool result without a model status call, with one external effect. Lose the guest
+and require an honest interrupted or uncertain result. Fail a home checkpoint and require
 visible failure rather than a saved-generation claim. Local celld does not establish every Cloudflare platform
 capability. Import more than 100 bounded history records, force a control-state checkpoint, restart, and verify
 paged bodies and stable cursors. Inspect physical document sizes so bounded working context is not mistaken for

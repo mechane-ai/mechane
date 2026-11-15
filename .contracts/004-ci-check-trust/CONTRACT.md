@@ -68,9 +68,10 @@ as a clean checkout; capture Git results before comparing them.
 When candidate acceptance fails, its last step prints the retained celld application and environment logs, database
 setup, build, and Console logs without dumping durable storage or credentials.
 
-The manual guest copy runs on public main with repository contents write access. It may attach one reviewed guest
-archive from an immutable release in the same repository to an existing App-owned draft. Verify the source digest,
-downloaded bytes and final asset metadata. The copy never publishes a release, replaces assets or uses a publisher key.
+The manual guest staging job runs on public main with Actions read and repository contents write. It may attach one
+reviewed guest archive to an App-owned draft from an immutable release or a qualified candidate in the same repository.
+Bind the selected candidate run and artifact to the draft tag's source commit. Verify the qualification, archive and
+final asset digests. The job never publishes a release, replaces assets or uses a publisher key.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,

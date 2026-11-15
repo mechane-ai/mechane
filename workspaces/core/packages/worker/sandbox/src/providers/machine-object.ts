@@ -1,7 +1,7 @@
 import { SandboxProvider } from '@mechane/deployment';
 import { MachineId } from '@mechane/records';
 import { WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { GUEST_PORT } from '@mechane/sandbox-wire';
+import { GUEST_PORT, NativeSnapshotReport } from '@mechane/sandbox-wire';
 import { serialCalls } from '@mechane/utilities';
 import { DurableObject } from 'cloudflare:workers';
 import { Option, Result, Schema } from 'effect';
@@ -81,6 +81,13 @@ export class MachineObject extends DurableObject<unknown> {
 
   async isAbsent({ machineId }: MachineIdInput): Promise<boolean> {
     return await this.#provider.isAbsent({ machineId });
+  }
+
+  async snapshotReport({ machineId }: MachineIdInput): Promise<typeof NativeSnapshotReport.Encoded | null> {
+    const report = await this.#provider.snapshotReport({ machineId });
+    const encoded = Option.map(report, Schema.encodeSync(NativeSnapshotReport));
+
+    return Option.getOrNull(encoded);
   }
 
   async connection({ machineId }: MachineIdInput): Promise<MachineConnection> {

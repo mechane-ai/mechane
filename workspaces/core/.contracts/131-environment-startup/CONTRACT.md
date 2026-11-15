@@ -37,6 +37,10 @@ files and recovery fences independently of diagnostic presentation. A missing te
 Record the workspace restoration source explicitly. A native snapshot reports zero archive parts copied; its portable
 archive size is not transferred bytes. Keep cache capture failures visible as bounded metadata without treating them
 as loss of a successfully committed portable checkpoint.
+Record native snapshot selection, including missing, expired and incompatible caches, rejected starts and guest exits.
+Retain only the latest capture's machine, generation, fixed outcome, time, duration and size. Diagnostic storage failures
+cannot fail startup or retirement. A rejected snapshot clears its selected identity before any portable fallback;
+fallback still requires positive native absence and retains the original startup budget.
 
 Console and CLI consume the same single report, including optional recorded process status. An unavailable process
 observation is distinct from a successful empty list. Reuse Console's canonical environment record and Elements presentation.

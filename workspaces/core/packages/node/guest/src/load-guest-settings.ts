@@ -1,4 +1,6 @@
 import { Effect, Schema } from 'effect';
+import { createHash } from 'node:crypto';
+import { dirname, join } from 'node:path';
 import { validateTrustedCertificates } from './certificate-environment.ts';
 import { GuestMisconfigured } from './errors.ts';
 import { GuestEnvironment } from './schemas.ts';
@@ -19,5 +21,16 @@ export const loadGuestSettings = Effect.fn('loadGuestSettings')(function* ({
 
   yield* validateTrustedCertificates(variables);
 
-  return { ...variables, home: process.cwd(), toolTarget: `${process.platform}-${process.arch}`, scratchDirectory };
+  const home = process.cwd();
+  const homeKey = createHash('sha256').update(home).digest('hex');
+  const temporary = dirname(scratchDirectory);
+  const toolCacheDirectory = join(temporary, `mechane-tools-${homeKey}`);
+
+  return {
+    ...variables,
+    home,
+    toolTarget: `${process.platform}-${process.arch}`,
+    scratchDirectory,
+    toolCacheDirectory,
+  };
 });

@@ -5,6 +5,7 @@ import { DateTime, Duration, Option, Result } from 'effect';
 import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
 import { writeRestoreStageTiming } from '../output/write-sandbox-diagnostic.ts';
 import type { ProviderStepInput } from '../types.ts';
+import { observeNativeSnapshot } from './observe-native-snapshot.ts';
 
 type StartMachineInput = ProviderStepInput & { readonly machine: LiveMachineRow };
 
@@ -33,6 +34,8 @@ export async function startMachine({ store, provider, machine }: StartMachineInp
   const finished = performance.now();
   const milliseconds = finished - started;
   const now = DateTime.nowUnsafe();
+
+  await observeNativeSnapshot({ store, provider, machineId: machine.id });
 
   const head = store.workspace().head;
 

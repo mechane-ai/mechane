@@ -107,6 +107,7 @@ function retirementFixture({ beforePut = async () => undefined }: FixtureInput =
     },
     connect: async () => Option.none(),
     restoredWorkspace: async () => false,
+    snapshotReport: async () => Option.none(),
     isAbsent: async () => false,
     stop: async (input) => {
       assert.equal(input.machineId, machineId);

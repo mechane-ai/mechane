@@ -1,5 +1,6 @@
 import type { SandboxTools } from '@mechane/sandbox-wire';
-import { Option, Schema } from 'effect';
+import { NativeSnapshotReport } from '@mechane/sandbox-wire';
+import { Option, Result, Schema } from 'effect';
 import type { MachineIdInput, MachineProvider } from '../types.ts';
 import { httpGuest } from './http-guest.ts';
 import { MachineCall } from './machine-object.ts';
@@ -11,6 +12,8 @@ type RemoteContainerInput = {
   readonly tools: SandboxTools;
   readonly onStartupExit: (input: MachineIdInput) => void;
 };
+
+const SnapshotObservation = Schema.OptionFromNullOr(NativeSnapshotReport);
 
 /** The Sandbox owns recovery and capacity; this adapter only reaches its compute owner. */
 export function remoteContainerProvider({ machine, tools, onStartupExit }: RemoteContainerInput): MachineProvider {
@@ -29,6 +32,13 @@ export function remoteContainerProvider({ machine, tools, onStartupExit }: Remot
       return machine.stop(encoded);
     },
     isAbsent: ({ machineId }) => machine.isAbsent({ machineId }),
+    snapshotReport: async ({ machineId }) => {
+      const report = await machine.snapshotReport({ machineId });
+
+      const decoded = Schema.decodeUnknownResult(SnapshotObservation)(report);
+
+      return Result.getOrThrow(decoded);
+    },
     restoredWorkspace: ({ machineId, checkpoint }) => {
       const selected = Option.some(checkpoint);
       const encoded = encode({ machineId, checkpoint: selected });

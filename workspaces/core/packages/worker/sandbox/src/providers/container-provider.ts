@@ -116,13 +116,11 @@ export function containerProvider({
           Result.getOrThrow(started);
         }
 
-        await cache.invalidateSelected({ machineId });
+        const portable = await cache.rejected({ machineId });
 
         if (container.running) {
           Result.getOrThrow(started);
         }
-
-        const portable = await cache.startup({ machineId, checkpoint });
 
         await startContainer({ container, gateway, environment, containerNetwork, machineId, startup: portable });
       }
@@ -133,6 +131,7 @@ export function containerProvider({
     connect: () => containerGuest({ container }),
     isAbsent: async () => !container.running,
     restoredWorkspace: cache.restoredWorkspace,
+    snapshotReport: cache.report,
     stop: async ({ machineId, checkpoint }) => {
       const identity = MachineId.make(machineId);
 

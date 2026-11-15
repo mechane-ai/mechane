@@ -1,6 +1,12 @@
 import { TurnStatus, Workspace } from '@mechane/protocol';
-import { HttpStatusCode } from '@mechane/records';
-import { SandboxExecutionIdentity, sandboxExecutionPath, SandboxExecutionResult } from '@mechane/sandbox-wire';
+import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
+import {
+  SandboxExecutionIdentity,
+  sandboxExecutionPath,
+  SandboxExecutionResult,
+  SandboxExecutionSubmission,
+} from '@mechane/sandbox-wire';
+import { startHttpService } from '@mechane/stack';
 import {
   createAccount,
   createMech,
@@ -19,7 +25,7 @@ import {
   waitForTurn,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { Option, Schema } from 'effect';
+import { Option, Result, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { checkpointedFilesSurviveMachineLoss } from './checkpointed-files-survive-machine-loss.ts';
@@ -30,6 +36,66 @@ const COMMAND_RECOVERY_WAIT_MS = 60_000;
 const COMMAND_TIMEOUT_SECONDS = 120;
 const COMPLETED_COMMAND_MODEL_CALLS = 2;
 const COMMAND_OWNER_RESTARTS = 6;
+
+const ACCEPTED_BASH_SUBMISSIONS: ReadonlySet<SandboxExecutionResult['_tag']> = new Set([
+  'Running',
+  'ExecutionEnvironmentRequired',
+]);
+
+type LostReplyInput = { readonly origin: URL; readonly command: string };
+
+async function readBashSubmission(request: Request): Promise<SandboxExecutionSubmission | null> {
+  if (request.method !== HttpMethod.Post || request.body === null) {
+    return null;
+  }
+
+  const input: unknown = await request
+    .clone()
+    .json()
+    .catch(() => null);
+
+  const decoded = Schema.decodeUnknownResult(SandboxExecutionSubmission)(input);
+
+  return Result.getOrNull(decoded);
+}
+
+async function startLostBashReply({ origin, command }: LostReplyInput) {
+  const state: { droppedPath: string | null; observedPath: string | null } = { droppedPath: null, observedPath: null };
+
+  const service = await startHttpService(async (request) => {
+    const url = new URL(request.url);
+
+    if (request.method === HttpMethod.Get && url.pathname === state.droppedPath) {
+      state.observedPath = url.pathname;
+    }
+
+    const submission = await readBashSubmission(request);
+    const forwarded = new Request(new URL(`${url.pathname}${url.search}`, origin), request);
+
+    forwarded.headers.delete(HttpHeader.Host);
+
+    const response = await fetch(forwarded, { redirect: 'manual' });
+
+    if (submission?.command === command && state.droppedPath === null) {
+      const receipt = Schema.decodeUnknownResult(SandboxExecutionResult)(await response.clone().json());
+
+      if (Result.isSuccess(receipt) && ACCEPTED_BASH_SUBMISSIONS.has(receipt.success._tag)) {
+        state.droppedPath = url.pathname;
+
+        await response.body?.cancel();
+
+        return Response.json(
+          { error: 'The fixture lost the command acknowledgement' },
+          { status: HttpStatusCode.BadGateway },
+        );
+      }
+    }
+
+    return response;
+  });
+
+  return { ...service, observePath: () => state.observedPath };
+}
 
 export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput): Promise<void> {
   const fixtures = requireFixtures(stack);
@@ -59,6 +125,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
   const directory = `.smoke-${randomUUID()}`;
   const initialMachines = await readSandboxMachines(stack);
   const cleanupFailures: Array<unknown> = [];
+  const resources: { closeLostReply?: () => Promise<void> } = {};
   const gate = await startCommandGate({ stack });
 
   try {
@@ -78,6 +145,12 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
       `curl --fail --silent '${gate.url}'`,
       `cat '${directory}/effects'`,
     ].join('\n');
+
+    const lostReply = await startLostBashReply({ origin: sandbox.origin, command });
+
+    resources.closeLostReply = lostReply.close;
+
+    await stack.restart({ environment: { MECHANE_SANDBOX_ORIGIN: lostReply.origin.origin } });
 
     const candidates = mechs.map((mech) => ({
       stack,
@@ -115,6 +188,13 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
         model.release({ marker: candidate.marker, index: 0 });
       }
     }
+
+    const observedReceiptPath = await waitFor({
+      name: 'the original Bash execution to be observed after losing its acknowledgement',
+      read: async () => lostReply.observePath(),
+      accept: (path) => path !== null,
+      timeoutMs: COMMAND_RECOVERY_WAIT_MS,
+    });
 
     await gate.waitForRequest({ count: 1 });
 
@@ -199,6 +279,8 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     const executionPath = sandboxExecutionPath(executionIdentity);
 
+    assert.equal(observedReceiptPath, executionPath, 'The Bash task joined a different execution');
+
     const receiptResponse = await fetch(new URL(executionPath, sandbox.origin), {
       headers: { authorization: `Bearer ${sandbox.bearer}` },
       signal: AbortSignal.timeout(COMMAND_RECOVERY_WAIT_MS),
@@ -233,7 +315,7 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
 
     assert.equal(Option.getOrThrow(inspectedResult.output).text, `${marker}\n`);
     assert.equal(Option.getOrThrow(inspectedResult.exitCode), 0);
-    await stack.restart();
+    await stack.restart({ environment: { MECHANE_SANDBOX_ORIGIN: sandbox.origin.origin } });
 
     const replayed = await readTrace({ ...winner, turnId: turn.id });
 
@@ -283,16 +365,15 @@ export async function interruptedCommandKeepsItsReceipt({ stack }: ScenarioInput
     gate.release();
 
     const cleanup = await Promise.allSettled(mechs.map((mech) => deleteSandbox({ stack, account, mechId: mech.id })));
+    const fixturesClosed = await Promise.allSettled([gate.close(), resources.closeLostReply?.()]);
 
-    for (const result of cleanup) {
+    for (const result of [...cleanup, ...fixturesClosed]) {
       if (result.status === 'rejected') {
         const reason: unknown = result.reason;
 
         cleanupFailures.push(reason);
       }
     }
-
-    await gate.close();
   }
 
   if (cleanupFailures.length > 0) {

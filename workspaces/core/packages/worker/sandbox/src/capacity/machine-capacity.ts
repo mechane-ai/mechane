@@ -4,6 +4,7 @@ import { SandboxCapacityIdentity, SandboxCapacityRefusalReason, SandboxCapacityS
 import type { SandboxOwner } from '@mechane/sandbox-wire';
 import { capturePromise, serialCalls } from '@mechane/utilities';
 import { DateTime, Option, Result, Schema } from 'effect';
+import { observeNativeSnapshot } from '../machines/observe-native-snapshot.ts';
 import type { MachineProvider, MachineStartInput, MachineStopInput } from '../types.ts';
 import type { CapacityClient } from './capacity-client.ts';
 
@@ -104,7 +105,12 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
   }: HeldInput & Pick<MachineStopInput, 'checkpoint'>): Promise<void> {
     // A failed stop retains its intent, so another request cannot allocate a replacement prematurely.
     save({ held: { ...held, phase: ReservationPhase.Stopping } });
-    await provider.stop({ machineId: held.machineId, checkpoint });
+
+    try {
+      await provider.stop({ machineId: held.machineId, checkpoint });
+    } finally {
+      await observeNativeSnapshot({ store, provider, machineId: held.machineId });
+    }
 
     const isAbsent = await provider.isAbsent({ machineId: held.machineId });
 
@@ -220,6 +226,7 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
       startupTimeout: provider.startupTimeout,
       isAbsent: provider.isAbsent,
       restoredWorkspace: provider.restoredWorkspace,
+      snapshotReport: provider.snapshotReport,
     },
     bindOwner,
     requireOwner,

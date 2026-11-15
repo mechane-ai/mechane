@@ -17,6 +17,7 @@ export type GuestSettings = GuestEnvironment & {
   readonly home: string;
   readonly toolTarget: string;
   readonly scratchDirectory: string;
+  readonly toolCacheDirectory: string;
 };
 
 /** An execution to answer: its id, what it runs, and how long the answer waits for it to settle. */

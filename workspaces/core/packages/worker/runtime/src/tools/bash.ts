@@ -18,10 +18,15 @@ import { ToolUnavailableError } from './errors.ts';
 import { isNativeToolCurrent } from './native-tools.ts';
 import { readExecutionReceipt } from './read-execution-receipt.ts';
 import { recordBashInput } from './record-bash-input.ts';
-import { cancelPendingSandboxExecution, requestSandboxExecution } from './sandbox-client.ts';
+import {
+  cancelPendingSandboxExecution,
+  requestSandboxExecution,
+  SandboxExecutionUnconfirmedError,
+} from './sandbox-client.ts';
 import type { BashArguments, BashInvocation, PreparedEnvironment, RuntimeToolContext } from './types.ts';
 
-type ObserveBashInput = RuntimeToolContext & { readonly executionId: string };
+type BashDeadline = { readonly deadlineAt?: number };
+type ObserveBashInput = RuntimeToolContext & BashDeadline & { readonly executionId: string };
 
 type AuthorizeBashInput = ObserveBashInput & {
   readonly store: RuntimeToolStore;
@@ -41,7 +46,7 @@ const FINAL_RECEIPT_STATES: ReadonlySet<string> = new Set(['completed', 'failed'
 const NEEDS_ENVIRONMENT: ReadonlySet<string> = new Set(['ExecutionNotFound', 'ExecutionEnvironmentRequired']);
 const COMPLETED_COMMAND_STATES: ReadonlySet<string> = new Set(['completed', 'timed_out', 'persistence_failed']);
 
-export async function executeBash(input: BashInvocation): Promise<BashResult> {
+export async function executeBash(input: BashInvocation & BashDeadline): Promise<BashResult> {
   const id = await toolExecutionId(input);
 
   try {
@@ -63,10 +68,18 @@ export async function executeBash(input: BashInvocation): Promise<BashResult> {
         return result;
       }
 
+      const submission: BashArguments | null = (() => {
+        if (observed._tag === 'ExecutionNotFound') {
+          return { command: input.command, timeoutMs: input.timeoutMs };
+        }
+
+        return null;
+      })();
+
       return await authorizeBash({
         ...identity,
         store,
-        submission: { command: input.command, timeoutMs: input.timeoutMs },
+        submission,
         wasExecutionCreated: begun.wasCreated && observed._tag === 'ExecutionNotFound',
         observed,
       });
@@ -77,6 +90,10 @@ export async function executeBash(input: BashInvocation): Promise<BashResult> {
     }
 
     writeBashUncertain({ executionId: id, cause: error });
+
+    if (error instanceof SandboxExecutionUnconfirmedError) {
+      throw error;
+    }
 
     return {
       status: 'uncertain',
@@ -92,6 +109,10 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
       const receipt = await readExecutionReceipt({ ...input, store, kind: 'sandbox' });
 
       if (receipt === null) {
+        if (input.deadlineAt !== undefined) {
+          throw new SandboxExecutionUnconfirmedError({ method: HttpMethod.Get });
+        }
+
         return { status: 'refused', executionId: input.executionId, message: 'This mech has no matching execution.' };
       }
 
@@ -112,6 +133,10 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
       const startedAtMs = Date.now();
       const started = performance.now();
       const progress = await requestSandboxExecution({ ...input, method: HttpMethod.Get });
+
+      if (input.deadlineAt !== undefined && progress._tag === 'ExecutionNotFound') {
+        throw new SandboxExecutionUnconfirmedError({ method: HttpMethod.Get });
+      }
 
       if (progress._tag === 'ExecutionEnvironmentRequired' && receipt.runId === input.runId) {
         writeBashRestoreObservation({
@@ -135,7 +160,11 @@ export async function observeBash(input: ObserveBashInput): Promise<BashResult> 
 
       return result;
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof SandboxExecutionUnconfirmedError) {
+      throw error;
+    }
+
     return {
       status: 'uncertain',
       executionId: input.executionId,

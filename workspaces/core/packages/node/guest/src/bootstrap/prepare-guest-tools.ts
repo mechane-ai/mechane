@@ -23,6 +23,7 @@ type PrepareGuestToolsInput = {
   readonly onPhase: ObserveStartupPhase;
   readonly target: string;
   readonly folder: string;
+  readonly cacheDirectory: string;
   readonly path: string;
   readonly trustedCertificatesPem: GuestSettings['trustedCertificatesPem'];
 };
@@ -33,6 +34,7 @@ export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
   onPhase,
   target,
   folder,
+  cacheDirectory,
   path,
   trustedCertificatesPem,
 }: PrepareGuestToolsInput): Effect.fn.Return<string, GuestMisconfigured> {
@@ -66,7 +68,15 @@ export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
       return yield* new GuestMisconfigured({ reason: `${tool.name} has no archive for ${platform}` });
     }
 
-    yield* installGuestTool({ tool, archive: archive.value, folder: toolsFolder, bin, environment, onPhase });
+    yield* installGuestTool({
+      tool,
+      archive: archive.value,
+      folder: toolsFolder,
+      bin,
+      cacheDirectory,
+      environment,
+      onPhase,
+    });
   }
 
   return bin;

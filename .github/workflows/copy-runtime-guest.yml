@@ -1,11 +1,23 @@
-name: Copy reused runtime guest
-run-name: Copy guest for ${{ inputs.target_tag }}
+name: Stage runtime guest
+run-name: Stage guest for ${{ inputs.target_tag }}
 on:
   workflow_dispatch:
     inputs:
       source_tag:
         description: Immutable release containing the reused guest
-        required: true
+        required: false
+        type: string
+      candidate_run_id:
+        description: Successful runtime candidate workflow run ID for a fresh guest
+        required: false
+        type: string
+      candidate_artifact_id:
+        description: Exact candidate artifact ID from that run
+        required: false
+        type: string
+      qualification_sha256:
+        description: Exact qualification.json SHA-256 for the candidate artifact
+        required: false
         type: string
       target_tag:
         description: Existing App-owned release draft
@@ -16,6 +28,7 @@ on:
         required: true
         type: string
 permissions:
+  actions: read
   contents: write
 concurrency:
   group: copy-runtime-guest-${{ inputs.target_tag }}
@@ -26,37 +39,109 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Copy the reviewed guest between releases in this repository
+      - name: Stage the qualified guest in this repository
         env:
           GH_TOKEN: ${{ github.token }}
           SOURCE_TAG: ${{ inputs.source_tag }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_ARTIFACT_ID: ${{ inputs.candidate_artifact_id }}
+          QUALIFICATION_SHA256: ${{ inputs.qualification_sha256 }}
           TARGET_TAG: ${{ inputs.target_tag }}
           ARCHIVE_SHA256: ${{ inputs.archive_sha256 }}
         run: |
           set -euo pipefail
+          reject() {
+            printf '::error::%s\n' "$1"
+            exit 1
+          }
           valid_tag='^v[0-9]+\.[0-9]+\.[0-9]+$'
-          if [[ ! "$SOURCE_TAG" =~ $valid_tag || ! "$TARGET_TAG" =~ $valid_tag || "$SOURCE_TAG" == "$TARGET_TAG" ]]; then
-            echo '::error::Select two distinct stable runtime tags.'
-            exit 1
-          fi
-          if [[ ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
-            echo '::error::Select the guest archive SHA-256 from the candidate.'
-            exit 1
-          fi
+          valid_id='^[1-9][0-9]*$'
+          valid_sha256='^[0-9a-f]{64}$'
+          [[ "$TARGET_TAG" =~ $valid_tag ]] || reject 'Select a stable runtime target tag.'
+          [[ "$ARCHIVE_SHA256" =~ $valid_sha256 ]] || reject 'Select the qualified guest archive SHA-256.'
 
           repo="github.com/$GITHUB_REPOSITORY"
-          source_file="mechane-guest-$SOURCE_TAG.oci.tar"
           target_file="mechane-guest-$TARGET_TAG.oci.tar"
           digest="sha256:$ARCHIVE_SHA256"
-          source=$(gh release view "$SOURCE_TAG" --repo "$repo" --json isImmutable,isDraft,assets)
-          size=$(jq -er --arg name "$source_file" --arg digest "$digest" '
-            select(.isImmutable and (.isDraft | not))
-            | .assets[]
-            | select(.name == $name and .digest == $digest and .state == "uploaded" and .size > 0)
-            | .size
-          ' <<< "$source")
-          draft=$(gh release view "$TARGET_TAG" --repo "$repo" --json isDraft,author,assets)
-          jq -e '.isDraft and .author.login == "mechane-engineering[bot]"' <<< "$draft" > /dev/null
+
+          read_draft() {
+            gh release view "$TARGET_TAG" --repo "$repo" --json isDraft,author,assets |
+              jq -ce 'select(.isDraft and .author.login == "mechane-engineering[bot]")' ||
+              reject 'Select an existing App-owned draft.'
+          }
+          read_draft > /dev/null
+
+          directory=$(mktemp -d)
+          trap 'rm -rf -- "$directory"' EXIT
+
+          verify_file() {
+            printf '%s  %s\n' "$1" "$2" | sha256sum -c /dev/stdin > /dev/null
+          }
+
+          if [[ -n "$SOURCE_TAG" ]]; then
+            [[ "$SOURCE_TAG" =~ $valid_tag && "$SOURCE_TAG" != "$TARGET_TAG" ]] ||
+              reject 'Select a distinct stable source release.'
+            [[ -z "$CANDIDATE_RUN_ID$CANDIDATE_ARTIFACT_ID$QUALIFICATION_SHA256" ]] ||
+              reject 'Select either an immutable source release or a candidate artifact.'
+            source_file="mechane-guest-$SOURCE_TAG.oci.tar"
+            source=$(gh release view "$SOURCE_TAG" --repo "$repo" --json isImmutable,isDraft,assets)
+            size=$(jq -er --arg name "$source_file" --arg digest "$digest" '
+              select(.isImmutable and (.isDraft | not)) | .assets[]
+              | select(.name == $name and .digest == $digest and .state == "uploaded" and .size > 0) | .size
+            ' <<< "$source")
+          else
+            [[ "$CANDIDATE_RUN_ID" =~ $valid_id && "$CANDIDATE_ARTIFACT_ID" =~ $valid_id &&
+              "$QUALIFICATION_SHA256" =~ $valid_sha256 ]] || reject 'Select the exact run, artifact and qualification digest.'
+
+            reference=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TARGET_TAG")
+            tag_id=$(jq -er '.object | select(.type == "tag") | .sha' <<< "$reference")
+            tag=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_id")
+            commit=$(jq -er '.object | select(.type == "commit") | .sha' <<< "$tag")
+            [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || reject 'The target tag must name an exact source commit.'
+
+            run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID")
+            jq -e --argjson run "$CANDIDATE_RUN_ID" --argjson repo "$GITHUB_REPOSITORY_ID" --arg commit "$commit" '
+              .id == $run and .repository.id == $repo and .head_repository.id == $repo and .head_sha == $commit
+              and .path == ".github/workflows/runtime-candidate.yml" and .event == "workflow_dispatch"
+              and .status == "completed" and .conclusion == "success"
+            ' <<< "$run" > /dev/null || reject 'The candidate run did not qualify the tagged source.'
+
+            artifact_path="repos/$GITHUB_REPOSITORY/actions/artifacts/$CANDIDATE_ARTIFACT_ID"
+            artifact=$(gh api "$artifact_path")
+            artifact_digest=$(jq -er --argjson id "$CANDIDATE_ARTIFACT_ID" --argjson run "$CANDIDATE_RUN_ID" \
+              --argjson repo "$GITHUB_REPOSITORY_ID" --arg commit "$commit" '
+                select(.id == $id and .name == ("mechane-candidate-" + $commit) and .expired == false)
+                | select(.workflow_run | .id == $run and .repository_id == $repo and .head_repository_id == $repo
+                  and .head_sha == $commit)
+                | .digest | select(test("^sha256:[0-9a-f]{64}$")) | ltrimstr("sha256:")
+              ' <<< "$artifact")
+            zip="$directory/candidate.zip"
+            gh api "$artifact_path/zip" > "$zip"
+            verify_file "$artifact_digest" "$zip" || reject 'The candidate artifact download differs from GitHub metadata.'
+
+            entries=$(unzip -Z1 "$zip")
+            prefix=''
+            if grep -Fxq "$TARGET_TAG/qualification.json" <<< "$entries"; then
+              prefix="$TARGET_TAG/"
+            fi
+            qualification="$directory/qualification.json"
+            inventory="$directory/artifacts.json"
+            unzip -p "$zip" "${prefix}qualification.json" > "$qualification"
+            verify_file "$QUALIFICATION_SHA256" "$qualification" || reject 'The qualification receipt digest differs.'
+            inventory_digest=$(jq -er --arg commit "$commit" --arg version "${TARGET_TAG#v}" '
+              select(.public_commit == $commit and .version == $version and .artifacts.path == "artifacts.json")
+              | select([.checks[] | select(.outcome == "passed") | .name] | sort
+                == ["artifact-scenarios", "complete", "shipped-formats"])
+              | .artifacts.sha256 | select(test("^[0-9a-f]{64}$"))
+            ' "$qualification")
+            unzip -p "$zip" "${prefix}artifacts.json" > "$inventory"
+            verify_file "$inventory_digest" "$inventory" || reject 'The artifact inventory differs from qualification.'
+            size=$(jq -er --arg name "$target_file" --arg sha "$ARCHIVE_SHA256" '
+              .assets[] | select(.name == $name and .sha256 == $sha and .bytes > 0) | .bytes
+            ' "$inventory")
+          fi
+
+          draft=$(read_draft)
           existing=$(jq -c --arg name "$target_file" '.assets[] | select(.name == $name)' <<< "$draft")
           if [[ -n "$existing" ]]; then
             jq -e --arg digest "$digest" --argjson size "$size" '
@@ -65,13 +150,17 @@ jobs:
             exit 0
           fi
 
-          directory=$(mktemp -d)
-          trap 'rm -rf -- "$directory"' EXIT
-          gh release download "$SOURCE_TAG" --repo "$repo" --pattern "$source_file" --dir "$directory"
-          printf '%s  %s\n' "$ARCHIVE_SHA256" "$directory/$source_file" | sha256sum --check --status
-          mv -- "$directory/$source_file" "$directory/$target_file"
+          if [[ -n "$SOURCE_TAG" ]]; then
+            gh release download "$SOURCE_TAG" --repo "$repo" --pattern "$source_file" --dir "$directory"
+            mv -- "$directory/$source_file" "$directory/$target_file"
+          else
+            unzip -p "$zip" "$prefix$target_file" > "$directory/$target_file"
+          fi
+
+          verify_file "$ARCHIVE_SHA256" "$directory/$target_file" || reject 'The guest archive digest differs.'
+          [[ "$(stat -c %s "$directory/$target_file")" == "$size" ]] || reject 'The guest archive size differs.'
           gh release upload "$TARGET_TAG" "$directory/$target_file" --repo "$repo"
-          gh release view "$TARGET_TAG" --repo "$repo" --json isDraft,assets |
+          read_draft |
             jq -e --arg name "$target_file" --arg digest "$digest" --argjson size "$size" '
-              .isDraft and any(.assets[]; .name == $name and .state == "uploaded" and .digest == $digest and .size == $size)
+              any(.assets[]; .name == $name and .state == "uploaded" and .digest == $digest and .size == $size)
             ' > /dev/null

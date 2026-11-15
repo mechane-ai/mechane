@@ -133,7 +133,15 @@ export function hostProvider({
     return machine.state === HostMachineStatus.Exited;
   };
 
-  return { start, connect, stop, startupTimeout, isAbsent, restoredWorkspace: async () => false };
+  return {
+    start,
+    connect,
+    stop,
+    startupTimeout,
+    isAbsent,
+    restoredWorkspace: async () => false,
+    snapshotReport: async () => Option.none(),
+  };
 }
 
 /** PUT starts one identity once; GET observes it without allocating. The launcher returns only a machine report. */

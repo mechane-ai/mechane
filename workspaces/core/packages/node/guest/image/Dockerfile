@@ -3,7 +3,7 @@
 FROM mirror.gcr.io/library/node:24.22.1-trixie-slim@sha256:89c5244bc22a9bc3287d89ebc7e49b9cb5bb84cd40e6175ac3421d5a9f68b95a
 ARG TARGETARCH
 RUN apt-get update \
-  && apt-get install --yes --no-install-recommends ca-certificates git xz-utils curl jq python3 python3-venv build-essential pkg-config libssl-dev openssl nix-bin unzip zstd ripgrep chromium xvfb ffmpeg fonts-liberation libnss3-tools \
+  && apt-get install --yes --no-install-recommends ca-certificates git xz-utils curl jq python3 python3-venv build-essential pkg-config libssl-dev openssl nix-bin unzip zstd ripgrep chromium xvfb ffmpeg fonts-liberation libnss3-tools tini \
   && rm -rf /var/lib/apt/lists/*
 RUN install -d -o node -g node /nix \
   && install -d /etc/nix \
@@ -23,4 +23,5 @@ RUN nix store info --store local \
   && test -r /usr/local/share/licenses/mechane-tools/mise-LICENSE
 WORKDIR /home/node
 EXPOSE 8080
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["node", "/opt/mechane/guest.mjs"]

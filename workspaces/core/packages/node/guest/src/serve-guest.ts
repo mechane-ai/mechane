@@ -16,6 +16,7 @@ import { loadGuestSettings } from './load-guest-settings.ts';
 import { processLedger } from './processes/process-ledger.ts';
 import type { Exchange, GuestFailure } from './types.ts';
 import { openWorkspaceFolder } from './workspace/open-workspace-folder.ts';
+import { prepareWorkspaceScratch } from './workspace/prepare-workspace-scratch.ts';
 import { workspaceJournal } from './workspace/workspace-journal.ts';
 
 /**
@@ -48,6 +49,16 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
 
   yield* listenToGuest({ settings: loadedSettings, exchanges, startup: status });
 
+  yield* prepareWorkspaceScratch(loadedSettings).pipe(
+    Effect.catchTags({
+      GuestMisconfigured: () => {
+        startup.fail();
+
+        return Effect.never;
+      },
+    }),
+  );
+
   const preparing = prepareGuestTools({
     tools: loadedSettings.additionalTools,
     onPhase: startup.advance,
@@ -55,6 +66,7 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
     folder,
     path: loadedSettings.path,
     trustedCertificatesPem: loadedSettings.trustedCertificatesPem,
+    cacheDirectory: loadedSettings.toolCacheDirectory,
   });
 
   const managedTools = yield* preparing.pipe(

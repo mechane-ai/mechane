@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,restore,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,maintenance,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "packages/worker/sandbox-store/src/{maintenance,workspaces}/**", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,restore,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives,bootstrap,workspace}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,maintenance,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "packages/worker/sandbox-store/src/{maintenance,workspaces}/**", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -32,6 +32,15 @@ cache must match the live machine and committed manifest before readiness; reche
 deadline after asynchronous reads. Never turn a blocked cache admission into archive activation. Native snapshots
 restore files, not process memory or a previous command identity. Keep local celld on this same compute API and qualify
 the native snapshot boundary separately against Cloudflare.
+
+Remove the redundant combined archive after every split part is complete. Preserve those immutable parts until their
+generation is released. Reuse a managed tool archive only after its bytes match the installation's pinned checksum;
+repeat extraction and executable version checks. Keep that disposable cache outside the durable home. Missing or changed
+cache bytes use ordinary verified download, and cache publication failure cannot fail an already verified tool.
+Mark each guest scratch directory with its home and process identity. Before preparing a fresh guest, remove only marked
+scratch for that home whose process is absent or whose PID belongs to the new guest. Preserve current scratch, live
+owners, unmarked directories and committed home files. Bound cleanup within the original startup budget; it cannot
+resume a frozen writer. Old unmarked native snapshots become incompatible when the qualified guest image changes.
 
 Keep the expanded and compressed checkpoint bounds in the shared sandbox wire constants used by the guest and Worker.
 Qualify a capacity change against streaming memory, home plus archive staging disk, part counts, and existing operation

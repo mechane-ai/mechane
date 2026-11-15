@@ -1,7 +1,7 @@
 ---
 name: managed-processes
 message: Keep managed processes bound to their original machine and preserve files when checkpointing or stopping them.
-paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/execution/completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/{environment,environment-durability}.tsx"]
+paths: ["packages/shared/sandbox-wire/**", "packages/shared/protocol/src/operations/environment/**", "packages/worker/runtime/src/tools/**", "packages/worker/runtime/src/operations/environment.ts", "packages/worker/runtime/src/execution/completion.ts", "packages/worker/server/src/sandboxes/completion.ts", "packages/worker/sandbox/src/**", "packages/worker/sandbox/src/service/**", "packages/worker/sandbox-store/src/**", "packages/node/guest/src/**", "packages/node/guest/image/Dockerfile", "packages/browser/console/src/screens/environment.tsx", "packages/browser/console-views/src/{environment,environment-durability}.tsx"]
 ---
 
 ## Rules
@@ -51,6 +51,9 @@ the callback itself sends no conversational message or reaction.
 Retain a known foreground exit code or timeout when saving its files fails. File status reports the save failure
 separately without changing that terminal outcome. Historical failure records that omitted the outcome remain
 explicitly unknown; a background checkpoint cannot rewrite them or turn their failed receipt into success.
+
+Run the guest under an unprivileged container init that reaps orphaned children, forwards signals and preserves exit
+status.
 
 Own each process group in the guest scope. Stop that group when its leader exits, on explicit stop, or on guest shutdown.
 Preserve processes across ordinary tool waits and bounded activation completion while their machine remains alive.
@@ -179,7 +182,9 @@ Seed a pre-receipt drain and inspect it before requesting Stop again. Require th
 time, and confirmed shutdown before completion. Historical backfills cannot replace a newer machine's latest receipt.
 Interrupt manifest publication after its last part and cancel the generation while publication is in flight. No stale
 head or successful receipt may appear. Reject a conflicting immutable manifest or missing referenced manifest on restore.
-Record host-group and isolated-container coverage separately. Do not claim cgroup isolation from process enumeration.
+Verify the qualified guest image reaps an exited orphan. Check SIGTERM forwarding and the child exit status with the
+configured init. Record host-group and isolated-container coverage separately. Do not claim cgroup isolation from
+process enumeration.
 Commit a head, mutate files afterward, and lose the machine before its drain. A later activation barrier must fail without
 calling the old head a fresh save. Repeat with a committed matching drain, an unfinished or failed drain, a generation
 mismatch, and an imported head with no previously ready machine. A never-ready startup refusal must not create a loss

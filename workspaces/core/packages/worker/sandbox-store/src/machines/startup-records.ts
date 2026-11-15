@@ -1,7 +1,12 @@
 import type { MachineId, RecordId } from '@mechane/records';
 import { renamedWireStruct } from '@mechane/records';
 import { ExecutionTiming, GuestStatus, MachineStartup, STARTUP_MAX_STEPS, StartupPhase } from '@mechane/sandbox-wire';
-import type { StartupFailure, StartupFailureObservation, StartupProgress } from '@mechane/sandbox-wire';
+import type {
+  NativeSnapshotReport,
+  StartupFailure,
+  StartupFailureObservation,
+  StartupProgress,
+} from '@mechane/sandbox-wire';
 import { decodeFirst } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
 import type { DateTime } from 'effect';
@@ -45,6 +50,7 @@ type SaveInput = { readonly report: MachineStartup };
 
 type FailureInput = Identity & { readonly failure: StartupFailure; readonly now: DateTime.Utc };
 type WorkInput = Identity & { readonly milliseconds: number; readonly phase: StartupProgress['phase'] };
+type SnapshotInput = { readonly snapshot: NativeSnapshotReport };
 
 /** Startup metadata shares the machine identity and never contains the execution's command or output. */
 export function startupRecords({ sql }: RecordsInput) {
@@ -78,6 +84,7 @@ export function startupRecords({ sql }: RecordsInput) {
         lastFailure: empty,
         deadlineAt,
         guest: empty,
+        nativeSnapshot: empty,
         restoration: empty,
         progress: {
           phase: StartupPhase.Container,
@@ -174,6 +181,18 @@ export function startupRecords({ sql }: RecordsInput) {
     });
   }
 
+  function observeNativeSnapshot({ snapshot }: SnapshotInput): void {
+    const found = read({ machineId: snapshot.machineId });
+
+    if (Option.isNone(found)) {
+      return;
+    }
+
+    const nativeSnapshot = Option.some(snapshot);
+
+    save({ report: { ...found.value, nativeSnapshot } });
+  }
+
   function failStartup({ machineId, failure, now }: FailureInput): void {
     const found = read({ machineId });
 
@@ -220,6 +239,7 @@ export function startupRecords({ sql }: RecordsInput) {
     recordStartupWork,
     observeGuestStartup,
     observeRestoration,
+    observeNativeSnapshot,
     failStartup,
     latestStartup,
     latestExecutionTiming,

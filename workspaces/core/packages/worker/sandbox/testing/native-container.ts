@@ -1,7 +1,8 @@
 import { SandboxContainerNetwork } from '@mechane/deployment';
 import { MachineId, RecordId } from '@mechane/records';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
-import { Deferred, Effect, Option } from 'effect';
+import { NativeSnapshotCaptureStatus, NativeSnapshotSelection } from '@mechane/sandbox-wire';
+import { Deferred, Duration, Effect, Option } from 'effect';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { containerProvider } from '../src/providers/container-provider.ts';
@@ -14,6 +15,7 @@ const DIGEST_CHARACTERS = 64;
 const CACHE_BYTES = 1024;
 const INITIAL_AND_SNAPSHOT_ATTEMPTS = 2;
 const PORTABLE_FALLBACK_ATTEMPTS = 3;
+const EXPIRED_CACHE_AGE = Duration.days(30);
 
 type FixtureInput = {
   readonly isRunning?: boolean;
@@ -23,6 +25,8 @@ type FixtureInput = {
   readonly shouldRejectSnapshot?: boolean;
   readonly shouldRetainSnapshotInstance?: boolean;
   readonly shouldStopDuringInspection?: boolean;
+  readonly captureError?: Error;
+  readonly shouldFailDiagnosticWrites?: boolean;
 };
 
 type NativeFixture = {
@@ -46,6 +50,8 @@ function createNativeFixture({
   shouldRejectSnapshot = false,
   shouldRetainSnapshotInstance = false,
   shouldStopDuringInspection = false,
+  captureError,
+  shouldFailDiagnosticWrites = false,
 }: FixtureInput = {}): NativeFixture {
   let running = isRunning;
   let activeLabels = labels;
@@ -135,7 +141,13 @@ function createNativeFixture({
     interceptAllOutboundHttp: async () => {
       throw new Error('direct fixture does not intercept HTTP');
     },
-    snapshotContainer: async () => ({ id: '3fe5c8b3-2628-47b7-a58e-1721e8e415de', size: CACHE_BYTES }),
+    snapshotContainer: async () => {
+      if (captureError !== undefined) {
+        throw captureError;
+      }
+
+      return { id: '3fe5c8b3-2628-47b7-a58e-1721e8e415de', size: CACHE_BYTES };
+    },
     signal: () => {
       throw new Error('fixture does not signal processes');
     },
@@ -147,6 +159,10 @@ function createNativeFixture({
   const memoryStorage = {
     get: async (key: string): Promise<unknown> => stored.get(key),
     put: async (key: string, value: unknown): Promise<void> => {
+      if (shouldFailDiagnosticWrites && key === 'workspace-cache-report') {
+        throw new Error('diagnostic storage unavailable');
+      }
+
       stored.set(key, value);
     },
   };
@@ -245,22 +261,22 @@ await test('present native instances retain their identity and inspection failur
   assert.equal(unavailable.counts().destroys, 0);
 });
 
+const checkpoint: Readonly<WorkspaceSnapshot> = {
+  generation: RecordId.make('430c3686-eac7-4cfa-9ca9-523d31b6d09c'),
+  parent: Option.none(),
+  archive: { bytes: 0, parts: 0, sha256: 'a'.repeat(DIGEST_CHARACTERS) },
+  manifestSha256: Option.some('b'.repeat(DIGEST_CHARACTERS)),
+  capturedMachineId: Option.some(machineId),
+  capturedAt: Option.none(),
+  capturedSequence: Option.none(),
+};
+
+const saved: Readonly<MachineStartInput> = { machineId, checkpoint: Option.some(checkpoint) };
+
 await test(
   'rejected native snapshot falls back only while the physical instance is absent',
   { timeout: 5000 },
   async () => {
-    const checkpoint: WorkspaceSnapshot = {
-      generation: RecordId.make('430c3686-eac7-4cfa-9ca9-523d31b6d09c'),
-      parent: Option.none(),
-      archive: { bytes: 0, parts: 0, sha256: 'a'.repeat(DIGEST_CHARACTERS) },
-      manifestSha256: Option.some('b'.repeat(DIGEST_CHARACTERS)),
-      capturedMachineId: Option.some(machineId),
-      capturedAt: Option.none(),
-      capturedSequence: Option.none(),
-    };
-
-    const saved = { machineId, checkpoint: Option.some(checkpoint) };
-
     for (const shouldRetainSnapshotInstance of [false, true]) {
       const fixture = createNativeFixture({ shouldRejectSnapshot: true, shouldRetainSnapshotInstance });
 
@@ -278,8 +294,76 @@ await test(
       }
 
       assert.equal(fixture.counts().snapshotStarts, 1);
+
+      const report = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+      assert.equal(report.selection, NativeSnapshotSelection.Rejected);
+      assert.equal(await fixture.provider.restoredWorkspace({ machineId, checkpoint }), false);
       await fixture.provider.stop(input);
       await fixture.settle();
     }
+  },
+);
+
+await test(
+  'native cache admits only its exact unexpired checkpoint and capture failure cannot prevent retirement',
+  { timeout: 5000 },
+  async (context) => {
+    context.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+
+    const fixture = createNativeFixture();
+
+    await fixture.provider.start(saved);
+    await fixture.provider.stop(saved);
+    await fixture.settle();
+    await fixture.provider.start(saved);
+    assert.equal(await fixture.provider.restoredWorkspace({ machineId, checkpoint }), true);
+    await fixture.provider.stop(input);
+    await fixture.settle();
+
+    const changed = { ...checkpoint, generation: RecordId.make('f8449d46-e5b9-477f-9e44-110d854b774b') };
+
+    await fixture.provider.start({ machineId, checkpoint: Option.some(changed) });
+    assert.equal(await fixture.provider.restoredWorkspace({ machineId, checkpoint: changed }), false);
+
+    const incompatible = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+    assert.equal(incompatible.selection, NativeSnapshotSelection.Incompatible);
+    await fixture.provider.stop(input);
+    await fixture.settle();
+
+    context.mock.timers.tick(Duration.toMillis(EXPIRED_CACHE_AGE));
+
+    await fixture.provider.start(saved);
+    assert.equal(await fixture.provider.restoredWorkspace({ machineId, checkpoint }), false);
+
+    const expired = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+    assert.equal(expired.selection, NativeSnapshotSelection.Expired);
+    await fixture.provider.stop(input);
+    await fixture.settle();
+
+    const failed = createNativeFixture({ captureError: new Error('private provider failure') });
+
+    await failed.provider.start(saved);
+    await failed.provider.stop(saved);
+    await failed.settle();
+    assert.equal(await failed.provider.isAbsent({ machineId }), true);
+
+    const failure = Option.getOrThrow(await failed.provider.snapshotReport({ machineId }));
+
+    assert.equal(Option.getOrThrow(failure.capture).status, NativeSnapshotCaptureStatus.Failed);
+    assert.equal(JSON.stringify(failure).includes('private provider failure'), false);
+    await failed.provider.start(saved);
+    assert.equal(await failed.provider.restoredWorkspace({ machineId, checkpoint }), false);
+    await failed.provider.stop(input);
+    await failed.settle();
+
+    const unavailable = createNativeFixture({ shouldFailDiagnosticWrites: true });
+
+    await unavailable.provider.start(saved);
+    await unavailable.provider.stop(saved);
+    await unavailable.settle();
+    assert.equal(await unavailable.provider.isAbsent({ machineId }), true);
   },
 );

@@ -3,7 +3,7 @@ import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Effect } from 'effect';
 import type { Scope } from 'effect';
 import { createHash } from 'node:crypto';
-import { writeFile } from 'node:fs/promises';
+import { rm, writeFile } from 'node:fs/promises';
 import { archivePartName } from '../archive-files/archive-part-name.ts';
 import { openWorkspaceFile } from '../archive-files/open-workspace-file.ts';
 import { readFilePart } from '../archive-files/read-file-part.ts';
@@ -40,6 +40,11 @@ export const splitArchive = Effect.fn('splitArchive')(function* ({
     state.bytes += body.byteLength;
     state.parts += 1;
   }
+
+  yield* Effect.tryPromise({
+    try: () => rm(path),
+    catch: (cause) => new WorkspaceFailed({ generation, step: WorkspaceStep.Archive, reason: String(cause) }),
+  });
 
   return { ...state, sha256: hash.digest('hex') };
 }, Effect.scoped);

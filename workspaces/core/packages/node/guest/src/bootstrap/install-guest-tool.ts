@@ -6,6 +6,7 @@ import { Duration, Effect, Option, Schema } from 'effect';
 import { chmod, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { GuestMisconfigured } from '../errors.ts';
+import { restoreGuestToolArchive, saveGuestToolArchive } from './guest-tool-cache.ts';
 import { runToolCommand } from './run-tool-command.ts';
 import type { ObserveStartupPhase } from './startup-progress.ts';
 
@@ -23,6 +24,7 @@ type InstallGuestToolInput = {
   readonly archive: SandboxToolArchive;
   readonly folder: string;
   readonly bin: string;
+  readonly cacheDirectory: string;
   readonly environment: () => Readonly<Record<string, string>>;
 };
 
@@ -33,6 +35,7 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
   archive,
   folder,
   bin,
+  cacheDirectory,
   environment,
 }: InstallGuestToolInput): Effect.fn.Return<void, GuestMisconfigured> {
   const toolName = Option.some(tool.name);
@@ -42,42 +45,54 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
   const downloadSeconds = String(SANDBOX_TOOL_LIMITS.downloadSeconds);
   const maxArchiveBytes = String(SANDBOX_TOOL_LIMITS.maxArchiveBytes);
   const url = archive.url.toString();
-
-  onPhase({ phase: StartupPhase.Download, tool: toolName });
-
-  yield* runToolCommand({
-    name: `download ${tool.name}`,
-    command: '/usr/bin/curl',
-    arguments: [
-      '--fail',
-      '--silent',
-      '--show-error',
-      '--proto',
-      '=https',
-      '--max-redirs',
-      '0',
-      '--max-time',
-      downloadSeconds,
-      '--max-filesize',
-      maxArchiveBytes,
-      '--output',
-      archivePath,
-      '--',
-      url,
-    ],
-    environment,
-    timeout: TOOL_DOWNLOAD_TIMEOUT,
-    maxOutputBytes: TOOL_OUTPUT_MAX_BYTES,
-  });
+  const cache = { cacheDirectory, tool, archive, archivePath };
 
   onPhase({ phase: StartupPhase.Verify, tool: toolName });
 
-  const digest = yield* artifactDigest({ path: archivePath }).pipe(
-    Effect.mapError(() => new GuestMisconfigured({ reason: `read ${tool.name} archive failed` })),
+  const cached = yield* restoreGuestToolArchive(cache).pipe(
+    Effect.catchTags({
+      ToolCacheUnavailable: () => Effect.succeed(false),
+      ArtifactUnreadable: () => Effect.succeed(false),
+    }),
   );
 
-  if (digest.sha256 !== archive.sha256) {
-    return yield* new GuestMisconfigured({ reason: `${tool.name} archive checksum did not match` });
+  if (!cached) {
+    onPhase({ phase: StartupPhase.Download, tool: toolName });
+
+    yield* runToolCommand({
+      name: `download ${tool.name}`,
+      command: '/usr/bin/curl',
+      arguments: [
+        '--fail',
+        '--silent',
+        '--show-error',
+        '--proto',
+        '=https',
+        '--max-redirs',
+        '0',
+        '--max-time',
+        downloadSeconds,
+        '--max-filesize',
+        maxArchiveBytes,
+        '--output',
+        archivePath,
+        '--',
+        url,
+      ],
+      environment,
+      timeout: TOOL_DOWNLOAD_TIMEOUT,
+      maxOutputBytes: TOOL_OUTPUT_MAX_BYTES,
+    });
+
+    onPhase({ phase: StartupPhase.Verify, tool: toolName });
+
+    const digest = yield* artifactDigest({ path: archivePath }).pipe(
+      Effect.mapError(() => new GuestMisconfigured({ reason: `read ${tool.name} archive failed` })),
+    );
+
+    if (digest.sha256 !== archive.sha256) {
+      return yield* new GuestMisconfigured({ reason: `${tool.name} archive checksum did not match` });
+    }
   }
 
   const listing = yield* runToolCommand({
@@ -116,11 +131,38 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
     catch: () => new GuestMisconfigured({ reason: `prepare ${tool.name} executable failed` }),
   });
 
+  yield* checkVersion({ tool, path: stagedPath, environment, onPhase });
+
+  yield* Effect.tryPromise({
+    try: () => rename(stagedPath, installedPath),
+    catch: () => new GuestMisconfigured({ reason: `install ${tool.name} executable failed` }),
+  });
+
+  if (!cached) {
+    yield* saveGuestToolArchive(cache).pipe(Effect.catchTags({ ToolCacheUnavailable: () => Effect.void }));
+  }
+
+  yield* Effect.tryPromise({
+    try: () => rm(archivePath),
+    catch: () => new GuestMisconfigured({ reason: `remove ${tool.name} archive failed` }),
+  });
+});
+
+type CheckVersionInput = Pick<InstallGuestToolInput, 'tool' | 'environment' | 'onPhase'> & { readonly path: string };
+
+const checkVersion = Effect.fn('checkVersion')(function* ({
+  tool,
+  path,
+  environment,
+  onPhase,
+}: CheckVersionInput): Effect.fn.Return<void, GuestMisconfigured> {
+  const toolName = Option.some(tool.name);
+
   onPhase({ phase: StartupPhase.CheckTool, tool: toolName });
 
   const output = yield* runToolCommand({
     name: `verify ${tool.name} ${tool.version}`,
-    command: stagedPath,
+    command: path,
     arguments: ['--version'],
     environment,
     timeout: TOOL_COMMAND_TIMEOUT,
@@ -132,14 +174,4 @@ export const installGuestTool = Effect.fn('installGuestTool')(function* ({
   if (versionOutput !== tool.versionOutput) {
     return yield* new GuestMisconfigured({ reason: `${tool.name} executable version did not match ${tool.version}` });
   }
-
-  yield* Effect.tryPromise({
-    try: () => rename(stagedPath, installedPath),
-    catch: () => new GuestMisconfigured({ reason: `install ${tool.name} executable failed` }),
-  });
-
-  yield* Effect.tryPromise({
-    try: () => rm(archivePath),
-    catch: () => new GuestMisconfigured({ reason: `remove ${tool.name} archive failed` }),
-  });
 });

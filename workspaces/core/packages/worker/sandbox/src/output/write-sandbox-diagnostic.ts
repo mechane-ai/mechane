@@ -1,5 +1,10 @@
 import { HttpHeader, MachineId, RecordId } from '@mechane/records';
-import type { ExecutionId, SandboxCompletionReceipt, WorkspaceStep } from '@mechane/sandbox-wire';
+import type {
+  ExecutionId,
+  NativeSnapshotCapture,
+  SandboxCompletionReceipt,
+  WorkspaceStep,
+} from '@mechane/sandbox-wire';
 import { safeCloudflareRay, safeFailureLocation } from '@mechane/utilities';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
 
@@ -18,7 +23,7 @@ type RestoreTiming = {
 type RestoreStageTiming = RestoreTiming & { readonly stage: 'provider' | 'health' | 'manifest' | 'copy' };
 type RestoreAdmissionTiming = RestoreTiming & { readonly executionId: ExecutionId };
 type CacheSavedInput = { readonly machineId: MachineId; readonly bytes: number; readonly elapsed: Duration.Duration };
-type CacheFailedInput = { readonly machineId: MachineId };
+type CacheFailedInput = { readonly machineId: MachineId; readonly status: NativeSnapshotCapture['status'] };
 
 export type WorkspaceTransferFailurePhase = 'fetch' | 'http' | 'body' | 'decode';
 
@@ -87,8 +92,8 @@ export function writeWorkspaceCacheSaved({ machineId, bytes, elapsed }: CacheSav
   console.log(line);
 }
 
-export function writeWorkspaceCacheFailed({ machineId }: CacheFailedInput): void {
-  const line = JSON.stringify({ event: 'sandbox.workspace_cache_failed', machineId });
+export function writeWorkspaceCacheFailed({ machineId, status }: CacheFailedInput): void {
+  const line = JSON.stringify({ event: 'sandbox.workspace_cache_failed', machineId, status });
 
   console.warn(line);
 }

@@ -1,6 +1,6 @@
 import type { MachineId } from '@mechane/records';
 import type { ExecutionRow, ExecutionStatus, SandboxStore, WorkspaceSnapshot } from '@mechane/sandbox-store';
-import type { ExecutionEnvironment, GuestStatus } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment, GuestStatus, NativeSnapshotReport } from '@mechane/sandbox-wire';
 import type { Duration, Option } from 'effect';
 import type { GuestAnswer } from './schemas.ts';
 
@@ -51,6 +51,7 @@ export type MachineProvider = {
   readonly stop: (input: MachineStopInput) => Promise<void>;
   /** A provider cache may accelerate only the exact committed generation on this physical machine. */
   readonly restoredWorkspace: (input: MachineCheckpointInput) => Promise<boolean>;
+  readonly snapshotReport: (input: MachineIdInput) => Promise<Option.Option<NativeSnapshotReport>>;
 };
 
 /** The object-owned bucket and namespace of every portable workspace generation. */

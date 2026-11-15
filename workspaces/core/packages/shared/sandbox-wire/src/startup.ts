@@ -36,10 +36,58 @@ export const StartupFailure = {
 export type StartupFailure = (typeof StartupFailure)[keyof typeof StartupFailure];
 export const WorkspaceRestoreSource = { Archive: 'archive', Native: 'native' } as const;
 
+export const NativeSnapshotSelection = {
+  Unavailable: 'unavailable',
+  NoCheckpoint: 'no_checkpoint',
+  Missing: 'missing',
+  Expired: 'expired',
+  Incompatible: 'incompatible',
+  Selected: 'selected',
+  Rejected: 'start_rejected',
+  Exited: 'guest_exited',
+} as const;
+
+export type NativeSnapshotSelection = (typeof NativeSnapshotSelection)[keyof typeof NativeSnapshotSelection];
+
+export const NativeSnapshotCaptureStatus = {
+  Capturing: 'capturing',
+  Saved: 'saved',
+  Failed: 'failed',
+  TimedOut: 'timed_out',
+  Uncommitted: 'uncommitted_checkpoint',
+  MachineChanged: 'machine_changed',
+  ConfigurationChanged: 'configuration_changed',
+} as const;
+
 export const STARTUP_MAX_STEPS = 48;
 const IsFinite = Schema.isFinite();
 const AtLeastZero = Schema.isGreaterThanOrEqualTo(0);
 const Nonnegative = Schema.Number.check(IsFinite, AtLeastZero);
+
+export const NativeSnapshotCapture = wireStruct({
+  fields: {
+    machineId: MachineId,
+    generation: RecordId,
+    status: Schema.Enum(NativeSnapshotCaptureStatus),
+    at: Schema.DateTimeUtcFromString,
+    duration: Schema.OptionFromNullOr(Schema.DurationFromMillis),
+    bytes: Schema.OptionFromNullOr(Nonnegative),
+  },
+});
+
+export type NativeSnapshotCapture = typeof NativeSnapshotCapture.Type;
+
+/** One selection and the latest capture remain bounded across machine replacements. */
+export const NativeSnapshotReport = wireStruct({
+  fields: {
+    machineId: MachineId,
+    selection: Schema.Enum(NativeSnapshotSelection),
+    selectedAt: Schema.DateTimeUtcFromString,
+    capture: Schema.OptionFromNullOr(NativeSnapshotCapture),
+  },
+});
+
+export type NativeSnapshotReport = typeof NativeSnapshotReport.Type;
 
 /** A measured duration describes completed work; a missing duration remains an open interval. */
 const StartupStep = wireStruct({
@@ -88,6 +136,9 @@ export const MachineStartup = wireStruct({
     deadlineAt: Schema.DateTimeUtcFromString,
     progress: StartupProgress,
     guest: Schema.OptionFromNullOr(GuestStatus),
+    nativeSnapshot: Schema.OptionFromNullOr(NativeSnapshotReport).pipe(
+      Schema.withDecodingDefaultKey(Effect.succeed(null)),
+    ),
     restoration: Schema.OptionFromNullOr(
       wireStruct({
         fields: {

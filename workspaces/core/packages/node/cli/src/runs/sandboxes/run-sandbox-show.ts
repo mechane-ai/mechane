@@ -51,7 +51,7 @@ function sandboxLines({
   });
 
   const startup = Option.toArray(environment.startup).flatMap(
-    ({ machineId, progress, deadlineAt, guest, restoration }) => [
+    ({ machineId, progress, deadlineAt, guest, restoration, nativeSnapshot }) => [
       `startup: ${progress.phase}; machine: ${machineId}`,
       `startup started: ${DateTime.formatIso(progress.startedAt)}; deadline: ${DateTime.formatIso(deadlineAt)}`,
       `last progress: ${DateTime.formatIso(progress.updatedAt)}`,
@@ -66,8 +66,19 @@ function sandboxLines({
         }),
       ),
       ...Option.toArray(restoration).map(
-        (value) => `restore: ${value.copiedParts}/${value.parts} parts; ${value.bytes} archive bytes`,
+        (value) =>
+          `restore: ${value.source}; ${value.copiedParts}/${value.parts} archive parts copied; ${value.bytes} portable archive bytes`,
       ),
+      ...Option.toArray(nativeSnapshot).flatMap((value) => [
+        `native cache: ${value.selection}; selected: ${DateTime.formatIso(value.selectedAt)}`,
+        ...Option.toArray(value.capture).map((capture) => {
+          const milliseconds = Option.map(capture.duration, Duration.toMillis);
+          const measured = Option.match(milliseconds, { onNone: () => 'unavailable', onSome: String });
+          const bytes = Option.match(capture.bytes, { onNone: () => 'unavailable', onSome: String });
+
+          return `native capture: ${capture.status}; machine: ${capture.machineId}; generation: ${capture.generation}; measured ms: ${measured}; snapshot bytes: ${bytes}`;
+        }),
+      ]),
     ],
   );
 

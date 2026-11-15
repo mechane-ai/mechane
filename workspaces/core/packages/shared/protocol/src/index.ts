@@ -276,4 +276,4 @@ export {
   MechMaintenanceReceipt,
 } from './operations/mechs/maintenance.schemas.ts';
 
-export { StartupFailure, StartupPhase, StartupProgress } from '@mechane/sandbox-wire';
+export { StartupFailure, StartupPhase, StartupProgress, NativeSnapshotReport } from '@mechane/sandbox-wire';

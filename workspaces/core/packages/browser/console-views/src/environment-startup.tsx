@@ -3,7 +3,13 @@ import { Waterfall } from '@mechane-ai/elements/charts/timeline';
 import type { WaterfallItem } from '@mechane-ai/elements/charts/timeline';
 import { Details } from '@mechane-ai/elements/collections';
 import { Notice, SkeletonText } from '@mechane-ai/elements/feedback';
-import type { SandboxReport, StartupFailure, StartupPhase, StartupProgress } from '@mechane/protocol';
+import type {
+  NativeSnapshotReport,
+  SandboxReport,
+  StartupFailure,
+  StartupPhase,
+  StartupProgress,
+} from '@mechane/protocol';
 import { DateTime, Duration, Option } from 'effect';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
@@ -33,6 +39,29 @@ const FAILURE_LABELS: Readonly<Record<StartupFailure, string>> = {
 
 const LIVE_STATUSES: ReadonlySet<string> = new Set(['starting', 'ready']);
 const COMPLETE_PHASES: ReadonlySet<StartupPhase> = new Set(['ready', 'guest_ready']);
+
+const SNAPSHOT_SELECTION_LABELS: Readonly<Record<NativeSnapshotReport['selection'], string>> = {
+  unavailable: 'Not available on this provider',
+  no_checkpoint: 'No committed checkpoint',
+  missing: 'No cached snapshot',
+  expired: 'Cached snapshot expired',
+  incompatible: 'Checkpoint or runtime configuration changed',
+  selected: 'Cached snapshot selected',
+  start_rejected: 'Snapshot start rejected',
+  guest_exited: 'Snapshot guest exited',
+};
+
+type SnapshotCapture = Option.Option.Value<NativeSnapshotReport['capture']>;
+
+const SNAPSHOT_CAPTURE_LABELS: Readonly<Record<SnapshotCapture['status'], string>> = {
+  capturing: 'Capture started; completion not observed',
+  saved: 'Saved',
+  failed: 'Capture failed',
+  timed_out: 'Capture exceeded its time limit',
+  uncommitted_checkpoint: 'Skipped: checkpoint was not committed by this machine',
+  machine_changed: 'Skipped: machine changed or stopped',
+  configuration_changed: 'Skipped: runtime configuration changed',
+};
 
 export function EnvironmentStartupPlaceholder(): ReactNode {
   return (
@@ -68,6 +97,7 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
   const failure = Option.getOrUndefined(progress.failure);
   const guest = Option.getOrUndefined(startup.guest);
   const restoration = Option.getOrUndefined(startup.restoration);
+  const nativeSnapshot = Option.getOrUndefined(startup.nativeSnapshot);
   const lastFailure = Option.getOrUndefined(report.environment.lastStartupFailure);
   const isSleeping = report.status === 'sleeping';
   const isLive = LIVE_STATUSES.has(report.status);
@@ -146,6 +176,7 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
                 },
               ]}
             />
+            {nativeSnapshot !== undefined && <NativeSnapshotDetails snapshot={nativeSnapshot} />}
             <Text variant="caption" tone="muted">
               Each timeline shows recorded observations from one process.
             </Text>
@@ -216,6 +247,48 @@ type StartupWaterfallProps = {
   readonly selected: string | undefined;
   readonly onSelect: (id: string) => void;
 };
+
+function NativeSnapshotDetails({ snapshot }: { readonly snapshot: NativeSnapshotReport }): ReactNode {
+  const capture = Option.getOrUndefined(snapshot.capture);
+
+  return (
+    <Stack isCompact>
+      <Details items={[{ label: 'Native cache selection', value: SNAPSHOT_SELECTION_LABELS[snapshot.selection] }]} />
+      {capture !== undefined && (
+        <>
+          <Details
+            items={[
+              { label: 'Last native capture', value: SNAPSHOT_CAPTURE_LABELS[capture.status] },
+              { label: 'Capture machine', value: <CopyValue label="capture machine" value={capture.machineId} /> },
+              {
+                label: 'Capture generation',
+                value: <CopyValue label="capture generation" value={capture.generation} />,
+              },
+              { label: 'Capture observed (UTC)', value: <ConsoleTimestamp value={capture.at} /> },
+              {
+                label: 'Capture duration',
+                value: Option.match(capture.duration, {
+                  onNone: () => 'Not recorded',
+                  onSome: (value) => durationLabel(Duration.toMillis(value)),
+                }),
+              },
+              {
+                label: 'Native snapshot bytes',
+                value: Option.match(capture.bytes, {
+                  onNone: () => 'Not recorded',
+                  onSome: (value) => value.toLocaleString('en-US'),
+                }),
+              },
+            ]}
+          />
+          <Text variant="caption" tone="muted">
+            Native snapshots accelerate startup. Saved-file durability comes from the committed portable checkpoint.
+          </Text>
+        </>
+      )}
+    </Stack>
+  );
+}
 
 function StartupWaterfall({ progress, label, selected, onSelect }: StartupWaterfallProps): ReactNode {
   const start = DateTime.toEpochMillis(progress.startedAt);
