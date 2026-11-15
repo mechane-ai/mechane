@@ -2,9 +2,11 @@ import { SandboxContainerNetwork } from '@mechane/deployment';
 import { MachineId, RecordId } from '@mechane/records';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { NativeSnapshotCaptureStatus, NativeSnapshotSelection } from '@mechane/sandbox-wire';
+import { serialCalls } from '@mechane/utilities';
 import { Deferred, Duration, Effect, Option } from 'effect';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import type { TestContext } from 'node:test';
 import { containerProvider } from '../src/providers/container-provider.ts';
 import type { ContainerProviderInput } from '../src/providers/types.ts';
 import type { MachineProvider, MachineStartInput } from '../src/types.ts';
@@ -26,6 +28,7 @@ type FixtureInput = {
   readonly shouldRetainSnapshotInstance?: boolean;
   readonly shouldStopDuringInspection?: boolean;
   readonly captureError?: Error;
+  readonly capture?: () => Promise<ContainerSnapshot>;
   readonly shouldFailDiagnosticWrites?: boolean;
 };
 
@@ -51,6 +54,7 @@ function createNativeFixture({
   shouldRetainSnapshotInstance = false,
   shouldStopDuringInspection = false,
   captureError,
+  capture,
   shouldFailDiagnosticWrites = false,
 }: FixtureInput = {}): NativeFixture {
   let running = isRunning;
@@ -146,6 +150,10 @@ function createNativeFixture({
         throw captureError;
       }
 
+      if (capture !== undefined) {
+        return await capture();
+      }
+
       return { id: '3fe5c8b3-2628-47b7-a58e-1721e8e415de', size: CACHE_BYTES };
     },
     signal: () => {
@@ -156,6 +164,8 @@ function createNativeFixture({
     },
   };
 
+  const transactions = serialCalls();
+
   const memoryStorage = {
     get: async (key: string): Promise<unknown> => stored.get(key),
     put: async (key: string, value: unknown): Promise<void> => {
@@ -165,11 +175,13 @@ function createNativeFixture({
 
       stored.set(key, value);
     },
+    transaction: async <Value>(run: (transaction: Pick<DurableObjectStorage, 'get' | 'put'>) => Promise<Value>) =>
+      await transactions.run({ run: async () => await run(storage) }),
   };
 
   // The native fixture adapts the generic DurableObjectStorage overloads to its in-memory map.
   // oxlint-disable-next-line typescript/consistent-type-assertions, typescript/no-unsafe-type-assertion -- SDK
-  const storage = memoryStorage as Pick<DurableObjectStorage, 'get' | 'put'>;
+  const storage = memoryStorage as Pick<DurableObjectStorage, 'get' | 'put' | 'transaction'>;
 
   const state: ContainerProviderInput['state'] = {
     storage,
@@ -367,3 +379,113 @@ await test(
     assert.equal(await unavailable.provider.isAbsent({ machineId }), true);
   },
 );
+
+type PendingCaptureInput = { readonly context: TestContext };
+
+type PendingCapture = {
+  readonly fixture: NativeFixture;
+  readonly snapshot: Deferred.Deferred<ContainerSnapshot, Error>;
+};
+
+async function stopWithPendingCapture({ context }: PendingCaptureInput): Promise<PendingCapture> {
+  context.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: Date.now() });
+
+  const started = Deferred.makeUnsafe<void>();
+  const snapshot = Deferred.makeUnsafe<ContainerSnapshot, Error>();
+  let captures = 0;
+
+  const fixture = createNativeFixture({
+    capture: async () => {
+      captures += 1;
+
+      if (captures === 1) {
+        await Effect.runPromise(Deferred.succeed(started, undefined));
+
+        return await Effect.runPromise(Deferred.await(snapshot));
+      }
+
+      return { id: 'f7133dfe-9145-452c-9c65-7560232630bd', size: CACHE_BYTES };
+    },
+  });
+
+  await fixture.provider.start(saved);
+
+  const stopping = fixture.provider.stop(saved);
+
+  await Effect.runPromise(Deferred.await(started));
+  context.mock.timers.tick(Duration.toMillis(Duration.minutes(1)) + 1);
+  await stopping;
+
+  return { fixture, snapshot };
+}
+
+await test(
+  'a native snapshot completing after the wait expires remains reusable',
+  { timeout: 5000 },
+  async (context) => {
+    const { fixture, snapshot } = await stopWithPendingCapture({ context });
+
+    const timedOut = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+    assert.equal(Option.getOrThrow(timedOut.capture).status, NativeSnapshotCaptureStatus.TimedOut);
+    assert.equal(await fixture.provider.isAbsent({ machineId }), true);
+    await Effect.runPromise(
+      Deferred.succeed(snapshot, { id: 'ff3b7118-479a-4df0-9494-0685c8d1aeec', size: CACHE_BYTES }),
+    );
+    await fixture.settle();
+
+    const completed = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+    assert.equal(Option.getOrThrow(completed.capture).status, NativeSnapshotCaptureStatus.Saved);
+    await fixture.provider.start(saved);
+    assert.equal(await fixture.provider.restoredWorkspace({ machineId, checkpoint }), true);
+    await fixture.provider.stop(input);
+    await fixture.settle();
+  },
+);
+
+await test('a late native snapshot rejection stays observed after retirement', { timeout: 5000 }, async (context) => {
+  const { fixture, snapshot } = await stopWithPendingCapture({ context });
+
+  await Effect.runPromise(Deferred.fail(snapshot, new Error('private late provider failure')));
+  await fixture.settle();
+
+  const report = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId }));
+
+  assert.equal(Option.getOrThrow(report.capture).status, NativeSnapshotCaptureStatus.Failed);
+  assert.equal(JSON.stringify(report).includes('private late provider failure'), false);
+  assert.equal(await fixture.provider.isAbsent({ machineId }), true);
+});
+
+for (const { owner, id: replacement } of [
+  { owner: 'the same machine', id: machineId },
+  { owner: 'a replacement machine', id: MachineId.make('dc12a5fe-609a-44c3-bfea-912df81363b1') },
+]) {
+  await test(`late capture cannot replace a newer cache for ${owner}`, { timeout: 5000 }, async (context) => {
+    const { fixture, snapshot } = await stopWithPendingCapture({ context });
+
+    const next = {
+      ...checkpoint,
+      capturedMachineId: Option.some(replacement),
+      generation: RecordId.make('16656f9b-49f5-4f7d-b8fa-557b77c56409'),
+    };
+
+    const nextStart = { machineId: replacement, checkpoint: Option.some(next) };
+
+    await fixture.provider.start(nextStart);
+    await fixture.provider.stop(nextStart);
+    await Effect.runPromise(
+      Deferred.succeed(snapshot, { id: 'ff3b7118-479a-4df0-9494-0685c8d1aeec', size: CACHE_BYTES }),
+    );
+    await fixture.settle();
+    await fixture.provider.start(nextStart);
+    assert.equal(await fixture.provider.restoredWorkspace({ machineId: replacement, checkpoint: next }), true);
+
+    const report = Option.getOrThrow(await fixture.provider.snapshotReport({ machineId: replacement }));
+
+    assert.equal(Option.getOrThrow(report.capture).generation, next.generation);
+    assert.equal(Option.getOrThrow(report.capture).status, NativeSnapshotCaptureStatus.Saved);
+    await fixture.provider.stop({ machineId: replacement, checkpoint: Option.none() });
+    await fixture.settle();
+  });
+}

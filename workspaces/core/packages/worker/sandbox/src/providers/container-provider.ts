@@ -64,6 +64,7 @@ export function containerProvider({
   const cache = containerWorkspaceCache({
     container,
     storage: state.storage,
+    waitUntil: (promise) => state.waitUntil(promise),
     nativeImage,
     instance,
     configuration: { additionalTools, isBrowserSandboxDisabled, trustedCertificatesPem, containerNetwork },

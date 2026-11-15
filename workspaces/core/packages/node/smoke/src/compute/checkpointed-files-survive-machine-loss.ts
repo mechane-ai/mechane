@@ -128,7 +128,12 @@ export async function checkpointedFilesSurviveMachineLoss({
     const writerTurn = await waitForTurn({ ...input, notificationId: sent.id });
     const checkpointOperationId = randomUUID();
     const checkpointInput = { ...input, operationId: checkpointOperationId };
-    const afterLoss = await checkpointSandbox(checkpointInput);
+
+    const afterLoss = await waitFor({
+      name: 'the checkpoint receipt after losing its machine',
+      read: () => checkpointSandbox(checkpointInput),
+      accept: (result) => result._tag !== 'Pending',
+    });
 
     assert.equal(writerTurn.status, TurnStatus.Completed);
     assert.equal(afterLoss._tag, 'Failed');

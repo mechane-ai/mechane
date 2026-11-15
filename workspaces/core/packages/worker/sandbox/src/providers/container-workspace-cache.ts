@@ -16,6 +16,7 @@ const CAPTURE_TIMEOUT = Duration.minutes(1);
 
 type CacheInput = Pick<ContainerProviderInput, 'container' | 'nativeImage' | 'instance'> & {
   readonly storage: ContainerProviderInput['state']['storage'];
+  readonly waitUntil: ContainerProviderInput['state']['waitUntil'];
   readonly configuration: Pick<
     ContainerProviderInput,
     'additionalTools' | 'isBrowserSandboxDisabled' | 'trustedCertificatesPem' | 'containerNetwork'
@@ -40,6 +41,7 @@ type CaptureObservationInput = { readonly observation: NativeSnapshotCapture };
 export function containerWorkspaceCache({
   container,
   storage,
+  waitUntil,
   nativeImage,
   instance,
   configuration,
@@ -157,13 +159,9 @@ export function containerWorkspaceCache({
   }
 
   async function recordCapture({ observation }: CaptureObservationInput): Promise<void> {
-    const current = await report({ machineId: observation.machineId });
+    const promise = records.saveCapture({ observation });
 
-    if (Option.isSome(current)) {
-      const lastCapture = Option.some(observation);
-
-      await saveReport({ value: { ...current.value, capture: lastCapture } });
-    }
+    await capturePromise({ promise });
   }
 
   async function restoredWorkspace({ machineId, checkpoint }: MachineCheckpointInput): Promise<boolean> {
@@ -228,7 +226,10 @@ export function containerWorkspaceCache({
 
     await recordCapture({ observation });
 
-    const promise = container.snapshotContainer({ name: checkpoint.generation });
+    const promise = completeCapture();
+
+    waitUntil(promise);
+
     const result = await captureBefore({ promise, span: CAPTURE_TIMEOUT });
     const captureMilliseconds = performance.now() - started;
     const captureDuration = Duration.millis(captureMilliseconds);
@@ -241,40 +242,61 @@ export function containerWorkspaceCache({
       return;
     }
 
-    const snapshot = Result.getOrThrow(result.value);
-    const current = await records.readSelection();
+    Result.getOrThrow(result.value);
 
-    const isCurrent = Option.exists(
-      current,
-      (value) => value.machineId === machineId && value.configuration === configurationKey,
-    );
+    async function completeCapture(): Promise<void> {
+      const completion = saveSnapshot();
+      const completed = await capturePromise({ promise: completion });
 
-    const isPresent = await requireContainerMachine({ container, machineId });
+      if (Result.isSuccess(completed)) {
+        return;
+      }
 
-    if (!isCurrent || !isPresent) {
+      const elapsedMilliseconds = performance.now() - started;
+      const elapsed = Duration.millis(elapsedMilliseconds);
+      const failedDuration = Option.some(elapsed);
+
       await recordCapture({
-        observation: { ...observation, status: NativeSnapshotCaptureStatus.MachineChanged, duration },
+        observation: { ...observation, status: NativeSnapshotCaptureStatus.Failed, duration: failedDuration },
       });
-
-      return;
+      writeWorkspaceCacheFailed({ machineId, status: NativeSnapshotCaptureStatus.Failed });
     }
 
-    const now = DateTime.nowUnsafe();
-    const expiresAt = DateTime.addDuration(now, CACHE_LIFETIME);
-    const snapshotId = NativeSnapshotId.make(snapshot.id);
+    async function saveSnapshot(): Promise<void> {
+      const snapshot = await container.snapshotContainer({ name: checkpoint.generation });
+      const now = DateTime.nowUnsafe();
+      const expiresAt = DateTime.addDuration(now, CACHE_LIFETIME);
+      const snapshotId = NativeSnapshotId.make(snapshot.id);
 
-    await records.saveCache({ value: { key: expected, snapshotId, bytes: snapshot.size, expiresAt } });
+      const saved = await records.saveCache({
+        machineId,
+        configuration: configurationKey,
+        value: { key: expected, snapshotId, bytes: snapshot.size, capturedAt: at, expiresAt },
+      });
 
-    const bytes = Option.some(snapshot.size);
+      const elapsedMilliseconds = performance.now() - started;
+      const elapsed = Duration.millis(elapsedMilliseconds);
+      const recordedDuration = Option.some(elapsed);
 
-    await recordCapture({
-      observation: { ...observation, status: NativeSnapshotCaptureStatus.Saved, duration, bytes },
-    });
+      if (!saved) {
+        await recordCapture({
+          observation: {
+            ...observation,
+            status: NativeSnapshotCaptureStatus.MachineChanged,
+            duration: recordedDuration,
+          },
+        });
 
-    const elapsedMs = performance.now() - started;
-    const elapsed = Duration.millis(elapsedMs);
+        return;
+      }
 
-    writeWorkspaceCacheSaved({ machineId, bytes: snapshot.size, elapsed });
+      const bytes = Option.some(snapshot.size);
+
+      await recordCapture({
+        observation: { ...observation, status: NativeSnapshotCaptureStatus.Saved, duration: recordedDuration, bytes },
+      });
+      writeWorkspaceCacheSaved({ machineId, bytes: snapshot.size, elapsed });
+    }
   }
 
   async function capture({ machineId, checkpoint }: MachineCheckpointInput): Promise<void> {

@@ -26,8 +26,11 @@ only those declared scratch locations. Existing home files remain data until an 
 
 Treat native container snapshots as disposable acceleration, never workspace authority. Capture only the frozen final
 drain after its portable generation and manifest commit. Bind a cache to that complete checkpoint, qualified image,
-instance size, tool configuration and network/trust configuration. Bound capture time; a cache failure cannot invalidate
-committed portable files or prevent retirement. Expired, absent or incompatible caches use portable restore. A restored
+instance size, tool configuration and network/trust configuration. Bound the foreground capture wait; a cache failure cannot
+invalidate committed portable files or prevent retirement. Keep observing a started capture after that wait expires, so a
+late successful snapshot remains reusable and a late rejection has a bounded diagnostic. Save its result atomically only
+while its machine and configuration remain selected and no newer capture has been saved. A delayed timeout observation
+cannot replace a completed capture outcome. Expired, absent or incompatible caches use portable restore. A restored
 cache must match the live machine and committed manifest before readiness; recheck generation, drain and original
 deadline after asynchronous reads. Never turn a blocked cache admission into archive activation. Native snapshots
 restore files, not process memory or a previous command identity. Keep local celld on this same compute API and qualify
@@ -209,6 +212,9 @@ after two restored parts; require a full fresh restore or an explicit recovery f
 Run `mise -C workspaces/core run sandbox:native:check` from the factory root for the native lifecycle fixture.
 An unstarted inspection must throw in that fixture; require cold startup, stopped retirement, native absence,
 rejected snapshot fallback, and rejection of unproved live identity without hiding inspection failures.
+Hold native capture past the foreground wait, retire the guest, then finish or reject capture. Require a late success to
+remain reusable and a late failure to remain observable without private provider error text. Complete a newer capture
+before an older one and require the newer snapshot and its diagnostic to survive.
 
 ## Local adaptations
 
