@@ -21,6 +21,7 @@ export type ExecutionRecords = {
   readonly execution: (input: ExecutionIdInput) => Option.Option<ExecutionRow>;
   /** Absent when no execution currently owns a machine without a settled receipt. */
   readonly activeExecution: () => Option.Option<ExecutionRow>;
+  readonly latestPendingExecutionAt: () => Option.Option<DateTime.Utc>;
   readonly unfinishedExecutions: () => ReadonlyArray<ExecutionRow>;
   readonly cancelPendingExecution: (input: ExecutionIdInput) => void;
   /** Refuses a claimed command before dispatch while preserving its immutable receipt identity. */

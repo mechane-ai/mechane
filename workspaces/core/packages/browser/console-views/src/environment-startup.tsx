@@ -210,6 +210,16 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
                   { label: 'Latest command', value: <CopyValue label="execution" value={execution.executionId} /> },
                   { label: 'Claimed (UTC)', value: <ConsoleTimestamp value={execution.claimedAt} /> },
                   {
+                    label: 'Claim to dispatch',
+                    value: Option.match(execution.dispatchedAt, {
+                      onNone: () => 'Not dispatched',
+                      onSome: (at) =>
+                        durationLabel(
+                          Math.max(0, DateTime.toEpochMillis(at) - DateTime.toEpochMillis(execution.claimedAt)),
+                        ),
+                    }),
+                  },
+                  {
                     label: 'Dispatched (UTC)',
                     value: Option.isSome(execution.dispatchedAt) ? (
                       <ConsoleTimestamp value={execution.dispatchedAt.value} />

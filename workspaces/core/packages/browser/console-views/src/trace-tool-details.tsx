@@ -1,4 +1,4 @@
-import { CopyValue, Stack } from '@mechane-ai/elements';
+import { CopyValue, Stack, Text } from '@mechane-ai/elements';
 import { CommandDetails } from '@mechane-ai/elements/ai';
 import { Details } from '@mechane-ai/elements/collections';
 import type { TurnToolCall } from '@mechane/protocol';
@@ -56,20 +56,23 @@ function BashDetails({
   const output = result === undefined ? undefined : Option.getOrUndefined(result.output);
 
   return (
-    <CommandDetails
-      command={command?.text}
-      output={output?.text}
-      isRunning={!isImported && result?.status === 'running'}
-      commandNotice={
-        command !== undefined && command.omittedBytes > 0
-          ? `${command.omittedBytes.toLocaleString('en-US')} command bytes omitted from this preview.`
-          : undefined
-      }
-      outputNotice={
-        output !== undefined && output.omittedBytes > 0
-          ? `${output.omittedBytes.toLocaleString('en-US')} output bytes omitted from this preview.`
-          : undefined
-      }
-    />
+    <Stack isCompact>
+      {result?.refusal !== undefined && <Text tone="muted">{result.refusal.text}</Text>}
+      <CommandDetails
+        command={command?.text}
+        output={output?.text}
+        isRunning={!isImported && result?.status === 'running'}
+        commandNotice={
+          command !== undefined && command.omittedBytes > 0
+            ? `${command.omittedBytes.toLocaleString('en-US')} command bytes omitted from this preview.`
+            : undefined
+        }
+        outputNotice={
+          output !== undefined && output.omittedBytes > 0
+            ? `${output.omittedBytes.toLocaleString('en-US')} output bytes omitted from this preview.`
+            : undefined
+        }
+      />
+    </Stack>
   );
 }

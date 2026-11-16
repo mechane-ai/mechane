@@ -34,6 +34,7 @@ export type { RunExecutionInput } from './types.ts';
 export { SandboxOwner } from './sandbox-owner.ts';
 export {
   SandboxStopPhase,
+  SandboxStopOrigin,
   SandboxRecoveryAction,
   SandboxStopReceipt,
   SandboxStopObservation,

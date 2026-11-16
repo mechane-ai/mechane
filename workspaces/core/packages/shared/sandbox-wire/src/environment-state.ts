@@ -9,10 +9,14 @@ export const SandboxStopPhase = {
   Requested: 'requested',
   WaitingForCommands: 'waiting_for_commands',
   Checkpointing: 'checkpointing',
+  Canceling: 'canceling',
+  Canceled: 'canceled',
   Stopping: 'stopping',
   Completed: 'completed',
   Failed: 'failed',
 } as const;
+
+export const SandboxStopOrigin = { Idle: 'idle', Explicit: 'explicit' } as const;
 
 /** Names the next safe action without turning inspection into a retry or repair. */
 export const SandboxRecoveryAction = {
@@ -29,8 +33,10 @@ export const SANDBOX_FAILURE_MAX_CHARS = 2000;
 export const SandboxStopReceipt = wireStruct({
   fields: {
     operationId: SandboxOperationId,
+    drainOperationId: Schema.optionalKey(SandboxOperationId),
     machineId: Schema.OptionFromNullOr(MachineId),
     phase: Schema.Enum(SandboxStopPhase),
+    origin: Schema.optionalKey(Schema.Enum(SandboxStopOrigin)),
     /** Older drain intents did not retain their request time. */
     requestedAt: Schema.OptionFromNullOr(Schema.DateTimeUtcFromString),
     updatedAt: Schema.DateTimeUtcFromString,

@@ -17,6 +17,23 @@ export function stopRecords({ sql }: RecordsInput) {
     return Option.map(row, ({ receipt }) => receipt);
   }
 
+  function sandboxStopForDrain({ operationId }: StopIdentity): Option.Option<SandboxStopReceipt> {
+    const original = sandboxStop({ operationId });
+
+    if (Option.isSome(original)) {
+      return original;
+    }
+
+    const cursor = sql.exec(
+      "SELECT receipt FROM sandbox_stops WHERE json_extract(receipt, '$.drain_operation_id') = ?",
+      operationId,
+    );
+
+    const row = decodeFirst({ cursor, schema: StopRow });
+
+    return Option.map(row, ({ receipt }) => receipt);
+  }
+
   function latestSandboxStop(): Option.Option<SandboxStopReceipt> {
     const cursor = sql.exec(
       "SELECT receipt FROM sandbox_stops ORDER BY COALESCE((SELECT rowid FROM machines WHERE id = json_extract(receipt, '$.machine_id')), 0) DESC, rowid DESC LIMIT 1",
@@ -45,11 +62,11 @@ export function stopRecords({ sql }: RecordsInput) {
     const value = Schema.encodeSync(ReceiptJson)({ operationId, ...fields });
 
     sql.exec(
-      "UPDATE sandbox_stops SET receipt = ? WHERE operation_id = ? AND json_extract(receipt, '$.phase') <> 'completed'",
+      "UPDATE sandbox_stops SET receipt = ? WHERE operation_id = ? AND json_extract(receipt, '$.phase') NOT IN ('completed', 'canceled')",
       value,
       operationId,
     );
   }
 
-  return { sandboxStop, latestSandboxStop, claimSandboxStop, saveSandboxStop };
+  return { sandboxStop, sandboxStopForDrain, latestSandboxStop, claimSandboxStop, saveSandboxStop };
 }

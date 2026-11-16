@@ -1,4 +1,5 @@
 import { Mech, TurnStatus } from '@mechane/protocol';
+import type { NotificationReceipt } from '@mechane/protocol';
 import {
   createAccount,
   createMech,
@@ -14,6 +15,7 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
 const PENDING_NOTICE_COUNT = 101;
+const NOTIFICATION_CONCURRENCY = 4;
 const EXPECTED_DRAIN_CALLS = 2;
 
 type ChangeMechState = MechContext & { readonly action: 'pause' | 'resume'; readonly expectedRevision: number };
@@ -69,7 +71,7 @@ export async function pausedAdmissionResumes({ stack }: ScenarioInput): Promise<
 
   const pausedAgain = await changeMechState({ ...owner, action: 'pause', expectedRevision: resumed.revision });
   const batchMarker = `paused-batch-${randomUUID()}`;
-  const pending = [];
+  const pending: Array<NotificationReceipt> = [];
   const failures: Array<unknown> = [];
 
   fixtures.model.configure({
@@ -81,12 +83,25 @@ export async function pausedAdmissionResumes({ stack }: ScenarioInput): Promise<
   });
 
   try {
-    for (let index = 0; index < PENDING_NOTICE_COUNT; index += 1) {
-      const notice = await sendNotification({ ...owner, text: `${batchMarker}:${index}` });
+    const submissions = Array.from({ length: NOTIFICATION_CONCURRENCY }, async (_, offset) => {
+      for (let index = offset; index < PENDING_NOTICE_COUNT; index += NOTIFICATION_CONCURRENCY) {
+        const notice = await sendNotification({ ...owner, text: `${batchMarker}:${index}` });
 
-      pending.push(notice);
+        pending.push(notice);
+      }
+    });
+
+    const outcomes = await Promise.allSettled(submissions);
+    const submissionFailures = outcomes.filter((outcome) => outcome.status === 'rejected');
+
+    if (submissionFailures.length > 0) {
+      throw new AggregateError(
+        submissionFailures.map((failure): unknown => failure.reason),
+        'The pending notifications could not all be submitted',
+      );
     }
 
+    assert.equal(pending.length, PENDING_NOTICE_COUNT);
     assert.equal(fixtures.model.readCalls({ marker: batchMarker }).length, 0);
     await stack.restart({ signal: 'SIGKILL' });
     await changeMechState({ ...owner, action: 'resume', expectedRevision: pausedAgain.revision });

@@ -53,6 +53,7 @@ import {
   SandboxRestoreResult,
   SandboxRunId,
   SandboxStopObservation,
+  SandboxStopOrigin,
   SandboxStopPhase,
   SandboxStopReceipt,
   StartupFailure,
@@ -139,6 +140,11 @@ type BrowserArtifactInput = {
 type EvidenceIdentityInput = { readonly artifactId: EvidenceArtifactId };
 
 type ProcessStartResultInput = { readonly result: Result.Result<SandboxProcessAnswer, unknown> };
+
+const SETTLED_STOP_PHASES: ReadonlySet<SandboxStopReceipt['phase']> = new Set([
+  SandboxStopPhase.Completed,
+  SandboxStopPhase.Canceled,
+]);
 
 function processStartResult({ result }: ProcessStartResultInput): SandboxProcessAnswer {
   if (Result.isFailure(result)) {
@@ -500,9 +506,21 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     await this.#armIdle();
 
+    const live = this.#store.liveMachine();
+    const decodedEnvironment = Schema.decodeUnknownSync(OptionalExecutionEnvironment)(environment);
+
+    if (
+      Option.isSome(decodedEnvironment) &&
+      !Option.exists(live, (machine) => machine.status === MachineStatus.Ready)
+    ) {
+      const now = DateTime.nowUnsafe();
+      const observeAt = DateTime.addDuration(now, MAINTENANCE_RETRY);
+
+      await this.#alarm.arm({ at: observeAt });
+    }
+
     const timeout = Duration.millis(timeoutMs);
     const wait = Duration.millis(waitMs);
-    const decodedEnvironment = Schema.decodeUnknownSync(OptionalExecutionEnvironment)(environment);
 
     const pending = runExecution({
       store: this.#store,
@@ -883,7 +901,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         const pendingStops = Promise.all(this.#stops);
         const canceled = await capturePromise({ promise: pendingStops });
 
-        const receipt = requestSandboxStop({ store: this.#store });
+        const receipt = requestSandboxStop({ store: this.#store, origin: SandboxStopOrigin.Explicit });
         const isCompleted = receipt.phase === SandboxStopPhase.Completed;
 
         if (Result.isFailure(canceled) && !isCompleted) {
@@ -1059,7 +1077,11 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const reservation = this.#capacity.reservation();
 
-    if (Option.isSome(reservation) && reservation.value.phase === ReservationPhase.Stopping) {
+    if (
+      Option.isSome(reservation) &&
+      reservation.value.phase === ReservationPhase.Stopping &&
+      !this.#hasPendingStop()
+    ) {
       await this.#armRetry();
 
       const cacheCheckpoint = Option.none();
@@ -1103,11 +1125,13 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
         switch (receipt.phase) {
           case SandboxStopPhase.Failed:
           case SandboxStopPhase.Completed:
+          case SandboxStopPhase.Canceled:
             return false;
 
           case SandboxStopPhase.Requested:
           case SandboxStopPhase.WaitingForCommands:
           case SandboxStopPhase.Checkpointing:
+          case SandboxStopPhase.Canceling:
           case SandboxStopPhase.Stopping:
             return Option.contains(receipt.machineId, machineId);
         }
@@ -1115,7 +1139,9 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
       if (Option.isSome(pending)) {
         const receipt = pending.value;
-        const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId: receipt.operationId });
+        const retainedDrain = Option.fromUndefinedOr(receipt.drainOperationId);
+        const operationId = Option.getOrElse(retainedDrain, () => receipt.operationId);
+        const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId });
         const result = this.#store.fileCheckpointResult({ purpose });
         const failed = Option.filter(result, FileCheckpointResult.guards.Failed);
 
@@ -1182,6 +1208,10 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
       machineId,
     });
 
+    if (receipt.phase === SandboxStopPhase.Canceled) {
+      return;
+    }
+
     if (receipt.phase === SandboxStopPhase.Failed && receipt.recoveryAction !== SandboxRecoveryAction.RetryStop) {
       this.#store.clearSandboxIdleAt();
       await this.#alarm.disarmAt({ at });
@@ -1192,7 +1222,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     if (receipt.phase !== SandboxStopPhase.Completed) {
       const checkpoint = this.#store.workspace().checkpoint;
 
-      if (Option.isSome(checkpoint)) {
+      if (Option.isSome(checkpoint) || receipt.phase === SandboxStopPhase.Canceling) {
         const retryNow = DateTime.nowUnsafe();
         const retrySpan = Duration.seconds(1);
         const retryAt = DateTime.addDuration(retryNow, retrySpan);
@@ -1313,15 +1343,22 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     }
 
     const recovery = this.#store.pendingRecoveryCheckpoint();
+    const pending = this.#store.latestPendingExecutionAt();
 
-    if (BackgroundWork.guards.Idle(work) && Option.isNone(checkpoint) && Option.isNone(recovery)) {
+    const isPreparing =
+      Option.exists(live, (machine) => machine.status === MachineStatus.Starting) && Option.isSome(pending);
+
+    const needsWorkspaceReconciliation = Option.isSome(checkpoint) || Option.isSome(recovery);
+
+    if (!isPreparing && BackgroundWork.guards.Idle(work) && !needsWorkspaceReconciliation) {
       return;
     }
 
-    const interval = Option.match(checkpoint, {
-      onNone: () => BACKGROUND_OBSERVE_INTERVAL,
-      onSome: () => MAINTENANCE_RETRY,
-    });
+    let interval = BACKGROUND_OBSERVE_INTERVAL;
+
+    if (isPreparing || Option.isSome(checkpoint)) {
+      interval = MAINTENANCE_RETRY;
+    }
 
     const at = DateTime.addDuration(now, interval);
 
@@ -1349,7 +1386,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const receipt = stop.value;
 
-    if (!Option.contains(receipt.machineId, machineId.value) || receipt.phase === SandboxStopPhase.Completed) {
+    if (!Option.contains(receipt.machineId, machineId.value) || SETTLED_STOP_PHASES.has(receipt.phase)) {
       return false;
     }
 

@@ -17,6 +17,11 @@ type FailureResponseInput = { readonly failure: unknown; readonly request: Reque
 const UNAVAILABLE_MESSAGE = 'The service could not complete this request';
 const ReasonFailure = Schema.Union([RequestInvalid, RequestConflict]);
 
+const PostgresErrorMetadata = Schema.Struct({
+  code: Schema.String.check(Schema.isPattern(/^[0-9A-Z]{5}$/u)),
+  severity: Schema.Literals(['ERROR', 'FATAL', 'PANIC']),
+});
+
 const FAILURE_MESSAGES: Readonly<Partial<Record<ServerFailure['_tag'], string>>> = {
   KeyMissing: 'Sign in to continue, or run mechane auth login.',
   KeyUnrecognized: 'The API key is not recognized. Run mechane auth login to replace it.',
@@ -58,6 +63,7 @@ function publicFailure({ failure, request }: FailureResponseInput): ServerFailur
     method: request.method,
     path: new URL(request.url).pathname,
     errorType: failureType(failure),
+    ...postgresFailureMetadata(failure),
   });
 
   return new ServiceUnavailable({ reason: UNAVAILABLE_MESSAGE });
@@ -88,4 +94,12 @@ function failureType(failure: unknown): string {
   }
 
   return 'UnknownFailure';
+}
+
+function postgresFailureMetadata(failure: unknown) {
+  if (!Schema.is(PostgresErrorMetadata)(failure)) {
+    return {};
+  }
+
+  return { sqlState: failure.code, severity: failure.severity };
 }

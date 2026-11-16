@@ -19,6 +19,14 @@ finish afterward. The caller's wait is not a hard response deadline.
 
 After guest activation, recheck the starting machine, drain, committed generation and original startup deadline before
 marking the machine ready. A retired or superseded owner cannot admit work.
+Advance a starting machine for accepted pending commands through the existing Sandbox alarm. Prepare the machine and
+restore its files without granting command authority. The current actor supplies authorization and credentials at dispatch.
+
+Record stop origin on admission. Current pending work may cancel an idle stop before provider shutdown begins. Finish
+any active drain checkpoint first. Persist cancellation before releasing the committed generation's exact guest freeze,
+and clear the drain only after acknowledgement. Keep explicit stops and stops with an unrecorded origin authoritative.
+An explicit request joining an idle drain owns that stop. If cancellation has already reached release, retain the same
+Stop receipt for the operator and replace its drain after acknowledgement without admitting a writer between drains.
 
 Serve identity-bound guest preparation status before managed tools finish. Refuse commands during bootstrap. Record
 phase changes, failures and actual transfer progress using the shared startup schemas. Bound retained steps and machine
@@ -58,6 +66,9 @@ Run `mise run check:fast` from the factory root. Type checking restricts inspect
 shapes; `sandbox-inspection-owner` enforces its import boundary. Run the existing interrupted-command and file-restoration
 scenarios against a real celld guest. While a command is held, read environment status with a bounded request and verify
 its original command identity. Restart owners and confirm files, the deadline and command receipts survive.
+Hold an idle drain while a command arrives, then verify the original machine can run it once after releasing the freeze.
+Repeat with an explicit stop and require retirement. Use one accepted command to verify that startup advances while the
+caller is absent, and that preparation alone cannot dispatch it.
 
 Hold tool preparation in a local fixture, read its guest status before releasing it, then verify one preparation and one
 command. Fail preparation and require a bounded failure code without dispatch. Inspect restoration progress and retained

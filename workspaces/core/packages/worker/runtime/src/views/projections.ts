@@ -247,12 +247,25 @@ function bashResult(value: string | null | undefined) {
 
   const result = decodeStored(StoredFields, value);
 
-  return {
+  const receipt = {
     status: result['status'],
     exit_code: result['exitCode'] ?? null,
     duration_ms: result['durationMs'] ?? null,
     output: traceTextRecord(bashOutput(result)),
   };
+
+  if (result['status'] === 'refused' && typeof result['message'] === 'string') {
+    const refusal = boundTraceText({
+      text: result['message'],
+      omittedBytes: 0,
+      maxBytes: TOOL_TRACE_OUTPUT_MAX_BYTES,
+      keep: 'start',
+    });
+
+    return { ...receipt, refusal: traceTextRecord(refusal) };
+  }
+
+  return receipt;
 }
 
 async function allowanceWasRefused(transaction: Tx, turnId: string): Promise<boolean> {

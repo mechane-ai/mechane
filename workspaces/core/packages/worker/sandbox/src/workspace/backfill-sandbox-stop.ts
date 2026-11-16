@@ -10,7 +10,7 @@ type BackfillStopInput = StoreInput & { readonly drain: DrainIdentity };
 
 /** A retained drain already names its stop; inspection must not replace that identity. */
 export function backfillSandboxStop({ store, drain }: BackfillStopInput): SandboxStopReceipt {
-  const previous = store.sandboxStop({ operationId: drain.operationId });
+  const previous = store.sandboxStopForDrain({ operationId: drain.operationId });
 
   if (Option.isSome(previous)) {
     return previous.value;

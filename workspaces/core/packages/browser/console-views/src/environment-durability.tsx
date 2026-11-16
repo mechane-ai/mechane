@@ -2,9 +2,28 @@ import { Collapsible, CopyValue, Row, Stack, Status, Subheading, Text } from '@m
 import { Details } from '@mechane-ai/elements/collections';
 import { Notice, SkeletonText } from '@mechane-ai/elements/feedback';
 import type { SandboxReport } from '@mechane/protocol';
-import { Option } from 'effect';
+import { DateTime, Option } from 'effect';
 import type { ReactNode } from 'react';
+import { durationLabel } from './format.ts';
 import { ConsoleTimestamp } from './record-time.tsx';
+
+type SandboxStop = Option.Option.Value<SandboxReport['environment']['stop']>;
+
+const STOP_LABELS: Readonly<Record<SandboxStop['phase'], string>> = {
+  requested: 'Shutdown requested',
+  waiting_for_commands: 'Waiting for the running command',
+  checkpointing: 'Saving workspace before shutdown',
+  canceling: 'Releasing the saved workspace',
+  canceled: 'Idle shutdown canceled for new work',
+  stopping: 'Stopping computer',
+  completed: 'Computer stopped',
+  failed: 'Computer shutdown failed',
+};
+
+const STOP_ORIGIN_LABELS: Readonly<Record<NonNullable<SandboxStop['origin']>, string>> = {
+  idle: 'Idle timeout',
+  explicit: 'Explicit request',
+};
 
 export function EnvironmentDurabilityPlaceholder(): ReactNode {
   return (
@@ -30,6 +49,15 @@ export function EnvironmentDurability({ report }: { readonly report: SandboxRepo
   const capturedSequence = Option.getOrUndefined(durability?.capturedSequence ?? Option.none());
   const nextCheckpointAt = Option.getOrUndefined(durability?.nextCheckpointAt ?? Option.none());
   const lastError = Option.getOrUndefined(durability?.lastError ?? Option.none());
+
+  const stop = Option.getOrUndefined(
+    Option.filter(
+      environment.stop,
+      (receipt) =>
+        Option.isNone(environment.startup) ||
+        Option.exists(environment.startup, (startup) => Option.contains(receipt.machineId, startup.machineId)),
+    ),
+  );
 
   return (
     <Stack isCompact>
@@ -65,6 +93,7 @@ export function EnvironmentDurability({ report }: { readonly report: SandboxRepo
       )}
       {lastError !== undefined && <Notice hasError>Last save error: {lastError}</Notice>}
       {recovery !== undefined && <Notice hasError>{recovery.reason}</Notice>}
+      {stop !== undefined && <StopStatus stop={stop} />}
       <Text variant="caption" tone="muted">
         Commands may finish before saving. Background writes may be newer.
       </Text>
@@ -121,6 +150,26 @@ export function EnvironmentDurability({ report }: { readonly report: SandboxRepo
           />
         </Collapsible.Panel>
       </Collapsible.Root>
+    </Stack>
+  );
+}
+
+function StopStatus({ stop }: { readonly stop: SandboxStop }): ReactNode {
+  const elapsed = Option.map(stop.requestedAt, (at) =>
+    durationLabel(Math.max(0, DateTime.toEpochMillis(stop.updatedAt) - DateTime.toEpochMillis(at))),
+  );
+
+  const origin = stop.origin === undefined ? 'Origin not recorded' : STOP_ORIGIN_LABELS[stop.origin];
+
+  return (
+    <Stack isCompact>
+      <Text variant="caption" tone="muted" role="status">
+        {STOP_LABELS[stop.phase]}
+        {' · '}
+        {origin}
+        {Option.isSome(elapsed) && ` · ${elapsed.value} recorded`}
+      </Text>
+      <CopyValue label="stop operation" value={stop.operationId} />
     </Stack>
   );
 }

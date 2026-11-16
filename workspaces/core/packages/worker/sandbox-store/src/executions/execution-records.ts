@@ -1,8 +1,7 @@
 import { ReceiptStatus } from '@mechane/sandbox-wire';
 import { decodeFirst, decodeRows } from '@mechane/store';
 import type { RecordsInput, SqlCall } from '@mechane/store';
-import { DateTime, Duration } from 'effect';
-import type { Option } from 'effect';
+import { DateTime, Duration, Option, Schema } from 'effect';
 import { ExecutionStatus } from '../constants.ts';
 import { ExecutionRow } from '../schemas.ts';
 import type {
@@ -13,6 +12,8 @@ import type {
   SettleExecutionInput,
 } from '../types.ts';
 import { failPersistence } from './fail-persistence.ts';
+
+const PendingExecution = Schema.Struct({ claimedAt: Schema.DateTimeUtcFromMillis });
 
 /** The sandbox's executions on its object's SQL storage. */
 export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
@@ -44,6 +45,7 @@ export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
   return {
     execution: (input) => execution({ sql, ...input }),
     activeExecution: () => activeExecution({ sql }),
+    latestPendingExecutionAt: () => latestPendingExecutionAt({ sql }),
     unfinishedExecutions,
     cancelPendingExecution,
     refusePendingExecution,
@@ -52,6 +54,17 @@ export function executionRecords({ sql }: RecordsInput): ExecutionRecords {
     settleExecution: (input) => settleExecution({ sql, ...input }),
     failPersistence: (input) => failPersistence({ sql, ...input }),
   };
+}
+
+function latestPendingExecutionAt({ sql }: RecordsInput): Option.Option<DateTime.Utc> {
+  const cursor = sql.exec(
+    'SELECT claimed_at_ms AS claimedAt FROM executions WHERE status = ? ORDER BY rowid DESC LIMIT 1',
+    ExecutionStatus.Pending,
+  );
+
+  const pending = decodeFirst({ cursor, schema: PendingExecution });
+
+  return Option.map(pending, ({ claimedAt }) => claimedAt);
 }
 
 function activeExecution({ sql }: RecordsInput): Option.Option<ExecutionRow> {

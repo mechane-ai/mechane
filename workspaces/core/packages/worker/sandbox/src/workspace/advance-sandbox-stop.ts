@@ -1,11 +1,17 @@
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
-import { SANDBOX_FAILURE_MAX_CHARS, SandboxRecoveryAction, SandboxStopPhase } from '@mechane/sandbox-wire';
+import {
+  SANDBOX_FAILURE_MAX_CHARS,
+  SandboxRecoveryAction,
+  SandboxStopOrigin,
+  SandboxStopPhase,
+} from '@mechane/sandbox-wire';
 import type { SandboxStopReceipt } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { DateTime, Option, Result } from 'effect';
 import { checkpointInactiveEnvironment } from '../checkpoints/checkpoint-inactive-environment.ts';
 import type { MachineIdInput, WorkspaceProviderStepInput } from '../types.ts';
 import { advanceIdleWorkspace } from './advance-idle-workspace.ts';
+import { canCancelIdleStop, cancelIdleStop } from './cancel-idle-stop.ts';
 import { requestSandboxStop } from './request-sandbox-stop.ts';
 
 type AdvanceStopInput = WorkspaceProviderStepInput & MachineIdInput;
@@ -18,7 +24,7 @@ export async function advanceSandboxStop({
   ...resources
 }: AdvanceStopInput): Promise<SandboxStopReceipt> {
   const input = { store, provider, machineId, ...resources };
-  const receipt = requestSandboxStop({ store });
+  const receipt = requestSandboxStop({ store, origin: SandboxStopOrigin.Idle });
 
   if (receipt.phase === SandboxStopPhase.Completed) {
     return receipt;
@@ -26,6 +32,20 @@ export async function advanceSandboxStop({
 
   if (receipt.phase === SandboxStopPhase.Failed && receipt.recoveryAction !== SandboxRecoveryAction.RetryStop) {
     return receipt;
+  }
+
+  if (receipt.phase === SandboxStopPhase.Stopping || receipt.recoveryAction === SandboxRecoveryAction.RetryStop) {
+    return await stopSandboxMachine({ ...input, receipt });
+  }
+
+  if (canCancelIdleStop({ ...input, receipt })) {
+    return await cancelIdleStop({ ...input, receipt });
+  }
+
+  if (receipt.phase === SandboxStopPhase.Canceling) {
+    const generation = Option.none();
+
+    return await stopSandboxMachine({ ...input, receipt: { ...receipt, generation } });
   }
 
   const phase = waitingPhase(input);
@@ -45,7 +65,9 @@ export async function advanceSandboxStop({
     });
   }
 
-  const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId: receipt.operationId });
+  const retainedDrain = Option.fromUndefinedOr(receipt.drainOperationId);
+  const operationId = Option.getOrElse(retainedDrain, () => receipt.operationId);
+  const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId });
   const result = store.fileCheckpointResult({ purpose });
 
   if (Option.isSome(result) && FileCheckpointResult.guards.Failed(result.value)) {
@@ -68,6 +90,10 @@ export async function advanceSandboxStop({
     return updated;
   }
 
+  if (canCancelIdleStop({ ...input, receipt })) {
+    return await cancelIdleStop({ ...input, receipt });
+  }
+
   const saved = checkpointInactiveEnvironment({ store });
 
   if (FileCheckpointResult.guards.Failed(saved)) {
@@ -79,22 +105,30 @@ export async function advanceSandboxStop({
     });
   }
 
-  const stopping: SandboxStopReceipt = {
-    ...receipt,
-    generation: committedGeneration,
-    phase: SandboxStopPhase.Stopping,
-    updatedAt: DateTime.nowUnsafe(),
-  };
+  return await stopSandboxMachine({ ...input, receipt: { ...receipt, generation: committedGeneration } });
+}
+
+type StopMachineInput = AdvanceStopInput & { readonly receipt: SandboxStopReceipt };
+
+async function stopSandboxMachine({
+  store,
+  provider,
+  machineId,
+  receipt,
+}: StopMachineInput): Promise<SandboxStopReceipt> {
+  const stopping = { ...receipt, phase: SandboxStopPhase.Stopping, updatedAt: DateTime.nowUnsafe() };
 
   store.saveSandboxStop(stopping);
 
-  const checkpoint = state.head;
+  const state = store.workspace();
+  const checkpoint = Option.filter(state.head, ({ generation }) => Option.contains(receipt.generation, generation));
+
   const stoppingPromise = provider.stop({ machineId, checkpoint });
   const stopped = await capturePromise({ promise: stoppingPromise });
 
   if (Result.isFailure(stopped)) {
     return failSandboxStop({
-      ...input,
+      store,
       receipt: stopping,
       cause: stopped.failure,
       recoveryAction: SandboxRecoveryAction.RetryStop,

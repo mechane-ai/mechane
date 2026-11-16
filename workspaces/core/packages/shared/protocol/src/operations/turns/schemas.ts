@@ -179,6 +179,7 @@ const BashToolResult = renamedWireStruct({
     exitCode: Schema.OptionFromNullOr(Schema.Int),
     duration: Schema.OptionFromNullOr(Schema.DurationFromMillis),
     output: Schema.OptionFromNullOr(ToolTraceText),
+    refusal: Schema.optionalKey(ToolTraceText),
   },
   renames: { duration: 'duration_ms' },
 });

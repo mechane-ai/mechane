@@ -106,6 +106,8 @@ Render the protocol's safe tool inspection fields without reconstructing argumen
 SDK tool completion from the command's recorded process outcome: a completed tool with exit code 127 is a failed
 command. Keep command and output in one expandable trace item with copy controls and recorded duration. Missing
 evidence, empty output, and truncated output remain distinct. Unknown tools retain their available execution metadata.
+Show a recorded shell refusal reason from the runtime's bounded messages. Keep provider errors and raw inputs out of
+this field. Leave the reason absent in historical records that did not retain it.
 
 Trace intervals name their measured boundaries. Reservation-to-settlement time is not provider inference time;
 missing usage is unknown, never zero. Show recorded turn events through a bounded API page, not a filtered page of
