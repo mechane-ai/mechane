@@ -56,8 +56,14 @@ token. It verifies immutable release metadata, asset and published checksums, an
 installation; tool versions and package installation still follow the repository lockfiles.
 Workflows in `manualWorkflows` run only through `workflow_dispatch`; push, tag, pull-request, release, and scheduled
 triggers are forbidden for them. The runtime candidate workflow accepts an explicit full source commit and refuses a
-different selected workflow ref before setup. It runs the canonical complete candidate acceptance, uploads only its
-qualified output, and retains that output for three days. It cannot publish or deploy. A skipped candidate job is not
+different selected workflow ref before setup. Separate candidate construction from canonical complete acceptance with
+an explicit job dependency. Retain verified unqualified bytes before acceptance so a failed qualification job can retry
+without rebuilding. Transfer their executable modes in a tar archive and select the immutable same-run artifact ID,
+archive digest, and artifact-inventory digest from the completed build job. Check the selected source and digests before
+acceptance; an expired or missing artifact requires a fresh build.
+Name unqualified builds, qualified candidates, and diagnostic artifacts distinctly, with their source and run attempt.
+Retain them for three days without overwriting previous attempts. Upload the promotable candidate only after complete
+acceptance seals its qualification. The workflow cannot publish or deploy. A skipped job or unqualified artifact is not
 qualification. The publisher still requires the selected complete qualification receipt.
 Optional guest reuse requires both a runtime release tag and its exact qualification digest before any download.
 Download only the current repository's release assets into the job's temporary directory. Pass the selected folder and
@@ -65,13 +71,15 @@ digest to the existing canonical builder; its complete qualification and guest-i
 A mismatch fails the candidate rather than falling back to another image or an unverified reuse path.
 Source selection failures name the failed check. A failed Git inspection must reject the candidate rather than count
 as a clean checkout; capture Git results before comparing them.
-When candidate acceptance fails, its last step prints the retained celld application and environment logs, database
-setup, build, and Console logs without dumping durable storage or credentials.
+Retain at most 256 KiB from each build or acceptance command log, including failures. Retain at most 256 KiB total from
+the existing celld application and environment, database setup, build, and Console log excerpts. Read only those named
+log paths, never durable storage, state dumps, or credentials. Preserve command failure through log capture.
 
 The manual guest staging job runs on public main with Actions read and repository contents write. It may attach one
 reviewed guest archive to an App-owned draft from an immutable release or a qualified candidate in the same repository.
-Bind the selected candidate run and artifact to the draft tag's source commit. Verify the qualification, archive and
-final asset digests. The job never publishes a release, replaces assets or uses a publisher key.
+Bind the selected candidate run and artifact to the draft tag's source commit. Accept the qualified source-and-attempt
+artifact name or the earlier exact source-only name, never an unqualified artifact. Verify the qualification, archive
+and final asset digests. The job never publishes a release, replaces assets or uses a publisher key.
 
 The separate `publish-elements.yml` workflow runs only for published UI releases in the public `mechane-ai/mechane` repository.
 Its publication job grants `contents: read` and `id-token: write`, uses a fresh `ubuntu-24.04` runner with no restored cache,

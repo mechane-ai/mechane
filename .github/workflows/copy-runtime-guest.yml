@@ -110,7 +110,9 @@ jobs:
             artifact=$(gh api "$artifact_path")
             artifact_digest=$(jq -er --argjson id "$CANDIDATE_ARTIFACT_ID" --argjson run "$CANDIDATE_RUN_ID" \
               --argjson repo "$GITHUB_REPOSITORY_ID" --arg commit "$commit" '
-                select(.id == $id and .name == ("mechane-candidate-" + $commit) and .expired == false)
+                select(.id == $id and .expired == false)
+                | select(.name == ("mechane-candidate-" + $commit)
+                  or (.name | test("^mechane-candidate-" + $commit + "-attempt-[1-9][0-9]*$")))
                 | select(.workflow_run | .id == $run and .repository_id == $repo and .head_repository_id == $repo
                   and .head_sha == $commit)
                 | .digest | select(test("^sha256:[0-9a-f]{64}$")) | ltrimstr("sha256:")

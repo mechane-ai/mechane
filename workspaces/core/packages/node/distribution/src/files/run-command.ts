@@ -7,7 +7,12 @@ import { DistributionFailed } from '../errors.ts';
 import type { DistributionSettings } from '../types.ts';
 
 const COMMAND_TIMEOUT = Duration.minutes(30);
-const LIVE_MODES: ReadonlySet<DistributionMode> = new Set([DistributionMode.Candidate, DistributionMode.Accept]);
+
+const LIVE_MODES: ReadonlySet<DistributionMode> = new Set([
+  DistributionMode.Build,
+  DistributionMode.Candidate,
+  DistributionMode.Accept,
+]);
 
 type CommandInput = {
   readonly command: string;

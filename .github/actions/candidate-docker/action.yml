@@ -1,0 +1,25 @@
+name: Set up candidate Docker
+description: Select the pinned Docker image store and verify the isolated bridge used by candidate jobs.
+runs:
+  using: composite
+  steps:
+    - name: Set up the candidate image store
+      id: docker
+      uses: docker/setup-docker-action@3f1ab1ab0e29231562e4db4ca600c1a49653bac6
+      with:
+        version: v29.8.2
+        daemon-config: '{"features":{"containerd-snapshotter":true}}'
+    - name: Select one Docker endpoint and check its bridge
+      shell: bash
+      env:
+        DOCKER_HOST: ${{ steps.docker.outputs.sock }}
+      run: |
+        set -euo pipefail
+        test -S "${DOCKER_HOST#unix://}"
+        printf 'DOCKER_HOST=%s\n' "$DOCKER_HOST" >> "$GITHUB_ENV"
+        network=$(docker network create \
+          --driver bridge \
+          --opt com.docker.network.bridge.enable_icc=false \
+          --label io.mechane.owner=ci-prerequisite \
+          "mechane-prerequisite-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}")
+        docker network rm "$network"

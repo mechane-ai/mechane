@@ -43,6 +43,11 @@ it does not accept a handwritten qualification request. Run
 receipt. Publication includes that qualification and every referenced file, then promotes the same candidate bytes under
 the public tag. Installation requires the selected qualification digest.
 
+The manual runtime candidate workflow runs `distribution:build` and `distribution:accept` in separate dependent jobs. It
+retains an explicitly unqualified tar archive with executable modes, then selects its artifact ID and digests for
+acceptance. Re-running failed jobs retries complete acceptance from those bytes without repeating a successful build.
+Each attempt keeps separate bounded diagnostics. Only sealed qualified output is eligible for promotion.
+
 Cached development results do not replace final acceptance. Hosted-only behavior retains separate provider evidence;
 local celld does not qualify Cloudflare routing or containment. Controlled database commands use only their declared
 bindings and remain separate from the runtime role. Run an import only when actual retained data requires it.

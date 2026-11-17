@@ -21,13 +21,18 @@ concurrency:
   group: runtime-candidate-${{ github.sha }}
   cancel-in-progress: false
 jobs:
-  candidate:
+  build:
     if: github.repository == 'mechane-ai/mechane'
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
+      CANDIDATE_DIRECTORY: ${{ runner.temp }}/mechane-candidate
+    outputs:
+      artifact_id: ${{ steps.archive.outputs.artifact-id }}
+      archive_sha256: ${{ steps.inventory.outputs.archive_sha256 }}
+      artifacts_sha256: ${{ steps.inventory.outputs.artifacts_sha256 }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -86,24 +91,7 @@ jobs:
             --dir "$guest_directory"
           printf '%s  %s\n' "$REUSE_GUEST_QUALIFICATION_SHA256" "$guest_directory/qualification.json" | sha256sum -c
           printf 'directory=%s\n' "$guest_directory" >> "$GITHUB_OUTPUT"
-      - name: Set up the candidate image store
-        id: docker
-        uses: docker/setup-docker-action@3f1ab1ab0e29231562e4db4ca600c1a49653bac6
-        with:
-          version: v29.8.2
-          daemon-config: '{"features":{"containerd-snapshotter":true}}'
-      - name: Select one Docker endpoint and check its bridge
-        env:
-          DOCKER_HOST: ${{ steps.docker.outputs.sock }}
-        run: |
-          test -S "${DOCKER_HOST#unix://}"
-          printf 'DOCKER_HOST=%s\n' "$DOCKER_HOST" >> "$GITHUB_ENV"
-          network=$(docker network create \
-            --driver bridge \
-            --opt com.docker.network.bridge.enable_icc=false \
-            --label io.mechane.owner=ci-prerequisite \
-            "mechane-prerequisite-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}")
-          docker network rm "$network"
+      - uses: ./.github/actions/candidate-docker
       - name: Set up the candidate image builder
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
         with:
@@ -113,37 +101,143 @@ jobs:
         run: |
           mise run contracts:check
           mise run repository:check
-      - name: Build and qualify the selected candidate once
+      - name: Build the selected candidate once
         env:
           REUSE_GUEST_DIRECTORY: ${{ steps.guest.outputs.directory }}
           REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
         run: |
           set -euo pipefail
           if [[ -z "$REUSE_GUEST_DIRECTORY" ]]; then
-            mise -C workspaces/core run distribution:candidate
+            mise -C workspaces/core run distribution:build -- "$CANDIDATE_DIRECTORY" \
+              2>&1 | tee "$RUNNER_TEMP/mechane-build.log"
           else
-            candidate_version=$(mise -C workspaces/core/packages/node/distribution exec -- node --input-type=module \
-              --eval 'import { RELEASE } from "@mechane/protocol"; process.stdout.write(RELEASE)')
-            candidate_directory="$GITHUB_WORKSPACE/workspaces/core/dist/distribution/v$candidate_version"
-            mise -C workspaces/core run distribution:candidate -- "$candidate_directory" \
-              --reuse-guest "$REUSE_GUEST_DIRECTORY" "$REUSE_GUEST_QUALIFICATION_SHA256"
+            mise -C workspaces/core run distribution:build -- "$CANDIDATE_DIRECTORY" \
+              --reuse-guest "$REUSE_GUEST_DIRECTORY" "$REUSE_GUEST_QUALIFICATION_SHA256" \
+              2>&1 | tee "$RUNNER_TEMP/mechane-build.log"
           fi
-      - name: Retain the qualified candidate for promotion
+      - name: Package the unqualified bytes with their executable modes
+        id: inventory
+        run: |
+          set -euo pipefail
+          test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
+          artifacts_sha256=$(sha256sum "$CANDIDATE_DIRECTORY/artifacts.json" | cut -d ' ' -f 1)
+          tar -cf "$RUNNER_TEMP/mechane-candidate.tar" -C "$CANDIDATE_DIRECTORY" .
+          archive_sha256=$(sha256sum "$RUNNER_TEMP/mechane-candidate.tar" | cut -d ' ' -f 1)
+          printf 'artifacts_sha256=%s\narchive_sha256=%s\n' "$artifacts_sha256" "$archive_sha256" >> "$GITHUB_OUTPUT"
+      - name: Retain the unqualified build for acceptance retries
+        id: archive
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: mechane-candidate-${{ github.sha }}
-          path: workspaces/core/dist/distribution/v*
+          name: mechane-unqualified-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-candidate.tar
           if-no-files-found: error
           compression-level: 0
           retention-days: 3
-      - name: Print retained local service logs after a failed smoke
-        if: failure()
+      - name: Collect bounded build diagnostics
+        if: always()
         run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mechane-build-logs"
+          if [[ -f "$RUNNER_TEMP/mechane-build.log" ]]; then
+            tail -c 262144 "$RUNNER_TEMP/mechane-build.log" > "$RUNNER_TEMP/mechane-build-logs/build.log"
+          fi
+      - name: Retain build diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-build-logs-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-build-logs
+          if-no-files-found: ignore
+          retention-days: 3
+  qualify:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MECHANE_BASE_BRANCH: origin/main
+      CANDIDATE_DIRECTORY: ${{ runner.temp }}/mechane-candidate
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Verify the qualification inputs
+        env:
+          EXPECTED_COMMIT: ${{ inputs.source_commit }}
+          BUILD_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          checkout_commit=$(git rev-parse HEAD)
+          if [[ "$checkout_commit" != "$EXPECTED_COMMIT" ]]; then
+            printf '::error::The qualification checkout differs from the selected source commit.\n'
+            exit 1
+          fi
+          if [[ ! "$BUILD_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+            ! "$ARTIFACTS_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            printf '::error::Select the completed build artifact ID and both exact SHA-256 digests.\n'
+            exit 1
+          fi
+      - name: Download the exact unqualified build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: ${{ runner.temp }}/mechane-build-download
+      - name: Verify and unpack the selected build
+        env:
+          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate.tar"
+          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" | sha256sum -c
+          mkdir "$CANDIDATE_DIRECTORY"
+          tar -xf "$archive" -C "$CANDIDATE_DIRECTORY"
+          printf '%s  %s\n' "$ARTIFACTS_SHA256" "$CANDIDATE_DIRECTORY/artifacts.json" | sha256sum -c
+          test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
+      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/candidate-docker
+      - name: Qualify the selected bytes without rebuilding
+        env:
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          mise -C workspaces/core run distribution:accept -- "$CANDIDATE_DIRECTORY" "$ARTIFACTS_SHA256" \
+            2>&1 | tee "$RUNNER_TEMP/mechane-acceptance.log"
+      - name: Retain the qualified candidate for promotion
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-candidate-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ env.CANDIDATE_DIRECTORY }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Collect bounded qualification diagnostics
+        if: always()
+        run: |
+          set -euo pipefail
+          logs="$RUNNER_TEMP/mechane-qualification-logs"
+          mkdir -p "$logs"
+          if [[ -f "$RUNNER_TEMP/mechane-acceptance.log" ]]; then
+            tail -c 262144 "$RUNNER_TEMP/mechane-acceptance.log" > "$logs/acceptance.log"
+          fi
           shopt -s nullglob
-          for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log \
-            "${TMPDIR:-/tmp}"/mechane-node-stack-*/application/.celld/{celld,build}.log \
-            "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/.celld/celld.log \
-            "${TMPDIR:-/tmp}"/mechane-node-failure-*/*.log; do
-            echo "== $log"
-            tail -n 80 "$log"
-          done
+          {
+            for log in "${TMPDIR:-/tmp}"/mechane-node-stack-*/*.log \
+              "${TMPDIR:-/tmp}"/mechane-node-stack-*/application/.celld/{celld,build}.log \
+              "${TMPDIR:-/tmp}"/mechane-node-stack-*/sandbox/.celld/celld.log \
+              "${TMPDIR:-/tmp}"/mechane-node-failure-*/*.log; do
+              echo "== $log"
+              tail -c 65536 "$log" | tail -n 80
+            done
+          } | tail -c 262144 | tee "$logs/local-services.log"
+      - name: Retain qualification diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-qualification-logs-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-qualification-logs
+          if-no-files-found: ignore
+          retention-days: 3

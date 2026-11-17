@@ -70,6 +70,9 @@ Runtime candidate acceptance runs static checks and the complete retained catalo
 generated qualification binds the selected source, artifacts, fixtures, configuration, and actual reports. That accepted
 candidate can be promoted without another build or a duplicate source-mode catalog. A cached inner-loop result does not
 substitute for complete candidate acceptance. Hosted-only guarantees still require their declared provider target.
+The manual runtime candidate workflow retains the completed build independently from its acceptance attempt. A retry
+runs complete acceptance in fresh execution state against the same selected artifact inventory, without recompiling
+its application bytes.
 Reuse a loaded guest by its selected OCI manifest and platform. A source replay also compares the current guest
 build inputs with the selected build record.
 
