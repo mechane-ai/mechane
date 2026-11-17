@@ -60,7 +60,21 @@ export async function runCandidateChecks({
   }
 
   try {
-    const staticLog = await execute('mise', ['-C', CORE_FOLDER, 'run', 'check:static', ':::', 'infrastructure:verify']);
+    const module = join(temporary, 'module');
+
+    await execute('unzip', ['-q', join(settings.folder, release.runtime.archive), '-d', module]);
+
+    await verifyRuntimeFiles({ module, manifest });
+
+    const staticLog = await execute('mise', [
+      '-C',
+      CORE_FOLDER,
+      'run',
+      'check:static',
+      ':::',
+      'infrastructure:verify',
+      module,
+    ]);
 
     retain('qualification-static.log', staticLog);
 
@@ -72,12 +86,6 @@ export async function runCandidateChecks({
     const celldOutput = await execute(celldPath, ['--version']);
     const celldVersion = celldOutput.trim();
     const node = await Effect.runPromise(fileDigest({ path: settings.nodeExecutable }));
-
-    const module = join(temporary, 'module');
-
-    await execute('unzip', ['-q', join(settings.folder, release.runtime.archive), '-d', module]);
-
-    await verifyRuntimeFiles({ module, manifest });
 
     const guest = receipt.assets.find(
       (asset) => asset.sha256 === manifest.guest.sha256 && asset.bytes === manifest.guest.bytes,

@@ -5,6 +5,11 @@ cd "$(dirname "$0")/.."
 infrastructure_check=$(mktemp -d "${TMPDIR:-/tmp}/mechane-infrastructure-check.XXXXXX")
 trap 'rm -rf "$infrastructure_check"' EXIT HUP INT TERM
 
+if [ "$#" -gt 1 ]; then
+  echo 'Expected at most one extracted installation module path.' >&2
+  exit 2
+fi
+
 tofu fmt -check -recursive infrastructure/modules infrastructure/examples
 shellcheck infrastructure/check.sh infrastructure/examples/cloudflare/setup-provider.sh
 
@@ -25,7 +30,12 @@ mkdir -p "$provider_path"
   CGO_ENABLED=0 go build -mod=readonly -trimpath -buildvcs=false -o "$provider_path/terraform-provider-mechane_v$provider_version" .
 )
 
-node packages/node/distribution/src/main.ts preview-module "$infrastructure_check/module"
+if [ "$#" -eq 0 ]; then
+  node packages/node/distribution/src/main.ts preview-module "$infrastructure_check/module"
+else
+  mkdir "$infrastructure_check/module"
+  cp -R "$1/." "$infrastructure_check/module"
+fi
 node packages/node/distribution/testing/shipped-formats.ts "$infrastructure_check/module/installation.json"
 cat > "$infrastructure_check/tofurc" <<EOF
 provider_installation {
