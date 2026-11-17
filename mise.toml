@@ -14,6 +14,7 @@ opentofu = "1.13.0"
 "github:macromackie/tenet" = "0.13.0"
 "github:macromackie/ev-grep" = "0.7.0"
 "aqua:koalaman/shellcheck" = "0.11.0"
+"aqua:rhysd/actionlint" = "1.7.12"
 
 [tools."github:mechane-ai/celld"]
 version = "0.6.3-mechane.4"
@@ -56,9 +57,10 @@ description = "Validate repository and product contracts"
 run = "tenet validate --root ."
 
 [tasks."repository:check"]
-description = "Check repository formatting, bootstrap, and package publication tools"
+description = "Check repository formatting, workflow syntax, bootstrap scripts and publication tools"
 run = [
   "workspaces/core/node_modules/.bin/oxfmt --check . '!workspaces/**'",
+  "actionlint",
   "shellcheck .config/*.sh",
   "workspaces/core/node_modules/.bin/tsc -p .config/tsconfig.json",
   "workspaces/core/node_modules/.bin/oxlint .config/*.mts",

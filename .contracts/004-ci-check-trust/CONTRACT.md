@@ -49,6 +49,9 @@ Repository actions run from the checked-out source under `.github/actions`.
 It checks out the full history and sets `MECHANE_BASE_BRANCH` to the pull request's target, or `main`, so the owned checks hold each ratchet's baseline to the merge base's.
 Concurrency cancels only a superseded pull-request run, never a run on `main`.
 The owned checks reject unpinned third-party actions, local action paths outside `.github/actions`, and workflows without `permissions`.
+The pinned actionlint validator checks every workflow's GitHub Actions syntax and expression contexts, including manual
+workflows before dispatch. Run it through `mise run factory:check` in the private source and `mise run repository:check`
+in its public export; both belong to `mise run check:static` and the pre-publication source check.
 The shared `.github/actions/setup` action owns pinned setup for checks, candidates, and package publication. Its owned
 mise bootstrap uses the read-only job token only with GitHub's API and follows an asset redirect without the
 token. It verifies immutable release metadata, asset and published checksums, and the binary digest declared in

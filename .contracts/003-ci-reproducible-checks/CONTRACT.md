@@ -44,12 +44,13 @@ Automatic CI uses the complete static graph in both repositories. Expensive cand
 operator command, locally or through the manual runtime candidate workflow. Runtime publication requires the canonical
 candidate acceptance below, rather than a repeated
 complete source-mode catalog followed by the same catalog against artifacts.
-The root `mise.toml` pins Node, pnpm, Bun, Go, OpenTofu, celld, Tenet, ev-grep and ShellCheck; `workspaces/core/pnpm-lock.yaml` pins every package, the lint tools included, and `mise run setup` installs it with `--frozen-lockfile`.
-The lint tools are npm packages, so the lockfile is their one pin and `mise.toml` does not repeat them.
+The root `mise.toml` pins Node, pnpm, Bun, Go, OpenTofu, celld, Tenet, ev-grep, ShellCheck and actionlint.
+`workspaces/core/pnpm-lock.yaml` pins package dependencies, including the TypeScript lint tools, and `mise run setup`
+installs them with `--frozen-lockfile`. `mise.toml` does not repeat package dependency versions.
 `.config/bootstrap.sh` verifies the mise binary against the SHA-256 digests it records, and `mise.lock` records every other tool's URL and checksum per platform; `locked = true` in `mise.toml` refuses a tool the lock does not record.
 Repository-local `activate_aggressive = true` keeps those pinned executables ahead of inherited system tools in task shells and subprocesses. The public exporter preserves and requires that setting; resolving a pinned binary for a direct `mise exec` call alone does not qualify nested commands.
 The pins check of `mise -C workspaces/core run checks` fails when the bootstrap's `mise_version`, the workspace manifest's `packageManager`, the sandbox image's Node release, or the local supervisor's expected celld version differs from `mise.toml`.
-`mise run check` runs contract validation, formatting, ShellCheck, type checks, `rules:check` with the registry's files and ast-grep examples, oxlint, ast-grep, Knip in both modes, jscpd, and the owned checks with their dependency-cruiser graph and rule examples.
+`mise run check` runs contract validation, formatting, actionlint, ShellCheck, type checks, `rules:check` with the registry's files and ast-grep examples, oxlint, ast-grep, Knip in both modes, jscpd, and the owned checks with their dependency-cruiser graph and rule examples.
 The same graph builds the production Worker, Console and Elements assets, the compiled CLI, and the sandbox guest. It checks the command reference, runs Go provider checks and OpenTofu validation, then drives that Worker through the retained smoke suite against celld, verified-TLS local Postgres, real containers, and deterministic external-service fixtures. The application and environment hosts load the same Worker artifact with their declared bindings.
 Its existing `fingerprint` task checks every role's bundle using the Worker's platform modules and resolution conditions.
 `mise run check:fast` is the inner loop and never the publication gate. It runs changed static checks, then selects

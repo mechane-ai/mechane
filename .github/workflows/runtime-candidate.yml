@@ -28,7 +28,6 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
-      CANDIDATE_DIRECTORY: ${{ runner.temp }}/mechane-candidate
     outputs:
       artifact_id: ${{ steps.archive.outputs.artifact-id }}
       archive_sha256: ${{ steps.inventory.outputs.archive_sha256 }}
@@ -38,6 +37,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Select the candidate directory
+        run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Verify the selected source before building
         env:
           EXPECTED_COMMIT: ${{ inputs.source_commit }}
@@ -156,12 +157,13 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
-      CANDIDATE_DIRECTORY: ${{ runner.temp }}/mechane-candidate
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
           fetch-depth: 0
+      - name: Select the candidate directory
+        run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Verify the qualification inputs
         env:
           EXPECTED_COMMIT: ${{ inputs.source_commit }}
