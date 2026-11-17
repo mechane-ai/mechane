@@ -78,6 +78,9 @@ required checkpoint and recovery fences, and retain the committed head until the
 Expose the last committed file head separately from capture, upload, and failure status. A background save failure
 cannot rewrite a terminal exit code or claim a saved generation. Retain live files and the previous head for recovery.
 Automatic checkpoint cadence is not a recovery-point guarantee. Unsaved writes can be lost with their physical machine.
+Give explicit same-guest recovery its own bounded deadline so a large archive can finish transferring. Use the original
+operation start for expiry, part retries, and publication. Preserve the ordinary checkpoint, restore, and part request
+budgets.
 An activity sequence records admitted work, not every write from a running process. Its equality with the captured
 sequence cannot establish that all live files are saved. Inspection never marks new activity merely to report status.
 
@@ -101,6 +104,10 @@ certificate baked into the generic image.
 Project the same authorities into Nix and Java as the PEM consumers. Refresh both formats when the gateway authority
 arrives, retain public roots, and preserve other authorized JVM options. Bound trust-store generation and reuse it
 while its authorities remain unchanged.
+Supply Bazel's server JVM trust through the image's system rc import of an atomically published managed startup rc.
+Publish it only after its immutable trust store is complete, and change the startup trust-store path when authorities
+change so a running Bazel server refreshes its trust. Keep the rc and stores outside the durable home. Process fixtures
+write only their private scratch; they never change the host's system Bazel configuration.
 
 Route local guest API calls and registered fixture requests through one retained, CA-verified HTTPS gateway. Configure
 native host-service access for only that gateway port before starting the environment host. Application code and guest
@@ -203,9 +210,11 @@ Fail an ephemeral startup with unconfirmed owned cleanup and require a rejected 
 another interrupt. Keep the retained ownership available for repair and preserve persistent interactive recovery.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
-Exercise installed CLI startup, unprivileged Nix store use, and actual Node, curl, git, Nix, and Java HTTPS verification.
+Exercise installed CLI startup, unprivileged Nix store use, and actual Node, curl, git, Nix, Java, and Bazel HTTPS verification.
 Require rejection without the supplied
 CA, acceptance with trusted startup configuration, and retained acceptance of both authorities after a late gateway CA.
+Keep the same Bazel output base during the trust change and require a new server to download with the new authority.
+Check the repository-owned Nix Bazel wrapper as well as a direct Bazel invocation, with TLS verification enabled.
 Lose the HTTP start acknowledgement while real bootstrap is held, then rejoin the same machine and require the exact
 container identity, one bootstrap, and one command effect. Reject conflicting start and stop identities. Lose a guest
 after two restored parts; require a full fresh restore or an explicit recovery fence with the committed source intact.

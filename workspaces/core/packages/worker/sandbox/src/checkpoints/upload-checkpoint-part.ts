@@ -4,7 +4,7 @@ import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
 import { DateTime, Duration, Option, Result, Schema } from 'effect';
 import { Hex } from 'effect/encoding';
-import { ANSWER_SLACK, WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
+import { ANSWER_SLACK } from '../constants.ts';
 import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
@@ -12,6 +12,7 @@ import { observeWorkspaceTransfer } from '../workspace/observe-workspace-transfe
 import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../workspace/workspace-request.ts';
+import { checkpointDeadline } from './checkpoint-deadline.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
 
@@ -202,7 +203,7 @@ function checkpointPartRetryTimeout({
 
   return Option.flatMap(pending, ({ startedAt }) => {
     const now = DateTime.nowUnsafe();
-    const deadline = DateTime.addDuration(startedAt, WORKSPACE_OPERATION_TIMEOUT);
+    const deadline = checkpointDeadline({ purpose: checkpoint.purpose, startedAt });
     const remainingMs = DateTime.toEpochMillis(deadline) - DateTime.toEpochMillis(now);
     const requestMs = Duration.toMillis(ANSWER_SLACK);
     const timeoutMs = Math.min(remainingMs, requestMs);

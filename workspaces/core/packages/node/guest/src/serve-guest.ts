@@ -66,6 +66,7 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
     folder,
     path: loadedSettings.path,
     trustedCertificatesPem: loadedSettings.trustedCertificatesPem,
+    scope: loadedSettings.scope,
     cacheDirectory: loadedSettings.toolCacheDirectory,
   });
 

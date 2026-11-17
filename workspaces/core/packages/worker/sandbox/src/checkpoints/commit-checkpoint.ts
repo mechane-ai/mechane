@@ -2,6 +2,7 @@ import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-st
 import { SandboxStopPhase } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import { publishGenerationManifest } from '../workspace/generation-manifest.ts';
+import { assertCheckpointDeadline } from './checkpoint-deadline.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { assertRecoveryCheckpointFence } from './recovery-checkpoint-fence.ts';
 import type { ArchivedCheckpointInput } from './types.ts';
@@ -34,6 +35,7 @@ export async function commitCheckpoint({
 
     if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
       assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
+      assertCheckpointDeadline({ checkpoint });
 
       const stop = store.latestSandboxStop();
 

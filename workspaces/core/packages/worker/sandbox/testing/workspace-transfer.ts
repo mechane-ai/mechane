@@ -1,13 +1,16 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MachineId, RecordId, SandboxOperationId } from '@mechane/records';
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
-import { guestWorkspacePath, WorkspaceStep } from '@mechane/sandbox-wire';
-import { DateTime, Option, Schema } from 'effect';
+import { guestWorkspacePath, SANDBOX_ARCHIVE_PART_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
+import { DateTime, Duration, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
+import type { TestContext } from 'node:test';
+import { advanceCheckpoint } from '../src/checkpoints/advance-checkpoint.ts';
+import { runRecoveryCheckpoint } from '../src/checkpoints/run-recovery-checkpoint.ts';
 import { uploadCheckpointPart } from '../src/checkpoints/upload-checkpoint-part.ts';
 import { WorkspaceTransferPhase } from '../src/errors.ts';
-import type { GuestConnection, GuestTransport } from '../src/types.ts';
+import type { GuestConnection, GuestTransport, MachineProvider } from '../src/types.ts';
 import { observeWorkspaceTransfer } from '../src/workspace/observe-workspace-transfer.ts';
 import { workspacePartKey } from '../src/workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../src/workspace/workspace-request.ts';
@@ -164,25 +167,38 @@ void test('a diagnostic sink failure cannot replace the transfer failure', { tim
 
 const CHECKPOINT_CONTENT = 'checkpoint fixture data';
 const CHECKPOINT_OWNER = 'required-checkpoint';
+const RECOVERY_UPLOADED_PARTS = 1000;
+const RECOVERY_ELAPSED = Duration.minutes(8);
 const checkpointOperation = SandboxOperationId.make('d0512f6f-c8f3-4d93-9c8f-617fcd550833');
+const drain = FileCheckpointPurpose.cases.Drain.make({ operationId: checkpointOperation, machineId });
 
-function unexpectedBucketOperation(): never {
-  throw new Error('unexpected checkpoint fixture bucket operation');
+function unexpectedCheckpointOperation(): never {
+  throw new Error('unexpected checkpoint fixture operation');
 }
 
-function checkpointPartFixture({ fetch }: GuestTransport) {
+type CheckpointFixtureInput = GuestTransport & {
+  readonly purpose?: FileCheckpointPurpose;
+  readonly uploadedParts?: number;
+};
+
+function checkpointPartFixture({ fetch, purpose = drain, uploadedParts = 0 }: CheckpointFixtureInput) {
   const { store, close } = sqliteStore();
   const now = DateTime.nowUnsafe();
-  const purpose = FileCheckpointPurpose.cases.Drain.make({ operationId: checkpointOperation, machineId });
   const contents = new TextEncoder().encode(CHECKPOINT_CONTENT);
   const sha256 = createHash('sha256').update(contents).digest('hex');
-  const archive = { bytes: contents.byteLength, parts: 1, sha256 };
-  const part = 0;
+  const bytes = SANDBOX_ARCHIVE_PART_BYTES * uploadedParts + contents.byteLength;
+  const archive = { bytes, parts: uploadedParts + 1, sha256 };
+  const part = uploadedParts;
   const parent = Option.none();
   const capturedSequence = Option.none();
 
   store.openMachine({ machineId, now });
   store.readyMachine({ machineId, now });
+
+  if (FileCheckpointPurpose.guards.Recovery(purpose)) {
+    store.recoverWorkspace({ machineId, generation: purpose.recoveryGeneration, reason: 'previous save expired' });
+  }
+
   store.claimFileCheckpoint({ purpose, now });
   store.saveCheckpoint({
     generation,
@@ -215,12 +231,12 @@ function checkpointPartFixture({ fetch }: GuestTransport) {
         writeHttpMetadata: () => undefined,
       };
     },
-    head: unexpectedBucketOperation,
-    get: unexpectedBucketOperation,
-    list: unexpectedBucketOperation,
-    delete: unexpectedBucketOperation,
-    createMultipartUpload: unexpectedBucketOperation,
-    resumeMultipartUpload: unexpectedBucketOperation,
+    head: async () => null,
+    get: unexpectedCheckpointOperation,
+    list: unexpectedCheckpointOperation,
+    delete: unexpectedCheckpointOperation,
+    createMultipartUpload: unexpectedCheckpointOperation,
+    resumeMultipartUpload: unexpectedCheckpointOperation,
   };
 
   const workspace = { bucket, owner: CHECKPOINT_OWNER };
@@ -230,12 +246,18 @@ function checkpointPartFixture({ fetch }: GuestTransport) {
   return { store, close, workspace, checkpoint, guest, part, archive, contents, objects };
 }
 
-void test('a required checkpoint retries a timed-out immutable part read', { timeout: 5000 }, async (context) => {
-  const fetch = context.mock.fn<GuestTransport['fetch']>(async () => new Response(CHECKPOINT_CONTENT));
+function checkpointFetchWithOneTimeout({ mock }: TestContext) {
+  const fetch = mock.fn<GuestTransport['fetch']>(async () => new Response(CHECKPOINT_CONTENT));
 
   fetch.mock.mockImplementationOnce(async () => {
     throw new DOMException('checkpoint part response timed out', 'TimeoutError');
   });
+
+  return fetch;
+}
+
+void test('a required checkpoint retries a timed-out immutable part read', { timeout: 5000 }, async (context) => {
+  const fetch = checkpointFetchWithOneTimeout(context);
 
   const fixture = checkpointPartFixture({ fetch });
 
@@ -268,4 +290,52 @@ void test('a checkpoint part HTTP rejection is terminal', { timeout: 5000 }, asy
   await assert.rejects(uploadCheckpointPart(fixture), { _tag: 'WorkspaceTransferFailed', reason });
   assert.equal(fetch.mock.callCount(), 1);
   assert.equal(fixture.objects.size, 0);
+});
+
+void test('same-guest recovery can retry a part and publish after the ordinary checkpoint deadline', async (context) => {
+  const now = Date.now();
+
+  context.mock.timers.enable({ apis: ['Date'], now });
+
+  const purpose = FileCheckpointPurpose.cases.Recovery.make({
+    operationId: checkpointOperation,
+    machineId,
+    recoveryGeneration: RecordId.make('8197140a-1858-4883-a807-b66447da9094'),
+    committedGeneration: Option.none(),
+  });
+
+  const fetch = checkpointFetchWithOneTimeout(context);
+
+  const fixture = checkpointPartFixture({ fetch, purpose, uploadedParts: RECOVERY_UPLOADED_PARTS });
+
+  context.after(fixture.close);
+
+  const provider: MachineProvider = {
+    startupTimeout: () => Duration.zero,
+    start: unexpectedCheckpointOperation,
+    connect: async (input) => {
+      assert.equal(input.machineId, machineId);
+
+      return Option.some(fixture.guest);
+    },
+    isAbsent: async () => false,
+    stop: unexpectedCheckpointOperation,
+    restoredWorkspace: async () => false,
+    snapshotReport: async () => Option.none(),
+  };
+
+  context.mock.timers.setTime(now + Duration.toMillis(RECOVERY_ELAPSED));
+
+  const input = { ...fixture, provider, purpose };
+  const pending = await runRecoveryCheckpoint(input);
+
+  assert.equal(pending._tag, 'Pending');
+
+  await advanceCheckpoint(input);
+
+  assert.deepEqual(Option.getOrThrow(fixture.store.fileCheckpointResult({ purpose })), {
+    _tag: 'Committed',
+    generation,
+  });
+  assert.equal(Option.isNone(fixture.store.workspace().recovery), true);
 });

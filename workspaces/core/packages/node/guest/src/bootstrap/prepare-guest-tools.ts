@@ -26,6 +26,7 @@ type PrepareGuestToolsInput = {
   readonly cacheDirectory: string;
   readonly path: string;
   readonly trustedCertificatesPem: GuestSettings['trustedCertificatesPem'];
+  readonly scope: GuestSettings['scope'];
 };
 
 /** The caller owns the private scratch folder until the guest and all its commands stop. */
@@ -37,6 +38,7 @@ export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
   cacheDirectory,
   path,
   trustedCertificatesPem,
+  scope,
 }: PrepareGuestToolsInput): Effect.fn.Return<string, GuestMisconfigured> {
   const toolsFolder = join(folder, 'tools');
   const bin = join(toolsFolder, 'bin');
@@ -58,7 +60,7 @@ export const prepareGuestTools = Effect.fn('prepareGuestTools')(function* ({
     PATH: path,
     HOME: toolsFolder,
     LANG: 'C.UTF-8',
-    ...certificateEnvironment({ scratchDirectory: folder, trustedCertificatesPem }),
+    ...certificateEnvironment({ scratchDirectory: folder, trustedCertificatesPem, scope }),
   });
 
   for (const tool of tools) {

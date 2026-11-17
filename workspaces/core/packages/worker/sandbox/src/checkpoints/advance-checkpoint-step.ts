@@ -1,10 +1,9 @@
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
-import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { Array, DateTime, Option, Result } from 'effect';
-import { WORKSPACE_CHECKPOINT_CONCURRENT_PARTS, WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
-import { WorkspaceTransferFailed } from '../errors.ts';
+import { WORKSPACE_CHECKPOINT_CONCURRENT_PARTS } from '../constants.ts';
 import type { GuestConnection } from '../types.ts';
 import { archiveCheckpoint } from './archive-checkpoint.ts';
+import { assertCheckpointDeadline } from './checkpoint-deadline.ts';
 import { commitCheckpoint } from './commit-checkpoint.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { reconcileStoredCheckpoint } from './reconcile-stored-checkpoint.ts';
@@ -23,6 +22,10 @@ export async function advanceCheckpointStep({
   const input = { store, provider, workspace, checkpoint };
   const { archive, part } = checkpoint;
 
+  if (!isCurrentCheckpoint({ store, checkpoint })) {
+    return;
+  }
+
   if (FileCheckpointPurpose.guards.Recovery(checkpoint.purpose)) {
     const result = store.fileCheckpointResult({ purpose: checkpoint.purpose });
 
@@ -33,10 +36,7 @@ export async function advanceCheckpointStep({
     }
 
     assertRecoveryCheckpointFence({ store, purpose: checkpoint.purpose });
-  }
-
-  if (!isCurrentCheckpoint({ store, checkpoint })) {
-    return;
+    assertCheckpointDeadline(input);
   }
 
   if (Option.isNone(archive)) {
@@ -141,24 +141,4 @@ async function connectCheckpointGuest({
   assertCheckpointDeadline({ checkpoint });
 
   return guest;
-}
-
-function assertCheckpointDeadline({ checkpoint }: Pick<CheckpointStepInput, 'checkpoint'>): void {
-  const deadline = DateTime.addDuration(checkpoint.startedAt, WORKSPACE_OPERATION_TIMEOUT);
-
-  const now = DateTime.nowUnsafe();
-
-  if (DateTime.isLessThan(now, deadline)) {
-    return;
-  }
-
-  const cause = new WorkspaceTransferFailed({
-    generation: checkpoint.generation,
-    step: WorkspaceStep.Archive,
-    reason: 'workspace checkpoint exceeded its five minute deadline',
-  });
-
-  const failure = Result.fail(cause);
-
-  Result.getOrThrow(failure);
 }

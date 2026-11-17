@@ -48,8 +48,10 @@ the archive applies no ignore rules. Size failures identify the tar or gzip repr
 Installation composition may supply a bounded public CA bundle through guest startup. The guest validates it and
 combines it with Node's public roots and Cloudflare's interception CA when present. Each tool or bash child receives the
 resulting scratch certificate bundle for Node, curl, git, and Nix, plus a Java-compatible trust store, including a
-gateway CA injected after startup. Trust is never selected by model tool input, baked into an installation-independent
-image, or replaced with disabled TLS verification.
+gateway CA injected after startup. The image's system Bazel configuration imports atomically published JVM startup
+options from machine scratch because Bazel discards `JAVA_TOOL_OPTIONS`. Authority changes select a new trust-store path
+so Bazel restarts a server holding old trust. Process fixtures never publish system Bazel configuration. Trust is never
+selected by model tool input, baked into an installation-independent image, or replaced with disabled TLS verification.
 
 Injected secret values are redacted before command output enters a receipt. A truncated tail also hides a possible
 secret suffix. This prevents accidental disclosure; arbitrary authorized commands can still read their own environment.

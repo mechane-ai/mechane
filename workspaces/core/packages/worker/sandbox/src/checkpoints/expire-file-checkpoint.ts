@@ -1,7 +1,7 @@
 import { FileCheckpointResult } from '@mechane/sandbox-store';
 import type { FileCheckpointPurpose, SandboxStore } from '@mechane/sandbox-store';
 import { DateTime, Option } from 'effect';
-import { WORKSPACE_OPERATION_TIMEOUT } from '../constants.ts';
+import { CHECKPOINT_DEADLINE_FAILURE, checkpointDeadline } from './checkpoint-deadline.ts';
 
 type ExpireFileCheckpointInput = {
   readonly store: SandboxStore;
@@ -10,22 +10,19 @@ type ExpireFileCheckpointInput = {
   readonly now: DateTime.Utc;
 };
 
-/** All file intents retain the same operation deadline and terminal failure receipt. */
 export function expireFileCheckpoint({
   store,
   purpose,
   startedAt,
   now,
 }: ExpireFileCheckpointInput): Option.Option<FileCheckpointResult> {
-  const expiresAt = DateTime.addDuration(startedAt, WORKSPACE_OPERATION_TIMEOUT);
+  const expiresAt = checkpointDeadline({ purpose, startedAt });
 
   if (DateTime.isLessThan(now, expiresAt)) {
     return Option.none();
   }
 
-  const result = FileCheckpointResult.cases.Failed.make({
-    reason: 'file checkpoint exceeded its five minute deadline',
-  });
+  const result = FileCheckpointResult.cases.Failed.make({ reason: CHECKPOINT_DEADLINE_FAILURE });
 
   store.finishFileCheckpoint({ purpose, result });
 
