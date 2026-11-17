@@ -60,7 +60,11 @@ installation; tool versions and package installation still follow the repository
 Workflows in `manualWorkflows` run only through `workflow_dispatch`; push, tag, pull-request, release, and scheduled
 triggers are forbidden for them. The runtime candidate workflow builds from a main push that changes the runtime
 version declaration or an explicit dispatch with the selected full source commit. It verifies that commit before
-setup. Separate candidate construction from canonical complete acceptance with
+setup. Only the checked private publisher updates public runtime main. It compares the exported build inputs with
+the exact public parent and assigns the next patch version for changed inputs. Preserve the parent's version for
+identical inputs unless the checked source declares a higher version. Attest the final tree, including the generated
+version, and use the same public-parent lease for assignment and push. Retrying an unchanged export retains the
+version and tree. Separate candidate construction from canonical complete acceptance with
 an explicit job dependency. Retain verified unqualified bytes before acceptance so a failed qualification job can retry
 without rebuilding. Transfer their executable modes in a tar archive and select the immutable same-run artifact ID,
 archive digest, and artifact-inventory digest from the completed build job. Check the selected source and digests before
