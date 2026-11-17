@@ -58,8 +58,9 @@ token. It verifies immutable release metadata, asset and published checksums, an
 `.config/mise-release.sh` before executing the binary. The official pinned mise action consumes that verified local
 installation; tool versions and package installation still follow the repository lockfiles.
 Workflows in `manualWorkflows` run only through `workflow_dispatch`; push, tag, pull-request, release, and scheduled
-triggers are forbidden for them. The runtime candidate workflow accepts an explicit full source commit and refuses a
-different selected workflow ref before setup. Separate candidate construction from canonical complete acceptance with
+triggers are forbidden for them. The runtime candidate workflow builds from a main push that changes the runtime
+version declaration or an explicit dispatch with the selected full source commit. It verifies that commit before
+setup. Separate candidate construction from canonical complete acceptance with
 an explicit job dependency. Retain verified unqualified bytes before acceptance so a failed qualification job can retry
 without rebuilding. Transfer their executable modes in a tar archive and select the immutable same-run artifact ID,
 archive digest, and artifact-inventory digest from the completed build job. Check the selected source and digests before
@@ -98,7 +99,7 @@ to enforce `manualWorkflows`. Review the source workflow to confirm it invokes o
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
-Values: `manualWorkflows` `.github/workflows/copy-runtime-guest.yml`, `.github/workflows/runtime-candidate.yml`.
+Values: `manualWorkflows` `.github/workflows/copy-runtime-guest.yml`.
 - owned check `workflows` (F004): enforced
 
 <!-- End of the generated block. -->

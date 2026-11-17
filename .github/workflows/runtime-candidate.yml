@@ -1,6 +1,10 @@
 name: Build runtime candidate
-run-name: Runtime candidate ${{ inputs.source_commit }}
+run-name: Runtime candidate ${{ github.sha }}
 on:
+  push:
+    branches: [main]
+    paths:
+      - workspaces/core/packages/shared/protocol/src/release.ts
   workflow_dispatch:
     inputs:
       source_commit:
@@ -41,7 +45,7 @@ jobs:
         run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Verify the selected source before building
         env:
-          EXPECTED_COMMIT: ${{ inputs.source_commit }}
+          EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
         run: |
           set -euo pipefail
           reject_source() {
@@ -76,22 +80,16 @@ jobs:
             exit 1
           fi
       - uses: ./.github/actions/setup
-      - name: Download the selected qualified guest
+      - name: Select a qualified guest with identical build inputs
         id: guest
-        if: inputs.reuse_guest_release != ''
         env:
           GH_TOKEN: ${{ github.token }}
           REUSE_GUEST_RELEASE: ${{ inputs.reuse_guest_release }}
           REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
         run: |
           set -euo pipefail
-          guest_directory="$RUNNER_TEMP/mechane-qualified-guest"
-          mkdir "$guest_directory"
-          gh release download "$REUSE_GUEST_RELEASE" \
-            --repo "github.com/$GITHUB_REPOSITORY" \
-            --dir "$guest_directory"
-          printf '%s  %s\n' "$REUSE_GUEST_QUALIFICATION_SHA256" "$guest_directory/qualification.json" | sha256sum -c
-          printf 'directory=%s\n' "$guest_directory" >> "$GITHUB_OUTPUT"
+          mise -C workspaces/core run build:guest
+          mise exec -- node .config/runtime-guest-selection.mts
       - uses: ./.github/actions/candidate-docker
       - name: Set up the candidate image builder
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
@@ -105,7 +103,7 @@ jobs:
       - name: Build the selected candidate once
         env:
           REUSE_GUEST_DIRECTORY: ${{ steps.guest.outputs.directory }}
-          REUSE_GUEST_QUALIFICATION_SHA256: ${{ inputs.reuse_guest_qualification_sha256 }}
+          REUSE_GUEST_QUALIFICATION_SHA256: ${{ steps.guest.outputs.qualification }}
         run: |
           set -euo pipefail
           if [[ -z "$REUSE_GUEST_DIRECTORY" ]]; then
@@ -166,7 +164,7 @@ jobs:
         run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - name: Verify the qualification inputs
         env:
-          EXPECTED_COMMIT: ${{ inputs.source_commit }}
+          EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
           BUILD_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
           ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}

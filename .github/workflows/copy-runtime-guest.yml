@@ -102,7 +102,8 @@ jobs:
             run=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$CANDIDATE_RUN_ID")
             jq -e --argjson run "$CANDIDATE_RUN_ID" --argjson repo "$GITHUB_REPOSITORY_ID" --arg commit "$commit" '
               .id == $run and .repository.id == $repo and .head_repository.id == $repo and .head_sha == $commit
-              and .path == ".github/workflows/runtime-candidate.yml" and .event == "workflow_dispatch"
+              and .path == ".github/workflows/runtime-candidate.yml"
+              and (.event == "workflow_dispatch" or (.event == "push" and .head_branch == "main"))
               and .status == "completed" and .conclusion == "success"
             ' <<< "$run" > /dev/null || reject 'The candidate run did not qualify the tagged source.'
 

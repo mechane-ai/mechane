@@ -8,9 +8,9 @@ Run `.config/bootstrap.sh` to install the pinned mise release, tools, and locked
 mise run check:static
 ```
 
-Automatic CI runs the same static command. Building release assets and running their complete acceptance is an explicit
-operator action through `Build runtime candidate`, or `mise -C workspaces/core run distribution:candidate` locally. The
-workflow requires a full reviewed source commit matching its selected ref.
+Automatic CI runs the same static command. A push to public main that changes the version declaration builds a runtime
+candidate. You can also dispatch `Build runtime candidate` for an exact commit or run
+`mise -C workspaces/core run distribution:candidate` locally.
 
 Separate build and qualification jobs retain the exact unqualified build before acceptance. Use
 `gh run rerun RUN_ID --failed` to retry full qualification without rebuilding while that artifact remains available.
@@ -19,8 +19,8 @@ Artifacts expire after three days.
 Publication requires the sealed qualified candidate and consumes those exact bytes. Source checks alone do not qualify a
 release.
 
-The workflow can reuse an existing qualified guest when both its release tag and qualification digest are supplied. The
-canonical builder checks the prior evidence and exact generated guest inputs; a mismatch fails without fallback.
+The workflow uses the latest immutable runtime release's guest when its build inputs match. A fresh image is built when
+the inputs change. Selecting a specific reuse tag and qualification digest requires a match.
 
 Start Docker and use the release-qualified celld identity before local runtime work. An explicit
 `MECHANE_LOCAL_CELLD_BINARY` override contains `executable`, `version`, and `sha256`; the launcher verifies them. Follow
