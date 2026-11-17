@@ -300,8 +300,22 @@ export class MechActor extends DurableObject<RuntimeBindings> {
                   while (coverage.sequence < state.notificationBaseSequence) {
                     const id = await SequenceNotifications.read(transaction, String(coverage.sequence + 1));
 
-                    if (id === undefined || !ids.includes(RecordId.make(id))) {
+                    if (id === undefined) {
                       break;
+                    }
+
+                    if (!ids.includes(RecordId.make(id))) {
+                      const notification = await Notifications.read(transaction, id);
+
+                      if (notification === undefined) {
+                        break;
+                      }
+
+                      const previous = await Turns.read(transaction, notification.turnId);
+
+                      if (previous === undefined || decodeStored(RunRecord, previous.value).endedAt === null) {
+                        break;
+                      }
                     }
 
                     coverage.sequence += 1;
