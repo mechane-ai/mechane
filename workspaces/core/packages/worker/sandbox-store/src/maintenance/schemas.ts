@@ -10,6 +10,7 @@ export const PortableMaintenance = Schema.Struct({
   provider: RecordText,
   source: Schema.OptionFromNullOr(WorkspaceSnapshot),
   target: Schema.OptionFromNullOr(MachineId),
+  lastDeletedMachineId: Schema.optionalKey(MachineId),
   lastError: Schema.OptionFromOptionalKey(RecordText),
 });
 

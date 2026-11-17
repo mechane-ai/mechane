@@ -27,10 +27,23 @@ export function portableMaintenanceRecords({ sql, atomic }: MaintenanceRecordsIn
 
   const savePortableMaintenance: (input: PortableMaintenance) => void = (input) => {
     const codec = Schema.fromJsonString(PortableMaintenance);
-    const value = Schema.encodeSync(codec)(input);
 
     atomic({
       run: () => {
+        const previous = portableMaintenance();
+        const retired = Option.fromUndefinedOr(input.lastDeletedMachineId);
+
+        const lastDeletedMachineId = Option.orElse(retired, () =>
+          Option.flatMap(previous, (operation) => Option.fromUndefinedOr(operation.lastDeletedMachineId)),
+        );
+
+        const operation = Option.match(lastDeletedMachineId, {
+          onNone: () => input,
+          onSome: (machineId) => ({ ...input, lastDeletedMachineId: machineId }),
+        });
+
+        const value = Schema.encodeSync(codec)(operation);
+
         sql.exec(
           'INSERT INTO portable_maintenance (slot, value) VALUES (1, ?) ON CONFLICT (slot) DO UPDATE SET value = excluded.value',
           value,

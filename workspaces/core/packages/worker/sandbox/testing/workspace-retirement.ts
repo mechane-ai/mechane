@@ -208,6 +208,7 @@ void test(
       const report = await managePortable(fixture);
 
       assert.equal(report.phase, SandboxPhase.Done);
+      assert.equal(report.status, 'empty');
       assert.equal(Option.isNone(fixture.store.workspace().head), true);
       assert.equal(Option.isNone(fixture.store.workspace().retired), true);
       assert.equal(fixture.objects.size, 0);
@@ -216,6 +217,19 @@ void test(
         Option.getOrThrow(fixture.store.execution({ executionId: dispatchedId })).status,
         ExecutionStatus.Uncertain,
       );
+
+      const nextMachineId = MachineId.make('30264fd4-e833-42cd-8da1-f1e354f34b44');
+
+      fixture.store.openMachine({ machineId: nextMachineId, now });
+      fixture.store.readyMachine({ machineId: nextMachineId, now });
+      fixture.store.loseMachine({ machineId: nextMachineId, now });
+
+      const afterLoss = await managePortable({
+        ...fixture,
+        request: { action: SandboxAction.Show, operationId: Option.none() },
+      });
+
+      assert.equal(afterLoss.status, 'recovery_required');
     } finally {
       await Effect.runPromise(Deferred.succeed(held, undefined));
       await Promise.allSettled([publishing]);

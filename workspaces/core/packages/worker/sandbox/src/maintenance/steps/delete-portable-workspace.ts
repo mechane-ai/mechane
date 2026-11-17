@@ -50,7 +50,17 @@ export async function deletePortableWorkspace({ store, provider, workspace, job 
 
   const retired = store.workspace().retired;
 
-  if (Option.isNone(retired)) {
-    store.savePortableMaintenance({ ...job, phase: SandboxPhase.Done });
+  if (Option.isSome(retired)) {
+    return;
   }
+
+  const ready = store.latestReadyMachine();
+  const completed = { ...job, phase: SandboxPhase.Done } as const;
+
+  const operation = Option.match(ready, {
+    onNone: () => completed,
+    onSome: ({ id }) => ({ ...completed, lastDeletedMachineId: id }),
+  });
+
+  store.savePortableMaintenance(operation);
 }

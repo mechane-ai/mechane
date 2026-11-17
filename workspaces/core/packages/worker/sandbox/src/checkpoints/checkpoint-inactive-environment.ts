@@ -3,7 +3,10 @@ import type { SandboxStore } from '@mechane/sandbox-store';
 import { Option } from 'effect';
 
 type InactiveEnvironmentInput = {
-  readonly store: Pick<SandboxStore, 'workspace' | 'latestReadyMachine' | 'machineDrain' | 'fileCheckpointResult'>;
+  readonly store: Pick<
+    SandboxStore,
+    'workspace' | 'latestReadyMachine' | 'machineDrain' | 'fileCheckpointResult' | 'portableMaintenance'
+  >;
 };
 
 /** Only a matching frozen drain proves a stopped machine's final files; ordinary snapshots resume their writers. */
@@ -16,6 +19,16 @@ export function checkpointInactiveEnvironment({ store }: InactiveEnvironmentInpu
       onNone: () => FileCheckpointResult.cases.Unallocated.make({}),
       onSome: ({ generation }) => FileCheckpointResult.cases.Committed.make({ generation }),
     });
+  }
+
+  const maintenance = store.portableMaintenance();
+
+  const lastDeletedMachineId = Option.flatMap(maintenance, (operation) =>
+    Option.fromUndefinedOr(operation.lastDeletedMachineId),
+  );
+
+  if (Option.isNone(head) && Option.contains(lastDeletedMachineId, previousMachine.value.id)) {
+    return FileCheckpointResult.cases.Unallocated.make({});
   }
 
   const drain = store.machineDrain({ machineId: previousMachine.value.id });
