@@ -19,8 +19,6 @@ type WorkspaceTransferInput<Value> = {
 };
 
 type WorkspaceTransferObservation = NonNullable<WorkspaceTransferFailed['observation']>;
-const NativeException = Schema.instanceOf(DOMException);
-const TIMEOUT_ERROR_NAME = 'TimeoutError';
 
 /** A response body can fail after headers arrive, so its timing must survive the original request wrapper. */
 export async function observeWorkspaceTransfer<Value>({
@@ -53,14 +51,12 @@ export async function observeWorkspaceTransfer<Value>({
       return String(cause);
     })();
 
-    const isTimedOut = Schema.is(NativeException)(cause) && cause.name === TIMEOUT_ERROR_NAME;
-
     const observation: WorkspaceTransferObservation = (() => {
       if (Option.isNone(part)) {
-        return { phase, elapsed, isTimedOut };
+        return { phase, elapsed };
       }
 
-      return { phase, elapsed, isTimedOut, part: part.value };
+      return { phase, elapsed, part: part.value };
     })();
 
     return new WorkspaceTransferFailed({ generation, step, reason, observation });

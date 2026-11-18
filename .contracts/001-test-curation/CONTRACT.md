@@ -69,7 +69,7 @@ The fixtures in `packages/worker/sandbox/testing` use Node's built-in test runne
 `mise -C workspaces/core run sandbox:native:check`, also in source checks. `native-container.ts` guards cold startup
 and safe retirement against unstarted inspection failure, live identity gaps, and uncertain inspection.
 `workspace-transfer.ts` guards safe transfer failure context, private-data redaction, and preservation of the original
-failure when reporting fails. A required checkpoint retries a part read timeout without retrying a rejected response.
+failure when reporting fails. A required checkpoint recovers from an interrupted part read. A guest rejection stays terminal.
 `gateway-self.ts` guards canonical self-API forwarding with unchanged credentials while
 rejecting other control-plane routes, aliases, invalid authorities, and private destinations. Its upstream fixture does
 not authenticate tokens; the application remains that authority. These process-scope fixtures do not establish hosted

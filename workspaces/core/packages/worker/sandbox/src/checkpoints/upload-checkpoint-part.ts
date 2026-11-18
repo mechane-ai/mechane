@@ -2,12 +2,13 @@ import { HttpMethod } from '@mechane/records';
 import { FileCheckpointResult } from '@mechane/sandbox-store';
 import { WorkspaceStep } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
-import { DateTime, Duration, Option, Result, Schema } from 'effect';
+import { DateTime, Duration, Option, Result } from 'effect';
 import { Hex } from 'effect/encoding';
 import { ANSWER_SLACK } from '../constants.ts';
 import { WorkspaceTransferFailed, WorkspaceTransferPhase } from '../errors.ts';
 import { readArchivePart } from '../files/read-archive-part.ts';
 import type { GuestConnection } from '../types.ts';
+import { isInterruptedWorkspaceRequest } from '../workspace/is-interrupted-workspace-request.ts';
 import { observeWorkspaceTransfer } from '../workspace/observe-workspace-transfer.ts';
 import { snapshotPartBytes } from '../workspace/snapshots/snapshot-part-bytes.ts';
 import { workspacePartKey } from '../workspace/workspace-part-key.ts';
@@ -134,7 +135,7 @@ async function readCheckpointPart({
 
 type RequestCheckpointPartInput = Omit<ReadCheckpointPartInput, 'archive'>;
 
-/** Repeats only a timed-out read of the same immutable part while its required checkpoint is still pending. */
+/** A lost connection can retry the same immutable read once within its original checkpoint deadline. */
 async function requestCheckpointPart({
   store,
   checkpoint,
@@ -179,18 +180,7 @@ function checkpointPartRetryTimeout({
   checkpoint,
   cause,
 }: CheckpointPartRetryInput): Option.Option<Duration.Duration> {
-  if (!Schema.is(WorkspaceTransferFailed)(cause)) {
-    return Option.none();
-  }
-
-  const observation = Option.fromUndefinedOr(cause.observation);
-
-  const isRequestTimeout = Option.exists(
-    observation,
-    ({ phase, isTimedOut }) => phase === WorkspaceTransferPhase.Request && isTimedOut,
-  );
-
-  if (!isRequestTimeout) {
+  if (!isInterruptedWorkspaceRequest({ cause })) {
     return Option.none();
   }
 

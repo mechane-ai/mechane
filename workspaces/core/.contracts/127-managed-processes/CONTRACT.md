@@ -74,9 +74,10 @@ Required file barriers wait for their complete generation rather than returning 
 For a graceful drain, take a fresh final checkpoint and keep writers frozen until provider stop is confirmed.
 Bound both the uncompressed tar stream and compressed archive to 2 GiB. Keep transfers part-bounded and retain their
 operation deadlines; the byte ceilings do not guarantee that every archive finishes within the deadline.
-Retry a timed-out request for an immutable part of a pending required checkpoint once under the same machine,
-generation and batch fence. Bound that request by the original operation deadline. A rejected response or invalid
-archive data still fails the save; a retry cannot start another checkpoint, release its writer or replace its head.
+When a request for an immutable part of a pending required checkpoint loses its connection before headers arrive,
+retry once under the same machine, generation, batch fence and operation deadline. A guest rejection or invalid archive
+data fails the save. The retry retains the checkpoint, its writer and its committed head. If a restore activation loses
+its response, poll the same guest and generation within the original startup deadline.
 
 Preserve live files and the previous committed head after a failed save. A failed provider stop retains the drain fence
 and capacity ownership. Snapshotting files does not preserve process memory or establish application transaction consistency.

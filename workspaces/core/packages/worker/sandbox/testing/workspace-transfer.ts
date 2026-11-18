@@ -1,6 +1,11 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MachineId, RecordId, SandboxOperationId } from '@mechane/records';
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
-import { guestWorkspacePath, SANDBOX_ARCHIVE_PART_BYTES, WorkspaceStep } from '@mechane/sandbox-wire';
+import {
+  guestWorkspacePath,
+  SANDBOX_ARCHIVE_PART_BYTES,
+  WorkspaceRestoreSource,
+  WorkspaceStep,
+} from '@mechane/sandbox-wire';
 import { DateTime, Duration, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -13,6 +18,7 @@ import { WorkspaceTransferPhase } from '../src/errors.ts';
 import type { GuestConnection, GuestTransport, MachineProvider } from '../src/types.ts';
 import { advanceWorkspace } from '../src/workspace/advance-workspace.ts';
 import { observeWorkspaceTransfer } from '../src/workspace/observe-workspace-transfer.ts';
+import { activateSnapshot } from '../src/workspace/snapshots/activate-snapshot.ts';
 import { workspacePartKey } from '../src/workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../src/workspace/workspace-request.ts';
 import { sqliteStore } from './store/sqlite-store.ts';
@@ -263,18 +269,18 @@ function checkpointProvider({ guest }: { readonly guest: GuestConnection }): Mac
   };
 }
 
-function checkpointFetchWithOneTimeout({ mock }: TestContext) {
+function interruptFirstPartRead({ mock }: TestContext, error: Error) {
   const fetch = mock.fn<GuestTransport['fetch']>(async () => new Response(CHECKPOINT_CONTENT));
 
   fetch.mock.mockImplementationOnce(async () => {
-    throw new DOMException('checkpoint part response timed out', 'TimeoutError');
+    throw error;
   });
 
   return fetch;
 }
 
-void test('a required checkpoint retries a timed-out immutable part read', { timeout: 5000 }, async (context) => {
-  const fetch = checkpointFetchWithOneTimeout(context);
+void test('a required checkpoint survives a lost part response', { timeout: 5000 }, async (context) => {
+  const fetch = interruptFirstPartRead(context, new Error('guest connection closed before headers'));
 
   const fixture = checkpointPartFixture({ fetch });
 
@@ -291,6 +297,41 @@ void test('a required checkpoint retries a timed-out immutable part read', { tim
 
   assert.deepEqual(reads, [expectedRead, expectedRead]);
   assert.deepEqual(fixture.objects.get(key), fixture.contents);
+});
+
+void test('a lost restore acknowledgement can poll the same generation again', async (context) => {
+  const fetch = context.mock.fn<GuestTransport['fetch']>(async () => new Response());
+
+  fetch.mock.mockImplementationOnce(async () => {
+    throw new Error('guest closed the connection');
+  });
+
+  const { store, close } = sqliteStore();
+
+  context.after(close);
+
+  const sha256 = createHash('sha256').update('a').digest('hex');
+  const archive = { bytes: 1, parts: 1, sha256 };
+
+  const restoration = {
+    machineId,
+    generation,
+    part: archive.parts,
+    startedAt: DateTime.nowUnsafe(),
+    source: WorkspaceRestoreSource.Archive,
+  };
+
+  store.saveRestoration(restoration);
+
+  const input = { store, guest: guestConnection({ fetch }), restoration, archive };
+
+  assert.equal(await activateSnapshot(input), false);
+  assert.equal(await activateSnapshot(input), true);
+
+  const paths = fetch.mock.calls.map(({ arguments: [sent] }) => sent.path);
+  const path = guestWorkspacePath({ machineId, generation, step: WorkspaceStep.Restore, part: Option.none() });
+
+  assert.deepEqual(paths, [path, path]);
 });
 
 void test('a checkpoint part HTTP rejection is terminal', { timeout: 5000 }, async (context) => {
@@ -321,7 +362,7 @@ void test('same-guest recovery can retry a part and publish after the ordinary c
     committedGeneration: Option.none(),
   });
 
-  const fetch = checkpointFetchWithOneTimeout(context);
+  const fetch = interruptFirstPartRead(context, new DOMException('checkpoint part response timed out', 'TimeoutError'));
 
   const fixture = checkpointPartFixture({ fetch, purpose, uploadedParts: RECOVERY_UPLOADED_PARTS });
 
