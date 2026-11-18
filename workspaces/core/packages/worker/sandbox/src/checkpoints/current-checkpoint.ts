@@ -1,6 +1,6 @@
 import { FileCheckpointPurpose } from '@mechane/sandbox-store';
-import { SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { Option } from 'effect';
+import { retiringWorkspace } from '../maintenance/maintenance-active.ts';
 import type { CheckpointStepInput } from './types.ts';
 
 type CurrentCheckpointInput = Pick<CheckpointStepInput, 'store' | 'checkpoint'>;
@@ -19,7 +19,5 @@ export function isCurrentCheckpoint({ store, checkpoint }: CurrentCheckpointInpu
     return matches;
   }
 
-  const maintenance = store.portableMaintenance();
-
-  return !Option.exists(maintenance, (job) => job.action === SandboxAction.Delete && job.phase === SandboxPhase.Retire);
+  return !retiringWorkspace({ store });
 }

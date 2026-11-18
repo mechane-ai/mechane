@@ -80,6 +80,8 @@ required checkpoint and recovery fences, and retain the committed head until the
 
 Expose the last committed file head separately from capture, upload, and failure status. A background save failure
 cannot rewrite a terminal exit code or claim a saved generation. Retain live files and the previous head for recovery.
+Keep an interrupted automatic capture’s generation and lease until release is acknowledged or the provider confirms
+its machine is gone. Resume release in the background even when no foreground command arrives.
 Automatic checkpoint cadence is not a recovery-point guarantee. Unsaved writes can be lost with their physical machine.
 Give explicit same-guest recovery its own bounded deadline so a large archive can finish transferring. Use the original
 operation start for expiry, part retries, and publication. Preserve the ordinary checkpoint, restore, and part request

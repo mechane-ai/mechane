@@ -1041,12 +1041,13 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
 
     const checkpoint = this.#store.workspace().checkpoint;
 
-    if (Option.isSome(checkpoint) && !checkpoint.value.isAborting) {
+    if (Option.isSome(checkpoint)) {
       await advanceCheckpoint({ ...input, checkpoint: checkpoint.value });
 
-      const current = this.#store.workspace().checkpoint;
+      const state = this.#store.workspace();
+      const committed = Option.exists(state.head, (head) => head.generation === checkpoint.value.generation);
 
-      if (Option.isNone(current) && FileCheckpointPurpose.guards.Automatic(checkpoint.value.purpose)) {
+      if (committed && FileCheckpointPurpose.guards.Automatic(checkpoint.value.purpose)) {
         const guest = await this.#provider.connect({ machineId: checkpoint.value.machineId });
 
         if (Option.isSome(guest)) {

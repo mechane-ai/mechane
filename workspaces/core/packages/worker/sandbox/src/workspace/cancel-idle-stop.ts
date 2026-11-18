@@ -2,12 +2,15 @@ import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-st
 import type { SandboxStore } from '@mechane/sandbox-store';
 import { SandboxRecoveryAction, SandboxStopOrigin, SandboxStopPhase } from '@mechane/sandbox-wire';
 import type { SandboxStopReceipt } from '@mechane/sandbox-wire';
-import { DateTime, Option } from 'effect';
+import { capturePromise } from '@mechane/utilities';
+import { DateTime, Option, Result } from 'effect';
 import { SANDBOX_IDLE } from '../constants.ts';
-import type { MachineIdInput, ProviderStepInput } from '../types.ts';
+import type { GuestConnection, MachineIdInput, ProviderStepInput } from '../types.ts';
+import { interruptedAutomaticGeneration } from './interrupted-automatic-generation.ts';
 import { releaseWorkspaceGeneration } from './release-workspace.ts';
 
 type StopIdentityInput = MachineIdInput & { readonly store: SandboxStore; readonly receipt: SandboxStopReceipt };
+type ReleaseStopFilesInput = StopIdentityInput & { readonly guest: GuestConnection };
 type CancelIdleStopInput = StopIdentityInput & ProviderStepInput;
 
 const CANCELLABLE_PHASES: ReadonlySet<SandboxStopReceipt['phase']> = new Set([
@@ -113,14 +116,8 @@ export async function cancelUnstartedIdleStop({ store, provider }: ProviderStepI
     return;
   }
 
-  if (Option.isSome(receipt.generation)) {
-    const generation = receipt.generation.value;
-    const lease = Option.none();
-    const released = await releaseWorkspaceGeneration({ guest: guest.value, machineId, generation, lease });
-
-    if (!released) {
-      return;
-    }
+  if (!(await releaseIdleStopFiles({ store, machineId, receipt, guest: guest.value }))) {
+    return;
   }
 
   const current = unstartedIdleStop({ store });
@@ -128,6 +125,39 @@ export async function cancelUnstartedIdleStop({ store, provider }: ProviderStepI
   if (Option.isSome(current) && current.value.receipt.operationId === receipt.operationId) {
     finishIdleStopCancellation(current.value);
   }
+}
+
+async function releaseIdleStopFiles({ store, machineId, receipt, guest }: ReleaseStopFilesInput): Promise<boolean> {
+  if (Option.isNone(receipt.generation)) {
+    return true;
+  }
+
+  const generation = receipt.generation.value;
+  const lease = Option.none();
+  const input = { guest, machineId, generation, lease };
+  const promise = releaseWorkspaceGeneration(input);
+  const released = await capturePromise({ promise });
+
+  if (Result.isSuccess(released)) {
+    return released.success;
+  }
+
+  const state = store.workspace();
+  const current = unstartedIdleStop({ store });
+  const sameStop = Option.exists(current, (owner) => owner.receipt.operationId === receipt.operationId);
+
+  const sameHome = Option.exists(
+    state.head,
+    (head) => head.generation === generation && Option.contains(head.capturedMachineId, machineId),
+  );
+
+  const orphan = interruptedAutomaticGeneration({ cause: released.failure, diagnostic: state.checkpointError });
+
+  if (!sameStop || !sameHome || Option.isNone(orphan)) {
+    return Result.getOrThrow(released);
+  }
+
+  return await releaseWorkspaceGeneration({ ...input, generation: orphan.value });
 }
 
 /** Once release can reach the guest, even a canceled command cannot turn this operation back into a stop. */

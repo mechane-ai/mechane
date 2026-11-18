@@ -22,7 +22,7 @@ export function failCheckpoint({ store, checkpoint, cause, elapsed }: FailedChec
 
     store.atomic({
       run: () => {
-        store.retireWorkspace({ generation });
+        store.saveCheckpoint({ ...checkpoint, isAborting: true });
         store.scheduleAutomaticCheckpoint({ at, error });
       },
     });

@@ -11,6 +11,7 @@ import { runRecoveryCheckpoint } from '../src/checkpoints/run-recovery-checkpoin
 import { uploadCheckpointPart } from '../src/checkpoints/upload-checkpoint-part.ts';
 import { WorkspaceTransferPhase } from '../src/errors.ts';
 import type { GuestConnection, GuestTransport, MachineProvider } from '../src/types.ts';
+import { advanceWorkspace } from '../src/workspace/advance-workspace.ts';
 import { observeWorkspaceTransfer } from '../src/workspace/observe-workspace-transfer.ts';
 import { workspacePartKey } from '../src/workspace/workspace-part-key.ts';
 import { workspaceRequest } from '../src/workspace/workspace-request.ts';
@@ -246,6 +247,22 @@ function checkpointPartFixture({ fetch, purpose = drain, uploadedParts = 0 }: Ch
   return { store, close, workspace, checkpoint, guest, part, archive, contents, objects };
 }
 
+function checkpointProvider({ guest }: { readonly guest: GuestConnection }): MachineProvider {
+  return {
+    startupTimeout: () => Duration.zero,
+    start: unexpectedCheckpointOperation,
+    connect: async (input) => {
+      assert.equal(input.machineId, machineId);
+
+      return Option.some(guest);
+    },
+    isAbsent: async () => false,
+    stop: unexpectedCheckpointOperation,
+    restoredWorkspace: async () => false,
+    snapshotReport: async () => Option.none(),
+  };
+}
+
 function checkpointFetchWithOneTimeout({ mock }: TestContext) {
   const fetch = mock.fn<GuestTransport['fetch']>(async () => new Response(CHECKPOINT_CONTENT));
 
@@ -310,19 +327,7 @@ void test('same-guest recovery can retry a part and publish after the ordinary c
 
   context.after(fixture.close);
 
-  const provider: MachineProvider = {
-    startupTimeout: () => Duration.zero,
-    start: unexpectedCheckpointOperation,
-    connect: async (input) => {
-      assert.equal(input.machineId, machineId);
-
-      return Option.some(fixture.guest);
-    },
-    isAbsent: async () => false,
-    stop: unexpectedCheckpointOperation,
-    restoredWorkspace: async () => false,
-    snapshotReport: async () => Option.none(),
-  };
+  const provider = checkpointProvider({ guest: fixture.guest });
 
   context.mock.timers.setTime(now + Duration.toMillis(RECOVERY_ELAPSED));
 
@@ -338,4 +343,48 @@ void test('same-guest recovery can retry a part and publish after the ordinary c
     generation,
   });
   assert.equal(Option.isNone(fixture.store.workspace().recovery), true);
+});
+
+void test('after an interrupted automatic transfer the guest must acknowledge its original lease before retirement', async (context) => {
+  const purpose = FileCheckpointPurpose.cases.Automatic.make({ operationId: SandboxOperationId.make(generation) });
+  const release = guestWorkspacePath({ machineId, generation, step: WorkspaceStep.Release, part: Option.none() });
+  const state = { isReleaseAccepted: false };
+
+  const fetch: GuestTransport['fetch'] = async ({ path, init }) => {
+    if (path !== release || init.method !== HttpMethod.Delete) {
+      throw new Error('the transfer was interrupted');
+    }
+
+    assert.equal(new Headers(init.headers).get(HttpHeader.MechaneCheckpointLease), String(fixture.checkpoint.lease));
+
+    if (state.isReleaseAccepted) {
+      return new Response();
+    }
+
+    return new Response(null, { status: HttpStatusCode.NoContent });
+  };
+
+  const fixture = checkpointPartFixture({ fetch, purpose });
+
+  context.after(fixture.close);
+
+  const provider = checkpointProvider({ guest: fixture.guest });
+  const input = { ...fixture, provider };
+
+  await advanceCheckpoint(input);
+  await advanceWorkspace({ ...input, shouldAdmitCommand: true });
+
+  const held = Option.getOrThrow(fixture.store.workspace().checkpoint);
+
+  assert.equal(held.generation, generation);
+  assert.equal(held.isAborting, true);
+  assert.equal(Option.isNone(fixture.store.workspace().retired), true);
+
+  state.isReleaseAccepted = true;
+
+  await advanceCheckpoint({ ...input, checkpoint: held });
+  assert.equal(Option.isNone(fixture.store.workspace().checkpoint), true);
+  assert.equal(Option.getOrThrow(fixture.store.workspace().retired), generation);
+  assert.equal(Option.isSome(fixture.store.workspace().checkpointError), true);
+  assert.equal(Option.isNone(fixture.store.workspace().head), true);
 });

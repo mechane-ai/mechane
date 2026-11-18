@@ -7,10 +7,10 @@ import {
   WORKSPACE_TRANSFER_BATCH_PARTS,
 } from '../constants.ts';
 import { releaseMachineWorkspace } from '../workspace/release-machine-workspace.ts';
-import { releaseWorkspaceGeneration } from '../workspace/release-workspace.ts';
 import { advanceCheckpointStep } from './advance-checkpoint-step.ts';
 import { isCurrentCheckpoint } from './current-checkpoint.ts';
 import { failCheckpoint } from './fail-checkpoint.ts';
+import { releaseAutomaticCheckpoint } from './release-automatic-checkpoint.ts';
 import { releaseRecoveryCheckpoint } from './release-recovery-checkpoint.ts';
 import type { CheckpointStepInput } from './types.ts';
 
@@ -21,6 +21,12 @@ export async function advanceCheckpoint({
   workspace,
   checkpoint,
 }: CheckpointStepInput): Promise<void> {
+  if (checkpoint.isAborting) {
+    await releaseAutomaticCheckpoint({ store, provider, checkpoint });
+
+    return;
+  }
+
   const startedAt = DateTime.nowUnsafe();
   const deadline = DateTime.addDuration(startedAt, WORKSPACE_TRANSFER_BATCH_DURATION);
   const lastPart = checkpoint.part + WORKSPACE_TRANSFER_BATCH_PARTS - 1;
@@ -74,19 +80,6 @@ export async function advanceCheckpoint({
       }
 
       if (FileCheckpointPurpose.guards.Automatic(checkpoint.purpose)) {
-        const guest = await provider.connect({ machineId: checkpoint.machineId });
-
-        if (Option.isSome(guest)) {
-          const lease = Option.some(checkpoint.lease);
-
-          await releaseWorkspaceGeneration({
-            guest: guest.value,
-            machineId: checkpoint.machineId,
-            generation: checkpoint.generation,
-            lease,
-          });
-        }
-
         return;
       }
 

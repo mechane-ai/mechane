@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { failCheckpoint } from '../src/checkpoints/fail-checkpoint.ts';
 import { readyInteractiveMachine } from '../src/machines/ready-interactive-machine.ts';
-import type { GuestConnection, MachineProvider, WorkspaceFiles } from '../src/types.ts';
+import type { GuestConnection, GuestTransport, MachineProvider, WorkspaceFiles } from '../src/types.ts';
 import { advanceSandboxStop } from '../src/workspace/advance-sandbox-stop.ts';
 import { requestSandboxStop } from '../src/workspace/request-sandbox-stop.ts';
 import { sqliteStore } from './store/sqlite-store.ts';
@@ -39,7 +39,7 @@ function unusedBucket(): R2Bucket {
   };
 }
 
-function idleStopFixture() {
+function idleStopFixture(transport?: GuestTransport) {
   const { store, close } = sqliteStore();
   const now = DateTime.nowUnsafe();
   const machineId = MACHINE;
@@ -49,16 +49,18 @@ function idleStopFixture() {
   const observed = { isReleaseAcknowledged: false, stoppedGeneration: Option.none<RecordId>() };
 
   const guest: GuestConnection = {
-    fetch: async (request) => {
-      assert.equal(request.path, path);
-      assert.equal(request.init.method, HttpMethod.Delete);
+    fetch:
+      transport?.fetch ??
+      (async (request) => {
+        assert.equal(request.path, path);
+        assert.equal(request.init.method, HttpMethod.Delete);
 
-      if (observed.isReleaseAcknowledged) {
-        return new Response(null, { status: HttpStatusCode.Ok });
-      }
+        if (observed.isReleaseAcknowledged) {
+          return new Response(null, { status: HttpStatusCode.Ok });
+        }
 
-      return new Response(null, { status: HttpStatusCode.NoContent });
-    },
+        return new Response(null, { status: HttpStatusCode.NoContent });
+      }),
     startup: async () => Option.none(),
     health: async () => true,
     execute: async () => assert.fail('a stop cannot dispatch a pending command'),
@@ -171,6 +173,84 @@ for (const origin of [SandboxStopOrigin.Idle, SandboxStopOrigin.Explicit]) {
     }
   });
 }
+
+void test('an idle stop can reopen the original home after an older runtime lost an automatic capture receipt', async (context) => {
+  const generation = RecordId.make('5393f2ba-f676-47ef-91e3-b45da9a2be86');
+
+  const release = guestWorkspacePath({
+    machineId: MACHINE,
+    generation,
+    step: WorkspaceStep.Release,
+    part: Option.none(),
+  });
+
+  const state = { isHeld: true };
+
+  const fixture = idleStopFixture({
+    fetch: async ({ path }) => {
+      if (path === release) {
+        state.isHeld = false;
+      }
+
+      if (state.isHeld) {
+        return new Response('another workspace generation owns the guest fence', {
+          status: HttpStatusCode.Unavailable,
+        });
+      }
+
+      return new Response();
+    },
+  });
+
+  context.after(fixture.close);
+
+  const { store, receipt } = fixture;
+
+  store.retireWorkspace({ generation: GENERATION });
+
+  const now = DateTime.nowUnsafe();
+
+  store.commitWorkspace({
+    generation: GENERATION,
+    archive: ARCHIVE,
+    parent: Option.none(),
+    manifestSha256: Option.none(),
+    capturedAt: Option.some(now),
+    capturedMachineId: Option.some(MACHINE),
+    capturedSequence: Option.none(),
+    shouldClearRecovery: false,
+  });
+
+  const metadata = JSON.stringify({
+    operationId: generation,
+    generation,
+    path: null,
+    cursor: 0,
+    phase: 'archive',
+    elapsedMs: 203,
+    stepElapsedMs: 203,
+  });
+
+  const error = Option.some(
+    `workspace transfer ${metadata}: Error: Durable Object reset because its code was updated.`,
+  );
+
+  store.scheduleAutomaticCheckpoint({ at: now, error });
+  store.saveSandboxStop({
+    ...receipt,
+    origin: SandboxStopOrigin.Idle,
+    phase: SandboxStopPhase.Failed,
+    generation: Option.some(GENERATION),
+    recoveryAction: SandboxRecoveryAction.RepairWorkspace,
+  });
+
+  const ready = await readyInteractiveMachine(fixture);
+
+  assert.equal(Option.getOrThrow(ready).id, MACHINE);
+  assert.equal(state.isHeld, false);
+  assert.equal(Option.getOrThrow(store.workspace().head).generation, GENERATION);
+  assert.equal(Option.getOrThrow(store.latestSandboxStop()).phase, SandboxStopPhase.Canceled);
+});
 
 void test('a failed idle save resumes the original guest only after it releases its files', async () => {
   const fixture = failedIdleStopFixture();
