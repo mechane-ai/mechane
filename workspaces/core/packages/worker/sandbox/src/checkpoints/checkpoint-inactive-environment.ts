@@ -48,6 +48,6 @@ export function checkpointInactiveEnvironment({ store }: InactiveEnvironmentInpu
 
   return FileCheckpointResult.cases.Failed.make({
     reason:
-      'The environment lost its machine without a matching final file checkpoint; restore and inspect it before continuing',
+      'The environment lost its machine without a matching final file checkpoint; its latest writes could not be saved',
   });
 }

@@ -229,7 +229,7 @@ void test(
         request: { action: SandboxAction.Show, operationId: Option.none() },
       });
 
-      assert.equal(afterLoss.status, 'recovery_required');
+      assert.equal(afterLoss.status, 'empty');
     } finally {
       await Effect.runPromise(Deferred.succeed(held, undefined));
       await Promise.allSettled([publishing]);

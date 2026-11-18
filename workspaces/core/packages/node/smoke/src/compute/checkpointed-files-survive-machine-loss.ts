@@ -27,7 +27,6 @@ import {
   runCli,
   sendNotification,
   startCommandGate,
-  upgradeSandbox,
   waitFor,
   waitForTurn,
 } from '@mechane/testing';
@@ -158,24 +157,10 @@ async function exerciseFileRecovery({ stack, account, mechId, directory }: Files
     assert.deepEqual(afterLossReport.environment.committedGeneration, savedReport.environment.committedGeneration);
     assert.deepEqual(await sandbox.readMachines(), otherMachines);
 
-    const blocked = await runBash({ ...input, command: `printf forbidden > '${directory}/after-loss'` });
-    const blockedReport = await readSandboxReport(input);
-
-    assert.equal(blocked.receipt.status, 'unavailable', 'Fresh work bypassed the lost-machine file barrier');
-    assert.deepEqual(await sandbox.readMachines(), otherMachines, 'Fresh work silently allocated after machine loss');
-    assert.deepEqual(blockedReport.environment.committedGeneration, savedReport.environment.committedGeneration);
-
-    await upgradeSandbox(input);
-
-    const retainedFailure = await checkpointSandbox(checkpointInput);
-
-    assert.deepEqual(retainedFailure, afterLoss, 'Recovery changed the original failed checkpoint receipt');
-
     const restored = await runBash({
       ...input,
       command: [
         `test ! -f '${directory}/unsaved'`,
-        `test ! -f '${directory}/after-loss'`,
         `test ! -f "$MECHANE_CACHE_HOME/${cacheMarker}"`,
         `node -e 'const fs=require("node:fs"),crypto=require("node:crypto");process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
       ].join(' && '),
@@ -183,6 +168,10 @@ async function exerciseFileRecovery({ stack, account, mechId, directory }: Files
 
     assert.equal(restored.turn.status, TurnStatus.Completed);
     assert.equal(restored.result.output, digest, 'Recovery lost committed files or retained a machine-local cache');
+
+    const retainedFailure = await checkpointSandbox(checkpointInput);
+
+    assert.deepEqual(retainedFailure, afterLoss, 'Starting a new guest changed the failed checkpoint receipt');
 
     await stoppedReceiptSurvivesReplacement(input);
 

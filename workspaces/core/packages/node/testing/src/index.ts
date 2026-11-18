@@ -12,7 +12,6 @@ export { readSandboxMachines } from './compute/read-sandbox-machines.ts';
 export { runBash } from './compute/run-bash.ts';
 export { setMachineLimit } from './compute/set-machine-limit.ts';
 export { deleteSandbox } from './compute/delete-sandbox.ts';
-export { upgradeSandbox } from './compute/upgrade-sandbox.ts';
 export { waitForBashCompletion } from './compute/wait-for-bash-completion.ts';
 export { requireFixtures } from './fixtures.ts';
 export { startMcpFixture } from './fixtures/mcp.ts';

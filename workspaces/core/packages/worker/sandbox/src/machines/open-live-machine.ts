@@ -4,7 +4,6 @@ import type { LiveMachineRow } from '@mechane/sandbox-store';
 import { StartupFailure } from '@mechane/sandbox-wire';
 import { DateTime, Option } from 'effect';
 import type { ProviderStepInput } from '../types.ts';
-import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
 import { startMachine } from './start-machine.ts';
 
 /**
@@ -21,7 +20,9 @@ export async function openLiveMachine({ store, provider }: ProviderStepInput): P
       return live;
     }
 
-    if (hasUncheckpointedMachineLoss({ store })) {
+    const workspace = store.workspace();
+
+    if (Option.isSome(workspace.recovery) || Option.isSome(workspace.checkpoint)) {
       return Option.none();
     }
 

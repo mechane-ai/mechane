@@ -6,7 +6,6 @@ import { DateTime, Duration, Option } from 'effect';
 import { readyWorkspaceMachine } from '../machines/ready-workspace-machine.ts';
 import { writeRestoreAdmissionTiming } from '../output/write-sandbox-diagnostic.ts';
 import type { StatusOf, WorkspaceProviderStepInput } from '../types.ts';
-import { hasUncheckpointedMachineLoss } from '../workspace/has-uncheckpointed-machine-loss.ts';
 import { askGuest } from './ask-guest.ts';
 import { executionProgress } from './execution-progress.ts';
 
@@ -58,7 +57,9 @@ export async function dispatchPending({
   }
 
   if (Option.isNone(machine)) {
-    if (hasUncheckpointedMachineLoss({ store })) {
+    const recovery = store.workspace().recovery;
+
+    if (Option.isSome(recovery)) {
       store.refusePendingExecution({ executionId: execution.id });
     }
 

@@ -142,7 +142,8 @@ uncertainty and terminal receipts; ordinary startup and capacity waits remain di
 Pending-only command cancellation atomically refuses a never-dispatched claim and returns its authoritative receipt.
 It cannot stop a machine or change a dispatched, uncertain or terminal execution, including when dispatch wins the race.
 
-Restore last committed files after physical machine loss only through an explicit operation UUID and exact expected
+Ordinary guest loss starts a fresh guest on demand from the last committed generation or an empty home.
+Repair of a retained file recovery failure requires an explicit operation UUID and exact expected
 machine, recovery generation and committed head. Require positive provider absence before replacing the machine or
 releasing its reservation. Failed health, a null stored pointer and inspection errors do not prove absence. Recheck
 the intent after awaited provider observations. Preserve terminal uncertainty without replaying commands, and refuse

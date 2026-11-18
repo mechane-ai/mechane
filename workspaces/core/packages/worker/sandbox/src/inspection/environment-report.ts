@@ -1,11 +1,10 @@
 import { RELEASE } from '@mechane/protocol';
 import { RemoteSandboxId } from '@mechane/records';
-import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
+import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import type { SandboxStore } from '@mechane/sandbox-store';
 import { SandboxPhase } from '@mechane/sandbox-wire';
 import type { SandboxReport } from '@mechane/sandbox-wire';
 import { Option, Result } from 'effect';
-import { checkpointInactiveEnvironment } from '../checkpoints/checkpoint-inactive-environment.ts';
 import { storedProcessSummaries } from './stored-process-summaries.ts';
 
 type EnvironmentReportStore = Pick<
@@ -13,9 +12,6 @@ type EnvironmentReportStore = Pick<
   | 'portableMaintenance'
   | 'liveMachine'
   | 'workspace'
-  | 'latestReadyMachine'
-  | 'machineDrain'
-  | 'fileCheckpointResult'
   | 'latestSandboxStop'
   | 'latestStartup'
   | 'latestExecutionTiming'
@@ -105,12 +101,6 @@ function portableStatus({ store }: StoreInput): string {
 
   if (Option.isSome(live)) {
     return live.value.status;
-  }
-
-  const checkpoint = checkpointInactiveEnvironment({ store });
-
-  if (FileCheckpointResult.guards.Failed(checkpoint)) {
-    return 'recovery_required';
   }
 
   if (Option.isSome(state.head)) {

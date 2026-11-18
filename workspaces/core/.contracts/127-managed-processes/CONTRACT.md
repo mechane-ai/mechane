@@ -106,16 +106,13 @@ environment whose machine became ready and could admit writers, require the late
 operation to have a committed file result matching that head's generation. Never-ready startup attempts cannot create
 loss evidence or erase unresolved loss from an earlier ready machine. Drain keeps its writers frozen until confirmed
 stop. An ordinary earlier snapshot, missing or failed drain, or mismatched generation cannot establish that newer writes
-survived machine loss. Persist a failed barrier and fence ordinary mutating admission in the sandbox using its durable
-machine and file evidence. A completed quiet model turn does not prove that files were saved. An environment whose
+survived machine loss. Preserve the failed barrier receipt. A subsequent command may start a fresh guest from the committed head. A completed quiet model turn does not prove that files were saved. An environment whose
 machines never became ready may use its immutable imported head or report Unallocated. A later successful checkpoint
 on an explicitly recovered live machine is fresh evidence; it does not retroactively recover or validate lost writes.
 
-Keep recovery reachable through the existing owner-authorized sandbox maintenance API while ordinary dispatch is fenced.
-For a lost machine with no unresolved workspace checkpoint or recovery record, an explicit upgrade may restore the
-committed head on a new machine. Verify the complete restoration and readiness before admitting a new writer. Do not
-automatically invoke that recovery or clear the fence from an operator's request alone. A pending checkpoint or retained
-recovery failure remains an explicit refusal. The lost-machine recovery path does not authorize discarding it.
+After ordinary machine loss, allocate compute when work arrives. Restore and verify the committed head before admitting
+a writer, or start empty when no head exists. Unfinished checkpoints and retained file recovery failures still fence
+admission. Preserve uncertain command receipts and allow explicit owner maintenance to repair file recovery failures.
 
 Provide an explicit service-authenticated file checkpoint retry for a quiet original ready guest. Bind its durable
 operation identity to the caller-observed live machine, failed recovery generation, and committed head. Refuse active
@@ -188,10 +185,9 @@ process enumeration.
 Commit a head, mutate files afterward, and lose the machine before its drain. A later activation barrier must fail without
 calling the old head a fresh save. Repeat with a committed matching drain, an unfinished or failed drain, a generation
 mismatch, and an imported head with no previously ready machine. A never-ready startup refusal must not create a loss
-fence or hide loss from an earlier ready machine. Check that worker replacement preserves each outcome and its fence.
-Attempt a fresh Bash after the failed barrier, require an unavailable receipt and no allocation, and preserve the old
-head. Recover through the public owner maintenance operation. Verify that restored files match the saved head, lost
-writes are not claimed, the earlier failed receipt stays failed, and only a new command after verified recovery can run.
+record or hide loss from an earlier ready machine. Check that the original checkpoint outcome survives replacement.
+Run a fresh command after ordinary machine loss. Verify that it can read committed files and the old barrier still
+reports its failure. Only the saved generation is recoverable.
 An unresolved workspace recovery record must still refuse maintenance rather than silently discard its failure.
 
 ## Local adaptations
