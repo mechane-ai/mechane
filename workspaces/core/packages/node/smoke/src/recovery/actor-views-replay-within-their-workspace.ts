@@ -1,5 +1,6 @@
 import { TurnStatus } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
+import { fixtureModelSelection } from '@mechane/stack';
 import {
   createAccount,
   createMech,
@@ -88,26 +89,30 @@ export async function actorViewsReplayWithinTheirWorkspace({ stack }: ScenarioIn
   assert.deepEqual(Option.getOrThrow(publication.presentation), { spec: presentation, fallback: expectedReply });
   assert.equal(JSON.stringify(published).includes(privateText), false);
 
-  await stack.restart({ signal: 'SIGKILL' });
+  await stack.restart({ signal: 'SIGKILL', environment: fixtureModelSelection('fixture/replacement-model') });
 
-  assert.deepEqual(await readTrace(address), original);
-  assert.deepEqual(await readEvents(owner), events);
-  assert.deepEqual(await readEvents({ ...owner, after: cursor }), resumed);
-  assert.deepEqual(await readConsoleMessages(owner), conversation, 'Restart repeated or lost explicit publication');
+  try {
+    assert.deepEqual(await readTrace(address), original);
+    assert.deepEqual(await readEvents(owner), events);
+    assert.deepEqual(await readEvents({ ...owner, after: cursor }), resumed);
+    assert.deepEqual(await readConsoleMessages(owner), conversation, 'Restart repeated or lost explicit publication');
 
-  for (const path of [turnPath(address), eventsPath(owner), historyPath(owner)]) {
-    const forbidden = await fetch(new URL(path, stack.origin), {
-      headers: { [HttpHeader.Authorization]: `Bearer ${other.token}` },
-      signal: AbortSignal.timeout(VIEW_READ_TIMEOUT_MS),
-    });
+    for (const path of [turnPath(address), eventsPath(owner), historyPath(owner)]) {
+      const forbidden = await fetch(new URL(path, stack.origin), {
+        headers: { [HttpHeader.Authorization]: `Bearer ${other.token}` },
+        signal: AbortSignal.timeout(VIEW_READ_TIMEOUT_MS),
+      });
 
-    const anonymous = await fetch(new URL(path, stack.origin), { signal: AbortSignal.timeout(VIEW_READ_TIMEOUT_MS) });
+      const anonymous = await fetch(new URL(path, stack.origin), { signal: AbortSignal.timeout(VIEW_READ_TIMEOUT_MS) });
 
-    assert.ok(INACCESSIBLE_STATUSES.has(forbidden.status));
-    assert.equal(anonymous.status, HttpStatusCode.Unauthorized);
+      assert.ok(INACCESSIBLE_STATUSES.has(forbidden.status));
+      assert.equal(anonymous.status, HttpStatusCode.Unauthorized);
+    }
+
+    assert.equal(fixtures.model.readCalls({ marker }).length, replies.length);
+  } finally {
+    await stack.restart({ environment: fixtureModelSelection() });
   }
-
-  assert.equal(fixtures.model.readCalls({ marker }).length, replies.length);
 
   const pagingMarker = `console-paging-${randomUUID()}`;
   const expectedMessages = Array.from({ length: PUBLICATION_BURST_COUNT }, (_, index) => `publication-${index}`);

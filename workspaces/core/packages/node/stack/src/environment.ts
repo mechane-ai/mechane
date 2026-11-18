@@ -35,18 +35,22 @@ export const FIXTURE_AUTH_RATE_LIMITS = {
   codeAttempt: { requests: 1000, windowSeconds: 600 },
 } as const;
 
-const FIXTURE_MODEL_OFFERS = [
-  {
-    id: FIXTURE_MODEL,
-    contextWindowTokens: 32_768,
-    maxOutputTokens: 1024,
-    inputMicrosPerMillionTokens: 1_000_000,
-    outputMicrosPerMillionTokens: 4_000_000,
-    cacheReadMicrosPerMillionTokens: 100_000,
-    cacheWriteMicrosPerMillionTokens: 1_250_000,
-    supportsImages: true,
-  },
-] as const;
+export function fixtureModelSelection(modelId = FIXTURE_MODEL): Environment {
+  const offers = [
+    {
+      id: modelId,
+      contextWindowTokens: 32_768,
+      maxOutputTokens: 1024,
+      inputMicrosPerMillionTokens: 1_000_000,
+      outputMicrosPerMillionTokens: 4_000_000,
+      cacheReadMicrosPerMillionTokens: 100_000,
+      cacheWriteMicrosPerMillionTokens: 1_250_000,
+      supportsImages: true,
+    },
+  ];
+
+  return { MECHANE_DEFAULT_MODEL: modelId, MECHANE_MODEL_OFFERS: JSON.stringify(offers) };
+}
 
 type ServerEnvironmentOptions = {
   readonly inherited: Environment;
@@ -121,7 +125,6 @@ function modelFixtureEnvironment({ model }: ModelFixtureEnvironmentInput): Envir
   return {
     MECHANE_MODEL_UPSTREAM_URL: model.origin.href,
     MECHANE_MODEL_UPSTREAM_KEY: model.apiKey,
-    MECHANE_MODEL_OFFERS: JSON.stringify(FIXTURE_MODEL_OFFERS),
-    MECHANE_DEFAULT_MODEL: FIXTURE_MODEL,
+    ...fixtureModelSelection(),
   };
 }

@@ -422,23 +422,9 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       if (this.#scope !== null) {
         await releaseExportHold(this.#access(), null);
-
-        const configuration = await readToolConfiguration(this.#harness);
-
-        if (configuration !== undefined) {
-          await this.#configureDefinition(configuration);
-        }
       }
 
       await this.#arm(false);
-
-      if (this.#scope === null) {
-        return;
-      }
-
-      await this.#recoverUndispatchedAttempts();
-      await abortPendingCancellations(this.#access());
-      await this.#resumePending();
     });
   }
 
@@ -484,7 +470,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
     }
   }
 
-  async #refreshDefinition(): Promise<boolean> {
+  async #refreshDefinition(mode: 'refresh' | 'restore' = 'refresh'): Promise<boolean> {
     const refresh = this.#definitionCalls.run({
       run: async () => {
         this.#runtime.isDefinitionRefreshing = true;
@@ -492,6 +478,12 @@ export class MechActor extends DurableObject<RuntimeBindings> {
         this.#runtime.nextDefinitionRefreshAt = Date.now() + definitionRefreshRetryMilliseconds;
 
         try {
+          if (mode === 'restore' && !this.#runtime.isDefinitionReady) {
+            const configuration = await readToolConfiguration(this.#harness);
+
+            return await this.#configureDefinition(configuration);
+          }
+
           return await this.#configureDefinition();
         } finally {
           this.#runtime.isDefinitionRefreshing = false;
@@ -566,6 +558,11 @@ export class MechActor extends DurableObject<RuntimeBindings> {
       state.activeRevision = mech.revision;
       state.isPolicyPaused = mech.status !== 'active' || policy === null || policy.isSuspended;
     }, context);
+
+    if (!this.#runtime.isDefinitionReady) {
+      await this.#recoverUndispatchedAttempts();
+      await abortPendingCancellations(access);
+    }
 
     this.#runtime.isDefinitionReady = true;
     this.#runtime.isDiscoveryComplete = prepared.configuration.isComplete;
@@ -650,7 +647,7 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       if (isRefreshDue && !this.#runtime.isDefinitionRefreshing) {
         try {
-          await this.#refreshDefinition();
+          await this.#refreshDefinition('restore');
         } catch (error) {
           writeActorOperationFailure(error);
         }
@@ -796,7 +793,6 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       const result = await this.#operate(envelope.method, envelope.input);
 
-      await this.#settleAttempts();
       await this.#arm(false);
 
       return Response.json(result ?? null);

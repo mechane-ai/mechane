@@ -68,6 +68,10 @@ alarm retries incomplete discovery at a bounded cadence. A completed partial loa
 explicit notices, while required discovery failure cannot produce a positive control acknowledgment. Local tool and
 receipt execution must not discover unrelated remote connections.
 
+A control-store outage during cold start must leave the actor's local state readable to an authorized caller. Retry
+execution preparation through the existing alarm. Restore current policy and the tool registry, reconcile abandoned
+provider reservations, and honor pending cancellations before resuming the agent.
+
 Use Pi's transaction queue for application documents sharing its storage. Mutate the document draft returned by the
 current transaction. A decoded application record is an immutable value: persist its replacement and related indexes in
 that same transaction. A local object passed into a draft collection does not retain mutation authority. Arm durable recovery before admission and reconcile
@@ -141,6 +145,8 @@ credentials, receipts, and historical evidence during cutover.
 
 Run the same compiled Worker artifact on celld and workerd with real storage, alarms, local TLS Postgres, and
 deterministic external providers.
+Restart a populated actor while its execution policy cannot be read. An authorized history read must succeed. Restore
+the policy and verify that accepted work resumes without a replacement actor or a duplicate provider action.
 Verify committed-only outbox capture, isolated concurrent commands, duplicate and lost acknowledgment, and late failure
 after a positive acknowledgment. After a tool-policy upgrade command succeeds, the next provider request must offer
 the current granted tools even when unrelated control delivery is backlogged.
