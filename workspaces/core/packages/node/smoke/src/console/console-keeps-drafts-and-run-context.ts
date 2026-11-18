@@ -1,9 +1,13 @@
+import { Mech } from '@mechane/protocol';
+import { HttpStatusCode, MediaType } from '@mechane/records';
 import {
   CONSOLE_STORAGE_READY_TIMEOUT_MS,
   consolePath,
   createAccount,
   createMech,
+  mechPath,
   requireFixtures,
+  runCli,
   sendNotificationAndWait,
   withConsoleBrowser,
 } from '@mechane/testing';
@@ -84,6 +88,64 @@ export async function consoleKeepsDraftsAndRunContext({ stack }: ScenarioInput):
       await otherDraft.fill('Other draft');
       await page.locator(`a[href*="mech=${first.id}"]`).first().click();
       assert.equal(await draft.inputValue(), 'Keep this draft');
+
+      const settings = new URL(consolePath({ workspaceId: account.workspaceId, mechId: first.id }), stack.origin);
+
+      settings.searchParams.set('view', 'definition');
+      await page.goto(settings.href);
+
+      const edit = page.getByRole('button', { name: 'Edit definition', exact: true });
+
+      await edit.click();
+
+      const instructions = page.getByRole('textbox', { name: 'Instructions', exact: true });
+      const save = page.getByRole('button', { name: 'Save definition', exact: true });
+      const definitionUrl = new URL(`${mechPath({ account, mechId: first.id })}/definition`, stack.origin).href;
+
+      await page.route(
+        definitionUrl,
+        async (route) => {
+          const committed = await route.fetch();
+
+          assert.equal(committed.status(), HttpStatusCode.Ok);
+          await route.fulfill({ status: HttpStatusCode.Unavailable, contentType: MediaType.Json, body: '{}' });
+        },
+        { times: 1 },
+      );
+      await instructions.fill(marker);
+      await save.click();
+      await page.getByRole('heading', { name: `Revision ${first.revision + 1} saved`, exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Done', exact: true }).click();
+      await edit.click();
+      assert.equal(await instructions.inputValue(), marker);
+
+      await instructions.fill('My unsaved instructions');
+      await page.route(
+        definitionUrl,
+        async (route) => {
+          await runCli({
+            stack,
+            account,
+            schema: Mech,
+            args: [
+              'mech',
+              'update',
+              first.id,
+              '--workspace',
+              account.workspaceId,
+              '--expected-revision',
+              String(first.revision + 1),
+              '--instructions',
+              'Another editor saved different instructions',
+            ],
+          });
+          await route.continue();
+        },
+        { times: 1 },
+      );
+      await save.click();
+      await page.getByRole('heading', { name: 'Definition changed', exact: true }).waitFor();
+      assert.equal(await instructions.inputValue(), 'My unsaved instructions');
     },
   });
 }

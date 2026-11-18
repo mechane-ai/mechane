@@ -1,4 +1,4 @@
-import { isRevisionConflict, problemMessage } from '@mechane/console-data';
+import { definitionSaveProblem, problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import type { Mech } from '@mechane/protocol';
 import { CreationRequestId, Micros } from '@mechane/records';
@@ -23,7 +23,7 @@ type DefinitionDraft = {
   readonly model: string;
   readonly instructions: string;
   readonly cap: string;
-  readonly hasRevisionConflict: boolean;
+  readonly saveProblem: ReturnType<typeof definitionSaveProblem>;
   readonly isPending: boolean;
   readonly error: string | undefined;
 };
@@ -173,7 +173,7 @@ export function WorkspaceDraftProvider({
         model: mech.model,
         instructions: Option.getOrElse(mech.instructions, () => ''),
         cap: String(mech.dailyCapMicros / 1_000_000),
-        hasRevisionConflict: false,
+        saveProblem: undefined,
         isPending: false,
         error: undefined,
       },
@@ -188,7 +188,15 @@ export function WorkspaceDraftProvider({
     update((current) =>
       current.definition === undefined
         ? current
-        : { ...current, definition: { ...current.definition, ...changes, error: undefined } },
+        : {
+            ...current,
+            definition: {
+              ...current.definition,
+              ...changes,
+              saveProblem: current.definition.saveProblem === 'conflict' ? 'conflict' : undefined,
+              error: undefined,
+            },
+          },
     );
   }
 
@@ -215,7 +223,7 @@ export function WorkspaceDraftProvider({
             draft.cap === String(draft.original.dailyCapMicros / 1_000_000)
               ? String(mech.dailyCapMicros / 1_000_000)
               : draft.cap,
-          hasRevisionConflict: false,
+          saveProblem: undefined,
         },
       };
     });
@@ -224,7 +232,7 @@ export function WorkspaceDraftProvider({
   function saveDefinition(data: ConsoleData): void {
     const draft = state.definition;
 
-    if (draft === undefined || draft.isPending || draft.hasRevisionConflict) {
+    if (draft === undefined || draft.isPending || draft.saveProblem === 'conflict') {
       return;
     }
 
@@ -251,6 +259,8 @@ export function WorkspaceDraftProvider({
           update((current) => (current.definition?.id === draft.id ? { ...current, definition: undefined } : current));
         },
         (cause: unknown) => {
+          const saveProblem = definitionSaveProblem(cause);
+
           update((current) =>
             current.definition?.id === draft.id
               ? {
@@ -258,8 +268,8 @@ export function WorkspaceDraftProvider({
                   definition: {
                     ...current.definition,
                     isPending: false,
-                    hasRevisionConflict: isRevisionConflict(cause),
-                    error: isRevisionConflict(cause) ? undefined : problemMessage(cause),
+                    saveProblem,
+                    error: saveProblem === 'conflict' ? undefined : problemMessage(cause),
                   },
                 }
               : current,

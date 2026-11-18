@@ -5,6 +5,7 @@ import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
 import type { ConsoleData } from '@mechane/console-data';
 import { DefinitionConflict } from '@mechane/console-views';
 import type { Mech } from '@mechane/protocol';
+import { Option } from 'effect';
 import type { ReactNode, SubmitEvent } from 'react';
 import { useWorkspaceDrafts } from '../drafts.tsx';
 
@@ -25,8 +26,33 @@ export function EditMechForm({
     return null;
   }
 
-  const { original, name, model, instructions, cap, hasRevisionConflict, isPending: isBusy, error } = definition;
-  const hasConflict = hasRevisionConflict || original.revision !== mech.revision;
+  const { original, name, model, instructions, cap, saveProblem, isPending: isBusy, error } = definition;
+  const hasConflict = saveProblem === 'conflict' || original.revision !== mech.revision;
+
+  const needsConfirmation = !isBusy && saveProblem === 'unconfirmed';
+  const hasMatchingIdentity = mech.name === name && mech.model === model;
+
+  const hasMatchingSettings =
+    Option.getOrElse(mech.instructions, () => '') === instructions &&
+    mech.dailyCapMicros === Math.round(Number(cap) * 1_000_000);
+
+  const matchesSavedEdit = mech.revision === original.revision + 1 && hasMatchingIdentity && hasMatchingSettings;
+
+  if (needsConfirmation && matchesSavedEdit) {
+    const isActive = Option.getOrNull(mech.activeRevision) === mech.revision;
+
+    return (
+      <DetailPage>
+        <Stack>
+          <Heading>Revision {mech.revision} saved</Heading>
+          <Muted>{isActive ? 'The mech is using this revision.' : 'Activation is pending.'}</Muted>
+          <Row>
+            <Button onClick={onClose}>Done</Button>
+          </Row>
+        </Stack>
+      </DetailPage>
+    );
+  }
 
   function submit(event: SubmitEvent): void {
     event.preventDefault();

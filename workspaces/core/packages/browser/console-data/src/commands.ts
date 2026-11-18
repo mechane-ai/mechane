@@ -1,6 +1,6 @@
 import type { Mech } from '@mechane/protocol';
 import { WorkspaceId } from '@mechane/records';
-import { isRevisionConflict } from './api.ts';
+import { definitionSaveProblem } from './api.ts';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { readRequests } from './requests.ts';
 import type { ReadKind, ReadRequest } from './requests.ts';
@@ -111,8 +111,8 @@ export function createCommands({
       } catch (error) {
         void Promise.allSettled([onFailure(request, error, commandSignal)]);
 
-        if (isRevisionConflict(error)) {
-          void Promise.allSettled([refreshRequest(readRequests.mech(input.mechId))]);
+        if (!commandSignal.aborted && definitionSaveProblem(error) !== undefined) {
+          void Promise.allSettled([refreshRequest(request)]);
         }
 
         throw error;

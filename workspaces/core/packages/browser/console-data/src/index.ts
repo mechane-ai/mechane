@@ -28,4 +28,4 @@ export type {
 export { loadSession } from './session.ts';
 export { completeBrowserAuthentication, browserAuthenticationMessage } from './browser-authentication.ts';
 export type { Session } from './session.ts';
-export { canRetainResult, isRevisionConflict, isSignedOut, isStorageFailure, problemMessage } from './api.ts';
+export { canRetainResult, definitionSaveProblem, isSignedOut, isStorageFailure, problemMessage } from './api.ts';

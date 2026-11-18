@@ -56,7 +56,9 @@ for the current route and cursors. Keep drafts and navigation preferences outsid
 
 Commands settle from the server acknowledgement. A later refresh, collection update, or cache failure reports its own
 degradation without reversing that outcome or repeating the command. Retain request IDs across uncertain retries and
-use revision checks for definition changes. Keep drafts, submitted text, pending request identity, and acknowledged
+use revision checks for definition changes. After an uncertain definition write, read back the saved record. An exact
+next revision matching the submitted fields confirms persistence. Report activation separately and retain a differing
+draft for reconciliation. Keep drafts, submitted text, pending request identity, and acknowledged
 outcomes outside the replaceable data runtime. Cache recovery must not clear or resubmit them.
 
 Keep public Console messages separate from private native model context. The typed `listConsoleMessages` operation

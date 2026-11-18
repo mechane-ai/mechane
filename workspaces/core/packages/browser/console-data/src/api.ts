@@ -157,9 +157,16 @@ export function problemMessage(error: unknown): string {
   return 'Could not load this data. Try again.';
 }
 
-/** A conflicting edit must be reconciled against the newer saved definition. */
-export function isRevisionConflict(error: unknown): boolean {
-  return error instanceof OperationFailed && error.failure._tag === 'MechRevisionConflict';
+export function definitionSaveProblem(error: unknown): 'conflict' | 'unconfirmed' | undefined {
+  if (error instanceof OperationFailed && error.failure._tag === 'MechRevisionConflict') {
+    return 'conflict';
+  }
+
+  if (isTransientReadFailure(error) || error instanceof RequestTimedOut || error instanceof ResponseUnreadable) {
+    return 'unconfirmed';
+  }
+
+  return undefined;
 }
 
 /** Whether loading a session failed because its credential is no longer valid. */
