@@ -8,8 +8,8 @@ RUN apt-get update \
 RUN install -d -o node -g node /nix \
   && install -d /etc/nix \
   && printf 'experimental-features = nix-command flakes\nbuild-users-group =\nsandbox = false\n' > /etc/nix/nix.conf
-RUN install -d -m 700 -o node -g node /run/mechane \
-  && printf '\ntry-import /run/mechane/bazel.bazelrc\n' >> /etc/bazel.bazelrc
+RUN install -d -m 700 -o node -g node /var/lib/mechane \
+  && printf '\ntry-import /var/lib/mechane/bazel.bazelrc\n' >> /etc/bazel.bazelrc
 COPY install-tools.sh /opt/mechane/install-tools.sh
 RUN sh /opt/mechane/install-tools.sh "$TARGETARCH" && rm /opt/mechane/install-tools.sh
 RUN install -d -m 755 /usr/local/share/licenses/mechane-tools

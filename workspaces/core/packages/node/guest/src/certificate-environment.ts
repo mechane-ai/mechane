@@ -22,7 +22,7 @@ const CERTIFICATE_MODE = 0o600;
 const CERTIFICATE_TIMEOUT = Duration.seconds(5);
 const CERTIFICATE_TIMEOUT_MS = Duration.toMillis(CERTIFICATE_TIMEOUT);
 const PEM_CERTIFICATE = /-----BEGIN CERTIFICATE-----[\s\S]+?-----END CERTIFICATE-----/gu;
-const BAZEL_RC_FILE = '/run/mechane/bazel.bazelrc';
+const BAZEL_RC_FILE = '/var/lib/mechane/bazel.bazelrc';
 
 type TrustInput = Pick<GuestSettings, 'scratchDirectory' | 'trustedCertificatesPem' | 'scope'>;
 type ValidateTrustInput = Pick<TrustInput, 'trustedCertificatesPem'>;

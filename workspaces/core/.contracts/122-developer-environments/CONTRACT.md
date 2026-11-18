@@ -107,7 +107,8 @@ while its authorities remain unchanged.
 Supply Bazel's server JVM trust through the image's system rc import of an atomically published managed startup rc.
 Publish it only after its immutable trust store is complete, and change the startup trust-store path when authorities
 change so a running Bazel server refreshes its trust. Keep the rc and stores outside the durable home. Process fixtures
-write only their private scratch; they never change the host's system Bazel configuration.
+write only their private scratch; they never change the host's system Bazel configuration. The container guest must
+start with an empty mounted `/run`, including when it installs additional tools before the first command.
 
 Route local guest API calls and registered fixture requests through one retained, CA-verified HTTPS gateway. Configure
 native host-service access for only that gateway port before starting the environment host. Application code and guest
@@ -215,6 +216,8 @@ Require rejection without the supplied
 CA, acceptance with trusted startup configuration, and retained acceptance of both authorities after a late gateway CA.
 Keep the same Bazel output base during the trust change and require a new server to download with the new authority.
 Check the repository-owned Nix Bazel wrapper as well as a direct Bazel invocation, with TLS verification enabled.
+Start the unprivileged guest image with an empty tmpfs at `/run` and an additional tool. Require guest readiness and
+a successful command using that tool.
 Lose the HTTP start acknowledgement while real bootstrap is held, then rejoin the same machine and require the exact
 container identity, one bootstrap, and one command effect. Reject conflicting start and stop identities. Lose a guest
 after two restored parts; require a full fresh restore or an explicit recovery fence with the committed source intact.
