@@ -25,6 +25,8 @@ restore its files without granting command authority. The current actor supplies
 Record stop origin on admission. Current pending work may cancel an idle stop before provider shutdown begins. Finish
 any active drain checkpoint first. Persist cancellation before releasing the committed generation's exact guest freeze,
 and clear the drain only after acknowledgement. Keep explicit stops and stops with an unrecorded origin authoritative.
+If an idle stop fails before capture starts, the next foreground request cancels its matching pending drain on the
+same machine. A live capture or outstanding file recovery retains ownership.
 An explicit request joining an idle drain owns that stop. If cancellation has already reached release, retain the same
 Stop receipt for the operator and replace its drain after acknowledgement without admitting a writer between drains.
 

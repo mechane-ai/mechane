@@ -59,6 +59,77 @@ export function canCancelIdleStop({ store, machineId, receipt }: StopIdentityInp
   return !isDraining && !Option.exists(result, FileCheckpointResult.guards.Failed);
 }
 
+function unstartedIdleStop({ store }: Pick<StopIdentityInput, 'store'>): Option.Option<StopIdentityInput> {
+  const live = store.liveMachine();
+  const drain = Option.flatMap(live, (machine) => store.machineDrain({ machineId: machine.id }));
+
+  if (Option.isNone(drain)) {
+    return Option.none();
+  }
+
+  const { machineId, operationId } = drain.value;
+  const receipt = store.sandboxStop({ operationId });
+  const workspace = store.workspace();
+
+  if (Option.isNone(receipt) || !Option.contains(receipt.value.machineId, machineId)) {
+    return Option.none();
+  }
+
+  const stop = receipt.value;
+  const isFailedIdleStop = stop.origin === SandboxStopOrigin.Idle && stop.phase === SandboxStopPhase.Failed;
+  const hasFileOwner = Option.isSome(workspace.checkpoint) || Option.isSome(workspace.recovery);
+
+  if (!isFailedIdleStop || stop.recoveryAction !== SandboxRecoveryAction.RepairWorkspace) {
+    return Option.none();
+  }
+
+  const repair = store.pendingRecoveryCheckpoint();
+
+  if (hasFileOwner || Option.isSome(repair)) {
+    return Option.none();
+  }
+
+  const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId });
+  const capture = store.fileCheckpointResult({ purpose });
+
+  if (Option.exists(capture, (result) => !FileCheckpointResult.guards.Pending(result))) {
+    return Option.none();
+  }
+
+  return Option.some({ store, machineId, receipt: receipt.value });
+}
+
+export async function cancelUnstartedIdleStop({ store, provider }: ProviderStepInput): Promise<void> {
+  const held = unstartedIdleStop({ store });
+
+  if (Option.isNone(held)) {
+    return;
+  }
+
+  const { machineId, receipt } = held.value;
+  const guest = await provider.connect({ machineId });
+
+  if (Option.isNone(guest) || !(await guest.value.health({ machineId }))) {
+    return;
+  }
+
+  if (Option.isSome(receipt.generation)) {
+    const generation = receipt.generation.value;
+    const lease = Option.none();
+    const released = await releaseWorkspaceGeneration({ guest: guest.value, machineId, generation, lease });
+
+    if (!released) {
+      return;
+    }
+  }
+
+  const current = unstartedIdleStop({ store });
+
+  if (Option.isSome(current) && current.value.receipt.operationId === receipt.operationId) {
+    finishIdleStopCancellation(current.value);
+  }
+}
+
 /** Once release can reach the guest, even a canceled command cannot turn this operation back into a stop. */
 export async function cancelIdleStop({
   store,

@@ -1,7 +1,13 @@
 import { HttpMethod, HttpStatusCode, MachineId, RecordId } from '@mechane/records';
 import { FileCheckpointPurpose, FileCheckpointResult } from '@mechane/sandbox-store';
 import type { SandboxStore } from '@mechane/sandbox-store';
-import { guestWorkspacePath, SandboxStopOrigin, SandboxStopPhase, WorkspaceStep } from '@mechane/sandbox-wire';
+import {
+  guestWorkspacePath,
+  SandboxRecoveryAction,
+  SandboxStopOrigin,
+  SandboxStopPhase,
+  WorkspaceStep,
+} from '@mechane/sandbox-wire';
 import { DateTime, Duration, Option } from 'effect';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -130,6 +136,40 @@ function failedIdleStopFixture() {
   failCheckpoint({ ...fixture, checkpoint, cause: 'archive exceeds the limit', elapsed: Duration.seconds(1) });
 
   return fixture;
+}
+
+for (const origin of [SandboxStopOrigin.Idle, SandboxStopOrigin.Explicit]) {
+  void test(`foreground admission after a failed ${origin} stop before capture`, async () => {
+    const fixture = idleStopFixture();
+    const { store, receipt, close, machineId } = fixture;
+
+    try {
+      store.retireWorkspace({ generation: GENERATION });
+      store.saveSandboxStop({
+        ...receipt,
+        origin,
+        phase: SandboxStopPhase.Failed,
+        generation: Option.some(GENERATION),
+        recoveryAction: SandboxRecoveryAction.RepairWorkspace,
+      });
+
+      assert.ok(Option.isNone(await readyInteractiveMachine(fixture)));
+
+      fixture.observed.isReleaseAcknowledged = true;
+
+      const ready = await readyInteractiveMachine(fixture);
+
+      if (origin === SandboxStopOrigin.Explicit) {
+        assert.ok(Option.isNone(ready));
+        assert.ok(Option.isSome(store.machineDrain({ machineId })));
+      } else {
+        assert.equal(Option.getOrThrow(ready).id, machineId);
+        assert.equal(Option.getOrThrow(store.latestSandboxStop()).phase, SandboxStopPhase.Canceled);
+      }
+    } finally {
+      close();
+    }
+  });
 }
 
 void test('a failed idle save resumes the original guest only after it releases its files', async () => {

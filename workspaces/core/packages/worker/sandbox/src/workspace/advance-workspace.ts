@@ -2,6 +2,7 @@ import { FileCheckpointPurpose } from '@mechane/sandbox-store';
 import { DateTime, Option } from 'effect';
 import { AUTOMATIC_CHECKPOINT_QUIET } from '../constants.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
+import { cancelUnstartedIdleStop } from './cancel-idle-stop.ts';
 import { releaseWorkspaceGeneration } from './release-workspace.ts';
 
 type AdvanceWorkspaceInput = WorkspaceProviderStepInput & { readonly shouldAdmitCommand: boolean };
@@ -21,6 +22,10 @@ export async function advanceWorkspace({
   const checkpoint = state.checkpoint;
 
   if (Option.isNone(checkpoint)) {
+    if (shouldAdmitCommand) {
+      await cancelUnstartedIdleStop({ store, provider });
+    }
+
     return true;
   }
 
