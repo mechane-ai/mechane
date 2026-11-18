@@ -5,6 +5,8 @@ import { guestWorkspacePath, SandboxStopOrigin, SandboxStopPhase, WorkspaceStep 
 import { DateTime, Duration, Option } from 'effect';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { failCheckpoint } from '../src/checkpoints/fail-checkpoint.ts';
+import { readyInteractiveMachine } from '../src/machines/ready-interactive-machine.ts';
 import type { GuestConnection, MachineProvider, WorkspaceFiles } from '../src/types.ts';
 import { advanceSandboxStop } from '../src/workspace/advance-sandbox-stop.ts';
 import { requestSandboxStop } from '../src/workspace/request-sandbox-stop.ts';
@@ -120,6 +122,78 @@ function commitFixtureCheckpoint({ store }: { readonly store: SandboxStore }): R
 
   return generation;
 }
+
+function failedIdleStopFixture() {
+  const fixture = idleStopFixture();
+  const checkpoint = Option.getOrThrow(fixture.store.workspace().checkpoint);
+
+  failCheckpoint({ ...fixture, checkpoint, cause: 'archive exceeds the limit', elapsed: Duration.seconds(1) });
+
+  return fixture;
+}
+
+void test('a failed idle save resumes the original guest only after it releases its files', async () => {
+  const fixture = failedIdleStopFixture();
+  const { store, observed, close, machineId } = fixture;
+
+  try {
+    const recovery = store.workspace().recovery;
+
+    assert.ok(Option.isSome(recovery));
+
+    const waiting = await readyInteractiveMachine(fixture);
+    const failed = Option.getOrThrow(store.latestSandboxStop());
+
+    assert.ok(Option.isNone(waiting));
+    assert.equal(failed.phase, SandboxStopPhase.Failed);
+    assert.deepEqual(store.workspace().recovery, recovery);
+
+    observed.isReleaseAcknowledged = true;
+
+    const ready = await readyInteractiveMachine(fixture);
+
+    assert.equal(Option.getOrThrow(ready).id, machineId);
+    assert.ok(Option.isNone(store.workspace().recovery));
+    assert.ok(Option.isNone(store.workspace().head), 'Releasing a failed archive cannot create a checkpoint');
+    assert.equal(Option.getOrThrow(store.liveMachine()).id, machineId);
+    assert.deepEqual(Option.getOrThrow(store.latestSandboxStop()), failed);
+    assert.equal(Option.getOrThrow(store.workspace().checkpointError), recovery.value.reason);
+  } finally {
+    close();
+  }
+});
+
+void test('an explicit stop during guest release keeps ownership of the unsaved home', async () => {
+  const fixture = failedIdleStopFixture();
+  const { store, provider, machineId, close } = fixture;
+
+  try {
+    const recovery = store.workspace().recovery;
+    const guest = Option.getOrThrow(await provider.connect({ machineId }));
+
+    const promoting: GuestConnection = {
+      ...guest,
+      fetch: async (request) => {
+        requestSandboxStop({ store, origin: SandboxStopOrigin.Explicit });
+
+        fixture.observed.isReleaseAcknowledged = true;
+
+        return await guest.fetch(request);
+      },
+    };
+
+    const ready = await readyInteractiveMachine({
+      ...fixture,
+      provider: { ...provider, connect: async () => Option.some(promoting) },
+    });
+
+    assert.ok(Option.isNone(ready));
+    assert.deepEqual(store.workspace().recovery, recovery);
+    assert.equal(Option.getOrThrow(store.latestSandboxStop()).origin, SandboxStopOrigin.Explicit);
+  } finally {
+    close();
+  }
+});
 
 void test(
   'an interrupted idle-stop cancellation releases only its committed drain on the same machine',

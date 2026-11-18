@@ -7,7 +7,7 @@ export { BackgroundWork } from './completions/completion-records.ts';
 
 export type { PortableMaintenance } from './maintenance/schemas.ts';
 export { WorkspaceSnapshot } from './workspaces/schemas.ts';
-export type { WorkspaceCheckpoint, WorkspaceRestoration } from './workspaces/schemas.ts';
+export type { WorkspaceCheckpoint, WorkspaceRecovery, WorkspaceRestoration } from './workspaces/schemas.ts';
 export { WorkspaceManifest } from './workspaces/schemas.ts';
 export type { WorkspaceRestore } from './workspaces/workspace-restore-records.ts';
 export { FileCheckpointPurpose, FileCheckpointResult } from './workspaces/schemas.ts';

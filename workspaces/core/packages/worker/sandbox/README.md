@@ -25,6 +25,10 @@ checkpoints save `/home/node` in the background; explicit barriers and graceful 
 Replacement machines verify and restore the last committed generation before running commands. A failed restore never
 becomes an empty workspace.
 
+If idle shutdown cannot save the home, the next command can resume on the original healthy guest with its unsaved files.
+The previous checkpoint stays authoritative until a later save succeeds. Inspect the last save error for an oversized
+archive and move rebuildable outputs out of the home before retrying the save.
+
 Upload and restoration advance archive parts in bounded parallel batches with separate concurrency limits. Each batch
 advances its durable cursor only after every part succeeds under the captured fence. Only a complete checkpoint
 establishes saved files. New generations publish an immutable manifest before the head commits. Restoration verifies its

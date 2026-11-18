@@ -3,6 +3,7 @@ import { DateTime, Duration, Option } from 'effect';
 import { advanceToIdleExecution } from '../executions/advance-to-idle-execution.ts';
 import type { WorkspaceProviderStepInput } from '../types.ts';
 import { advanceWorkspace } from '../workspace/advance-workspace.ts';
+import { resumeIdleWorkspace } from '../workspace/resume-idle-workspace.ts';
 import { observeMachine } from './observe-machine.ts';
 import { readyWorkspaceMachine } from './ready-workspace-machine.ts';
 
@@ -15,6 +16,12 @@ export async function readyInteractiveMachine({
   workspace,
 }: WorkspaceProviderStepInput): Promise<Option.Option<LiveMachineRow>> {
   const input = { store, provider, workspace };
+
+  const recovery = store.workspace().recovery;
+
+  if (Option.isSome(recovery)) {
+    await resumeIdleWorkspace(input);
+  }
 
   if (!(await advanceWorkspace({ ...input, shouldAdmitCommand: true }))) {
     return Option.none();

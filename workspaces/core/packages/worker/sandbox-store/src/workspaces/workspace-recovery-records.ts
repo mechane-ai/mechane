@@ -34,6 +34,14 @@ export function workspaceRecoveryRecords({ sql }: RecordsInput) {
     );
   };
 
+  function clearLiveRecovery({ machineId, generation }: Pick<WorkspaceRecovery, 'machineId' | 'generation'>): void {
+    sql.exec(
+      "UPDATE sandbox_workspace SET recovery = NULL WHERE slot = 1 AND json_extract(recovery, '$.machineId') = ? AND json_extract(recovery, '$.generation') = ?",
+      machineId,
+      generation,
+    );
+  }
+
   /** A lost partial copy is recoverable from its committed source; that source must never be retired. */
   const failRestoration: (input: FailedRestorationInput) => void = ({ restoration, reason }) => {
     const recoveryCodec = Schema.fromJsonString(WorkspaceRecovery);
@@ -54,5 +62,5 @@ export function workspaceRecoveryRecords({ sql }: RecordsInput) {
     );
   };
 
-  return { retireWorkspace, clearRetiredWorkspace, recoverWorkspace, failRestoration };
+  return { retireWorkspace, clearRetiredWorkspace, recoverWorkspace, clearLiveRecovery, failRestoration };
 }

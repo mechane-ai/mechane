@@ -110,7 +110,9 @@ export function EnvironmentStartup({ report }: { readonly report: SandboxReport 
       ? 'Sleeping'
       : isLive
         ? PHASE_LABELS[progress.phase]
-        : 'Stopped';
+        : report.status === 'recovery_required'
+          ? 'File recovery required'
+          : 'Stopped';
 
   const guestProgress =
     progress.phase === 'bootstrap'

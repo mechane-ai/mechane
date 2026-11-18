@@ -11,7 +11,6 @@ import {
   BackgroundWork,
   FileCheckpointIdentityReused,
   FileCheckpointPurpose,
-  FileCheckpointResult,
   MachineStatus,
   openSandboxStore,
   ReservationPhase,
@@ -111,6 +110,7 @@ import { advanceSandboxStop, failSandboxStop } from './workspace/advance-sandbox
 import { backfillSandboxStop } from './workspace/backfill-sandbox-stop.ts';
 import { releaseWorkspaceGeneration } from './workspace/release-workspace.ts';
 import { requestSandboxStop } from './workspace/request-sandbox-stop.ts';
+import { recordFailedDrain, resumeIdleWorkspace } from './workspace/resume-idle-workspace.ts';
 import { retireWorkspace } from './workspace/retire-workspace.ts';
 
 type BindOwnerInput = { readonly owner: typeof SandboxOwner.Encoded };
@@ -436,6 +436,18 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     this.#capacity.requireOwner();
 
     const input = { executionId, command, timeoutMs, waitMs, environment };
+
+    const recovery = this.#store.workspace().recovery;
+    const foreground = Option.fromNullishOr(environment);
+
+    if (Option.isSome(foreground) && Option.isSome(recovery)) {
+      const previous = this.#store.execution({ executionId });
+
+      if (Option.isNone(previous)) {
+        await this.#calls.run({ run: () => resumeIdleWorkspace({ store: this.#store, provider: this.#provider }) });
+      }
+    }
+
     const timeout = Duration.millis(timeoutMs);
     const request = { executionId, command, timeout };
     const now = DateTime.nowUnsafe();
@@ -1118,42 +1130,7 @@ export class SandboxObject extends DurableObject<SandboxEnvironment> {
     const workspace = this.#store.workspace();
 
     if (Option.isSome(workspace.recovery)) {
-      const machineId = workspace.recovery.value.machineId;
-      const stop = this.#store.latestSandboxStop();
-
-      const pending = Option.filter(stop, (receipt) => {
-        switch (receipt.phase) {
-          case SandboxStopPhase.Failed:
-          case SandboxStopPhase.Completed:
-          case SandboxStopPhase.Canceled:
-            return false;
-
-          case SandboxStopPhase.Requested:
-          case SandboxStopPhase.WaitingForCommands:
-          case SandboxStopPhase.Checkpointing:
-          case SandboxStopPhase.Canceling:
-          case SandboxStopPhase.Stopping:
-            return Option.contains(receipt.machineId, machineId);
-        }
-      });
-
-      if (Option.isSome(pending)) {
-        const receipt = pending.value;
-        const retainedDrain = Option.fromUndefinedOr(receipt.drainOperationId);
-        const operationId = Option.getOrElse(retainedDrain, () => receipt.operationId);
-        const purpose = FileCheckpointPurpose.cases.Drain.make({ machineId, operationId });
-        const result = this.#store.fileCheckpointResult({ purpose });
-        const failed = Option.filter(result, FileCheckpointResult.guards.Failed);
-
-        if (Option.isSome(failed)) {
-          failSandboxStop({
-            store: this.#store,
-            receipt,
-            cause: failed.value.reason,
-            recoveryAction: SandboxRecoveryAction.RepairWorkspace,
-          });
-        }
-      }
+      recordFailedDrain({ store: this.#store, recovery: workspace.recovery.value });
 
       return;
     }

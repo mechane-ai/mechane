@@ -138,6 +138,9 @@ an arbitrary command to reconstruct its output.
 Refuse a never-dispatched command as unavailable when a durable workspace recovery fence requires repair. Apply this
 to new claims and pending retries so waiting commands cannot block their own recovery checkpoint. Preserve dispatched
 uncertainty and terminal receipts; ordinary startup and capacity waits remain distinct from required file recovery.
+When an idle shutdown fails to save, new work may resume on the same healthy guest after it releases the failed
+generation. Recheck ownership after release. Preserve the unsaved files, last committed head and failed stop receipt.
+Keep explicit stops, lost guests and active repairs fenced.
 
 Pending-only command cancellation atomically refuses a never-dispatched claim and returns its authoritative receipt.
 It cannot stop a machine or change a dispatched, uncertain or terminal execution, including when dispatch wins the race.
@@ -198,6 +201,8 @@ durable file results, multipart size, and explicit cache reconstruction. Process
 isolation. Local direct networking is an explicit platform composition and cannot establish hosted egress enforcement.
 After a required checkpoint fails, require a new command to return unavailable without dispatch, preserve the original
 recovery identity and committed files, and verify that the refused command leaves the recovery checkpoint unblocked.
+In the idle-stop fixture, withhold release acknowledgement and check that the fence holds. Then acknowledge release
+and require admission on the original machine with the failed save still visible.
 Refuse restoration while its provider remains active and when the selected fences or reused UUID change. Destroy the
 actual guest after a failed final drain, restore its committed home through the public CLI, and require the unchanged
 head and failed Stop receipt. Retry the original UUID after later maintenance without another replacement or replay.
