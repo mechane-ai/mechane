@@ -60,6 +60,8 @@ const GenerationId = Schema.String.check(
 );
 
 const Summary = Schema.Literals([
+  'Mechane could not confirm model admission',
+  'The Mechane model admission service is temporarily unavailable',
   'The model provider rejected the request',
   'The model provider service is temporarily unavailable',
   'context_length_exceeded',
@@ -71,7 +73,7 @@ const Summary = Schema.Literals([
 ]);
 
 const ProviderDiagnostic = Schema.Struct({
-  category: Schema.Literals(['provider_error', 'http_error', 'stream_error']),
+  category: Schema.Literals(['admission_error', 'provider_error', 'http_error', 'stream_error']),
   attempt_id: RecordId,
   generation_task_id: Schema.optionalKey(NativeTaskId),
   http_status: Schema.optionalKey(HttpStatus),

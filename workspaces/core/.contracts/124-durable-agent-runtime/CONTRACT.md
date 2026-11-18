@@ -135,8 +135,9 @@ fresh-input guard. Authenticated HTTP transports use manual redirects and reject
 forwarding credentials to another destination.
 
 Keep credentials out of durable model context, tool arguments, and inspection output. Resolve configured references at
-the trusted boundary. Treat private completion as quiet. Public messages and reactions require addressed tools under
-contract 125. A terminal command result and a committed home revision are separate facts. Persist the command's known
+the trusted boundary. Distinguish a failure reserving or authorizing a model request from a failure sending it to
+the provider. Preserve the native retry and budget classification. Treat private completion as quiet. Public
+messages and reactions require addressed tools under contract 125. A terminal command result and a committed home revision are separate facts. Persist the command's known
 outcome without waiting for background file transfer; checkpoint failure cannot rewrite that outcome or claim saved
 files and successful retirement. Required file barriers retain their own blocking result. Preserve actual files,
 credentials, receipts, and historical evidence during cutover.

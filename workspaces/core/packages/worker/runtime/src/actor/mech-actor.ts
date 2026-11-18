@@ -793,6 +793,10 @@ export class MechActor extends DurableObject<RuntimeBindings> {
 
       const result = await this.#operate(envelope.method, envelope.input);
 
+      if (this.#runtime.isDefinitionReady) {
+        await this.#settleAttempts();
+      }
+
       await this.#arm(false);
 
       return Response.json(result ?? null);

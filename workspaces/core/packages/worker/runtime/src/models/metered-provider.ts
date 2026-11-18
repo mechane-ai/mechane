@@ -69,6 +69,24 @@ type ProviderRequestInput = {
   readonly isSimple: boolean;
 };
 
+function failureSummary(message: AssistantMessage, capture: ProviderDiagnosticCapture): string {
+  const isRetryable = isRetryableAssistantError(message);
+
+  if (capture.read().category === 'admission_error') {
+    if (isRetryable) {
+      return 'The Mechane model admission service is temporarily unavailable';
+    }
+
+    return 'Mechane could not confirm model admission';
+  }
+
+  if (isRetryable) {
+    return 'The model provider service is temporarily unavailable';
+  }
+
+  return 'The model provider rejected the request';
+}
+
 function sanitizedFailure(input: {
   readonly message: AssistantMessage;
   readonly model: Model<Api>;
@@ -76,11 +94,7 @@ function sanitizedFailure(input: {
   readonly refusal: string | null;
   readonly capture: ProviderDiagnosticCapture;
 }): AssistantMessage {
-  const diagnostic = { text: 'The model provider rejected the request' };
-
-  if (isRetryableAssistantError(input.message)) {
-    diagnostic.text = 'The model provider service is temporarily unavailable';
-  }
+  const diagnostic = { text: failureSummary(input.message, input.capture) };
 
   if (isContextOverflow(input.message, input.contextWindowTokens)) {
     diagnostic.text = 'context_length_exceeded';
@@ -399,6 +413,8 @@ function meteredProviderStreams(getAccess: () => ActorAccess): ProviderStreams {
             causation.generationTaskId = String(attempt.taskId);
           }
 
+          diagnostic.record({ category: 'admission_error' });
+
           const admitted = await access.withControl((store) =>
             store.reserveProviderAttempt({ ...identity, ...causation }),
           );
@@ -500,6 +516,8 @@ function meteredProviderStreams(getAccess: () => ActorAccess): ProviderStreams {
           if (!marked.wasMarked) {
             throw new Error('The provider attempt has an earlier uncertain dispatch');
           }
+
+          diagnostic.record({ category: 'provider_error' });
 
           dispatched.count += 1;
           const signals = [AbortSignal.timeout(requestTimeoutMs)];

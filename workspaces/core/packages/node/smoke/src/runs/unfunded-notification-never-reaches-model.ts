@@ -41,6 +41,11 @@ export async function unfundedNotificationNeverReachesModel({ stack }: ScenarioI
 
   const trace = await readTrace({ ...input, turnId: turn.id });
 
+  assert.ok(
+    (trace.evidenceNotices ?? []).some((notice) => notice.includes('"category":"admission_error"')),
+    'The trace must distinguish local admission refusal from an upstream model rejection',
+  );
+
   assert.deepEqual(
     trace.dispatches.map((dispatch) => dispatch.status),
     [DispatchStatus.Refused],
