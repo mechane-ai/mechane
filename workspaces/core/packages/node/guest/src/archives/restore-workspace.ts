@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import type { ObserveStartupPhase } from '../bootstrap/startup-progress.ts';
 import { WorkspaceFailed } from '../errors.ts';
 import type { WorkspaceRestoreInput } from '../types.ts';
+import { prepareHomeCache } from '../workspace/prepare-home-cache.ts';
 import { WORKSPACE_TRANSFER_TIMEOUT } from './constants.ts';
 import { joinArchive } from './join-archive.ts';
 
@@ -48,6 +49,8 @@ export const restoreWorkspace = Effect.fn('restoreWorkspace')(function* (
       (failure) => new WorkspaceFailed({ generation, step: WorkspaceStep.Restore, reason: failure.reason }),
     ),
   );
+
+  yield* prepareHomeCache(settings);
 
   input.onPhase({ phase: StartupPhase.Ready, tool });
 });

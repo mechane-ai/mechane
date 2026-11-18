@@ -162,6 +162,7 @@ async function exerciseFileRecovery({ stack, account, mechId, directory }: Files
       command: [
         `test ! -f '${directory}/unsaved'`,
         `test ! -f "$MECHANE_CACHE_HOME/${cacheMarker}"`,
+        `test -d "$HOME/.cache" && test ! -e "$HOME/.cache/${cacheMarker}"`,
         `node -e 'const fs=require("node:fs"),crypto=require("node:crypto");process.stdout.write(crypto.createHash("sha256").update(fs.readFileSync("${directory}/multipart")).digest("hex"))'`,
       ].join(' && '),
     });
@@ -476,6 +477,7 @@ function createCheckpointFilesCommand({ directory, cacheMarker }: CheckpointFile
     'fs.mkdirSync(cache,{recursive:true})',
     `fs.mkdirSync("${directory}")`,
     `fs.writeFileSync(cache+"/${cacheMarker}","reconstructible")`,
+    `fs.writeFileSync(process.env.HOME+"/.cache/${cacheMarker}","reconstructible")`,
     'const cipher=crypto.createCipheriv("aes-256-ctr",Buffer.alloc(32),Buffer.alloc(16))',
     `const multipart=cipher.update(Buffer.alloc(${MULTIPART_FILE_BYTES}))`,
     `fs.writeFileSync("${directory}/multipart",multipart)`,

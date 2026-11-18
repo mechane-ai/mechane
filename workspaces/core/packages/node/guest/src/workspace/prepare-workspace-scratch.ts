@@ -5,6 +5,7 @@ import { lstat, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { GuestMisconfigured } from '../errors.ts';
 import type { GuestSettings } from '../types.ts';
+import { prepareHomeCache } from './prepare-home-cache.ts';
 import { WORKSPACE_SCRATCH_PREFIX } from './workspace-scratch-path.ts';
 
 const OWNER_FILE = '.mechane-guest.json';
@@ -31,7 +32,7 @@ const ScratchOwner = Schema.Struct({
 const OwnerJson = Schema.fromJsonString(ScratchOwner);
 const AbsentProcess = Schema.Struct({ code: Schema.Literal(ABSENT_PROCESS_CODE) });
 
-type ScratchInput = Pick<GuestSettings, 'home' | 'machineId' | 'scratchDirectory'>;
+type ScratchInput = Pick<GuestSettings, 'home' | 'machineId' | 'scratchDirectory' | 'scope'>;
 type PreviousInput = { readonly folder: string; readonly homeKey: string };
 type RemoveScratchInput = PreviousInput & Pick<ScratchInput, 'scratchDirectory'>;
 
@@ -44,7 +45,10 @@ export const prepareWorkspaceScratch = Effect.fn('prepareWorkspaceScratch')(func
   home,
   machineId,
   scratchDirectory,
+  scope,
 }: ScratchInput): Effect.fn.Return<void, GuestMisconfigured> {
+  yield* prepareHomeCache({ home, scope });
+
   const homeKey = createHash('sha256').update(home).digest('hex');
   const metadata = Schema.encodeSync(OwnerJson)({ owner: SCRATCH_OWNER, homeKey, machineId, processId: process.pid });
   const marker = join(scratchDirectory, OWNER_FILE);

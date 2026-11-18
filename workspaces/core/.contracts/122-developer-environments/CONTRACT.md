@@ -21,8 +21,11 @@ that home through explicit environment setup. Preserve existing files. Do not in
 silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
 
 Declare machine-local package caches and reinstallable tool versions through the guest's ordinary tool environment.
-Keep source, lockfiles, configuration, Git metadata, and unknown files in the durable home. A fresh machine may rebuild
-only those declared scratch locations. Existing home files remain data until an explicit recovery operation moves them.
+Keep source, lockfiles, configuration, Git metadata, and unknown files in the durable home. On fresh startup and
+portable restore, link a missing `.cache` entry in the container home to machine-local cache storage. Preserve existing
+directories, files and links. Failure to prepare this optional cache must leave the guest and restored source usable.
+A fresh machine may rebuild only declared scratch locations. Existing home files remain data until an explicit
+recovery operation moves them.
 
 Treat native container snapshots as disposable acceleration, never workspace authority. Capture only the frozen final
 drain after its portable generation and manifest commit. Bind a cache to that complete checkpoint, qualified image,
