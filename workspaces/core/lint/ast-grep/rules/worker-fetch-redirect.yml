@@ -1,0 +1,11 @@
+id: worker-fetch-redirect
+language: TypeScript
+severity: error
+message: "Reject redirects with a supported Workers fetch option, such as `redirect: 'manual'` with a status check (124)"
+files: ['packages/worker/*/src/**']
+ignores: ['**/node_modules/**', 'packages/worker/server/src/import/**']
+rule:
+  kind: pair
+  all:
+    - has: { field: key, regex: '^[''"]?redirect[''"]?$' }
+    - has: { field: value, regex: '^[''"]error[''"]$' }

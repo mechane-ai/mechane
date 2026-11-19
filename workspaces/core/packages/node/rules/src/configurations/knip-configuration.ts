@@ -29,7 +29,7 @@ const PROGRAM_ENTRIES = '**/main.ts!';
 const GENERATOR_ENTRIES = '*/main.ts!';
 
 const DISTRIBUTION_PACKAGE = '@mechane/distribution';
-const SANDBOX_PACKAGE = '@mechane/sandbox';
+const TEST_FOLDER = 'testing';
 
 /** Every TypeScript file below a source root, each a production file. */
 const PROJECT_FILES = '**/*.{ts,tsx}!';
@@ -114,10 +114,6 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
     };
   }
 
-  if (member.name === SANDBOX_PACKAGE) {
-    return { entry: ['testing/*.ts'], project: ['src/**/*.ts!', 'testing/**/*.ts'] };
-  }
-
   if (member.hasStories) {
     return { entry: ['src/**/*.stories.tsx'], project: ['src/**/*.{ts,tsx}!'] };
   }
@@ -130,7 +126,18 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
   const mains = roots.filter(isProgramSource).map((root) => posix.join(root, PROGRAM_ENTRIES));
   const generators = roots.filter((root) => root === SCRIPTS_FOLDER).map((root) => posix.join(root, GENERATOR_ENTRIES));
   const entry = [...mains, ...generators];
-  const project = roots.map((root) => posix.join(root, PROJECT_FILES));
+
+  const project = roots.map((root) => {
+    if (root === TEST_FOLDER) {
+      return 'testing/**/*.ts';
+    }
+
+    return posix.join(root, PROJECT_FILES);
+  });
+
+  if (roots.includes(TEST_FOLDER)) {
+    entry.push('testing/*.ts');
+  }
 
   if (entry.length === 0) {
     return { project };

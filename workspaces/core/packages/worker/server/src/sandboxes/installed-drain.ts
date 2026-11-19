@@ -21,7 +21,7 @@ async function inspectPendingSave({ sandbox }: RuntimeConfiguration, allocation:
 
   const reply = await fetch(new URL(path, sandbox.origin), {
     headers: { [HttpHeader.Authorization]: `Bearer ${Redacted.value(sandbox.bearer)}` },
-    redirect: 'error',
+    redirect: 'manual',
   });
 
   if (!reply.ok) {

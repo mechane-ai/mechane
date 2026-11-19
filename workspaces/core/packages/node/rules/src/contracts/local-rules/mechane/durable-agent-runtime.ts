@@ -1,9 +1,17 @@
-import { ADOPTED, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
+import { ADOPTED, AST_GREP_DEFAULTS, CRUISER_DEFAULTS } from '@mechane/rule-shapes';
 import type { ContractEnforcement } from '@mechane/rule-shapes';
 
 export const durableAgentRuntime = {
   values: {},
   rules: [
+    {
+      ...AST_GREP_DEFAULTS,
+      ...ADOPTED,
+      name: 'worker-fetch-redirect',
+      standard: '124',
+      violation: ["const options = { redirect: 'error' };"],
+      allowed: ["const options = { redirect: 'manual' };"],
+    },
     {
       ...CRUISER_DEFAULTS,
       ...ADOPTED,

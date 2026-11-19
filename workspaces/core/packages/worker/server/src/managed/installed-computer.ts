@@ -178,7 +178,7 @@ export async function proxyInstalledComputer(
   const options: RequestInit = {
     method: request.method,
     headers,
-    redirect: 'error',
+    redirect: 'manual',
     signal: AbortSignal.any([request.signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]),
   };
 
@@ -238,6 +238,10 @@ export async function proxyInstalledComputer(
 
   if (!reply.ok && !isRepairRefusal && reply.status !== HttpStatusCode.RangeNotSatisfiable) {
     await reply.body?.cancel();
+
+    if (reply.status < HttpStatusCode.BadRequest) {
+      throw new ManagedHttpError(HttpStatusCode.BadGateway, 'The session computer returned an unexpected redirect');
+    }
 
     if (reply.status === HttpStatusCode.Conflict) {
       throw new ManagedHttpError(reply.status, 'The allocation or original operation has changed');

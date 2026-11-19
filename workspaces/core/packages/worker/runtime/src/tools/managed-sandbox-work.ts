@@ -30,7 +30,7 @@ async function requestManagedWorkspace({ sandbox, method, command }: RequestInpu
 
   const response = await fetch(url, {
     method,
-    redirect: 'error',
+    redirect: 'manual',
     headers: { [HttpHeader.Authorization]: `Bearer ${bearer}`, [HttpHeader.ContentType]: MediaType.Json },
     body: JSON.stringify(command),
   });

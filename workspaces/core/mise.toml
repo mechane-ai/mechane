@@ -26,6 +26,7 @@ depends = [
   "reference:check",
   "infrastructure:check",
   "sandbox:native:check",
+  "server:native:check",
   "smoke",
 ]
 run = "node packages/node/checks/src/main.ts record"
@@ -33,7 +34,16 @@ run = "node packages/node/checks/src/main.ts record"
 # Successful target receipts are reusable independently of a complete release qualification.
 [tasks."check:fast"]
 description = "Check changed source and run only targets without matching successful input receipts"
-depends = ["lint:changed", "typecheck:incremental", "knip", "duplicates", "checks", "rules:check", "reference:check"]
+depends = [
+  "server:native:check",
+  "lint:changed",
+  "typecheck:incremental",
+  "knip",
+  "duplicates",
+  "checks",
+  "rules:check",
+  "reference:check",
+]
 run = "node packages/node/checks/src/main.ts run-affected"
 
 [tasks."check:static"]
@@ -48,7 +58,12 @@ depends = [
   "rules:check",
   "reference:check",
   "sandbox:native:check",
+  "server:native:check",
 ]
+
+[tasks."server:native:check"]
+description = "Verify OpenID Connect discovery on workerd with local issuer responses"
+run = "node --test packages/worker/server/testing/*.ts"
 
 [tasks."sandbox:native:check"]
 description = "Check native container safety, transfer diagnostics and Gateway control-plane isolation without cloud credentials"

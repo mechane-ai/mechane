@@ -211,6 +211,7 @@ identity adapter against the pinned upstream public APIs. Generated dependency r
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
+- ast-grep `worker-fetch-redirect` (124): enforced
 - dependency-cruiser `single-durable-agent-owner` (124): enforced: Use Pi for agent execution, such as `Harness` in the Worker runtime
 - dependency-cruiser `shared-bash-native-surface` (124): enforced: Import native Bash tools and environment APIs in the shared binding, such as `createBashTool`; applications own Harness
 - dependency-cruiser `durable-harness-owner` (124): enforced: Construct Pi in its Worker owner, such as `Harness` in packages/worker/runtime

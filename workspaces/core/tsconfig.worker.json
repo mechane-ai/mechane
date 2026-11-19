@@ -9,6 +9,7 @@
     "packages/worker/sandbox/testing",
     "packages/worker/sandbox-store/src",
     "packages/worker/server/src",
+    "packages/worker/server/testing",
     "packages/worker/store/src"
   ]
 }

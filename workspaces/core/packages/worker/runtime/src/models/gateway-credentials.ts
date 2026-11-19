@@ -77,7 +77,7 @@ export async function resolveGatewayCredential({
 
     const response = await fetch(settings.url, {
       method: HttpMethod.Post,
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.any(signals),
       headers: {
         [HttpHeader.ContentType]: MediaType.Json,

@@ -15,7 +15,7 @@ const VALUES = {
     '@mechane/console': ['src', 'scripts', '.storybook', 'vite.config.ts', 'worker-licenses.ts'],
     '@mechane/distribution': ['src', 'testing'],
     '@mechane/sandbox': ['src', 'testing'],
-    '@mechane/server': ['src', 'build'],
+    '@mechane/server': ['src', 'testing', 'build'],
   },
   libraryExports: { '.': './src/index.ts' },
   // StyleX imports resolve directly to their definition. The UI's other subpaths expose cohesive public modules.

@@ -138,6 +138,7 @@
 /lint/ast-grep/tests/untyped-failure.yml linguist-generated merge=ours
 /lint/ast-grep/tests/variant-style-comparisons-tsx.yml linguist-generated merge=ours
 /lint/ast-grep/tests/variant-style-comparisons-typescript.yml linguist-generated merge=ours
+/lint/ast-grep/tests/worker-fetch-redirect.yml linguist-generated merge=ours
 /lint/ast-grep/utils/abbreviation.yml linguist-generated merge=ours
 /lint/ast-grep/utils/boolean-prefix-tsx.yml linguist-generated merge=ours
 /lint/ast-grep/utils/boolean-prefix.yml linguist-generated merge=ours

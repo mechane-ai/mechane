@@ -33,12 +33,14 @@ function refused(): ManagedHttpError {
 async function metadata({ url, signal }: Source): Promise<unknown> {
   const response = await fetch(url, {
     signal,
-    redirect: 'error',
+    redirect: 'manual',
     headers: { [HttpHeader.Accept]: MediaType.Json },
     cf: { cacheEverything: true, cacheTtlByStatus: { '200': PUBLIC_KEY_CACHE_SECONDS, '400-599': -1 } },
   });
 
   if (!response.ok) {
+    await response.body?.cancel();
+
     throw new Error('Identity provider metadata is unavailable');
   }
 
