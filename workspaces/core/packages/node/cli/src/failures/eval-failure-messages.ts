@@ -5,8 +5,6 @@ import { bareMessage } from './bare-message.ts';
 import { ownMessage } from './own-message.ts';
 import type { FailureMessages } from './types.ts';
 
-const RESPONSE_RETRY = Option.some('inspect the mech activation history, then rerun with the same --out-folder');
-
 /**
  * The report of each way an eval run fails beside its calls, under its tag. Every record the run saved stays, so a
  * rerun resumes.
@@ -14,8 +12,6 @@ const RESPONSE_RETRY = Option.some('inspect the mech activation history, then re
 export const EVAL_FAILURE_MESSAGES: Readonly<FailureMessages<EvalFailure>> = {
   EvalAdapterFailed: ({ _tag, operation, reason }) =>
     bareMessage({ code: _tag, status: ExitStatus.Failed, message: `${operation}: ${reason}` }),
-  EvalTransportFailed: ({ _tag, operation, reason }) =>
-    bareMessage({ code: _tag, status: ExitStatus.Unavailable, message: `${operation}: ${reason}` }),
   EvalManifestMissing: ({ _tag, outFolder }) =>
     bareMessage({
       code: _tag,
@@ -52,13 +48,6 @@ export const EVAL_FAILURE_MESSAGES: Readonly<FailureMessages<EvalFailure>> = {
     }),
   EvalFileFailed: ({ _tag, step, path, reason }) =>
     bareMessage({ code: _tag, status: ExitStatus.Failed, message: `${step} ${path}: ${reason}` }),
-  EvalResponseInvalid: ({ _tag, mechId, reason }) =>
-    ownMessage({
-      code: _tag,
-      status: ExitStatus.Failed,
-      message: `read evaluation progress for mech ${mechId}: ${reason}`,
-      next: RESPONSE_RETRY,
-    }),
   EvalInterrupted: ({ _tag, outFolder }) => ({
     status: ExitStatus.Interrupted,
     record: { code: _tag, message: 'Ctrl-C interrupted the run', family: Option.none() },

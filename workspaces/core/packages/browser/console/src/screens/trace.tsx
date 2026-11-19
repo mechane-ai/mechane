@@ -1,28 +1,21 @@
-import { Button, Row, Stack } from '@mechane-ai/elements';
-import { Notice } from '@mechane-ai/elements/feedback';
-import { problemMessage } from '@mechane/console-data';
+import { Stack } from '@mechane-ai/elements';
 import type { ConsoleData, ReadRequest } from '@mechane/console-data';
-import { isImportedTurn, TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
+import { TurnTrace, TurnTracePlaceholder } from '@mechane/console-views';
 import type { TraceTab } from '@mechane/console-views';
-import type { ConsoleView, Mech, Trace, Turn } from '@mechane/protocol';
-import { MechId, TurnId } from '@mechane/records';
+import type { Mech } from '@mechane/protocol';
 import { useRouter } from '@tanstack/react-router';
-import { Schema } from 'effect';
-import { useState } from 'react';
 import type { ReactNode } from 'react';
+import type { MechPageReads } from '../mech-page-reads.ts';
 import { ConsoleLink } from '../navigation.tsx';
 import { useTrace } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import type { ConsoleLocation, ConsoleNavigation } from '../types.ts';
-import { useScreenLifetime } from '../use-screen-lifetime.ts';
 import { RunEvidence } from './run-evidence.tsx';
 import { TurnHistory } from './turn-history.tsx';
 
-const inspectorViews: ReadonlySet<ConsoleView> = new Set(['requests', 'events', 'tools']);
-const cancelableStatuses: ReadonlySet<string> = new Set(['queued', 'running']);
-
 type TraceScreenProps = ConsoleNavigation & {
   readonly data: ConsoleData;
+  readonly view: MechPageReads['view'];
   readonly mech: Mech;
   readonly notice: ReactNode;
   readonly request: ReadRequest<'trace'>;
@@ -40,64 +33,13 @@ export function selectedTraceTab(location: ConsoleLocation): TraceTab {
         : 'Overview';
 }
 
-export function TraceScreen({ turnId, ...props }: TraceScreenProps & { readonly turnId: string }): ReactNode {
-  if (!Schema.is(TurnId)(turnId)) {
-    return (
-      <Notice hasError>
-        This run ID is invalid.{' '}
-        <Button onClick={() => props.navigate({ workspace: props.data.workspace.id, mech: props.mech.id })}>
-          Return to mech
-        </Button>
-      </Notice>
-    );
-  }
-
-  return <ValidTraceScreen {...props} turnId={turnId} />;
-}
-
-function ValidTraceScreen({
-  data,
-  mech,
-  turnId,
-  location,
-  navigate,
-  notice,
-  request,
-}: TraceScreenProps & { readonly turnId: Turn['id'] }): ReactNode {
+export function TraceScreen({ data, mech, location, navigate, notice, request, view }: TraceScreenProps): ReactNode {
   const router = useRouter();
-  const [cancelState, setCancelState] = useState<'idle' | 'sending' | 'received'>('idle');
-  const [error, setError] = useState<string>();
-  const isScreenActive = useScreenLifetime();
+  const turnId = request.turnId;
   const state = useTrace(data, request);
 
-  const mainView = inspectorViews.has(location.view ?? 'conversation') ? 'conversation' : location.view;
-
-  const base = { workspace: data.workspace.id, mech: mech.id, ...(mainView === undefined ? {} : { view: mainView }) };
-
-  const selected = { ...base, turn: turnId };
+  const selected = { workspace: data.workspace.id, mech: mech.id, view, turn: turnId } as const;
   const tab = selectedTraceTab(location);
-
-  function cancel(): void {
-    if (cancelState !== 'idle') {
-      return;
-    }
-
-    setCancelState('sending');
-    setError(undefined);
-    void data.commands.cancelTurn({ mechId: MechId.make(mech.id), turnId }).then(
-      () => {
-        if (isScreenActive()) {
-          setCancelState('received');
-        }
-      },
-      (cause: unknown) => {
-        if (isScreenActive()) {
-          setCancelState('idle');
-          setError(problemMessage(cause));
-        }
-      },
-    );
-  }
 
   return (
     <Stack>
@@ -106,20 +48,6 @@ function ValidTraceScreen({
         {(trace, traceNotice) => (
           <Stack>
             {traceNotice}
-            {error !== undefined && <Notice hasError>{error}</Notice>}
-            {canStopTurn(trace.turn) && (
-              <Row>
-                <Button
-                  disabled={cancelState !== 'idle'}
-                  isPending={cancelState === 'sending'}
-                  pendingLabel="Stopping…"
-                  onClick={cancel}
-                >
-                  {cancelState === 'received' ? 'Stop requested' : 'Stop run'}
-                </Button>
-              </Row>
-            )}
-            {canStopTurn(trace.turn) && cancelState === 'received' && <Notice>Waiting for the run to stop.</Notice>}
             <TurnTrace
               trace={trace}
               tab={tab}
@@ -134,7 +62,7 @@ function ValidTraceScreen({
                         ? 'events'
                         : next === 'Tools'
                           ? 'tools'
-                          : 'conversation',
+                          : 'runs',
                 })
               }
               onRequest={(requestId) => navigate({ ...selected, inspect: 'requests', request: requestId })}
@@ -167,8 +95,4 @@ function ValidTraceScreen({
       </ResourceView>
     </Stack>
   );
-}
-
-function canStopTurn(turn: Trace['turn']): boolean {
-  return !isImportedTurn(turn) && cancelableStatuses.has(turn.status);
 }

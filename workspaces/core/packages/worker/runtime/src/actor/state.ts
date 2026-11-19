@@ -1,10 +1,11 @@
 import { defineDoc } from '@earendil-works/pi-durable';
 import { Record, Schema } from 'effect';
+import { createHash } from 'node:crypto';
 
 const ACTOR_STATE_VERSION = 1;
 const CHECKPOINT_DELTA_COUNT = 100;
-const HEXADECIMAL_RADIX = 16;
-const HEXADECIMAL_BYTE_DIGITS = 2;
+const STRING_CHUNK_UNITS = 32_768;
+const SINGLE_UTF16_UNIT_MAX = 0xff_ff;
 
 const NullableText = Schema.NullOr(Schema.String);
 
@@ -55,37 +56,101 @@ export const State = defineDoc<ActorState>({
   checkpointWhen: (_value, _operations, checkpoint) => checkpoint.deltasSinceBase >= CHECKPOINT_DELTA_COUNT,
 });
 
-// Canonical fingerprints walk the recursive JSON tree while sorting each object's own keys.
-// ast-grep-ignore: loop-recursion
-export function stableJson(value: unknown): string {
+function* quoted(value: string) {
+  if (value.length <= STRING_CHUNK_UNITS) {
+    yield JSON.stringify(value);
+
+    return;
+  }
+
+  yield '"';
+  let start = 0;
+
+  while (start < value.length) {
+    let end = Math.min(value.length, start + STRING_CHUNK_UNITS);
+    const last = value.codePointAt(end - 1) ?? 0;
+
+    if (end < value.length && last > SINGLE_UTF16_UNIT_MAX) {
+      end -= 1;
+    }
+
+    yield JSON.stringify(value.slice(start, end)).slice(1, -1);
+    start = end;
+  }
+
+  yield '"';
+}
+
+// The same canonical fragments feed persisted identity hashes and equality comparisons.
+function* canonicalParts(value: unknown): Generator<string> {
+  if (typeof value === 'string') {
+    yield* quoted(value);
+
+    return;
+  }
+
   if (Array.isArray(value)) {
-    return `[${value.map(stableJson).join(',')}]`;
+    yield '[';
+
+    for (let index = 0; index < value.length; index += 1) {
+      if (index > 0) {
+        yield ',';
+      }
+
+      if (index in value) {
+        yield* canonicalParts(value[index]);
+      }
+    }
+
+    yield ']';
+
+    return;
   }
 
   if (value !== null && typeof value === 'object') {
-    return `{${Record.toEntries(value)
-      .toSorted(([left], [right]) => {
-        if (left < right) {
-          return -1;
-        }
+    yield '{';
+    let separator = '';
 
-        if (left > right) {
-          return 1;
-        }
+    for (const [key, entry] of Record.toEntries(value).toSorted(([left], [right]) => {
+      if (left < right) {
+        return -1;
+      }
 
-        return 0;
-      })
-      .map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`)
-      .join(',')}}`;
+      if (left > right) {
+        return 1;
+      }
+
+      return 0;
+    })) {
+      yield separator;
+
+      yield* quoted(key);
+
+      yield ':';
+
+      yield* canonicalParts(entry);
+
+      separator = ',';
+    }
+
+    yield '}';
+
+    return;
   }
 
-  return JSON.stringify([value]).slice(1, -1);
+  yield JSON.stringify([value]).slice(1, -1);
+}
+
+export function stableJson(value: unknown): string {
+  return Array.from(canonicalParts(value)).join('');
 }
 
 export async function fingerprint(value: unknown): Promise<string> {
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(stableJson(value)));
+  const hash = createHash('sha256');
 
-  return Array.from(new Uint8Array(bytes), (byte) =>
-    byte.toString(HEXADECIMAL_RADIX).padStart(HEXADECIMAL_BYTE_DIGITS, '0'),
-  ).join('');
+  for (const fragment of canonicalParts(value)) {
+    hash.update(fragment);
+  }
+
+  return hash.digest('hex');
 }

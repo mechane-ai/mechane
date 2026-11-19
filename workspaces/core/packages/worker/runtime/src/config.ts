@@ -1,22 +1,47 @@
 import type { CredentialKeyring } from '@mechane/control-store';
 import { OriginProtocol, SecureOrigin, ServiceOrigin } from '@mechane/deployment';
-import { RecordId, SHA256_PATTERN } from '@mechane/records';
+import { SHA256_PATTERN } from '@mechane/records';
 import { Predicate, Record, Redacted, Schema } from 'effect';
+import { readManagedGitSettings } from './managed/git/settings.ts';
+import type { ManagedGitSettings } from './managed/git/settings.ts';
+import { readManagedMcpSettings } from './managed/mcp/settings.ts';
+import type { ManagedMcpSettings } from './managed/mcp/settings.ts';
+import { readManagedWebSettings } from './managed/tools/web-settings.ts';
+import type { ManagedWebSettings } from './managed/tools/web-settings.ts';
+import { gatewayCredentials } from './models/gateway-credential-settings.ts';
+import type { GatewayCredentials } from './models/gateway-credential-settings.ts';
+import { ManagedEffort } from './models/model-effort.ts';
 
 const PositiveInteger = Schema.Int.check(Schema.isGreaterThan(0));
 const NonnegativeInteger = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
 const SecretBinding = Schema.Struct({ get: Schema.declare(Predicate.isFunction) });
 
-const ModelOfferSchema = Schema.Struct({
-  id: Schema.NonEmptyString,
-  contextWindowTokens: PositiveInteger,
-  maxOutputTokens: PositiveInteger,
+const TokenRates = Schema.Struct({
   inputMicrosPerMillionTokens: NonnegativeInteger,
   outputMicrosPerMillionTokens: NonnegativeInteger,
   cacheReadMicrosPerMillionTokens: NonnegativeInteger,
   cacheWriteMicrosPerMillionTokens: NonnegativeInteger,
-  supportsImages: Schema.optionalKey(Schema.Boolean),
+  cacheWriteOneHourMicrosPerMillionTokens: Schema.optionalKey(NonnegativeInteger),
 });
+
+const PricedOffer = Schema.Struct({ ...TokenRates.fields, listPrice: Schema.optionalKey(TokenRates) });
+
+const ModelOfferSchema = Schema.Struct({
+  ...PricedOffer.fields,
+  id: Schema.NonEmptyString,
+  contextWindowTokens: PositiveInteger,
+  maxOutputTokens: PositiveInteger,
+  supportsImages: Schema.optionalKey(Schema.Boolean),
+  protocol: Schema.optionalKey(Schema.Literals(['openai-completions', 'anthropic-messages'])),
+  efforts: Schema.optionalKey(Schema.NonEmptyArray(ManagedEffort)),
+  defaultEffort: Schema.optionalKey(ManagedEffort),
+  fastPricing: Schema.optionalKey(PricedOffer),
+}).check(
+  Schema.makeFilter(
+    (offer) => offer.defaultEffort === undefined || offer.efforts?.includes(offer.defaultEffort) === true,
+  ),
+  Schema.makeFilter((offer) => offer.fastPricing === undefined || offer.protocol === 'anthropic-messages'),
+);
 
 const KeyringSchema = Schema.Struct({
   current: Schema.NonEmptyString,
@@ -24,26 +49,11 @@ const KeyringSchema = Schema.Struct({
 });
 
 const OffersSchema = Schema.NonEmptyArray(ModelOfferSchema);
-const PRODUCER_SECRET_MIN_CHARS = 32;
-
-const NotificationProducerSchema = Schema.Struct({
-  id: Schema.NonEmptyString,
-  secretBinding: Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_]+$/u)),
-  recipients: Schema.NonEmptyArray(Schema.Struct({ workspaceId: RecordId, mechId: RecordId })),
-});
-
-const NotificationProducersSchema = Schema.Array(NotificationProducerSchema);
 const DEFAULT_MAX_CONNECTIONS = 4;
 const DEFAULT_DAILY_CAP_MICROS = 50_000_000;
 const DEFAULT_MAX_MACHINES = 10;
 
 export type ModelOffer = typeof ModelOfferSchema.Type;
-
-export type NotificationProducer = {
-  readonly id: string;
-  readonly secret: Redacted.Redacted;
-  readonly recipients: ReadonlyArray<{ readonly workspaceId: string; readonly mechId: string }>;
-};
 
 export type RuntimeConfiguration = {
   readonly databaseUrl: Redacted.Redacted;
@@ -51,17 +61,18 @@ export type RuntimeConfiguration = {
   readonly maxConnections: number;
   readonly maxDailyAllowanceMicros: number;
   readonly maxMachines: number;
-  readonly defaultModel: string;
+  readonly managedMcp: ManagedMcpSettings;
+  readonly managedGit: ManagedGitSettings;
+  readonly managedWeb: ManagedWebSettings;
   readonly githubApiOrigin: string;
   readonly publicOrigin: string;
   readonly toolOrigin: string;
   readonly model: {
     readonly upstreamUrl: string;
-    readonly apiKey: Redacted.Redacted;
+    readonly credentials: GatewayCredentials;
     readonly offers: ReadonlyArray<ModelOffer>;
   };
   readonly sandbox: { readonly origin: string; readonly bearer: Redacted.Redacted };
-  readonly notificationProducers: ReadonlyArray<NotificationProducer>;
 };
 
 export type RuntimeEnvironment = Readonly<Record<string, unknown>>;
@@ -70,8 +81,11 @@ const SECRET_SETTINGS = [
   'MECHANE_DATABASE_URL',
   'MECHANE_CREDENTIAL_KEYRING',
   'MECHANE_MODEL_UPSTREAM_KEY',
+  'MECHANE_MODEL_ASSERTION_BEARER',
   'MECHANE_SANDBOX_SERVICE_KEY',
   'MECHANE_GITHUB_CLIENT_SECRET',
+  'MECHANE_SERVER_API_KEY',
+  'MECHANE_AGENT_IDENTITY_PRIVATE_KEY_PEM',
 ] as const;
 
 export async function resolveRuntimeEnvironment({
@@ -80,16 +94,8 @@ export async function resolveRuntimeEnvironment({
   readonly environment: RuntimeEnvironment;
 }): Promise<RuntimeEnvironment> {
   const resolved: Record<string, unknown> = { ...environment };
-  const producerBindings: Array<string> = [];
-  const producers = environment['MECHANE_NOTIFICATION_PRODUCERS'];
 
-  if (typeof producers === 'string') {
-    const configuration = Schema.decodeUnknownSync(NotificationProducersSchema)(JSON.parse(producers));
-
-    producerBindings.push(...configuration.map((producer) => producer.secretBinding));
-  }
-
-  for (const name of [...SECRET_SETTINGS, ...producerBindings]) {
+  for (const name of SECRET_SETTINGS) {
     const binding = environment[name];
 
     if (Schema.is(SecretBinding)(binding)) {
@@ -125,7 +131,14 @@ function modelEndpoint(environment: RuntimeEnvironment): string {
   const value = requiredEnvironment(environment, 'MECHANE_MODEL_UPSTREAM_URL');
   const decoded = Schema.decodeUnknownResult(SecureOrigin)(value);
 
-  if (decoded._tag === 'Failure' || decoded.success.username !== '' || decoded.success.password !== '') {
+  if (decoded._tag === 'Failure') {
+    throw new Error('Invalid runtime setting MECHANE_MODEL_UPSTREAM_URL');
+  }
+
+  const url = decoded.success;
+  const hasCredentials = url.username !== '' || url.password !== '';
+
+  if (hasCredentials || url.search !== '' || url.hash !== '') {
     throw new Error('Invalid runtime setting MECHANE_MODEL_UPSTREAM_URL');
   }
 
@@ -157,12 +170,8 @@ export function loadRuntimeConfiguration({
 
   const modelIds = new Set(offers.map((offer) => offer.id));
 
-  const defaultModel = Schema.decodeUnknownSync(Schema.String)(
-    environment['MECHANE_DEFAULT_MODEL'] ?? 'openai/gpt-6.1-sol',
-  );
-
-  if (modelIds.size !== offers.length || !modelIds.has(defaultModel)) {
-    throw new Error('Model offers must have distinct IDs and include the default model');
+  if (modelIds.size !== offers.length) {
+    throw new Error('Model offers must have distinct IDs');
   }
 
   const keyring = parseKeyring(environment);
@@ -197,20 +206,17 @@ export function loadRuntimeConfiguration({
       DEFAULT_DAILY_CAP_MICROS,
     ),
     maxMachines: optionalInteger(environment, 'MECHANE_MAX_MACHINES', DEFAULT_MAX_MACHINES),
-    defaultModel,
+    managedMcp: readManagedMcpSettings(environment),
     publicOrigin: publicOrigin.origin,
     toolOrigin: toolOrigin.origin,
+    managedGit: readManagedGitSettings(environment),
+    managedWeb: readManagedWebSettings(environment),
     githubApiOrigin: githubApiOrigin.origin,
-    model: {
-      upstreamUrl: modelEndpoint(environment),
-      apiKey: Redacted.make(requiredEnvironment(environment, 'MECHANE_MODEL_UPSTREAM_KEY')),
-      offers,
-    },
+    model: { upstreamUrl: modelEndpoint(environment), credentials: gatewayCredentials(environment), offers },
     sandbox: {
       origin: sandboxOrigin.origin,
       bearer: Redacted.make(requiredEnvironment(environment, 'MECHANE_SANDBOX_SERVICE_KEY')),
     },
-    notificationProducers: notificationProducerSettings(environment),
   };
 }
 
@@ -221,36 +227,6 @@ function parseKeyring(environment: RuntimeEnvironment): CredentialKeyring {
     );
   } catch {
     throw new Error('Credential keyring configuration is invalid');
-  }
-}
-
-function notificationProducerSettings(environment: RuntimeEnvironment): ReadonlyArray<NotificationProducer> {
-  const raw = environment['MECHANE_NOTIFICATION_PRODUCERS'];
-
-  if (raw === undefined) {
-    return [];
-  }
-
-  try {
-    const producers = Schema.decodeUnknownSync(NotificationProducersSchema, { onExcessProperty: 'error' })(
-      JSON.parse(Schema.decodeUnknownSync(Schema.String)(raw)),
-    );
-
-    if (new Set(producers.map((producer) => producer.id)).size !== producers.length) {
-      throw new Error('Duplicate notification producer');
-    }
-
-    return producers.map((producer) => {
-      const secret = requiredEnvironment(environment, producer.secretBinding);
-
-      if (secret.length < PRODUCER_SECRET_MIN_CHARS) {
-        throw new Error('The producer signing secret is too short');
-      }
-
-      return { id: producer.id, recipients: producer.recipients, secret: Redacted.make(secret) };
-    });
-  } catch {
-    throw new Error('Notification producer configuration is invalid');
   }
 }
 

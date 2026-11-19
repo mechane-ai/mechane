@@ -1,25 +1,27 @@
 # Agent environments
 
-A mech is a persistent identity with working context and a developer environment. Generic notifications bring it new
-input. One active model owner protects that context and shared files; different mechs work independently. An activation
-is a bounded Pi execution within that identity, not a separate task for each notification.
+An agent is a named identity with one execution slot. Sessions using the same agent keep separate conversations, files
+and pending tool calls. Threads within a session share its worker environment. Attach an explicit memory store when two
+sessions need to share knowledge. The installation's sandbox and an external worker both implement the Managed Agents
+environment work protocol.
 
 The agent chooses commands and follows the repository's instructions. Mechane provides tools and current authority; it
 does not prescribe coding, review, merge, or deployment stages.
 
 ## Access
 
-A workspace owner writes a credential from a private file, then grants references and public variables to a mech:
+An external worker polls an environment with its environment key. Each accepted work item grants a short-lived
+credential for one session. The installed dispatcher delivers that credential to the session’s isolated guest. Public
+session events, tool results, attached skills and memory use the same work protocol in both environments.
 
-```sh
-mechane credential put application-agent --file /private/path/application-key
-mechane execution-access show MECH_ID
-```
+A workspace owner grants a named agent access for sessions opened by a specific workspace member or service principal.
+The grant contains public variables and references to credentials already encrypted in that workspace. Use the managed
+agent ID and the session creator’s principal ID when provisioning an installation. See
+[Installed command access](./self-hosting.md#installed-command-access) for the CLI commands.
 
-Use `execution-access set` with the current
-[grant schema](../packages/shared/protocol/src/operations/execution-access/schemas.ts). Grants contain public
-environment variables and encrypted credential references. Metadata exposes references only. Revocation affects
-subsequent dispatch without selecting a broader credential to compensate.
+The installed worker checks its current lease before each Bash command. Rotating a referenced credential or revoking the
+grant takes effect on the next command. Agents with delegated threads share a session computer, so those sessions
+receive an empty command environment grant. External workers provision their own command credentials.
 
 Configure application CLIs through their ordinary environment settings. In Softmax, the installation supplies Nexus CLI
 and its service identity. Nexus owns application access, approval requests, and provider credential issuance. Mechane
@@ -33,8 +35,9 @@ its credentials deliberately, so grant the intended authority rather than treati
 ## Tools and files
 
 The generic image includes the developer tools needed to clone, edit, test, and publish repositories, plus Chromium, a
-display server, and media encoding. Repository pins remain authoritative. The
-[native tool definitions](../packages/worker/runtime/src/tools/runtime-tools.ts) own current names and input shapes.
+display server, and media encoding. Repository pins remain authoritative. The standard Managed Agents toolset runs in
+the installed worker. The native compute service also keeps process, browser and evidence receipts for installation
+operators.
 
 Nix runs as the guest user with flakes enabled. Its single-user store lives at `/nix`, outside the durable home; the
 outer container owns isolation. Use the repository's flake or setup entrypoint for Bazel and other pinned toolchains.
@@ -51,26 +54,25 @@ again on a fresh machine. Company CLIs such as Nexus remain explicit installatio
 
 Use `sandboxes.web_access: "public"` for general browsing, or the default `packages` mode with explicit
 `additional_hosts`. Both modes retain the outbound gateway. Public browsing does not authorize private destinations or
-general access to the installation's control plane. The canonical public self API admits only catalog-declared self
-operations through normal scoped-token authentication, so `mechane self message` and `mechane self wake` work without
-additional credentials. Other control-plane routes and installation aliases remain blocked. Development servers use
-loopback inside their own sandbox.
+general access to the installation’s control plane. The gateway forwards the worker’s scoped operations only to the
+installation’s canonical origin. The application checks the active lease and session on each request. Development
+servers use loopback inside their own sandbox.
 
-Use ordinary files in the durable home for notes, plans, and progress. The installation can recommend a layout without
-adding a runtime task or memory service. Internal model-context checkpoints are distinct from those files. Remote tools
-come from current owner-configured MCP connections and grants. Remembered instructions cannot expand authority.
+The installed worker starts in `/workspace`. Its backing directory lives under the guest home, so checkouts, uncommitted
+changes and ordinary notes follow the session when its machine is replaced. Every thread in that session uses the same
+files. A second session gets its own workspace, even when both sessions select the same agent and environment. The SDK
+mounts attached memory stores outside the home. Installed sessions restore the portable home and load the session’s
+current memory resources on the next allocation. External workers decide how to store and recover their own files.
 
-A terminal foreground result records the shell's exit code or timeout and bounded output durably. It does not wait for a
-remote home upload. Automatic file checkpoints coalesce changes in the background and yield to new foreground work.
-Native activation completion does not itself save every file or end managed processes. Explicit file barriers and
-graceful shutdown still wait for a fresh committed generation.
+A tool result can arrive before its files are saved. On graceful release the installed environment quiesces the worker,
+commits the home and stops the machine. The next allocation restores the committed generation before starting the
+worker. An abrupt machine loss can lose changes made since the last checkpoint. The environment report records the saved
+generation, capture or restore progress, and any failure.
 
-The environment report shows the last committed head separately from automatic capture, upload, and failure status. Its
-[durability schema](../packages/shared/sandbox-wire/src/environment-state.ts) distinguishes observed activity from the
-captured activity of that saved head. A saved head describes files at capture time, not every later write. Automatic
-cadence is not a recovery-point guarantee; a lost machine can lose unsaved changes. Activity records admitted work, not
-a filesystem watch. An already-running process can write after capture without a new dispatch, so equal activity
-sequences do not mean that every live file is saved. Status reads do not create activity.
+When you stop a persistent local stack or apply new environment source, the supervisor holds new launches and lets
+active workers finish. It waits for their files to be saved and their machines to stop before replacing the host. A
+failed save leaves the host available. The stack's `owner.json` identifies the session, allocation generation, and
+reason so you can inspect its computer and retry the checkpoint.
 
 Keep reproducible caches and build output in scratch locations; archive limits remain explicit. A failed save preserves
 the previous committed generation and live files for recovery. Portable archives exclude browser profiles, cookies, and
@@ -110,18 +112,15 @@ New generations publish an immutable manifest after their archive parts and befo
 verifies that manifest's digest. Existing committed generations retain their original inline metadata and archive
 verification. Cloudflare-native snapshots are not the portable-home authority and are not required locally.
 
-Stop acknowledges a durable operation ID with HTTP 202. Inspect that ID or the workspace report for requested, waiting
-for commands, checkpointing, stopping, completed, or failed state. Inspection includes the committed generation,
-transfer cursor, recovery files, bounded last error, and a recovery action. A failed save preserves live files; a failed
-provider stop retains the final drain and retries its original identity. Completed confirms shutdown. Repeating Stop
-does not erase the failure or imply that an earlier head contains later writes. The activation checkpoint route also
-supports a passive receipt GET. It cannot advance a pending save or allocate a guest; an unknown operation returns 404.
+Inspect the installed session’s workspace report for the stop phase, committed generation, transfer cursor, and recovery
+action. A stop completes after the provider confirms the machine has gone. A failed final archive keeps the original
+guest available for file repair while it is still alive.
 
-For a failed save on the original quiet, ready guest, an operator can request a file-only checkpoint retry through the
-authenticated environment service. The request names the observed machine, recovery generation, and committed head.
-Changed observations or active work are refused. It preserves live files, the old head, and the original failure until a
-complete new generation commits. A successful repair resumes a retained Stop through its normal final drain; it does not
-clear a model or tool admission fence. This operation never runs a shell or adds a command completion notice.
+For an installed session, read `GET /internal/managed/sessions/{sessionId}/computer/allocation` and the adjacent
+`workspace` resource. A workspace owner can retry a failed final save while the allocation is releasing. POST its
+observed `generation`, `machineId`, `recoveryGeneration`, and `committedGeneration` to
+`…/computer/workspace/recovery-checkpoints/{operationId}`. Use GET on that same URL to follow the file repair. A changed
+generation or a different guest returns HTTP 409. Normal session release resumes shutdown after the save.
 
 A lost start acknowledgement rejoins the positively identified guest. A conflicting identity is refused. Application
 restarts preserve the separate environment owner and its guest. If the environment host itself loses a guest during
@@ -134,59 +133,42 @@ explicit recovery fence.
 | Managed process or browser session | Exists only on its original machine; saved files do not restore process memory or browser login.       |
 | Ready screenshot or recording      | Remains in private evidence storage after machine replacement, independently of workspace generations. |
 
-Every command uses a stable execution ID. `bash_status` observes its receipt without resubmitting the command. If a
-machine disappears before a receipt commits, the result stays uncertain. Check the remote branch, PR, deployment, or
-other affected system before deciding whether to repeat an external write.
+When a foreground command loses its result, inspect the affected branch, PR, deployment, or other external system before
+repeating a write. A machine replacement can recover committed files and still leave the command’s outcome uncertain.
 
 ## Development servers
 
-Use the managed-process tools for a server or watcher that must survive a tool result. Keep the returned machine and
-process handle. List existing work before starting another server. Read a handle for its state and bounded output, or
-stop its owned group. Reads and stops never start replacement work or mint another execution credential.
+Inside SDK Bash, use `mechane-computer GET processes` to list servers and watchers. Start one with
+`mechane-computer POST "processes/$id" '{"command":"make serve"}'`, using a new UUID for `id`. Save the returned machine
+and process handle. Read that handle for state and bounded output, or stop its process group. The
+[guest CLI documentation](../packages/node/guest/README.md#installed-session-computer) describes receipt polling.
 
-Terminal environment results enter a durable sandbox outbox in the same operation that records the outcome. The sandbox
-retries delivery after interruption, keeping the original execution identity. The runtime authenticates the callback,
-checks its workspace and mech against the persisted execution, and compares the authoritative terminal receipt before
-admitting a generic notification. Reading that receipt neither allocates compute nor extends the machine's idle
-deadline. If the original tool already retained the matching terminal outcome, the callback is acknowledged without a
-redundant inbox notice. A completed process-start receipt can still describe a running process; its later exit or loss
-produces a notification. A callback racing a pending active start waits through transport retry. Detached, uncertain, or
-abandoned pending execution still produces its completion notification.
+An installed session records each process exit, stop, or loss together with its originating action, work ID, and lease
+generation. To check an earlier process, read
+`GET /internal/managed/sessions/{sessionId}/computer/completions/{processId}` with a workspace credential authorized for
+that session. The collection at `…/computer/completions` returns the latest 20 receipts. Supply its `nextAfter` cursor
+as `after` to read the next page. Reading receipts leaves the agent idle and preserves the machine's idle deadline. Use
+the process handle to read bounded output.
 
-A terminal result, a saved home, and notification acceptance are separate facts. An exited process may have unsaved
-background writes. A failed file save cannot rewrite a completed command. The notification includes correlation and
-status; the agent chooses whether to read output or send a message through its tools.
+Checkpoint status is reported separately. An exited process can have unsaved files. A later checkpoint failure preserves
+the original exit code and work identity.
 
 Managed processes receive the current granted environment at startup. Reads and stops do not renew credentials or prove
 provider revocation. Later privileged work uses a fresh application operation and current authority. A running process
 is not a promise that its startup credentials are still valid.
 
+An installed process starts in the same `/workspace` directory as the SDK Bash tool, so a relative path names the same
+checked-out file from either tool.
+
 Running means the process started. Inspect its output and application response before treating it as ready. Exited
 includes an exit code; Stopped records an explicit stop; Lost means the original machine cannot supply the process. Lost
 work never restarts automatically. An incomplete log tail reports omitted bytes.
 
-Managed processes survive ordinary tool waits and activation completion while their machine remains alive. Explicit tool
-activity renews the existing idle deadline; background execution and Console polling do not. On resume, inspect the
-handle before deciding whether to start a replacement. Explicitly canceling an activation stops the processes it
-started. Canceling a dispatched foreground shell retires the machine, so other handles on that machine become Lost.
-
-Automatic checkpoints pause writers while copying the home, then resume them and release foreground admission during
-upload. They share one in-flight owner and coalesce later activity. Graceful drain takes a fresh snapshot and keeps
-writers paused until shutdown is confirmed. A failed save retains recoverable live files and the previous head.
-Snapshots preserve files, not application transaction consistency.
-
-After machine loss, an earlier saved head does not prove that newer background writes survived. A barrier with no live
-machine accepts that head only with matching committed drain evidence from the latest machine that became ready.
-Never-ready startup attempts neither create file-loss evidence nor hide earlier loss. Missing proof leaves an explicit
-failure and fences ordinary replacement allocation.
-
-The agent can inspect receipts and report the loss. An explicit upgrade can restore the last committed generation when
-no checkpoint or recovery remains pending. Restoring older saved files does not establish that the lost machine's newer
-writes survived. An environment with no previously ready machine can use its immutable imported files.
-
-The Console's Environment view passively observes existing handles. Expanding a process reads bounded logs; stopping it
-targets that exact machine and process. An individual stop owns a process group. A child that creates another session
-requires whole isolated-environment shutdown.
+Background processes survive individual tool calls while the same guest runs. A status read leaves the worker’s idle
+deadline unchanged. Inspect the existing handle after reconnecting. On ordinary release, the runtime quiesces the guest,
+saves its home and shuts it down. Machine replacement starts new processes only when the agent requests them. An abrupt
+loss can leave the files at the last committed generation. Check process receipts and checkpoint status separately when
+diagnosing an interrupted task.
 
 ## Browser interaction
 
@@ -213,24 +195,22 @@ Explicit screenshot and recording tools save captures. Ordinary observations sup
 result includes actual image content when a bounded preview is available. Full images and videos stay outside the
 conversation, in private R2 storage owned by the sandbox service.
 
-A successful durable capture returns a Mechane viewer link. The capture's local scratch path lasts only while its
-machine does. Use the viewer link in the PR through ordinary authorized `gh` commands. Recording limits bound encoded
-duration and bytes; the descriptor reports measured media duration. Pending or failed evidence is not downloadable.
+A ready capture returns its signed-in Console link in `evidence.viewer_url`. To retrieve it later, run
+`mechane-computer GET "evidence/$id"` and read `viewer_url`. Use that URL as proof in the PR. The link keeps the session
+and capture identity when the machine is replaced. The recording descriptor reports measured duration, media type, size,
+and checksum. Pending and failed captures have no downloadable media.
 
-Reviewers must sign in with current workspace membership. The application Worker checks membership on every metadata and
-media read, including video ranges. A viewer link grants no access; sign-in returns to that evidence. Removing
-membership also removes access through a previously shared link. Provider uploads are separate application operations
-with their own authority; a copied attachment follows that provider's access policy independently of this original.
+Reviewers sign in with a workspace identity authorized to read the capture’s session. The application Worker checks that
+authority on each metadata and media read, including video ranges. Sign-in returns the reviewer to the linked capture.
+Removing membership also removes access through a previously shared link. Provider uploads are separate application
+operations with their own authority; a copied attachment follows that provider's access policy independently of this
+original.
 
-Use `export_evidence` with the ready artifact ID when a CLI needs actual media bytes. It copies the saved original into
-`.mechane-evidence` under the current home and returns its absolute path, SHA-256, media type, size, and machine ID. It
-does not open Chromium, capture a changed page, or publish anything. Only this mech's ready artifacts are available.
-Ordinary shell commands can consume the returned file. Use the supplied digest when preparing an upload manifest.
-
-A confirmed copy is available on that machine; it joins the normal home checkpoint. Copy completion alone does not prove
-that a checkpoint committed. After machine replacement, call `export_evidence` again to copy the durable original.
-Repeating an interrupted copy is safe. Remove exported copies when no longer needed to keep home snapshots small;
-removing a local file does not delete the original saved evidence.
+Use `mechane-computer GET "evidence/$id/content" > capture.png` to stream the stored original from an installed session;
+choose the filename for its media type. Compare its checksum with the artifact metadata before publishing. For a
+verified copy in the session’s home, use `mechane-computer POST "evidence/$id/export"`. It returns the stored file’s
+path, SHA-256, media type, size, and machine ID. The exported copy joins the next home checkpoint. Removing that local
+copy preserves the original in evidence storage.
 
 Capture metadata identifies the original environment and native invocation, URL, time, dimensions, and digest. Supply
 the inspected repository path when requesting Git provenance. The runtime records its actual head and dirty state, or
@@ -242,17 +222,15 @@ support a visual review without claiming production authentication, real data, o
 
 ## Notifications and communication
 
-The [notification guide](notifications.md) describes generic admission and service producers. The agent can handle other
-input while an application request awaits approval. Its decision arrives as another notification, which carries
-correlation but no implied tool result. The agent reads current permission and relevance before a fresh operation.
+The [notification guide](notifications.md) describes how an application starts a session or sends a follow-up. A session
+can release the agent's execution slot while a person considers a tool request. Return the decision to the originating
+session and call. Check current permission before a new external operation.
 
-Use explicit tools for every outward message or reaction. Slack tools belong to the configured application CLI or MCP
-service. `console_message` publishes to the current mech's public Console conversation. Native final text and quiet
-completion do not send a response. Instructions can recommend acknowledgment without adding runtime delivery behavior.
+Read assistant replies from session events. Sending a Slack reply, reacting to a message or updating a PR requires an
+explicit tool call to the configured CLI or MCP service. A completed turn does not publish to another application.
 
-A new notification can arrive after a model decides on a command. Before a new effect, the runtime checks the presented
-notification watermark and current owner. A `not_started` result asks the model to reconsider with current context
-without launching the command. Previously admitted effects retain their original receipts and must be observed honestly.
+A durable receipt ties a previously admitted effect to its actual tool call. If a worker disconnects while an effect may
+be running, inspect the receipt before repeating the operation. Keep uncertainty visible to the caller.
 
 ## Qualification
 

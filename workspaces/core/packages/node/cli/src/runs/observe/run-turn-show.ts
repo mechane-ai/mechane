@@ -10,7 +10,7 @@ export const runTurnShow = Effect.fn('runTurnShow')(function* ({
   input,
   credentials,
   selectedWorkspaceId,
-}: RunInput<'turn show'>): Effect.fn.Return<CommandResult<'turn show'>, RunFailure> {
+}: RunInput<'history turn'>): Effect.fn.Return<CommandResult<'history turn'>, RunFailure> {
   const trace = yield* withWorkspace({
     call,
     origin,

@@ -1,0 +1,2319 @@
+{
+  "routes": [
+    {
+      "method": "POST",
+      "path": "/v1/skills",
+      "operation": "beta_create_skill_v1_skills_post",
+      "query": {},
+      "body": null,
+      "multipart": true
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills",
+      "operation": "beta_list_skills_v1_skills_get",
+      "query": {
+        "page": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "source": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}",
+      "operation": "beta_get_skill_v1_skills__skill_id__get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}",
+      "operation": "beta_delete_skill_v1_skills__skill_id__delete",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/skills/{skill_id}/versions",
+      "operation": "beta_create_skill_version_v1_skills__skill_id__versions_post",
+      "query": {},
+      "body": null,
+      "multipart": true
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions",
+      "operation": "beta_list_skill_versions_v1_skills__skill_id__versions_get",
+      "query": {
+        "page": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "limit": { "anyOf": [{ "type": "integer", "minimum": 1, "maximum": 1000 }, { "type": "null" }] }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "operation": "beta_get_skill_version_v1_skills__skill_id__versions__version__get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/skills/{skill_id}/versions/{version}",
+      "operation": "beta_delete_skill_version_v1_skills__skill_id__versions__version__delete",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/skills/{skill_id}/versions/{version}/content",
+      "operation": "beta_download_skill_version_content_v1_skills__skill_id__versions__version__content_get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments",
+      "operation": "beta_create_environment_v1_environments_post",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaPublicEnvironmentCreateRequest" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments",
+      "operation": "beta_list_environments_v1_environments_get",
+      "query": {
+        "limit": { "type": "integer", "maximum": 1000, "minimum": 1 },
+        "page": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "include_archived": { "type": "boolean" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}",
+      "operation": "beta_get_environment_v1_environments__environment_id__get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}",
+      "operation": "beta_update_environment_v1_environments__environment_id__post",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaPublicEnvironmentUpdateRequest" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/environments/{environment_id}",
+      "operation": "beta_delete_environment_v1_environments__environment_id__delete",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/archive",
+      "operation": "beta_archive_environment_v1_environments__environment_id__archive_post",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/stats",
+      "operation": "beta_get_environment_stats_v1_environments__environment_id__work_stats_get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/poll",
+      "operation": "beta_poll_work_v1_environments__environment_id__work_poll_get",
+      "query": {
+        "block_ms": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] },
+        "reclaim_older_than_ms": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/ack",
+      "operation": "beta_acknowledge_work_v1_environments__environment_id__work__work_id__ack_post",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/heartbeat",
+      "operation": "beta_record_heartbeat_v1_environments__environment_id__work__work_id__heartbeat_post",
+      "query": {
+        "desired_ttl_seconds": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+        "expected_last_heartbeat": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}/stop",
+      "operation": "beta_stop_work_v1_environments__environment_id__work__work_id__stop_post",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaSelfHostedWorkStopRequest" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work/{work_id}",
+      "operation": "beta_get_work_v1_environments__environment_id__work__work_id__get",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/environments/{environment_id}/work/{work_id}",
+      "operation": "beta_update_work_v1_environments__environment_id__work__work_id__post",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaSelfHostedWorkUpdateRequest" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/environments/{environment_id}/work",
+      "operation": "beta_list_work_v1_environments__environment_id__work_get",
+      "query": {
+        "limit": { "type": "integer", "maximum": 1000, "minimum": 1 },
+        "page": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions",
+      "operation": "BetaCreateSession",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateSessionParams" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions",
+      "operation": "BetaListSessions",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "include_archived": { "type": "boolean" },
+        "created_at[gte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[gt]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lt]": { "$ref": "#/$defs/BetaTimestamp" },
+        "agent_id": { "type": "string" },
+        "agent_version": { "type": "integer", "format": "int32" },
+        "order": { "$ref": "#/$defs/BetaManagedAgentsListOrder" },
+        "memory_store_id": { "type": "string" },
+        "deployment_id": { "type": "string" },
+        "statuses[]": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSessionStatus" } }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}",
+      "operation": "BetaGetSession",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}",
+      "operation": "BetaUpdateSession",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateSessionParams" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/sessions/{session_id}",
+      "operation": "BetaDeleteSession",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/events",
+      "operation": "BetaListEvents",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "order": { "$ref": "#/$defs/BetaManagedAgentsListOrder" },
+        "types[]": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSessionEventType" } },
+        "created_at[gte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[gt]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lt]": { "$ref": "#/$defs/BetaTimestamp" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/events",
+      "operation": "BetaSendEvents",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsSendSessionEventsParams" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/events/stream",
+      "operation": "BetaStreamSessionEvents",
+      "query": {
+        "event_deltas[]": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsEventDeltaType" } }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/archive",
+      "operation": "BetaArchiveSession",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads",
+      "operation": "BetaListSessionThreads",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "statuses[]": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSessionThreadStatus" } }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}",
+      "operation": "BetaGetSessionThread",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/events",
+      "operation": "BetaListSessionThreadEvents",
+      "query": { "limit": { "type": "integer", "format": "int32" }, "page": { "type": "string" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/stream",
+      "operation": "BetaStreamSessionThreadEvents",
+      "query": {
+        "event_deltas[]": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsEventDeltaType" } }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/threads/{thread_id}/archive",
+      "operation": "BetaArchiveSessionThread",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/resources",
+      "operation": "BetaListResources",
+      "query": { "limit": { "type": "integer", "format": "int32" }, "page": { "type": "string" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/resources",
+      "operation": "BetaAddResource",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsAddSessionResourceParams" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "operation": "BetaGetResource",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "operation": "BetaDeleteResource",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/sessions/{session_id}/resources/{resource_id}",
+      "operation": "BetaUpdateResource",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateSessionResourceParams" },
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents",
+      "operation": "BetaCreateAgent",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateAgentParams" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents",
+      "operation": "BetaListAgents",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "created_at[gte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "include_archived": { "type": "boolean" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/{agent_id}",
+      "operation": "BetaGetAgent",
+      "query": { "version": { "type": "integer", "format": "int32" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/{agent_id}",
+      "operation": "BetaUpdateAgent",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateAgentParams" },
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/agents/{agent_id}/archive",
+      "operation": "BetaArchiveAgent",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/agents/{agent_id}/versions",
+      "operation": "BetaListAgentVersions",
+      "query": { "limit": { "type": "integer", "format": "int32" }, "page": { "type": "string" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults",
+      "operation": "BetaCreateVault",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateVaultRequest" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults",
+      "operation": "BetaListVaults",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "include_archived": { "type": "boolean" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}",
+      "operation": "BetaGetVault",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}",
+      "operation": "BetaUpdateVault",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateVaultRequestBody" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/vaults/{vault_id}",
+      "operation": "BetaDeleteVault",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/archive",
+      "operation": "BetaArchiveVault",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials",
+      "operation": "BetaCreateCredential",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateCredentialRequestBody" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}/credentials",
+      "operation": "BetaListCredentials",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "include_archived": { "type": "boolean" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "operation": "BetaGetCredential",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "operation": "BetaUpdateCredential",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateCredentialRequestBody" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}",
+      "operation": "BetaDeleteCredential",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}/archive",
+      "operation": "BetaArchiveCredential",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/vaults/{vault_id}/credentials/{credential_id}/mcp_oauth_validate",
+      "operation": "BetaValidateCredential",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memories",
+      "operation": "BetaCreateMemory",
+      "query": { "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" } },
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateMemoryParams" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memories",
+      "operation": "BetaListMemories",
+      "query": {
+        "path_prefix": { "type": "string" },
+        "depth": { "type": "integer", "format": "int32" },
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "operation": "BetaGetMemory",
+      "query": { "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "operation": "BetaUpdateMemory",
+      "query": { "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" } },
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateMemoryParams" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/memory_stores/{memory_store_id}/memories/{memory_id}",
+      "operation": "BetaDeleteMemory",
+      "query": { "expected_content_sha256": { "type": "string" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions",
+      "operation": "BetaListMemoryVersions",
+      "query": {
+        "memory_id": { "type": "string" },
+        "session_id": { "type": "string" },
+        "api_key_id": { "type": "string" },
+        "service_account_id": { "type": "string" },
+        "operation": { "$ref": "#/$defs/BetaManagedAgentsMemoryVersionOperation" },
+        "created_at[gte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}",
+      "operation": "BetaGetMemoryVersion",
+      "query": { "view": { "$ref": "#/$defs/BetaManagedAgentsMemoryView" } },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/memory_versions/{memory_version_id}/redact",
+      "operation": "BetaRedactMemoryVersion",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores",
+      "operation": "BetaCreateMemoryStore",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsCreateMemoryStoreRequest" },
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores",
+      "operation": "BetaListMemoryStores",
+      "query": {
+        "limit": { "type": "integer", "format": "int32" },
+        "page": { "type": "string" },
+        "include_archived": { "type": "boolean" },
+        "created_at[gte]": { "$ref": "#/$defs/BetaTimestamp" },
+        "created_at[lte]": { "$ref": "#/$defs/BetaTimestamp" }
+      },
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "GET",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "operation": "BetaGetMemoryStore",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "operation": "BetaUpdateMemoryStore",
+      "query": {},
+      "body": { "$ref": "#/$defs/BetaManagedAgentsUpdateMemoryStoreRequestBody" },
+      "multipart": false
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/memory_stores/{memory_store_id}",
+      "operation": "BetaDeleteMemoryStore",
+      "query": {},
+      "body": null,
+      "multipart": false
+    },
+    {
+      "method": "POST",
+      "path": "/v1/memory_stores/{memory_store_id}/archive",
+      "operation": "BetaArchiveMemoryStore",
+      "query": {},
+      "body": null,
+      "multipart": false
+    }
+  ],
+  "definitions": {
+    "BetaCloudConfigParams": {
+      "properties": {
+        "networking": {
+          "anyOf": [
+            {
+              "oneOf": [{ "$ref": "#/$defs/BetaUnrestrictedNetwork" }, { "$ref": "#/$defs/BetaLimitedNetworkParams" }]
+            },
+            { "type": "null" }
+          ]
+        },
+        "packages": { "anyOf": [{ "$ref": "#/$defs/BetaPackagesParams" }, { "type": "null" }] },
+        "type": { "type": "string", "const": "cloud" }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["type"]
+    },
+    "BetaCurrency": { "type": "string", "enum": ["USD"] },
+    "BetaLimitedNetworkParams": {
+      "properties": {
+        "allow_mcp_servers": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "allow_package_managers": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "allowed_hosts": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "type": { "type": "string", "const": "limited" }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["type"]
+    },
+    "BetaManagedAgentsAddSessionResourceParams": {
+      "type": "object",
+      "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsFileResourceParams" }]
+    },
+    "BetaManagedAgentsAdvisorParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "model"],
+      "properties": {
+        "type": { "type": "string", "const": "advisor" },
+        "model": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "BetaManagedAgentsAgentParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "const": "agent" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "version": { "type": "integer", "format": "int32" }
+      }
+    },
+    "BetaManagedAgentsAgentToolConfigUnionParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsBashToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsEditToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsReadToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsWriteToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsGlobToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsGrepToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchToolConfigParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebSearchToolConfigParams" }
+      ]
+    },
+    "BetaManagedAgentsAgentToolParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsAgentToolset20260401Params" },
+        { "$ref": "#/$defs/BetaManagedAgentsMCPToolsetParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsCustomToolParams" }
+      ]
+    },
+    "BetaManagedAgentsAgentToolset20260401Params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "agent_toolset_20260401" },
+        "default_config": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsAgentToolsetDefaultConfigParams" }, { "type": "null" }]
+        },
+        "configs": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsAgentToolConfigUnionParams" } }
+      }
+    },
+    "BetaManagedAgentsAgentToolsetDefaultConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsAgentWithOverridesParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "const": "agent_with_overrides" },
+        "id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "version": { "type": "integer", "format": "int32" },
+        "model": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsModelParams" }] },
+        "system": { "anyOf": [{ "type": "string", "maxLength": 100000 }, { "type": "null" }] },
+        "tools": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsAgentToolParams" } },
+            { "type": "null" }
+          ]
+        },
+        "mcp_servers": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMCPServerParams" } },
+            { "type": "null" }
+          ]
+        },
+        "skills": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSkillParams" } },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsAlwaysAllowPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "always_allow" } }
+    },
+    "BetaManagedAgentsAlwaysAskPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "always_ask" } }
+    },
+    "BetaManagedAgentsAnthropicSkillParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "skill_id"],
+      "properties": {
+        "type": { "type": "string", "const": "anthropic" },
+        "skill_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "version": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 64 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsAutoPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "auto" } }
+    },
+    "BetaManagedAgentsAwsRoleExecutionIdentityParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "role_arn"],
+      "properties": {
+        "type": { "type": "string", "const": "aws_role" },
+        "role_arn": {
+          "type": "string",
+          "maxLength": 2048,
+          "pattern": "^arn:aws(-[a-z]+)*:iam::[0-9]{12}:role/[\\w+=,.@/-]+$"
+        }
+      }
+    },
+    "BetaManagedAgentsBase64DocumentSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "media_type", "data"],
+      "properties": {
+        "type": { "type": "string", "const": "base64" },
+        "media_type": { "type": "string", "minLength": 1 },
+        "data": { "type": "string", "minLength": 1 }
+      }
+    },
+    "BetaManagedAgentsBase64ImageSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "media_type", "data"],
+      "properties": {
+        "type": { "type": "string", "const": "base64" },
+        "media_type": { "type": "string", "minLength": 1 },
+        "data": { "type": "string", "minLength": 1 }
+      }
+    },
+    "BetaManagedAgentsBashToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "bash" },
+        "name": { "type": "string", "const": "bash" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsBranchCheckout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "type": "string", "const": "branch" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 }
+      }
+    },
+    "BetaManagedAgentsBudget": { "type": "object", "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsBudgetLimit" }] },
+    "BetaManagedAgentsBudgetLimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "max_list_cost"],
+      "properties": {
+        "type": { "type": "string", "const": "limit" },
+        "max_list_cost": { "allOf": [{ "$ref": "#/$defs/BetaMonetaryAmount" }] }
+      }
+    },
+    "BetaManagedAgentsCommitCheckout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "sha"],
+      "properties": {
+        "type": { "type": "string", "const": "commit" },
+        "sha": { "type": "string", "minLength": 7, "maxLength": 64, "pattern": "^[0-9a-fA-F]+$" }
+      }
+    },
+    "BetaManagedAgentsContentSha256Precondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "content_sha256" },
+        "content_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "BetaManagedAgentsCreateAgentParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "model"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "model": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsModelParams" }] },
+        "description": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "null" }] },
+        "system": { "anyOf": [{ "type": "string", "maxLength": 100000 }, { "type": "null" }] },
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsAgentToolParams" } },
+        "mcp_servers": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMCPServerParams" } },
+        "skills": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSkillParams" } },
+        "metadata": { "type": "object", "additionalProperties": { "type": "string" } },
+        "multiagent": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentParams" }, { "type": "null" }] },
+        "execution_identity": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsExecutionIdentityParams" }, { "type": "null" }]
+        }
+      }
+    },
+    "BetaManagedAgentsCreateCredentialRequestBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auth"],
+      "properties": {
+        "auth": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsCredentialCreateAuth" }] },
+        "display_name": { "anyOf": [{ "type": "string", "maxLength": 255 }, { "type": "null" }] },
+        "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "BetaManagedAgentsCreateMemoryParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "content"],
+      "properties": {
+        "path": { "type": "string", "minLength": 2, "maxLength": 1024, "pattern": "^(/[^/\u0000]+)+$" },
+        "content": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsCreateMemoryStoreRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "description": { "type": "string", "maxLength": 1024 },
+        "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "BetaManagedAgentsCreateSessionAgentUnionParams": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsAgentParams" },
+            { "$ref": "#/$defs/BetaManagedAgentsAgentWithOverridesParams" }
+          ]
+        }
+      ]
+    },
+    "BetaManagedAgentsCreateSessionParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent", "environment_id"],
+      "properties": {
+        "agent": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsCreateSessionAgentUnionParams" }] },
+        "environment_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "null" }] },
+        "metadata": { "type": "object", "additionalProperties": { "type": "string" } },
+        "resources": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSessionResourceParams" } },
+        "vault_ids": { "type": "array", "items": { "type": "string" } },
+        "initial_events": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BetaManagedAgentsSessionInitialEventParams" }
+        },
+        "budget": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsBudget" }] }
+      }
+    },
+    "BetaManagedAgentsCreateVaultRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name"],
+      "properties": {
+        "display_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "BetaManagedAgentsCredentialCreateAuth": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMcpOauthCreateParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsStaticBearerCreateParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsEnvironmentVariableCreateParams" }
+      ]
+    },
+    "BetaManagedAgentsCredentialNetworkingParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsUnrestrictedCredentialNetworkingParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsLimitedCredentialNetworkingParams" }
+      ]
+    },
+    "BetaManagedAgentsCredentialUpdateAuth": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMcpOauthUpdateParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsStaticBearerUpdateParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsEnvironmentVariableUpdateParams" }
+      ]
+    },
+    "BetaManagedAgentsCustomSkillParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "skill_id"],
+      "properties": {
+        "type": { "type": "string", "const": "custom" },
+        "skill_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "version": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 64 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsCustomToolInputSchema": {
+      "additionalProperties": true,
+      "properties": {
+        "properties": { "anyOf": [{ "additionalProperties": true, "type": "object" }, { "type": "null" }] },
+        "required": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "type": { "const": "object", "type": "string" }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "BetaManagedAgentsCustomToolParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name", "description", "input_schema"],
+      "properties": {
+        "type": { "type": "string", "const": "custom" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_-]{1,128}$" },
+        "description": { "type": "string", "minLength": 1 },
+        "input_schema": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsCustomToolInputSchema" }] }
+      }
+    },
+    "BetaManagedAgentsDocumentBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "source"],
+      "properties": {
+        "type": { "type": "string", "const": "document" },
+        "source": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsDocumentSource" }] },
+        "title": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "context": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsDocumentSource": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsBase64DocumentSource" },
+        { "$ref": "#/$defs/BetaManagedAgentsPlainTextDocumentSource" },
+        { "$ref": "#/$defs/BetaManagedAgentsURLDocumentSource" },
+        { "$ref": "#/$defs/BetaManagedAgentsFileDocumentSource" }
+      ]
+    },
+    "BetaManagedAgentsEditToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "edit" },
+        "name": { "type": "string", "const": "edit" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsEffortHigh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "high" } }
+    },
+    "BetaManagedAgentsEffortLevel": { "type": "string", "enum": ["low", "medium", "high", "xhigh", "max"] },
+    "BetaManagedAgentsEffortLow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "low" } }
+    },
+    "BetaManagedAgentsEffortMax": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "max" } }
+    },
+    "BetaManagedAgentsEffortMedium": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "medium" } }
+    },
+    "BetaManagedAgentsEffortParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsEffortLevel" },
+        {
+          "type": "object",
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsEffortLow" },
+            { "$ref": "#/$defs/BetaManagedAgentsEffortMedium" },
+            { "$ref": "#/$defs/BetaManagedAgentsEffortHigh" },
+            { "$ref": "#/$defs/BetaManagedAgentsEffortXhigh" },
+            { "$ref": "#/$defs/BetaManagedAgentsEffortMax" }
+          ]
+        }
+      ]
+    },
+    "BetaManagedAgentsEffortXhigh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "xhigh" } }
+    },
+    "BetaManagedAgentsEnvironmentVariableCreateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "secret_name", "secret_value", "networking"],
+      "properties": {
+        "type": { "type": "string", "const": "environment_variable" },
+        "secret_name": { "type": "string", "minLength": 1, "maxLength": 255, "pattern": "^[A-Z_][A-Z0-9_]*$" },
+        "secret_value": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+        "networking": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsCredentialNetworkingParams" }] },
+        "injection_location": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsInjectionLocationParams" }] }
+      }
+    },
+    "BetaManagedAgentsEnvironmentVariableUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "environment_variable" },
+        "secret_value": {
+          "anyOf": [
+            { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+            { "type": "null" }
+          ]
+        },
+        "networking": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsCredentialNetworkingParams" }, { "type": "null" }]
+        },
+        "injection_location": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsInjectionLocationUpdateParams" }] }
+      }
+    },
+    "BetaManagedAgentsEventDeltaType": { "type": "string", "enum": ["agent.message", "agent.thinking"] },
+    "BetaManagedAgentsEventParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsUserMessageEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserInterruptEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserToolConfirmationEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserCustomToolResultEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserDefineOutcomeEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserToolResultEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsSystemMessageEventParams" }
+      ]
+    },
+    "BetaManagedAgentsExecutionIdentityParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsAwsRoleExecutionIdentityParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsServiceAccountExecutionIdentityParams" }
+      ]
+    },
+    "BetaManagedAgentsFileDocumentSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "file_id"],
+      "properties": { "type": { "type": "string", "const": "file" }, "file_id": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsFileImageSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "file_id"],
+      "properties": { "type": { "type": "string", "const": "file" }, "file_id": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsFileResourceParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "file_id"],
+      "properties": {
+        "type": { "type": "string", "const": "file" },
+        "file_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "mount_path": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 4096 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsFileRubricParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "file_id"],
+      "properties": { "type": { "type": "string", "const": "file" }, "file_id": { "type": "string" } }
+    },
+    "BetaManagedAgentsGitHubRepositoryResourceParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": {
+        "type": { "type": "string", "const": "github_repository" },
+        "url": { "type": "string", "minLength": 1, "maxLength": 2048 },
+        "authorization_token": { "type": "string", "minLength": 1, "maxLength": 4096 },
+        "mount_path": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 4096 }, { "type": "null" }] },
+        "checkout": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsRepositoryCheckout" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsGlobToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "glob" },
+        "name": { "type": "string", "const": "glob" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsGrepToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "grep" },
+        "name": { "type": "string", "const": "grep" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsImageBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "source"],
+      "properties": {
+        "type": { "type": "string", "const": "image" },
+        "source": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsImageSource" }] }
+      }
+    },
+    "BetaManagedAgentsImageSource": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsBase64ImageSource" },
+        { "$ref": "#/$defs/BetaManagedAgentsURLImageSource" },
+        { "$ref": "#/$defs/BetaManagedAgentsFileImageSource" }
+      ]
+    },
+    "BetaManagedAgentsInjectionLocationParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "header": { "type": "boolean" }, "body": { "type": "boolean" } }
+    },
+    "BetaManagedAgentsInjectionLocationUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "header": { "type": "boolean" }, "body": { "type": "boolean" } }
+    },
+    "BetaManagedAgentsLimitedCredentialNetworkingParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "allowed_hosts"],
+      "properties": {
+        "type": { "type": "string", "const": "limited" },
+        "allowed_hosts": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "BetaManagedAgentsListOrder": { "type": "string", "enum": ["asc", "desc"] },
+    "BetaManagedAgentsMCPServerParams": {
+      "type": "object",
+      "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsURLMCPServerParams" }]
+    },
+    "BetaManagedAgentsMCPToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMCPToolsetDefaultConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMCPToolsetParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "mcp_server_name"],
+      "properties": {
+        "type": { "type": "string", "const": "mcp_toolset" },
+        "mcp_server_name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "default_config": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMCPToolsetDefaultConfigParams" }, { "type": "null" }]
+        },
+        "configs": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMCPToolConfigParams" } }
+      }
+    },
+    "BetaManagedAgentsMcpOauthCreateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "mcp_server_url", "access_token"],
+      "properties": {
+        "type": { "type": "string", "const": "mcp_oauth" },
+        "mcp_server_url": { "type": "string", "minLength": 1, "maxLength": 2047 },
+        "access_token": { "type": "string", "minLength": 1, "maxLength": 8192, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+        "expires_at": { "anyOf": [{ "$ref": "#/$defs/BetaTimestamp" }, { "type": "null" }] },
+        "refresh": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMcpOauthRefreshParams" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMcpOauthRefreshParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["refresh_token", "token_endpoint", "client_id", "token_endpoint_auth"],
+      "properties": {
+        "refresh_token": { "type": "string", "minLength": 1, "maxLength": 8192 },
+        "token_endpoint": { "type": "string", "minLength": 1, "maxLength": 2047 },
+        "client_id": { "type": "string", "minLength": 1, "maxLength": 1024 },
+        "scope": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 8192 }, { "type": "null" }] },
+        "resource": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 2047 }, { "type": "null" }] },
+        "token_endpoint_auth": {
+          "type": "object",
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsTokenEndpointAuthNoneParam" },
+            { "$ref": "#/$defs/BetaManagedAgentsTokenEndpointAuthBasicParam" },
+            { "$ref": "#/$defs/BetaManagedAgentsTokenEndpointAuthPostParam" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsMcpOauthRefreshUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "refresh_token": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 8192 }, { "type": "null" }] },
+        "scope": { "anyOf": [{ "type": "string", "maxLength": 8192 }, { "type": "null" }] },
+        "token_endpoint_auth": {
+          "type": "object",
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsTokenEndpointAuthBasicUpdateParam" },
+            { "$ref": "#/$defs/BetaManagedAgentsTokenEndpointAuthPostUpdateParam" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsMcpOauthUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "mcp_oauth" },
+        "access_token": {
+          "anyOf": [
+            { "type": "string", "minLength": 1, "maxLength": 8192, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+            { "type": "null" }
+          ]
+        },
+        "expires_at": { "anyOf": [{ "$ref": "#/$defs/BetaTimestamp" }, { "type": "null" }] },
+        "refresh": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMcpOauthRefreshUpdateParams" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMemoryStoreResourceParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "memory_store_id"],
+      "properties": {
+        "type": { "type": "string", "const": "memory_store" },
+        "memory_store_id": { "type": "string", "pattern": "^memstore_[a-zA-Z0-9_]+$" },
+        "access": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMountMode" }, { "type": "null" }] },
+        "instructions": { "anyOf": [{ "type": "string", "maxLength": 4096 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMemoryVersionOperation": { "type": "string", "enum": ["created", "modified", "deleted"] },
+    "BetaManagedAgentsMemoryView": { "type": "string", "enum": ["basic", "full"] },
+    "BetaManagedAgentsModel": {
+      "anyOf": [
+        { "const": "claude-fable-5-2" },
+        { "const": "claude-haiku-5-5" },
+        { "const": "claude-sonnet-5-5" },
+        { "const": "claude-opus-5-5" },
+        { "const": "claude-fable-5-1" },
+        { "const": "claude-sonnet-5" },
+        { "const": "claude-fable-5" },
+        { "const": "claude-opus-5" },
+        { "const": "claude-opus-4-8" },
+        { "const": "claude-opus-4-7" },
+        { "const": "claude-opus-4-6" },
+        { "const": "claude-sonnet-4-6" },
+        { "const": "claude-haiku-4-5" },
+        { "const": "claude-haiku-4-5-20251001" },
+        { "const": "claude-opus-4-5" },
+        { "const": "claude-opus-4-5-20251101" },
+        { "const": "claude-sonnet-4-5", "deprecated": true },
+        { "const": "claude-sonnet-4-5-20250929", "deprecated": true },
+        { "type": "string" }
+      ]
+    },
+    "BetaManagedAgentsModelConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsModel" }] },
+        "speed": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsSpeed" }, { "type": "null" }] },
+        "effort": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsEffortParams" }, { "type": "null" }] },
+        "inference_geo": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsModelParams": {
+      "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsModel" }, { "$ref": "#/$defs/BetaManagedAgentsModelConfigParams" }]
+    },
+    "BetaManagedAgentsMountMode": { "type": "string", "enum": ["read_write", "read_only"] },
+    "BetaManagedAgentsMultiagent20261001Params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "multiagent_20261001" },
+        "workflows": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentWorkflowsParams" }, { "type": "null" }]
+        },
+        "subagents": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentSubagentsParams" }, { "type": "null" }]
+        },
+        "advisor": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentAdvisorParams" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsMultiagentAdvisorDisabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "disabled" } }
+    },
+    "BetaManagedAgentsMultiagentAdvisorEnabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "model"],
+      "properties": {
+        "type": { "type": "string", "const": "enabled" },
+        "model": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "BetaManagedAgentsMultiagentAdvisorParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentAdvisorEnabledParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentAdvisorDisabledParams" }
+      ]
+    },
+    "BetaManagedAgentsMultiagentCoordinatorParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "agents"],
+      "properties": {
+        "type": { "type": "string", "const": "coordinator" },
+        "agents": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMultiagentRosterEntryParams" } }
+      }
+    },
+    "BetaManagedAgentsMultiagentInlineAgentsDisabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "disabled" } }
+    },
+    "BetaManagedAgentsMultiagentInlineAgentsEnabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "enabled" } }
+    },
+    "BetaManagedAgentsMultiagentInlineAgentsParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentInlineAgentsEnabledParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentInlineAgentsDisabledParams" }
+      ]
+    },
+    "BetaManagedAgentsMultiagentParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentCoordinatorParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagent20261001Params" }
+      ]
+    },
+    "BetaManagedAgentsMultiagentPredefinedAgentParams": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsAgentParams" },
+            { "$ref": "#/$defs/BetaManagedAgentsMultiagentSelfParams" }
+          ]
+        }
+      ]
+    },
+    "BetaManagedAgentsMultiagentRosterEntryParams": {
+      "oneOf": [
+        { "type": "string" },
+        {
+          "oneOf": [
+            { "$ref": "#/$defs/BetaManagedAgentsAgentParams" },
+            { "$ref": "#/$defs/BetaManagedAgentsMultiagentSelfParams" },
+            { "$ref": "#/$defs/BetaManagedAgentsAdvisorParams" }
+          ]
+        }
+      ]
+    },
+    "BetaManagedAgentsMultiagentSelfParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "self" } }
+    },
+    "BetaManagedAgentsMultiagentSubagentsDisabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "disabled" } }
+    },
+    "BetaManagedAgentsMultiagentSubagentsEnabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "enabled" },
+        "inline_agents": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentInlineAgentsParams" }, { "type": "null" }]
+        },
+        "predefined_agents": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMultiagentPredefinedAgentParams" } },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsMultiagentSubagentsParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentSubagentsEnabledParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentSubagentsDisabledParams" }
+      ]
+    },
+    "BetaManagedAgentsMultiagentWorkflowsDisabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "disabled" } }
+    },
+    "BetaManagedAgentsMultiagentWorkflowsEnabledParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "enabled" },
+        "inline_agents": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentInlineAgentsParams" }, { "type": "null" }]
+        },
+        "predefined_agents": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMultiagentPredefinedAgentParams" } },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsMultiagentWorkflowsParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentWorkflowsEnabledParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMultiagentWorkflowsDisabledParams" }
+      ]
+    },
+    "BetaManagedAgentsPermissionPolicy": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsAlwaysAllowPolicy" },
+        { "$ref": "#/$defs/BetaManagedAgentsAlwaysAskPolicy" },
+        { "$ref": "#/$defs/BetaManagedAgentsAutoPolicy" }
+      ]
+    },
+    "BetaManagedAgentsPlainTextDocumentSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "media_type", "data"],
+      "properties": {
+        "type": { "type": "string", "const": "text" },
+        "media_type": { "type": "string", "const": "text/plain" },
+        "data": { "type": "string", "minLength": 1 }
+      }
+    },
+    "BetaManagedAgentsPrecondition": {
+      "type": "object",
+      "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsContentSha256Precondition" }]
+    },
+    "BetaManagedAgentsReadToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "read" },
+        "name": { "type": "string", "const": "read" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsRedactedBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "redacted" } }
+    },
+    "BetaManagedAgentsRepositoryCheckout": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsBranchCheckout" },
+        { "$ref": "#/$defs/BetaManagedAgentsCommitCheckout" }
+      ]
+    },
+    "BetaManagedAgentsRubricParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsFileRubricParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsTextRubricParams" }
+      ]
+    },
+    "BetaManagedAgentsSearchResultBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "source", "title", "content", "citations"],
+      "properties": {
+        "type": { "type": "string", "const": "search_result" },
+        "source": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSearchResultContent" } },
+        "citations": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsSearchResultCitations" }] }
+      }
+    },
+    "BetaManagedAgentsSearchResultCitations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled"],
+      "properties": { "enabled": { "type": "boolean" } }
+    },
+    "BetaManagedAgentsSearchResultContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": { "type": { "type": "string", "const": "text" }, "text": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsSendSessionEventsParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["events"],
+      "properties": { "events": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsEventParams" } } }
+    },
+    "BetaManagedAgentsServiceAccountExecutionIdentityParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "service_account" } }
+    },
+    "BetaManagedAgentsSessionAgentUpdate": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsAgentToolParams" } },
+        "mcp_servers": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMCPServerParams" } }
+      }
+    },
+    "BetaManagedAgentsSessionEventType": {
+      "type": "string",
+      "enum": [
+        "user.message",
+        "user.interrupt",
+        "user.tool_confirmation",
+        "user.custom_tool_result",
+        "agent.custom_tool_use",
+        "agent.message",
+        "agent.thinking",
+        "agent.mcp_tool_use",
+        "agent.mcp_tool_result",
+        "agent.tool_use",
+        "agent.tool_result",
+        "agent.thread_message_received",
+        "agent.thread_message_sent",
+        "agent.thread_context_compacted",
+        "session.error",
+        "session.status_rescheduled",
+        "session.status_running",
+        "session.status_idle",
+        "session.status_terminated",
+        "session.thread_created",
+        "span.outcome_evaluation_start",
+        "span.outcome_evaluation_end",
+        "span.model_request_start",
+        "span.model_request_end",
+        "span.outcome_evaluation_ongoing",
+        "user.define_outcome",
+        "session.thread_status_running",
+        "session.thread_status_idle",
+        "session.thread_status_terminated",
+        "user.tool_result",
+        "session.thread_status_rescheduled",
+        "session.updated",
+        "system.message",
+        "session.usage",
+        "workflow_run.created",
+        "workflow_run.status_running",
+        "workflow_run.status_idle",
+        "workflow_run.status_ended",
+        "workflow_run.error",
+        "workflow_run.phase_started",
+        "workflow_run.phase_ended"
+      ]
+    },
+    "BetaManagedAgentsSessionInitialEventParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsUserMessageEventParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsUserDefineOutcomeEventParams" }
+      ]
+    },
+    "BetaManagedAgentsSessionResourceParams": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsGitHubRepositoryResourceParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsFileResourceParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsMemoryStoreResourceParam" }
+      ]
+    },
+    "BetaManagedAgentsSessionStatus": { "type": "string", "enum": ["rescheduling", "running", "idle", "terminated"] },
+    "BetaManagedAgentsSessionThreadStatus": {
+      "type": "string",
+      "enum": ["running", "idle", "rescheduling", "terminated"]
+    },
+    "BetaManagedAgentsSkillParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsAnthropicSkillParams" },
+        { "$ref": "#/$defs/BetaManagedAgentsCustomSkillParams" }
+      ]
+    },
+    "BetaManagedAgentsSpeed": { "type": "string", "enum": ["standard", "fast"] },
+    "BetaManagedAgentsStaticBearerCreateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "token", "mcp_server_url"],
+      "properties": {
+        "type": { "type": "string", "const": "static_bearer" },
+        "token": { "type": "string", "minLength": 1, "maxLength": 8192, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+        "mcp_server_url": { "type": "string", "minLength": 1, "maxLength": 2047 }
+      }
+    },
+    "BetaManagedAgentsStaticBearerUpdateParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "static_bearer" },
+        "token": {
+          "anyOf": [
+            { "type": "string", "minLength": 1, "maxLength": 8192, "pattern": "^[^\\x00-\\x1f\\x7f]*$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsSystemContentBlock": {
+      "type": "object",
+      "oneOf": [{ "$ref": "#/$defs/BetaManagedAgentsTextBlock" }]
+    },
+    "BetaManagedAgentsSystemMessageEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "content"],
+      "properties": {
+        "type": { "type": "string", "const": "system.message" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSystemContentBlock" } }
+      }
+    },
+    "BetaManagedAgentsTextBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "text"],
+      "properties": { "type": { "type": "string", "const": "text" }, "text": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsTextRubricParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "content"],
+      "properties": {
+        "type": { "type": "string", "const": "text" },
+        "content": { "type": "string", "maxLength": 262144 }
+      }
+    },
+    "BetaManagedAgentsTokenEndpointAuthBasicParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "client_secret"],
+      "properties": {
+        "type": { "type": "string", "const": "client_secret_basic" },
+        "client_secret": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "BetaManagedAgentsTokenEndpointAuthBasicUpdateParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "client_secret_basic" },
+        "client_secret": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 512 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsTokenEndpointAuthNoneParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "none" } }
+    },
+    "BetaManagedAgentsTokenEndpointAuthPostParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "client_secret"],
+      "properties": {
+        "type": { "type": "string", "const": "client_secret_post" },
+        "client_secret": { "type": "string", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "BetaManagedAgentsTokenEndpointAuthPostUpdateParam": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "client_secret_post" },
+        "client_secret": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 512 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsToolResultContentBlock": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsTextBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsImageBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsDocumentBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsSearchResultBlock" }
+      ]
+    },
+    "BetaManagedAgentsURLDocumentSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": { "type": { "type": "string", "const": "url" }, "url": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsURLImageSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "url"],
+      "properties": { "type": { "type": "string", "const": "url" }, "url": { "type": "string", "minLength": 1 } }
+    },
+    "BetaManagedAgentsURLMCPServerParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name", "url"],
+      "properties": {
+        "type": { "type": "string", "const": "url" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "url": { "type": "string", "maxLength": 2048 },
+        "auth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "audience"],
+          "properties": { "type": { "const": "agent_token" }, "audience": { "type": "string", "minLength": 1 } }
+        },
+        "agent_token_header": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["audience"],
+          "properties": { "audience": { "type": "string", "minLength": 1 } }
+        }
+      }
+    },
+    "BetaManagedAgentsUnrestrictedCredentialNetworkingParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "unrestricted" } }
+    },
+    "BetaManagedAgentsUpdateAgentParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "type": "integer", "format": "int32" },
+        "name": { "type": "string", "maxLength": 256 },
+        "description": { "anyOf": [{ "type": "string", "maxLength": 2048 }, { "type": "null" }] },
+        "model": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsModelParams" }] },
+        "system": { "anyOf": [{ "type": "string", "maxLength": 100000 }, { "type": "null" }] },
+        "tools": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsAgentToolParams" } },
+            { "type": "null" }
+          ]
+        },
+        "mcp_servers": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsMCPServerParams" } },
+            { "type": "null" }
+          ]
+        },
+        "skills": {
+          "anyOf": [
+            { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsSkillParams" } },
+            { "type": "null" }
+          ]
+        },
+        "metadata": {
+          "anyOf": [
+            { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+            { "type": "null" }
+          ]
+        },
+        "multiagent": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsMultiagentParams" }, { "type": "null" }] },
+        "execution_identity": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsExecutionIdentityParams" }, { "type": "null" }]
+        }
+      }
+    },
+    "BetaManagedAgentsUpdateCredentialRequestBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "display_name": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] },
+        "metadata": {
+          "anyOf": [
+            { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+            { "type": "null" }
+          ]
+        },
+        "auth": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsCredentialUpdateAuth" }] }
+      }
+    },
+    "BetaManagedAgentsUpdateMemoryParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "content": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "path": {
+          "anyOf": [
+            { "type": "string", "minLength": 2, "maxLength": 1024, "pattern": "^(/[^/\u0000]+)+$" },
+            { "type": "null" }
+          ]
+        },
+        "precondition": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsPrecondition" }] }
+      }
+    },
+    "BetaManagedAgentsUpdateMemoryStoreRequestBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] },
+        "description": { "anyOf": [{ "type": "string", "maxLength": 1024 }, { "type": "null" }] },
+        "metadata": {
+          "anyOf": [
+            { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsUpdateSessionParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 500 }, { "type": "null" }] },
+        "metadata": {
+          "anyOf": [
+            { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+            { "type": "null" }
+          ]
+        },
+        "vault_ids": { "type": "array", "items": { "type": "string" } },
+        "agent": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsSessionAgentUpdate" }] },
+        "budget": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsBudget" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUpdateSessionResourceParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorization_token"],
+      "properties": { "authorization_token": { "type": "string", "minLength": 1, "maxLength": 4096 } }
+    },
+    "BetaManagedAgentsUpdateVaultRequestBody": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "display_name": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] },
+        "metadata": {
+          "anyOf": [
+            { "type": "object", "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] } },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "BetaManagedAgentsUserContentBlock": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsTextBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsImageBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsDocumentBlock" },
+        { "$ref": "#/$defs/BetaManagedAgentsRedactedBlock" }
+      ]
+    },
+    "BetaManagedAgentsUserCustomToolResultEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "custom_tool_use_id"],
+      "properties": {
+        "type": { "type": "string", "const": "user.custom_tool_result" },
+        "custom_tool_use_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsToolResultContentBlock" } },
+        "is_error": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUserDefineOutcomeEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "description", "rubric"],
+      "properties": {
+        "type": { "type": "string", "const": "user.define_outcome" },
+        "description": { "type": "string" },
+        "rubric": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsRubricParams" }] },
+        "max_iterations": { "anyOf": [{ "type": "integer", "format": "int32" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUserInterruptEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "user.interrupt" },
+        "session_thread_id": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUserLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "const": "approximate" },
+        "city": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] },
+        "region": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] },
+        "country": { "anyOf": [{ "type": "string", "pattern": "^[A-Z]{2}$" }, { "type": "null" }] },
+        "timezone": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 255 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUserMessageEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "content"],
+      "properties": {
+        "type": { "type": "string", "const": "user.message" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsUserContentBlock" } }
+      }
+    },
+    "BetaManagedAgentsUserToolConfirmationEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tool_use_id", "result"],
+      "properties": {
+        "type": { "type": "string", "const": "user.tool_confirmation" },
+        "tool_use_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "result": { "allOf": [{ "$ref": "#/$defs/BetaManagedAgentsUserToolConfirmationResult" }] },
+        "deny_message": { "anyOf": [{ "type": "string", "maxLength": 10000 }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsUserToolConfirmationResult": { "type": "string", "enum": ["allow", "deny"] },
+    "BetaManagedAgentsUserToolResultEventParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tool_use_id"],
+      "properties": {
+        "type": { "type": "string", "const": "user.tool_result" },
+        "tool_use_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsToolResultContentBlock" } },
+        "is_error": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsWebFetchToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "web_fetch" },
+        "name": { "type": "string", "const": "web_fetch" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] },
+        "allowed_domains": { "type": "array", "items": { "type": "string" } },
+        "blocked_domains": { "type": "array", "items": { "type": "string" } },
+        "max_content_tokens": { "anyOf": [{ "type": "integer", "format": "int32" }, { "type": "null" }] },
+        "url_sources": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourcesParams" }, { "type": "null" }]
+        }
+      }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceAll": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "all" } }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceExcept": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tools"],
+      "properties": {
+        "type": { "type": "string", "const": "except" },
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceToolReference" } }
+      }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceNone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": { "type": { "type": "string", "const": "none" } }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceOnly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "tools"],
+      "properties": {
+        "type": { "type": "string", "const": "only" },
+        "tools": { "type": "array", "items": { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceToolReference" } }
+      }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceShorthand": { "type": "string", "enum": ["all", "none"] },
+    "BetaManagedAgentsWebFetchUrlSourceToolFilter": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceAll" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceNone" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceOnly" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceExcept" }
+      ]
+    },
+    "BetaManagedAgentsWebFetchUrlSourceToolFilterParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceShorthand" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceToolFilter" }
+      ]
+    },
+    "BetaManagedAgentsWebFetchUrlSourceToolReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "name"],
+      "properties": {
+        "type": { "type": "string", "const": "tool_reference" },
+        "name": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "BetaManagedAgentsWebFetchUrlSourceUserInput": {
+      "type": "object",
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceAll" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceNone" }
+      ]
+    },
+    "BetaManagedAgentsWebFetchUrlSourceUserInputParams": {
+      "oneOf": [
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceShorthand" },
+        { "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceUserInput" }
+      ]
+    },
+    "BetaManagedAgentsWebFetchUrlSourcesParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "user_input": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceUserInputParams" }, { "type": "null" }]
+        },
+        "client_tool_results": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceToolFilterParams" }, { "type": "null" }]
+        },
+        "server_tool_results": {
+          "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsWebFetchUrlSourceToolFilterParams" }, { "type": "null" }]
+        }
+      }
+    },
+    "BetaManagedAgentsWebSearchToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "web_search" },
+        "name": { "type": "string", "const": "web_search" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] },
+        "allowed_domains": { "type": "array", "items": { "type": "string" } },
+        "blocked_domains": { "type": "array", "items": { "type": "string" } },
+        "user_location": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsUserLocation" }, { "type": "null" }] }
+      }
+    },
+    "BetaManagedAgentsWriteToolConfigParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "type": { "type": "string", "const": "write" },
+        "name": { "type": "string", "const": "write" },
+        "enabled": { "anyOf": [{ "type": "boolean" }, { "type": "null" }] },
+        "permission_policy": { "anyOf": [{ "$ref": "#/$defs/BetaManagedAgentsPermissionPolicy" }, { "type": "null" }] }
+      }
+    },
+    "BetaMonetaryAmount": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "amount"],
+      "properties": {
+        "currency": { "allOf": [{ "$ref": "#/$defs/BetaCurrency" }] },
+        "amount": { "type": "string", "pattern": "^(0|[1-9]\\d*)$" }
+      }
+    },
+    "BetaPackagesParams": {
+      "properties": {
+        "apt": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "cargo": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "gem": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "go": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "npm": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "pip": { "anyOf": [{ "items": { "type": "string" }, "type": "array" }, { "type": "null" }] },
+        "type": { "type": "string", "const": "packages" }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "BetaPublicEnvironmentCreateRequest": {
+      "properties": {
+        "config": {
+          "anyOf": [
+            {
+              "oneOf": [{ "$ref": "#/$defs/BetaCloudConfigParams" }, { "$ref": "#/$defs/BetaSelfHostedConfigParams" }]
+            },
+            { "type": "null" }
+          ]
+        },
+        "description": { "anyOf": [{ "type": "string", "maxLength": 1024 }, { "type": "null" }] },
+        "metadata": { "additionalProperties": { "type": "string" }, "type": "object" },
+        "name": { "type": "string", "maxLength": 256, "minLength": 1 },
+        "scope": { "anyOf": [{ "type": "string", "enum": ["organization", "account"] }, { "type": "null" }] }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["name"]
+    },
+    "BetaPublicEnvironmentUpdateRequest": {
+      "properties": {
+        "config": {
+          "anyOf": [
+            {
+              "oneOf": [{ "$ref": "#/$defs/BetaCloudConfigParams" }, { "$ref": "#/$defs/BetaSelfHostedConfigParams" }]
+            },
+            { "type": "null" }
+          ]
+        },
+        "description": { "anyOf": [{ "type": "string", "maxLength": 1024 }, { "type": "null" }] },
+        "metadata": {
+          "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "type": "object"
+        },
+        "name": { "anyOf": [{ "type": "string", "maxLength": 256, "minLength": 1 }, { "type": "null" }] },
+        "scope": { "anyOf": [{ "type": "string", "enum": ["organization", "account"] }, { "type": "null" }] }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "BetaSelfHostedConfigParams": {
+      "properties": { "type": { "type": "string", "const": "self_hosted" } },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["type"]
+    },
+    "BetaSelfHostedWorkStopRequest": { "properties": { "force": { "type": "boolean" } }, "type": "object" },
+    "BetaSelfHostedWorkUpdateRequest": {
+      "properties": {
+        "metadata": {
+          "additionalProperties": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "type": "object"
+        }
+      },
+      "type": "object",
+      "required": ["metadata"]
+    },
+    "BetaTimestamp": { "type": "string", "format": "date-time" },
+    "BetaUnrestrictedNetwork": {
+      "properties": { "type": { "type": "string", "const": "unrestricted" } },
+      "additionalProperties": false,
+      "type": "object",
+      "required": ["type"]
+    }
+  }
+}

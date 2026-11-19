@@ -1,5 +1,4 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
-import type { SubmissionRecord, Tx } from '@earendil-works/pi-durable';
 import type { ControlStore, ImportedSpendReservation as SpendReservation } from '@mechane/control-store';
 import { RequestInvalid, TOOL_TRACE_OUTPUT_MAX_BYTES, TurnNotFound } from '@mechane/protocol';
 import {
@@ -11,9 +10,8 @@ import {
   TurnId,
 } from '@mechane/records';
 import { Schema } from 'effect';
-import type { ActorPageInput, ActorTrace } from '../actor/client.ts';
+import type { ActorPageInput, ActorTrace, MechScope } from '../actor/client.ts';
 import {
-  Attempts,
   Cancellations,
   Effects,
   Events,
@@ -22,17 +20,14 @@ import {
   ImportedMessagePointers,
   ImportedRunPointers,
   Messages,
-  OpenTurns,
-  putTurn,
   runAttempts,
   runEvents,
   Turns,
 } from '../actor/collections.ts';
+import type { ActorRecordReader } from '../actor/record-store.ts';
 import { decodeStored, RunRecord, StoredFields } from '../actor/records.ts';
-import type { ActorAccess } from '../actor/types.ts';
 import type { ActivityEvent, ConsoleMessage, Run } from '../domain.ts';
 import { providerFailureReason } from '../models/provider-diagnostic.ts';
-import { appendEvent } from '../notifications/admission.ts';
 import { nativeEvent } from '../notifications/events.ts';
 import {
   importedTraces,
@@ -47,13 +42,17 @@ const ACTOR_PAGE_MAX_ROWS = 100;
 const EVENT_PAGE_MAX_ROWS = 100;
 const MESSAGE_PAGE_MAX_ROWS = 100;
 const BINARY_SEARCH_PARTITIONS = 2;
-const ALLOWANCE_REFUSALS: ReadonlySet<string> = new Set(['workspace_allowance', 'mech_allowance']);
 const TOOL_END_EVENTS: ReadonlySet<string> = new Set(['tool.completed', 'tool.failed']);
 const REFUSED_ATTEMPT_STATES: ReadonlySet<string> = new Set(['refused', 'released']);
 const NATIVE_TURN_LIMIT_ERROR = 'Native conversation ended unanswered: turn_limit';
 
 type TurnInput = { readonly turnId: string };
-type TurnUpdate = { readonly id: string; readonly status: SubmissionRecord };
+export type HistoricalView = { readonly harness: ActorRecordReader; readonly scope: MechScope };
+
+type TraceView = HistoricalView & {
+  readonly withControl: <T>(operation: (store: Pick<ControlStore, 'getProviderAttempts'>) => Promise<T>) => Promise<T>;
+};
+
 type RunPageCursor = { readonly nativeAfter: string | undefined; readonly importedAfter: string | undefined };
 type RecordedProviderAttempt = NonNullable<Awaited<ReturnType<ControlStore['getProviderAttempt']>>>;
 
@@ -110,40 +109,6 @@ function traceTextRecord(value: unknown) {
   return { text: text.text, omitted_bytes: text.omittedBytes };
 }
 
-function submissionError(status: SubmissionRecord): string | null {
-  if (status.status !== 'unanswered') {
-    return null;
-  }
-
-  if ('detail' in status) {
-    const diagnostic = providerFailureReason(status.detail);
-
-    if (diagnostic !== undefined) {
-      return diagnostic;
-    }
-  }
-
-  let reason = 'unknown';
-
-  if ('reason' in status) {
-    reason = status.reason;
-  }
-
-  return `Native conversation ended unanswered: ${reason}`;
-}
-
-function runFailureReason(error: string | null, hasAllowanceRefusal: boolean): Run['failureReason'] {
-  if (error === null) {
-    return null;
-  }
-
-  if (hasAllowanceRefusal) {
-    return 'allowance_exhausted';
-  }
-
-  return 'faulted';
-}
-
 function failureNotice(error: string | null): string | undefined {
   if (error === NATIVE_TURN_LIMIT_ERROR) {
     return error;
@@ -198,7 +163,7 @@ function accountingDispatch(attempt: RecordedProviderAttempt): SpendReservation 
   return { ...dispatch, state: 'reserved' };
 }
 
-async function readDispatches(access: ActorAccess, run: Run, ids: ReadonlyArray<string>) {
+async function readDispatches(access: TraceView, run: Run, ids: ReadonlyArray<string>) {
   if (ids.length === 0) {
     return [];
   }
@@ -268,129 +233,7 @@ function bashResult(value: string | null | undefined) {
   return receipt;
 }
 
-async function allowanceWasRefused(transaction: Tx, turnId: string): Promise<boolean> {
-  const ids = await runAttempts(turnId).allInTransaction(transaction);
-
-  for (const id of ids) {
-    const attempt = await Attempts.read(transaction, id);
-
-    if (attempt !== undefined && ALLOWANCE_REFUSALS.has(attempt.refusalReason ?? '')) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-async function synchronizeTurn(transaction: Tx, update: TurnUpdate): Promise<void> {
-  const record = await Turns.read(transaction, update.id);
-
-  if (record === undefined) {
-    return;
-  }
-
-  const run: Run = decodeStored(RunRecord, record.value);
-  const status = update.status;
-
-  if (status.status === 'placed') {
-    if (run.status === 'queued') {
-      if (run.startedAt === null) {
-        await appendEvent(transaction, {
-          type: 'activation.started',
-          runId: run.id,
-          payload: { notificationIds: run.notificationIds },
-        });
-      }
-
-      await putTurn(transaction, {
-        ...record,
-        value: JSON.stringify({
-          ...run,
-          status: 'running',
-          startedAt: new Date().toISOString(),
-          version: run.version + 1,
-        }),
-      });
-    }
-
-    return;
-  }
-
-  if (status.status === 'queued' || run.endedAt !== null) {
-    return;
-  }
-
-  let nextStatus: Run['status'] = 'completed';
-
-  if (status.status !== 'done') {
-    nextStatus = 'failed';
-
-    if (run.cancelRequestedAt !== null) {
-      nextStatus = 'cancelled';
-    }
-  }
-
-  const error = submissionError(status);
-  const refusal = await allowanceWasRefused(transaction, run.id);
-  const failureReason = runFailureReason(error, refusal);
-
-  await putTurn(transaction, {
-    ...record,
-    value: JSON.stringify({
-      ...run,
-      status: nextStatus,
-      startedAt: run.startedAt ?? run.createdAt,
-      endedAt: new Date().toISOString(),
-      error,
-      failureReason,
-      version: run.version + 1,
-    }),
-  });
-
-  let eventType = 'activation.completed';
-
-  const payload: Record<string, unknown> = {
-    submissionId: record.submissionId,
-    notificationIds: run.notificationIds,
-    error,
-  };
-
-  if (nextStatus === 'failed') {
-    eventType = 'activation.failed';
-    payload['reason'] = failureReason ?? 'faulted';
-  } else if (nextStatus === 'cancelled') {
-    eventType = 'activation.stopped';
-  }
-
-  await appendEvent(transaction, { type: eventType, runId: run.id, payload });
-}
-
-export async function synchronizeTurns(access: ActorAccess): Promise<void> {
-  const ids = await access.harness.commit((transaction) => OpenTurns.allInTransaction(transaction), BACKGROUND_CONTEXT);
-  const updates: Array<TurnUpdate> = [];
-
-  for (const id of ids) {
-    const turn = await Turns.get(access.harness, id, BACKGROUND_CONTEXT);
-
-    if (turn !== undefined) {
-      const submission = await access.harness.submission(turn.submissionId, BACKGROUND_CONTEXT);
-
-      if (submission !== undefined) {
-        updates.push({ id, status: await submission.status(BACKGROUND_CONTEXT) });
-      }
-    }
-  }
-
-  if (updates.length > 0) {
-    await access.harness.commit(async (transaction) => {
-      for (const update of updates) {
-        await synchronizeTurn(transaction, update);
-      }
-    }, BACKGROUND_CONTEXT);
-  }
-}
-
-async function runPageCursor(access: ActorAccess, after: string | undefined): Promise<RunPageCursor> {
+async function runPageCursor(access: HistoricalView, after: string | undefined): Promise<RunPageCursor> {
   if (after === undefined) {
     return { nativeAfter: undefined, importedAfter: undefined };
   }
@@ -408,9 +251,7 @@ async function runPageCursor(access: ActorAccess, after: string | undefined): Pr
   return { nativeAfter: undefined, importedAfter: after };
 }
 
-export async function listRuns(access: ActorAccess, input: ActorPageInput) {
-  await synchronizeTurns(access);
-
+export async function listRuns(access: HistoricalView, input: ActorPageInput) {
   const limit = Math.max(1, Math.min(input.maxRows ?? ACTOR_PAGE_DEFAULT_ROWS, ACTOR_PAGE_MAX_ROWS));
   const cursor = await runPageCursor(access, input.after ?? undefined);
   const items: Array<Run> = [];
@@ -452,9 +293,7 @@ export async function listRuns(access: ActorAccess, input: ActorPageInput) {
   return { items: items.slice(0, limit), hasMore: hasMore || items.length > limit };
 }
 
-export async function readRun(access: ActorAccess, input: TurnInput): Promise<Run | null> {
-  await synchronizeTurns(access);
-
+export async function readRun(access: HistoricalView, input: TurnInput): Promise<Run | null> {
   const turn = await Turns.get(access.harness, input.turnId, BACKGROUND_CONTEXT);
 
   if (turn === undefined) {
@@ -466,7 +305,7 @@ export async function readRun(access: ActorAccess, input: TurnInput): Promise<Ru
   return decodeStored(RunRecord, turn.value);
 }
 
-export async function readCancellation(access: ActorAccess, input: TurnInput) {
+export async function readCancellation(access: HistoricalView, input: TurnInput) {
   const cancellation = await Cancellations.get(access.harness, input.turnId, BACKGROUND_CONTEXT);
 
   if (cancellation !== undefined) {
@@ -476,7 +315,7 @@ export async function readCancellation(access: ActorAccess, input: TurnInput) {
   return await readImportedCancellation(access.harness, access.scope, input.turnId);
 }
 
-export async function readTrace(access: ActorAccess, input: TurnInput): Promise<ActorTrace> {
+export async function readTrace(access: TraceView, input: TurnInput): Promise<ActorTrace> {
   const run = await readRun(access, input);
 
   if (run === null) {
@@ -629,7 +468,7 @@ async function sequenceRows<T extends { readonly sequence: number }>({
 }
 
 async function importedEventSource(
-  access: ActorAccess,
+  access: HistoricalView,
   runId: string | undefined,
 ): Promise<SequenceSource<ActivityEvent>> {
   if (runId !== undefined) {
@@ -646,7 +485,7 @@ async function importedEventSource(
 }
 
 async function nativeEventSource(
-  access: ActorAccess,
+  access: HistoricalView,
   runId: string | undefined,
 ): Promise<SequenceSource<ActivityEvent>> {
   if (runId !== undefined) {
@@ -672,7 +511,7 @@ async function nativeEventSource(
   };
 }
 
-export async function listEvents(access: ActorAccess, input: EventPageInput) {
+export async function listEvents(access: HistoricalView, input: EventPageInput) {
   const limit = Math.max(1, Math.min(input.maxRows ?? EVENT_PAGE_MAX_ROWS, EVENT_PAGE_MAX_ROWS));
 
   const bounds = {
@@ -709,7 +548,7 @@ export async function listEvents(access: ActorAccess, input: EventPageInput) {
   return { events, hasMore: ordered.length > limit, afterSequence };
 }
 
-export async function listConsoleMessages(access: ActorAccess, input: MessagePageInput) {
+export async function listConsoleMessages(access: HistoricalView, input: MessagePageInput) {
   const limit = Math.max(1, Math.min(input.maxRows ?? MESSAGE_PAGE_MAX_ROWS, MESSAGE_PAGE_MAX_ROWS));
   const isForward = input.afterSequence !== undefined;
 

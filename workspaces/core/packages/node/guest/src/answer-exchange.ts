@@ -10,6 +10,8 @@ import type { WorkspaceFailed } from './errors.ts';
 import { routeEvidence } from './evidence/route-evidence.ts';
 import { routeExecution } from './executions/route-execution.ts';
 import { guestRequestRoute } from './guest-request-route.ts';
+import type { ManagedWorkLauncher } from './managed-work/launch.ts';
+import { routeManagedWork } from './managed-work/route.ts';
 import type { ProcessFailed } from './processes/process-failed.ts';
 import { routeProcess } from './processes/route-process.ts';
 import type { ProcessLedger } from './processes/types.ts';
@@ -30,6 +32,7 @@ type AnswerExchangeInput = {
   readonly workspace: WorkspaceJournal;
   readonly processes: ProcessLedger;
   readonly browser: BrowserRuntime;
+  readonly launchManagedWork: ManagedWorkLauncher;
 };
 
 type RouteRequestInput = {
@@ -39,6 +42,7 @@ type RouteRequestInput = {
   readonly workspace: WorkspaceJournal;
   readonly processes: ProcessLedger;
   readonly browser: BrowserRuntime;
+  readonly launchManagedWork: ManagedWorkLauncher;
 };
 
 /**
@@ -52,6 +56,7 @@ export const answerExchange = Effect.fn('answerExchange')(function* ({
   workspace,
   processes,
   browser,
+  launchManagedWork,
 }: AnswerExchangeInput): Effect.fn.Return<void> {
   const answer = yield* routeRequest({
     request: exchange.request,
@@ -60,6 +65,7 @@ export const answerExchange = Effect.fn('answerExchange')(function* ({
     workspace,
     processes,
     browser,
+    launchManagedWork,
   }).pipe(
     Effect.catchTags({
       RouteNotFound: () => Effect.succeed(NOT_FOUND),
@@ -85,6 +91,7 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
   workspace,
   processes,
   browser,
+  launchManagedWork,
 }: RouteRequestInput): Effect.fn.Return<
   ServedAnswer,
   RouteNotFound | RequestInvalid | WorkspaceFailed | ProcessFailed | BrowserFailed
@@ -95,6 +102,8 @@ const routeRequest = Effect.fn('routeRequest')(function* ({
   });
 
   switch (resource) {
+    case GuestSegment.ManagedWork:
+      return yield* routeManagedWork({ request, method, rest, notFound, launch: launchManagedWork });
     case GuestSegment.Capabilities:
       return yield* answerCapabilities({ method, rest, notFound });
     case GuestSegment.Executions:

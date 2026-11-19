@@ -1,5 +1,12 @@
 import { MachineId, ModelToolCallId, SessionId } from '@mechane/records';
-import { BrowserAction, BrowserRequest, BrowserResponse, BrowserResult, SandboxRunId } from '@mechane/sandbox-wire';
+import {
+  BrowserAction,
+  BrowserRequest,
+  BrowserResponse,
+  BrowserResult,
+  InstalledActionOrigin,
+  SandboxRunId,
+} from '@mechane/sandbox-wire';
 import type { BrowserTab } from '@mechane/sandbox-wire';
 import { decodeFirst, decodeRows } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
@@ -11,6 +18,8 @@ const BrowserCallFailure = Schema.Struct({ reason: Schema.String, isUncertain: S
 
 /** A durable action intent and its actual guest receipt keep retries from repeating browser effects. */
 export const BrowserCall = Schema.Struct({
+  /** Native calls made outside an installed session have no managed origin. */
+  origin: Schema.optionalKey(InstalledActionOrigin),
   request: BrowserRequest,
   runId: SandboxRunId,
   sessionId: SessionId,
@@ -25,7 +34,7 @@ export const BrowserCall = Schema.Struct({
 
 export type BrowserCall = typeof BrowserCall.Type;
 type BrowserIdentity = Pick<BrowserRequest, 'requestId'>;
-type ClaimInput = Pick<BrowserCall, 'request' | 'runId' | 'sessionId' | 'toolCallId'>;
+type ClaimInput = Pick<BrowserCall, 'request' | 'runId' | 'sessionId' | 'toolCallId' | 'origin'>;
 type AssignInput = BrowserIdentity & { readonly machineId: typeof MachineId.Type };
 type SaveInput = { readonly machineId: typeof MachineId.Type; readonly response: BrowserResponse };
 type FailureInput = BrowserIdentity & typeof BrowserCallFailure.Type;
@@ -37,7 +46,10 @@ const StoredCall = Schema.Struct({ record: CallJson });
 const RequestJson = Schema.fromJsonString(BrowserRequest);
 const BrowserMachine = Schema.Struct({ machineId: MachineId });
 
-class BrowserRequestReused extends Schema.TaggedError<BrowserRequestReused>()('BrowserRequestReused', {
+const OptionalOrigin = Schema.Option(InstalledActionOrigin);
+const sameOrigin = Schema.toEquivalence(OptionalOrigin);
+
+export class BrowserRequestReused extends Schema.TaggedError<BrowserRequestReused>()('BrowserRequestReused', {
   requestId: BrowserRequest.fields.requestId,
 }) {}
 
@@ -79,14 +91,17 @@ export function browserRecords({ sql }: RecordsInput) {
     );
   }
 
-  function claimBrowserCall({ request, runId, sessionId, toolCallId }: ClaimInput): BrowserCall {
+  function claimBrowserCall({ request, runId, sessionId, toolCallId, ...provenance }: ClaimInput): BrowserCall {
     const existing = browserCall(request);
 
     if (Option.isSome(existing)) {
       const previous = Schema.encodeSync(RequestJson)(existing.value.request);
       const repeated = Schema.encodeSync(RequestJson)(request);
 
-      const isSamePayload = previous === repeated && existing.value.sessionId === sessionId;
+      const original = Option.fromNullishOr(existing.value.origin);
+      const requested = Option.fromNullishOr(provenance.origin);
+      const isSameOrigin = sameOrigin(original, requested);
+      const isSamePayload = previous === repeated && existing.value.sessionId === sessionId && isSameOrigin;
       const mismatch = new BrowserRequestReused({ requestId: request.requestId });
 
       return replayInteractiveClaim({ existing: existing.value, runId, toolCallId, isSamePayload, mismatch });
@@ -101,6 +116,7 @@ export function browserRecords({ sql }: RecordsInput) {
     }));
 
     const record: BrowserCall = {
+      ...provenance,
       request,
       runId,
       sessionId,
@@ -139,8 +155,8 @@ export function browserRecords({ sql }: RecordsInput) {
   }
 
   /** A failed unassigned claim is also a tombstone against an initial submission arriving later. */
-  function abandonBrowserCall({ request, runId, sessionId, toolCallId }: ClaimInput): BrowserCall {
-    const record = claimBrowserCall({ request, runId, sessionId, toolCallId });
+  function abandonBrowserCall({ ...input }: ClaimInput): BrowserCall {
+    const record = claimBrowserCall(input);
 
     if (Option.isSome(record.machineId) || Option.isSome(record.response) || Option.isSome(record.failure)) {
       return record;

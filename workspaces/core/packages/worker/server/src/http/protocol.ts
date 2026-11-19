@@ -1,12 +1,21 @@
-import { Access, catalog, findRoute, KeyMissing, RequestInvalid, RouteNotFound } from '@mechane/protocol';
+import {
+  Access,
+  catalog,
+  findRoute,
+  KeyMissing,
+  RequestInvalid,
+  RouteNotFound,
+  WorkspaceOwnerRequired,
+} from '@mechane/protocol';
 import type { Operation, RouteMatch } from '@mechane/protocol';
-import { HttpHeader, HttpMethod, RecordId } from '@mechane/records';
+import { HttpHeader, HttpMethod, WorkspaceId } from '@mechane/records';
 import type { AuthCaller } from '@mechane/runtime';
 import { Option, Record, Schema } from 'effect';
-import { NOTIFICATION_BODY_MAX_BYTES } from '../notifications/constants.ts';
 import { readJsonBody } from './body.ts';
 import { respondFailure } from './failure.ts';
 import type { ProtocolHandlerOptions, ProtocolRequest } from './types.ts';
+
+const workspaceAccess: ReadonlySet<Operation['access']> = new Set([Access.Member, Access.Owner]);
 
 type DecodeInput = {
   readonly request: Request;
@@ -16,7 +25,7 @@ type DecodeInput = {
 };
 
 async function decodeInput({ request, url, route, operation }: DecodeInput): Promise<object> {
-  const rawBody = await readOperationBody(request, operation);
+  const rawBody = await readOperationBody(request);
 
   try {
     const params = Schema.decodeUnknownSync(operation.params, { onExcessProperty: 'error' })(route.params);
@@ -33,13 +42,9 @@ async function decodeInput({ request, url, route, operation }: DecodeInput): Pro
   }
 }
 
-async function readOperationBody(request: Request, operation: Operation): Promise<unknown> {
+async function readOperationBody(request: Request): Promise<unknown> {
   if (request.method === HttpMethod.Get) {
     return {};
-  }
-
-  if (operation === catalog.sendNotification) {
-    return await readJsonBody(request, NOTIFICATION_BODY_MAX_BYTES);
   }
 
   return await readJsonBody(request);
@@ -48,7 +53,6 @@ async function readOperationBody(request: Request, operation: Operation): Promis
 type OperationCallerInput = {
   readonly operation: Operation;
   readonly authenticate: ProtocolHandlerOptions['authenticate'];
-  readonly authenticateSelf: ProtocolHandlerOptions['authenticateSelf'];
   readonly request: Request;
   readonly peerAddress: string | null;
 };
@@ -56,7 +60,6 @@ type OperationCallerInput = {
 async function operationCaller({
   operation,
   authenticate,
-  authenticateSelf,
   request,
   peerAddress,
 }: OperationCallerInput): Promise<AuthCaller> {
@@ -64,16 +67,12 @@ async function operationCaller({
     return { authKind: 'public', principalId: null, keyId: null };
   }
 
-  if (operation.access === Access.Self) {
-    return await authenticateSelf(request, peerAddress);
-  }
-
   return await authenticate(request, peerAddress);
 }
 
-function decodeWorkspaceId(value: unknown): RecordId {
+function decodeWorkspaceId(value: unknown): WorkspaceId {
   try {
-    return Schema.decodeUnknownSync(RecordId)(value);
+    return Schema.decodeUnknownSync(WorkspaceId)(value);
   } catch {
     throw new RequestInvalid({ reason: 'The workspace identifier is invalid' });
   }
@@ -82,7 +81,6 @@ function decodeWorkspaceId(value: unknown): RecordId {
 export function createProtocolHandler({
   execute,
   authenticate,
-  authenticateSelf,
   authorizeMembership,
   limitPublicRequest,
 }: ProtocolHandlerOptions) {
@@ -106,16 +104,20 @@ export function createProtocolHandler({
         await limitPublicRequest(route.name, peerAddress);
       }
 
-      const caller = await operationCaller({ operation, authenticate, authenticateSelf, request, peerAddress });
+      const caller = await operationCaller({ operation, authenticate, request, peerAddress });
 
-      if (operation.access === Access.Member) {
+      if (workspaceAccess.has(operation.access)) {
         if (caller.principalId === null) {
           throw new KeyMissing({});
         }
 
         const workspaceId = decodeWorkspaceId(route.params['workspace_id']);
 
-        await authorizeMembership({ caller, workspaceId });
+        const role = await authorizeMembership({ caller, workspaceId });
+
+        if (operation.access === Access.Owner && role !== 'owner') {
+          throw new WorkspaceOwnerRequired({ workspaceId });
+        }
       }
 
       const input = await decodeInput({ request, url, route, operation });

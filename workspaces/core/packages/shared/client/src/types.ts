@@ -11,7 +11,7 @@ export type AccessCredential = {
   /** Always none: a public operation sends no key. */
   readonly [Access.Public]: Option.Option<never>;
   readonly [Access.Principal]: Redacted.Redacted | typeof BROWSER_CREDENTIAL;
-  readonly [Access.Self]: Redacted.Redacted;
+  readonly [Access.Owner]: Redacted.Redacted | typeof BROWSER_CREDENTIAL;
   readonly [Access.Member]: Redacted.Redacted | typeof BROWSER_CREDENTIAL;
 };
 

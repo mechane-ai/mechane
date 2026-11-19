@@ -7,7 +7,7 @@ import { EmptyState, SkeletonText } from '@mechane-ai/elements/feedback';
 import type { ConsoleMessage } from '@mechane/protocol';
 import { PresentationOutput } from '@mechane/protocol/presentation';
 import { DateTime, Option } from 'effect';
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode } from 'react';
 import { StructuredMessage } from './structured-message.tsx';
 
 const timestampFormatter = new Intl.DateTimeFormat('en-US', {
@@ -35,13 +35,11 @@ export function ConversationPlaceholder(): ReactNode {
   );
 }
 
-export function MechConversation({
+export function ArchivedConversation({
   messages,
   name,
   avatar,
   controls,
-  updates,
-  viewportRef,
   initialPosition,
   scrollRestorationId,
   inspect,
@@ -50,20 +48,16 @@ export function MechConversation({
   readonly name: string;
   readonly avatar?: ReactNode;
   readonly controls: ReactNode;
-  readonly updates?: ReactNode;
-  readonly viewportRef?: RefObject<HTMLDivElement | null>;
   readonly initialPosition?: ConversationRootProps['initialPosition'];
   readonly scrollRestorationId: string;
   readonly inspect: (runId: string) => ReactNode;
 }): ReactNode {
   return (
-    <Conversation.Root viewportRef={viewportRef} initialPosition={initialPosition}>
-      <Conversation.Viewport label={`${name} conversation`} scrollRestorationId={scrollRestorationId}>
+    <Conversation.Root shouldFollow={false} initialPosition={initialPosition}>
+      <Conversation.Viewport label={`${name} archive`} scrollRestorationId={scrollRestorationId}>
         <Conversation.Content>
           {controls}
-          {messages.length === 0 && (
-            <EmptyState title="Start a conversation">Send a message below to work with {name}.</EmptyState>
-          )}
+          {messages.length === 0 && <EmptyState title="No archived messages" />}
           {messages.map((message) => (
             <Conversation.Item key={message.id} messageId={message.id}>
               <ConversationMessage message={message} name={name} avatar={avatar} inspect={inspect} />
@@ -71,7 +65,6 @@ export function MechConversation({
           ))}
         </Conversation.Content>
       </Conversation.Viewport>
-      {updates === undefined ? <Conversation.JumpToLatest /> : <Conversation.Controls>{updates}</Conversation.Controls>}
     </Conversation.Root>
   );
 }

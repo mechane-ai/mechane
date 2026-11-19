@@ -10,8 +10,7 @@ export type AuthRateLimits = {
 
 export type AuthenticationConfiguration = {
   readonly origin: string;
-  readonly githubClientId: string;
-  readonly githubClientSecret: string;
+  readonly githubOAuth: { readonly clientId: string; readonly clientSecret: string } | null;
   readonly githubWebOrigin: string;
   readonly githubApiOrigin: string;
   readonly allowedIdentities: ReadonlyArray<AuthenticationIdentity> | null;

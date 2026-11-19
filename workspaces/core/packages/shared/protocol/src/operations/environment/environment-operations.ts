@@ -12,8 +12,8 @@ const EnvironmentProcessPath = wireStruct({
 
 const showEnvironment = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/environment',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/environment',
+  access: Access.Owner,
   params: MechPath,
   query: NoFields,
   body: NoFields,
@@ -23,8 +23,8 @@ const showEnvironment = {
 
 const showEnvironmentProcess = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id',
+  access: Access.Owner,
   params: EnvironmentProcessPath,
   query: NoFields,
   body: NoFields,
@@ -34,8 +34,8 @@ const showEnvironmentProcess = {
 
 const stopEnvironmentProcess = {
   method: HttpMethod.Post,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/environment/machines/:machine_id/processes/:process_id/stop',
+  access: Access.Owner,
   params: EnvironmentProcessPath,
   query: NoFields,
   body: NoFields,

@@ -16,37 +16,19 @@ workspace. Keep bounded, redacted output and report omitted bytes. Preserve the 
 Once terminal, a process cannot become running again through a delayed observation. Return the committed observation
 after merging a guest response, so concurrent cancellation cannot expose a stale Running result or duplicate handle.
 
-Record an environment execution's terminal receipt and completion outbox entry atomically in the sandbox store.
-The additive migration's transition triggers create one entry per stable execution and kind; retries never invent a
-replacement identity. Retain a pending entry until its authenticated owner acknowledges the verified result. Failed
-attempts use the store's bounded exponential backoff and survive host or worker replacement.
+The installed session's computer owns its background process receipts. Record the authorized workspace, environment,
+session, work ID, lease generation and action ID when claiming the process. Preserve that origin through machine
+replacement. Derive it from the admitted work credential and session binding. Exclude credentials and shell output.
+Reject a replay that changes the command or origin. A later lease can inspect the original outcome.
+Start an installed background process in the SDK Bash workspace so relative paths identify the same files in both tools.
 
-Authenticate completion callbacks with the existing environment-service credential. The Worker receiver scopes the execution
-to its persisted workspace and mech, then compares the callback against the sandbox's authoritative terminal receipt.
-That read is passive: it cannot allocate a machine, dispatch work, resolve startup credentials, or renew the idle lease.
-Reject mismatched identities and outcomes. Only a verified result may become a generic environment notification.
-Repeated delivery retains the same notification identity and cannot create a second receipt or model wake obligation.
+Commit the terminal outcome and its receipt in one storage operation. Read one receipt by its process ID and list
+recent receipts using a bounded cursor. Reading an outcome must preserve the session's scheduling state, machine
+allocation, and idle deadline. Keep provider events and explicit external messages under their existing owners.
 
-After verifying the authoritative receipt, acknowledge a canceled foreground command without an inbox notice under
-contract 124. Also suppress a notice when the original tool result already recorded the terminal outcome.
-Expose retained undelivered receipts to the owning mech's bounded resume reconciliation, regardless of callback backoff.
-For a mech-owned execution, acknowledge only its matching immutable receipt after the mech has durably admitted its outcome.
-When an operator directly starts a diagnostic execution, the caller owns its completion instead of the mech.
-The caller records the intent and observed terminal outcome, then acknowledges the exact matching receipt.
-Never acknowledge an unknown receipt solely because the mech has no matching execution.
-A completed `start_process` receipt may record only successful admission while its nested outcome is Running. Its later
-terminal result still needs a notification. An explicit Exited, Stopped, or Lost process observation can establish prior
-observation only when its process, machine, outcome, and exit code match the verified receipt.
-A pending initial tool result on an active activation makes callback delivery retry until that result settles.
-Detached or uncertain work otherwise receives its terminal notice.
-Never infer prior observation from core receipt completion alone, a callback claim, or in-memory state. The internal
-historical-note exporter may suppress its own completion through a trusted stored purpose; model input cannot select it.
-
-Keep terminal execution, saved files, and notification admission distinct. Commit the known exit code, timeout, and
-bounded output before returning terminal command completion; remote checkpoint upload is not part of that receipt.
-A process exit does not establish a saved home. Completion notifications contain bounded
-correlation and outcome, not secret-bearing output. The agent chooses whether to inspect output or communicate externally;
-the callback itself sends no conversational message or reaction.
+Preserve outstanding completion entries for earlier executions in their original storage. Acknowledge an external
+recipient only after it confirms receipt. Never attribute an earlier entry to an installed session simply because
+both use the same underlying database schema.
 
 Retain a known foreground exit code or timeout when saving its files fails. File status reports the save failure
 separately without changing that terminal outcome. Historical failure records that omitted the outcome remain
@@ -152,16 +134,11 @@ Return unavailable for a failed health probe while retaining its identity and ac
 Repeat with an ended pointer and the same latest assigned recovery identity; refuse renewal for a later replacement.
 Confirm that provider absence preserves the head, recovery, and reservation and ends retention scheduling.
 
-Interrupt delivery after the sandbox terminal receipt commits, lose the runtime acknowledgment, and restart the owner.
-Verify the outbox remains pending or retries with its original identity and one admitted notification. Exercise an invalid
-service credential, a foreign execution, altered terminal fields, and a duplicate callback. A forged result cannot wake a
-mech. Inspect the authoritative GET for machine allocation, credential issuance, and lease changes; all must remain absent.
-Complete a foreground command before callback delivery and verify acknowledgment without an inbox message. Race delivery
-with a still-pending active tool receipt and require retry, then repeat with running, uncertain, and abandoned pending
-receipts. Verify detached completion becomes one notification and no runtime-generated conversation reply.
-Complete `start_process` with a Running outcome, then observe Exited and Lost separately. Both must produce the terminal
-notification despite the completed start receipt. Return termination in the original tool result and verify no redundant
-notice. Keep initial admission, terminal observation, and callback authentication as separate assertions.
+Start an installed process through a real session lease and record its machine and action ID. Observe terminal exit,
+explicit stop and machine loss. Restart the service and reread the original receipt. Require one unchanged entry
+with its authenticated work and generation. Walk the history across a full page and repeat a terminal observation.
+Lookups must leave the model request count and public session events unchanged. Reject changed starts and access
+from another session. Preserve pre-cutover receipts without synthesizing a new model wake.
 
 During checkpoint qualification, keep a managed writer running across ordinary commands. Hold remote upload and require
 the exited command's durable result and the next command to progress. Verify one coalesced capture, the stable archive,

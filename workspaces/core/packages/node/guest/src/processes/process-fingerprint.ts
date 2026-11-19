@@ -10,7 +10,14 @@ export function processFingerprint({ request }: ProcessFingerprintInput): string
   const variables = Record.toEntries(access.variables).toSorted(([left], [right]) => left.localeCompare(right));
   const revealed = Record.map(access.secrets, Redacted.value);
   const secrets = Record.toEntries(revealed).toSorted(([left], [right]) => left.localeCompare(right));
-  const value = JSON.stringify({ command: request.command, variables, secrets });
+
+  const value = JSON.stringify({
+    command: request.command,
+    workingDirectory: request.workingDirectory,
+    variables,
+    secrets,
+  });
+
   const hash = createHash('sha256');
 
   hash.update(value);

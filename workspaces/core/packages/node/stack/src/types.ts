@@ -1,3 +1,4 @@
+import type { WorkspaceId } from '@mechane/records';
 import type { Buffer } from 'node:buffer';
 import type { ChildProcess } from 'node:child_process';
 import type { HttpHandler } from './fixtures/http.ts';
@@ -59,7 +60,10 @@ export type ModelReply = {
   readonly text?: string;
   readonly tools?: ReadonlyArray<ModelToolCall>;
   readonly isHeld?: boolean;
+  readonly holdAfterPrefix?: { readonly text: string; readonly thinking: string };
   readonly status?: number;
+  readonly reportedSpeed?: 'standard' | 'fast';
+  readonly cacheCreation?: { readonly ephemeral_5m_input_tokens: number; readonly ephemeral_1h_input_tokens: number };
   readonly streamResponseId?: string;
   readonly streamError?: {
     readonly code: number;
@@ -106,12 +110,9 @@ export type GitHubFixture = {
   readonly users: { readonly owner: GitHubUser; readonly member: GitHubUser; readonly outsider: GitHubUser };
 };
 
-export type NotificationProducerFixture = { readonly id: string; readonly signingSecret: string };
-
 export type LocalFixtures = {
   readonly github: GitHubFixture | undefined;
   readonly model: ModelFixture | undefined;
-  readonly notifications: NotificationProducerFixture;
   readonly close: () => Promise<void>;
 };
 
@@ -135,7 +136,11 @@ export type StackOptions = {
   readonly prepareGuest?: (input: LocalGuestSetup) => Promise<ReadonlyArray<LocalToolAsset>>;
 };
 
-export type RestartOptions = { readonly signal?: 'SIGTERM' | 'SIGKILL'; readonly environment?: Environment };
+export type RestartOptions = {
+  readonly signal?: 'SIGTERM' | 'SIGKILL';
+  readonly environment?: Readonly<Record<string, string | null>>;
+};
+
 export type SandboxRestartOptions = Pick<RestartOptions, 'signal'> & { readonly whileStopped?: () => Promise<void> };
 
 export type ConversationImportScope = { readonly workspaceId: string; readonly mechId: string };
@@ -164,6 +169,7 @@ export type LocalSandbox = {
   readonly pid?: number;
   readonly logFile?: string;
   readonly readMachines: () => Promise<ReadonlyArray<string>>;
+  readonly hasContainers: () => Promise<boolean>;
   readonly inspectMachine: (machineId: string) => Promise<SandboxFixtureMachine | undefined>;
   readonly dumpStatus: (options?: DiagnosticOptions) => Promise<string>;
   readonly persistedFiles: (options?: DiagnosticOptions) => AsyncIterable<Buffer>;
@@ -178,6 +184,7 @@ export type LocalSandbox = {
 
 export type LocalStack = {
   readonly origin: URL;
+  readonly bootstrapWorkspaceId: typeof WorkspaceId.Encoded;
   readonly databaseUrl: string;
   readonly stateDirectory: string;
   readonly fixtures: LocalFixtures | undefined;

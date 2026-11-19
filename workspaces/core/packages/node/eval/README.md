@@ -1,70 +1,43 @@
 # @mechane/eval
 
-The Node eval library runs application suites through Mechane's public client. Each trial gets a fresh subject and a
-separate judge. Suites choose the visible input, fixture tools, frozen evidence, rubric and grade schema. The existing
-reply suite assesses explicit Console publications; tool suites can complete quietly.
+Run application evaluations against the Managed Agents API. Each trial gives the subject and judge separate agents,
+environments, and sessions. The reply suite grades the subject’s visible session message. Tool suites choose the
+recorded observations their judges may see.
 
-Layer 4 · node lane · effect dialect · consumers: cli-kernel, cli, smoke
+Layer 4 · node lane · consumers: cli-kernel, cli, smoke
 
-## Layout
+## Run a suite
 
-- `src/run-eval.ts`: run, resume and cleanup, including the reply-suite consumer.
-- `src/application-types.ts`: suite callbacks, targets and stage records.
-- `src/environment/`: authenticated MCP hosting and explicit local or cloudflared transport.
-- `src/trial/`: native notification admission and activation evidence.
-- `src/judge/`: structured submission, regrading and calibration.
-- `src/store/`: immutable records and the operating-system writer lock.
-- `src/report/`: read-only inspection, comparison and historical adapters.
-- `src/fingerprint-eval-sources.ts`: deterministic fingerprints of explicitly selected application sources.
+For a reply suite, use the Mechane CLI. Supply the installation origin and credentials as for other CLI commands.
 
-## Rules
+```sh
+mechane eval run --suite suite.json --out-folder ./eval-run --workspace "$WORKSPACE_ID"
+```
 
-The [product contracts](../../../.contracts/index.md) apply, with
-[057](../../../.contracts/057-eval-run-lifecycle/CONTRACT.md) to
-[060](../../../.contracts/060-eval-score-accounting/CONTRACT.md) for the run, its grading and its scores.
-[132](../../../.contracts/132-eval-adapter-boundaries/CONTRACT.md) defines the application adapter boundary.
+Set both the subject and grader models in the suite. Repeating the command with the same inputs and folder resumes the
+saved run. Use the public [library API](src/index.ts) for application-specific tools and evidence.
 
-## Use
+An [EvalSuite](src/application-types.ts) declares the visible inputs, private rubric, tools, role limits, and grade
+schema. The runner handles a custom tool call in the eval process and saves the observation before returning its result
+through the session API. The judge receives the frozen evidence and the `submit_grade` tool. A valid submission gets a
+durable receipt. Exact retries return that receipt.
 
-Compose an [`EvalSuite`](src/application-types.ts) with encoded JSON configuration. The resolver turns its millisecond
-bounds and serialized values into native durations, measured brands, timestamps and explicit optional values for
-execution. [`defineGradeSchema`](src/define-grade-schema.ts) and [`createEvalTarget`](src/create-eval-target.ts) are
-Effect factories; yield them before calling `runEval`. `resumeEval` requires matching frozen settings and preserves
-operation identities, deadlines, evidence and grades. `cleanupEval` retries cancellation and archival without grading.
-The CLI's `eval run --suite-file FILE --out-folder RUN` uses the same core through the reply-suite adapter; repeating
-that command resumes its saved run.
+## Recovery and evidence
 
-`createEvalTarget` rejects remote origins for local targets, insecure hosted origins, and URLs containing credentials or
-non-origin components before making requests. Readiness repeats that check for targets supplied directly.
+The manifest freezes the experiment, target, workspace, and fingerprints. Role receipts identify their agents,
+environments, and sessions. On restart the runner reconciles these records before starting work. Each session has its
+original deadline and budget. Cleanup can be retried independently of execution or grading.
 
-Use `fingerprintEvalSources` with a root URL and explicit file patterns for application behavior. Every pattern must
-match regular files; relative names and contents determine the digest. Keep CLI and documentation outside fixture
-patterns. Use `evalRunnerFingerprint` separately for installed runner bytes.
+Inspect per-stage files for the observations, immutable evidence, and accepted grade. The report is a projection. Usage
+and reported list cost belong to the session that produced them. Missing accounting evidence stays unknown. Historical
+reports can be inspected. They do not provide the execution state needed to resume a current run.
 
-Set `definition.connectionName` when subject instructions require a named application connection. Tool descriptions show
-that name; each role keeps a separate credential reference for recovery and cleanup.
+`fingerprintEvalSources` hashes the selected adapter sources. `evalRunnerFingerprint` identifies the installed runner.
+Calibration reads the saved labels and evidence digests. `compareExpected` can return `Option.none()` when an
+observation and its grade cannot be compared.
 
-The manifest and per-stage files are authoritative. Observations and structured grades are saved before their MCP
-receipts return. `report.json` is a replaceable projection. Subjects cannot read private rubrics or judge credentials.
-Judges receive the suite's evidence allowlist and only `submit_grade`; final model prose is diagnostic. Native traces
-retain the model's tool-call ID alongside `invocation_id`, the stable identity that joins adapter calls to their durable
-observation receipts.
-
-Cleanup completion, execution failure and quality are separate. Unknown charges stay unknown. Unconfirmed local release
-failures remain incomplete until their resource ownership can be resolved; a cleanup retry never clears them merely
-because time passed. Historical reports remain inspectable and cannot be resumed.
-
-Comparison requires matching MCP connection names and judge models, instructions, capabilities and grade schemas. A
-declared self-grading relationship can change when the subject model changes under a fixed judge; comparison reports
-that relationship with the subject experiment differences. The judge receives neither the subject identity nor that
-relationship.
-
-`inspectCalibration` reads expectations from saved audit metadata and accepts a `compareExpected` callback. Returning
-`Option.none()` means the label and grade cannot be compared. Its summary separates disagreement, missing grades, and
-unavailable comparisons, with selected and compared counts. `calibrationLines` formats that projection. Neither reads
-current case files nor changes the saved grade.
-
-## Never
-
-- Never show a subject an expectation, and never count a reply that is not a grade as a score.
-- Never call the deployment but through the client's catalog operations.
+The [lifecycle](../../../.contracts/057-eval-run-lifecycle/CONTRACT.md),
+[grading](../../../.contracts/058-eval-grading-isolation/CONTRACT.md),
+[production path](../../../.contracts/059-eval-production-path/CONTRACT.md),
+[accounting](../../../.contracts/060-eval-score-accounting/CONTRACT.md), and
+[adapter](../../../.contracts/132-eval-adapter-boundaries/CONTRACT.md) contracts govern the runner.

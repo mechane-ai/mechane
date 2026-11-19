@@ -1,6 +1,3 @@
-/** The longest name a mech may have. */
-export const MECH_NAME_MAX_CHARS = 64;
-
 /** The longest instructions a mech may have. */
 export const INSTRUCTIONS_MAX_CHARS = 65_536;
 

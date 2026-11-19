@@ -6,6 +6,7 @@ import { requireAuthenticated, validatedOperation } from '../validated-operation
 import { DEVICE_APPROVAL_SECONDS, DEVICE_POLL_SECONDS, KEY_LIFETIME_MAX_SECONDS } from './configuration.ts';
 import type { AuthenticationConfiguration } from './configuration.ts';
 import { createAuthToken, createUserCode, hashAuthToken } from './secrets.ts';
+import { createWorkspaceServiceOperations } from './workspace-services.ts';
 
 const KEY_PAGE_RECORDS = 100;
 const MILLISECONDS_PER_SECOND = 1000;
@@ -27,6 +28,7 @@ export function createAuthOperations({ store, configuration }: AuthOperationOpti
   const keyLifetimes = { login: configuration.loginKeyLifetimeSeconds, named: configuration.namedKeyLifetimeSeconds };
 
   return {
+    ...createWorkspaceServiceOperations({ store, keyLifetimeSeconds: configuration.namedKeyLifetimeSeconds }),
     startDeviceApproval: validatedOperation({
       operation: catalog.startDeviceApproval,
       run: async ({ input }) => {

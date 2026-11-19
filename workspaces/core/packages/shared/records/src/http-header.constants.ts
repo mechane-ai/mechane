@@ -1,6 +1,10 @@
 /** The header names Mechane sends and reads, in the lower case `Headers` stores them in. */
 export const HttpHeader = {
   Accept: 'accept',
+  AnthropicBeta: 'anthropic-beta',
+  AnthropicVersion: 'anthropic-version',
+  AnthropicWorkspaceId: 'anthropic-workspace-id',
+  ApiKey: 'x-api-key',
   AcceptRanges: 'accept-ranges',
   AcceptEncoding: 'accept-encoding',
   Authorization: 'authorization',
@@ -21,6 +25,8 @@ export const HttpHeader = {
   GitHubApiVersion: 'x-github-api-version',
   Host: 'host',
   Location: 'location',
+  MechaneAllocationGeneration: 'x-mechane-allocation-generation',
+  MechaneWorkId: 'x-mechane-work-id',
   MechaneClientAddress: 'x-mechane-client-address',
   MechaneCheckpointLease: 'x-mechane-checkpoint-lease',
   MechaneRunId: 'x-mechane-run-id',
@@ -32,6 +38,7 @@ export const HttpHeader = {
   ProxyAuthorization: 'proxy-authorization',
   Range: 'range',
   Referer: 'referer',
+  RequestId: 'request-id',
   ReferrerPolicy: 'referrer-policy',
   Refresh: 'refresh',
   RetryAfter: 'retry-after',

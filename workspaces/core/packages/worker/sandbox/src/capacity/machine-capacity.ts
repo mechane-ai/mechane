@@ -22,20 +22,28 @@ type MachineCapacityInput = {
   readonly store: SandboxStore;
   readonly provider: MachineProvider;
   readonly client: CapacityClient;
+  readonly isAdmittingInstalled: () => boolean;
   readonly scheduleStopRetry: () => Promise<void>;
 };
 
-type BindOwnerInput = { readonly owner: SandboxOwner };
+type BindOwnerInput = { readonly owner: SandboxOwner; readonly isInstalled: boolean };
 type HeldInput = { readonly held: MachineReservation };
 
 type MachineCapacity = {
   readonly provider: MachineProvider;
   readonly bindOwner: (input: BindOwnerInput) => Promise<void>;
   readonly requireOwner: () => SandboxOwner;
+  readonly isInstalled: () => boolean;
   readonly reservation: () => Option.Option<MachineReservation>;
 };
 
-export function machineCapacity({ store, provider, client, scheduleStopRetry }: MachineCapacityInput): MachineCapacity {
+export function machineCapacity({
+  store,
+  provider,
+  client,
+  isAdmittingInstalled,
+  scheduleStopRetry,
+}: MachineCapacityInput): MachineCapacity {
   const calls = serialCalls();
 
   function requireOwner(): SandboxOwner {
@@ -46,6 +54,20 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     }
 
     return capacity.value.owner;
+  }
+
+  function isInstalled(): boolean {
+    const owner = store.capacity();
+
+    return Option.exists(owner, (value) => value.owner.isInstalled === true);
+  }
+
+  function physicalCheckpoint({ checkpoint }: Pick<MachineStartInput, 'checkpoint'>): MachineStartInput['checkpoint'] {
+    if (isInstalled()) {
+      return Option.none();
+    }
+
+    return checkpoint;
   }
 
   function reservation(): Option.Option<MachineReservation> {
@@ -76,7 +98,7 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     return Result.getOrThrow(decoded);
   }
 
-  async function bindOwner({ owner }: BindOwnerInput): Promise<void> {
+  async function bindOwner({ owner, isInstalled: installed }: BindOwnerInput): Promise<void> {
     await calls.run({
       run: async () => {
         const existing = store.capacity();
@@ -85,7 +107,7 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
           const previous = existing.value.owner;
           const matches = previous.workspaceId === owner.workspaceId && previous.mechId === owner.mechId;
 
-          if (!matches) {
+          if (!matches || (previous.isInstalled === true) !== installed) {
             throw new InvalidSandboxOwner({});
           }
 
@@ -93,6 +115,12 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
         }
 
         const initialReservation = Option.none();
+
+        if (installed) {
+          store.bindCapacity({ owner: { ...owner, isInstalled: installed }, reservation: initialReservation });
+
+          return;
+        }
 
         store.bindCapacity({ owner, reservation: initialReservation });
       },
@@ -107,7 +135,9 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     save({ held: { ...held, phase: ReservationPhase.Stopping } });
 
     try {
-      await provider.stop({ machineId: held.machineId, checkpoint });
+      const cache = physicalCheckpoint({ checkpoint });
+
+      await provider.stop({ machineId: held.machineId, checkpoint: cache });
     } finally {
       await observeNativeSnapshot({ store, provider, machineId: held.machineId });
     }
@@ -118,11 +148,13 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
       throw new MachineStopUnconfirmed({});
     }
 
-    const allocation = identity({ held });
-    const released = await client.release(allocation);
+    if (!isInstalled()) {
+      const allocation = identity({ held });
+      const released = await client.release(allocation);
 
-    if (released.status !== SandboxCapacityStatus.Released) {
-      throw new CapacityReleaseFailed({});
+      if (released.status !== SandboxCapacityStatus.Released) {
+        throw new CapacityReleaseFailed({});
+      }
     }
 
     const clearedReservation = Option.none();
@@ -130,10 +162,7 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     store.saveReservation({ reservation: clearedReservation });
   }
 
-  async function startReservation({
-    held,
-    checkpoint,
-  }: HeldInput & Pick<MachineStartInput, 'checkpoint'>): Promise<void> {
+  async function acquireNative({ held }: HeldInput): Promise<void> {
     const allocation = identity({ held });
     const admitted = await client.acquire(allocation);
 
@@ -157,8 +186,19 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
     if (admitted.status !== SandboxCapacityStatus.Acquired) {
       throw new InvalidSandboxOwner({});
     }
+  }
 
-    await provider.start({ machineId: held.machineId, checkpoint });
+  async function startReservation({
+    held,
+    checkpoint,
+  }: HeldInput & Pick<MachineStartInput, 'checkpoint'>): Promise<void> {
+    if (!isInstalled()) {
+      await acquireNative({ held });
+    }
+
+    const cache = physicalCheckpoint({ checkpoint });
+
+    await provider.start({ machineId: held.machineId, checkpoint: cache });
     save({ held: { ...held, phase: ReservationPhase.Held } });
   }
 
@@ -168,6 +208,14 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
         requireOwner();
 
         const previous = reservation();
+
+        if (isInstalled() && !isAdmittingInstalled()) {
+          if (Option.exists(previous, (held) => held.machineId === machineId && held.phase === ReservationPhase.Held)) {
+            return;
+          }
+
+          throw new CapacityRefused({ reason: 'stale' });
+        }
 
         if (Option.isSome(previous)) {
           const held = previous.value;
@@ -213,7 +261,9 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
           return;
         }
 
-        await provider.stop({ machineId, checkpoint });
+        const cache = physicalCheckpoint({ checkpoint });
+
+        await provider.stop({ machineId, checkpoint: cache });
       },
     });
   }
@@ -225,11 +275,12 @@ export function machineCapacity({ store, provider, client, scheduleStopRetry }: 
       stop,
       startupTimeout: provider.startupTimeout,
       isAbsent: provider.isAbsent,
-      restoredWorkspace: provider.restoredWorkspace,
+      restoredWorkspace: async (input) => !isInstalled() && (await provider.restoredWorkspace(input)),
       snapshotReport: provider.snapshotReport,
     },
     bindOwner,
     requireOwner,
+    isInstalled,
     reservation,
   };
 }

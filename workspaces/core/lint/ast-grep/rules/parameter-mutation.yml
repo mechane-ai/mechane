@@ -43,3 +43,4 @@ rule:
             any:
               - { kind: shorthand_property_identifier_pattern, pattern: $P }
               - { kind: identifier, pattern: $P }
+    - not: { matches: native-storage-delete }

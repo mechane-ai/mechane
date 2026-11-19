@@ -18,7 +18,8 @@ type CommitInput = ObjectInput & {
 
 /** A validated byte interval uses R2's offset and length fields for partial reads. */
 export type EvidenceRange = { readonly offset: number; readonly length: number };
-type ReadInput = ObjectInput & { readonly range: EvidenceRange };
+type ReadInput = ObjectInput & { readonly range: EvidenceRange; readonly includeBody: boolean };
+type EvidenceRead = { readonly object: R2Object; readonly body: Option.Option<R2ObjectBody['body']> };
 
 const EvidenceIntegrityReason = {
   ChunkMissing: 'capture chunk is no longer available',
@@ -43,12 +44,16 @@ class EvidenceStorageFailed extends Schema.TaggedError<EvidenceStorageFailed>()(
 
 type CommitResult = Result.Result<void, EvidenceIntegrityFailed | EvidenceStorageFailed>;
 
-function evidenceObjectKey({ workspaceId, mechId, artifactId }: EvidencePath): string {
-  return `evidence/${workspaceId}/${mechId}/${artifactId}/content`;
+export function evidenceOwnerKey({ workspaceId, mechId }: Pick<EvidencePath, 'workspaceId' | 'mechId'>): string {
+  return `evidence/${workspaceId}/${mechId}/`;
 }
 
-function evidenceChunkKey({ workspaceId, mechId, artifactId, offsetBytes }: ChunkObjectInput): string {
-  return `evidence/${workspaceId}/${mechId}/${artifactId}/chunks/${offsetBytes}`;
+function evidenceObjectKey({ artifactId, ...owner }: EvidencePath): string {
+  return `${evidenceOwnerKey(owner)}${artifactId}/content`;
+}
+
+function evidenceChunkKey({ artifactId, offsetBytes, ...owner }: ChunkObjectInput): string {
+  return `${evidenceOwnerKey(owner)}${artifactId}/chunks/${offsetBytes}`;
 }
 
 /** A chunk receipt fixes its digest before this retryable write. */
@@ -279,9 +284,26 @@ export async function releaseEvidenceChunks({ object, chunks }: ReleaseInput): P
   }
 }
 
-/** Reads the admitted owner's private object, returning null when its media is unavailable. */
-export async function readEvidenceObject({ bucket, range, ...owner }: ReadInput): Promise<R2ObjectBody | null> {
+/** Reads the admitted owner's private object, checking only metadata when the caller requests HEAD. */
+export async function readEvidenceObject({
+  bucket,
+  range,
+  includeBody,
+  ...owner
+}: ReadInput): Promise<Option.Option<EvidenceRead>> {
   const key = evidenceObjectKey(owner);
 
-  return await bucket.get(key, { range });
+  if (includeBody) {
+    const object = await bucket.get(key, { range });
+
+    const stored = Option.fromNullishOr(object);
+
+    return Option.map(stored, (value) => ({ object: value, body: Option.some(value.body) }));
+  }
+
+  const object = await bucket.head(key);
+
+  const stored = Option.fromNullishOr(object);
+
+  return Option.map(stored, (value) => ({ object: value, body: Option.none() }));
 }

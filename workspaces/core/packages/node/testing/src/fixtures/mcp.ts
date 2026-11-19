@@ -46,7 +46,7 @@ const tools = [
   },
 ] as const;
 
-export type McpFixture = {
+type McpFixture = {
   readonly origin: URL;
   readonly names: typeof FixtureTool;
   readonly descriptions: typeof descriptions;

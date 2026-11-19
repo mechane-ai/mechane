@@ -22,8 +22,16 @@ BEGIN
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA mechane FROM %I',role_name);
   EXECUTE format('GRANT SELECT ON ALL TABLES IN SCHEMA mechane TO %I',role_name);
   EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.principals,mechane.identities,mechane.workspaces,mechane.memberships,mechane.oauth_states,mechane.browser_sessions,mechane.api_keys,mechane.device_approvals,mechane.auth_attempts,mechane.mechs,mechane.credentials,mechane.execution_access,mechane.mcp_connections,mechane.mcp_grants,mechane.sandbox_capacity TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.managed_command_grants TO %I',role_name);
   EXECUTE format('GRANT INSERT ON mechane.mech_revisions,mechane.audit_events TO %I',role_name);
   EXECUTE format('GRANT INSERT,UPDATE ON mechane.provider_attempts,mechane.control_changes TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE ON mechane.managed_agents,mechane.managed_skills TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE ON mechane.managed_installed_allocations TO %I',role_name);
+  EXECUTE format('GRANT INSERT ON mechane.managed_agent_versions,mechane.managed_skill_versions,mechane.managed_budget_changes,mechane.managed_oidc_identities,mechane.managed_installations,mechane.workspace_service_principals,mechane.managed_usage_activity TO %I',role_name);
+  EXECUTE format('GRANT INSERT,DELETE ON mechane.managed_session_mutations,mechane.managed_memory_versions TO %I',role_name);
+  EXECUTE format('GRANT UPDATE(path,content,content_sha256,content_size_bytes,redacted_at,redacted_by) ON mechane.managed_memory_versions TO %I',role_name);
+  EXECUTE format('GRANT UPDATE(deleted_at) ON mechane.managed_skill_versions TO %I',role_name);
+  EXECUTE format('GRANT INSERT,UPDATE,DELETE ON mechane.managed_environments,mechane.managed_environment_keys,mechane.managed_work,mechane.managed_worker_polls,mechane.managed_git_transfers,mechane.managed_sessions,mechane.managed_memory_stores,mechane.managed_memories,mechane.managed_vaults,mechane.managed_vault_credentials,mechane.managed_session_git_tokens TO %I',role_name);
   EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA mechane FROM %I',role_name);
   EXECUTE format('GRANT USAGE,SELECT ON SEQUENCE mechane.control_changes_source_sequence_seq TO %I',role_name);
   EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA mechane REVOKE INSERT,UPDATE,DELETE ON TABLES FROM %I',role_name);

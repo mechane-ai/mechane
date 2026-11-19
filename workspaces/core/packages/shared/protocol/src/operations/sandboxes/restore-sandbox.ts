@@ -10,8 +10,8 @@ import { MechPath } from '../schemas.ts';
 /** Explicitly restores the last committed files after positively confirmed physical machine loss. */
 export const restoreSandbox = {
   method: HttpMethod.Post,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/sandbox/restore',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/sandbox/restore',
+  access: Access.Owner,
   params: MechPath,
   query: NoFields,
   body: SandboxRestoreRequest,

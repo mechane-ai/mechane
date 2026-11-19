@@ -7,17 +7,15 @@ export const ApplicationFile = {
   Report: 'report.json',
   SubjectIntent: 'subject-intent.json',
   SubjectReceipt: 'subject-receipt.json',
-  SubjectNotification: 'subject-notification.json',
+  SubjectInputAttempt: 'subject-input-attempt.json',
   Subject: 'subject.json',
   Evidence: 'evidence.json',
   JudgeIntent: 'judge-intent.json',
   JudgeReceipt: 'judge-receipt.json',
-  JudgeNotification: 'judge-notification.json',
+  JudgeInputAttempt: 'judge-input-attempt.json',
   Judge: 'judge.json',
   Submission: 'grade-submission.json',
   Grade: 'grade.json',
-  SubjectConnection: 'subject-connection.json',
-  JudgeConnection: 'judge-connection.json',
 } as const;
 
 export const ApplicationFolder = {

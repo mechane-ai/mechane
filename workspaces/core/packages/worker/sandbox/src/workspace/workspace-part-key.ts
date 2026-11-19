@@ -14,7 +14,13 @@ type WorkspacePartKeyInput = {
 export function workspacePartKey({ owner, generation, part }: WorkspacePartKeyInput): string {
   const index = workspacePartIndex({ part });
 
-  return `sandboxes/${owner}/${generation}/${index}`;
+  const prefix = workspaceOwnerKey({ owner });
+
+  return `${prefix}${generation}/${index}`;
+}
+
+export function workspaceOwnerKey({ owner }: Pick<WorkspacePartKeyInput, 'owner'>): string {
+  return `sandboxes/${owner}/`;
 }
 
 function workspacePartIndex({ part }: Pick<WorkspacePartKeyInput, 'part'>): string {

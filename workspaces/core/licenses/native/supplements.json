@@ -8,5 +8,6 @@
   "@earendil-works/pi-telemetry@1.5.1": "pi-1.5.1.txt",
   "@earendil-works/pi-durable@1.5.1": "pi-1.5.1.txt",
   "@earendil-works/pi-ai@1.5.1": "pi-1.5.1.txt",
-  "@earendil-works/pi-schema@1.5.1": "pi-1.5.1.txt"
+  "@earendil-works/pi-schema@1.5.1": "pi-1.5.1.txt",
+  "standardwebhooks@1.1.1": "standardwebhooks-1.1.1.txt"
 }

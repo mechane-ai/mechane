@@ -6,6 +6,9 @@ paths: ["packages/browser/console-cache/**", "packages/browser/console-data/**",
 
 ## Rules
 
+Include the admitted installation, principal, session and thread in every conversation-specific cache or query key.
+Opening a second session on the same agent cannot reuse the first session's rows, cursor, draft or authority.
+
 Treat the browser database as a replaceable copy of server records. Resolve the current principal and workspace
 membership through the server before opening a protected persisted view for each data runtime. Workspace returns,
 cache recovery, and Back/Forward cache restoration pass that same admission gate. A retained application session or
@@ -23,17 +26,18 @@ Keep these responsibilities separate:
 | Cache lifecycle in `console-cache/src/store/storage.ts` | Scoped generations, retention, recovery, and cleanup. |
 
 Use published APIs without dependency patches, private imports, a custom Worker bridge, or a second record replication
-protocol. Console presentation imports neither the cache nor its persistence libraries. Native Query results are
-completion scalars; record values and page coverage have one owner in the canonical collections.
+protocol. Console presentation imports neither the cache nor its persistence libraries. For persistent record reads, native Query results are completion scalars. Canonical collections own those records and exact page coverage.
 
 Persist records in their schema-owned serializable form. Validate restored rows and page receipts as well as new writes.
 Publish a receipt only after the native persistence API confirms its referenced canonical updates. A page is ready only
 when its exact receipt and compatible referenced rows are present; an absent receipt never means an empty page.
 Keep refresh timing in the tab's Query state. A persisted receipt describes ordered membership and pagination, so an
 unchanged successful read must not manufacture a durable mutation just to record when the request completed.
-Keep credentials, drafts, unsent commands, submission state, and public conversation transcripts outside this cache.
-Contract 113 assigns public history to one admitted in-memory conversation owner and data-owned Query reads. A format change replaces derived
-copies without deleting authoritative server data or application drafts.
+Keep credentials, drafts, unsent commands and submission state outside this cache. Session and thread history, the
+latest status event, private execution slot, and owner-only archived messages live in the admitted tab's Query
+results under contract 113.
+Invalidate those results when their resource or workspace admission ends. A format change replaces the derived
+copies and preserves authoritative records and application drafts.
 
 Admit canonical writes through one short native Web Lock per generation in `console-data/src/collections.ts`.
 Under that lock, reload the touched tables through the public `forceReloadSubset({})`, evaluate domain guards against
@@ -47,8 +51,9 @@ successful preparation alone does not make a write uncertain.
 These locks order application decisions. Native TanStack remains the sole record replication owner, with no added queue
 or cross-tab RPC protocol.
 
-Scope cache identity to the installation, principal, workspace, and format generation. Keep the current generation's
-validated pointer in browser storage and change it under the scope's exclusive Web Lock. Give each generation a fresh
+Bind each cache generation to the installation, principal, workspace, format, and the current server-admitted
+operator privilege. On owner demotion or promotion, select a fresh generation under the scope's exclusive Web Lock
+and fence peers still using the old privilege. Keep the validated pointer in browser storage. Give each generation a fresh
 random 128-bit identity and its own OPFS directory. Keep rendered paths within the native VFS limit, including journal
 suffixes. Never discover a usable generation by scanning old files.
 Each open runtime holds a shared lifecycle lease for its generation. This lease only prevents physical deletion while
@@ -97,7 +102,9 @@ recovery path, and native API calls for memory branches, dependency patches, pri
 In a real browser against the packaged service, initialize all canonical tables concurrently, then reopen populated and
 successful-empty pages while holding their network reads. Confirm exact receipt coverage reveals cached content.
 Repeat with rejected admission, a principal or workspace switch, and an incompatible cache format. No protected content
-may cross owners. Verify current-page reads and retained drafts after Back/Forward cache restoration.
+may cross owners. Demote a workspace owner and open a fresh tab. The member must retain authorized managed sessions
+and lose access to every cached operator record. Restore ownership and verify fresh admission before reading records.
+Verify current-page reads and retained drafts after Back/Forward cache restoration.
 
 Use two tabs for one generation. Check shared records and receipts, independent network error and retry state, polling,
 command invalidation, and continued use after either tab closes. Release an older response after another tab accepts a
@@ -122,7 +129,9 @@ cleanup. Temporary qualification probes stay outside tracked source under the ex
 
 ## Local adaptations
 
-Evidence collections contain admitted canonical metadata and page membership. Media bytes and private viewer access
+Evidence collections contain admitted canonical metadata and page membership. Installed captures use the same
+workspace, agent, session and artifact for their list rows and detail. Revoking a capture removes its metadata
+from the detail and every affected page. Revoking its session fences all of its captures. Media bytes and private viewer access
 are fetched through the authenticated route; a cached URL or metadata record is not an authorization grant. Process
 summaries use passive reads, and detailed logs load only for an explicitly selected handle.
 

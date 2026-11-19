@@ -1,4 +1,9 @@
 export { PresentationCatalog } from './catalog.ts';
+/**
+ * Published by @mechane/client/presentation for Nexus's Slack connector.
+ *
+ * @public
+ */
 export { createPresentationOutput } from './create-presentation-output.ts';
 export { PresentationOutput, PresentationSpecification } from './schemas.ts';
 /**

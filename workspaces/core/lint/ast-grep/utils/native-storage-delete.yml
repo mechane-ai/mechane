@@ -1,0 +1,16 @@
+# Durable Object transactions delete persisted keys without mutating caller-owned collections.
+id: native-storage-delete
+language: TypeScript
+rule:
+  all:
+    - pattern: $TRANSACTION.delete($$$)
+    - inside:
+        stopBy: { matches: function-boundary }
+        matches: function-boundary
+        has:
+          field: parameters
+          has:
+            kind: required_parameter
+            all:
+              - has: { field: pattern, kind: identifier, pattern: $TRANSACTION }
+              - has: { field: type, regex: '^:\s*DurableObjectTransaction$' }

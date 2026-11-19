@@ -128,10 +128,6 @@ function useAppearanceContext(): AppearanceContextValue {
   return context;
 }
 
-export function useMechAppearances(): Readonly<Record<string, AgentAppearance>> {
-  return useAppearanceContext().appearances;
-}
-
 export function useMechAppearance(mechId: string): {
   readonly appearance: AgentAppearance | undefined;
   readonly setAppearance: (appearance: AgentAppearance | undefined) => void;

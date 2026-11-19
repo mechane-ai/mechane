@@ -1,9 +1,9 @@
 import { TOOL_RESPONSE_MAX_BYTES } from './constants.ts';
 import { serializedToolResult } from './serialized-result.ts';
 
-type RedactInput = { readonly value: unknown; readonly secrets: ReadonlyArray<string> };
+type RedactInput = { readonly value: unknown; readonly secrets: ReadonlyArray<string>; readonly maximumBytes?: number };
 
-export function redactToolResult({ value, secrets }: RedactInput): unknown {
+export function redactToolResult({ value, secrets, maximumBytes = TOOL_RESPONSE_MAX_BYTES }: RedactInput): unknown {
   const serialized = { text: serializedToolResult(value) };
   const ordered = secrets.filter((secret) => secret.length > 0).toSorted((left, right) => right.length - left.length);
 
@@ -12,8 +12,8 @@ export function redactToolResult({ value, secrets }: RedactInput): unknown {
     serialized.text = serialized.text.replaceAll(encoded, '[redacted]');
   }
 
-  if (new TextEncoder().encode(serialized.text).byteLength > TOOL_RESPONSE_MAX_BYTES) {
-    return { status: 'unavailable', message: 'The tool result exceeds the response limit.' };
+  if (new TextEncoder().encode(serialized.text).byteLength > maximumBytes) {
+    return undefined;
   }
 
   return JSON.parse(serialized.text);

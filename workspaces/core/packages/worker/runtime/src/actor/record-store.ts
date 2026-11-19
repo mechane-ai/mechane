@@ -1,7 +1,7 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
 import type { Context } from '@earendil-works/chord/context';
 import { defineDocFamily } from '@earendil-works/pi-durable';
-import type { Harness, Tx } from '@earendil-works/pi-durable';
+import type { Session, Tx } from '@earendil-works/pi-durable';
 import { RequestInvalid } from '@mechane/protocol';
 import { BYTES_PER_KIBIBYTE } from '@mechane/records';
 import { Schema } from 'effect';
@@ -41,7 +41,7 @@ const Catalog = defineDocFamily({
   checkpointWhen: () => true,
 });
 
-export type ActorRecordReader = Pick<Harness, 'snapshot'>;
+export type ActorRecordReader = Pick<Session, 'snapshot'>;
 
 export type ActorRecordPageInput = {
   readonly after?: string | undefined;
@@ -322,6 +322,23 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     return items;
   }
 
+  async function retire(transaction: Tx): Promise<void> {
+    const catalog = await transaction.doc(Catalog, name, null);
+
+    for (let ordinal = 0; ordinal < catalog.total; ordinal += 1) {
+      const key = address(name, ordinal);
+      const order = await transaction.doc(Order, key, null);
+
+      if (order.id !== null) {
+        await transaction.retireDoc(Values, address(name, order.id));
+      }
+
+      await transaction.retireDoc(Order, key);
+    }
+
+    await transaction.retireDoc(Catalog, name);
+  }
+
   return {
     get,
     read,
@@ -337,6 +354,7 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     page,
     all,
     allInTransaction,
+    retire,
   };
 }
 

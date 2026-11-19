@@ -14,8 +14,10 @@ COPY install-tools.sh /opt/mechane/install-tools.sh
 RUN sh /opt/mechane/install-tools.sh "$TARGETARCH" && rm /opt/mechane/install-tools.sh
 RUN install -d -m 755 /usr/local/share/licenses/mechane-tools
 COPY --chmod=644 gh-LICENSE mise-LICENSE /usr/local/share/licenses/mechane-tools/
+RUN install -d -m 700 -o node -g node /mnt/memory /home/node/workspace \
+  && ln -s /home/node/workspace /workspace
 COPY --chmod=644 guest.mjs mechane.mjs /opt/mechane/
-COPY --chmod=755 mechane /usr/local/bin/mechane
+COPY --chmod=755 mechane mechane-computer /usr/local/bin/
 USER node
 RUN nix store info --store local \
   && test "$(nix eval --expr '2 + 2')" = 4 \

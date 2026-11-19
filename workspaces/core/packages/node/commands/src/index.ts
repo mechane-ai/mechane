@@ -2,6 +2,7 @@ export { commandReference } from './command-reference.ts';
 export { CommandReference } from './schemas.ts';
 export {
   OutputMode,
+  ErrorCode,
   API_KEY_VARIABLE,
   ExitStatus,
   PROGRAM,
@@ -16,7 +17,6 @@ export {
 } from './constants.ts';
 export { helpLines } from './help-lines.ts';
 export type { CommandName, CommandInput } from './commands.ts';
-export type { ErrorCode } from './constants.ts';
 export { COMMANDS } from './commands.ts';
 export { GLOBAL_FLAGS } from './global-flags.ts';
 export type { CommandDeclaration } from './types.ts';

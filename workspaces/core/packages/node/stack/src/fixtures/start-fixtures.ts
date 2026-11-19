@@ -1,9 +1,6 @@
-import { randomBytes, randomUUID } from 'node:crypto';
 import type { LocalFixtures, LocalProviders } from '../types.ts';
 import { startGitHubFixture } from './github.ts';
 import { startModelFixture } from './model.ts';
-
-const SIGNING_KEY_BYTES = 32;
 
 type StartFixturesInput = { readonly origin: URL; readonly providers?: LocalProviders };
 
@@ -34,7 +31,6 @@ export async function startFixtures({
     return {
       github: github?.fixture,
       model: model?.fixture,
-      notifications: { id: randomUUID(), signingSecret: randomBytes(SIGNING_KEY_BYTES).toString('hex') },
       close: async () => {
         await closeFixtures(cleanup);
       },

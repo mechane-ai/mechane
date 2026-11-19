@@ -9,6 +9,7 @@ import type { Collection, CollectionConfig, DbClient, InferSchemaOutput } from '
 import { persistedCollectionOptions } from '@tanstack/db-sqlite-persistence-core';
 import type { PersistedCollectionPersistence, PersistedCollectionUtils } from '@tanstack/db-sqlite-persistence-core';
 import { MutableRef, Schema } from 'effect';
+import { ManagedAgent, ManagedEnvironment, ManagedSession, ManagedThread } from './managed-records.ts';
 import {
   AllowanceRow,
   EnvironmentProcessDetailsRow,
@@ -18,6 +19,7 @@ import {
   MechDefinitionRow,
   MechSummaryRow,
   restoreRecord,
+  SessionEvidenceRow,
   TraceEvidenceRow,
   TurnRow,
 } from './records.ts';
@@ -37,7 +39,7 @@ type RowSchema<Row extends object> = ReturnType<typeof Schema.toStandardSchemaV1
 /** A native DbClient descriptor preserving a canonical row's typed encoded fields. */
 export type CanonicalCollectionOptions<Row extends KeyedRow> = ReturnType<typeof table<Row>>;
 
-type CanonicalCollection<Row extends object> = Collection<
+export type CanonicalCollection<Row extends object> = Collection<
   Row,
   string,
   CanonicalPersistenceOperations,
@@ -92,6 +94,36 @@ function collectionId(scope: string, name: string): string {
 /** Records and exact page coverage share one admitted persistent owner. */
 export function createCanonicalCollections(scope: string, persistence: PersistedCollectionPersistence) {
   return {
+    managedAgents: table({
+      name: collectionId(scope, 'managedAgents'),
+      row: Schema.Struct({ key: Schema.String, value: ManagedAgent }),
+      persistence,
+      key: rowKey,
+    }),
+    managedEnvironments: table({
+      name: collectionId(scope, 'managedEnvironments'),
+      row: Schema.Struct({ key: Schema.String, value: ManagedEnvironment }),
+      persistence,
+      key: rowKey,
+    }),
+    managedSessions: table({
+      name: collectionId(scope, 'managedSessions'),
+      row: Schema.Struct({ key: Schema.String, value: ManagedSession }),
+      persistence,
+      key: rowKey,
+    }),
+    managedThreads: table({
+      name: collectionId(scope, 'managedThreads'),
+      row: Schema.Struct({ key: Schema.String, value: ManagedThread }),
+      persistence,
+      key: rowKey,
+    }),
+    sessionEvidence: table({
+      name: collectionId(scope, 'session-evidence'),
+      row: SessionEvidenceRow,
+      persistence,
+      key: rowKey,
+    }),
     mechs: table({ name: collectionId(scope, 'mechs'), row: MechSummaryRow, persistence, key: rowKey }),
     mechDefinitions: table({
       name: collectionId(scope, 'mech-definitions'),
@@ -135,6 +167,11 @@ type CanonicalCollections = ReturnType<typeof createCanonicalCollections>;
 /** Materializes each descriptor once within the scope's owning native DbClient. */
 export function materializeCanonicalCollections(db: DbClient, collections: CanonicalCollections) {
   return {
+    managedAgents: db.collection(collections.managedAgents),
+    managedEnvironments: db.collection(collections.managedEnvironments),
+    managedSessions: db.collection(collections.managedSessions),
+    managedThreads: db.collection(collections.managedThreads),
+    sessionEvidence: db.collection(collections.sessionEvidence),
     mechs: db.collection(collections.mechs),
     mechDefinitions: db.collection(collections.mechDefinitions),
     turns: db.collection(collections.turns),

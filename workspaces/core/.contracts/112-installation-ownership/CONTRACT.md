@@ -73,7 +73,10 @@ local HTTPS uses a generated trusted root. Never disable TLS verification or bak
 
 Run the same Worker artifact locally and in production. The local supervisor starts separate celld application and
 environment hosts so an application edit cannot destroy the guest. Source mode uses an explicit compiler graph watch;
-artifact mode does not rebuild. Application reload preserves the environment and guest. Environment and guest edits
+artifact mode does not rebuild. Apply database migrations and runtime grants before replacing a local application
+Worker. Keep its serving bundle if preparation fails, and restore it if the replacement fails readiness. After fencing
+admission, an unavailable owner inventory permits shutdown only if Docker confirms this local host has no containers.
+Application reload preserves the environment and guest. Environment and guest edits
 require explicit source apply with admission fenced. Drain fresh files before replacing a machine that admitted writers.
 Distinguish source apply
 from same-byte recovery restart; never silently apply an old bundle as new source. Status identifies compiled and applied

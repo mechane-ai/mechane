@@ -1,5 +1,6 @@
 import { Bytes, MachineId, ModelToolCallId } from '@mechane/records';
 import {
+  InstalledActionOrigin,
   PROCESS_HISTORY_MAX_ENTRIES,
   PROCESS_MAX_INSTANCES,
   ProcessId,
@@ -20,6 +21,7 @@ export const ProcessRecord = Schema.Struct({
   runId: SandboxRunId,
   toolCallId: ModelToolCallId,
   command: ProcessStart.to.fields.command,
+  origin: Schema.optionalKey(InstalledActionOrigin),
   /** Absence means the process has not been assigned to a machine. */
   machineId: Schema.OptionFromNullOr(MachineId),
   /** Absence means the process has not been observed on its assigned machine. */
@@ -29,16 +31,18 @@ export const ProcessRecord = Schema.Struct({
 
 export type ProcessRecord = typeof ProcessRecord.Type;
 type ProcessIdentity = Pick<ProcessRecord, 'processId'>;
-type ClaimProcessInput = Pick<ProcessRecord, 'processId' | 'runId' | 'toolCallId' | 'command'>;
+type ClaimProcessInput = Pick<ProcessRecord, 'processId' | 'runId' | 'toolCallId' | 'command' | 'origin'>;
 type AssignProcessInput = ProcessIdentity & { readonly machineId: typeof MachineId.Type };
 type ProcessObservationTime = { readonly now: DateTime.Utc };
 type SaveProcessInput = { readonly observation: ProcessObservation };
 type CancelProcessRunInput = { readonly runId: SandboxRunId };
 type WriteProcessInput = { readonly record: ProcessRecord };
+const OptionalOrigin = Schema.Option(InstalledActionOrigin);
+const sameOrigin = Schema.toEquivalence(OptionalOrigin);
 const ProcessJson = Schema.fromJsonString(ProcessRecord);
 const StoredProcess = Schema.Struct({ record: ProcessJson });
 
-class ProcessIdentityReused extends Schema.TaggedError<ProcessIdentityReused>()('ProcessIdentityReused', {
+export class ProcessIdentityReused extends Schema.TaggedError<ProcessIdentityReused>()('ProcessIdentityReused', {
   processId: ProcessId,
 }) {}
 
@@ -123,11 +127,14 @@ export function processRecords({ sql }: RecordsInput) {
     );
   }
 
-  function claimProcess({ processId, runId, toolCallId, command }: ClaimProcessInput): ProcessRecord {
+  function claimProcess({ processId, runId, toolCallId, command, ...provenance }: ClaimProcessInput): ProcessRecord {
     const existing = process({ processId });
 
     if (Option.isSome(existing)) {
-      const isSamePayload = existing.value.command === command;
+      const original = Option.fromNullishOr(existing.value.origin);
+      const requested = Option.fromNullishOr(provenance.origin);
+      const isSameOrigin = sameOrigin(original, requested);
+      const isSamePayload = existing.value.command === command && isSameOrigin;
       const mismatch = new ProcessIdentityReused({ processId });
 
       return replayInteractiveClaim({ existing: existing.value, runId, toolCallId, isSamePayload, mismatch });
@@ -138,6 +145,7 @@ export function processRecords({ sql }: RecordsInput) {
     const isStopRequested = Option.isSome(canceled);
 
     const record: ProcessRecord = {
+      ...provenance,
       processId,
       runId,
       toolCallId,

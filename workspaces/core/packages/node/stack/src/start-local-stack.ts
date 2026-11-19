@@ -5,7 +5,7 @@ import { Record, Schema } from 'effect';
 import { access, copyFile, cp, mkdir, readFile, rm } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { captureStackFailure } from './capture-failure.ts';
-import { drainSandboxes } from './celld/drain-sandboxes.ts';
+import { drainSandboxes, InstalledDrainFailedError } from './celld/drain-sandboxes.ts';
 import { dumpDurableStorage } from './celld/dump-durable-storage.ts';
 import { startCelldSandbox } from './celld/start-celld-sandbox.ts';
 import { startCelldWorker } from './celld/start-celld-worker.ts';
@@ -53,7 +53,7 @@ import {
 const MIGRATION_TIMEOUT_MS = 60_000;
 const SHUTDOWN_TIMEOUT_MS = 60_000;
 const SANDBOX_START_TIMEOUT_MS = 600_000;
-const APPLY_TIMEOUT_MS = 300_000;
+const DRAIN_TIMEOUT_MS = 480_000;
 const PRIVATE_DIRECTORY_MODE = 0o700;
 type ResourceName = 'application' | 'console' | 'sandbox' | 'sandbox-ingress' | 'gateway' | 'fixtures' | 'postgres';
 
@@ -162,7 +162,8 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
         environment: { ...applicationEnvironment, ...resources.postgres?.clientEnvironment },
         ...binaryOptions,
         isArtifact: !isSource,
-        isWatched: isSource,
+        prepareSource: prepareDatabase,
+        isWatched: isSource && options.mode === 'persistent',
       });
     } catch (cause) {
       if (cause instanceof StackCleanupUnconfirmedError) {
@@ -195,6 +196,11 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
     }
   }
 
+  async function prepareDatabase(): Promise<void> {
+    await runDatabaseProgram('migrate');
+    await runDatabaseProgram('grant');
+  }
+
   async function restart(input: RestartOptions = {}): Promise<void> {
     if (resources.closing !== undefined || resources.application === undefined) {
       throw new Error('The local stack is stopped');
@@ -208,7 +214,8 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
 
     await resources.application.close({ signal: input.signal ?? 'SIGTERM' });
 
-    configuration.environment = { ...configuration.environment, ...input.environment };
+    const updated = { ...configuration.environment, ...input.environment };
+    configuration.environment = Record.filter(updated, (value) => value !== null);
 
     await launch();
   }
@@ -226,16 +233,23 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
   }
 
   async function closeResources(): Promise<void> {
-    const deadlineMs = Date.now() + SHUTDOWN_TIMEOUT_MS;
     const shouldDrain = options.mode === 'persistent' && resources.isServing === true && resources.hasDrained !== true;
 
     if (shouldDrain && resources.sandbox !== undefined) {
+      const deadlineMs = Date.now() + DRAIN_TIMEOUT_MS;
+
       try {
         await resources.ingress?.hold();
         await drainSandboxes({ origin: applicationOrigin, sandbox: resources.sandbox, deadlineMs, report: record });
 
         resources.hasDrained = true;
       } catch (cause) {
+        if (cause instanceof InstalledDrainFailedError) {
+          await record({ phase: 'shutdown-blocked', installed: cause.allocation, recovery: cause.message, deadlineMs });
+
+          throw cause;
+        }
+
         await record({
           phase: 'shutdown-blocked',
           recovery: 'Inspect the recorded sandbox stop and retry after repair',
@@ -248,6 +262,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       }
     }
 
+    const deadlineMs = Date.now() + SHUTDOWN_TIMEOUT_MS;
     const failures: Array<unknown> = [];
 
     async function release(name: ResourceName, close: () => Promise<void | undefined>): Promise<void> {
@@ -417,7 +432,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       await resources.ingress.hold();
       await record({ phase: 'applying-environment' });
 
-      const deadlineMs = Date.now() + APPLY_TIMEOUT_MS;
+      const deadlineMs = Date.now() + DRAIN_TIMEOUT_MS;
 
       await drainSandboxes({ origin: applicationOrigin, sandbox: resources.sandbox, deadlineMs, report: record });
 
@@ -466,6 +481,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       await record({
         phase: 'source-apply-blocked',
         recovery: 'Repair the source or retained environment and retry apply',
+        ...(cause instanceof InstalledDrainFailedError && { installed: cause.allocation, recovery: cause.message }),
       });
 
       try {
@@ -600,8 +616,10 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       };
     }
 
-    await runDatabaseProgram('migrate');
-    await runDatabaseProgram('grant');
+    if (!isSource) {
+      await prepareDatabase();
+    }
+
     await launch();
 
     if (isConsoleDevelopment) {
@@ -623,6 +641,7 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
 
     const stack: LocalStack = {
       origin,
+      bootstrapWorkspaceId: state.secrets.workspaceId,
       databaseUrl: postgres.url,
       stateDirectory: state.directory,
       fixtures: resources.fixtures,
@@ -712,7 +731,9 @@ function workerVariables(environment: Environment): Readonly<Record<string, stri
   const variables: Record<string, string> = {};
 
   for (const [name, value] of Record.toEntries(environment)) {
-    if (name.startsWith('MECHANE_') && !name.startsWith('MECHANE_LOCAL_') && !HOST_VARIABLES.has(name)) {
+    const application = name.startsWith('MECHANE_') && !name.startsWith('MECHANE_LOCAL_') && !HOST_VARIABLES.has(name);
+
+    if (application || name.startsWith('CMA_WEB_TOOLS__')) {
       variables[name] = value;
     }
   }

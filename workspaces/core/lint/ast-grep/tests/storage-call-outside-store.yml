@@ -5,3 +5,4 @@ valid:
 invalid:
   - 'this.ctx.storage.get(key);'
   - 'this.ctx.storage.setAlarm(at);'
+  - 'function remove(transaction: DurableObjectTransaction) { transaction.delete("key"); }'

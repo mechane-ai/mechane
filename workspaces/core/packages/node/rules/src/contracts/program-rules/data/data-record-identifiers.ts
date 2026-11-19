@@ -36,7 +36,7 @@ export const dataRecordIdentifiers = {
     {
       ...AST_GREP_DEFAULTS,
       name: 'plain-id-type',
-      exemptRoles: [FileRole.NativeRuntime, FileRole.NativeConversation],
+      exemptRoles: [FileRole.NativeRuntime],
       behavior: FixBehavior.TypeOnly,
       standard: 'TD-14',
       status: RuleStatus.Ratchet,

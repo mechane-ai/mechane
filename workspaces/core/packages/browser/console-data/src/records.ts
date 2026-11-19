@@ -1,5 +1,6 @@
 import {
   Allowance,
+  ConsoleSessionEvidenceArtifact,
   EvidenceArtifact,
   ListedEvent,
   Mech,
@@ -11,6 +12,7 @@ import {
 } from '@mechane/protocol';
 import { MechId, wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
+import { ManagedId } from './managed-records.ts';
 
 function recordSchema<Value extends Schema.Top>(value: Value) {
   return Schema.Struct({ key: Schema.String, value: Schema.toEncoded(value) });
@@ -66,6 +68,21 @@ export type TraceEvidenceRow = typeof TraceEvidenceRow.Type;
 /** Capture metadata keyed by the admitted mech and durable artifact identity. */
 export const EvidenceArtifactRow = mechRecordSchema(EvidenceArtifact);
 export type EvidenceArtifactRow = typeof EvidenceArtifactRow.Type;
+
+/** Capture metadata is shared by session list and viewer, even without a retained native run. */
+export const SessionEvidenceRow = Schema.Struct({
+  key: Schema.String,
+  agentId: ManagedId,
+  sessionId: ManagedId,
+  value: Schema.toEncoded(ConsoleSessionEvidenceArtifact),
+});
+
+export type SessionEvidenceRow = typeof SessionEvidenceRow.Type;
+
+export function decodeSessionEvidenceArtifact(row: SessionEvidenceRow): ConsoleSessionEvidenceArtifact {
+  return restoreRecord(ConsoleSessionEvidenceArtifact, row.value);
+}
+
 /** One passive environment snapshot includes its saved files and bounded process summaries. */
 export const EnvironmentReportRow = mechRecordSchema(SandboxReport);
 export type EnvironmentReportRow = typeof EnvironmentReportRow.Type;
@@ -136,9 +153,4 @@ export function decodeEnvironmentReport(row: EnvironmentReportRow): SandboxRepor
 /** Restores bounded output fetched for one exact process handle. */
 export function decodeEnvironmentProcessDetails(row: EnvironmentProcessDetailsRow): ProcessObservation {
   return restoreRecord(ProcessObservation, row.value);
-}
-
-/** Restores the workspace allowance with the protocol's money and optional fields. */
-export function decodeAllowance(row: AllowanceRow): Allowance {
-  return restoreRecord(Allowance, row.value);
 }

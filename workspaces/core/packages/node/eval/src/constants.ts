@@ -29,8 +29,7 @@ export const INPUT_MAX_CHARS = 8192;
 /** The longest description of an expectation. */
 export const DESCRIPTION_MAX_CHARS = 1024;
 
-export const PUBLICATION_INSTRUCTIONS =
-  'Publish your completed answer exactly once using console_message with your answer in text. After publishing, finish quietly. Internal final text is not sent to the requester.';
+export const PUBLICATION_INSTRUCTIONS = 'Reply to the user in this session with your completed answer.';
 
 /** The hexadecimal digits of a trial's id: 128 bits of its SHA-256, as many as a UUID's, so a mech's name holds it. */
 export const TRIAL_ID_HEX_CHARS = 32;
@@ -78,6 +77,6 @@ export type EvalAuditKind = (typeof EvalAuditKind)[keyof typeof EvalAuditKind];
 export const EvalScope = { Full: 'full', JudgeOnly: 'judge_only' } as const;
 export type EvalScope = (typeof EvalScope)[keyof typeof EvalScope];
 
-/** Recorded observations come from authenticated MCP tool requests. */
-export const ObservationProvenance = { Mcp: 'mcp' } as const;
+/** A custom tool observation records a session event and its durable application result. */
+export const ObservationProvenance = { CustomTool: 'custom_tool' } as const;
 export type ObservationProvenance = (typeof ObservationProvenance)[keyof typeof ObservationProvenance];

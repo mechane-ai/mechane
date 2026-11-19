@@ -104,10 +104,7 @@ export const regradeEval = Effect.fn('regradeEval')(function* ({
 
   const gradingConfiguration: EvalSuite = {
     ...configuredSuite,
-    definition: {
-      ...originalConfiguration,
-      judge: { ...judge, nativeTools: [], gradeSchema: suite.gradeSchema.definition },
-    },
+    definition: { ...originalConfiguration, judge: { ...judge, gradeSchema: suite.gradeSchema.definition } },
   };
 
   const gradingSuite = yield* resolveEvalSuite({ suite: gradingConfiguration });

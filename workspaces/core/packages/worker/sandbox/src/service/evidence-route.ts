@@ -32,7 +32,9 @@ export async function serveEvidence({
     return Response.json(result);
   }
 
-  if (request.method !== HttpMethod.Get) {
+  const isContentHead = request.method === HttpMethod.Head && artifactId !== undefined && action === 'content';
+
+  if (request.method !== HttpMethod.Get && !isContentHead) {
     return new Response(null, { status: HttpStatusCode.NotFound });
   }
 
@@ -73,7 +75,7 @@ export async function serveEvidence({
       headers.set(HttpHeader.Range, rangeHeader);
     }
 
-    return await stub.fetch(target.href, { method: HttpMethod.Get, headers });
+    return await stub.fetch(target.href, { method: request.method, headers });
   }
 
   if (action !== undefined) {

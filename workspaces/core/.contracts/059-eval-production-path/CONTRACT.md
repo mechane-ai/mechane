@@ -40,26 +40,19 @@ Confirm that an evaluation request produced no external effect, and that a requi
 
 ## Local adaptations
 
-The shared runner calls the declared `/api/v1` operations through `@mechane/client` and protocol schemas. It uses the
-ordinary notification/activation/Pi path, with explicit Console publication only when the suite assesses that reply.
-Application tools are supplied through scoped MCP connections; the runner does not import private Worker handlers.
-Run coordination and grading records stay in the Node library/CLI, outside the deployed execution engine.
+Run every trial against the public Managed Agents SDK. Create ordinary agents, self-hosted environments, and
+sessions. Follow the session event log, supply custom tool results through `user.custom_tool_result`, and observe the
+same terminal events that an application sees. The Node runner owns coordination, grading, and its own durable
+journal. Worker handlers and native historical conversation APIs are outside that boundary.
 
-Each trial and repeat has fresh subject/judge mechs and no inherited conversation, home notes, or execution grant.
-`nativeTools` is an ordinary definition capability: application-tool subjects can select no native tools, and the
-legacy reply subject selects `console_message`. Current runtime authorization still governs dispatch and replay.
-Application adapters must disclose whether tool results establish capture, accepted state, or an observed effect.
-Synthetic fixture receipts alone cannot establish application transactions, UI rendering, or external delivery.
+Pin each session to its selected agent definition, model, and role tools. Provision each role with an independent
+conversation and environment. Reconcile creation using durable role identity. Use the provider-issued custom tool
+event ID to join the real request, the application observation, and the result. The adapter states whether its
+evidence proves capture, acceptance, or an externally observed effect.
 
-The manifest records the actual deployment release/runtime revision, model settings, tool definitions, grade schema,
-and adapter/component identities. The published library archive includes its canonical client/schema closure.
-Consumers pin an immutable artifact or configure an explicit deployment endpoint; a sibling checkout is no dependency.
-Local and hosted runs share the coordinator, with loopback or scoped tunnel transport chosen at composition.
-
-Eval resources are identified by their stable names, operation identities, and scoped grants. They do not have a
-separate server-side resource category. Fresh tools-only profiles constrain native effects, but supplied remote tools
-still require their own authorized fixture/effect boundary. A passing public-path smoke does not establish every
-external platform's isolation or runtime compatibility.
+Freeze the deployment artifact identity, model settings, role bounds, tool definitions, grade schema, and adapter
+fingerprint. Local and hosted targets run the same coordinator against the selected origin and workspace. The
+published library must run from its declared dependencies and public API.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -1,12 +1,14 @@
 import { Event, EventType } from '@mechane/protocol';
 import { RecordId } from '@mechane/records';
-import { createMechContext, readConsoleMessages, readEvents } from '@mechane/testing';
+import { createAccount, readConsoleMessages, readEvents } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { DateTime, Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 
 export async function importedConversationRemainsReadable({ stack }: ScenarioInput): Promise<void> {
-  const owner = await createMechContext({ stack, name: 'Retained Console history' });
+  const account = await createAccount({ stack });
+  const owner = { stack, account, mechId: randomUUID() };
 
   const fixture = await stack.prepareConversationImport({
     workspaceId: owner.account.workspaceId,

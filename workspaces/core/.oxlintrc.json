@@ -801,7 +801,6 @@
     },
     {
       "files": [
-        "packages/node/eval/src/environment/http-entry.ts",
         "packages/shared/bash/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
@@ -884,7 +883,6 @@
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
         "packages/node/cli/scripts/reference/main.ts",
         "packages/node/program/src/output/**",
-        "packages/worker/runtime/src/operations/notifications.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",
@@ -1307,7 +1305,6 @@
     },
     {
       "files": [
-        "packages/node/eval/src/environment/http-entry.ts",
         "packages/shared/bash/src/**",
         "packages/node/guest/src/guest-listener.ts",
         "packages/shared/deployment/src/worker-deployment.ts",
@@ -1334,7 +1331,6 @@
         "packages/worker/server/src/settings/worker.ts",
         "packages/worker/server/src/import/output.ts",
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
-        "packages/worker/runtime/src/operations/notifications.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
         "packages/worker/sandbox/src/service/settings.ts",
@@ -3591,7 +3587,6 @@
       "files": [
         "packages/worker/server/src/import/output.ts",
         "packages/worker/runtime/src/output/write-actor-diagnostic.ts",
-        "packages/worker/runtime/src/operations/notifications.ts",
         "packages/worker/server/src/main.ts",
         "packages/worker/server/src/http/failure.ts",
         "packages/node/stack/src/main.ts",

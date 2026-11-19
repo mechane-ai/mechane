@@ -1,11 +1,12 @@
 import {
+  ErrorBody,
   MECH_MAINTENANCE_PATH,
   MechMaintenanceAction,
   MechMaintenanceReceipt,
   MechMaintenanceRequest,
   MechRuntimeStatus,
 } from '@mechane/protocol';
-import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
+import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
@@ -41,18 +42,7 @@ export async function applyConversationImport(input: ApplyConversationImportInpu
 
   await input.runProgram({ name: 'migrate', arguments: [], environment });
 
-  const request = Schema.decodeUnknownSync(MechMaintenanceRequest)({
-    workspaceId: input.workspaceId,
-    mechId: input.mechId,
-    action: MechMaintenanceAction.Quiesce,
-  });
-
-  const quiesced = await fetch(new URL(MECH_MAINTENANCE_PATH, input.origin), {
-    method: HttpMethod.Post,
-    headers: { [HttpHeader.Authorization]: `Bearer ${input.bearer}`, [HttpHeader.ContentType]: MediaType.Json },
-    body: JSON.stringify(Schema.encodeSync(MechMaintenanceRequest)(request)),
-    signal: AbortSignal.timeout(MAINTENANCE_TIMEOUT_MS),
-  });
+  const quiesced = await maintenanceRequest(input, MechMaintenanceAction.Quiesce);
 
   if (!quiesced.ok) {
     throw new Error(`The frozen conversation target refused quiescence (${quiesced.status})`);
@@ -60,13 +50,10 @@ export async function applyConversationImport(input: ApplyConversationImportInpu
 
   const maintenance = Schema.decodeUnknownSync(MechMaintenanceReceipt)(await quiesced.json());
 
-  if (
-    maintenance.status !== MechRuntimeStatus.Quiesced ||
-    maintenance.pendingNativeTaskCount !== 0 ||
-    maintenance.pendingEffectCount !== 0
-  ) {
-    throw new Error('The frozen conversation target has active execution');
-  }
+  assert.equal(maintenance.status, MechRuntimeStatus.Quiesced);
+  assert.equal(maintenance.canResume, false, 'The historical mech still allows execution');
+  assert.equal(maintenance.pendingNativeTaskCount, 0);
+  assert.equal(maintenance.pendingEffectCount, 0);
 
   const selection = ['--workspace', input.workspaceId, '--mech', input.mechId];
   const dryRun = await input.runProgram({ name: 'import', arguments: ['--dry-run', ...selection], environment });
@@ -98,4 +85,30 @@ export async function applyConversationImport(input: ApplyConversationImportInpu
   );
 
   await input.runProgram({ name: 'import', arguments: applyArguments, environment });
+
+  const refused = await maintenanceRequest(input, MechMaintenanceAction.Resume);
+
+  assert.equal(refused.status, HttpStatusCode.Conflict, 'An archived mech accepted execution after historical import');
+
+  const body = Schema.decodeUnknownSync(ErrorBody)(await refused.json());
+
+  assert.equal(body.error.code, 'RequestConflict');
+}
+
+async function maintenanceRequest(
+  input: ApplyConversationImportInput,
+  action: MechMaintenanceRequest['action'],
+): Promise<Response> {
+  const request = Schema.decodeUnknownSync(MechMaintenanceRequest)({
+    workspaceId: input.workspaceId,
+    mechId: input.mechId,
+    action,
+  });
+
+  return await fetch(new URL(MECH_MAINTENANCE_PATH, input.origin), {
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Authorization]: `Bearer ${input.bearer}`, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify(Schema.encodeSync(MechMaintenanceRequest)(request)),
+    signal: AbortSignal.timeout(MAINTENANCE_TIMEOUT_MS),
+  });
 }

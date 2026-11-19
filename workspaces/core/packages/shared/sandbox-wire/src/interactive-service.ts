@@ -1,6 +1,6 @@
 import { MachineId, ModelToolCallId, RecordText, SessionId } from '@mechane/records';
 import { Schema } from 'effect';
-import { BrowserArtifactPart, BrowserRequest, BrowserRequestId, BrowserResponse } from './browser/schemas.ts';
+import { BrowserArtifactPart, BrowserRequest, BrowserResponse } from './browser/schemas.ts';
 import { ExecutionEnvironmentRequired } from './execution-environment.ts';
 import { SandboxRunId } from './interactive.ts';
 import { ProcessCanceled, ProcessId, ProcessObservation, ProcessStart } from './processes/process.schemas.ts';
@@ -33,10 +33,6 @@ export type SandboxProcessAnswer = typeof SandboxProcessAnswer.Type;
 /** Original identities address observation without allowing a replacement machine allocation. */
 export const SandboxProcessIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, processId: ProcessId });
 export type SandboxProcessIdentity = typeof SandboxProcessIdentity.Type;
-
-/** Cancellation fences every interactive action originating in this native run. */
-export const SandboxRunIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, runId: SandboxRunId });
-export type SandboxRunIdentity = typeof SandboxRunIdentity.Type;
 
 /** Browser submission retains trusted native identity separately from its derived request ID. */
 export const SandboxBrowserSubmission = Schema.Struct({
@@ -74,7 +70,3 @@ export const SandboxBrowserArtifactAnswer = Schema.TaggedUnion({
 });
 
 export type SandboxBrowserArtifactAnswer = typeof SandboxBrowserArtifactAnswer.Type;
-
-/** Private browser receipt address shared by submission and observation. */
-export const SandboxBrowserIdentity = Schema.Struct({ ...SandboxServiceIdentity.fields, requestId: BrowserRequestId });
-export type SandboxBrowserIdentity = typeof SandboxBrowserIdentity.Type;

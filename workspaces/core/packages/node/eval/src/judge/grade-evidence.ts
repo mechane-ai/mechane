@@ -92,13 +92,7 @@ export const gradeEvidence = Effect.fn('gradeEvidence')(function* ({
   ];
 
   const instructions = `${suite.definition.judge.instructions}\n\n${SUBMISSION_INSTRUCTIONS}`;
-  const configuredModel = Option.fromUndefinedOr(suite.definition.judge.model);
-  const connectionName = Option.none<string>();
-
-  const settings: RoleSettings = Option.match(configuredModel, {
-    onNone: () => ({ instructions, nativeTools: [] }),
-    onSome: (model) => ({ model, instructions, nativeTools: [] }),
-  });
+  const settings: RoleSettings = { model: suite.definition.judge.model, instructions };
 
   const judge = yield* runRole({
     context,
@@ -107,7 +101,6 @@ export const gradeEvidence = Effect.fn('gradeEvidence')(function* ({
     text,
     tools,
     environment: selectedEnvironment,
-    connectionName,
   });
 
   const submitted = yield* context.files.submission.read();

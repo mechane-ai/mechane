@@ -2,6 +2,9 @@
 id: parameter-mutation
 valid:
   - 'function add({ rows, row }: AddInput) { return [...rows, row]; }'
+  - 'function remove(transaction: DurableObjectTransaction) { transaction.delete("key"); }'
 invalid:
   - 'function add({ rows, row }: AddInput) { rows.push(row); }'
   - 'function add({ totals }: AddInput) { Object.assign(totals, { turns: 1 }); }'
+  - 'function remove(transaction: Map<string, string>) { transaction.delete("key"); }'
+  - 'function remove(transaction: DurableObjectTransaction, other: Set<string>) { other.delete("key"); }'

@@ -5,6 +5,7 @@ import {
   developerEnvironments,
   evidenceExport,
   executionAccess,
+  managedAgentsCompatibility,
   managedProcesses,
   mechNotifications,
   modelCaching,
@@ -50,4 +51,5 @@ export const MECHANE_CONTRACTS = {
   'browser-evidence': browserEvidence,
   'evidence-export': evidenceExport,
   'environment-startup': environmentStartup,
+  'managed-agents-compatibility': managedAgentsCompatibility,
 } as const satisfies Readonly<Partial<Record<ContractName, ContractEnforcement>>>;

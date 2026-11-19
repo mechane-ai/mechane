@@ -46,7 +46,3 @@ export function sandboxCompletionPath({
 }: typeof SandboxCompletionIdentity.Type): string {
   return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/completions/${encodeURIComponent(executionId)}`;
 }
-
-export function sandboxPendingCompletionsPath({ workspaceId, mechId }: typeof SandboxOwner.Type): string {
-  return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}/completions`;
-}

@@ -1,16 +1,33 @@
 # @mechane/console-data
 
 The browser data owner for an admitted origin, principal, and workspace. It exposes native TanStack DB collections,
-fixed read descriptors, and named API commands. Public Console messages load through the typed conversation API and
-remain outside canonical domain collections. Query owns their demanded reads; the Console retains the accumulated
-transcript, route state, and drafts. Private model output is available only through activation inspection.
+fixed read descriptors, and named API commands. Managed agents, environments, sessions, and threads use the same-origin
+Console gateway and the Anthropic SDK. Canonical rows hold resource summaries and read receipts hold ordered page keys
+and the exact next cursor. A route identifies both agent and session. Session reads verify that pairing before loading
+its threads, history, or sending an event.
+
+The session Evidence view requests one ordered capture page when opened. Its viewer and list share capture metadata in a
+canonical table keyed by agent, session, and artifact. Each receipt retains the producing allocation and action origin
+when supplied. Media uses the private, session-scoped content URL directly, including native video range reads. A denied
+session or capture clears its affected rows and page coverage across tabs.
+
+Session messages and the agent’s execution slot and ordered queue live in tab-owned Query results. The owner-only
+archive uses a tab-owned, read-only cursor over an imported mech’s original conversation. Event lists use the session or
+thread endpoint selected by the route. The current transcript subscribes to the matching SDK event stream, reconnects
+after transient disconnects, reconciles with authoritative pages on connect and commit, and retains the same query
+observer during focus refresh. The browser projects public text, tool names and confirmation IDs. Credentials and raw
+tool inputs stay outside its stored data. Initial messages use session creation’s `initial_events` field. Later
+messages, interrupts and confirmations use the session event endpoint. Mechane runtime diagnostics retain their existing
+record and receipt types.
 
 Call `createConsoleData` with the expected principal, workspace, current route's `initialRequests`, and an
 `AbortSignal`. Every runtime confirms the principal and workspace membership through the server before opening
-persistent storage, including workspace switches and recovery. Storage failure rejects startup; there is no memory mode.
+persistent storage, including workspace switches and recovery. It exposes the workspace role returned by that admission.
+A change in operator access rotates the cache generation before protected data can be read. Storage failure rejects
+startup; there is no memory mode.
 
-Each tab's TanStack Query observers own network demand, polling, focus refresh, errors, and retries. Their results are
-completion timestamps. Validated server records and exact read receipts live only in the canonical TanStack DB
+Each tab's TanStack Query observers own network demand, polling, focus refresh, errors, and retries. Canonical reads
+publish completion timestamps. Validated server records and exact read receipts live only in the canonical TanStack DB
 collections, whose native coordinator shares committed data across tabs. Receipt publication waits for its canonical
 rows to settle. Receipts preserve ordered page membership and pagination metadata, including successful empty results.
 `ready(request)` checks the receipt and every referenced row, so cached content does not wait for a network refresh.
@@ -63,5 +80,4 @@ refresh its overview and detail reads; a stale handle cannot stop a replacement 
 
 Use the [screen guide](../../../docs/console.md#adding-a-screen-or-feature) for the data ownership decision and
 implementation path. Every new ordinary resource, report, and picker uses the same records, receipt, and live-read
-owners. Fresh admission and public conversation history are explicit protocol exceptions, not alternate general-purpose
-data APIs.
+owners. Fresh admission and tab-owned session history and attention are the explicit protocol exceptions.

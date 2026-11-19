@@ -2,16 +2,20 @@
 
 This private package supplies required native TanStack browser SQLite persistence to `@mechane/console-data`. The caller
 must admit the principal and workspace through the server before opening their cache. Stored records are replaceable
-server copies; the cache contains no credentials, drafts, or unsent commands.
+server copies. Managed agent, environment, session, and thread summaries use canonical rows and exact read receipts.
+Transcript events and the current execution slot belong to tab-local queries. Drafts belong to the admitted Console
+workspace. Credentials, media bytes, and unsent commands stay outside SQLite.
 
 `openConsoleStorage` opens wa-sqlite in the upstream OPFS Worker and uses `BrowserCollectionCoordinator` for native
 collection replication. Unsupported or unavailable storage rejects startup. There is no memory mode or alternate engine.
 During ordinary disposal, the caller cleans up its collections before closing the cache. A terminal native fault first
 fences the data runtime and promptly closes native resources; recovery cleans up the remaining collections.
 
-Each installation, principal, workspace, and cache format has a durable generation pointer. Short Web Locks protect that
-pointer; shared generation leases permit tabs to use one database. Native TanStack and wa-sqlite own transactions,
-record replication, and file coordination. This package owns namespace retirement and browser lifetime only.
+Each installation, principal, and workspace has a durable generation pointer. Its cache format and server-admitted
+operator privilege must both match before a tab opens the database. A changed privilege starts a fresh generation and
+makes other tabs readmit their viewers. Short Web Locks protect that pointer; shared generation leases permit tabs to
+use one database. Native TanStack and wa-sqlite own transactions, record replication, and file coordination. This
+package owns namespace retirement and browser lifetime only.
 
 Retirement removes the pointer before any file cleanup. Every later open selects a fresh random generation, so failed
 cleanup cannot restore an old cache. The invalidation callback immediately fences the owning data runtime. Other tabs

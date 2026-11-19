@@ -12,7 +12,7 @@ import type { AuthenticationConfiguration } from '@mechane/runtime';
 import { escapeHtml } from '@mechane/utilities';
 import { timingSafeEqual } from 'node:crypto';
 import { cookieHeader, readCookie, readCookieTokenHash } from './cookies.ts';
-import { exchangeGithubCode } from './github.ts';
+import { exchangeGithubCode, requireGithubOAuth } from './github.ts';
 import { authPage, AuthPageError } from './page.ts';
 import type { AuthRequest } from './types.ts';
 
@@ -64,6 +64,7 @@ function secretMatches(left: string, right: string): boolean {
 }
 
 export async function startSignIn({ request, store, configuration }: AuthRequest): Promise<Response> {
+  const github = requireGithubOAuth(configuration);
   const state = createAuthToken(TokenPrefix.SignIn);
   const returnTo = returnDestination(request, configuration.origin);
   const expiresAt = new Date(Date.now() + SIGN_IN_SECONDS * MILLISECONDS_PER_SECOND).toISOString();
@@ -73,7 +74,7 @@ export async function startSignIn({ request, store, configuration }: AuthRequest
 
   const target = new URL('/login/oauth/authorize', configuration.githubWebOrigin);
 
-  target.searchParams.set('client_id', configuration.githubClientId);
+  target.searchParams.set('client_id', github.clientId);
   target.searchParams.set('redirect_uri', new URL('/auth/github/callback', configuration.origin).href);
   target.searchParams.set('state', state);
 

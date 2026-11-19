@@ -27,7 +27,7 @@ export const spawnBash = Effect.fn('spawnBash')(function* ({
   const environment = shellEnvironment({ request, settings });
 
   return yield* Effect.callback<BashRun, ExecutionUnstarted>((resume) => {
-    const child = spawnShell({ command: request.command, home: settings.home, environment });
+    const child = spawnShell({ command: request.command, cwd: settings.home, environment });
 
     const refuse: (error: Error) => void = (error) =>
       resume(Effect.fail(new ExecutionUnstarted({ executionId, reason: error.message })));

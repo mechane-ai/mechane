@@ -150,23 +150,36 @@ function qualityLines({ quality, selectedTrials, label }: QualityLinesInput): Re
 }
 
 function spendLine({ role, spend }: SpendLineInput): string {
-  const accounting: string = (() => {
-    if (spend.isComplete) {
-      return 'complete charge accounting';
-    }
+  const amounts: Array<string> = [];
+  const price = Option.fromUndefinedOr(spend.knownListCostUsdCents);
 
-    return `partial charge accounting; unknown attempts: ${spend.unknownAttempts.join(', ')}`;
-  })();
+  if (Option.isSome(price)) {
+    amounts.push(`${price.value} cents at USD list prices`);
+  }
 
-  const usage: string = (() => {
-    if (spend.unknownUsageAttempts.length === 0) {
-      return 'complete reported usage';
-    }
+  const charge = Option.fromUndefinedOr(spend.knownChargedMicros);
 
-    return `partial usage; unknown attempts: ${spend.unknownUsageAttempts.join(', ')}`;
-  })();
+  if (Option.isSome(charge)) {
+    amounts.push(`${charge.value} charged micro-dollars`);
+  }
 
-  return `${role}: ${spend.knownChargedMicros} known charged micro-dollars (${accounting}); ${spend.knownInputTokens} input, ${spend.knownOutputTokens} output, ${spend.knownCacheReadTokens} cache-read, ${spend.knownCacheWriteTokens} cache-write tokens (${usage})`;
+  if (amounts.length === 0) {
+    amounts.push('cost unavailable');
+  }
+
+  if (!spend.isComplete) {
+    const missing = spend.unknownAttempts.join(', ');
+
+    amounts.push(`incomplete cost accounting for ${missing}`);
+  }
+
+  let usage = 'reported';
+
+  if (spend.unknownUsageAttempts.length > 0) {
+    usage = `partial, missing counters for ${spend.unknownUsageAttempts.join(', ')}`;
+  }
+
+  return `${role}: ${amounts.join(', ')}; ${spend.knownInputTokens} input, ${spend.knownOutputTokens} output, ${spend.knownCacheReadTokens} cache-read, ${spend.knownCacheWriteTokens} cache-write tokens (${usage})`;
 }
 
 function trialLines({ trial }: TrialLinesInput): ReadonlyArray<string> {

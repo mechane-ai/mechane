@@ -76,13 +76,15 @@ retained container events over a bounded time range. Discover the available tele
 container events used `$container.applicationId` to select the application. Worker logs alone may show only a failed
 guest request and omit the process error that caused it.
 
-Inspect the original turn and effect receipts after interruption. A restart resumes Pi-owned work; submitting another
-notification creates new input. A lost HTTP response does not prove an external write failed. Inspect its external
-outcome before authorizing another effect.
+For a Managed Agents session, inspect its event history and original tool call after an interruption. Confirm whether
+the external operation completed before sending a result or another input. See
+[session recovery](notifications.md#reconnect).
 
-Native traces describe actor-owned turns, provider attempts, and tools. Imported traces retain historical provenance and
-an explicit evidence notice; importing them never replays tools or publications. Pending historical notifications and
-uncertain executions remain evidence for later reconciliation.
+Workspace owners can inspect native records from before the cutover using their Mechane key or Console sign-in. List the
+workspace's saved mechs with `GET /api/operator/workspaces/WORKSPACE_ID/mechs`. Under each `MECH_ID`, read `turns`,
+`history`, and `evidence` for recorded activity. Read `held-work` for unfinished admissions and `archived-completions`
+for verified late receipts. Preserve the original IDs when reconciling them with external effects. Pending work in the
+archive requires an operator decision. New agent input goes to a Managed Agents session.
 
 Direct sandbox diagnostic executions create completion receipts even when no mech owns the execution. Prefer an isolated
 fixture for diagnostics. When a direct execution is necessary, retain its intent and observed terminal outcome. Read

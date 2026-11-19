@@ -56,10 +56,10 @@ variable "settings" {
 
   validation {
     condition = alltrue([
-      for name in keys(var.settings) : can(regex("^MECHANE_[A-Z0-9_]+$", name)) &&
-      !contains(["MECHANE_DATABASE_URL", "MECHANE_MIGRATION_DATABASE_URL", "MECHANE_CREDENTIAL_KEYRING", "MECHANE_MODEL_UPSTREAM_KEY", "MECHANE_GITHUB_CLIENT_SECRET", "MECHANE_SANDBOX_SERVICE_KEY", "MECHANE_NEXUS_SIGNING_SECRET"], name)
+      for name in keys(var.settings) : can(regex("^(MECHANE_[A-Z0-9_]+|CMA_WEB_TOOLS__(ENABLED|ALLOWED_DOMAINS|BLOCKED_DOMAINS|MAX_CONTENT_TOKENS))$", name)) &&
+      !contains(["MECHANE_DATABASE_URL", "MECHANE_MIGRATION_DATABASE_URL", "MECHANE_CREDENTIAL_KEYRING", "MECHANE_MODEL_UPSTREAM_KEY", "MECHANE_MODEL_ASSERTION_BEARER", "MECHANE_GITHUB_CLIENT_SECRET", "MECHANE_SERVER_API_KEY", "MECHANE_AGENT_IDENTITY_PRIVATE_KEY_PEM", "MECHANE_SANDBOX_SERVICE_KEY", "MECHANE_NEXUS_SIGNING_SECRET"], name)
     ])
-    error_message = "Supply named non-secret MECHANE settings; database, model, OAuth, signing, and encryption credentials require secret references."
+    error_message = "Supply non-secret MECHANE settings or supported CMA web tool settings. Database, model, OAuth, signing, and encryption credentials require secret references."
   }
 }
 

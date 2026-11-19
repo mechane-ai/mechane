@@ -1,10 +1,8 @@
+import type Anthropic from '@anthropic-ai/sdk';
 import type { OperationCall } from '@mechane/client';
-import type { NotificationReceipt } from '@mechane/protocol';
-import type { Bytes } from '@mechane/records';
-import type { Effect, Option, Redacted, Schema, Scope } from 'effect';
+import type { Effect, Option, Schema } from 'effect';
 import type {
   CleanupRecord,
-  ConnectionRecord,
   EvalBounds,
   EvalCallId,
   EvalManifest,
@@ -17,6 +15,7 @@ import type {
   EvidenceRecord,
   GradeSchemaDefinition,
   GradeSubmission,
+  ManagedInputAttempt,
   Observation,
   RoleIntent,
   RoleReceipt,
@@ -25,42 +24,14 @@ import type {
   StructuredGradeRecord,
 } from './application-schemas.ts';
 import type { EvalRole, EvalScope, EvalTargetKind } from './constants.ts';
-import type { EvalAdapterFailed, EvalTransportFailed } from './errors.ts';
+import type { EvalAdapterFailed } from './errors.ts';
 import type { EvalRunFailure, OnceFile, WorkspaceAccess, WriteProgress } from './types.ts';
 
 /** Evidence, rubrics, and application tool payloads stay within serializable JSON. */
 export type Json = Schema.Json;
 
 /** The runner uses ordinary authenticated operations for every role lifecycle. */
-export type EvalOperation =
-  | 'readiness'
-  | 'showAllowance'
-  | 'createMech'
-  | 'showMech'
-  | 'updateMech'
-  | 'sendNotification'
-  | 'listTurns'
-  | 'showTurn'
-  | 'cancelTurn'
-  | 'listConsoleMessages'
-  | 'createConnection'
-  | 'listConnections'
-  | 'updateConnection'
-  | 'deleteConnection'
-  | 'grantTools'
-  | 'putCredential'
-  | 'deleteCredential'
-  | 'configureExecutionAccess';
-
-/** A bridge exposes only the runner's authenticated local MCP listener. */
-export type EvalTransportInput = { readonly localOrigin: URL };
-/** Release confirms the bridge stopped before the listener and writer close. */
-export type EvalTransport = { readonly origin: URL; readonly release: Effect.Effect<void, EvalTransportFailed> };
-
-/** Scoped transports may be recreated without changing the frozen experiment. */
-export type OpenEvalTransport = (
-  input: EvalTransportInput,
-) => Effect.Effect<EvalTransport, EvalTransportFailed, Scope.Scope>;
+export type EvalOperation = 'readiness' | 'showAllowance';
 
 /** A target supplies one selected runtime and its explicit workspace credential. */
 export type EvalTarget = {
@@ -69,7 +40,7 @@ export type EvalTarget = {
   readonly kind: EvalTargetKind;
   readonly origin: URL;
   readonly artifactIdentity: string;
-  readonly openTransport: OpenEvalTransport;
+  readonly managed: Anthropic;
 };
 
 /** A decoder validates the submitted value without access to other trial state. */
@@ -81,10 +52,10 @@ export type EvalGradeSchema = {
   readonly decode: (input: DecodeGradeInput) => Effect.Effect<Json, EvalAdapterFailed>;
 };
 
-/** Retry identity belongs to the native call and survives a restarted fixture listener. */
+/** The public custom-tool event ID identifies a fixture invocation through recovery. */
 export type ExecuteToolInput = { readonly name: string; readonly arguments: Json; readonly callId: EvalCallId };
 
-/** Application behavior stays separate from MCP authentication and journal ownership. */
+/** Suites own fixture behavior. The runner records every result before returning it. */
 export type EvalEnvironment = {
   readonly execute: (input: ExecuteToolInput) => Effect.Effect<EvalToolResult, EvalAdapterFailed>;
   readonly release: Effect.Effect<void, EvalAdapterFailed>;
@@ -113,7 +84,6 @@ export type EvalSuite = {
 /** Execution resolves the public definition once into canonical units and identities. */
 export type ResolvedEvalSuite = Omit<EvalSuite, 'definition'> & { readonly definition: EvalSuiteDefinition };
 
-type ConnectionFileInput = { readonly role: EvalRole };
 type SaveObservationInput = { readonly observation: Observation };
 type SaveCleanupInput = { readonly cleanup: CleanupRecord };
 type SaveFailureInput = { readonly failure: EvalStageFailure };
@@ -123,16 +93,15 @@ export type ApplicationTrialFiles = {
   readonly folder: string;
   readonly subjectIntent: OnceFile<RoleIntent>;
   readonly subjectReceipt: OnceFile<RoleReceipt>;
-  readonly subjectNotification: OnceFile<NotificationReceipt>;
+  readonly subjectInputAttempt: OnceFile<ManagedInputAttempt>;
   readonly subject: OnceFile<RoleRecord>;
   readonly evidence: OnceFile<EvidenceRecord>;
   readonly judgeIntent: OnceFile<RoleIntent>;
   readonly judgeReceipt: OnceFile<RoleReceipt>;
-  readonly judgeNotification: OnceFile<NotificationReceipt>;
+  readonly judgeInputAttempt: OnceFile<ManagedInputAttempt>;
   readonly judge: OnceFile<RoleRecord>;
   readonly submission: OnceFile<GradeSubmission>;
   readonly grade: OnceFile<StructuredGradeRecord>;
-  readonly connection: (input: ConnectionFileInput) => OnceFile<ConnectionRecord>;
   readonly readObservations: () => Effect.Effect<ReadonlyArray<Observation>, EvalRunFailure>;
   readonly saveObservation: (input: SaveObservationInput) => Effect.Effect<void, EvalRunFailure>;
   readonly readJudgeObservations: () => Effect.Effect<ReadonlyArray<Observation>, EvalRunFailure>;
@@ -145,30 +114,6 @@ export type ApplicationTrialFiles = {
 
 /** The fixture can read and append only its trial's observations. */
 export type ObservationJournal = Pick<ApplicationTrialFiles, 'readObservations' | 'saveObservation'>;
-type CleanupFailureInput = { readonly reason: string };
-type OnCleanupFailure = (input: CleanupFailureInput) => Effect.Effect<void, EvalRunFailure>;
-
-/** Hosting bounds authenticated requests and records successful calls before their acknowledgment. */
-export type HostEnvironmentInput = {
-  readonly environment: EvalEnvironment;
-  readonly tools: ReadonlyArray<EvalToolDefinition>;
-  /** None for a caller that does not retain a durable observation journal. */
-  readonly journal: Option.Option<ObservationJournal>;
-  readonly scopeId: EvalTrialId;
-  readonly maxRequestBytes: Bytes;
-  readonly maxToolRequests: number;
-  readonly target: EvalTarget;
-  /** None when the caller has no additional cleanup failure sink. */
-  readonly onCleanupFailure: Option.Option<OnCleanupFailure>;
-};
-
-/** The role receives a scoped URL and secret; the secret never enters saved records. */
-export type HostedEnvironment = {
-  readonly url: URL;
-  readonly token: Redacted.Redacted;
-  readonly release: Effect.Effect<void, EvalTransportFailed>;
-  readonly readIssues: () => ReadonlyArray<string>;
-};
 
 /** Subjects and judges share the same frozen bounds and trial-owned stage files. */
 export type RoleContext = {
@@ -184,11 +129,9 @@ export type RunRoleInput = {
   readonly context: RoleContext;
   readonly role: EvalRole;
   readonly settings: RoleSettings;
-  /** None when the role needs no application-specific MCP connection name. */
-  readonly connectionName: Option.Option<string>;
   readonly text: string;
   readonly tools: ReadonlyArray<EvalToolDefinition>;
-  /** None for a role that uses only its declared native tools. */
+  /** None for a role that receives no custom tools. */
   readonly environment: Option.Option<EvalEnvironment>;
 };
 

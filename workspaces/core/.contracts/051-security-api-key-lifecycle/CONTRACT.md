@@ -1,7 +1,7 @@
 ---
 name: security-api-key-lifecycle
 message: Store issued keys as hashes bound to owner, scope, and expiry, revoke them permanently, and fail with distinct unauthenticated errors.
-paths: ["packages/worker/server/src/auth/**", "packages/worker/runtime/src/operations/**", "packages/worker/control-store/src/store/api/auth/**", "packages/shared/protocol/src/operations/auth/**"]
+paths: ["packages/worker/server/src/auth/**", "packages/worker/runtime/src/operations/**", "packages/worker/control-store/src/store/api/auth/**", "packages/shared/protocol/src/operations/auth/**", "packages/shared/protocol/src/operations/service-principals/**", "packages/worker/server/src/managed/service-credentials.ts", "packages/worker/control-store/src/store/api/configuration/workspaces.ts"]
 ---
 
 ## Rules
@@ -45,6 +45,12 @@ Search logs, audit records, and metadata responses for key secrets.
 Mechane issues its `mk_` keys through browser-approved device requests. The Postgres auth store keeps token hashes,
 principal ownership, purpose, name, expiry, and revocation. A device request fixes its purpose and requested lifetime
 before approval. The browser reviews those values before approving; an API key cannot approve another key.
+
+Shared workspace owners can use their browser session or browser-approved CLI login to provision a service key
+for a stable workspace-local subject. Allocate a distinct member principal. Bind its key to creator-scoped Managed
+Agents requests and reject it at private operator routes and OIDC-only deployments. Keep the principal stable on
+rotation. Revoke the previous key atomically and invalidate every key when membership is removed. Return the new
+secret once and expose only metadata on inspection. Named automation keys cannot provision service credentials.
 
 Claim approved credentials once. Metadata and audits contain identifiers only. Keep browser sessions, device polling
 tokens, sign-in state, and API keys in the same trusted auth store with separate purposes and expiries.

@@ -34,22 +34,19 @@ Confirm that the grader shares no producing component with the assessed system, 
 
 ## Local adaptations
 
-A suite supplies visible inputs separately from private rubrics. Only its visible input and this trial's recorded
-calls reach the application environment. Fresh mechs use role/trial identities rather than case names and receive no
-runner directory or other trial's context. A suite's evidence builder explicitly selects the assessed output; the
-reply adapter selects an explicit Console publication, while application adapters select captured tool evidence.
+Give each subject and judge a separate agent, session, and tool set. Pass only the visible input to the subject and
+its application tools. The reply adapter takes its evidence from the subject's `agent.message` events. A session
+that ends without reply text has no reply to grade. An application suite declares the observations its judge may see.
 
-Each fresh judge has `nativeTools: []` and only its private `submit_grade` MCP grant. Its model request receives the
-frozen evidence value, rubric, and grade instructions/schema. Model identities, case labels, prior grades, and
-calibration expectations remain outside that input. Subject diagnostic text stays private; a reply-grading suite
-explicitly selects its public reply as assessed evidence.
-Validate and persist a submitted grade before returning its receipt. Exact retries preserve it; a conflicting second
-submission cannot replace it. Final prose alone is not a grade.
+Offer the judge only the custom `submit_grade` tool. Its inputs are the frozen evidence, rubric, grade schema, and
+instructions. Keep subject instructions, trial labels, private calibration expectations, and prior grades out of the
+judge's input. Accept a grade only after schema and rubric validation. Persist it before sending a tool result.
+An exact retry returns the original receipt. A conflicting submission leaves that grade intact. Judge prose cannot
+create a grade.
 
-The suite declares different models unless it explicitly selects self-grading. Save requested and resolved identities;
-provider weight revisions remain unavailable when the provider does not report them. `calibrateEval` and `regradeEval`
-use the ordinary grading implementation and freeze their own audit manifest. Calibration expectations stay separate
-from judge input, and audit records never overwrite source evidence or grades.
+Require explicit subject and judge models. Self-grading must be an explicit suite choice. Retain the resolved agent
+version and model evidence the provider supplies. Calibration and regrading use the same grading implementation,
+freeze their own inputs, and preserve the original evidence and grades.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

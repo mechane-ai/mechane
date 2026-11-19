@@ -35,21 +35,31 @@ export const FIXTURE_AUTH_RATE_LIMITS = {
   codeAttempt: { requests: 1000, windowSeconds: 600 },
 } as const;
 
-export function fixtureModelSelection(modelId = FIXTURE_MODEL): Environment {
+function fixtureModelSelection(): Environment {
+  const rates = {
+    inputMicrosPerMillionTokens: 1_000_000,
+    outputMicrosPerMillionTokens: 4_000_000,
+    cacheReadMicrosPerMillionTokens: 100_000,
+    cacheWriteMicrosPerMillionTokens: 1_250_000,
+  };
+
+  const defaults = { contextWindowTokens: 32_768, maxOutputTokens: 1024, ...rates, listPrice: rates };
+
+  const fastRates = { ...rates, inputMicrosPerMillionTokens: 2_000_000 };
+
   const offers = [
+    { ...defaults, id: FIXTURE_MODEL, efforts: ['medium', 'high'], defaultEffort: 'medium' },
+    { ...defaults, id: 'claude-haiku-5-5' },
     {
-      id: modelId,
-      contextWindowTokens: 32_768,
-      maxOutputTokens: 1024,
-      inputMicrosPerMillionTokens: 1_000_000,
-      outputMicrosPerMillionTokens: 4_000_000,
-      cacheReadMicrosPerMillionTokens: 100_000,
-      cacheWriteMicrosPerMillionTokens: 1_250_000,
-      supportsImages: true,
+      ...defaults,
+      id: 'claude-opus-5-5',
+      protocol: 'anthropic-messages',
+      efforts: ['high'],
+      fastPricing: { ...fastRates, listPrice: { ...fastRates, cacheWriteOneHourMicrosPerMillionTokens: 4_000_000 } },
     },
   ];
 
-  return { MECHANE_DEFAULT_MODEL: modelId, MECHANE_MODEL_OFFERS: JSON.stringify(offers) };
+  return { MECHANE_MODEL_OFFERS: JSON.stringify(offers.map((offer) => ({ ...offer, supportsImages: true }))) };
 }
 
 type ServerEnvironmentOptions = {
@@ -90,7 +100,6 @@ export function serverEnvironment(input: ServerEnvironmentOptions): Environment 
     ...deploymentEnvironment,
     ...githubEnvironment,
     ...modelEnvironment,
-    MECHANE_NOTIFICATION_PRODUCERS: input.inherited['MECHANE_NOTIFICATION_PRODUCERS'] ?? '[]',
     MECHANE_AUTH_RATE_LIMITS: input.inherited['MECHANE_AUTH_RATE_LIMITS'] ?? JSON.stringify(FIXTURE_AUTH_RATE_LIMITS),
     MECHANE_NAMED_KEY_LIFETIME_SECONDS: input.inherited['MECHANE_NAMED_KEY_LIFETIME_SECONDS'] ?? '31536000',
   };

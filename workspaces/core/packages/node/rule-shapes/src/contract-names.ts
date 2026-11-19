@@ -106,6 +106,7 @@ export const CONTRACT_NAMES = [
   'environment-startup',
   'eval-adapter-boundaries',
   'ui-notification-feedback',
+  'managed-agents-compatibility',
   'test-curation',
   'test-assertion-integrity',
   'ci-reproducible-checks',

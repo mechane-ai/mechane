@@ -20,3 +20,10 @@ export type { ImportedMechContext, ImportedSpendReservation } from './imported-h
 export { openImportedHistory } from './store/imported-history/open-history.ts';
 export type { ImportedHistory } from './store/imported-history/history.ts';
 export type { ImportScope, ImportScopeSelection } from './imported-history.ts';
+export { ManagedStoreError } from './store/managed/managed-record.ts';
+export { workerSessionSkills } from './store/managed/skill-mounts.ts';
+export type { ManagedPageQuery, ManagedScope } from './store/managed/types.ts';
+
+export { isInstalledEnvironment } from './store/managed/installed-session.ts';
+export type { InstalledSession } from './store/managed/installed-session.ts';
+export { openGitTransfer } from './store/managed/git-transfer.ts';

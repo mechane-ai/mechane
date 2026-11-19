@@ -7,11 +7,18 @@ export type SandboxServiceEnvironment = SandboxEnvironment & {
   readonly SANDBOXES: DurableObjectNamespace<SandboxObject>;
 };
 
-type SandboxStubInput = { readonly environment: SandboxServiceEnvironment; readonly identity: SandboxServiceIdentity };
+type SandboxStubInput = { readonly environment: SandboxServiceEnvironment } & (
+  | { readonly identity: SandboxServiceIdentity }
+  | { readonly name: string }
+);
 
-export function sandboxStub({ environment, identity }: SandboxStubInput): DurableObjectStub<SandboxObject> {
-  const name = JSON.stringify([identity.workspaceId, identity.mechId]);
-  const identifier = environment.SANDBOXES.idFromName(name);
+export function sandboxStub(input: SandboxStubInput): DurableObjectStub<SandboxObject> {
+  if ('name' in input) {
+    return input.environment.SANDBOXES.getByName(input.name);
+  }
 
-  return environment.SANDBOXES.get(identifier);
+  const { workspaceId, mechId } = input.identity;
+  const name = JSON.stringify([workspaceId, mechId]);
+
+  return input.environment.SANDBOXES.getByName(name);
 }

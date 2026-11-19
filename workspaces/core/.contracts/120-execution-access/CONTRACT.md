@@ -1,13 +1,20 @@
 ---
 name: execution-access
 message: Give tools only current environment authority and keep credentials out of durable execution records.
-paths: ["packages/worker/runtime/**", "packages/worker/control-store/**", "packages/worker/server/src/sandboxes/**", "packages/shared/protocol/src/operations/connections/**", "packages/shared/protocol/src/operations/credentials/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/protocol/src/operations/sandboxes/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**"]
+paths: ["packages/worker/runtime/**", "packages/worker/control-store/**", "packages/worker/server/src/sandboxes/**", "packages/worker/server/src/managed/installed-*.ts", "packages/shared/protocol/src/operations/connections/**", "packages/shared/protocol/src/operations/credentials/**", "packages/shared/protocol/src/operations/execution-access/**", "packages/shared/protocol/src/operations/sandboxes/**", "packages/shared/sandbox-wire/src/**", "packages/worker/sandbox*/src/**", "packages/node/guest/src/executions/**", "packages/node/guest/src/managed-work/**"]
 ---
 
 ## Rules
 
-Keep one current execution grant per workspace mech. Owner-only operations record the acting principal and grant or
-revoke result. A notification, model message, remembered instruction, or fork grants no authority.
+Keep one installed command grant per workspace, managed agent and authorized session creator. A workspace owner sets
+or revokes the grant. Record the actor, the target and the result without recording credential values. A renamed
+agent retains its identity. Another agent with the same name, a session event and a copied configuration confer
+no command authority.
+
+Release command credentials only to the active installation-owned worker for the specified session. Match its current
+work lease and allocation generation, its creator and the agent pinned in the catalog. External workers provision
+their own credentials. A shared computer for a multiagent roster receives an empty command grant, as does an
+eligible session that lacks a binding.
 
 Keep grants generic: public environment variables and encrypted credential references. Resolve references immediately
 before dispatch and inject values only into the authorized command environment. Recheck the grant for each new effect.
@@ -56,6 +63,9 @@ callbacks with the service credential, never a guest key.
 Exercise the packaged API and command path with current and revoked grants, a foreign workspace, a reused execution ID,
 and a lost response. Inspect emitted output and persisted records for fixture secrets. A new-notification refusal must
 leave no execution, credential-issuance, or machine-acquisition effect.
+
+Run a CLI command under the admitted agent and principal. Rotate and revoke the referenced credential between
+commands. Check the shell and retained output. Repeat with a different session creator and a replaced worker lease.
 
 Inspect a nonzero result, missing historical input, and bounded output through the same trace. Verify native tool
 completion preserves the exit code, replay preserves its original snapshot, and missing input cannot fall back to raw

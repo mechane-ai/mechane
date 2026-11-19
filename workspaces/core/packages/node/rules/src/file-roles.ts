@@ -10,7 +10,6 @@ const BROWSER_BUILD_CONFIGURATION = [
 export const FILE_ROLES = {
   [FileRole.Browser]: ['packages/browser/**'],
   [FileRole.NativeRuntime]: [
-    'packages/node/eval/src/environment/http-entry.ts',
     'packages/shared/bash/src/**',
     'packages/node/guest/src/guest-listener.ts',
     'packages/shared/deployment/src/worker-deployment.ts',
@@ -22,10 +21,6 @@ export const FILE_ROLES = {
   ],
   [FileRole.NativePresentation]: ['packages/shared/protocol/src/presentation/**'],
   [FileRole.NativeCalendar]: ['packages/browser/elements/packages/forms/src/dates/civil.ts'],
-  [FileRole.NativeConversation]: [
-    'packages/browser/console-data/src/conversation.ts',
-    'packages/browser/console/src/conversations/entry.ts',
-  ],
   [FileRole.NativeSandboxBoundary]: [
     'packages/worker/sandbox/src/service/**',
     'packages/worker/sandbox/src/capacity/machine-capacity.ts',
@@ -58,9 +53,13 @@ export const FILE_ROLES = {
   [FileRole.BrowserQuery]: [
     'packages/browser/console-data/src/collections.ts',
     'packages/browser/console-data/src/console-data.ts',
+    'packages/browser/console-data/src/managed-reads.ts',
     'packages/browser/console-data/src/read-ready.ts',
   ],
-  [FileRole.BrowserCommand]: ['packages/browser/console-data/src/commands.ts'],
+  [FileRole.BrowserCommand]: [
+    'packages/browser/console-data/src/commands.ts',
+    'packages/browser/console-data/src/managed-commands.ts',
+  ],
   [FileRole.BrowserCacheLifecycle]: ['packages/browser/console-cache/src/store/storage.ts'],
   [FileRole.Settings]: [
     'packages/worker/server/src/import/settings.ts',
@@ -88,7 +87,6 @@ export const FILE_ROLES = {
     'packages/worker/runtime/src/output/write-actor-diagnostic.ts',
     'packages/node/cli/scripts/reference/main.ts',
     'packages/node/program/src/output/**',
-    'packages/worker/runtime/src/operations/notifications.ts',
     'packages/worker/server/src/main.ts',
     'packages/worker/server/src/http/failure.ts',
     'packages/node/stack/src/main.ts',

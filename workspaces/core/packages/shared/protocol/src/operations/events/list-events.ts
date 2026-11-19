@@ -13,11 +13,15 @@ const EventWait = Schema.NumberFromString.pipe(Schema.decodeTo(DurationFromSecon
   isBetweenDuration({ minimum: Duration.zero, maximum: WAIT_MAX }),
 );
 
+const fromBeginning = Schema.withDecodingDefaultKey<typeof EventCursor>(Effect.succeed('0'));
+/** Sequence used by historical log readers. Omitting it starts at the beginning of the log. */
+export const LogEventCursor = EventCursor.pipe(fromBeginning);
+
 /** The events to list: those after `after`, waiting up to `wait` while there are none. */
 const EventQuery = renamedWireStruct({
   fields: {
     /** Absent at the log's start, as an absent cursor is on every list. */
-    after: EventCursor.pipe(Schema.withDecodingDefaultKey(Effect.succeed('0'))),
+    after: LogEventCursor,
     /** Absent for a list that does not wait. */
     wait: EventWait.pipe(Schema.withDecodingDefaultKey(Effect.succeed('0'))),
   },
@@ -30,8 +34,8 @@ const EventQuery = renamedWireStruct({
  */
 export const listEvents = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/events',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/events',
+  access: Access.Owner,
   params: MechPath,
   query: EventQuery,
   body: NoFields,

@@ -1,8 +1,4 @@
 import type { LocalStack } from '@mechane/stack';
-import type { Account } from './auth/types.ts';
-
-export type AccountContext = { readonly stack: LocalStack; readonly account: Account };
-export type MechContext = AccountContext & { readonly mechId: string };
 
 export type ScenarioInput = { readonly stack: LocalStack; readonly guarantee: string };
 

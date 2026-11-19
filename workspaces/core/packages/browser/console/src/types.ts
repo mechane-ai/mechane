@@ -1,16 +1,28 @@
+import type { ManagedEvent } from '@mechane/console-data';
 import type { ConsoleView, Turn } from '@mechane/protocol';
 
 /** Only shareable record selections go in the URL. */
 export type ConsoleLocation = {
   /** Absent selects the remembered workspace or opens the workspace chooser. */
   readonly workspace?: string;
-  /** Absent opens the workspace mech list. */
+  /** Managed resource selections resolve under the selected installation and workspace. */
+  readonly isArchiveIndex?: true;
+  readonly agent?: string;
+  readonly session?: string;
+  readonly isSessionEvidence?: true;
+  readonly thread?: string;
+  /** Links to a processed session event retain its timestamp cutoff when later pages arrive. */
+  readonly through?: string;
+  readonly eventId?: ManagedEvent['id'];
+  /** Service-issued opaque cursor; omission selects the first page. */
+  readonly page?: string;
+  /** Native diagnostic and capture links identify their historical mech separately. */
   readonly mech?: string;
   /** Absent opens the mech, before selecting one of its turns. */
   readonly turn?: string;
   /** Absent leaves the run or mech visible without opening a capture. */
   readonly artifact?: string;
-  /** Absent opens the mech's conversation. */
+  /** Absent opens the managed directory or a native mech's diagnostics. */
   readonly view?: ConsoleView;
   /** Absent opens the overview or the inspector section selected by an existing view link. */
   readonly inspect?: ConsoleView;
@@ -32,6 +44,7 @@ export type ReaderPosition = { readonly region: string; readonly top: number; re
 /** Cursor trails retained by one browser history entry. */
 export type PageCursors = {
   readonly mechs: ReadonlyArray<string>;
+  readonly archive: ReadonlyArray<number>;
   readonly turns: ReadonlyArray<Turn['id']>;
   readonly activity: ReadonlyArray<number>;
   readonly events: ReadonlyArray<number>;

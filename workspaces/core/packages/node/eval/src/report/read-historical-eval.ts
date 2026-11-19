@@ -9,8 +9,7 @@ import { jsonDigest } from '../json-digest.ts';
 import { EvalId } from '../schemas.ts';
 import { readHistoricalReport, readHistoricalTrial } from '../store/historical-records.ts';
 import { trialId } from '../trial-id.ts';
-import { summarizeCompletion } from './eval-inspection.ts';
-import { summarizeQuality } from './grade-quality.ts';
+import { summarizeTrials } from './eval-inspection.ts';
 import {
   INSPECTION_VERSION,
   InspectionScope,
@@ -19,7 +18,7 @@ import {
   StageStatus,
 } from './inspection-schemas.ts';
 import type { EvalInspection, GradeQuality, RoleSpend, TrialInspection, TrialStages } from './inspection-schemas.ts';
-import { combineRoleSpend } from './role-spend.ts';
+import { NativeInspectionReport } from './read-archived-stages.ts';
 
 const HISTORICAL_SUNDIAL_FORMAT = 1;
 const HISTORICAL_TURN_REPORT_VERSION = 2;
@@ -146,6 +145,7 @@ type HistoricalInspectionInput = {
   readonly suiteId: EvalId;
   readonly digest: Option.Option<string>;
   readonly source: InspectionSource;
+  readonly scope: InspectionScope;
   readonly raw: Json;
   readonly trials: ReadonlyArray<TrialInspection>;
   readonly caseId: Option.Option<EvalId>;
@@ -170,6 +170,37 @@ export const readHistoricalEval = Effect.fn('readHistoricalEval')(function* ({
     const report = yield* decodeHistoricalReport({ schema: HistoricalSundialReport, value: raw.value, outFolder });
 
     return yield* sundialInspection({ report, raw: raw.value, outFolder, caseId });
+  }
+
+  const encodedNative = Schema.toEncoded(NativeInspectionReport);
+
+  if (Schema.is(encodedNative)(raw.value)) {
+    const report = yield* Schema.decodeUnknownEffect(NativeInspectionReport)(raw.value).pipe(
+      Effect.mapError(
+        (error) => new EvalFileFailed({ step: EvalFileStep.Decode, path: outFolder, reason: error.message }),
+      ),
+    );
+
+    const historicalRecord = Option.none<Json>();
+
+    const trials = report.trials.map((saved) => {
+      const trial = emptyHistoricalTrial({ ...saved, historicalRecord });
+
+      return { ...trial, subjectSpend: saved.subjectSpend, judgeSpend: saved.judgeSpend };
+    });
+
+    const digest = Option.some(report.digest);
+
+    return historicalInspection({
+      suiteId: report.suiteId,
+      digest,
+      scope: report.scope,
+      source: InspectionSource.HistoricalMechane,
+      raw: raw.value,
+      trials,
+      caseId,
+      notices: ['Archived native eval projection. The original stage records are unavailable in this folder.'],
+    });
   }
 
   if (Schema.is(MechaneFormat)(raw.value)) {
@@ -232,6 +263,7 @@ const sundialInspection = Effect.fn('sundialInspection')(function* ({
     suiteId: 'sundial-planner',
     digest,
     source: InspectionSource.HistoricalSundial,
+    scope: InspectionScope.Full,
     raw,
     trials,
     caseId,
@@ -321,6 +353,7 @@ function mechaneInspection({ report, raw, caseId }: MechaneInspectionInput): Eva
     suiteId: report.suite_id,
     digest,
     source: InspectionSource.HistoricalMechane,
+    scope: InspectionScope.Full,
     raw,
     trials,
     caseId,
@@ -370,33 +403,21 @@ function historicalInspection({
   suiteId,
   digest,
   source,
+  scope,
   raw,
   trials,
   caseId,
   notices,
 }: HistoricalInspectionInput): EvalInspection {
-  const subjectSpends = trials.map((trial) => trial.subjectSpend);
-  const judgeSpends = trials.map((trial) => trial.judgeSpend);
-  const qualities = trials.map((trial) => trial.quality);
-
-  const selectedTrials = Option.match(caseId, {
-    onNone: () => trials,
-    onSome: (selected) => trials.filter((trial) => trial.caseId === selected),
-  });
-
   return {
     version: INSPECTION_VERSION,
     source,
-    scope: InspectionScope.Full,
+    scope,
     isResumable: false,
     suiteId,
     digest,
     manifest: Option.none(),
-    completion: summarizeCompletion({ trials, scope: InspectionScope.Full }),
-    subjectSpend: combineRoleSpend({ spends: subjectSpends }),
-    judgeSpend: combineRoleSpend({ spends: judgeSpends }),
-    quality: summarizeQuality({ qualities }),
-    trials: selectedTrials,
+    ...summarizeTrials({ trials, scope, caseId }),
     notices,
     historicalDefinition: Option.some(raw),
   };
@@ -430,7 +451,7 @@ function emptyHistoricalTrial({
 
 function historicalSpend({ identity, charge }: HistoricalSpendInput): RoleSpend {
   return {
-    knownChargedMicros: Option.getOrElse(charge, () => Micros.make(0)),
+    ...(Option.isSome(charge) && { knownChargedMicros: charge.value }),
     isComplete: false,
     unknownAttempts: [identity],
     knownInputTokens: Tokens.make(0),

@@ -60,7 +60,6 @@ export const codeTypescriptEffectErrors = {
         FileRole.BrowserCacheLifecycle,
         FileRole.NativeRuntime,
         FileRole.NativePresentation,
-        FileRole.NativeConversation,
         FileRole.NativeSandboxBoundary,
       ],
       standard: 'ER-04',

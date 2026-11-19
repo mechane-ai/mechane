@@ -1,4 +1,4 @@
-import { KeyMissing } from '@mechane/protocol';
+import { KeyMissing, KeyUnrecognized } from '@mechane/protocol';
 import { HttpHeader } from '@mechane/records';
 import { limitAuthentication, resolveAuthentication } from '@mechane/runtime';
 import type { AuthCaller } from '@mechane/runtime';
@@ -14,6 +14,10 @@ function requestCredential(request: Request, origin: string): RequestCredential 
 
   if (authorization !== null) {
     const token = bearerToken({ authorization });
+
+    if (token === null) {
+      throw new KeyUnrecognized({});
+    }
 
     return { kind: 'key', token };
   }

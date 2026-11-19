@@ -11,7 +11,9 @@ type ContentInput = { readonly request: Request; readonly store: SandboxStore; r
 
 /** Only scoped media uses the platform fetch boundary; the body owner checks the bound namespace before R2. */
 export async function serveEvidenceContent({ request, store, bucket }: ContentInput): Promise<Response> {
-  if (request.method !== HttpMethod.Get) {
+  const includeBody = request.method === HttpMethod.Get;
+
+  if (!includeBody && request.method !== HttpMethod.Head) {
     return new Response(null, { status: HttpStatusCode.NotFound });
   }
 
@@ -34,5 +36,5 @@ export async function serveEvidenceContent({ request, store, bucket }: ContentIn
   const range = request.headers.get(HttpHeader.Range);
   const rangeHeader = Option.fromNullishOr(range);
 
-  return await readEvidenceContent({ store, bucket, ...decoded.success, rangeHeader });
+  return await readEvidenceContent({ store, bucket, ...decoded.success, rangeHeader, includeBody });
 }

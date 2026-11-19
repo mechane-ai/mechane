@@ -18,3 +18,6 @@ export const browserControl = { values: {}, rules: [] } as const satisfies Contr
 export const browserEvidence = { values: {}, rules: [] } as const satisfies ContractEnforcement;
 /** Private transfer checks establish capture ownership, byte integrity and safe repeated copies. */
 export const evidenceExport = { values: {}, rules: [] } as const satisfies ContractEnforcement;
+
+/** Public SDK and worker qualifications exercise the external Managed Agents protocol. */
+export const managedAgentsCompatibility = { values: {}, rules: [] } as const satisfies ContractEnforcement;

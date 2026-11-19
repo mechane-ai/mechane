@@ -9,7 +9,7 @@ type WaitForRead = {
   readonly tables: CanonicalTables;
   readonly request: ReadRequest;
   readonly signal: AbortSignal;
-  readonly refreshRead: () => Promise<number>;
+  readonly refreshRead: () => Promise<unknown>;
 };
 
 type ReadSource = {
@@ -22,6 +22,17 @@ type ReadSource = {
 type ReadDefinition = { readonly tables: ReadonlyArray<keyof CanonicalTables>; readonly cardinality: 'one' | 'many' };
 
 const readDefinitions = {
+  agents: { tables: ['managedAgents'], cardinality: 'many' },
+  agent: { tables: ['managedAgents'], cardinality: 'one' },
+  managedEnvironments: { tables: ['managedEnvironments'], cardinality: 'many' },
+  sessions: { tables: ['managedSessions'], cardinality: 'many' },
+  session: { tables: ['managedSessions'], cardinality: 'one' },
+  threads: { tables: ['managedThreads'], cardinality: 'many' },
+  sessionEvidence: { tables: ['sessionEvidence'], cardinality: 'many' },
+  sessionArtifact: { tables: ['sessionEvidence'], cardinality: 'one' },
+  sessionEvents: { tables: [], cardinality: 'many' },
+  archive: { tables: [], cardinality: 'many' },
+  attention: { tables: [], cardinality: 'one' },
   mechs: { tables: ['mechs'], cardinality: 'many' },
   mech: { tables: ['mechs', 'mechDefinitions'], cardinality: 'one' },
   turns: { tables: ['turns'], cardinality: 'many' },

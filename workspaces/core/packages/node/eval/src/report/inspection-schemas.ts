@@ -8,6 +8,7 @@ import {
   EvalTrial,
   EvidenceRecord,
   GradeSubmission,
+  MinorUnits,
   Observation,
   RoleIntent,
   RoleReceipt,
@@ -17,7 +18,7 @@ import {
 import { CriterionVerdict, EvalScope } from '../constants.ts';
 import { EvalId, Grade } from '../schemas.ts';
 
-export const INSPECTION_VERSION = 1;
+export const INSPECTION_VERSION = 2;
 
 export const InspectionSource = {
   Records: 'records',
@@ -81,7 +82,10 @@ export const GradeQuality = Schema.Union([
 export type GradeQuality = typeof GradeQuality.Type;
 
 export const RoleSpend = Schema.Struct({
-  knownChargedMicros: Micros,
+  /** Public list cost in cents, summed without floating-point conversion. */
+  knownListCostUsdCents: Schema.optionalKey(MinorUnits),
+  /** Present only for historical reports that recorded actual charges. */
+  knownChargedMicros: Schema.optionalKey(Micros),
   isComplete: Schema.Boolean,
   unknownAttempts: Schema.Array(Schema.String),
   knownInputTokens: Tokens,

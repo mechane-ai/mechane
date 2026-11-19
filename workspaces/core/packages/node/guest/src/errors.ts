@@ -2,6 +2,12 @@ import { RecordId } from '@mechane/records';
 import { ExecutionId, WorkspaceStep } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
 
+export class InstalledCommandFailed extends Schema.TaggedError<InstalledCommandFailed>()('InstalledCommandFailed', {
+  reason: Schema.String,
+}) {}
+
+export class SessionWorkerFailed extends Schema.TaggedError<SessionWorkerFailed>()('SessionWorkerFailed', {}) {}
+
 /** The guest's environment does not decode into its settings. */
 export class GuestMisconfigured extends Schema.TaggedError<GuestMisconfigured>()('GuestMisconfigured', {
   reason: Schema.String,

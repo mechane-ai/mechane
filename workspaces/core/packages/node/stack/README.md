@@ -47,9 +47,12 @@ recovers an owner without claiming that source edits were applied.
 
 Console development uses Vite HMR directly from Console and Elements source. It forwards API requests to the application
 Worker, so startup needs no Console or Elements build. Esbuild watches the Worker's actual import graph, including
-workspace packages, and publishes successful bundles before requesting an application restart. A failed compile leaves
-the previous application available. Guest output, state, and logs stay outside that graph; celld's own watcher is off.
-An application restart does not silently rebuild or replace the retained environment host.
+workspace packages. On a changed bundle the supervisor runs the local migrations and grants before replacing the
+application. A failed compile or database setup leaves the current application serving. If a replacement fails
+readiness, the supervisor restores the previous bundle. Guest output, state, and logs stay outside that graph; celld's
+own watcher is off. An application restart does not silently rebuild or replace the retained environment host.
+Disposable smoke stacks compile the application once at startup, so editing source during a recovery test leaves its
+running bundle stable.
 
 Development defaults to deterministic external HTTP fixtures. GitHub sign-in offers owner, member, and rejected outsider
 accounts; scripted model replies need no provider account. Select each provider independently at start, for example
@@ -125,11 +128,12 @@ carry ownership labels. Worker `.celld/supervisor.json` records include celld's 
 also handles an application supervisor killed with `SIGKILL`. Per-process `.celld/exit-<pid>.json` receipts record the
 requested and OS-reported exit signals. An environment-changing restart preserves its requested signal.
 
-Persistent shutdown first reads authenticated sandbox ownership, requests Stop, and waits for completed receipts within
-one deadline. A failed checkpoint keeps the hosts and files available, records recovery status, and permits a later
-shutdown retry. Successful shutdown releases owned processes and containers while retaining database, durable object,
-R2, keyring, and certificate files. Ephemeral fixture mode discards its owned state after stopping resources. Failed
-startup retains private files for diagnosis. An ownership record prevents a second launcher from taking the same state.
+Persistent shutdown holds new launches and gives active installed workers time to finish their tools. It waits up to
+eight minutes for their normal workspace checkpoints and confirmed machine stops. A failed checkpoint keeps the hosts
+and files available and records the session, generation, and repair reason in `owner.json`. Retry shutdown after repair.
+Successful shutdown releases owned processes and containers while retaining database, durable object, R2, keyring, and
+certificate files. Ephemeral fixture mode discards its owned state after stopping resources. Failed startup retains
+private files for diagnosis. An ownership record prevents a second launcher from taking the same state.
 
 After a successful shutdown, `mise run dev -- reset --confirm` deletes that local installation. The reset requires a
 recognized state directory and refuses existing owner records, Worker locks, or owned Docker resources. It never stops

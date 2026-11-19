@@ -2,13 +2,14 @@ import { Bytes, HttpMethod, MachineId } from '@mechane/records';
 import type { ProcessRecord } from '@mechane/sandbox-store';
 import {
   ExecutionEnvironmentRequired,
+  INSTALLED_WORKSPACE_PATH,
   ProcessCanceled,
   ProcessId,
   ProcessObservation,
   ProcessPending,
   ProcessState,
 } from '@mechane/sandbox-wire';
-import type { ExecutionEnvironment, ProcessHandle, SandboxProcessAnswer } from '@mechane/sandbox-wire';
+import type { ExecutionEnvironment, ProcessHandle, ProcessStart, SandboxProcessAnswer } from '@mechane/sandbox-wire';
 import { DateTime, Option, Result, Schema } from 'effect';
 import { connectLiveMachine } from '../machines/connect-live-machine.ts';
 import { readyInteractiveMachine } from '../machines/ready-interactive-machine.ts';
@@ -114,7 +115,14 @@ export async function startManagedProcess({
     return ExecutionEnvironmentRequired.make({});
   }
 
-  const start = Option.some({ processId, command: assigned.command, environment });
+  const submission = { processId, command: assigned.command, environment };
+  const provenance = Option.fromNullishOr(assigned.origin);
+
+  const start = Option.match(provenance, {
+    onNone: () => Option.some(submission),
+    onSome: () => Option.some<ProcessStart>({ ...submission, workingDirectory: INSTALLED_WORKSPACE_PATH }),
+  });
+
   const dispatchedAt = DateTime.nowUnsafe();
 
   store.noteWorkspaceActivity({ now: dispatchedAt });

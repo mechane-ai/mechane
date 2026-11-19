@@ -12,6 +12,7 @@ type WorkerBuildOptions = {
   readonly output: string;
   readonly isWatched: boolean;
   readonly logFile: string;
+  readonly prepare: (() => Promise<void>) | undefined;
   readonly onBuild: (input: WorkerBuildResult) => Promise<void>;
 };
 
@@ -21,9 +22,14 @@ export async function startWorkerBuild(input: WorkerBuildOptions): Promise<Build
   const entry = resolve(input.entry);
   const output = resolve(input.output);
   const temporaryOutput = join(dirname(output), 'next-worker.mjs');
-  const measured = { startedAtMs: performance.now() };
+  const measured = { startedAtMs: performance.now(), hasPrepared: false };
 
   await mkdir(dirname(temporaryOutput), { recursive: true, mode: PRIVATE_DIRECTORY_MODE });
+
+  async function publishBytes(contents: Uint8Array): Promise<void> {
+    await writeFile(temporaryOutput, contents, { mode: PRIVATE_FILE_MODE });
+    await rename(temporaryOutput, output);
+  }
 
   const publish: Plugin = {
     name: 'publish-successful-worker',
@@ -58,16 +64,42 @@ export async function startWorkerBuild(input: WorkerBuildOptions): Promise<Build
           throw error;
         });
 
-        if (previous !== null && previous.equals(bundle.contents)) {
+        const unchanged = previous !== null && previous.equals(bundle.contents);
+        const durationMs = performance.now() - measured.startedAtMs;
+
+        if (!measured.hasPrepared || !unchanged) {
+          await input.prepare?.();
+
+          measured.hasPrepared = true;
+        }
+
+        if (unchanged) {
           return;
         }
 
-        await writeFile(temporaryOutput, bundle.contents, { mode: PRIVATE_FILE_MODE });
-        await rename(temporaryOutput, output);
+        await publishBytes(bundle.contents);
 
-        const durationMs = performance.now() - measured.startedAtMs;
+        try {
+          await input.onBuild({ durationMs });
+        } catch (cause) {
+          if (previous === null) {
+            throw cause;
+          }
 
-        await input.onBuild({ durationMs });
+          await publishBytes(previous);
+
+          try {
+            await input.onBuild({ durationMs });
+          } catch (restoreCause) {
+            throw new AggregateError(
+              [cause, restoreCause],
+              'Both the new Worker and the previous Worker failed to start',
+              { cause: restoreCause },
+            );
+          }
+
+          throw cause;
+        }
       });
     },
   };

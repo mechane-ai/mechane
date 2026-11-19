@@ -1,4 +1,5 @@
-import { Result, Schema } from 'effect';
+import { Schema } from 'effect';
+import { readFailureCode } from '../cli/read-failure-code.ts';
 import type { CliResult } from '../cli/types.ts';
 
 const FailureCode = Schema.Literals([
@@ -11,10 +12,6 @@ const FailureCode = Schema.Literals([
   'ResponseUnreadable',
 ]);
 
-const FailureEnvelope = Schema.fromJsonString(
-  Schema.Struct({ errors: Schema.Array(Schema.Struct({ code: Schema.Unknown })) }),
-);
-
 const FAILURE_MESSAGES: Readonly<Record<typeof FailureCode.Type, string>> = {
   RateLimited: 'authentication was rate limited',
   ServiceUnavailable: 'the authentication service was unavailable',
@@ -26,20 +23,13 @@ const FAILURE_MESSAGES: Readonly<Record<typeof FailureCode.Type, string>> = {
 };
 
 export function deviceClaimFailure(result: CliResult): Error {
-  const decoded = Schema.decodeUnknownResult(FailureEnvelope)(result.stdout);
-  const envelope = Result.getOrElse(decoded, () => ({ errors: [] }));
-  const failure = envelope.errors[0];
-  let code = 'NoTerminalFailure';
-  let message = 'the CLI stopped without a terminal failure record';
+  const code = readFailureCode(result.stdout);
+  let message = 'the CLI returned an unexpected failure code';
 
-  if (failure !== undefined) {
-    code = 'UnrecognizedFailure';
-    message = 'the CLI returned an unrecognized failure code';
-
-    if (Schema.is(FailureCode)(failure.code)) {
-      code = failure.code;
-      message = FAILURE_MESSAGES[failure.code];
-    }
+  if (code === 'NoTerminalFailure') {
+    message = 'the CLI stopped without a terminal failure record';
+  } else if (Schema.is(FailureCode)(code)) {
+    message = FAILURE_MESSAGES[code];
   }
 
   return new Error(

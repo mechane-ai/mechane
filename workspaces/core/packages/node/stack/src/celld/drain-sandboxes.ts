@@ -1,7 +1,14 @@
 import { writeDiagnostic } from '@mechane/program';
 import { SANDBOX_OWNERS_PATH, SandboxOwnerPage, SandboxOwnerQuery } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
-import { sandboxStopPath, SandboxStopPhase, sandboxStopReadPath, SandboxStopReceipt } from '@mechane/sandbox-wire';
+import {
+  InstalledDrainReport,
+  SANDBOX_INSTALLED_DRAIN_PATH,
+  sandboxStopPath,
+  SandboxStopPhase,
+  sandboxStopReadPath,
+  SandboxStopReceipt,
+} from '@mechane/sandbox-wire';
 import type { SandboxCapacityIdentity } from '@mechane/sandbox-wire';
 import { Option, Schema } from 'effect';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -16,13 +23,32 @@ type DrainInput = {
   readonly report: (details: Readonly<Record<string, unknown>>) => Promise<void>;
 };
 
-type RequestInput = DrainInput & { readonly url: URL; readonly method: string };
+type RequestInput = DrainInput & {
+  readonly url: URL;
+  readonly method: string;
+  readonly canSkipUnavailable?: () => Promise<boolean>;
+};
+
 type DrainOwnerInput = DrainInput & { readonly owner: SandboxCapacityIdentity };
+
+export class InstalledDrainFailedError extends Error {
+  readonly allocation: InstalledDrainReport['pending'][number];
+
+  constructor(allocation: InstalledDrainReport['pending'][number]) {
+    const reason = allocation.reason ?? 'Inspect the session computer for the retained file checkpoint';
+
+    super(`Installed session ${allocation.sessionId} could not save its workspace: ${reason}`);
+
+    this.name = 'InstalledDrainFailedError';
+    this.allocation = allocation;
+  }
+}
 
 export async function drainSandboxes(input: DrainInput): Promise<void> {
   writeDiagnostic({ program: 'stack', line: 'Inspecting local environment owners before shutdown' });
 
   const completed = new Set<string>();
+  let lastInstalledReport = '';
 
   async function drainUnfinished(owner: SandboxCapacityIdentity): Promise<void> {
     const identity = JSON.stringify(owner);
@@ -43,9 +69,24 @@ export async function drainSandboxes(input: DrainInput): Promise<void> {
   }
 
   do {
+    const installed = await readInstalledDrain(input);
+    const receipt = JSON.stringify(installed);
+
+    if (installed.pending.length > 0 && receipt !== lastInstalledReport) {
+      await input.report({ phase: 'draining', installed });
+
+      lastInstalledReport = receipt;
+    }
+
+    const failed = installed.pending.find((allocation) => allocation.phase === 'failed');
+
+    if (failed !== undefined) {
+      throw new InstalledDrainFailedError(failed);
+    }
+
     const owners = await readOwners(input);
 
-    if (owners.length === 0) {
+    if (owners.length === 0 && installed.pending.length === 0 && !installed.hasMore) {
       return;
     }
 
@@ -55,6 +96,23 @@ export async function drainSandboxes(input: DrainInput): Promise<void> {
   } while (Date.now() < input.deadlineMs);
 
   throw new Error('The local environments did not drain before the shutdown deadline; their hosts remain available');
+}
+
+async function readInstalledDrain(input: DrainInput): Promise<InstalledDrainReport> {
+  const url = new URL(SANDBOX_INSTALLED_DRAIN_PATH, input.origin);
+
+  const body = await requestJson({
+    ...input,
+    url,
+    method: HttpMethod.Post,
+    canSkipUnavailable: async () => !(await input.sandbox.hasContainers()),
+  });
+
+  if (body === undefined) {
+    return { pending: [], hasMore: false };
+  }
+
+  return Schema.decodeUnknownSync(InstalledDrainReport)(body);
 }
 
 async function readOwners(input: DrainInput): Promise<ReadonlyArray<SandboxCapacityIdentity>> {
@@ -68,7 +126,17 @@ async function readOwners(input: DrainInput): Promise<ReadonlyArray<SandboxCapac
 
     url.search = parameters.toString();
 
-    const body = await requestJson({ ...input, url, method: HttpMethod.Get });
+    const body = await requestJson({
+      ...input,
+      url,
+      method: HttpMethod.Get,
+      canSkipUnavailable: async () => !(await input.sandbox.hasContainers()),
+    });
+
+    if (body === undefined) {
+      return owners;
+    }
+
     const page = Schema.decodeUnknownSync(SandboxOwnerPage)(body);
 
     owners.push(...page.owners);
@@ -141,6 +209,11 @@ async function requestJson(input: RequestInput): Promise<unknown> {
 
     if (response === undefined || response.status === HttpStatusCode.Unavailable) {
       await response?.body?.cancel();
+
+      if ((await input.canSkipUnavailable?.()) === true) {
+        return undefined;
+      }
+
       await delay(STATUS_INTERVAL_MS);
     } else {
       if (!response.ok) {

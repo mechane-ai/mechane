@@ -6,12 +6,20 @@ import { runCli } from '../cli/run-cli.ts';
 type MachineLimitInput = { readonly stack: LocalStack; readonly account: Account; readonly machines: number };
 
 export async function setMachineLimit({ stack, account, machines }: MachineLimitInput): Promise<void> {
-  const policy = await runCli({
+  await setWorkspacePolicy({ stack, account, changes: { machines } });
+}
+
+type PolicyChange = Omit<MachineLimitInput, 'machines'> & { readonly changes: Partial<WorkspacePolicy> };
+
+export async function setWorkspacePolicy({ stack, account, changes }: PolicyChange): Promise<WorkspacePolicy> {
+  const before = await runCli({
     stack,
     account,
     args: ['workspace', 'policy', 'show', account.workspaceId],
     schema: WorkspacePolicy,
   });
+
+  const policy = { ...before, ...changes };
 
   await runCli({
     stack,
@@ -26,10 +34,12 @@ export async function setMachineLimit({ stack, account, machines }: MachineLimit
       '--sandboxes',
       String(policy.hasSandboxes),
       '--machines',
-      String(machines),
+      String(policy.machines),
       '--daily-allowance-micros',
       String(policy.dailyAllowanceMicros),
     ],
     schema: WorkspacePolicy,
   });
+
+  return before;
 }

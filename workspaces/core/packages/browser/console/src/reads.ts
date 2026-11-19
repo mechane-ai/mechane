@@ -1,6 +1,5 @@
 import {
   canRetainResult,
-  decodeAllowance,
   decodeEnvironmentProcessDetails,
   decodeEnvironmentReport,
   decodeEvent,
@@ -12,7 +11,6 @@ import {
   recordKey,
 } from '@mechane/console-data';
 import type {
-  AllowanceRow,
   CanonicalCollectionOptions,
   ConsoleData,
   EnvironmentProcessDetailsRow,
@@ -24,7 +22,7 @@ import type {
   ReadRequest,
   TurnRow,
 } from '@mechane/console-data';
-import type { Allowance, EventPage, MechPage, TurnPage } from '@mechane/protocol';
+import type { EventPage, MechPage, TurnPage } from '@mechane/protocol';
 import { eq, findProblems, inArray, useLiveQuery } from '@tanstack/react-db';
 import type { HealthNode } from '@tanstack/react-db';
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
@@ -211,7 +209,7 @@ type CollectionReadOptions<Row extends KeyedRecord, Value> = {
   readonly project: (rows: ReadonlyArray<CanonicalQueryRow<Row>>, receipt: ReadReceipt) => Value | undefined;
 };
 
-function useCollectionRead<Row extends KeyedRecord, Value>({
+export function useCollectionRead<Row extends KeyedRecord, Value>({
   data,
   request,
   isActive = true,
@@ -231,22 +229,12 @@ function useCollectionRead<Row extends KeyedRecord, Value>({
   return useReadState({ data, request, isActive, observation, value, records: [query] });
 }
 
-function mechPage(rows: ReadonlyArray<MechSummaryRow>, receipt: ReadReceipt): MechPage {
-  return { mechs: rows.map(decodeMechSummary), hasMore: receipt.hasMore === true };
-}
-
 function eventPage(rows: ReadonlyArray<EventRow>, receipt: ReadReceipt): EventPage {
   return { events: rows.map(decodeEvent), hasMore: receipt.hasMore === true };
 }
 
 function turnPage(rows: ReadonlyArray<TurnRow>, receipt: ReadReceipt): TurnPage {
   return { turns: rows.map(decodeTurn), hasMore: receipt.hasMore === true };
-}
-
-function allowanceValue(rows: ReadonlyArray<AllowanceRow>): Allowance | undefined {
-  const row = rows[0];
-
-  return row === undefined ? undefined : decodeAllowance(row);
 }
 
 function evidencePage(rows: ReadonlyArray<EvidenceArtifactRow>, receipt: ReadReceipt) {
@@ -312,11 +300,6 @@ export function useEvidenceArtifact(data: ConsoleData, request: ReadRequest<'evi
   });
 }
 
-/** Keeps the server's mech order and waits for every summary named by the page receipt. */
-export function useMechs(data: ConsoleData, request: ReadRequest<'mechs'> | undefined) {
-  return useCollectionRead({ data, request, collection: data.collections.mechs, project: mechPage });
-}
-
 /** Resolves activity and run history pages against the same canonical events. */
 export function useEvents(data: ConsoleData, request: ReadRequest<'events' | 'turnEvents'> | undefined) {
   return useCollectionRead({ data, request, collection: data.collections.events, project: eventPage });
@@ -358,11 +341,6 @@ export function useTurns(data: ConsoleData, request: ReadRequest<'turns'> | unde
   return useCollectionRead({ data, request, collection: data.collections.turns, project: turnPage });
 }
 
-/** Keeps allowance readiness independent of the mech list's primary content. */
-export function useAllowance(data: ConsoleData, request: ReadRequest<'allowance'>) {
-  return useCollectionRead({ data, request, collection: data.collections.allowance, project: allowanceValue });
-}
-
 /** Requires matching summary and definition revisions before replacing a complete authorized mech view. */
 export function useMech(data: ConsoleData, request: ReadRequest<'mech'> | undefined) {
   const observation = useReadReceipt(data, request);
@@ -399,4 +377,48 @@ export function useTrace(data: ConsoleData, request: ReadRequest<'trace'> | unde
   }, [evidence.data, receipt, turns.data]);
 
   return useReadState({ data, request, observation, value, records: [turns, evidence] });
+}
+
+/** Session text and membership live only in the admitted tab's reader. */
+export function useManagedEvents(data: ConsoleData, request: ReadRequest<'sessionEvents'>) {
+  const observation = useReadReceipt(data, request);
+  const history = data.managed.history(request);
+
+  const value = useMemo(
+    () => (history === undefined ? undefined : { items: history.items, next: history.nextPage }),
+    [history],
+  );
+
+  return useReadState({ data, request, observation, value, records: [] });
+}
+
+/** Only a fresh operator-owned execution slot can label a session as working. */
+export function useAgentAttention(data: ConsoleData, agentId: string) {
+  const request = useMemo(() => data.reads.attention(agentId), [data, agentId]);
+  const observation = useReadReceipt(data, request);
+  const value = data.managed.attention(request);
+  const state = useReadState({ data, request, observation, value, records: [] });
+
+  return state.kind === 'ready' && state.refresh.kind !== 'failed' ? state.value : undefined;
+}
+
+function archiveDirectoryPage(rows: ReadonlyArray<MechSummaryRow>, receipt: ReadReceipt): MechPage {
+  return { mechs: rows.map(decodeMechSummary), hasMore: receipt.hasMore === true };
+}
+
+export function useArchivedMechs(data: ConsoleData, request: ReadRequest<'mechs'>) {
+  return useCollectionRead({ data, request, collection: data.collections.mechs, project: archiveDirectoryPage });
+}
+
+/** Owner-only archival messages, including publication receipts, never enter persistent Console storage. */
+export function useArchivedMessages(data: ConsoleData, request: ReadRequest<'archive'> | undefined) {
+  const observation = useReadReceipt(data, request);
+
+  return useReadState({
+    data,
+    request,
+    observation,
+    value: request === undefined ? undefined : data.archive(request),
+    records: [],
+  });
 }

@@ -44,7 +44,7 @@ export function createExecutionConfigurationRecords(context: StoreContext) {
   };
 }
 
-function executionCredentialReferences(access: ExecutionAccess): ReadonlyArray<string> {
+export function executionCredentialReferences(access: ExecutionAccess): ReadonlyArray<string> {
   const references = Record.values(access.secrets);
 
   if (Record.keys(access.variables).some((name) => Object.hasOwn(access.secrets, name))) {

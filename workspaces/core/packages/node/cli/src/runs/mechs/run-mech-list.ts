@@ -13,7 +13,7 @@ export const runMechList = Effect.fn('runMechList')(function* ({
   origin,
   credentials,
   selectedWorkspaceId,
-}: RunInput<'mech list'>): Effect.fn.Return<CommandResult<'mech list'>, RunFailure> {
+}: RunInput<'history mechs'>): Effect.fn.Return<CommandResult<'history mechs'>, RunFailure> {
   const mechs: (access: WorkspaceAccess) => Effect.Effect<MechList, ClientFailure> = ({ token, workspaceId }) =>
     readPages({
       key: 'mechs',

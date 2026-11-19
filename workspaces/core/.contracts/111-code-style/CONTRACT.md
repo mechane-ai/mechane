@@ -134,10 +134,6 @@ These form choices do not relax strict TypeScript, input immutability, meaningfu
 boundary validation, safe errors, or SQL and authorization rules. Keep every asynchronous failure observed. Mutable
 global state, unchecked `any`, unsafe type assertions, swallowed failures, and duplicate schemas remain violations.
 
-The private tool-owner AsyncLocalStorage cell in `packages/worker/runtime/src/tools/context.ts` keeps its named native
-context wrapper. Callers cannot inline it without exposing the context cell. This small boundary owns dynamic context
-and is exempt from the forwarding-function rule; it adds no second owner or execution path.
-
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 
 - ast-grep `iife-form` (SC-01): enforced in phase F3

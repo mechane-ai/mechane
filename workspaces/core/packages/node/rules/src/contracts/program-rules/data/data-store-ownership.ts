@@ -10,7 +10,11 @@ export const dataStoreOwnership = {
       ...ADOPTED,
       name: 'storage-call-outside-store',
       standard: 'DO-06',
-      violation: ['this.ctx.storage.get(key);', 'this.ctx.storage.setAlarm(at);'],
+      violation: [
+        'this.ctx.storage.get(key);',
+        'this.ctx.storage.setAlarm(at);',
+        'function remove(transaction: DurableObjectTransaction) { transaction.delete("key"); }',
+      ],
       allowed: ['turnStore.readTurn({ turnId });'],
     },
     {

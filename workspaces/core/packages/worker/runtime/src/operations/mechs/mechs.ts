@@ -1,15 +1,12 @@
 import type { ControlStore } from '@mechane/control-store';
-import { catalog, ModelInvalid, TurnEnded, TurnNotFound, TurnRuntimeSource } from '@mechane/protocol';
-import type { OperationInput } from '@mechane/protocol';
+import { catalog, TurnNotFound } from '@mechane/protocol';
 import type { TurnId } from '@mechane/records';
 import { waitFor } from '@mechane/utilities';
 import { Duration, Option } from 'effect';
-import { randomUUID } from 'node:crypto';
 import type { MechActorResolver } from '../../actor/client.ts';
-import type { RuntimeConfiguration } from '../../config.ts';
 import { requireWorkspaceMember } from '../auth/admission.ts';
 import type { AuthCaller } from '../types.ts';
-import { requireAuthenticated, validatedOperation } from '../validated-operation.ts';
+import { validatedOperation } from '../validated-operation.ts';
 import {
   activityRecord,
   dispatchRecord,
@@ -22,26 +19,14 @@ import {
 
 const PAGE_MAX_ROWS = 50;
 const EVENT_WAIT_POLL = Duration.millis(250);
-const COMPLETED_STATES: ReadonlySet<string> = new Set(['completed', 'failed', 'cancelled']);
 
-export type MechOperationsInput = {
-  readonly store: ControlStore;
-  readonly configuration: RuntimeConfiguration;
-  readonly actors: MechActorResolver;
-};
+export type MechOperationsInput = { readonly store: ControlStore; readonly actors: MechActorResolver };
 
 type MechIdentity = { readonly workspaceId: string; readonly mechId: string };
 type MechAdmission = MechIdentity & { readonly caller: AuthCaller };
 type RunAdmission = MechAdmission & { readonly turnId: TurnId };
-type MechCopyRequest = { readonly input: OperationInput<typeof catalog.cloneMech>; readonly caller: AuthCaller };
 
-function requireModel(configuration: RuntimeConfiguration, model: string): void {
-  if (!configuration.model.offers.some((offer) => offer.id === model)) {
-    throw new ModelInvalid({ model, offered: configuration.model.offers.map((offer) => offer.id) });
-  }
-}
-
-export function createMechOperations({ store, configuration, actors }: MechOperationsInput) {
+export function createMechOperations({ store, actors }: MechOperationsInput) {
   async function requireMech({ workspaceId, mechId, caller }: MechAdmission) {
     await requireWorkspaceMember({ store, caller, workspaceId });
 
@@ -60,49 +45,7 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
     return run;
   }
 
-  async function mechCopyInput({ input, caller }: MechCopyRequest) {
-    const authenticated = requireAuthenticated(caller);
-
-    await requireMech({ ...input, caller });
-
-    return {
-      workspaceId: input.workspaceId,
-      mechId: input.mechId,
-      principalId: authenticated.principalId,
-      name: input.name,
-      requestId: input.requestId ?? randomUUID(),
-    };
-  }
-
   return {
-    createMech: validatedOperation({
-      operation: catalog.createMech,
-      run: async ({ input, caller }) => {
-        const authenticated = requireAuthenticated(caller);
-
-        await requireWorkspaceMember({ store, caller, workspaceId: input.workspaceId });
-
-        const model = input.model ?? configuration.defaultModel;
-
-        requireModel(configuration, model);
-
-        const mech = await store.createMech({
-          workspaceId: input.workspaceId,
-          principalId: authenticated.principalId,
-          requestId: input.requestId ?? randomUUID(),
-          definition: {
-            name: input.name,
-            model,
-            instructions: input.instructions ?? null,
-            nativeTools: input.nativeTools ?? null,
-            dailyCapMicros: input.dailyCapMicros ?? configuration.maxDailyAllowanceMicros,
-            status: 'active',
-          },
-        });
-
-        return mechRecord(mech);
-      },
-    }),
     listMechs: validatedOperation({
       operation: catalog.listMechs,
       run: async ({ input, caller }) => {
@@ -126,44 +69,17 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
         return mechRecord(mech, activeRevision);
       },
     }),
-    updateMech: validatedOperation({
-      operation: catalog.updateMech,
+    listArchivedCompletions: validatedOperation({
+      operation: catalog.listArchivedCompletions,
       run: async ({ input, caller }) => {
-        const authenticated = requireAuthenticated(caller);
-        const previous = await requireMech({ ...input, caller });
+        await requireMech({ ...input, caller });
 
-        if (input.model !== undefined) {
-          requireModel(configuration, input.model);
-        }
-
-        const changes = {
-          name: input.name ?? previous.name,
-          model: input.model ?? previous.model,
-          instructions: previous.instructions,
-          nativeTools: previous.nativeTools ?? null,
-          dailyCapMicros: input.dailyCapMicros ?? previous.dailyCapMicros,
-          status: input.status ?? previous.status,
-        };
-
-        if (input.instructions !== undefined) {
-          changes.instructions = Option.getOrNull(input.instructions);
-        }
-
-        if (input.nativeTools !== undefined) {
-          changes.nativeTools = Option.getOrNull(input.nativeTools);
-        }
-
-        const mech = await store.updateMech({
-          workspaceId: input.workspaceId,
-          mechId: input.mechId,
-          principalId: authenticated.principalId,
-          expectedRevision: input.expectedRevision,
-          changes,
+        const page = await actors(input).listArchivedCompletions({
+          after: Option.getOrNull(input.after),
+          maxRows: PAGE_MAX_ROWS,
         });
 
-        const { activeRevision } = await actors(input).readMech();
-
-        return mechRecord(mech, activeRevision);
+        return { completions: page.items, has_more: page.hasMore, next_cursor: page.nextCursor };
       },
     }),
     listMechRevisions: validatedOperation({
@@ -181,34 +97,12 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
         return { revisions: page.items.map(revisionRecord), has_more: page.hasMore };
       },
     }),
-    cloneMech: validatedOperation({
-      operation: catalog.cloneMech,
-      run: async (context) => {
-        const copyInput = await mechCopyInput(context);
-        const mech = await store.cloneMech(copyInput);
+    listHeldWork: validatedOperation({
+      operation: catalog.listHeldWork,
+      run: async ({ input, caller }) => {
+        await requireMech({ ...input, caller });
 
-        return mechRecord(mech);
-      },
-    }),
-    forkMech: validatedOperation({
-      operation: catalog.forkMech,
-      run: async (context) => {
-        const copyInput = await mechCopyInput(context);
-        const source = actors(copyInput);
-        const exported = await source.exportContext({ requestId: copyInput.requestId });
-
-        const mech = await store.forkMechDefinition({
-          ...copyInput,
-          expectedRevision: exported.definitionRevision,
-          sourceSequence: exported.sourceSequence,
-        });
-
-        await actors({ workspaceId: mech.workspaceId, mechId: mech.id }).importContext({
-          requestId: copyInput.requestId,
-          exported,
-        });
-
-        return mechRecord(mech);
+        return await actors(input).listHeldWork({ after: Option.getOrNull(input.after), maxRows: PAGE_MAX_ROWS });
       },
     }),
     listMechHistory: validatedOperation({
@@ -262,31 +156,6 @@ export function createMechOperations({ store, configuration, actors }: MechOpera
         }
 
         return { ...response, reply_excerpt: excerpt };
-      },
-    }),
-    cancelTurn: validatedOperation({
-      operation: catalog.cancelTurn,
-      run: async ({ input, caller }) => {
-        const authenticated = requireAuthenticated(caller);
-        const run = await requireRun({ ...input, caller });
-
-        if (run.runtimeSource === TurnRuntimeSource.Imported) {
-          throw new TurnEnded({ turnId: input.turnId });
-        }
-
-        if (run.cancelRequestedAt === null && COMPLETED_STATES.has(run.status)) {
-          throw new TurnEnded({ turnId: input.turnId });
-        }
-
-        await actors(input).cancelRun({ turnId: input.turnId, principalId: authenticated.principalId });
-
-        const receipt = await actors(input).readCancellation({ turnId: input.turnId });
-
-        if (receipt === null) {
-          throw new TurnEnded({ turnId: input.turnId });
-        }
-
-        return { turn_id: input.turnId, canceled_at: receipt.canceledAt, canceler_id: receipt.cancelerId };
       },
     }),
     listRecentEvents: validatedOperation({

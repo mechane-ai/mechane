@@ -51,10 +51,9 @@ The shared envelope preserves each suite's grade schema. The reply-suite project
 `uncertain` criterion verdicts without averaging uncertainty. A numeric projection names its scale and shows its
 numerator and graded denominator. No grades means an unavailable mean. Keep raw grades and evidence inspectable.
 
-Subject and judge accounting are separate. Refused requests are known zero; reserved/unknown dispatches and absent
-usage are explicitly unknown. Settled reservation charges can be known while token usage remains unavailable.
-Recorded totals are partial whenever an attempt lacks the required evidence. They are not a claim that unobserved
-provider attempts were free.
+Report subject and judge usage separately. Use the provider's cumulative session usage exactly once. Expose a
+reported list cost with its source and currency. A missing list cost or missing token count stays unknown. A list
+price is an estimate of usage value. Actual billing requires billing evidence.
 
 Regrades and calibration write additional audit records. Comparison checks cases, repeats, tools, fixture/evidence
 semantics, and judge configuration before deriving per-case differences. Explicit subject-component variations are

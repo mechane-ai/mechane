@@ -46,6 +46,12 @@ Pi receives Durable Object storage through its public constructor. Its upstream 
 into product code. Actor application documents use public Harness transactions. Chat platform adapters belong to the
 integration owner and cannot become an alternative agent or authority store.
 
+The session storage owner at `packages/worker/runtime/src/managed/store/session-storage.ts` may erase the tables in an
+individual Pi storage namespace. Compute the namespace from the session ID internally, enumerate whole table names
+under its exact prefix, validate and quote each identifier, and drop them in one transaction after closing that
+session's harness. Expose no caller-supplied SQL, identifiers, prefixes or access to Pi's private record schemas.
+Test repeated erasure and prove that an adjacent live session retains its complete context.
+
 `packages/browser/console-cache/src/store/storage.ts` may forward native persistence SQL and bound values unchanged
 to enforce cache-generation validity and an operation deadline. TanStack owns those statements and transaction order.
 This boundary accepts no application SQL and adds no second queue or Worker protocol.

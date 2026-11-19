@@ -8,21 +8,20 @@ import { listEvents } from './operations/events/list-events.ts';
 import { listRecentEvents } from './operations/events/list-recent-events.ts';
 import { EVIDENCE_OPERATIONS } from './operations/evidence/evidence-operations.ts';
 import { EXECUTION_ACCESS_OPERATIONS } from './operations/execution-access/execution-access-operations.ts';
+import { listHeldWork } from './operations/history/list-held-work.ts';
 import { listMechHistory } from './operations/history/list-mech-history.ts';
 import { MECH_OPERATIONS } from './operations/mechs/mech-operations.ts';
-import { sendNotification } from './operations/notifications/send-notification.ts';
 import { ROUTINE_OPERATIONS } from './operations/routines/routine-operations.ts';
 import { manageSandbox } from './operations/sandboxes/manage-sandbox.ts';
 import { restoreSandbox } from './operations/sandboxes/restore-sandbox.ts';
-import { SELF_OPERATIONS } from './operations/self/self-operations.ts';
+import { SERVICE_PRINCIPAL_OPERATIONS } from './operations/service-principals/service-principal-operations.ts';
 import { STATUS_OPERATIONS } from './operations/status/status-operations.ts';
 import { TURN_OPERATIONS } from './operations/turns/turn-operations.ts';
 import { WORKSPACE_OPERATIONS } from './operations/workspaces/workspace-operations.ts';
 
-/** The operations a deployment serves, keyed by name. */
 type Catalog = Readonly<Record<string, Operation>>;
 
-/** Every operation the server serves, keyed by name; the router and the client both derive from it. */
+/** First-party authentication, workspace administration and native operator routes. */
 export const catalog = {
   ...AUTH_OPERATIONS,
   ...CONNECTION_OPERATIONS,
@@ -33,17 +32,17 @@ export const catalog = {
   listEvents,
   listRecentEvents,
   listConsoleMessages,
-  sendNotification,
   ...ROUTINE_OPERATIONS,
   ...MECH_OPERATIONS,
+  listHeldWork,
   listMechHistory,
   manageSandbox,
   restoreSandbox,
+  ...SERVICE_PRINCIPAL_OPERATIONS,
   ...STATUS_OPERATIONS,
-  ...SELF_OPERATIONS,
   ...TURN_OPERATIONS,
   ...WORKSPACE_OPERATIONS,
 } as const satisfies Catalog;
 
-/** The name of one operation of the catalog, such as `createMech`. */
+/** Names the first-party operation selected by the router and typed client. */
 export type OperationName = keyof typeof catalog;

@@ -2,6 +2,7 @@ import {
   MechNotFound,
   PersonalWorkspaceProtected,
   PrincipalNotFound,
+  RequestInvalid,
   WorkspaceCreationConflict,
   WorkspaceLastOwner,
   WorkspaceMemberNotFound,
@@ -12,7 +13,8 @@ import { PrincipalId, RecordId, WorkspaceId } from '@mechane/records';
 import { Record, Schema } from 'effect';
 import type { Mech } from '../../../domain.ts';
 import type { StoreContext } from '../../context.ts';
-import { recordConfigurationChange } from './audit.ts';
+import { revokePrincipalKeys } from '../auth/workspace-services.ts';
+import { recordConfigurationAudit, recordConfigurationChange } from './audit.ts';
 import { lockWorkspaceAuthority } from './authority.ts';
 import type { MemberRecord, WorkspaceActor, WorkspacePolicy, WorkspaceRecord } from './types.ts';
 
@@ -134,12 +136,23 @@ export function createWorkspaceRecords(context: StoreContext) {
           throw new PersonalWorkspaceProtected({ workspaceId: WorkspaceId.make(input.workspaceId) });
         }
 
-        const principal = await transaction.client.query('SELECT id FROM mechane.principals WHERE id = $1', [
-          input.memberPrincipalId,
-        ]);
+        const principal = await transaction.client.query<{ readonly service_workspace_id: string | null }>(
+          `SELECT service.workspace_id AS service_workspace_id FROM mechane.principals principal
+           LEFT JOIN mechane.workspace_service_principals service ON service.principal_id=principal.id WHERE principal.id=$1`,
+          [input.memberPrincipalId],
+        );
 
-        if (principal.rows.length === 0) {
+        const target = principal.rows[0];
+
+        if (target === undefined) {
           throw new PrincipalNotFound({ principalId: PrincipalId.make(input.memberPrincipalId) });
+        }
+
+        if (
+          target.service_workspace_id !== null &&
+          (target.service_workspace_id !== input.workspaceId || input.role === 'owner')
+        ) {
+          throw new RequestInvalid({ reason: 'A service principal can only be a member of its issuing workspace' });
         }
 
         const current = await transaction.client.query<{ readonly role: 'owner' | 'member' }>(
@@ -163,6 +176,10 @@ export function createWorkspaceRecords(context: StoreContext) {
         }
 
         if (input.role === null) {
+          if (target.service_workspace_id !== null) {
+            await revokePrincipalKeys(transaction, input.memberPrincipalId);
+          }
+
           await transaction.client.query(
             'DELETE FROM mechane.memberships WHERE workspace_id = $1 AND principal_id = $2',
             [input.workspaceId, input.memberPrincipalId],
@@ -258,7 +275,7 @@ export function createWorkspaceRecords(context: StoreContext) {
           'UPDATE mechane.workspaces SET policy = $2,daily_cap_micros = $3 WHERE id = $1',
           [input.workspaceId, input.policy, input.policy.dailyAllowanceMicros],
         );
-        await recordConfigurationChange({
+        await recordConfigurationAudit({
           context: transaction,
           ...input,
           action: 'workspace.policy-changed',

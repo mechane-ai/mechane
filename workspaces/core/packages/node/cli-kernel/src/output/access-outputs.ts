@@ -1,4 +1,11 @@
-import { KeyList, KeyMetadata, Principal, Workspace } from '@mechane/protocol';
+import {
+  KeyList,
+  KeyMetadata,
+  Principal,
+  RevokedWorkspaceServiceKey,
+  Workspace,
+  WorkspaceServicePrincipal,
+} from '@mechane/protocol';
 import { wireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { CredentialSource } from '../constants.ts';
@@ -43,4 +50,7 @@ export const ACCESS_OUTPUTS = {
   'key create': KeyCreateResult,
   'key list': KeyList,
   'key revoke': KeyMetadata,
+  'service-principal show': WorkspaceServicePrincipal,
+  'service-principal rotate': WorkspaceServicePrincipal,
+  'service-principal revoke': RevokedWorkspaceServiceKey,
 } as const;

@@ -1,8 +1,9 @@
 # Distribution licenses
 
 These files preserve notices shipped with Mechane artifacts. `apache-2.0.js` contains the Mechane notice and Apache-2.0
-text. `effect.js` and `semver.js` copy their installed packages' MIT notices. The CLI embeds this directory. The guest
-and its installed CLI include the Mechane, Effect, and reachable semver notices.
+text. `effect.js` and `semver.js` retain their installed packages' notices. The CLI embeds this directory. The guest and
+its installed CLI each carry notices from their own bundle's dependency graph, including the Anthropic SDK and its
+vendored query serializer.
 
 ## Worker and browser artifacts
 

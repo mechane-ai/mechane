@@ -11,6 +11,8 @@
     "@mechane/sandbox": "workspace:*",
     "@mechane/sandbox-wire": "workspace:*",
     "@mechane/utilities": "workspace:*",
-    "effect": "4.0.7"
+    "effect": "4.0.7",
+    "jose": "6.2.17",
+    "zod": "4.5.4"
   }
 }

@@ -1,12 +1,22 @@
 import { EVIDENCE_PAGE_ARTIFACTS, EvidenceArtifact, EvidenceSha256 } from '@mechane/protocol';
 import type { EvidencePage, EvidenceQuery } from '@mechane/protocol';
-import { Bytes } from '@mechane/records';
+import { Bytes, EvidenceArtifactId } from '@mechane/records';
+import { BrowserOperation, InstalledActionOrigin } from '@mechane/sandbox-wire';
 import { decodeFirst, decodeOne, decodeRows } from '@mechane/store';
 import type { RecordsInput } from '@mechane/store';
 import { Option, Schema } from 'effect';
 
 const ArtifactJson = Schema.fromJsonString(EvidenceArtifact);
 const ArtifactRow = Schema.Struct({ record: ArtifactJson });
+
+const OriginRow = Schema.Struct({
+  artifactId: EvidenceArtifactId,
+  origin: Schema.fromJsonString(InstalledActionOrigin),
+});
+
+const ArtifactIds = Schema.Array(EvidenceArtifactId);
+const ArtifactIdsJson = Schema.fromJsonString(ArtifactIds);
+type OriginsInput = { readonly artifactIds: typeof ArtifactIds.Type };
 const UsageRow = Schema.Struct({ artifactCount: Schema.Int, sizeBytes: Bytes });
 
 /** The receipt fixes a chunk's position, length, and digest before its retryable R2 write. */
@@ -86,6 +96,30 @@ export function evidenceRecords({ sql }: RecordsInput) {
     };
   }
 
+  /** Join through the allocating screenshot or recording start. Later steps may belong to different work. */
+  function captureOrigins({
+    artifactIds,
+  }: OriginsInput): ReadonlyMap<EvidenceArtifactId, typeof InstalledActionOrigin.Type> {
+    const ids = Schema.encodeSync(ArtifactIdsJson)(artifactIds);
+
+    const cursor = sql.exec(
+      `SELECT a.id AS artifactId, json_extract(b.record, '$.origin') AS origin
+       FROM evidence_artifacts a JOIN browser_calls b ON b.id = a.id AND b.id = a.execution_id
+       AND b.run_id = a.run_id AND json_extract(b.record,'$.sessionId') = a.session_id
+       AND json_extract(b.record,'$.toolCallId') = a.tool_call_id
+       WHERE a.id IN (SELECT value FROM json_each(?)) AND json_type(b.record, '$.origin') = 'object'
+       AND json_extract(b.record,'$.request.action._tag') IN (?, ?)`,
+      ids,
+      BrowserOperation.Screenshot,
+      BrowserOperation.RecordStart,
+    );
+
+    const rows = decodeRows({ cursor, schema: OriginRow });
+    const origins = rows.map((row) => [row.artifactId, row.origin] as const);
+
+    return new Map(origins);
+  }
+
   function evidenceUsage(): typeof UsageRow.Type {
     const cursor = sql.exec(
       'SELECT COUNT(*) AS artifactCount, COALESCE(SUM(size_bytes), 0) AS sizeBytes FROM evidence_artifacts',
@@ -116,6 +150,7 @@ export function evidenceRecords({ sql }: RecordsInput) {
 
   return {
     evidenceArtifact,
+    captureOrigins,
     evidenceForCall,
     insertEvidenceArtifact,
     saveEvidenceArtifact,

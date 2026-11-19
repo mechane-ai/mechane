@@ -7,14 +7,13 @@ paths: ["packages/node/eval/**", "packages/node/smoke/src/evals/**"]
 ## Rules
 
 Keep fixture behavior, evidence selection, grade validation, and label agreement in the application adapter.
-The runner owns authenticated hosting, execution, durable records, recovery, and generic report accounting.
+The runner owns the authenticated session, custom tool delivery, durable records, recovery, and report accounting.
 Accept those application decisions through the public `EvalSuite` and reporting callbacks. Do not import a consumer's
 source or require its case names, environment variables, filesystem layout, or numeric score scale.
 
-Validate the selected runtime origin before requesting readiness or binding an authenticated client. Local targets
-use loopback origins; hosted targets use HTTPS. Reject embedded credentials, paths, queries, and fragments.
-Application configuration chooses the workspace and transport explicitly. Never infer permission for hosted work from
-failed local setup.
+Validate the selected runtime origin before binding the Managed Agents client. Local targets use loopback origins.
+Hosted targets use HTTPS. Reject embedded credentials, paths, queries, and fragments. Application configuration
+chooses the workspace explicitly. Keep failed local setup local.
 
 Fingerprint explicitly selected sources by their relative names and file contents. Reject empty selections, unmatched
 patterns, and non-file entries. Preserve order independence and exclude dependency-installation directories.
@@ -30,8 +29,8 @@ evidence must not enter its new content digest. Reusing a saved bundle for calib
 
 ## Checks
 
-The existing `gradesObservedToolEvidence` smoke exercises the public target factory, MCP execution, saved calibration
-inspection, disagreement, and missing-grade accounting. Its invalid local target must fail before any network request.
+The existing `gradesObservedToolEvidence` smoke exercises the public target factory, custom tool execution, saved
+calibration inspection, disagreement, and missing-grade accounting. Its invalid local target must fail before any network request.
 
 Review source patterns beside the adapter's imports. Does every result-affecting callback have a fingerprinted owner?
 Can a CLI-only edit invalidate the fixture? Can a changed label on disk alter a saved calibration result?

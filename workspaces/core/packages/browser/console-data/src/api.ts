@@ -9,9 +9,15 @@ import {
 import { ConsoleStorageFailed } from '@mechane/console-cache';
 import { catalog, ErrorFamily } from '@mechane/protocol';
 import type { OperationInput, OperationOutput } from '@mechane/protocol';
-import { HttpMethod } from '@mechane/records';
+import { HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Effect, Option, Result, Schema } from 'effect';
 import type { Duration } from 'effect';
+import {
+  isManagedResourceDenied,
+  ManagedResourceMismatch,
+  ManagedSessionUnavailable,
+  managedStatus,
+} from './managed-errors.ts';
 import {
   isTransientReadFailure,
   ReadResponseFailed,
@@ -24,18 +30,13 @@ import {
 export type ConsoleOperation =
   | 'showPrincipal'
   | 'listWorkspaces'
+  | 'listConsoleMessages'
   | 'listMechs'
   | 'showMech'
-  | 'createMech'
-  | 'updateMech'
-  | 'sendNotification'
-  | 'listConsoleMessages'
   | 'listTurns'
   | 'showTurn'
   | 'listTurnEvents'
-  | 'cancelTurn'
   | 'listRecentEvents'
-  | 'listMechRevisions'
   | 'listEvidence'
   | 'showEvidence'
   | 'showEnvironment'
@@ -53,12 +54,6 @@ export type ConsoleApi = <N extends ConsoleOperation>(
   input: Input<N>,
   signal?: AbortSignal,
 ) => Promise<Output<N>>;
-
-const REMOVED_ACCESS: ReadonlySet<ErrorFamily> = new Set([
-  ErrorFamily.Unauthenticated,
-  ErrorFamily.Forbidden,
-  ErrorFamily.NotFound,
-]);
 
 const SCOPE_FAILURE_FAMILIES: ReadonlySet<ErrorFamily> = new Set([ErrorFamily.Unauthenticated, ErrorFamily.Forbidden]);
 
@@ -122,6 +117,22 @@ export const isStorageFailure = Schema.is(ConsoleStorageFailed);
 
 /** A safe user-facing explanation that does not expose transport details. */
 export function problemMessage(error: unknown): string {
+  if (
+    Schema.is(ManagedResourceMismatch)(error) ||
+    Schema.is(ManagedSessionUnavailable)(error) ||
+    managedStatus(error) === HttpStatusCode.NotFound
+  ) {
+    return 'This resource is unavailable in the selected agent or session.';
+  }
+
+  if (managedStatus(error) === HttpStatusCode.Forbidden) {
+    return 'Your account cannot open this resource.';
+  }
+
+  if (managedStatus(error) === HttpStatusCode.Conflict) {
+    return 'The session changed. Refresh its latest state before trying again.';
+  }
+
   if (error instanceof OriginUnreachable) {
     return 'Could not reach this Mechane installation. Check the connection and try again.';
   }
@@ -157,18 +168,6 @@ export function problemMessage(error: unknown): string {
   return 'Could not load this data. Try again.';
 }
 
-export function definitionSaveProblem(error: unknown): 'conflict' | 'unconfirmed' | undefined {
-  if (error instanceof OperationFailed && error.failure._tag === 'MechRevisionConflict') {
-    return 'conflict';
-  }
-
-  if (isTransientReadFailure(error) || error instanceof RequestTimedOut || error instanceof ResponseUnreadable) {
-    return 'unconfirmed';
-  }
-
-  return undefined;
-}
-
 /** Whether loading a session failed because its credential is no longer valid. */
 export function isSignedOut(error: unknown): boolean {
   return error instanceof OperationFailed && error.family === ErrorFamily.Unauthenticated;
@@ -176,11 +175,23 @@ export function isSignedOut(error: unknown): boolean {
 
 /** Transient failures may retain a snapshot; authorization or removal failures must hide it. */
 export function canRetainResult(error: unknown): boolean {
-  return !(error instanceof OperationFailed && REMOVED_ACCESS.has(error.family));
+  return readFailureScope(error) === undefined;
 }
 
 /** The smallest confirmed removal boundary; undefined leaves admitted content available. */
 export function readFailureScope(error: unknown): 'scope' | 'mech' | 'turn' | 'artifact' | 'request' | undefined {
+  if (
+    Schema.is(ManagedResourceMismatch)(error) ||
+    Schema.is(ManagedSessionUnavailable)(error) ||
+    isManagedResourceDenied(error)
+  ) {
+    return 'request';
+  }
+
+  if (managedStatus(error) === HttpStatusCode.Unauthorized) {
+    return 'scope';
+  }
+
   if (!(error instanceof OperationFailed)) {
     return undefined;
   }

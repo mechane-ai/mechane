@@ -12,6 +12,7 @@ type SandboxJsonRequest = {
   /** Null leaves observations free of commands and credentials. */
   readonly body: string | null;
   readonly maximumBytes: number;
+  readonly expectedStatus?: number;
   readonly signal?: AbortSignal | undefined;
 };
 
@@ -29,6 +30,12 @@ export async function requestSandboxJson(input: SandboxJsonRequest): Promise<unk
   });
 
   await rejectRedirect(response);
+
+  if (input.expectedStatus !== undefined && response.status !== input.expectedStatus) {
+    await response.body?.cancel();
+
+    throw new Error(`The sandbox returned HTTP ${String(response.status)}`);
+  }
 
   return await readBoundedJson(response, input.maximumBytes);
 }

@@ -6,19 +6,22 @@ import type { RuntimeConfiguration } from '../config.ts';
 import { readSandboxProcess, stopSandboxProcess } from '../tools/processes/client.ts';
 import { restoreSandboxWorkspace } from '../tools/restore-sandbox.ts';
 import { manageSandboxWorkspace } from '../tools/sandbox-maintenance.ts';
-import { requireWorkspaceMember } from './auth/admission.ts';
 import { requireSandboxEnabled } from './require-sandbox-enabled.ts';
 import type { AuthCaller } from './types.ts';
-import { validatedOperation } from './validated-operation.ts';
+import { requireAuthenticated, validatedOperation } from './validated-operation.ts';
 
 type EnvironmentOperationsInput = { readonly store: ControlStore; readonly configuration: RuntimeConfiguration };
 type EnvironmentAdmission = { readonly workspaceId: string; readonly mechId: string; readonly caller: AuthCaller };
 
-/** The public Console observes existing handles only after current workspace membership and mech admission. */
+/** Native environment observation and repair require the current workspace owner. */
 export function createEnvironmentOperations({ store, configuration }: EnvironmentOperationsInput) {
   async function requireEnvironment({ workspaceId, mechId, caller }: EnvironmentAdmission): Promise<void> {
-    await requireWorkspaceMember({ store, caller, workspaceId });
-    await store.getMech({ workspaceId, mechId });
+    await store.authorizeConfigurationWorkspace({
+      workspaceId,
+      mechId,
+      principalId: requireAuthenticated(caller).principalId,
+      isOwnerRequired: true,
+    });
   }
 
   return {

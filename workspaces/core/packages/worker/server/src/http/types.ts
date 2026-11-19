@@ -16,12 +16,11 @@ export type PublicRequestLimiter = (name: OperationName, peerAddress?: string | 
 export type MembershipAuthorizer = (input: {
   readonly caller: AuthCaller;
   readonly workspaceId: string;
-}) => Promise<unknown>;
+}) => Promise<'member' | 'owner'>;
 
 export type ProtocolHandlerOptions = {
   readonly execute: ProtocolExecutor;
   readonly authenticate: RequestAuthenticator;
-  readonly authenticateSelf: RequestAuthenticator;
   readonly authorizeMembership: MembershipAuthorizer;
   readonly limitPublicRequest: PublicRequestLimiter;
 };

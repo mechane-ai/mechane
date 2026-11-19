@@ -1,3 +1,4 @@
+import { canForwardManagedWorkerRequest } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import { Record } from 'effect';
 import { randomUUID } from 'node:crypto';
@@ -26,6 +27,7 @@ export type GuestGateway = {
 const PRIVATE_HEADERS: ReadonlySet<string> = new Set([HttpHeader.Host, HttpHeader.ProxyAuthorization, 'connection']);
 const FIXTURE_PATH_PREFIX = '/__mechane_fixtures/';
 const BODYLESS_METHODS: ReadonlySet<string> = new Set([HttpMethod.Get, HttpMethod.Head]);
+const WORKER_METHODS: ReadonlySet<string> = new Set([HttpMethod.Get, HttpMethod.Post, HttpMethod.Delete]);
 
 export async function startGuestGateway({ target, tls }: GatewayInput): Promise<GuestGateway> {
   const key = await readFile(tls.key);
@@ -46,18 +48,18 @@ export async function startGuestGateway({ target, tls }: GatewayInput): Promise<
     const fixture = fixtures.get(path);
 
     if (fixture !== undefined) {
-      void handleFixtureRequest(incoming, outgoing, fixture);
+      void handleFixtureRequest({ incoming, outgoing, answer: fixture });
 
       return;
     }
 
     for (const [prefix, answer] of services) {
       if (path.startsWith(prefix)) {
-        void handleFixtureRequest(
+        void handleFixtureRequest({
           incoming,
           outgoing,
-          async (received) => await answerFixtureService({ received, prefix, answer }),
-        );
+          answer: async (received) => await answerFixtureService({ received, prefix, answer }),
+        });
 
         return;
       }
@@ -65,6 +67,16 @@ export async function startGuestGateway({ target, tls }: GatewayInput): Promise<
 
     if (path.startsWith(FIXTURE_PATH_PREFIX)) {
       outgoing.writeHead(HttpStatusCode.NotFound);
+      outgoing.end();
+
+      return;
+    }
+
+    if (
+      !WORKER_METHODS.has(incoming.method ?? '') ||
+      !canForwardManagedWorkerRequest({ request: workerRequest(incoming, target) })
+    ) {
+      outgoing.writeHead(HttpStatusCode.Forbidden);
       outgoing.end();
 
       return;
@@ -148,11 +160,35 @@ function fixtureServicePath({ pathname, prefix }: FixtureServicePathInput): stri
 }
 
 function requestPath(incoming: IncomingMessage, target: URL): string | undefined {
+  if (incoming.url === undefined || !incoming.url.startsWith('/') || incoming.url.startsWith('//')) {
+    return undefined;
+  }
+
   try {
-    return new URL(incoming.url ?? '/', target).pathname;
+    const destination = new URL(incoming.url, target);
+
+    if (destination.origin === target.origin) {
+      return destination.pathname;
+    }
+
+    return undefined;
   } catch {
     return undefined;
   }
+}
+
+function workerRequest(incoming: IncomingMessage, target: URL): Request {
+  const headers = new Headers();
+
+  for (const [key, value] of Record.toEntries(incoming.headers)) {
+    if (typeof value === 'string') {
+      headers.set(key, value);
+    } else if (value !== undefined) {
+      headers.set(key, value.join(', '));
+    }
+  }
+
+  return new Request(new URL(incoming.url ?? '/', target), { method: incoming.method ?? HttpMethod.Get, headers });
 }
 
 function gatewayListenHost(): string {

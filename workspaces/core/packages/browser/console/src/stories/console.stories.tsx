@@ -1,9 +1,5 @@
-import { AgentAvatar, Button, Heading, IconButton, Muted, Row, Stack, TextButton } from '@mechane-ai/elements';
-import type { AgentAppearance } from '@mechane-ai/elements';
-import { MessageAction, PromptInput } from '@mechane-ai/elements/ai';
-import { CollectionToolbar } from '@mechane-ai/elements/collections';
+import { AgentAvatar, Button, TextButton } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
-import { Field, Input } from '@mechane-ai/elements/forms';
 import {
   DetailPage,
   Navigation,
@@ -15,52 +11,43 @@ import {
   WorkbenchFooter,
   WorkbenchScroll,
 } from '@mechane-ai/elements/layout';
-import { PageNavigation } from '@mechane-ai/elements/navigation';
 import type { TraceTab } from '@mechane/console-views';
 import {
   Activity,
+  ArchivedConversation,
   ConsoleShell,
-  EnvironmentProcesses,
-  isImportedTurn,
-  MechConversation,
-  MechHeader,
-  MechList,
+  ConversationPlaceholder,
+  ManagedAgentList,
+  ManagedListPlaceholder,
+  ManagedSessionList,
   MechPagePlaceholder,
-  MechSettings,
-  MechsPagePlaceholder,
-  DefinitionConflict as SavedDefinition,
+  SessionComposer,
+  SessionStatus,
+  SessionTranscript,
   TurnList,
   TurnTrace,
 } from '@mechane/console-views';
 import {
-  Allowance,
   ConsoleMessagePage,
   EventPage,
-  Mech,
-  MechPage,
-  MechSummary,
   REPLY_EXCERPT_MAX_CHARS,
   Trace,
   TurnPage,
   TurnRuntimeSource,
   WorkspaceList,
 } from '@mechane/protocol';
-import type { ConsoleView } from '@mechane/protocol';
-import { Micros } from '@mechane/records';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Option, Schema } from 'effect';
-import { ArrowLeft, Bot, ListTree, Plus, RefreshCw, Settings } from 'lucide-react';
+import { Schema } from 'effect';
+import { ArrowLeft, Bot, Settings } from 'lucide-react';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ComponentProps, ReactNode } from 'react';
 import { ResourceView } from '../resource.tsx';
-
-const activeRunStatuses: ReadonlySet<string> = new Set(['queued', 'running']);
 
 const meta = {
   title: 'Screens/Console',
   tags: ['!supported'],
   component: ConsoleShell,
-  subcomponents: { Activity, MechConversation, MechHeader, MechList, DefinitionConflict: SavedDefinition, TurnTrace },
+  subcomponents: { ManagedAgentList, ManagedSessionList, SessionTranscript, SessionComposer, Activity, TurnTrace },
   parameters: {
     layout: 'fullscreen',
     docs: {
@@ -96,68 +83,15 @@ const workspaceList = Schema.decodeUnknownSync(WorkspaceList)({
   ],
 });
 
-const allowance = Schema.decodeUnknownSync(Allowance)({
-  day: '2026-11-02',
-  daily_allowance_micros: 10_000_000,
-  committed_micros: 650_000,
-});
+const scout = { id: 'agent_repository_scout', name: 'Repository scout', model: 'claude-sonnet-4-6', version: 1 };
 
-const mechPage = Schema.decodeUnknownSync(MechPage)({
-  mechs: [
-    {
-      id: 'dc656ff2-2844-4ada-b87c-1dc9ac64914e',
-      name: 'Repository scout',
-      model: 'openai/gpt-5-mini',
-      revision: 1,
-      status: 'active',
-      creator_id: 'd9a81e36-fd09-4d26-9f8e-3d27a28740ab',
-      created_at: '2026-11-02T12:00:00Z',
-      forked_from: null,
-    },
-    {
-      id: '14290322-7450-4f99-9b42-5b5b56b9a993',
-      name: 'Daily briefing',
-      model: 'openai/gpt-5-mini',
-      revision: 3,
-      status: 'paused',
-      creator_id: 'd9a81e36-fd09-4d26-9f8e-3d27a28740ab',
-      created_at: '2026-10-30T09:00:00Z',
-      forked_from: null,
-    },
-    {
-      id: 'f1f7d720-83a6-47e4-8417-fb763b3b82d5',
-      name: 'Release watcher',
-      model: 'openai/gpt-5-mini',
-      revision: 2,
-      status: 'active',
-      creator_id: 'd9a81e36-fd09-4d26-9f8e-3d27a28740ab',
-      created_at: '2026-10-28T16:30:00Z',
-      forked_from: null,
-    },
-  ],
-  has_more: false,
-});
+const agents = [
+  scout,
+  { id: 'agent_daily_brief', name: 'Daily briefing', model: 'claude-sonnet-4-6', version: 3 },
+  { id: 'agent_release', name: 'Release watcher', model: 'claude-sonnet-4-6', version: 2 },
+];
 
-const sampleMech = mechPage.mechs.find((mech) => mech.name === 'Repository scout');
-
-if (sampleMech === undefined) {
-  throw new Error('Story requires Repository scout');
-}
-
-const scout = sampleMech;
-const encodedScout = Schema.encodeSync(MechSummary)(scout);
-
-const scoutDefinition = Schema.decodeUnknownSync(Mech)({
-  ...encodedScout,
-  instructions:
-    'Inspect the repository before each release. Report the checks that ran and preserve the running installation.',
-  daily_cap_micros: 5_000_000,
-  active_revision: scout.revision,
-  updated_at: encodedScout.created_at,
-  updater_id: encodedScout.creator_id,
-});
-
-const emptyPage = Schema.decodeUnknownSync(MechPage)({ mechs: [], has_more: false });
+const nativeMechId = 'dc656ff2-2844-4ada-b87c-1dc9ac64914e';
 const turnId = '52d0e964-811d-44f4-a96e-d38ca5df748b';
 const notificationId = '08c361a4-a15b-487b-b917-1c588b48be12';
 
@@ -302,8 +236,8 @@ function StoryShell({
       homeLink={
         <Navigation>
           <NavigationSection label="Overview">
-            <NavigationLink href="#mechs" icon={<Bot size={16} />} isSelected>
-              Mechs
+            <NavigationLink href="#agents" icon={<Bot size={16} />} isSelected>
+              Agents
             </NavigationLink>
           </NavigationSection>
           <NavigationSection label="Pinned">
@@ -312,7 +246,7 @@ function StoryShell({
             </NavigationLink>
           </NavigationSection>
           <NavigationSection label="Recent">
-            {mechPage.mechs.slice(1).map((mech) => (
+            {agents.slice(1).map((mech) => (
               <NavigationLink key={mech.id} href={`#${mech.id}`} icon={<AgentAvatar seed={mech.id} />}>
                 {mech.name}
               </NavigationLink>
@@ -331,48 +265,15 @@ function StoryShell({
   );
 }
 
-function MechsToolbar(): ReactNode {
-  return (
-    <PageToolbar
-      title="Mechs"
-      actions={
-        <>
-          <IconButton variant="ghost" aria-label="Refresh mechs" onClick={() => undefined}>
-            <RefreshCw size={16} aria-hidden />
-          </IconButton>
-          <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => undefined}>
-            Create mech
-          </ToolbarAction>
-        </>
-      }
-    />
-  );
-}
-
-function MechsStory({ page }: { readonly page: MechPage }): ReactNode {
-  const [pinned, setPinned] = useState<ReadonlySet<string>>(new Set([scout.id]));
-
+function DirectoryStory({ isEmpty = false }: { readonly isEmpty?: boolean }): ReactNode {
   return (
     <StoryShell>
-      <MechsToolbar />
-      <MechList
-        hasPrevious={false}
-        page={page}
-        allowance={allowance}
-        pinnedIds={pinned}
-        onTogglePin={(mech) =>
-          setPinned((previous) =>
-            previous.has(mech.id)
-              ? new Set([...previous].filter((id) => id !== mech.id))
-              : new Set([...previous, mech.id]),
-          )
-        }
-        mechHref={(mech) => `?mech=${mech.id}`}
-        onOpen={() => undefined}
-        onCreate={() => undefined}
-        onPrevious={() => undefined}
-        onNext={() => undefined}
-      />
+      <PageToolbar title="Agents" />
+      <Workbench>
+        <WorkbenchScroll isFlush label="Agents">
+          <ManagedAgentList agents={isEmpty ? [] : agents} href={(id) => `#${id}`} onOpen={() => undefined} />
+        </WorkbenchScroll>
+      </Workbench>
     </StoryShell>
   );
 }
@@ -403,12 +304,6 @@ function TraceStory({
             Back
           </ToolbarAction>
         }
-        actions={
-          !isImportedTurn(trace.turn) &&
-          activeRunStatuses.has(trace.turn.status) && (
-            <ToolbarAction onClick={() => undefined}>Cancel run</ToolbarAction>
-          )
-        }
       />
       {notice}
       <Workbench>
@@ -423,7 +318,7 @@ function TraceStory({
               setTab('Requests');
             }}
             requestHref={(id) =>
-              `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${scout.id}&turn=${trace.turn.id}&view=requests&request=${id}`
+              `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${nativeMechId}&turn=${trace.turn.id}&view=requests&request=${id}`
             }
             replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full message →</TextButton>}
             events={<Activity label="Run events" hasInset={false} page={events} />}
@@ -434,7 +329,7 @@ function TraceStory({
   );
 }
 
-export const Mechs: Story = { render: () => <MechsStory page={mechPage} /> };
+export const Agents: Story = { render: () => <DirectoryStory /> };
 
 export const CompletedTurn: Story = { render: () => <TraceStory trace={completedTrace} /> };
 
@@ -457,7 +352,7 @@ export const UnavailableReply: Story = {
   ),
 };
 
-export const Empty: Story = { render: () => <MechsStory page={emptyPage} /> };
+export const Empty: Story = { render: () => <DirectoryStory isEmpty /> };
 
 export const FailedRefresh: Story = {
   render: () => (
@@ -472,59 +367,24 @@ export const FailedRefresh: Story = {
   ),
 };
 
-export const DefinitionConflict: Story = {
-  render: () => (
-    <StoryShell>
-      <PageToolbar showBreadcrumb title="Repository scout / Edit definition" />
-      <DetailPage>
-        <Stack>
-          <Heading>Edit Repository scout</Heading>
-          <Muted>Editing revision 1.</Muted>
-          <SavedDefinition
-            saved={{
-              ...scout,
-              revision: 2,
-              dailyCapMicros: Micros.make(5_000_000),
-              instructions: Option.some('Inspect the workspace before each release.'),
-            }}
-            onContinue={() => undefined}
-            onRefresh={() => undefined}
-          />
-          <Field.Root name="name">
-            <Field.Label>Name</Field.Label>
-            <Input value="Repository scout" readOnly />
-          </Field.Root>
-
-          <Row>
-            <Button variant="solid" disabled>
-              Save definition
-            </Button>
-            <Button>Cancel</Button>
-          </Row>
-        </Stack>
-      </DetailPage>
-    </StoryShell>
-  ),
-};
-
 export const Loading: Story = {
   render: () => (
     <StoryShell>
-      <ResourceView state={{ kind: 'pending' }} label="Loading mechs" placeholder={<MechsPagePlaceholder />}>
+      <ResourceView
+        state={{ kind: 'pending' }}
+        label="Loading agents"
+        placeholder={<ManagedListPlaceholder kind="agents" />}
+      >
         {() => null}
       </ResourceView>
     </StoryShell>
   ),
 };
 
-export const ConversationLoading: Story = {
+export const RunListLoading: Story = {
   render: () => (
     <StoryShell>
-      <ResourceView
-        state={{ kind: 'pending' }}
-        label="Loading conversation"
-        placeholder={<MechPagePlaceholder view="conversation" />}
-      >
+      <ResourceView state={{ kind: 'pending' }} label="Loading runs" placeholder={<MechPagePlaceholder view="runs" />}>
         {() => null}
       </ResourceView>
     </StoryShell>
@@ -537,7 +397,7 @@ export const RunLoading: Story = {
       <ResourceView
         state={{ kind: 'pending' }}
         label="Loading run"
-        placeholder={<MechPagePlaceholder view="conversation" hasFocusedRun />}
+        placeholder={<MechPagePlaceholder view="runs" hasFocusedRun />}
       >
         {() => null}
       </ResourceView>
@@ -775,164 +635,193 @@ const longRunPage = Schema.decodeUnknownSync(TurnPage)({
   })),
 });
 
-const collectionViews: ReadonlySet<ConsoleView> = new Set(['runs', 'activity']);
+export const LongTitlesAndRuns: Story = {
+  render: () => (
+    <StoryShell>
+      <PageToolbar title={scout.name} />
+      <Workbench>
+        <WorkbenchScroll isFlush label="Runs">
+          <TurnList
+            page={longRunPage}
+            turnHref={(id) => `?mech=${nativeMechId}&turn=${id}`}
+            onOpen={() => undefined}
+            emptyDescription="No runs were recorded for this mech."
+          />
+        </WorkbenchScroll>
+      </Workbench>
+    </StoryShell>
+  ),
+};
 
-function WorkspaceStory({
-  initialView = 'conversation',
-  hasLongName = false,
-}: {
-  readonly initialView?: ConsoleView;
-  readonly hasLongName?: boolean;
-}): ReactNode {
-  const [view, setView] = useState<ConsoleView>(initialView);
-  const [hasFocusedRun, setFocusedRun] = useState(false);
-  const [isPinned, setPinned] = useState(true);
-  const [draft, setDraft] = useState('Verify the release and preserve the running installation.');
-  const [appearance, setAppearance] = useState<AgentAppearance>();
+const releaseReview = {
+  id: 'ses_release_review',
+  title: 'Review the release candidate',
+  status: 'idle',
+  updatedAt: '2026-11-02T12:00:04Z',
+};
 
-  const mech = {
-    ...scoutDefinition,
-    name: hasLongName ? 'Repository scout for infrastructure, releases, and deployment verification' : scout.name,
-  };
+const dependencyUpdate = {
+  id: 'ses_dependency_update',
+  title: 'Update the test runner',
+  status: 'running',
+  updatedAt: '2026-11-02T12:02:00Z',
+};
 
-  if (hasFocusedRun) {
-    return <TraceStory trace={completedTrace} onBack={() => setFocusedRun(false)} />;
-  }
+const eventFields = { threadId: null, toolName: null, permission: null, stopReason: null };
+type SessionEvents = ComponentProps<typeof SessionTranscript>['events'];
+
+const reviewEvents: SessionEvents = [
+  {
+    ...eventFields,
+    id: 'sevt_user_review',
+    type: 'user.message',
+    processedAt: '2026-11-02T11:59:59Z',
+    text: 'Review the release candidate and summarize the checks.',
+  },
+  {
+    ...eventFields,
+    id: 'sevt_run_checks',
+    type: 'agent.tool_use',
+    toolName: 'bash',
+    processedAt: '2026-11-02T12:00:00Z',
+    text: 'Run the release checks',
+  },
+  {
+    ...eventFields,
+    id: 'sevt_checks_complete',
+    type: 'agent.tool_result',
+    processedAt: '2026-11-02T12:00:02Z',
+    text: '',
+  },
+  {
+    ...eventFields,
+    id: 'sevt_review_reply',
+    type: 'agent.message',
+    processedAt: '2026-11-02T12:00:04Z',
+    text: 'The Console, protocol, and Worker checks passed. Run `mise run check:fast` to repeat them.',
+  },
+];
+
+function SessionStory(): ReactNode {
+  const [draft, setDraft] = useState('');
+  const [events, setEvents] = useState(reviewEvents);
 
   return (
     <StoryShell>
-      <MechHeader
-        mech={mech}
-        appearance={appearance}
-        view={view}
-        isPinned={isPinned}
-        isBusy={false}
-        viewHref={(next) => `?mech=${mech.id}&view=${next}`}
-        onView={setView}
-        onPin={() => setPinned(!isPinned)}
-        onStatus={() => undefined}
-      />
+      <PageToolbar title={releaseReview.title} actions={<SessionStatus status={releaseReview.status} />} />
       <Workbench>
-        {view === 'conversation' ? (
-          <>
-            <MechConversation
-              messages={
-                Schema.decodeUnknownSync(ConsoleMessagePage)({
-                  messages: [
-                    {
-                      id: notificationId,
-                      mech_id: mech.id,
-                      run_id: null,
-                      role: 'user',
-                      text: 'Review the release candidate and summarize the checks with a command to repeat them.',
-                      presentation: null,
-                      created_at: '2026-11-02T11:59:59Z',
-                      sequence: 1,
-                    },
-                    {
-                      id: '2b8ac90c-8954-4796-afb7-1c0e358c3d0a',
-                      mech_id: mech.id,
-                      run_id: completedTrace.turn.id,
-                      role: 'assistant',
-                      text: recordedReply,
-                      presentation: null,
-                      created_at: '2026-11-02T12:00:04Z',
-                      sequence: 2,
-                    },
-                  ],
-                  has_more: false,
-                  before_sequence: 1,
-                }).messages
+        <SessionTranscript events={events} agentName={scout.name} reader={{ id: 'story-release-review' }} />
+        <WorkbenchFooter>
+          <SessionComposer
+            value={draft}
+            onChange={setDraft}
+            isPending={false}
+            onSend={() => {
+              if (draft.trim() === '') {
+                return;
               }
-              scrollRestorationId="example-conversation"
-              name={mech.name}
-              avatar={<AgentAvatar seed={mech.id} size="xs" />}
-              controls={null}
-              inspect={() => (
-                <MessageAction label="Inspect run" onClick={() => setFocusedRun(true)}>
-                  <ListTree size={16} aria-hidden />
-                </MessageAction>
-              )}
-            />
-            <WorkbenchFooter>
-              <PromptInput
-                label={`Message ${mech.name}`}
-                value={draft}
-                onValueChange={setDraft}
-                onSubmit={(event) => event.preventDefault()}
-                enterBehavior="submit"
-                isCompact
-              />
-            </WorkbenchFooter>
-          </>
-        ) : (
-          <WorkbenchScroll
-            label={
-              view === 'activity'
-                ? 'History'
-                : view === 'runs'
-                  ? 'Runs'
-                  : view === 'definition'
-                    ? 'Mech settings'
-                    : 'Environment'
-            }
-            scrollRestorationId={`story-${view}`}
-            isFlush={collectionViews.has(view)}
-          >
-            {collectionViews.has(view) && (
-              <CollectionToolbar label="Activity views">
-                <PageNavigation
-                  label="Activity views"
-                  isEmbedded
-                  items={[
-                    { id: 'activity', label: 'Events', href: '#activity' },
-                    { id: 'runs', label: 'Runs', href: '#runs' },
-                  ]}
-                  selectedId={view}
-                  onNavigate={setView}
-                />
-              </CollectionToolbar>
-            )}
-            {view === 'runs' && (
-              <TurnList
-                page={longRunPage}
-                turnHref={(id) => `?turn=${id}`}
-                onOpen={() => setFocusedRun(true)}
-                emptyDescription="Executions appear here."
-              />
-            )}
-            {view === 'activity' && (
-              <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
-            )}
-            {view === 'environment' && (
-              <EnvironmentProcesses
-                processes={Option.some([])}
-                stopping={new Set()}
-                failure={undefined}
-                onStop={() => undefined}
-                renderDetails={() => null}
-              />
-            )}
-            {view === 'definition' && (
-              <MechSettings
-                mech={mech}
-                appearance={appearance}
-                onAppearance={setAppearance}
-                appearanceError={undefined}
-                isBusy={false}
-                error={undefined}
-                onEdit={() => undefined}
-                onArchive={() => undefined}
-              />
-            )}
-          </WorkbenchScroll>
-        )}
+
+              setEvents([
+                ...events,
+                {
+                  ...eventFields,
+                  id: `sevt_draft_${events.length}`,
+                  type: 'user.message',
+                  text: draft,
+                  processedAt: null,
+                },
+              ]);
+              setDraft('');
+            }}
+          />
+        </WorkbenchFooter>
       </Workbench>
     </StoryShell>
   );
 }
 
-export const ConversationWorkspace: Story = { render: () => <WorkspaceStory /> };
-export const LongTitlesAndRuns: Story = { render: () => <WorkspaceStory initialView="runs" hasLongName /> };
-export const HistoryWorkspace: Story = { render: () => <WorkspaceStory initialView="activity" /> };
-export const MechSettingsWorkspace: Story = { render: () => <WorkspaceStory initialView="definition" /> };
+export const Sessions: Story = {
+  render: () => (
+    <StoryShell>
+      <PageToolbar title={scout.name} />
+      <Workbench>
+        <WorkbenchScroll isFlush label="Sessions">
+          <ManagedSessionList
+            sessions={[dependencyUpdate, releaseReview]}
+            activeSessionId={dependencyUpdate.id}
+            href={(id) => `#${id}`}
+            onOpen={() => undefined}
+          />
+        </WorkbenchScroll>
+      </Workbench>
+    </StoryShell>
+  ),
+};
+
+export const SessionConversation: Story = { render: () => <SessionStory /> };
+
+export const SessionLoading: Story = {
+  render: () => (
+    <StoryShell>
+      <ResourceView state={{ kind: 'pending' }} label="Loading session" placeholder={<ConversationPlaceholder />}>
+        {() => null}
+      </ResourceView>
+    </StoryShell>
+  ),
+};
+
+export const HistoryWorkspace: Story = {
+  render: () => (
+    <StoryShell>
+      <PageToolbar title={scout.name} />
+      <Workbench>
+        <WorkbenchScroll isFlush label="Events">
+          <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
+        </WorkbenchScroll>
+      </Workbench>
+    </StoryShell>
+  ),
+};
+
+const archivedMessages = Schema.decodeUnknownSync(ConsoleMessagePage)({
+  messages: [
+    {
+      id: 'eb5adcc0-9988-46da-8c84-9e615048c0dd',
+      mech_id: nativeMechId,
+      run_id: turnId,
+      role: 'assistant',
+      text: 'The Console package passed.',
+      created_at: '2026-11-02T12:00:04Z',
+      sequence: 1,
+      presentation: {
+        spec: {
+          root: 'summary',
+          elements: {
+            summary: { type: 'Card', props: { title: 'Archived release checks' }, children: ['console'] },
+            console: { type: 'Text', props: { content: 'The Console package passed.' }, children: [] },
+          },
+        },
+        fallback: 'The Console package passed.',
+      },
+    },
+  ],
+  before_sequence: 1,
+  has_more: false,
+});
+
+export const ArchivedMessages: Story = {
+  render: () => (
+    <StoryShell>
+      <PageToolbar title={scout.name} />
+      <Workbench>
+        <ArchivedConversation
+          name={scout.name}
+          messages={archivedMessages.messages}
+          controls={null}
+          scrollRestorationId="story-archive"
+          inspect={(run) => <a href={`?mech=${nativeMechId}&turn=${run}&view=conversation`}>Open run</a>}
+        />
+      </Workbench>
+    </StoryShell>
+  ),
+};

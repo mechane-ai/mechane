@@ -5,7 +5,6 @@ import {
   memberOrUnknown,
   Micros,
   ModelToolCallId,
-  PrincipalId,
   RecordName,
   RecordText,
   renamedWireStruct,
@@ -75,11 +74,6 @@ export const UnknownTurn = Schema.StructWithRest(
 );
 
 export type UnknownTurn = typeof UnknownTurn.Type;
-
-/** A cancel the mech recorded on a turn, when and by whom; the turn ends unanswered, `canceled`, once it stops. */
-export const TurnCancel = wireStruct({ fields: { turnId: TurnId, canceledAt: WireTime, cancelerId: PrincipalId } });
-
-export type TurnCancel = typeof TurnCancel.Type;
 
 /** The tokens of each kind a dispatch used, as the upstream reported them; input excludes cached tokens. */
 const TokenUsage = Schema.Struct({

@@ -14,12 +14,15 @@ export { FileCheckpointPurpose, FileCheckpointResult } from './workspaces/schema
 export { FileCheckpointIdentityReused } from './workspaces/file-checkpoint-records.ts';
 export { ReservationPhase } from './capacity/capacity-records.ts';
 export type { MachineReservation } from './capacity/capacity-records.ts';
+export { ProcessIdentityReused } from './processes/process-records.ts';
 export type { ProcessRecord } from './processes/process-records.ts';
+export { BrowserRequestReused } from './browser/browser-records.ts';
 export type { BrowserCall } from './browser/browser-records.ts';
 export type { EvidenceChunk } from './evidence/evidence-records.ts';
 export {
   commitEvidenceObject,
   EvidenceIntegrityFailed,
+  evidenceOwnerKey,
   stageEvidenceChunk,
   releaseEvidenceChunks,
   readEvidenceObject,
@@ -29,3 +32,4 @@ export type { EvidenceRange } from './evidence/evidence-objects.ts';
 export { AUTOMATIC_CHECKPOINT_INTERVAL } from './workspaces/workspace-records.ts';
 export { machineCacheRecords } from './workspaces/machine-cache-records.ts';
 export type { MachineCacheSnapshot } from './workspaces/machine-cache-records.ts';
+export { AllocationPhase, managedAllocationStore } from './capacity/managed-allocation.ts';

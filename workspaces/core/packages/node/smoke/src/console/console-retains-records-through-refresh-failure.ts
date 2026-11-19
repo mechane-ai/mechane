@@ -1,161 +1,82 @@
-import { catalog } from '@mechane/protocol';
 import { HttpStatusCode, MediaType } from '@mechane/records';
-import {
-  CONSOLE_STORAGE_READY_TIMEOUT_MS,
-  consolePath,
-  createAccount,
-  createMech,
-  mechPath,
-  requireFixtures,
-  withConsoleBrowser,
-} from '@mechane/testing';
+import { CONSOLE_STORAGE_READY_TIMEOUT_MS, createManagedContext, withConsoleAgent } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
-import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-type EnvironmentPathInput = { readonly workspaceId: string; readonly mechId: string };
-
 export async function consoleRetainsRecordsThroughRefreshFailure({ stack }: ScenarioInput): Promise<void> {
-  const login = requireFixtures(stack).github.users.owner.login;
-  const account = await createAccount({ stack, login });
-  const mech = await createMech({ stack, account, name: `warm-${randomUUID()}` });
+  const { account, agent, session } = await createManagedContext({ stack, name: `Refresh ${randomUUID()}` });
 
-  await withConsoleBrowser({
+  await withConsoleAgent({
     stack,
     account,
+    agentName: agent.name,
     run: async (page) => {
-      const storageReady = { timeout: CONSOLE_STORAGE_READY_TIMEOUT_MS };
+      const ready = { timeout: CONSOLE_STORAGE_READY_TIMEOUT_MS };
 
-      await page.goto(consolePath({ workspaceId: account.workspaceId, mechId: mech.id }));
+      const row = page.getByRole('link', { name: `Open ${session.title ?? session.id}`, exact: true });
 
-      const composer = page.getByRole('textbox', { name: `Message ${mech.name}`, exact: true });
+      await row.waitFor(ready);
 
-      await composer.waitFor(storageReady);
+      const listUrl = page.url();
 
-      const shortcut = page.getByRole('link', { name: mech.name, exact: true });
-
-      await shortcut.waitFor(storageReady);
-
-      const path = mechPath({ account, mechId: mech.id });
-      const environment = environmentPath({ workspaceId: account.workspaceId, mechId: mech.id });
-      const environmentUrl = new URL(environment, stack.origin).href;
-      const environmentResponse = page.waitForResponse((response) => response.url() === environmentUrl, storageReady);
-
-      const [overviewResponse] = await Promise.all([
-        environmentResponse,
-        page.getByRole('link', { name: 'Environment', exact: true }).click(),
-      ]);
-
-      assert.equal(overviewResponse.status(), HttpStatusCode.Ok, `Environment GET ${environmentUrl} did not succeed`);
-
-      const body: unknown = await overviewResponse.json();
-      const overview = Schema.decodeUnknownSync(catalog.showEnvironment.output)(body);
-      const savedFiles = page.getByRole('heading', { name: 'Saved files', exact: true });
-
-      await savedFiles.waitFor(storageReady);
-      assert.equal(Option.getOrThrow(overview.environment.processes).length, 0);
-      assert.equal(Option.isNone(overview.sandboxId), true, 'Passive inspection allocated a machine');
-
-      // Visible rows can precede persistence acceptance; establish a completed native read before reloading.
       await page.getByRole('link', { name: `Settings for ${account.login}`, exact: true }).click();
       await page.getByRole('button', { name: 'Data status', exact: true }).click();
+      await page.getByText('wa-sqlite / OPFS available', { exact: true }).waitFor(ready);
 
-      const refreshingReads = page
-        .locator('dl > div')
-        .filter({ has: page.getByText('Refreshing', { exact: true }) })
-        .getByRole('definition');
-
-      await refreshingReads.filter({ hasText: /^0$/ }).waitFor(storageReady);
-      await page
-        .locator('dl > div')
-        .filter({ has: page.getByText('Failed reads', { exact: true }) })
-        .getByRole('definition')
-        .filter({ hasText: /^0$/ })
-        .waitFor(storageReady);
-      await page.getByText('wa-sqlite / OPFS available', { exact: true }).waitFor(storageReady);
-      await shortcut.click();
-      await composer.waitFor(storageReady);
+      for (const label of ['Refreshing', 'Failed reads']) {
+        await page
+          .locator('dl > div')
+          .filter({ has: page.getByText(label, { exact: true }) })
+          .getByRole('definition')
+          .filter({ hasText: /^0$/ })
+          .waitFor(ready);
+      }
 
       const gate = Promise.withResolvers<void>();
-      const pattern = new URL(path, stack.origin).href;
 
-      await page.route(pattern, async (route) => {
+      function isSessionList(url: URL): boolean {
+        return url.pathname === '/console-api/v1/sessions' && url.searchParams.get('agent_id') === agent.id;
+      }
+
+      await page.route(isSessionList, async (route) => {
         await gate.promise;
-        await route.fulfill({ status: HttpStatusCode.Unavailable, contentType: MediaType.Json, body: '{}' });
+        await route.fulfill({
+          status: HttpStatusCode.Unavailable,
+          contentType: MediaType.Json,
+          body: JSON.stringify({ type: 'error', error: { type: 'api_error', message: 'Session refresh failed' } }),
+        });
       });
 
-      try {
-        const pending = page.waitForRequest((request) => request.url() === pattern, storageReady);
+      const retry = page.getByRole('button', { name: 'Retry refresh', exact: true });
 
-        const [, request] = await Promise.all([page.reload(), pending]);
+      try {
+        const pending = page.waitForRequest((request) => isSessionList(new URL(request.url())), ready);
+        const [, request] = await Promise.all([page.goto(listUrl), pending]);
 
         await Promise.race([
-          composer.waitFor(storageReady),
+          row.waitFor(ready),
           request.response().then(() => {
-            throw new Error('The held refresh finished before durable content appeared');
+            throw new Error('The refresh finished before persisted session metadata appeared');
           }),
         ]);
-        assert.equal(await composer.isEnabled(), true);
-
-        const failed = page.waitForResponse(
-          (response) => response.status() === HttpStatusCode.Unavailable && response.url() === pattern,
-          storageReady,
-        );
-
         gate.resolve();
-        await failed;
-        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor(storageReady);
-        assert.equal(await composer.isEnabled(), true);
+        await retry.waitFor(ready);
+        assert.equal(await row.isVisible(), true);
       } finally {
         gate.resolve();
         await page.unrouteAll({ behavior: 'wait' });
       }
 
-      await page.getByRole('button', { name: 'Retry refresh', exact: true }).click();
-      await page
-        .getByRole('button', { name: 'Retry refresh', exact: true })
-        .waitFor({ ...storageReady, state: 'hidden' });
-      await page.getByRole('link', { name: 'Environment', exact: true }).click();
-      await savedFiles.waitFor(storageReady);
-      await page.route(environmentUrl, (route) =>
-        route.fulfill({ status: HttpStatusCode.Unavailable, contentType: MediaType.Json, body: '{}' }),
-      );
-
-      try {
-        await page.reload();
-        await page.getByRole('button', { name: 'Retry refresh', exact: true }).waitFor(storageReady);
-        assert.equal(await savedFiles.isVisible(), true, 'Failed refresh hid the retained environment overview');
-      } finally {
-        await page.unroute(environmentUrl);
-      }
-
-      const refreshed = page.waitForResponse(
-        (response) => response.url() === environmentUrl && response.status() === HttpStatusCode.Ok,
-        storageReady,
-      );
-
-      const [refreshedResponse] = await Promise.all([
-        refreshed,
-        page.getByRole('button', { name: 'Retry refresh', exact: true }).click(),
+      const [refreshed] = await Promise.all([
+        page.waitForResponse((response) => isSessionList(new URL(response.url())) && response.ok(), ready),
+        retry.click(),
       ]);
 
-      const refreshedBody: unknown = await refreshedResponse.json();
-      const recovered = Schema.decodeUnknownSync(catalog.showEnvironment.output)(refreshedBody);
-
-      assert.equal(Option.isNone(recovered.sandboxId), true, 'Refreshing the overview allocated a machine');
-      await savedFiles.waitFor(storageReady);
-      await page
-        .getByRole('button', { name: 'Retry refresh', exact: true })
-        .waitFor({ ...storageReady, state: 'hidden' });
+      assert.equal(refreshed.status(), HttpStatusCode.Ok);
+      await retry.waitFor({ ...ready, state: 'hidden' });
+      await row.click();
+      await page.getByRole('textbox', { name: 'Message this session', exact: true }).waitFor(ready);
     },
   });
-}
-
-function environmentPath({ workspaceId, mechId }: EnvironmentPathInput): string {
-  const workspace = encodeURIComponent(workspaceId);
-  const mech = encodeURIComponent(mechId);
-  const path = catalog.showEnvironment.path.replace(':workspace_id', workspace);
-
-  return path.replace(':mech_id', mech);
 }

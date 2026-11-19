@@ -1,7 +1,5 @@
-import { DispatchStatus, SettlementBasis, UnknownDispatch } from '@mechane/protocol';
-import type { TracedDispatch } from '@mechane/protocol';
 import { Micros, Tokens } from '@mechane/records';
-import { Number, Option, Schema } from 'effect';
+import { Array, Number, Option } from 'effect';
 import type { RoleIntent, RoleReceipt, RoleRecord } from '../application-schemas.ts';
 import type { RoleSpend } from './inspection-schemas.ts';
 
@@ -11,106 +9,105 @@ type InspectRoleSpendInput = {
   readonly record: Option.Option<RoleRecord>;
 };
 
-type DispatchSpendInput = { readonly dispatch: TracedDispatch };
 type CombineRoleSpendInput = { readonly spends: ReadonlyArray<RoleSpend> };
-type UnknownRoleSpendInput = { readonly identity: string };
 
-const EMPTY_SPEND: Readonly<RoleSpend> = {
-  knownChargedMicros: Micros.make(0),
-  isComplete: true,
-  unknownAttempts: [],
+type Counters = Pick<
+  RoleSpend,
+  'knownInputTokens' | 'knownOutputTokens' | 'knownCacheReadTokens' | 'knownCacheWriteTokens'
+>;
+
+const EMPTY_COUNTERS: Readonly<Counters> = {
   knownInputTokens: Tokens.make(0),
   knownOutputTokens: Tokens.make(0),
   knownCacheReadTokens: Tokens.make(0),
   knownCacheWriteTokens: Tokens.make(0),
-  unknownUsageAttempts: [],
 };
 
 export function inspectRoleSpend({ intent, receipt, record }: InspectRoleSpendInput): RoleSpend {
   if (Option.isNone(record)) {
     if (Option.isNone(intent) && Option.isNone(receipt)) {
-      return EMPTY_SPEND;
+      return {
+        ...EMPTY_COUNTERS,
+        knownListCostUsdCents: '0',
+        isComplete: true,
+        unknownAttempts: [],
+        unknownUsageAttempts: [],
+      };
     }
 
-    const notificationId = Option.match(intent, {
-      onNone: () => Option.map(receipt, (saved) => saved.notificationId),
-      onSome: (saved) => Option.some(saved.notificationId),
-    });
+    const sessionId = Option.map(receipt, (value) => value.sessionId);
+    const creationId = Option.map(intent, (value) => value.creationRequestId);
+    const identity = Option.getOrElse(sessionId, () => Option.getOrElse(creationId, () => 'unresolved role'));
 
-    const identity = Option.getOrElse(notificationId, () => 'unresolved role');
-
-    return unknownRoleSpend({ identity });
+    return { ...EMPTY_COUNTERS, isComplete: false, unknownAttempts: [identity], unknownUsageAttempts: [identity] };
   }
 
-  if (record.value.dispatches.length === 0) {
-    return unknownRoleSpend({ identity: record.value.notificationId });
+  const { sessionId } = record.value;
+  const usage = Option.fromUndefinedOr(record.value.usage);
+  const values = Option.getOrElse(usage, (): NonNullable<RoleRecord['usage']> => ({}));
+  const input = Option.fromUndefinedOr(values.inputTokens);
+  const output = Option.fromUndefinedOr(values.outputTokens);
+  const reads = Option.fromUndefinedOr(values.cacheReadInputTokens);
+  const hourly = Option.fromUndefinedOr(values.cacheCreation1hInputTokens);
+  const ephemeral = Option.fromUndefinedOr(values.cacheCreation5mInputTokens);
+  const cost = Option.fromUndefinedOr(values.listCostUsdCents);
+
+  const unknownUsageAttempts: Array<string> = [];
+
+  if ([input, output, reads, hourly, ephemeral].some(Option.isNone)) {
+    unknownUsageAttempts.push(sessionId);
   }
 
-  const spends = record.value.dispatches.map((dispatch) => dispatchSpend({ dispatch }));
-  const spend = combineRoleSpend({ spends });
+  const totalWrite = Option.getOrElse(hourly, () => 0) + Option.getOrElse(ephemeral, () => 0);
+  const knownInput = Option.getOrElse(input, () => 0);
+  const knownOutput = Option.getOrElse(output, () => 0);
+  const knownReads = Option.getOrElse(reads, () => 0);
 
-  if (!record.value.isEvidenceComplete) {
-    return {
-      ...spend,
-      isComplete: false,
-      unknownAttempts: [...spend.unknownAttempts, record.value.notificationId],
-      unknownUsageAttempts: [...spend.unknownUsageAttempts, record.value.notificationId],
-    };
+  const counters: Counters = {
+    knownInputTokens: Tokens.make(knownInput),
+    knownOutputTokens: Tokens.make(knownOutput),
+    knownCacheReadTokens: Tokens.make(knownReads),
+    knownCacheWriteTokens: Tokens.make(totalWrite),
+  };
+
+  if (Option.isNone(cost)) {
+    return { ...counters, unknownUsageAttempts, isComplete: false, unknownAttempts: [sessionId] };
   }
-
-  return spend;
-}
-
-export function combineRoleSpend({ spends }: CombineRoleSpendInput): RoleSpend {
-  const knownCharges = spends.map((spend) => spend.knownChargedMicros);
-  const inputTokens = spends.map((spend) => spend.knownInputTokens);
-  const outputTokens = spends.map((spend) => spend.knownOutputTokens);
-  const cacheReadTokens = spends.map((spend) => spend.knownCacheReadTokens);
-  const cacheWriteTokens = spends.map((spend) => spend.knownCacheWriteTokens);
-  const chargedTotal = Number.sumAll(knownCharges);
-  const inputTotal = Number.sumAll(inputTokens);
-  const outputTotal = Number.sumAll(outputTokens);
-  const cacheReadTotal = Number.sumAll(cacheReadTokens);
-  const cacheWriteTotal = Number.sumAll(cacheWriteTokens);
 
   return {
-    knownChargedMicros: Micros.make(chargedTotal),
-    isComplete: spends.every((spend) => spend.isComplete),
-    unknownAttempts: spends.flatMap((spend) => spend.unknownAttempts),
-    knownInputTokens: Tokens.make(inputTotal),
-    knownOutputTokens: Tokens.make(outputTotal),
-    knownCacheReadTokens: Tokens.make(cacheReadTotal),
-    knownCacheWriteTokens: Tokens.make(cacheWriteTotal),
-    unknownUsageAttempts: spends.flatMap((spend) => spend.unknownUsageAttempts),
+    ...counters,
+    unknownUsageAttempts,
+    knownListCostUsdCents: cost.value,
+    isComplete: true,
+    unknownAttempts: [],
   };
 }
 
-function dispatchSpend({ dispatch }: DispatchSpendInput): RoleSpend {
-  if (Schema.is(UnknownDispatch)(dispatch)) {
-    return unknownRoleSpend({ identity: dispatch.id });
-  }
+export function combineRoleSpend({ spends }: CombineRoleSpendInput): RoleSpend {
+  const optionalPrices = spends.map((spend) => Option.fromUndefinedOr(spend.knownListCostUsdCents));
+  const prices = Array.getSomes(optionalPrices);
+  const optionalCharges = spends.map((spend) => Option.fromUndefinedOr(spend.knownChargedMicros));
+  const charges = Array.getSomes(optionalCharges);
+  const inputCounts = spends.map((spend) => spend.knownInputTokens);
+  const outputCounts = spends.map((spend) => spend.knownOutputTokens);
+  const readCounts = spends.map((spend) => spend.knownCacheReadTokens);
+  const writeCounts = spends.map((spend) => spend.knownCacheWriteTokens);
+  const inputs = Number.sumAll(inputCounts);
+  const outputs = Number.sumAll(outputCounts);
+  const reads = Number.sumAll(readCounts);
+  const writes = Number.sumAll(writeCounts);
+  const charged = Number.sumAll(charges);
+  const cents = prices.reduce((sum, price) => sum + BigInt(price), 0n);
 
-  switch (dispatch.status) {
-    case DispatchStatus.Reserved:
-      return unknownRoleSpend({ identity: dispatch.id });
-    case DispatchStatus.Refused:
-      return EMPTY_SPEND;
-    case DispatchStatus.Settled:
-      if (dispatch.basis === SettlementBasis.Reservation) {
-        return { ...EMPTY_SPEND, knownChargedMicros: dispatch.settledMicros, unknownUsageAttempts: [dispatch.id] };
-      }
-
-      return {
-        ...EMPTY_SPEND,
-        knownChargedMicros: dispatch.settledMicros,
-        knownInputTokens: dispatch.inputTokens,
-        knownOutputTokens: dispatch.outputTokens,
-        knownCacheReadTokens: dispatch.cacheReadTokens,
-        knownCacheWriteTokens: dispatch.cacheWriteTokens,
-      };
-  }
-}
-
-function unknownRoleSpend({ identity }: UnknownRoleSpendInput): RoleSpend {
-  return { ...EMPTY_SPEND, isComplete: false, unknownAttempts: [identity], unknownUsageAttempts: [identity] };
+  return {
+    ...(prices.length > 0 && { knownListCostUsdCents: cents.toString() }),
+    ...(charges.length > 0 && { knownChargedMicros: Micros.make(charged) }),
+    knownInputTokens: Tokens.make(inputs),
+    knownOutputTokens: Tokens.make(outputs),
+    knownCacheReadTokens: Tokens.make(reads),
+    knownCacheWriteTokens: Tokens.make(writes),
+    isComplete: spends.every((spend) => spend.isComplete),
+    unknownAttempts: spends.flatMap((spend) => spend.unknownAttempts),
+    unknownUsageAttempts: spends.flatMap((spend) => spend.unknownUsageAttempts),
+  };
 }

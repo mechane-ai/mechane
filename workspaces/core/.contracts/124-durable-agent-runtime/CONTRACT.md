@@ -6,17 +6,24 @@ paths: ["packages/shared/bash/**", "packages/worker/runtime/**", "packages/worke
 
 ## Rules
 
-Run one pi-durable Harness and working conversation per mech in its Durable Object. Use supported public APIs and the
-upstream storage adapter. Pi owns input placement, model/tool execution, compaction, and task recovery. Mechane owns
-notification identity, current authority, environment boundaries, and explicit publications. Keep a second execution
-engine, dependency patches, private SDK imports, and a separate run scheduler out of the application.
+One named agent owns one durable execution slot across its definition versions. Each Managed Agents session pins its
+resolved configuration and keeps an independent history, sandbox and resource scope. Each thread has a separate Pi
+working conversation. Use supported Pi APIs for model execution, compaction, and recovery. Accept input durably while
+another session runs. Admit model starts, resumes and new agent effects through the same identity owner after restart.
+The actor owns each serialized session operation until it settles, even if its caller disconnects. Streaming responses
+release the session queue as soon as the response is ready; the stream has its own lifetime.
+
+A wait for a permission, client tool or delegated result releases the slot. Deliver its result to the originating
+session, thread and call. A new event in another session cannot steer this generation, invalidate its authority or
+select its checkout. Fence stale owners before dispatch. Preserve known external effect receipts through lease changes.
+External work already admitted may finish independently. Distinct agent identities may execute concurrently.
 
 Expose the current native workspace, mech, session and run identity in the command environment as `MECHANE_*`
 variables. Runtime identity and origin override configured variables and credential names; a secret grant cannot
 replace attribution. Keep these identities stable when retrying the same native execution receipt. They are references
 for ordinary tools, not authority to create external work, report success or publish a response.
 
-Do not impose a fixed model or tool round count on the root conversation. Current budgets, authority, and cancellation
+Do not impose a fixed model or tool round count on a working conversation. Current budgets, authority, and cancellation
 bound continued work. Reconcile runtime-owned native configuration on every actor open through supported Pi APIs,
 clearing a previously stored round limit without changing working context, history, or the human definition revision.
 Retain a known native termination cause in safe trace evidence for historical failures without exposing raw errors.
@@ -37,8 +44,10 @@ those recipients through the shared idempotent delivery owner and confirm their 
 command success. Do not hold a Postgres transaction over actor RPC or drain unrelated backlog to acknowledge a command.
 A bounded confirmation failure reports persisted configuration with unconfirmed runtime refresh, without repeating the
 mutation. A factual recipient acknowledgment survives concurrent sweep claims and later delivery failures. Select
-connection recipients from current grants before deleting them; workspace policy changes reach every mech. Skip remote
-tool discovery for inactive recipients and load their current grants when they resume.
+connection recipients from current grants before deleting them. Workspace policy and its audit record commit together.
+Enforce current policy at admission and wake eligible installed work after a change. Policy writes must complete
+independently of the number or availability of historical actors and managed sessions. Skip remote tool discovery for
+inactive recipients and load their current grants when they resume.
 
 Keep each bounded, serialized definition refresh alive in its recipient actor until it settles. An expired caller
 confirmation must leave the refresh queue able to process later changes. The same durable outbox receipt remains
@@ -49,15 +58,10 @@ cleanup. Its committed intent immediately fences new effects; the existing actor
 across restart. Keep cold initialization free of remote cancellation waits, and preserve the earliest recovery alarm
 while polling.
 
-Acknowledge a canceled foreground command's terminal receipt without admitting a notification or another activation.
-Also acknowledge an already-observed terminal command result, including a confirmed refusal, without another wake.
-Preserve its outcome and execution identity; a stopped activation does not establish the command's outcome. Continue
-admitting unobserved command and background completions at most once under their existing notification identity.
-
-Before releasing a quiesced mech, reconcile the environment's retained completion outbox while admission remains fenced.
-Durably admit each verified result under its existing identity before acknowledging it. Bound each reconciliation pass;
-leave an incomplete resume quiesced and retry through the existing alarm. Do not hold an actor transaction across
-environment requests, bypass an export hold, or let a completed read suppress a new unobserved notification.
+Retain known foreground and background execution outcomes under their original owner. A canceled activation alone
+does not establish the outcome of a command. Installed process completions are private session observations. Reading
+a completion cannot schedule a generation or invent a user or agent event. Contract 127 owns the originating identities
+and machine receipt. Preserve pre-cutover outbox entries for their original recipients.
 
 Persist sanitized remote tool descriptors and availability notices as one bounded native configuration projection
 before acknowledging refresh. Rebuild executable adapters locally from it on cold start. It is registry composition,
@@ -144,6 +148,12 @@ credentials, receipts, and historical evidence during cutover.
 
 ## Checks
 
+Use two sessions and two distinguishable contexts on the same agent. Hold A at an external call, run B, return A's
+result, interrupt B, replace the actor and reconnect both clients. Verify a single active identity owner, the exact
+destination and count of each effect, independent session histories, and the absence of private data across sessions.
+Reload immediately after a message is accepted while another session is waiting. Verify the original session serves
+its history and finishes the accepted message without another submission.
+
 Run the same compiled Worker artifact on celld and workerd with real storage, alarms, local TLS Postgres, and
 deterministic external providers.
 Restart a populated actor while its execution policy cannot be read. An authorized history read must succeed. Restore
@@ -162,11 +172,9 @@ input. Exercise independent mechs, cancellation, failed runs, and compaction. Co
 32 tool rounds with one publication and complete accounting. Reopen stored native configuration with its old round
 limit and unchanged definition; clearing the limit must preserve the conversation identity, history, and working context.
 
-Replay the actual terminal callback of a canceled foreground command and wait for its delivery acknowledgment. Require
-no received notification, added activation, or paid request. Inspect durable admission before provider counts so delayed
-scheduling cannot hide a wake. Retain the ordinary background completion flow's one-wake guarantee.
-Quiesce, stop an environment with a running background process, and resume with its retained completion. Require its
-single notification before new work, including after an unavailable environment owner and a repeated callback.
+Read a canceled command and completed installed process before and after an owner restart. Verify that each retains
+one receipt and that observation does not enqueue a second provider request. Forfeit a machine with a running process
+and require a result tied to that original machine.
 
 Hold cold readiness beyond the initial request's wait and require one eventual process dispatch without another
 notification or model poll. Restart or cancel during preparation and verify the original identity and dispatch fence.
@@ -175,8 +183,7 @@ Accept a correction after a shell claim but before dispatch. Require the old com
 claim and native wait to settle promptly, and the next provider context to include the correction. Race pending-only
 cancellation with dispatch and preserve the original running, uncertain and terminal receipts. Require the refused
 command's trace and model result to distinguish non-dispatch from unavailable infrastructure.
-Replay its retained terminal callback and require acknowledgment without another completion notification or interruption
-of subsequent work.
+Inspect its retained terminal receipt while subsequent work is running. The read must preserve the current activation.
 
 Drop an acknowledged cold Bash submission response, then kill the application during receipt observation. Require
 the original command's terminal tool result without a model status call, with one external effect. Lose the guest

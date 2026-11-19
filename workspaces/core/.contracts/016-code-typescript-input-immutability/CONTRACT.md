@@ -62,6 +62,9 @@ draft supplied by `Collection.update`, and deleting a canonical row through `Col
 `parameter-mutation` site suppression because the dependency owns those mutation interfaces. This allowance does
 not permit changing a caller's ordinary record, array, or map.
 
+A direct call to `DurableObjectTransaction.delete` deletes persisted keys. Its explicitly typed receiver distinguishes
+the storage API from mutation of an input collection. The storage ownership check confines this call to store modules.
+
 oxlint `no-param-reassign` with `props: true`, `unicorn/no-array-sort` and `unicorn/no-array-reverse` with `allowExpressionStatement: false`, so even a statement that discards the result fails, and ast-grep `parameter-mutation`, enforce these rules.
 Every type is read-only (TD-06): ast-grep `readonly-type-members` rejects a property signature without `readonly`, and `readonly-collections` an `Array`, `Set`, `Map`, `T[]`, a tuple or a `Record` that no `Readonly` wraps, so a collection type is `ReadonlyArray`, `ReadonlySet`, `ReadonlyMap`, `readonly [A, B]` or `Readonly<Record<…>>`. Only a `const` local inside a function body, such as a listener's buffer, and a call's type argument there, such as `new Map<string, Turn>()`, may be mutable.
 

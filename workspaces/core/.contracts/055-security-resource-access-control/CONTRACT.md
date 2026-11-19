@@ -56,30 +56,25 @@ An admitted GitHub identity may receive the installation's explicit initial work
 no other workspace access. API keys and browser sessions do not cache membership authority. A removed membership or
 revoked key fails on the next operation, including repeated reads and tool dispatch.
 
-Each mech has its own durable sandbox identity. Only the authenticated runtime may command the sandbox service; the
-service binds the supplied workspace and mech to that identity before execution. Guests validate their own machine
-identity and receive no general application API authority implicitly.
+Each session has its own sandbox identity. Authenticate access to the sandbox service and bind a lease to its
+installation, environment, session and work item. A guest receives only its session-scoped work credential.
 
 Workspace policy gates new model reservations and compute admission atomically with their records. Suspended work
 cannot acquire new paid work or credentials. Existing command effects remain observable; suspension never erases files.
 
-The owning application service decides external capabilities and approvals. Its requester attribution comes from verified
-intake and cannot be replaced by model text or a rendered action. Mechane authenticates notification producers separately
-from their body metadata and restricts them to configured recipients. A decision notification grants no runtime authority.
-Current generic execution grants and external application permissions remain independent checks.
+The integration verifies its provider's events and owns external permissions, approval policy and receipts.
+Managed Agents admission authenticates the application credential and resolves the session and creator independently
+of body metadata. Authorize a tool result against the specific pending call. A submitted event cannot extend a grant.
 
 The Cloudflare compute provider disables direct internet and routes HTTP through its declared egress gateway.
 Invalid or disagreeing URL and Host authorities, literal private targets, and unsupported ports are refused. Local
 compute fixtures remain explicitly isolated and cannot become a production fallback.
 
-Allow the canonical public HTTPS origin through that gateway only for exact catalog-declared method and path matches
-whose access is Self and whose path parameters satisfy the operation schema. Forward the caller's credential unchanged
-to the normal API; its scoped self-token verification remains authoritative. Other control-plane operations,
-installation aliases and the separate runtime origin remain
-blocked, including with public web access. Keep the public-host, authority, port and manual-redirect checks.
-Run the package-local Gateway fixture with `mise -C workspaces/core run sandbox:native:check` to verify forwarding and
-refusal at that boundary. Qualify the ordinary self CLI through the hosted Gateway separately; its local upstream
-fixture does not establish token authentication or Cloudflare network behavior.
+Refuse guest browser and general command egress to control-plane hosts and installation aliases. The trusted worker
+transport uses the documented session-scoped work secret for specific session operations at the canonical origin.
+Refuse to forward that credential to another origin, even when public web access is enabled. Keep environment polling
+keys, shared application credentials and the server's credential manager outside the guest. Exercise wrong work IDs,
+foreign session access, stale lease and rejected redirects through the same production entry points used locally.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

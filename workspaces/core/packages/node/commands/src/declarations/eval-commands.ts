@@ -21,7 +21,7 @@ const EvalCompareInput = renamedWireStruct({
   },
 });
 
-/** Evaluations grade explicit Console messages from fresh mechs through the deployment. */
+/** Evaluations run each case and grader in independent managed sessions. */
 export const EVAL_COMMANDS = {
   'eval inspect': {
     summary:
@@ -55,30 +55,9 @@ export const EVAL_COMMANDS = {
     input: EvalCompareInput,
   },
   'eval run': {
-    summary:
-      'run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume',
+    summary: 'run each case and grade its observed replies in separate managed sessions; reuse --out-folder to resume',
     shape: CommandShape.Document,
-    operations: [
-      'listWorkspaces',
-      'readiness',
-      'showAllowance',
-      'createMech',
-      'showMech',
-      'updateMech',
-      'sendNotification',
-      'listTurns',
-      'showTurn',
-      'cancelTurn',
-      'listConsoleMessages',
-      'createConnection',
-      'listConnections',
-      'updateConnection',
-      'deleteConnection',
-      'grantTools',
-      'putCredential',
-      'deleteCredential',
-      'configureExecutionAccess',
-    ],
+    operations: ['listWorkspaces', 'readiness', 'showAllowance'],
     flags: {
       'suite': { kind: FlagKind.Text, summary: 'the suite file: JSON with its cases and their expectations' },
       'out-folder': {

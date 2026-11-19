@@ -30,7 +30,6 @@ export function validatedOperation<Declaration extends Operation>({
 export function requireAuthenticated(caller: AuthCaller): AuthenticatedCaller {
   switch (caller.authKind) {
     case 'public':
-    case 'self':
       throw new KeyMissing({});
     case 'session':
     case 'key':

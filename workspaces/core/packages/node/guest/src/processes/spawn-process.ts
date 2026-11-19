@@ -1,7 +1,7 @@
 import { Bytes } from '@mechane/records';
 import { OUTPUT_TAIL_BYTES } from '@mechane/sandbox-wire';
 import type { ProcessStart } from '@mechane/sandbox-wire';
-import { Effect, Result } from 'effect';
+import { Effect, Option, Result } from 'effect';
 import { shellEnvironment } from '../executions/shell-environment.ts';
 import { spawnShell } from '../executions/spawn-shell.ts';
 import { spawnedBash } from '../executions/spawned-bash.ts';
@@ -17,9 +17,11 @@ export const spawnProcess = Effect.fn('spawnProcess')(function* ({
   settings,
 }: SpawnProcessInput): Effect.fn.Return<BashRun, ProcessFailed> {
   const environment = shellEnvironment({ request, settings });
+  const directory = Option.fromNullishOr(request.workingDirectory);
+  const cwd = Option.getOrElse(directory, () => settings.home);
 
   return yield* Effect.callback<BashRun, ProcessFailed>((resume) => {
-    const child = spawnShell({ command: request.command, home: settings.home, environment });
+    const child = spawnShell({ command: request.command, cwd, environment });
 
     child.once('error', (failure) => {
       const error = new ProcessFailed({ processId: request.processId, reason: failure.message });

@@ -21,7 +21,7 @@ const InstallationHosts = Schema.fromJsonString(Schema.Array(PublicHostname)).pi
   Schema.withDecodingDefaultKey(Effect.succeed('[]')),
 );
 
-/** Control-plane hosts stay private except for canonical self operations authenticated by the application. */
+/** The canonical application can receive leased worker operations. Installation aliases remain private. */
 export const EgressVariables = renamedWireStruct({
   fields: {
     origin: SecureOrigin,

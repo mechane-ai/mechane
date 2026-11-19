@@ -74,7 +74,7 @@ variables {
 run "application_configuration" {
   command = plan
   variables {
-    settings = { MECHANE_DEFAULT_MODEL = "example/model" }
+    settings = { MECHANE_MAX_MACHINES = "3" }
   }
 }
 

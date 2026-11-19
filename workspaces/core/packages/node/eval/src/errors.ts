@@ -1,4 +1,4 @@
-import { MechId, Micros } from '@mechane/records';
+import { Micros } from '@mechane/records';
 import { Schema } from 'effect';
 import { EvalFileStep } from './constants.ts';
 
@@ -12,25 +12,19 @@ export const EvalAdapterOperation = {
   ValidateSuite: 'validate suite',
   ValidateJudge: 'validate judge',
   ValidateGradeSchema: 'validate grade schema',
-  ValidateJudgeCapabilities: 'validate judge capabilities',
   ValidateJudgeRubric: 'validate judge rubric',
   ValidateToolDefinition: 'validate tool definition',
-  CheckRuntime: 'check eval runtime',
+  ManagedRequest: 'Managed Agents request',
   StartEval: 'start eval',
   CleanEval: 'clean eval',
   ReadFrozenCase: 'read frozen case',
   FreezeEvidence: 'freeze evidence',
   ReadEvidence: 'read frozen evidence',
   ReadManifest: 'read eval manifest',
-  ReadCallIdentity: 'read MCP call identity',
   ExecuteTool: 'execute eval tool',
   ReplayTool: 'replay tool call',
-  RecordTool: 'record tool call',
   RecordToolResult: 'record tool result',
-  ValidateRoleSettings: 'validate role settings',
-  VerifyRoleCapabilities: 'verify role capabilities',
   VerifyRoleSettings: 'verify role settings',
-  ReconcileConnection: 'reconcile role connection',
   CancelRole: 'cancel eval role',
   DecodeReplyInput: 'decode reply evidence input',
   DecodeReplyGrade: 'decode reply grade',
@@ -45,35 +39,11 @@ export const EvalAdapterOperation = {
   ValidateCalibrationExamples: 'validate calibration examples',
 } as const;
 
-/** Transport failures identify the owned listener or bridge operation. */
-export const EvalTransportOperation = {
-  External: 'application transport',
-  ServeRequest: 'serve MCP request',
-  Listen: 'listen for eval tools',
-  ReadListener: 'read eval listener',
-  ReadRequest: 'read MCP request',
-  CloseListener: 'close eval listener',
-  JoinRequests: 'join eval requests',
-  StartCloudflared: 'start cloudflared',
-  OpenCloudflared: 'open cloudflared',
-  ReadCloudflaredOrigin: 'read cloudflared origin',
-  ProbeCloudflared: 'probe cloudflared',
-  CloseCloudflared: 'close cloudflared',
-} as const;
-
 /** Invalid suite setup or evidence remains separate from a model's quality grade. */
 export class EvalAdapterFailed extends Schema.TaggedError<EvalAdapterFailed>()('EvalAdapterFailed', {
   operation: Schema.Enum(EvalAdapterOperation),
-  reason: Schema.String,
-}) {
-  override get message(): string {
-    return `${this.operation}: ${this.reason}`;
-  }
-}
-
-/** Transport failures leave their accepted operation identities available for recovery. */
-export class EvalTransportFailed extends Schema.TaggedError<EvalTransportFailed>()('EvalTransportFailed', {
-  operation: Schema.Enum(EvalTransportOperation),
+  /** Absent when the failure did not include an HTTP response. */
+  httpStatus: Schema.optionalKey(Schema.Int),
   reason: Schema.String,
 }) {
   override get message(): string {
@@ -86,7 +56,7 @@ export class EvalManifestMissing extends Schema.TaggedError<EvalManifestMissing>
   outFolder: Schema.String,
 }) {}
 
-/** The turns a plan has not saved yet could, each at its mech's cap, spend more than the day's allowance has left. */
+/** The remaining roles could exhaust the workspace's daily allowance at their session limits. */
 export class AllowanceExhausted extends Schema.TaggedError<AllowanceExhausted>()('AllowanceExhausted', {
   day: Schema.String,
   neededMicros: Micros,
@@ -107,12 +77,6 @@ export class EvalFileFailed extends Schema.TaggedError<EvalFileFailed>()('EvalFi
 /** Ctrl-C interrupted an eval run once its finalizers ran; every record it saved stays, so a rerun resumes. */
 export class EvalInterrupted extends Schema.TaggedError<EvalInterrupted>()('EvalInterrupted', {
   outFolder: Schema.String,
-}) {}
-
-/** The runtime response cannot establish a role's completion; saved intent remains available for a retry. */
-export class EvalResponseInvalid extends Schema.TaggedError<EvalResponseInvalid>()('EvalResponseInvalid', {
-  mechId: MechId,
-  reason: Schema.String,
 }) {}
 
 /** The kernel still holds another writer's lock on this run directory. */

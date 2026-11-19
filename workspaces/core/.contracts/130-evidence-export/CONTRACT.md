@@ -1,14 +1,16 @@
 ---
 name: evidence-export
 message: Copy only this mech's verified durable evidence into its current home without recapture or provider authority.
-paths: ["packages/shared/sandbox-wire/src/evidence-export.ts", "packages/node/guest/src/evidence/**", "packages/worker/runtime/src/tools/export-evidence.ts", "packages/worker/sandbox/src/evidence/export-evidence.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox/src/service/evidence-route.ts"]
+paths: ["packages/shared/sandbox-wire/src/evidence-export.ts", "packages/node/guest/src/evidence/**", "packages/worker/runtime/src/operations/evidence.ts", "packages/worker/sandbox/src/evidence/export-evidence.ts", "packages/worker/sandbox/src/sandbox-object.ts", "packages/worker/sandbox/src/service/evidence-route.ts", "packages/worker/sandbox/src/service/serve-evidence-content.ts"]
 ---
 
 ## Rules
 
-Accept only an artifact identity from the model. Derive workspace and mech from trusted native tool context and require
-current execution admission. Resolve only a ready capture owned by that mech before allocating compute or reading bytes.
-Keep foreign, absent, pending, and failed captures unavailable through this interface.
+The authenticated operator may inspect a retained capture through its workspace and mech. Scope every metadata and media
+read to that pair. Read from stored receipts and media without starting a model or guest. For a copy, accept only the artifact ID
+from the caller and use the private service's bound sandbox owner and current machine admission. An agent-facing tool
+must derive that scope from its admitted session. Resolve the owner's ready capture before allocating compute or reading
+bytes. Foreign, absent, pending and failed captures cannot become ready exports.
 
 Copy the durable original through the private sandbox transport, without public URLs, object keys, or member credentials.
 Keep provider upload APIs, credential issuance, and scope policy outside Mechane. Generic credential custody belongs
@@ -24,8 +26,10 @@ guest integrity or input refusal is Failed, not an automatic polling loop over t
 
 ## Checks
 
-Run the product type, lint, boundary, wire-lock, and compiled smoke checks. Exercise a saved capture through native
-export and ordinary shell access, then compare its digest after replacing the environment and exporting again. Try a
+Check a saved artifact through the operator metadata and media routes in `packages/worker/runtime/src/operations/evidence.ts`.
+Verify that the media matches its receipt and a different owner cannot read it. Exercise the authenticated export in
+`packages/worker/sandbox/src/service/evidence-route.ts` and verify the copied bytes through ordinary shell access.
+Compare the digest after replacing the environment and repeating that export. Try a
 foreign artifact and changed transfer bytes; neither may produce a ready file. Lose the copy response and repeat the
 request to verify one stable file without a new capture. Keep the provider-copy qualification with its owning CLI.
 

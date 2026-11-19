@@ -43,7 +43,6 @@ export {
   UnknownFailure,
   KeyMissing,
   DeviceApprovalNotFound,
-  NotificationConflict,
   KeyExpired,
   KeyUnrecognized,
   KeyNotFound,
@@ -75,7 +74,7 @@ export { MechArchived, SandboxCapacityReached } from './errors/mech.errors.ts';
  * @public
  */
 export { ReleaseSourceUnavailable } from './errors/release-source.errors.ts';
-export { ModelInvalid, TurnEnded, TurnNotFound } from './errors/mech.errors.ts';
+export { TurnNotFound } from './errors/mech.errors.ts';
 export { MechCreationConflict, MechRevisionConflict, SandboxDisabled } from './errors/mech.errors.ts';
 
 export type { FailureCodec } from './errors/types.ts';
@@ -83,36 +82,18 @@ export type { FailureCodec } from './errors/types.ts';
 export { RELEASE_REPOSITORY, ReleaseAsset } from './releases/constants.ts';
 export { releaseBinaryName } from './releases/release-binary-name.ts';
 export { releaseAssetUrl } from './releases/release-asset-url.ts';
-export { Event, EventCursor, EventPage, ListedEvent, UnknownEvent } from './operations/events/schemas.ts';
-export { EventType, WAIT_MAX } from './operations/events/constants.ts';
-export {
-  NotificationId,
-  NotificationText,
-  NotificationBody,
-  NotificationReceipt,
-  NOTIFICATION_TEXT_MAX_CHARS,
-} from './operations/notifications/schemas.ts';
-export {
-  ConsoleMessageId,
-  ConsoleMessageRole,
-  ConsoleMessage,
-  ConsoleMessagePage,
-} from './operations/conversation/schemas.ts';
-export {
-  Instructions,
-  Mech,
-  MechList,
-  MechName,
-  MechPage,
-  MechSummary,
-  DefinitionRevision,
-  NativeToolName,
-  NativeTools,
-  MechRevision,
-  MechRevisionPage,
-} from './operations/mechs/schemas.ts';
-export { MechStatus } from './operations/mechs/constants.ts';
+export { LogEventCursor } from './operations/events/list-events.ts';
+export { Event, EventPage, ListedEvent, UnknownEvent } from './operations/events/schemas.ts';
+export { EventType } from './operations/events/constants.ts';
+export { NotificationText, NOTIFICATION_TEXT_MAX_CHARS } from './operations/notifications/schemas.ts';
+export { ConsoleMessage, ConsoleMessagePage } from './operations/conversation/schemas.ts';
+export { Instructions, Mech, MechList, MechPage, MechSummary, NativeToolName } from './operations/mechs/schemas.ts';
 export { Access, ACCESS_FAILURES } from './operation/constants.ts';
+export {
+  RevokedWorkspaceServiceKey,
+  ServiceSubject,
+  WorkspaceServicePrincipal,
+} from './operations/service-principals/schemas.ts';
 export { decodeRequestPart } from './operation/decode-request-part.ts';
 export { NoFields, OperationMethod } from './operation/schemas.ts';
 export type { Operation, OperationInput, OperationOutput, ServiceFreeCodec } from './operation/types.ts';
@@ -136,7 +117,6 @@ export {
   Trace,
   TracedDispatch,
   Turn,
-  TurnCancel,
   UnknownDispatch,
   UnknownTurn,
 } from './operations/turns/schemas.ts';
@@ -151,7 +131,6 @@ export {
   TOOL_TRACE_MAX_BYTES,
   TurnRuntimeSource,
   TurnStatus,
-  UnansweredReason,
 } from './operations/turns/constants.ts';
 export {
   Allowance,
@@ -203,6 +182,14 @@ export { ExecutionAccess, ExecutionAccessState } from './operations/execution-ac
 
 export { EvidenceNotFound, EvidenceUnavailable } from './errors/evidence.errors.ts';
 export {
+  ConsoleSessionEvidenceArtifact,
+  ConsoleSessionEvidencePage,
+} from './operations/evidence/console-session-evidence.ts';
+export {
+  consoleSessionEvidencePath,
+  consoleSessionEvidenceViewerPath,
+} from './operations/evidence/console-session-evidence-paths.ts';
+export {
   EvidenceArtifact,
   EvidenceDescriptor,
   EvidenceMediaType,
@@ -238,16 +225,8 @@ export {
 
 export { ProcessHandle, ProcessObservation, ProcessSummary, ProcessSummaries } from '@mechane/sandbox-wire';
 
-export { SELF_TOKEN_VARIABLE, WakeId, WakeStatus, Wake, WakeList } from './operations/self/schemas.ts';
-export {
-  Routine,
-  RoutineId,
-  RoutineList,
-  RoutineRequest,
-  RoutineRevision,
-  RoutineStatus,
-  ExpectedRoutineRevision,
-} from './operations/routines/schemas.ts';
+export { SELF_TOKEN_VARIABLE } from './operations/self/schemas.ts';
+export { Routine, RoutineId, RoutineList } from './operations/routines/schemas.ts';
 
 export {
   MECH_HISTORY_IMPORT_PATH,
@@ -266,7 +245,8 @@ export {
   SandboxOwnerPage,
 } from './operations/environment/sandbox-owner.schemas.ts';
 
-export { MechHistoryPage } from './operations/history/schemas.ts';
+export { HeldWorkPage } from './operations/history/list-held-work.ts';
+export type { HeldWorkItem } from './operations/history/list-held-work.ts';
 
 export {
   MECH_MAINTENANCE_PATH,
@@ -277,3 +257,13 @@ export {
 } from './operations/mechs/maintenance.schemas.ts';
 
 export { StartupFailure, StartupPhase, StartupProgress, NativeSnapshotReport } from '@mechane/sandbox-wire';
+
+export { managedRequestDefinitions, managedOperations, matchManagedRoute } from './managed/requests.ts';
+export type { ManagedHttpRoute } from './managed/requests.ts';
+export {
+  canForwardManagedWorkerRequest,
+  hasManagedWorkCredential,
+  managedWorkerAccess,
+} from './managed/worker-access.ts';
+
+export { managedWorkspaceId } from './managed/workspace-id.ts';

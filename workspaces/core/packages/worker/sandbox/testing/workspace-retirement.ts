@@ -1,5 +1,5 @@
-import { Bytes, MachineId, RecordId, SandboxOperationId } from '@mechane/records';
-import { ExecutionStatus, FileCheckpointPurpose } from '@mechane/sandbox-store';
+import { Bytes, MachineId, MechId, RecordId, SandboxOperationId, WorkspaceId } from '@mechane/records';
+import { evidenceOwnerKey, ExecutionStatus, FileCheckpointPurpose } from '@mechane/sandbox-store';
 import type { WorkspaceSnapshot } from '@mechane/sandbox-store';
 import { ReceiptStatus, SandboxAction, SandboxPhase } from '@mechane/sandbox-wire';
 import { capturePromise } from '@mechane/utilities';
@@ -9,6 +9,8 @@ import { test } from 'node:test';
 import { commitCheckpoint } from '../src/checkpoints/commit-checkpoint.ts';
 import { managePortable } from '../src/maintenance/manage-portable.ts';
 import type { MachineProvider, WorkspaceFiles } from '../src/types.ts';
+import { destroyInstalledWorkspace } from '../src/workspace/installed-session-workspace.ts';
+import { workspaceOwnerKey } from '../src/workspace/workspace-part-key.ts';
 import { sqliteStore } from './store/sqlite-store.ts';
 
 const machineId = MachineId.make('d59354ae-4ab0-43b1-a2ba-e1ef281f4709');
@@ -16,6 +18,8 @@ const generation = RecordId.make('b069f632-7b10-4e16-8fca-126dd5b229ff');
 const previous = RecordId.make('10286748-5ffb-46f9-8d37-cf9739da9cda');
 const operationId = SandboxOperationId.make('34995087-fe48-4793-8564-eb2a3bf1d76c');
 const checkpointId = SandboxOperationId.make('498bf63b-1d9d-4c96-aaf2-b755c1bbf780');
+const SESSION_TEST_KEYS = 8031;
+const OUTAGE_ON_DELETE_CALL = 2;
 const terminalId = 'b65c148e-77c3-4272-bd86-5cbf58b61ea2';
 const dispatchedId = '50fb650d-7992-4f8c-9e8a-45dd8752860d';
 const archive = { bytes: 1, parts: 1, sha256: 'a'.repeat(64) } as const;
@@ -311,3 +315,59 @@ for (const barrier of required) {
     }
   });
 }
+
+void test('installed session deletion retries partial batches and preserves adjacent sessions', async () => {
+  const fixture = retirementFixture();
+  const owner = { workspaceId: WorkspaceId.make(previous), mechId: MechId.make(generation) };
+
+  fixture.store.bindCapacity({ owner: { ...owner, isInstalled: true }, reservation: Option.none() });
+
+  const filePrefix = workspaceOwnerKey(fixture.workspace);
+  const evidencePrefix = evidenceOwnerKey(owner);
+  const neighbor = `sandboxes/${fixture.workspace.owner}-neighbor/manifest`;
+  const neighborEvidence = `${evidenceOwnerKey({ ...owner, mechId: MechId.make(previous) })}capture`;
+  const retained = new Set([neighbor, neighborEvidence]);
+
+  for (let index = 0; index < SESSION_TEST_KEYS; index += 1) {
+    fixture.objects.add(`${filePrefix}${index}`);
+    fixture.objects.add(`${evidencePrefix}${index}`);
+  }
+
+  for (const key of retained) {
+    fixture.objects.add(key);
+  }
+
+  const original = fixture.workspace.bucket;
+  let calls = 0;
+
+  const bucket: R2Bucket = {
+    ...original,
+    delete: async (keys) => {
+      calls += 1;
+
+      if (calls === OUTAGE_ON_DELETE_CALL) {
+        throw new Error('injected bucket outage');
+      }
+
+      await original.delete(keys);
+    },
+  };
+
+  const provider = { ...fixture.provider, isAbsent: async () => true };
+  const workspace = { ...fixture.workspace, bucket };
+  const input = { store: fixture.store, workspace, provider, owner };
+
+  try {
+    await assert.rejects(destroyInstalledWorkspace(input), /injected bucket outage/u);
+    assert.ok(Option.isSome(fixture.store.workspace().head));
+    assert.equal(await destroyInstalledWorkspace(input), false);
+    assert.ok(Option.isSome(fixture.store.workspace().head));
+    assert.equal(await destroyInstalledWorkspace(input), true);
+    assert.deepEqual(fixture.objects, retained);
+    assert.ok(Option.isNone(fixture.store.workspace().head));
+    assert.equal(await destroyInstalledWorkspace(input), true);
+    assert.deepEqual(fixture.objects, retained);
+  } finally {
+    fixture.close();
+  }
+});

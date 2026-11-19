@@ -8,6 +8,10 @@ export function getRouter() {
 
 declare module '@tanstack/react-router' {
   interface HistoryState {
+    readonly sessionReaderOrigin?: { readonly selection: ConsoleLocation; readonly steps: number };
+    readonly sessionEvidenceReturn?: string;
+    readonly sessionGalleryOrigin?: ConsoleLocation;
+    readonly managedPages?: ReadonlyArray<string | null>;
     readonly consolePages?: Partial<PageCursors>;
     readonly consoleReturn?: { readonly row: string; readonly positions: ReadonlyArray<ReaderPosition> };
     readonly consoleRunOrigin?: ConsoleLocation;

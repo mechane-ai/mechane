@@ -1,20 +1,21 @@
 # @mechane/console
 
-TanStack Start application at `/console`. Routes compose the data and presentation packages; the Worker serves its
-static build. See the [Console guide](../../../docs/console.md) for behavior, local development, and deployment.
+The TanStack Start application at `/console` browses workspace agents, opens sessions, and inspects a selected session
+or thread. The Worker serves its static build. The [Console guide](../../../docs/console.md) covers user flows, local
+development, and deployment.
 
-`src/application.tsx` owns browser sign-in state and workspace lifetimes. `src/screens/` owns commands and navigation.
-The Vite build creates the shell, extracted StyleX styles, and bundled dependency notices. Storybook builds views
-independently through `.storybook/`.
+`src/application.tsx` owns browser admission. `src/workspace.tsx` owns the admitted workspace and its data runtime.
+`src/managed-navigation.ts` constructs shareable agent and session routes. The managed screens compose reads, commands,
+and presentation components. Their draft owner retains unsent text across navigation and cache recovery. The URL carries
+the selected resources and page, so another authorized viewer can open the same records.
 
-Run overviews link to captured browser evidence at
-`/console/workspaces/:workspaceId/mechs/:mechId/evidence/:artifactId`. The viewer retains the selected workspace through
-sign-in, presents source provenance, and uses authenticated media URLs. Captures document observations, not a test
-verdict. A shared link requires current workspace membership. The root route keeps the same workspace and conversation
-owner mounted while a capture covers the conversation or activation. Direct capture links return to the recorded
-activation; in-app Back also restores the originating row, draft, and scroll position.
+Workspace owners can open Settings → Archived mechs to browse historical records and their original published messages.
+The read-only Archive renders recorded text and validated presentation cards and links to recorded runs.
 
-The mech's Environment view lists active and recent managed processes with exact-machine stop controls. Bounded output
-loads only when a process is expanded. Network observers detach while a run or capture covers the view, without
-discarding expanded logs. Browsing this view never starts a machine, restarts a lost process, or extends the machine's
-idle deadline.
+Historical native diagnostics live under `src/screens/mech.tsx`. Run overviews link to captured evidence at
+`/console/workspaces/:workspaceId/mechs/:mechId/evidence/:artifactId`. The full-page viewer uses authenticated media and
+offers a return to the originating run when one was recorded. The Environment view reads checkpoint and process reports
+and loads bounded output for an expanded handle.
+
+The Vite build emits the shell, extracted StyleX styles, and dependency notices. Storybook builds component examples
+through `.storybook/`.

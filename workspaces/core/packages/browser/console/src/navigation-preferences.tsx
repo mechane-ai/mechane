@@ -1,20 +1,18 @@
-import type { Mech } from '@mechane/protocol';
-import { MechId } from '@mechane/records';
 import { Schema } from 'effect';
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 
 const RECENT_LIMIT = 5;
-const preferencesSchema = Schema.Struct({ pinned: Schema.Array(MechId), recent: Schema.Array(MechId) });
+const preferencesSchema = Schema.Struct({ pinned: Schema.Array(Schema.String), recent: Schema.Array(Schema.String) });
 
-type NavigationPreferences = { readonly pinned: ReadonlyArray<Mech['id']>; readonly recent: ReadonlyArray<Mech['id']> };
+type NavigationPreferences = { readonly pinned: ReadonlyArray<string>; readonly recent: ReadonlyArray<string> };
 
 type PreferenceSnapshot = { readonly preferences: NavigationPreferences; readonly hasError: boolean };
 
 type NavigationPreferenceState = NavigationPreferences & {
-  readonly visit: (id: Mech['id']) => void;
-  readonly togglePin: (id: Mech['id']) => void;
-  readonly forget: (id: Mech['id']) => void;
+  readonly visit: (id: string) => void;
+  readonly togglePin: (id: string) => void;
+  readonly forget: (id: string) => void;
   readonly hasPersistenceError: boolean;
 };
 
@@ -65,7 +63,7 @@ export function NavigationPreferenceProvider({
   readonly workspaceId: string;
   readonly children: ReactNode;
 }): ReactNode {
-  const storageKey = `mechane:navigation:${principalId}:${workspaceId}`;
+  const storageKey = `mechane:agent-navigation:${principalId}:${workspaceId}`;
 
   return (
     <NavigationPreferenceOwner key={storageKey} storageKey={storageKey}>
@@ -98,7 +96,7 @@ function NavigationPreferenceOwner({
   );
 
   const visit = useCallback(
-    (id: Mech['id']): void => {
+    (id: string): void => {
       const previous = latest.current.preferences;
 
       if (previous.recent[0] === id || previous.pinned.includes(id)) {
@@ -114,7 +112,7 @@ function NavigationPreferenceOwner({
   );
 
   const togglePin = useCallback(
-    (id: Mech['id']): void => {
+    (id: string): void => {
       const previous = latest.current.preferences;
       const wasPinned = previous.pinned.includes(id);
 
@@ -129,7 +127,7 @@ function NavigationPreferenceOwner({
   );
 
   const forget = useCallback(
-    (id: Mech['id']): void => {
+    (id: string): void => {
       const previous = latest.current.preferences;
 
       if (!previous.pinned.includes(id) && !previous.recent.includes(id)) {

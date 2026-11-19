@@ -80,8 +80,4 @@ export const AttemptRow = Schema.Struct({
 
 export const ExportRow = Schema.Struct({ id: Schema.String, value: Schema.String });
 
-export type NotificationRecord = typeof NotificationRow.Type;
-export type TurnRecord = typeof TurnRow.Type;
-export type CancellationRecord = typeof CancellationRow.Type;
 export type EffectRecord = typeof EffectRow.Type;
-export type AttemptRecord = typeof AttemptRow.Type;

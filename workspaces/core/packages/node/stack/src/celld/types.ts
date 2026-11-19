@@ -9,6 +9,7 @@ export type CelldWorkerOptions = {
   readonly celldBinary?: CelldBinary;
   readonly isArtifact?: boolean;
   readonly isWatched?: boolean;
+  readonly prepareSource?: () => Promise<void>;
   readonly readiness?: CelldReadiness;
 };
 

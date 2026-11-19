@@ -1,17 +1,7 @@
-import { cloneMech, forkMech } from './copy-mech.ts';
-import { createMech } from './create-mech.ts';
+import { listArchivedCompletions } from './list-archived-completions.ts';
 import { listMechRevisions } from './list-mech-revisions.ts';
 import { listMechs } from './list-mechs.ts';
 import { showMech } from './show-mech.ts';
-import { updateMech } from './update-mech.ts';
 
-/** Mech creation, definition revisions, cloning and forks. */
-export const MECH_OPERATIONS = {
-  createMech,
-  cloneMech,
-  listMechs,
-  listMechRevisions,
-  showMech,
-  updateMech,
-  forkMech,
-} as const;
+/** Native definitions and saved revisions for operator inspection. */
+export const MECH_OPERATIONS = { listMechs, listMechRevisions, listArchivedCompletions, showMech } as const;

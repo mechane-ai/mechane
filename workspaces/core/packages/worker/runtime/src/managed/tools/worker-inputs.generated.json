@@ -1,0 +1,89 @@
+{
+  "bash": {
+    "additionalProperties": false,
+    "description": "Input payload for the `bash` tool of the\n`agent_toolset_20260401` toolset. All fields are optional;\na normal invocation supplies `command`, while `restart=true`\n(with no `command`) reboots the runner-side bash session.\n",
+    "properties": {
+      "command": { "description": "Shell command to execute. Omit only when `restart` is true.", "type": "string" },
+      "restart": {
+        "description": "When true, restart the persistent bash session instead of\nrunning a command. Subsequent calls without `restart` will\nrun against the fresh session.\n",
+        "type": "boolean"
+      },
+      "timeout_ms": {
+        "description": "Per-call timeout in milliseconds. Defaults to the\nrunner-wide tool timeout when omitted or zero.\n",
+        "minimum": 0,
+        "type": "integer"
+      }
+    },
+    "type": "object"
+  },
+  "edit": {
+    "additionalProperties": false,
+    "description": "Input payload for the `edit` tool. Performs a string\nreplacement in the named file; by default `old_string` must\noccur exactly once.\n",
+    "properties": {
+      "file_path": { "description": "Path of the file to edit.", "type": "string" },
+      "old_string": { "description": "Substring to find and replace.", "type": "string" },
+      "new_string": { "description": "Replacement text.", "type": "string" },
+      "replace_all": {
+        "description": "When true, replace every occurrence of `old_string`\ninstead of requiring a unique match.\n",
+        "type": "boolean"
+      }
+    },
+    "required": ["file_path", "old_string", "new_string"],
+    "type": "object"
+  },
+  "glob": {
+    "additionalProperties": false,
+    "description": "Input payload for the `glob` tool. Returns paths matching a\ndoublestar glob pattern, newest first.\n",
+    "properties": {
+      "pattern": {
+        "description": "Doublestar glob pattern (e.g. `**/*.go`). Absolute patterns\nare only permitted when the runner is configured to allow\nthem.\n",
+        "type": "string"
+      },
+      "path": {
+        "description": "Optional directory root to search under. Defaults to the\nrunner's working directory.\n",
+        "type": "string"
+      }
+    },
+    "required": ["pattern"],
+    "type": "object"
+  },
+  "grep": {
+    "additionalProperties": false,
+    "description": "Input payload for the `grep` tool. Searches file contents for\na regular expression, returning matching lines.\n",
+    "properties": {
+      "pattern": { "description": "Regular expression to search for.", "type": "string" },
+      "path": {
+        "description": "Optional directory root to search under. Defaults to the\nrunner's working directory.\n",
+        "type": "string"
+      }
+    },
+    "required": ["pattern"],
+    "type": "object"
+  },
+  "read": {
+    "additionalProperties": false,
+    "description": "Input payload for the `read` tool. Reads file contents\nrelative to the runner's working directory (or absolute when\nthe runner permits).\n",
+    "properties": {
+      "file_path": { "description": "Path of the file to read.", "type": "string" },
+      "view_range": {
+        "description": "Optional `[start_line, end_line]` 1-indexed inclusive\nrange. When omitted the entire file is returned.\n`end_line` of 0 or negative means \"to end of file\".\n",
+        "items": { "type": "integer" },
+        "maxItems": 2,
+        "minItems": 2,
+        "type": "array"
+      }
+    },
+    "required": ["file_path"],
+    "type": "object"
+  },
+  "write": {
+    "additionalProperties": false,
+    "description": "Input payload for the `write` tool. Writes (overwriting) the\nentire file contents.\n",
+    "properties": {
+      "file_path": { "description": "Path of the file to write.", "type": "string" },
+      "content": { "description": "Full file contents to write.", "type": "string" }
+    },
+    "required": ["file_path", "content"],
+    "type": "object"
+  }
+}

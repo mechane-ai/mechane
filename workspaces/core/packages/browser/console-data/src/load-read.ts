@@ -15,9 +15,10 @@ import { Option, Result, Schema } from 'effect';
 import type { ConsoleApi, Input, Output } from './api.ts';
 import { upsertRows } from './collections.ts';
 import type { CanonicalTables, CanonicalWriter } from './collections.ts';
+import type { ManagedKind } from './managed-reads.ts';
 import { MechDefinition, recordKey, TraceEvidence, turnVersion } from './records.ts';
 import type { MechDefinitionRow, MechSummaryRow, TurnRow } from './records.ts';
-import type { ReadKind, ReadReceipt, ReadRequest } from './requests.ts';
+import type { ReadKind, ReadReceipt, ReadRequest, TabReadKind } from './requests.ts';
 
 const terminalTurnStatuses: ReadonlySet<string> = new Set([
   TurnStatus.Completed,
@@ -39,18 +40,20 @@ type ReadOutputs = {
   readonly allowance: Output<'showAllowance'>;
 };
 
+type NativeReadKind = Exclude<ReadKind, ManagedKind | TabReadKind>;
+
 type ReadAnswer = {
-  readonly [Kind in ReadKind]: {
+  readonly [Kind in NativeReadKind]: {
     readonly kind: Kind;
     readonly request: ReadRequest<Kind>;
     readonly output: ReadOutputs[Kind];
   };
-}[ReadKind];
+}[NativeReadKind];
 
 type FetchRead = {
   readonly api: ConsoleApi;
   readonly workspaceId: Input<'listMechs'>['workspaceId'];
-  readonly request: ReadRequest;
+  readonly request: ReadRequest<NativeReadKind>;
   readonly signal: AbortSignal;
 };
 
@@ -178,7 +181,7 @@ type SaveMech = {
 };
 
 /** Reconciles an acknowledged definition without regressing saved or active revisions. */
-export async function saveMech({ writeRows, tables, mech, signal }: SaveMech): Promise<void> {
+async function saveMech({ writeRows, tables, mech, signal }: SaveMech): Promise<void> {
   const summary: MechSummaryRow = { key: mech.id, value: Schema.encodeSync(MechSummary)(mech) };
   const definition: MechDefinitionRow = { key: mech.id, value: Schema.encodeSync(MechDefinition)(mech) };
 

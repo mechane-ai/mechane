@@ -4,6 +4,7 @@ import { createWorkspaceRecords } from './api/configuration/workspaces.ts';
 import type { Page } from './api/page.ts';
 import type { StoreContext } from './context.ts';
 import { StoreConflict } from './errors.ts';
+import { countHeldSandboxes } from './held-sandboxes.ts';
 import { StoredText } from './row-values.ts';
 import { lockWorkspace } from './scope-locks.ts';
 
@@ -31,7 +32,6 @@ const AllocationSchema = Schema.Struct({
   state: Schema.Literals(['held', 'released']),
 });
 
-const HeldMachinesSchema = Schema.Struct({ held_machines: Schema.Number, workspace_machines: Schema.Number });
 type Allocation = typeof AllocationSchema.Type;
 
 export function createSandboxCapacityStore(context: StoreContext) {
@@ -91,12 +91,7 @@ export function createSandboxCapacityStore(context: StoreContext) {
           }
         }
 
-        const counted = await transaction.client.query(
-          "SELECT count(*) AS held_machines, count(*) FILTER (WHERE workspace_id=$1) AS workspace_machines FROM mechane.sandbox_capacity WHERE state='held'",
-          [identity.workspaceId],
-        );
-
-        const allocation = Schema.decodeUnknownSync(HeldMachinesSchema)(counted.rows[0]);
+        const allocation = await countHeldSandboxes(transaction, identity.workspaceId);
 
         if (allocation.held_machines >= maximumMachines || allocation.workspace_machines >= policy.machines) {
           return { status: 'refused', reason: 'capacity' };

@@ -73,7 +73,13 @@ export async function exportEvidence({
 
   const rangeHeader = Option.none<string>();
 
-  const content = await readEvidenceContent({ store, bucket: workspace.bucket, ...identity, rangeHeader });
+  const content = await readEvidenceContent({
+    store,
+    bucket: workspace.bucket,
+    ...identity,
+    rangeHeader,
+    includeBody: true,
+  });
 
   const body = Option.fromNullOr(content.body);
 

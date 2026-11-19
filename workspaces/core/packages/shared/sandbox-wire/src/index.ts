@@ -8,6 +8,7 @@ export {
   WORKSPACE_ARCHIVE_MAX_BYTES,
   HostMachineStatus,
   GUEST_PORT,
+  INSTALLED_WORKSPACE_PATH,
   ReceiptStatus,
   OUTPUT_TAIL_BYTES,
 } from './constants.ts';
@@ -64,10 +65,6 @@ export {
   SandboxExecutionObservation,
   SandboxExecutionResult,
   SandboxExecutionRefusal,
-  sandboxExecutionPath,
-  sandboxExecutionCancelPath,
-  sandboxExecutionCancelPendingPath,
-  sandboxExecutionResumePath,
   sandboxWorkspacePath,
   sandboxStopPath,
   sandboxStopReadPath,
@@ -114,10 +111,6 @@ export {
   BROWSER_RECORDING_MAX_BYTES,
   BROWSER_RECORDING_MAX_DURATION,
   BROWSER_MAX_TARGETS,
-  BROWSER_NAVIGATION_URL_PATTERN,
-  BROWSER_INPUT_TAB_ID_MAX_CHARS,
-  BROWSER_INPUT_MAX_CHARS,
-  BROWSER_COORDINATE_MAX_PIXELS,
   BROWSER_MAX_LOGS,
   BROWSER_MAX_TABS,
   BROWSER_TEXT_MAX_CHARS,
@@ -155,53 +148,40 @@ export {
   SandboxProcessSubmission,
   SandboxProcessAnswer,
   SandboxProcessIdentity,
-  SandboxRunIdentity,
   SandboxBrowserSubmission,
   SandboxBrowserAbandonResult,
   BrowserProgress,
   SandboxBrowserArtifactAnswer,
-  SandboxBrowserIdentity,
 } from './interactive-service.ts';
-export { sandboxProcessesPath } from './sandbox-processes-path.ts';
-export { sandboxProcessPath } from './sandbox-process-path.ts';
 export { sandboxProcessReadPath } from './sandbox-process-read-path.ts';
 export { sandboxProcessStopPath } from './sandbox-process-stop-path.ts';
-export { sandboxInteractiveCancelPath } from './sandbox-interactive-cancel-path.ts';
-export { sandboxBrowserPath, sandboxBrowserAbandonPath } from './sandbox-browser-path.ts';
 export {
   SandboxCheckpointIdentity,
   SandboxCheckpointResult,
   SandboxCheckpointObservation,
-  sandboxCheckpointPath,
   SandboxRecoveryCheckpointRequest,
   SandboxRecoveryCheckpointRefusalReason,
   SandboxRecoveryCheckpointRefusal,
   SandboxRecoveryCheckpointResult,
 } from './checkpoint.ts';
 export {
-  EvidenceExportIdentity,
   EvidenceExportMetadata,
   EvidenceExportFile,
   EvidenceExportResult,
-  sandboxEvidenceExportPath,
   guestEvidenceExportPath,
 } from './evidence-export.ts';
 export {
   SANDBOX_COMPLETION_PATH,
-  SandboxCompletionKind,
-  SandboxCompletionStatus,
   SandboxCompletionReceipt,
   SandboxCompletion,
   SandboxCompletionAccepted,
   SandboxCompletionIdentity,
   sandboxCompletionPath,
-  sandboxPendingCompletionsPath,
 } from './completion.ts';
 
 export {
   IMAGE_STARTUP_SECONDS,
   WORKSPACE_RESTORE_SECONDS,
-  MACHINE_STARTUP_GRACE_MS,
   StartupPhase,
   WorkspaceRestoreSource,
   NativeSnapshotSelection,
@@ -216,3 +196,36 @@ export {
   MachineStartup,
   ExecutionTiming,
 } from './startup.ts';
+export {
+  MANAGED_WORK_PATH,
+  MANAGED_WORK_FINGERPRINT_HEADER,
+  MANAGED_WORK_MAX_BYTES,
+  ManagedSandboxWorkAction,
+  ManagedWorkerAllocation,
+  ManagedWorkerClaim,
+  ManagedWorkerSession,
+} from './managed-work.ts';
+
+export { ManagedGitIdentity, managedGitIdentityPath } from './managed-git.ts';
+export { readGitOperation } from './managed-git-route.ts';
+export type { GitIdentityRequest, GitOperation } from './managed-git-route.ts';
+export {
+  installedComputerAccess,
+  isInstalledWorkerComputerOperation,
+  installedComputerPath,
+  installedComputerServicePath,
+  InstalledCheckpointRepair,
+  InstalledProcessCommand,
+  InstalledProcessSubmission,
+} from './installed-computer.ts';
+export { installedComputerQuery } from './installed-computer-query.ts';
+export { installedCommandEnvironmentPath, matchInstalledCommandEnvironment } from './installed-command-environment.ts';
+
+export { InstalledActionOrigin } from './installed-action-origin.ts';
+export { InstalledDrainReport, SANDBOX_INSTALLED_DRAIN_PATH } from './installed-drain.ts';
+export {
+  InstalledCompletionCursor,
+  InstalledCompletionObservation,
+  InstalledCompletionPage,
+  InstalledProcessCompletion,
+} from './installed-process-completion.ts';

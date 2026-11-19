@@ -1,1 +1,0 @@
-export const NOTIFICATION_BODY_MAX_BYTES = 524_288;

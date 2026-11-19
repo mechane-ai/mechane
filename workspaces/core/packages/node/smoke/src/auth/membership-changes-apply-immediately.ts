@@ -1,37 +1,33 @@
-import { catalog, Mech, Workspace, WorkspaceMember, WorkspaceMemberRemoval } from '@mechane/protocol';
-import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
-import { createAccount, mechPath, runCli, runCliFailure } from '@mechane/testing';
+import { BROWSER_AUTHENTICATION_REQUEST, Workspace, WorkspaceMember, WorkspaceMemberRemoval } from '@mechane/protocol';
+import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import type { Account, ScenarioInput } from '@mechane/testing';
+import { createAccount, requireFixtures, runCli, runCliFailure } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 
-const REQUEST_TIMEOUT_MS = 15_000;
+const Environment = Schema.fromJsonString(Schema.Struct({ id: Schema.String, name: Schema.String }));
 
-const ApiFailure = Schema.Struct({ error: Schema.Struct({ code: Schema.String }) });
-type WorkspaceReadInput = Pick<ScenarioInput, 'stack'> & { readonly account: Account; readonly mechId: string };
+const Failure = Schema.fromJsonString(
+  Schema.Struct({ type: Schema.Literal('error'), error: Schema.Struct({ type: Schema.String }) }),
+);
 
-async function assertWorkspaceReadRejected({ stack, account, mechId }: WorkspaceReadInput): Promise<void> {
-  const response = await fetch(new URL(mechPath({ account, mechId }), stack.origin), {
-    headers: { [HttpHeader.Authorization]: `Bearer ${account.token}` },
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
+function environmentPath({ id }: { readonly id: string | undefined }): string {
+  const root = '/console-api/v1/environments';
 
-  const failure = Schema.decodeUnknownSync(ApiFailure)(await response.json());
+  if (id === undefined) {
+    return root;
+  }
 
-  assert.equal(response.status, HttpStatusCode.NotFound);
-  assert.equal(failure.error.code, 'WorkspaceNotFound', 'The API exposed a workspace without current membership');
+  return `${root}/${encodeURIComponent(id)}`;
+}
+
+function mechDirectoryPath({ root, workspaceId }: { readonly root: string; readonly workspaceId: string }): string {
+  return `${root}/workspaces/${encodeURIComponent(workspaceId)}/mechs`;
 }
 
 export async function membershipChangesApplyImmediately({ stack }: ScenarioInput): Promise<void> {
-  const ownerLogin = stack.fixtures?.github?.users.owner.login;
-
-  assert.ok(
-    ownerLogin !== undefined && ownerLogin.length > 0,
-    'Workspace administration needs the local installation owner',
-  );
-
-  const owner = await createAccount({ stack, login: ownerLogin });
+  const owner = await createAccount({ stack, login: requireFixtures(stack).github.users.owner.login });
   const member = await createAccount({ stack });
 
   const workspace = await runCli({
@@ -41,16 +37,43 @@ export async function membershipChangesApplyImmediately({ stack }: ScenarioInput
     schema: Workspace,
   });
 
-  const mech = await runCli({
-    stack,
-    account: owner,
-    args: ['mech', 'create', '--workspace', workspace.id, '--name', 'membership proof'],
-    schema: Mech,
+  async function environmentRequest(account: Account, id?: string, body?: Readonly<Record<string, unknown>>) {
+    const path = environmentPath({ id });
+    const url = new URL(path, stack.origin);
+
+    const headers = {
+      'anthropic-workspace-id': workspace.id,
+      'anthropic-beta': 'managed-agents-2026-04-01',
+      'anthropic-version': '2026-10-21',
+      [HttpHeader.Origin]: stack.origin.origin,
+      [HttpHeader.ContentType]: MediaType.Json,
+      [HttpHeader.BrowserAuthentication]: BROWSER_AUTHENTICATION_REQUEST,
+    };
+
+    if (body === undefined) {
+      return await account.browser.request({ url, headers });
+    }
+
+    return await account.browser.request({ url, headers, method: HttpMethod.Post, body: JSON.stringify(body) });
+  }
+
+  const saved = await environmentRequest(owner, undefined, {
+    name: 'membership proof',
+    config: { type: 'self_hosted' },
   });
 
-  const scopedMember = { ...member, workspaceId: workspace.id };
+  assert.equal(saved.status, HttpStatusCode.Ok);
 
-  await assertWorkspaceReadRejected({ stack, account: scopedMember, mechId: mech.id });
+  const environment = Schema.decodeUnknownSync(Environment)(saved.text);
+
+  async function assertRemoved(id: string, body?: Readonly<Record<string, unknown>>): Promise<void> {
+    const denied = await environmentRequest(member, id, body);
+
+    assert.equal(denied.status, HttpStatusCode.Forbidden);
+    assert.equal(Schema.decodeUnknownSync(Failure)(denied.text).error.type, 'permission_error');
+  }
+
+  await assertRemoved(environment.id);
   await runCli({
     stack,
     account: owner,
@@ -58,14 +81,30 @@ export async function membershipChangesApplyImmediately({ stack }: ScenarioInput
     schema: WorkspaceMember,
   });
 
-  const visible = await runCli({
-    stack,
-    account: member,
-    args: ['mech', 'show', mech.id, '--workspace', workspace.id],
-    schema: Mech,
+  const archivedPath = mechDirectoryPath({ root: '/api/operator', workspaceId: workspace.id });
+  const archive = new URL(archivedPath, stack.origin);
+
+  const ownerArchive = await owner.browser.request({ url: archive });
+  const memberArchive = await member.browser.request({ url: archive });
+
+  assert.equal(ownerArchive.status, HttpStatusCode.Ok);
+  assert.equal(memberArchive.status, HttpStatusCode.Forbidden);
+
+  const retiredPath = mechDirectoryPath({ root: '/api/v1', workspaceId: workspace.id });
+
+  const retiredCreate = await owner.browser.request({
+    url: new URL(retiredPath, stack.origin),
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Origin]: stack.origin.origin, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify({ name: 'retired definition' }),
   });
 
-  assert.equal(visible.id, mech.id);
+  assert.equal(retiredCreate.status, HttpStatusCode.NotFound);
+
+  const visible = await environmentRequest(member, environment.id);
+
+  assert.equal(visible.status, HttpStatusCode.Ok);
+  assert.equal(Schema.decodeUnknownSync(Environment)(visible.text).id, environment.id);
 
   const refusedEdit = await runCliFailure({
     stack,
@@ -80,32 +119,15 @@ export async function membershipChangesApplyImmediately({ stack }: ScenarioInput
     args: ['workspace', 'member', 'remove', member.principalId, '--workspace', workspace.id],
     schema: WorkspaceMemberRemoval,
   });
-  await assertWorkspaceReadRejected({ stack, account: scopedMember, mechId: mech.id });
 
-  const edited = await fetch(
-    new URL(`${mechPath({ account: scopedMember, mechId: mech.id })}/definition`, stack.origin),
-    {
-      method: catalog.updateMech.method,
-      headers: { [HttpHeader.Authorization]: `Bearer ${member.token}`, [HttpHeader.ContentType]: MediaType.Json },
-      body: JSON.stringify(
-        Schema.encodeSync(catalog.updateMech.body)({ expectedRevision: mech.revision, name: 'Unauthorized edit' }),
-      ),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    },
-  );
+  const formerMemberArchive = await member.browser.request({ url: archive });
 
-  const failure = Schema.decodeUnknownSync(ApiFailure)(await edited.json());
+  assert.equal(formerMemberArchive.status, HttpStatusCode.NotFound);
+  await assertRemoved(environment.id);
+  await assertRemoved(environment.id, { name: 'Unauthorized edit' });
 
-  assert.equal(edited.status, HttpStatusCode.NotFound);
-  assert.equal(failure.error.code, 'WorkspaceNotFound', 'A removed member could still write to the workspace');
+  const unchanged = await environmentRequest(owner, environment.id);
 
-  const unchanged = await runCli({
-    stack,
-    account: owner,
-    args: ['mech', 'show', mech.id, '--workspace', workspace.id],
-    schema: Mech,
-  });
-
-  assert.equal(unchanged.revision, mech.revision);
-  assert.equal(unchanged.name, mech.name);
+  assert.equal(unchanged.status, HttpStatusCode.Ok);
+  assert.equal(Schema.decodeUnknownSync(Environment)(unchanged.text).name, environment.name);
 }

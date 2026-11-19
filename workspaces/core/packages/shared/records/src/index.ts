@@ -19,6 +19,8 @@ export {
 export {
   RECORD_TEXT_MAX_CHARS,
   SHA256_PATTERN,
+  UNSIGNED_INTEGER_PATTERN,
+  GIT_OBJECT_ID_PATTERN,
   SHA256_DIGEST_PATTERN,
   BOOLEAN_PREFIXES,
   PAGE_RENAMES,
@@ -42,7 +44,16 @@ export { listQuery } from './list-query.ts';
 export { renamedWireStruct } from './renamed-wire-struct.ts';
 export { unknownMember } from './unknown-member.ts';
 export { boundedText } from './bounded-text.ts';
-export { MechId, MachineId, NativeSnapshotId, WorkspaceId, PrincipalId, SessionId } from './entity.schemas.ts';
+export {
+  MechId,
+  ManagedAgentId,
+  MachineId,
+  NativeSnapshotId,
+  WorkspaceId,
+  PrincipalId,
+  ServiceKeyId,
+  SessionId,
+} from './entity.schemas.ts';
 export { ConnectionId } from './connection.schemas.ts';
 export { CreationRequestId, CreationRequestRecordId } from './creation.schemas.ts';
 export { ModelToolCallId } from './model-tool-call-id.schemas.ts';

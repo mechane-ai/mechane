@@ -96,6 +96,37 @@ function failureType(failure: unknown): string {
   return 'UnknownFailure';
 }
 
+type SessionDeliveryFailure = {
+  readonly operation: 'open' | 'dispatch';
+  readonly failure: unknown;
+  readonly workspaceId: string;
+  readonly sessionId: string;
+};
+
+export function reportSessionDeliveryFailure({
+  operation,
+  failure,
+  workspaceId,
+  sessionId,
+}: SessionDeliveryFailure): void {
+  console.error({
+    event: 'managed.session.delivery_failed',
+    operation,
+    workspaceId,
+    sessionId,
+    errorType: failureType(failure),
+  });
+}
+
+export function reportRecoveryFailure(step: string, failure: unknown): void {
+  console.error({
+    event: 'managed.recovery.failed',
+    step,
+    errorType: failureType(failure),
+    ...postgresFailureMetadata(failure),
+  });
+}
+
 function postgresFailureMetadata(failure: unknown) {
   if (!Schema.is(PostgresErrorMetadata)(failure)) {
     return {};

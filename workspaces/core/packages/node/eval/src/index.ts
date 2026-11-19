@@ -3,8 +3,8 @@ export type { EvalFailure, WorkspaceAccess, WriteProgress } from './types.ts';
 export { EvalOutcome } from './constants.ts';
 /** Runs suites and recovers or cleans their saved work without replacing completed stages. @public */
 export { runEval, resumeEval, runReplyEval, cleanupEval } from './run-eval.ts';
-/** Composes the canonical client and selected MCP transport for an eval workspace. @public */
-export { createEvalTarget, localTransport } from './create-eval-target.ts';
+/** Composes the Managed Agents client for an eval workspace. @public */
+export { createEvalTarget } from './create-eval-target.ts';
 /** Identifies the executing runner bytes for experiment provenance. @public */
 export { evalRunnerFingerprint } from './eval-runner-fingerprint.ts';
 /** Hashes explicitly selected application sources independently of terminal and documentation code. @public */
@@ -13,27 +13,16 @@ export { fingerprintEvalSources } from './fingerprint-eval-sources.ts';
 export { defineGradeSchema } from './define-grade-schema.ts';
 /** Freezes evidence and its digest for grading and calibration. @public */
 export { createEvidenceRecord } from './create-evidence-record.ts';
-/** Hosts authenticated fixture tools with durable receipts for suite adapters. @public */
-export { hostEnvironment } from './environment/host-environment.ts';
-/** Owns a temporary bridge from a hosted runtime to the local fixture. @public */
-export { createCloudflaredTransport } from './environment/cloudflared-transport.ts';
 /** Reads authoritative saved stages for external inspection and audits. @public */
 export { readEval } from './store/application-store.ts';
 /** Validates declared schemas and experiment settings without model work. @public */
 export { validateEvalSuite } from './plan-application.ts';
-/** Provides typed adapter, transport, and missing-manifest failures to SDK consumers. @public */
-export {
-  EvalAdapterFailed,
-  EvalAdapterOperation,
-  EvalManifestMissing,
-  EvalTransportFailed,
-  EvalTransportOperation,
-} from './errors.ts';
+/** Provides typed adapter and missing-manifest failures to SDK consumers. @public */
+export { EvalAdapterFailed, EvalAdapterOperation, EvalManifestMissing } from './errors.ts';
 /** Defines the application adapter and saved-record interfaces accepted by the public runner. @public */
 export type {
   Json,
   EvalTarget,
-  OpenEvalTransport,
   EvalEnvironment,
   EvalSuite,
   EvalGradeSchema,

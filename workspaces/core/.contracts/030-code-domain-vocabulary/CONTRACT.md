@@ -36,16 +36,16 @@ messages, tool calls, stream parts, or task identifiers to simulate the retired 
 | installation | One deployed Mechane service and its global configuration | — |
 | workspace | The membership and allowance boundary containing mechs | — |
 | principal | A stable authenticated identity that can hold memberships | — |
-| mech | A durable identity with instructions, working context, and execution environment | — |
+| mech | The product's named agent identity with one durable execution owner across sessions | — |
 | notification | An immutable accepted input with producer identity and ordered inbox sequence | inbox item (for new admission) |
 | activation | A native Pi execution driving one mech, potentially consuming many notifications | — |
 | run | The stored execution record used for an activation or a preserved historical input execution | — |
 | turn | The existing inspection API's name for a run record | — |
-| session | An internal context identity or preserved historical conversation record | — |
-| conversation | The mech's public Console messages, distinct from private model context | — |
+| session | An independent conversation with pinned agent configuration, event history and session resources | — |
+| conversation | The session's authorized exchange of inputs, assistant messages and tool events | — |
 | work item | A preserved historical progress record; current work notes are ordinary files | — |
-| thread | An external conversation such as a Slack thread, qualified by its platform | — |
-| memory | Ordinary notes in a mech's durable home; historical SQL documents remain preserved | — |
+| thread | An independently addressed conversation context within a session; qualify external Slack threads by platform | — |
+| memory | Knowledge explicitly attached to a session through a versioned memory store | — |
 | revision | An immutable version of a mech definition | — |
 | model offer | A configured model with context, output, and pricing limits | — |
 | dispatch | One metered model-call attempt | — |

@@ -26,7 +26,7 @@ const VALUES = {
     {
       path: ['tags'],
       lines: [
-        'The public client and eval archives consume exports marked @public, including types their declarations must name. Keep this tag limited to the actual public archive surface.',
+        'The public client, Bash, and eval archives consume exports marked @public, including types their declarations must name. Keep this tag limited to the actual public archive surface.',
       ],
     },
     {

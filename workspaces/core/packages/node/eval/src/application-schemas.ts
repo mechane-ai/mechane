@@ -1,14 +1,11 @@
-import { Instructions, NativeTools, NotificationId, NotificationText, TracedDispatch } from '@mechane/protocol';
+import { Instructions, NotificationText } from '@mechane/protocol';
 import {
   Bytes,
-  ConnectionId,
   CreationRequestId,
-  MechId,
   Micros,
-  RecordName,
   renamedWireStruct,
   Sequence,
-  TurnId,
+  UNSIGNED_INTEGER_PATTERN,
   WorkspaceId,
 } from '@mechane/records';
 import { Duration, Schema } from 'effect';
@@ -24,7 +21,7 @@ import {
 import { EvalId } from './schemas.ts';
 
 /** Record codecs own this version; reports remain derived from the saved stages. */
-export const EVAL_FORMAT_VERSION = 3;
+export const EVAL_FORMAT_VERSION = 4;
 
 /** A terminal role result stays distinct from whether its evidence can be graded. */
 export const EvalRoleStatus = { Completed: 'completed', Failed: 'failed', Cancelled: 'cancelled' } as const;
@@ -33,8 +30,6 @@ export const StructuredGradeStatus = { Graded: 'graded', Ungradable: 'ungradable
 
 const SchemaIdentity = Schema.Struct({ id: Schema.NonEmptyString, version: Schema.NonEmptyString });
 const hasTrialIdPattern = Schema.isPattern(TRIAL_ID_PATTERN);
-const hasConnectionName = Schema.isMinLength(1);
-const ConnectionDisplayName = RecordName.check(hasConnectionName);
 
 /** Trial identities are deterministic digests, independent of mutable infrastructure resources. */
 export const EvalTrialId = Schema.String.check(hasTrialIdPattern).pipe(Schema.brand('EvalTrialId'));
@@ -92,18 +87,16 @@ export const EvalBounds = renamedWireStruct({
 
 export type EvalBounds = typeof EvalBounds.Type;
 
-/** Capabilities are explicit even when the model and instructions use deployment defaults. */
+/** The role's model is frozen before its execution. */
 export const RoleSettings = Schema.Struct({
-  /** Absent for the deployment's default model offer. */
-  model: Schema.optionalKey(Schema.NonEmptyString),
+  model: Schema.NonEmptyString,
   /** Absent when the role has no additional instructions. */
   instructions: Schema.optionalKey(Instructions),
-  nativeTools: NativeTools,
 });
 
 export type RoleSettings = typeof RoleSettings.Type;
 
-/** The runner keeps private rubrics outside the subject's visible input. */
+/** The runner keeps the rubric separate from subject input. */
 export const EvalCaseDefinition = Schema.Struct({
   id: EvalId,
   input: NotificationText,
@@ -118,8 +111,6 @@ export const EvalSuiteDefinition = Schema.Struct({
   id: EvalId,
   version: Schema.NonEmptyString,
   adapter: Schema.Struct({ ...SchemaIdentity.fields, fingerprint: Schema.NonEmptyString }),
-  /** Absent when the subject has no application-specific MCP connection name. */
-  connectionName: Schema.optionalKey(ConnectionDisplayName),
   subject: RoleSettings,
   judge: Schema.Struct({
     ...RoleSettings.fields,
@@ -176,14 +167,11 @@ export const EvalAuditManifest = Schema.Struct({
 
 export type EvalAuditManifest = typeof EvalAuditManifest.Type;
 
-/** Creation and notification identities are saved before either external request is sent. */
+/** A saved role intent owns its agent, environment, session, and one input. */
 export const RoleIntent = Schema.Struct({
   creationRequestId: CreationRequestId,
-  notificationId: NotificationId,
   role: Schema.Enum(EvalRole),
   name: Schema.NonEmptyString,
-  /** None when the role uses the connection's generated recovery identity as its display name. */
-  connectionName: Schema.OptionFromOptionalKey(ConnectionDisplayName),
   settings: RoleSettings,
   text: Schema.String,
   deadlineAt: Schema.DateTimeUtcFromString,
@@ -192,11 +180,12 @@ export const RoleIntent = Schema.Struct({
 
 export type RoleIntent = typeof RoleIntent.Type;
 
-/** The accepted resource identity reconciles lost acknowledgments without another role creation. */
+/** The receipt binds the isolated session to its agent, environment and saved input. */
 export const RoleReceipt = Schema.Struct({
   creationRequestId: CreationRequestId,
-  notificationId: NotificationId,
-  mechId: MechId,
+  agentId: Schema.NonEmptyString,
+  environmentId: Schema.NonEmptyString,
+  sessionId: Schema.NonEmptyString,
   resolvedModel: Schema.NonEmptyString,
   createdAt: Schema.DateTimeUtcFromString,
   /** None when the provider did not disclose a revision. */
@@ -205,12 +194,33 @@ export const RoleReceipt = Schema.Struct({
 
 export type RoleReceipt = typeof RoleReceipt.Type;
 
+export const ManagedInputAttempt = Schema.Struct({
+  sessionId: Schema.NonEmptyString,
+  creationRequestId: CreationRequestId,
+});
+
+export type ManagedInputAttempt = typeof ManagedInputAttempt.Type;
+
+const nonnegative = Schema.isGreaterThanOrEqualTo(0);
+const TokenCount = Schema.Int.check(nonnegative);
+const decimalInteger = Schema.isPattern(UNSIGNED_INTEGER_PATTERN);
+export const MinorUnits = Schema.String.check(decimalInteger);
+
+const SessionUsage = Schema.Struct({
+  inputTokens: Schema.optionalKey(TokenCount),
+  outputTokens: Schema.optionalKey(TokenCount),
+  cacheReadInputTokens: Schema.optionalKey(TokenCount),
+  cacheCreation1hInputTokens: Schema.optionalKey(TokenCount),
+  cacheCreation5mInputTokens: Schema.optionalKey(TokenCount),
+  listCostUsdCents: Schema.optionalKey(MinorUnits),
+});
+
 /** Role completion records execution, evidence coverage, and observed usage independently of quality. */
 export const RoleRecord = Schema.Struct({
   status: Schema.Enum(EvalRoleStatus),
-  mechId: MechId,
-  notificationId: NotificationId,
-  runIds: Schema.Array(TurnId),
+  agentId: Schema.NonEmptyString,
+  sessionId: Schema.NonEmptyString,
+  eventIds: Schema.Array(Schema.NonEmptyString),
   /** Absent when the role did not publish a diagnostic reply. */
   reply: Schema.optionalKey(Schema.String),
   /** Absent when execution ended without a recorded issue. */
@@ -220,7 +230,8 @@ export const RoleRecord = Schema.Struct({
   resolvedModel: Schema.String,
   /** None when the provider did not disclose a revision. */
   providerRevision: Schema.OptionFromNullOr(Schema.String),
-  dispatches: Schema.Array(TracedDispatch),
+  /** Absent when no cumulative session accounting was recorded. */
+  usage: Schema.optionalKey(SessionUsage),
   toolCalls: Schema.Array(Schema.Json),
   isEvidenceComplete: Schema.Boolean,
   unknowns: Schema.Array(Schema.String),
@@ -243,7 +254,7 @@ export const Observation = Schema.Struct({
   arguments: Schema.Json,
   result: EvalToolResult,
   observedAt: Schema.DateTimeUtcFromString,
-  provenance: Schema.Literal(ObservationProvenance.Mcp),
+  provenance: Schema.Literal(ObservationProvenance.CustomTool),
 });
 
 export type Observation = typeof Observation.Type;
@@ -288,15 +299,6 @@ export const StructuredGradeRecord = Schema.Struct({
 });
 
 export type StructuredGradeRecord = typeof StructuredGradeRecord.Type;
-
-/** Scoped connections retain only resource references, never their credentials. */
-export const ConnectionRecord = Schema.Struct({
-  id: ConnectionId,
-  secretReference: Schema.String,
-  role: Schema.Enum(EvalRole),
-});
-
-export type ConnectionRecord = typeof ConnectionRecord.Type;
 
 /** Cleanup attempts append resource identities and unresolved failures without changing grades. */
 export const CleanupRecord = Schema.Struct({

@@ -28,7 +28,9 @@ export function helpLines({ release }: HelpLinesInput): ReadonlyArray<string> {
   return [
     `${program} ${release}`,
     `usage: ${program} <command> [arguments] [flags]`,
-    `text that starts with - goes after --, with every flag before it: ${program} notification send <mech-id> -- '- item'; a flag value that starts with - is written --instructions='- be terse'`,
+    'For agents and sessions, point the Anthropic CLI at this installation with ANTHROPIC_BASE_URL and ANTHROPIC_API_KEY.',
+    'List agents with ant beta:agents list. Open a conversation with ant beta:sessions connect <session-id>.',
+    'Use -- before positional arguments that start with a hyphen, and --flag=value for flag values that start with one.',
     '',
     'commands:',
     ...commands.flatMap((command) => commandLines({ command })),

@@ -38,9 +38,7 @@ export const ErrorCode = {
   EvalFileFailed: 'EvalFileFailed',
   EvalInterrupted: 'EvalInterrupted',
   EvalAdapterFailed: 'EvalAdapterFailed',
-  EvalTransportFailed: 'EvalTransportFailed',
   EvalManifestMissing: 'EvalManifestMissing',
-  EvalResponseInvalid: 'EvalResponseInvalid',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];

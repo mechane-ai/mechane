@@ -188,7 +188,6 @@ export const FileRole = {
   NativeRuntime: 'native-runtime',
   NativePresentation: 'native-presentation',
   NativeCalendar: 'native-calendar',
-  NativeConversation: 'native-conversation',
   NativeSandboxBoundary: 'native-sandbox-boundary',
   NativeLifecycle: 'native-lifecycle',
   SqlMigration: 'sql-migration',

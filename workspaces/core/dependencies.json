@@ -133,10 +133,16 @@
     "dialect": "data",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/cli-kernel", "@mechane/cli-login", "@mechane/cli-update", "@mechane/cli"]
+    "consumers": [
+      "@mechane/cli-kernel",
+      "@mechane/cli-login",
+      "@mechane/cli-update",
+      "@mechane/cli",
+      "@mechane/testing"
+    ]
   },
   "@mechane/eval": {
-    "owns": "The eval runner: suite, plan, trials, records and report, through /api/v1 only",
+    "owns": "Eval plans, trials and reports through the public Managed Agents SDK and scoped installation diagnostics",
     "layer": 4,
     "lane": "node",
     "dialect": "effect",
@@ -422,7 +428,7 @@
     "consumers": ["@mechane-ai/elements", "@mechane/console"]
   },
   "@mechane/runtime": {
-    "owns": "One Pi durable mech actor, immutable notifications, guarded tools, working context, native views, and provider accounting",
+    "owns": "Managed agent sessions, serialized identity execution, historical inspection, guarded tools, and provider accounting",
     "layer": 6,
     "lane": "worker",
     "dialect": "plain",
@@ -467,7 +473,7 @@
     "dialect": "plain",
     "kind": "library",
     "criterion": "reuse",
-    "consumers": ["@mechane/runtime"],
+    "consumers": [],
     "confines": ["@earendil-works/pi-durable"]
   }
 }

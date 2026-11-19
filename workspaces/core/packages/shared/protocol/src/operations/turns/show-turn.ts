@@ -9,8 +9,8 @@ import { Trace, TurnPath } from './schemas.ts';
 /** Reads one turn of a mech with its dispatches: what each model request reserved, used and was charged. */
 export const showTurn = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id',
+  access: Access.Owner,
   params: TurnPath,
   query: NoFields,
   body: NoFields,

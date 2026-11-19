@@ -7,8 +7,6 @@ import type {
   EvalFileFailed,
   EvalInterrupted,
   EvalManifestMissing,
-  EvalResponseInvalid,
-  EvalTransportFailed,
   OutFolderBusy,
   PlanChanged,
   SuiteInvalid,
@@ -22,9 +20,7 @@ export type EvalFailure =
   | AllowanceExhausted
   | EvalFileFailed
   | EvalInterrupted
-  | EvalResponseInvalid
   | EvalAdapterFailed
-  | EvalTransportFailed
   | EvalManifestMissing;
 
 /** The key a mech command sends, and the caller's one workspace, where every mech command acts. */

@@ -1,10 +1,13 @@
-import { Effect, Schema } from 'effect';
+import { Effect, Option, Schema } from 'effect';
 import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { validateTrustedCertificates } from './certificate-environment.ts';
 import { GuestMisconfigured } from './errors.ts';
 import { GuestEnvironment } from './schemas.ts';
 import type { GuestSettings } from './types.ts';
+
+const [, entry, mode] = process.argv;
+export const guestCommand = { entry: Option.fromNullishOr(entry), mode } as const;
 
 type LoadGuestSettingsInput = { readonly scratchDirectory: string };
 

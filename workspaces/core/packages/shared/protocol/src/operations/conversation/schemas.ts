@@ -17,7 +17,7 @@ export const ConsoleMessageId = RecordId.pipe(Schema.brand('ConsoleMessageId'));
 export type ConsoleMessageId = typeof ConsoleMessageId.Type;
 
 /** The transcript distinguishes admitted user notices from explicit agent publications. */
-export const ConsoleMessageRole = { User: 'user', Assistant: 'assistant' } as const;
+const ConsoleMessageRole = { User: 'user', Assistant: 'assistant' } as const;
 
 /** Assistant messages exist only after the explicit Console publication tool succeeds. */
 export const ConsoleMessage = wireStruct({

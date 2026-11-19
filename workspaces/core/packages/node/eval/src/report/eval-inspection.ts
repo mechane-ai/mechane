@@ -80,6 +80,25 @@ export function evalInspection({ saved, caseId, projectGrade }: EvalInspectionIn
     inspectTrial({ snapshot, manifest: saved.manifest, projectGrade, scope }),
   );
 
+  return {
+    version: INSPECTION_VERSION,
+    source: InspectionSource.Records,
+    scope,
+    isResumable: !isAudit && scope === InspectionScope.Full,
+    suiteId: saved.manifest.definition.id,
+    digest: Option.some(saved.manifest.digest),
+    manifest: Option.some(saved.manifest),
+    ...summarizeTrials({ trials, scope, caseId }),
+    notices: auditNotices({ isAudit }),
+    historicalDefinition: Option.none(),
+  };
+}
+
+type SummarizeTrialsInput = SummarizeCompletionInput & Pick<InspectionOptions, 'caseId'>;
+type TrialSummary = Pick<EvalInspection, 'completion' | 'subjectSpend' | 'judgeSpend' | 'quality' | 'trials'>;
+
+/** A case filter narrows displayed rows while totals cover the entire saved evaluation. */
+export function summarizeTrials({ trials, scope, caseId }: SummarizeTrialsInput): TrialSummary {
   const selectedTrials = Option.match(caseId, {
     onNone: () => trials,
     onSome: (selected) => trials.filter((trial) => trial.caseId === selected),
@@ -90,20 +109,11 @@ export function evalInspection({ saved, caseId, projectGrade }: EvalInspectionIn
   const qualities = trials.map((trial) => trial.quality);
 
   return {
-    version: INSPECTION_VERSION,
-    source: InspectionSource.Records,
-    scope,
-    isResumable: !isAudit && scope === InspectionScope.Full,
-    suiteId: saved.manifest.definition.id,
-    digest: Option.some(saved.manifest.digest),
-    manifest: Option.some(saved.manifest),
     completion: summarizeCompletion({ trials, scope }),
     subjectSpend: combineRoleSpend({ spends: subjectSpends }),
     judgeSpend: combineRoleSpend({ spends: judgeSpends }),
     quality: summarizeQuality({ qualities }),
     trials: selectedTrials,
-    notices: auditNotices({ isAudit }),
-    historicalDefinition: Option.none(),
   };
 }
 
@@ -399,7 +409,7 @@ function resolveStageFailure({ stage, hasFailure }: ResolveStageFailureInput): S
   return stage;
 }
 
-export function summarizeCompletion({ trials, scope }: SummarizeCompletionInput): EvalCompletion {
+function summarizeCompletion({ trials, scope }: SummarizeCompletionInput): EvalCompletion {
   const pendingTrials = trials.filter((trial) => {
     const stages: ReadonlyArray<StageStatus> = (() => {
       if (scope === InspectionScope.JudgeOnly) {

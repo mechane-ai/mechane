@@ -10,8 +10,8 @@ import { MechPath } from '../schemas.ts';
 /** Manages the mech's persistent sandbox through an idempotent maintenance request. */
 export const manageSandbox = {
   method: HttpMethod.Post,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/sandbox',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/sandbox',
+  access: Access.Owner,
   params: MechPath,
   query: NoFields,
   body: SandboxRequest,

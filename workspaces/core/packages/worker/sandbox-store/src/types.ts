@@ -5,6 +5,7 @@ import type { DateTime, Duration, Option } from 'effect';
 import type { browserRecords } from './browser/browser-records.ts';
 import type { capacityRecords } from './capacity/capacity-records.ts';
 import type { completionRecords } from './completions/completion-records.ts';
+import type { installedProcessCompletions } from './completions/installed-process-completions.ts';
 import type { evidenceRecords } from './evidence/evidence-records.ts';
 import type { interactiveRuns } from './interactive-runs.ts';
 import type { machineDrains } from './machines/machine-drains.ts';
@@ -88,10 +89,12 @@ export type SandboxAlarm = {
 };
 
 /** The sandbox database's operations and migration revision. */
-export type SandboxStore = DatabaseFunctions &
-  ReturnType<typeof browserRecords> &
+export type SandboxStore = DatabaseFunctions & { readonly purgeInstalledSession: () => void } & ReturnType<
+    typeof browserRecords
+  > &
   ReturnType<typeof capacityRecords> &
   ReturnType<typeof completionRecords> &
+  ReturnType<typeof installedProcessCompletions> &
   ReturnType<typeof evidenceRecords> &
   ReturnType<typeof interactiveRuns> &
   ReturnType<typeof machineDrains> &

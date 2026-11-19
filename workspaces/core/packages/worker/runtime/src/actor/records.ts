@@ -151,14 +151,6 @@ export const NotificationRecord = Schema.Struct({
   data: Schema.NullOr(Fields),
 });
 
-export const NotificationReceiptRecord = Schema.Struct({
-  id: Schema.String,
-  mechId: Schema.String,
-  receivedAt: Schema.String,
-  receivedSequence: Schema.Number,
-  wasCreated: Schema.Boolean,
-});
-
 export const StatusRecord = Schema.Struct({
   ...Scope.fields,
   activeRevision: Schema.Number,
@@ -169,15 +161,6 @@ export const StatusRecord = Schema.Struct({
 });
 
 export const CancellationRecord = Schema.Struct({ cancelerId: Schema.String, canceledAt: Schema.String });
-
-export const ExportRecord = Schema.Struct({
-  version: Schema.Literal(1),
-  source: Scope,
-  exportedAt: Schema.String,
-  sourceSequence: Schema.Number,
-  definitionRevision: Schema.Number,
-  context: Schema.String,
-});
 
 export const SpendRecord = Schema.Struct({
   id: Schema.String,

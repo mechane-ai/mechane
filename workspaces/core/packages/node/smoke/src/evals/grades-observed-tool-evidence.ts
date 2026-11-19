@@ -5,12 +5,10 @@ import {
   defineGradeSchema,
   evalInspection,
   inspectCalibration,
-  localTransport,
   readEval,
   runEval,
 } from '@mechane/eval';
 import type { CompareCalibration, EvalEnvironment, EvalGradeSchema, EvalSuite } from '@mechane/eval';
-import { TurnToolCall } from '@mechane/protocol';
 import { BYTES_PER_KIBIBYTE } from '@mechane/records';
 import type { LocalStack } from '@mechane/stack';
 import { requireFixtures } from '@mechane/testing';
@@ -30,10 +28,14 @@ const ROLE_TIMEOUT = Duration.minutes(1);
 const CLEANUP_TIMEOUT = Duration.seconds(30);
 const EVIDENCE_MAX_BYTES = 64 * BYTES_PER_KIBIBYTE;
 const TOOL_MAX_CALLS = 4;
-const CONNECTION_NAME = 'Observed application';
 const LOOKUP_DESCRIPTION = 'Read the fixture value.';
 const Grade = Schema.Struct({ isAccepted: Schema.Boolean });
-const ToolCalls = Schema.Array(TurnToolCall);
+
+const CustomToolUse = Schema.Struct({
+  type: Schema.Literal('agent.custom_tool_use'),
+  id: Schema.String,
+  name: Schema.String,
+});
 
 const OfferedTools = Schema.Array(
   Schema.Struct({ function: Schema.Struct({ name: Schema.String, description: Schema.String }) }),
@@ -46,24 +48,15 @@ export async function gradesObservedToolEvidence({
 }: ObservedToolEvidenceInput): Promise<void> {
   const fixtures = requireFixtures(stack);
   const marker = `observed-tool-${randomUUID()}`;
-  const modelToolCallId = `toolu_${randomUUID()}`;
 
   fixtures.model.configure({
     marker,
     replies: [
-      { tools: [{ id: modelToolCallId, name: 'lookup', namePrefix: 'mcp_lookup_', input: {} }] },
+      { tools: [{ id: randomUUID(), name: 'lookup', input: {} }] },
       { text: 'The application tool completed' },
-      {
-        tools: [
-          { id: randomUUID(), name: 'submit_grade', namePrefix: 'mcp_submit_grade_', input: { isAccepted: true } },
-        ],
-      },
+      { tools: [{ id: randomUUID(), name: 'submit_grade', input: { isAccepted: true } }] },
       { text: 'The judgment was submitted' },
-      {
-        tools: [
-          { id: randomUUID(), name: 'submit_grade', namePrefix: 'mcp_submit_grade_', input: { isAccepted: true } },
-        ],
-      },
+      { tools: [{ id: randomUUID(), name: 'submit_grade', input: { isAccepted: true } }] },
       { text: 'The calibration judgment was submitted' },
     ],
   });
@@ -86,7 +79,6 @@ export async function gradesObservedToolEvidence({
       artifactIdentity,
       token: Redacted.make(account.token),
       workspaceId: account.workspaceId,
-      openTransport: localTransport,
     });
 
     const suite = createObservedSuite({ gradeSchema, marker });
@@ -99,17 +91,6 @@ export async function gradesObservedToolEvidence({
         progress.push(line);
       },
     });
-
-    const connections = yield* target.call({
-      name: 'listConnections',
-      input: { workspaceId: target.access.workspaceId },
-      credential: target.access.token,
-    });
-
-    assert.equal(
-      connections.connections.some((connection) => connection.name === CONNECTION_NAME),
-      false,
-    );
 
     const source = yield* readEval({ outFolder });
     const evidence = source.trials.at(0)?.evidence;
@@ -172,36 +153,28 @@ export async function gradesObservedToolEvidence({
   assert.equal(
     trial.subject.value.isEvidenceComplete,
     true,
-    `An observed native invocation was treated as missing: ${JSON.stringify({ unknowns: trial.subject.value.unknowns, progress })}`,
+    `The completed custom tool call has incomplete evidence: ${JSON.stringify({ unknowns: trial.subject.value.unknowns, progress })}`,
   );
   assert.ok(Option.isSome(trial.evidence) && trial.evidence.value.isComplete);
   assert.ok(Option.isSome(trial.grade) && trial.grade.value.status === 'graded');
 
-  const calls = Schema.decodeUnknownSync(ToolCalls)(trial.subject.value.toolCalls);
-  const invocation = calls.find((call) => call.id === modelToolCallId);
+  const calls = trial.subject.value.toolCalls.filter(Schema.is(CustomToolUse));
+  const invocation = calls.find((call) => call.name === 'lookup');
   const observation = trial.observations.at(0);
 
   assert.ok(invocation !== undefined && observation !== undefined);
-  assert.notEqual(
-    invocation.id,
-    invocation.invocationId,
-    'The native invocation lost its separate model-call diagnostic',
-  );
-  assert.equal(invocation.invocationId, observation.callId, 'The trace and durable receipt name different invocations');
+  assert.equal(invocation.id, observation.callId, 'The session event and durable observation name different calls');
+  assert.deepEqual(observation.result.output, { marker });
 
   const firstRequest = fixtures.model.readCalls({ marker }).at(0);
 
   assert.ok(firstRequest !== undefined);
 
   const tools = Schema.decodeUnknownSync(OfferedTools)(firstRequest.body['tools']);
-  const lookup = tools.find((tool) => tool.function.name.startsWith('mcp_lookup_'));
+  const lookup = tools.find((tool) => tool.function.name === 'lookup');
 
   assert.ok(lookup !== undefined);
-  assert.ok(
-    lookup.function.description.includes(JSON.stringify(CONNECTION_NAME)),
-    'Offered tools lost their connection authority',
-  );
-  assert.ok(lookup.function.description.endsWith(LOOKUP_DESCRIPTION));
+  assert.equal(lookup.function.description, LOOKUP_DESCRIPTION);
 }
 
 function createObservedSuite({ gradeSchema, marker }: ObservedSuiteInput): EvalSuite {
@@ -222,11 +195,10 @@ function createObservedSuite({ gradeSchema, marker }: ObservedSuiteInput): EvalS
       id: 'observed-tool-evidence',
       version: '1',
       adapter: { id: 'observed-tool-evidence', version: '1', fingerprint: 'observed-tool-evidence-v1' },
-      connectionName: CONNECTION_NAME,
-      subject: { instructions: 'Use lookup once, then stop.', nativeTools: [] },
+      subject: { model: 'claude-haiku-5-5', instructions: 'Use lookup once, then stop.' },
       judge: {
         instructions: 'Accept the completed application tool result.',
-        nativeTools: [],
+        model: 'claude-haiku-5-5',
         isSelfGrading: true,
         gradeSchema: gradeSchema.definition,
       },
@@ -269,7 +241,6 @@ async function refusesRemoteLocalTarget({ token, workspaceId }: RefusedTargetInp
         token: Redacted.make(token),
         workspaceId,
         artifactIdentity: 'rejected-local-target',
-        openTransport: localTransport,
       }),
     ),
     /loopback origin/u,

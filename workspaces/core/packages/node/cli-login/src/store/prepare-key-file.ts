@@ -1,5 +1,6 @@
 import { CredentialsFailed, CredentialsStep } from '@mechane/cli-kernel';
-import { Effect, Redacted } from 'effect';
+import { Effect, Option, Redacted } from 'effect';
+import { lstatSync } from 'node:fs';
 import { access, constants } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { PathInput } from './types.ts';
@@ -23,6 +24,17 @@ export const prepareKeyFile = Effect.fn('prepareKeyFile')(function* ({
     try: () => access(folder, constants.W_OK),
     catch: (cause) => new CredentialsFailed({ step: CredentialsStep.Write, path, reason: String(cause) }),
   });
+
+  const target = yield* Effect.try({
+    try: () => lstatSync(path, { throwIfNoEntry: false }),
+    catch: (cause) => new CredentialsFailed({ step: CredentialsStep.Write, path, reason: String(cause) }),
+  });
+
+  const existing = Option.fromNullishOr(target);
+
+  if (Option.isSome(existing) && !existing.value.isFile()) {
+    return yield* new CredentialsFailed({ step: CredentialsStep.Write, path, reason: 'Expected a regular key file' });
+  }
 
   const write: KeyFile['write'] = ({ token }) => writePrivateFile({ path, text: `${Redacted.value(token)}\n` });
 

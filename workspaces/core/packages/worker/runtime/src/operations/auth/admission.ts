@@ -6,6 +6,7 @@ import {
   KeyRevoked,
   KeyUnrecognized,
   RateLimited,
+  TokenPrefix,
   WorkspaceNotFound,
 } from '@mechane/protocol';
 import { RecordId } from '@mechane/records';
@@ -77,6 +78,10 @@ export async function resolveAuthentication({
     await requireIdentityAdmission({ store, configuration, principalId: session.principalId });
 
     return { authKind: 'session', principalId: session.principalId, keyId: null };
+  }
+
+  if (credential.token.startsWith(TokenPrefix.WorkspaceService)) {
+    throw new KeyUnrecognized({});
   }
 
   const key = await store.auth.findKey({ tokenHash });

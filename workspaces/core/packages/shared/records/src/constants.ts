@@ -11,11 +11,17 @@ export const RECORD_TEXT_MAX_CHARS = 2_000_000;
 /** The version of a random UUID, the only kind of id a caller makes for a record. */
 export const RANDOM_UUID_VERSION = 4;
 
+/** A complete object ID from a SHA-1 or SHA-256 Git repository. */
+export const GIT_OBJECT_ID_PATTERN = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u;
+
 /** A SHA-256 digest as lowercase hex. */
 export const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 
 /** A content digest with its explicit SHA-256 algorithm, as used by OCI images. */
 export const SHA256_DIGEST_PATTERN = /^sha256:[0-9a-f]{64}$/;
+
+/** Base-ten nonnegative integer with no sign or redundant leading zeroes. */
+export const UNSIGNED_INTEGER_PATTERN = /^(?:0|[1-9][0-9]*)$/u;
 
 /** UTC accounting days use four-digit years in `YYYY-MM-DD` form. */
 export const UTC_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;

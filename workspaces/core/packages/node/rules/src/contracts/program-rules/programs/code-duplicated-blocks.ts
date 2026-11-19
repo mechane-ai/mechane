@@ -20,6 +20,8 @@ const VALUES = {
       'packages/worker/server/.output/**',
       '**/.swc/**',
       '**/reference.json',
+      'packages/shared/protocol/src/managed/requests.generated.json',
+      'packages/worker/runtime/src/managed/tools/worker-inputs.generated.json',
       'lint/baseline/**',
       ...PARSER_COMPANIONS.map(({ path }) => path),
     ],

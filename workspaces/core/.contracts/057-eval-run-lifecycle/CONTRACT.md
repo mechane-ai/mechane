@@ -38,27 +38,19 @@ Compare a resumed run's deadlines, budgets, and trace sequence with the original
 
 ## Local adaptations
 
-`@mechane/eval` owns the Node run coordinator, reached through its public library or `mechane eval run`.
-Both application-tool suites and the reply-suite adapter use the same notification-driven role lifecycle.
-`manifest.json` freezes the suite, adapter fingerprint, tools, grade schema, bounds, target identity, and selected trials.
-Validate the suite and deployment readiness before agent creation. Verify each created role's selected tool profile
-before notification admission or model work. Record transport credentials separately from the manifest.
+`@mechane/eval` runs one trial and role at a time through the Managed Agents API. Before creating resources,
+freeze the suite, tool schemas, role models, workspace, target identity, budgets, original deadlines, and trial IDs.
+Record each role's unique intent before its first create. Bind the returned agent, environment, and session IDs to it.
+After an uncertain creation, consult the provider for the saved intent. Multiple matching resources are an explicit
+recovery failure. A retry must never silently start a second paid session.
 
-Each role intent records its creation request identity, notification identity, selected native tools, cap, and original
-deadline before either public operation is sent. A saved receipt identifies the same mech and notification across
-recovery. Native activations and trace dispatches belong to that receipt; final private model text is diagnostic only.
-MCP observations are saved before acknowledgment, and evidence is saved before its judge starts. Per-stage files are
-created once. The SQLite exclusive writer lock is released by the operating system after a crash.
+Write each application tool result before sending its receipt, each subject's evidence before starting its judge, and
+each grade before acknowledging submission. Resume reuses these stages under the existing operating-system writer
+lock. It preserves original deadlines, accepted tool results, grades, failures, and usage evidence.
 
-Run trials and roles sequentially. Resume verifies the frozen experiment and preserves completed stages. A completed
-resume does not call a model. A failed or cancelled role is evidence, not authority to rerun it silently. Ctrl-C
-requests cancellation and retains recorded results. Cleanup waits for terminal activation state within its deadline,
-archives owned mechs, and deletes their scoped connections and credentials. An unconfirmed cleanup remains visible
-and can be retried without executing or grading again.
-
-A transport restart can recreate endpoint addresses and credentials, while preserving recorded calls and request
-receipts. It cannot guarantee that an agent interrupted by the outage is still running. Pi/provider retry behavior
-can issue another paid attempt; stable operation identities are not an exactly-once billing guarantee.
+Cleanup reconciles an accepted resource even when the create response was lost. It closes only owned resources and
+confirms their terminal state. Cancellation, unknown cleanup, and completed grades remain distinct. Retrying cleanup
+must not execute the subject or judge. A completed resume must issue zero new model requests.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

@@ -7,6 +7,8 @@
     "packages/worker/server/.output/**",
     "**/.swc/**",
     "**/reference.json",
+    "packages/shared/protocol/src/managed/requests.generated.json",
+    "packages/worker/runtime/src/managed/tools/worker-inputs.generated.json",
     "lint/baseline/**",
     "lint/ast-grep/rules/boolean-names-tsx.yml",
     "lint/ast-grep/rules/ui-control-geometry-typescript.yml",

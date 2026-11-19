@@ -10,45 +10,28 @@ import {
 } from '@mechane/records';
 import { Duration, Schema } from 'effect';
 import { WireTime } from '../../schemas.ts';
-import { MechName } from '../mechs/schemas.ts';
-import { NotificationId, NotificationText } from '../notifications/schemas.ts';
+import { NotificationId } from '../notifications/schemas.ts';
 
 const ROUTINE_MIN_SECONDS = Duration.toSeconds(Duration.minutes(1));
 const ROUTINE_MAX_DAYS = 30;
 const ROUTINE_MAX_SECONDS = Duration.toSeconds(Duration.days(ROUTINE_MAX_DAYS));
 
 /** A deleted routine retains its identity and evidence while refusing future delivery. */
-export const RoutineStatus = { Enabled: 'enabled', Disabled: 'disabled', Deleted: 'deleted' } as const;
+const RoutineStatus = { Enabled: 'enabled', Disabled: 'disabled', Deleted: 'deleted' } as const;
 
 /** A caller retains this UUID when retrying a recurring notification configuration. */
 export const RoutineId = RecordId.pipe(Schema.brand('RoutineId'));
 export type RoutineId = typeof RoutineId.Type;
 
 /** Revision zero names absence; each accepted change increments the saved revision. */
-export const RoutineRevision = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }));
-export type RoutineRevision = typeof RoutineRevision.Type;
+const RoutineRevision = Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }));
 
 /** Intervals are bounded to prevent accidental rapid paid work or unsupported deadlines. */
-const RoutineInterval = Schema.Int.check(
+export const RoutineInterval = Schema.Int.check(
   Schema.isBetween({ minimum: ROUTINE_MIN_SECONDS, maximum: ROUTINE_MAX_SECONDS }),
 );
 
-/** The current revision must leave room for the next accepted change. */
-export const ExpectedRoutineRevision = RoutineRevision.check(Schema.isLessThan(Number.MAX_SAFE_INTEGER));
-export type ExpectedRoutineRevision = typeof ExpectedRoutineRevision.Type;
-
-/** Full desired configuration; enabling starts a fresh absolute cadence for this revision. */
-export const RoutineRequest = wireStruct({
-  fields: {
-    expectedRevision: ExpectedRoutineRevision,
-    name: MechName,
-    text: NotificationText,
-    everySeconds: RoutineInterval,
-    isEnabled: Schema.Boolean,
-  },
-});
-
-export type RoutineRequest = typeof RoutineRequest.Type;
+export type RoutineInterval = typeof RoutineInterval.Type;
 
 /** A saved routine distinguishes a due slot, durable inbox admission, and actual model observation. */
 export const Routine = wireStruct({

@@ -1,9 +1,21 @@
 import { ProcessHandle } from '@mechane/protocol';
-import { EvidenceArtifactId, MechId, TurnId } from '@mechane/records';
+import { EvidenceArtifactId, MechId, Sequence, TurnId } from '@mechane/records';
 import { Result, Schema } from 'effect';
+import { ManagedId } from './managed-records.ts';
 import { restoreRecord } from './records.ts';
 
 const READ_KIND = {
+  Agents: 'agents',
+  Agent: 'agent',
+  Attention: 'attention',
+  ManagedEnvironments: 'managedEnvironments',
+  Sessions: 'sessions',
+  Session: 'session',
+  Threads: 'threads',
+  SessionEvents: 'sessionEvents',
+  SessionEvidence: 'sessionEvidence',
+  SessionArtifact: 'sessionArtifact',
+  Archive: 'archive',
   Mechs: 'mechs',
   Mech: 'mech',
   Turns: 'turns',
@@ -21,7 +33,43 @@ const READ_KIND = {
 export const ReadId = Schema.String.pipe(Schema.brand('ConsoleReadId'));
 type ReadId = typeof ReadId.Type;
 
+const PageCursor = Schema.NullOr(Schema.String);
+
 const ReadTarget = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Agents), page: PageCursor }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Agent), agentId: ManagedId }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Attention), agentId: ManagedId }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.ManagedEnvironments), page: PageCursor }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Sessions), agentId: ManagedId, page: PageCursor }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Session), agentId: ManagedId, sessionId: ManagedId }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.Threads),
+    agentId: ManagedId,
+    sessionId: ManagedId,
+    page: PageCursor,
+  }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.SessionEvents),
+    agentId: ManagedId,
+    sessionId: ManagedId,
+    threadId: Schema.NullOr(ManagedId),
+    page: PageCursor,
+    through: PageCursor,
+    isStatusOnly: Schema.Boolean,
+  }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.SessionEvidence),
+    agentId: ManagedId,
+    sessionId: ManagedId,
+    after: Schema.NullOr(EvidenceArtifactId),
+  }),
+  Schema.Struct({
+    kind: Schema.Literal(READ_KIND.SessionArtifact),
+    agentId: ManagedId,
+    sessionId: ManagedId,
+    artifactId: EvidenceArtifactId,
+  }),
+  Schema.Struct({ kind: Schema.Literal(READ_KIND.Archive), mechId: MechId, before: Schema.NullOr(Sequence) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mechs), after: Schema.NullOr(Schema.String) }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Mech), mechId: MechId }),
   Schema.Struct({ kind: Schema.Literal(READ_KIND.Turns), mechId: MechId, after: Schema.NullOr(TurnId) }),
@@ -52,11 +100,41 @@ export type ReadRequest<Kind extends ReadKind = ReadKind> = Extract<ReadTarget, 
   readonly id: ReadId;
 };
 
+export type TabReadKind = 'sessionEvents' | 'attention' | 'archive';
+
+export const isTabRead = Schema.is(
+  Schema.Struct({ kind: Schema.Literals([READ_KIND.Attention, READ_KIND.SessionEvents, READ_KIND.Archive]) }),
+);
+
+export const isManagedDetail = Schema.is(
+  Schema.Struct({ kind: Schema.Literals([READ_KIND.Agent, READ_KIND.Session]) }),
+);
+
+export const isSessionEvidenceRead = Schema.is(
+  Schema.Struct({ kind: Schema.Literals([READ_KIND.SessionEvidence, READ_KIND.SessionArtifact]) }),
+);
+
+export const isManagedRead = Schema.is(
+  Schema.Struct({
+    kind: Schema.Literals([
+      READ_KIND.Agent,
+      READ_KIND.Agents,
+      READ_KIND.ManagedEnvironments,
+      READ_KIND.Sessions,
+      READ_KIND.Session,
+      READ_KIND.Threads,
+      READ_KIND.SessionEvidence,
+      READ_KIND.SessionArtifact,
+    ]),
+  }),
+);
+
 /** Ordered membership for one successful API read, including successful empty results. */
 export const ReadReceipt = Schema.Struct({
   id: Schema.toEncoded(ReadId),
   kind: ReadKind,
   keys: Schema.Array(Schema.String),
+  nextPage: Schema.optionalKey(Schema.NullOr(Schema.String)),
   /** Null means the endpoint does not expose pagination metadata. */
   hasMore: Schema.NullOr(Schema.Boolean),
 }).check(
@@ -78,6 +156,53 @@ function request<Target extends ReadTarget>(target: Target): Target & { readonly
 
 /** Builds stable read identities before runtime creation or during route navigation. */
 export const readRequests = {
+  attention: (agentId: string) => request({ kind: READ_KIND.Attention, agentId }),
+  agents: (page: string | null = null) => request({ kind: READ_KIND.Agents, page }),
+  agent: (agentId: string) => request({ kind: READ_KIND.Agent, agentId }),
+  managedEnvironments: (page: string | null = null) => request({ kind: READ_KIND.ManagedEnvironments, page }),
+  sessions: (agentId: string, page: string | null = null) => request({ kind: READ_KIND.Sessions, agentId, page }),
+  session: (agentId: string, sessionId: string) => request({ kind: READ_KIND.Session, agentId, sessionId }),
+  threads: (agentId: string, sessionId: string, page: string | null = null) =>
+    request({ kind: READ_KIND.Threads, agentId, sessionId, page }),
+  sessionEvents: (
+    target: { readonly agentId: ManagedId; readonly sessionId: ManagedId; readonly threadId: ManagedId | null },
+    page: string | null = null,
+    through: string | null = null,
+  ) =>
+    request({
+      kind: READ_KIND.SessionEvents,
+      agentId: target.agentId,
+      sessionId: target.sessionId,
+      threadId: target.threadId,
+      page,
+      through,
+      isStatusOnly: false,
+    }),
+  sessionEvidence: (agentId: string, sessionId: string, after: string | null = null) =>
+    request({
+      kind: READ_KIND.SessionEvidence,
+      agentId,
+      sessionId,
+      after: after === null ? null : EvidenceArtifactId.make(after),
+    }),
+  sessionArtifact: (agentId: string, sessionId: string, artifactId: string) =>
+    request({ kind: READ_KIND.SessionArtifact, agentId, sessionId, artifactId: EvidenceArtifactId.make(artifactId) }),
+  sessionStatus: (agentId: string, sessionId: string) =>
+    request({
+      kind: READ_KIND.SessionEvents,
+      agentId,
+      sessionId,
+      threadId: null,
+      page: null,
+      through: null,
+      isStatusOnly: true,
+    }),
+  archive: (mechId: string, before: number | null = null) =>
+    request({
+      kind: READ_KIND.Archive,
+      mechId: MechId.make(mechId),
+      before: before === null ? null : Sequence.make(before),
+    }),
   mechs: (after: string | null) => request({ kind: READ_KIND.Mechs, after }),
   mech: (mechId: string) => request({ kind: READ_KIND.Mech, mechId: MechId.make(mechId) }),
   turns: (mechId: string, after: TurnId | null) =>
@@ -119,8 +244,20 @@ export function isArtifactRead({
   artifact,
 }: {
   readonly candidate: ReadRequest;
-  readonly artifact: ReadRequest<'evidenceArtifact'>;
+  readonly artifact: ReadRequest<'evidenceArtifact' | 'sessionArtifact' | 'sessionEvidence'>;
 }): boolean {
+  if (artifact.kind !== 'evidenceArtifact') {
+    if (!isSessionEvidenceRead(candidate)) {
+      return false;
+    }
+
+    if (candidate.agentId !== artifact.agentId || candidate.sessionId !== artifact.sessionId) {
+      return false;
+    }
+
+    return artifact.kind === 'sessionEvidence' || candidate.kind === 'sessionEvidence' || candidate.id === artifact.id;
+  }
+
   if (candidate.kind === 'evidence') {
     return candidate.mechId === artifact.mechId;
   }

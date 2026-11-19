@@ -1,7 +1,7 @@
 ---
 name: ui-conversation-state
 message: Preserve the reader's position and the author's draft while presenting supplied messages and activity.
-paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/conversations/**","packages/browser/console/src/drafts.tsx","packages/browser/console/src/screens/mech.tsx","packages/browser/console/src/screens/message.tsx","packages/browser/console/src/screens/conversation.tsx","packages/browser/console/src/screens/conversation-activity.tsx","packages/browser/console-views/src/conversation.tsx","packages/browser/console-views/src/events.tsx"]
+paths: ["packages/browser/elements/packages/ai/**","packages/browser/console/src/drafts.tsx","packages/browser/console/src/screens/managed-session.tsx","packages/browser/console/src/managed-reads.ts","packages/browser/console-views/src/managed/**","packages/browser/console-views/src/events.tsx"]
 ---
 
 ## Rules
@@ -50,31 +50,25 @@ rules govern retained assertions.
 
 ## Local adaptations
 
-Each mech has one public Console conversation. Only operator submissions and explicit `console_message` publications
-appear in it. Private model text, native tool activity, incoming integration notifications, and activation termination
-belong to Activity and authorized trace inspection. Do not manufacture an assistant reply from a completed activation.
-Historical source messages remain readable in Activity and run traces, without a separate session UI.
+Each Managed Agents session has its own conversation. Render documented user and agent events, with tool activity
+attributed to the correct thread. Keep native model context and operator-only diagnostics in authorized trace views.
+Reading a session never changes which session is executing.
 
-Scope the draft and submission identity to the admitted workspace and mech. Conversation URL aliases reach that same
-draft. Retain a bounded set of conversation owners across mech and run navigation. Eviction cancels their reads; workspace
-or principal disposal clears protected content and rejects late completions. Cache recovery preserves the conversation
-owner, draft, and acknowledged submissions while future reads use the current admitted data runtime.
+Scope drafts, submitted text, event cursors, and reader positions to the admitted principal, installation, agent,
+session, and thread. Preserve the draft during navigation and cache recovery. Disposal cancels reads; a revoked
+session cannot reveal earlier events. Keep tabs and workspaces independent.
 
-The conversation owner merges authorized public history by stable message identity. Its requested page and refresh
-lifecycle use the data owner's Query observers. It retains the public transcript in memory, outside the persistent
-canonical record cache. A history response started before a send cannot erase its newer receipt or clear a later draft.
-Refresh after acknowledged commands through the existing read owner; do not add a second polling loop to a view.
+Read session and thread history through the data owner's observers, using stable event IDs. A failed or uncertain
+send preserves the draft for explicit retry. An acknowledged send must never clear edits typed while the server
+was accepting the previous text. Refresh through the existing observer after acknowledgement.
 
-A submission receipt confirms durable notification acceptance, not reading, a new activation, a promised reply, or task
-completion. Show only progress supported by recorded mailbox and activation evidence. Multiple notifications may share
-an activation; opening another source does not switch the mech's identity or create an independent model owner.
-Keep current activity beside the composer, independent of the transcript's history page. An unavailable activity read
-must not imply idleness or reverse an acknowledged submission.
+Show acceptance as acceptance of a session event. Attribute a tool confirmation to its actual tool event ID.
+Read the latest status event to determine whether that session needs action. The private scheduler owns the
+`Working now` and `Waiting for agent` labels. Browsing a different session never grants that session the slot.
 
-Preserve reader position and draft state while inspecting Activity, Environment, or a full-page run trace. Supply saved
-history position before the first ready paint. A supplied offset starts in reading mode and applies once, so content
-arrival does not override it. TanStack Router owns history positions; Elements accepts an offset without routing logic.
-Scope scrolling identity to the admitted principal, workspace, mech, and history page.
+Restore the saved reader position before rendering a ready session when the user returns through browser history.
+TanStack Router owns the saved position; Elements accepts the offset. A link to a processed event selects its
+stable event ID and timestamp cutoff. Preserve its original session and offer a return to the live conversation.
 
 Reserve the viewport and composer in the initial pending layout. Loading and ready use the same flex and scroll owners.
 A transcript or activity refresh cannot unmount authorized controls, reset submission, or replace usable content.
@@ -84,10 +78,9 @@ Inspect a run while reading older content and while a send is pending. Return be
 one submission, the same anchor, and the preserved draft. Switch mechs and return with warm and delayed history. Repeat
 from an earlier page and after reload. Confirm restored reading mode differs from following mode when content appends.
 
-Finish quiet and tool-only activations and verify neither appears as a public assistant message. Publish a Console
-message explicitly, refresh history, and verify one copy. Fail activity and history reads before and after admission;
-confirm independently known receipts and current composer state remain intact. Reject admission after a scope change
-and verify no prior transcript or late callback becomes visible.
+Finish a tool-only step and verify its tool event remains distinct from a textual reply. Reconnect and read history
+concurrently, then verify one copy of each durable event by ID. Switch between two sessions during refresh and
+confirm that their drafts and replies remain independent. Revoke access and ensure stale callbacks reveal no content.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->
 

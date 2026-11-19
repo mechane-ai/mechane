@@ -1,6 +1,6 @@
 import type { CommandResult, RunFailure, RunInput } from '@mechane/cli-kernel';
 import type { Routine } from '@mechane/protocol';
-import { DateTime, Duration, Effect, Option } from 'effect';
+import { DateTime, Effect, Option } from 'effect';
 import { withWorkspace } from '../mechs/with-workspace.ts';
 
 type RoutineLineInput = { readonly routine: Routine };
@@ -18,39 +18,13 @@ function routineTime({ at }: RoutineTimeInput): string {
   return DateTime.formatIso(at.value);
 }
 
-export const runRoutinePut = Effect.fn('runRoutinePut')(function* ({
-  call,
-  origin,
-  input,
-  credentials,
-  selectedWorkspaceId,
-}: RunInput<'routine put'>): Effect.fn.Return<CommandResult<'routine put'>, RunFailure> {
-  const interval = Duration.minutes(input.everyMinutes);
-  const everySeconds = Duration.toSeconds(interval);
-
-  const result = yield* withWorkspace({
-    call,
-    origin,
-    credentials,
-    selectedWorkspaceId,
-    use: ({ token, workspaceId }) =>
-      call({
-        name: 'putRoutine',
-        input: { ...input, workspaceId, everySeconds, isEnabled: input.enabled },
-        credential: token,
-      }),
-  });
-
-  return { result, lines: [routineLine({ routine: result })] };
-});
-
 export const runRoutineShow = Effect.fn('runRoutineShow')(function* ({
   call,
   origin,
   input,
   credentials,
   selectedWorkspaceId,
-}: RunInput<'routine show'>): Effect.fn.Return<CommandResult<'routine show'>, RunFailure> {
+}: RunInput<'history routine'>): Effect.fn.Return<CommandResult<'history routine'>, RunFailure> {
   const result = yield* withWorkspace({
     call,
     origin,
@@ -82,7 +56,7 @@ export const runRoutineList = Effect.fn('runRoutineList')(function* ({
   input,
   credentials,
   selectedWorkspaceId,
-}: RunInput<'routine list'>): Effect.fn.Return<CommandResult<'routine list'>, RunFailure> {
+}: RunInput<'history routines'>): Effect.fn.Return<CommandResult<'history routines'>, RunFailure> {
   const result = yield* withWorkspace({
     call,
     origin,
@@ -99,23 +73,4 @@ export const runRoutineList = Effect.fn('runRoutineList')(function* ({
   }
 
   return { result, lines };
-});
-
-export const runRoutineDelete = Effect.fn('runRoutineDelete')(function* ({
-  call,
-  origin,
-  input,
-  credentials,
-  selectedWorkspaceId,
-}: RunInput<'routine delete'>): Effect.fn.Return<CommandResult<'routine delete'>, RunFailure> {
-  const result = yield* withWorkspace({
-    call,
-    origin,
-    credentials,
-    selectedWorkspaceId,
-    use: ({ token, workspaceId }) =>
-      call({ name: 'deleteRoutine', input: { ...input, workspaceId }, credential: token }),
-  });
-
-  return { result, lines: [routineLine({ routine: result })] };
 });

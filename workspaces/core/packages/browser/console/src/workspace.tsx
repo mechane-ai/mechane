@@ -1,12 +1,15 @@
 import { Button } from '@mechane-ai/elements';
-import { Notice } from '@mechane-ai/elements/feedback';
+import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
 import { createConsoleData, isStorageFailure, problemMessage } from '@mechane/console-data';
-import type { ConsoleData, ConsoleDataOwner, Session } from '@mechane/console-data';
+import type { ConsoleData, ConsoleDataOwner, ViewerSession } from '@mechane/console-data';
 import {
+  ArchivedMechListPlaceholder,
   ConsoleShell,
+  ConversationPlaceholder,
   EvidencePagePlaceholder,
+  ManagedEvidenceListPlaceholder,
+  ManagedListPlaceholder,
   MechPagePlaceholder,
-  MechsPagePlaceholder,
 } from '@mechane/console-views';
 import type { Workspace } from '@mechane/protocol';
 import { useRouterState } from '@tanstack/react-router';
@@ -22,24 +25,24 @@ import {
 } from 'react';
 import type { ReactNode } from 'react';
 import { flushSync } from 'react-dom';
-import { ConversationProvider } from './conversations/provider.tsx';
 import { WorkspaceDraftProvider } from './drafts.tsx';
 import { initialReads } from './initial-reads.ts';
 import { MechAppearanceProvider } from './mech-appearance.tsx';
 import { NavigationPreferenceProvider } from './navigation-preferences.tsx';
 import { readReaderPositions, restoreReaderPositions } from './navigation.tsx';
 import { ResourceView } from './resource.tsx';
+import { ArchivedMechsScreen } from './screens/archived-mechs.tsx';
+import { ManagedScreen } from './screens/managed.tsx';
 import { MechScreen } from './screens/mech.tsx';
-import { MechsScreen } from './screens/mechs.tsx';
 import { selectedTraceTab } from './screens/trace.tsx';
 import { WorkspaceSettings } from './screens/workspace-settings.tsx';
-import type { ConsoleNavigation, ReaderPosition } from './types.ts';
+import type { ConsoleLocation, ConsoleNavigation, ReaderPosition } from './types.ts';
 import { useScreenLifetime } from './use-screen-lifetime.ts';
 import { WorkspaceAccount, WorkspaceNavigation } from './workspace-navigation.tsx';
 
 type WorkspaceScreenProps = ConsoleNavigation & {
   readonly owner: ConsoleDataOwner;
-  readonly session: Session;
+  readonly session: ViewerSession;
   readonly workspace: Workspace;
   readonly onSessionEnded: () => void;
 };
@@ -91,13 +94,49 @@ function restoreWorkspacePosition(target: WorkspacePosition): void {
   restoreReaderPositions(target.readers);
 }
 
+function workspacePlaceholder(selected: ConsoleLocation): ReactNode {
+  if (selected.artifact !== undefined) {
+    return <EvidencePagePlaceholder />;
+  }
+
+  if (selected.isSessionEvidence === true) {
+    return <ManagedEvidenceListPlaceholder />;
+  }
+
+  if (selected.mech !== undefined) {
+    return (
+      <MechPagePlaceholder
+        view={selected.view ?? 'runs'}
+        hasFocusedRun={selected.turn !== undefined}
+        traceTab={selectedTraceTab(selected)}
+      />
+    );
+  }
+
+  if (selected.isArchiveIndex === true) {
+    return <ArchivedMechListPlaceholder />;
+  }
+
+  if (selected.session !== undefined) {
+    return <ConversationPlaceholder />;
+  }
+
+  return <ManagedListPlaceholder kind={selected.agent === undefined ? 'agents' : 'sessions'} />;
+}
+
 export function WorkspaceScreen(props: WorkspaceScreenProps): ReactNode {
   const { session, workspace, location } = props;
 
   return (
     <MechAppearanceProvider principalId={session.principal.id} workspaceId={workspace.id}>
       <NavigationPreferenceProvider principalId={session.principal.id} workspaceId={workspace.id}>
-        <WorkspaceDraftProvider mechId={location.mech}>
+        <WorkspaceDraftProvider
+          scope={
+            location.agent === undefined
+              ? location.mech
+              : JSON.stringify([location.agent, location.session, location.thread])
+          }
+        >
           <WorkspaceRuntime {...props} />
         </WorkspaceDraftProvider>
       </NavigationPreferenceProvider>
@@ -148,7 +187,7 @@ function WorkspaceRuntime({
       principalId: session.principal.id,
       workspace,
       onSessionEnded,
-      initialRequests: initialReads(location, pages),
+      initialRequests: initialReads(location, pages, { role: workspace.role }),
       signal: controller.signal,
     }).then(
       async (data) => {
@@ -235,8 +274,8 @@ function WorkspaceRuntime({
 
     const controller = new AbortController();
     const frames = new Set<number>();
-    const requests = initialReads(location, pages, 'primary');
     const data = runtime.data;
+    const requests = initialReads(location, pages, { role: data.workspace.role, selection: 'primary' });
     const restoreTarget = target;
 
     function restore(): void {
@@ -309,27 +348,15 @@ function WorkspaceRuntime({
 
   const selected = { ...location, workspace: workspace.id };
 
-  const placeholder =
-    selected.artifact === undefined ? (
-      selected.mech === undefined ? (
-        <MechsPagePlaceholder />
-      ) : (
-        <MechPagePlaceholder
-          view={selected.view ?? 'conversation'}
-          hasFocusedRun={selected.turn !== undefined}
-          traceTab={selectedTraceTab(selected)}
-        />
-      )
-    ) : (
-      <EvidencePagePlaceholder />
-    );
+  const placeholder = workspacePlaceholder(selected);
+  const isNativeRun = selected.mech !== undefined && selected.turn !== undefined;
 
   return (
     <ConsoleShell
       workspaces={session.workspaces}
       workspaceId={workspace.id}
       onWorkspace={(id) => navigate({ workspace: id })}
-      shouldFocus={(selected.turn !== undefined || selected.artifact !== undefined) && selected.mech !== undefined}
+      shouldFocus={isNativeRun || selected.artifact !== undefined}
       homeLink={
         runtime.data === undefined ? null : (
           <Activity mode={runtime.kind === 'ready' ? 'visible' : 'hidden'}>
@@ -344,7 +371,6 @@ function WorkspaceRuntime({
           <WorkspaceContent
             data={runtime.data}
             session={session}
-            workspace={workspace}
             location={selected}
             navigate={navigate}
             onReplace={replace}
@@ -377,7 +403,6 @@ function WorkspaceRuntime({
 function WorkspaceContent({
   data,
   session,
-  workspace,
   location,
   navigate,
   onReplace,
@@ -385,8 +410,7 @@ function WorkspaceContent({
   onRecoveryStarted,
 }: ConsoleNavigation & {
   readonly data: ConsoleData;
-  readonly session: Session;
-  readonly workspace: Workspace;
+  readonly session: ViewerSession;
   readonly onReplace: (previous: ConsoleData, data: ConsoleData) => void;
   readonly claimAutomaticRecovery: () => boolean;
   readonly onRecoveryStarted: () => void;
@@ -424,7 +448,7 @@ function WorkspaceContent({
     onRecoveryStarted();
     setRecovery({ data, isPending: true });
 
-    const requests = initialReads(location, pages);
+    const requests = initialReads(location, pages, { role: data.workspace.role });
 
     async function openReplacement(): Promise<ConsoleData> {
       const replacement = await data.recover(requests);
@@ -432,7 +456,11 @@ function WorkspaceContent({
       try {
         while (isActive()) {
           const target = recoveryTarget.current;
-          const primary = initialReads(target.location, target.pages, 'primary');
+
+          const primary = initialReads(target.location, target.pages, {
+            role: replacement.workspace.role,
+            selection: 'primary',
+          });
 
           await Promise.all(primary.map((request) => replacement.ready(request)));
 
@@ -492,7 +520,7 @@ function WorkspaceContent({
   }, [data]);
 
   return (
-    <ConversationProvider data={data}>
+    <>
       {shouldOfferRecovery && (
         <Notice>
           {recovery.isPending
@@ -506,13 +534,22 @@ function WorkspaceContent({
       )}
       {location.mech === undefined ? (
         location.view === 'definition' ? (
-          <WorkspaceSettings data={data} session={session} workspace={workspace} />
+          <WorkspaceSettings data={data} session={session} workspace={data.workspace} />
+        ) : location.isArchiveIndex === true ? (
+          <ArchivedMechsScreen data={data} location={location} navigate={navigate} />
         ) : (
-          <MechsScreen data={data} onOpen={(mech) => navigate({ workspace: workspace.id, mech })} />
+          <ManagedScreen
+            key={JSON.stringify([location.agent, location.session, location.thread])}
+            data={data}
+            location={location}
+            navigate={navigate}
+          />
         )
-      ) : (
+      ) : data.workspace.role === 'owner' ? (
         <MechScreen key={location.mech} data={data} mechId={location.mech} location={location} navigate={navigate} />
+      ) : (
+        <EmptyState title="Workspace owner access required" />
       )}
-    </ConversationProvider>
+    </>
   );
 }

@@ -7,7 +7,13 @@ export type KeyPurpose = (typeof KeyPurpose)[keyof typeof KeyPurpose];
 export const KEY_NAME_MAX_CHARS = 64;
 
 /** The prefix of each kind of secret token the deployment issues, so a person or a scanner recognizes one. */
-export const TokenPrefix = { Key: 'mk_', Poll: 'mkp_', Session: 'mks_', SignIn: 'mki_' } as const;
+export const TokenPrefix = {
+  Key: 'mk_',
+  WorkspaceService: 'mkw_',
+  Poll: 'mkp_',
+  Session: 'mks_',
+  SignIn: 'mki_',
+} as const;
 
 export type TokenPrefix = (typeof TokenPrefix)[keyof typeof TokenPrefix];
 
@@ -28,6 +34,10 @@ const TOKEN_RANDOM_PATTERN = `[A-Za-z0-9_-]{${Math.ceil((TOKEN_RANDOM_BYTES * BA
 
 /** A Mechane key: its prefix, then its random part. */
 export const KEY_TOKEN_PATTERN: Readonly<RegExp> = new RegExp(`^${TokenPrefix.Key}${TOKEN_RANDOM_PATTERN}$`);
+
+export const SERVICE_KEY_TOKEN_PATTERN: Readonly<RegExp> = new RegExp(
+  `^${TokenPrefix.WorkspaceService}${TOKEN_RANDOM_PATTERN}$`,
+);
 
 /** A device approval's poll token: its prefix, then its random part. */
 export const POLL_TOKEN_PATTERN: Readonly<RegExp> = new RegExp(`^${TokenPrefix.Poll}${TOKEN_RANDOM_PATTERN}$`);

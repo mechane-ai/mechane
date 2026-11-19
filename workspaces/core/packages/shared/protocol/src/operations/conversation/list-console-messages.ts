@@ -12,8 +12,8 @@ const ConversationCursor = Schema.OptionFromOptionalKey(EventCursor);
 
 export const listConsoleMessages = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/conversation',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/conversation',
+  access: Access.Owner,
   params: MechPath,
   query: wireStruct({ fields: { beforeSequence: ConversationCursor, afterSequence: ConversationCursor } }),
   body: NoFields,

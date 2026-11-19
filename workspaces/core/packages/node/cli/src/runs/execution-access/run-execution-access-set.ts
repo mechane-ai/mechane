@@ -12,15 +12,41 @@ export const runExecutionAccessSet = Effect.fn('runExecutionAccessSet')(function
   credentials,
   selectedWorkspaceId,
 }: RunInput<'execution-access set'>): Effect.fn.Return<CommandResult<'execution-access set'>, RunFailure> {
+  const granted = Option.some(input.access);
+
   const use: (access: WorkspaceAccess) => Effect.Effect<ExecutionAccessState, RunFailure> = ({ token, workspaceId }) =>
-    call({ name: 'configureExecutionAccess', input: { ...input, workspaceId }, credential: token });
+    call({
+      name: 'configureManagedCommandAccess',
+      input: { ...input, workspaceId, access: granted },
+      credential: token,
+    });
 
   const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 
-  const line = Option.match(result.access, {
-    onSome: () => 'Execution access configured.',
-    onNone: () => 'Execution access revoked.',
+  return { lines: ['Execution access configured.'], result };
+});
+
+export const runExecutionAccessRevoke = Effect.fn('runExecutionAccessRevoke')(function* ({
+  call,
+  origin,
+  input,
+  credentials,
+  selectedWorkspaceId,
+}: RunInput<'execution-access revoke'>): Effect.fn.Return<CommandResult<'execution-access revoke'>, RunFailure> {
+  const revoked = Option.none();
+
+  const result = yield* withWorkspace({
+    call,
+    origin,
+    credentials,
+    selectedWorkspaceId,
+    use: ({ token, workspaceId }) =>
+      call({
+        name: 'configureManagedCommandAccess',
+        input: { ...input, workspaceId, access: revoked },
+        credential: token,
+      }),
   });
 
-  return { lines: [line], result };
+  return { lines: ['Execution access revoked.'], result };
 });

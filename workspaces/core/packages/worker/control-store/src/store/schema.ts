@@ -1,3 +1,14 @@
+import { managedUsageMigration } from './managed-budget-schema.ts';
+import { agentMigrationSql } from './managed/agent-schema.ts';
+import { installedAllocationMigrationSql } from './managed/installed-allocations-schema.ts';
+import { installedEnvironmentMigrationSql } from './managed/installed-environment-schema.ts';
+import { memoryMigrationSql } from './managed/memory-schema.ts';
+import { managedOidcMigrationSql } from './managed/oidc-schema.ts';
+import { sessionMigrationSql } from './managed/session-schema.ts';
+import { skillMigrationSql } from './managed/skill-schema.ts';
+import { vaultMigrationSql } from './managed/vault-migration.ts';
+import { workerMigrationSql } from './managed/work-schema.ts';
+
 export const DOMAIN_MIGRATIONS = [
   {
     version: 1,
@@ -424,6 +435,67 @@ ALTER TABLE mechane.oauth_states ADD COLUMN session_token_hash text;
     sql: `
 ALTER TABLE mechane.mechs ADD COLUMN native_tools text[];
 ALTER TABLE mechane.mech_revisions ADD COLUMN native_tools text[];
+`,
+  },
+  {
+    version: 9,
+    sql: [
+      agentMigrationSql,
+      workerMigrationSql,
+      installedEnvironmentMigrationSql,
+      sessionMigrationSql,
+      skillMigrationSql,
+      memoryMigrationSql,
+      vaultMigrationSql,
+      managedUsageMigration,
+      managedOidcMigrationSql,
+    ].join('\n'),
+  },
+  { version: 10, sql: installedAllocationMigrationSql },
+  {
+    version: 11,
+    sql: `
+CREATE TABLE mechane.managed_installations (
+  workspace_id uuid PRIMARY KEY REFERENCES mechane.workspaces(id),
+  principal_id uuid NOT NULL UNIQUE REFERENCES mechane.principals(id)
+);
+`,
+  },
+  {
+    version: 12,
+    sql: `
+CREATE TABLE mechane.managed_command_grants (
+  workspace_id uuid NOT NULL, agent_id text NOT NULL, principal_id uuid NOT NULL,
+  access jsonb NOT NULL CHECK (jsonb_typeof(access)='object'),
+  PRIMARY KEY (workspace_id,agent_id,principal_id),
+  FOREIGN KEY (workspace_id,agent_id) REFERENCES mechane.managed_agents(workspace_id,id) ON DELETE CASCADE,
+  FOREIGN KEY (workspace_id,principal_id) REFERENCES mechane.memberships(workspace_id,principal_id) ON DELETE CASCADE
+);
+`,
+  },
+  {
+    version: 13,
+    sql: `
+CREATE TABLE mechane.workspace_service_principals (
+  workspace_id uuid NOT NULL REFERENCES mechane.workspaces(id),
+  subject text NOT NULL,
+  principal_id uuid NOT NULL UNIQUE REFERENCES mechane.principals(id),
+  PRIMARY KEY (workspace_id,subject)
+);
+`,
+  },
+  {
+    version: 14,
+    sql: `
+CREATE FUNCTION mechane.workspace_allows_worker_effect(workspace uuid, installed boolean)
+RETURNS boolean LANGUAGE sql VOLATILE SECURITY INVOKER AS $policy$
+  SELECT EXISTS (
+    SELECT 1 FROM mechane.workspaces space WHERE space.id=workspace
+      AND NOT coalesce((space.policy->>'isSuspended')::boolean,false)
+      AND (NOT installed OR coalesce((space.policy->>'hasSandboxes')::boolean,true))
+    FOR SHARE OF space
+  );
+$policy$;
 `,
   },
 ] as const;

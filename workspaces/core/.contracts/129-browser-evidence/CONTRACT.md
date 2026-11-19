@@ -10,6 +10,10 @@ Bind evidence to its workspace, mech, session, run, tool call, and capture ident
 intent before capture. A repeated identity rejoins its existing outcome; it never silently captures a changed page.
 Keep pending, ready, and failed states distinct. Claim saved evidence only after the expected bytes and digest are
 validated in durable storage.
+Give the installed worker a reviewer URL on a ready native capture and subsequent artifact lookup. Build it from the
+installation’s public origin and the workspace, agent, and session admitted by the current lease. Preserve the original
+capture action and work generation when a later work item finishes a recording. Keep session evidence links usable
+after the worker and machine are gone. Authorize each viewer request against the session’s actual workspace and agent.
 Treat an immutable media-integrity mismatch as a terminal failure. Distinguish it from a retryable storage transport
 failure; retrying the same fixed bytes cannot repair their digest.
 Commit ready state before releasing staging objects. A staging-cleanup failure cannot make verified media unavailable.

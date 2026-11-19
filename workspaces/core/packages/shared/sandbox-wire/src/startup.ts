@@ -1,14 +1,9 @@
 import { MachineId, RecordId, RecordText, wireStruct } from '@mechane/records';
 import { Effect, Schema } from 'effect';
 import { ExecutionId } from './schemas.ts';
-import { SANDBOX_TOOL_LIMITS } from './tools/constants.ts';
 
 export const IMAGE_STARTUP_SECONDS = 90;
 export const WORKSPACE_RESTORE_SECONDS = 300;
-const MILLISECONDS_PER_SECOND = 1000;
-
-export const MACHINE_STARTUP_GRACE_MS =
-  (IMAGE_STARTUP_SECONDS + SANDBOX_TOOL_LIMITS.startupSeconds + WORKSPACE_RESTORE_SECONDS) * MILLISECONDS_PER_SECOND;
 
 export const StartupPhase = {
   Container: 'container',

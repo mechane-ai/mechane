@@ -389,6 +389,7 @@ export async function startCelldWorker(input: CelldWorkerOptions): Promise<Local
         output: bundleFile,
         logFile: buildLogFile,
         isWatched: input.isWatched !== false,
+        prepare: input.prepareSource,
         onBuild: async ({ durationMs }) => {
           resources.lastBuildDurationMs = durationMs;
 

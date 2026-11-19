@@ -7,95 +7,82 @@ The signed-out page is a standalone entrance. An explicit workspace URL wins aft
 remembered choice. Without either, a single shared workspace opens before Personal; several shared workspaces open a
 chooser.
 
-The sidebar separates Overview, Pinned, and Recent. Recent shows the last five unpinned mechs you opened. Preferences
-and shortcuts belong to your account and workspace in this browser. Account settings contain documentation and software
-notices under About.
+## Working with an agent
 
-## A mech's views
+Under **Overview → Agents**, open an agent to see its sessions. A session is one conversation with that agent. Choose
+**New session** to select an environment, optionally give the session a title, and send its first message. If you need
+another self-hosted environment, you can create its definition from the same form. The directory also offers **New
+agent**. Pinned and Recent are shortcuts to agents in the current workspace and browser account.
 
-**Conversation** is the public exchange between Console operators and the mech. An operator submission becomes a durable
-notification. An agent reply appears only when the mech explicitly calls `console_message`, optionally with a structured
-presentation. Private model text and tool steps do not stream into this conversation. An activation can finish quietly.
+The session list reports each session’s public lifecycle status. **Working now** identifies the session currently using
+the agent’s execution slot when the private attention read is available. A session can be waiting for a tool decision
+while the same agent works in another session. Opening a conversation selects what you read. Sending a message or
+confirming a pending tool call can give the agent more work.
 
-**Activity** separates notifications and events from bounded activations. A notification receipt proves accepted input;
-it does not promise a new activation or a reply. One activation can consume multiple notifications. Historical source
-messages and execution events remain inspectable without a separate session selector or source-specific live agent.
+The transcript shows public user and agent messages, tool activity, and session events. A thread selector opens the
+events for one thread. Compose messages in the session conversation. Where the current session is waiting for a tool
+confirmation, the transcript offers the decision on the corresponding call. The composer also offers an interrupt while
+the session is running or rescheduling. An external action such as posting to Slack still requires a tool call.
 
-**Environment** shows the last saved file checkpoint, its recorded capture time, pending upload, and save or recovery
-errors beside the mech's processes. Commands can finish before files are saved; background writes can be newer than the
-captured checkpoint. Reads do not wake a machine or extend its lease. A process Stop targets its exact handle. Notes,
-plans, and memory are ordinary durable home files, not separate work or memory CRUD views. Settings holds the
-definition, appearance, grants, and lifecycle controls.
+Agent and session links include the workspace in the path. A session opens at
+`/console/workspaces/:workspaceId/agents/:agentId/sessions/:sessionId`. A `thread` query parameter selects a thread.
+Pagination follows the service’s opaque cursors. Reopening a link reads the selected records under the viewer’s current
+workspace membership.
 
-Mech and activation rows use full-row links and keyboard focus. Open a trace in another tab, or use Back to return to
-the row and reading position. Trace inspection fills the page and temporarily hides workspace navigation without
-changing your saved sidebar preference. It preserves the conversation, draft, and original return destination.
+Select **Evidence** in a session to see its browser screenshots and recordings. Open a capture to see its status, media
+and recorded execution origin. **Copy link** opens the same capture for someone with access to that session. **Back to
+evidence** returns to the capture list. **Back to session** restores the conversation you were reading.
 
-## Evidence
+## Archived diagnostics and evidence
 
-An activation trace shows recorded outcomes, model requests, safe tool projections, and events. Quiet completion has no
-implied public reply. Preserved historical replies remain linked to their exact event. Tool completion and command exit
-are distinct: a returned command with a nonzero exit is still a failed command.
+Workspace owners can open **Settings → Archived mechs** at `/console/workspaces/:workspaceId/archives`. Each row opens
+the mech’s read-only Archive, including historical messages, recorded Markdown, and structured cards. Select a recorded
+message’s run link to inspect its execution. Older and Newer follow archive pages.
 
-Native traces describe Pi and actor execution. Imported traces carry historical provenance and an evidence notice;
-reading or importing an old receipt does not execute its tool again.
+Historical mech links also provide Runs, Events, and Environment. A run opens full-page inspection of the recorded
+outcome, model requests, tool activity, events, and captures. The request waterfall measures reservation to settlement.
+Missing usage, truncated data, and imported history retain their provenance. Command exit and tool completion have
+distinct outcomes.
 
-The request waterfall shows reservation-to-settlement intervals, not exact provider inference time. Missing usage
-remains unknown. A tool duration needs both recorded endpoints. Raw credential-bearing arguments do not enter the
-browser. Missing, unavailable, and truncated evidence remain labeled across trace views.
+Archived captures open at `/console/workspaces/:workspaceId/mechs/:mechId/evidence/:artifactId`. A direct link can
+return to the recorded run. Media requires fresh authorization. A capture documents what the process observed at that
+point.
 
-Select a request or event without losing the original return destination. Copying a link preserves the selected record
-for viewers with current workspace membership. A direct trace link returns to its mech. Evidence media uses a full-page
-viewer with the same return behavior and fresh server authorization.
+Environment displays recorded checkpoint and recovery information alongside process summaries. Expand a process to read
+its bounded output. A Stop action targets the recorded machine and process handle. Reading diagnostics leaves machine
+lifetime and workspace contents alone.
 
 ## Loading and drafts
 
-Initial layouts reserve the eventual content geometry. The shared loading boundary delays decoration and keeps the
-composer in place. Usable content remains mounted during refresh. Refresh failure keeps the last authorized result and
-offers retry; access loss clears protected content.
+The loading boundary delays placeholders during short reads and renders the view’s placeholder during longer waits.
+Refreshes can keep an authorized result visible. Error and access states belong to the resource being read.
 
-Only an acknowledged submission clears its submitted draft. Rejected or uncertain sends retain text and request
-identity. A late history response cannot clear a later draft or erase a newer receipt. Reading older messages does not
-hide current activity or cause new text to pull the reader away from their anchor. Return-to-latest is explicit.
+Drafts stay in the admitted workspace’s in-memory owner, keyed by agent, session, and selected thread. Switching
+sessions preserves unfinished text. If an earlier submission succeeds while the author is editing, only the submitted
+draft clears. Failed sends retain the text. When delivery is uncertain, check the conversation before sending again.
+Reloading a link restores server history; unsent text lives in the open browser application.
 
-Drafts and public conversation history survive run inspection and recent mech navigation within the admitted scope.
-Switching account or workspace disposes protected content and fences pending completions. Local cache recovery replaces
-cached resources without resending a command or discarding an acknowledged result.
+## Adding a screen or feature
 
-## Package ownership
+| Owner                  | Responsibility                                                              |
+| ---------------------- | --------------------------------------------------------------------------- |
+| `console`              | Routes, navigation, command interaction, and drafts                         |
+| `console-data`         | Admission, SDK calls, read lifecycles, record ingestion, and commands       |
+| `console-cache`        | Native browser persistence, scoped generations, recovery, and disposal      |
+| `console-views`        | Presentation of supplied agents, sessions, threads, events, and diagnostics |
+| `@mechane-ai/elements` | Shared controls, layouts, charts, and content rendering                     |
 
-| Owner                  | Responsibility                                                                         |
-| ---------------------- | -------------------------------------------------------------------------------------- |
-| `console`              | Routes, composition, drafts, public conversation lifetime, and navigation              |
-| `console-data`         | Admission, Query read lifecycles, canonical records, exact page receipts, and commands |
-| `console-cache`        | Native browser persistence, scoped generations, recovery, and cleanup                  |
-| `console-views`        | Mech, conversation, activity, environment, and trace presentation                      |
-| `@mechane-ai/elements` | Shared controls, visual roles, layouts, charts, and content rendering                  |
+Start with the resource’s owner. Managed resources use the official Anthropic SDK through the same-origin Console
+gateway. Store resource summaries and exact page membership in TanStack DB. Keep session and thread events and the
+agent’s current execution slot in tab-owned queries. A transcript subscribes to its event stream and reconciles
+committed events with authorized history. Native diagnostics use their scoped catalog operations. The data package owns
+both transports.
 
-Only `console-data` crosses from the shared Effect client into browser Promises. Native Query observers own demanded
-reads and refresh. Canonical TanStack DB collections retain admitted resource records and exact page membership. One
-fetched page never implies the complete dataset. Native browser persistence owns cross-tab record replication.
-
-Public conversation history is the narrow exception to canonical persistence. Its Query observer lives in
-`console-data/src/conversation.ts`; the admitted conversation owner merges authorized pages in memory by stable message
-identity. There is no competing native Chat transcript and no public projection of the active model stream. Other
-resource records use the normal canonical path. [Contract 113](../.contracts/113-console-boundaries/CONTRACT.md) defines
-these boundaries and [contract 119](../.contracts/119-console-cache-lifecycle/CONTRACT.md) defines cache recovery.
-
-### Add a view
-
-Add a resource's encoded row, canonical table, bounded request, ingestion, and readiness checks in the existing data
-modules. Compose it with shared live reads and `ResourceView`. Keep filters and cursor inputs in interaction state; keep
-fetched record pages out of screen state and Query results. Commands settle from API acknowledgment and refresh
-canonical data through the same owner.
-
-The shared frame owns outer geometry and separators. Tables fill the content surface and cells own their insets.
-Conversation prose has a reading width. Detail forms use the shared detail container. Base UI owns interaction, StyleX
-owns appearance, and the generic waterfall owns measured trace geometry.
-
-Run browser types and import boundaries, then inspect the built application with delayed reads, failed refresh, empty
-history, switching mechs, pending sends, and full-page trace return. Static checks establish ownership; the browser
-establishes the assembled experience.
+Compose established views with live reads and `ResourceView`. Screens own selections, drafts, and command feedback. Use
+server acknowledgments to settle commands. A page refresh can fail after a command has already succeeded. Exercise
+navigation between two sessions during a send, thread inspection, reloading a selected page, and returning from a
+capture in the built application. See the [Console boundaries](../.contracts/113-console-boundaries/CONTRACT.md) and
+[cache lifecycle](../.contracts/119-console-cache-lifecycle/CONTRACT.md) contracts.
 
 ## Local development
 
@@ -116,6 +103,6 @@ Worker, real authentication boundaries, and deterministic providers.
 ## Release
 
 The Console ships in the application's immutable Worker release, with verified asset inventory and dependency notices.
-The Worker serves it through `ASSETS` at the installation's origin. It has no separate deployment or browser secret
-configuration. `/api/v1` owns domain operations and `/console` owns assets; a missing API never returns the application
-shell. HTML is uncached and hashed assets are immutable.
+The Worker serves `/console` through `ASSETS` at the installation’s origin. Public SDK clients use `/v1`. The browser
+uses its session cookie at `/console-api/v1` for Managed Agents and the installation’s scoped endpoints for native
+diagnostics and authentication. HTML is uncached and hashed assets are immutable.

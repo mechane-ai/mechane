@@ -44,9 +44,10 @@ export const runExecution = Effect.fn('runExecution')(function* ({
   yield* Deferred.await(run.closed).pipe(Effect.timeoutOption(CLOSE_GRACE));
 
   const retained = run.output();
-  const redacted = redactExecutionOutput({ output: retained, request });
+  const redacted = redactExecutionOutput({ output: retained, request, hasCompleteEnd: false });
   const output = yield* retainCommandOutput({ executionId, home: settings.home, output: redacted });
-  const duration = DateTime.distance(startedAt, DateTime.nowUnsafe());
+  const endedAt = DateTime.nowUnsafe();
+  const duration = DateTime.distance(startedAt, endedAt);
 
   return Option.match(exitCode, {
     onNone: (): SettledReceipt => ({ state: ReceiptStatus.TimedOut, duration, output }),
@@ -60,7 +61,8 @@ const finishedBash = Effect.fn('finishedBash')(function* ({
   request,
   settings,
 }: RunExecutionInput): Effect.fn.Return<FinishedBash, ExecutionUnstarted, Scope.Scope> {
-  const run = yield* Effect.acquireRelease(spawnBash({ executionId, request, settings }), (bash) => bash.kill);
+  const starting = spawnBash({ executionId, request, settings });
+  const run = yield* Effect.acquireRelease(starting, (bash) => bash.kill);
   const exitCode = yield* Deferred.await(run.exited).pipe(Effect.timeoutOption(request.timeout));
 
   return { run, exitCode };

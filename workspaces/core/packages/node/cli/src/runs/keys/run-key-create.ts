@@ -22,6 +22,7 @@ export const runKeyCreate = Effect.fn('runKeyCreate')(function* ({
     lines: [
       `created the key ${key.name} (${key.id}) of ${principal.name}; it expires at ${DateTime.formatIso(key.expiresAt)}`,
       `wrote its token to ${keyFile}`,
+      `For the Anthropic CLI or SDK, set ANTHROPIC_BASE_URL to ${origin.origin} and load ANTHROPIC_API_KEY from that file.`,
     ],
     result: { principal, key, keyFile },
   };

@@ -1,30 +1,29 @@
-import { catalog } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MediaType } from '@mechane/records';
+import { Schema } from 'effect';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-type ProxyState = { readonly isDropped: boolean; readonly failure: string | null };
-type ProxyInput = { readonly origin: URL; readonly workspaceId: string };
+const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['127.0.0.1', 'localhost', '[::1]']);
+
+const CreatedAgent = Schema.fromJsonString(
+  Schema.Struct({ id: Schema.NonEmptyString, metadata: Schema.Struct({ eval_creation_id: Schema.NonEmptyString }) }),
+);
+
+type CreatedAgent = typeof CreatedAgent.Type;
+type ProxyState = { readonly droppedAgent: CreatedAgent | null; readonly failure: string | null };
+type ProxyInput = { readonly origin: URL };
 type Proxy = { readonly origin: URL; readonly state: ProxyState; readonly stop: () => Promise<void> };
 
 type ForwardInput = {
   readonly origin: URL;
-  readonly creationPath: string;
   readonly request: IncomingMessage;
   readonly response: ServerResponse;
   readonly getState: () => ProxyState;
-  readonly markDropped: () => void;
+  readonly markDropped: (agent: CreatedAgent) => void;
 };
 
-async function forward({
-  origin,
-  creationPath,
-  request,
-  response,
-  getState,
-  markDropped,
-}: ForwardInput): Promise<void> {
+async function forward({ origin, request, response, getState, markDropped }: ForwardInput): Promise<void> {
   const chunks: Array<Uint8Array> = [];
   const stream: AsyncIterable<Uint8Array> = request;
 
@@ -34,7 +33,15 @@ async function forward({
 
   const headers = new Headers();
 
-  for (const name of [HttpHeader.Authorization, HttpHeader.ContentType, HttpHeader.Accept]) {
+  for (const name of [
+    HttpHeader.Authorization,
+    HttpHeader.ContentType,
+    HttpHeader.Accept,
+    'x-api-key',
+    'anthropic-version',
+    'anthropic-beta',
+    'anthropic-workspace-id',
+  ]) {
     const value = request.headers[name];
 
     if (typeof value === 'string') {
@@ -44,22 +51,27 @@ async function forward({
 
   const method = request.method ?? HttpMethod.Get;
   const body = Buffer.concat(chunks);
-  const options: RequestInit = { method, headers };
+  const options: RequestInit = { method, headers, redirect: 'error' };
 
   if (body.length > 0) {
     options.body = body;
   }
 
   const target = new URL(request.url ?? '/', origin);
+
+  if (target.origin !== origin.origin) {
+    throw new Error('The eval fixture only forwards to its local stack');
+  }
+
   const upstream = await fetch(target, options);
   const bytes = await upstream.arrayBuffer();
 
-  if (!getState().isDropped && method === HttpMethod.Post && target.pathname === creationPath) {
+  if (getState().droppedAgent === null && method === HttpMethod.Post && target.pathname === '/v1/agents') {
     if (!upstream.ok) {
       throw new Error(`The upstream creation failed with status ${upstream.status}`);
     }
 
-    markDropped();
+    markDropped(Schema.decodeUnknownSync(CreatedAgent)(new TextDecoder().decode(bytes)));
 
     response.destroy();
 
@@ -72,19 +84,21 @@ async function forward({
   response.end(Buffer.from(bytes));
 }
 
-export async function creationResponseProxy({ origin, workspaceId }: ProxyInput): Promise<Proxy> {
-  let state: ProxyState = { isDropped: false, failure: null };
-  const creationPath = catalog.createMech.path.replace(':workspace_id', workspaceId);
+export async function creationResponseProxy({ origin }: ProxyInput): Promise<Proxy> {
+  if (origin.protocol !== 'http:' || !LOOPBACK_HOSTS.has(origin.hostname)) {
+    throw new Error('The eval creation proxy requires a loopback fixture');
+  }
+
+  let state: ProxyState = { droppedAgent: null, failure: null };
 
   const server = createServer((request, response) => {
     void forward({
       origin,
-      creationPath,
       request,
       response,
       getState: () => state,
-      markDropped: () => {
-        state = { ...state, isDropped: true };
+      markDropped: (agent) => {
+        state = { ...state, droppedAgent: agent };
       },
     }).catch((error: unknown) => {
       state = { ...state, failure: String(error) };

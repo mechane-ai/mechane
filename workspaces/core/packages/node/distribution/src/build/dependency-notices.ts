@@ -108,7 +108,13 @@ async function packageNotices({ folder, supplements }: PackageNoticesInput): Pro
 
   const identity = `${metadata.name}@${metadata.version}`;
   const files = await packageNoticeFiles({ folder });
-  const filenames = [...files.primary, ...files.thirdParty].toSorted();
+  // The SDK ships the vendored query serializer's BSD notice only alongside its TypeScript source.
+  const filenames = [...files.primary, ...files.thirdParty];
+
+  if (metadata.name === '@anthropic-ai/sdk') {
+    filenames.push('src/internal/qs/LICENSE.md');
+  }
+
   const notices: Array<string> = [];
 
   if (files.primary.length === 0) {
@@ -138,7 +144,7 @@ async function packageNotices({ folder, supplements }: PackageNoticesInput): Pro
     }
   }
 
-  for (const filename of filenames) {
+  for (const filename of filenames.toSorted()) {
     const contents = await readFile(join(folder, filename), 'utf8');
 
     if (contents.trim() === '') {

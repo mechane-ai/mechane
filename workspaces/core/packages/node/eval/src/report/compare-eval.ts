@@ -219,11 +219,6 @@ function manifestCompatibility({
     { field: 'repeats', baseline: baselineDefinition.repeats, candidate: candidateDefinition.repeats },
     { field: 'judge configuration and grade schema', baseline: baselineJudge, candidate: candidateJudge },
     { field: 'tool definitions', baseline: baselineDefinition.tools, candidate: candidateDefinition.tools },
-    {
-      field: 'MCP connection name',
-      baseline: baselineDefinition.connectionName,
-      candidate: candidateDefinition.connectionName,
-    },
   ];
 
   const strictDifferences = strictFields.flatMap((field) => compareField(field));

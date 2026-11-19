@@ -4,11 +4,15 @@ import { Duration } from 'effect';
 /** The port a container's guest listens on, which its image exposes and its sandbox reaches through `getTcpPort`. */
 export const GUEST_PORT = 8080;
 
+/** Checkpointed working directory shared by installed SDK workers and their background processes. */
+export const INSTALLED_WORKSPACE_PATH = '/workspace';
+
 /**
  * The segments of the guest's two routes, each below the machine it serves: `/machines/:machine_id/health`, and
  * `/machines/:machine_id/executions/:execution_id`. The host launcher's one route is `/machines/:machine_id`.
  */
 export const GuestSegment = {
+  ManagedWork: 'managed-work',
   Machines: 'machines',
   Health: 'health',
   Capabilities: 'capabilities',

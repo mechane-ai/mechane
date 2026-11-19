@@ -1,33 +1,43 @@
 import { ExecutionAccess } from '@mechane/protocol';
-import { MechId, renamedWireStruct } from '@mechane/records';
+import { ManagedAgentId, PrincipalId, renamedWireStruct } from '@mechane/records';
 import { Schema } from 'effect';
 import { CommandShape, FlagKind } from '../../constants.ts';
 import type { CommandDeclaration } from '../../types.ts';
-import { MECH_ARGUMENT } from '../constants.ts';
 
-const AccessJson = Schema.fromJsonString(Schema.OptionFromNullOr(ExecutionAccess));
+const Grant = Schema.fromJsonString(ExecutionAccess);
+const TARGET = { agentId: ManagedAgentId, granteePrincipalId: PrincipalId } as const;
+const RENAMES = { agentId: 'agent-id', granteePrincipalId: 'grantee-principal-id' } as const;
 
-/** Execution grants expose credential references only and require live workspace ownership. */
+const IDENTITY = {
+  arguments: [
+    { name: 'agent-id', summary: 'the Managed Agent ID from ant beta:agents list' },
+    { name: 'grantee-principal-id', summary: 'the Mechane principal that starts the authorized sessions' },
+  ],
+  shape: CommandShape.Document,
+} as const;
+
 export const EXECUTION_ACCESS_COMMANDS = {
   'execution-access show': {
-    summary: 'show a mech execution grant without resolving its credentials',
-    shape: CommandShape.Document,
-    operations: ['listWorkspaces', 'showExecutionAccess'],
+    ...IDENTITY,
+    summary: 'show the installed command grant for an agent and principal',
+    operations: ['listWorkspaces', 'showManagedCommandAccess'],
     flags: {},
-    arguments: [MECH_ARGUMENT],
-    input: renamedWireStruct({ fields: { mechId: MechId }, renames: { mechId: 'mech-id' } }),
+    input: renamedWireStruct({ fields: TARGET, renames: RENAMES }),
   },
   'execution-access set': {
-    summary: 'replace execution access for future commands; pass null to revoke',
-    shape: CommandShape.Document,
-    operations: ['listWorkspaces', 'configureExecutionAccess'],
+    ...IDENTITY,
+    summary: 'set the environment variables and credential references available to installed commands',
+    operations: ['listWorkspaces', 'configureManagedCommandAccess'],
     flags: {
-      access: {
-        kind: FlagKind.Text,
-        summary: 'JSON grant with environment variables and credential references; null revokes access',
-      },
+      access: { kind: FlagKind.Text, summary: 'JSON grant with variables and workspace credential references' },
     },
-    arguments: [MECH_ARGUMENT],
-    input: renamedWireStruct({ fields: { mechId: MechId, access: AccessJson }, renames: { mechId: 'mech-id' } }),
+    input: renamedWireStruct({ fields: { ...TARGET, access: Grant }, renames: RENAMES }),
+  },
+  'execution-access revoke': {
+    ...IDENTITY,
+    summary: 'revoke the installed command grant for this agent and principal',
+    operations: ['listWorkspaces', 'configureManagedCommandAccess'],
+    flags: {},
+    input: renamedWireStruct({ fields: TARGET, renames: RENAMES }),
   },
 } as const satisfies Readonly<Record<string, CommandDeclaration>>;

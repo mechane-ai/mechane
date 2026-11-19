@@ -110,4 +110,19 @@ export const MIGRATIONS: ReadonlyArray<Migration> = [
   ({ sql }) => {
     sql.exec('CREATE TABLE workspace_restores (operation_id TEXT PRIMARY KEY, record TEXT NOT NULL) STRICT');
   },
+  ({ sql }) => {
+    sql.exec(`
+      CREATE TRIGGER installed_process_completion AFTER INSERT ON sandbox_completions
+      WHEN NEW.kind='process' AND EXISTS (
+        SELECT 1 FROM managed_processes WHERE id=NEW.execution_id AND json_type(record,'$.origin')='object'
+      )
+      BEGIN
+        UPDATE sandbox_completions
+        SET is_delivered=1, receipt=json_set(NEW.receipt,'$.origin',json(
+          (SELECT json_extract(record,'$.origin') FROM managed_processes WHERE id=NEW.execution_id)
+        ))
+        WHERE execution_id=NEW.execution_id AND kind=NEW.kind;
+      END
+    `);
+  },
 ];

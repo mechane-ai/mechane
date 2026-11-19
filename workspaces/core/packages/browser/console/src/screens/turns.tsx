@@ -13,12 +13,10 @@ import { ResourceView } from '../resource.tsx';
 export function TurnsScreen({
   data,
   mech,
-  onMessage,
   pageRead,
 }: {
   readonly data: ConsoleData;
   readonly mech: Mech;
-  readonly onMessage: () => void;
   readonly pageRead: PageRead<'turns', ReadRequest<'turns'>>;
 }): ReactNode {
   const records = useRecordNavigation();
@@ -43,20 +41,7 @@ export function TurnsScreen({
               turnHref={(turn) => records.href({ ...base, turn })}
               onOpen={(turn) => records.open({ ...base, turn }, turn)}
               focusRowId={records.focusRowId}
-              emptyAction={
-                mech.status === 'active' ? (
-                  <Button variant="solid" onClick={onMessage}>
-                    Send a message
-                  </Button>
-                ) : undefined
-              }
-              emptyDescription={
-                mech.status === 'paused'
-                  ? 'Notifications are retained until you resume this mech.'
-                  : mech.status === 'archived'
-                    ? 'This mech was archived before it started working.'
-                    : 'Execution traces appear here when the mech wakes to process notifications.'
-              }
+              emptyDescription="No runs were recorded for this mech."
             />
             {showPagination && (
               <ListFooter

@@ -7,13 +7,21 @@ Open `openControlStore` inside the Worker request or actor operation and close i
 owns its transaction. The public API exposes domain operations; clients and SQL stay private. Interactive transactions
 retain one connection through commit or rollback.
 
+The managed catalog in `src/store/managed` owns agent versions, environment and worker credentials, session descriptors,
+skills, memory versions, and vault records. A catalog request carries the authenticated workspace and principal.
+Administrators can access that workspace's resources. Sessions pin an agent version and resolve its skills and subagents
+when created. Their immutable configuration, pending initial events, and worker request commit together. The runtime
+owns execution and event order. The catalog projects runtime status by sequence and stores mutation receipts so replay
+cannot repeat an update or deletion.
+
 A provider attempt reserves its maximum charge before dispatch. First dispatch admission rechecks current policy and
 caps under the workspace lock. It assigns the charge to that database transaction's UTC day. A repeated mark retains the
 original day and reports `wasMarked: false`; it does not authorize another send. Unknown dispatched work remains
 charged. Only an undispatched reservation can be released as unused.
 
-Definition and policy changes commit durable control delivery records in their transaction. Delivery claims expire,
-retry with bounded backoff, and acknowledge immutable identities. The caller supplies the scheduled recovery sweep.
+Changes to actor-owned configuration commit durable control delivery records in their transaction. Delivery claims
+expire, retry with bounded backoff, and acknowledge immutable identities. The caller supplies the scheduled recovery
+sweep.
 
 `captureControlChanges({ run })` gives one operation a domain-store facade on the same pool. Each domain write retains
 its own transaction; capture publishes only that operation's committed outbox rows. The HTTP command confirms those
@@ -24,7 +32,9 @@ repeat or undo the mutation. A digest-bound positive acknowledgment cannot be cl
 Mech grants and execution access target that mech. Connection changes target its current grant recipients; deletion
 records them before removing grants. Credential rotation refreshes MCP-granted recipients whose connection references
 that credential. Execution-only credential references resolve on the next command and do not change offered tools.
-Workspace policy reaches all mechs. Notification acceptance and reads do not drain control delivery or await discovery.
+Workspace policy updates commit the policy and its audit record together. Model dispatch and machine acquisition read
+that policy in Postgres. A successful policy update wakes waiting installed sessions. Notification acceptance and reads
+do not drain control delivery or await discovery.
 
 The actor persists sanitized tool descriptors and availability notices before confirming refresh. Cold startup rebuilds
 adapters from this bounded native projection without contacting remote MCP endpoints. The projection grants no access:

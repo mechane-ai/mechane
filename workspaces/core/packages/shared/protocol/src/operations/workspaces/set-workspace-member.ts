@@ -1,5 +1,6 @@
 import { HttpMethod } from '@mechane/records';
 import { Schema } from 'effect';
+import { RequestInvalid } from '../../errors/errors.ts';
 import { Access } from '../../operation/constants.ts';
 import { NoFields } from '../../operation/schemas.ts';
 import type { Operation } from '../../operation/types.ts';
@@ -18,5 +19,5 @@ export const setWorkspaceMember = {
   query: NoFields,
   body: WorkspaceMemberRole,
   output: WorkspaceMember,
-  errors: MEMBER_MUTATION_FAILURES,
+  errors: [...MEMBER_MUTATION_FAILURES, RequestInvalid],
 } as const satisfies Operation;

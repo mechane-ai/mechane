@@ -5,9 +5,11 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./managed": "./src/managed.ts",
     "./presentation": "./src/presentation/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.10.0",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
     "effect": "4.0.7"

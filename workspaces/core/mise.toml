@@ -51,7 +51,7 @@ depends = [
 ]
 
 [tasks."sandbox:native:check"]
-description = "Check native container safety, transfer diagnostics and Gateway self routing without cloud credentials"
+description = "Check native container safety, transfer diagnostics and Gateway control-plane isolation without cloud credentials"
 run = "node --test packages/worker/sandbox/testing/*.ts"
 
 [tasks.fingerprint]
@@ -150,7 +150,11 @@ run = "jscpd"
 description = "Run the repository's own checks: layout, blank lines, patterns, orphans, documents, pins, the wire and migration locks, the boundaries with one dependency-cruiser cruise of every rule, the owned ratchets with their baselines, and every baseline against the merge base's"
 depends = ["routes:generate"]
 wait_for = ["build:server", "build:cli", "build:guest"]
-run = "node packages/node/checks/src/main.ts check"
+run = [
+  "tsc -p packages/shared/protocol/upstream/tsconfig.json",
+  "node packages/shared/protocol/upstream/generate-requests.mjs --check",
+  "node packages/node/checks/src/main.ts check",
+]
 
 [tasks."build:server"]
 depends = ["build:console"]
@@ -178,9 +182,12 @@ description = "Bundle the sandbox guest and installed CLI as portable Node modul
 dir = "{{config_root}}/packages/node/guest"
 run = '''
 set -e
+metadata=$(mktemp -d)
+trap 'rm -rf "$metadata"' EXIT
 notices=$(cat ../../../licenses/apache-2.0.js ../../../licenses/effect.js)
-bun build src/main.ts --target=node --outfile image/guest.mjs --banner "$notices"
-bun build ../cli/src/guest/main.ts --target=node --outfile image/mechane.mjs --banner "$notices"
+bun build src/main.ts --target=node --outfile image/guest.mjs --banner "$notices" --metafile="$metadata/guest.json"
+bun build ../cli/src/guest/main.ts --target=node --outfile image/mechane.mjs --banner "$notices" --metafile="$metadata/mechane.json"
+node ../distribution/src/build/append-guest-notices.ts "$metadata"
 '''
 
 [tasks."build:cli"]
@@ -263,6 +270,11 @@ depends = ["build:guest"]
 depends = ["smoke:prepare"]
 run = "node packages/node/checks/src/main.ts run-target smoke:auth"
 
+[tasks."smoke:managed"]
+description = "Qualify Managed Agents operations and runtime behavior against the compiled local Worker"
+depends = ["smoke:prepare"]
+run = "node packages/node/checks/src/main.ts run-target smoke:managed"
+
 [tasks."smoke:runs"]
 depends = ["smoke:prepare"]
 run = "node packages/node/checks/src/main.ts run-target smoke:runs"
@@ -274,10 +286,6 @@ run = "node packages/node/checks/src/main.ts run-target smoke:context"
 [tasks."smoke:recovery"]
 depends = ["smoke:prepare"]
 run = "node packages/node/checks/src/main.ts run-target smoke:recovery"
-
-[tasks."smoke:notifications"]
-depends = ["smoke:prepare"]
-run = "node packages/node/checks/src/main.ts run-target smoke:notifications"
 
 [tasks."smoke:evals"]
 depends = ["smoke:prepare"]
@@ -322,6 +330,7 @@ run = [
   "node packages/node/checks/src/main.ts normalize",
   "node packages/node/checks/src/main.ts fix",
   "mise run reference",
+  "node packages/shared/protocol/upstream/generate-requests.mjs",
   "oxfmt .",
   "tofu fmt -recursive infrastructure",
   "gofmt -w infrastructure/provider",

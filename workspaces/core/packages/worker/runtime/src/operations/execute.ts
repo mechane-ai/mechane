@@ -7,13 +7,12 @@ import { isInstallationAdministrator } from './auth/admission.ts';
 import type { AuthenticationConfiguration } from './auth/configuration.ts';
 import { createAuthOperations } from './auth/operations.ts';
 import { createConfigurationOperations } from './configuration/configuration.ts';
+import { createConversationOperations } from './conversation.ts';
 import { createEnvironmentOperations } from './environment.ts';
 import { createEvidenceOperations } from './evidence.ts';
 import { createMechOperations } from './mechs/mechs.ts';
-import { createNotificationOperations } from './notifications.ts';
 import { requireSandboxEnabled } from './require-sandbox-enabled.ts';
 import { createRoutineOperations } from './routines.ts';
-import { createSelfOperations } from './self.ts';
 import type { NamedOperationContext, OperationHandlers } from './types.ts';
 import { requireAuthenticated, validatedOperation } from './validated-operation.ts';
 
@@ -37,9 +36,8 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
   const { store, configuration, authentication } = options;
 
   const handlers: OperationHandlers = {
-    ...createNotificationOperations({ store, actors: options.actors }),
+    ...createConversationOperations({ store, actors: options.actors }),
     ...createRoutineOperations({ store, actors: options.actors }),
-    ...createSelfOperations({ store, actors: options.actors }),
     ...createAuthOperations({ store, configuration: authentication }),
     ...createEvidenceOperations({ store, configuration }),
     ...createEnvironmentOperations({ store, configuration }),
@@ -49,7 +47,7 @@ export function createOperationExecutor(options: OperationExecutorOptions) {
       isInstallationAdministrator: async (principalId) =>
         await isInstallationAdministrator({ store, configuration: authentication, principalId }),
     }),
-    ...createMechOperations({ store, configuration, actors: options.actors }),
+    ...createMechOperations({ store, actors: options.actors }),
     health: validatedOperation({ operation: catalog.health, run: async () => options.health() }),
     readiness: validatedOperation({ operation: catalog.readiness, run: async () => await options.readiness() }),
     manageSandbox: validatedOperation({

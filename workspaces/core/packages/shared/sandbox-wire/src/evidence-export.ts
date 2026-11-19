@@ -1,14 +1,6 @@
 import { Bytes, EvidenceArtifactId, MachineId, MediaType, RecordText, SHA256_PATTERN } from '@mechane/records';
 import type { RecordId } from '@mechane/records';
 import { Schema } from 'effect';
-import { SANDBOX_SERVICE_PREFIX, SandboxServiceIdentity } from './service.ts';
-
-export const EvidenceExportIdentity = Schema.Struct({
-  ...SandboxServiceIdentity.fields,
-  artifactId: EvidenceArtifactId,
-});
-
-export type EvidenceExportIdentity = typeof EvidenceExportIdentity.Type;
 
 /** Transfers a fixed capture rather than a caller-selected file or download URL. */
 export const EvidenceExportMetadata = Schema.Struct({
@@ -31,14 +23,6 @@ export const EvidenceExportResult = Schema.TaggedUnion({
 });
 
 export type EvidenceExportResult = typeof EvidenceExportResult.Type;
-
-export function sandboxEvidenceExportPath({ workspaceId, mechId, artifactId }: EvidenceExportIdentity): string {
-  const workspace = encodeURIComponent(workspaceId);
-  const mech = encodeURIComponent(mechId);
-  const artifact = encodeURIComponent(artifactId);
-
-  return `${SANDBOX_SERVICE_PREFIX}/${workspace}/${mech}/evidence/${artifact}/export`;
-}
 
 type GuestExportPathInput = { readonly machineId: RecordId; readonly metadata: EvidenceExportMetadata };
 

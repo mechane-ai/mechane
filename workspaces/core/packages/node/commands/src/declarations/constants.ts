@@ -1,5 +1,5 @@
-/** The argument that names a mech, by the id `mechane mech create` printed. */
+/** The identity of a historical mech in this workspace. */
 export const MECH_ARGUMENT = {
   name: 'mech-id',
-  summary: 'the id of the mech, as mechane mech list prints it',
+  summary: 'the id of the mech, as mechane history mechs prints it',
 } as const;

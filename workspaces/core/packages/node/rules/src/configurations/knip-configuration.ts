@@ -104,7 +104,12 @@ function memberWorkspace({ member }: MemberWorkspaceInput): MemberWorkspace {
 
   if (member.name === DISTRIBUTION_PACKAGE) {
     return {
-      entry: ['src/**/main.ts!', 'src/build/build-worker.ts!', 'testing/shipped-formats.ts'],
+      entry: [
+        'src/**/main.ts!',
+        'src/build/build-worker.ts!',
+        'src/build/append-guest-notices.ts!',
+        'testing/shipped-formats.ts',
+      ],
       project: ['src/**/*.ts!', 'testing/**/*.ts'],
     };
   }

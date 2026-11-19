@@ -2,6 +2,7 @@ import type { BrowserRuntime } from '@mechane/browser';
 import { Effect, FiberSet, Queue } from 'effect';
 import { answerExchange } from './answer-exchange.ts';
 import type { ExecutionUnstarted } from './errors.ts';
+import type { ManagedWorkLauncher } from './managed-work/launch.ts';
 import type { ProcessLedger } from './processes/types.ts';
 import type { Exchange, ExecutionLedger, GuestSettings, WorkspaceJournal } from './types.ts';
 
@@ -14,6 +15,7 @@ type AnswerNextExchangeInput = {
   readonly workspace: WorkspaceJournal;
   readonly processes: ProcessLedger;
   readonly browser: BrowserRuntime;
+  readonly launchManagedWork: ManagedWorkLauncher;
 };
 
 /** Takes the next request the server took, and answers it in a fiber of its own among the guest's fibers. */
@@ -25,8 +27,12 @@ export const answerNextExchange = Effect.fn('answerNextExchange')(function* ({
   workspace,
   processes,
   browser,
+  launchManagedWork,
 }: AnswerNextExchangeInput): Effect.fn.Return<void> {
   const exchange = yield* Queue.take(exchanges);
 
-  yield* FiberSet.run(fibers, answerExchange({ exchange, settings, ledger, workspace, processes, browser }));
+  yield* FiberSet.run(
+    fibers,
+    answerExchange({ exchange, settings, ledger, workspace, processes, browser, launchManagedWork }),
+  );
 });

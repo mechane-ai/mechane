@@ -5,26 +5,38 @@ import { Option, Record, Redacted } from 'effect';
 type RedactExecutionOutputInput = {
   readonly output: SettledReceipt['output'];
   readonly request: Pick<ExecutionRequest, 'environment'>;
+  readonly hasCompleteEnd: boolean;
 };
 
 type PrefixInput = { readonly omittedBytes: Bytes; readonly secrets: ReadonlyArray<string> };
 type SuffixInput = { readonly text: string; readonly secrets: ReadonlyArray<string> };
 
 /** Redacts injected values before retention, including a possible credential suffix at a truncated tail's start. */
-export function redactExecutionOutput({ output, request }: RedactExecutionOutputInput): SettledReceipt['output'] {
+export function redactExecutionOutput({
+  output,
+  request,
+  hasCompleteEnd,
+}: RedactExecutionOutputInput): SettledReceipt['output'] {
   const access = Option.getOrElse(request.environment, () => ({ variables: {}, secrets: {} }));
   const values = Record.values(access.secrets);
   const secrets = values.map(Redacted.value).filter((value) => value.length > 0);
   const longestFirst = secrets.toSorted((left, right) => right.length - left.length);
   const hiddenPrefix = redactionPrefix({ omittedBytes: output.omittedBytes, secrets });
-  const prefix = output.text.slice(0, hiddenPrefix);
-  let text = output.text.slice(hiddenPrefix);
+  let text = output.text;
 
   for (const value of longestFirst) {
     text = text.replaceAll(value, '[redacted]');
   }
 
-  const suffixLength = redactionSuffix({ text, secrets });
+  // Clipping before redaction could split a complete credential at the new boundary.
+  const prefix = text.slice(0, hiddenPrefix);
+  text = text.slice(hiddenPrefix);
+
+  let suffixLength = 0;
+
+  if (!hasCompleteEnd) {
+    suffixLength = redactionSuffix({ text, secrets });
+  }
 
   const redacted: string = (() => {
     if (suffixLength > 0) {

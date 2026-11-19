@@ -1,193 +1,142 @@
-import { TurnStatus } from '@mechane/protocol';
-import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+import { HttpHeader, HttpMethod } from '@mechane/records';
 import {
-  SandboxCompletionAccepted,
-  SandboxCompletionReceipt,
-  sandboxExecutionCancelPendingPath,
-  SandboxExecutionIdentity,
-  sandboxExecutionPath,
-  SandboxExecutionResult,
-  sandboxPendingCompletionsPath,
-  SandboxServiceIdentity,
-  sandboxStopPath,
+  InstalledDrainReport,
+  SANDBOX_INSTALLED_DRAIN_PATH,
+  SandboxReport,
   SandboxStopPhase,
-  sandboxStopReadPath,
-  SandboxStopReceipt,
 } from '@mechane/sandbox-wire';
 import {
-  createMechContext,
-  deleteSandbox,
-  readBashResult,
-  readSandboxCompletion,
-  readTrace,
+  readInstalledComputer,
   requireFixtures,
-  runBash,
-  sendNotification,
+  runInstalledBash,
   startCommandGate,
   waitFor,
-  waitForPendingExecution,
-  waitForTurn,
+  waitForInstalledRelease,
+  withInstalledContext,
 } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { Option, Schema } from 'effect';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { posix } from 'node:path';
 
-const REQUEST_TIMEOUT_MS = 15_000;
-const DRAIN_TIMEOUT_MS = 30_000;
-const BLOCKER_TIMEOUT_MS = 120_000;
-
-const STOP_TERMINAL_PHASES: ReadonlySet<SandboxStopReceipt['phase']> = new Set([
-  SandboxStopPhase.Completed,
-  SandboxStopPhase.Failed,
-]);
+const EVENT_PAGE_ROWS = 100;
+const RELEASE_TIMEOUT_MS = 300_000;
 
 export async function drainCompletesBeforePendingBash({ stack }: ScenarioInput): Promise<void> {
-  const marker = `drain-bash-${randomUUID()}`;
-  const input = await createMechContext({ stack, name: marker });
-  const { account, mechId } = input;
   const sandbox = stack.sandbox;
 
   assert.ok(sandbox !== undefined);
 
-  const { origin, bearer } = sandbox;
-  const identity = Schema.decodeUnknownSync(SandboxServiceIdentity)({ workspaceId: account.workspaceId, mechId });
-  const stopPath = sandboxStopPath(identity);
-  const { model } = requireFixtures(stack);
-  const gate = await startCommandGate({ stack });
-  const blockerId = randomUUID();
-  const toolCallId = randomUUID();
-  const filename = `.drain-once-${randomUUID()}`;
-  const pending = { id: '' };
+  await withInstalledContext({
+    stack,
+    name: `drain-bash-${randomUUID()}`,
+    run: async (context) => {
+      const gate = await startCommandGate({ stack });
+      const first = randomUUID();
+      const later = randomUUID();
+      const filename = `ordering-${first}`;
+      const { model } = requireFixtures(stack);
+      const heldCommand = `curl --fail --silent '${gate.url}' && printf 'first\\n' >> '${filename}'`;
+      const nextCommand = `printf 'later\\n' >> '${filename}'`;
+      const commands = [heldCommand, nextCommand];
 
-  function executionPath(executionId: string): string {
-    const execution = Schema.decodeUnknownSync(SandboxExecutionIdentity)({ ...identity, executionId });
+      try {
+        model.configure({
+          marker: first,
+          replies: [{ tools: [{ id: randomUUID(), name: 'bash', input: { command: heldCommand } }] }, { text: first }],
+        });
+        model.configure({
+          marker: later,
+          replies: [{ tools: [{ id: randomUUID(), name: 'bash', input: { command: nextCommand } }] }, { text: later }],
+        });
 
-    return sandboxExecutionPath(execution);
-  }
+        const admitted = await context.client.beta.sessions.events.send(context.session.id, {
+          events: [first, later].map((text) => ({ type: 'user.message', content: [{ type: 'text', text }] })),
+        });
 
-  async function request(path: string, method: HttpMethod, body?: unknown): Promise<unknown> {
-    const response = await fetch(new URL(path, origin), {
-      method,
-      headers: { [HttpHeader.Authorization]: `Bearer ${bearer}`, [HttpHeader.ContentType]: MediaType.Json },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
+        assert.equal(admitted.data?.length, commands.length);
+        await gate.waitForRequest({ count: 1 });
 
-    assert.ok(response.ok, `Sandbox request returned ${response.status}`);
+        const queuedId = admitted.data.at(-1)?.id;
+        const held = await context.client.beta.sessions.events.list(context.session.id, { limit: EVENT_PAGE_ROWS });
+        const queued = held.data.find((event) => event.id === queuedId);
 
-    return await response.json();
-  }
+        assert.ok(queued?.type === 'user.message');
+        assert.equal(queued.processed_at, null, 'The later request was consumed while the first shell was held');
 
-  async function readStop(operationId: SandboxStopReceipt['operationId']): Promise<SandboxStopReceipt> {
-    const path = sandboxStopReadPath({ ...identity, operationId });
+        const draining = await advanceInstallationDrain(stack);
+        const active = draining.pending.find((allocation) => allocation.sessionId === context.session.id);
 
-    return Schema.decodeUnknownSync(SandboxStopReceipt)(await request(path, HttpMethod.Get));
-  }
+        assert.equal(active?.phase, 'working', 'The supervisor tried to stop an active shell');
 
-  try {
-    const ready = await runBash({ ...input, command: 'printf ready' });
+        const before = await readInstalledComputer(context, SandboxReport, { path: '/workspace' });
+        const machineId = Option.getOrThrow(before.sandboxId);
 
-    assert.equal(ready.result.output, 'ready');
+        const pending = await readInstalledComputer(context, SandboxReport, { path: '/workspace' });
 
-    const started = Schema.decodeUnknownSync(SandboxExecutionResult)(
-      await request(executionPath(blockerId), HttpMethod.Post, {
-        command: `curl --fail --silent '${gate.url}'`,
-        timeoutMs: BLOCKER_TIMEOUT_MS,
-        waitMs: 0,
-        environment: { variables: {}, secrets: {} },
-      }),
-    );
+        assert.deepEqual(pending.environment.committedGeneration, before.environment.committedGeneration);
+        assert.ok(Option.isNone(pending.environment.stop), 'A live tool was drained before it completed');
+        assert.equal(await sandbox.readFile({ machineId, path: posix.join('/workspace', filename) }), undefined);
+        gate.release();
 
-    assert.equal(started._tag, 'Running');
-    await gate.waitForRequest({ count: 1 });
+        const completed = await waitFor({
+          name: 'the earlier and queued commands to return linked shell results',
+          read: () => context.client.beta.sessions.events.list(context.session.id, { limit: EVENT_PAGE_ROWS }),
+          accept: (history) =>
+            history.data.filter((event) => event.type === 'user.tool_result').length >= commands.length,
+        });
 
-    const original = Schema.decodeUnknownSync(SandboxStopReceipt)(await request(stopPath, HttpMethod.Post));
+        const called = completed.data.filter((event) => event.type === 'agent.tool_use');
+        const returned = completed.data.filter((event) => event.type === 'user.tool_result');
 
-    await waitFor({
-      name: 'the original stop to wait for the held command',
-      read: () => readStop(original.operationId),
-      accept: (receipt) => receipt.phase === SandboxStopPhase.WaitingForCommands,
-      timeoutMs: DRAIN_TIMEOUT_MS,
-    });
+        assert.deepEqual(
+          called.map((event) => event.input['command']),
+          commands,
+        );
+        assert.deepEqual(
+          returned.map((event) => event.tool_use_id),
+          called.map((event) => event.id),
+        );
+        assert.ok(returned.every((event) => event.is_error !== true));
 
-    model.configure({
-      marker,
-      replies: [
-        { tools: [{ id: toolCallId, name: 'bash', input: { command: `printf 'once\\n' >> '${filename}'` } }] },
-        { text: 'The command result was observed' },
-      ],
-    });
+        await waitFor({
+          name: 'the supervisor to confirm physical release',
+          timeoutMs: RELEASE_TIMEOUT_MS,
+          read: () => advanceInstallationDrain(stack),
+          accept: (report) => report.pending.length === 0 && !report.hasMore,
+        });
 
-    const sent = await sendNotification({ ...input, text: marker });
+        const { receipt, isPhysicallyAbsent } = await waitForInstalledRelease(context, { machineId });
 
-    pending.id = await waitForPendingExecution({
-      ...input,
-      excludeExecutionId: blockerId,
-      timeoutMs: DRAIN_TIMEOUT_MS,
-    });
+        assert.equal(receipt.phase, SandboxStopPhase.Completed, Option.getOrUndefined(receipt.lastError));
+        assert.ok(isPhysicallyAbsent);
 
-    const observed = Schema.decodeUnknownSync(SandboxExecutionResult)(
-      await request(executionPath(pending.id), HttpMethod.Get),
-    );
+        const contents = await runInstalledBash(context, { command: `cat '${filename}'` });
 
-    assert.equal(observed._tag, 'ExecutionEnvironmentRequired');
-    gate.release();
+        assert.equal(contents.trimEnd(), 'first\nlater');
+        assert.equal(gate.readRequests().length, 1);
+      } finally {
+        gate.release();
 
-    const stopped = await waitFor({
-      name: 'the original stop to complete despite the pending actor command',
-      read: () => readStop(original.operationId),
-      accept: (receipt) => STOP_TERMINAL_PHASES.has(receipt.phase),
-      timeoutMs: DRAIN_TIMEOUT_MS,
-    });
+        await gate.close();
+      }
+    },
+  });
+}
 
-    assert.equal(stopped.phase, SandboxStopPhase.Completed);
-    assert.equal(stopped.operationId, original.operationId);
-    assert.deepEqual(stopped.machineId, original.machineId);
+async function advanceInstallationDrain(stack: ScenarioInput['stack']) {
+  const sandbox = stack.sandbox;
 
-    const blocker = await readSandboxCompletion({ ...input, executionId: blockerId });
+  assert.ok(sandbox !== undefined);
 
-    assert.ok(blocker !== null);
-    assert.equal(blocker.status, 'exited');
-    assert.equal(Option.getOrThrow(blocker.exitCode), 0);
+  const response = await fetch(new URL(SANDBOX_INSTALLED_DRAIN_PATH, stack.origin), {
+    method: HttpMethod.Post,
+    headers: { [HttpHeader.Authorization]: `Bearer ${sandbox.bearer}` },
+    redirect: 'error',
+  });
 
-    const receipt = Schema.encodeSync(SandboxCompletionReceipt)(blocker);
-    const acknowledged = await request(sandboxPendingCompletionsPath(identity), HttpMethod.Post, receipt);
+  assert.ok(response.ok, `The local supervisor drain returned HTTP ${response.status}`);
 
-    Schema.decodeUnknownSync(SandboxCompletionAccepted)(acknowledged);
-
-    await readBashResult({ model, marker, toolCallId });
-
-    const turn = await waitForTurn({ ...input, notificationId: sent.id });
-    const trace = await readTrace({ ...input, turnId: turn.id });
-    const tool = trace.toolCalls?.find((call) => call.id === toolCallId);
-
-    assert.equal(turn.status, TurnStatus.Completed);
-    assert.ok(tool?.inspection !== undefined);
-    assert.equal(tool.inspection.executionId, pending.id);
-    assert.equal(Option.getOrThrow(tool.inspection.result).status, 'completed');
-
-    const checked = await runBash({ ...input, command: `test "$(wc -l < '${filename}')" -eq 1 && cat '${filename}'` });
-
-    assert.equal(checked.result.output, 'once\n');
-    assert.equal(gate.readRequests().length, 1);
-  } finally {
-    gate.release();
-
-    if (pending.id !== '') {
-      const execution = Schema.decodeUnknownSync(SandboxExecutionIdentity)({ ...identity, executionId: pending.id });
-      const path = sandboxExecutionCancelPendingPath(execution);
-
-      const response = await fetch(new URL(path, origin), {
-        method: HttpMethod.Post,
-        headers: { [HttpHeader.Authorization]: `Bearer ${bearer}` },
-        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-      });
-
-      assert.equal(response.status, HttpStatusCode.Ok);
-    }
-
-    await gate.close();
-    await deleteSandbox(input);
-  }
+  return Schema.decodeUnknownSync(InstalledDrainReport)(await response.json());
 }

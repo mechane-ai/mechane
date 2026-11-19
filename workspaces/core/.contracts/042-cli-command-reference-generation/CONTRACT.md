@@ -35,6 +35,11 @@ Build each reference consumer without the program's build toolchain.
 
 ## Local adaptations
 
+Use the installed Anthropic `ant` CLI for portable agent, session, and environment operations. The Mechane command
+model owns operator authentication, installation administration, and inspection of retained records through
+`mechane history`. Evaluate compatibility by pointing the stock client at the installation with
+`ANTHROPIC_BASE_URL` and an installation key and running a public lifecycle there.
+
 The command model is `packages/node/commands/src`, and the CLI's parser and `--help` derive from it.
 The generator `packages/node/cli/scripts/reference/main.ts` imports only the model and writes `packages/node/cli/reference.json`, whose `schema_version` the model declares.
 `mise -C workspaces/core run reference` writes the reference, and `mise -C workspaces/core run reference:check` fails when the committed copy differs from the model's output.
@@ -45,7 +50,8 @@ A release's host binary reports the release its stamp holds, and `release:cli` s
 The model names each command's output schema, which the output module encodes once, so a run returns its result unencoded.
 Ast-grep `encode-in-runs` enforces this in CLI runs and the eval coordinator. The eval store's persistence codec
 separately encodes saved records and bytes used for hashes; its exact `PersistenceCodec` role preserves that owner.
-`eval run` declares every operation its trials call, and the reference lists the exit status `Interrupted`, 130, which it ends with on Ctrl-C.
+`eval run` declares the private catalog operations used to select and qualify the target workspace. Subjects
+and graders use the public Managed Agents SDK. The reference lists exit status `Interrupted` (130) for Ctrl-C.
 The model declares `ErrorCode`, the code of each failure the CLI reports under its own name, and the reference lists them as `error_codes`; every report of such a failure takes it as a `ReportInput`, whose failure's tag must be one of them, so a code the model does not declare fails to compile.
 
 <!-- Generated from @mechane/rules by `mise run fix`; change the registry, never this block. -->

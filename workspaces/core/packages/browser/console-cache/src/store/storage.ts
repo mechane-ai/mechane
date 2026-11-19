@@ -11,7 +11,7 @@ import type { Types } from 'effect';
 import { Base64Url, Hex } from 'effect/encoding';
 
 const CACHE_NAMESPACE = 'mechane-console-opfs';
-const CACHE_SCHEMA_REVISION = 5;
+const CACHE_SCHEMA_REVISION = 6;
 // The native VFS permits 64-character paths, including room for journal suffixes.
 const CACHE_DIRECTORY = 'mc2';
 const GENERATION_BYTES = 16;
@@ -28,6 +28,7 @@ const MISSING_FILE = 'NotFoundError';
 const GenerationName = Schema.String.check(Schema.isPattern(/^[A-Za-z0-9_-]{22}$/u));
 
 const CacheGeneration = Schema.Struct({
+  hasOperatorAccess: Schema.Boolean,
   schemaRevision: Schema.Literal(CACHE_SCHEMA_REVISION),
   generation: GenerationName,
   createdAt: Schema.DateTimeUtcFromMillis,
@@ -45,6 +46,7 @@ export const ConsoleStorageStage = {
   Execute: 'execute',
   Close: 'close',
   Generation: 'generation',
+  AccessChanged: 'access-changed',
   Retire: 'retire',
   Collect: 'collect',
   CanonicalPrepare: 'canonical-prepare',
@@ -81,6 +83,7 @@ type ConsoleStorageScope = {
 };
 
 type OpenConsoleStorage = ConsoleStorageScope & {
+  readonly hasOperatorAccess: boolean;
   readonly lifecycle: ConsoleStorageLifecycle;
   readonly signal: AbortSignal;
   readonly onInvalidated: (failure: ConsoleStorageFailed) => void;
@@ -202,9 +205,7 @@ function createDatabasePath({
   return `${CACHE_DIRECTORY}/${scope.name}/${generation}/db`;
 }
 
-function readGeneration(scope: CacheScope): CacheGeneration | undefined {
-  const wire = localStorage.getItem(scope.key);
-
+function decodeGeneration(wire: string | null): CacheGeneration | undefined {
   if (wire === null) {
     return undefined;
   }
@@ -261,23 +262,27 @@ async function acquireGeneration({
 async function selectGeneration({
   scope,
   signal,
+  hasOperatorAccess,
 }: {
+  readonly hasOperatorAccess: boolean;
   readonly scope: CacheScope;
   readonly signal: AbortSignal;
 }): Promise<SelectedGeneration> {
   return await navigator.locks.request(scope.key, { signal }, async () => {
-    const previous = readGeneration(scope);
+    const previous = decodeGeneration(localStorage.getItem(scope.key));
     const now = DateTime.nowUnsafe();
     const maxAgeMs = Duration.toMillis(CACHE_MAX_AGE);
 
     const ageMs =
       previous === undefined ? maxAgeMs : DateTime.toEpochMillis(now) - DateTime.toEpochMillis(previous.createdAt);
 
-    const isCurrent = previous !== undefined && ageMs >= 0 && ageMs < maxAgeMs;
+    const isFresh = ageMs >= 0 && ageMs < maxAgeMs;
+    const isCurrent = previous !== undefined && previous.hasOperatorAccess === hasOperatorAccess && isFresh;
 
     const generation: CacheGeneration = isCurrent
       ? previous
       : {
+          hasOperatorAccess,
           schemaRevision: CACHE_SCHEMA_REVISION,
           generation: Base64Url.encode(crypto.getRandomValues(new Uint8Array(GENERATION_BYTES))),
           createdAt: now,
@@ -322,7 +327,7 @@ async function removeRetiredGenerations(scope: CacheScope): Promise<void> {
           createGenerationKey({ scope, generation: name }),
           { ifAvailable: true },
           async (lock) => {
-            if (lock !== null && readGeneration(scope)?.generation !== name) {
+            if (lock !== null && decodeGeneration(localStorage.getItem(scope.key))?.generation !== name) {
               await scopes.removeEntry(name, { recursive: true });
             }
           },
@@ -440,6 +445,22 @@ function createStorage({
     }
   }
 
+  function replacementFailure(current: string | null) {
+    const replacement = decodeGeneration(current);
+
+    if (replacement !== undefined && replacement.hasOperatorAccess !== generation.hasOperatorAccess) {
+      return new ConsoleStorageFailed({
+        stage: ConsoleStorageStage.AccessChanged,
+        reason: 'Workspace access changed in another tab',
+      });
+    }
+
+    return new ConsoleStorageFailed({
+      stage: ConsoleStorageStage.Generation,
+      reason: 'The cache generation is retired',
+    });
+  }
+
   function checkGeneration(): void {
     const nowMs = DateTime.toEpochMillis(DateTime.nowUnsafe());
     const current = Result.try(() => localStorage.getItem(scope.key));
@@ -451,10 +472,7 @@ function createStorage({
     }
 
     if (isExpired || !hasSelectedGeneration) {
-      throw new ConsoleStorageFailed({
-        stage: ConsoleStorageStage.Generation,
-        reason: 'The cache generation is retired',
-      });
+      throw replacementFailure(Result.isSuccess(current) ? current.success : null);
     }
   }
 
@@ -538,12 +556,7 @@ function createStorage({
     const current = Result.try(() => localStorage.getItem(scope.key));
 
     if (Result.isFailure(current) || current.success !== wire) {
-      invalidate(
-        new ConsoleStorageFailed({
-          stage: ConsoleStorageStage.Generation,
-          reason: 'Local data was reset in another tab',
-        }),
-      );
+      invalidate(replacementFailure(Result.isSuccess(current) ? current.success : null));
       void close().catch(() => undefined);
     }
   }
@@ -565,6 +578,16 @@ function createStorage({
       const current = Result.try(checkGeneration);
 
       if (Result.isFailure(current)) {
+        if (
+          Schema.is(ConsoleStorageFailed)(current.failure) &&
+          current.failure.stage === ConsoleStorageStage.AccessChanged
+        ) {
+          invalidate(current.failure);
+          void close().catch(() => undefined);
+
+          return;
+        }
+
         void discard().catch((error: unknown) =>
           invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Retire, reason: String(error) })),
         );
@@ -648,6 +671,7 @@ export async function openConsoleStorage(input: OpenConsoleStorage): Promise<Con
       await input.lifecycle.awaitPreviousCleanup(input, input.signal);
 
       return await selectGeneration({
+        hasOperatorAccess: input.hasOperatorAccess,
         scope,
         signal: AbortSignal.any([input.signal, AbortSignal.timeout(Duration.toMillis(OPEN_TIMEOUT))]),
       });

@@ -6,8 +6,10 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.10.0",
     "@mechane/cli-kernel": "workspace:*",
     "@mechane/client": "workspace:*",
+    "@mechane/commands": "workspace:*",
     "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",

@@ -11,5 +11,11 @@ export const RecordNotFound = class RecordNotFoundError extends Error {
 };
 
 export class ProviderDispatchRefused extends Schema.TaggedError<ProviderDispatchRefused>()('ProviderDispatchRefused', {
-  reason: Schema.Literals(['workspace_suspended', 'mech_disabled', 'workspace_allowance', 'mech_allowance']),
+  reason: Schema.Literals([
+    'workspace_suspended',
+    'mech_disabled',
+    'workspace_allowance',
+    'mech_allowance',
+    'session_budget',
+  ]),
 }) {}

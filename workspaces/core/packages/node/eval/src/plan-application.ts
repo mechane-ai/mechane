@@ -1,17 +1,19 @@
 import { NotificationText } from '@mechane/protocol';
-import { ToolSchema } from '@modelcontextprotocol/sdk/types.js';
 import { DateTime, Effect, Option, Schema } from 'effect';
-import { gte } from 'semver';
 import { EVAL_FORMAT_VERSION, EvalSuiteDefinition } from './application-schemas.ts';
 import type { EvalManifest, EvalTargetIdentity } from './application-schemas.ts';
 import type { EvalSuite, EvalTarget, ResolvedEvalSuite } from './application-types.ts';
 import { EvalAdapterFailed, EvalAdapterOperation, PlanChanged } from './errors.ts';
 import { jsonDigest } from './json-digest.ts';
+import { managedRequest } from './managed-request.ts';
 import type { ApplicationStore } from './store/application-store.ts';
 import { digestManifest } from './store/encode-eval-records.ts';
 import { trialId } from './trial-id.ts';
 import type { EvalRunFailure } from './types.ts';
 import { validateTargetOrigin } from './validate-target-origin.ts';
+
+const OBJECT_INPUT = 'object';
+const hasObjectInput = Schema.is(Schema.Struct({ type: Schema.Literal(OBJECT_INPUT) }));
 
 type ValidateEvalSuiteInput = { readonly suite: EvalSuite };
 type ResolveEvalTargetInput = { readonly target: EvalTarget };
@@ -27,7 +29,9 @@ type FreezeApplicationManifestInput = ResolvedSuiteInput &
 export const resolveEvalSuite = Effect.fn('resolveEvalSuite')(function* ({
   suite,
 }: ValidateEvalSuiteInput): Effect.fn.Return<ResolvedEvalSuite, EvalRunFailure> {
-  const definition = yield* Schema.decodeUnknownEffect(EvalSuiteDefinition)(suite.definition).pipe(
+  const definition = yield* Schema.decodeUnknownEffect(EvalSuiteDefinition, { onExcessProperty: 'error' })(
+    suite.definition,
+  ).pipe(
     Effect.mapError(
       (failure) => new EvalAdapterFailed({ operation: EvalAdapterOperation.ValidateSuite, reason: failure.message }),
     ),
@@ -43,16 +47,11 @@ export const resolveEvalSuite = Effect.fn('resolveEvalSuite')(function* ({
     });
   }
 
-  if (!definition.judge.isSelfGrading) {
-    const subjectModel = Option.fromUndefinedOr(definition.subject.model);
-    const judgeModel = Option.fromUndefinedOr(definition.judge.model);
-
-    if (Option.isNone(subjectModel) || Option.isNone(judgeModel) || subjectModel.value === judgeModel.value) {
-      return yield* new EvalAdapterFailed({
-        operation: EvalAdapterOperation.ValidateJudge,
-        reason: 'Independent judging requires two explicitly different model IDs',
-      });
-    }
+  if (!definition.judge.isSelfGrading && definition.subject.model === definition.judge.model) {
+    return yield* new EvalAdapterFailed({
+      operation: EvalAdapterOperation.ValidateJudge,
+      reason: 'Independent judging requires two explicitly different model IDs',
+    });
   }
 
   const declaredSchema = jsonDigest({ value: definition.judge.gradeSchema });
@@ -62,13 +61,6 @@ export const resolveEvalSuite = Effect.fn('resolveEvalSuite')(function* ({
     return yield* new EvalAdapterFailed({
       operation: EvalAdapterOperation.ValidateGradeSchema,
       reason: 'The frozen grade schema differs from its decoder',
-    });
-  }
-
-  if (definition.judge.nativeTools.length > 0) {
-    return yield* new EvalAdapterFailed({
-      operation: EvalAdapterOperation.ValidateJudgeCapabilities,
-      reason: 'Judges must have an empty native tool selection',
     });
   }
 
@@ -84,11 +76,14 @@ export const resolveEvalSuite = Effect.fn('resolveEvalSuite')(function* ({
   }
 
   for (const tool of definition.tools) {
-    yield* Effect.try({
-      try: () => ToolSchema.parse(tool),
-      catch: (cause) =>
-        new EvalAdapterFailed({ operation: EvalAdapterOperation.ValidateToolDefinition, reason: String(cause) }),
-    });
+    const schema = tool.inputSchema;
+
+    if (!hasObjectInput(schema)) {
+      return yield* new EvalAdapterFailed({
+        operation: EvalAdapterOperation.ValidateToolDefinition,
+        reason: `Tool ${tool.name} requires an object input schema`,
+      });
+    }
   }
 
   return { ...suite, definition };
@@ -101,7 +96,7 @@ export const validateEvalSuite = Effect.fn('validateEvalSuite')(function* (
   yield* resolveEvalSuite(input);
 });
 
-/** Readiness freezes the selected native runtime and rejects incompatible deployments before creation. */
+/** Check deployment identity and authenticated workspace access before creating any resource. */
 export const resolveEvalTarget = Effect.fn('resolveEvalTarget')(function* ({
   target,
 }: ResolveEvalTargetInput): Effect.fn.Return<EvalTargetIdentity, EvalRunFailure> {
@@ -109,26 +104,12 @@ export const resolveEvalTarget = Effect.fn('resolveEvalTarget')(function* ({
 
   const credential = Option.none();
 
-  const readiness = yield* target.call({ name: 'readiness', input: {}, credential }).pipe(
-    Effect.catchTags({
-      ResponseUnreadable: () => {
-        const failure = new EvalAdapterFailed({
-          operation: EvalAdapterOperation.CheckRuntime,
-          reason:
-            'The selected deployment does not provide the native notification runtime required by this eval release',
-        });
+  const readiness = yield* target.call({ name: 'readiness', input: {}, credential });
 
-        return Effect.fail(failure);
-      },
-    }),
-  );
-
-  if (!gte(readiness.release, '0.33.0')) {
-    return yield* new EvalAdapterFailed({
-      operation: EvalAdapterOperation.CheckRuntime,
-      reason: `Mechane ${readiness.release} predates the required native tool allowlist support in 0.33.0`,
-    });
-  }
+  yield* managedRequest({
+    action: 'check Managed Agents workspace access',
+    operation: (signal) => target.managed.beta.agents.list({ limit: 1 }, { signal }),
+  });
 
   return {
     kind: target.kind,

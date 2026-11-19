@@ -1,6 +1,7 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { catalog, TYPED_CODE_FIELD } from '@mechane/protocol';
 import { HttpHeader, HttpStatusCode } from '@mechane/records';
-import { approveAndClaimKey, createAccount, startApproval } from '@mechane/testing';
+import { approveAndClaimKey, createAccount, requireFixtures, startApproval } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { DateTime, Redacted, Schema } from 'effect';
 import assert from 'node:assert/strict';
@@ -12,7 +13,7 @@ const DEFAULT_NAMED_KEY_SECONDS = 31_536_000;
 const ErrorResponse = Schema.Struct({ error: Schema.Struct({ code: Schema.String }) });
 
 export async function expiredKeyCannotAuthorizeRequests({ stack }: ScenarioInput): Promise<void> {
-  const account = await createAccount({ stack });
+  const account = await createAccount({ stack, login: requireFixtures(stack).github.users.owner.login });
 
   await stack.restart({ environment: { MECHANE_NAMED_KEY_LIFETIME_SECONDS: '2' } });
 
@@ -24,6 +25,12 @@ export async function expiredKeyCannotAuthorizeRequests({ stack }: ScenarioInput
     assert.equal(review.status, HttpStatusCode.Ok);
 
     const claimed = await approveAndClaimKey({ stack, approval, browser: account.browser, review });
+
+    const client = new Anthropic({
+      baseURL: stack.origin.origin,
+      apiKey: Redacted.value(claimed.token),
+      maxRetries: 0,
+    });
 
     const expiresAtMillis = DateTime.toEpochMillis(claimed.key.expiresAt);
 
@@ -37,7 +44,8 @@ export async function expiredKeyCannotAuthorizeRequests({ stack }: ScenarioInput
     const failure = Schema.decodeUnknownSync(ErrorResponse)(await response.json());
 
     assert.equal(response.status, HttpStatusCode.Unauthorized);
-    assert.equal(failure.error.code, 'KeyExpired', 'An expired key still authorized the public API');
+    assert.equal(failure.error.code, 'KeyExpired');
+    await assert.rejects(client.beta.agents.list({ limit: 1 }), { status: HttpStatusCode.Unauthorized });
   } finally {
     await stack.restart({ environment: { MECHANE_NAMED_KEY_LIFETIME_SECONDS: String(DEFAULT_NAMED_KEY_SECONDS) } });
   }

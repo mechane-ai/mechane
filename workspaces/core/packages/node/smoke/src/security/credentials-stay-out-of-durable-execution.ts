@@ -1,4 +1,4 @@
-import { requireFixtures } from '@mechane/testing';
+import { createManagedContext, issueEnvironmentKey, requireFixtures } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import { Schema } from 'effect';
 import assert from 'node:assert/strict';
@@ -14,8 +14,17 @@ export async function credentialsStayOutOfDurableExecution({ stack }: ScenarioIn
   const canaries: Array<Canary> = [
     { label: 'the model provider key', value: fixtures.model.apiKey },
     { label: 'the GitHub OAuth secret', value: fixtures.github.clientSecret },
-    { label: 'the notification producer secret', value: fixtures.notifications.signingSecret },
   ];
+
+  const { account, client, environment } = await createManagedContext({ stack, name: 'credential audit' });
+
+  const environmentKey = await issueEnvironmentKey({
+    origin: stack.origin,
+    environmentId: environment.id,
+    token: account.token,
+  });
+
+  canaries.push({ label: 'an environment worker key', value: environmentKey });
 
   const folders = await readdir(stack.stateDirectory, { withFileTypes: true });
 
@@ -44,6 +53,8 @@ export async function credentialsStayOutOfDurableExecution({ stack }: ScenarioIn
   for (const canary of canaries) {
     assertCanaryAbsent({ canary, database, log });
   }
+
+  await client.beta.environments.archive(environment.id);
 }
 
 type CanaryInspection = { readonly canary: Canary; readonly database: string; readonly log: string };

@@ -1,8 +1,10 @@
-import { RecordId, SHA256_PATTERN, UtcDay } from '@mechane/records';
+import { RecordId, SHA256_PATTERN, UNSIGNED_INTEGER_PATTERN, UtcDay } from '@mechane/records';
 import { Schema } from 'effect';
 import type { Allowance } from '../domain.ts';
 import type {
   DispatchProviderAttempt,
+  ManagedProviderAttemptIdentity,
+  MarkProviderAttemptDispatched,
   ProviderAttempt,
   ProviderAttemptDecision,
   ProviderAttemptDispatch,
@@ -16,10 +18,14 @@ import type {
 } from '../provider-attempt.ts';
 import type { StoreContext } from './context.ts';
 import { ProviderDispatchRefused, RecordNotFound, StoreConflict } from './errors.ts';
+import { createManagedUsageStore, managedBudgetReached } from './managed-budget.ts';
 import { StoredChecksum, StoredText, StoredTimestamp } from './row-values.ts';
 import { lockWorkspace } from './scope-locks.ts';
 
 const QUERY_MAX_ATTEMPTS = 256;
+const MANAGED_USAGE_TIMEOUT_MS = 240_000;
+const USAGE_TIMEOUT_MAX_MS = 2_147_483_647;
+const billedStates: ReadonlySet<ProviderAttempt['state']> = new Set(['dispatched', 'settled']);
 const AttemptPresence = Schema.Struct({ id: Schema.NullOr(RecordId) });
 
 const AttemptRow = Schema.Struct({
@@ -27,6 +33,8 @@ const AttemptRow = Schema.Struct({
   workspace_id: RecordId,
   mech_id: RecordId,
   activation_id: RecordId,
+  session_id: Schema.NullOr(StoredText),
+  thread_id: Schema.NullOr(StoredText),
   generation_task_id: Schema.NullOr(StoredText),
   attempt_ordinal: Schema.Number,
   request_fingerprint: StoredChecksum,
@@ -38,7 +46,13 @@ const AttemptRow = Schema.Struct({
   upstream_usage: Schema.NullOr(Schema.Record(StoredText, Schema.Unknown)),
   state: Schema.Literals(['reserved', 'dispatched', 'settled', 'released', 'refused']),
   refusal_reason: Schema.NullOr(
-    Schema.Literals(['workspace_suspended', 'mech_disabled', 'workspace_allowance', 'mech_allowance']),
+    Schema.Literals([
+      'workspace_suspended',
+      'mech_disabled',
+      'workspace_allowance',
+      'mech_allowance',
+      'session_budget',
+    ]),
   ),
   created_at: StoredTimestamp,
   dispatched_at: Schema.NullOr(StoredTimestamp),
@@ -67,9 +81,10 @@ type Limits = typeof LimitsRow.Type;
 type Totals = typeof TotalsRow.Type;
 type AllowanceInput = { readonly workspaceId: string; readonly mechId?: string };
 
-type BudgetStore = ProviderAttemptStore & {
-  readonly showAllowance: (input: AllowanceInput) => Promise<Allowance | null>;
-};
+type BudgetStore = ProviderAttemptStore &
+  ReturnType<typeof createManagedUsageStore> & {
+    readonly showAllowance: (input: AllowanceInput) => Promise<Allowance | null>;
+  };
 
 function providerAttempt(value: unknown): ProviderAttempt {
   const row = Schema.decodeUnknownSync(AttemptRow)(value);
@@ -79,6 +94,8 @@ function providerAttempt(value: unknown): ProviderAttempt {
     workspaceId: row.workspace_id,
     mechId: row.mech_id,
     activationId: row.activation_id,
+    sessionId: row.session_id,
+    threadId: row.thread_id,
     generationTaskId: row.generation_task_id,
     attemptOrdinal: row.attempt_ordinal,
     requestFingerprint: row.request_fingerprint,
@@ -140,7 +157,12 @@ function checkIdentity(current: ProviderAttempt, input: ProviderAttemptIdentity)
 
   const hasSameReservation = hasSameRequest && current.reservedMicros === input.reservedMicros;
 
-  if (!hasSameScope || !hasSameCausation || !hasSameReservation) {
+  const sessionId = input.managed?.sessionId ?? null;
+  const threadId = input.managed?.threadId ?? null;
+  const hasSameSession = current.sessionId === sessionId && current.threadId === threadId;
+  const hasSameOwner = hasSameScope && hasSameSession;
+
+  if (!hasSameOwner || !hasSameCausation || !hasSameReservation) {
     throw new StoreConflict('Provider attempt identity changed');
   }
 }
@@ -255,53 +277,96 @@ async function readTotals(context: StoreContext, input: ProviderAttemptScope): P
   return Schema.decodeUnknownSync(TotalsRow)(counted.rows[0]);
 }
 
+async function sessionRefusal(
+  context: StoreContext,
+  scope: Pick<ProviderAttemptScope, 'workspaceId' | 'mechId'>,
+  sessionId: string | undefined | null,
+): Promise<'session_budget' | null> {
+  if (sessionId === undefined || sessionId === null) {
+    return null;
+  }
+
+  if (await managedBudgetReached(context, { workspaceId: scope.workspaceId, mechId: scope.mechId, sessionId })) {
+    return 'session_budget';
+  }
+
+  return null;
+}
+
+async function reserveLocked(
+  transaction: StoreContext,
+  input: ProviderAttemptIdentity,
+): Promise<ProviderAttemptDecision> {
+  validateIdentity(input);
+
+  const limits = await readLimits(transaction, input);
+
+  const previous = await transaction.client.query('SELECT * FROM mechane.provider_attempts WHERE id=$1', [input.id]);
+
+  if (previous.rows.length > 0) {
+    const current = providerAttempt(previous.rows[0]);
+
+    checkIdentity(current, input);
+
+    return decision(current, false);
+  }
+
+  const totals = await readTotals(transaction, input);
+  const dailyRefusal = refusalReason(input, limits, totals);
+  const sessionLimit = await sessionRefusal(transaction, input, input.managed?.sessionId);
+  const refusal = dailyRefusal ?? sessionLimit;
+  const state = attemptState(refusal);
+
+  const inserted = await transaction.client.query(
+    `INSERT INTO mechane.provider_attempts(id,workspace_id,mech_id,activation_id,generation_task_id,attempt_ordinal,
+       request_fingerprint,provider,model,reserved_micros,state,refusal_reason,session_id,thread_id)
+     VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+    [
+      input.id,
+      input.workspaceId,
+      input.mechId,
+      input.activationId,
+      input.generationTaskId ?? null,
+      input.attemptOrdinal,
+      input.requestFingerprint,
+      input.provider,
+      input.model,
+      input.reservedMicros,
+      state,
+      refusal,
+      input.managed?.sessionId ?? null,
+      input.managed?.threadId ?? null,
+    ],
+  );
+
+  return decision(providerAttempt(inserted.rows[0]), true);
+}
+
 export function createProviderAttemptStore(context: StoreContext): BudgetStore {
   return {
+    ...createManagedUsageStore(context),
     async reserveProviderAttempt(input: ProviderAttemptIdentity): Promise<ProviderAttemptDecision> {
-      validateIdentity(input);
-
       return await context.atomic(async (transaction) => {
         await lockWorkspace({ client: transaction.client, workspaceId: input.workspaceId });
 
-        const limits = await readLimits(transaction, input);
+        return await reserveLocked(transaction, input);
+      });
+    },
+    async reserveManagedProviderAttempt(input: ManagedProviderAttemptIdentity): Promise<ProviderAttemptDecision> {
+      return await context.atomic(async (transaction) => {
+        await lockWorkspace({ client: transaction.client, workspaceId: input.workspaceId });
 
-        const previous = await transaction.client.query('SELECT * FROM mechane.provider_attempts WHERE id=$1', [
-          input.id,
-        ]);
-
-        if (previous.rows.length > 0) {
-          const current = providerAttempt(previous.rows[0]);
-
-          checkIdentity(current, input);
-
-          return decision(current, false);
-        }
-
-        const totals = await readTotals(transaction, input);
-        const refusal = refusalReason(input, limits, totals);
-        const state = attemptState(refusal);
-
-        const inserted = await transaction.client.query(
-          `INSERT INTO mechane.provider_attempts(id,workspace_id,mech_id,activation_id,generation_task_id,attempt_ordinal,
-             request_fingerprint,provider,model,reserved_micros,state,refusal_reason)
-           VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
-          [
-            input.id,
-            input.workspaceId,
-            input.mechId,
-            input.activationId,
-            input.generationTaskId ?? null,
-            input.attemptOrdinal,
-            input.requestFingerprint,
-            input.provider,
-            input.model,
-            input.reservedMicros,
-            state,
-            refusal,
-          ],
+        const sequence = await transaction.client.query(
+          `SELECT COALESCE(
+             (SELECT attempt_ordinal FROM mechane.provider_attempts WHERE id=$1),
+             (SELECT max(attempt_ordinal)+1 FROM mechane.provider_attempts
+              WHERE workspace_id=$2 AND mech_id=$3 AND activation_id=$4 AND session_id IS NOT NULL),1) AS ordinal`,
+          [input.id, input.workspaceId, input.mechId, input.activationId],
         );
 
-        return decision(providerAttempt(inserted.rows[0]), true);
+        const order = Schema.decodeUnknownSync(Schema.Struct({ ordinal: Schema.Int }))(sequence.rows[0]);
+
+        return await reserveLocked(transaction, { ...input, attemptOrdinal: order.ordinal });
       });
     },
     async getProviderAttempt(input: ProviderAttemptScope): Promise<ProviderAttempt | null> {
@@ -326,7 +391,13 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
 
       return attempts;
     },
-    async markProviderAttemptDispatched(input: DispatchProviderAttempt): Promise<ProviderAttemptDispatch> {
+    async markProviderAttemptDispatched(input: MarkProviderAttemptDispatched): Promise<ProviderAttemptDispatch> {
+      const usageTimeoutMs = input.usageTimeoutMs ?? MANAGED_USAGE_TIMEOUT_MS;
+
+      if (!Number.isSafeInteger(usageTimeoutMs) || usageTimeoutMs < 1 || usageTimeoutMs > USAGE_TIMEOUT_MAX_MS) {
+        throw new StoreConflict('Usage timeout must be a positive 32-bit millisecond count');
+      }
+
       return await context.atomic(async (transaction) => {
         const current = await lockAttempt(transaction, input);
 
@@ -341,7 +412,8 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
         const limits = await readLimits(transaction, input);
         const totals = await readTotals(transaction, input);
         const reservedMicros = additionalDispatchCharge(current, limits);
-        const refusal = refusalReason({ reservedMicros }, limits, totals);
+        const dailyRefusal = refusalReason({ reservedMicros }, limits, totals);
+        const refusal = dailyRefusal ?? (await sessionRefusal(transaction, input, current.sessionId));
 
         if (refusal !== null) {
           throw new ProviderDispatchRefused({ reason: refusal });
@@ -349,11 +421,49 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
 
         const updated = await transaction.client.query(
           `UPDATE mechane.provider_attempts SET state='dispatched',dispatched_at=now(),
+             usage_due_at=CASE WHEN session_id IS NOT NULL THEN statement_timestamp()+$2::int*interval '1 millisecond' END,
              accounting_date=(now() AT TIME ZONE 'UTC')::date WHERE id=$1 RETURNING *`,
-          [input.id],
+          [input.id, usageTimeoutMs],
         );
 
         return { ...providerAttempt(updated.rows[0]), wasMarked: true };
+      });
+    },
+    async markManagedUsageUnconfirmed(input: DispatchProviderAttempt): Promise<ProviderAttempt> {
+      return await context.atomic(async (transaction) => {
+        const current = await lockAttempt(transaction, input);
+
+        if (current.sessionId === null || !billedStates.has(current.state)) {
+          throw new StoreConflict('Only a dispatched managed request can have unconfirmed usage');
+        }
+
+        if (current.state === 'dispatched') {
+          await transaction.client.query(
+            'UPDATE mechane.provider_attempts SET usage_unconfirmed_at=coalesce(usage_unconfirmed_at,clock_timestamp()) WHERE id=$1',
+            [input.id],
+          );
+        }
+
+        return current;
+      });
+    },
+    async releaseUnsentManagedDispatch(input: DispatchProviderAttempt): Promise<ProviderAttempt> {
+      return await context.atomic(async (transaction) => {
+        await lockAttempt(transaction, input);
+
+        const released = await transaction.client.query(
+          `UPDATE mechane.provider_attempts SET state='released',released_at=coalesce(released_at,now()),
+             unsent_dispatch_marked_at=coalesce(unsent_dispatch_marked_at,dispatched_at),dispatched_at=NULL,usage_due_at=NULL
+           WHERE id=$1 AND session_id IS NOT NULL AND usage_unconfirmed_at IS NULL AND (state='dispatched' OR (state='released' AND unsent_dispatch_marked_at IS NOT NULL))
+           RETURNING *`,
+          [input.id],
+        );
+
+        if (released.rowCount !== 1) {
+          throw new StoreConflict('Only an unsent managed dispatch can be released');
+        }
+
+        return providerAttempt(released.rows[0]);
       });
     },
     async releaseUnusedProviderAttempt(input: ReleaseUnusedProviderAttempt): Promise<ProviderAttempt> {
@@ -382,10 +492,21 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
       return await context.atomic(async (transaction) => {
         const current = await lockAttempt(transaction, input);
 
+        if (current.sessionId !== null && input.listCostPicodollars === undefined) {
+          throw new StoreConflict('Managed settlement must provide its list cost or mark it unpriced');
+        }
+
+        if (
+          typeof input.listCostPicodollars === 'string' &&
+          !UNSIGNED_INTEGER_PATTERN.test(input.listCostPicodollars)
+        ) {
+          throw new StoreConflict('Managed list cost must be a nonnegative integer in picodollars');
+        }
+
         if (current.state === 'settled') {
           const same = await transaction.client.query<{ readonly is_same: boolean }>(
-            'SELECT actual_micros=$2 AND upstream_usage=$3::jsonb AS is_same FROM mechane.provider_attempts WHERE id=$1',
-            [input.id, input.actualMicros, input.upstreamUsage],
+            'SELECT actual_micros=$2 AND upstream_usage=$3::jsonb AND list_cost_picodollars IS NOT DISTINCT FROM $4::numeric AS is_same FROM mechane.provider_attempts WHERE id=$1',
+            [input.id, input.actualMicros, input.upstreamUsage, input.listCostPicodollars ?? null],
           );
 
           if (same.rows[0]?.is_same !== true) {
@@ -400,9 +521,9 @@ export function createProviderAttemptStore(context: StoreContext): BudgetStore {
         }
 
         const updated = await transaction.client.query(
-          `UPDATE mechane.provider_attempts SET state='settled',actual_micros=$2,upstream_usage=$3,settled_at=now()
+          `UPDATE mechane.provider_attempts SET state='settled',actual_micros=$2,upstream_usage=$3,list_cost_picodollars=$4,settled_at=clock_timestamp()
            WHERE id=$1 RETURNING *`,
-          [input.id, input.actualMicros, input.upstreamUsage],
+          [input.id, input.actualMicros, input.upstreamUsage, input.listCostPicodollars ?? null],
         );
 
         return providerAttempt(updated.rows[0]);

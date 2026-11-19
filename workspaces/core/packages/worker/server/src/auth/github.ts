@@ -7,6 +7,17 @@ import { AuthPageError } from './page.ts';
 const GITHUB_TIMEOUT_MS = 20_000;
 type ExchangeCode = { readonly configuration: AuthenticationConfiguration; readonly code: string };
 
+export function requireGithubOAuth(configuration: AuthenticationConfiguration) {
+  if (configuration.githubOAuth === null) {
+    throw new AuthPageError(
+      'GitHub browser sign-in is not configured for this installation.',
+      HttpStatusCode.Unavailable,
+    );
+  }
+
+  return configuration.githubOAuth;
+}
+
 async function githubJson(request: Request): Promise<unknown> {
   try {
     const response = await fetch(request, { signal: AbortSignal.timeout(GITHUB_TIMEOUT_MS) });
@@ -26,11 +37,12 @@ async function githubJson(request: Request): Promise<unknown> {
 }
 
 export async function exchangeGithubCode({ configuration, code }: ExchangeCode): Promise<GitHubUser> {
+  const github = requireGithubOAuth(configuration);
   const callback = new URL('/auth/github/callback', configuration.origin);
 
   const body = new URLSearchParams({
-    client_id: configuration.githubClientId,
-    client_secret: configuration.githubClientSecret,
+    client_id: github.clientId,
+    client_secret: github.clientSecret,
     code,
     redirect_uri: callback.href,
   });

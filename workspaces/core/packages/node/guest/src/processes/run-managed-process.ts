@@ -92,7 +92,7 @@ const startAdmittedProcess = Effect.fn('startAdmittedProcess')(function* ({
   const readOutput: BashRun['output'] = () => {
     const output = run.output();
 
-    return redactExecutionOutput({ output, request });
+    return redactExecutionOutput({ output, request, hasCompleteEnd: false });
   };
 
   MutableRef.update(managed.state, (state) => ({ ...state, run: Option.some(run), readOutput }));

@@ -33,8 +33,6 @@ export const captureEvalResult = Effect.fn('captureEvalResult')(function* <A, R>
       EvalFileFailed: onFailure,
       EvalInterrupted: onFailure,
       EvalManifestMissing: onFailure,
-      EvalResponseInvalid: onFailure,
-      EvalTransportFailed: onFailure,
       OperationFailed: onFailure,
       OriginUnreachable: onFailure,
       OutFolderBusy: onFailure,

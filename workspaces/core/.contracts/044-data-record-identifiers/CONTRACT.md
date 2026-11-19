@@ -46,6 +46,11 @@ The browser's public conversation owner retains the serializable message IDs ret
 Use the same ID when projecting a domain record to a UI row. Mechane Elements accepts caller-supplied opaque string
 identities without creating records or deriving domain fields from them.
 
+The authenticated runtime compares the receiving Durable Object ID to its expected address in
+`packages/worker/runtime/src/actor/identity.ts`. Managed identities share one namespace with historical actors.
+Derive the managed address from the validated workspace and agent. Use the original mech ID for an archive and
+verify its stored workspace separately. Reject mismatched addresses before reading records or accepting work.
+
 Tokens and user codes are credentials, not record IDs. Look them up by their SHA-256 hashes. Sandbox and machine
 records persist their owning workspace and mech separately from any derived object name. Evals retain their plan
 basis, trial identity, and submitted request identities so interrupted evaluation does not repeat accepted work.

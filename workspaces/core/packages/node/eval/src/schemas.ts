@@ -1,7 +1,7 @@
 import { ModelId } from '@mechane/deployment';
 import { Instructions, NotificationText } from '@mechane/protocol';
 import { isWellFormedText, Micros, wireStruct } from '@mechane/records';
-import { Effect, Predicate, Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import {
   CASES_PER_SUITE,
   CriterionVerdict,
@@ -36,7 +36,7 @@ export const Expectation = Schema.Struct({
 
 export type Expectation = typeof Expectation.Type;
 
-/** Expectations belong to the grader and are never included in the subject's notification. */
+/** The grader receives expectations separately from the subject's message. */
 const Case = Schema.Struct({
   id: EvalId,
   input: NotificationText.check(Schema.isMaxLength(INPUT_MAX_CHARS)),
@@ -46,10 +46,7 @@ const Case = Schema.Struct({
 /** One task of a suite for the subject, with the expectations its reply is graded by. */
 export type Case = typeof Case.Type;
 
-/**
- * A suite file: the subject's settings, the grader's model, how often each case runs, and the cap of each mech a trial
- * creates. The caps let the ledger bound what each of a trial's two turns can spend.
- */
+/** A suite freezes the subject and grader models, repeat count and per-session budget. */
 export const Suite = wireStruct({
   fields: {
     version: Schema.Literal(SUITE_VERSION),
@@ -63,13 +60,9 @@ export const Suite = wireStruct({
           }),
         ),
       ),
-      /** Absent for the deployment's first offer. */
-      model: Schema.optionalKey(ModelId),
+      model: ModelId,
     }),
-    grader: Schema.Struct({
-      /** Absent for the deployment's first offer. */
-      model: Schema.optionalKey(ModelId),
-    }),
+    grader: Schema.Struct({ model: ModelId }),
     /** Absent for a suite whose grader must run on another model than its subject. */
     isSelfGrading: Schema.Boolean.pipe(Schema.withDecodingDefaultKey(Effect.succeed(false))),
     repeats: Schema.Int.check(Schema.isBetween({ minimum: 1, maximum: REPEATS_PER_CASE })),
@@ -77,13 +70,9 @@ export const Suite = wireStruct({
     cases: Schema.Array(Case).check(Schema.isBetweenLength(1, CASES_PER_SUITE), hasDistinctIds),
   },
 }).check(
-  // A model a suite omits is the deployment's first offer, which no read reports, so only two named models differ.
-  Schema.makeFilter(
-    ({ isSelfGrading, subject, grader }) =>
-      isSelfGrading ||
-      ([subject.model, grader.model].every(Predicate.isNotUndefined) && subject.model !== grader.model),
-    { expected: "a grader on a model the suite names apart from the subject's, unless self_grading is true" },
-  ),
+  Schema.makeFilter(({ isSelfGrading, subject, grader }) => isSelfGrading || subject.model !== grader.model, {
+    expected: "a grader on a model the suite names apart from the subject's, unless self_grading is true",
+  }),
 );
 
 export type Suite = typeof Suite.Type;

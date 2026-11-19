@@ -327,7 +327,7 @@ function importedEvents(history: ReadonlyArray<unknown>, scope: MechScope): Read
   return result;
 }
 
-export function importedMessages(history: ReadonlyArray<unknown>, scope: MechScope): ReadonlyArray<ConsoleMessage> {
+function importedMessages(history: ReadonlyArray<unknown>, scope: MechScope): ReadonlyArray<ConsoleMessage> {
   const result: Array<ConsoleMessage> = [];
 
   for (const entry of history) {

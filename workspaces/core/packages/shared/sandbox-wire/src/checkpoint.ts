@@ -1,6 +1,6 @@
 import { MachineId, RecordId, RecordText, SandboxOperationId } from '@mechane/records';
 import { Schema } from 'effect';
-import { SandboxServiceIdentity, sandboxWorkspacePath } from './service.ts';
+import { SandboxServiceIdentity } from './service.ts';
 
 export const SandboxCheckpointIdentity = Schema.Struct({
   ...SandboxServiceIdentity.fields,
@@ -44,11 +44,3 @@ export const SandboxRecoveryCheckpointResult = Schema.Union([
   SandboxCheckpointResult,
   SandboxRecoveryCheckpointRefusal,
 ]);
-
-export function sandboxCheckpointPath({
-  workspaceId,
-  mechId,
-  operationId,
-}: typeof SandboxCheckpointIdentity.Type): string {
-  return `${sandboxWorkspacePath({ workspaceId, mechId })}/checkpoints/${encodeURIComponent(operationId)}`;
-}

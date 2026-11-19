@@ -6,6 +6,8 @@ type CreatePresentationOutputInput = { readonly spec: unknown };
 /**
  * Validates an untrusted specification and derives its complete readable fallback. Throws when the tree or resulting
  * payload exceeds shared limits.
+ *
+ * @public
  */
 export function createPresentationOutput({ spec }: CreatePresentationOutputInput): PresentationOutput {
   const parsed = PresentationSpecification.parse(spec);

@@ -7,13 +7,12 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.10.0",
     "@mechane/client": "workspace:*",
     "@mechane/deployment": "workspace:*",
     "@mechane/program": "workspace:*",
     "@mechane/protocol": "workspace:*",
     "@mechane/records": "workspace:*",
-    "@modelcontextprotocol/sdk": "1.32.1",
-    "effect": "4.0.7",
-    "semver": "7.8.5"
+    "effect": "4.0.7"
   }
 }

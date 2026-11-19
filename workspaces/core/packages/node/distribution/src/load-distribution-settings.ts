@@ -36,6 +36,11 @@ const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
 
 const REUSE_MODES: ReadonlySet<DistributionMode> = new Set([DistributionMode.Build, DistributionMode.Candidate]);
 
+/** The staging folder provided by the guest bundler contains one module graph for each output file. */
+export function guestNoticesDirectory(): string {
+  return Schema.decodeUnknownSync(Schema.NonEmptyString)(process.argv[PROGRAM_ARGUMENTS_START]);
+}
+
 /** Reads the distribution command and its allowed child-process environment once. */
 export const loadDistributionSettings = Effect.fn('loadDistributionSettings')(function* (): Effect.fn.Return<
   DistributionSettings,

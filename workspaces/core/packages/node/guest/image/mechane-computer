@@ -1,0 +1,42 @@
+#!/bin/sh
+set -eu
+
+usage() {
+  cat <<'HELP'
+Usage: mechane-computer GET RESOURCE
+       mechane-computer POST RESOURCE [JSON]
+
+Resources include processes, browser, evidence and completions. A fresh action takes a UUID.
+Reuse the same UUID to observe or retry that action.
+
+  mechane-computer GET processes
+  mechane-computer POST "processes/$id" '{"command":"make test"}'
+  mechane-computer POST "browser/$id" '{"_tag":"Tabs"}'
+  mechane-computer GET "completions?after=$id"
+  mechane-computer POST "evidence/$id/export"
+  mechane-computer GET "evidence/$id/content" > capture.png
+HELP
+}
+
+case ${1:-} in
+  -h|--help) usage; exit 0 ;;
+  GET) [ "$#" -eq 2 ] || { usage >&2; exit 2; } ;;
+  POST) [ "$#" -ge 2 ] && [ "$#" -le 3 ] || { usage >&2; exit 2; } ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+: "${MECHANE_COMPUTER_SOCKET:?requires a running Mechane session}"
+: "${MECHANE_COMPUTER_TICKET:?requires a running Mechane session}"
+
+method=$1
+resource=$2
+shift 2
+if [ "$method" = POST ]; then
+  if [ "$#" -eq 0 ]; then set -- '{}'; fi
+  set -- --data-raw "$1" --header 'content-type: application/json'
+fi
+
+printf 'x-mechane-computer-ticket: %s\n' "$MECHANE_COMPUTER_TICKET" | /usr/bin/curl -q --silent --show-error --fail-with-body --globoff --noproxy '*' \
+  --abstract-unix-socket "$MECHANE_COMPUTER_SOCKET" --request "$method" \
+  --header @- \
+  "$@" -- "http://localhost/$resource"

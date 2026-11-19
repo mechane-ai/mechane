@@ -1,7 +1,7 @@
 ---
 name: developer-environments
 message: Keep developer tools reproducible, files durable, and execution recovery independent of application-specific workflows.
-paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,restore,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives,bootstrap,workspace}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,maintenance,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "packages/worker/sandbox-store/src/{maintenance,workspaces}/**", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
+paths: ["packages/shared/sandbox-wire/src/{constants,certificate-environment,environment-state,installed-drain,managed-work,restore,schemas}.ts", "packages/node/guest/image/{Dockerfile,mechane,*.sh}", "packages/node/guest/src/{executions,archives,bootstrap,managed-work,workspace}/**", "packages/node/guest/src/{certificate-environment,load-guest-settings,schemas}.ts", "packages/node/stack/**", "packages/worker/server/src/sandboxes/{installed-drain,owners}.ts", "packages/worker/control-store/src/store/managed/installed-drain.ts", "packages/node/testing/src/fixtures/command-gate.ts", "packages/worker/sandbox/src/{checkpoints,executions,maintenance,providers,egress,workspace}/**", "packages/worker/sandbox/src/{constants,sandbox-object}.ts", "packages/worker/sandbox/src/service/managed*.ts", "packages/worker/sandbox-store/src/{maintenance,workspaces}/**", "infrastructure/modules/cloudflare/**", "docs/agent-environments.md"]
 ---
 
 ## Rules
@@ -14,11 +14,31 @@ package payloads disposable; do not install a privileged daemon or persist rebui
 Build the installed Mechane CLI from the same source as a portable Node artifact in that image, or reuse a previously
 qualified image whose recorded guest inputs match those generated from the current source under contract 112.
 
-Keep useful source, Git metadata, notes, and progress records in the committed home. Memory and work organization are
-ordinary agent-managed files, not another runtime task or memory service. Keep internal model-context checkpoints in
-the runtime store; their persistence does not establish file durability. Keep reproducible caches and build output outside
-that home through explicit environment setup. Preserve existing files. Do not infer disposability from `.gitignore` or
-silently exclude unknown files. Retain archive size limits and report failures instead of claiming files were committed.
+Bind each installed session's workspace ledger to its workspace, environment, and session IDs. Use that ledger for
+worker launch, process and evidence receipts, and file recovery. Fence launch, renewal and release by the allocation
+generation. Reuse that generation and its original work claim across startup retries. Hold the installation and workspace
+capacity until physical absence is confirmed and the release is acknowledged for that generation. A delayed release
+cannot free a successor allocation. Quiesce the worker and its writers before committing the final archive. A retired
+session refuses delayed launches.
+
+When an idle installed worker disappears, settle its lost lease and reconcile the recorded effects. Historical status
+and receipt reads leave the session idle. Allocate a replacement only when a tool needs execution after reconciliation.
+
+Deleting an installed session removes its home generations and native evidence across every object-storage page.
+Retain the retirement fence and file receipts through interrupted batches. Confirm deletion only after the machine
+has stopped, both owned prefixes are empty, and the session ledger has been cleared. An unfinished batch reports
+pending and a provider failure remains an error. Exercise a retried deletion larger than one batch and check a
+neighboring session’s files and evidence survive.
+
+Permit a workspace owner to retry a failed final archive on the original quiet guest while its allocation is releasing.
+Match the allocation generation, machine, failed archive generation, and last committed head. The file retry preserves
+the capacity reservation until the normal release observes the saved archive and confirms the machine stopped.
+
+Place the installed worker's `/workspace` inside its checkpointed home. Keep source, Git metadata, notes and progress
+in that home. Keep mounted memory resources and internal model context under their respective owners. Preserve unknown
+files, including ignored files. Report a checkpoint failure while retaining the previous committed generation.
+Use portable home archives for installed sessions. A whole-container image would also preserve memory mounts and scratch
+files after access changes. External workers own their environment files.
 
 Declare machine-local package caches and reinstallable tool versions through the guest's ordinary tool environment.
 Keep source, lockfiles, configuration, Git metadata, and unknown files in the durable home. On fresh startup and
@@ -122,6 +142,11 @@ proxy an arbitrary guest-supplied host URL. Keep the gateway and guest alive acr
 environment source apply drains and replaces its affected owner with current compiled code; same-byte restart remains
 a distinct recovery operation. Preserve files and refuse unsafe apply rather than silently serving an old build as new.
 
+Hold new installed launches during persistent local shutdown and environment source apply. Keep the active worker's
+tools, lease renewal, and release reachable until its work finishes. Drain every installed allocation through ordinary
+generation-fenced release before retiring the host. If a final checkpoint fails, retain the host and record the session,
+allocation generation, and file failure in the local ownership report so the operator can repair that same guest.
+
 Stop the environment owner and revoke its grant before releasing the gateway port. Reconcile retained ownership after
 unclean exit before port reuse. Require native Linux bridge reachability and default-denial evidence. Record the actual
 macOS Docker backend and its host-forwarding limits; local checks do not establish equivalent Linux or hosted isolation.
@@ -179,6 +204,18 @@ Startup timing, early guest status and passive inspection follow [contract 131](
 
 ## Checks
 
+Lose the physical worker after a completed turn. Run ordinary recovery and read its historical receipts; verify the
+session still has no replacement allocation. Send new input that needs a shell and verify it obtains a fresh lease,
+restores the committed files, and executes only the newly requested command.
+
+Write a file through a real installed session tool. Release that generation, observe its committed checkpoint and
+confirmed machine stop, then run another tool in the same session and compare the restored bytes. A second session
+using the same agent and environment must have its own files. Replay a delayed release after a successor starts and
+verify the successor remains usable. Lose the first launch response and require one physical allocation, one shell
+effect and one work claim. Hold a stop acknowledgement and verify the allocation still counts against capacity.
+Fail a final archive, remove the injected fault, and retry the same guest. Verify stale allocation and file references
+are refused, the original files survive, and the next allocation restores the committed repair.
+
 Build the image and inspect pinned tool versions. Run the existing command-recovery and file-restoration smoke cases.
 For a new workload, record source revision, commands, checkpoint size, restart results, and required-check outcomes in
 the deployment work record. Inspect network configuration for company-specific values and review observation requests
@@ -220,6 +257,9 @@ Finish one live SQLite inspection while another still needs its observed WAL. Ve
 the main file and WAL bytes. Confirm that an interrupted raw read reports its error without captured bytes.
 Fail an ephemeral startup with unconfirmed owned cleanup and require a rejected result containing both failures without
 another interrupt. Keep the retained ownership available for repair and preserve persistent interactive recovery.
+Hold an installed worker's shell at an external gate and request local drain. Observe the same working allocation,
+let the shell complete, then require its saved workspace, physical machine absence, and an empty drain report.
+Exercise a failed save and a successful repair on its original generation before the supervisor reports completion.
 Exercise both archive limits and require the diagnostic to identify the measured representation, observed bytes, and
 limit while preserving the previous head and recoverable live files.
 Exercise installed CLI startup, unprivileged Nix store use, and actual Node, curl, git, Nix, Java, and Bazel HTTPS verification.

@@ -1,17 +1,16 @@
 import { jsonFileText, replaceFile } from '@mechane/program';
-import { NotificationReceipt } from '@mechane/protocol';
 import { Sequence } from '@mechane/records';
 import { Array, Effect, Option, Schema } from 'effect';
 import { readdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import {
   CleanupRecord,
-  ConnectionRecord,
   EvalAuditManifest,
   EvalManifest,
   EvalStageFailure,
   EvidenceRecord,
   GradeSubmission,
+  ManagedInputAttempt,
   Observation,
   RoleIntent,
   RoleReceipt,
@@ -20,7 +19,7 @@ import {
 } from '../application-schemas.ts';
 import type { EvalTrial, EvalTrialId } from '../application-schemas.ts';
 import type { ApplicationTrialFiles, EvalTrialSnapshot, SavedEval } from '../application-types.ts';
-import { EvalAuditKind, EvalFileStep, EvalRole, EvalScope } from '../constants.ts';
+import { EvalAuditKind, EvalFileStep, EvalScope } from '../constants.ts';
 import { validateEvidenceRecord } from '../create-evidence-record.ts';
 import { EvalAdapterFailed, EvalAdapterOperation, EvalFileFailed, EvalManifestMissing } from '../errors.ts';
 import { EvalInspection } from '../report/inspection-schemas.ts';
@@ -69,11 +68,6 @@ const RECORD_NAME_PATTERN = /^\d{6}\.json$/u;
 const MISSING_FOLDER_CODE = 'ENOENT';
 const MissingFolder = Schema.Struct({ code: Schema.Literal(MISSING_FOLDER_CODE) });
 const ManifestEnvelope = Schema.Union([EvalManifest, EvalAuditManifest]);
-
-const ConnectionFile = {
-  [EvalRole.Subject]: ApplicationFile.SubjectConnection,
-  [EvalRole.Judge]: ApplicationFile.JudgeConnection,
-} as const;
 
 class RecordFolderUnreadable extends Schema.TaggedError<RecordFolderUnreadable>()('RecordFolderUnreadable', {
   path: Schema.String,
@@ -150,20 +144,19 @@ function applicationTrialFiles({ folder }: TrialFilesInput): ApplicationTrialFil
     folder,
     subjectIntent: storedRecord({ folder, name: ApplicationFile.SubjectIntent, schema: RoleIntent }),
     subjectReceipt: storedRecord({ folder, name: ApplicationFile.SubjectReceipt, schema: RoleReceipt }),
-    subjectNotification: storedRecord({
+    subjectInputAttempt: storedRecord({
       folder,
-      name: ApplicationFile.SubjectNotification,
-      schema: NotificationReceipt,
+      name: ApplicationFile.SubjectInputAttempt,
+      schema: ManagedInputAttempt,
     }),
     subject: storedRecord({ folder, name: ApplicationFile.Subject, schema: RoleRecord }),
     evidence: storedRecord({ folder, name: ApplicationFile.Evidence, schema: EvidenceRecord }),
     judgeIntent: storedRecord({ folder, name: ApplicationFile.JudgeIntent, schema: RoleIntent }),
     judgeReceipt: storedRecord({ folder, name: ApplicationFile.JudgeReceipt, schema: RoleReceipt }),
-    judgeNotification: storedRecord({ folder, name: ApplicationFile.JudgeNotification, schema: NotificationReceipt }),
+    judgeInputAttempt: storedRecord({ folder, name: ApplicationFile.JudgeInputAttempt, schema: ManagedInputAttempt }),
     judge: storedRecord({ folder, name: ApplicationFile.Judge, schema: RoleRecord }),
     submission: storedRecord({ folder, name: ApplicationFile.Submission, schema: GradeSubmission }),
     grade: storedRecord({ folder, name: ApplicationFile.Grade, schema: StructuredGradeRecord }),
-    connection: ({ role }) => storedRecord({ folder, name: ConnectionFile[role], schema: ConnectionRecord }),
     readObservations: () => readNumberedRecords({ folder: observationsFolder, schema: Observation }),
     saveObservation: ({ observation }) =>
       saveNumberedRecord({
@@ -210,10 +203,9 @@ const saveNumberedRecord = Effect.fn('saveNumberedRecord')(function* <S extends 
   yield* file.create({ record });
 });
 
-const readNumberedRecords = Effect.fn('readNumberedRecords')(function* <S extends Schema.Codec<unknown, unknown>>({
-  folder,
-  schema,
-}: NumberedRecordsInput<S>): Effect.fn.Return<ReadonlyArray<S['Type']>, EvalRunFailure> {
+export const readNumberedRecords = Effect.fn('readNumberedRecords')(function* <
+  S extends Schema.Codec<unknown, unknown>,
+>({ folder, schema }: NumberedRecordsInput<S>): Effect.fn.Return<ReadonlyArray<S['Type']>, EvalFileFailed> {
   const names = yield* Effect.tryPromise({
     try: () => readdir(folder),
     catch: (cause) => new RecordFolderUnreadable({ path: folder, error: cause }),

@@ -53,9 +53,14 @@ export async function rejectRedirect(response: Response): Promise<void> {
   }
 }
 
-export function boundedToolFetch(sharedSignal?: AbortSignal): typeof fetch {
+type ToolFetchLimit = {
+  readonly signal?: AbortSignal | undefined;
+  readonly maximumBytes: number;
+  readonly onExceeded: () => void;
+};
+
+export function boundedToolFetch({ signal: sharedSignal, maximumBytes, onExceeded }: ToolFetchLimit): typeof fetch {
   const deadline = AbortSignal.timeout(TOOL_REQUEST_TIMEOUT_MS);
-  const received = { bytes: 0 };
 
   return async (url, init) => {
     const signals = [deadline];
@@ -77,11 +82,14 @@ export function boundedToolFetch(sharedSignal?: AbortSignal): typeof fetch {
       return response;
     }
 
+    let receivedBytes = 0;
+
     const bound = new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
-        received.bytes += chunk.byteLength;
+        receivedBytes += chunk.byteLength;
 
-        if (received.bytes > TOOL_RESPONSE_MAX_BYTES) {
+        if (receivedBytes > maximumBytes) {
+          onExceeded();
           controller.error(new Error('The service response exceeds the tool limit'));
 
           return;

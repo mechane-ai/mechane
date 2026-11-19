@@ -11,7 +11,7 @@ import { jsonDigest } from '../json-digest.ts';
 import { Expectation, Grade } from '../schemas.ts';
 import type { Suite } from '../schemas.ts';
 
-const REPLY_ADAPTER_VERSION = '1';
+const REPLY_ADAPTER_VERSION = '2';
 const ROLE_TIMEOUT = Duration.minutes(5);
 const CLEANUP_TIMEOUT = Duration.seconds(30);
 const OBSERVATION_MAX_BYTES = 64 * BYTES_PER_KIBIBYTE;
@@ -60,19 +60,17 @@ export const replySuite = Effect.fn('replySuite')(function* ({
   const definition: EvalSuite['definition'] = {
     id: suite.id,
     version: REPLY_ADAPTER_VERSION,
-    connectionName: 'Eval tools',
     adapter: {
       id: 'mechane.reply-suite',
       version: REPLY_ADAPTER_VERSION,
       fingerprint: jsonDigest({ value: { version: REPLY_ADAPTER_VERSION, gradeSchema: gradeSchema.definition } }),
     },
-    subject: { ...suite.subject, instructions: subjectInstructions, nativeTools: ['console_message'] },
+    subject: { ...suite.subject, instructions: subjectInstructions },
     judge: {
       ...suite.grader,
       instructions: REPLY_JUDGE_INSTRUCTIONS,
       isSelfGrading: suite.isSelfGrading,
       gradeSchema: gradeSchema.definition,
-      nativeTools: [],
     },
     repeats: suite.repeats,
     bounds,
@@ -122,14 +120,14 @@ const collectEvidence: EvalSuite['collectEvidence'] = Effect.fn('collectEvidence
   const reply = Option.fromUndefinedOr(subject.reply);
   const value = { input, reply: Option.getOrNull(reply) };
   const schema = { id: 'mechane.reply-evidence', version: REPLY_ADAPTER_VERSION };
-  const scope = ["The subject's explicit public reply, assessed against its private expectations."];
+  const scope = ["The subject's session reply, assessed against its private expectations."];
 
   if (subject.status !== EvalRoleStatus.Completed || !subject.isEvidenceComplete) {
     return { schema, value, scope, isComplete: false, issue: 'The subject did not complete its reply' };
   }
 
   if (Option.isNone(reply)) {
-    return { schema, value, scope, isComplete: false, issue: 'The subject did not publish a reply' };
+    return { schema, value, scope, isComplete: false, issue: 'The subject did not send a session reply' };
   }
 
   return { schema, value, scope, isComplete: true };

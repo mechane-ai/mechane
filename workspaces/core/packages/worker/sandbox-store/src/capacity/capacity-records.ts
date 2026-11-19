@@ -19,7 +19,8 @@ export const MachineReservation = Schema.Struct({
 
 export type MachineReservation = typeof MachineReservation.Type;
 
-const OwnerJson = Schema.fromJsonString(SandboxOwner);
+const BoundOwner = Schema.Struct({ ...SandboxOwner.fields, isInstalled: Schema.optionalKey(Schema.Literal(true)) });
+const OwnerJson = Schema.fromJsonString(BoundOwner);
 const ReservationJson = Schema.fromJsonString(MachineReservation);
 const OptionalReservation = Schema.OptionFromNullOr(ReservationJson);
 const CapacityRow = Schema.Struct({ owner: OwnerJson, reservation: OptionalReservation });

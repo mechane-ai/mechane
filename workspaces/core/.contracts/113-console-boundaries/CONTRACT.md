@@ -1,13 +1,15 @@
 ---
 name: console-boundaries
-message: Keep the console an ordinary API client with admitted data, explicit public conversation, and one release.
+message: Keep the console an ordinary API client with admitted data, independently addressed agent sessions, and one release.
 paths: ["packages/browser/**", "packages/worker/server/**", "packages/worker/runtime/src/views/projections.ts", "packages/node/distribution/**", "packages/node/stack/**", "infrastructure/**"]
 ---
 
 ## Rules
 
-The console ships at `/console` in the same immutable release as the application Worker. `/api/v1` owns runtime operations;
-OpenTofu owns installations and upgrades, never individual mechs. API misses do not become HTML responses.
+The Console ships at `/console` in the same release as the application Worker. Use the official SDK through
+`/console-api/v1` for the signed-in viewer's Managed Agents operations. External clients use `/v1`.
+Native traces and workspace repair use `/api/operator` with operator authorization. Both API gateways dispatch
+the same Managed Agents operations and apply their own admission policy. API misses return API errors.
 
 `console` owns routes, application composition, drafts, and the Storybook runner. `console-data` owns admission,
 requests, canonical records, page membership, and acknowledged commands. `console-cache` owns native persistence
@@ -23,10 +25,10 @@ Receiving a newer record updates its readers without silently changing the membe
 One loaded page or the union of loaded pages never establishes an exhaustive dataset.
 
 Use each tab's native TanStack Query observers for demanded API reads, polling, focus refresh, errors, and manual retries.
-Keep their successful result a completion scalar. Canonical records and exact page receipts belong only to TanStack DB;
+Keep the successful result of a canonical record read a completion scalar. Canonical records and exact page receipts belong only to TanStack DB;
 the native browser coordinator replicates those collections, not a tab's network-request state.
 Keep temporary transport recovery in `console-data/src/read-recovery.ts`, beneath those read lifecycles. Only
-catalog-declared GET operations, including public conversation history, may recover explicit 502, 503, or 504 responses or
+catalog-declared operator GET operations may recover explicit 502, 503, or 504 responses or
 failed network exchanges. Allow at most two additional attempts, with 1-second and 3-second minimum waits, within the
 original 40-second read deadline. Honor a valid Retry-After deadline; fail when it is invalid or cannot fit the remaining
 budget. The shared client preserves bounded retry metadata without implementing retries. Keep Query's automatic retries
@@ -54,26 +56,19 @@ removes only its own read subscription; it does not clear another page's canonic
 On browser page suspension, dispose the data runtime. A Back/Forward cache restoration creates a newly admitted runtime
 for the current route and cursors. Keep drafts and navigation preferences outside that lifetime.
 
-Commands settle from the server acknowledgement. A later refresh, collection update, or cache failure reports its own
-degradation without reversing that outcome or repeating the command. Retain request IDs across uncertain retries and
-use revision checks for definition changes. After an uncertain definition write, read back the saved record. An exact
-next revision matching the submitted fields confirms persistence. Report activation separately and retain a differing
-draft for reconciliation. Keep drafts, submitted text, pending request identity, and acknowledged
-outcomes outside the replaceable data runtime. Cache recovery must not clear or resubmit them.
+Settle commands from the server acknowledgement. Keep drafts outside of replaceable storage. Clear only the
+submitted text for the acknowledged session and preserve edits made while a send was pending. After an uncertain
+write, expose its error and retain the draft; automatic recovery must never repeat a session event.
 
-Keep public Console messages separate from private native model context. The typed `listConsoleMessages` operation
-returns only operator submissions and explicit communication-tool publications. Do not expose the active native model
-stream as a public conversation or reconstruct public messages from activation completion.
-
-Return the newest bounded public-history page for initial and `beforeSequence` reads, in ascending publication sequence.
-For `afterSequence`, return the earliest bounded page above the cursor across imported and native records.
-Advancing to the last returned sequence must reach every later publication without skips.
+Read the authorized session's typed public events. Present a history page in the documented order, then reconcile
+live session/thread events by stable event ID. Open the stream before fetching history on reconnect. Treat transient
+deltas as presentation updates. Native provider progress and internal context require their own authorized trace view.
 
 Treat each new resource screen, picker, and report as a canonical record consumer. Add its protocol-backed row to
 `console-data/src/records.ts`, native table to `collections.ts`, and bounded request to `requests.ts` and `load-read.ts`.
 Compose its view through the shared live-read hooks in `console/src/reads.ts`, preserving exact receipt membership,
 readiness, refresh errors, and owner disposal. React state holds cursor inputs and interaction state, never fetched
-record pages. Historical source messages remain inspectable in Activity and run traces without a separate session UI.
+record pages. History and run diagnostics retain their originating session identity.
 Declare each read's table dependencies and cardinality once in `read-ready.ts`. Derive native hydration, subscriptions,
 and row coverage from that declaration. Keep domain compatibility checks explicit, including matching mech revisions.
 Use `ResourceState` and `ResourceView` for ordinary read presentation. A background refresh cannot replace usable content
@@ -82,21 +77,18 @@ with initial placeholders; access loss and failed required storage keep their ex
 Data diagnostics derive aggregate counts from the native request owner. Show them on explicit inspection in Settings.
 Exclude record values, request keys, credentials, and raw failure payloads from diagnostic presentation.
 
-The complete domain-record transport exceptions are fresh principal/workspace admission, the runtime admission gate,
-and public conversation history. The data owner uses native Query observers for demanded public history and refresh.
-One conversation owner merges these authorized pages by canonical identity in memory; neither the persistent cache nor
-a second Chat instance mirrors that transcript. Adding an exception requires a contract change, an enforceable boundary
-where possible, and browser evidence for its authority and lifetime. Authenticated media uses native image/video loads;
-its metadata follows the canonical record path.
+Keep token and workspace admission, session/thread event pages, the current status event, and the agent's private
+execution slot outside persistent record collections. Apply the same tab-only boundary to owner-authorized archived
+publications, including historical cards. The data owner holds demanded history and slot responses in
+tab-owned Query observers. Stream reconnection, polling, and manual retry reconcile the exact authorized scope.
+Authenticated media loads its bytes on demand; its metadata follows the canonical record path.
 
-Each mech has one editable public Console conversation. Integration notifications and private model output are Activity
-evidence. Historical session URLs do not create or select live execution contexts. Scope the conversation, draft, and submission
-identity to the admitted principal, workspace, and mech.
-
-Within one admitted scope, retain a bounded set of conversation owners across mech and run navigation. Eviction cancels
-reads. Scope loss fences callbacks and disposes protected content. Keep that lifecycle above replaceable cache
-connections so local persistence recovery cannot lose a draft or repeat an acknowledged submission. Rejected fresh
-admission still revokes the conversation immediately. A late history read cannot remove a newer acknowledged message.
+Give each session a shareable URL. Scope drafts and submissions by principal, workspace, agent, session and
+thread. Open an event in its owning session. Rendering a different session or thread issues reads only. Show
+`Working now` only for the authorized session holding the execution slot. Show `Waiting for agent` only for
+sessions explicitly returned in the scheduler's bounded queue. A missing execution or queue observation leaves the
+public session lifecycle intact. Hide protected values after revocation, including in other open tabs.
+Losing a replaceable cache connection cancels its reads and preserves the admitted user's drafts.
 
 Browser sessions use the existing HttpOnly, same-site cookie. Unsafe cookie-authenticated API requests require the
 installation's exact Origin. Explicit bearer credentials never fall back to cookies. Authorization always resolves the
@@ -125,13 +117,13 @@ the originating page, its focused record, and the position in its actual scrolli
 full page and temporarily hides workspace navigation without changing the saved sidebar preference. Preserve the
 reader's history offset after asynchronous content mounts. The navigation owner derives scroll-region identities from
 the admitted data scope and resource; different mechs and runs must not share a region identity. Preserve the
-same mech's conversation and draft while inspecting its runs. A direct run link has a usable return to its mech even
+session draft while reading other sessions and owner diagnostics. A direct run link has a usable return to its mech even
 without an originating history entry. Refreshing activity preserves the rows being read until the reader requests the newer page.
 The public entry contains no private snapshot. A transient read failure may retain the last authorized result; access
 loss and removal clear it. A revision conflict preserves edited fields and accepts concurrent changes to untouched fields.
 
-Separate workspace navigation from pinned and recently opened mechs. Recent shortcuts follow explicit visits, not
-the order of a bounded mech-list page. Keep browser-local shortcuts and appearance preferences scoped to the principal
+Separate workspace navigation from pinned and recently opened agents. Recent shortcuts follow explicit visits, not
+the order of a bounded agent-list page. Keep browser-local shortcuts and appearance preferences scoped to the principal
 and workspace. Shortcut and appearance storage contains identifiers and presentation choices; protected record copies
 belong only to the admitted cache in contract 119. Resolve shortcut records
 through the normal authorized reads; prune confirmed unavailable records without treating a transient failure or
@@ -165,7 +157,7 @@ accessibility checks apply. Backend Effect and storage rules retain their existi
 
 A browser React subscription may initialize one local boolean guard and set it false from its cleanup callback to
 invalidate asynchronous completion notifications. This replaces contract 015's loop-only reassignment baseline for
-that subscription-lifetime guard, as used by `mech-page-reads.ts` and `use-mech-navigation-resource.ts`. Keep the guard
+that subscription-lifetime guard, as used by `mech-page-reads.ts`. Keep the guard
 with its subscription and cleanup; this allowance does not cover counters, branch-selected values, or module state.
 
 Only `console-data/src/api.ts` runs shared Effects and translates their typed failures to rejected Promises.
@@ -202,7 +194,7 @@ reader's history state.
 
 Selecting a model request makes its evidence reachable without scrolling past the entire request collection. Keep the
 selected record's identity separate from its position in a bounded page. Historical event provenance links to the
-identified run; do not substitute the latest run. Public navigation presents Conversation, Activity, and Environment.
+identified run; do not substitute the latest run. Public navigation presents agents, sessions and their conversations. Operator diagnostics present Runs, Events, and Environment.
 Memory and progress are ordinary durable files, not separate runtime CRUD screens.
 
 Show trace-wide evidence limits beside the trace summary across all subviews. A complete-looking overview must not
@@ -211,9 +203,10 @@ does not become a zero-duration step.
 
 ## Evidence
 
-Run the existing `actorViewsReplayWithinTheirWorkspace` smoke scenario from the factory root with
-`mise -C workspaces/core run smoke -- actorViewsReplayWithinTheirWorkspace`. Its incremental public-history read must
-recover every publication in a burst larger than one page exactly once, without publishing private completion text.
+Run `mise -C workspaces/core run smoke -- sessionEventsReplayWithinTheirWorkspace` from the factory root. Check
+that session replay recovers filtered and paginated events across process restart, preserves the scoped transcript
+and avoids repeating side effects. Run `mise -C workspaces/core run smoke:console` for session draft isolation and
+the browser's retained-record refresh cases.
 
 Inspect a successful command, a nonzero exit, a pending command, truncated output, and a historical call without a safe
 command snapshot. Verify the process outcome, command and output remain readable at narrow widths, copy the displayed
@@ -227,14 +220,17 @@ attempt and admits no late content. Keep these fault probes within the existing 
 
 Environment controls observe exact managed-process handles without waking a machine or extending its lease. Load logs
 for the selected handle, preserve terminal output, and retain keyboard focus when Stop removes its own control.
-Evidence opens in a full-page viewer. Preserve the public conversation, draft, reader scroll, and originating link when
-returning; a direct evidence link selects its recorded mech and returns to its run without a history loop.
+Evidence opens in a full-page viewer. Preserve the originating page, row and scroll position when returning. A direct
+link to an installed capture identifies its public workspace, agent, session and artifact. It returns to the session's
+capture list and conversation. Archived captures return to their recorded run. A signed-in viewer with access to the
+session can open recorded screenshots and video. Read and stream media under the same authority as the resource,
+including native video range requests. Exercise `consoleOpensSessionEvidence` against the built application and guest.
 Pending and ready media share one frame. Canonical evidence metadata belongs to the domain data owner. Public conversation
-history remains with its admitted in-memory owner. Neither media bytes nor another transcript copy enter TanStack.
+history lives in the admitted tab's Query observer. Keep media bytes and transcript content out of persistent collections.
 
 Check browser and backend types, the production console build, package boundaries, and local runtime scenarios. Use a
 real browser against the packaged service to verify sign-in/out, workspace isolation, a completed turn, trace
-navigation, revision conflicts, and rejected cross-origin writes. Verify the hosted Worker and guest release identities and an empty subsequent
+navigation, isolated session events and rejected cross-origin writes. Verify the hosted Worker and guest release identities and an empty subsequent
 OpenTofu plan before declaring an installation upgraded.
 
 Review a new feature from API demand through its canonical table, exact receipt, live projection, and presentation.

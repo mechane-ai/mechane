@@ -12,7 +12,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import type { ConsoleLocation, PageCursors, ReaderPosition } from './types.ts';
 
-const RouteLink = createLink(TextLink);
+export const RouteLink = createLink(TextLink);
 
 /** Reads the router's history position with an identity that cannot carry another owner's offset. */
 export function useReaderPosition(scope: string, resource: string) {

@@ -21,9 +21,9 @@ export function text(value: unknown): string {
   return value;
 }
 
-export async function startHttpService(answer: HttpHandler): Promise<HttpService> {
+export async function startHttpService(answer: HttpHandler, maxRequestBytes = REQUEST_MAX_BYTES): Promise<HttpService> {
   const server = createServer((request, response) => {
-    void handleFixtureRequest(request, response, answer);
+    void handleFixtureRequest({ incoming: request, outgoing: response, answer, maxRequestBytes });
   });
 
   server.listen(0, '127.0.0.1');
@@ -40,13 +40,18 @@ export async function startHttpService(answer: HttpHandler): Promise<HttpService
   return { origin, close: async () => await closeHttpServer(server) };
 }
 
-export async function handleFixtureRequest(
-  incoming: IncomingMessage,
-  outgoing: ServerResponse,
-  answer: HttpHandler,
-): Promise<void> {
+type FixtureRequest = {
+  readonly incoming: IncomingMessage;
+  readonly outgoing: ServerResponse;
+  readonly answer: HttpHandler;
+  readonly maxRequestBytes?: number;
+};
+
+export async function handleFixtureRequest(input: FixtureRequest): Promise<void> {
+  const { outgoing } = input;
+
   try {
-    await handleRequest(incoming, outgoing, answer);
+    await handleRequest(input);
   } catch {
     if (!outgoing.headersSent) {
       outgoing.writeHead(HttpStatusCode.InternalServerError, { [HttpHeader.ContentType]: MediaType.Json });
@@ -56,7 +61,12 @@ export async function handleFixtureRequest(
   }
 }
 
-async function handleRequest(incoming: IncomingMessage, outgoing: ServerResponse, answer: HttpHandler): Promise<void> {
+async function handleRequest({
+  incoming,
+  outgoing,
+  answer,
+  maxRequestBytes = REQUEST_MAX_BYTES,
+}: FixtureRequest): Promise<void> {
   const chunks: Array<Uint8Array> = [];
   let sizeBytes = 0;
 
@@ -64,7 +74,7 @@ async function handleRequest(incoming: IncomingMessage, outgoing: ServerResponse
     const chunk = Buffer.from(value);
     sizeBytes += chunk.byteLength;
 
-    if (sizeBytes > REQUEST_MAX_BYTES) {
+    if (sizeBytes > maxRequestBytes) {
       outgoing.writeHead(HttpStatusCode.PayloadTooLarge);
       outgoing.end();
 

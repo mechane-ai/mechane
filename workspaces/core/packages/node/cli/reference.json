@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.33.21",
+  "release": "0.33.22",
   "flags": [
     {
       "name": "origin",
@@ -169,7 +169,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         },
         {
           "name": "connection-id",
@@ -189,7 +189,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -205,7 +205,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         },
         {
           "name": "connection-id",
@@ -215,40 +215,68 @@
     },
     {
       "name": "execution-access show",
-      "summary": "show a mech execution grant without resolving its credentials",
+      "summary": "show the installed command grant for an agent and principal",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "showExecutionAccess"
+        "showManagedCommandAccess"
       ],
       "flags": [],
       "arguments": [
         {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "name": "agent-id",
+          "summary": "the Managed Agent ID from ant beta:agents list"
+        },
+        {
+          "name": "grantee-principal-id",
+          "summary": "the Mechane principal that starts the authorized sessions"
         }
       ]
     },
     {
       "name": "execution-access set",
-      "summary": "replace execution access for future commands; pass null to revoke",
+      "summary": "set the environment variables and credential references available to installed commands",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "configureExecutionAccess"
+        "configureManagedCommandAccess"
       ],
       "flags": [
         {
           "name": "access",
           "kind": "text",
-          "summary": "JSON grant with environment variables and credential references; null revokes access",
+          "summary": "JSON grant with variables and workspace credential references",
           "required": true
         }
       ],
       "arguments": [
         {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "name": "agent-id",
+          "summary": "the Managed Agent ID from ant beta:agents list"
+        },
+        {
+          "name": "grantee-principal-id",
+          "summary": "the Mechane principal that starts the authorized sessions"
+        }
+      ]
+    },
+    {
+      "name": "execution-access revoke",
+      "summary": "revoke the installed command grant for this agent and principal",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "configureManagedCommandAccess"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "agent-id",
+          "summary": "the Managed Agent ID from ant beta:agents list"
+        },
+        {
+          "name": "grantee-principal-id",
+          "summary": "the Mechane principal that starts the authorized sessions"
         }
       ]
     },
@@ -397,6 +425,65 @@
         {
           "name": "key-id",
           "summary": "the id of the key, as mechane key list prints it"
+        }
+      ]
+    },
+    {
+      "name": "service-principal show",
+      "summary": "show the service principal and current key metadata in the selected workspace",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showWorkspaceServicePrincipal"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "subject",
+          "summary": "the stable name of this service in the workspace"
+        }
+      ]
+    },
+    {
+      "name": "service-principal rotate",
+      "summary": "provision or rotate a service credential and write its token to an owner-only file",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "rotateWorkspaceServiceKey"
+      ],
+      "flags": [
+        {
+          "name": "key-file",
+          "kind": "text",
+          "summary": "the file for the new token, readable only by its owner",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "subject",
+          "summary": "the stable name of this service in the workspace"
+        }
+      ]
+    },
+    {
+      "name": "service-principal revoke",
+      "summary": "revoke the named key of this service while preserving its identity",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "revokeWorkspaceServiceKey"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "subject",
+          "summary": "the stable name of this service in the workspace"
+        },
+        {
+          "name": "key-id",
+          "summary": "the key ID from service-principal show or rotate"
         }
       ]
     },
@@ -556,49 +643,7 @@
       ]
     },
     {
-      "name": "mech create",
-      "summary": "create a persistent mech in your workspace, which receives notifications and acts through tools",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "createMech"
-      ],
-      "flags": [
-        {
-          "name": "request-id",
-          "kind": "text",
-          "summary": "reuse the printed creation request id to retry without creating another mech",
-          "required": false
-        },
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "the name that tells the mech apart, such as scout",
-          "required": true
-        },
-        {
-          "name": "instructions",
-          "kind": "text",
-          "summary": "the instructions the mech follows whenever it works",
-          "required": false
-        },
-        {
-          "name": "model",
-          "kind": "text",
-          "summary": "the model the mech uses, one the deployment offers; its first offer when absent",
-          "required": false
-        },
-        {
-          "name": "daily-cap-micros",
-          "kind": "text",
-          "summary": "what the mech's model requests may cost each UTC day, in micro-dollars; the deployment's default when absent",
-          "required": false
-        }
-      ],
-      "arguments": []
-    },
-    {
-      "name": "mech list",
+      "name": "history mechs",
       "summary": "list the mechs of your workspace, oldest first, each with the mech it was forked from",
       "shape": "document",
       "operations": [
@@ -609,64 +654,24 @@
       "arguments": []
     },
     {
-      "name": "mech fork",
-      "summary": "fork an idle mech into a paused identity with its working context and linked source history; sandbox files remain with the source mech",
+      "name": "history mech",
+      "summary": "show the mech definition, lifecycle, and current and active revisions",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "forkMech"
+        "showMech"
       ],
-      "flags": [
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "the name that tells the new mech apart",
-          "required": true
-        },
-        {
-          "name": "request-id",
-          "kind": "text",
-          "summary": "reuse the printed request id to retry the same fork",
-          "required": false
-        }
-      ],
+      "flags": [],
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
     {
-      "name": "notification send",
-      "summary": "notify a mech under an id printed before sending; retry the same text with --notification-id to deliver once",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "sendNotification"
-      ],
-      "flags": [
-        {
-          "name": "notification-id",
-          "kind": "text",
-          "summary": "reuse a printed notification id to retry an uncertain send; a fresh one when absent",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "text",
-          "summary": "what to tell the mech"
-        }
-      ]
-    },
-    {
-      "name": "event list",
-      "summary": "write the events of a mech, one record each: to the end of its log, or with --follow as they happen",
+      "name": "history events",
+      "summary": "write retained events after a cursor, one record per event",
       "shape": "stream",
       "operations": [
         "listWorkspaces",
@@ -678,237 +683,98 @@
           "kind": "text",
           "summary": "the sequence of the last event you have, to resume after it; 0 when absent",
           "required": false
-        },
-        {
-          "name": "follow",
-          "kind": "switch",
-          "summary": "keep waiting for new events until Ctrl-C",
-          "required": false
         }
       ],
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
     {
-      "name": "mech clone",
-      "summary": "copy a definition into a fresh identity with empty history and no connection grants or bindings",
+      "name": "history held",
+      "summary": "inspect unfinished historical work and uncertain effects without resuming them",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "cloneMech"
-      ],
-      "flags": [
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "the new mech display name",
-          "required": true
-        },
-        {
-          "name": "request-id",
-          "kind": "text",
-          "summary": "reuse the printed request id to retry the same clone",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "mech show",
-      "summary": "show the mech definition, lifecycle, and current and active revisions",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "showMech"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "mech update",
-      "summary": "update a definition with a revision check; new runs use the saved definition",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "updateMech"
-      ],
-      "flags": [
-        {
-          "name": "expected-revision",
-          "kind": "text",
-          "summary": "the current revision from mech show; refuses a concurrent edit",
-          "required": true
-        },
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "a new display name; the mech keeps its identity and history",
-          "required": false
-        },
-        {
-          "name": "model",
-          "kind": "text",
-          "summary": "one of the deployment model offers",
-          "required": false
-        },
-        {
-          "name": "instructions",
-          "kind": "text",
-          "summary": "the mission for future turns; an empty string clears it",
-          "required": false
-        },
-        {
-          "name": "daily-cap-micros",
-          "kind": "text",
-          "summary": "the daily spending cap in micro-dollars",
-          "required": false
-        },
-        {
-          "name": "status",
-          "kind": "text",
-          "summary": "active, paused, or archived",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "mech rename",
-      "summary": "rename a mech without changing its identity, history, or connections",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "updateMech"
-      ],
-      "flags": [
-        {
-          "name": "expected-revision",
-          "kind": "text",
-          "summary": "the current revision from mech show; refuses a concurrent edit",
-          "required": true
-        },
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "the new display name",
-          "required": true
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "mech revisions",
-      "summary": "list a page of definition revisions with who changed each one and when",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listMechRevisions"
+        "listHeldWork"
       ],
       "flags": [
         {
           "name": "after",
           "kind": "text",
-          "summary": "list revisions after this number; 0 when absent",
+          "summary": "continue after the preceding page cursor",
           "required": false
         }
       ],
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
     {
-      "name": "mech pause",
-      "summary": "pause new turns while running work finishes and queued input stays durable",
+      "name": "history turn",
+      "summary": "show one turn of a mech: its outcome, and each model request it reserved, with its tokens and charge",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "updateMech"
+        "showTurn"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "mech-id",
+          "summary": "the id of the mech, as mechane history mechs prints it"
+        },
+        {
+          "name": "turn-id",
+          "summary": "the id of the turn, as mechane history events prints it"
+        }
+      ]
+    },
+    {
+      "name": "history routines",
+      "summary": "list routines and retained deletion receipts for one mech",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "listRoutines"
       ],
       "flags": [
         {
-          "name": "expected-revision",
+          "name": "after",
           "kind": "text",
-          "summary": "the current revision from mech show; refuses a concurrent edit",
-          "required": true
+          "summary": "continue after the previous page cursor",
+          "required": false
         }
       ],
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
     {
-      "name": "mech resume",
-      "summary": "resume a paused or archived mech and release its queued input",
+      "name": "history routine",
+      "summary": "show routine configuration and delivery and observation evidence",
       "shape": "document",
       "operations": [
         "listWorkspaces",
-        "updateMech"
+        "showRoutine"
       ],
-      "flags": [
-        {
-          "name": "expected-revision",
-          "kind": "text",
-          "summary": "the current revision from mech show; refuses a concurrent edit",
-          "required": true
-        }
-      ],
+      "flags": [],
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "mech archive",
-      "summary": "retain the mech and its history while stopping new turns and refusing new input",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "updateMech"
-      ],
-      "flags": [
+          "summary": "the id of the mech, as mechane history mechs prints it"
+        },
         {
-          "name": "expected-revision",
-          "kind": "text",
-          "summary": "the current revision from mech show; refuses a concurrent edit",
-          "required": true
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "name": "routine-id",
+          "summary": "the durable routine identity"
         }
       ]
     },
@@ -924,7 +790,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -947,7 +813,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -988,7 +854,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -1017,7 +883,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -1040,7 +906,7 @@
       "arguments": [
         {
           "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
+          "summary": "the id of the mech, as mechane history mechs prints it"
         }
       ]
     },
@@ -1063,270 +929,6 @@
         }
       ],
       "arguments": []
-    },
-    {
-      "name": "turn show",
-      "summary": "show one turn of a mech: its outcome, and each model request it reserved, with its tokens and charge",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "showTurn"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "turn-id",
-          "summary": "the id of the turn, as mechane event list prints it"
-        }
-      ]
-    },
-    {
-      "name": "turn cancel",
-      "summary": "cancel a running turn and its unfinished command",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "cancelTurn"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "turn-id",
-          "summary": "the id of the turn, as mechane event list prints it"
-        }
-      ]
-    },
-    {
-      "name": "self wake schedule",
-      "summary": "persist a wake for this mech and return its receipt immediately",
-      "shape": "document",
-      "operations": [
-        "scheduleSelfWake"
-      ],
-      "flags": [
-        {
-          "name": "wake-id",
-          "kind": "text",
-          "summary": "reuse this identity to retry the same schedule",
-          "required": false
-        },
-        {
-          "name": "after-seconds",
-          "kind": "text",
-          "summary": "wake after this many seconds, resolved once on first acceptance",
-          "required": false
-        },
-        {
-          "name": "at",
-          "kind": "text",
-          "summary": "wake at this RFC 3339 time; use exactly one deadline flag",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "text",
-          "summary": "the notification delivered to this mech at the deadline"
-        }
-      ]
-    },
-    {
-      "name": "self wake show",
-      "summary": "show one wake receipt for this mech",
-      "shape": "document",
-      "operations": [
-        "showSelfWake"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "wake-id",
-          "summary": "the durable wake receipt to inspect or cancel"
-        }
-      ]
-    },
-    {
-      "name": "self wake list",
-      "summary": "list wake receipts for this mech",
-      "shape": "document",
-      "operations": [
-        "listSelfWakes"
-      ],
-      "flags": [
-        {
-          "name": "after",
-          "kind": "text",
-          "summary": "continue after this wake receipt from the previous page",
-          "required": false
-        }
-      ],
-      "arguments": []
-    },
-    {
-      "name": "self wake cancel",
-      "summary": "cancel a wake or return its already delivered receipt",
-      "shape": "document",
-      "operations": [
-        "cancelSelfWake"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "wake-id",
-          "summary": "the durable wake receipt to inspect or cancel"
-        }
-      ]
-    },
-    {
-      "name": "self message",
-      "summary": "explicitly publish a Console message from this mech",
-      "shape": "document",
-      "operations": [
-        "publishSelfMessage"
-      ],
-      "flags": [
-        {
-          "name": "message-id",
-          "kind": "text",
-          "summary": "reuse this identity to retry the same publication",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "text",
-          "summary": "the public message text"
-        }
-      ]
-    },
-    {
-      "name": "routine put",
-      "summary": "save a recurring notification with a revision check",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "putRoutine"
-      ],
-      "flags": [
-        {
-          "name": "revision",
-          "kind": "text",
-          "summary": "the current routine revision; 0 creates a new identity",
-          "required": true
-        },
-        {
-          "name": "name",
-          "kind": "text",
-          "summary": "the display name of the routine",
-          "required": true
-        },
-        {
-          "name": "text",
-          "kind": "text",
-          "summary": "the ordinary notification text delivered at each interval",
-          "required": true
-        },
-        {
-          "name": "every-minutes",
-          "kind": "text",
-          "summary": "an interval from 1 minute to 30 days",
-          "required": true
-        },
-        {
-          "name": "enabled",
-          "kind": "text",
-          "summary": "true enables delivery; false pauses future delivery",
-          "required": true
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "routine-id",
-          "summary": "the durable routine identity"
-        }
-      ]
-    },
-    {
-      "name": "routine show",
-      "summary": "show routine configuration and delivery and observation evidence",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "showRoutine"
-      ],
-      "flags": [],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "routine-id",
-          "summary": "the durable routine identity"
-        }
-      ]
-    },
-    {
-      "name": "routine list",
-      "summary": "list routines and retained deletion receipts for one mech",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "listRoutines"
-      ],
-      "flags": [
-        {
-          "name": "after",
-          "kind": "text",
-          "summary": "continue after the previous page cursor",
-          "required": false
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        }
-      ]
-    },
-    {
-      "name": "routine delete",
-      "summary": "stop future delivery while preserving accepted notifications and evidence",
-      "shape": "document",
-      "operations": [
-        "listWorkspaces",
-        "deleteRoutine"
-      ],
-      "flags": [
-        {
-          "name": "revision",
-          "kind": "text",
-          "summary": "the current routine revision; 0 creates a new identity",
-          "required": true
-        }
-      ],
-      "arguments": [
-        {
-          "name": "mech-id",
-          "summary": "the id of the mech, as mechane mech list prints it"
-        },
-        {
-          "name": "routine-id",
-          "summary": "the durable routine identity"
-        }
-      ]
     },
     {
       "name": "eval inspect",
@@ -1374,28 +976,12 @@
     },
     {
       "name": "eval run",
-      "summary": "run each case on a fresh mech, grade its Console messages with a fresh grader mech, and report each trial; reuse --out-folder to resume",
+      "summary": "run each case and grade its observed replies in separate managed sessions; reuse --out-folder to resume",
       "shape": "document",
       "operations": [
         "listWorkspaces",
         "readiness",
-        "showAllowance",
-        "createMech",
-        "showMech",
-        "updateMech",
-        "sendNotification",
-        "listTurns",
-        "showTurn",
-        "cancelTurn",
-        "listConsoleMessages",
-        "createConnection",
-        "listConnections",
-        "updateConnection",
-        "deleteConnection",
-        "grantTools",
-        "putCredential",
-        "deleteCredential",
-        "configureExecutionAccess"
+        "showAllowance"
       ],
       "flags": [
         {
@@ -1499,8 +1085,6 @@
     "EvalFileFailed",
     "EvalInterrupted",
     "EvalAdapterFailed",
-    "EvalTransportFailed",
-    "EvalManifestMissing",
-    "EvalResponseInvalid"
+    "EvalManifestMissing"
   ]
 }

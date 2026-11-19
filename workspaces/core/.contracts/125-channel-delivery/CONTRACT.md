@@ -1,31 +1,25 @@
 ---
 name: channel-delivery
-message: Authenticate generic notification producers and keep conversational output in explicit addressed agent tools.
+message: Route authenticated events to their session and address external publications through explicit tools.
 paths: ["packages/worker/runtime/**", "packages/worker/server/**", "packages/shared/protocol/src/operations/notifications/**"]
 ---
 
 ## Rules
 
 Keep platform verification, subscriptions, parsing, formatting, attachments, and delivery receipts in the integration
-owner. Mechane accepts generic notifications; it neither hosts Slack handlers nor imports Chat SDK platform adapters.
+owner. Mechane accepts session events. Chat SDK platform adapters belong with the provider integration.
 A platform event is not a privileged model instruction. Installation policy decides which verified events to deliver.
 
-Authenticate a service producer from deployment configuration, separately from notification metadata. Bind each
-credential to explicit workspace and mech recipients. Verify the raw payload, freshness, request pathname, and signature
-before trusting its content. A body field cannot supply authenticated producer identity, recipient authority, or a reply
-credential. Member-authenticated admission uses the ordinary current workspace authority boundary.
+Authenticate the application before admitting events to its agent session. Verify current authority to the session
+and thread at the receiving boundary. Verify provider signatures at the integration that accepts provider webhooks.
+Body metadata, session creator attribution and tool result text cannot confer authority.
 
-Use the producer's stable notification identity for idempotency. Persist validated content, source metadata, authenticated
-producer identity, and wake intent before returning acceptance. Identical retry returns the same receipt; changed input
-under an existing identity fails. Transport acknowledgement says only that the notification was accepted. It is not a
-promise that the mech has read it, started work, chosen to respond, or completed the request.
+Persist accepted input before acknowledging it. The session event ID records admission. A lost response to an
+ordinary user message may leave delivery uncertain. Keep provider delivery identity and reconciliation with its owner.
 
-Make every outward conversation write an explicit agent tool call with a destination. The Console communication tool
-names the current mech's public conversation by its invocation scope. Platform tools name their channel or thread through
-the configured CLI or MCP interface. No intake, end-of-turn, approval, cancellation, or failure callback sends a message
-or reaction. Prompt guidance may recommend acknowledgment; scheduling must not perform it.
-An immediate acknowledgment or progress update still requires that explicit tool call. A scheduler receipt, command
-exit, or background checkpoint does not authorize an outward write.
+Publish visible assistant messages as session events. Keep internal reasoning and operator-only diagnostics separate.
+Every Slack reply, reaction, GitHub write or other external publication requires an explicit authorized tool call
+addressed to a destination. Receiving input, finishing a turn or observing an approval never performs that action.
 
 Keep output authorization and uncertain-delivery reconciliation with the tool's owning service. Use stable operation
 identities for repeated calls. A delivery failure cannot rerun completed application work. Current destination policy
@@ -33,13 +27,9 @@ still governs retry, and a rendered button or remembered destination cannot gran
 
 ## Checks
 
-Send signed notifications through the packaged HTTP route. Exercise a valid producer, stale timestamp, altered body,
-altered pathname, unknown producer, foreign recipient, identical retry, and changed duplicate. Verify durable admission
-before success, no protected input on refusal, and recovery after a lost acknowledgment or host replacement.
-
-Observe all lifecycle outcomes without a communication tool call and require zero platform posts or reactions. Then
-invoke the explicit Console tool twice with one stable identity and confirm one public message. Qualify platform CLI
-formatting and receipt recovery in the owning integration, not by duplicating its SDK checks here.
+Send events with different credentials, sessions and call IDs. Verify authorized admission, denial without protected
+input, and independent replay after a disconnect. Require zero platform posts for an ordinary agent message or
+session status change. Exercise one explicit channel tool call and reconcile its receipt after a lost response.
 
 Run the generated dependency boundaries from the product workspace. Platform adapters cannot enter runtime, server, or
 browser source through a new helper. Review the send callsites for implicit destinations and lifecycle-triggered output.

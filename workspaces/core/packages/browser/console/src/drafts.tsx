@@ -1,382 +1,90 @@
-import { definitionSaveProblem, problemMessage } from '@mechane/console-data';
-import type { ConsoleData } from '@mechane/console-data';
-import type { Mech } from '@mechane/protocol';
-import { CreationRequestId, Micros } from '@mechane/records';
-import { Option, Schema } from 'effect';
-import { createContext, useContext, useState } from 'react';
+import { problemMessage } from '@mechane/console-data';
+import { createContext, useContext, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import type { MessageReceipt, MessageSubmission as SubmittedMessage } from './conversations/entry.ts';
 
-type MessageSubmission = {
-  readonly id: string;
-  readonly text: string;
-  readonly isPending: boolean;
-  readonly error: string | undefined;
-};
-
-type MessageDraft = { readonly id: string; readonly text: string; readonly submission: MessageSubmission | undefined };
-
-type DefinitionDraft = {
-  readonly id: string;
-  readonly original: Mech;
-  readonly name: string;
-  readonly model: string;
-  readonly instructions: string;
-  readonly cap: string;
-  readonly saveProblem: ReturnType<typeof definitionSaveProblem>;
-  readonly isPending: boolean;
-  readonly error: string | undefined;
-};
-
-type CreatedMech = Pick<Mech, 'id' | 'name'>;
-
-type CreationDraft = {
-  readonly name: string;
-  readonly instructions: string;
-  readonly requestId: CreationRequestId;
-  readonly isPending: boolean;
-  readonly error: string | undefined;
-  readonly created: CreatedMech | undefined;
-};
-
-type DraftState = {
-  readonly scope: string;
-  readonly message: MessageDraft;
-  readonly definition: DefinitionDraft | undefined;
-  readonly creation: CreationDraft | undefined;
-};
+type Submission = { readonly isPending: boolean; readonly error?: string };
+type MessageDraft = { readonly text: string; readonly submission?: Submission };
 
 type DraftOwner = {
   readonly message: MessageDraft;
-  readonly definition: DefinitionDraft | undefined;
-  readonly creation: CreationDraft | undefined;
   readonly changeMessage: (text: string) => void;
-  readonly sendMessage: (
-    mech: Mech,
-    send: (message: SubmittedMessage) => Promise<MessageReceipt>,
-    shouldRetry?: boolean,
-  ) => void;
-  readonly openDefinition: (mech: Mech) => void;
-  readonly closeDefinition: () => void;
-  readonly changeDefinition: (
-    changes: Partial<Pick<DefinitionDraft, 'name' | 'model' | 'instructions' | 'cap'>>,
-  ) => void;
-  readonly continueDefinition: (mech: Mech) => void;
-  readonly saveDefinition: (data: ConsoleData) => void;
-  readonly openCreation: () => void;
-  readonly closeCreation: () => void;
-  readonly changeCreation: (changes: Partial<Pick<CreationDraft, 'name' | 'instructions'>>) => void;
-  readonly createMech: (data: ConsoleData) => Promise<CreatedMech | undefined>;
+  readonly sendMessage: (canSend: boolean, send: (message: { readonly text: string }) => Promise<unknown>) => void;
 };
 
 const DraftContext = createContext<DraftOwner | undefined>(undefined);
-
-function emptyDrafts(scope: string): DraftState {
-  return {
-    scope,
-    message: { id: crypto.randomUUID(), text: '', submission: undefined },
-    definition: undefined,
-    creation: undefined,
-  };
-}
+const empty: MessageDraft = { text: '' };
 
 export function WorkspaceDraftProvider({
-  mechId,
+  scope,
   children,
 }: {
-  readonly mechId: string | undefined;
+  readonly scope: string | undefined;
   readonly children: ReactNode;
 }): ReactNode {
-  const scope = mechId ?? 'workspace';
-  const [saved, setSaved] = useState<ReadonlyMap<string, DraftState>>(() => new Map());
-  const state = saved.get(scope) ?? emptyDrafts(scope);
+  const [drafts, setDrafts] = useState<ReadonlyMap<string, MessageDraft>>(() => new Map());
+  const latest = useRef(drafts);
+  const message = scope === undefined ? empty : (drafts.get(scope) ?? empty);
 
-  if (!saved.has(scope)) {
-    setSaved(new Map(saved).set(scope, state));
-  }
+  function save(key: string, draft: MessageDraft): void {
+    const next = new Map(latest.current);
 
-  function update(change: (current: DraftState) => DraftState): void {
-    setSaved((current) => {
-      const previous = current.get(scope);
+    if (draft.text === '' && draft.submission === undefined) {
+      next.delete(key);
+    } else {
+      next.set(key, draft);
+    }
 
-      return previous === undefined ? current : new Map(current).set(scope, change(previous));
-    });
+    latest.current = next;
+
+    setDrafts(next);
   }
 
   function changeMessage(text: string): void {
-    update((current) => ({ ...current, message: { ...current.message, id: crypto.randomUUID(), text } }));
-  }
-
-  function sendMessage(
-    mech: Mech,
-    send: (message: SubmittedMessage) => Promise<MessageReceipt>,
-    shouldRetry = false,
-  ): void {
-    const draft = state.message;
-
-    if (draft.submission?.isPending === true || mech.status === 'archived') {
+    if (scope === undefined) {
       return;
     }
 
-    const submitted = shouldRetry && draft.submission !== undefined ? draft.submission : draft;
+    const current = latest.current.get(scope);
 
-    if (submitted.text.trim().length === 0) {
+    save(scope, current?.submission?.isPending === true ? { ...current, text } : { text });
+  }
+
+  function sendMessage(canSend: boolean, send: (message: { readonly text: string }) => Promise<unknown>): void {
+    if (scope === undefined || !canSend) {
       return;
     }
 
-    const submission = { id: submitted.id, text: submitted.text, isPending: true, error: undefined };
+    const draft = latest.current.get(scope);
 
-    update((current) => ({ ...current, message: { ...current.message, submission } }));
-
-    void send(submission).then(
-      () => {
-        update((current) => {
-          if (current.message.submission?.id !== submission.id) {
-            return current;
-          }
-
-          const isSubmittedDraft = current.message.id === submission.id;
-
-          return {
-            ...current,
-            message: {
-              id: isSubmittedDraft ? crypto.randomUUID() : current.message.id,
-              text: isSubmittedDraft ? '' : current.message.text,
-              submission: undefined,
-            },
-          };
-        });
-      },
-      (cause: unknown) => {
-        update((current) =>
-          current.message.submission?.id === submission.id
-            ? {
-                ...current,
-                message: {
-                  ...current.message,
-                  submission: { ...submission, isPending: false, error: problemMessage(cause) },
-                },
-              }
-            : current,
-        );
-      },
-    );
-  }
-
-  function openDefinition(mech: Mech): void {
-    update((current) => ({
-      ...current,
-      definition: {
-        id: crypto.randomUUID(),
-        original: mech,
-        name: mech.name,
-        model: mech.model,
-        instructions: Option.getOrElse(mech.instructions, () => ''),
-        cap: String(mech.dailyCapMicros / 1_000_000),
-        saveProblem: undefined,
-        isPending: false,
-        error: undefined,
-      },
-    }));
-  }
-
-  function closeDefinition(): void {
-    update((current) => (current.definition?.isPending === true ? current : { ...current, definition: undefined }));
-  }
-
-  function changeDefinition(changes: Partial<Pick<DefinitionDraft, 'name' | 'model' | 'instructions' | 'cap'>>): void {
-    update((current) =>
-      current.definition === undefined
-        ? current
-        : {
-            ...current,
-            definition: {
-              ...current.definition,
-              ...changes,
-              saveProblem: current.definition.saveProblem === 'conflict' ? 'conflict' : undefined,
-              error: undefined,
-            },
-          },
-    );
-  }
-
-  function continueDefinition(mech: Mech): void {
-    update((current) => {
-      const draft = current.definition;
-
-      if (draft === undefined) {
-        return current;
-      }
-
-      return {
-        ...current,
-        definition: {
-          ...draft,
-          original: mech,
-          name: draft.name === draft.original.name ? mech.name : draft.name,
-          model: draft.model === draft.original.model ? mech.model : draft.model,
-          instructions:
-            draft.instructions === Option.getOrElse(draft.original.instructions, () => '')
-              ? Option.getOrElse(mech.instructions, () => '')
-              : draft.instructions,
-          cap:
-            draft.cap === String(draft.original.dailyCapMicros / 1_000_000)
-              ? String(mech.dailyCapMicros / 1_000_000)
-              : draft.cap,
-          saveProblem: undefined,
-        },
-      };
-    });
-  }
-
-  function saveDefinition(data: ConsoleData): void {
-    const draft = state.definition;
-
-    if (draft === undefined || draft.isPending || draft.saveProblem === 'conflict') {
+    if (draft === undefined || draft.submission?.isPending === true || draft.text.trim() === '') {
       return;
     }
 
-    const amount = Math.round(Number(draft.cap) * 1_000_000);
+    const submitted = { text: draft.text, submission: { isPending: true } };
 
-    if (!Schema.is(Micros)(amount)) {
-      update((current) => ({ ...current, definition: { ...draft, error: 'Enter a valid daily cap.' } }));
+    save(scope, submitted);
 
-      return;
-    }
-
-    update((current) => ({ ...current, definition: { ...draft, isPending: true, error: undefined } }));
-    void data.commands
-      .updateMech({
-        mechId: draft.original.id,
-        expectedRevision: draft.original.revision,
-        name: draft.name,
-        model: draft.model,
-        instructions: draft.instructions === '' ? Option.none() : Option.some(draft.instructions),
-        dailyCapMicros: amount,
-      })
+    void Promise.resolve()
+      .then(() => send({ text: submitted.text }))
       .then(
         () => {
-          update((current) => (current.definition?.id === draft.id ? { ...current, definition: undefined } : current));
-        },
-        (cause: unknown) => {
-          const saveProblem = definitionSaveProblem(cause);
+          const current = latest.current.get(scope);
 
-          update((current) =>
-            current.definition?.id === draft.id
-              ? {
-                  ...current,
-                  definition: {
-                    ...current.definition,
-                    isPending: false,
-                    saveProblem,
-                    error: saveProblem === 'conflict' ? undefined : problemMessage(cause),
-                  },
-                }
-              : current,
-          );
+          if (current?.submission === submitted.submission) {
+            save(scope, current === submitted ? empty : { text: current.text });
+          }
+        },
+        (problem: unknown) => {
+          const current = latest.current.get(scope);
+
+          if (current?.submission === submitted.submission) {
+            save(scope, { text: current.text, submission: { isPending: false, error: problemMessage(problem) } });
+          }
         },
       );
   }
 
-  function openCreation(): void {
-    update((current) => ({
-      ...current,
-      creation: {
-        name: '',
-        instructions: '',
-        requestId: Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()),
-        isPending: false,
-        error: undefined,
-        created: undefined,
-      },
-    }));
-  }
-
-  function closeCreation(): void {
-    update((current) => (current.creation?.isPending === true ? current : { ...current, creation: undefined }));
-  }
-
-  function changeCreation(changes: Partial<Pick<CreationDraft, 'name' | 'instructions'>>): void {
-    update((current) =>
-      current.creation === undefined
-        ? current
-        : {
-            ...current,
-            creation: {
-              ...current.creation,
-              ...changes,
-              requestId: Schema.decodeUnknownSync(CreationRequestId)(crypto.randomUUID()),
-              error: undefined,
-            },
-          },
-    );
-  }
-
-  async function createMech(data: ConsoleData): Promise<CreatedMech | undefined> {
-    const draft = state.creation;
-
-    if (draft === undefined || draft.isPending) {
-      return undefined;
-    }
-
-    if (draft.created !== undefined) {
-      return draft.created;
-    }
-
-    update((current) => ({ ...current, creation: { ...draft, isPending: true, error: undefined } }));
-
-    return await data.commands
-      .createMech({
-        name: draft.name,
-        requestId: draft.requestId,
-        ...(draft.instructions.trim() === '' ? {} : { instructions: draft.instructions }),
-      })
-      .then(
-        (mech) => {
-          const created = { id: mech.id, name: mech.name };
-
-          update((current) =>
-            current.creation?.requestId === draft.requestId
-              ? { ...current, creation: { ...current.creation, isPending: false, created } }
-              : current,
-          );
-
-          return created;
-        },
-        (cause: unknown): undefined => {
-          update((current) =>
-            current.creation?.requestId === draft.requestId
-              ? { ...current, creation: { ...draft, isPending: false, error: problemMessage(cause) } }
-              : current,
-          );
-
-          return undefined;
-        },
-      );
-  }
-
-  return (
-    <DraftContext
-      value={{
-        message: state.message,
-        definition: state.definition,
-        creation: state.creation,
-        changeMessage,
-        sendMessage,
-        openDefinition,
-        closeDefinition,
-        changeDefinition,
-        continueDefinition,
-        saveDefinition,
-        openCreation,
-        closeCreation,
-        changeCreation,
-        createMech,
-      }}
-    >
-      {children}
-    </DraftContext>
-  );
+  return <DraftContext value={{ message, changeMessage, sendMessage }}>{children}</DraftContext>;
 }
 
 export function useWorkspaceDrafts(): DraftOwner {

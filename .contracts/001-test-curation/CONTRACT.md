@@ -93,6 +93,9 @@ An owned rule over the import graph, the history, the registry or a value copied
 A run against a real model, OpenRouter or Cloudflare is separate evidence that a person starts; `mise run check` never calls a paid model or a cloud account.
 A smoke run keeps its state under the operating system's temporary directory, removes it after a passing run, and writes nothing into tracked source.
 
+An isolated source scenario keeps the same compiled Worker across its restarts. Source watching belongs to
+the retained development stack, where an edit intentionally reloads the service.
+
 Mechane declares no example tests and does not install `test-example-suite`.
 The smoke runs the built CLI as its users run it, which that contract classes as end-to-end, so the example allowance and the declared example limit name nothing here.
 The registry's rule examples, which the checks run as each rule's test (TS-05), are admitted under the accepted code standard.

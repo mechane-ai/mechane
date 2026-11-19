@@ -1,39 +1,34 @@
 # @mechane/client
 
-The isomorphic client that calls catalog operations and decodes their answers, downloads the files a deployment serves
-and reads its latest release.
+Mechane uses the official Anthropic SDK for the Managed Agents API. This package supplies the Console's browser binding,
+the client for native installation operations, and shared presentation helpers.
 
-Layer 3 · shared lane · effect dialect · any consumer
+## Managed Agents
 
-## Surface
+Use the official SDK with the installation base URL and an authorized credential for public `/v1` calls. The SDK exposes
+agents, environments, sessions, and session events. A Console session link identifies an agent and a session as separate
+resources.
 
-- Calls: `call`, `CallRequest` and `OperationCall`.
-- Response limits: `Bytes`, supplied as `maxResponseBytes` on each `call`.
-- Files: `download` and `latestRelease`.
-- Failures: `OperationFailed`, `OriginUnreachable`, `RequestTimedOut`, `ResponseUnreadable`, its `AnswerStep`, and
-  `ClientFailure`.
-- Retry metadata: `RetryAfter` and `readRetryAfter`.
-- Presentations: `@mechane/client/presentation` exports the canonical catalog, validators, fallback builder, and
-  `toPresentationCard({ spec })` for Chat SDK adapters.
+`@mechane/client/managed` exports `createConsoleManagedClient` for an already-admitted browser workspace. It returns an
+Anthropic SDK instance bound to the same-origin `/console-api` gateway, the workspace header, and the caller's abort
+signal. The HTTP-only session cookie authenticates requests. Reads and mutations share that browser lifetime. The
+binding disables automatic SDK retries and reports an expired session to its owner. A caller can reconcile a send
+against authoritative history before deciding whether to repeat it.
 
-## Use
+## Native installation operations
 
-Call an operation by its catalog name with the credential its access needs, within a timeout its program bounds. An
-explicit `maxResponseBytes` choice is `Option.some(Bytes)` for a byte cap before JSON decoding or `Option.none()` for a
-response the caller trusts to be unbounded. Cancellation stops the body reader. An error answer decodes into
-`OperationFailed` with the failure its code names, or an `UnknownFailure`.
+`call`, `OperationCall`, and `CallRequest` use the installation operation catalog and decode its declared answers. Use
+these for installation authentication and native diagnostics such as trace and capture reads. Each call takes a bound
+timeout and an explicit `maxResponseBytes` choice. Supply `Option.some(Bytes)` to cap a response before JSON decoding,
+or `Option.none()` to accept an unbounded response. Cancellation stops the body reader.
 
-HTTP response failures retain their status and bounded `Retry-After` metadata. The client never repeats a call; the
-caller owns any retry policy, cancellation, and total deadline.
+Failures distinguish server refusal, an unreachable origin, a timeout, and an unreadable answer. HTTP failures retain
+status and bounded `RetryAfter` metadata. The caller owns its retry policy and deadline. The package also exports
+`download` and `latestRelease` for deployment files and release information.
 
-Pass an untrusted complete presentation to `toPresentationCard({ spec })` before posting it through a Chat SDK adapter.
-It enforces the shared static catalog and message bounds, then returns the native card. Invalid input throws instead of
-dropping unsupported content. Use `createPresentationOutput({ spec })` when a destination also needs readable fallback
-text. Platform formatting and application approval controls belong to the integration.
+## Structured presentations
 
-With strict declaration checking, install the optional `@types/node` peer and include Node types. Chat SDK's
-declarations refer to `Buffer`.
-
-## Never
-
-Follow a redirect, so a key never reaches another origin, or import `node:` or `cloudflare:` modules.
+`@mechane/client/presentation` exposes the canonical json-render catalog, validators, fallback builder, and Chat SDK
+card conversion. Validate an untrusted presentation with `toPresentationCard({ spec })` before posting it through a Chat
+SDK adapter. Use `createPresentationOutput({ spec })` when a destination needs readable fallback text. Platform
+formatting and application approvals belong to the integration.

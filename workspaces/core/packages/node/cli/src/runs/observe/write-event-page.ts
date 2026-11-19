@@ -14,7 +14,6 @@ type ListedEventPage = readonly [ReadonlyArray<ListedEvent>, Option.Option<numbe
  */
 export const writeEventPage = Effect.fn('writeEventPage')(function* ({
   after,
-  isFollowing,
   write,
   ...listing
 }: EventPageInput): Effect.fn.Return<ListedEventPage, ClientFailure> {
@@ -29,5 +28,5 @@ export const writeEventPage = Effect.fn('writeEventPage')(function* ({
     () => after,
   );
 
-  return [events, Option.liftPredicate(next, () => isFollowing || hasMore)];
+  return [events, Option.liftPredicate(next, () => hasMore)];
 });

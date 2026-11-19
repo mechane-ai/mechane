@@ -1,10 +1,11 @@
-# The authenticated compute service owns the sole Durable Object namespace.
+# The sandbox service and the runtime address check derive the physical IDs for their respective namespaces.
 id: object-name-outside-object-calls
 language: TypeScript
 severity: error
-message: 'Name a sandbox only in its authenticated service boundary, such as `namespace.idFromName(name)` in `sandbox-service/src/settings.ts` (044)'
+message: 'Resolve Durable Object IDs at their authenticated owners, such as `ownsActorAddress` in the runtime (044)'
 files: [packages/**/*.ts]
-ignores: ['**/node_modules/**', packages/worker/sandbox/src/service/settings.ts]
+ignores:
+  ['**/node_modules/**', packages/worker/sandbox/src/service/settings.ts, packages/worker/runtime/src/actor/identity.ts]
 rule:
   kind: property_identifier
   regex: ^(idFromName|idFromString|newUniqueId)$

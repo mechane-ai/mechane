@@ -29,6 +29,17 @@ serves a `GET` of `/machines/<machine id>/health`, and a `PUT` of `/machines/<ma
 that answers the execution's receipt. Workspace routes archive, transfer, restore and release a generation. The ledger
 freezes new commands until release; a failed save can release the live workspace for a later cleanup command.
 
+## Installed session computer
+
+The standard agent toolset’s Bash can call `mechane-computer --help` in an installed session. It can start and inspect
+processes, control Chromium, and stream saved evidence. Save each action UUID to read its receipt or repeat the same
+request. For pending actions, poll the receipt in the same work lease and repeat the original request only when its
+receipt requests dispatch. The worker forwards operations over a private Unix socket using its current session
+credential. The socket closes when the work lease ends.
+
+Run `mechane-computer POST "evidence/$id/export"` for an existing artifact and inspect the returned export status. When
+the artifact is ready, use `mechane-computer GET "evidence/$id/content"` to stream its bytes.
+
 ## Never
 
 - Never restart a guest that has accepted an execution: its identity and receipt ledger remain single-use.

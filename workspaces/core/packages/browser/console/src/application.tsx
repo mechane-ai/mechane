@@ -1,7 +1,7 @@
 import { Button, Heading, Muted, Stack } from '@mechane-ai/elements';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
-import { createConsoleDataOwner, isSignedOut, loadSession, problemMessage } from '@mechane/console-data';
-import type { ConsoleDataOwner, Session } from '@mechane/console-data';
+import { createConsoleDataOwner, isSignedOut, loadViewerSession, problemMessage } from '@mechane/console-data';
+import type { ConsoleDataOwner, ViewerSession } from '@mechane/console-data';
 import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { ConsoleEntrance, ConsolePending, Welcome } from './entrance.tsx';
@@ -12,7 +12,7 @@ type SessionState =
   | { readonly kind: 'loading' }
   | { readonly kind: 'signed-out' }
   | { readonly kind: 'failed'; readonly error: unknown; readonly isRetrying: boolean }
-  | { readonly kind: 'ready'; readonly session: Session };
+  | { readonly kind: 'ready'; readonly session: ViewerSession };
 
 export function ConsoleApplication({ location, navigate }: ConsoleNavigation): ReactNode {
   const [owner] = useState(createConsoleDataOwner);
@@ -27,7 +27,7 @@ export function ConsoleApplication({ location, navigate }: ConsoleNavigation): R
   useEffect(() => {
     const controller = new AbortController();
 
-    void loadSession(new URL(globalThis.location.origin), controller.signal).then(
+    void loadViewerSession(new URL(globalThis.location.origin), controller.signal).then(
       (session) => {
         if (!controller.signal.aborted) {
           setState({ kind: 'ready', session });
@@ -86,7 +86,7 @@ function WorkspaceSelection({
   reconnect,
 }: ConsoleNavigation & {
   readonly owner: ConsoleDataOwner;
-  readonly session: Session;
+  readonly session: ViewerSession;
   readonly reconnect: () => void;
 }): ReactNode {
   const preferenceKey = `mechane:workspace:${session.principal.id}`;

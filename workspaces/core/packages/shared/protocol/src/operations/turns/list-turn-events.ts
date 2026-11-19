@@ -16,8 +16,8 @@ const TurnEventsQuery = Schema.Struct({
 /** The turn's events and the receipt of its inbox items, paged in commit order. */
 export const listTurnEvents = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/turns/:turn_id/events',
+  access: Access.Owner,
   params: TurnPath,
   query: TurnEventsQuery,
   body: NoFields,

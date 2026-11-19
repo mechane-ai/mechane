@@ -13,6 +13,7 @@ import { readEvidenceArtifact } from './read-evidence.ts';
 type ContentInput = EvidencePath & {
   readonly store: SandboxStore;
   readonly bucket: R2Bucket;
+  readonly includeBody: boolean;
   /** None requests the complete artifact; a header requests one finite byte interval. */
   readonly rangeHeader: Option.Option<string>;
 };
@@ -37,6 +38,7 @@ export async function readEvidenceContent({
   store,
   bucket,
   rangeHeader,
+  includeBody,
   ...identity
 }: ContentInput): Promise<Response> {
   const found = readEvidenceArtifact({ store, ...identity });
@@ -76,29 +78,33 @@ export async function readEvidenceContent({
 
   const { range, isPartial } = reading.value;
 
-  const promise = readEvidenceObject({ bucket, ...identity, range });
+  const promise = readEvidenceObject({ bucket, ...identity, range, includeBody });
   const read = await capturePromise({ promise });
 
   if (Result.isFailure(read)) {
     return new Response(null, { status: HttpStatusCode.Unavailable });
   }
 
-  const stored = Option.fromNullishOr(read.success);
+  const stored = read.success;
 
   if (Option.isNone(stored)) {
     return new Response(null, { status: HttpStatusCode.NotFound });
   }
 
-  const metadata = Option.fromUndefinedOr(stored.value.customMetadata);
+  const { object, body } = stored.value;
+  const metadata = Option.fromUndefinedOr(object.customMetadata);
   const hasDigest = Option.exists(metadata, (value) => value['sha256'] === descriptor.sha256);
 
-  if (stored.value.size !== descriptor.sizeBytes || !hasDigest) {
-    await stored.value.body.cancel();
+  if (object.size !== descriptor.sizeBytes || !hasDigest) {
+    if (Option.isSome(body)) {
+      await body.value.cancel();
+    }
 
     return new Response(null, { status: HttpStatusCode.Unavailable });
   }
 
   const contentLength = String(range.length);
+  const media = Option.getOrNull(body);
 
   headers.set(HttpHeader.ContentLength, contentLength);
 
@@ -107,8 +113,8 @@ export async function readEvidenceContent({
 
     headers.set(HttpHeader.ContentRange, contentRange);
 
-    return new Response(stored.value.body, { status: HttpStatusCode.PartialContent, headers });
+    return new Response(media, { status: HttpStatusCode.PartialContent, headers });
   }
 
-  return new Response(stored.value.body, { headers });
+  return new Response(media, { headers });
 }

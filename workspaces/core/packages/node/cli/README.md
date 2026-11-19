@@ -1,7 +1,8 @@
 # @mechane/cli
 
-The `mechane` command: its invocation and settings, the output it writes and the failures it reports, and the run of
-each command beside the login's and the self-update's.
+The `mechane` operator CLI handles sign-in, key issuance, workspace administration, evaluation, and historical
+inspection. To run agents or share sessions, point Anthropic’s `ant` CLI at the installation. See the
+[self-hosting guide](../../../docs/self-hosting.md#use).
 
 Layer 6 · node lane · effect dialect · no consumers
 

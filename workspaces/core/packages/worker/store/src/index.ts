@@ -1,5 +1,6 @@
 export type { SqlCall, RecordsInput, Migration, DatabaseFunctions, AlarmTimeInput } from './types.ts';
 export { decodeRows } from './decode-rows.ts';
+export { decodeOptionalStoredValue } from './decode-optional-value.ts';
 export { decodeOne } from './decode-one.ts';
 export { decodeFirst } from './decode-first.ts';
 export { decodeCache } from './decode-cache.ts';

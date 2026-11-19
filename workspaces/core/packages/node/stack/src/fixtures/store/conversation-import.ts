@@ -161,6 +161,24 @@ export async function seedConversationImport(input: SeedConversationImport): Pro
     publications: publications.map((publication) => ({ ...publication, activityId: randomUUID() })),
   };
 
+  const historicalMechSql = `mech AS (
+  INSERT INTO mechane.mechs(id,workspace_id,name,model,status,revision,creation_request_id,creation_fingerprint,creator_id,updater_id)
+  SELECT (data->>'mechId')::uuid,workspace.id,'Historical Console fixture','openai/gpt-6.1-sol','paused',1,
+    (data->>'creationRequestId')::uuid,'frozen-conversation-fixture',workspace.creator_id,workspace.creator_id
+  FROM fixture JOIN workspace ON workspace.id=(data->>'workspaceId')::uuid RETURNING id,name,model,creator_id
+)
+INSERT INTO mechane.mech_revisions(mech_id,revision,name,model,daily_cap_micros,status,updater_id)
+SELECT id,1,name,model,50000000,'paused',creator_id FROM mech;`;
+
+  await runFixtureSql({
+    ...input,
+    database: decodeURIComponent(new URL(input.migrationUrl).pathname.slice(1)),
+    variables: { fixture: JSON.stringify(fixture) },
+    sql: `WITH fixture AS (SELECT :'fixture'::jsonb AS data),
+workspace AS (SELECT id,creator_id FROM mechane.workspaces WHERE id=(SELECT (data->>'workspaceId')::uuid FROM fixture)),
+${historicalMechSql}`,
+  });
+
   await runFixtureSql({
     ...input,
     database: sourceDatabaseName,
@@ -184,14 +202,7 @@ workspace AS (
   SELECT (data->>'workspaceId')::uuid,'Historical fixture workspace',principal.id,'{"isSuspended":true}'::jsonb
   FROM fixture CROSS JOIN principal RETURNING id,creator_id
 ),
-mech AS (
-  INSERT INTO mechane.mechs(id,workspace_id,name,model,status,revision,creation_request_id,creation_fingerprint,creator_id,updater_id)
-  SELECT (data->>'mechId')::uuid,workspace.id,'Historical Console fixture','openai/gpt-6.1-sol','paused',1,
-    (data->>'creationRequestId')::uuid,'frozen-conversation-fixture',workspace.creator_id,workspace.creator_id
-  FROM fixture CROSS JOIN workspace RETURNING id,name,model,creator_id
-)
-INSERT INTO mechane.mech_revisions(mech_id,revision,name,model,daily_cap_micros,status,updater_id)
-SELECT id,1,name,model,50000000,'paused',creator_id FROM mech;
+${historicalMechSql}
 WITH fixture AS (SELECT :'fixture'::jsonb AS data),
 session AS (
   INSERT INTO mechane.sessions(id,workspace_id,mech_id,channel_key,source,created_at,updated_at)

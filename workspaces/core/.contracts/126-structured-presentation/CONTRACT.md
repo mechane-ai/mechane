@@ -10,10 +10,10 @@ Declare the supported json-render catalog and complete spec validator once in `@
 Derive types from that native schema. The Console's React registry consumes the validated spec. Platform renderers live
 with their integration owner and may map the catalog without introducing another Mechane spec or authority model.
 
-Keep text and presentation publication explicit. The `console_message` tool accepts readable text and an optional complete
-presentation for the current mech's public Console conversation. Put presentation guidance on its native argument schema.
-Do not inject catalog-generation prompts into conversation instructions or publish final model text automatically.
-A presentation recorded in private tool activity is not proof that an outward message was sent.
+Render a native archive publication's recorded `presentation` only after decoding its bounded catalog spec.
+Include the stored readable fallback. Keep the owner-only archive read-only, and require current workspace ownership.
+Managed Agents session events use Anthropic's documented content blocks. Keep card fields out of those envelopes and
+render Markdown text as text content. External deliveries publish only through the integration's communication tool.
 
 Bound nodes, text, nesting, collections, and media before retaining a complete presentation. Keep readable fallback text
 with each published message. Reject invalid complete specs without creating blank success or repeating agent work.
@@ -27,18 +27,17 @@ Keep the catalog static. `Actions` groups HTTPS navigation links; it cannot exec
 action buttons, state expressions, repeated elements, and remote images. A destination checks its own current authority.
 Application approval controls belong to the application and are not model-authored execution capabilities.
 
-Persist one canonical presentation with its public message and stable communication receipt. Unsupported clients receive
-the same readable fallback. Keep private model context and credential-bearing arguments out of the public transcript.
-Native execution traces remain a distinct authorized projection.
+Preserve a canonical card with its recorded publication and stable communication receipt. Unsupported clients must
+receive the readable fallback. Keep private model context and credential-bearing arguments out of the transcript.
 
 ## Checks
 
 Type-check the catalog against its native renderer. Render text, links, fields, tables, and charts through the Console
 registry. Inspect registration and link rendering for dynamic imports, unsafe URL protocols, raw HTML, and callbacks.
 
-Inspect a provider request to confirm presentation guidance describes explicit tool arguments. Complete an activation
-without the communication tool and verify no message appears. Replay an explicit publication with the same effect
-identity and verify one canonical public message and presentation.
+Open a recorded native publication with a structured card as an authorized owner. Verify that a member cannot read
+the archive and that an ordinary managed-session message containing JSON displays as message content. Inspect an
+external communication receipt to distinguish sending a card from generating a proposed card.
 
 Exercise an oversized spec, unsupported component, attempted event handler, and unavailable renderer. Confirm readable
 fallback, no unauthorized operation, and no repeated agent work. Existing accessibility, loading, and cache contracts

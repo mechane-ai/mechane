@@ -3,6 +3,8 @@ import { RecordId } from '@mechane/records';
 import { DEFAULT_AUTH_RATE_LIMITS, KEY_LIFETIME_MAX_SECONDS } from '@mechane/runtime';
 import type { AuthenticationConfiguration, RuntimeConfiguration } from '@mechane/runtime';
 import { Schema } from 'effect';
+import { loadManagedServiceCredentials } from '../managed/service-credentials.ts';
+import type { ManagedServiceCredentials } from '../managed/service-credentials.ts';
 import type { SettingsEnvironment } from './environment.ts';
 import { integerSetting, jsonSetting, optionalSetting, requiredSetting } from './environment.ts';
 
@@ -24,9 +26,30 @@ const RateLimitsSchema = Schema.Struct({
   codeAttempt: RateLimitSchema,
 });
 
-export type ServerSettings = { readonly isTrustedProxy: boolean; readonly authentication: AuthenticationConfiguration };
+export type ServerSettings = {
+  readonly isTrustedProxy: boolean;
+  readonly authentication: AuthenticationConfiguration;
+  readonly managedIdentity: ManagedServiceCredentials;
+};
 
 type ServerSettingsInput = { readonly runtime: RuntimeConfiguration; readonly environment: SettingsEnvironment };
+
+function loadGithubOAuth(environment: SettingsEnvironment): AuthenticationConfiguration['githubOAuth'] {
+  const clientId = environment['MECHANE_GITHUB_CLIENT_ID'];
+  const clientSecret = environment['MECHANE_GITHUB_CLIENT_SECRET'];
+
+  if (clientId === undefined && clientSecret === undefined) {
+    return null;
+  }
+
+  const isCredential = Schema.is(Schema.NonEmptyString);
+
+  if (!isCredential(clientId) || !isCredential(clientSecret)) {
+    throw new Error('GitHub browser sign-in requires both a client ID and a client secret');
+  }
+
+  return { clientId, clientSecret };
+}
 
 export function loadServerSettings({ runtime, environment }: ServerSettingsInput): ServerSettings {
   const githubWebOriginSetting = optionalSetting({
@@ -65,14 +88,14 @@ export function loadServerSettings({ runtime, environment }: ServerSettingsInput
   });
 
   return {
+    managedIdentity: loadManagedServiceCredentials(environment),
     isTrustedProxy:
       Schema.decodeUnknownSync(Schema.Literals(['true', 'false']))(
         optionalSetting({ environment, name: 'MECHANE_TRUSTED_PROXY', fallback: 'false' }),
       ) === 'true',
     authentication: {
       origin: runtime.publicOrigin,
-      githubClientId: requiredSetting({ environment, name: 'MECHANE_GITHUB_CLIENT_ID' }),
-      githubClientSecret: requiredSetting({ environment, name: 'MECHANE_GITHUB_CLIENT_SECRET' }),
+      githubOAuth: loadGithubOAuth(environment),
       githubWebOrigin: githubWebOrigin.success.origin,
       githubApiOrigin: runtime.githubApiOrigin,
       allowedIdentities: Schema.decodeUnknownSync(AllowedIdentitiesSchema)(allowedIdentities),

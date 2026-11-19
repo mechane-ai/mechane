@@ -1,66 +1,32 @@
 import type { ImportedSpendReservation as SpendReservation } from '@mechane/control-store';
-import { MechHistoryImportReceipt, MechMaintenanceReceipt, ServerFailure } from '@mechane/protocol';
-import type { MechHistoryImportBatch, RoutineRequest } from '@mechane/protocol';
+import {
+  HeldWorkPage,
+  MechHistoryImportReceipt,
+  MechMaintenanceReceipt,
+  ServerFailure,
+  SourceCompletion,
+} from '@mechane/protocol';
+import type { MechHistoryImportBatch } from '@mechane/protocol';
 import { HttpHeader, HttpMethod, MechId, MediaType, WorkspaceId } from '@mechane/records';
 import { SandboxCompletion } from '@mechane/sandbox-wire';
 import { Schema } from 'effect';
-import type { ActivityEvent, ConsoleMessage, Notification, NotificationReceipt, Run } from '../domain.ts';
+import type { ActivityEvent, ConsoleMessage, Run } from '../domain.ts';
 import {
   ActivityRecord,
   CancellationRecord,
-  ExportRecord,
   MessageRecord,
-  NotificationReceiptRecord,
   RoutineRecord,
   RunRecord,
   StatusRecord,
   TraceRecord,
-  WakeRecord,
 } from './records.ts';
 
 export type MechScope = { readonly workspaceId: string; readonly mechId: string };
 
-export type ActorNotification = Omit<Notification, 'workspaceId' | 'mechId' | 'receivedSequence' | 'receivedAt'> & {
-  readonly shouldPublishToConsole?: boolean;
-};
-
 export type ActorPageInput = { readonly after?: string | null | undefined; readonly maxRows?: number | undefined };
 export type ActorPage<T> = { readonly items: ReadonlyArray<T>; readonly hasMore: boolean };
 
-export type ActorWake = {
-  readonly id: string;
-  readonly mechId: string;
-  readonly status: 'scheduled' | 'cancelled' | 'delivered';
-  readonly text: string;
-  readonly createdAt: string;
-  readonly dueAt: string;
-  readonly canceledAt: string | null;
-  readonly deliveredAt: string | null;
-  readonly notificationId: string | null;
-};
-
-export type ScheduleWakeInput = {
-  readonly wakeId: string;
-  readonly text: string;
-  readonly afterSeconds?: number;
-  readonly at?: string;
-};
-
 export type ActorRoutine = typeof RoutineRecord.Type;
-
-export type PutRoutineInput = typeof RoutineRequest.Type & { readonly routineId: string; readonly principalId: string };
-
-export type DeleteRoutineInput = {
-  readonly routineId: string;
-  readonly expectedRevision: number;
-  readonly principalId: string;
-};
-
-export type PublishMessageInput = {
-  readonly messageId: string;
-  readonly text: string;
-  readonly presentation?: Readonly<Record<string, unknown>> | undefined;
-};
 
 export type ActorControlChange = {
   readonly id: string;
@@ -102,25 +68,19 @@ export type ActorTrace = {
   readonly evidenceNotices: ReadonlyArray<string>;
 };
 
-export type ActorExport = {
-  readonly version: 1;
-  readonly source: MechScope;
-  readonly exportedAt: string;
-  readonly sourceSequence: number;
-  readonly definitionRevision: number;
-  readonly context: string;
-};
-
 export type ActorHistoryImport = MechHistoryImportBatch;
 export type MechActorResolver = (scope: MechScope) => MechActorClient;
 export type ActorHistoryImportReceipt = typeof MechHistoryImportReceipt.Type;
 
 export type MechActorClient = {
-  readonly admitNotification: (input: ActorNotification) => Promise<NotificationReceipt>;
   readonly applyControlChange: (input: ActorControlChange) => Promise<void>;
+  readonly listArchivedCompletions: (
+    input: ActorPageInput,
+  ) => Promise<ActorPage<SourceCompletion> & { readonly nextCursor: string | null }>;
   readonly acceptCompletion: (input: SandboxCompletion) => Promise<void>;
   readonly status: () => Promise<ActorStatus>;
   readonly readMech: () => Promise<ActorStatus>;
+  readonly listHeldWork: (input: ActorPageInput) => Promise<typeof HeldWorkPage.Encoded>;
   readonly listHistory: (
     input: ActorPageInput,
   ) => Promise<{
@@ -132,7 +92,6 @@ export type MechActorClient = {
   readonly listRuns: (input: ActorPageInput) => Promise<ActorPage<Run>>;
   readonly readRun: (input: { readonly turnId: string }) => Promise<Run | null>;
   readonly readTrace: (input: { readonly turnId: string }) => Promise<ActorTrace>;
-  readonly cancelRun: (input: { readonly turnId: string; readonly principalId: string }) => Promise<Run>;
   readonly readCancellation: (input: {
     readonly turnId: string;
   }) => Promise<{ readonly cancelerId: string; readonly canceledAt: string } | null>;
@@ -156,19 +115,8 @@ export type MechActorClient = {
     readonly hasMore: boolean;
     readonly beforeSequence: number | null;
   }>;
-  readonly scheduleWake: (input: ScheduleWakeInput) => Promise<ActorWake>;
-  readonly readWake: (input: { readonly wakeId: string }) => Promise<ActorWake | null>;
-  readonly listWakes: (input: ActorPageInput) => Promise<ActorPage<ActorWake>>;
-  readonly cancelWake: (input: { readonly wakeId: string }) => Promise<ActorWake>;
-  readonly putRoutine: (input: PutRoutineInput) => Promise<ActorRoutine>;
   readonly readRoutine: (input: { readonly routineId: string }) => Promise<ActorRoutine | null>;
   readonly listRoutines: (input: ActorPageInput) => Promise<ActorPage<ActorRoutine>>;
-  readonly deleteRoutine: (input: DeleteRoutineInput) => Promise<ActorRoutine>;
-  readonly publishMessage: (input: PublishMessageInput) => Promise<ConsoleMessage>;
-  readonly quiesce: () => Promise<void>;
-  readonly resume: () => Promise<void>;
-  readonly exportContext: (input?: { readonly requestId?: string | undefined }) => Promise<ActorExport>;
-  readonly importContext: (input: { readonly requestId: string; readonly exported: ActorExport }) => Promise<void>;
   readonly importHistory: (input: ActorHistoryImport) => Promise<ActorHistoryImportReceipt>;
 };
 
@@ -211,11 +159,21 @@ export function createMechActorClient(input: CreateClientInput): MechActorClient
   }
 
   return {
-    admitNotification: (value) => call('admitNotification', value, NotificationReceiptRecord),
     applyControlChange: (value) => write('applyControlChange', value),
+    listArchivedCompletions: (value) =>
+      call(
+        'listArchivedCompletions',
+        value,
+        Schema.Struct({
+          items: Schema.Array(SourceCompletion),
+          hasMore: Schema.Boolean,
+          nextCursor: Schema.NullOr(Schema.String),
+        }),
+      ),
     acceptCompletion: (value) => write('acceptCompletion', Schema.encodeSync(SandboxCompletion)(value)),
     status: () => call('status', {}, StatusRecord),
     readMech: () => call('status', {}, StatusRecord),
+    listHeldWork: (value) => call('listHeldWork', value, Schema.toEncoded(HeldWorkPage)),
     listHistory: (value) =>
       call(
         'listHistory',
@@ -239,7 +197,6 @@ export function createMechActorClient(input: CreateClientInput): MechActorClient
       call('listRuns', value, Schema.Struct({ items: Schema.Array(RunRecord), hasMore: Schema.Boolean })),
     readRun: (value) => call('readRun', value, Schema.NullOr(RunRecord)),
     readTrace: (value) => call('readTrace', value, TraceRecord),
-    cancelRun: (value) => call('cancelRun', value, RunRecord),
     readCancellation: (value) => call('readCancellation', value, Schema.NullOr(CancellationRecord)),
     listEvents: (value) =>
       call(
@@ -257,21 +214,9 @@ export function createMechActorClient(input: CreateClientInput): MechActorClient
           beforeSequence: Schema.NullOr(Schema.Number),
         }),
       ),
-    scheduleWake: (value) => call('scheduleWake', value, WakeRecord),
-    readWake: (value) => call('readWake', value, Schema.NullOr(WakeRecord)),
-    listWakes: (value) =>
-      call('listWakes', value, Schema.Struct({ items: Schema.Array(WakeRecord), hasMore: Schema.Boolean })),
-    cancelWake: (value) => call('cancelWake', value, WakeRecord),
-    putRoutine: (value) => call('putRoutine', value, RoutineRecord),
     readRoutine: (value) => call('readRoutine', value, Schema.NullOr(RoutineRecord)),
     listRoutines: (value) =>
       call('listRoutines', value, Schema.Struct({ items: Schema.Array(RoutineRecord), hasMore: Schema.Boolean })),
-    deleteRoutine: (value) => call('deleteRoutine', value, RoutineRecord),
-    publishMessage: (value) => call('publishMessage', value, MessageRecord),
-    quiesce: () => write('quiesce'),
-    resume: () => write('resume'),
-    exportContext: (value) => call('exportContext', value ?? {}, ExportRecord),
-    importContext: (value) => write('importContext', value),
     importHistory: (value) => call('importHistory', value, MechHistoryImportReceipt),
   };
 }

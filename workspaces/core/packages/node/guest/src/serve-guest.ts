@@ -13,6 +13,7 @@ import type { ExecutionUnstarted } from './errors.ts';
 import { executionLedger } from './executions/execution-ledger.ts';
 import { listenToGuest } from './guest-listener.ts';
 import { loadGuestSettings } from './load-guest-settings.ts';
+import { createManagedWorkLauncher } from './managed-work/launch.ts';
 import { processLedger } from './processes/process-ledger.ts';
 import type { Exchange, GuestFailure } from './types.ts';
 import { openWorkspaceFolder } from './workspace/open-workspace-folder.ts';
@@ -103,13 +104,15 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
     return [...processes.ownedProcessGroups(), ...browser.ownedProcessGroups()];
   }
 
+  const launchManagedWork = createManagedWorkLauncher({ settings, isFrozen: ledger.isFrozen });
+
   const workspace = workspaceJournal({
     folder,
     settings,
     ledger,
     fibers,
     ownedProcessGroups,
-    isBusy: browser.isBusy,
+    isBusy: () => browser.isBusy() || launchManagedWork.isRunning(),
     onRestorePhase,
   });
 
@@ -117,7 +120,17 @@ export const serveGuest = Effect.fn('serveGuest')(function* (): Effect.fn.Return
 
   startup.advance({ phase: StartupPhase.GuestReady, tool });
 
-  const next = answerNextExchange({ exchanges, fibers, settings, ledger, workspace, processes, browser });
+  const next = answerNextExchange({
+    exchanges,
+    fibers,
+    settings,
+    ledger,
+    workspace,
+    processes,
+    browser,
+    launchManagedWork,
+  });
+
   const serving = Effect.forever(next);
 
   yield* FiberSet.run(fibers, serving);

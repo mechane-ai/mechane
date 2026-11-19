@@ -6,9 +6,9 @@ Layer 1 · shared lane · data dialect · any consumer
 
 ## Surface
 
-- Service: `SandboxExecutionSubmission`, `SandboxExecutionResult`, and `sandboxExecutionPath` support durable command
-  submission, credential-free observation, and cancellation. `SandboxExecutionResume` supplies fresh credentials to an
-  existing intent after a cold start or restoration. Maintenance schemas are also re-exported by the product API.
+- The service uses `SandboxExecutionSubmission` and `SandboxExecutionResult` for durable command submission and
+  observation. `SandboxExecutionResume` supplies fresh credentials to an existing intent after a cold start or
+  restoration. Maintenance schemas are also re-exported by the product API.
 - Capacity: `SandboxCapacityRequest` and `SandboxCapacityResult` authenticate the compute service's acquire/release
   callback at `SANDBOX_CAPACITY_PATH`. A reservation binds one workspace, mech, generation, and machine; refusal
   distinguishes current policy, workspace capacity, and a stale generation.

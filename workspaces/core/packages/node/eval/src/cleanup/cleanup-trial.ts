@@ -1,48 +1,52 @@
-import { MechStatus, TurnEnded, TurnStatus } from '@mechane/protocol';
-import { DateTime, Effect, Option, Result, Schema } from 'effect';
+import { DateTime, Effect, Option, Predicate, Result } from 'effect';
 import type { CleanupRecord, RoleIntent, RoleReceipt } from '../application-schemas.ts';
 import type { RoleContext } from '../application-types.ts';
 import { captureEvalResult } from '../capture-eval-result.ts';
 import { EvalRole } from '../constants.ts';
 import { EvalAdapterFailed, EvalAdapterOperation } from '../errors.ts';
-import { readRoleRuns } from '../trial/read-role-runs.ts';
-import { openRole, readRoleRecord, selectRoleFiles } from '../trial/run-role.ts';
+import { managedRequest } from '../managed-request.ts';
+import { readRoleRecord } from '../trial/read-role-record.ts';
+import { selectRoleFiles } from '../trial/role-files.ts';
+import { isOwned, provisioningIssue, recoverRoleResource } from '../trial/role-resources.ts';
+import type { EvalSession, OwnedResource } from '../trial/role-resources.ts';
 import type { EvalRunFailure } from '../types.ts';
 
-type CleanupTrialInput = { readonly context: RoleContext };
-type CleanupRoleInput = CleanupTrialInput & { readonly role: EvalRole; readonly intent: RoleIntent };
-type SelectedRoleInput = CleanupTrialInput & { readonly role: EvalRole };
-type ArchiveRoleInput = CleanupTrialInput & { readonly receipt: RoleReceipt };
 type CleanupSteps = Pick<CleanupRecord, 'resources' | 'steps' | 'errors'>;
+type CleanupTrialInput = { readonly context: RoleContext };
+type CleanupLine = { readonly line: string };
 
-const ROLES = [EvalRole.Subject, EvalRole.Judge] as const;
+type CleanupRoleInput = {
+  readonly context: RoleContext;
+  readonly role: EvalRole;
+  readonly intent: RoleIntent;
+  readonly receipt: Option.Option<RoleReceipt>;
+  readonly recordResource: (input: CleanupLine) => void;
+  readonly recordStep: (input: CleanupLine) => void;
+};
+
 const CLEANUP_STAGE = 'cleanup';
-const POLL_INTERVAL = '250 millis';
-const ACTIVE_STATUSES: ReadonlySet<TurnStatus> = new Set([TurnStatus.Queued, TurnStatus.Running]);
+const ACTIVE: ReadonlySet<EvalSession['status']> = new Set(['running', 'rescheduling']);
+const TERMINATED = 'terminated';
+const ROLES = [EvalRole.Subject, EvalRole.Judge] as const;
 
-/** Append a cleanup attempt while retaining every unconfirmed local release failure. */
 export const cleanupTrial = Effect.fn('cleanupTrial')(function* ({
   context,
 }: CleanupTrialInput): Effect.fn.Return<CleanupRecord, EvalRunFailure> {
   const previous = yield* context.files.readCleanup();
   const failures = yield* context.files.readFailures();
   const unconfirmed = failures.filter((failure) => failure.stage === CLEANUP_STAGE);
-  const roles = yield* Effect.forEach(ROLES, (role) => cleanupSelectedRole({ context, role }), { concurrency: 1 });
-
-  const resources = [
-    ...unconfirmed.map((failure) => `unconfirmed-release:${failure.sequence}`),
-    ...roles.flatMap((role) => role.resources),
-  ];
-
-  const steps = roles.flatMap((role) => role.steps);
+  const roles = yield* Effect.forEach(ROLES, (role) => cleanupSelectedRole(context, role), { concurrency: 1 });
   const errors = [...unconfirmed.map((failure) => failure.reason), ...roles.flatMap((role) => role.errors)];
 
   const cleanup: CleanupRecord = {
     attempt: previous.length + 1,
     completedAt: DateTime.nowUnsafe(),
     isComplete: errors.length === 0,
-    resources,
-    steps,
+    resources: [
+      ...unconfirmed.map((failure) => `unconfirmed-release:${failure.sequence}`),
+      ...roles.flatMap((role) => role.resources),
+    ],
+    steps: roles.flatMap((role) => role.steps),
     errors,
   };
 
@@ -51,202 +55,230 @@ export const cleanupTrial = Effect.fn('cleanupTrial')(function* ({
   return cleanup;
 });
 
-const cleanupSelectedRole = Effect.fn('cleanupSelectedRole')(function* ({
-  context,
-  role,
-}: SelectedRoleInput): Effect.fn.Return<CleanupSteps, EvalRunFailure> {
+const cleanupSelectedRole = Effect.fn('cleanupSelectedRole')(function* (
+  context: RoleContext,
+  role: EvalRole,
+): Effect.fn.Return<CleanupSteps, EvalRunFailure> {
   const files = selectRoleFiles({ context, role });
-  const savedIntent = yield* files.intent.read();
+  const intent = yield* files.intent.read();
 
-  if (Option.isNone(savedIntent)) {
+  if (Option.isNone(intent)) {
     return { resources: [], steps: [], errors: [] };
   }
 
-  const intent = savedIntent.value;
-  const secretReference = `eval_${intent.creationRequestId.replaceAll('-', '_')}`;
-  const resources = [`creation:${intent.creationRequestId}`, `credential:${secretReference}`];
+  const receipt = yield* files.receipt.read();
 
-  const program = cleanupRole({ context, role, intent }).pipe(
-    Effect.timeoutOrElse({
-      duration: context.bounds.cleanupTimeout,
-      orElse: () => {
-        const failure = new EvalAdapterFailed({
-          operation: EvalAdapterOperation.CancelRole,
-          reason: 'Terminal cancellation was not confirmed before the cleanup deadline',
-        });
-
-        return Effect.fail(failure);
-      },
-    }),
-  );
-
-  const result = yield* captureEvalResult({ program });
-
-  const roleResult: CleanupSteps = Result.match(result, {
-    onFailure: (failure) => ({ resources: [], steps: [], errors: [`${role}: ${String(failure)}`] }),
-    onSuccess: (receipt) => ({
-      resources: [`mech:${receipt.mechId}`],
-      steps: [`${role}: cancellation confirmed and mech archived`],
-      errors: [],
-    }),
-  });
-
-  const connections = yield* cleanupConnections({ context, role, intent });
-  const { call, access } = context.target;
-
-  const revocation = call({
-    name: 'deleteCredential',
-    input: { workspaceId: access.workspaceId, secretReference },
-    credential: access.token,
-  });
-
-  const revoked = yield* captureEvalResult({ program: revocation });
-
-  const credentialResult: CleanupSteps = Result.match(revoked, {
-    onFailure: (failure) => ({ resources: [], steps: [], errors: [`${role} credential: ${String(failure)}`] }),
-    onSuccess: () => ({ resources: [], steps: [`${role}: credential deleted`], errors: [] }),
-  });
-
-  const results = [roleResult, connections, credentialResult];
-
-  return {
-    resources: [...resources, ...results.flatMap((step) => step.resources)],
-    steps: results.flatMap((step) => step.steps),
-    errors: results.flatMap((step) => step.errors),
-  };
-});
-
-const cleanupConnections = Effect.fn('cleanupConnections')(function* ({
-  context,
-  role,
-  intent,
-}: CleanupRoleInput): Effect.fn.Return<CleanupSteps, EvalRunFailure> {
-  const { call, access } = context.target;
-  const secretReference = `eval_${intent.creationRequestId.replaceAll('-', '_')}`;
-
-  const listing = call({
-    name: 'listConnections',
-    input: { workspaceId: access.workspaceId },
-    credential: access.token,
-  });
-
-  const listed = yield* captureEvalResult({ program: listing });
-
-  if (Result.isFailure(listed)) {
-    return { resources: [], steps: [], errors: [`${role} connections: ${String(listed.failure)}`] };
+  if (Option.isSome(receipt) && receipt.value.creationRequestId !== intent.value.creationRequestId) {
+    return { resources: [], steps: [], errors: [`${role}: the saved receipt does not match the role intent`] };
   }
 
-  const connections = listed.success.connections.filter((connection) =>
-    Option.contains(connection.secretReference, secretReference),
-  );
+  const resources = [`creation:${intent.value.creationRequestId}`];
+  const steps: Array<string> = [];
 
-  const results = yield* Effect.forEach(
-    connections,
-    (connection) => {
-      const program = call({
-        name: 'deleteConnection',
-        input: { workspaceId: access.workspaceId, connectionId: connection.id },
-        credential: access.token,
-      });
+  const timeout = new EvalAdapterFailed({
+    operation: EvalAdapterOperation.CancelRole,
+    reason: 'Resource cleanup was not confirmed within the cleanup deadline',
+  });
 
-      return captureEvalResult({ program });
+  const program = cleanupRole({
+    context,
+    role,
+    intent: intent.value,
+    receipt,
+    recordResource: ({ line }) => {
+      resources.push(line);
     },
-    { concurrency: 1 },
-  );
+    recordStep: ({ line }) => {
+      steps.push(line);
+    },
+  }).pipe(Effect.timeoutOrElse({ duration: context.bounds.cleanupTimeout, orElse: () => Effect.fail(timeout) }));
 
-  return {
-    resources: connections.map((connection) => `connection:${connection.id}`),
-    steps: results.filter(Result.isSuccess).map(() => `${role}: connection deleted`),
-    errors: results.filter(Result.isFailure).map((result) => `${role} connection: ${String(result.failure)}`),
-  };
+  const result = yield* captureEvalResult({ program });
+  const errors: Array<string> = [];
+
+  if (Result.isFailure(result)) {
+    const failure = String(result.failure);
+
+    errors.push(`${role}: ${failure}`);
+  }
+
+  return { resources, steps, errors };
+});
+
+type Retrieval = { readonly id: OwnedResource['id']; readonly signal: AbortSignal };
+
+type ResourceInput<R extends OwnedResource> = {
+  readonly context: RoleContext;
+  readonly intent: RoleIntent;
+  readonly kind: 'agent' | 'environment' | 'session';
+  readonly id: Option.Option<OwnedResource['id']>;
+  readonly retrieve: (input: Retrieval) => Promise<R>;
+  readonly list: (signal: AbortSignal) => AsyncIterable<R>;
+};
+
+const ownedResource = Effect.fn('ownedResource')(function* <R extends OwnedResource>(
+  input: ResourceInput<R>,
+): Effect.fn.Return<Option.Option<R>, EvalRunFailure> {
+  if (Option.isNone(input.id)) {
+    return yield* recoverRoleResource(input);
+  }
+
+  const id = input.id.value;
+
+  const resource = yield* managedRequest({
+    action: `Inspect owned eval ${input.kind}`,
+    operation: (signal) => input.retrieve({ id, signal }),
+  });
+
+  if (!isOwned({ resource, intent: input.intent })) {
+    return yield* provisioningIssue({ reason: 'The recorded resource belongs to a different creation request' });
+  }
+
+  return Option.some(resource);
 });
 
 const cleanupRole = Effect.fn('cleanupRole')(function* ({
   context,
   role,
   intent,
-}: CleanupRoleInput): Effect.fn.Return<RoleReceipt, EvalRunFailure> {
-  const receipt = yield* openRole({ context, role, intent });
-  const { call, access } = context.target;
-  const before = yield* readRoleRuns({ call, access, mechId: receipt.mechId });
-  const active = before.filter((run) => ACTIVE_STATUSES.has(run.status));
+  receipt,
+  recordResource,
+  recordStep,
+}: CleanupRoleInput): Effect.fn.Return<void, EvalRunFailure> {
+  const { agents, environments, sessions } = context.target.managed.beta;
+  const lookup = { include_archived: true };
+  const sessionId = Option.map(receipt, (saved) => saved.sessionId);
 
-  for (const run of active) {
-    yield* call({
-      name: 'cancelTurn',
-      input: { workspaceId: access.workspaceId, mechId: receipt.mechId, turnId: run.id },
-      credential: access.token,
-    }).pipe(
-      Effect.catchTags({
-        OperationFailed: (failure) => {
-          if (Schema.is(TurnEnded)(failure.failure)) {
-            return Effect.void;
-          }
+  const session = yield* ownedResource({
+    context,
+    intent,
+    kind: 'session',
+    id: sessionId,
+    retrieve: ({ id, signal }) => sessions.retrieve(id, {}, { signal }),
+    list: (signal) => sessions.list(lookup, { signal }),
+  });
 
-          return Effect.fail(failure);
-        },
-      }),
-    );
+  if (Option.isSome(session)) {
+    recordResource({ line: `session:${session.value.id}` });
+    yield* stopSession(context, session.value);
+    recordStep({ line: `${role}: session terminated and archived` });
   }
 
-  yield* archiveRole({ context, receipt });
+  const agentId = Option.map(receipt, (saved) => saved.agentId);
 
-  const state = { runs: yield* readRoleRuns({ call, access, mechId: receipt.mechId }) };
+  const agent = yield* ownedResource({
+    context,
+    intent,
+    kind: 'agent',
+    id: agentId,
+    retrieve: ({ id, signal }) => agents.retrieve(id, {}, { signal }),
+    list: (signal) => agents.list(lookup, { signal }),
+  });
 
-  while (state.runs.some((run) => ACTIVE_STATUSES.has(run.status))) {
-    yield* Effect.sleep(POLL_INTERVAL);
+  if (Option.isSome(agent)) {
+    const { id, archived_at } = agent.value;
 
-    state.runs = yield* readRoleRuns({ call, access, mechId: receipt.mechId });
+    recordResource({ line: `agent:${id}` });
+
+    if (Predicate.isNull(archived_at)) {
+      const archived = yield* managedRequest({
+        action: 'Archive eval agent',
+        operation: (signal) => agents.archive(id, {}, { signal }),
+      });
+
+      if (archived.id !== id || Predicate.isNull(archived.archived_at)) {
+        return yield* provisioningIssue({ reason: 'The service did not confirm archival of the owned agent' });
+      }
+    }
+
+    recordStep({ line: `${role}: agent archived` });
+  }
+
+  const environmentId = Option.map(receipt, (saved) => saved.environmentId);
+
+  const environment = yield* ownedResource({
+    context,
+    intent,
+    kind: 'environment',
+    id: environmentId,
+    retrieve: ({ id, signal }) => environments.retrieve(id, {}, { signal }),
+    list: (signal) => environments.list(lookup, { signal }),
+  });
+
+  if (Option.isSome(environment)) {
+    const { id, archived_at } = environment.value;
+
+    recordResource({ line: `environment:${id}` });
+
+    if (Predicate.isNull(archived_at)) {
+      const archived = yield* managedRequest({
+        action: 'Archive eval environment',
+        operation: (signal) => environments.archive(id, {}, { signal }),
+      });
+
+      if (archived.id !== id || Predicate.isNull(archived.archived_at)) {
+        return yield* provisioningIssue({ reason: 'The service did not confirm archival of the owned environment' });
+      }
+    }
+
+    recordStep({ line: `${role}: environment archived` });
   }
 
   const files = selectRoleFiles({ context, role });
-  const saved = yield* files.record.read();
+  const previous = yield* files.record.read();
 
-  if (Option.isNone(saved)) {
-    const observations = yield* context.files.readObservations();
-    const hasRemoteTools = role === EvalRole.Judge || observations.length > 0;
-    const wasCancelled = state.runs.length === 0 || active.length > 0;
-    const keepCancellationReason = Option.liftPredicate<string>(() => wasCancelled);
-
-    const cancellationIssue = keepCancellationReason(
-      'The role was archived during cleanup before its result was saved',
-    );
-
-    const hosted = Option.none();
-
+  if (Option.isSome(receipt) && Option.isNone(previous)) {
     const record = yield* readRoleRecord({
       context,
-      role,
       intent,
-      receipt,
-      runs: state.runs,
-      hasRemoteTools,
-      hosted,
-      wasDeadlineExceeded: false,
-      cancellationIssue,
+      receipt: receipt.value,
+      reason: 'The session was archived during cleanup before its result was saved',
     });
 
     yield* files.record.create({ record });
   }
-
-  return receipt;
 });
 
-const archiveRole = Effect.fn('archiveRole')(function* ({
-  context,
-  receipt,
-}: ArchiveRoleInput): Effect.fn.Return<void, EvalRunFailure> {
-  const { call, access } = context.target;
-  const input = { workspaceId: access.workspaceId, mechId: receipt.mechId };
-  const mech = yield* call({ name: 'showMech', input, credential: access.token });
+const stopSession = Effect.fn('stopSession')(function* (
+  context: RoleContext,
+  original: EvalSession,
+): Effect.fn.Return<void, EvalAdapterFailed> {
+  const { sessions } = context.target.managed.beta;
+  const id = original.id;
 
-  if (mech.status === MechStatus.Archived) {
-    return;
+  const read = managedRequest({
+    action: 'Inspect eval session while stopping',
+    operation: (signal) => sessions.retrieve(id, {}, { signal }),
+  });
+
+  let session = original;
+
+  if (ACTIVE.has(session.status)) {
+    yield* managedRequest({
+      action: 'Interrupt eval session',
+      operation: (signal) => sessions.events.send(id, { events: [{ type: 'user.interrupt' }] }, { signal }),
+    });
+
+    do {
+      session = yield* read;
+
+      if (ACTIVE.has(session.status)) {
+        yield* Effect.sleep('250 millis');
+      }
+    } while (ACTIVE.has(session.status));
   }
 
-  yield* call({
-    name: 'updateMech',
-    input: { ...input, expectedRevision: mech.revision, status: MechStatus.Archived },
-    credential: access.token,
-  });
+  if (Predicate.isNull(session.archived_at)) {
+    session = yield* managedRequest({
+      action: 'Archive eval session',
+      operation: (signal) => sessions.archive(id, {}, { signal }),
+    });
+  }
+
+  if (session.id !== id || Predicate.isNull(session.archived_at) || session.status !== TERMINATED) {
+    return yield* new EvalAdapterFailed({
+      operation: EvalAdapterOperation.CancelRole,
+      reason: 'The owned session was not confirmed terminated and archived',
+    });
+  }
 });

@@ -1,5 +1,6 @@
 import { HttpMethod, HttpStatusCode, SandboxOperationId } from '@mechane/records';
 import {
+  MANAGED_WORK_PATH,
   SandboxAction,
   SandboxCheckpointIdentity,
   SandboxCompletionIdentity,
@@ -19,8 +20,12 @@ import { Schema } from 'effect';
 import type { SandboxObject } from '../sandbox-object.ts';
 import { authenticate } from './authenticate.ts';
 import { serveEvidence } from './evidence-route.ts';
+import { serveInstalledComputer } from './installed-computer.ts';
 import { serveInteractive } from './interactive-route.ts';
+import { boundManagedSandbox, InstalledSession } from './managed-sandbox.ts';
+import { serveManagedWork } from './managed-work.ts';
 import { InvalidSandboxRequestError, readBody } from './read-body.ts';
+import { recoveryCheckpointResponse } from './recovery-checkpoint-response.ts';
 import { sandboxStub } from './settings.ts';
 import type { SandboxServiceEnvironment } from './settings.ts';
 
@@ -46,6 +51,13 @@ export async function serveSandbox({ request, environment }: ServeInput): Promis
   try {
     return await routeSandbox({ request, environment });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.name === 'ManagedAllocationInactive' || error.message.includes('Managed sandbox allocation is inactive'))
+    ) {
+      return Response.json({ error: 'ManagedAllocationInactive' }, { status: HttpStatusCode.Conflict });
+    }
+
     const isDecodingFailure = Schema.isSchemaError(error) || error instanceof SyntaxError || error instanceof URIError;
 
     if (isDecodingFailure || error instanceof InvalidSandboxRequestError) {
@@ -58,17 +70,50 @@ export async function serveSandbox({ request, environment }: ServeInput): Promis
 
 async function routeSandbox({ request, environment }: ServeInput): Promise<Response> {
   const url = new URL(request.url);
-  const segments = url.pathname.split('/').slice(ROUTE_PREFIX_SEGMENTS);
-  const [workspaceId, mechId, resource, executionId, action, ...remaining] = segments;
+
+  if (url.pathname === MANAGED_WORK_PATH) {
+    return await serveManagedWork({ request, environment });
+  }
+
+  if (url.pathname.startsWith(`${MANAGED_WORK_PATH}/`)) {
+    const [workspaceId, environmentId, sessionId, ...segments] = url.pathname
+      .slice(MANAGED_WORK_PATH.length + 1)
+      .split('/');
+
+    const session = Schema.decodeUnknownSync(InstalledSession)({ workspaceId, environmentId, sessionId });
+    const { stub, owner } = await boundManagedSandbox({ environment, session });
+    const installed = await serveInstalledComputer({ request, session, stub, resource: segments.join('/') });
+
+    if (installed !== null) {
+      return installed;
+    }
+
+    return await routeResources({ request, url, identity: owner, stub, segments });
+  }
+
+  const [workspaceId, mechId, ...segments] = url.pathname.split('/').slice(ROUTE_PREFIX_SEGMENTS);
   const identity = Schema.decodeUnknownSync(SandboxServiceIdentity)({ workspaceId, mechId });
+  const stub = sandboxStub({ environment, identity });
+
+  await stub.bindOwner({ owner: identity });
+
+  return await routeResources({ request, url, identity, stub, segments });
+}
+
+type BoundResources = {
+  readonly request: Request;
+  readonly url: URL;
+  readonly identity: SandboxServiceIdentity;
+  readonly stub: Stub;
+  readonly segments: ReadonlyArray<string>;
+};
+
+async function routeResources({ request, url, identity, stub, segments }: BoundResources): Promise<Response> {
+  const [resource, executionId, action, ...remaining] = segments;
 
   if (remaining.length > 0) {
     return Response.json({ error: 'NotFound' }, { status: HttpStatusCode.NotFound });
   }
-
-  const stub = sandboxStub({ environment, identity });
-
-  await stub.bindOwner({ owner: identity });
 
   const isStopReceipt = resource === 'stop' && executionId !== undefined && action === undefined;
 
@@ -158,15 +203,7 @@ async function routeSandbox({ request, environment }: ServeInput): Promise<Respo
     const encoded = Schema.encodeSync(SandboxRecoveryCheckpointRequest)(decoded);
     const result = await stub.retryCheckpoint({ operationId, request: encoded });
 
-    if (result._tag === 'RecoveryCheckpointRefused') {
-      return Response.json(result, { status: HttpStatusCode.Conflict });
-    }
-
-    if (result._tag === 'Pending') {
-      return Response.json(result, { status: HttpStatusCode.Accepted });
-    }
-
-    return Response.json(result);
+    return recoveryCheckpointResponse({ result });
   }
 
   if (isCheckpoint && action !== undefined && request.method === HttpMethod.Get) {

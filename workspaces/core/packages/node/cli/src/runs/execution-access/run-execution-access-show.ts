@@ -13,7 +13,7 @@ export const runExecutionAccessShow = Effect.fn('runExecutionAccessShow')(functi
   selectedWorkspaceId,
 }: RunInput<'execution-access show'>): Effect.fn.Return<CommandResult<'execution-access show'>, RunFailure> {
   const use: (access: WorkspaceAccess) => Effect.Effect<ExecutionAccessState, RunFailure> = ({ token, workspaceId }) =>
-    call({ name: 'showExecutionAccess', input: { ...input, workspaceId }, credential: token });
+    call({ name: 'showManagedCommandAccess', input: { ...input, workspaceId }, credential: token });
 
   const result = yield* withWorkspace({ call, origin, credentials, selectedWorkspaceId, use });
 

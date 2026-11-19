@@ -1,7 +1,7 @@
 import { applicationWorkerDeployment, SANDBOX_VARIABLES, SandboxProvider } from '@mechane/deployment';
 import { JSON_INDENT_CHARS } from '@mechane/program';
 import { RELEASE } from '@mechane/protocol';
-import { MediaType } from '@mechane/records';
+import { GIT_OBJECT_ID_PATTERN, MediaType } from '@mechane/records';
 import { workerBuildOptions } from '@mechane/wrangler';
 import { Record } from 'effect';
 import { build } from 'esbuild';
@@ -73,7 +73,7 @@ async function main(): Promise<void> {
 
   const revision = stdout.trim();
 
-  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(revision)) {
+  if (!GIT_OBJECT_ID_PATTERN.test(revision)) {
     throw new Error('Release revision must be a Git commit identity');
   }
 

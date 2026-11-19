@@ -1,12 +1,12 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
-import type { EntryRecord } from '@earendil-works/pi-durable';
+import type { Conversation, EntryRecord } from '@earendil-works/pi-durable';
 import { RequestInvalid } from '@mechane/protocol';
 import { boundTraceText, toolExecutionId as executionId } from '@mechane/records';
 import { Schema } from 'effect';
 import type { ActorHistoryEntry, ActorPageInput } from '../actor/client.ts';
 import { ImportedHistory, TaskTurns } from '../actor/collections.ts';
 import { NativeFields, StoredFields } from '../actor/records.ts';
-import type { ActorAccess } from '../actor/types.ts';
+import type { HistoricalView } from './projections.ts';
 
 const HISTORY_DEFAULT_ROWS = 50;
 const HISTORY_MAX_ROWS = 100;
@@ -144,7 +144,7 @@ function nextHistoryCursor(value: typeof HistoryCursor.Type, hasMore: boolean): 
   return encodeCursor(value);
 }
 
-async function nativeTurnId(access: ActorAccess, entry: EntryRecord): Promise<string | null> {
+async function nativeTurnId(access: HistoricalView, entry: EntryRecord): Promise<string | null> {
   if (entry.byTaskId === undefined) {
     return null;
   }
@@ -152,7 +152,9 @@ async function nativeTurnId(access: ActorAccess, entry: EntryRecord): Promise<st
   return (await TaskTurns.get(access.harness, String(entry.byTaskId), BACKGROUND_CONTEXT)) ?? null;
 }
 
-export async function historyPage(access: ActorAccess, input: ActorPageInput) {
+type HistoryView = HistoricalView & { readonly conversation?: Pick<Conversation, 'entries'> | undefined };
+
+export async function historyPage(access: HistoryView, input: ActorPageInput) {
   let cursor: typeof HistoryCursor.Type = { ...access.scope, imported: 0, native: null };
 
   if (input.after !== undefined && input.after !== null) {
@@ -201,6 +203,12 @@ export async function historyPage(access: ActorAccess, input: ActorPageInput) {
   }
 
   const imported = cursor.imported + entries.length;
+
+  if (access.conversation === undefined) {
+    const nextCursor = nextHistoryCursor({ ...access.scope, imported, native: null }, archive.hasMore);
+
+    return { entries, hasMore: archive.hasMore, nextCursor };
+  }
 
   if (entries.length === limit) {
     let hasMore = imported < importedCount;

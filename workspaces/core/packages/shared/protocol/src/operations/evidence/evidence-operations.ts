@@ -10,8 +10,8 @@ import { EvidenceArtifact, EvidenceMediaType, EvidencePage, EvidencePath, Eviden
 
 const listEvidence = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/evidence',
+  access: Access.Owner,
   params: MechPath,
   query: EvidenceQuery,
   body: NoFields,
@@ -21,8 +21,8 @@ const listEvidence = {
 
 const showEvidence = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id',
+  access: Access.Owner,
   params: EvidencePath,
   query: NoFields,
   body: NoFields,
@@ -32,8 +32,8 @@ const showEvidence = {
 
 const readEvidenceContent = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id/content',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs/:mech_id/evidence/:artifact_id/content',
+  access: Access.Owner,
   params: EvidencePath,
   query: NoFields,
   body: NoFields,

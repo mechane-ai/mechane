@@ -23,18 +23,20 @@ is automatic; environment or guest source changes use explicit apply through the
 | Local source | [Local guide](workspaces/core/packages/node/stack/README.md) | Pinned tools, qualified celld, Docker                      |
 | Self-hosted  | [Self-hosting guide](workspaces/core/docs/self-hosting.md)   | Cloudflare Workers, Containers, R2, Postgres, GitHub OAuth |
 
-With the installed CLI, select your operator's origin and sign in:
+Start an agent session with Anthropic's `ant` CLI or the Managed Agents SDK. Set `ANTHROPIC_BASE_URL` to your
+installation's origin and `ANTHROPIC_API_KEY` to an installation key. See the
+[setup instructions](workspaces/core/docs/self-hosting.md#use).
 
 ```sh
-export MECHANE_ORIGIN=https://agents.example.com
-mechane auth login
-mechane mech create --name scout
-mechane notification send MECH_ID 'hello, scout'
+ant beta:agents list
+ant beta:environments list
+SESSION_ID="$(ant --raw-output --transform id beta:sessions create \
+  --agent "$AGENT_ID" --environment-id "$ENVIRONMENT_ID")"
+ant beta:sessions connect "$SESSION_ID"
 ```
 
-Use the returned mech ID. Keep the printed notification ID when retrying an uncertain send. Workspace policy controls
-execution access and spending. Replies appear only through explicit communication tools; private model completion can be
-quiet.
+Select the agent and environment IDs from the lists and use the session ID returned by `create` to continue that
+conversation. Workspace policy controls execution access and spending. External replies use the agent's tools.
 
 ## Runtime
 
@@ -62,7 +64,7 @@ Load `@mechane-ai/elements/styles.css` once and import the families you use, suc
 ## Documentation
 
 - [Console](workspaces/core/docs/console.md): conversations, activity, environments, and trace evidence.
-- [Notifications](workspaces/core/docs/notifications.md): durable input and explicit responses.
+- [Session events](workspaces/core/docs/notifications.md) cover input, external triggers, and responses.
 - [Operations](workspaces/core/docs/operations.md): qualification, migration, import, stopping, and recovery.
 - [Development](.config/README.md): pinned tools and standalone checks.
 

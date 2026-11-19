@@ -69,7 +69,7 @@ function retryDelay(failure: unknown, minimumDelayMs: number): number | undefine
   return undefined;
 }
 
-async function waitForRetry(delayMs: number, signal: AbortSignal): Promise<void> {
+export async function waitForRetry(delayMs: number, signal: AbortSignal): Promise<void> {
   signal.throwIfAborted();
 
   const waited = Promise.withResolvers<void>();

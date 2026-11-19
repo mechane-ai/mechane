@@ -59,32 +59,6 @@ function sandboxServicePath({ workspaceId, mechId }: SandboxServiceIdentity): st
   return `${SANDBOX_SERVICE_PREFIX}/${encodeURIComponent(workspaceId)}/${encodeURIComponent(mechId)}`;
 }
 
-export function sandboxExecutionPath({ executionId, ...identity }: SandboxExecutionIdentity): string {
-  return `${sandboxServicePath(identity)}/executions/${encodeURIComponent(executionId)}`;
-}
-
-export function sandboxExecutionCancelPath({ workspaceId, mechId, executionId }: SandboxExecutionIdentity): string {
-  const path = sandboxExecutionPath({ workspaceId, mechId, executionId });
-
-  return `${path}/cancel`;
-}
-
-export function sandboxExecutionCancelPendingPath({
-  workspaceId,
-  mechId,
-  executionId,
-}: SandboxExecutionIdentity): string {
-  const path = sandboxExecutionPath({ workspaceId, mechId, executionId });
-
-  return `${path}/cancel-pending`;
-}
-
-export function sandboxExecutionResumePath({ workspaceId, mechId, executionId }: SandboxExecutionIdentity): string {
-  const path = sandboxExecutionPath({ workspaceId, mechId, executionId });
-
-  return `${path}/resume`;
-}
-
 export function sandboxWorkspacePath({ workspaceId, mechId }: SandboxServiceIdentity): string {
   const path = sandboxServicePath({ workspaceId, mechId });
 

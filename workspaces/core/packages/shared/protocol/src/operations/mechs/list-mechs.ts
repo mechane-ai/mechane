@@ -9,8 +9,8 @@ import { MechPage } from './schemas.ts';
 /** Lists the workspace's mechs a page at a time, oldest first. */
 export const listMechs = {
   method: HttpMethod.Get,
-  path: '/api/v1/workspaces/:workspace_id/mechs',
-  access: Access.Member,
+  path: '/api/operator/workspaces/:workspace_id/mechs',
+  access: Access.Owner,
   params: WorkspacePath,
   query: listQuery({ cursor: RecordId }),
   body: NoFields,

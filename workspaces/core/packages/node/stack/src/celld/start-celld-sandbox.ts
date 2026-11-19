@@ -262,6 +262,11 @@ async function createSandboxDriver(input: SandboxOptions, worker: LocalCelldWork
       },
       logFile: worker.logFile,
       readMachines,
+      hasContainers: async () => {
+        const owned = await containers();
+
+        return owned.length > 0;
+      },
       inspectMachine,
       dumpStatus,
       persistedFiles: (options = {}) => persistedFiles({ directory, ...options }),

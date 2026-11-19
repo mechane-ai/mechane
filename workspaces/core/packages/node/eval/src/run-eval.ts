@@ -247,7 +247,6 @@ const runApplicationTrial = Effect.fn('runApplicationTrial')(function* ({
     context.writeProgress({ line: `Trial ${context.trialId}: subject` });
 
     const selectedEnvironment = Option.some(environment);
-    const connectionName = Option.fromUndefinedOr(suite.definition.connectionName);
 
     return yield* runRole({
       context,
@@ -256,7 +255,6 @@ const runApplicationTrial = Effect.fn('runApplicationTrial')(function* ({
       text: evalCase.input,
       tools: suite.definition.tools,
       environment: selectedEnvironment,
-      connectionName,
     });
   });
 

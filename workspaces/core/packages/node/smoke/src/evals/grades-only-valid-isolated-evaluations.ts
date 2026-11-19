@@ -1,3 +1,5 @@
+import Anthropic from '@anthropic-ai/sdk';
+import { WorkspaceList } from '@mechane/protocol';
 import type { ModelFixture } from '@mechane/stack';
 import { createAccount, requireFixtures, runCli, startCli } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
@@ -9,12 +11,10 @@ import { join } from 'node:path';
 import { creationResponseProxy } from './creation-response-proxy.ts';
 import { gradesObservedToolEvidence } from './grades-observed-tool-evidence.ts';
 
-const EXPECTED_MODEL_CALLS = 11;
-const SUBJECT_MODEL_CALLS = 2;
-const FINAL_GRADED_CALL = 6;
+const MODEL = 'claude-haiku-5-5';
 const ACCEPTED_SUBMISSIONS = 2;
 const CLI_DIAGNOSTIC_MAX_CHARS = 4096;
-const SUBMIT_GRADE_PREFIX = 'mcp_submit_grade_';
+const SUBMIT_GRADE = 'submit_grade';
 
 const EvalEnvelope = Schema.Struct({
   result: Schema.Struct({
@@ -40,11 +40,6 @@ const ModelMessages = Schema.Array(Schema.Struct({ role: Schema.String, content:
 const JsonText = Schema.fromJsonString(Schema.Json);
 const JsonArray = Schema.Array(Schema.Json);
 const JsonFields = Schema.Record(Schema.String, Schema.Json);
-const Manifest = Schema.fromJsonString(Schema.Struct({ trials: Schema.Array(Schema.Struct({ id: Schema.String })) }));
-
-const MechList = Schema.Struct({
-  mechs: Schema.Array(Schema.Struct({ id: Schema.String, name: Schema.String, status: Schema.String })),
-});
 
 const AcceptedReceipt = Schema.Struct({
   status: Schema.Literal('accepted'),
@@ -56,8 +51,15 @@ type AcceptedReceipt = typeof AcceptedReceipt.Type;
 type ModelCall = ReturnType<ModelFixture['readCalls']>[number];
 
 export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInput): Promise<void> {
-  const account = await createAccount({ stack });
   const fixtures = requireFixtures(stack);
+  const owner = await createAccount({ stack, login: fixtures.github.users.owner.login });
+  const listed = await runCli({ stack, account: owner, args: ['workspace', 'list'], schema: WorkspaceList });
+  const workspace = listed.workspaces.find((entry) => entry.name === 'Softmax');
+
+  assert.ok(workspace !== undefined, 'The installation workspace must be visible to its owner');
+
+  const account = { ...owner, workspaceId: workspace.id };
+  const client = new Anthropic({ baseURL: stack.origin.origin, apiKey: account.token, maxRetries: 0 });
   const marker = `evaluation-${randomUUID()}`;
   const ungradedMarker = `ungraded-${randomUUID()}`;
   const quietMarker = `quiet-${randomUUID()}`;
@@ -78,8 +80,8 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
   const suite = {
     version: 1,
     id: suiteId,
-    subject: { instructions: subjectInstructions },
-    grader: {},
+    subject: { model: MODEL, instructions: subjectInstructions },
+    grader: { model: MODEL },
     self_grading: true,
     repeats: 1,
     trial_cap_micros: 1_000_000,
@@ -107,7 +109,7 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
   fixtures.model.configure({
     marker,
     replies: [
-      ...publishedReply('Blue'),
+      { text: 'Blue' },
       submittedGrade(invalidGrade),
       submittedGrade(grade),
       submittedGrade(grade),
@@ -115,11 +117,8 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
       { text: JSON.stringify(conflictingGrade) },
     ],
   });
-  fixtures.model.configure({
-    marker: ungradedMarker,
-    replies: [...publishedReply('Blue'), { text: JSON.stringify(grade) }],
-  });
-  fixtures.model.configure({ marker: quietMarker, replies: [{ text: 'This private text is not an answer' }] });
+  fixtures.model.configure({ marker: ungradedMarker, replies: [{ text: 'Blue' }, { text: JSON.stringify(grade) }] });
+  fixtures.model.configure({ marker: quietMarker, replies: [{ text: '' }] });
 
   const runMarkers = new Set([marker, ungradedMarker, quietMarker]);
 
@@ -147,7 +146,11 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
   try {
     const result = await refused.finished;
 
-    assert.equal(result.status, 1);
+    assert.equal(
+      result.status,
+      1,
+      result.stdout.replaceAll(account.token, '[redacted]').slice(0, CLI_DIAGNOSTIC_MAX_CHARS),
+    );
     assert.equal(
       await readFile(historicalReportPath, 'utf8'),
       historicalReport,
@@ -170,7 +173,7 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
 
   await writeFile(creationSuitePath, JSON.stringify({ ...suite, cases: suite.cases.slice(0, 1) }), { mode: 0o600 });
 
-  const proxy = await creationResponseProxy({ origin: stack.origin, workspaceId: account.workspaceId });
+  const proxy = await creationResponseProxy({ origin: stack.origin });
 
   const interrupted = startCli({
     stack: { origin: proxy.origin, cli: stack.cli },
@@ -188,40 +191,57 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
     environment: { MECHANE_API_KEY: account.token },
   });
 
+  let diagnostic = '';
+
   try {
     const result = await interrupted.finished;
 
     assert.notEqual(result.status, 0, 'A lost creation response was reported as successful');
     assert.equal(proxy.state.failure, null);
-    assert.equal(proxy.state.isDropped, true, 'The creation response was not dropped');
+
+    diagnostic = [result.stdout, result.stderr]
+      .join('\n')
+      .replaceAll(account.token, '[redacted]')
+      .slice(0, CLI_DIAGNOSTIC_MAX_CHARS);
   } finally {
     await interrupted.stop();
     await proxy.stop();
   }
 
-  const manifest = Schema.decodeUnknownSync(Manifest)(await readFile(join(creationFolder, 'manifest.json'), 'utf8'));
-  const firstTrial = manifest.trials[0];
+  const dropped = proxy.state.droppedAgent;
 
-  assert.ok(firstTrial !== undefined);
+  assert.ok(dropped !== null, `The proxy did not receive an agent create. ${diagnostic}`);
 
-  const subjectName = `subject ${firstTrial.id}`;
+  const creationId = dropped.metadata.eval_creation_id;
 
   async function readCreatedSubjects() {
-    const listed = await runCli({
-      stack,
-      account,
-      args: ['mech', 'list', '--workspace', account.workspaceId],
-      schema: MechList,
-    });
+    const subjects = [];
 
-    return listed.mechs.filter((mech) => mech.name === subjectName);
+    for await (const agent of client.beta.agents.list({ include_archived: true })) {
+      if (agent.metadata['eval_creation_id'] === creationId) {
+        subjects.push({ id: agent.id, archivedAt: agent.archived_at });
+      }
+    }
+
+    return subjects;
   }
 
   const recovered = await readCreatedSubjects();
 
   assert.equal(recovered.length, 1, 'Creation recovery duplicated the subject after its acknowledgement was lost');
-  assert.equal(recovered[0]?.status, 'archived', 'Creation recovery left an unowned subject active');
+
+  const [subject] = recovered;
+
+  assert.ok(subject !== undefined);
+  assert.equal(subject.id, dropped.id);
+  assert.notEqual(subject.archivedAt, null, 'Creation recovery left an unowned subject active');
+
+  const sessions = await client.beta.sessions.list({ agent_id: subject.id, include_archived: true });
+
+  assert.deepEqual(sessions.data, [], 'Cleanup started a session for a lost agent creation');
   assert.equal(readEvalCalls().length, 0, 'Creation recovery started model work');
+
+  let originalCalls: ReadonlyArray<ModelCall> = [];
 
   for (const repeat of [false, true]) {
     const command = startEval(join(folder, 'out'));
@@ -260,15 +280,19 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
 
       const calls = readEvalCalls();
 
-      assert.equal(calls.length, EXPECTED_MODEL_CALLS, `The evaluation ${String(repeat)} repeated model work`);
+      if (repeat) {
+        assert.deepEqual(calls, originalCalls, 'Resuming the evaluation started new model work');
+      } else {
+        originalCalls = calls;
+      }
 
       const didExposeExpectation = calls
-        .filter((call) => call.index < SUBJECT_MODEL_CALLS)
+        .filter((call) => call.index === 0)
         .some((call) => [expectation, criterionId].some((secret) => JSON.stringify(call.body).includes(secret)));
 
       assert.equal(didExposeExpectation, false, 'A subject saw its grading expectation');
 
-      const judgeCalls = calls.filter((call) => call.marker !== quietMarker && call.index >= SUBJECT_MODEL_CALLS);
+      const judgeCalls = calls.filter((call) => call.marker !== quietMarker && call.index > 0);
 
       assertJudgeCapabilities(judgeCalls);
 
@@ -283,7 +307,7 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
         false,
       );
 
-      const finalGradeCall = calls.find((call) => call.marker === marker && call.index === FINAL_GRADED_CALL);
+      const finalGradeCall = judgeCalls.findLast((call) => call.marker === marker);
 
       assert.ok(finalGradeCall !== undefined);
 
@@ -311,7 +335,7 @@ export async function gradesOnlyValidIsolatedEvaluations({ stack }: ScenarioInpu
 }
 
 function submittedGrade(input: Readonly<Record<string, unknown>>) {
-  return { tools: [{ id: randomUUID(), name: 'submit_grade', namePrefix: SUBMIT_GRADE_PREFIX, input }] };
+  return { tools: [{ id: randomUUID(), name: SUBMIT_GRADE, input }] };
 }
 
 function assertJudgeCapabilities(calls: ReadonlyArray<ModelCall>): void {
@@ -320,7 +344,7 @@ function assertJudgeCapabilities(calls: ReadonlyArray<ModelCall>): void {
 
     assert.equal(tools.length, 1, 'A judge received capabilities beyond grade submission');
     assert.equal(
-      tools.every((tool) => tool.function.name.startsWith(SUBMIT_GRADE_PREFIX)),
+      tools.every((tool) => tool.function.name === SUBMIT_GRADE),
       true,
     );
   }
@@ -357,11 +381,4 @@ function readAcceptedReceipts(value: Schema.Json): ReadonlyArray<AcceptedReceipt
   }
 
   return receipts;
-}
-
-function publishedReply(text: string) {
-  return [
-    { tools: [{ id: randomUUID(), name: 'console_message', input: { text } }] },
-    { text: 'The publication is complete' },
-  ];
 }

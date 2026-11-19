@@ -8,6 +8,7 @@ const isConsoleView = Schema.is(Schema.Enum(ConsoleView));
 export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): ConsoleLocation => ({
     ...(typeof search['workspace'] === 'string' ? { workspace: search['workspace'] } : {}),
+    ...(typeof search['page'] === 'string' ? { page: search['page'] } : {}),
     ...(typeof search['mech'] === 'string' ? { mech: search['mech'] } : {}),
     ...(typeof search['turn'] === 'string' ? { turn: search['turn'] } : {}),
     ...(isConsoleView(search['view']) ? { view: search['view'] } : {}),

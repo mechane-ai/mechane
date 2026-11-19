@@ -60,7 +60,7 @@ async function getMech(context: StoreContext, scope: MechScope): Promise<Mech> {
   return mech;
 }
 
-async function saveRevision(context: StoreContext, mechId: string): Promise<void> {
+export async function saveRevision(context: StoreContext, mechId: string): Promise<void> {
   await context.client.query(
     `INSERT INTO mechane.mech_revisions
       (mech_id, revision, name, model, instructions, daily_cap_micros, status, updater_id, updated_at, native_tools)

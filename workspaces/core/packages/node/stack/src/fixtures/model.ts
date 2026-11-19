@@ -1,14 +1,17 @@
-import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
+import { BYTES_PER_MEBIBYTE, HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
 import { Option } from 'effect';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import type { ModelCall, ModelCallSelector, ModelFixture, ModelPlan, ModelReply, ModelToolCall } from '../types.ts';
+import { anthropicMessageResponse } from './anthropic-messages.ts';
 import { record, startHttpService, text } from './http.ts';
 import type { HttpService } from './http.ts';
 
 const DEFAULT_WAIT_MS = 30_000;
 const DEFAULT_PROMPT_TOKENS = 20;
 const DEFAULT_COMPLETION_TOKENS = 10;
+// A model request can carry a full 32 MiB session event plus provider metadata.
+const MODEL_REQUEST_MAX_BYTES = 33 * BYTES_PER_MEBIBYTE;
 const PROVIDER_KEY_BYTES = 24;
 const MILLISECONDS_PER_SECOND = 1000;
 const ESTIMATED_CHARACTERS_PER_TOKEN = 4;
@@ -66,12 +69,37 @@ export async function startModelFixture(): Promise<StartedModel> {
     gates.get(key)?.resolve();
   }
 
+  async function waitForRelease(call: ModelCallSelector) {
+    const key = gateKey(call);
+
+    if (released.has(key)) {
+      return;
+    }
+
+    const gate = Promise.withResolvers<void>();
+
+    gates.set(key, gate);
+
+    try {
+      await gate.promise;
+    } finally {
+      gates.delete(key);
+    }
+  }
+
+  const credentials = new Map([
+    ['/api/v1/chat/completions', { header: HttpHeader.Authorization, value: `Bearer ${apiKey}` }],
+    ['/api/v1/messages', { header: HttpHeader.ApiKey, value: apiKey }],
+  ]);
+
   async function handle(request: Request): Promise<Response> {
-    if (new URL(request.url).pathname !== '/api/v1/chat/completions' || request.method !== HttpMethod.Post) {
+    const credential = credentials.get(new URL(request.url).pathname);
+
+    if (credential === undefined || request.method !== HttpMethod.Post) {
       return Response.json({ error: 'Unknown model fixture route' }, { status: HttpStatusCode.NotFound });
     }
 
-    if (request.headers.get(HttpHeader.Authorization) !== `Bearer ${apiKey}`) {
+    if (request.headers.get(credential.header) !== credential.value) {
       return Response.json({ error: 'Invalid model credential' }, { status: HttpStatusCode.Unauthorized });
     }
 
@@ -123,17 +151,14 @@ export async function startModelFixture(): Promise<StartedModel> {
       );
     }
 
-    if (reply.isHeld === true) {
-      const key = gateKey(call);
-      const gate = Promise.withResolvers<void>();
+    let resume = Promise.resolve();
 
-      gates.set(key, gate);
+    if (reply.isHeld === true || reply.holdAfterPrefix !== undefined) {
+      resume = waitForRelease(call);
 
-      if (!released.has(key)) {
-        await gate.promise;
+      if (reply.holdAfterPrefix === undefined) {
+        await resume;
       }
-
-      gates.delete(key);
     }
 
     if (reply.status !== undefined && reply.status >= HttpStatusCode.BadRequest) {
@@ -152,12 +177,21 @@ export async function startModelFixture(): Promise<StartedModel> {
 
     const measuredReply = { ...reply, promptTokens: reply.promptTokens ?? estimatedPromptTokens };
 
+    if (credential.header === HttpHeader.ApiKey) {
+      return anthropicMessageResponse({
+        model: text(body['model']),
+        reply: measuredReply,
+        speed: reply.reportedSpeed ?? body['speed'] ?? 'standard',
+        outputTokens: reply.completionTokens ?? DEFAULT_COMPLETION_TOKENS,
+      });
+    }
+
     const resolvedReply = resolveReplyTools(measuredReply, body);
 
-    return modelResponse(text(body['model']), resolvedReply, body['stream'] === true);
+    return modelResponse(text(body['model']), resolvedReply, { isStreaming: body['stream'] === true, resume });
   }
 
-  const service = await startHttpService(handle);
+  const service = await startHttpService(handle, MODEL_REQUEST_MAX_BYTES);
 
   return {
     fixture: {
@@ -277,7 +311,11 @@ function modelRequestPurpose(value: unknown): ModelCall['purpose'] {
   return 'generation';
 }
 
-function modelResponse(model: string, reply: ModelReply, isStreaming: boolean): Response {
+function modelResponse(
+  model: string,
+  reply: ModelReply,
+  { isStreaming, resume }: { readonly isStreaming: boolean; readonly resume: Promise<void> },
+): Response {
   const id = reply.streamResponseId ?? `chatcmpl-${randomUUID()}`;
   const created = Math.floor(Date.now() / MILLISECONDS_PER_SECOND);
 
@@ -348,11 +386,50 @@ function modelResponse(model: string, reply: ModelReply, isStreaming: boolean): 
     },
   ];
 
+  const prefix = reply.holdAfterPrefix;
+
+  if (prefix !== undefined) {
+    const opening = {
+      id,
+      created,
+      model,
+      object: 'chat.completion.chunk',
+      choices: [
+        {
+          index: 0,
+          delta: { role: 'assistant', reasoning_content: prefix.thinking, content: prefix.text },
+          finish_reason: null,
+        },
+      ],
+    };
+
+    const encoder = new TextEncoder();
+
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(opening)}\n\n`));
+      },
+      async pull(controller) {
+        await resume;
+        controller.enqueue(encoder.encode(encodedEvents(chunks)));
+        controller.close();
+      },
+    });
+
+    return new Response(body, {
+      headers: { [HttpHeader.ContentType]: MediaType.EventStream, [HttpHeader.CacheControl]: 'no-cache' },
+    });
+  }
+
   return eventStream(chunks);
 }
 
+function encodedEvents(chunks: ReadonlyArray<Readonly<Record<string, unknown>>>) {
+  return `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('')}data: [DONE]\n\n`;
+}
+
 function eventStream(chunks: ReadonlyArray<Readonly<Record<string, unknown>>>): Response {
-  const body = `${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join('')}data: [DONE]\n\n`;
+  const body = encodedEvents(chunks);
 
   return new Response(body, {
     headers: { [HttpHeader.ContentType]: MediaType.EventStream, [HttpHeader.CacheControl]: 'no-cache' },

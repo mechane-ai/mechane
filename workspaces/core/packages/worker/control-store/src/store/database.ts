@@ -10,6 +10,7 @@ import type { StoreContext } from './context.ts';
 import { createControlChangeStore } from './control-changes.ts';
 import { createCredentialStore } from './credentials.ts';
 import { createImportedHistoryStore } from './imported-history/history.ts';
+import { createManagedCatalog } from './managed/catalog.ts';
 import { createMemberAdmissionStore } from './member-admission.ts';
 import { openPool } from './postgres.ts';
 import type { DatabaseInput } from './postgres.ts';
@@ -30,6 +31,7 @@ export type OpenControlStoreInput = DatabaseInput & {
 
 function createControlRecords(context: StoreContext, keyring: CredentialKeyring) {
   return {
+    managed: createManagedCatalog(context, keyring),
     ...createAuthStore(context),
     ...createConfigurationRecords(context),
     ...createMechStore(context),
