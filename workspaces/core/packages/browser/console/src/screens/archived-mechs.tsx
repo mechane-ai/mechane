@@ -1,5 +1,5 @@
 import { EmptyState } from '@mechane-ai/elements/feedback';
-import { PageToolbar, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData } from '@mechane/console-data';
 import { ArchivedMechList, ArchivedMechListPlaceholder, SessionPagination } from '@mechane/console-views';
 import { useRouter } from '@tanstack/react-router';
@@ -17,18 +17,17 @@ export function ArchivedMechsScreen(props: Props): ReactNode {
   const { data, navigate } = props;
 
   return (
-    <>
-      <PageToolbar
-        title="Archived mechs"
-        leading={
-          <ToolbarAction
-            icon={<ArrowLeft size={16} aria-hidden />}
-            onClick={() => navigate({ workspace: data.workspace.id, view: 'definition' })}
-          >
-            Settings
-          </ToolbarAction>
-        }
-      />
+    <PageLayout
+      title="Archived mechs"
+      leading={
+        <ToolbarAction
+          icon={<ArrowLeft size={16} aria-hidden />}
+          onClick={() => navigate({ workspace: data.workspace.id, view: 'definition' })}
+        >
+          Settings
+        </ToolbarAction>
+      }
+    >
       <Workbench>
         <WorkbenchScroll isFlush label="Archived mechs">
           {data.workspace.role === 'owner' ? (
@@ -38,7 +37,7 @@ export function ArchivedMechsScreen(props: Props): ReactNode {
           )}
         </WorkbenchScroll>
       </Workbench>
-    </>
+    </PageLayout>
   );
 }
 

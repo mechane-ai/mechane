@@ -28,20 +28,20 @@ export type NavigationRailProps = {
 
 const styles = stylex.create({
   root: { display: 'flex', flexDirection: 'column', alignItems: 'stretch', flexShrink: 0, minWidth: 0 },
-  links: { display: 'flex', flexDirection: 'column', alignItems: 'stretch' },
+  desktopRail: {
+    paddingBlock: {
+      default: `calc((${pageGeometry.toolbarHeight} - ${controls.height}) / 2)`,
+      [conditions.coarsePointer]: `calc((${pageGeometry.toolbarHeight} - ${controls.coarseTarget}) / 2)`,
+    },
+  },
+  links: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: spacing.xs },
+  action: { alignSelf: 'center' },
   mobileLinks: {
     display: 'grid',
     gridAutoFlow: 'column',
     gridAutoColumns: 'minmax(0, 1fr)',
     gap: spacing.xs,
     padding: spacing.xs,
-  },
-  cell: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: pageGeometry.toolbarHeight,
   },
   selected: { ':is([aria-current="location"])': { backgroundColor: colors.canvas } },
   mobileLink: {
@@ -154,50 +154,46 @@ export function NavigationRail({ label, links, action }: NavigationRailProps): R
 
   return (
     <Tooltip.Provider>
-      <div {...stylex.props(styles.root)}>
+      <div {...stylex.props(styles.root, styles.desktopRail)}>
         <nav aria-label={label} {...stylex.props(styles.links)}>
           {links.map(({ label: linkLabel, icon, isCurrent = false, ...link }) => (
-            <div key={link.href} {...stylex.props(styles.cell)}>
-              <Tooltip.Root>
-                <Tooltip.Trigger
-                  render={
-                    <IconLink
-                      {...mergeProps(stylex.props(styles.selected), link)}
-                      aria-label={linkLabel}
-                      aria-current={isCurrent ? 'location' : undefined}
-                      onClick={(event) => activateLink(link.onClick, event)}
-                    />
-                  }
-                >
-                  {icon}
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Positioner side="right">
-                    <Tooltip.Popup>{linkLabel}</Tooltip.Popup>
-                  </Tooltip.Positioner>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </div>
+            <Tooltip.Root key={link.href}>
+              <Tooltip.Trigger
+                render={
+                  <IconLink
+                    {...mergeProps(stylex.props(styles.selected), link)}
+                    aria-label={linkLabel}
+                    aria-current={isCurrent ? 'location' : undefined}
+                    onClick={(event) => activateLink(link.onClick, event)}
+                  />
+                }
+              >
+                {icon}
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Positioner side="right">
+                  <Tooltip.Popup>{linkLabel}</Tooltip.Popup>
+                </Tooltip.Positioner>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           ))}
         </nav>
         {action !== undefined && (
           <>
             <hr {...stylex.props(styles.divider)} />
-            <div {...stylex.props(styles.cell)}>
-              <Tooltip.Root>
-                <Tooltip.Trigger
-                  render={<IconButton variant="ghost" aria-label={action.label} />}
-                  onClick={activateAction}
-                >
-                  {action.icon}
-                </Tooltip.Trigger>
-                <Tooltip.Portal>
-                  <Tooltip.Positioner side="right">
-                    <Tooltip.Popup>{action.label}</Tooltip.Popup>
-                  </Tooltip.Positioner>
-                </Tooltip.Portal>
-              </Tooltip.Root>
-            </div>
+            <Tooltip.Root>
+              <Tooltip.Trigger
+                render={<IconButton variant="ghost" aria-label={action.label} xstyle={styles.action} />}
+                onClick={activateAction}
+              >
+                {action.icon}
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Positioner side="right">
+                  <Tooltip.Popup>{action.label}</Tooltip.Popup>
+                </Tooltip.Positioner>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 import * as stylex from '@stylexjs/stylex';
 import type { ReactNode } from 'react';
-import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import { colors, controls, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { useScrollTabIndex } from '../../foundations/src/use-scroll-tab-index.ts';
 import { frameConditions } from './frame.stylex.ts';
 
@@ -8,7 +8,9 @@ const styles = stylex.create({
   root: {
     display: 'flex',
     flexDirection: 'column',
-    height: `calc(100dvh - ${pageGeometry.toolbarHeight})`,
+    height: '100dvh',
+    maxHeight: '100%',
+    flex: 1,
     minWidth: 0,
     minHeight: 0,
     containerType: 'inline-size',

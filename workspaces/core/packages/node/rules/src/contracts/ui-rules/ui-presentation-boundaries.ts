@@ -44,7 +44,7 @@ const MODULES: ReadonlyArray<ModuleBoundary> = [
   { name: 'forms', dependencies: ['foundations', 'core', 'overlays'] },
   { name: 'feedback', dependencies: ['foundations', 'core'] },
   { name: 'navigation', dependencies: ['foundations', 'forms', 'overlays'] },
-  { name: 'layout', dependencies: ['foundations', 'core', 'overlays'] },
+  { name: 'layout', dependencies: ['foundations', 'core', 'overlays', 'navigation'] },
   { name: 'collections', dependencies: ['foundations', 'core', 'forms', 'overlays', 'feedback'] },
   { name: 'content', dependencies: ['foundations', 'core', 'forms'] },
   { name: 'ai', dependencies: ['foundations', 'core', 'forms', 'overlays', 'content', 'feedback'] },

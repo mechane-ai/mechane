@@ -1,6 +1,5 @@
 import { ButtonPlaceholder, SkeletonText } from '@mechane-ai/elements/feedback';
-import { PageToolbar, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
-import { PageNavigationPlaceholder } from '@mechane-ai/elements/navigation';
+import { PageLayout, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleView } from '@mechane/protocol';
 import type { ReactNode } from 'react';
 import { ConversationPlaceholder } from './conversation.tsx';
@@ -21,37 +20,33 @@ export function MechPagePlaceholder({
 }): ReactNode {
   if (hasFocusedRun) {
     return (
-      <>
-        <PageToolbar
-          showNavigation={false}
-          title={<SkeletonText width="16ch" />}
-          leading={<ButtonPlaceholder width="6ch" />}
-        />
+      <PageLayout
+        showNavigation={false}
+        title={<SkeletonText width="16ch" />}
+        leading={<ButtonPlaceholder width="6ch" />}
+      >
         <Workbench>
           <WorkbenchScroll label="Run details">
             <TurnTracePlaceholder tab={traceTab} />
           </WorkbenchScroll>
         </Workbench>
-      </>
+      </PageLayout>
     );
   }
 
   return (
-    <>
-      <PageToolbar
-        title={<SkeletonText width="16ch" />}
-        views={
-          <PageNavigationPlaceholder
-            isEmbedded
-            items={[
-              { id: 'runs', label: 'Runs' },
-              { id: 'activity', label: 'Events' },
-              { id: 'environment', label: 'Environment' },
-              { id: 'conversation', label: 'Archive' },
-            ]}
-          />
-        }
-      />
+    <PageLayout
+      title={<SkeletonText width="16ch" />}
+      navigation={{
+        isPlaceholder: true,
+        items: [
+          { id: 'runs', label: 'Runs' },
+          { id: 'activity', label: 'Events' },
+          { id: 'environment', label: 'Environment' },
+          { id: 'conversation', label: 'Archive' },
+        ],
+      }}
+    >
       <Workbench>
         {view === 'conversation' ? (
           <ConversationPlaceholder />
@@ -67,6 +62,6 @@ export function MechPagePlaceholder({
           </WorkbenchScroll>
         )}
       </Workbench>
-    </>
+    </PageLayout>
   );
 }

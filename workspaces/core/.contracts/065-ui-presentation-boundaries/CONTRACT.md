@@ -51,7 +51,7 @@ The family graph permits these dependencies:
 | `forms` | `foundations`, `core`, `overlays` |
 | `feedback` | `foundations`, `core` |
 | `navigation` | `foundations`, `forms`, `overlays` |
-| `layout` | `foundations`, `core`, `overlays` |
+| `layout` | `foundations`, `core`, `overlays`, `navigation` |
 | `collections` | `foundations`, `core`, `forms`, `overlays`, `feedback` |
 | `content` | `foundations`, `core`, `forms` |
 | `ai` | `foundations`, `core`, `forms`, `overlays`, `content`, `feedback` |

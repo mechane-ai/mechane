@@ -3,9 +3,8 @@ import { useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Button, Row, SectionHeading, Stack } from '../../core/src/index.ts';
 import { AsyncRegion, Notice } from '../../feedback/src/index.ts';
-import { PageToolbar } from '../../layout/src/index.ts';
+import { PageLayout } from '../../layout/src/index.ts';
 import { useCommandShortcuts } from '../../navigation/src/commands/index.ts';
-import { PageNavigation } from '../../navigation/src/index.ts';
 import { CollectionToolbar } from './collection-controls.tsx';
 import { CollectionFilters } from './collection-filters.tsx';
 import { DataTable, DataTablePlaceholder } from './data-table.tsx';
@@ -64,45 +63,52 @@ function CollectionExample({ state = 'ready', hasNavigation = false }: Collectio
 
   return (
     <div ref={region} onKeyDown={controls.onKeyDown}>
-      <PageToolbar title="Projects" actions={!hasNavigation && controls.actions} showNavigation={false} />
-      {hasNavigation && (
-        <PageNavigation
-          selectedId={view}
-          onNavigate={setView}
-          items={[
-            { id: 'projects', label: 'Projects', href: '#projects' },
-            { id: 'archive', label: 'Archive', href: '#archive' },
-          ]}
-          actions={controls.actions}
-        />
-      )}
-      {controls.chips !== false && <CollectionToolbar label="Applied filters">{controls.chips}</CollectionToolbar>}
-      {state === 'pending' ? (
-        <AsyncRegion
-          state="pending"
-          label="Loading projects"
-          placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
-        />
-      ) : (
-        <AsyncRegion
-          state={state}
-          label="Loading projects"
-          placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
-        >
-          {state === 'failed' ? (
-            <Notice hasError>The application supplies its recovery action here.</Notice>
-          ) : (
-            <DataTable
-              rows={rows}
-              columns={columns}
-              getRowId={(record) => record.id}
-              caption="Projects"
-              hideCaption
-              empty="No projects match this view."
-            />
-          )}
-        </AsyncRegion>
-      )}
+      <PageLayout
+        title="Projects"
+        actions={!hasNavigation && controls.actions}
+        showNavigation={false}
+        navigation={
+          hasNavigation
+            ? {
+                selectedId: view,
+                onNavigate: ({ id }) => setView(id),
+                items: [
+                  { id: 'projects', label: 'Projects', href: '#projects' },
+                  { id: 'archive', label: 'Archive', href: '#archive' },
+                ],
+                actions: controls.actions,
+              }
+            : undefined
+        }
+      >
+        {controls.chips !== false && <CollectionToolbar label="Applied filters">{controls.chips}</CollectionToolbar>}
+        {state === 'pending' ? (
+          <AsyncRegion
+            state="pending"
+            label="Loading projects"
+            placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
+          />
+        ) : (
+          <AsyncRegion
+            state={state}
+            label="Loading projects"
+            placeholder={<DataTablePlaceholder caption="Records" columns={columns} />}
+          >
+            {state === 'failed' ? (
+              <Notice hasError>The application supplies its recovery action here.</Notice>
+            ) : (
+              <DataTable
+                rows={rows}
+                columns={columns}
+                getRowId={(record) => record.id}
+                caption="Projects"
+                hideCaption
+                empty="No projects match this view."
+              />
+            )}
+          </AsyncRegion>
+        )}
+      </PageLayout>
     </div>
   );
 }
@@ -115,7 +121,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'useCollectionControls owns search disclosure, filters, chips and focus. Applications supply values and callbacks and compose its actions with PageToolbar, SectionHeading or PageNavigation. Queries, routes and shortcut eligibility remain in the application. This example registers / only within its focus region. Filter controls render generic supplied icons and never interpret product statuses.',
+          'useCollectionControls owns search disclosure, filters, chips and focus. Applications supply values and callbacks and compose its actions with PageLayout, SectionHeading or PageNavigation. Queries, routes and shortcut eligibility remain in the application. This example registers / only within its focus region. Filter controls render generic supplied icons and never interpret product statuses.',
       },
     },
   },

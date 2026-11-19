@@ -106,12 +106,12 @@ immediately on focus; the destination must accept focus. The keyboard-navigation
 Pending actions keep focus and reserve space for both labels. Unavailable actions remain disabled. Use concise labels
 that describe the operation; a refresh failure belongs beside the retained content, not in a replacement empty screen.
 
-Use `RecordPage.Root`, `Toolbar`, `Body`, `Content`, `Header`, and `Aside` to compose a resource detail. The toolbar
-owns the shared top edge and optional back link; the header owns a focusable record heading. Body content and an aside
-wrap naturally at narrow widths. `PageNavigation` exposes ordinary anchors with controlled current-item state.
+Use `RecordPage.Layout`, `Body`, `Content`, `Header`, and `Aside` to compose a resource detail. The toolbar owns the
+shared top edge and optional back link; the header owns a focusable record heading. Body content and an aside wrap
+naturally at narrow widths. `PageNavigation` exposes ordinary anchors with controlled current-item state.
 `SettingsSection` groups settings; each `SettingsRow` binds a real control ID to its label and description. Its bounded
 field column aligns ordinary controls across rows, with smaller toggles at the trailing edge. Use `PageContent` for
-inset content in an existing page. Use `ReportContent` when inset content leads to full-width report rows, and
+inset content in an existing page. Use `PageSection` when inset content leads to full-width report rows, and
 `CollectionLayout` when one primary collection fills the available height. Table cells own their inset within the
 containing task region. A dialog or inspector can provide that region without taking the width of the application.
 

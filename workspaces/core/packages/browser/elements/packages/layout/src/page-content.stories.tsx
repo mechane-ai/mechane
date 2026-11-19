@@ -9,8 +9,8 @@ import { ButtonPlaceholder, FieldPlaceholder } from '../../feedback/src/index.ts
 import { Input } from '../../forms/src/index.ts';
 import { colors, pageGeometry } from '../../foundations/src/tokens.stylex.ts';
 import { PageContent } from './page-content.tsx';
-import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
-import { ReportContent } from './report-content.tsx';
+import { PageLayout } from './page-layout.tsx';
+import { ToolbarAction } from './page-toolbar.tsx';
 
 const styles = stylex.create({
   comparison: { position: 'relative', minWidth: 0 },
@@ -33,13 +33,13 @@ const styles = stylex.create({
 const meta = {
   title: 'Layout/PageContent',
   component: PageContent,
-  subcomponents: { ReportContent },
+
   parameters: {
     layout: 'fullscreen',
     docs: {
       description: {
         component:
-          'PageContent owns one inset and the rhythm between content sections inside an existing page. Related sections can stack without additional panels. Use the chart report prop for a self-contained report with one heading, summary and plot. Embedded charts use their ordinary frame within the containing region. Supply the same composition while loading. ReportContent owns one PageContent around its optional summary and keeps its breakdown full width. Pass summary content directly and omit it for a table-only section. Table cells own their inset within the containing task region. Use CollectionLayout for a primary collection filling available height, and DetailPage for a centered reading column. The application owns measures, populations, periods, formatting and read state.',
+          'PageContent owns one inset and the rhythm between content sections inside an existing page. Related sections can stack without additional panels. Use the chart report prop for a self-contained report with one heading, summary and plot. Embedded charts use their ordinary frame within the containing region. Supply the same composition while loading. PageSection insets its optional summary and keeps its breakdown full width. Pass summary content directly and omit it for a table-only section. Table cells own their inset within the containing task region. Use CollectionLayout for a primary collection filling available height, and DetailPage for a centered reading column. The application owns measures, populations, periods, formatting and read state.',
       },
     },
   },
@@ -50,12 +50,11 @@ type Story = StoryObj;
 
 export const ReportWithRecords: Story = {
   render: () => (
-    <>
-      <PageToolbar
-        showNavigation={false}
-        title="Review activity"
-        actions={<ToolbarAction icon={<Download size={16} aria-hidden />}>Export</ToolbarAction>}
-      />
+    <PageLayout
+      showNavigation={false}
+      title="Review activity"
+      actions={<ToolbarAction icon={<Download size={16} aria-hidden />}>Export</ToolbarAction>}
+    >
       <PageContent>
         <MetricGrid layout="columns">
           <Metric label="reviewed records" value="42" />
@@ -80,7 +79,7 @@ export const ReportWithRecords: Story = {
         getRowId={(record) => record.id}
         empty="No pending reviews."
       />
-    </>
+    </PageLayout>
   ),
 };
 
@@ -103,8 +102,8 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
   };
 
   return (
-    <ReportContent
-      summary={
+    <>
+      <PageContent>
         <>
           {isLoading ? (
             <BarChartPlaceholder
@@ -136,23 +135,21 @@ function ActivityReport({ isLoading = false }: { readonly isLoading?: boolean })
             />
           )}
         </>
-      }
-      breakdown={
-        <DataTable
-          caption="Completed operations by type"
-          rows={[
-            { id: 'build', label: 'Build', count: 360 },
-            { id: 'publish', label: 'Publish', count: 120 },
-          ]}
-          columns={[
-            { id: 'label', label: 'Type', role: 'primary', cell: (row) => row.label },
-            { id: 'count', label: 'Completed', role: 'number', cell: (row) => row.count.toLocaleString() },
-          ]}
-          getRowId={(row) => row.id}
-          empty="No completed operations."
-        />
-      }
-    />
+      </PageContent>
+      <DataTable
+        caption="Completed operations by type"
+        rows={[
+          { id: 'build', label: 'Build', count: 360 },
+          { id: 'publish', label: 'Publish', count: 120 },
+        ]}
+        columns={[
+          { id: 'label', label: 'Type', role: 'primary', cell: (row) => row.label },
+          { id: 'count', label: 'Completed', role: 'number', cell: (row) => row.count.toLocaleString() },
+        ]}
+        getRowId={(row) => row.id}
+        empty="No completed operations."
+      />
+    </>
   );
 }
 
@@ -169,7 +166,7 @@ function AlignmentReport({ isLoading = false }: { readonly isLoading?: boolean }
 
   return (
     <div {...stylex.props(styles.comparison, hasGuides && styles.guides)}>
-      <PageToolbar
+      <PageLayout
         showNavigation={false}
         title="Account activity"
         actions={
@@ -177,28 +174,29 @@ function AlignmentReport({ isLoading = false }: { readonly isLoading?: boolean }
             Alignment guides
           </ToolbarAction>
         }
-      />
-      <SectionHeading
-        title="Reporting period"
-        actions={
-          isLoading ? (
+      >
+        <SectionHeading
+          title="Reporting period"
+          actions={
+            isLoading ? (
+              <FieldPlaceholder width={192} />
+            ) : (
+              <Input type="month" aria-label="Reporting month" defaultValue="2026-11" xstyle={styles.field} />
+            )
+          }
+        />
+        <CollectionToolbar
+          label="Activity controls"
+          actions={isLoading ? <ButtonPlaceholder width="6ch" /> : <Button>Export</Button>}
+        >
+          {isLoading ? (
             <FieldPlaceholder width={192} />
           ) : (
-            <Input type="month" aria-label="Reporting month" defaultValue="2026-11" xstyle={styles.field} />
-          )
-        }
-      />
-      <CollectionToolbar
-        label="Activity controls"
-        actions={isLoading ? <ButtonPlaceholder width="6ch" /> : <Button>Export</Button>}
-      >
-        {isLoading ? (
-          <FieldPlaceholder width={192} />
-        ) : (
-          <Input aria-label="Find activity" placeholder="Find activity" xstyle={styles.field} />
-        )}
-      </CollectionToolbar>
-      <ActivityReport isLoading={isLoading} />
+            <Input aria-label="Find activity" placeholder="Find activity" xstyle={styles.field} />
+          )}
+        </CollectionToolbar>
+        <ActivityReport isLoading={isLoading} />
+      </PageLayout>
     </div>
   );
 }

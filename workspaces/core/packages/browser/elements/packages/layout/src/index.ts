@@ -1,3 +1,4 @@
+export { PageLayout, PageSection } from './page-layout.tsx';
 export { AppShell } from './app-shell.tsx';
 export { NavigationRail } from './navigation-rail.tsx';
 export type { NavigationRailLink, NavigationRailProps } from './navigation-rail.tsx';
@@ -7,16 +8,12 @@ export { DetailPage } from './detail-page.tsx';
 export { FocusPage } from './focus-page.tsx';
 export { Workbench, WorkbenchScroll, WorkbenchFooter } from './workbench.tsx';
 export { ViewStack } from './view-stack.tsx';
-export { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
+export { ToolbarAction } from './page-toolbar.tsx';
 export type { PageContentProps } from './page-content.tsx';
 export { PageContent } from './page-content.tsx';
-export { ReportContent } from './report-content.tsx';
-export type { ReportContentProps } from './report-content.tsx';
 export { CollectionLayout } from './collection-layout.tsx';
 export type { CollectionLayoutProps } from './collection-layout.tsx';
 export type {
-  RecordPageRootProps,
-  RecordPageToolbarProps,
   RecordPageBodyProps,
   RecordPageHeaderProps,
   RecordPageContentProps,

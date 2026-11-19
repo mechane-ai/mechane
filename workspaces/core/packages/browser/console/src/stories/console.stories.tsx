@@ -5,7 +5,7 @@ import {
   Navigation,
   NavigationLink,
   NavigationSection,
-  PageToolbar,
+  PageLayout,
   ToolbarAction,
   Workbench,
   WorkbenchFooter,
@@ -268,12 +268,13 @@ function StoryShell({
 function DirectoryStory({ isEmpty = false }: { readonly isEmpty?: boolean }): ReactNode {
   return (
     <StoryShell>
-      <PageToolbar title="Agents" />
-      <Workbench>
-        <WorkbenchScroll isFlush label="Agents">
-          <ManagedAgentList agents={isEmpty ? [] : agents} href={(id) => `#${id}`} onOpen={() => undefined} />
-        </WorkbenchScroll>
-      </Workbench>
+      <PageLayout title="Agents">
+        <Workbench>
+          <WorkbenchScroll isFlush label="Agents">
+            <ManagedAgentList agents={isEmpty ? [] : agents} href={(id) => `#${id}`} onOpen={() => undefined} />
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   );
 }
@@ -296,7 +297,7 @@ function TraceStory({
 
   return (
     <StoryShell shouldFocus>
-      <PageToolbar
+      <PageLayout
         showNavigation={false}
         title={scout.name}
         leading={
@@ -304,27 +305,28 @@ function TraceStory({
             Back
           </ToolbarAction>
         }
-      />
-      {notice}
-      <Workbench>
-        <WorkbenchScroll label="Run details" scrollRestorationId="run">
-          <TurnTrace
-            trace={trace}
-            tab={tab}
-            onTab={setTab}
-            requestId={request}
-            onRequest={(id) => {
-              setRequest(id);
-              setTab('Requests');
-            }}
-            requestHref={(id) =>
-              `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${nativeMechId}&turn=${trace.turn.id}&view=requests&request=${id}`
-            }
-            replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full message →</TextButton>}
-            events={<Activity label="Run events" hasInset={false} page={events} />}
-          />
-        </WorkbenchScroll>
-      </Workbench>
+      >
+        {notice}
+        <Workbench>
+          <WorkbenchScroll label="Run details" scrollRestorationId="run">
+            <TurnTrace
+              trace={trace}
+              tab={tab}
+              onTab={setTab}
+              requestId={request}
+              onRequest={(id) => {
+                setRequest(id);
+                setTab('Requests');
+              }}
+              requestHref={(id) =>
+                `https://mechane.example/console?workspace=${workspaceList.workspaces[0].id}&mech=${nativeMechId}&turn=${trace.turn.id}&view=requests&request=${id}`
+              }
+              replyLink={() => <TextButton onClick={() => setTab('Events')}>Read full message →</TextButton>}
+              events={<Activity label="Run events" hasInset={false} page={events} />}
+            />
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   );
 }
@@ -638,17 +640,18 @@ const longRunPage = Schema.decodeUnknownSync(TurnPage)({
 export const LongTitlesAndRuns: Story = {
   render: () => (
     <StoryShell>
-      <PageToolbar title={scout.name} />
-      <Workbench>
-        <WorkbenchScroll isFlush label="Runs">
-          <TurnList
-            page={longRunPage}
-            turnHref={(id) => `?mech=${nativeMechId}&turn=${id}`}
-            onOpen={() => undefined}
-            emptyDescription="No runs were recorded for this mech."
-          />
-        </WorkbenchScroll>
-      </Workbench>
+      <PageLayout title={scout.name}>
+        <Workbench>
+          <WorkbenchScroll isFlush label="Runs">
+            <TurnList
+              page={longRunPage}
+              turnHref={(id) => `?mech=${nativeMechId}&turn=${id}`}
+              onOpen={() => undefined}
+              emptyDescription="No runs were recorded for this mech."
+            />
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   ),
 };
@@ -708,34 +711,35 @@ function SessionStory(): ReactNode {
 
   return (
     <StoryShell>
-      <PageToolbar title={releaseReview.title} actions={<SessionStatus status={releaseReview.status} />} />
-      <Workbench>
-        <SessionTranscript events={events} agentName={scout.name} reader={{ id: 'story-release-review' }} />
-        <WorkbenchFooter>
-          <SessionComposer
-            value={draft}
-            onChange={setDraft}
-            isPending={false}
-            onSend={() => {
-              if (draft.trim() === '') {
-                return;
-              }
+      <PageLayout title={releaseReview.title} actions={<SessionStatus status={releaseReview.status} />}>
+        <Workbench>
+          <SessionTranscript events={events} agentName={scout.name} reader={{ id: 'story-release-review' }} />
+          <WorkbenchFooter>
+            <SessionComposer
+              value={draft}
+              onChange={setDraft}
+              isPending={false}
+              onSend={() => {
+                if (draft.trim() === '') {
+                  return;
+                }
 
-              setEvents([
-                ...events,
-                {
-                  ...eventFields,
-                  id: `sevt_draft_${events.length}`,
-                  type: 'user.message',
-                  text: draft,
-                  processedAt: null,
-                },
-              ]);
-              setDraft('');
-            }}
-          />
-        </WorkbenchFooter>
-      </Workbench>
+                setEvents([
+                  ...events,
+                  {
+                    ...eventFields,
+                    id: `sevt_draft_${events.length}`,
+                    type: 'user.message',
+                    text: draft,
+                    processedAt: null,
+                  },
+                ]);
+                setDraft('');
+              }}
+            />
+          </WorkbenchFooter>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   );
 }
@@ -743,17 +747,18 @@ function SessionStory(): ReactNode {
 export const Sessions: Story = {
   render: () => (
     <StoryShell>
-      <PageToolbar title={scout.name} />
-      <Workbench>
-        <WorkbenchScroll isFlush label="Sessions">
-          <ManagedSessionList
-            sessions={[dependencyUpdate, releaseReview]}
-            activeSessionId={dependencyUpdate.id}
-            href={(id) => `#${id}`}
-            onOpen={() => undefined}
-          />
-        </WorkbenchScroll>
-      </Workbench>
+      <PageLayout title={scout.name}>
+        <Workbench>
+          <WorkbenchScroll isFlush label="Sessions">
+            <ManagedSessionList
+              sessions={[dependencyUpdate, releaseReview]}
+              activeSessionId={dependencyUpdate.id}
+              href={(id) => `#${id}`}
+              onOpen={() => undefined}
+            />
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   ),
 };
@@ -773,12 +778,13 @@ export const SessionLoading: Story = {
 export const HistoryWorkspace: Story = {
   render: () => (
     <StoryShell>
-      <PageToolbar title={scout.name} />
-      <Workbench>
-        <WorkbenchScroll isFlush label="Events">
-          <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
-        </WorkbenchScroll>
-      </Workbench>
+      <PageLayout title={scout.name}>
+        <Workbench>
+          <WorkbenchScroll isFlush label="Events">
+            <Activity page={{ ...completedEvents, events: completedEvents.events.toReversed() }} />
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   ),
 };
@@ -812,16 +818,17 @@ const archivedMessages = Schema.decodeUnknownSync(ConsoleMessagePage)({
 export const ArchivedMessages: Story = {
   render: () => (
     <StoryShell>
-      <PageToolbar title={scout.name} />
-      <Workbench>
-        <ArchivedConversation
-          name={scout.name}
-          messages={archivedMessages.messages}
-          controls={null}
-          scrollRestorationId="story-archive"
-          inspect={(run) => <a href={`?mech=${nativeMechId}&turn=${run}&view=conversation`}>Open run</a>}
-        />
-      </Workbench>
+      <PageLayout title={scout.name}>
+        <Workbench>
+          <ArchivedConversation
+            name={scout.name}
+            messages={archivedMessages.messages}
+            controls={null}
+            scrollRestorationId="story-archive"
+            inspect={(run) => <a href={`?mech=${nativeMechId}&turn=${run}&view=conversation`}>Open run</a>}
+          />
+        </Workbench>
+      </PageLayout>
     </StoryShell>
   ),
 };

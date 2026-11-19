@@ -16,7 +16,6 @@ const styles = stylex.create({
     borderBottomStyle: 'solid',
     borderBottomColor: colors.line,
   },
-  embedded: { borderBottomWidth: 0 },
   navigation: { borderBottomWidth: 0, flex: '1 1 auto', maxWidth: '100%' },
   actions: {
     display: 'flex',
@@ -39,25 +38,19 @@ export type PageNavigationItem<ItemId extends string = string> = {
 export type PageNavigationProps<ItemId extends string = string> = {
   readonly items: ReadonlyArray<PageNavigationItem<ItemId>>;
   readonly selectedId: ItemId;
-  readonly onNavigate?: (id: ItemId) => void;
+  readonly onNavigate?: (item: PageNavigationItem<ItemId>) => void;
   readonly label?: string;
-  readonly isEmbedded?: boolean;
   readonly actions?: ReactNode;
 };
 
 export type PageNavigationPlaceholderProps = {
   readonly items: ReadonlyArray<Pick<PageNavigationItem, 'id' | 'label'>>;
-  readonly isEmbedded?: boolean;
   readonly actions?: ReactNode;
 };
 
-export function PageNavigationPlaceholder({
-  items,
-  isEmbedded = false,
-  actions,
-}: PageNavigationPlaceholderProps): ReactNode {
+export function PageNavigationPlaceholder({ items, actions }: PageNavigationPlaceholderProps): ReactNode {
   return (
-    <div aria-hidden inert {...stylex.props(styles.row, isEmbedded && styles.embedded)}>
+    <div aria-hidden inert {...stylex.props(styles.row)}>
       <div {...stylex.props(tabStyles.list, styles.navigation)}>
         {items.map((item) => (
           <span key={item.id} {...stylex.props(tabStyles.item)}>
@@ -75,11 +68,10 @@ export function PageNavigation<ItemId extends string>({
   selectedId,
   onNavigate,
   label = 'Page sections',
-  isEmbedded = false,
   actions,
 }: PageNavigationProps<ItemId>): ReactNode {
   return (
-    <div {...stylex.props(styles.row, isEmbedded && styles.embedded)}>
+    <div {...stylex.props(styles.row)}>
       <nav aria-label={label} {...stylex.props(tabStyles.list, styles.navigation)}>
         {items.map((item) => (
           <a
@@ -100,7 +92,7 @@ export function PageNavigation<ItemId extends string>({
               }
 
               event.preventDefault();
-              onNavigate(item.id);
+              onNavigate(item);
             }}
           >
             {item.label}

@@ -2,7 +2,7 @@ import { CopyValue, Muted, Row, Stack, Subheading } from '@mechane-ai/elements';
 import { Details } from '@mechane-ai/elements/collections';
 import { MediaViewerPlaceholder } from '@mechane-ai/elements/content';
 import { ButtonPlaceholder, SkeletonText } from '@mechane-ai/elements/feedback';
-import { PageToolbar, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { EvidenceArtifact } from '@mechane/protocol';
 import { Option } from 'effect';
 import type { ReactNode } from 'react';
@@ -63,18 +63,17 @@ export function EvidenceDetails({
 
 export function EvidencePagePlaceholder(): ReactNode {
   return (
-    <>
-      <PageToolbar
-        showNavigation={false}
-        title={<SkeletonText width="20ch" />}
-        leading={<ButtonPlaceholder width="6ch" />}
-      />
+    <PageLayout
+      showNavigation={false}
+      title={<SkeletonText width="20ch" />}
+      leading={<ButtonPlaceholder width="6ch" />}
+    >
       <Workbench>
         <WorkbenchScroll label="Evidence">
           <EvidenceDetailsPlaceholder />
         </WorkbenchScroll>
       </Workbench>
-    </>
+    </PageLayout>
   );
 }
 

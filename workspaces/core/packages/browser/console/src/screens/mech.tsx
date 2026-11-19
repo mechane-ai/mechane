@@ -1,7 +1,6 @@
 import { Button } from '@mechane-ai/elements';
 import { EmptyState, Notice } from '@mechane-ai/elements/feedback';
-import { PageToolbar, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
-import { PageNavigation } from '@mechane-ai/elements/navigation';
+import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import { problemMessage } from '@mechane/console-data';
 import type { ConsoleData } from '@mechane/console-data';
 import { EvidencePagePlaceholder, MechPagePlaceholder } from '@mechane/console-views';
@@ -74,28 +73,27 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
       label="Loading mech"
       failure={
         pageState.kind === 'failed' ? (
-          <>
-            <PageToolbar
-              title={location.turn === undefined ? 'Mech' : 'Run'}
-              showNavigation={location.turn === undefined}
-              leading={
-                <ToolbarAction
-                  icon={<ArrowLeft size={16} aria-hidden />}
-                  aria-label={location.turn === undefined ? 'Back to agents' : 'Back to diagnostics'}
-                  onClick={() => {
-                    if (location.turn === undefined) {
-                      navigate({ workspace: data.workspace.id });
+          <PageLayout
+            title={location.turn === undefined ? 'Mech' : 'Run'}
+            showNavigation={location.turn === undefined}
+            leading={
+              <ToolbarAction
+                icon={<ArrowLeft size={16} aria-hidden />}
+                aria-label={location.turn === undefined ? 'Back to agents' : 'Back to diagnostics'}
+                onClick={() => {
+                  if (location.turn === undefined) {
+                    navigate({ workspace: data.workspace.id });
 
-                      return;
-                    }
+                    return;
+                  }
 
-                    records.back({ workspace: data.workspace.id, mech: mechId });
-                  }}
-                >
-                  Back
-                </ToolbarAction>
-              }
-            />
+                  records.back({ workspace: data.workspace.id, mech: mechId });
+                }}
+              >
+                Back
+              </ToolbarAction>
+            }
+          >
             <Workbench>
               <WorkbenchScroll label="Loading failed">
                 <div role="alert">
@@ -112,7 +110,7 @@ export function MechScreen({ data, mechId, location, navigate }: MechNavigation)
                 </div>
               </WorkbenchScroll>
             </Workbench>
-          </>
+          </PageLayout>
         ) : undefined
       }
     >
@@ -194,21 +192,20 @@ function MechDetails({
 
   if (location.turn !== undefined) {
     return (
-      <>
-        <PageToolbar
-          showNavigation={false}
-          title={mech.name}
-          leading={
-            <ToolbarAction
-              ref={runBack}
-              icon={<ArrowLeft size={16} aria-hidden />}
-              aria-label="Back to diagnostics"
-              onClick={() => records.back({ ...base, view })}
-            >
-              Back
-            </ToolbarAction>
-          }
-        />
+      <PageLayout
+        showNavigation={false}
+        title={mech.name}
+        leading={
+          <ToolbarAction
+            ref={runBack}
+            icon={<ArrowLeft size={16} aria-hidden />}
+            aria-label="Back to diagnostics"
+            onClick={() => records.back({ ...base, view })}
+          >
+            Back
+          </ToolbarAction>
+        }
+      >
         <Workbench>
           <WorkbenchScroll label="Run details" scrollRestorationId={runReader.id}>
             {reads.trace === undefined ? (
@@ -227,7 +224,7 @@ function MechDetails({
             )}
           </WorkbenchScroll>
         </Workbench>
-      </>
+      </PageLayout>
     );
   }
 
@@ -249,22 +246,18 @@ function MechDetails({
   }
 
   return (
-    <>
-      <PageToolbar
-        title={mech.name}
-        views={
-          <PageNavigation
-            label="Diagnostics"
-            isEmbedded
-            selectedId={view}
-            items={diagnosticViews.map((item) => ({ ...item, href: records.href({ ...base, view: item.id }) }))}
-            onNavigate={(next) => {
-              positions.current.set(view, readReaderPositions());
-              navigate({ ...base, view: next });
-            }}
-          />
-        }
-      />
+    <PageLayout
+      title={mech.name}
+      navigation={{
+        label: 'Diagnostics',
+        selectedId: view,
+        items: diagnosticViews.map((item) => ({ ...item, href: records.href({ ...base, view: item.id }) })),
+        onNavigate: ({ id: next }) => {
+          positions.current.set(view, readReaderPositions());
+          navigate({ ...base, view: next });
+        },
+      }}
+    >
       <Workbench>
         {notice}
         {view === 'conversation' ? (
@@ -275,6 +268,6 @@ function MechDetails({
           </WorkbenchScroll>
         )}
       </Workbench>
-    </>
+    </PageLayout>
   );
 }

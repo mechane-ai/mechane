@@ -2,7 +2,7 @@ import { Button, Muted, Stack, TextLink } from '@mechane-ai/elements';
 import { Details } from '@mechane-ai/elements/collections';
 import { Notice } from '@mechane-ai/elements/feedback';
 import { SettingsSection } from '@mechane-ai/elements/forms';
-import { DetailPage, PageToolbar } from '@mechane-ai/elements/layout';
+import { DetailPage, PageLayout } from '@mechane-ai/elements/layout';
 import { browserAuthenticationMessage, completeBrowserAuthentication } from '@mechane/console-data';
 import type { ConsoleData, ViewerSession } from '@mechane/console-data';
 import { BrowserAuthenticationPath } from '@mechane/protocol';
@@ -68,8 +68,7 @@ export function WorkspaceSettings({
   }
 
   return (
-    <>
-      <PageToolbar title="Settings" />
+    <PageLayout title="Settings">
       <DetailPage>
         <Stack>
           <SettingsSection title="Workspace">
@@ -111,6 +110,6 @@ export function WorkspaceSettings({
           <DataStatus data={data} />
         </Stack>
       </DetailPage>
-    </>
+    </PageLayout>
   );
 }

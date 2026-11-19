@@ -182,7 +182,7 @@ module.exports = {
       comment: 'Compose independent areas in the application, such as `<AppShell>{chart}</AppShell>`',
       severity: 'error',
       from: { path: '^(?:packages/browser/elements/packages)/(?:layout)/', pathNot: '[.]stories[.]tsx$' },
-      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:layout|foundations|core|overlays)/)' },
+      to: { path: '^(?:packages/browser/elements/packages)/(?!(?:layout|foundations|core|overlays|navigation)/)' },
     },
     {
       name: 'ui-collections-public-entry',

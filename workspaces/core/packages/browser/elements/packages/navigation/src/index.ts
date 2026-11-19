@@ -4,4 +4,4 @@ export { PageNavigation, PageNavigationPlaceholder } from './page-navigation.tsx
 export { SkipLink } from './skip-link.tsx';
 export { Tabs } from './tabs.tsx';
 export { ContentTabs } from './content-tabs.tsx';
-export type { ContentTab, ContentTabNavigation, ContentTabsProps } from './content-tabs.tsx';
+export type { ContentTab, ContentTabsProps } from './content-tabs.tsx';

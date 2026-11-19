@@ -4,7 +4,8 @@ import type { ReactNode } from 'react';
 import { PromptInput } from '../../ai/src/index.ts';
 import { Button, Prose, Stack } from '../../core/src/index.ts';
 import { AppShell } from './app-shell.tsx';
-import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
+import { PageLayout } from './page-layout.tsx';
+import { ToolbarAction } from './page-toolbar.tsx';
 import { Navigation, NavigationItem, NavigationSection } from './sidebar.tsx';
 import { ViewStack } from './view-stack.tsx';
 import { Workbench, WorkbenchFooter, WorkbenchScroll } from './workbench.tsx';
@@ -44,39 +45,41 @@ function Example(): ReactNode {
     >
       <ViewStack.Root>
         <ViewStack.Panel isActive={!isFocused}>
-          <PageToolbar title="Project assistant" />
-          <Workbench>
-            <WorkbenchScroll label="Conversation" scrollRestorationId="example-conversation">
-              <Stack>
-                <Prose>The recorded result is ready to inspect.</Prose>
-                <div>
-                  <Button onClick={() => setFocused(true)}>Open run</Button>
-                </div>
-              </Stack>
-            </WorkbenchScroll>
-            <WorkbenchFooter>
-              <PromptInput
-                label="Message"
-                isCompact
-                value={draft}
-                onValueChange={setDraft}
-                onSubmit={(event) => event.preventDefault()}
-              />
-            </WorkbenchFooter>
-          </Workbench>
+          <PageLayout title="Project assistant">
+            <Workbench>
+              <WorkbenchScroll label="Conversation" scrollRestorationId="example-conversation">
+                <Stack>
+                  <Prose>The recorded result is ready to inspect.</Prose>
+                  <div>
+                    <Button onClick={() => setFocused(true)}>Open run</Button>
+                  </div>
+                </Stack>
+              </WorkbenchScroll>
+              <WorkbenchFooter>
+                <PromptInput
+                  label="Message"
+                  isCompact
+                  value={draft}
+                  onValueChange={setDraft}
+                  onSubmit={(event) => event.preventDefault()}
+                />
+              </WorkbenchFooter>
+            </Workbench>
+          </PageLayout>
         </ViewStack.Panel>
         {isFocused && (
           <>
-            <PageToolbar
+            <PageLayout
               title="Run details"
               showNavigation={false}
               leading={<ToolbarAction onClick={() => setFocused(false)}>Back</ToolbarAction>}
-            />
-            <Workbench>
-              <WorkbenchScroll label="Run details">
-                <Prose>This detail uses the full application width. The conversation remains mounted.</Prose>
-              </WorkbenchScroll>
-            </Workbench>
+            >
+              <Workbench>
+                <WorkbenchScroll label="Run details">
+                  <Prose>This detail uses the full application width. The conversation remains mounted.</Prose>
+                </WorkbenchScroll>
+              </Workbench>
+            </PageLayout>
           </>
         )}
       </ViewStack.Root>

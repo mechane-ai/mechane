@@ -1,6 +1,6 @@
 import { Button, Stack, TextLink } from '@mechane-ai/elements';
 import { Notice } from '@mechane-ai/elements/feedback';
-import { PageToolbar, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import {
   EvidenceDetails,
   EvidenceDetailsPlaceholder,
@@ -95,27 +95,28 @@ function Example({
 }): ReactNode {
   return (
     <>
-      <PageToolbar
+      <PageLayout
         showNavigation={false}
         title="Evidence · Example mech"
         leading={<Button variant="ghost">Back</Button>}
-      />
-      <Workbench>
-        <WorkbenchScroll label="Evidence">
-          <Stack>
-            {notice}
-            <EvidenceDetails
-              artifact={artifact}
-              contentSrc={sampleScreen}
-              hasMediaFailed={hasMediaFailed}
-              mediaAttempt={0}
-              onMediaError={() => undefined}
-              onRetryMedia={() => undefined}
-              runLink={<TextLink href="#run">Open run</TextLink>}
-            />
-          </Stack>
-        </WorkbenchScroll>
-      </Workbench>
+      >
+        <Workbench>
+          <WorkbenchScroll label="Evidence">
+            <Stack>
+              {notice}
+              <EvidenceDetails
+                artifact={artifact}
+                contentSrc={sampleScreen}
+                hasMediaFailed={hasMediaFailed}
+                mediaAttempt={0}
+                onMediaError={() => undefined}
+                onRetryMedia={() => undefined}
+                runLink={<TextLink href="#run">Open run</TextLink>}
+              />
+            </Stack>
+          </WorkbenchScroll>
+        </Workbench>
+      </PageLayout>
     </>
   );
 }

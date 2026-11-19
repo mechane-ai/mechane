@@ -1,6 +1,6 @@
 import { Status } from '@mechane-ai/elements';
 import { Skeleton } from '@mechane-ai/elements/feedback';
-import { PageToolbar, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedAgent } from '@mechane/console-data';
 import {
   CreateEnvironmentForm,
@@ -55,17 +55,16 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
   }
 
   return (
-    <>
-      <PageToolbar
-        title={isCreating ? 'New agent' : 'Agents'}
-        actions={
-          !isCreating && (
-            <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
-              New agent
-            </ToolbarAction>
-          )
-        }
-      />
+    <PageLayout
+      title={isCreating ? 'New agent' : 'Agents'}
+      actions={
+        !isCreating && (
+          <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
+            New agent
+          </ToolbarAction>
+        )
+      }
+    >
       <Workbench>
         <WorkbenchScroll label="Agents" isFlush={!isCreating}>
           {isCreating ? (
@@ -98,15 +97,19 @@ function AgentDirectory({ data, location, navigate }: ManagedProps): ReactNode {
           )}
         </WorkbenchScroll>
       </Workbench>
-    </>
+    </PageLayout>
   );
 }
 
 function AgentScreen({ data, agentId, location, navigate }: ManagedProps & { readonly agentId: string }): ReactNode {
   const request = useMemo(() => data.reads.agent(agentId), [data, agentId]);
-  const agent = useManagedAgent(data, request);
-  const { visit, forget } = useNavigationPreferences();
-  const archivedAt = agent.kind === 'ready' ? agent.value.archivedAt : undefined;
+  const read = useManagedAgent(data, request);
+  const { visit, forget, pinned, togglePin } = useNavigationPreferences();
+  const workspace = data.workspace.id;
+  const agent = read.kind === 'ready' ? read.value : undefined;
+  const [isFormOpen, setCreating] = useState(false);
+  const isCreating = isFormOpen && agent?.archivedAt === null;
+  const archivedAt = agent?.archivedAt;
 
   useEffect(() => {
     if (archivedAt === null) {
@@ -120,31 +123,78 @@ function AgentScreen({ data, agentId, location, navigate }: ManagedProps & { rea
     if (data.readRevocation(request) !== undefined) {
       forget(agentId);
     }
-  }, [data, request, forget, agentId, agent.kind]);
+  }, [data, request, forget, agentId, read.kind]);
 
   return (
-    <ResourceView state={agent} label="Loading agent" placeholder={<ManagedListPlaceholder kind="sessions" />}>
-      {(value, notice) => (
-        <>
-          {notice}
-          <AgentSessions data={data} agent={value} location={location} navigate={navigate} />
-        </>
-      )}
-    </ResourceView>
+    <PageLayout
+      title={isCreating ? 'New session' : (agent?.name ?? 'Agent')}
+      leading={
+        <ToolbarAction
+          aria-label="Back to agents"
+          icon={<ArrowLeft size={16} aria-hidden />}
+          onClick={() => navigate({ workspace })}
+        >
+          Agents
+        </ToolbarAction>
+      }
+      actions={
+        typeof agent?.archivedAt === 'string' ? (
+          <Status>Archived</Status>
+        ) : (
+          !isCreating &&
+          agent?.archivedAt === null && (
+            <>
+              <MechPinButton
+                name={agent.name}
+                isPinned={pinned.includes(agent.id)}
+                onToggle={() => togglePin(agent.id)}
+              />
+              <ArchiveManagedResource
+                kind="agent"
+                name={agent.name}
+                archive={() => data.managed.archiveAgent(agent.id)}
+              />
+              <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
+                New session
+              </ToolbarAction>
+            </>
+          )
+        )
+      }
+    >
+      <ResourceView state={read} label="Loading agent" placeholder={<ManagedListPlaceholder kind="sessions" />}>
+        {(value, notice) => (
+          <>
+            {notice}
+            <AgentSessions
+              data={data}
+              agent={value}
+              isCreating={isCreating}
+              onCancel={() => setCreating(false)}
+              location={location}
+              navigate={navigate}
+            />
+          </>
+        )}
+      </ResourceView>
+    </PageLayout>
   );
 }
 
 function AgentSessions({
   data,
   agent,
+  isCreating,
+  onCancel,
   location,
   navigate,
-}: ManagedProps & { readonly agent: ManagedAgent }): ReactNode {
+}: ManagedProps & {
+  readonly isCreating: boolean;
+  readonly onCancel: () => void;
+  readonly agent: ManagedAgent;
+}): ReactNode {
   const router = useRouter();
   const workspace = data.workspace.id;
-  const [isFormOpen, setCreating] = useState(false);
-  const isCreating = isFormOpen && agent.archivedAt === null;
-  const { pinned, togglePin } = useNavigationPreferences();
   const request = useMemo(() => data.reads.sessions(agent.id, location.page ?? null), [data, agent.id, location.page]);
   const sessions = useManagedSessions(data, request);
   const attention = useAgentAttention(data, agent.id);
@@ -155,73 +205,35 @@ function AgentSessions({
   }
 
   return (
-    <>
-      <PageToolbar
-        title={isCreating ? 'New session' : agent.name}
-        leading={
-          <ToolbarAction
-            aria-label="Back to agents"
-            icon={<ArrowLeft size={16} aria-hidden />}
-            onClick={() => navigate({ workspace })}
+    <Workbench>
+      <WorkbenchScroll isFlush={!isCreating} label={isCreating ? 'New session' : 'Sessions'}>
+        {isCreating ? (
+          <SessionCreation data={data} agentId={agent.id} onCancel={onCancel} onCreated={open} />
+        ) : (
+          <ResourceView
+            state={sessions}
+            label="Loading sessions"
+            placeholder={<ManagedListPlaceholder kind="sessions" />}
           >
-            Agents
-          </ToolbarAction>
-        }
-        actions={
-          typeof agent.archivedAt === 'string' ? (
-            <Status>Archived</Status>
-          ) : (
-            !isCreating &&
-            agent.archivedAt === null && (
+            {(page, notice) => (
               <>
-                <MechPinButton
-                  name={agent.name}
-                  isPinned={pinned.includes(agent.id)}
-                  onToggle={() => togglePin(agent.id)}
+                {notice}
+                <ManagedSessionList
+                  sessions={page.items}
+                  activeSessionId={attention?.sessionId}
+                  queuedSessionIds={attention?.queuedSessionIds}
+                  href={(id) =>
+                    router.buildLocation(managedDestination({ workspace, agent: agent.id, session: id })).publicHref
+                  }
+                  onOpen={open}
                 />
-                <ArchiveManagedResource
-                  kind="agent"
-                  name={agent.name}
-                  archive={() => data.managed.archiveAgent(agent.id)}
-                />
-                <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
-                  New session
-                </ToolbarAction>
+                <SessionPagination onPrevious={paging.previous} onNext={paging.next(page.next)} />
               </>
-            )
-          )
-        }
-      />
-      <Workbench>
-        <WorkbenchScroll isFlush={!isCreating} label={isCreating ? 'New session' : 'Sessions'}>
-          {isCreating ? (
-            <SessionCreation data={data} agentId={agent.id} onCancel={() => setCreating(false)} onCreated={open} />
-          ) : (
-            <ResourceView
-              state={sessions}
-              label="Loading sessions"
-              placeholder={<ManagedListPlaceholder kind="sessions" />}
-            >
-              {(page, notice) => (
-                <>
-                  {notice}
-                  <ManagedSessionList
-                    sessions={page.items}
-                    activeSessionId={attention?.sessionId}
-                    queuedSessionIds={attention?.queuedSessionIds}
-                    href={(id) =>
-                      router.buildLocation(managedDestination({ workspace, agent: agent.id, session: id })).publicHref
-                    }
-                    onOpen={open}
-                  />
-                  <SessionPagination onPrevious={paging.previous} onNext={paging.next(page.next)} />
-                </>
-              )}
-            </ResourceView>
-          )}
-        </WorkbenchScroll>
-      </Workbench>
-    </>
+            )}
+          </ResourceView>
+        )}
+      </WorkbenchScroll>
+    </Workbench>
   );
 }
 

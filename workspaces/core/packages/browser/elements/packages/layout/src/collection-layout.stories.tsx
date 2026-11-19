@@ -5,12 +5,11 @@ import { BarChart, BarChartPlaceholder } from '../../charts/src/cartesian/index.
 import { ChartSeriesMarker } from '../../charts/src/index.ts';
 import { DataTable, DataTablePlaceholder, DataTableText } from '../../collections/src/index.ts';
 import type { DataTableColumn } from '../../collections/src/index.ts';
-import { Button, SectionHeading } from '../../core/src/index.ts';
+import { Button } from '../../core/src/index.ts';
 import { AsyncRegion, EmptyState, Meter } from '../../feedback/src/index.ts';
 import { Input, SelectControl } from '../../forms/src/index.ts';
 import { CollectionLayout } from './collection-layout.tsx';
-import { PageToolbar } from './page-toolbar.tsx';
-import { ReportContent } from './report-content.tsx';
+import { PageLayout, PageSection } from './page-layout.tsx';
 
 const records = Array.from({ length: 80 }, (_, index) => ({
   id: String(index),
@@ -40,7 +39,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Start with FullHeight for a primary searchable collection: the header owns its controls, and DataTable fills the available viewport. Start with ShortReport for a measure followed by finite full-width contributors: ReportContent owns the chart inset, and table cells own row insets. Pointer or keyboard row inspection highlights the supplied series without selecting or querying it. Omit summary for table-only sections. Use RecordPage for one record and its task navigation. The application prepares rows, query state, permissions and retained results. Loading and Failed show initial reads; a refresh keeps the ready composition mounted. Use ContentTabs for local panels, PageNavigation for destinations, and ViewStack when inactive content must stay mounted.',
+          'Start with FullHeight for a primary searchable collection: the header owns its controls, and DataTable fills the available viewport. Start with ShortReport for a measure followed by finite full-width contributors: PageSection owns its summary inset, and table cells own row insets. Pointer or keyboard row inspection highlights the supplied series without selecting or querying it. Omit summary for table-only sections. Use RecordPage for one record and its task navigation. The application prepares rows, query state, permissions and retained results. Loading and Failed show initial reads; a refresh keeps the ready composition mounted. Use ContentTabs for local panels, PageNavigation for destinations, and ViewStack when inactive content must stay mounted.',
       },
     },
   },
@@ -58,45 +57,47 @@ function CollectionExample({ initialState = 'ready' }: { readonly initialState?:
   const placeholder = <DataTablePlaceholder caption="Records" columns={columns} window={{ height: 'fill' }} />;
 
   return (
-    <CollectionLayout
-      header={
-        <PageToolbar
-          title="Records"
-          showNavigation={false}
-          actions={
-            <Input
-              type="search"
-              aria-label="Find records"
-              placeholder="Find records…"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          }
+    <PageLayout
+      title="Records"
+      showNavigation={false}
+      actions={
+        <Input
+          type="search"
+          aria-label="Find records"
+          placeholder="Find records…"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
         />
       }
     >
-      {state === 'pending' ? (
-        <AsyncRegion state="pending" label="Loading records" placeholder={placeholder} />
-      ) : (
-        <AsyncRegion state={state === 'failed' ? 'failed' : 'ready'} label="Loading records" placeholder={placeholder}>
-          {state === 'failed' ? (
-            <EmptyState
-              title="Records unavailable"
-              action={<Button onClick={() => setState('ready')}>Retry records</Button>}
-            />
-          ) : (
-            <DataTable
-              rows={rows}
-              columns={columns}
-              getRowId={(row) => row.id}
-              caption="Records"
-              window={{ height: 'fill' }}
-              empty="No matching records."
-            />
-          )}
-        </AsyncRegion>
-      )}
-    </CollectionLayout>
+      <CollectionLayout>
+        {state === 'pending' ? (
+          <AsyncRegion state="pending" label="Loading records" placeholder={placeholder} />
+        ) : (
+          <AsyncRegion
+            state={state === 'failed' ? 'failed' : 'ready'}
+            label="Loading records"
+            placeholder={placeholder}
+          >
+            {state === 'failed' ? (
+              <EmptyState
+                title="Records unavailable"
+                action={<Button onClick={() => setState('ready')}>Retry records</Button>}
+              />
+            ) : (
+              <DataTable
+                rows={rows}
+                columns={columns}
+                getRowId={(row) => row.id}
+                caption="Records"
+                window={{ height: 'fill' }}
+                empty="No matching records."
+              />
+            )}
+          </AsyncRegion>
+        )}
+      </CollectionLayout>
+    </PageLayout>
   );
 }
 
@@ -194,25 +195,23 @@ function RecordReport({
   ) : undefined;
 
   const content = (
-    <ReportContent
+    <PageSection
+      title="Services"
       summary={summary}
       breakdown={
-        <>
-          <SectionHeading title="Services" />
-          {isPending ? (
-            <DataTablePlaceholder caption="Records" columns={reportColumns} />
-          ) : (
-            <DataTable
-              rows={rows}
-              columns={reportColumns}
-              getRowId={(row) => row.id}
-              caption="Reported requests"
-              hideCaption
-              onRowHighlightChange={setHighlightedId}
-              empty="No reported requests."
-            />
-          )}
-        </>
+        isPending ? (
+          <DataTablePlaceholder caption="Records" columns={reportColumns} />
+        ) : (
+          <DataTable
+            rows={rows}
+            columns={reportColumns}
+            getRowId={(row) => row.id}
+            caption="Reported requests"
+            hideCaption
+            onRowHighlightChange={setHighlightedId}
+            empty="No reported requests."
+          />
+        )
       }
     />
   );

@@ -32,12 +32,13 @@ and collections consume foundations independently, without sharing a page contro
 | Role                                   | Geometry and owner                                                                                                              |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Page content edge                      | `pageGeometry.inset` is 16px. Section headings, table-cell content, and inset report frames share that edge.                    |
-| Shell toolbar and navigation cell      | 48px. Separators do not subtract from the area used to centre their contents.                                                   |
+| Shell toolbar and rail footer          | 48px. Separators do not subtract from the area used to centre their contents.                                                   |
 | Section heading and collection toolbar | 48px minimum. A single row of ordinary controls fits that height; wrapped content grows.                                        |
 | Standard single-line control           | 32px including borders; 44px for coarse pointers. This is the default shared control recipe.                                    |
 | Compact report caption                 | 36px minimum; at least 48px for coarse pointers. Titles and action groups may wrap independently.                               |
 | Explicit compact single-line control   | 28px including borders; 44px for coarse pointers. The same recipe owns focus, padding and pending geometry.                     |
-| Navigation item                        | 32px; 44px for coarse pointers. Expanded navigation has 8px outer and item insets; collapsed items centre in the rail.          |
+| Sidebar navigation item                | 32px; 44px for coarse pointers. Expanded navigation has 8px outer and item insets; collapsed items are centred.                 |
+| Desktop area rail                      | 4px between links. Targets are 32px or 44px for coarse pointers. The first target centres beside the sidebar header.            |
 | Standard navigation or leading glyph   | A 16px box that does not shrink beside text. Small indicators, artwork and avatars retain their intended sizes.                 |
 | Table row and column header            | 48px row; 36px header baseline, growing for larger sort targets. Table geometry owns the virtualizer's matching fixed estimate. |
 | Page section gap                       | `pageGeometry.sectionGap` is 32px. The containing composition owns it.                                                          |
@@ -69,7 +70,7 @@ Choose a heading by its scope:
 
 | Scope                                  | Heading and controls                                                                               | Boundary                                                                         |
 | -------------------------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Independent page section or collection | `SectionHeading` or `CollectionToolbar`; 48px standard row and 32px standard controls.             | Owns its page inset and section separation.                                      |
+| Independent page section or collection | `PageSection` or `CollectionToolbar`; 48px standard row and 32px standard controls.                | Owns its page inset and section separation.                                      |
 | One chart report                       | The chart's private caption; 36px row and explicit 28px compact controls through `report.actions`. | Stays quiet without a gray header fill, inside the report's single subtle frame. |
 | Prose or form content within a section | `Subheading`; standard form controls.                                                              | Uses the containing reading column or form inset.                                |
 
@@ -90,20 +91,20 @@ avatar need not share the ordinary glyph's size; reserve an empty slot only when
 
 Choose the containing task before its inset, scrolling behavior, or visual boundary.
 
-| Need                                                               | Composition and boundary                                                                           |
-| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                     |
-| Independent section title, metadata and scoped actions             | Standard `SectionHeading` defines the section. `Subheading` names prose or form content within it. |
-| Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                    |
-| An inset report followed by a finite breakdown                     | `ReportContent` scrolls with the page and leaves its breakdown full width.                         |
-| One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.                 |
-| One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                             |
-| A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                         |
-| A standalone sign-in or focused step outside the application shell | `FocusPage` centers one bounded task.                                                              |
-| Tool panes and an independently scrolling inspector                | `Workbench` and its scroll regions own those boundaries.                                           |
-| A self-contained analytical report                                 | The chart's `report` input groups its compact caption, summary and plot in one subtle frame.       |
-| A plot embedded in an existing content region                      | The chart supplies its own title, legend and inspection. The containing region owns separation.    |
-| A bounded decision, linked item or structured message Card         | `Panel` provides the unit's boundary.                                                              |
+| Need                                                               | Composition and boundary                                                                                        |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Related sections in ordinary page flow                             | `Stack` with section headings and shared gaps.                                                                  |
+| Independent section title, metadata and scoped actions             | `PageSection` groups the heading and its scrolling content. `Subheading` names prose or form content within it. |
+| Inset content inside a page                                        | `PageContent` owns one inset and the gaps between its children.                                                 |
+| An inset report followed by a finite breakdown                     | `PageSection` scrolls with the page and leaves its breakdown full width.                                        |
+| One primary searchable or virtualized collection                   | `CollectionLayout` keeps its header above a viewport filling the available height.                              |
+| One record's identity, content and properties                      | `RecordPage` supplies the toolbar, header, content and optional aside.                                          |
+| A centered form or reading column                                  | `DetailPage` supplies the content measure.                                                                      |
+| A standalone sign-in or focused step outside the application shell | `FocusPage` centers one bounded task.                                                                           |
+| Tool panes and an independently scrolling inspector                | `Workbench` and its scroll regions own those boundaries.                                                        |
+| A self-contained analytical report                                 | The chart's `report` input groups its compact caption, summary and plot in one subtle frame.                    |
+| A plot embedded in an existing content region                      | The chart supplies its own title, legend and inspection. The containing region owns separation.                 |
+| A bounded decision, linked item or structured message Card         | `Panel` provides the unit's boundary.                                                                           |
 
 Prefer vertically stacked sections for related page content. Use columns when the views need simultaneous comparison and
 remain readable at their actual widths. A self-contained report owns one frame. Its surrounding page can stay flat.

@@ -1,5 +1,5 @@
 import { Button, CopyValue, Stack } from '@mechane-ai/elements';
-import { PageToolbar, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData } from '@mechane/console-data';
 import { EvidenceDetails, EvidenceDetailsPlaceholder } from '@mechane/console-views';
 import { evidenceContentPath, evidenceViewerPath } from '@mechane/protocol';
@@ -51,26 +51,25 @@ export function EvidenceScreen({ data, mechId, mechName, location, state, notice
   }
 
   return (
-    <>
-      <PageToolbar
-        showNavigation={false}
-        title={`Evidence · ${mechName}`}
-        leading={
-          <ToolbarAction ref={back} icon={<ArrowLeft size={16} aria-hidden />} onClick={returnToRun}>
-            Back
-          </ToolbarAction>
-        }
-        actions={
-          state.kind === 'ready' ? (
-            <CopyValue
-              label="evidence link"
-              value={new URL(evidenceViewerPath(state.value), globalThis.location.origin).href}
-            >
-              Copy link
-            </CopyValue>
-          ) : undefined
-        }
-      />
+    <PageLayout
+      showNavigation={false}
+      title={`Evidence · ${mechName}`}
+      leading={
+        <ToolbarAction ref={back} icon={<ArrowLeft size={16} aria-hidden />} onClick={returnToRun}>
+          Back
+        </ToolbarAction>
+      }
+      actions={
+        state.kind === 'ready' ? (
+          <CopyValue
+            label="evidence link"
+            value={new URL(evidenceViewerPath(state.value), globalThis.location.origin).href}
+          >
+            Copy link
+          </CopyValue>
+        ) : undefined
+      }
+    >
       <Workbench>
         <WorkbenchScroll label="Evidence" scrollRestorationId={reader.id}>
           {notice}
@@ -84,7 +83,7 @@ export function EvidenceScreen({ data, mechId, mechName, location, state, notice
           </ResourceView>
         </WorkbenchScroll>
       </Workbench>
-    </>
+    </PageLayout>
   );
 }
 

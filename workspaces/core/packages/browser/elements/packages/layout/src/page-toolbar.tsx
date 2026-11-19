@@ -2,6 +2,7 @@ import * as stylex from '@stylexjs/stylex';
 import { Children } from 'react';
 import type { ComponentProps, ReactNode } from 'react';
 import { Button } from '../../core/src/index.ts';
+import { layers } from '../../foundations/src/constants.stylex.ts';
 import { headerStyles } from '../../foundations/src/header-styles.ts';
 import { colors, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 import { frameConditions } from './frame.stylex.ts';
@@ -10,7 +11,9 @@ import { SidebarToggle } from './sidebar.tsx';
 const styles = stylex.create({
   toolbar: {
     boxSizing: 'border-box',
-    position: 'relative',
+    position: 'sticky',
+    insetBlockStart: 0,
+    zIndex: layers.sticky,
     display: 'flex',
     flexWrap: 'wrap',
     containerType: 'inline-size',
@@ -54,7 +57,6 @@ const styles = stylex.create({
     flexShrink: 1,
     marginLeft: 'auto',
   },
-  views: { display: 'flex', alignItems: 'center', minWidth: 0, flexShrink: 0 },
   leading: { display: 'flex', alignItems: 'center', paddingInlineStart: spacing.sm, flexShrink: 0 },
   actionCell: { boxSizing: 'border-box', display: 'flex', alignItems: 'stretch', minWidth: 0 },
   action: { minWidth: 0, maxWidth: '100%' },
@@ -62,12 +64,11 @@ const styles = stylex.create({
   actionLabel: { display: { default: 'inline', [frameConditions.toolbarCompact]: 'none' } },
 });
 
-type PageToolbarProps = {
+export type PageToolbarProps = {
   readonly title: ReactNode;
   readonly actions?: ReactNode;
   readonly showBreadcrumb?: boolean;
   readonly showNavigation?: boolean;
-  readonly views?: ReactNode;
   readonly leading?: ReactNode;
 };
 
@@ -78,15 +79,13 @@ export function PageToolbar({
   actions,
   showBreadcrumb = false,
   showNavigation = true,
-  views,
   leading,
 }: PageToolbarProps): ReactNode {
   const hasTitle = Children.toArray(title).length > 0;
   const hasActions = Children.toArray(actions).length > 0;
-  const hasViews = Children.toArray(views).length > 0;
   const hasLeading = Children.toArray(leading).length > 0;
 
-  if (Children.toArray([title, actions, views, leading]).length === 0) {
+  if (Children.toArray([title, actions, leading]).length === 0) {
     return null;
   }
 
@@ -105,7 +104,6 @@ export function PageToolbar({
           <Label {...stylex.props(styles.label)}>{title}</Label>
         </Title>
       )}
-      {hasViews && <div {...stylex.props(styles.views)}>{views}</div>}
       {hasActions && <div {...stylex.props(styles.actions)}>{actions}</div>}
     </div>
   );

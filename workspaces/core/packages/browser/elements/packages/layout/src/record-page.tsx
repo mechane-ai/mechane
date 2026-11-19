@@ -4,9 +4,10 @@ import type { ReactNode, Ref } from 'react';
 import { Heading, Muted } from '../../core/src/index.ts';
 import { conditions } from '../../foundations/src/constants.stylex.ts';
 import { colors, controls, pageGeometry, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
+import type { PageNavigationProps } from '../../navigation/src/index.ts';
 import { DetailPage } from './detail-page.tsx';
 import { frame } from './frame.stylex.ts';
-import { PageToolbar } from './page-toolbar.tsx';
+import { PageLayout } from './page-layout.tsx';
 
 const styles = stylex.create({
   root: {
@@ -61,11 +62,10 @@ const styles = stylex.create({
   },
 });
 
-export type RecordPageRootProps = { readonly children: ReactNode };
 export type RecordPageBodyProps = { readonly children: ReactNode; readonly isWide?: boolean };
 export type RecordPageContentProps = { readonly children: ReactNode };
 
-export type RecordPageToolbarProps = {
+type RecordBackProps = {
   readonly backLabel: string;
   readonly backHref: string;
   readonly onBack?: () => void;
@@ -82,55 +82,61 @@ export type RecordPageHeaderProps = {
 
 export type RecordPageAsideProps = { readonly children: ReactNode; readonly label?: string };
 
-function RecordPageRoot({ children }: RecordPageRootProps): ReactNode {
-  return <div {...stylex.props(styles.root)}>{children}</div>;
+function RecordBackLink({ backLabel, backHref, onBack }: RecordBackProps): ReactNode {
+  return (
+    <a
+      href={backHref}
+      {...stylex.props(styles.back)}
+      onClick={(event) => {
+        if (onBack === undefined || event.defaultPrevented || event.button !== 0) {
+          return;
+        }
+
+        const hasCommandModifier = event.metaKey || event.ctrlKey;
+        const hasAlternateModifier = event.shiftKey || event.altKey;
+
+        if (hasCommandModifier || hasAlternateModifier) {
+          return;
+        }
+
+        event.preventDefault();
+        onBack();
+      }}
+    >
+      <ArrowLeft size={16} aria-hidden {...stylex.props(styles.backIcon)} />
+      <span {...stylex.props(styles.backLabel)}>{backLabel}</span>
+    </a>
+  );
 }
 
-function RecordPageToolbar({
-  backLabel,
-  backHref,
-  onBack,
-  actions,
-  showNavigation = true,
-}: RecordPageToolbarProps): ReactNode {
+function RecordLayout<Item extends string>({
+  navigation,
+  children,
+  ...props
+}: RecordBackProps & {
+  readonly navigation?: PageNavigationProps<Item> | undefined;
+  readonly children: ReactNode;
+}): ReactNode {
   return (
-    <PageToolbar
+    <PageLayout
       showBreadcrumb
-      showNavigation={showNavigation}
-      actions={actions}
-      title={
-        <a
-          href={backHref}
-          {...stylex.props(styles.back)}
-          onClick={(event) => {
-            if (onBack === undefined || event.defaultPrevented || event.button !== 0) {
-              return;
-            }
-
-            const hasCommandModifier = event.metaKey || event.ctrlKey;
-            const hasAlternateModifier = event.shiftKey || event.altKey;
-
-            if (hasCommandModifier || hasAlternateModifier) {
-              return;
-            }
-
-            event.preventDefault();
-            onBack();
-          }}
-        >
-          <ArrowLeft size={16} aria-hidden {...stylex.props(styles.backIcon)} />
-          <span {...stylex.props(styles.backLabel)}>{backLabel}</span>
-        </a>
-      }
-    />
+      showNavigation={props.showNavigation ?? true}
+      actions={props.actions}
+      title={<RecordBackLink {...props} />}
+      navigation={navigation}
+    >
+      {children}
+    </PageLayout>
   );
 }
 
 function RecordPageBody({ children, isWide = false }: RecordPageBodyProps): ReactNode {
   return (
-    <DetailPage isWide={isWide}>
-      <div {...stylex.props(styles.body)}>{children}</div>
-    </DetailPage>
+    <div {...stylex.props(styles.root)}>
+      <DetailPage isWide={isWide}>
+        <div {...stylex.props(styles.body)}>{children}</div>
+      </DetailPage>
+    </div>
   );
 }
 
@@ -165,8 +171,7 @@ function RecordPageAside({ children, label = 'Properties' }: RecordPageAsideProp
 }
 
 export const RecordPage = {
-  Root: RecordPageRoot,
-  Toolbar: RecordPageToolbar,
+  Layout: RecordLayout,
   Body: RecordPageBody,
   Content: RecordPageContent,
   Header: RecordPageHeader,

@@ -99,9 +99,9 @@ input limits, and readable fallbacks.
 
 Choose the
 [containing task and layout](https://github.com/mechane-ai/mechane/blob/main/workspaces/core/docs/visual-system.md#composition-decisions)
-before adding a surface. Stack related page sections. `PageContent` insets content, `ReportContent` combines inset
-content with full-width finite rows, and `CollectionLayout` gives a primary collection its available height. Dialogs,
-inspectors and structured message Cards retain their own containing width. `Panel` bounds an independent unit.
+before adding a surface. Stack related page sections. `PageContent` insets content, `PageSection` combines inset content
+with full-width finite rows, and `CollectionLayout` gives a primary collection its available height. Dialogs, inspectors
+and structured message Cards retain their own containing width. `Panel` bounds an independent unit.
 
 Use Base UI's `render` composition and named variants for appearance. Native attributes, events, and refs remain
 available. Typed `xstyle` inputs permit placement styles compiled by the application's StyleX setup. Applications own
@@ -119,6 +119,13 @@ bottom-left control. Applications supply the menu content and actions. `Avatar` 
 initials or photo trigger. Applications supply selection, URLs, native link handlers, and action callbacks. Omit the
 rail for a sidebar that collapses to page icons. `SidebarFooter layout="navigation"` holds persistent controls in the
 contextual sidebar and reserves their intrinsic height while its pages scroll independently.
+
+Use `PageLayout` for a screen. Give it the page title, actions, and optional `navigation` with the destination links,
+selected ID, and view actions. The toolbar and navigation keep their natural height above the scrolling body. Wrap each
+report section's heading and content together in a sibling `PageSection`. Its heading stays visible until the next
+section arrives. On a short viewport the body prioritizes reading space. Use `RecordPage.Layout` for a record with a
+back link and optional route navigation. A bounded table or workbench can fill the page body and scroll its own rows or
+panes. Set `scrollRestorationId` when the router restores a named page body.
 
 `PageNavigation` uses real destination links; `Tabs` switches associated local panels with keyboard tab semantics. Both
 share the same typography, height, inset and selected indicator. Supply view controls through `PageNavigation.actions`
@@ -178,14 +185,14 @@ Use a chart's `report` input for a self-contained analytical report with a compa
 summary choices, scoped actions and matching placeholders, with links to the maintained examples. Embedded charts use
 their ordinary frame within the containing region. The application owns periods, aggregates, coverage and read state.
 
-Keep full-width tables outside `PageContent` so their cell insets remain the only gutter. `ReportContent` owns the inset
+Keep full-width tables outside `PageContent` so their cell insets remain the only gutter. `PageSection` owns the inset
 for its optional `summary` and leaves its `breakdown` full width. Pass summary content directly; omit it when a section
 contains only rows. Absent, `null` and `false` summaries reserve no empty space. `ContentTabs` uses `defaultSelectedId`
-for an initial local choice or `navigation` for application-controlled links; the two modes are mutually exclusive.
-`SettingsSection` keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and controls. Use
-`isPlaceholder` on a decorative row without a control ID; ready rows require a real `controlId` for their label.
-`FormActions` owns submission rows and their internal spacing. The enclosing section owns the gap before and after the
-actions.
+for an initial local choice. Give shareable views real links in the navigation slot on `PageLayout` or
+`RecordPage.Layout`. `SettingsSection` keeps wide tables inside their scroll region, and `SettingsRow` aligns labels and
+controls. Use `isPlaceholder` on a decorative row without a control ID; ready rows require a real `controlId` for their
+label. `FormActions` owns submission rows and their internal spacing. The enclosing section owns the gap before and
+after the actions.
 
 Elements 0.29 removes `ReportSection`. Move its metric summary into the explanatory chart's `report.summary` or
 `report.seriesValues`. Use ordinary `Stack` composition when content already belongs to an existing region.

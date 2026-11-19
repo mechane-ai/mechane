@@ -21,6 +21,7 @@ import { AppShell } from './app-shell.tsx';
 import { DetailPage } from './detail-page.tsx';
 import { NavigationRailMenu } from './navigation-rail-menu.tsx';
 import { NavigationRail } from './navigation-rail.tsx';
+import { PageLayout } from './page-layout.tsx';
 import { PageToolbar, ToolbarAction } from './page-toolbar.tsx';
 import {
   Navigation,
@@ -130,7 +131,7 @@ function CollectionShell({ hasHeaderControl = false }: { readonly hasHeaderContr
         </SidebarFooter>
       }
     >
-      <PageToolbar
+      <PageLayout
         title={view}
         actions={
           <>
@@ -140,22 +141,23 @@ function CollectionShell({ hasHeaderControl = false }: { readonly hasHeaderContr
             <ToolbarAction icon={<Plus size={16} aria-hidden />}>Create item</ToolbarAction>
           </>
         }
-      />
-      <DetailPage>
-        <Stack>
-          <Heading>{view}</Heading>
-          <Panel>
-            <Stack isCompact>
-              <Muted>
-                This content remains readable when the sidebar collapses or the navigation moves into a drawer.
-              </Muted>
-              <div>
-                <Button>View details</Button>
-              </div>
-            </Stack>
-          </Panel>
-        </Stack>
-      </DetailPage>
+      >
+        <DetailPage>
+          <Stack>
+            <Heading>{view}</Heading>
+            <Panel>
+              <Stack isCompact>
+                <Muted>
+                  This content remains readable when the sidebar collapses or the navigation moves into a drawer.
+                </Muted>
+                <div>
+                  <Button>View details</Button>
+                </div>
+              </Stack>
+            </Panel>
+          </Stack>
+        </DetailPage>
+      </PageLayout>
     </AppShell>
   );
 }
@@ -256,7 +258,7 @@ function AreaShell(): ReactNode {
         </Navigation>
       }
     >
-      <PageToolbar
+      <PageLayout
         title={page}
         showNavigation={!shouldFocus}
         actions={
@@ -264,10 +266,11 @@ function AreaShell(): ReactNode {
             {shouldFocus ? 'Leave focus mode' : 'Enter focus mode'}
           </ToolbarAction>
         }
-      />
-      <DetailPage>
-        <Muted>Switch areas, collapse the page list, or open navigation on a phone.</Muted>
-      </DetailPage>
+      >
+        <DetailPage>
+          <Muted>Switch areas, collapse the page list, or open navigation on a phone.</Muted>
+        </DetailPage>
+      </PageLayout>
     </AppShell>
   );
 }
@@ -330,10 +333,11 @@ export const PersistentNavigation: Story = {
         </SidebarFooter>
       }
     >
-      <PageToolbar title="Collections" />
-      <DetailPage>
-        <Muted>The account controls remain below the scrolling collection list.</Muted>
-      </DetailPage>
+      <PageLayout title="Collections">
+        <DetailPage>
+          <Muted>The account controls remain below the scrolling collection list.</Muted>
+        </DetailPage>
+      </PageLayout>
     </AppShell>
   ),
 };

@@ -7,7 +7,7 @@ requests, URL state, permissions and persisted preferences.
 ## Tables
 
 Choose the [containing task region](visual-system.md#composition-decisions) before the table's viewport. Use
-`ReportContent` for an optional inset summary followed by full-width finite report rows. Pass content directly to its
+`PageSection` for an optional inset summary followed by full-width finite report rows. Pass content directly to its
 summary slot. A table-only section omits that slot. Use `CollectionLayout` for one primary collection whose header stays
 above a viewport filling the available height.
 

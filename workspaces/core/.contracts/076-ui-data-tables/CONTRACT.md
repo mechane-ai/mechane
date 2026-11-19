@@ -48,7 +48,7 @@ on another collection forms a distinct task. Related forms, finite breakdowns an
 Different measurement populations require clear scope, and can share a page.
 Keep pagination, retry, and load-more controls with their collection.
 
-Use `ReportContent` for an optional inset summary followed by a finite full-width breakdown.
+Use `PageSection` for an optional inset summary followed by a finite full-width breakdown.
 Use `CollectionLayout` for a header above a primary collection viewport filling the available height.
 Table cells own their inset within the containing task region. Page tables extend to their section edges, while
 dialogs, inspectors and structured message Cards supply their own containing width and scroll boundary.

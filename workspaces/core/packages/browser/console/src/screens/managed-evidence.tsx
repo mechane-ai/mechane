@@ -1,6 +1,6 @@
 import { CopyValue } from '@mechane-ai/elements';
 import { EmptyState } from '@mechane-ai/elements/feedback';
-import { PageToolbar, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
+import { PageLayout, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedSession, ReadRequest } from '@mechane/console-data';
 import {
   EvidenceDetailsPlaceholder,
@@ -18,6 +18,7 @@ import { useManagedPaging } from '../managed-paging.ts';
 import { useSessionArtifact, useSessionEvidence } from '../managed-reads.ts';
 import { RouteLink, useReaderPosition } from '../navigation.tsx';
 import { ResourceView } from '../resource.tsx';
+import type { ResourceState } from '../resource.tsx';
 import { sessionEvidenceRead } from '../session-evidence-read.ts';
 import type { ConsoleLocation } from '../types.ts';
 
@@ -25,20 +26,18 @@ type SessionScope = { readonly agentId: string; readonly sessionId: string; read
 
 type EvidenceScreenProps = {
   readonly data: ConsoleData;
-  readonly session: ManagedSession;
+  readonly read: ResourceState<ManagedSession>;
+  readonly agentId: string;
+  readonly sessionId: string;
   readonly location: ConsoleLocation;
-  readonly notice: ReactNode;
 };
 
-export function ManagedSessionEvidence({ data, session, location, notice }: EvidenceScreenProps): ReactNode {
+export function ManagedSessionEvidence({ data, read, agentId, sessionId, location }: EvidenceScreenProps): ReactNode {
   const router = useRouter();
   const history = useRouterState({ select: (state) => state.location.state });
-  const scope = { workspaceId: data.workspace.id, agentId: session.agentId, sessionId: session.id };
+  const scope = { workspaceId: data.workspace.id, agentId, sessionId };
 
-  const request = useMemo(
-    () => sessionEvidenceRead({ agentId: session.agentId, sessionId: session.id }, location),
-    [session.agentId, session.id, location],
-  );
+  const request = useMemo(() => sessionEvidenceRead({ agentId, sessionId }, location), [agentId, sessionId, location]);
 
   const isDetail = location.artifact !== undefined;
   const origin = history.sessionReaderOrigin;
@@ -47,54 +46,61 @@ export function ManagedSessionEvidence({ data, session, location, notice }: Evid
   const reader = useReaderPosition(data.scope, request?.id ?? 'missing-evidence');
 
   return (
-    <>
-      <PageToolbar
-        showNavigation={!isDetail}
-        title={`Evidence · ${session.title ?? session.agentName}`}
-        leading={
-          <RouteLink
-            {...managedDestination({
-              ...back,
-              workspace: scope.workspaceId,
-              agent: scope.agentId,
-              session: scope.sessionId,
-              ...(isDetail ? { isSessionEvidence: true } : {}),
-            })}
-            replace
-            onClick={(event) => {
-              const isCommand = event.metaKey || event.ctrlKey;
-              const isModified = isCommand || event.shiftKey || event.altKey;
+    <PageLayout
+      showNavigation={!isDetail}
+      title={read.kind === 'ready' ? `Evidence · ${read.value.title ?? read.value.agentName}` : 'Evidence'}
+      leading={
+        <RouteLink
+          {...managedDestination({
+            ...back,
+            workspace: scope.workspaceId,
+            agent: scope.agentId,
+            session: scope.sessionId,
+            ...(isDetail ? { isSessionEvidence: true } : {}),
+          })}
+          replace
+          onClick={(event) => {
+            const isCommand = event.metaKey || event.ctrlKey;
+            const isModified = isCommand || event.shiftKey || event.altKey;
 
-              if (back === undefined || event.button !== 0 || isModified) {
-                return;
-              }
-
-              event.preventDefault();
-              router.history.go(-steps);
-            }}
-            state={
-              isDetail && history.sessionReaderOrigin !== undefined
-                ? { sessionReaderOrigin: history.sessionReaderOrigin }
-                : {}
+            if (back === undefined || event.button !== 0 || isModified) {
+              return;
             }
-          >
-            {isDetail ? 'Back to evidence' : 'Back to session'}
-          </RouteLink>
-        }
-      />
-      <Workbench>
-        <WorkbenchScroll label="Session evidence" scrollRestorationId={reader.id}>
-          {notice}
-          {request === undefined ? (
-            <EmptyState title="Evidence link unavailable" />
-          ) : request.kind === 'sessionEvidence' ? (
-            <SessionCaptures data={data} location={location} scope={scope} request={request} />
-          ) : (
-            <SessionCapture key={request.id} data={data} scope={scope} request={request} />
-          )}
-        </WorkbenchScroll>
-      </Workbench>
-    </>
+
+            event.preventDefault();
+            router.history.go(-steps);
+          }}
+          state={
+            isDetail && history.sessionReaderOrigin !== undefined
+              ? { sessionReaderOrigin: history.sessionReaderOrigin }
+              : {}
+          }
+        >
+          {isDetail ? 'Back to evidence' : 'Back to session'}
+        </RouteLink>
+      }
+    >
+      <ResourceView
+        state={read}
+        label="Loading session evidence"
+        placeholder={isDetail ? <EvidenceDetailsPlaceholder /> : <ManagedEvidenceListPlaceholder />}
+      >
+        {(_session, notice) => (
+          <Workbench>
+            <WorkbenchScroll label="Session evidence" scrollRestorationId={reader.id}>
+              {notice}
+              {request === undefined ? (
+                <EmptyState title="Evidence link unavailable" />
+              ) : request.kind === 'sessionEvidence' ? (
+                <SessionCaptures data={data} location={location} scope={scope} request={request} />
+              ) : (
+                <SessionCapture key={request.id} data={data} scope={scope} request={request} />
+              )}
+            </WorkbenchScroll>
+          </Workbench>
+        )}
+      </ResourceView>
+    </PageLayout>
   );
 }
 

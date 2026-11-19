@@ -12,9 +12,8 @@ import { Navigation, NavigationLink, SidebarLabel } from './sidebar.tsx';
 
 const meta = {
   title: 'Layout/RecordPage',
-  component: RecordPage.Root,
+  component: RecordPage.Layout,
   subcomponents: {
-    Toolbar: RecordPage.Toolbar,
     Body: RecordPage.Body,
     Content: RecordPage.Content,
     Header: RecordPage.Header,
@@ -28,7 +27,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'Supported. RecordPage composes a record toolbar, focusable heading, content, and optional properties. Put Header and the main content inside Content, with Aside as its sibling inside Body. Body shares DetailPage sizing and wraps the aside when the columns no longer fit. Toolbar reuses PageToolbar and its sidebar toggle; place it once inside AppShell. Applications supply routing, record data, actions, and titleRef when a completed route change should focus the heading. Use DetailPage alone when only a centered content container is needed. SettingsSection groups existing SettingsRow controls without a second card or row style; applications own drafts, labels, validation, and saving. Use Field for compact forms. PageNavigation links to independent pages using href and aria-current; optional onNavigate intercepts only unmodified activation. Use Tabs for panels within one page. The application supplies stable item IDs, selectedId, destinations, and navigation. Set embedded when a surrounding region already owns the bottom separator.',
+          'Supported. RecordPage composes a record toolbar, focusable heading, content, and optional properties. Put Header and the main content inside Content, with Aside as its sibling inside Body. Body shares DetailPage sizing and wraps the aside when the columns no longer fit. Layout owns the back link and sidebar toggle across record read states. Applications supply routing, record data, actions, and titleRef when a completed route change should focus the heading. Use DetailPage alone when only a centered content container is needed. SettingsSection groups existing SettingsRow controls without a second card or row style; applications own drafts, labels, validation, and saving. Use Field for compact forms. PageNavigation links to independent pages using href and aria-current; optional onNavigate intercepts only unmodified activation. Use Tabs for panels within one page. The application supplies stable item IDs, selectedId, destinations, and navigation.',
       },
     },
   },
@@ -58,12 +57,12 @@ function RecordExample(): ReactNode {
         </Navigation>
       }
     >
-      <RecordPage.Root>
-        <RecordPage.Toolbar
-          backLabel="Records"
-          backHref="#example-records"
-          actions={<ToolbarAction icon={<Save size={16} aria-hidden />}>Save changes</ToolbarAction>}
-        />
+      <RecordPage.Layout
+        navigation={{ label: 'Record pages', items: pages, selectedId, onNavigate: ({ id }) => setSelectedId(id) }}
+        backLabel="Records"
+        backHref="#example-records"
+        actions={<ToolbarAction icon={<Save size={16} aria-hidden />}>Save changes</ToolbarAction>}
+      >
         <RecordPage.Body>
           <RecordPage.Content>
             <RecordPage.Header
@@ -72,7 +71,6 @@ function RecordExample(): ReactNode {
               icon={<FileText size={24} />}
               titleRef={titleRef}
             />
-            <PageNavigation label="Record pages" items={pages} selectedId={selectedId} onNavigate={setSelectedId} />
             {selectedId === 'overview' && (
               <SettingsSection title="Document">
                 <SettingsRow label="Name" controlId="record-example-name">
@@ -114,7 +112,7 @@ function RecordExample(): ReactNode {
             </Stack>
           </RecordPage.Aside>
         </RecordPage.Body>
-      </RecordPage.Root>
+      </RecordPage.Layout>
     </AppShell>
   );
 }
@@ -128,8 +126,7 @@ export const StackedProperties: Story = {
 
 export const WithoutProperties: Story = {
   render: () => (
-    <RecordPage.Root>
-      <RecordPage.Toolbar backLabel="Shared documents and review checklists" backHref="#example-documents" />
+    <RecordPage.Layout backLabel="Shared documents and review checklists" backHref="#example-documents">
       <RecordPage.Body>
         <RecordPage.Content>
           <RecordPage.Header
@@ -143,7 +140,7 @@ export const WithoutProperties: Story = {
           </SettingsSection>
         </RecordPage.Content>
       </RecordPage.Body>
-    </RecordPage.Root>
+    </RecordPage.Layout>
   ),
 };
 
@@ -157,7 +154,6 @@ export const PageLinks: Story = {
   render: () => (
     <Stack>
       <PageNavigation label="Document pages" items={pages} selectedId="overview" />
-      <PageNavigation label="Embedded document pages" items={pages} selectedId="history" isEmbedded />
       <Muted>These native links retain browser navigation, copying, and opening in another tab.</Muted>
     </Stack>
   ),
