@@ -4,6 +4,15 @@ React components for applications, AI interfaces, and analytical graphics. Eleme
 surfaces, shared visual tokens, and accessible interactions. Mechane's Console consumes the same package. Components
 receive values and callbacks; applications own routing, data, identity, and persistence.
 
+## Workspace implementation guides
+
+- [Workspace layout](skills/elements-workspace/SKILL.md) covers shell lifetime, full-width reports, task navigation and
+  toolbar geometry.
+- [Loading and chart interaction](skills/elements-presentation/SKILL.md) covers coordinated route transitions, delayed
+  skeletons and pointer and keyboard inspection.
+
+The guides are included under `skills/` in the package.
+
 ## Install
 
 Install [Elements from npm](https://www.npmjs.com/package/@mechane-ai/elements). React and React DOM are peer

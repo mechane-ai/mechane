@@ -16,6 +16,7 @@ import { mergeStyles } from '../../foundations/src/style-composition.ts';
 import type { PlacementStyle } from '../../foundations/src/style-composition.ts';
 import { colors, controls, radii, spacing, typography } from '../../foundations/src/tokens.stylex.ts';
 
+const GROUP_OUTLINE_WIDTH_PX = 1;
 const SWITCH_TRACK_WIDTH_PX = 36;
 const SWITCH_TRACK_HEIGHT_PX = 20;
 const SWITCH_THUMB_SIZE_PX = 14;
@@ -153,11 +154,12 @@ const styles = stylex.create({
     'minWidth': 0,
     'maxWidth': '100%',
     'boxSizing': 'border-box',
-    'gap': spacing.xxs,
-    'padding': spacing.xxs,
-    'borderWidth': 1,
-    'borderStyle': 'solid',
-    'borderColor': colors.line,
+    'gap': 0,
+    'padding': 0,
+    'outlineWidth': GROUP_OUTLINE_WIDTH_PX,
+    'outlineOffset': -GROUP_OUTLINE_WIDTH_PX,
+    'outlineStyle': 'solid',
+    'outlineColor': colors.line,
     'borderRadius': radii.sm,
     'backgroundColor': colors.surface,
     ':is([data-orientation="vertical"])': { flexDirection: 'column', alignItems: 'stretch' },

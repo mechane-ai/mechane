@@ -11,7 +11,7 @@ import { FormActions } from './form-actions.tsx';
 import { FilePicker, InputGroup, NumberField } from './form-controls.tsx';
 import { Field, Input, Textarea } from './forms.tsx';
 import { Select } from './select.tsx';
-import { Switch } from './selection.tsx';
+import { Switch, ToggleGroup } from './selection.tsx';
 import { SettingsRow } from './settings-row.tsx';
 import { SettingsSection } from './settings-section.tsx';
 
@@ -238,5 +238,18 @@ export const SettingsLoading: Story = {
         </FormActions>
       </Stack>
     </div>
+  ),
+};
+
+export const ReportToolbar: Story = {
+  render: () => (
+    <Row>
+      <Input type="month" aria-label="Reporting month" defaultValue="2026-11" />
+      <ToggleGroup.Root aria-label="Period" defaultValue={['month']}>
+        <ToggleGroup.Item value="month">Month</ToggleGroup.Item>
+        <ToggleGroup.Item value="year">Year</ToggleGroup.Item>
+      </ToggleGroup.Root>
+      <Button>Export</Button>
+    </Row>
   ),
 };

@@ -1,6 +1,6 @@
 {
   "name": "@mechane-ai/elements",
-  "version": "0.38.0",
+  "version": "0.38.1",
   "description": "Elements by Mechane — React components for applications, AI interfaces, and analytical graphics",
   "license": "Apache-2.0",
   "repository": {
@@ -10,6 +10,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "packages/foundations/src/constants.stylex.ts",
     "packages/foundations/src/tokens.stylex.ts",
     "styles.css",

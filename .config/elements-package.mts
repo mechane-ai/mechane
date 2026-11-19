@@ -36,6 +36,7 @@ export function buildElementsPackage(source: string, destination: string) {
     mkdirSync(dirname(join(staged, definition)), { recursive: true });
     copyFileSync(join(sourcePackage, definition), join(staged, definition));
   }
+  cpSync(join(sourcePackage, 'skills'), join(staged, 'skills'), { recursive: true });
   copyFileSync(join(sourcePackage, 'README.md'), join(staged, 'README.md'));
   copyFileSync(join(sourcePackage, 'styles.css'), join(staged, 'styles.css'));
   for (const name of ['LICENSE', 'NOTICE']) copyFileSync(join(root, name), join(staged, name));
