@@ -29,6 +29,7 @@ const TOOL_DESCRIPTION_MAX_CHARS = 512;
 
 export const ManagedAgent = Schema.Struct({
   id: ManagedId,
+  archivedAt: Schema.optionalKey(nullableText),
   name: Schema.String,
   description: nullableText,
   model: Schema.String,
@@ -43,6 +44,7 @@ export type ManagedEnvironment = typeof ManagedEnvironment.Type;
 
 export const ManagedSession = Schema.Struct({
   id: ManagedId,
+  archivedAt: Schema.optionalKey(nullableText),
   agentId: ManagedId,
   agentName: Schema.String,
   environmentId: ManagedId,
@@ -82,6 +84,7 @@ export type ManagedEvent = typeof ManagedEvent.Type;
 export function projectAgent(agent: Agent): ManagedAgent {
   return {
     id: agent.id,
+    archivedAt: agent.archived_at,
     name: agent.name,
     description: agent.description,
     model: agent.model.id,
@@ -93,6 +96,7 @@ export function projectAgent(agent: Agent): ManagedAgent {
 export function projectSession(session: Session): ManagedSession {
   return {
     id: session.id,
+    archivedAt: session.archived_at,
     agentId: session.agent.id,
     agentName: session.agent.name,
     environmentId: session.environment_id,

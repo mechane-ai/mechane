@@ -44,7 +44,10 @@ those recipients through the shared idempotent delivery owner and confirm their 
 command success. Do not hold a Postgres transaction over actor RPC or drain unrelated backlog to acknowledge a command.
 A bounded confirmation failure reports persisted configuration with unconfirmed runtime refresh, without repeating the
 mutation. A factual recipient acknowledgment survives concurrent sweep claims and later delivery failures. Select
-connection recipients from current grants before deleting them. Workspace policy and its audit record commit together.
+connection recipients from current grants before deleting them. Workspace membership changes and their audit records
+commit together. Membership-protected operations read the committed role on their next authorization. Granting or
+revoking membership must complete independently of archived actors, billing identities and existing outbox deliveries.
+Workspace policy and its audit record commit together.
 Enforce current policy at admission and wake eligible installed work after a change. Policy writes must complete
 independently of the number or availability of historical actors and managed sessions. Skip remote tool discovery for
 inactive recipients and load their current grants when they resume.

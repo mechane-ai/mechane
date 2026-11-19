@@ -1,4 +1,4 @@
-import { TextButton } from '@mechane-ai/elements';
+import { Status, TextButton } from '@mechane-ai/elements';
 import { Notice, Skeleton } from '@mechane-ai/elements/feedback';
 import { PageToolbar, ToolbarAction, Workbench, WorkbenchFooter } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedSession } from '@mechane/console-data';
@@ -25,6 +25,7 @@ import { RouteLink, useReaderPosition } from '../navigation.tsx';
 import { useAgentAttention, useManagedEvents } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import type { ConsoleNavigation } from '../types.ts';
+import { ArchiveManagedResource } from './archive-managed-resource.tsx';
 import { ManagedSessionEvidence } from './managed-evidence.tsx';
 
 const interruptibleStatuses: ReadonlySet<ManagedSession['status']> = new Set(['running', 'rescheduling']);
@@ -108,7 +109,9 @@ function SessionDetail({
   const canSend = session.status !== 'terminated';
   const isPrimary = location.thread === undefined;
   const isHistoric = location.through !== undefined;
-  const canCompose = isPrimary && !isHistoric;
+  const isArchived = typeof session.archivedAt === 'string';
+  const canCompose = isPrimary && !isHistoric && !isArchived;
+  const canArchive = canCompose && session.archivedAt === null && session.status === 'idle';
 
   const lastStatus =
     authority.kind === 'ready' && authority.refresh.kind !== 'failed' ? authority.value.items[0] : undefined;
@@ -126,7 +129,7 @@ function SessionDetail({
   }
 
   useEffect(() => {
-    if (isHistoric) {
+    if (isHistoric || isArchived) {
       return;
     }
 
@@ -136,7 +139,7 @@ function SessionDetail({
     void data.managed.followEvents(request, controller.signal).catch(() => undefined);
 
     return () => controller.abort();
-  }, [data, request, isHistoric]);
+  }, [data, request, isHistoric, isArchived]);
 
   function selectThread(thread: string | undefined): void {
     navigate({ workspace, agent: agentId, session: sessionId, ...(thread === undefined ? {} : { thread }) });
@@ -174,12 +177,23 @@ function SessionDetail({
                 Agent working in another session
               </TextButton>
             )}
-            <SessionStatus
-              status={session.status}
-              stopReason={stop?.stopReason}
-              isExecuting={activeSessionId === sessionId}
-              isWaiting={attention?.queuedSessionIds.includes(sessionId)}
-            />
+            {canArchive && (
+              <ArchiveManagedResource
+                kind="session"
+                name={session.title ?? sessionId}
+                archive={() => data.managed.archiveSession(target)}
+              />
+            )}
+            {isArchived ? (
+              <Status>Archived</Status>
+            ) : (
+              <SessionStatus
+                status={session.status}
+                stopReason={stop?.stopReason}
+                isExecuting={activeSessionId === sessionId}
+                isWaiting={attention?.queuedSessionIds.includes(sessionId)}
+              />
+            )}
           </>
         }
       />

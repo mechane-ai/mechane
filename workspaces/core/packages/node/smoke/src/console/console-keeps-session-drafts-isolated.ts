@@ -8,6 +8,7 @@ import {
 import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { archiveConsoleTargets } from './archive-console-targets.ts';
 
 export async function consoleKeepsSessionDraftsIsolated({ stack }: ScenarioInput): Promise<void> {
   const marker = randomUUID();
@@ -102,6 +103,17 @@ export async function consoleKeepsSessionDraftsIsolated({ stack }: ScenarioInput
         await page.reload();
         await page.getByText(`Received ${marker}`, { exact: true }).waitFor(ready);
         assert.equal(page.url(), firstUrl);
+        await archiveConsoleTargets({ page, agentName: agent.name, sessionTitle: session.title ?? session.id });
+
+        const [archivedSession, sibling, archivedAgent] = await Promise.all([
+          client.beta.sessions.retrieve(session.id),
+          client.beta.sessions.retrieve(other.id),
+          client.beta.agents.retrieve(agent.id),
+        ]);
+
+        assert.notEqual(archivedSession.archived_at, null);
+        assert.equal(sibling.archived_at, null);
+        assert.notEqual(archivedAgent.archived_at, null);
       },
     });
   } finally {

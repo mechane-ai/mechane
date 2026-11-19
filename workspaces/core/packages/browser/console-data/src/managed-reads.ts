@@ -110,9 +110,18 @@ export async function admitSession(
   }
 }
 
-type ManagedRow = { readonly id: ManagedId; readonly updatedAt?: string; readonly version?: number };
+type ManagedRow = {
+  readonly id: ManagedId;
+  readonly updatedAt?: string;
+  readonly version?: number;
+  readonly archivedAt?: string | null;
+};
 
 function isCurrent(value: ManagedRow, previous: ManagedRow): boolean {
+  if (typeof previous.archivedAt === 'string' && value.archivedAt !== previous.archivedAt) {
+    return false;
+  }
+
   if (
     previous.updatedAt !== undefined &&
     value.updatedAt !== undefined &&

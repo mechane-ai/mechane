@@ -1,3 +1,4 @@
+import { Status } from '@mechane-ai/elements';
 import { Skeleton } from '@mechane-ai/elements/feedback';
 import { PageToolbar, ToolbarAction, Workbench, WorkbenchScroll } from '@mechane-ai/elements/layout';
 import type { ConsoleData, ManagedAgent } from '@mechane/console-data';
@@ -23,6 +24,7 @@ import { useNavigationPreferences } from '../navigation-preferences.tsx';
 import { useAgentAttention } from '../reads.ts';
 import { ResourceView } from '../resource.tsx';
 import type { ConsoleNavigation } from '../types.ts';
+import { ArchiveManagedResource } from './archive-managed-resource.tsx';
 import { ManagedSessionScreen } from './managed-session.tsx';
 
 type ManagedProps = ConsoleNavigation & { readonly data: ConsoleData };
@@ -104,13 +106,15 @@ function AgentScreen({ data, agentId, location, navigate }: ManagedProps & { rea
   const request = useMemo(() => data.reads.agent(agentId), [data, agentId]);
   const agent = useManagedAgent(data, request);
   const { visit, forget } = useNavigationPreferences();
-  const isReady = agent.kind === 'ready';
+  const archivedAt = agent.kind === 'ready' ? agent.value.archivedAt : undefined;
 
   useEffect(() => {
-    if (isReady) {
+    if (archivedAt === null) {
       visit(agentId);
+    } else if (typeof archivedAt === 'string') {
+      forget(agentId);
     }
-  }, [isReady, agentId, visit]);
+  }, [archivedAt, agentId, visit, forget]);
 
   useEffect(() => {
     if (data.readRevocation(request) !== undefined) {
@@ -138,7 +142,8 @@ function AgentSessions({
 }: ManagedProps & { readonly agent: ManagedAgent }): ReactNode {
   const router = useRouter();
   const workspace = data.workspace.id;
-  const [isCreating, setCreating] = useState(false);
+  const [isFormOpen, setCreating] = useState(false);
+  const isCreating = isFormOpen && agent.archivedAt === null;
   const { pinned, togglePin } = useNavigationPreferences();
   const request = useMemo(() => data.reads.sessions(agent.id, location.page ?? null), [data, agent.id, location.page]);
   const sessions = useManagedSessions(data, request);
@@ -163,17 +168,27 @@ function AgentSessions({
           </ToolbarAction>
         }
         actions={
-          !isCreating && (
-            <>
-              <MechPinButton
-                name={agent.name}
-                isPinned={pinned.includes(agent.id)}
-                onToggle={() => togglePin(agent.id)}
-              />
-              <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
-                New session
-              </ToolbarAction>
-            </>
+          typeof agent.archivedAt === 'string' ? (
+            <Status>Archived</Status>
+          ) : (
+            !isCreating &&
+            agent.archivedAt === null && (
+              <>
+                <MechPinButton
+                  name={agent.name}
+                  isPinned={pinned.includes(agent.id)}
+                  onToggle={() => togglePin(agent.id)}
+                />
+                <ArchiveManagedResource
+                  kind="agent"
+                  name={agent.name}
+                  archive={() => data.managed.archiveAgent(agent.id)}
+                />
+                <ToolbarAction icon={<Plus size={16} aria-hidden />} onClick={() => setCreating(true)}>
+                  New session
+                </ToolbarAction>
+              </>
+            )
           )
         }
       />

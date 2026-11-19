@@ -14,6 +14,10 @@ Under **Overview → Agents**, open an agent to see its sessions. A session is o
 another self-hosted environment, you can create its definition from the same form. The directory also offers **New
 agent**. Pinned and Recent are shortcuts to agents in the current workspace and browser account.
 
+Choose **Archive session** on an idle session to end it and remove it from the session list. Its direct link still opens
+the conversation. **Archive agent** removes an agent from the directory and leaves its existing sessions available. Both
+actions ask you to confirm the selected name.
+
 The session list reports each session’s public lifecycle status. **Working now** identifies the session currently using
 the agent’s execution slot when the private attention read is available. A session can be waiting for a tool decision
 while the same agent works in another session. Opening a conversation selects what you read. Sending a message or

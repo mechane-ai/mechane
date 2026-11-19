@@ -19,6 +19,7 @@ export { withConsoleAgent } from './with-console-agent.ts';
 export { CONSOLE_STORAGE_READY_TIMEOUT_MS } from './with-console-browser.ts';
 export { approveAndClaimKey, pollApproval, startApproval } from './auth/device-approval.ts';
 export type { Account, BrowserPage } from './auth/types.ts';
+export type { Page as ConsoleBrowserPage } from 'playwright';
 export { runCli } from './cli/run-cli.ts';
 export { runCliFailure } from './cli/run-cli-failure.ts';
 export { startCli } from './cli/start-cli.ts';

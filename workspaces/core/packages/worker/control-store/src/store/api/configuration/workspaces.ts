@@ -184,7 +184,7 @@ export function createWorkspaceRecords(context: StoreContext) {
             'DELETE FROM mechane.memberships WHERE workspace_id = $1 AND principal_id = $2',
             [input.workspaceId, input.memberPrincipalId],
           );
-          await recordConfigurationChange({
+          await recordConfigurationAudit({
             context: transaction,
             ...input,
             action: 'workspace.member-removed',
@@ -199,7 +199,7 @@ export function createWorkspaceRecords(context: StoreContext) {
            ON CONFLICT(workspace_id,principal_id) DO UPDATE SET role = EXCLUDED.role`,
           [input.workspaceId, input.memberPrincipalId, input.role],
         );
-        await recordConfigurationChange({
+        await recordConfigurationAudit({
           context: transaction,
           ...input,
           action: 'workspace.member-set',

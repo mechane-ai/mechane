@@ -64,6 +64,35 @@ export function createManagedCommands({
   return {
     attention,
     history,
+    async archiveAgent(agentId: ManagedId) {
+      const request = readRequests.agent(agentId);
+      const commandSignal = signalForRead(request);
+
+      try {
+        await client.beta.agents.archive(agentId, {}, { signal: commandSignal });
+      } catch (error) {
+        await onFailure(request, error, commandSignal);
+
+        throw error;
+      }
+
+      await Promise.allSettled([refresh(request), refreshKind('agents')]);
+    },
+    async archiveSession(target: Target) {
+      const request = readRequests.session(target.agentId, target.sessionId);
+      const commandSignal = signalForRead(request);
+
+      try {
+        await admitSession(client, target, commandSignal);
+        await client.beta.sessions.archive(target.sessionId, {}, { signal: commandSignal });
+      } catch (error) {
+        await onFailure(request, error, commandSignal);
+
+        throw error;
+      }
+
+      await Promise.allSettled([refresh(request), refreshKind('sessions', target.agentId)]);
+    },
     async createAgent({
       name,
       model,
