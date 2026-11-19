@@ -37,6 +37,7 @@ import { runReadiness } from './run-readiness.ts';
 import { runSandboxChange } from './sandboxes/run-sandbox-change.ts';
 import { runSandboxRestore } from './sandboxes/run-sandbox-restore.ts';
 import { runSandboxShow } from './sandboxes/run-sandbox-show.ts';
+import { runAgentPolicySet, runAgentPolicyShow } from './workspaces/run-agent-policy.ts';
 import { WORKSPACE_RUNS } from './workspaces/workspace-runs.ts';
 
 /** The run of each command; a command without one fails to compile. */
@@ -44,6 +45,8 @@ type Runs = { readonly [N in CommandName]: Run<N> };
 
 /** The run of each command; a command without one fails to compile. Only a command that streams writes as it goes. */
 export const RUNS: Readonly<Runs> = {
+  'agent-policy show': documentRun({ run: runAgentPolicyShow }),
+  'agent-policy set': documentRun({ run: runAgentPolicySet }),
   'execution-access show': documentRun({ run: runExecutionAccessShow }),
   'execution-access revoke': documentRun({ run: runExecutionAccessRevoke }),
   'execution-access set': documentRun({ run: runExecutionAccessSet }),

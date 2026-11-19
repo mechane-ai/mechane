@@ -75,6 +75,8 @@
     "POST /v1/memory_stores/{memory_store_id}",
     "DELETE /v1/memory_stores/{memory_store_id}",
     "POST /v1/memory_stores/{memory_store_id}/archive",
+    "GET /api/operator/workspaces/:workspace_id/agents/:agent_id/policy",
+    "PUT /api/operator/workspaces/:workspace_id/agents/:agent_id/policy",
     "POST /api/v1/device_approvals",
     "POST /api/v1/device_approvals/poll",
     "GET /api/v1/principal",
@@ -131,6 +133,13 @@
     "PUT /api/v1/workspaces/:workspace_id/policy"
   ],
   "fields": [
+    "GET /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.agent_id",
+    "GET /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.creator_principal_id",
+    "GET /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.daily_cap_micros",
+    "PUT /api/operator/workspaces/:workspace_id/agents/:agent_id/policy body.daily_cap_micros",
+    "PUT /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.agent_id",
+    "PUT /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.creator_principal_id",
+    "PUT /api/operator/workspaces/:workspace_id/agents/:agent_id/policy output.daily_cap_micros",
     "POST /api/v1/device_approvals body.purpose",
     "POST /api/v1/device_approvals body.name",
     "POST /api/v1/device_approvals output.user_code",
@@ -1894,6 +1903,8 @@
     "mech.forked"
   ],
   "commands": [
+    "agent-policy show",
+    "agent-policy set",
     "connection create",
     "connection update",
     "connection list",
@@ -1949,6 +1960,7 @@
     "--help",
     "--workspace",
     "--version",
+    "agent-policy set --daily-cap-micros",
     "connection create --name",
     "connection create --url",
     "connection create --secret-reference",

@@ -8,6 +8,7 @@ import {
   readInstalledComputer,
   requireFixtures,
   runCli,
+  runCliFailure,
   runInstalledBash,
   startInstalledProcess,
   waitForInstalledCompletion,
@@ -34,6 +35,8 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   const privateFile = join(account.configurationRoot, secretReference);
 
   const workspaceId = workspace.id;
+  const identity = `context=${workspaceId}/${agent.id}/${session.id}`;
+  const printIdentity = String.raw`printf 'context=%s/%s/%s\n' "$MECHANE_WORKSPACE_ID" "$MECHANE_AGENT_ID" "$MECHANE_SESSION_ID"`;
   const target = [agent.id, account.principalId, '--workspace', workspaceId];
   const access = { variables: { SMOKE_SETTING: 'current' }, secrets: { SMOKE_SECRET: secretReference } };
   const rotatedSecret = randomBytes(SECRET_BYTES).toString('hex');
@@ -70,6 +73,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   }
 
   const command = [
+    printIdentity,
     'test "$SMOKE_SETTING" = current && test -n "$SMOKE_SECRET" || exit 1',
     'printf %s "$SMOKE_SECRET" | sha256sum',
     String.raw`printf "stdout=%s\n" "$SMOKE_SECRET"`,
@@ -77,6 +81,18 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
   ].join('\n');
 
   try {
+    for (const field of ['variables', 'secrets']) {
+      const collision = { ...access, [field]: { MECHANE_SESSION_ID: secretReference } };
+
+      const refused = await runCliFailure({
+        stack,
+        account,
+        args: ['execution-access', 'set', ...target, '--access', JSON.stringify(collision)],
+      });
+
+      assert.match(refused.stdout, /MECHANE_SESSION_ID/u);
+    }
+
     for (const [index, secret] of secrets.entries()) {
       await saveSecret(secret);
 
@@ -98,6 +114,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
       const digest = createHash('sha256').update(secret).digest('hex');
       const output = await runInstalledBash(context, { command });
 
+      assert.ok(output.split('\n').includes(identity), 'Bash must identify the session that owns this work');
       assert.ok(output.includes(digest), 'The shell did not use the current secret');
       assert.ok(output.includes('stdout=') && output.includes('stderr='));
       assert.ok(
@@ -121,6 +138,7 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
     await startInstalledProcess(context, {
       processId,
       command: [
+        printIdentity,
         'test "$SMOKE_SETTING" = current || exit 1',
         `printf %s "$SMOKE_SECRET" | sha256sum | grep -Fq '${processDigest}' || exit 1`,
         'printf %s "$SMOKE_SECRET" >&2',
@@ -136,15 +154,16 @@ export async function executionGrantIsCurrentAndTransient({ stack }: ScenarioInp
       path: installedComputerResourcePath({ collection: 'processes', id: processId }),
     });
 
+    assert.ok(observation.output.text.split('\n').includes(identity), 'The process must identify its owning session');
     assert.ok(!observation.output.text.includes(rotatedSecret), 'The process log included a granted secret');
 
     await revokeBinding();
 
     const revoked = await runInstalledBash(context, {
-      command: 'test -z "$SMOKE_SECRET$SMOKE_SETTING" && printf revoked',
+      command: `test -z "$SMOKE_SECRET$SMOKE_SETTING" && ${printIdentity}`,
     });
 
-    assert.equal(revoked.trim(), 'revoked', 'A running session kept access after revocation');
+    assert.equal(revoked.trim(), identity, 'Revocation must remove the grant and preserve session attribution');
 
     const ownerAttempt = await fetch(
       new URL(installedCommandEnvironmentPath({ sessionId: session.id }), stack.origin),

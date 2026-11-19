@@ -89,6 +89,7 @@ export { NotificationText, NOTIFICATION_TEXT_MAX_CHARS } from './operations/noti
 export { ConsoleMessage, ConsoleMessagePage } from './operations/conversation/schemas.ts';
 export { Instructions, Mech, MechList, MechPage, MechSummary, NativeToolName } from './operations/mechs/schemas.ts';
 export { Access, ACCESS_FAILURES } from './operation/constants.ts';
+export { ManagedAgentPolicy } from './operations/agents/agent-policy.ts';
 export {
   RevokedWorkspaceServiceKey,
   ServiceSubject,

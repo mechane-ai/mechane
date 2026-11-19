@@ -151,6 +151,22 @@ Put the new file's contents in the integration's secret store. Use that credenti
 against this installation. Reuse the principal ID when granting the service access to installed commands. On an
 OIDC-only installation, integrations authenticate with their issued OIDC identity.
 
+## Managed agent spending policy
+
+A workspace owner can inspect an agent's creator and set its daily model spending cap by public agent ID. The cap uses
+millionths of a US dollar. New agents inherit the workspace cap at creation. Each paid request must fit both its agent's
+remaining allowance and the workspace's remaining allowance for the UTC day.
+
+```sh
+mechane agent-policy show "$AGENT_ID" --workspace "$WORKSPACE_ID" --output json
+mechane agent-policy set "$AGENT_ID" --workspace "$WORKSPACE_ID" --daily-cap-micros 1000000
+```
+
+The JSON result includes `creator_principal_id` and `daily_cap_micros`. For an integration that creates and runs its own
+agent with OIDC, use the creator UUID from this readback when enrolling that service's principal. The workspace owner
+can run `mechane workspace member set "$CREATOR_ID" --role member --workspace "$WORKSPACE_ID"` and grant the installed
+command access below. Refreshing a token with the same trusted OIDC identity preserves the creator UUID.
+
 ## Installed command access
 
 A workspace owner can grant an installed agent’s shell access to a workspace credential. Scope the grant to the managed
@@ -166,6 +182,10 @@ mechane execution-access revoke "$AGENT_ID" "$GRANTEE_PRINCIPAL_ID" --workspace 
 
 The value `nexus-service` names a credential already stored in this workspace. The read operation returns configuration
 and credential references. External workers manage their environment independently.
+
+Installed shell commands and background processes receive `MECHANE_WORKSPACE_ID`, `MECHANE_AGENT_ID`, and
+`MECHANE_SESSION_ID` from their current work lease. Tools can use these public IDs to link to the originating session. A
+command grant is optional for this attribution. Each downstream service authorizes its own actions.
 
 ## MCP and agent identity
 

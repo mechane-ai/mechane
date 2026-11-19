@@ -22,11 +22,11 @@ export async function installedCommandEnvironment(input: {
     throw new ManagedHttpError(HttpStatusCode.Unauthorized, 'An installed work credential is required');
   }
 
-  const { workspaceId, access } = await store.managed.installed.commandAccess.resolve({ sessionId, token });
+  const { workspaceId, environment } = await store.managed.installed.commandAccess.resolve({ sessionId, token });
 
   requireWorkerWorkspace(request, workspaceId);
 
-  const environment = Schema.encodeSync(ExecutionEnvironment)(access ?? { variables: {}, secrets: {} });
+  const payload = Schema.encodeSync(ExecutionEnvironment)(environment);
 
-  return Response.json(environment, { headers: { [HttpHeader.CacheControl]: 'no-store' } });
+  return Response.json(payload, { headers: { [HttpHeader.CacheControl]: 'no-store' } });
 }

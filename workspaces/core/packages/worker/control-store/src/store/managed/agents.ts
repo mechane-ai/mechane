@@ -7,6 +7,7 @@ import { lockWorkspace } from '../scope-locks.ts';
 import { agentDefinition, validateEffectiveToolsets } from './agent-definition.ts';
 import { listAgents, listAgentVersions, loadAgent, publicAgent } from './agent-lookup.ts';
 import type { AgentLookup } from './agent-lookup.ts';
+import { createManagedAgentPolicyStore } from './agent-policy.ts';
 import { pinRoster, rebindSelf } from './agent-roster.ts';
 import { managedDocument, managedId, ManagedStoreError } from './managed-record.ts';
 import { resolveAgentSkills } from './skills.ts';
@@ -148,6 +149,7 @@ async function archiveAgent(context: StoreContext, input: ResourceReference): Pr
 
 export function createManagedAgentStore(context: StoreContext) {
   return {
+    policy: createManagedAgentPolicyStore(context),
     create: (input: CreateAgent) => context.atomic((transaction) => createAgent(transaction, input)),
     update: (input: UpdateAgent) => context.atomic((transaction) => updateAgent(transaction, input)),
     archive: (input: ResourceReference) => context.atomic((transaction) => archiveAgent(transaction, input)),

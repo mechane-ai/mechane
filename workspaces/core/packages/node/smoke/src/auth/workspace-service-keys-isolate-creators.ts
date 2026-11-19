@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import {
   catalog,
+  ManagedAgentPolicy,
   managedWorkspaceId,
   RevokedWorkspaceServiceKey,
   Workspace,
@@ -8,7 +9,7 @@ import {
   WorkspaceMemberRemoval,
   WorkspaceServicePrincipal,
 } from '@mechane/protocol';
-import { HttpHeader, HttpStatusCode } from '@mechane/records';
+import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import type { ScenarioInput } from '@mechane/testing';
 import { createAccount, requireFixtures, runCli, runCliFailure, startCli } from '@mechane/testing';
 import { Option, Schema } from 'effect';
@@ -98,6 +99,35 @@ export async function workspaceServiceKeysIsolateCreators({ stack }: ScenarioInp
     status: HttpStatusCode.Forbidden,
   });
 
+  const ownerPolicy = await runCli({
+    stack,
+    account: owner,
+    args: ['agent-policy', 'show', agent.id, '--workspace', workspace.id],
+    schema: ManagedAgentPolicy,
+  });
+
+  assert.equal(ownerPolicy.creatorPrincipalId, key.principalId);
+
+  const foreignPolicy = await runCliFailure({
+    stack,
+    account: owner,
+    args: ['agent-policy', 'set', agent.id, '--workspace', other.id, '--daily-cap-micros', '0'],
+  });
+
+  assert.equal(foreignPolicy.code, 'RequestInvalid');
+
+  const policyPath = catalog.configureManagedAgentPolicy.path
+    .replace(':workspace_id', workspace.id)
+    .replace(':agent_id', agent.id);
+
+  const policyWrite = await fetch(new URL(policyPath, stack.origin), {
+    method: catalog.configureManagedAgentPolicy.method,
+    headers: { [HttpHeader.Authorization]: `Bearer ${key.token}`, [HttpHeader.ContentType]: MediaType.Json },
+    body: JSON.stringify({ daily_cap_micros: 0 }),
+  });
+
+  assert.equal(policyWrite.status, HttpStatusCode.Unauthorized);
+
   const expansion = await runCliFailure({
     stack,
     account: owner,
@@ -135,6 +165,14 @@ export async function workspaceServiceKeysIsolateCreators({ stack }: ScenarioInp
   const member = await createAccount({ stack });
 
   await addMember(member.principalId);
+
+  const memberPolicy = await runCliFailure({
+    stack,
+    account: member,
+    args: ['agent-policy', 'show', agent.id, '--workspace', workspace.id],
+  });
+
+  assert.equal(memberPolicy.code, 'WorkspaceOwnerRequired');
 
   const memberRotate = await runCliFailure({
     stack,

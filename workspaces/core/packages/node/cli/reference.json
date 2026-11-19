@@ -1,7 +1,7 @@
 {
   "schema_version": 4,
   "program": "mechane",
-  "release": "0.33.22",
+  "release": "0.33.23",
   "flags": [
     {
       "name": "origin",
@@ -34,6 +34,45 @@
     }
   ],
   "commands": [
+    {
+      "name": "agent-policy show",
+      "summary": "show the agent creator and daily spending cap in the selected workspace",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "showManagedAgentPolicy"
+      ],
+      "flags": [],
+      "arguments": [
+        {
+          "name": "agent-id",
+          "summary": "the Managed Agent ID from ant beta:agents list"
+        }
+      ]
+    },
+    {
+      "name": "agent-policy set",
+      "summary": "set the daily model spending cap for this agent across its sessions",
+      "shape": "document",
+      "operations": [
+        "listWorkspaces",
+        "configureManagedAgentPolicy"
+      ],
+      "flags": [
+        {
+          "name": "daily-cap-micros",
+          "kind": "text",
+          "summary": "the daily model budget in micro-dollars",
+          "required": true
+        }
+      ],
+      "arguments": [
+        {
+          "name": "agent-id",
+          "summary": "the Managed Agent ID from ant beta:agents list"
+        }
+      ]
+    },
     {
       "name": "connection create",
       "summary": "register a reusable remote MCP connection with an explicit tool policy and allowlist",

@@ -1,4 +1,5 @@
 import type { Operation } from './operation/types.ts';
+import { AGENT_POLICY_OPERATIONS } from './operations/agents/agent-policy.ts';
 import { AUTH_OPERATIONS } from './operations/auth/auth-operations.ts';
 import { CONNECTION_OPERATIONS } from './operations/connections/connection-operations.ts';
 import { listConsoleMessages } from './operations/conversation/list-console-messages.ts';
@@ -23,6 +24,7 @@ type Catalog = Readonly<Record<string, Operation>>;
 
 /** First-party authentication, workspace administration and native operator routes. */
 export const catalog = {
+  ...AGENT_POLICY_OPERATIONS,
   ...AUTH_OPERATIONS,
   ...CONNECTION_OPERATIONS,
   ...CREDENTIAL_OPERATIONS,

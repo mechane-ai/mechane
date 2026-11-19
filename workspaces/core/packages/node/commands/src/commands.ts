@@ -1,3 +1,4 @@
+import { AGENT_POLICY_COMMANDS } from './declarations/access/agent-policy-commands.ts';
 import { AUTH_COMMANDS } from './declarations/access/auth-commands.ts';
 import { KEY_COMMANDS } from './declarations/access/key-commands.ts';
 import { SERVICE_PRINCIPAL_COMMANDS } from './declarations/access/service-principal-commands.ts';
@@ -16,6 +17,7 @@ import type { CommandDeclaration } from './types.ts';
 
 /** Every command, keyed by the words a person types, in the order `--help` lists them. */
 export const COMMANDS = {
+  ...AGENT_POLICY_COMMANDS,
   ...CONNECTION_COMMANDS,
   ...EXECUTION_ACCESS_COMMANDS,
   ...CREDENTIAL_COMMANDS,

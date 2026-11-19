@@ -37,8 +37,10 @@ export async function startInstalledProcess({ store, request, sessionId, submit 
     return Response.json(receipt, { status: current.status });
   }
 
-  const { access } = await store.managed.installed.commandAccess.resolve({ sessionId, token: workerBearer(request) });
-  const environment = access ?? { variables: {}, secrets: {} };
+  const { environment } = await store.managed.installed.commandAccess.resolve({
+    sessionId,
+    token: workerBearer(request),
+  });
 
   const submission = Schema.encodeSync(Schema.fromJsonString(InstalledProcessSubmission))({
     ...command.success,

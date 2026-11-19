@@ -20,7 +20,7 @@ type CommandEnvironment = {
   readonly secrets: Readonly<Record<string, Redacted.Redacted>>;
 };
 
-type WorkerAccess = { readonly workspaceId: string; readonly access: CommandEnvironment | null };
+type WorkerAccess = { readonly workspaceId: string; readonly environment: CommandEnvironment };
 
 async function authorizeTarget(context: StoreContext, { scope, agentId, granteePrincipalId }: Target) {
   await lockWorkspaceAuthority({ context, ...scope, isOwnerRequired: true });
@@ -129,7 +129,13 @@ export function createInstalledCommandAccess(context: StoreContext, keyring: Cre
           );
         }
 
-        const { workspaceId, sessionId } = allocation;
+        const { workspaceId, agentId, sessionId } = allocation;
+
+        const identity = {
+          MECHANE_WORKSPACE_ID: workspaceId,
+          MECHANE_AGENT_ID: agentId,
+          MECHANE_SESSION_ID: sessionId,
+        };
 
         const result = await transaction.client.query<GrantRow>(
           `SELECT g.access FROM mechane.managed_sessions s
@@ -145,7 +151,7 @@ export function createInstalledCommandAccess(context: StoreContext, keyring: Cre
         const row = result.rows[0];
 
         if (row === undefined) {
-          return { workspaceId, access: null };
+          return { workspaceId, environment: { variables: identity, secrets: {} } };
         }
 
         const access = readAccess(row.access);
@@ -166,7 +172,7 @@ export function createInstalledCommandAccess(context: StoreContext, keyring: Cre
           secrets[name] = secret;
         }
 
-        return { workspaceId, access: { variables: access.variables, secrets } };
+        return { workspaceId, environment: { variables: { ...access.variables, ...identity }, secrets } };
       }),
   };
 }

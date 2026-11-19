@@ -18,10 +18,10 @@ session, thread and call. A new event in another session cannot steer this gener
 select its checkout. Fence stale owners before dispatch. Preserve known external effect receipts through lease changes.
 External work already admitted may finish independently. Distinct agent identities may execute concurrently.
 
-Expose the current native workspace, mech, session and run identity in the command environment as `MECHANE_*`
-variables. Runtime identity and origin override configured variables and credential names; a secret grant cannot
-replace attribution. Keep these identities stable when retrying the same native execution receipt. They are references
-for ordinary tools, not authority to create external work, report success or publish a response.
+Each installed shell and background process receives the public `MECHANE_WORKSPACE_ID`, `MECHANE_AGENT_ID` and
+`MECHANE_SESSION_ID` from its authorized work lease, including when no command grant exists. Reserve these names
+in both configured variables and credential bindings. They identify the session for external tools. Downstream
+services authorize actions with their own credentials.
 
 Do not impose a fixed model or tool round count on a working conversation. Current budgets, authority, and cancellation
 bound continued work. Reconcile runtime-owned native configuration on every actor open through supported Pi APIs,
@@ -133,6 +133,12 @@ provider wrapper with a trusted HTTP transport. Allocate attempt identity durabl
 current workspace and mech policy, then recheck the actor fence before dispatch. Retries of the reservation retain its
 identity; a new paid request receives another reservation. Settle confirmed usage once. An uncertain dispatched request
 retains its reservation until evidence resolves it. Buffered SDK progress is not authoritative spending evidence.
+
+Only a workspace owner can inspect or set a Managed Agent’s daily spending policy. Resolve the public agent ID
+inside the selected workspace and report its stored creator principal. Apply changes to the cap used by provider
+admission under the same workspace lock. Preserve the independent workspace limit and record each change in
+the audit log. Reapplying the current cap creates no revision or audit entry.
+
 The private generation guard checks its native task ownership, cancellation, and control fences. New unobserved input
 does not revoke that generation's prepared cutoff; consequential tool and publication admission retains its separate
 fresh-input guard. Authenticated HTTP transports use manual redirects and reject non-success responses without
@@ -161,6 +167,8 @@ the policy and verify that accepted work resumes without a replacement actor or 
 Verify committed-only outbox capture, isolated concurrent commands, duplicate and lost acknowledgment, and late failure
 after a positive acknowledgment. After a tool-policy upgrade command succeeds, the next provider request must offer
 the current granted tools even when unrelated control delivery is backlogged.
+Compare the three installed shell identifiers with the workspace, agent and session returned by their APIs. Check
+the same identifiers in a background process and after command-grant revocation. Reject grant names that shadow them.
 Hold discovery past the caller's confirmation limit and verify the saved change's explicit unconfirmed result. Release
 discovery and require a new change to confirm without restarting the actor or repeating the saved mutation.
 Restart with remote discovery held: restored native cleanup and local tools must progress from durable descriptors,

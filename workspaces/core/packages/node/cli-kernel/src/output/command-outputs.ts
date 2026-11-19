@@ -9,6 +9,7 @@ import {
   ExecutionAccessState,
   HeldWorkPage,
   ListedEvent,
+  ManagedAgentPolicy,
   Mech,
   MechList,
   Readiness,
@@ -31,6 +32,8 @@ import { WORKSPACE_OUTPUTS } from './workspace-outputs.ts';
  * result is one of its records. A command without one fails to compile.
  */
 export const COMMAND_OUTPUTS = {
+  'agent-policy show': ManagedAgentPolicy,
+  'agent-policy set': ManagedAgentPolicy,
   'execution-access show': ExecutionAccessState,
   'execution-access revoke': ExecutionAccessState,
   'execution-access set': ExecutionAccessState,
