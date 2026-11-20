@@ -66,7 +66,7 @@ import {
 import type {
   ExecutionId,
   InstalledProcessCompletion,
-  ManagedWorkerClaim,
+  ManagedWorkerClaimWire,
   RunExecutionInput,
 } from '@mechane/sandbox-wire';
 import { afterSettling, capturePromise } from '@mechane/utilities';
@@ -140,7 +140,7 @@ type OwnerMode = { readonly isInstalled: boolean };
 type ManagedGeneration = { readonly generation: number };
 type ScopedInput = Partial<ManagedGeneration>;
 type ScopedCall<T> = { readonly generation: ScopedInput['generation']; readonly run: () => Promise<T> };
-type ManagedStartInput = ManagedGeneration & { readonly claim: ManagedWorkerClaim };
+type ManagedStartInput = ManagedGeneration & { readonly claim: ManagedWorkerClaimWire };
 
 type ProcessSubmissionInput = typeof SandboxProcessSubmission.Encoded &
   ScopedInput &

@@ -486,6 +486,9 @@ export async function startLocalStack(options: StackOptions): Promise<LocalStack
       ...configured,
       MECHANE_ORIGIN: origin.origin,
       MECHANE_SANDBOX_SERVICE_KEY: environment['MECHANE_SANDBOX_SERVICE_KEY'] ?? state.secrets.sandboxKey,
+      ...(options.mode === 'ephemeral' && {
+        MECHANE_SANDBOX_WORKER_IDLE_MS: environment['MECHANE_SANDBOX_WORKER_IDLE_MS'] ?? '8000',
+      }),
     };
 
     if (options.sandbox === 'configured') {

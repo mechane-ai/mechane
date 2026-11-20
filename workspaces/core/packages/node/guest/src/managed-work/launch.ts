@@ -81,7 +81,10 @@ function launchChild({ claim, settings, entry, digest }: ChildInput): WorkProces
     finished.resolve();
   });
   child.once('error', rejectAdmission);
-  child.send({ claim, shell }, (error) => {
+
+  const encodedClaim = Schema.encodeSync(ManagedWorkerClaim)(claim);
+
+  child.send({ claim: encodedClaim, shell }, (error) => {
     const failure = Option.fromNullishOr(error);
 
     if (Option.isSome(failure)) {

@@ -40,7 +40,7 @@ export const buildRelease = Effect.fn('buildRelease')(function* ({
   });
 
   const binaries = yield* Effect.forEach(targets, (target) => compileBinary({ release, target, folder, inherited }), {
-    concurrency: 1,
+    concurrency: targets.length,
   });
 
   const manifest = { release, revision, binaries: Record.fromEntries(binaries) };

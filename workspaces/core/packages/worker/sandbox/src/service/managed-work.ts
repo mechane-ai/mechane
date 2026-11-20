@@ -42,7 +42,7 @@ export async function serveManagedWork({ request, environment }: LaunchInput): P
 
   switch (command.action) {
     case ManagedSandboxWorkAction.Start: {
-      const claim = Schema.decodeUnknownSync(ManagedWorkerClaim)(command);
+      const claim = Schema.encodeSync(ManagedWorkerClaim)(command);
 
       return new Response(null, { status: await stub.managedStart({ generation, claim }) });
     }

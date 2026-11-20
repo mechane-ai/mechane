@@ -1,17 +1,17 @@
 import { HttpStatusCode } from '@mechane/records';
 import { AllocationPhase, managedAllocationStore } from '@mechane/sandbox-store';
-import type { ManagedWorkerClaim } from '@mechane/sandbox-wire';
+import type { ManagedWorkerClaimWire } from '@mechane/sandbox-wire';
 import { serialCalls } from '@mechane/utilities';
 import { Option, Schema } from 'effect';
 
 type Generation = { readonly generation: number };
 type ScopedEffect<T> = Generation & { readonly run: () => Promise<T> };
-type StartClaim = Generation & { readonly claim: ManagedWorkerClaim };
+type StartClaim = Generation & { readonly claim: ManagedWorkerClaimWire };
 
 type MachineLifecycle = {
   readonly storage: Pick<DurableObjectStorage, 'get' | 'put'>;
-  readonly start: (claim: ManagedWorkerClaim, beforeHandoff: () => Promise<void>) => Promise<number>;
-  readonly observed: (claim: ManagedWorkerClaim) => Promise<boolean>;
+  readonly start: (claim: ManagedWorkerClaimWire, beforeHandoff: () => Promise<void>) => Promise<number>;
+  readonly observed: (claim: ManagedWorkerClaimWire) => Promise<boolean>;
   readonly touch: () => Promise<boolean>;
   readonly release: () => Promise<boolean>;
   readonly destroy: () => Promise<boolean>;

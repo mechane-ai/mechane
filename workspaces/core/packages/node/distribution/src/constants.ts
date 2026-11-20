@@ -31,14 +31,29 @@ export const QUALIFICATION_SHARDS = [
   'auth',
   'managed-core',
   'managed-advanced',
-  'lifecycle',
+  'lifecycle-context',
+  'lifecycle-core',
+  'lifecycle-recovery',
   'console',
-  'compute-fast',
+  'compute-core',
+  'compute-capacity',
+  'compute-browser',
+  'compute-drain',
   'compute-recovery',
   'compute-restore',
 ] as const;
 
 export type QualificationShard = (typeof QUALIFICATION_SHARDS)[number];
+
+/** Shards whose scenarios do not touch the container sandbox and qualify without loading the guest image. */
+export const CONTAINER_FREE_SHARDS: ReadonlySet<QualificationShard> = new Set([
+  'auth',
+  'managed-core',
+  'managed-advanced',
+  'lifecycle-context',
+  'lifecycle-core',
+  'lifecycle-recovery',
+]);
 
 /** The shard that exercises browser Console flows and requires Playwright Chromium installation. */
 export const CONSOLE_SHARD: QualificationShard = 'console';
@@ -49,6 +64,7 @@ export const DistributionMode = {
   Candidate: 'candidate',
   Accept: 'accept',
   AcceptShard: 'accept-shard',
+  AcceptStatic: 'accept-static',
   MergeQualification: 'merge-qualification',
   Verify: 'verify',
   Preview: 'preview-module',

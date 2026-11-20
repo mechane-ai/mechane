@@ -16,7 +16,7 @@ import type { ArtifactQualification } from '../qualification.ts';
 import { RuntimeRelease } from '../runtime-artifact.ts';
 import { InstallationManifest } from '../schemas.ts';
 import type { ArtifactReceipt } from '../schemas.ts';
-import type { DistributionSettings, FileDigest } from '../types.ts';
+import type { DistributionSettings, FileDigest, VerificationScope } from '../types.ts';
 import { verifyDistribution } from '../verify/verify-distribution.ts';
 import { verifyQualifiedDistribution } from '../verify/verify-qualified-distribution.ts';
 import type { CandidateChecks, QualificationTools } from './shard-schema.ts';
@@ -30,8 +30,14 @@ export type VerifiedCandidate = {
   readonly release: RuntimeRelease;
 };
 
-type VerifyCandidateInput = { readonly settings: DistributionSettings };
-type VerifyUnchangedInput = { readonly settings: DistributionSettings; readonly candidate: VerifiedCandidate };
+type VerifyCandidateInput = { readonly settings: DistributionSettings; readonly scope?: VerificationScope | undefined };
+
+type VerifyUnchangedInput = {
+  readonly settings: DistributionSettings;
+  readonly candidate: VerifiedCandidate;
+  readonly scope?: VerificationScope | undefined;
+};
+
 type VerifyRuntimeInput = { readonly module: string; readonly manifest: InstallationManifest };
 
 type ExecuteInput = {
@@ -85,6 +91,7 @@ export const existingQualification = Effect.fn('existingQualification')(function
 
 export const verifyAcceptanceCandidate = Effect.fn('verifyAcceptanceCandidate')(function* ({
   settings,
+  scope = 'complete',
 }: VerifyCandidateInput): Effect.fn.Return<VerifiedCandidate, DistributionFailed> {
   const selected = yield* fileDigest({ path: join(settings.folder, 'artifacts.json') });
 
@@ -96,7 +103,7 @@ export const verifyAcceptanceCandidate = Effect.fn('verifyAcceptanceCandidate')(
   }
 
   const source = yield* readPublicSource({ settings });
-  const receipt = yield* verifyDistribution({ settings });
+  const receipt = yield* verifyDistribution({ settings, scope });
 
   if (receipt.public_commit !== source) {
     return yield* new DistributionFailed({
@@ -125,8 +132,9 @@ export const verifyAcceptanceCandidate = Effect.fn('verifyAcceptanceCandidate')(
 export const verifyCandidateUnchanged = Effect.fn('verifyCandidateUnchanged')(function* ({
   settings,
   candidate,
+  scope = 'complete',
 }: VerifyUnchangedInput): Effect.fn.Return<UnchangedCandidate, DistributionFailed> {
-  yield* verifyDistribution({ settings });
+  yield* verifyDistribution({ settings, scope });
 
   const unchanged = yield* readPublicSource({ settings });
   const artifacts = yield* fileDigest({ path: join(settings.folder, 'artifacts.json') });
@@ -238,6 +246,18 @@ export async function inspectQualificationTools({ settings }: VerifyCandidateInp
   return { node: { ...node, version: process.versions.node }, celld: { ...celld, version: celldVersion } };
 }
 
+export function resolveHostCliBinary({ receipt }: Pick<PrepareGuestInput, 'receipt'>): string {
+  const target = Schema.decodeUnknownSync(Schema.Enum(CliTarget))(`${platform()}-${arch()}`);
+  const cli = releaseBinaryName({ target });
+  const binary = receipt.assets.find(({ name }) => name === cli);
+
+  if (binary === undefined) {
+    throw new Error('The candidate has no CLI for this qualification host');
+  }
+
+  return cli;
+}
+
 export async function prepareQualificationGuest({
   settings,
   receipt,
@@ -267,13 +287,7 @@ export async function prepareQualificationGuest({
     throw new Error('The candidate must run with its Linux amd64 guest');
   }
 
-  const target = Schema.decodeUnknownSync(Schema.Enum(CliTarget))(`${platform()}-${arch()}`);
-  const cli = releaseBinaryName({ target });
-  const binary = receipt.assets.find(({ name }) => name === cli);
-
-  if (binary === undefined) {
-    throw new Error('The candidate has no CLI for this qualification host');
-  }
+  const cli = resolveHostCliBinary({ receipt });
 
   return { guestImageId: image.Id, guestImageLog: `${JSON.stringify(image)}\n`, cli };
 }

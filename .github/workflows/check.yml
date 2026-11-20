@@ -76,6 +76,8 @@ jobs:
           # The full history holds the merge base the baselines are compared with.
           fetch-depth: 0
       - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm github:macromackie/tenet github:macromackie/ev-grep aqua:koalaman/shellcheck aqua:rhysd/actionlint
       - name: Check source
         run: mise run check:static
   elements:
@@ -90,6 +92,8 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm
       - name: Build Elements package
         run: mise -C workspaces/core run build:elements
   infrastructure:
@@ -104,6 +108,9 @@ jobs:
         with:
           persist-credentials: false
       - uses: ./.github/actions/setup
+        with:
+          tools: go opentofu
+          install-packages: 'false'
       - name: Test OpenTofu provider and format
         run: |
           set -euo pipefail

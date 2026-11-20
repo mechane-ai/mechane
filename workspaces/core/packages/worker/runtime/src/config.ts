@@ -59,6 +59,8 @@ const DEFAULT_TENSORLAKE_API_URL = 'https://api.tensorlake.ai';
 const DEFAULT_MODAL_APP_NAME = 'mechane-sandboxes';
 const DISABLED_SANDBOX_ORIGIN = 'https://sandbox.invalid';
 const DISABLED_SANDBOX_BEARER = 'disabled-sandbox-service-key';
+const WORKER_IDLE_MIN_MS = 1000;
+const WORKER_IDLE_MAX_MS = 3_600_000;
 
 export type ModelOffer = typeof ModelOfferSchema.Type;
 
@@ -67,6 +69,7 @@ export type SandboxRuntimeConfiguration = {
   readonly origin: string;
   readonly bearer: Redacted.Redacted;
   readonly image: string;
+  readonly workerIdleMs: number | null;
   readonly tensorlake: { readonly apiKey: Redacted.Redacted | null; readonly baseUrl: string };
   readonly modal: {
     readonly baseUrl: string | null;
@@ -264,6 +267,22 @@ function resolveModalSettings(environment: RuntimeEnvironment, provider: Pluggab
   };
 }
 
+function resolveWorkerIdleMs(environment: RuntimeEnvironment): number | null {
+  const value = optionalString(environment, 'MECHANE_SANDBOX_WORKER_IDLE_MS');
+
+  if (value === null) {
+    return null;
+  }
+
+  const parsed = Number(value);
+
+  if (!Number.isSafeInteger(parsed) || parsed < WORKER_IDLE_MIN_MS || parsed > WORKER_IDLE_MAX_MS) {
+    throw new Error('Invalid runtime setting MECHANE_SANDBOX_WORKER_IDLE_MS');
+  }
+
+  return parsed;
+}
+
 function loadSandboxConfiguration(environment: RuntimeEnvironment): SandboxRuntimeConfiguration {
   const provider = resolveSandboxProvider(environment);
 
@@ -277,6 +296,7 @@ function loadSandboxConfiguration(environment: RuntimeEnvironment): SandboxRunti
     origin: resolveSandboxOrigin(environment, provider),
     bearer: resolveSandboxBearer(environment, provider),
     image,
+    workerIdleMs: resolveWorkerIdleMs(environment),
     tensorlake: resolveTensorlakeSettings(environment, provider),
     modal: resolveModalSettings(environment, provider),
   };

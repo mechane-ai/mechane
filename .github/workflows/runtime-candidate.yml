@@ -33,8 +33,12 @@ jobs:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
     outputs:
-      artifact_id: ${{ steps.archive.outputs.artifact-id }}
-      archive_sha256: ${{ steps.inventory.outputs.archive_sha256 }}
+      core_artifact_id: ${{ steps.archive_core.outputs.artifact-id }}
+      core_archive_sha256: ${{ steps.inventory.outputs.core_archive_sha256 }}
+      guest_artifact_id: ${{ steps.archive_guest.outputs.artifact-id }}
+      guest_archive_sha256: ${{ steps.inventory.outputs.guest_archive_sha256 }}
+      cli_other_artifact_id: ${{ steps.archive_cli_other.outputs.artifact-id }}
+      cli_other_archive_sha256: ${{ steps.inventory.outputs.cli_other_archive_sha256 }}
       artifacts_sha256: ${{ steps.inventory.outputs.artifacts_sha256 }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
@@ -80,6 +84,8 @@ jobs:
             exit 1
           fi
       - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm bun go github:macromackie/tenet aqua:koalaman/shellcheck aqua:rhysd/actionlint
       - name: Select a qualified guest with identical build inputs
         id: guest
         env:
@@ -90,8 +96,10 @@ jobs:
           set -euo pipefail
           mise -C workspaces/core run build:guest
           mise exec -- node .config/runtime-guest-selection.mts
-      - uses: ./.github/actions/candidate-docker
+      - if: steps.guest.outputs.directory == ''
+        uses: ./.github/actions/candidate-docker
       - name: Set up the candidate image builder
+        if: steps.guest.outputs.directory == ''
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
         with:
           version: v0.38.2
@@ -120,15 +128,48 @@ jobs:
           set -euo pipefail
           test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
           artifacts_sha256=$(sha256sum "$CANDIDATE_DIRECTORY/artifacts.json" | cut -d ' ' -f 1)
-          tar -cf "$RUNNER_TEMP/mechane-candidate.tar" -C "$CANDIDATE_DIRECTORY" .
-          archive_sha256=$(sha256sum "$RUNNER_TEMP/mechane-candidate.tar" | cut -d ' ' -f 1)
-          printf 'artifacts_sha256=%s\narchive_sha256=%s\n' "$artifacts_sha256" "$archive_sha256" >> "$GITHUB_OUTPUT"
-      - name: Retain the unqualified build for acceptance retries
-        id: archive
+          shopt -s nullglob
+          guest_files=( "$CANDIDATE_DIRECTORY"/mechane-guest-*.oci.tar )
+          test "${#guest_files[@]}" -eq 1
+          guest_name=$(basename "${guest_files[0]}")
+          other_cli=( mechane-darwin-arm64 mechane-darwin-x64 mechane-linux-arm64 )
+          tar -cf "$RUNNER_TEMP/mechane-candidate-guest.tar" -C "$CANDIDATE_DIRECTORY" "$guest_name"
+          tar -cf "$RUNNER_TEMP/mechane-candidate-cli-other.tar" -C "$CANDIDATE_DIRECTORY" "${other_cli[@]}"
+          tar --exclude="$guest_name" --exclude=mechane-darwin-arm64 --exclude=mechane-darwin-x64 --exclude=mechane-linux-arm64 \
+            -cf "$RUNNER_TEMP/mechane-candidate-core.tar" -C "$CANDIDATE_DIRECTORY" .
+          core_archive_sha256=$(sha256sum "$RUNNER_TEMP/mechane-candidate-core.tar" | cut -d ' ' -f 1)
+          guest_archive_sha256=$(sha256sum "$RUNNER_TEMP/mechane-candidate-guest.tar" | cut -d ' ' -f 1)
+          cli_other_archive_sha256=$(sha256sum "$RUNNER_TEMP/mechane-candidate-cli-other.tar" | cut -d ' ' -f 1)
+          {
+            printf 'artifacts_sha256=%s\n' "$artifacts_sha256"
+            printf 'core_archive_sha256=%s\n' "$core_archive_sha256"
+            printf 'guest_archive_sha256=%s\n' "$guest_archive_sha256"
+            printf 'cli_other_archive_sha256=%s\n' "$cli_other_archive_sha256"
+          } >> "$GITHUB_OUTPUT"
+      - name: Retain unqualified core build for acceptance retries
+        id: archive_core
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: mechane-unqualified-${{ github.sha }}-attempt-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/mechane-candidate.tar
+          name: mechane-unqualified-core-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-candidate-core.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Retain unqualified guest build for container shards
+        id: archive_guest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-unqualified-guest-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-candidate-guest.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Retain unqualified cross-platform CLIs for canonical sealing
+        id: archive_cli_other
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-unqualified-cli-other-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-candidate-cli-other.tar
           if-no-files-found: error
           compression-level: 0
           retention-days: 3
@@ -148,22 +189,10 @@ jobs:
           path: ${{ runner.temp }}/mechane-build-logs
           if-no-files-found: ignore
           retention-days: 3
-  qualify-shard:
+  qualify-static:
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        shard:
-          - auth
-          - managed-core
-          - managed-advanced
-          - lifecycle
-          - console
-          - compute-fast
-          - compute-recovery
-          - compute-restore
     env:
       GITHUB_TOKEN: ${{ github.token }}
       MECHANE_BASE_BRANCH: origin/main
@@ -177,8 +206,8 @@ jobs:
       - name: Verify the qualification inputs
         env:
           EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
-          BUILD_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
-          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          CORE_ARTIFACT_ID: ${{ needs.build.outputs.core_artifact_id }}
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |
           set -euo pipefail
@@ -187,30 +216,174 @@ jobs:
             printf '::error::The qualification checkout differs from the selected source commit.\n'
             exit 1
           fi
-          if [[ ! "$BUILD_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+          if [[ ! "$CORE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$CORE_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
             ! "$ARTIFACTS_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
-            printf '::error::Select the completed build artifact ID and both exact SHA-256 digests.\n'
+            printf '::error::Select the completed core artifact ID and exact SHA-256 digests.\n'
             exit 1
           fi
-      - name: Download the exact unqualified build
+      - name: Download the exact unqualified core build
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          artifact-ids: ${{ needs.build.outputs.core_artifact_id }}
           path: ${{ runner.temp }}/mechane-build-download
-      - name: Verify and unpack the selected build
+      - name: Verify and unpack the selected core build
         env:
-          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate.tar"
-          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" | sha256sum -c
+          archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-core.tar"
+          printf '%s  %s\n' "$CORE_ARCHIVE_SHA256" "$archive" | sha256sum -c
           mkdir "$CANDIDATE_DIRECTORY"
           tar -xf "$archive" -C "$CANDIDATE_DIRECTORY"
           printf '%s  %s\n' "$ARTIFACTS_SHA256" "$CANDIDATE_DIRECTORY/artifacts.json" | sha256sum -c
           test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
       - uses: ./.github/actions/setup
-      - uses: ./.github/actions/candidate-docker
+        with:
+          tools: node pnpm go opentofu github:macromackie/tenet github:macromackie/ev-grep aqua:koalaman/shellcheck aqua:rhysd/actionlint
+      - name: Qualify static, infrastructure, and shipped-format checks
+        env:
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+        run: |
+          set -euo pipefail
+          mise -C workspaces/core run distribution:accept-static -- "$CANDIDATE_DIRECTORY" "$ARTIFACTS_SHA256" \
+            2>&1 | tee "$RUNNER_TEMP/mechane-static.log"
+          mkdir -p "$RUNNER_TEMP/mechane-static-output"
+          cp "$CANDIDATE_DIRECTORY/qualification-static-receipt.json" \
+            "$CANDIDATE_DIRECTORY/qualification-static.log" \
+            "$CANDIDATE_DIRECTORY/qualification-shipped-formats.log" \
+            "$RUNNER_TEMP/mechane-static-output/"
+      - name: Upload static receipt
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-static-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-static-output
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 3
+      - name: Collect bounded static diagnostics
+        if: always()
+        run: |
+          set -euo pipefail
+          logs="$RUNNER_TEMP/mechane-static-logs"
+          mkdir -p "$logs"
+          if [[ -f "$RUNNER_TEMP/mechane-static.log" ]]; then
+            tail -c 262144 "$RUNNER_TEMP/mechane-static.log" > "$logs/static.log"
+          fi
+      - name: Retain static diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: mechane-static-logs-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-static-logs
+          if-no-files-found: ignore
+          retention-days: 3
+  qualify-shard:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: auth
+            needs_container: false
+          - shard: managed-core
+            needs_container: false
+          - shard: managed-advanced
+            needs_container: false
+          - shard: lifecycle-context
+            needs_container: false
+          - shard: lifecycle-core
+            needs_container: false
+          - shard: lifecycle-recovery
+            needs_container: false
+          - shard: console
+            needs_container: true
+          - shard: compute-core
+            needs_container: true
+          - shard: compute-capacity
+            needs_container: true
+          - shard: compute-browser
+            needs_container: true
+          - shard: compute-drain
+            needs_container: true
+          - shard: compute-recovery
+            needs_container: true
+          - shard: compute-restore
+            needs_container: true
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      MECHANE_BASE_BRANCH: origin/main
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Select the candidate directory
+        run: printf 'CANDIDATE_DIRECTORY=%s/mechane-candidate\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
+      - name: Verify the qualification inputs
+        env:
+          EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
+          CORE_ARTIFACT_ID: ${{ needs.build.outputs.core_artifact_id }}
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
+          GUEST_ARTIFACT_ID: ${{ needs.build.outputs.guest_artifact_id }}
+          GUEST_ARCHIVE_SHA256: ${{ needs.build.outputs.guest_archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+          NEEDS_CONTAINER: ${{ matrix.needs_container }}
+        run: |
+          set -euo pipefail
+          checkout_commit=$(git rev-parse HEAD)
+          if [[ "$checkout_commit" != "$EXPECTED_COMMIT" ]]; then
+            printf '::error::The qualification checkout differs from the selected source commit.\n'
+            exit 1
+          fi
+          if [[ ! "$CORE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$CORE_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+            ! "$ARTIFACTS_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+            printf '::error::Select the completed core artifact ID and exact SHA-256 digests.\n'
+            exit 1
+          fi
+          if [[ "$NEEDS_CONTAINER" == "true" ]]; then
+            if [[ ! "$GUEST_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$GUEST_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+              printf '::error::Select the completed guest artifact ID and exact SHA-256 digest.\n'
+              exit 1
+            fi
+          fi
+      - name: Download the exact unqualified core build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.core_artifact_id }}
+          path: ${{ runner.temp }}/mechane-build-download
+      - name: Download the exact unqualified guest build
+        if: matrix.needs_container
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.guest_artifact_id }}
+          path: ${{ runner.temp }}/mechane-build-download
+      - name: Verify and unpack the selected build
+        env:
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
+          GUEST_ARCHIVE_SHA256: ${{ needs.build.outputs.guest_archive_sha256 }}
+          ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
+          NEEDS_CONTAINER: ${{ matrix.needs_container }}
+        run: |
+          set -euo pipefail
+          core_archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-core.tar"
+          printf '%s  %s\n' "$CORE_ARCHIVE_SHA256" "$core_archive" | sha256sum -c
+          mkdir "$CANDIDATE_DIRECTORY"
+          tar -xf "$core_archive" -C "$CANDIDATE_DIRECTORY"
+          if [[ "$NEEDS_CONTAINER" == "true" ]]; then
+            guest_archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-guest.tar"
+            printf '%s  %s\n' "$GUEST_ARCHIVE_SHA256" "$guest_archive" | sha256sum -c
+            tar -xf "$guest_archive" -C "$CANDIDATE_DIRECTORY"
+          fi
+          printf '%s  %s\n' "$ARTIFACTS_SHA256" "$CANDIDATE_DIRECTORY/artifacts.json" | sha256sum -c
+          test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
+      - uses: ./.github/actions/setup
+        with:
+          tools: node pnpm github:mechane-ai/celld
+      - if: matrix.needs_container
+        uses: ./.github/actions/candidate-docker
       - name: Qualify shard ${{ matrix.shard }} without rebuilding
         env:
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
@@ -260,7 +433,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
   qualify:
-    needs: [build, qualify-shard]
+    needs: [build, qualify-static, qualify-shard]
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
@@ -276,8 +449,12 @@ jobs:
       - name: Verify the qualification inputs
         env:
           EXPECTED_COMMIT: ${{ inputs.source_commit || github.sha }}
-          BUILD_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
-          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          CORE_ARTIFACT_ID: ${{ needs.build.outputs.core_artifact_id }}
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
+          GUEST_ARTIFACT_ID: ${{ needs.build.outputs.guest_artifact_id }}
+          GUEST_ARCHIVE_SHA256: ${{ needs.build.outputs.guest_archive_sha256 }}
+          CLI_OTHER_ARTIFACT_ID: ${{ needs.build.outputs.cli_other_artifact_id }}
+          CLI_OTHER_ARCHIVE_SHA256: ${{ needs.build.outputs.cli_other_archive_sha256 }}
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |
           set -euo pipefail
@@ -286,36 +463,54 @@ jobs:
             printf '::error::The qualification checkout differs from the selected source commit.\n'
             exit 1
           fi
-          if [[ ! "$BUILD_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+          if [[ ! "$CORE_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$CORE_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+            ! "$GUEST_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$GUEST_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
+            ! "$CLI_OTHER_ARTIFACT_ID" =~ ^[1-9][0-9]*$ || ! "$CLI_OTHER_ARCHIVE_SHA256" =~ ^[0-9a-f]{64}$ ||
             ! "$ARTIFACTS_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
-            printf '::error::Select the completed build artifact ID and both exact SHA-256 digests.\n'
+            printf '::error::Select all completed build artifact IDs and exact SHA-256 digests.\n'
             exit 1
           fi
-      - name: Download the exact unqualified build
+      - name: Download the complete unqualified build parts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          artifact-ids: ${{ needs.build.outputs.core_artifact_id }},${{ needs.build.outputs.guest_artifact_id }},${{ needs.build.outputs.cli_other_artifact_id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/mechane-build-download
+      - name: Download the static receipt
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: mechane-static-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/mechane-shards
       - name: Download all completed shard receipts
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: mechane-shard-*-${{ github.sha }}-attempt-${{ github.run_attempt }}
           merge-multiple: true
           path: ${{ runner.temp }}/mechane-shards
-      - name: Verify and unpack the selected build
+      - name: Verify and unpack the complete build
         env:
-          ARCHIVE_SHA256: ${{ needs.build.outputs.archive_sha256 }}
+          CORE_ARCHIVE_SHA256: ${{ needs.build.outputs.core_archive_sha256 }}
+          GUEST_ARCHIVE_SHA256: ${{ needs.build.outputs.guest_archive_sha256 }}
+          CLI_OTHER_ARCHIVE_SHA256: ${{ needs.build.outputs.cli_other_archive_sha256 }}
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |
           set -euo pipefail
-          archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate.tar"
-          printf '%s  %s\n' "$ARCHIVE_SHA256" "$archive" | sha256sum -c
+          core_archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-core.tar"
+          guest_archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-guest.tar"
+          cli_other_archive="$RUNNER_TEMP/mechane-build-download/mechane-candidate-cli-other.tar"
+          printf '%s  %s\n' "$CORE_ARCHIVE_SHA256" "$core_archive" | sha256sum -c
+          printf '%s  %s\n' "$GUEST_ARCHIVE_SHA256" "$guest_archive" | sha256sum -c
+          printf '%s  %s\n' "$CLI_OTHER_ARCHIVE_SHA256" "$cli_other_archive" | sha256sum -c
           mkdir "$CANDIDATE_DIRECTORY"
-          tar -xf "$archive" -C "$CANDIDATE_DIRECTORY"
+          tar -xf "$core_archive" -C "$CANDIDATE_DIRECTORY"
+          tar -xf "$guest_archive" -C "$CANDIDATE_DIRECTORY"
+          tar -xf "$cli_other_archive" -C "$CANDIDATE_DIRECTORY"
           printf '%s  %s\n' "$ARTIFACTS_SHA256" "$CANDIDATE_DIRECTORY/artifacts.json" | sha256sum -c
           test ! -e "$CANDIDATE_DIRECTORY/qualification.json"
       - uses: ./.github/actions/setup
-      - name: Seal canonical qualification from all verified shard receipts
+        with:
+          tools: node pnpm
+      - name: Seal canonical qualification from static and shard receipts
         env:
           ARTIFACTS_SHA256: ${{ needs.build.outputs.artifacts_sha256 }}
         run: |

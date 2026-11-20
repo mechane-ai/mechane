@@ -52,6 +52,24 @@ export const ShardReceipt = Schema.Struct({
 
 export type ShardReceipt = typeof ShardReceipt.Type;
 
+export const STATIC_RECEIPT_NAME = 'qualification-static-receipt.json';
+export const STATIC_LOG_NAME = 'qualification-static.log';
+export const FORMATS_LOG_NAME = 'qualification-shipped-formats.log';
+
+export const StaticReceipt = Schema.Struct({
+  format_version: Schema.Literal(QUALIFICATION_FORMAT_VERSION),
+  public_commit: GitCommit,
+  artifacts: Schema.Struct({ path: Schema.Literal('artifacts.json'), ...ArtifactDigest.fields }),
+  installation: Schema.Struct({ path: Schema.Literal('installation.json'), ...ArtifactDigest.fields }),
+  worker_sha256: ArtifactDigest.fields.sha256,
+  static_log_file: Schema.Literal(STATIC_LOG_NAME),
+  static_log_sha256: ArtifactDigest.fields.sha256,
+  formats_log_file: Schema.Literal(FORMATS_LOG_NAME),
+  formats_log_sha256: ArtifactDigest.fields.sha256,
+});
+
+export type StaticReceipt = typeof StaticReceipt.Type;
+
 type ShardFilenameInput = { readonly shard: QualificationShard };
 
 export function shardReceiptName({ shard }: ShardFilenameInput): string {

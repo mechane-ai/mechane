@@ -6,7 +6,7 @@ import {
   SandboxStopOrigin,
   SandboxStopPhase,
 } from '@mechane/sandbox-wire';
-import type { ManagedWorkerClaim, SandboxOwner } from '@mechane/sandbox-wire';
+import type { ManagedWorkerClaimWire, SandboxOwner } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
 import { Array, DateTime, Duration, Option } from 'effect';
 import { createHash } from 'node:crypto';
@@ -16,7 +16,7 @@ import { advanceSandboxStop } from './advance-sandbox-stop.ts';
 import { requestSandboxStop } from './request-sandbox-stop.ts';
 import { workspaceOwnerKey } from './workspace-part-key.ts';
 
-type ClaimInput = WorkspaceProviderStepInput & { readonly claim: ManagedWorkerClaim };
+type ClaimInput = WorkspaceProviderStepInput & { readonly claim: ManagedWorkerClaimWire };
 type LaunchInput = ClaimInput & { readonly beforeHandoff: () => Promise<void> };
 type ConnectedMachine = MachineIdInput & { readonly guest: GuestConnection };
 type GuestWorkInput = ConnectedMachine & { readonly init: RequestInit };

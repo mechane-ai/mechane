@@ -194,6 +194,7 @@ export {
   ManagedSandboxWorkAction,
   ManagedWorkerAllocation,
   ManagedWorkerClaim,
+  type ManagedWorkerClaimWire,
   ManagedWorkerSession,
 } from './managed-work.ts';
 

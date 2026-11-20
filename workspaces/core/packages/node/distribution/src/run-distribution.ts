@@ -3,6 +3,7 @@ import { buildDistribution } from './build/build-distribution.ts';
 import { previewModule } from './build/preview-module.ts';
 import { acceptDistribution } from './candidate/accept-distribution.ts';
 import { acceptShard } from './candidate/accept-shard.ts';
+import { acceptStatic } from './candidate/accept-static.ts';
 import { buildCandidate } from './candidate/build-candidate.ts';
 import { mergeQualification } from './candidate/merge-qualification.ts';
 import { DistributionMode } from './constants.ts';
@@ -28,6 +29,8 @@ export const runDistribution = Effect.fn('runDistribution')(function* (): Effect
       return yield* acceptDistribution({ settings });
     case DistributionMode.AcceptShard:
       return yield* acceptShard({ settings });
+    case DistributionMode.AcceptStatic:
+      return yield* acceptStatic({ settings });
     case DistributionMode.MergeQualification:
       return yield* mergeQualification({ settings });
     case DistributionMode.Verify:

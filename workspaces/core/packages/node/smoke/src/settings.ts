@@ -6,7 +6,11 @@ import type { ScenarioFamily } from './catalog.ts';
 import { parseSmokeShard } from './shards.ts';
 import type { SmokeShard } from './shards.ts';
 
-type ArtifactSettings = { readonly directory: string; readonly guestImage: string; readonly cliExecutable: string };
+type ArtifactSettings = {
+  readonly directory: string;
+  readonly guestImage: string | undefined;
+  readonly cliExecutable: string;
+};
 
 type SmokeSettings = {
   readonly match: string | undefined;
@@ -24,8 +28,6 @@ type ArtifactArguments = {
   readonly guestImage: string | undefined;
   readonly cliExecutable: string | undefined;
 };
-
-const ARTIFACT_ARGUMENT_COUNT = 3;
 
 export function smokeSettings(): SmokeSettings {
   const { values, positionals } = parseArgs({
@@ -107,15 +109,15 @@ function artifactSettings({ directory, guestImage, cliExecutable }: ArtifactArgu
     return undefined;
   }
 
-  if (provided.length !== ARTIFACT_ARGUMENT_COUNT || directory === undefined || guestImage === undefined) {
-    throw new Error('The smoke requires artifact-directory, guest-image, and cli-executable together');
+  if (directory === undefined || cliExecutable === undefined) {
+    throw new Error('The smoke requires artifact-directory and cli-executable together');
   }
 
-  if (cliExecutable === undefined || !isAbsolute(directory) || !isAbsolute(cliExecutable)) {
+  if (!isAbsolute(directory) || !isAbsolute(cliExecutable)) {
     throw new Error('The smoke artifact directory and CLI executable must be absolute paths');
   }
 
-  if (!/^sha256:[a-f0-9]{64}$/u.test(guestImage)) {
+  if (guestImage !== undefined && !/^sha256:[a-f0-9]{64}$/u.test(guestImage)) {
     throw new Error('The smoke guest image must be an immutable sha256 digest');
   }
 

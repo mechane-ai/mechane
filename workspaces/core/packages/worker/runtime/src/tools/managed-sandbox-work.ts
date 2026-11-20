@@ -1,15 +1,19 @@
 import { HttpHeader, HttpMethod, HttpStatusCode, MediaType } from '@mechane/records';
-import { MANAGED_WORK_PATH, ManagedSandboxWorkAction } from '@mechane/sandbox-wire';
-import type { ManagedWorkerClaim, ManagedWorkerSession } from '@mechane/sandbox-wire';
+import { MANAGED_WORK_PATH, ManagedSandboxWorkAction, ManagedWorkerClaim } from '@mechane/sandbox-wire';
+import type { ManagedWorkerClaimWire, ManagedWorkerSession } from '@mechane/sandbox-wire';
 import { waitFor } from '@mechane/utilities';
-import { DateTime, Duration, Redacted } from 'effect';
+import { DateTime, Duration, Redacted, Schema } from 'effect';
 import type { RuntimeConfiguration } from '../config.ts';
 
 type Connection = Pick<RuntimeConfiguration, 'sandbox'>;
 type Session = typeof ManagedWorkerSession.Type & { readonly workspaceId: string };
 type Allocation = Session & { readonly generation: number };
 type Action = (typeof ManagedSandboxWorkAction)[keyof typeof ManagedSandboxWorkAction];
-type Command = Session | (Allocation & { readonly action: Action });
+
+type Command =
+  | Session
+  | (Allocation & { readonly action: Action })
+  | (Allocation & ManagedWorkerClaimWire & { readonly action: Action });
 
 type RequestInput = Connection & { readonly method: HttpMethod; readonly command: Command };
 
@@ -50,9 +54,12 @@ async function deliverManagedAction(input: RequestInput, expected: HttpStatusCod
 
 export async function startManagedSandboxWorker({
   sandbox,
+  workspaceId,
+  generation,
   ...claim
 }: Connection & Allocation & ManagedWorkerClaim): Promise<void> {
-  const command = { ...claim, action: ManagedSandboxWorkAction.Start };
+  const encoded = Schema.encodeSync(ManagedWorkerClaim)(claim);
+  const command = { workspaceId, generation, ...encoded, action: ManagedSandboxWorkAction.Start };
 
   await deliverManagedAction({ sandbox, command, method: HttpMethod.Post }, HttpStatusCode.Accepted);
 }

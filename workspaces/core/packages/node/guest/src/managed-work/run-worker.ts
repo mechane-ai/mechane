@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { capturePromise } from '@mechane/utilities';
 import { decodeWorkSecretToken } from '@mechane/worker-agent';
-import { Result, Schema } from 'effect';
+import { Duration, Option, Result, Schema } from 'effect';
 import { once } from 'node:events';
 import { startComputerRelay } from './computer-relay.ts';
 import type { RunInstalledCommand } from './installed-bash.ts';
@@ -36,7 +36,16 @@ export async function runManagedWorker({ signal, runCommand }: ProcessEntry): Pr
   });
 
   async function handleClaim(): Promise<void> {
-    const worker = client.beta.environments.work.worker({ workdir, tools: workspace.tools });
+    const idleDuration = Option.fromNullishOr(claim.maxIdle);
+
+    const worker = Option.match(idleDuration, {
+      onNone: () => client.beta.environments.work.worker({ workdir, tools: workspace.tools }),
+      onSome: (duration) => {
+        const maxIdleMs = Duration.toMillis(duration);
+
+        return client.beta.environments.work.worker({ workdir, tools: workspace.tools, maxIdleMs });
+      },
+    });
 
     sessionSignal.throwIfAborted();
 

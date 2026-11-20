@@ -113,15 +113,8 @@ run = "oxfmt --check ."
 # Each lane's program checks every member of the lane once, under the lane's runtime types, as dependencies.json
 # assigns them. Two checkers per program leave CPUs to the other builders of a shared host.
 [tasks.typecheck]
-description = "Type-check each lane's program: the shared lane, the worker lane and the node lane, each with every member dependencies.json puts in it"
-depends = ["routes:generate"]
-wait_for = ["build:server", "build:cli", "build:guest"]
-run = [
-  "tsc -p tsconfig.shared.json --checkers 2",
-  "tsc -p tsconfig.worker.json --checkers 2",
-  "tsc -p tsconfig.node.json --checkers 2",
-  "tsc -p tsconfig.browser.json --checkers 2",
-]
+description = "Type-check each lane's program: the shared lane, the worker lane, the node lane and the browser lane in parallel"
+depends = ["typecheck:shared", "typecheck:worker", "typecheck:node", "typecheck:browser"]
 
 [tasks."typecheck:incremental"]
 description = "Type-check each lane's program as typecheck does, reusing each program's build information from its last run"
@@ -135,19 +128,23 @@ run = [
 
 [tasks."typecheck:shared"]
 description = "Type-check only the shared lane"
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "tsc -p tsconfig.shared.json --checkers 2"
 
 [tasks."typecheck:worker"]
 description = "Type-check only the worker lane"
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "tsc -p tsconfig.worker.json --checkers 2"
 
 [tasks."typecheck:node"]
 description = "Type-check only the node lane"
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "tsc -p tsconfig.node.json --checkers 2"
 
 [tasks."typecheck:browser"]
 description = "Type-check only the browser lane"
 depends = ["routes:generate"]
+wait_for = ["build:server", "build:cli", "build:guest"]
 run = "tsc -p tsconfig.browser.json --checkers 2"
 
 [tasks."ci:plan"]
@@ -172,10 +169,19 @@ oxfmt --check --no-error-on-unmatched-pattern $files
 node packages/node/checks/src/main.ts lint $files
 """
 
-[tasks.knip]
-description = "Report unused files, exports and dependencies, counting tests and then production consumers only"
+[tasks."knip:all"]
+description = "Report unused files, exports and dependencies across source and tests"
 wait_for = ["build:server", "build:cli", "build:guest"]
-run = ["knip", "knip --production"]
+run = "knip"
+
+[tasks."knip:production"]
+description = "Report unused files, exports and dependencies across production consumers"
+wait_for = ["build:server", "build:cli", "build:guest"]
+run = "knip --production"
+
+[tasks.knip]
+description = "Report unused files, exports and dependencies, counting tests and production consumers in parallel"
+depends = ["knip:all", "knip:production"]
 
 [tasks.duplicates]
 description = "Fail on any copied block at or above the declared size"
@@ -261,6 +267,10 @@ run = "node packages/node/distribution/src/main.ts accept"
 [tasks."distribution:accept-shard"]
 description = "Qualify one smoke shard of an existing candidate by its selected artifact inventory digest"
 run = "node packages/node/distribution/src/main.ts accept-shard"
+
+[tasks."distribution:accept-static"]
+description = "Qualify static, infrastructure, and shipped-format checks of an existing candidate in parallel with smoke shards"
+run = "node packages/node/distribution/src/main.ts accept-static"
 
 [tasks."distribution:merge-qualification"]
 description = "Seal one canonical qualification.json from completed parallel shard receipts"

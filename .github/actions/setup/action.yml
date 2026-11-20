@@ -1,5 +1,14 @@
 name: Set up pinned tools
 description: Verify mise and install the repository's locked tools and packages without a CI cache.
+inputs:
+  tools:
+    description: Optional space-separated mise tool specs from mise.lock to install instead of the full toolset.
+    required: false
+    default: ''
+  install-packages:
+    description: Whether to install locked workspace packages after tool installation.
+    required: false
+    default: 'true'
 runs:
   using: composite
   steps:
@@ -25,6 +34,13 @@ runs:
     - name: Put the bootstrap's tools on PATH
       shell: bash
       run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    - name: Disable implicit mise downloads when scoped to selected tools
+      if: inputs.tools != ''
+      shell: bash
+      run: echo "MISE_AUTO_INSTALL=false" >> "$GITHUB_ENV"
     - name: Install the pinned mise, tools and locked packages
       shell: bash
+      env:
+        MECHANE_SETUP_TOOLS: ${{ inputs.tools }}
+        MECHANE_SETUP_PACKAGES: ${{ inputs.install-packages }}
       run: .config/bootstrap.sh

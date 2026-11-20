@@ -62,8 +62,15 @@ git config merge.ours.name "this side of a file the rule registry generates"
 git config merge.ours.driver true
 mise trust --quiet "$root/mise.toml"
 mise trust --quiet "$root/workspaces/core/mise.toml"
-mise install
-mise run setup
+if [ -n "${MECHANE_SETUP_TOOLS:-}" ]; then
+  read -r -a setup_tools <<< "$MECHANE_SETUP_TOOLS"
+  mise install "${setup_tools[@]}"
+else
+  mise install
+fi
+if [ "${MECHANE_SETUP_PACKAGES:-true}" = "true" ]; then
+  mise run setup
+fi
 
 case ":$caller_path:" in
   *":$bin:"*) ;;

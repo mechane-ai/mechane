@@ -4,6 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   CONSOLE_SHARD,
+  CONTAINER_FREE_SHARDS,
   CORE_FOLDER,
   DistributionStep,
   QUALIFICATION_FORMAT_VERSION,
@@ -12,11 +13,13 @@ import {
 import type { QualificationShard } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { writeDocument } from '../files/write-document.ts';
-import type { DistributionInput } from '../types.ts';
+import type { ArtifactReceipt, InstallationManifest } from '../schemas.ts';
+import type { DistributionInput, DistributionSettings, VerificationScope } from '../types.ts';
 import {
   executeDistributionCommand,
   inspectQualificationTools,
   prepareQualificationGuest,
+  resolveHostCliBinary,
   sanitizeCandidateLog,
   verifyAcceptanceCandidate,
   verifyCandidateUnchanged,
@@ -26,6 +29,36 @@ import { shardLogName, ShardReceipt, shardReceiptName, ShardSummary } from './sh
 
 const SHARD_SUMMARY_PREFIX = 'SMOKE_SHARD_SUMMARY ';
 const ShardName = Schema.Literals(QUALIFICATION_SHARDS);
+
+type ShardRuntimeInput = {
+  readonly isContainerFree: boolean;
+  readonly settings: DistributionSettings;
+  readonly receipt: ArtifactReceipt;
+  readonly manifest: InstallationManifest;
+};
+
+type ShardRuntime = { readonly guestImageId: string | undefined; readonly guestImageLog: string; readonly cli: string };
+
+function shardVerificationScope(isContainerFree: boolean): VerificationScope {
+  if (isContainerFree) {
+    return 'core';
+  }
+
+  return 'runtime';
+}
+
+async function prepareShardRuntime({
+  isContainerFree,
+  settings,
+  receipt,
+  manifest,
+}: ShardRuntimeInput): Promise<ShardRuntime> {
+  if (isContainerFree) {
+    return { guestImageId: undefined, guestImageLog: '', cli: resolveHostCliBinary({ receipt }) };
+  }
+
+  return await prepareQualificationGuest({ settings, receipt, manifest });
+}
 
 /** Runs one qualification shard over an immutable candidate and writes its signed shard receipt. */
 export const acceptShard = Effect.fn('acceptShard')(function* ({
@@ -41,7 +74,9 @@ export const acceptShard = Effect.fn('acceptShard')(function* ({
     ),
   );
 
-  const candidate = yield* verifyAcceptanceCandidate({ settings });
+  const isContainerFree = CONTAINER_FREE_SHARDS.has(shard);
+  const scope = shardVerificationScope(isContainerFree);
+  const candidate = yield* verifyAcceptanceCandidate({ settings, scope });
 
   const execution = yield* Effect.tryPromise({
     try: () =>
@@ -60,26 +95,31 @@ export const acceptShard = Effect.fn('acceptShard')(function* ({
 
           const tools = await inspectQualificationTools({ settings });
 
-          const { guestImageId, guestImageLog, cli } = await prepareQualificationGuest({
+          const guest = await prepareShardRuntime({
+            isContainerFree,
             settings,
             receipt: candidate.receipt,
             manifest: candidate.manifest,
           });
 
+          const smokeArgs = [
+            join(CORE_FOLDER, 'packages/node/smoke/src/main.ts'),
+            '--shard',
+            shard,
+            '--artifact-directory',
+            module,
+            '--cli-executable',
+            join(settings.folder, guest.cli),
+          ];
+
+          if (guest.guestImageId !== undefined) {
+            smokeArgs.push('--guest-image', guest.guestImageId);
+          }
+
           const smoke = await executeDistributionCommand({
             settings,
             command: settings.nodeExecutable,
-            args: [
-              join(CORE_FOLDER, 'packages/node/smoke/src/main.ts'),
-              '--shard',
-              shard,
-              '--artifact-directory',
-              module,
-              '--guest-image',
-              guestImageId,
-              '--cli-executable',
-              join(settings.folder, cli),
-            ],
+            args: smokeArgs,
           });
 
           const line = smoke.split('\n').find((entry) => entry.startsWith(SHARD_SUMMARY_PREFIX));
@@ -98,8 +138,8 @@ export const acceptShard = Effect.fn('acceptShard')(function* ({
 
           return {
             tools,
-            cli,
-            guestImageLog: sanitizeCandidateLog({ contents: guestImageLog, temporary }),
+            cli: guest.cli,
+            guestImageLog: sanitizeCandidateLog({ contents: guest.guestImageLog, temporary }),
             log: sanitizeCandidateLog({ contents: smoke, temporary }),
             catalog: { count: summary.count, guarantees: summary.guarantees },
           };
@@ -108,7 +148,7 @@ export const acceptShard = Effect.fn('acceptShard')(function* ({
     catch: (cause) => new DistributionFailed({ step: DistributionStep.Command, reason: String(cause) }),
   });
 
-  const { artifacts, installation } = yield* verifyCandidateUnchanged({ settings, candidate });
+  const { artifacts, installation } = yield* verifyCandidateUnchanged({ settings, candidate, scope });
   const logFile = shardLogName({ shard });
 
   yield* Effect.tryPromise({

@@ -1,4 +1,5 @@
 import { Duration, Effect } from 'effect';
+import type { Scope } from 'effect';
 import { execFile } from 'node:child_process';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -6,6 +7,7 @@ import { DistributionStep } from '../constants.ts';
 import { DistributionFailed } from '../errors.ts';
 import { assetName } from '../files/asset-name.ts';
 import { fileDigest } from '../files/file-digest.ts';
+import { acquireStagingFolder } from '../files/staging-folder.ts';
 import { writeDocument } from '../files/write-document.ts';
 import type { Artifact, InstallationManifest } from '../schemas.ts';
 import type { DistributionSettings } from '../types.ts';
@@ -25,12 +27,11 @@ export const packageModule = Effect.fn('packageModule')(function* ({
   settings,
   manifest,
   providerSetup,
-}: PackageInput): Effect.fn.Return<ReadonlyArray<Artifact>, DistributionFailed> {
-  const folder = join(settings.folder, 'module');
+}: PackageInput): Effect.fn.Return<ReadonlyArray<Artifact>, DistributionFailed, Scope.Scope> {
+  const folder = yield* acquireStagingFolder({ prefix: 'mechane-module-stage-' });
   const files = yield* stageModule({ folder, manifest });
   const name = assetName({ kind: 'cloudflare' });
   const path = join(settings.folder, name);
-
   const execute = promisify(execFile);
   const timeout = Duration.toMillis(ZIP_TIMEOUT);
 
@@ -65,4 +66,4 @@ export const packageModule = Effect.fn('packageModule')(function* ({
     { name: 'installation.json', ...manifestDigest },
     { name: 'release.json', ...releaseDigest },
   ];
-});
+}, Effect.scoped);

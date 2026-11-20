@@ -2,6 +2,7 @@ import type { ControlStore, InstalledSession } from '@mechane/control-store';
 import type { RuntimeConfiguration } from '@mechane/runtime';
 import { releaseManagedSandboxWorker, startManagedSandboxWorker, touchManagedSandboxWorker } from '@mechane/runtime';
 import type { PluggableSandboxProvider } from '@mechane/sandbox-provider';
+import { Duration } from 'effect';
 import { awaitInstalledProgress } from './await-installed-progress.ts';
 import { resolveSandboxBackend } from './provider-dispatch.ts';
 
@@ -143,6 +144,9 @@ export async function resumeInstalledStartup(
     generation,
     ...grant,
     apiOrigin,
+    ...(configuration.sandbox.workerIdleMs !== null && {
+      maxIdle: Duration.millis(configuration.sandbox.workerIdleMs),
+    }),
     sandbox: configuration.sandbox,
   });
 }

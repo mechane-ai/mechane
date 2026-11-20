@@ -13,6 +13,7 @@ type RunScenariosInput = Pick<ScenarioSelection, 'catalog'> & { readonly stack: 
 type ShardSummaryInput = Pick<ScenarioSelection, 'catalog'> & { readonly shard: SmokeShard };
 
 const SCENARIO_DEADLINE_MS = 180_000;
+const CONCURRENT_SCENARIOS_MAX = 4;
 
 export function writeCatalogSummary({ catalog }: Pick<RunScenariosInput, 'catalog'>): void {
   const summary = {
@@ -50,33 +51,52 @@ export function selectScenarios({ catalog, match, family }: ScenarioSelection): 
   return selected;
 }
 
+async function runOneScenario({
+  stack,
+  scenario,
+}: {
+  readonly stack: LocalStack;
+  readonly scenario: Scenario;
+}): Promise<void> {
+  const name = scenario.run.name;
+  const replay = `mise -C workspaces/core exec -- node packages/node/smoke/src/main.ts ${name}`;
+
+  process.stdout.write(`START ${name}\n`);
+
+  const deadline = Promise.withResolvers<never>();
+  const startedAt = performance.now();
+
+  const timer = setTimeout(
+    () => deadline.reject(new Error(`The smoke timed out: ${scenario.guarantee}`)),
+    scenario.timeoutMs ?? SCENARIO_DEADLINE_MS,
+  );
+
+  try {
+    await Promise.race([scenario.run({ stack, guarantee: scenario.guarantee }), deadline.promise]);
+
+    const elapsedMs = Math.round(performance.now() - startedAt);
+
+    process.stdout.write(`PASS ${scenario.guarantee} (${elapsedMs} ms)\n`);
+  } catch (cause) {
+    const elapsedMs = Math.round(performance.now() - startedAt);
+
+    throw new Error(`Smoke ${name} failed after ${elapsedMs} ms. Run locally with ${replay}`, { cause });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function runScenarios({ stack, catalog }: RunScenariosInput): Promise<void> {
-  for (const scenario of catalog) {
-    const name = scenario.run.name;
-    const replay = `mise -C workspaces/core exec -- node packages/node/smoke/src/main.ts ${name}`;
+  const concurrent = catalog.filter((scenario) => scenario.canUseRetainedStack === true);
+  const serial = catalog.filter((scenario) => scenario.canUseRetainedStack !== true);
 
-    process.stdout.write(`START ${name}\n`);
+  for (let offset = 0; offset < concurrent.length; offset += CONCURRENT_SCENARIOS_MAX) {
+    const batch = concurrent.slice(offset, offset + CONCURRENT_SCENARIOS_MAX);
 
-    const deadline = Promise.withResolvers<never>();
-    const startedAt = performance.now();
+    await Promise.all(batch.map((scenario) => runOneScenario({ stack, scenario })));
+  }
 
-    const timer = setTimeout(
-      () => deadline.reject(new Error(`The smoke timed out: ${scenario.guarantee}`)),
-      scenario.timeoutMs ?? SCENARIO_DEADLINE_MS,
-    );
-
-    try {
-      await Promise.race([scenario.run({ stack, guarantee: scenario.guarantee }), deadline.promise]);
-
-      const elapsedMs = Math.round(performance.now() - startedAt);
-
-      process.stdout.write(`PASS ${scenario.guarantee} (${elapsedMs} ms)\n`);
-    } catch (cause) {
-      const elapsedMs = Math.round(performance.now() - startedAt);
-
-      throw new Error(`Smoke ${name} failed after ${elapsedMs} ms. Run locally with ${replay}`, { cause });
-    } finally {
-      clearTimeout(timer);
-    }
+  for (const scenario of serial) {
+    await runOneScenario({ stack, scenario });
   }
 }

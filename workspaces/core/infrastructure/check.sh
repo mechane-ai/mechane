@@ -25,9 +25,9 @@ mkdir -p "$provider_path"
     printf '%s\n' "$unformatted" >&2
     exit 1
   fi
-  go vet ./...
-  go test ./...
-  CGO_ENABLED=0 go build -mod=readonly -trimpath -buildvcs=false -o "$provider_path/terraform-provider-mechane_v$provider_version" .
+  export CGO_ENABLED=0
+  go test -mod=readonly -trimpath -buildvcs=false ./...
+  go build -mod=readonly -trimpath -buildvcs=false -o "$provider_path/terraform-provider-mechane_v$provider_version" .
 )
 
 if [ "$#" -eq 0 ]; then

@@ -1,10 +1,13 @@
 import type { Option } from 'effect';
-import type { ShardReceipt } from './candidate/shard-schema.ts';
+import type { ShardReceipt, StaticReceipt } from './candidate/shard-schema.ts';
 import type { DistributionMode } from './constants.ts';
 import type { ArtifactQualification } from './qualification.ts';
 import type { Artifact, ArtifactReceipt } from './schemas.ts';
 
 export type GuestReuseSelection = { readonly folder: string; readonly qualificationSha256: string };
+
+/** Controls which candidate asset subsets a partial qualification worker verifies before canonical sealing. */
+export type VerificationScope = 'complete' | 'core' | 'runtime';
 
 /** The chosen output folder and the environment allowed into build tools. */
 export type DistributionSettings = {
@@ -25,5 +28,6 @@ export type PathInput = { readonly path: string };
 export type FileDigest = Omit<Artifact, 'name'>;
 /** An offline module staging result that cannot be published as a release. */
 export type PreviewResult = { readonly folder: string; readonly is_preview: true };
+
 /** The result printed by a release command or an offline module preview. */
-export type DistributionResult = ArtifactReceipt | PreviewResult | ArtifactQualification | ShardReceipt;
+export type DistributionResult = ArtifactReceipt | PreviewResult | ArtifactQualification | ShardReceipt | StaticReceipt;

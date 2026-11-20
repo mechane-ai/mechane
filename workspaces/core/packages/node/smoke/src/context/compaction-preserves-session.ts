@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { message, waitForReply } from '../runs/session-messages.ts';
 
-const TOOL_STEPS = 33;
-const RESULT_BYTES = 8192;
+const TOOL_STEPS = 11;
+const RESULT_BYTES = 24_576;
 const MODEL_CONTEXT_BYTES = 131_072;
 
 export async function compactionPreservesSession({ stack }: ScenarioInput): Promise<void> {

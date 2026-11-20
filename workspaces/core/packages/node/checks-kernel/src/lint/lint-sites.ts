@@ -18,8 +18,9 @@ export const lintSites = Effect.fn('lintSites')(function* ({
   inherited,
 }: LintSitesInput): Effect.fn.Return<ReadonlyArray<Site>, InputUnreadable> {
   const targets = Array.match(paths, { onEmpty: () => [WORKSPACE_FOLDER], onNonEmpty: (named) => named });
-  const oxlint = yield* oxlintSites({ targets, inherited });
-  const astGrep = yield* astGrepSites({ targets, inherited });
+  const oxlintEffect = oxlintSites({ targets, inherited });
+  const astGrepEffect = astGrepSites({ targets, inherited });
+  const [oxlint, astGrep] = yield* Effect.all([oxlintEffect, astGrepEffect], { concurrency: 2 });
 
   /** A site, its message ended with its rule's standard. */
   const standardSite: (site: Site) => Site = (site) => ({ ...site, message: standardMessage(site) });

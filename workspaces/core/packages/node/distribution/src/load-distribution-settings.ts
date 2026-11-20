@@ -15,6 +15,7 @@ const INHERITED_NAMES = [
   'DOCKER_CONTEXT',
   'BUILDX_BUILDER',
   'XDG_CACHE_HOME',
+  'MISE_AUTO_INSTALL',
   'MISE_CONFIG_DIR',
   'MISE_SYSTEM_CONFIG_DIR',
   'MISE_IGNORED_CONFIG_PATHS',
@@ -27,6 +28,7 @@ const OUTPUT_FOLDER = fileURLToPath(OUTPUT_URL);
 const ARGUMENT_MODES: ReadonlySet<DistributionMode> = new Set([
   DistributionMode.Accept,
   DistributionMode.AcceptShard,
+  DistributionMode.AcceptStatic,
   DistributionMode.MergeQualification,
   DistributionMode.VerifyQualified,
 ]);
@@ -44,7 +46,7 @@ const DEFAULT_FOLDER_MODES: ReadonlySet<DistributionMode> = new Set([
 const REUSE_MODES: ReadonlySet<DistributionMode> = new Set([DistributionMode.Build, DistributionMode.Candidate]);
 
 const USAGE_MESSAGE =
-  'use candidate [OUTPUT], accept OUTPUT ARTIFACTS_SHA256, accept-shard OUTPUT ARTIFACTS_SHA256 SHARD, merge-qualification OUTPUT ARTIFACTS_SHA256 SHARDS_DIR, build [OUTPUT], verify OUTPUT, preview-module OUTPUT, or verify-qualified OUTPUT SHA256';
+  'use candidate [OUTPUT], accept OUTPUT ARTIFACTS_SHA256, accept-shard OUTPUT ARTIFACTS_SHA256 SHARD, accept-static OUTPUT ARTIFACTS_SHA256, merge-qualification OUTPUT ARTIFACTS_SHA256 SHARDS_DIR, build [OUTPUT], verify OUTPUT, preview-module OUTPUT, or verify-qualified OUTPUT SHA256';
 
 /** The staging folder provided by the guest bundler contains one module graph for each output file. */
 export function guestNoticesDirectory(): string {
