@@ -67,7 +67,10 @@ export async function assessManagedTool(
           throw new Error('The tool assessment belongs to another conversation');
         }
 
-        return await run(owner.current);
+        return await run(
+          async () => ({ ...(await owner.current()), webTools: [] }),
+          requestSignal ?? new AbortController().signal,
+        );
       },
     });
 

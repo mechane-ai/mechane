@@ -7,6 +7,7 @@ type Transition = {
   readonly sessionId: string;
   readonly status: 'running' | 'idle' | 'terminated';
   readonly reason?: ManagedWireObject;
+  readonly stopDetails?: ManagedWireObject | null;
   readonly isForced?: boolean;
 };
 
@@ -33,6 +34,7 @@ export async function transition(transaction: Tx, change: Transition) {
     threadId: state.threadId,
     status: change.status,
     stopReason: change.reason ?? null,
+    stopDetails: change.stopDetails ?? null,
     isForced: change.isForced === true,
   });
 }

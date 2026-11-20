@@ -17,6 +17,7 @@ const Thread = Schema.Struct({
   startedAt: Schema.NullOr(Schema.Number),
   status: ManagedSessionStatus,
   reason: Schema.NullOr(ManagedWireObject),
+  stopDetails: Schema.optional(Schema.NullOr(ManagedWireObject)),
   activeMs: Schema.Number,
   hasTransitioned: Schema.Boolean,
   usage: Schema.NullOr(ManagedWireObject),

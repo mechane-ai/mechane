@@ -12,19 +12,42 @@ import { sessionEvents } from './event-log/payload-storage.ts';
 import { appendManagedEvent } from './event-log/write.ts';
 import { finishManagedInterrupt } from './input-turns.ts';
 import { transition } from './lifecycle.ts';
-import { managedModelError } from './model-error.ts';
+import { managedModelError, parseModelRefusal } from './model-error.ts';
 import { completeManagedOutcomeTurn, managedGraderHeartbeat } from './outcomes.ts';
 import { readManagedAnswer } from './preview-output.ts';
+import type { ManagedWireObject } from './protocol.ts';
 import { ActiveNativeSessions, enqueue, release, sessionState } from './scheduler.ts';
 
-type TurnEnd = 'end_turn' | 'interrupted' | 'retries_exhausted';
+type TurnEnd =
+  | { readonly kind: 'end_turn' }
+  | { readonly kind: 'interrupted' }
+  | { readonly kind: 'retries_exhausted' }
+  | { readonly kind: 'refusal'; readonly stopDetails: ManagedWireObject | null };
+
 type SettledSubmission = Extract<SubmissionRecord, { readonly status: 'done' | 'unanswered' }>;
 type ObservedBudget = { readonly settled: SubmissionId | null; readonly revision: number };
+
+const DEFAULT_TURN_END = { kind: 'end_turn' } as const satisfies TurnEnd;
+
+function idleStop(cause: TurnEnd): {
+  readonly reason: 'end_turn' | 'retries_exhausted' | 'refusal';
+  readonly stopDetails: ManagedWireObject | null;
+} {
+  if (cause.kind === 'retries_exhausted') {
+    return { reason: 'retries_exhausted', stopDetails: null };
+  }
+
+  if (cause.kind === 'refusal') {
+    return { reason: 'refusal', stopDetails: cause.stopDetails };
+  }
+
+  return { reason: 'end_turn', stopDetails: null };
+}
 
 export async function finishManagedTurn(
   transaction: Tx,
   sessionId: string,
-  cause: TurnEnd = 'end_turn',
+  cause: TurnEnd = DEFAULT_TURN_END,
 ): Promise<void> {
   const state = await sessionState(transaction, sessionId);
   state.activeEvent = null;
@@ -37,18 +60,14 @@ export async function finishManagedTurn(
 
   const hasNext = !state.isBudgetReached && state.pendingHead < state.pendingTail;
 
-  if (!hasNext || cause !== 'end_turn') {
-    let reason: 'end_turn' | 'retries_exhausted' = 'end_turn';
+  if (!hasNext || cause.kind !== 'end_turn') {
+    const { reason, stopDetails } = idleStop(cause);
 
-    if (cause === 'retries_exhausted') {
-      reason = cause;
-    }
-
-    await transition(transaction, { sessionId, status: 'idle', reason: { type: reason } });
+    await transition(transaction, { sessionId, status: 'idle', reason: { type: reason }, stopDetails });
   }
 
   if (hasNext) {
-    if (cause !== 'end_turn') {
+    if (cause.kind !== 'end_turn') {
       await transition(transaction, { sessionId, status: 'running' });
     }
 
@@ -107,6 +126,14 @@ async function recordCompletion(
   await completeManagedOutcomeTurn(transaction, sessionId, outcome);
 
   if (hasFailed) {
+    if (failure?.reason === 'model_error') {
+      const refusal = parseModelRefusal(failure.detail);
+
+      if (refusal !== null) {
+        return { kind: 'refusal', stopDetails: refusal.details };
+      }
+    }
+
     let error = {
       type: 'unknown_error',
       message: 'The model turn could not finish',
@@ -119,14 +146,14 @@ async function recordCompletion(
 
     await appendManagedEvent(transaction, { sessionId }, { type: 'session.error', error });
 
-    return 'retries_exhausted';
+    return { kind: 'retries_exhausted' };
   }
 
   if (wasInterrupted) {
-    return 'interrupted';
+    return { kind: 'interrupted' };
   }
 
-  return 'end_turn';
+  return { kind: 'end_turn' };
 }
 
 export async function settleManagedSubmission(

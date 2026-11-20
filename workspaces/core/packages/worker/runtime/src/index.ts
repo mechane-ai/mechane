@@ -32,6 +32,7 @@ export { preflightManagedEvents } from './managed/admission.ts';
 export { validateManagedMcpServers } from './managed/mcp/settings.ts';
 export { managedIdentityDiscovery } from './managed/mcp/identity-discovery.ts';
 export { assertManagedBudgetModels } from './managed/budget-models.ts';
+export { multiagentMemberEntries } from './managed/multiagent.ts';
 export { verifyManagedHost } from './managed/egress.ts';
 export { resolveManagedToolsets } from './managed/tools/resolve-toolsets.ts';
 

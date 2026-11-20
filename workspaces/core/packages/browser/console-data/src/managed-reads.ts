@@ -40,7 +40,11 @@ export async function loadManagedAttention(
   const wire = await client.get<unknown>(attentionPath(request.agentId), { signal });
 
   return await Schema.decodeUnknownPromise(
-    Schema.Struct({ sessionId: Schema.NullOr(ManagedId), queuedSessionIds: Schema.Array(ManagedId) }),
+    Schema.Struct({
+      sessionId: Schema.NullOr(ManagedId),
+      sessionTitle: Schema.optional(Schema.NullOr(Schema.String)),
+      queuedSessionIds: Schema.Array(ManagedId),
+    }),
   )(wire);
 }
 

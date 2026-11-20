@@ -99,21 +99,43 @@ export async function pinManagedAgent({
     return { runtimeMechId: row.runtime_id, childRuntimeMechIds, agent: { ...primary, multiagent: null } };
   }
 
-  const roster = managedDocument(coordinator, 'multiagent')['agents'];
+  const parsed = managedDocument(coordinator, 'multiagent');
 
-  if (!Array.isArray(roster)) {
-    throw new TypeError('Stored coordinator is missing its roster');
+  async function resolveMembers(roster: unknown): Promise<ReadonlyArray<ManagedDocument>> {
+    if (!Array.isArray(roster)) {
+      throw new TypeError('Stored coordinator is missing its roster');
+    }
+
+    const members: Array<ManagedDocument> = [];
+
+    for (const entry of roster) {
+      const member = await resolveChild({ context, scope, entry, row, primary });
+
+      members.push(member.agent);
+
+      childRuntimeMechIds[member.id] = member.runtimeId;
+    }
+
+    return members;
   }
 
-  const agents: Array<ManagedDocument> = [];
+  if (parsed['type'] === 'multiagent_20261001') {
+    const subagents = managedDocument(parsed['subagents'], 'subagents');
 
-  for (const entry of roster) {
-    const member = await resolveChild({ context, scope, entry, row, primary });
+    if (subagents['type'] !== 'enabled') {
+      return { runtimeMechId: row.runtime_id, childRuntimeMechIds, agent: { ...primary, multiagent: parsed } };
+    }
 
-    agents.push(member.agent);
+    const agents = await resolveMembers(subagents['predefined_agents']);
 
-    childRuntimeMechIds[member.id] = member.runtimeId;
+    return {
+      runtimeMechId: row.runtime_id,
+      childRuntimeMechIds,
+      agent: { ...primary, multiagent: { ...parsed, subagents: { ...subagents, predefined_agents: agents } } },
+    };
   }
+
+  const agents = await resolveMembers(parsed['agents']);
 
   return {
     runtimeMechId: row.runtime_id,

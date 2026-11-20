@@ -1,5 +1,5 @@
 import { BACKGROUND_CONTEXT } from '@earendil-works/chord/context';
-import { defineDoc, LiveDoc } from '@earendil-works/pi-durable';
+import { defineDoc, defineDocFamily, LiveDoc } from '@earendil-works/pi-durable';
 import type { ConversationId, Harness, Tx } from '@earendil-works/pi-durable';
 import { Schema } from 'effect';
 import type { WithControl } from '../actor/types.ts';
@@ -24,6 +24,15 @@ const OpenSpan = defineDoc<{ readonly receipt: SpanReceipt | null }>({
   scope: 'session',
   version: 1,
   initial: () => ({ receipt: null }),
+  checkpointWhen: () => true,
+});
+
+export const LastModelFailure = defineDocFamily<{ readonly detail: string | null }, null>({
+  kind: 'managed.last-model-failure',
+  scope: 'session',
+  version: 1,
+  family: true,
+  initial: () => ({ detail: null }),
   checkpointWhen: () => true,
 });
 
@@ -83,7 +92,7 @@ function measuredTokens(usage: RawUsage | null) {
   const counts = {
     cache_creation_input_tokens: written,
     cache_read_input_tokens: cached,
-    input_tokens: (usage?.prompt_tokens ?? 0) - cached - written,
+    input_tokens: Math.max(0, (usage?.prompt_tokens ?? 0) - cached - written),
     output_tokens: usage?.completion_tokens ?? 0,
   };
 
@@ -125,6 +134,13 @@ async function completeSpan(transaction: Tx, { receipt, result, generation }: Co
   const state = await sessionState(transaction, sessionId);
   const interrupted = state.interrupt !== null || state.activation !== receipt.activationId;
   const isError = result.isError || interrupted;
+  const lastFailure = await transaction.doc(LastModelFailure, sessionId, null);
+
+  if (isError && !interrupted) {
+    lastFailure.detail = result.errorDetail ?? null;
+  } else {
+    lastFailure.detail = null;
+  }
 
   if (!isError && result.message !== undefined && generation?.sessionId === sessionId) {
     await appendManagedAssistant(transaction, generation, result.message);

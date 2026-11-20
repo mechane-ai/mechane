@@ -12,7 +12,7 @@ import { charge, reservation, sessionListCost, usageTransport } from '../models/
 import type { RawUsage } from '../models/gateway.ts';
 import { matchesGatewayModel } from '../models/managed-offers.ts';
 import { rejectRedirect } from '../tools/http.ts';
-import { modelHttpFailures, modelStreamFailure } from './model-error.ts';
+import { encodeModelRefusal, modelHttpFailures, modelStreamFailure } from './model-error.ts';
 import type { ManagedExecution, ManagedRequest } from './provider-types.ts';
 
 const WireEffort = Schema.optionalKey(Schema.NullOr(Schema.String));
@@ -262,6 +262,9 @@ export function managedAttempt({ owner, execution, offer, signal }: AttemptInput
         modelId: offer.id,
         speed: execution.speed ?? 'standard',
         recordError,
+        recordRefusal: (details) => {
+          state.error = encodeModelRefusal(details);
+        },
         recordUsage: (usage) => {
           state.usage = usage;
         },
@@ -339,13 +342,13 @@ export function managedAttempt({ owner, execution, offer, signal }: AttemptInput
     try {
       await settle();
     } catch (error) {
-      await state.span?.finish({ isError: true, usage: state.usage });
+      await state.span?.finish({ isError: true, usage: state.usage, errorDetail: state.error });
 
       throw error;
     }
 
     if (message === undefined || state.usage === null) {
-      await state.span?.finish({ isError: true, usage: state.usage });
+      await state.span?.finish({ isError: true, usage: state.usage, errorDetail: state.error });
 
       return;
     }

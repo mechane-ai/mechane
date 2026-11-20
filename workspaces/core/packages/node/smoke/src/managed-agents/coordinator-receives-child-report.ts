@@ -228,6 +228,35 @@ export async function coordinatorReceivesChildReport({ stack }: ScenarioInput): 
   assert.equal(archived.stats?.startup_seconds, 0);
   assert.equal(archived.usage?.active_seconds, archived.stats.active_seconds);
 
+  const modernCoordinator = await agents.create({
+    name: `modern-${key}`,
+    model: modelId,
+    multiagent: {
+      type: 'multiagent_20261001',
+      subagents: { type: 'enabled', predefined_agents: [{ type: 'agent', id: child.id, version: child.version }] },
+    },
+  });
+
+  assert.partialDeepStrictEqual(modernCoordinator.multiagent, {
+    type: 'multiagent_20261001',
+    workflows: { type: 'disabled' },
+    subagents: {
+      type: 'enabled',
+      inline_agents: { type: 'disabled' },
+      predefined_agents: [{ type: 'agent', id: child.id, version: child.version }],
+    },
+    advisor: { type: 'disabled' },
+  });
+
+  const modernSession = await sessions.create({ agent: modernCoordinator.id, environment_id: environment.id });
+
+  assert.partialDeepStrictEqual(modernSession.agent.multiagent, {
+    type: 'multiagent_20261001',
+    subagents: { type: 'enabled', predefined_agents: [{ id: child.id, version: child.version }] },
+  });
+  await sessions.archive(modernSession.id);
+  await agents.archive(modernCoordinator.id);
+
   const terminated = await sessions.threads.list(session.id, { statuses: ['terminated'] });
 
   assert.deepEqual(

@@ -17,7 +17,7 @@ import { failManagedRequest, ManagedRuntimeError, ManagedRuntimeFailureWire } fr
 import { managedActorUrl } from './identity.ts';
 import { runManagedOperation } from './operations.ts';
 import { ManagedAgentScope } from './protocol.ts';
-import type { ManagedSessionMutation } from './protocol.ts';
+import type { ManagedEvent, ManagedSessionMutation } from './protocol.ts';
 import { runManagedReadOperation } from './read-operations.ts';
 import { createSessionObserver } from './session-observer.ts';
 import { openManagedSessionReader } from './session-reader.ts';
@@ -52,6 +52,28 @@ export function openManagedSessionHost(
   const slotWakes = new EventTarget();
   const retired = new AbortController();
   const instanceId = crypto.randomUUID();
+  const deletedListeners = new Set<(event: ManagedEvent) => void>();
+
+  function notifyDeleted(event: ManagedEvent): void {
+    for (const listener of deletedListeners) {
+      listener(event);
+    }
+  }
+
+  function subscribeDeleted(listener: (event: ManagedEvent) => void, signal: AbortSignal): void {
+    if (signal.aborted) {
+      return;
+    }
+
+    deletedListeners.add(listener);
+    signal.addEventListener(
+      'abort',
+      () => {
+        deletedListeners.delete(listener);
+      },
+      { once: true },
+    );
+  }
 
   const cached: { engine?: ManagedAgentEngine; services?: Promise<RuntimeServices>; hasRecoveredSlot: boolean } = {
     hasRecoveredSlot: false,
@@ -162,6 +184,7 @@ export function openManagedSessionHost(
 
           await metaStore.seal(await fingerprint(mutation));
         },
+        onSessionDeleted: notifyDeleted,
         delegate: scopedDelegate(meta.scope),
       });
 
@@ -388,6 +411,7 @@ export function openManagedSessionHost(
                 observe: observer.observe,
                 source,
                 signal: AbortSignal.any([request.signal, retired.signal]),
+                subscribeDeleted,
                 onStreamClose,
               }),
           );

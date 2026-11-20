@@ -208,8 +208,19 @@ export async function listManagedEvents(
   return await collectPage(reader, { ...input, maxRows, matches: filter(input) }, historicalIds(reader, input));
 }
 
-export async function managedEventTail(reader: ActorRecordReader, input: ThreadScope): Promise<number> {
+export async function managedEventTail(
+  reader: ActorRecordReader,
+  input: ThreadScope & { readonly lastEventId?: string | undefined },
+): Promise<number> {
   const index = viewIndex(input, 'processed');
+
+  if (input.lastEventId !== undefined) {
+    const resumed = await index.offsetAfter(reader, input.lastEventId);
+
+    if (resumed !== undefined) {
+      return resumed;
+    }
+  }
 
   return await index.count(reader);
 }

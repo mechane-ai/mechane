@@ -8,6 +8,8 @@ type EventChanges = { readonly data: ReadonlyArray<ManagedEvent>; readonly offse
 
 type ReadChanges = (input: ManagedEventScope & { readonly offset: number }) => Promise<EventChanges>;
 
+type DeletedSubscription = (listener: (event: ManagedEvent) => void, signal: AbortSignal) => void;
+
 type LiveStream = {
   readonly watchPreviews?: (observer: {
     readonly emit: PreviewSink;
@@ -19,10 +21,21 @@ type LiveStream = {
   readonly scope: ManagedStreamInput;
   readonly source: EventTarget;
   readonly signal: AbortSignal;
+  readonly subscribeDeleted?: DeletedSubscription | undefined;
   readonly onStreamClose?: (() => void) | undefined;
 };
 
 const KEEPALIVE_MS = 15_000;
+const RETRY_MS = 3000;
+const TERMINAL_SESSION_EVENTS: ReadonlySet<string> = new Set(['session.status_terminated', 'session.deleted']);
+
+function isTerminalStreamEvent(type: string, isThreadStream: boolean): boolean {
+  if (TERMINAL_SESSION_EVENTS.has(type)) {
+    return true;
+  }
+
+  return isThreadStream && type === 'session.thread_status_terminated';
+}
 
 export async function managedStream({
   offset,
@@ -30,21 +43,28 @@ export async function managedStream({
   scope,
   source,
   signal,
+  subscribeDeleted,
   onStreamClose,
   watchPreviews,
 }: LiveStream): Promise<Response> {
   const encoder = new TextEncoder();
   const cursor = { offset, revision: 0 };
+  const streamState = { isClosed: false };
   const canceled = new AbortController();
   const pulse = new EventTarget();
   const previews = new AbortController();
   const previewSignal = AbortSignal.any([canceled.signal, previews.signal]);
   const includePreviews = (scope.eventDeltas?.length ?? 0) > 0;
+  const isThreadStream = scope.threadId !== undefined;
   let ready = Promise.resolve();
   const live: { window?: ReturnType<typeof previewWindow> } = {};
 
   function isCanceled(): boolean {
     return canceled.signal.aborted;
+  }
+
+  function isClosed(): boolean {
+    return streamState.isClosed;
   }
 
   function changed(): void {
@@ -76,19 +96,47 @@ export async function managedStream({
     changed();
   }
 
-  function deliver(controller: ReadableStreamDefaultController<Uint8Array>, events: ReadonlyArray<ManagedEvent>) {
-    for (const event of events) {
-      controller.enqueue(encoder.encode(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`));
-      live.window?.reconcile(event);
+  function closeStream(controller: ReadableStreamDefaultController<Uint8Array>): void {
+    if (streamState.isClosed) {
+      return;
     }
+
+    streamState.isClosed = true;
+
+    dispose();
+    controller.close();
+  }
+
+  function deliver(
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    events: ReadonlyArray<ManagedEvent>,
+  ): boolean {
+    for (const event of events) {
+      if (streamState.isClosed || isCanceled()) {
+        return true;
+      }
+
+      const payload = JSON.stringify(event);
+      const chunk = encoder.encode(`id: ${event.id}\nevent: ${event.type}\ndata: ${payload}\n\n`);
+
+      controller.enqueue(chunk);
+      live.window?.reconcile(event);
+
+      if (isTerminalStreamEvent(event.type, isThreadStream)) {
+        closeStream(controller);
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   const body = new ReadableStream<Uint8Array>(
     {
       start(controller) {
         function disconnect(): void {
-          dispose();
-          controller.close();
+          closeStream(controller);
         }
 
         if (signal.aborted) {
@@ -99,18 +147,26 @@ export async function managedStream({
 
         source.addEventListener('change', changed, { signal: canceled.signal });
         signal.addEventListener('abort', disconnect, { signal: canceled.signal, once: true });
-        controller.enqueue(encoder.encode(': connected\n\n'));
+        subscribeDeleted?.((event) => {
+          deliver(controller, [event]);
+        }, canceled.signal);
+        controller.enqueue(encoder.encode(`retry: ${RETRY_MS}\n: connected\n\n`));
 
         if (!includePreviews || watchPreviews === undefined) {
           return;
         }
 
         live.window = previewWindow((frame) => {
-          if (previewSignal.aborted || (controller.desiredSize ?? 0) <= 0) {
+          const isStopped = isClosed() || previewSignal.aborted;
+
+          if (isStopped || (controller.desiredSize ?? 0) <= 0) {
             return false;
           }
 
-          controller.enqueue(encoder.encode(`event: ${frame.type}\ndata: ${JSON.stringify(frame)}\n\n`));
+          const payload = JSON.stringify(frame);
+          const chunk = encoder.encode(`event: ${frame.type}\ndata: ${payload}\n\n`);
+
+          controller.enqueue(chunk);
 
           return true;
         });
@@ -131,11 +187,11 @@ export async function managedStream({
       },
       async pull(controller) {
         try {
-          while (!isCanceled()) {
+          while (!isCanceled() && !isClosed()) {
             const revision = cursor.revision;
             const page = await readChanges({ ...scope, offset: cursor.offset });
 
-            if (isCanceled()) {
+            if (isCanceled() || isClosed()) {
               return;
             }
 
@@ -149,18 +205,26 @@ export async function managedStream({
 
             const elapsed = await wait(revision);
 
-            if (elapsed && !isCanceled()) {
+            if (elapsed && !isCanceled() && !isClosed()) {
               controller.enqueue(encoder.encode(': keepalive\n\n'));
 
               return;
             }
           }
         } catch (failure) {
-          dispose();
-          controller.error(failure);
+          if (!isClosed()) {
+            streamState.isClosed = true;
+
+            dispose();
+            controller.error(failure);
+          }
         }
       },
-      cancel: dispose,
+      cancel() {
+        streamState.isClosed = true;
+
+        dispose();
+      },
     },
     { highWaterMark: 16 },
   );
@@ -168,6 +232,10 @@ export async function managedStream({
   await ready;
 
   return new Response(body, {
-    headers: { [HttpHeader.ContentType]: MediaType.EventStream, [HttpHeader.CacheControl]: 'no-store' },
+    headers: {
+      [HttpHeader.ContentType]: MediaType.EventStream,
+      [HttpHeader.CacheControl]: 'no-store',
+      [HttpHeader.XAccelBuffering]: 'no',
+    },
   });
 }

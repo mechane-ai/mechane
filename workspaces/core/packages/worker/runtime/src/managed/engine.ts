@@ -29,6 +29,7 @@ import type { ManagedToolCall } from './pi-tools.ts';
 import { createGenerationRegistry } from './preview-output.ts';
 import type {
   ManagedAgentScope,
+  ManagedEvent,
   ManagedSessionMutation,
   ManagedSessionOpen,
   ManagedSessionSend,
@@ -45,6 +46,7 @@ import { registerManagedPrimary } from './thread-registration.ts';
 import { abortRetiredFocus } from './thread-retirement.ts';
 import { archiveManagedThread } from './threads.ts';
 import { managedToolPermission } from './tools/auto-policy.ts';
+import { resolveManagedWebServerTools } from './tools/web-server-tools.ts';
 import { managedUsageProjector } from './usage-projection.ts';
 import { reconcileWorkerDemand } from './worker-demand.ts';
 
@@ -54,6 +56,7 @@ type StartOptions = {
   readonly configuration: RuntimeConfiguration;
   readonly identitySlot: ManagedIdentitySlot;
   readonly sealErasure: (sessionId: string, mutation?: ManagedSessionMutation) => Promise<void>;
+  readonly onSessionDeleted?: ((event: ManagedEvent) => void) | undefined;
   readonly withControl: WithControl;
   readonly wake: () => void;
   readonly wakeInstalledSession: InstalledWorkerWake;
@@ -149,6 +152,7 @@ export async function startManagedSessionEngine(options: StartOptions) {
     },
     eraseChildren: (sessionId) => eraseDelegatedChildren(harness, sessionId, options.delegate),
     sealErasure: options.sealErasure,
+    onSessionDeleted: options.onSessionDeleted,
     resumeBudget: resumeManagedBudget,
   });
 
@@ -201,7 +205,13 @@ export async function startManagedSessionEngine(options: StartOptions) {
         throw new Error('The active session cannot dispatch');
       }
 
-      const native = await transaction.doc(ProviderDoc, await managedOutcomeConversation(transaction, state));
+      const conversationId = await managedOutcomeConversation(transaction, state);
+      const native = await transaction.doc(ProviderDoc, conversationId);
+      let webTools: ReadonlyArray<Readonly<Record<string, unknown>>> = [];
+
+      if (conversationId === state.conversation) {
+        webTools = resolveManagedWebServerTools(state.tools, options.configuration.managedWeb);
+      }
 
       return {
         runtimeMechId: state.runtimeMechId,
@@ -214,6 +224,7 @@ export async function startManagedSessionEngine(options: StartOptions) {
         effort: state.effort ?? undefined,
         activationId: state.activation,
         providerSessionId: native.sessionId,
+        webTools,
       };
     }, context);
   }

@@ -54,18 +54,29 @@ export async function readManagedSessionState(transaction: Tx, sessionId: string
   return { ...base, status: 'idle', stop_reason: primary.reason ?? { type: 'end_turn' } };
 }
 
-function idleFields(status: string, reason: ManagedWireObject | null) {
+function idleFields(status: string, reason: ManagedWireObject | null, stopDetails: ManagedWireObject | null = null) {
   if (status === 'idle') {
-    return { stop_details: null, stop_reason: reason };
+    return { stop_details: stopDetails, stop_reason: reason };
   }
 
   return {};
 }
 
+function refusalDetails(reason: ManagedWireObject | null, primary: ThreadRecord): ManagedWireObject | null {
+  if (reason?.['type'] === 'refusal') {
+    return primary.stopDetails ?? null;
+  }
+
+  return null;
+}
+
 export async function reconcileManagedSessionStatus(transaction: Tx, sessionId: string, isForced = false) {
   const next = await readManagedSessionState(transaction, sessionId);
+  const session = await sessionState(transaction, sessionId);
+  const primary = await requiredThread(transaction, sessionId, session.threadId);
+  const stopDetails = refusalDetails(next.stop_reason, primary);
   const aggregate = await transaction.doc(Aggregate, sessionId, null);
-  const reason = JSON.stringify(next.stop_reason);
+  const reason = JSON.stringify({ reason: next.stop_reason, stopDetails });
 
   if (!isForced && aggregate.status === next.status && aggregate.reason === reason) {
     return false;
@@ -73,8 +84,7 @@ export async function reconcileManagedSessionStatus(transaction: Tx, sessionId: 
 
   aggregate.status = next.status;
   aggregate.reason = reason;
-  const fields = idleFields(next.status, next.stop_reason);
-  const session = await sessionState(transaction, sessionId);
+  const fields = idleFields(next.status, next.stop_reason, stopDetails);
 
   if (next.status === 'idle' && session.publicSessionId === sessionId) {
     await queueSessionUsage(transaction, sessionId);
@@ -91,6 +101,7 @@ type Transition = {
   readonly threadId: string;
   readonly status: 'running' | 'idle' | 'terminated';
   readonly stopReason?: ManagedWireObject | null;
+  readonly stopDetails?: ManagedWireObject | null;
   readonly isArchived?: boolean;
   readonly usage?: ManagedWireObject | null;
   readonly isForced?: boolean;
@@ -105,13 +116,29 @@ function reasonFor(change: Transition) {
   return change.stopReason ?? { type: 'end_turn' };
 }
 
-function createTransition(previous: ThreadRecord, change: Transition, reason: ManagedWireObject | null): ThreadRecord {
+function detailsFor(change: Transition): ManagedWireObject | null {
+  if (change.status !== 'idle') {
+    return null;
+  }
+
+  return change.stopDetails ?? null;
+}
+
+type TransitionUpdate = {
+  readonly previous: ThreadRecord;
+  readonly change: Transition;
+  readonly reason: ManagedWireObject | null;
+  readonly stopDetails: ManagedWireObject | null;
+};
+
+function createTransition({ previous, change, reason, stopDetails }: TransitionUpdate): ThreadRecord {
   const now = Math.max(Date.now(), previous.updatedAt);
 
   const record = {
     ...previous,
     status: change.status,
     reason,
+    stopDetails,
     activeMs: activeMillis(previous, now),
     updatedAt: now,
     hasTransitioned: true,
@@ -137,7 +164,13 @@ export async function transitionManagedThread(transaction: Tx, change: Transitio
   }
 
   const reason = reasonFor(change);
-  const unchanged = previous.status === change.status && JSON.stringify(previous.reason) === JSON.stringify(reason);
+  const stopDetails = detailsFor(change);
+
+  const unchanged =
+    previous.status === change.status &&
+    JSON.stringify(previous.reason) === JSON.stringify(reason) &&
+    JSON.stringify(previous.stopDetails ?? null) === JSON.stringify(stopDetails);
+
   const hasStatusEvent = !unchanged || change.isForced === true;
   const hasRecordChanges = hasStatusEvent || change.isArchived === true || change.usage !== undefined;
 
@@ -147,7 +180,7 @@ export async function transitionManagedThread(transaction: Tx, change: Transitio
     return publicThread(previous);
   }
 
-  const record = createTransition(previous, change, reason);
+  const record = createTransition({ previous, change, reason, stopDetails });
   const session = await sessionState(transaction, change.sessionId);
   const isPublicSession = session.publicSessionId === change.sessionId;
 
@@ -178,7 +211,7 @@ export async function transitionManagedThread(transaction: Tx, change: Transitio
   const publishesThreadStatus = record.parentId !== null || (threadAtCap && isPublicSession);
 
   if (publishesThreadStatus && hasStatusEvent) {
-    const idle = idleFields(record.status, reason);
+    const idle = idleFields(record.status, reason, stopDetails);
 
     const event = await appendManagedEvent(
       transaction,

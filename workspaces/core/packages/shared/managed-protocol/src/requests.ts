@@ -97,3 +97,20 @@ export function matchManagedRoute({ method, pathname, isConsole }: RouteInput): 
 
   return Option.none();
 }
+
+type PathInput = { readonly pathname: string };
+
+/** Return the HTTP methods declared for a public path when no route matches the requested method. */
+export function allowedManagedMethods({ pathname }: PathInput): ReadonlyArray<string> {
+  const actual = pathname.split('/');
+
+  const matching = routes.filter(({ segments }) => {
+    const params = matchParams({ segments, actual });
+
+    return Option.isSome(params);
+  });
+
+  const methods = matching.map(({ route }) => route.method);
+
+  return [...new Set(methods)];
+}

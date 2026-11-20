@@ -48,25 +48,25 @@ export function createManagedSessionStore(context: StoreContext, keyring: Creden
       context.atomic((transaction) => createSession(transaction, keyring, input)),
     get: async (identity: SessionIdentity) => await sessionDocument(context, await readSession(context, identity)),
     list: (input: { readonly scope: ManagedScope; readonly query?: SessionQuery }) => listSessions(context, input),
-    async visibleIds({
+    async visibleSummaries({
       scope,
       ids,
     }: {
       readonly scope: ManagedScope;
       readonly ids: ReadonlyArray<string>;
-    }): Promise<ReadonlyArray<string>> {
+    }): Promise<ReadonlyArray<{ readonly id: string; readonly title: string | null }>> {
       if (ids.length === 0) {
         return [];
       }
 
       const result = await context.client.query(
-        'SELECT id FROM mechane.managed_sessions WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean) AND id=ANY($4::text[])',
+        `SELECT id,configuration->>'title' AS title FROM mechane.managed_sessions WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean) AND id=ANY($4::text[])`,
         [scope.workspaceId, scope.principalId, scope.isAdmin, ids],
       );
 
-      return Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ id: StoredText })))(result.rows).map(
-        (row) => row.id,
-      );
+      return Schema.decodeUnknownSync(
+        Schema.Array(Schema.Struct({ id: StoredText, title: Schema.NullOr(StoredText) })),
+      )(result.rows);
     },
     async runtimeBinding(identity: SessionIdentity) {
       const row = await readSession(context, identity);

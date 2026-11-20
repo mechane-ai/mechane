@@ -337,6 +337,10 @@ export function createManagedSkillStore(context: StoreContext) {
                 UNION ALL
                 SELECT member FROM jsonb_array_elements(sess.configuration #> '{agent,multiagent,agents}') member
                  WHERE sess.configuration #>> '{agent,multiagent,type}' = 'coordinator'
+                UNION ALL
+                SELECT member FROM jsonb_array_elements(sess.configuration #> '{agent,multiagent,subagents,predefined_agents}') member
+                 WHERE sess.configuration #>> '{agent,multiagent,type}' = 'multiagent_20261001'
+                   AND sess.configuration #>> '{agent,multiagent,subagents,type}' = 'enabled'
               ) AS roster
               WHERE roster.agent->'skills' @> jsonb_build_array(jsonb_build_object('type','custom','skill_id',s.id,'version',v.id))
             )`,

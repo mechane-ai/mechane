@@ -2,7 +2,7 @@ import Anthropic, { APIError } from '@anthropic-ai/sdk';
 import { sessionsTokenFromSecret } from '@anthropic-ai/sdk/lib/environments/worker';
 import { BetaHeartbeatPreconditionFailedError } from '@anthropic-ai/sdk/resources/beta/environments/work';
 import { betaAgentToolset20260401 } from '@anthropic-ai/sdk/tools/agent-toolset/node';
-import { HttpStatusCode } from '@mechane/records';
+import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import { createAccount, issueEnvironmentKey, requireFixtures, waitFor } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
@@ -12,6 +12,8 @@ import { join } from 'node:path';
 import { recoverWorkerEffect, verifySuspendedWorker } from './recover-worker-effect.ts';
 
 const DISPATCH_TIMEOUT_MS = 30_000;
+const OVERSIZED_TTL_SECONDS = 900;
+const CLAMPED_TTL_SECONDS = 300;
 
 const inaccessible: ReadonlySet<number> = new Set([
   HttpStatusCode.Unauthorized,
@@ -176,6 +178,42 @@ export async function scopedWorkerDeliversToolResult({ stack }: ScenarioInput): 
     const settlement = await owner.beta.sessions.create(create);
 
     await verifySuspendedWorker({ ...check, sessionId: settlement.id, stack, account });
+
+    const operatorStop = await owner.beta.sessions.create(create);
+    const stopPrompt = `stop-${marker}`;
+
+    model.configure({
+      marker: stopPrompt,
+      replies: [{ tools: [{ id: randomUUID(), name: 'bash', input: { command: 'true' } }] }],
+    });
+    await owner.beta.sessions.events.send(operatorStop.id, {
+      events: [{ type: 'user.message', content: [{ type: 'text', text: stopPrompt }] }],
+    });
+
+    const queued = await waitFor({
+      name: 'queued work item for operator stop check',
+      read: () => poller.beta.environments.work.poll(environment.id, { block_ms: 500 }),
+      accept: (receipt) => receipt !== null && receipt.data.id === operatorStop.id,
+    });
+
+    assert.ok(queued !== null && queued.secret !== null);
+    await poller.beta.environments.work.ack(queued.id, { environment_id: environment.id });
+
+    const queuedRunner = scopedClient(queued.secret);
+
+    const clampedHeartbeat = await queuedRunner.beta.environments.work
+      .heartbeat(queued.id, { environment_id: environment.id, desired_ttl_seconds: OVERSIZED_TTL_SECONDS })
+      .withResponse();
+
+    assert.equal(clampedHeartbeat.data.ttl_seconds, CLAMPED_TTL_SECONDS);
+    assert.match(clampedHeartbeat.response.headers.get(HttpHeader.AnthropicWorkspaceId) ?? '', /^wrkspc_/u);
+
+    const stopped = await owner.beta.environments.work
+      .stop(queued.id, { environment_id: environment.id, force: true })
+      .withResponse();
+
+    assert.equal(stopped.data.state, 'stopped');
+    assert.match(stopped.response.headers.get(HttpHeader.AnthropicWorkspaceId) ?? '', /^wrkspc_/u);
   } finally {
     controller.abort();
     await rm(workdir, { recursive: true, force: true });

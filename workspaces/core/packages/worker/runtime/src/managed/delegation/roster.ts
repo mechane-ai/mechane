@@ -1,6 +1,7 @@
 import { HttpStatusCode } from '@mechane/records';
 import { Schema } from 'effect';
 import { failManagedRequest } from '../failure.ts';
+import { multiagentMemberEntries } from '../multiagent.ts';
 import { ManagedWireObject } from '../protocol.ts';
 import type { ManagedSessionOpen } from '../protocol.ts';
 
@@ -35,12 +36,18 @@ export function encodeCoordinatorRoster(open: ManagedSessionOpen): string {
     return '';
   }
 
-  const coordinator = Schema.decodeUnknownSync(
-    Schema.Struct({ type: Schema.Literal('coordinator'), agents: Schema.Array(Agent) }),
-  )(profile);
+  const agents = multiagentMemberEntries(Agent, profile);
+
+  if (agents === null) {
+    failManagedRequest(HttpStatusCode.BadRequest, 'Invalid multiagent configuration');
+  }
+
+  if (agents.length === 0) {
+    return '';
+  }
 
   const configuration = Schema.decodeUnknownSync(Installed)({
-    agents: coordinator.agents,
+    agents,
     ownerName: open.agent['name'],
     creatorId: open.creatorId,
     memoryInstructions: open.memoryInstructions ?? '',

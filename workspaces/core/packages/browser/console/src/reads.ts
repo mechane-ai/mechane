@@ -219,12 +219,12 @@ export function useManagedEvents(data: ConsoleData, request: ReadRequest<'sessio
   return useReadState({ data, request, observation, value, records: [] });
 }
 
-/** Only a fresh operator-owned execution slot can label a session as working. */
+/** Retains the last confirmed agent attention across transient refresh failures. */
 export function useAgentAttention(data: ConsoleData, agentId: string) {
   const request = useMemo(() => data.reads.attention(agentId), [data, agentId]);
   const observation = useReadReceipt(data, request);
   const value = data.managed.attention(request);
   const state = useReadState({ data, request, observation, value, records: [] });
 
-  return state.kind === 'ready' && state.refresh.kind !== 'failed' ? state.value : undefined;
+  return state.kind === 'ready' ? state.value : undefined;
 }

@@ -6,10 +6,12 @@ export function SessionStatus({
   stopReason,
   isExecuting,
   isWaiting,
+  queuePosition,
 }: {
   readonly status: string;
   readonly isExecuting?: boolean | undefined;
   readonly isWaiting?: boolean | undefined;
+  readonly queuePosition?: number | undefined;
   readonly stopReason?: string | null | undefined;
 }): ReactNode {
   if (isExecuting === true) {
@@ -17,7 +19,10 @@ export function SessionStatus({
   }
 
   if (isWaiting === true) {
-    return <Status>Waiting for agent</Status>;
+    const label =
+      queuePosition !== undefined && queuePosition > 0 ? `Waiting for agent (#${queuePosition})` : 'Waiting for agent';
+
+    return <Status>{label}</Status>;
   }
 
   switch (status) {
@@ -31,6 +36,10 @@ export function SessionStatus({
       switch (stopReason ?? '') {
         case 'requires_action':
           return <Status tone="warning">Needs action</Status>;
+        case 'budget_reached':
+          return <Status tone="warning">Budget reached</Status>;
+        case 'refusal':
+          return <Status tone="warning">Refused</Status>;
         case 'retries_exhausted':
           return <Status tone="negative">Retries exhausted</Status>;
         default:

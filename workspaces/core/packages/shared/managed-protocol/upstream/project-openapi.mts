@@ -18,7 +18,7 @@ const hasOperationId = Schema.is(Schema.Struct({ operationId: Schema.String }));
 const annotation = new Set(['description', 'title', 'example', 'examples', 'discriminator', 'default']);
 const managedPath = /^(\/v1\/(?:agents|environments|sessions|skills|vaults|memory_stores)(?:\/[^?]*)?)\?beta=true$/u;
 const classifiedPath =
-  /^(\/v1\/(?:agents|environments|sessions|skills|vaults|memory_stores|deployments|dreams|files)(?:\/[^?]*)?)(\?beta=true)?$/u;
+  /^(\/v1\/(?:agents|environments|sessions|skills|vaults|memory_stores|deployments|deployment_runs|dreams|files|tunnels|user_profiles)(?:\/[^?]*)?)(\?beta=true)?$/u;
 const propertyTables: ReadonlySet<string> = new Set(['properties', 'patternProperties']);
 const schemaPrefix = '#/components/schemas/';
 const workerTools = ['Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Write'];
@@ -140,7 +140,7 @@ type ManagedSchemas = {
 };
 
 function exclusionReason(path: string, isBeta: boolean): string {
-  if (path.startsWith('/v1/deployments')) {
+  if (path.startsWith('/v1/deployments') || path.startsWith('/v1/deployment_runs')) {
     return 'Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers.';
   }
 
@@ -150,6 +150,14 @@ function exclusionReason(path: string, isBeta: boolean): string {
 
   if (path.startsWith('/v1/files')) {
     return 'Files API is hosted-only and excluded from Anthropic self-hosted Managed Agents.';
+  }
+
+  if (path.startsWith('/v1/tunnels')) {
+    return 'Hosted tunnels are excluded from Anthropic self-hosted Managed Agents.';
+  }
+
+  if (path.startsWith('/v1/user_profiles')) {
+    return 'User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents.';
   }
 
   if (path.startsWith('/v1/skills') && !isBeta) {

@@ -7,7 +7,7 @@ import { Record, Schema } from 'effect';
 import { appendManagedEvent } from './event-log/write.ts';
 import { ManagedRuntimeError } from './failure.ts';
 import { ManagedWireObject } from './protocol.ts';
-import type { ManagedSessionMutation } from './protocol.ts';
+import type { ManagedEvent, ManagedSessionMutation } from './protocol.ts';
 import { ActiveNativeSessions, DirtySessions, enqueue, release, sessionState } from './scheduler.ts';
 import {
   lifecycleRequest,
@@ -27,6 +27,7 @@ type LifecycleOptions = {
   readonly eraseChildren: (sessionId: string) => Promise<void>;
   readonly destroyInstalledWorkspace: (scope: InstalledSession) => Promise<void>;
   readonly sealErasure: (sessionId: string, mutation?: ManagedSessionMutation) => Promise<void>;
+  readonly onSessionDeleted?: ((event: ManagedEvent) => void) | undefined;
   readonly resumeBudget: (transaction: Tx, sessionId: string) => Promise<void>;
 };
 
@@ -162,7 +163,9 @@ export function createManagedSessionLifecycle(options: LifecycleOptions) {
       await options.sealErasure(input.sessionId, input);
     }
 
-    return await harness.commit(async (transaction) => {
+    const deleted: { event?: ManagedEvent } = {};
+
+    const settled = await harness.commit(async (transaction) => {
       const state = await sessionState(transaction, input.sessionId);
 
       if (state.mutationId !== input.mutationId) {
@@ -172,6 +175,12 @@ export function createManagedSessionLifecycle(options: LifecycleOptions) {
       if (input.kind === 'delete') {
         state.isArchived = true;
         state.status = 'terminated';
+
+        deleted.event = await appendManagedEvent(
+          transaction,
+          { sessionId: input.sessionId, stableKey: `session-delete:${input.mutationId}` },
+          { type: 'session.deleted' },
+        );
 
         await release(transaction, input.sessionId);
         await ActiveNativeSessions.remove(transaction, input.sessionId);
@@ -205,6 +214,12 @@ export function createManagedSessionLifecycle(options: LifecycleOptions) {
 
       return { ...document, status: current.status };
     }, BACKGROUND_CONTEXT);
+
+    if (deleted.event !== undefined) {
+      options.onSessionDeleted?.(deleted.event);
+    }
+
+    return settled;
   }
 
   return {

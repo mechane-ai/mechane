@@ -64,6 +64,7 @@ type NativeStream = {
   readonly offer: ModelOffer;
   readonly settings: StreamOptions;
   readonly modelOptions: ManagedModelOptions;
+  readonly webTools?: ReadonlyArray<Readonly<Record<string, unknown>>> | undefined;
 };
 
 function selectOffer(offer: ModelOffer, options: ManagedModelOptions): ModelOffer {
@@ -77,7 +78,14 @@ function selectOffer(offer: ModelOffer, options: ManagedModelOptions): ModelOffe
   return { ...Struct.omit(offer, ['listPrice', 'cacheWriteOneHourMicrosPerMillionTokens']), ...offer.fastPricing };
 }
 
-function nativeStream({ input, transcript, offer, settings, modelOptions }: NativeStream): AssistantMessageEventStream {
+function nativeStream({
+  input,
+  transcript,
+  offer,
+  settings,
+  modelOptions,
+  webTools,
+}: NativeStream): AssistantMessageEventStream {
   if (hasApi(input.model, 'anthropic-messages')) {
     return streamManagedAnthropic({
       model: { ...input.model, id: offer.id },
@@ -85,6 +93,7 @@ function nativeStream({ input, transcript, offer, settings, modelOptions }: Nati
       settings,
       isSimple: input.isSimple,
       modelOptions,
+      webTools,
     });
   }
 
@@ -109,7 +118,14 @@ function nativeStream({ input, transcript, offer, settings, modelOptions }: Nati
   return stream(model, transcript, settings);
 }
 
-async function run(owner: ManagedRequest, input: Invocation, publish: PublishEvent): Promise<void> {
+type RunInput = {
+  readonly owner: ManagedRequest;
+  readonly input: Invocation;
+  readonly publish: PublishEvent;
+  readonly requestSignal: AbortSignal;
+};
+
+async function run({ owner, input, publish, requestSignal }: RunInput): Promise<void> {
   const execution = await owner.current();
   const entry = resolveManagedModel(owner.configuration.model.offers, execution.model);
 
@@ -140,6 +156,7 @@ async function run(owner: ManagedRequest, input: Invocation, publish: PublishEve
   const settings = {
     ...input.options,
     ...payload,
+    signal: requestSignal,
     apiKey: MODEL_GATEWAY_AUTH_MARKER,
     fetch: attempt.fetch,
     maxRetries: 0,
@@ -148,7 +165,14 @@ async function run(owner: ManagedRequest, input: Invocation, publish: PublishEve
     transport: 'sse' as const,
   };
 
-  const upstream = nativeStream({ input, transcript: documents.transcript, offer, settings, modelOptions: execution });
+  const upstream = nativeStream({
+    input,
+    transcript: documents.transcript,
+    offer,
+    settings,
+    modelOptions: execution,
+    webTools: execution.webTools,
+  });
 
   try {
     for await (const event of upstream) {
@@ -236,7 +260,8 @@ export function createManagedModels(owner: ManagedProviderOwner) {
       await owner.withRequest(
         providerSessionId,
         input.options?.signal,
-        async (current) => await run({ ...owner, current }, input, (event) => output.push(event)),
+        async (current, requestSignal) =>
+          await run({ owner: { ...owner, current }, input, publish: (event) => output.push(event), requestSignal }),
       );
     }
 

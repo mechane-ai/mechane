@@ -188,6 +188,23 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     return catalog?.live ?? 0;
   }
 
+  async function offsetAfter(
+    reader: ActorRecordReader,
+    id: string,
+    context: Context = BACKGROUND_CONTEXT,
+  ): Promise<number | undefined> {
+    const row = await reader.snapshot(Values, address(name, id), context);
+
+    if (row?.ordinal === undefined || row.ordinal === null) {
+      return undefined;
+    }
+
+    const catalog = await reader.snapshot(Catalog, name, context);
+    const first = catalog?.first ?? 0;
+
+    return Math.max(first, row.ordinal + 1);
+  }
+
   async function countInTransaction(transaction: Tx): Promise<number> {
     const catalog = await transaction.doc(Catalog, name, null);
 
@@ -353,6 +370,7 @@ function createCollection<T>({ name, schema, removal }: CollectionDefinition<T>)
     append,
     remove,
     count,
+    offsetAfter,
     countInTransaction,
     totalInTransaction,
     at,

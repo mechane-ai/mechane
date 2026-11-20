@@ -124,6 +124,7 @@ export type ManagedThreadPage = typeof ManagedThreadPage.Type;
 
 export const ManagedStreamRequest = Schema.Struct({
   ...ManagedEventScope.fields,
+  lastEventId: Schema.optional(Schema.NonEmptyString),
   eventDeltas: Schema.optional(Schema.Array(Schema.Literals(['agent.message', 'agent.thinking']))),
 });
 

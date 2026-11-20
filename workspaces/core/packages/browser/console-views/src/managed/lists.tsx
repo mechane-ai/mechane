@@ -100,13 +100,18 @@ export function ManagedSessionList({
         { ...sessionColumns[0], cell: (session) => <DataTableText>{session.title ?? session.id}</DataTableText> },
         {
           ...sessionColumns[1],
-          cell: (session) => (
-            <SessionStatus
-              status={session.status}
-              isExecuting={session.id === activeSessionId}
-              isWaiting={queuedSessionIds?.includes(session.id)}
-            />
-          ),
+          cell: (session) => {
+            const queueIndex = queuedSessionIds?.indexOf(session.id) ?? -1;
+
+            return (
+              <SessionStatus
+                status={session.status}
+                isExecuting={session.id === activeSessionId}
+                isWaiting={queueIndex >= 0}
+                queuePosition={queueIndex >= 0 ? queueIndex + 1 : undefined}
+              />
+            );
+          },
         },
         { ...sessionColumns[2], cell: (session) => <ManagedTimestamp value={session.updatedAt} /> },
       ]}

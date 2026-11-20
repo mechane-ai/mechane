@@ -8,6 +8,7 @@ import { decodeManagedBody } from './request-input.ts';
 const EXECUTION_REQUEST_MAX_BYTES = 33_554_432;
 const MANAGED_BETA = 'managed-agents-2026-04-01';
 const MEMORY_BETA = 'agent-memory-2026-07-22';
+const SKILLS_BETA = 'skills-2025-10-02';
 const supportedVersions: ReadonlySet<string> = new Set(['2026-10-21', '2023-06-01']);
 
 export function requireManagedHeaders(request: Request, path: string): void {
@@ -22,15 +23,18 @@ export function requireManagedHeaders(request: Request, path: string): void {
     .map((beta) => beta.trim())
     .filter(Boolean);
 
-  if (path.startsWith('/v1/skills') && betas.length === 0) {
-    return;
-  }
-
-  if (path.startsWith('/v1/memory_stores') && betas.includes(MEMORY_BETA)) {
-    if (betas.includes(MANAGED_BETA)) {
-      throw new ManagedHttpError(HttpStatusCode.BadRequest, 'Use a single memory API beta');
+  if (path.startsWith('/v1/skills')) {
+    if (betas.length === 0 || betas.includes(SKILLS_BETA) || betas.includes(MANAGED_BETA)) {
+      return;
     }
 
+    throw new ManagedHttpError(
+      HttpStatusCode.BadRequest,
+      'This endpoint requires no beta or the skills-2025-10-02 or managed-agents-2026-04-01 beta',
+    );
+  }
+
+  if (path.startsWith('/v1/memory_stores') && (betas.includes(MEMORY_BETA) || betas.includes(MANAGED_BETA))) {
     return;
   }
 

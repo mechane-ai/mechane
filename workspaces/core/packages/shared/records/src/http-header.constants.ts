@@ -1,6 +1,7 @@
 /** The header names Mechane sends and reads, in the lower case `Headers` stores them in. */
 export const HttpHeader = {
   Accept: 'accept',
+  Allow: 'allow',
   AnthropicBeta: 'anthropic-beta',
   AnthropicVersion: 'anthropic-version',
   AnthropicWorkspaceId: 'anthropic-workspace-id',
@@ -24,6 +25,7 @@ export const HttpHeader = {
   ETag: 'etag',
   GitHubApiVersion: 'x-github-api-version',
   Host: 'host',
+  LastEventId: 'last-event-id',
   Location: 'location',
   MechaneAllocationGeneration: 'x-mechane-allocation-generation',
   MechaneWorkId: 'x-mechane-work-id',
@@ -47,6 +49,7 @@ export const HttpHeader = {
   UserAgent: 'user-agent',
   UiMessageStream: 'x-vercel-ai-ui-message-stream',
   WwwAuthenticate: 'www-authenticate',
+  XAccelBuffering: 'x-accel-buffering',
   XContentTypeOptions: 'x-content-type-options',
   XSessionId: 'x-session-id',
   SlackRequestTimestamp: 'x-slack-request-timestamp',

@@ -1,6 +1,8 @@
 import { LiveDoc } from '@earendil-works/pi-durable';
 import type { TaskId, Tx } from '@earendil-works/pi-durable';
 import { appendManagedEvent } from './event-log/write.ts';
+import { managedModelError } from './model-error.ts';
+import { LastModelFailure } from './model-spans.ts';
 
 export async function recordManagedRetry(transaction: Tx, sessionId: string, taskId: TaskId): Promise<void> {
   const task = await transaction.task(taskId);
@@ -16,16 +18,21 @@ export async function recordManagedRetry(transaction: Tx, sessionId: string, tas
     return;
   }
 
+  const lastFailure = await transaction.doc(LastModelFailure, sessionId, null);
+
+  let error: Readonly<Record<string, unknown>> = {
+    type: 'unknown_error',
+    message: 'The model request is being retried.',
+    retry_status: { type: 'retrying' },
+  };
+
+  if (lastFailure.detail !== null) {
+    error = managedModelError(lastFailure.detail, 'retrying');
+  }
+
   await appendManagedEvent(
     transaction,
     { sessionId, stableKey: `model-retry:${taskId}:${attempt}` },
-    {
-      type: 'session.error',
-      error: {
-        type: 'unknown_error',
-        message: 'The model request is being retried.',
-        retry_status: { type: 'retrying' },
-      },
-    },
+    { type: 'session.error', error },
   );
 }

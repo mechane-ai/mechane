@@ -10,8 +10,8 @@ operations and review request, response and event schema changes in the upstream
 published self-hosted feature matrix and run both SDKs against the local server.
 [Self-hosted differences](https://platform.claude.com/docs/en/managed-agents/self-hosted/differences)
 
-Run `node packages/shared/protocol/upstream/generate-requests.mjs` from `workspaces/core` to build the runtime request
-schemas and sandbox tool inputs. Pass `--check` to verify both outputs. The request projection also includes the
+Run `node packages/shared/managed-protocol/upstream/generate-requests.mjs` from `workspaces/core` to build the runtime
+request schemas and sandbox tool inputs. Pass `--check` to verify both outputs. The request projection also includes the
 documented self-hosted MCP identity fields and nullable session override lists.
 [Agent identity](https://platform.claude.com/docs/en/managed-agents/self-hosted/agent-identity) ·
 [Session overrides](https://platform.claude.com/docs/en/managed-agents/sessions)

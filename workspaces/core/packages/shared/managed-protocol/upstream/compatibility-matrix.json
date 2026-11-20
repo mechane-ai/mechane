@@ -68,6 +68,22 @@
     },
     {
       "method": "POST",
+      "path": "/v1/tunnels/{tunnel_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveTunnel",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tunnels/{tunnel_id}/certificates/{certificate_id}/archive",
+      "beta": true,
+      "operation": "BetaArchiveTunnelCertificate",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
       "path": "/v1/vaults/{vault_id}/archive",
       "beta": true,
       "operation": "BetaArchiveVault",
@@ -116,6 +132,14 @@
     },
     {
       "method": "POST",
+      "path": "/v1/user_profiles/{user_profile_id}/enrollment_url",
+      "beta": true,
+      "operation": "BetaCreateEnrollmentUrl",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
       "path": "/v1/memory_stores/{memory_store_id}/memories",
       "beta": true,
       "operation": "BetaCreateMemory",
@@ -137,6 +161,38 @@
       "operation": "BetaCreateSession",
       "status": "implemented",
       "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tunnels",
+      "beta": true,
+      "operation": "BetaCreateTunnel",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tunnels/{tunnel_id}/certificates",
+      "beta": true,
+      "operation": "BetaCreateTunnelCertificate",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/user_profiles",
+      "beta": true,
+      "operation": "BetaCreateUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/user_profiles/{user_profile_id}/action_urls",
+      "beta": true,
+      "operation": "BetaCreateUserProfileActionUrl",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
     },
     {
       "method": "POST",
@@ -188,6 +244,14 @@
     },
     {
       "method": "DELETE",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": true,
+      "operation": "BetaDeleteUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "DELETE",
       "path": "/v1/vaults/{vault_id}",
       "beta": true,
       "operation": "BetaDeleteVault",
@@ -215,6 +279,14 @@
       "path": "/v1/deployments/{deployment_id}",
       "beta": true,
       "operation": "BetaGetDeployment",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/deployment_runs/{deployment_run_id}",
+      "beta": true,
+      "operation": "BetaGetDeploymentRun",
       "status": "excluded_self_hosted",
       "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
     },
@@ -276,6 +348,30 @@
     },
     {
       "method": "GET",
+      "path": "/v1/tunnels/{tunnel_id}",
+      "beta": true,
+      "operation": "BetaGetTunnel",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/tunnels/{tunnel_id}/certificates/{certificate_id}",
+      "beta": true,
+      "operation": "BetaGetTunnelCertificate",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": true,
+      "operation": "BetaGetUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
       "path": "/v1/vaults/{vault_id}",
       "beta": true,
       "operation": "BetaGetVault",
@@ -305,6 +401,14 @@
       "operation": "BetaListCredentials",
       "status": "implemented",
       "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/deployment_runs",
+      "beta": true,
+      "operation": "BetaListDeploymentRuns",
+      "status": "excluded_self_hosted",
+      "reason": "Scheduled deployments are excluded from Anthropic self-hosted Managed Agents; installations own recurring triggers."
     },
     {
       "method": "GET",
@@ -388,6 +492,30 @@
     },
     {
       "method": "GET",
+      "path": "/v1/tunnels/{tunnel_id}/certificates",
+      "beta": true,
+      "operation": "BetaListTunnelCertificates",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/tunnels",
+      "beta": true,
+      "operation": "BetaListTunnels",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/user_profiles",
+      "beta": true,
+      "operation": "BetaListUserProfiles",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
       "path": "/v1/vaults",
       "beta": true,
       "operation": "BetaListVaults",
@@ -409,6 +537,22 @@
       "operation": "BetaRedactMemoryVersion",
       "status": "implemented",
       "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tunnels/{tunnel_id}/reveal_token",
+      "beta": true,
+      "operation": "BetaRevealTunnelToken",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/tunnels/{tunnel_id}/rotate_token",
+      "beta": true,
+      "operation": "BetaRotateTunnelToken",
+      "status": "excluded_self_hosted",
+      "reason": "Hosted tunnels are excluded from Anthropic self-hosted Managed Agents."
     },
     {
       "method": "POST",
@@ -508,6 +652,14 @@
     },
     {
       "method": "POST",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": true,
+      "operation": "BetaUpdateUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
       "path": "/v1/vaults/{vault_id}",
       "beta": true,
       "operation": "BetaUpdateVault",
@@ -521,6 +673,54 @@
       "operation": "BetaValidateCredential",
       "status": "implemented",
       "reason": "Implemented in the published self-hosted Managed Agents profile."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/user_profiles",
+      "beta": false,
+      "operation": "CreateUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/user_profiles/{user_profile_id}/action_urls",
+      "beta": false,
+      "operation": "CreateUserProfileActionUrl",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "DELETE",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": false,
+      "operation": "DeleteUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": false,
+      "operation": "GetUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "GET",
+      "path": "/v1/user_profiles",
+      "beta": false,
+      "operation": "ListUserProfiles",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
+    },
+    {
+      "method": "POST",
+      "path": "/v1/user_profiles/{user_profile_id}",
+      "beta": false,
+      "operation": "UpdateUserProfile",
+      "status": "excluded_self_hosted",
+      "reason": "User profiles are hosted-only and excluded from Anthropic self-hosted Managed Agents."
     },
     {
       "method": "POST",

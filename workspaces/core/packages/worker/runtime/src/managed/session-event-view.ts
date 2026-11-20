@@ -67,7 +67,7 @@ export function createManagedEventView({ session, workspaceId, withControl, flus
     return await readPublishedUsagePage({ harness: session, localId: input.sessionId, flush: flushUsage }, page);
   }
 
-  async function tail(input: ManagedEventScope) {
+  async function tail(input: ManagedEventScope & { readonly lastEventId?: string | undefined }) {
     const scope = await eventScope(input);
 
     return await managedEventTail(session, scope);

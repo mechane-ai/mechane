@@ -95,7 +95,7 @@ export async function advanceManagedFocus(owner: FocusOwner, id: string): Promis
 
       state.interrupt = null;
 
-      await finishManagedTurn(transaction, id, 'interrupted');
+      await finishManagedTurn(transaction, id, { kind: 'interrupted' });
 
       return true;
     }

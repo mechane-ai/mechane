@@ -1,4 +1,6 @@
 import { HttpStatusCode } from '@mechane/records';
+import { Schema } from 'effect';
+import type { ManagedWireObject } from './protocol.ts';
 
 type ModelErrorType =
   | 'billing_error'
@@ -82,14 +84,56 @@ export function modelStreamFailure(error: unknown): string | undefined {
   return undefined;
 }
 
-export function managedModelError(detail: unknown) {
+const REFUSAL_PREFIX = 'model_refusal:';
+
+const RefusalStopDetails = Schema.Struct({
+  type: Schema.Literal('refusal'),
+  category: Schema.NullOr(Schema.Literals(['cyber', 'bio', 'frontier_llm', 'reasoning_extraction', 'general_harms'])),
+  explanation: Schema.NullOr(Schema.String),
+});
+
+export function encodeModelRefusal(raw: unknown): string {
+  const parsed = Schema.decodeUnknownResult(RefusalStopDetails)(raw);
+
+  if (parsed._tag === 'Success') {
+    return `${REFUSAL_PREFIX}${JSON.stringify(parsed.success)}`;
+  }
+
+  return `${REFUSAL_PREFIX}null`;
+}
+
+export function parseModelRefusal(detail: unknown): { readonly details: ManagedWireObject | null } | null {
+  if (typeof detail !== 'string' || !detail.startsWith(REFUSAL_PREFIX)) {
+    return null;
+  }
+
+  const encoded = detail.slice(REFUSAL_PREFIX.length);
+
+  if (encoded === 'null') {
+    return { details: null };
+  }
+
+  try {
+    const parsed = Schema.decodeUnknownResult(RefusalStopDetails)(JSON.parse(encoded));
+
+    if (parsed._tag === 'Success') {
+      return { details: parsed.success };
+    }
+  } catch {
+    return { details: null };
+  }
+
+  return { details: null };
+}
+
+export function managedModelError(detail: unknown, retryType: 'exhausted' | 'retrying' = 'exhausted') {
   if (typeof detail === 'string') {
     const error = knownFailures.get(detail);
 
     if (error !== undefined) {
-      return { ...error, retry_status: { type: 'exhausted' } };
+      return { ...error, retry_status: { type: retryType } };
     }
   }
 
-  return { type: failed, message: 'The model request failed.', retry_status: { type: 'exhausted' } };
+  return { type: failed, message: 'The model request failed.', retry_status: { type: retryType } };
 }

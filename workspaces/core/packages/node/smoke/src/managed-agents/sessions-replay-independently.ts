@@ -1,6 +1,6 @@
 import type Anthropic from '@anthropic-ai/sdk';
 import type { BetaManagedAgentsUserMessageEventParams } from '@anthropic-ai/sdk/resources/beta/sessions/events';
-import { HttpStatusCode, MediaType } from '@mechane/records';
+import { HttpHeader, HttpStatusCode, MediaType } from '@mechane/records';
 import { createManagedContext, requireFixtures, waitFor } from '@mechane/testing';
 import type { ScenarioInput } from '@mechane/testing';
 import assert from 'node:assert/strict';
@@ -115,9 +115,32 @@ export async function sessionsReplayIndependently({ stack }: ScenarioInput): Pro
 
     assert.equal(archived.status, 'terminated');
 
-    const deleted = await client.beta.sessions.delete(first.id);
+    const resumed = await verifySseResume({
+      origin: stack.origin,
+      token: client.apiKey ?? '',
+      sessionId: other.id,
+      lastEventId: receiptId,
+    });
+
+    assert.ok(resumed.some((event) => event.type === 'agent.message'));
+
+    const deleteStream = await client.beta.sessions.events.stream(
+      first.id,
+      {},
+      { signal: AbortSignal.timeout(streamTimeoutMs) },
+    );
+
+    const deletedPromise = client.beta.sessions.delete(first.id);
+    const deleteEvents = [];
+
+    for await (const event of deleteStream) {
+      deleteEvents.push(event);
+    }
+
+    const deleted = await deletedPromise;
 
     assert.equal(deleted.type, 'session_deleted');
+    assert.ok(deleteEvents.some((event) => event.type === 'session.deleted'));
     await assert.rejects(client.beta.sessions.events.list(first.id), { status: HttpStatusCode.NotFound });
 
     const survivingEvents = await client.beta.sessions.events.list(other.id, { types: ['user.message'] });
@@ -150,6 +173,105 @@ async function observeLiveInput(
     }
 
     assert.fail('The live stream ended without the accepted input event');
+  } finally {
+    controller.abort();
+  }
+}
+
+type ResumeInput = {
+  readonly origin: URL;
+  readonly token: string;
+  readonly sessionId: string;
+  readonly lastEventId: string;
+};
+
+function parseSseFrame(frame: string): { readonly id: string; readonly type: string } | null {
+  const lines = frame.split('\n');
+  const idLine = lines.find((line) => line.startsWith('id: '));
+  const eventLine = lines.find((line) => line.startsWith('event: '));
+
+  if (idLine === undefined || eventLine === undefined) {
+    return null;
+  }
+
+  return { id: idLine.slice('id: '.length), type: eventLine.slice('event: '.length) };
+}
+
+type SseFrame = { readonly id: string; readonly type: string };
+
+function consumeSseFrames(
+  frames: ReadonlyArray<string>,
+  lastEventId: string,
+): { readonly hasRetry: boolean; readonly events: ReadonlyArray<SseFrame> } {
+  const hasRetry = frames.some((frame) => frame.includes('retry: 3000'));
+  const events: Array<SseFrame> = [];
+
+  for (const frame of frames) {
+    const parsed = parseSseFrame(frame);
+
+    if (parsed !== null) {
+      assert.notEqual(parsed.id, lastEventId);
+      events.push(parsed);
+    }
+  }
+
+  return { hasRetry, events };
+}
+
+async function verifySseResume({
+  origin,
+  token,
+  sessionId,
+  lastEventId,
+}: ResumeInput): Promise<ReadonlyArray<SseFrame>> {
+  const controller = new AbortController();
+  const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(streamTimeoutMs)]);
+
+  try {
+    const response = await fetch(new URL(`/v1/sessions/${sessionId}/events/stream`, origin), {
+      headers: {
+        [HttpHeader.ApiKey]: token,
+        [HttpHeader.AnthropicVersion]: '2026-10-21',
+        [HttpHeader.AnthropicBeta]: 'managed-agents-2026-04-01',
+        [HttpHeader.LastEventId]: lastEventId,
+      },
+      signal,
+    });
+
+    assert.equal(response.status, HttpStatusCode.Ok);
+    assert.equal(response.headers.get(HttpHeader.XAccelBuffering), 'no');
+    assert.ok(response.body !== null);
+
+    const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+    const collected: Array<SseFrame> = [];
+    let hasRetry = false;
+    let buffer = '';
+
+    while (!signal.aborted) {
+      const chunk = await reader.read();
+
+      if (chunk.done) {
+        break;
+      }
+
+      buffer += chunk.value;
+
+      const frames = buffer.split('\n\n');
+      buffer = frames.pop() ?? '';
+
+      const batch = consumeSseFrames(frames, lastEventId);
+      hasRetry ||= batch.hasRetry;
+
+      collected.push(...batch.events);
+
+      if (batch.events.some((event) => event.type === 'agent.message')) {
+        assert.ok(hasRetry);
+
+        return collected;
+      }
+    }
+
+    assert.fail('SSE Last-Event-ID resume did not replay agent.message');
   } finally {
     controller.abort();
   }

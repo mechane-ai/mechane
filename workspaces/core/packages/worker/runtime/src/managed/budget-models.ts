@@ -3,6 +3,7 @@ import { Schema } from 'effect';
 import type { RuntimeConfiguration } from '../config.ts';
 import { resolveManagedModel } from '../models/managed-offers.ts';
 import { failManagedRequest } from './failure.ts';
+import { multiagentMemberEntries } from './multiagent.ts';
 
 const AgentModel = Schema.Struct({
   model: Schema.Union([
@@ -10,8 +11,6 @@ const AgentModel = Schema.Struct({
     Schema.Struct({ id: Schema.String, speed: Schema.optional(Schema.Literals(['standard', 'fast'])) }),
   ]),
 });
-
-const Coordinator = Schema.Struct({ type: Schema.Literal('coordinator'), agents: Schema.Array(AgentModel) });
 
 function requireListPrice(configuration: RuntimeConfiguration, agent: unknown): void {
   if (!Schema.is(AgentModel)(agent)) {
@@ -51,11 +50,13 @@ export function assertManagedBudgetModels(
     return;
   }
 
-  if (!Schema.is(Coordinator)(roster)) {
+  const members = multiagentMemberEntries(AgentModel, roster);
+
+  if (members === null) {
     failManagedRequest(HttpStatusCode.BadRequest, 'A session budget requires a resolved roster of predefined agents');
   }
 
-  for (const child of roster.agents) {
+  for (const child of members) {
     requireListPrice(configuration, child);
   }
 }

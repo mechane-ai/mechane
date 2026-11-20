@@ -11,8 +11,10 @@ export type AgentSlotBindings = Readonly<Record<string, unknown>> & {
   readonly SESSIONS: SlotNamespace;
 };
 
+export type ManagedIdentityLease = { readonly epoch: number; readonly signal: AbortSignal };
+
 export type ManagedIdentitySlot = {
-  readonly acquire: (signal?: AbortSignal) => Promise<number>;
+  readonly acquire: (signal?: AbortSignal) => Promise<ManagedIdentityLease>;
   readonly epoch: () => Promise<number | null>;
   readonly release: (expectedEpoch: number) => Promise<void>;
 };

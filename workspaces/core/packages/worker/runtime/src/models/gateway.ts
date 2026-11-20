@@ -26,11 +26,17 @@ function writesAccounted(details: typeof UsageDetails.Type | undefined): boolean
   return (details?.cache_write_1h_tokens ?? 0) + (details?.cache_write_5m_tokens ?? 0) <= written;
 }
 
+const ServerToolUse = Schema.Struct({
+  web_search_requests: Schema.optionalKey(UsageTokenCount),
+  web_fetch_requests: Schema.optionalKey(UsageTokenCount),
+});
+
 export const RawUsage = Schema.Struct({
   prompt_tokens: UsageTokenCount,
   completion_tokens: UsageTokenCount,
   speed: Schema.optionalKey(Schema.Literals(['standard', 'fast'])),
   prompt_tokens_details: Schema.optionalKey(Schema.UndefinedOr(UsageDetails)),
+  server_tool_use: Schema.optionalKey(Schema.UndefinedOr(ServerToolUse)),
 }).check(
   Schema.makeFilter(
     (usage) =>

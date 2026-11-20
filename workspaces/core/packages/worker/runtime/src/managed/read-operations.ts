@@ -5,7 +5,7 @@ import { receiveDelegationRead } from './delegation/receiver.ts';
 import { decodeManagedInput, failManagedRequest } from './failure.ts';
 import { ManagedDelegationPreview } from './preview-coordinates.ts';
 import { delegatedPreviews, watchSessionPreviews } from './preview-relay.ts';
-import type { ManagedAgentScope } from './protocol.ts';
+import type { ManagedAgentScope, ManagedEvent } from './protocol.ts';
 import {
   ManagedEventPageInput,
   ManagedSessionReference,
@@ -26,6 +26,7 @@ type ReadOperation = {
   readonly observe: SessionObserver;
   readonly source: EventTarget;
   readonly signal: AbortSignal;
+  readonly subscribeDeleted?: ((listener: (event: ManagedEvent) => void, signal: AbortSignal) => void) | undefined;
   readonly onStreamClose?: (() => void) | undefined;
 };
 
@@ -38,6 +39,7 @@ export async function runManagedReadOperation({
   observe,
   source,
   signal,
+  subscribeDeleted,
   onStreamClose,
 }: ReadOperation): Promise<Response> {
   switch (method) {
@@ -71,6 +73,7 @@ export async function runManagedReadOperation({
         scope: request,
         source,
         signal,
+        subscribeDeleted,
         onStreamClose,
         watchPreviews: (observer) => watchSessionPreviews({ reader, observe, scope: request, delegate }, observer),
       });

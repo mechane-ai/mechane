@@ -187,10 +187,13 @@ async function acceptPrimaryInput(
         }
 
         await applyManagedSystemMessage(transaction, state.conversation, { event: admitted });
-        await processManagedEvent(transaction, state.id, admitted.id);
-      } else {
-        await queueInput(transaction, state.id, admitted.id);
+
+        const processedAt = await processManagedEvent(transaction, state.id, admitted.id);
+
+        return { ...admitted, processed_at: processedAt };
       }
+
+      await queueInput(transaction, state.id, admitted.id);
 
       return admitted;
     }

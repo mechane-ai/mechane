@@ -1,6 +1,6 @@
 import { workerSessionSkills } from '@mechane/control-store';
 import { HttpStatusCode, wireStruct } from '@mechane/records';
-import { assertManagedBudgetModels, preflightManagedEvents } from '@mechane/runtime';
+import { assertManagedBudgetModels, multiagentMemberEntries, preflightManagedEvents } from '@mechane/runtime';
 import type { RuntimeConfiguration } from '@mechane/runtime';
 import { Schema } from 'effect';
 import { normalizeManagedAgentFields } from './agents.ts';
@@ -12,17 +12,24 @@ import type { ManagedRequest } from './types.ts';
 
 const Document = Schema.Record(Schema.String, Schema.Unknown);
 const Documents = Schema.Array(Document);
-const Coordinator = Schema.Struct({ agents: Documents });
 
 function validatePinnedAgent(agent: ManagedRequest['body'], configuration: RuntimeConfiguration): void {
   normalizeManagedAgentFields(agent, configuration);
 
-  if (agent['multiagent'] !== null && agent['multiagent'] !== undefined) {
-    const coordinator = Schema.decodeUnknownSync(Coordinator)(agent['multiagent']);
+  const multiagent = agent['multiagent'];
 
-    for (const child of coordinator.agents) {
-      normalizeManagedAgentFields(child, configuration);
-    }
+  if (multiagent === null || multiagent === undefined) {
+    return;
+  }
+
+  const members = multiagentMemberEntries(Document, multiagent);
+
+  if (members === null) {
+    throw new ManagedHttpError(HttpStatusCode.BadRequest, 'Invalid multiagent configuration');
+  }
+
+  for (const child of members) {
+    normalizeManagedAgentFields(child, configuration);
   }
 }
 

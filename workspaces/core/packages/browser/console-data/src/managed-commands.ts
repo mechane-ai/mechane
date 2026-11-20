@@ -12,6 +12,7 @@ import type { ReadKind, ReadRequest } from './requests.ts';
 
 const STREAM_RECONNECT_MIN_MS = Duration.toMillis('1 second');
 const STREAM_RECONNECT_MAX_MS = Duration.toMillis('30 seconds');
+const ATTENTION_SPAN_EVENTS: ReadonlySet<string> = new Set(['span.model_request_start', 'span.model_request_end']);
 
 type Target = { readonly agentId: ManagedId; readonly sessionId: ManagedId };
 type Events = Parameters<ManagedClient['beta']['sessions']['events']['send']>[1]['events'];
@@ -197,6 +198,8 @@ export function createManagedCommands({
                 refresh(readRequests.attention(request.agentId)),
                 refreshKind('sessions', request.agentId),
               ]);
+            } else if (ATTENTION_SPAN_EVENTS.has(event.type)) {
+              await refresh(readRequests.attention(request.agentId));
             }
           }
         }

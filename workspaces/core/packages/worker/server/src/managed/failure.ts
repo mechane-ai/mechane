@@ -11,11 +11,14 @@ const kinds: Readonly<Record<number, string>> = {
   [HttpStatusCode.PaymentRequired]: 'billing_error',
   [HttpStatusCode.Forbidden]: 'permission_error',
   [HttpStatusCode.NotFound]: 'not_found_error',
+  [HttpStatusCode.MethodNotAllowed]: 'invalid_request_error',
   [HttpStatusCode.RequestTimedOut]: 'timeout_error',
   [HttpStatusCode.Conflict]: 'conflict_error',
   [HttpStatusCode.PreconditionFailed]: 'invalid_request_error',
   [HttpStatusCode.PayloadTooLarge]: 'request_too_large',
+  [HttpStatusCode.UnprocessableEntity]: 'invalid_request_error',
   [HttpStatusCode.TooManyRequests]: 'rate_limit_error',
+  [HttpStatusCode.Unavailable]: 'overloaded_error',
   [HttpStatusCode.GatewayTimedOut]: 'timeout_error',
   [HttpStatusCode.Overloaded]: 'overloaded_error',
 };
@@ -45,11 +48,11 @@ function managedError(failure: Failure, requestId: string, headers?: Headers) {
 }
 
 export function managedFailure(failure: unknown, request: Request, requestId: string): Response {
-  if (
-    failure instanceof ManagedHttpError ||
-    failure instanceof ManagedStoreError ||
-    failure instanceof ManagedRuntimeError
-  ) {
+  if (failure instanceof ManagedHttpError) {
+    return managedError(failure, requestId, failure.headers);
+  }
+
+  if (failure instanceof ManagedStoreError || failure instanceof ManagedRuntimeError) {
     return managedError(failure, requestId);
   }
 

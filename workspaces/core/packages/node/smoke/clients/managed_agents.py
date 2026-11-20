@@ -22,7 +22,7 @@ from referencing.jsonschema import DRAFT202012
 from managed_skills import verify_managed_skills
 from managed_vaults import verify_managed_vaults
 
-UPSTREAM = Path(__file__).resolve().parents[3] / "shared/protocol/upstream/anthropic-v2.10.0.openapi.json.gz"
+UPSTREAM = Path(__file__).resolve().parents[3] / "shared/managed-protocol/upstream/anthropic-v2.10.0.openapi.json.gz"
 FAMILIES = {
     "agents", "sessions", "environments", "vaults", "memory_stores", "skills",
     "deployments", "deployment_runs", "dreams",

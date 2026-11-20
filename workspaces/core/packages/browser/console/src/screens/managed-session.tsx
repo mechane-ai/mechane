@@ -93,6 +93,8 @@ function SessionActions({
   const target = { agentId, sessionId };
   const attention = useAgentAttention(data, agentId);
   const activeSessionId = attention?.sessionId;
+  const activeTitle = attention?.sessionTitle ?? undefined;
+  const queueIndex = attention?.queuedSessionIds.indexOf(sessionId) ?? -1;
   const isHistoric = location.through !== undefined;
   const isArchived = typeof session.archivedAt === 'string';
   const isCurrentSession = location.thread === undefined && !isHistoric;
@@ -114,7 +116,10 @@ function SessionActions({
         </TextButton>
       )}
       {typeof activeSessionId === 'string' && activeSessionId !== sessionId && (
-        <TextButton onClick={() => navigate({ workspace, agent: agentId, session: activeSessionId })}>
+        <TextButton
+          title={activeTitle === undefined ? undefined : `Currently working in: ${activeTitle}`}
+          onClick={() => navigate({ workspace, agent: agentId, session: activeSessionId })}
+        >
           Agent working in another session
         </TextButton>
       )}
@@ -132,7 +137,8 @@ function SessionActions({
           status={session.status}
           stopReason={stop?.stopReason}
           isExecuting={activeSessionId === sessionId}
-          isWaiting={attention?.queuedSessionIds.includes(sessionId)}
+          isWaiting={queueIndex >= 0}
+          queuePosition={queueIndex >= 0 ? queueIndex + 1 : undefined}
         />
       )}
     </>

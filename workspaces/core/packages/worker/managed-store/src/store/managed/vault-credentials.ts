@@ -183,7 +183,12 @@ export function createVaultCredentials(context: StoreContext, keyring: Credentia
         throw new ManagedStoreError(HttpStatusCode.BadRequest, 'mcp_server_url is immutable');
       }
 
-      const name = optionalName(body['display_name']) ?? current.display_name;
+      let name = current.display_name;
+
+      if (Object.hasOwn(body, 'display_name')) {
+        name = optionalName(body['display_name']);
+      }
+
       const metadata = patchMetadata(current.metadata, body['metadata']);
       const token = auth['token'];
       const envelope = await rotateToken({ keyring, scope, id, vaultId, token });

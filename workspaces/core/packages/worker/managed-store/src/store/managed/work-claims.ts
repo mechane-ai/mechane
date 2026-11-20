@@ -17,7 +17,10 @@ export function createWorkClaims(context: StoreContext) {
       const leaseId = managedId('lease');
 
       const result = await context.client.query<WorkRow>(
-        `WITH candidate AS (
+        `WITH expired_stopping AS (
+           UPDATE mechane.managed_work SET state='stopped', stopped_at=coalesce(stopped_at,now())
+           WHERE workspace_id=$1 AND environment_id=$2 AND state='stopping' AND lease_until<=clock_timestamp()
+         ), candidate AS (
            SELECT w.id FROM mechane.managed_work w WHERE w.workspace_id=$1 AND w.environment_id=$2
              AND mechane.workspace_allows_worker_effect(w.workspace_id,w.installation_owned)
              AND EXISTS(SELECT 1 FROM mechane.managed_sessions s WHERE s.workspace_id=w.workspace_id

@@ -11,8 +11,20 @@ const parseSkills = Schema.decodeUnknownSync(Schema.Array(Skill));
 function childAgents(agent: ManagedDocument): ReadonlyArray<ManagedDocument> {
   const coordinator = agent['multiagent'];
 
-  if (isManagedDocument(coordinator) && coordinator['type'] === 'coordinator') {
+  if (!isManagedDocument(coordinator)) {
+    return [];
+  }
+
+  if (coordinator['type'] === 'coordinator') {
     return Schema.decodeUnknownSync(Documents)(coordinator['agents']);
+  }
+
+  if (coordinator['type'] === 'multiagent_20261001') {
+    const subagents = coordinator['subagents'];
+
+    if (isManagedDocument(subagents) && subagents['type'] === 'enabled') {
+      return Schema.decodeUnknownSync(Documents)(subagents['predefined_agents']);
+    }
   }
 
   return [];

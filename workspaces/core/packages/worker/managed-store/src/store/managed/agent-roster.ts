@@ -56,6 +56,86 @@ async function resolveEntry({ context, scope, id, version, entry }: ResolveEntry
   return { type: 'agent', id: target, version: child.version };
 }
 
+async function resolveRoster(owner: AgentOwner, roster: unknown): Promise<ReadonlyArray<RosterEntry>> {
+  if (!Array.isArray(roster) || roster.length === 0 || roster.length > COORDINATOR_MAX_ENTRIES) {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Expected one to twenty predefined coordinator agents');
+  }
+
+  const seen = new Set<string>();
+  const agents: Array<RosterEntry> = [];
+
+  for (const entry of roster) {
+    const resolved = await resolveEntry({ ...owner, entry });
+
+    if (seen.has(resolved.id)) {
+      throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Expected distinct agent references');
+    }
+
+    seen.add(resolved.id);
+    agents.push(resolved);
+  }
+
+  return agents;
+}
+
+function assertDisabledFeature(value: unknown, field: string, message: string): void {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  const parsed = managedDocument(value, field);
+
+  if (parsed['type'] !== 'disabled') {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, message);
+  }
+}
+
+async function pinMultiagent20261001(owner: AgentOwner, value: ManagedDocument): Promise<ManagedDocument> {
+  assertDisabledFeature(value['workflows'], 'workflows', 'Workflows are not supported in multiagent_20261001');
+  assertDisabledFeature(value['advisor'], 'advisor', 'Advisor is not supported in multiagent_20261001');
+
+  const rawSubagents = value['subagents'];
+
+  if (rawSubagents === undefined || rawSubagents === null) {
+    return {
+      type: 'multiagent_20261001',
+      workflows: { type: 'disabled' },
+      subagents: { type: 'disabled' },
+      advisor: { type: 'disabled' },
+    };
+  }
+
+  const subagents = managedDocument(rawSubagents, 'subagents');
+
+  if (subagents['type'] === 'disabled') {
+    return {
+      type: 'multiagent_20261001',
+      workflows: { type: 'disabled' },
+      subagents: { type: 'disabled' },
+      advisor: { type: 'disabled' },
+    };
+  }
+
+  if (subagents['type'] !== 'enabled') {
+    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Invalid multiagent_20261001 subagents configuration');
+  }
+
+  assertDisabledFeature(
+    subagents['inline_agents'],
+    'inline_agents',
+    'Inline subagents are not supported; supply predefined_agents',
+  );
+
+  const agents = await resolveRoster(owner, subagents['predefined_agents']);
+
+  return {
+    type: 'multiagent_20261001',
+    workflows: { type: 'disabled' },
+    subagents: { type: 'enabled', inline_agents: { type: 'disabled' }, predefined_agents: agents },
+    advisor: { type: 'disabled' },
+  };
+}
+
 export async function pinRoster({
   context,
   scope,
@@ -68,49 +148,32 @@ export async function pinRoster({
   }
 
   const value = managedDocument(configuration, 'multiagent');
-  const roster = value['agents'];
+  const owner = { context, scope, id, version };
+
+  if (value['type'] === 'multiagent_20261001') {
+    return await pinMultiagent20261001(owner, value);
+  }
 
   if (value['type'] !== 'coordinator' || Object.hasOwn(value, 'advisor')) {
-    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Expected a coordinator without an advisor');
+    throw new ManagedStoreError(
+      HttpStatusCode.BadRequest,
+      'Expected a coordinator or multiagent_20261001 configuration',
+    );
   }
 
-  if (!Array.isArray(roster) || roster.length === 0 || roster.length > COORDINATOR_MAX_ENTRIES) {
-    throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Expected one to twenty predefined coordinator agents');
-  }
-
-  const seen = new Set<string>();
-  const agents: Array<RosterEntry> = [];
-
-  for (const entry of roster) {
-    const resolved = await resolveEntry({ context, scope, id, version, entry });
-
-    if (seen.has(resolved.id)) {
-      throw new ManagedStoreError(HttpStatusCode.BadRequest, 'Expected distinct agent references');
-    }
-
-    seen.add(resolved.id);
-    agents.push(resolved);
-  }
+  const agents = await resolveRoster(owner, value['agents']);
 
   return { type: 'coordinator', agents };
 }
 
 type RebindSelfInput = { readonly definition: ManagedDocument; readonly id: string; readonly version: number };
 
-export function rebindSelf({ definition, id, version }: RebindSelfInput): ManagedDocument {
-  const configuration = definition['multiagent'];
-
-  if (configuration === null) {
-    return definition;
-  }
-
-  const roster = managedDocument(configuration, 'multiagent')['agents'];
-
+function rebindEntries(roster: unknown, id: string, version: number): ReadonlyArray<ManagedDocument> {
   if (!Array.isArray(roster)) {
     throw new TypeError('Stored coordinator is missing its roster');
   }
 
-  const agents = roster.map((entry) => {
+  return roster.map((entry) => {
     const reference = managedDocument(entry, 'agent');
 
     if (reference['id'] === id) {
@@ -119,6 +182,30 @@ export function rebindSelf({ definition, id, version }: RebindSelfInput): Manage
 
     return reference;
   });
+}
+
+export function rebindSelf({ definition, id, version }: RebindSelfInput): ManagedDocument {
+  const configuration = definition['multiagent'];
+
+  if (configuration === null) {
+    return definition;
+  }
+
+  const parsed = managedDocument(configuration, 'multiagent');
+
+  if (parsed['type'] === 'multiagent_20261001') {
+    const subagents = managedDocument(parsed['subagents'], 'subagents');
+
+    if (subagents['type'] !== 'enabled') {
+      return definition;
+    }
+
+    const predefined = rebindEntries(subagents['predefined_agents'], id, version);
+
+    return { ...definition, multiagent: { ...parsed, subagents: { ...subagents, predefined_agents: predefined } } };
+  }
+
+  const agents = rebindEntries(parsed['agents'], id, version);
 
   return { ...definition, multiagent: { type: 'coordinator', agents } };
 }

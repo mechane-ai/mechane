@@ -10,7 +10,7 @@ import {
   SlotErrorPayload,
   SlotHeartbeatOutput,
 } from './protocol.ts';
-import type { ManagedIdentitySlot, SlotNamespace } from './protocol.ts';
+import type { ManagedIdentityLease, ManagedIdentitySlot, SlotNamespace } from './protocol.ts';
 
 const HEARTBEAT_INTERVAL = Duration.millis(15_000);
 const WAIT_FALLBACK_POLL = Duration.millis(1000);
@@ -81,7 +81,8 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
       leaseUntilMs: number | null;
       isLost: boolean;
       heartbeatStop: AbortController | null;
-    } = { mode: 'available', epoch: null, leaseUntilMs: null, isLost: false, heartbeatStop: null };
+      leaseLost: AbortController | null;
+    } = { mode: 'available', epoch: null, leaseUntilMs: null, isLost: false, heartbeatStop: null, leaseLost: null };
 
     function isLeaseActive(leaseEpoch: number, stop: AbortSignal): boolean {
       return !stop.aborted && leaseState.mode === 'held' && leaseState.epoch === leaseEpoch;
@@ -111,6 +112,8 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
           } else if (result.status === 'lost' && leaseState.epoch === leaseEpoch) {
             leaseState.isLost = true;
             leaseState.leaseUntilMs = null;
+
+            leaseState.leaseLost?.abort(new Error('The agent lost its execution slot'));
 
             stopHeartbeat();
 
@@ -165,7 +168,7 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
       }
     }
 
-    async function acquire(signal: AbortSignal = new AbortController().signal): Promise<number> {
+    async function acquire(signal: AbortSignal = new AbortController().signal): Promise<ManagedIdentityLease> {
       signal.throwIfAborted();
 
       if (leaseState.mode !== 'available') {
@@ -175,6 +178,7 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
       leaseState.mode = 'waiting';
       leaseState.leaseUntilMs = null;
       leaseState.isLost = false;
+      leaseState.leaseLost = null;
 
       try {
         let granted = await waitForTurn(signal);
@@ -183,13 +187,16 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
           granted = await waitForTurn(signal);
         }
 
+        const leaseLost = new AbortController();
+
         leaseState.mode = 'held';
         leaseState.epoch = granted.epoch;
         leaseState.leaseUntilMs = granted.leaseUntilMs;
+        leaseState.leaseLost = leaseLost;
 
         startHeartbeat(granted.epoch);
 
-        return granted.epoch;
+        return { epoch: granted.epoch, signal: leaseLost.signal };
       } catch (cause) {
         stopHeartbeat();
 
@@ -204,6 +211,7 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
           leaseState.epoch = null;
           leaseState.leaseUntilMs = null;
           leaseState.isLost = false;
+          leaseState.leaseLost = null;
         }
 
         throw cause;
@@ -235,6 +243,7 @@ export function createAgentSlotClient({ namespace, scope }: SlotClientInput) {
         leaseState.epoch = null;
         leaseState.leaseUntilMs = null;
         leaseState.isLost = false;
+        leaseState.leaseLost = null;
       }
 
       try {

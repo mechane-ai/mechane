@@ -259,6 +259,14 @@ async function endEvaluation(
     return;
   }
 
+  if (work.startId === '') {
+    if (result !== 'needs_revision') {
+      await save(transaction, id, { ...current, result, completed_at: new Date().toISOString(), explanation });
+    }
+
+    return;
+  }
+
   const end = await appendManagedEvent(
     transaction,
     { sessionId: id },

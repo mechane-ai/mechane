@@ -84,28 +84,32 @@ export async function acceptManagedToolReply(
   if (event.type === 'user.tool_confirmation' && event.result === 'allow') {
     call.stage = 'result';
 
-    await processManagedEvent(transaction, state.id, admitted.id);
+    const processedAt = await processManagedEvent(transaction, state.id, admitted.id);
+
     await transition(transaction, { sessionId: state.id, status: 'running' });
 
     if (call.nativeKind === 'mcp') {
       await enqueue(transaction, state.id);
     }
 
-    return admitted;
+    return { ...admitted, processed_at: processedAt };
   }
 
   call.stage = 'complete';
   call.resultId = admitted.id;
 
+  let settled = admitted;
+
   if (isConfirmation) {
-    await processManagedEvent(transaction, state.id, admitted.id);
+    const processedAt = await processManagedEvent(transaction, state.id, admitted.id);
+    settled = { ...admitted, processed_at: processedAt };
   }
 
   if (event.type === 'user.tool_result') {
     const origin = await readManagedEvent(transaction, state.id, id);
 
     if (origin !== undefined) {
-      await recordManagedOutcomeEvidence(transaction, state.id, { call: origin, result: admitted });
+      await recordManagedOutcomeEvidence(transaction, state.id, { call: origin, result: settled });
     }
   }
 
@@ -116,7 +120,7 @@ export async function acceptManagedToolReply(
     await enqueue(transaction, state.id);
   }
 
-  return admitted;
+  return settled;
 }
 
 function interrupts(id: string) {
@@ -174,9 +178,9 @@ export async function interruptManagedTurn(
   const admitted = await appendManagedEvent(transaction, { sessionId: state.id }, event);
 
   if (state.activeEvent === null && state.pendingHead === state.pendingTail) {
-    await processManagedEvent(transaction, state.id, admitted.id);
+    const processedAt = await processManagedEvent(transaction, state.id, admitted.id);
 
-    return admitted;
+    return { ...admitted, processed_at: processedAt };
   }
 
   await interrupts(state.id).put(transaction, admitted.id, admitted.id);

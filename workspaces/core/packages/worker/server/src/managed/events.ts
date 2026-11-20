@@ -1,4 +1,4 @@
-import { HttpStatusCode } from '@mechane/records';
+import { HttpHeader, HttpStatusCode } from '@mechane/records';
 import {
   ManagedEventPageInput,
   ManagedSessionSend,
@@ -37,6 +37,16 @@ function pathIdentifier(params: ManagedRequest['params'], key: string): string {
   }
 
   return id;
+}
+
+function lastEventIdHeader(request: Request): string | undefined {
+  const value = request.headers.get(HttpHeader.LastEventId)?.trim();
+
+  if (value === undefined || value.length === 0) {
+    return undefined;
+  }
+
+  return value;
 }
 
 export async function handleEvents(input: ManagedRequest): Promise<unknown> {
@@ -82,7 +92,14 @@ export async function handleEvents(input: ManagedRequest): Promise<unknown> {
         throw new ManagedHttpError(HttpStatusCode.Forbidden, 'Worker credentials cannot stream model previews');
       }
 
-      const target = { sessionId, workerLeaseId, threadId: params['thread_id'], eventDeltas: query['event_deltas[]'] };
+      const target = {
+        sessionId,
+        workerLeaseId,
+        threadId: params['thread_id'],
+        lastEventId: lastEventIdHeader(input.request),
+        eventDeltas: query['event_deltas[]'],
+      };
+
       const stream = eventInput(ManagedStreamRequest, target, 'Invalid event stream parameters');
 
       return await runtime.stream({ ...stream, signal: input.request.signal });

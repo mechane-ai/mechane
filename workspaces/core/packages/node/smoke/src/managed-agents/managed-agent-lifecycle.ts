@@ -71,6 +71,52 @@ export async function managedAgentLifecycle({ stack }: ScenarioInput): Promise<v
   await assert.rejects(owner.beta.environments.create({ name, config: { type: 'cloud' } }), {
     status: HttpStatusCode.BadRequest,
   });
+
+  const wrongMethod = await fetch(new URL('/v1/agents', stack.origin), {
+    method: HttpMethod.Delete,
+    headers: { [HttpHeader.ApiKey]: account.token, [HttpHeader.AnthropicVersion]: '2026-10-21' },
+  });
+
+  assert.equal(wrongMethod.status, HttpStatusCode.MethodNotAllowed);
+  assert.match(wrongMethod.headers.get(HttpHeader.Allow) ?? '', /GET/u);
+  assert.match(wrongMethod.headers.get(HttpHeader.Allow) ?? '', /POST/u);
+
+  const combinedMemoryBeta = await fetch(new URL('/v1/memory_stores', stack.origin), {
+    method: HttpMethod.Get,
+    headers: {
+      [HttpHeader.ApiKey]: account.token,
+      [HttpHeader.AnthropicVersion]: '2026-10-21',
+      [HttpHeader.AnthropicBeta]: 'managed-agents-2026-04-01,agent-memory-2026-07-22',
+    },
+  });
+
+  assert.equal(combinedMemoryBeta.status, HttpStatusCode.Ok);
+
+  const skillsBeta = await fetch(new URL('/v1/skills', stack.origin), {
+    method: HttpMethod.Get,
+    headers: {
+      [HttpHeader.ApiKey]: account.token,
+      [HttpHeader.AnthropicVersion]: '2026-10-21',
+      [HttpHeader.AnthropicBeta]: 'skills-2025-10-02',
+    },
+  });
+
+  assert.equal(skillsBeta.status, HttpStatusCode.Ok);
+
+  const vault = await owner.beta.vaults.create({ display_name: name });
+
+  const credential = await owner.beta.vaults.credentials.create(vault.id, {
+    display_name: 'Temporary label',
+    auth: { type: 'static_bearer', mcp_server_url: 'https://mcp.example.invalid/v1', token: 'secret-token' },
+  });
+
+  assert.equal(credential.display_name, 'Temporary label');
+
+  const cleared = await owner.beta.vaults.credentials.update(credential.id, { vault_id: vault.id, display_name: null });
+
+  assert.equal(cleared.display_name, null);
+  await owner.beta.vaults.archive(vault.id);
+
   await owner.beta.agents.archive(agent.id);
   await assert.rejects(owner.beta.agents.update(agent.id, { description: 'archived' }), {
     status: HttpStatusCode.Conflict,

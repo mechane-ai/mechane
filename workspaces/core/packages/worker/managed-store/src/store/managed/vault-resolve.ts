@@ -37,7 +37,11 @@ export async function resolveMcpAuthorization(
       SELECT configuration->'agent' AS definition FROM session WHERE agent_id=$2
       UNION ALL
       SELECT child FROM session CROSS JOIN LATERAL jsonb_array_elements(configuration#>'{agent,multiagent,agents}') child
-      WHERE agent_id<>$2 AND child->>'type'='agent' AND child->>'id'=$2
+      WHERE agent_id<>$2 AND configuration#>>'{agent,multiagent,type}'='coordinator' AND child->>'type'='agent' AND child->>'id'=$2
+      UNION ALL
+      SELECT child FROM session CROSS JOIN LATERAL jsonb_array_elements(configuration#>'{agent,multiagent,subagents,predefined_agents}') child
+      WHERE agent_id<>$2 AND configuration#>>'{agent,multiagent,type}'='multiagent_20261001'
+        AND configuration#>>'{agent,multiagent,subagents,type}'='enabled' AND child->>'type'='agent' AND child->>'id'=$2
     ), declared AS (
       SELECT server FROM actor CROSS JOIN LATERAL jsonb_array_elements(definition->'mcp_servers') server
       WHERE server->>'name'=$4 AND server->>'url'=$5 AND server->>'type'='url'

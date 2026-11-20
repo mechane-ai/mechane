@@ -1,4 +1,4 @@
-import { managedWorkspaceId, matchManagedRoute } from '@mechane/managed-protocol';
+import { allowedManagedMethods, managedWorkspaceId, matchManagedRoute } from '@mechane/managed-protocol';
 import { HttpHeader, HttpMethod, HttpStatusCode } from '@mechane/records';
 import type { AuthenticationConfiguration } from '@mechane/runtime';
 import { matchInstalledCommandEnvironment } from '@mechane/sandbox-wire';
@@ -180,6 +180,14 @@ export function createManagedHandler(dependencies: Dependencies) {
       const matched = matchManagedRoute({ method: request.method, pathname: path, isConsole });
 
       if (Option.isNone(matched)) {
+        const allowed = allowedManagedMethods({ pathname: path });
+
+        if (allowed.length > 0) {
+          throw new ManagedHttpError(HttpStatusCode.MethodNotAllowed, 'Method not allowed', {
+            [HttpHeader.Allow]: allowed.join(', '),
+          });
+        }
+
         throw new ManagedHttpError(HttpStatusCode.NotFound, 'Resource not found');
       }
 
@@ -207,10 +215,19 @@ export function createManagedHandler(dependencies: Dependencies) {
       if (route.path.startsWith('/v1/environments/{environment_id}/work')) {
         const body = await managedBody(route, request);
 
-        return managedResponse(
-          await handleManagedWorkOperation({ ...base, body, authenticate, peerAddress, origin: authentication.origin }),
-          requestId,
-        );
+        const result = await handleManagedWorkOperation({
+          ...base,
+          body,
+          authenticate,
+          peerAddress,
+          origin: authentication.origin,
+        });
+
+        const response = managedResponse(result.value, requestId);
+
+        response.headers.set(HttpHeader.AnthropicWorkspaceId, managedWorkspaceId({ workspaceId: result.workspaceId }));
+
+        return response;
       }
 
       const input = await scopedManagedRequest({ base, route, authenticate: () => authenticate(request, peerAddress) });

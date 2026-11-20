@@ -29,6 +29,7 @@ const Meter = Schema.Struct({
   writes_1h: Schema.Number,
   writes_5m: Schema.Number,
   search_count: Schema.Number,
+  fetch_count: Schema.Number,
 });
 
 function managedBudget(amount: string | null) {
@@ -88,7 +89,9 @@ async function usageMeters(context: StoreContext, scope: MultipleSessions) {
          coalesce((upstream_usage#>>'{prompt_tokens_details,cached_tokens}')::bigint,0) AS cached,
          coalesce((upstream_usage#>>'{prompt_tokens_details,cache_write_tokens}')::bigint,0) AS written,
          coalesce((upstream_usage#>>'{prompt_tokens_details,cache_write_1h_tokens}')::bigint,0) AS writes_1h,
-         coalesce((upstream_usage#>>'{prompt_tokens_details,cache_write_5m_tokens}')::bigint,0) AS writes_5m
+         coalesce((upstream_usage#>>'{prompt_tokens_details,cache_write_5m_tokens}')::bigint,0) AS writes_5m,
+         coalesce((upstream_usage#>>'{server_tool_use,web_search_requests}')::bigint,0) AS attempt_searches,
+         coalesce((upstream_usage#>>'{server_tool_use,web_fetch_requests}')::bigint,0) AS attempt_fetches
        FROM observations
      ), tokens AS (
        SELECT coalesce(bool_or(price IS NULL),false) AS is_unpriced,
@@ -96,20 +99,23 @@ async function usageMeters(context: StoreContext, scope: MultipleSessions) {
          coalesce(bool_and(written=writes_1h+writes_5m),true) AS has_cache_detail,
          coalesce(sum(price),0) AS cost,coalesce(sum(prompt-cached-written),0)::bigint AS input_tokens,
          coalesce(sum(completion),0)::bigint AS output_tokens,coalesce(sum(cached),0)::bigint AS cached_tokens,
-         coalesce(sum(writes_1h),0)::bigint AS writes_1h,coalesce(sum(writes_5m),0)::bigint AS writes_5m
+         coalesce(sum(writes_1h),0)::bigint AS writes_1h,coalesce(sum(writes_5m),0)::bigint AS writes_5m,
+         coalesce(sum(attempt_searches),0)::bigint AS attempt_searches,
+         coalesce(sum(attempt_fetches),0)::bigint AS attempt_fetches
        FROM attempts
      ), searches AS (
        SELECT count(*) AS requests FROM mechane.managed_web_searches WHERE workspace_id=s.workspace_id AND session_id=s.id AND at<boundary.through
          AND ($3::text IS NULL OR thread_id=$3)
      ), costs AS (
-       SELECT tokens.*,seconds.active,seconds.thread_active,searches.requests,
-         (3600 * tokens.cost + 36000000000000::numeric * searches.requests +
+       SELECT tokens.*,seconds.active,seconds.thread_active,(searches.requests + tokens.attempt_searches) AS requests,
+         tokens.attempt_fetches AS fetches,
+         (3600 * tokens.cost + 36000000000000::numeric * (searches.requests + tokens.attempt_searches) +
          CASE WHEN $3::text IS NULL THEN seconds.active * 80000000000 ELSE 0 END) AS units
        FROM tokens,seconds,searches
      )
      SELECT is_unpriced,has_token_usage,has_cache_detail,trunc(units)::text AS consumed_units,round(units/36000000000000)::text AS list_cents,
        active::float8 AS active_seconds,thread_active::float8 AS thread_active_seconds,input_tokens,output_tokens,cached_tokens,writes_1h,writes_5m,
-       requests AS search_count FROM costs) billed
+       requests AS search_count,fetches AS fetch_count FROM costs) billed
      WHERE s.workspace_id=$1 AND s.id=ANY($2::text[])`,
     [scope.workspaceId, scope.sessionIds, scope.threadId ?? null, scope.asOf ?? null],
   );
@@ -172,7 +178,7 @@ function projectUsage(usage: UsageMeter, session: UsageMeter) {
     threadActiveSeconds: usage.thread_active_seconds,
     usage: {
       ...tokenUsage(usage),
-      server_tool_use: { web_search_requests: usage.search_count, web_fetch_requests: 0 },
+      server_tool_use: { web_search_requests: usage.search_count, web_fetch_requests: usage.fetch_count },
       active_seconds: usage.active_seconds,
       list_cost: listCost(usage),
     },

@@ -2,7 +2,10 @@ import type { ManagedIdentitySlot } from '@mechane/agent-slot';
 import { serialCalls } from '@mechane/utilities';
 import type { ManagedExecution } from './provider-types.ts';
 
-export type ExclusiveEffect = <T>(signal: AbortSignal | undefined, effect: () => Promise<T>) => Promise<T>;
+export type ExclusiveEffect = <T>(
+  signal: AbortSignal | undefined,
+  effect: (leaseSignal: AbortSignal) => Promise<T>,
+) => Promise<T>;
 
 export function createExecutionGate(slot: ManagedIdentitySlot, read: () => Promise<ManagedExecution>) {
   const effects = serialCalls();
@@ -18,22 +21,31 @@ export function createExecutionGate(slot: ManagedIdentitySlot, read: () => Promi
     return expected;
   }
 
-  async function run<T>(signal: AbortSignal | undefined, effect: (epoch: number) => Promise<T>): Promise<T> {
+  async function run<T>(
+    signal: AbortSignal | undefined,
+    effect: (leaseSignal: AbortSignal, epoch: number) => Promise<T>,
+  ): Promise<T> {
     return await effects.run({
       run: async () => {
         signal?.throwIfAborted();
 
-        const epoch = await slot.acquire(signal);
-        held.epoch = epoch;
+        const lease = await slot.acquire(signal);
+        held.epoch = lease.epoch;
+
+        let activeSignal = lease.signal;
+
+        if (signal !== undefined) {
+          activeSignal = AbortSignal.any([signal, lease.signal]);
+        }
 
         try {
-          signal?.throwIfAborted();
+          activeSignal.throwIfAborted();
 
-          return await effect(epoch);
+          return await effect(activeSignal, lease.epoch);
         } finally {
           held.epoch = null;
 
-          await slot.release(epoch);
+          await slot.release(lease.epoch);
         }
       },
     });
@@ -42,7 +54,7 @@ export function createExecutionGate(slot: ManagedIdentitySlot, read: () => Promi
   async function withRequest<T>(
     providerSessionId: string,
     signal: AbortSignal | undefined,
-    effect: (current: () => Promise<ManagedExecution>) => Promise<T>,
+    effect: (current: () => Promise<ManagedExecution>, requestSignal: AbortSignal) => Promise<T>,
   ): Promise<T> {
     const start = await read();
 
@@ -50,9 +62,9 @@ export function createExecutionGate(slot: ManagedIdentitySlot, read: () => Promi
       throw new Error('The model request belongs to another conversation');
     }
 
-    return await run(signal, async (epoch) => {
+    return await run(signal, async (requestSignal, epoch) => {
       async function current(): Promise<ManagedExecution> {
-        signal?.throwIfAborted();
+        requestSignal.throwIfAborted();
 
         const owner = await read();
 
@@ -67,7 +79,7 @@ export function createExecutionGate(slot: ManagedIdentitySlot, read: () => Promi
 
       await current();
 
-      return await effect(current);
+      return await effect(current, requestSignal);
     });
   }
 

@@ -13,6 +13,7 @@ export type ManagedExecution = ManagedModelOptions & {
   readonly providerSessionId: string;
   readonly epoch: number;
   readonly model: string;
+  readonly webTools?: ReadonlyArray<Readonly<Record<string, unknown>>> | undefined;
 };
 
 type ProviderControl = <T>(operation: (store: ControlStore) => Promise<T>) => Promise<T>;
@@ -22,6 +23,7 @@ export type ModelSpanResult = {
   readonly isError: boolean;
   readonly usage: RawUsage | null;
   readonly message?: AssistantMessage;
+  readonly errorDetail?: string | undefined;
 };
 
 type ManagedModelSpan = { readonly finish: (result: ModelSpanResult) => Promise<void> };
@@ -48,6 +50,6 @@ export type ManagedProviderOwner = Omit<ManagedRequest, 'current'> & {
   readonly withRequest: <T>(
     sessionId: string,
     signal: AbortSignal | undefined,
-    run: (current: CurrentExecution) => Promise<T>,
+    run: (current: CurrentExecution, requestSignal: AbortSignal) => Promise<T>,
   ) => Promise<T>;
 };
