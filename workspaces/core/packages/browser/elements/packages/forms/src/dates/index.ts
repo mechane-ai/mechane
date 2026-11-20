@@ -18,3 +18,5 @@ export type { MonthPickerProps } from './month-picker.tsx';
 export { MonthPicker } from './month-picker.tsx';
 export type { MonthRangePickerProps, MonthRangePreset } from './month-range-picker.tsx';
 export { MonthRangePicker } from './month-range-picker.tsx';
+export type { EventMonthItem, EventMonthProps } from './event-month.tsx';
+export { EventMonth } from './event-month.tsx';

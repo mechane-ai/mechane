@@ -29,3 +29,6 @@ toolbar.
 Give every table a query. Use local search and filter dimensions for complete finite data. Route remote search and
 filters through the collection owner before the server takes a page. A table inside its collection's query frame reuses
 the same controls. Record a specific reason for a static reference table or an unavailable capability.
+
+Use `EventMonth` from `/forms/dates` for an event grid. Supply display labels per civil date and handle the selected day
+in the caller. Use the grid across the working pane and show the selected day's actions and full agenda separately.

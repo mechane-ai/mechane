@@ -69,7 +69,7 @@ Every path below belongs to `@mechane-ai/elements`. There is one package, versio
 | ---------------------- | ----------------------------------------------------------------------------------- |
 | Root                   | Buttons, text, surfaces, disclosure, avatars, and CopyValue.                        |
 | `/forms`               | Fields, inputs, selection, appearance picking, file picking, and settings sections. |
-| `/forms/dates`         | Civil-date calendars and range selection.                                           |
+| `/forms/dates`         | Civil-date pickers, range selection, and a controlled event month.                  |
 | `/overlays`            | Dialog, Drawer, Menu, Popover, Preview, Tooltip, and AlertDialog.                   |
 | `/feedback`            | Async regions, skeletons, progress, meters, notices, empty states, and toasts.      |
 | `/navigation`          | Tabs, page navigation, breadcrumbs, skip links, and shortcut labels.                |
