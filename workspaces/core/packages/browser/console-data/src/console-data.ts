@@ -285,6 +285,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     readonly localFailure: unknown;
     readonly cleanupFailure: unknown;
     readonly isClearing: boolean;
+    readonly isPageHiding: boolean;
     readonly revocation: unknown;
     readonly cacheInvalidation: unknown;
   }>({
@@ -293,6 +294,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     localFailure: undefined,
     cleanupFailure: undefined,
     isClearing: false,
+    isPageHiding: false,
     revocation: undefined,
     cacheInvalidation: undefined,
   });
@@ -986,7 +988,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
           await runtime.cache.discard();
         }
       } finally {
-        await runtime.cache.dispose();
+        await runtime.cache.dispose({ isPageHide: state.current.isPageHiding });
       }
     }
   }
@@ -999,6 +1001,10 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
     const failure = Schema.is(ConsoleStorageFailed)(error)
       ? error
       : new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) });
+
+    if (state.current.isPageHiding && failure.stage === ConsoleStorageStage.Close) {
+      return;
+    }
 
     globalThis.reportError(new Error(`Console cache failed during ${failure.stage}`));
 
@@ -1046,10 +1052,14 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
   async function waitForCleanup(): Promise<void> {
     cleanup.current ??= options.owner.trackCleanup(storageScope, closeRuntime());
 
-    await awaitCleanup(cleanup.current, runtime.cache.dispose);
+    await awaitCleanup(cleanup.current, () => runtime.cache.dispose({ isPageHide: state.current.isPageHiding }));
   }
 
-  async function dispose(): Promise<void> {
+  async function dispose(disposeOptions?: { readonly isPageHide?: boolean }): Promise<void> {
+    if (disposeOptions?.isPageHide === true) {
+      state.current = { ...state.current, isPageHiding: true };
+    }
+
     unsubscribeInvalidation();
 
     try {
@@ -1116,7 +1126,7 @@ async function createData(options: CreateConsoleData, workspaceOwner: WorkspaceO
       state.current = { ...state.current, isClearing: true };
 
       endSession(new ScopeAdmissionEnded({}), false);
-      void Promise.allSettled([initialized.then(dispose)]);
+      void Promise.allSettled([initialized.then(() => dispose())]);
 
       return;
     }

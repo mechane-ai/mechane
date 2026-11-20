@@ -41,6 +41,7 @@ export const ManagedSessionOpen = Schema.Struct({
   childSkillInstructions: Schema.optional(Schema.Record(Schema.String, Schema.String)),
   tools: Schema.Array(ManagedWireObject),
   initialEvents: Schema.Array(ManagedWireObject),
+  isArchived: Schema.optional(Schema.Boolean),
 });
 
 export type ManagedSessionOpen = typeof ManagedSessionOpen.Type;

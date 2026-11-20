@@ -14,6 +14,7 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
   '.png': MediaType.Png,
   '.svg': MediaType.Svg,
   '.txt': MediaType.PlainText,
+  '.wasm': MediaType.WebAssembly,
   '.webp': MediaType.Webp,
   '.woff': MediaType.Woff,
   '.woff2': MediaType.Woff2,

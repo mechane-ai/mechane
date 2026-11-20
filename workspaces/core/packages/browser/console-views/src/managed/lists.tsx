@@ -26,7 +26,7 @@ const agentColumns = [
 const sessionColumns = [
   { id: 'session', label: 'Session', role: 'primary' },
   { id: 'status', label: 'Status', role: 'status', width: 132 },
-  { id: 'updated', label: 'Updated', role: 'timestamp', width: 172, isSecondary: true },
+  { id: 'updated', label: 'Updated', role: 'timestamp', width: 216, isSecondary: true },
 ] as const satisfies ReadonlyArray<DataTableColumnLayout>;
 
 export function ManagedListPlaceholder({ kind }: { readonly kind: 'agents' | 'sessions' }): ReactNode {

@@ -200,9 +200,9 @@ function WorkspaceRuntime({
   });
 
   useEffect(() => {
-    function closeRuntime(): void {
+    function closeRuntime(options?: { readonly isPageHide?: boolean }): void {
       lifetime.current?.abort();
-      void current.current?.dispose();
+      void current.current?.dispose(options);
 
       current.current = undefined;
     }
@@ -212,7 +212,7 @@ function WorkspaceRuntime({
         savePosition();
       }
 
-      closeRuntime();
+      closeRuntime({ isPageHide: true });
 
       // Hide protected content before the browser freezes this document's rendered snapshot.
       flushSync(() => setRuntime((previous) => ({ kind: 'pending', data: previous.data })));

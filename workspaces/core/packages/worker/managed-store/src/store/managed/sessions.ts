@@ -8,7 +8,7 @@ import { listSessions } from './session-list.ts';
 import type { SessionQuery } from './session-list.ts';
 import { applySessionMutation } from './session-mutations.ts';
 import type { MutationInput } from './session-mutations.ts';
-import { openDescriptor, readSession, sessionDocument } from './session-records.ts';
+import { openDescriptor, readSession, reopenDescriptor, sessionDocument } from './session-records.ts';
 import type { SessionIdentity, SessionStatus } from './session-records.ts';
 import { closeSessionWork } from './work-records.ts';
 
@@ -77,6 +77,8 @@ export function createManagedSessionStore(context: StoreContext, keyring: Creden
         pendingOpen: await openDescriptor(context, row),
       };
     },
+    reopenDescriptor: async (identity: SessionIdentity) =>
+      await reopenDescriptor(context, await readSession(context, identity)),
     async confirmOpen({ scope, id }: SessionIdentity) {
       await context.client.query(
         'UPDATE mechane.managed_sessions SET initial_events=NULL WHERE workspace_id=$1 AND (creator_id=$2 OR $3::boolean) AND id=$4 AND initial_events IS NOT NULL',

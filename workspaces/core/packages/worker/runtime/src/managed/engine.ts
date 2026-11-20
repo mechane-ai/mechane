@@ -44,7 +44,7 @@ import { createManagedSessionLifecycle } from './session-lifecycle.ts';
 import { createManagedSessionView } from './session-view.ts';
 import { registerManagedPrimary } from './thread-registration.ts';
 import { abortRetiredFocus } from './thread-retirement.ts';
-import { archiveManagedThread } from './threads.ts';
+import { archiveManagedSessionThreads, archiveManagedThread } from './threads.ts';
 import { managedToolPermission } from './tools/auto-policy.ts';
 import { resolveManagedWebServerTools } from './tools/web-server-tools.ts';
 import { managedUsageProjector } from './usage-projection.ts';
@@ -301,6 +301,11 @@ export async function startManagedSessionEngine(options: StartOptions) {
           { sessionId: input.sessionId, threadId: input.threadId, isBudgetReached },
           events,
         );
+      } else if (input.isArchived === true) {
+        state.isArchived = true;
+        state.status = 'terminated';
+
+        await archiveManagedSessionThreads(transaction, input.sessionId);
       } else {
         await transition(transaction, {
           sessionId: input.sessionId,
@@ -310,7 +315,10 @@ export async function startManagedSessionEngine(options: StartOptions) {
         });
       }
     }, context);
-    options.wake();
+
+    if (input.isArchived !== true) {
+      options.wake();
+    }
 
     return await view.read(input);
   }

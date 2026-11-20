@@ -109,11 +109,11 @@ export async function sessionDocument(context: StoreContext, row: SessionRow): P
   return renderSession(row, meter);
 }
 
-export async function openDescriptor(context: StoreContext, row: SessionRow) {
-  if (row.initial_events === null) {
-    return null;
-  }
-
+async function buildOpenDescriptor(
+  context: StoreContext,
+  row: SessionRow,
+  initialEvents: ReadonlyArray<ManagedDocument>,
+) {
   return {
     id: row.id,
     creatorId: row.creator_id,
@@ -131,8 +131,21 @@ export async function openDescriptor(context: StoreContext, row: SessionRow) {
       workspaceId: row.workspace_id,
       agent: row.configuration.agent,
     }),
-    initialEvents: row.initial_events,
+    initialEvents,
+    isArchived: row.archived_at !== null || row.status === 'terminated',
   };
+}
+
+export async function openDescriptor(context: StoreContext, row: SessionRow) {
+  if (row.initial_events === null) {
+    return null;
+  }
+
+  return await buildOpenDescriptor(context, row, row.initial_events);
+}
+
+export async function reopenDescriptor(context: StoreContext, row: SessionRow) {
+  return await buildOpenDescriptor(context, row, []);
 }
 
 type WorkerResourceScope = { readonly workspaceId: string; readonly sessionId: string };

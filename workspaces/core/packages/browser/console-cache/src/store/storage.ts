@@ -67,10 +67,12 @@ export type ConsoleStorageHealth = {
   readonly issue?: { readonly kind: 'failed'; readonly message: string };
 };
 
+type CloseOptions = { readonly isPageHide?: boolean };
+
 type ConsoleStorage = {
   readonly generationId: CacheGenerationId;
   readonly persistence: PersistedCollectionPersistence;
-  readonly dispose: () => Promise<void>;
+  readonly dispose: (options?: CloseOptions) => Promise<void>;
   readonly discard: () => Promise<void>;
   readonly readHealth: () => ConsoleStorageHealth;
   readonly subscribeHealth: (listener: () => void) => () => void;
@@ -490,7 +492,9 @@ function createStorage({
     try {
       await closeDatabase();
     } catch (error) {
-      invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) }));
+      if (!state.hasPageHidden || state.health.issue !== undefined) {
+        invalidate(new ConsoleStorageFailed({ stage: ConsoleStorageStage.Close, reason: String(error) }));
+      }
     } finally {
       // Native close terminates its Worker even when closing the connection rejects.
       await lease.release();
@@ -499,8 +503,12 @@ function createStorage({
     }
   }
 
-  async function beginClose(): Promise<void> {
+  async function beginClose(options?: CloseOptions): Promise<void> {
     state.isClosed = true;
+
+    if (options?.isPageHide === true) {
+      state.hasPageHidden = true;
+    }
 
     clearTimeout(expiration);
     globalThis.removeEventListener('storage', onStorage);
